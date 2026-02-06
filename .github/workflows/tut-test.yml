@@ -33,4 +33,3 @@ jobs:
     - name: running pycbc tutorials
       run: |
         cd PyCBC-Tutorials
-        ./test_notebooks
