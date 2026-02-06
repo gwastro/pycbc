@@ -225,7 +225,8 @@ def add_osg_site(sitecat, cp):
                       value=r"\"0,1,2,4,5,7,8,9,10,11,12,13,16,17,24,27,35,36,40\"")
     site.add_profiles(Namespace.CONDOR, key="Requirements",
                       value="(HAS_SINGULARITY =?= TRUE) && "
-                            "(IS_GLIDEIN =?= True)")
+                            "(IS_GLIDEIN =?= True) && "
+                            "(HAS_CVMFS_singularity_opensciencegrid_org =?= True)")
     cvmfs_loc = '"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v'
     cvmfs_loc += sing_version + '"'
     site.add_profiles(Namespace.CONDOR, key="My.SingularityImage",
