@@ -19,12 +19,12 @@ tqdm
 gwdatafind>=1.1.3
 
 # Requirements for full pegasus env
-pegasus-wms.api == 5.1.2
+pegasus-wms == 5.1.2
 # https://pegasus.isi.edu/documentation/user-guide/installation.html#mixing-environments-system-venv-conda
 # six is listed, but is now not needed.
-pegasus-wms.api >= 5.1.1
-pegasus-wms.common >= 5.1.1
-pegasus-wms.worker >= 5.1.1
+pegasus-wms.api == 5.1.2
+pegasus-wms.common == 5.1.2
+pegasus-wms.worker == 5.1.2
 boto3
 certifi
 GitPython
