@@ -1,5 +1,6 @@
 import numpy as np
 cimport numpy as cnp
+import cython
 from cython import wraparound, boundscheck, cdivision
 from libc.math cimport M_PI, sqrt
 from libc.math cimport round as cround
@@ -306,3 +307,40 @@ def timecluster_cython(
         elif max_loc < i:
             i += 1
     return j
+
+ctypedef fused numeric_type:
+    cython.int
+    cython.long
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
+def get_coinc_indexes_cython_twodet_twocoinc(
+    numeric_type [::1] idxarr1,
+    numeric_type [::1] idxarr2,
+    numeric_type offset1,
+    numeric_type offset2,
+    numeric_type [::1] outputs
+):
+    cdef Py_ssize_t arr1pos = 0
+    cdef Py_ssize_t arr2pos = 0
+    cdef Py_ssize_t outpos = 0
+    cdef Py_ssize_t arr1_size = idxarr1.size
+    cdef Py_ssize_t arr2_size = idxarr2.size
+    cdef numeric_type cpos1
+    cdef numeric_type cpos2
+
+    while arr1pos < arr1_size and arr2pos < arr2_size:
+        cpos1 = idxarr1[arr1pos] - offset1
+        cpos2 = idxarr2[arr2pos] - offset2
+        if cpos1 == cpos2:
+            outputs[outpos] = cpos1
+            outpos += 1
+            arr1pos += 1
+            arr2pos += 1
+        elif cpos1 < cpos2:
+            arr1pos += 1
+        else:
+            arr2pos += 1
+    return outpos
+
