@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 import argparse
 import sys
 import numpy as np
@@ -15,18 +15,18 @@ from pycbc.types import TimeSeries, FrequencySeries
 
 # --- GLOBAL WORKER DATA (set by initializer) ---
 g_coarse_waveforms = None
-g_fine_waveforms = None # Use g_fine_waveforms
+g_fine_bank = None
 g_psd = None
 g_args = None
 
-def init_worker(coarse_waveforms, fine_waveforms, psd, args_namespace):
+def init_worker(coarse_waveforms, fine_bank, psd, args_namespace):
     """
     Initializer function for each worker process.
     Sets read-only global variables.
     """
-    global g_coarse_waveforms, g_fine_waveforms, g_psd, g_args
+    global g_coarse_waveforms, g_fine_bank, g_psd, g_args
     g_coarse_waveforms = coarse_waveforms
-    g_fine_waveforms = fine_waveforms # Assign to g_fine_waveforms
+    g_fine_bank = fine_bank
     g_psd = psd
     g_args = args_namespace
     # Silence worker logging
@@ -128,8 +128,7 @@ def process_template(i):
     """
     Worker function that runs the full design loop for a single template index 'i'.
     """
-    h_fine = g_fine_waveforms[i] # Use the fork-safe list
-
+    h_fine = g_fine_bank[i].copy()[::g_args.dec_factor]
     if sigmasq(h_fine, psd=g_psd, low_frequency_cutoff=g_args.f_low) <= 0:
         return i, 0.0, -1, 0.0, np.array([], dtype=np.float64)
 
@@ -149,13 +148,14 @@ def process_template(i):
     
     matches = np.array(matches)
     morder = np.argsort(matches)[::-1]
+    msearch = morder[:g_args.search_depth]
 
     current_taps = g_args.n_taps
     while current_taps <= g_args.max_taps:
         best_qa_match = -1
         best_qa_idx = -1
         coarse_match = -1
-        for best_c_idx in morder[0:g_args.search_depth]:
+        for best_c_idx in msearch:
             best_match = matches[best_c_idx]
 
             h_ref = g_coarse_waveforms[best_c_idx]
@@ -211,6 +211,7 @@ def process_template(i):
             
             if best_qa_match >= g_args.min_match: break
         if best_qa_match >= g_args.min_match: break
+        msearch = [best_qa_idx] # Simple alg for now, resort to best from initial step
             
         current_taps += g_args.tap_step
         
@@ -271,8 +272,8 @@ def main():
                            enable_compressed_waveforms=False)
     n_fine = len(fine_bank)
     
-    logging.info("Preparing fine bank (pre-loading all waveforms to RAM)...")
-    fine_waveforms = [h.copy()[::args.dec_factor] for h in tqdm(fine_bank, desc="Generating Fine Waveforms", disable=not show_progress, file=sys.stderr)]
+    #logging.info("Preparing fine bank (pre-loading all waveforms to RAM)...")
+    #fine_waveforms = [h.copy()[::args.dec_factor] for h in tqdm(fine_bank, desc="Generating Fine Waveforms", disable=not show_progress, file=sys.stderr)]
     
     # --- PHASE 1: Write File Headers via TemplateBank reuse ---
     logging.info("Writing bank parameters to output file...")
@@ -304,7 +305,7 @@ def main():
     
     try:
         with mp.Pool(processes=args.n_processes, initializer=init_worker, 
-                     initargs=(coarse_waveforms, fine_waveforms, psd, args)) as pool:
+                     initargs=(coarse_waveforms, fine_bank, psd, args)) as pool:
             
             results_iter = pool.imap_unordered(process_template, job_list)
             if not args.verbose:
