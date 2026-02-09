@@ -45,7 +45,7 @@ install_requires = setup_requires + [
     'Mako>=1.0.1',
     'beautifulsoup4>=4.6.0',
     'tqdm',
-    'setuptools',
+    'setuptools<82.0.0',
     'gwdatafind',
     'pegasus-wms.api == 5.1.2',
     'python-ligo-lw >= 1.7.0',
