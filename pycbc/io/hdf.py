@@ -31,34 +31,91 @@ logger = logging.getLogger('pycbc.io.hdf')
 class HGroup(h5py.Group):
     """ Low level extensions to the h5py group object
     """
-    def create_group(self, name, track_order=None):
-        """
-        Wrapper around h5py's create_group in order to redirect to the
-        manual HGroup object defined here
-        """
-        if track_order is None:
-            track_order = h5py.h5.get_config().track_order
 
-        with h5py._objects.phil:
-            name, lcpl = self._e(name, lcpl=True)
-            gcpl = HGroup._gcpl_crt_order if track_order else None
-            gid = h5py.h5g.create(self.id, name, lcpl=lcpl, gcpl=gcpl)
-            return HGroup(gid)
+    def create_group(self, *args, **kwargs):
+        """
+        Wraps create_group to return an HGroup instance.
+        """
+        group_obj = super().create_group(*args, **kwargs)
+        return HGroup(group_obj.id)
 
-    def create_dataset(self, name, shape=None, dtype=None, data=None, **kwds):
+    def create_dataset(self, name, **kwds):
         """
         Wrapper around h5py's create_dataset so that checksums are used
         """
-        if isinstance(data, np.ndarray) and not data.dtype == object:
+        # Always enforce fletcher32 for numeric dtypes on non-scalar
+        # datasets. Do NOT allow callers to disable checksums with
+        # fletcher32=False.
+        data = kwds.get('data', None)
+        dtype = kwds.get('dtype', None)
+
+        # Decide whether the dataset will be numeric. Prefer the explicit
+        # dtype if provided; otherwise infer from the data (safely using
+        # np.asarray to handle lists/tuples/scalars).
+        dtype_numeric = False
+        if dtype is not None:
+            try:
+                dtype_numeric = np.issubdtype(np.dtype(dtype), np.number)
+            except (TypeError, ValueError):
+                dtype_numeric = False
+        elif data is not None:
+            try:
+                arr = np.asarray(data)
+                # Treat object-dtype conservatively as non-numeric.
+                if arr.dtype == np.dtype('O'):
+                    dtype_numeric = False
+                else:
+                    dtype_numeric = np.issubdtype(arr.dtype, np.number)
+            except (TypeError, ValueError):
+                dtype_numeric = False
+
+        # Determine whether the dataset will be scalar. Scalar datasets
+        # must not add fletcher32
+        is_scalar = False
+        if 'shape' in kwds:
+            sh = kwds['shape']
+            if isinstance(sh, tuple):
+                is_scalar = (len(sh) == 0)
+            else:
+                # Non-tuple shapes are treated as non-scalar
+                is_scalar = False
+        elif data is not None:
+            try:
+                arr = np.asarray(data)
+                is_scalar = (arr.ndim == 0)
+            except Exception:
+                is_scalar = False
+
+        # Only set fletcher32 for numeric, non-scalar datasets.
+        if dtype_numeric and not is_scalar:
             kwds['fletcher32'] = True
-        return h5py.Group.create_dataset(
-            self,
-            name,
-            shape=shape,
-            dtype=dtype,
-            data=data,
-            **kwds
-        )
+
+        return super().create_dataset(name, **kwds)
+
+    def __getitem__(self, name):
+        """
+        Ensures that when accessing subgroups (e.g., g['subgroup']),
+        or looping through a .values() or .items() call,
+        they are returned as HGroup objects.
+        """
+        obj = super().__getitem__(name)
+        # If it's already our wrapped HGroup, just return it
+        if isinstance(obj, HGroup):
+            return obj
+        # Only wrap group-like objects. Datasets and other non-group
+        # objects should be returned unchanged. Use presence of
+        # mapping-like API (keys) as a quick proxy for group-like.
+        if isinstance(obj, h5py.Group) and hasattr(obj, 'keys'):
+            return HGroup(obj.id)
+        return obj
+
+    @property
+    def parent(self):
+        """
+        Wrap the parent group as a HGroup object.
+        """
+        parent_obj = super().parent
+        return HGroup(parent_obj.id)
 
 
 class HFile(HGroup, h5py.File):
