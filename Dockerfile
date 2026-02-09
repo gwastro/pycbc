@@ -10,7 +10,7 @@ ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.o
 RUN dnf -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && dnf -y install cvmfs cvmfs-config-default && dnf clean all && dnf makecache && \
     dnf -y groupinstall "Development Tools" \
                         "Scientific Support" && \
-    rpm -e --nodeps git perl-Git && dnf -y install @python39 rsync zlib-devel libpng-devel libjpeg-devel sqlite-devel openssl-devel fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel hdf5 hdf5-devel python39-devel swig which osg-ca-certs && python3.9 -m pip install --upgrade pip setuptools wheel cython && python3.9 -m pip install mkl ipython jupyter jupyterhub jupyterlab lalsuite==7.24 && \
+    rpm -e --nodeps git perl-Git && dnf -y install @python39 rsync zlib-devel libpng-devel libjpeg-devel sqlite-devel openssl-devel fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel hdf5 hdf5-devel python39-devel swig which osg-ca-certs && python3.9 -m pip install --upgrade pip "setuptools<82.0.0" wheel cython && python3.9 -m pip install mkl ipython jupyter jupyterhub jupyterlab lalsuite==7.24 && \
     dnf -y install https://repo.opensciencegrid.org/osg/3.5/el8/testing/x86_64/osg-wn-client-3.5-5.osg35.el8.noarch.rpm && dnf -y install pelican-osdf-compat-7.10.11-1.x86_64 && dnf -y install pelican-7.10.11-1.x86_64 && dnf clean all
 
 # set up environment
