@@ -162,34 +162,6 @@ def hypertriangle(*params, bounds=(0, 1)):
         out_params = [out_params[i][0] for i in range(K)]
     return out_params
 
-def solve_root(f, a, b, tol=1e-6, max_iter=100):
-    """Simple bisection root solver."""
-    fa = f(a)
-    fb = f(b)
-
-    if fa * fb > 0:
-        raise ValueError(f"Root not bracketed: f({a})={fa}, f({b})={fb}")
-
-    if abs(fa) < tol: return a
-    if abs(fb) < tol: return b
-
-    for _ in range(max_iter):
-        c = (a + b) / 2
-        fc = f(c)
-
-        if abs(fc) < tol or (b - a) / 2 < tol:
-            return c
-
-        if fa * fc < 0:
-            b = c
-            fb = fc
-        else:
-            a = c
-            fa = fc
-
-    return (a + b) / 2
-
-
 #
 # =============================================================================
 #
@@ -506,7 +478,7 @@ def mass2_from_tau0_tau3(tau0, tau3, f_lower):
     return mass2_from_mtotal_eta(mtotal, eta)
 
 
-def ecc_mchirp_from_mchirp_ecc(mchirp, ecc):
+def Emchirp_from_mchirp_ecc(mchirp, ecc):
     """ The effective eccentric mchirp parameter as defined in
     the equation 8 in https://arxiv.org/pdf/2107.14736.
     Eccentricity must be defined at the dominant (2,2) mode GW
@@ -534,78 +506,34 @@ def ecc_mchirp_from_mchirp_ecc(mchirp, ecc):
             kappa_beta * mchirp**6 +
             zeta_beta * mchirp**8)
 
-    gamma = (Xi_gamma * mchirp**2 +
-             Delta_gamma * mchirp**4 +
-             kappa_gamma * mchirp**6 +
-             zeta_gamma * mchirp**8)
+    #gamma = (Xi_gamma * mchirp**2 +
+    #         Delta_gamma * mchirp**4 +
+    #         kappa_gamma * mchirp**6 +
+    #         zeta_gamma * mchirp**8)
 
     e2 = ecc**2
     e4 = e2**2
     e6 = e4 * e2
 
-    ecc_mchirp = mchirp * (1 + alpha * e2 + beta * e4 + gamma * e6)
+    Emchirp = mchirp * (1 + alpha * e2 + beta * e4)
 
-    return ecc_mchirp
+    return Emchirp
 
-def _mchirp_from_ecc_mchirp_ecc(ecc_mchirp, ecc):
-    """
-    Inverse function to get mchirp from ecc_mchirp and ecc.
-    Solves ecc_mchirp_from_mchirp_ecc(mchirp, ecc) - ecc_mchirp = 0
-    """
-    def target(mchirp):
-        return ecc_mchirp_from_mchirp_ecc(mchirp, ecc) - ecc_mchirp
+def mchirp_from_Emchirp_ecc(Emchirp, ecc):
+    xi = 0.06110974175360381
+    delta = -0.4193723077257345
+    e2 = ecc**2
 
-    # Search strategy:
-    # We know mchirp ~ ecc_mchirp.
-    # We try to bracket the root starting from this guess.
+    A = xi * e2
+    B = 1 + delta * e2
+    C = -Emchirp
 
-    guess = ecc_mchirp
-    # Initial bracket width factor
-    factor = 0.2
-
-    # Try finding a bracket
-    lower = guess * (1 - factor)
-    upper = guess * (1 + factor)
-
-    # Limit max iterations for bracket expansion
-    max_iter = 10
-
-    try:
-        f_lower = target(lower)
-        f_upper = target(upper)
-
-        # Expand if signs are the same
-        for _ in range(max_iter):
-            if f_lower * f_upper < 0:
-                break
-
-            if abs(f_lower) < abs(f_upper):
-                # Root is likely lower
-                lower /= 1.5
-                f_lower = target(lower)
-            else:
-                # Root is likely higher
-                upper *= 1.5
-                f_upper = target(upper)
-
-            # Safety checks for physical range (roughly 0 to 100 for this approx)
-            if upper > 100:
-                upper = 100
-                f_upper = target(upper)
-                if f_lower * f_upper > 0:
-                     # If still same sign at 100, we might be out of validity range
-                     # or function turns over.
-                     break
-
-            if lower < 0.1:
-                lower = 0.1
-                f_lower = target(lower)
-
-        return solve_root(target, lower, upper)
-    except Exception:
-        return numpy.nan
-
-mchirp_from_ecc_mchirp_ecc = numpy.vectorize(_mchirp_from_ecc_mchirp_ecc)
+    discriminant = B**2 - 4*A*C
+    # Handle potentially negative discriminant (though unlikely here)
+    mask = discriminant >= 0
+    mchirp = numpy.full_like(Emchirp, numpy.nan)
+    mchirp[mask] = (-B[mask] + numpy.sqrt(discriminant[mask])) / (2*A[mask])
+    return mchirp
 
 def lambda_tilde(mass1, mass2, lambda1, lambda2):
     """ The effective lambda parameter
