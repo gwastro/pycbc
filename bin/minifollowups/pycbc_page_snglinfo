@@ -200,6 +200,14 @@ headers.append("M<sub>c</sub>")
 headers.append("s<sub>1z</sub>")
 headers.append("s<sub>2z</sub>")
 headers.append("Duration")
+# display eccentricity and relative anomaly if they exist
+try:
+    data[0].append('%5.2f' % sngl_file.eccentricity[0])
+    data[0].append('%5.2f' % sngl_file.rel_anomaly[0])
+    headers.append("eccentricity")
+    headers.append("rel_anomaly")
+except KeyError:
+    pass
 
 if args.significance_file and not args.n_loudest:
     with hdf.HFile(args.significance_file, 'r') as sig_f:
