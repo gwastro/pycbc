@@ -50,7 +50,7 @@ jobs:
       run: |
         conda install \
             pip \
-            setuptools \
+            "setuptools<82.0.0" \
             tox
 
     - name: Run basic pycbc test suite

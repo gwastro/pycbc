@@ -32,8 +32,8 @@ requires = []
 setup_requires = ['numpy>=1.16.0']
 install_requires = setup_requires + [
     'cython>=0.29',
-    'numpy>=1.16.0,!=1.19.0,!=2.2.2',
-    'scipy>=0.16.0',
+    'numpy>=1.16.0,!=1.19.0,!=2.2.2,<2',
+    'scipy>=0.16.0,<1.17.0',
     'astropy>=2.0.3,!=4.2.1,!=4.0.5',
     'matplotlib>=1.5.1',
     'mpld3>=0.3',
@@ -43,7 +43,7 @@ install_requires = setup_requires + [
     'Mako>=1.0.1',
     'beautifulsoup4>=4.6.0',
     'tqdm',
-    'setuptools',
+    'setuptools<82.0.0',
     'gwdatafind',
     'pegasus-wms.api == 5.0.9',
     'pegasus-wms.common == 5.0.9',
@@ -96,7 +96,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.8.5'
+        vinfo.version = '2.8.6'
         vinfo.release = True
 
     version_script = f"""# coding: utf-8
