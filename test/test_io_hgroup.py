@@ -240,7 +240,9 @@ class TestIOHFile(unittest.TestCase):
                 # default behaviour, and our wrapper isn't needed)
                 self.assertFalse(
                     _dataset_has_fletcher32(d_h5py),
-                    "h5py.File-created dataset should not have fletcher32 checksum"
+                    "h5py.File-created dataset should not have fletcher32 "
+                    "checksum (h5py default behaviour has changed - we can remove "
+                    "the HGroup wrapper now)"
                 )
 
 suite = unittest.TestSuite()
