@@ -173,7 +173,6 @@ for seg in observing_segs:
     valid_bad_dq = (dq_segs & dq_ok_segs)
 
     # pad / expand segments outwards by dq_padding seconds
-    # use protract (pycbc uses protract in other parts of the code)
     valid_bad_dq.protract(args.dq_padding)
     valid_bad_dq.coalesce()
 
