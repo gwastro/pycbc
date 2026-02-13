@@ -170,6 +170,8 @@ for seg in observing_segs:
     dq_mask = (ts_dq_channel <= args.dq_thresh)
     dq_segs = timeseries_to_segmentlist(dq_mask)
 
+    # these are the times where dq channel is working, and
+    # the dq channel is above threshold
     valid_bad_dq = (dq_segs & dq_ok_segs)
 
     # pad / expand segments outwards by dq_padding seconds
