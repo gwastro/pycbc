@@ -2,9 +2,10 @@ import os
 import unittest
 import tempfile
 import numpy as np
-from utils import simple_exit
+from utils import simple_exit, parse_args_cpu_only
 from pycbc.io.hdf import HFile
 
+parse_args_cpu_only('io.hdf')
 
 class TestIOHDF(unittest.TestCase):
 

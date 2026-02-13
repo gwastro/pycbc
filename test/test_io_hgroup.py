@@ -3,8 +3,10 @@ import unittest
 import tempfile
 import h5py
 import numpy as np
-from utils import simple_exit
+from utils import simple_exit, parse_args_cpu_only
 from pycbc.io.hdf import HFile, HGroup
+
+parse_args_cpu_only('io.hgroup')
 
 
 def _dataset_has_fletcher32(dataset):

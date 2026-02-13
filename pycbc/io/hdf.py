@@ -39,58 +39,19 @@ class HGroup(h5py.Group):
         group_obj = super().create_group(*args, **kwargs)
         return HGroup(group_obj.id)
 
-    def create_dataset(self, name, **kwds):
+    def create_dataset(self, name, *args, **kwds):
         """
         Wrapper around h5py's create_dataset so that checksums are used
         """
-        # Always enforce fletcher32 for numeric dtypes on non-scalar
-        # datasets. Do NOT allow callers to disable checksums with
-        # fletcher32=False.
-        data = kwds.get('data', None)
-        dtype = kwds.get('dtype', None)
+        # Do not allow callers to override including fletcher32
+        if 'fletcher32' in kwds:
+            del kwds['fletcher32']
 
-        # Decide whether the dataset will be numeric. Prefer the explicit
-        # dtype if provided; otherwise infer from the data (safely using
-        # np.asarray to handle lists/tuples/scalars).
-        dtype_numeric = False
-        if dtype is not None:
-            try:
-                dtype_numeric = np.issubdtype(np.dtype(dtype), np.number)
-            except (TypeError, ValueError):
-                dtype_numeric = False
-        elif data is not None:
-            try:
-                arr = np.asarray(data)
-                # Treat object-dtype conservatively as non-numeric.
-                if arr.dtype == np.dtype('O'):
-                    dtype_numeric = False
-                else:
-                    dtype_numeric = np.issubdtype(arr.dtype, np.number)
-            except (TypeError, ValueError):
-                dtype_numeric = False
+        try:
+            return super().create_dataset(name, *args, **kwds, fletcher32=True)
+        except ValueError:
+            return super().create_dataset(name, *args, **kwds)
 
-        # Determine whether the dataset will be scalar. Scalar datasets
-        # must not add fletcher32
-        is_scalar = False
-        if 'shape' in kwds:
-            sh = kwds['shape']
-            if isinstance(sh, tuple):
-                is_scalar = (len(sh) == 0)
-            else:
-                # Non-tuple shapes are treated as non-scalar
-                is_scalar = False
-        elif data is not None:
-            try:
-                arr = np.asarray(data)
-                is_scalar = (arr.ndim == 0)
-            except Exception:
-                is_scalar = False
-
-        # Only set fletcher32 for numeric, non-scalar datasets.
-        if dtype_numeric and not is_scalar:
-            kwds['fletcher32'] = True
-
-        return super().create_dataset(name, **kwds)
 
     def __getitem__(self, name):
         """
