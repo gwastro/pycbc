@@ -27,6 +27,8 @@ triggers.
 import logging
 import numpy as np
 
+from .eventmgr_cython import get_coinc_indexes_cython_twodet_twocoinc
+
 logger = logging.getLogger('pycbc.events.coherent')
 
 
@@ -53,6 +55,25 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
         List of indexes for triggers in geocent time that appear in
         multiple detectors
     """
+    if min_nifos == 2 and len(idx_dict) == 2:
+        ifos = list(idx_dict.keys())
+        # Could cache an output array if needed
+        idxarr1 = idx_dict[ifos[0]]
+        idxarr2 = idx_dict[ifos[1]]
+        # If either detector has no above-threshold triggers, there can be
+        # no coincidences. Handle this explicitly to avoid passing a
+        # zero-length output array into the Cython helper.
+        if len(idxarr1) == 0 or len(idxarr2) == 0:
+            return np.array([], dtype=idxarr1.dtype)
+        outarr = np.zeros(max(len(idxarr1), len(idxarr2)), dtype=idxarr1.dtype)
+        num_idxs = get_coinc_indexes_cython_twodet_twocoinc(
+            idxarr1,
+            idxarr2,
+            time_delay_idx[ifos[0]],
+            time_delay_idx[ifos[1]],
+            outarr
+        )
+        return outarr[:num_idxs]
     coinc_list = np.array([], dtype=int)
     for ifo in idx_dict.keys():
         # Create list of indexes above single detector threshold, in geocent
