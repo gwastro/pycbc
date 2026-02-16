@@ -9,8 +9,8 @@ from pycbc.io.hdf import HFile, HGroup
 parse_args_cpu_only("io.hgroup")
 
 
-def _dataset_has_fletcher32(dataset):
-    """Return True if dataset creation property lists include fletcher32."""
+def _dataset_has_checksumming(dataset):
+    """True if dataset creation properties include checksum arguments."""
     plist = dataset.id.get_create_plist()
     n = plist.get_nfilters()
     for i in range(n):
@@ -20,6 +20,7 @@ def _dataset_has_fletcher32(dataset):
             name_low = name.lower()
         else:
             name_low = str(name).lower()
+        # check if fletcher32 has been anabled
         if (
             b"fletcher" in name_low
             if isinstance(name_low, bytes)
@@ -30,9 +31,9 @@ def _dataset_has_fletcher32(dataset):
 
 
 class TestIOHFile(unittest.TestCase):
-    def test_create_dataset_has_fletcher32(self):
+    def test_create_dataset_has_checksum(self):
         """
-        Test that a created dataset has fletcher32 enabled or not as appropriate
+        Test that a created dataset has checksum enabled or not as appropriate
         """
         should_be_checksummed = []
         should_not_be_checksummed = []
@@ -48,6 +49,7 @@ class TestIOHFile(unittest.TestCase):
                 should_be_checksummed.append("shape_based_with_dtype")
 
                 # Make a shape-based dataset where dtype isnt given
+                # This defaults as float32, so should have checksumming enabled
                 f.create_dataset(
                     "shape_based_no_dtype",
                     shape=(10,),
@@ -111,15 +113,15 @@ class TestIOHFile(unittest.TestCase):
                 for dataset_name in should_be_checksummed:
                     d = f[dataset_name]
                     self.assertTrue(
-                        _dataset_has_fletcher32(d),
-                        "fletcher32 should be enabled for %s dataset"
+                        _dataset_has_checksumming(d),
+                        "checksumming should be enabled for %s dataset"
                         % dataset_name,
                     )
                 for dataset_name in should_not_be_checksummed:
                     d = f[dataset_name]
                     self.assertFalse(
-                        _dataset_has_fletcher32(d),
-                        "fletcher32 should be not enabled for %s dataset"
+                        _dataset_has_checksumming(d),
+                        "checksumming should be not enabled for %s dataset"
                         % dataset_name,
                     )
 
@@ -228,18 +230,18 @@ class TestIOHFile(unittest.TestCase):
                     "Dtypes should be identical",
                 )
 
-                # Assert HFile-created dataset has fletcher32 enabled
+                # Assert HFile-created dataset has checksum enabled
                 self.assertTrue(
-                    _dataset_has_fletcher32(d_hfile),
-                    "HFile-created dataset should have fletcher32 checksum",
+                    _dataset_has_checksumming(d_hfile),
+                    "HFile-created dataset should have checksum",
                 )
 
                 # Assert that the h5py.File-created dataset _doesnt_
-                # have fletcher32 enabled (If this fails, h5py has updated its
+                # have checksum enabled (If this fails, h5py has updated its
                 # default behaviour, and our wrapper isn't needed)
                 self.assertFalse(
-                    _dataset_has_fletcher32(d_h5py),
-                    "h5py.File-created dataset should not have fletcher32 "
+                    _dataset_has_checksumming(d_h5py),
+                    "h5py.File-created dataset should not have "
                     "checksum (h5py default behaviour has changed - we can remove "
                     "the HGroup wrapper now)",
                 )
