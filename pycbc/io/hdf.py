@@ -49,7 +49,7 @@ class HGroup(h5py.Group):
 
         try:
             return super().create_dataset(name, *args, **kwds, fletcher32=True)
-        except ValueError:
+        except (ValueError, TypeError):
             logging.debug(
                 "Could not create a dataset with fletcher32, falling back "
                 "to default"
