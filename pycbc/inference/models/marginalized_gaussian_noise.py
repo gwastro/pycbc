@@ -29,7 +29,7 @@ from pycbc.detector import Detector
 from .gaussian_noise import (BaseGaussianNoise,
                              create_waveform_generator,
                              GaussianNoise, catch_waveform_error)
-from .tools import marginalize_likelihood, DistMarg, hm_phase_marginalize
+from .tools import marginalize_likelihood, DistMarg, hm_phase_marginalize,hm_phase_peaks
 
 
 class MarginalizedPhaseGaussianNoise(GaussianNoise):
@@ -813,12 +813,20 @@ class MarginalizedHMPhase(BaseGaussianNoise):
     name = 'marginalized_hm_phase'
 
     def __init__(self, variable_params, data, low_frequency_cutoff,
-                 sample_rate = 2048,
+                 sample_rate = 2048, numerical = False, grid = False,
+                 grid_points = 2000,first_order_correction = False,offset = 0,
+                 dominant_mode_peak = False,
                   **kwargs):
         super(MarginalizedHMPhase,self).__init__(variable_params, data,
                                             low_frequency_cutoff,
                                             **kwargs)
         sample_rate = float(sample_rate)
+        self.numerical = numerical
+        self.grid = grid
+        self.grid_points = grid_points
+        self.first_order_correction = first_order_correction
+        self.offset = offset
+        self.dominant_mode_peak = dominant_mode_peak
         df = data[self.detectors[0]].delta_f
         self.df = df
         self.sample_rate = sample_rate
@@ -939,4 +947,7 @@ class MarginalizedHMPhase(BaseGaussianNoise):
                     hmhn_total[(m,n)] = hmhn[ifo][(m,n)]
         self.shm = shm_total
         self.hmhn = hmhn_total
-        return hm_phase_marginalize(shm_total,hmhn_total)
+        self.peaks = hm_phase_peaks(shm_total,hmhn_total,self.dominant_mode_peak)
+        return hm_phase_marginalize(shm_total,hmhn_total, self.numerical,self.grid,
+                                    self.grid_points,self.first_order_correction,self.offset,
+                                    self.dominant_mode_peak)
