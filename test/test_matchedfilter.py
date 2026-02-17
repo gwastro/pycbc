@@ -36,6 +36,8 @@ import numpy
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Matched Filter")
+
+import testing_data
 #import pycbc.fft.fftw
 #pycbc.fft.fftw.set_measure_level(0)
 
@@ -190,7 +192,30 @@ class TestMatchedFilter(unittest.TestCase):
             self._check_accuracy_subsample_offset(
                 o, i, ph
             )
+    
+    def test_optimized_match_valid(self):
+        with self.context:
+            NL_waveform, L_waveform, ligo_psd = testing_data.get_match_testing_waveforms()
 
+            NL_waveform = FrequencySeries(NL_waveform, delta_f=0.25)
+            L_waveform = FrequencySeries(L_waveform, delta_f=0.25)
+            ligo_psd = FrequencySeries(ligo_psd, delta_f=0.25)
+
+            o_optimized, _, _ = optimized_match(
+                NL_waveform,
+                L_waveform,
+                return_phase=True,
+                psd=ligo_psd
+            )
+
+            o, _, _ = match(
+                NL_waveform,
+                L_waveform,
+                return_phase=True,
+                psd=ligo_psd
+            )
+
+            self.assertGreaterEqual(o_optimized, o)
 
     def _check_accuracy_subsample_offset(self, o, i, ph):
         self.assertAlmostEqual(1.0, o, places=10)
@@ -234,7 +259,6 @@ class TestMatchedFilter(unittest.TestCase):
             self.assertRaises(TypeError,match,zeros(10),zeros(10))
 
             self.assertRaises(ValueError,match,self.filt,self.filt[0:len(self.filt)-1])
-
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMatchedFilter))
