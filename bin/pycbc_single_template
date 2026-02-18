@@ -154,6 +154,11 @@ parser.add_argument("--u-val", type=float, default=None,
                   help="The ratio between hplus and hcross to use in the "
                     "template, according to h(t) = hplus * u_val + hcross. "
                     "If not given only hplus is used.")
+# Optional arguments for eccentric templates
+parser.add_argument("--eccentricity", type=float, default=0,
+                  help="The orbital eccentricity. Default = 0")
+parser.add_argument("--rel-anomaly", type=float, default=0,
+                  help="The relativistic anomaly. Default = 0")
 parser.add_argument("--window", type=float,
                   help="Time to save on each side of the given trigger time")
 parser.add_argument("--order", type=int,
@@ -228,7 +233,9 @@ if not opt.use_params_of_closest_injection:
             spin1z=opt.spin1z,
             spin2x=opt.spin2x,
             spin2y=opt.spin2y,
-            spin2z=opt.spin2z)
+            spin2z=opt.spin2z,
+            eccentricity=opt.eccentricity,
+            rel_anomaly=opt.rel_anomaly)
 
 with ctx:
     fft.from_cli(opt)
