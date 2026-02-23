@@ -54,7 +54,7 @@ class TestIOHFile(unittest.TestCase):
                     "shape_based_no_dtype",
                     shape=(10,),
                 )
-                should_not_be_checksummed.append("shape_based_no_dtype")
+                should_be_checksummed.append("shape_based_no_dtype")
 
                 int_list = [1, 2, 3, 4, 5, 6, 7, 8, 9]
                 # Make a dataset from some int data cast as a f8,
