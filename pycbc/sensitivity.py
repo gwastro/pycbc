@@ -136,12 +136,15 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     volume_error: float
         The standard error in the volume
     """
+    # Powers for different distributions
     d_power = {
         'log'             : 3.,
         'uniform'         : 2.,
         'distancesquared' : 1.,
         'volume'          : 0.
     }[distribution]
+    
+    # Powers for chirp mass scaling
     mchirp_power = {
             'log'             : 0.,
             'uniform'         : 5. / 6.,
@@ -149,13 +152,14 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
             'volume'          : 15. / 6.
     }[distribution]
 
-    # establish maximum physical distance: first for chirp distance distribution
+    # Establish maximum physical distance: first for chirp distance distribution
     if limits_param == 'chirp_distance':
+        # Standard BNS chirp mass for conversion
         mchirp_standard_bns = 1.4 * 2.**(-1. / 5.)
         all_mchirp = numpy.concatenate((found_mchirp, missed_mchirp))
         max_mchirp = all_mchirp.max()
         if max_param is not None:
-            # use largest injected mchirp to convert back to distance
+            # Use largest injected mchirp to convert back to distance
             max_distance = max_param * \
                                   (max_mchirp / mchirp_standard_bns)**(5. / 6.)
         else:
@@ -164,49 +168,43 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
         if max_param is not None:
             max_distance = max_param
         else:
-            # if no max distance given, use max distance actually injected
+            # If no max distance given, use max distance actually injected
             max_distance = max(found_d.max(), missed_d.max())
     else:
         raise NotImplementedError("%s is not a recognized parameter"
                                   % limits_param)
 
-    # volume of sphere
+    # Calculate volume of sphere out to maximum distance
     montecarlo_vtot = (4. / 3.) * numpy.pi * max_distance**3.
 
-    # arrays of weights for the MC integral
+    # Calculate weights based on distribution parameters
     if distribution_param == 'distance':
-        found_weights = found_d ** d_power
-        missed_weights = missed_d ** d_power
+        found_weights = numpy.power(found_d, d_power)
+        missed_weights = numpy.power(missed_d, d_power)
     elif distribution_param == 'chirp_distance':
-        # weight by a power of mchirp to rescale injection density to the
-        # target mass distribution
-        found_weights = found_d ** d_power * \
-                        found_mchirp ** mchirp_power
-        missed_weights = missed_d ** d_power * \
-                         missed_mchirp ** mchirp_power
-    else:
-        raise NotImplementedError("%s is not a recognized distance parameter"
-                                  % distribution_param)
+        found_weights = (numpy.power(found_d, d_power) * 
+                        numpy.power(found_mchirp, mchirp_power))
+        missed_weights = (numpy.power(missed_d, d_power) * 
+                         numpy.power(missed_mchirp, mchirp_power))
 
-    all_weights = numpy.concatenate((found_weights, missed_weights))
+    # Pre-allocate array and store found weights
+    total_size = len(found_weights) + len(missed_weights)
+    mc_weight_samples = numpy.zeros(total_size)
+    mc_weight_samples[:len(found_weights)] = found_weights
 
-    # measured weighted efficiency is w_i for a found inj and 0 for missed
-    # MC integral is volume of sphere * (sum of found weights)/(sum of all weights)
-    # over injections covering the sphere
-    mc_weight_samples = numpy.concatenate((found_weights, 0 * missed_weights))
-    mc_sum = sum(mc_weight_samples)
+    # Calculate Monte Carlo statistics
+    mc_sum = numpy.sum(mc_weight_samples)
+    mc_sum_squares = numpy.sum(mc_weight_samples ** 2)
+    mc_sample_variance = (mc_sum_squares / len(mc_weight_samples) - 
+                         (mc_sum / len(mc_weight_samples)) ** 2)
 
     if limits_param == 'distance':
-        mc_norm = sum(all_weights)
+        mc_norm = sum(numpy.concatenate((found_weights, missed_weights)))
     elif limits_param == 'chirp_distance':
-        # if injections are made up to a maximum chirp distance, account for
-        # extra missed injections that would occur when injecting up to
-        # maximum physical distance : this works out to a 'chirp volume' factor
-        mc_norm = sum(all_weights * (max_mchirp / all_mchirp) ** (5. / 2.))
+        mc_norm = sum(numpy.concatenate((found_weights, missed_weights)) * (max_mchirp / all_mchirp) ** (5. / 2.))
 
-    # take out a constant factor
     mc_prefactor = montecarlo_vtot / mc_norm
-
+    
     # count the samples
     if limits_param == 'distance':
         Ninj = len(mc_weight_samples)
@@ -226,9 +224,6 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
         else:
             Ninj = sum((max_mchirp / all_mchirp) ** mchirp_power)
 
-    # sample variance of efficiency: mean of the square - square of the mean
-    mc_sample_variance = sum(mc_weight_samples ** 2.) / Ninj - \
-                                                          (mc_sum / Ninj) ** 2.
 
     # return MC integral and its standard deviation; variance of mc_sum scales
     # relative to sample variance by Ninj (Bienayme' rule)
