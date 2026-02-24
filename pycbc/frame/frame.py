@@ -519,7 +519,9 @@ class DataBuffer(object):
         self.detector = channel_name.split(':')[0]
 
         self.update_cache()
-        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(self.stream, self.channel_name)
+        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(
+            self.stream, self.channel_name
+        )
 
         raw_size = self.raw_sample_rate * max_buffer
         self.raw_buffer = TimeSeries(zeros(raw_size, dtype=dtype),
@@ -584,13 +586,21 @@ class DataBuffer(object):
         try:
             read_func = _fr_type_map[self.channel_type][0]
             dtype = _fr_type_map[self.channel_type][1]
-            data = read_func(self.stream, self.channel_name,
-                             self.read_pos, int(blocksize), 0)
-            return TimeSeries(data.data.data, delta_t=data.deltaT,
-                              epoch=self.read_pos,
-                              dtype=dtype)
+            data = read_func(
+                self.stream,
+                self.channel_name,
+                self.read_pos,
+                int(blocksize),
+                0
+            )
+            return TimeSeries(
+                data.data.data,
+                delta_t=data.deltaT,
+                epoch=self.read_pos,
+                dtype=dtype
+            )
         except Exception:
-            raise RuntimeError('Cannot read {0} frame data'.format(self.channel_name))
+            raise RuntimeError(f'Cannot read {self.channel_name} frame data')
 
     def null_advance(self, blocksize):
         """Advance and insert zeros
@@ -664,8 +674,9 @@ class DataBuffer(object):
         cache = locations_to_cache(keys)
         stream = lalframe.FrStreamCacheOpen(cache)
         self.stream = stream
-        self.channel_type, self.raw_sample_rate = \
-            self._retrieve_metadata(self.stream, self.channel_name)
+        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(
+            self.stream, self.channel_name
+        )
 
     def attempt_advance(self, blocksize, timeout=10):
         """ Attempt to advance the frame buffer. Retry upon failure, except
@@ -826,19 +837,22 @@ class StatusBuffer(DataBuffer):
         return idx
 
     def advance(self, blocksize):
-        """ Add blocksize seconds more to the buffer, push blocksize seconds
-        from the beginning.
+        """Read `blocksize` seconds of new status data, append it to the end of
+        the internal status buffer, and drop `blocksize` seconds from the
+        beginning of the buffer. Check if the newly added status data indicates
+        usable or unusable strain data.
 
         Parameters
         ----------
         blocksize: int
-            The number of seconds to attempt to read from the channel
+            The number of seconds to attempt to read from the channel.
 
         Returns
         -------
         status: boolean
-            Returns True if all of the status information if valid,
-            False if any is not.
+            Returns True if all of the status information if valid, False if
+            any is not, None if there was a problem reading the status
+            information.
         """
         try:
             if self.increment_update_cache:
@@ -847,7 +861,14 @@ class StatusBuffer(DataBuffer):
             return self.check_valid(ts)
         except RuntimeError:
             self.null_advance(blocksize)
-            return False
+            return None
+
+    def attempt_advance(self, blocksize, timeout=10):
+        result = super().attempt_advance(blocksize, timeout)
+        if result is None:
+            return None
+        return self.check_valid(result)
+
 
 class iDQBuffer(object):
 
