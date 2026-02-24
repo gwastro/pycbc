@@ -163,7 +163,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
     def logdet_fit(self, cov, p):
         """Construct a linear regression from a sample of truncated covariance
         matrices.
-        
+
         Returns the sample points used for linear fit generation as well as the
         linear fit parameters.
         """
@@ -197,7 +197,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         x = numpy.vstack([sample_sizes, numpy.ones(len(sample_sizes))]).T
         m, b = numpy.linalg.lstsq(x, sample_dets, rcond=None)[0]
         return (sample_sizes, sample_dets), (m, b)
-            
+
     @BaseGaussianNoise.normalize.setter
     def normalize(self, normalize):
         """Clears the current stats if the normalization state is changed.
@@ -226,11 +226,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
         gt = gate_start + window
         lindex, rindex = ts.get_gate_indices(gt, window)
         return lindex, rindex
-    
+
     def det_lognorm(self, det, start_index=None, end_index=None):
         """Calculate the normalization term from the truncated covariance
         matrix.
-        
+
         Determinant is estimated using a linear fit to logdet vs truncated
         matrix size.
         """
@@ -414,14 +414,14 @@ class BaseGatedGaussian(BaseGaussianNoise):
         Parameters
         ----------
         gatestart : float
-            Geocentric start time of the gate.
+            Start time of the gate.
         gateend : float
-            Geocentric end time of the gate.
+            End time of the gate.
         ra : float
             Right ascension of the signal.
         dec : float
             Declination of the signal.
-            
+
         Returns
         -------
         dict :
@@ -432,10 +432,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
             thisdet = Detector(det)
             # account for the time delay between the waveforms of the
             # different detectors
-            gatestartdelay = gatestart + thisdet.time_delay_from_earth_center(
-                ra, dec, gatestart)
-            gateenddelay = gateend + thisdet.time_delay_from_earth_center(
-                ra, dec, gateend)
+            refdet = self.current_params.get('tc_ref_frame', 'geocentric')
+            gatestartdelay = thisdet.arrival_time(gatestart, ra, dec, refdet)
+            gateenddelay = thisdet.arrival_time(gateend, ra, dec, refdet)
             dgatedelay = gateenddelay - gatestartdelay
             gatetimes[det] = (gatestartdelay, dgatedelay)
         return gatetimes
@@ -672,14 +671,31 @@ class GatedGaussianNoise(BaseGatedGaussian):
             rr = 4 * invpsd.delta_f * rtilde[slc].inner(gated_rtilde[slc]).real
             logl += norm - 0.5*rr
         return float(logl)
-    
+
+    @property
+    def _extra_stats(self):
+        """Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
+        detector."""
+        return ['loglr', 'maxl_phase'] + ['{}_optimal_snrsq'.format(det) for det in self._data]
+
+    def _nowaveform_loglr(self):
+        """Convenience function to set loglr values if no waveform generated.
+        """
+        setattr(self._current_stats, 'loglikelihood', -numpy.inf)
+        # maxl phase doesn't exist, so set it to nan
+        setattr(self._current_stats, 'maxl_phase', numpy.nan)
+        for det in self._data:
+            # snr can't be < 0 by definition, so return 0
+            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
+        return -numpy.inf
+
     @property
     def multi_signal_support(self):
         """ The list of classes that this model supports in a multi-signal
         likelihood
         """
         return [type(self)]
-    
+
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
@@ -805,7 +821,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                 pols.append(h)
             out[det] = tuple(pols)
         return out
-    
+
     def get_gate_times_hmeco(self):
         """Gets the time to apply a gate based on the current sky position.
         Returns
@@ -931,14 +947,14 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         # compute the marginalized log likelihood
         marglogl = special.logsumexp(loglr) + lognl - numpy.log(len(self.pol))
         return float(marglogl)
-    
+
     @property
     def multi_signal_support(self):
         """ The list of classes that this model supports in a multi-signal
         likelihood
         """
         return [type(self)]
-    
+
     @catch_waveform_error
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
