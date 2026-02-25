@@ -94,8 +94,12 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
   
 
     # Solve
-    h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)
-    
+    import scipy.linalg
+    try:
+        h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)    
+    except:
+        h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_drier='gelss')
+
     return h_optimal     
         
 # --- 2. Verification (Double Precision) ---
