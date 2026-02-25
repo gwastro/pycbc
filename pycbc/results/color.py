@@ -20,10 +20,92 @@ _source_color_map = {
     'BHG': '#C6C29E'    # dark khaki
 }
 
+_coinc_color_map = {
+    'H1L1': '#caff00',  # lime green
+    'H1V1': '#088e49',  # dark green
+    'L1V1': '#00ffe3',  # cyan
+    'H1L1V1': '#ca9210',  # brown
+    'H1K1': '#0cd75d',  # bright green
+    'K1L1': '#df9aff',  # light purple
+    'H1K1L1': '#ff866d',  # coral
+    'K1V1': '#6d61ff',  # blue violet
+    'H1K1V1': '#b65910',  # sienna
+    'K1L1V1': '#00c2ce',  # turquoise
+    'H1K1L1V1': '#82a200',  # olive
+    'H1I1': '#20869e',  # teal
+    'I1L1': '#b2baff',  # light blue
+    'H1I1L1': '#4db68e',  # sea green
+    'I1V1': '#8a7520',  # olive drab
+    'H1I1V1': '#92e7ff',  # sky blue
+    'I1L1V1': '#928ad2',  # medium purple
+    'H1I1L1V1': '#ffe77d',  # light yellow
+    'I1K1': '#c2c600',  # chartreuse
+    'H1I1K1': '#10ff00',  # neon green
+    'I1K1L1': '#087ddb',  # dodger blue
+    'H1I1K1L1': '#5dffa6',  # aquamarine
+    'I1K1V1': '#f36100',  # orange red
+    'H1I1K1V1': '#ce5dff',  # medium orchid
+    'I1K1L1V1': '#00927d',  # dark cyan
+    'H1I1K1L1V1': '#00ae31',  # forest green
+    'G1H1': '#0000aa',  # navy
+    'G1L1': '#650400',  # maroon
+    'G1H1L1': '#550075',  # plum
+    'G1V1': '#004900',  # deep green
+    'G1H1V1': '#615d61',  # slate gray
+    'G1L1V1': '#a69a96',  # taupe
+    'G1H1L1V1': '#ebe3eb',  # lavender blush
+    'G1K1': '#593d00',  # sienna
+    'G1H1K1': '#00495d',  # deep teal
+    'G1K1L1': '#4d498e',  # indigo
+    'G1H1K1L1': '#28614d',  # pine
+    'G1K1V1': '#1035ff',  # electric blue
+    'G1H1K1V1': '#efbe9e',  # peach
+    'G1K1L1V1': '#824539',  # russet
+    'G1H1K1L1V1': '#a61400',  # scarlet
+    'G1I1': '#201c49',  # midnight
+    'G1H1I1': '#aac6be',  # seafoam
+    'G1I1L1': '#8200e7',  # violet
+    'G1H1I1L1': '#496900',  # olive drab
+    'G1I1V1': '#718269',  # sage
+    'G1H1I1V1': '#86a2b6',  # steel blue
+    'G1I1L1V1': '#493951',  # dusty mauve
+    'G1H1I1L1V1': '#a2aa6d',  # khaki
+    'G1I1K1': '#391804',  # espresso
+    'G1H1I1K1': '#aa7165',  # rosy brown
+    'G1I1K1L1': '#657196',  # slate blue
+    'G1H1I1K1L1': '#00392d',  # forest teal
+    'G1I1K1V1': '#c6b2ce',  # thistle
+    'G1H1I1K1V1': '#c2f7db',  # mint cream
+    'G1I1K1L1V1': '#414535',  # dark olive
+    'G1H1I1K1L1V1': '#242800',  # dark olive (deep)
+}
 
 def ifo_color(ifo):
+    """ Return a color for the IFO
+    """
     return _ifo_color_map[ifo]
 
 
 def source_color(source):
+    """ Return a color to indicate the source type """
     return _source_color_map[source]
+
+def coinc_color(coinc):
+    """ Return a color for the coincidence type
+
+    Parameters
+    coinc : string
+        A string for the IFOs in the coincidence.
+        This will be in alphabetical order, i.e. H1L1V1.
+
+    Returns
+    string : The RGB color for the corresponding coinc
+    """
+    if len(coinc) == 1:
+        if coinc in _ifo_color_map:
+            return _ifo_color_map[coinc]
+        raise KeyError(f"Unknown IFO coincidence '{coinc}'")
+    try:
+        return _coinc_color_map[coinc]
+    except KeyError:
+        raise KeyError(f"Unknown coincidence type '{coinc}'") from None
