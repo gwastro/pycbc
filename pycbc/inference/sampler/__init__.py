@@ -71,8 +71,9 @@ except ImportError:
     pass
 
 try:
-    from .nessai import NessaiSampler
+    from .nessai import INessaiSampler, NessaiSampler
     samplers[NessaiSampler.name] = NessaiSampler
+    samplers[INessaiSampler.name] = INessaiSampler
 except ImportError:
     pass
 

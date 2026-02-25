@@ -23,10 +23,15 @@ from ...pool import choose_pool
 
 
 class NessaiSampler(BaseSampler):
-    """Class to construct a FlowSampler from the nessai package."""
+    """Class to construct a FlowSampler from the nessai package.
+    
+    Supports both the standard and importance nested sampler version of nessai.
+    Defaults to the standard version.
+    """
 
     name = "nessai"
     _io = NessaiFile
+    _importance_nested_sampler = False
 
     def __init__(
         self,
@@ -69,25 +74,29 @@ class NessaiSampler(BaseSampler):
     @property
     def samples(self):
         """The raw nested samples including the corresponding weights"""
-        if self._sampler.ns.nested_samples:
-            ns = numpy.array(self._sampler.ns.nested_samples)
-            samples = nessai.livepoint.live_points_to_dict(
-                ns,
-                self.model.sampling_params,
-            )
-            samples["logwt"] = self._sampler.ns.state.log_posterior_weights
-            samples["loglikelihood"] = ns["logL"]
-            samples["logprior"] = ns["logP"]
-            samples["it"] = ns["it"]
-        else:
-            samples = {}
+        # When using the importance nested sampler, use all samples rather
+        # than the nested samples.
+        try:
+            raw_samples = numpy.array(self._sampler.ns.samples)
+        except AttributeError:
+            raw_samples = numpy.array(self._sampler.ns.nested_samples)
+        if not len(raw_samples):
+            return {}
+        samples = nessai.livepoint.live_points_to_dict(
+            raw_samples,
+            self.model.sampling_params,
+        )
+        samples["logwt"] = self._sampler.ns.state.log_posterior_weights
+        samples["loglikelihood"] = raw_samples["logL"]
+        samples["logprior"] = raw_samples["logP"]
+        samples["it"] = raw_samples["it"]
         return samples
 
     def run(self, **kwargs):
         """Run the sampler"""
         default_kwds, default_run_kwds = self.get_default_kwds(
             importance_nested_sampler=self.extra_kwds.get(
-                "importance_nested_sampler", False
+                "importance_nested_sampler", self._importance_nested_sampler
             )
         )
 
@@ -100,7 +109,7 @@ class NessaiSampler(BaseSampler):
         if output is None:
             output = os.path.join(
                 os.path.dirname(os.path.abspath(self.checkpoint_file)),
-                "outdir_nessai",
+                f"outdir_{self.name}",
             )
 
         if kwargs is not None:
@@ -163,13 +172,7 @@ class NessaiSampler(BaseSampler):
                 "importance_nested_sampler",
             )
         else:
-            importance_nested_sampler = False
-
-        # Requires additional development work, see the model class below
-        if importance_nested_sampler is True:
-            raise NotImplementedError(
-                "Importance nested sampler is not currently supported"
-            )
+            importance_nested_sampler = cls._importance_nested_sampler
 
         default_kwds, default_run_kwds = cls.get_default_kwds(
             importance_nested_sampler
@@ -188,7 +191,9 @@ class NessaiSampler(BaseSampler):
             default_kwds.pop(kwd, None)
             default_run_kwds.pop(kwd, None)
 
-        kwds = {}
+        kwds = {
+            "importance_nested_sampler": importance_nested_sampler,
+        }
         run_kwds = {}
 
         # ast.literal_eval is used here since specifying a dictionary with all
@@ -365,11 +370,20 @@ class NessaiModel(nessai.model.Model):
 
     def from_unit_hypercube(self, x):
         """Map from the unit-hypercube to the prior."""
-        # Needs to be implemented for importance nested sampler
-        # This method is already available in pycbc but the inverse is not
-        raise NotImplementedError
+        x_out = x.copy()
+        inv = self.model.prior_distribution.cdfinv(**{n: x[n] for n in self.names})
+        for name in self.names:
+            x_out[name] = inv[name]
+        return x_out
 
     def to_unit_hypercube(self, x):
         """Map to the unit-hypercube to the prior."""
-        # Needs to be implemented for importance nested sampler
+        # As of nessai v0.12.0, this method is not required to use the
+        # importance nested sampler
         raise NotImplementedError
+
+
+class INessaiSampler(NessaiSampler):
+    """Wrapper for nessai that defaults to the importance nested sampler"""
+    name = "inessai"
+    _importance_nested_sampler = True
