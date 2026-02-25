@@ -88,8 +88,21 @@ def _check_lal_pars(p):
         The lal type dictionary to pass to the lalsimulation waveform functions.
     """
     lal_pars = lal.CreateDict()
-    #nonGRparams can be straightforwardly added if needed, however they have to
-    # be invoked one by one
+    # try and add all provided items to lal_pars. We try both the provided key
+    # as well as a camel case version
+    for key, value in p.items():
+        if (value is None) or (key in default_args.keys()):
+            continue
+        camelcase = "".join([subkey.capitalize() for subkey in key.split("_")])
+        for _key in [key, camelcase]:
+            _func = getattr(
+                lalsimulation, f"SimInspiralWaveformParamsInsert{_key}", None
+            )
+            if _func is not None:
+                _func(lal_pars, value)
+                break
+    # some keys require specific functions to be added to lal_pars. Below we
+    # add these parameters one by one
     if p['phase_order']!=-1:
         lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(lal_pars,int(p['phase_order']))
     if p['amplitude_order']!=-1:
@@ -133,6 +146,7 @@ def _check_lal_pars(p):
         for l,m in p['mode_array']:
             lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
         lalsimulation.SimInspiralWaveformParamsInsertModeArray(lal_pars, ma)
+
     #TestingGR parameters:
     if p['dchi0'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi0(lal_pars,p['dchi0'])
