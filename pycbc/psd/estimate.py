@@ -201,7 +201,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
     return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype,
                            epoch=timeseries.start_time)
 
-def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, trunc_method=None):
+def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, trunc_method='hann'):
     """Modify a PSD such that the impulse response associated with its inverse
     square root is no longer than `max_filter_len` time samples. In practice
     this corresponds to a coarse graining or smoothing of the PSD.
