@@ -969,7 +969,7 @@ def marginalize_likelihood(sh, hh,
 
 def hm_phase_marginalize(shm, hmhn, numerical, grid, grid_points,
                          first_order_correction, offset,
-                         dominant_mode_peak):
+                         dominant_mode_peak,weighted_mode_peak):
     ''' 
     returns the likelihood marginalized over the phase provided the
     inner products between each modes
@@ -1019,7 +1019,7 @@ def hm_phase_marginalize(shm, hmhn, numerical, grid, grid_points,
     else:
         print('using analytic approximation')
         start_time = time.perf_counter()
-        _roots = hm_phase_peaks(shm, hmhn, dominant_mode_peak)
+        _roots = hm_phase_peaks(shm, hmhn, dominant_mode_peak,weighted_mode_peak)
 
         roots = _roots + offset  # shape: (R,)
 
@@ -1082,7 +1082,7 @@ def hm_phase_marginalize(shm, hmhn, numerical, grid, grid_points,
         print(end_time - start_time)
         return marg_loglr
 
-def hm_phase_peaks(shm,hmhn,dominant_mode_peak):
+def hm_phase_peaks(shm,hmhn,dominant_mode_peak,weighted_mode_peak):
         """
         Returns the maximas and minimas of the likelihood in phase
         within (0,2pi)
@@ -1096,13 +1096,27 @@ def hm_phase_peaks(shm,hmhn,dominant_mode_peak):
         """
 
         if dominant_mode_peak:
+            print('using dominant mode peak')
             sp = numpy.zeros(4)
             for i,n in enumerate(range(0,4)):
                 sp[i] = 0.5*(numpy.arctan(-shm[2].imag/shm[2].real) + n*numpy.pi)
                 if sp[i] < 0 :
                     sp[i] += 2*numpy.pi
             return sp
+        if weighted_mode_peak:
+            print('using weighted peak')
+            n2 = numpy.arange(4)
+            phi2 = 0.5*(numpy.arctan(-shm[2].imag/shm[2].real) + n2*numpy.pi)
+            phi2[phi2 < 0] += 2 * numpy.pi
+            n3 = numpy.arange(6)
+            phi3 = (1/3)*(numpy.arctan(-shm[3].imag/shm[3].real) + n3*numpy.pi)
+            phi3[phi3 < 0] += 2*numpy.pi
+            diff = numpy.abs(phi2[:,None] - phi3[None,:])
+            i2,i3 = numpy.where(diff < 0.2)
+            weighted_peak = (numpy.abs(shm[2])*phi2[i2] + numpy.abs(shm[3])*phi3[i3])/(numpy.abs(shm[2])+numpy.abs(shm[3]))
+            return weighted_peak
         else:
+            print('using all peaks')
             _m_max = max(shm.keys())
             z = {p:0 for p in range(1,_m_max+1)}
             for p in shm:
