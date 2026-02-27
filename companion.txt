@@ -19,6 +19,8 @@ https://github.com/willvousden/ptemcee/archive/master.tar.gz
 torch
 nessai>=0.11.0
 snowline
+# TEMPORARY - REMOVE THIS ONCE PYPMC HAS A RELEASE
+git+https://github.com/pypmc/pypmc
 
 # useful to look at PyCBC Live with htop
 setproctitle
