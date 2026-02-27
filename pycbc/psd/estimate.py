@@ -201,7 +201,9 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
     return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype,
                            epoch=timeseries.start_time)
 
-def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, trunc_method=None):
+def inverse_spectrum_truncation(psd, max_filter_len, which_spectrum='invasd',
+                                low_frequency_cutoff=None, 
+                                low_frequency_fill_value=0, trunc_method=None):
     """Modify a PSD such that the impulse response associated with its inverse
     square root is no longer than `max_filter_len` time samples. In practice
     this corresponds to a coarse graining or smoothing of the PSD.
@@ -212,11 +214,20 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
         PSD whose inverse spectrum is to be truncated.
     max_filter_len : int
         Maximum length of the time-domain filter in samples.
+    which_spectrum : {'invasd', 'invpsd'}
+        Which spectrum to truncate. If 'invasd' (default), apply truncation to
+        the inverse ASD. If 'invpsd', apply to the inverse PSD.
     low_frequency_cutoff : {None, int}
-        Frequencies below `low_frequency_cutoff` are zeroed in the output.
+        Frequencies below `low_frequency_cutoff` are set to value specified by 
+        `low_frequency_fill_value`.
+    low_frequency_fill_value : {float, 'kmin'}
+        Value to set PSD to at frequencies below `low_frequency_cutoff`.
+        Default 0. If 'kmin', set to the value of the PSD at the low frequency
+        cutoff index.
     trunc_method : {None, 'hann'}
         Function used for truncating the time-domain filter.
         None produces a hard truncation at `max_filter_len`.
+    
 
     Returns
     -------
@@ -244,23 +255,44 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
 
     N = (len(psd)-1)*2
 
-    inv_asd = FrequencySeries(zeros(len(psd)), delta_f=psd.delta_f, \
+    inv_spectrum = FrequencySeries(zeros(len(psd)), delta_f=psd.delta_f, \
         dtype=complex_same_precision_as(psd))
 
     kmin = 1
     if low_frequency_cutoff:
         kmin = int(low_frequency_cutoff / psd.delta_f)
+    
+    # set values below low frequency cutoff
+    if low_frequency_fill_value != 0:
+        if low_frequency_fill_value == 'kmin':
+            low_val = 1/psd[kmin]
+            inv_spectrum[:kmin] = low_val
+        elif type(low_frequency_fill_value) == float:
+            inv_spectrum[:kmin] = 1/low_frequency_fill_value
+        else:
+            raise ValueError(f'Invalid low frequency fill value '
+                             f'{low_frequency_fill_value}; '
+                             f'input must be either a float or "kmin"')
 
-    inv_asd[kmin:N//2] = (1.0 / psd[kmin:N//2]) ** 0.5
+    inv_spectrum[kmin:N//2] = (1.0 / psd[kmin:N//2])
+
+    # if truncating asd, take sqrt
+    if which_spectrum != 'invpsd':
+        if which_spectrum == 'invasd':
+            inv_spectrum[:N//2] = inv_spectrum[:N//2]**0.5
+        else:
+            raise ValueError(f'Invalid which_spectrum input {which_spectrum}; '
+                             f'input must be either "invpsd" or "invasd"')
+
     if not USE_CACHING_FOR_INV_SPEC_TRUNC:
         q = TimeSeries(
             numpy.zeros(N),
             delta_t=(N / psd.delta_f),
             dtype=real_same_precision_as(psd)
         )
-        ifft(inv_asd, q)
+        ifft(inv_spectrum, q)
     else:
-        q = execute_cached_ifft(inv_asd, copy_output=False,
+        q = execute_cached_ifft(inv_spectrum, copy_output=False,
                                 uid=INVSPECTRUNC_UNIQUE_ID)
 
     trunc_start = max_filter_len // 2
@@ -285,7 +317,8 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
     else:
         psd_trunc = execute_cached_fft(q, copy_output=False,
                                        uid=INVSPECTRUNC_UNIQUE_ID)
-    psd_trunc *= psd_trunc.conj()
+    if which_spectrum == 'invasd':
+        psd_trunc *= psd_trunc.conj()
     psd_out = 1. / abs(psd_trunc)
 
     return psd_out
