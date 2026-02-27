@@ -22,13 +22,14 @@ import itertools
 import logging
 import numpy
 from scipy import special
-
-from pycbc.waveform import generator
+from pycbc.waveform import generator, get_fd_waveform
+from pycbc.waveform.utils import apply_fd_time_shift
+from pycbc.filter.matchedfilter import overlap_cplx
 from pycbc.detector import Detector
 from .gaussian_noise import (BaseGaussianNoise,
                              create_waveform_generator,
                              GaussianNoise, catch_waveform_error)
-from .tools import marginalize_likelihood, DistMarg
+from .tools import marginalize_likelihood, DistMarg, hm_phase_marginalize,hm_phase_peaks
 
 
 class MarginalizedPhaseGaussianNoise(GaussianNoise):
@@ -806,3 +807,148 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
         setattr(self._current_stats, 'maxl_phase', self.phase[idx])
         return float(lr_total)
+
+class MarginalizedHMPhase(BaseGaussianNoise):
+
+    name = 'marginalized_hm_phase'
+
+    def __init__(self, variable_params, data, low_frequency_cutoff,
+                 sample_rate = 2048, numerical = False, grid = False,
+                 grid_points = 2000,first_order_correction = False,offset = 0,
+                 dominant_mode_peak = False,weighted_mode_peak = False,
+                  **kwargs):
+        super(MarginalizedHMPhase,self).__init__(variable_params, data,
+                                            low_frequency_cutoff,
+                                            **kwargs)
+        sample_rate = float(sample_rate)
+        self.numerical = numerical
+        self.grid = grid
+        self.grid_points = grid_points
+        self.first_order_correction = first_order_correction
+        self.offset = offset
+        self.dominant_mode_peak = dominant_mode_peak
+        self.weighted_mode_peak = weighted_mode_peak
+        df = data[self.detectors[0]].delta_f
+        self.df = df
+        self.sample_rate = sample_rate
+        flen = int(round(sample_rate / self.df) / 2 + 1)
+        self.flen = flen
+        self.shm = {}
+        self.hmhn = {}
+        # Extract mode array from static params
+        ## TODO : Fix junk in handling mode_arrays.
+        p = self.static_params.copy()
+        if 'mode_array' in p:
+            if isinstance(p['mode_array'],float):
+                self._mode_array = [(2,2)]
+            else:
+                self._mode_array = [(int(lm[0]),int(lm[1])) for lm in p['mode_array'].split()]
+                _ = p.pop('mode_array')
+        else:
+            raise ValueError('Provide Mode array')
+        
+        # Remove coa_phase from static params since it will be marginalized
+        if 'coa_phase' in p:
+            _ = p.pop('coa_phase')
+        
+        self.static_waveform_params = p
+        
+        # Initialize detector objects
+        self.det = {}
+        for ifo in self.data:
+            self.det[ifo] = Detector(ifo)
+            # Resize data to consistent length
+            self.data[ifo].resize(flen)
+
+    def _loglr(self):
+        # Get current parameters
+        params = self.current_params
+        if 'mode_array' in params:
+            _ = params.pop('mode_array')
+        if 'coa_phase' in params:
+            _ = params.pop('coa_phase')
+        # Calculate waveforms for each mode
+        ## TODO : Can replace all this calculation by waveform_generator.generate(**current_params)?
+        hplm, hclm = {}, {}
+        for lm in self._mode_array:
+            hp, hc = get_fd_waveform(delta_f = self.df,
+                                     mode_array = lm,
+                                     coa_phase = 0, **params)
+            hp.resize(self.flen)
+            hc.resize(self.flen)
+            hplm[lm] = hp
+            hclm[lm] = hc
+        
+        
+        hpm, hcm = {}, {}
+        for (l,m), hplm_val in hplm.items():
+            hpm[m] = hpm.get(m, 0) + hplm_val
+        for (l,m), hclm_val in hclm.items():
+            hcm[m] = hcm.get(m, 0) + hclm_val
+        
+        ## Detector frame signals ( can replace by generator)?
+        h = {}
+        shm = {}
+        hmhn = {}
+        for ifo in self.data:
+            h[ifo] = {}
+            # Calculate antenna pattern and time shifts
+            flow = self.kmin[ifo] * self.df
+            fhigh = self.kmax[ifo] * self.df
+            fp, fc = self.det[ifo].antenna_pattern(params['ra'], params['dec'], 
+                                                   params['polarization'], params['tc'])
+            
+            time_delay = self.det[ifo].time_delay_from_earth_center(params['ra'],params['dec'],
+                                                                    params['tc'])
+            ## This is tc in det frame
+            time_shift = time_delay + params['tc']
+
+            ## Apply projections for each mode and time shift
+            for m in hpm:
+                h_unshifted = fp*hpm[m] + fc*hcm[m]
+                ## Set epoch to data epoch
+                h_unshifted._epoch = self.data[ifo].start_time
+                h[ifo][m] = apply_fd_time_shift(h_unshifted, time_shift)
+            
+            # Calculate inner products shm = <s|hm>
+            shm[ifo] = {}
+            for m in h[ifo]:
+                shm[ifo][m] = overlap_cplx(
+                    self.data[ifo],
+                    h[ifo][m],
+                    psd=self.psds[ifo],
+                    low_frequency_cutoff=flow,
+                    high_frequency_cutoff=fhigh,
+                    normalized=False)
+            # Calculate inner products hmhn = <hm|hn>
+            hmhn[ifo] = {}
+            for m,n in itertools.combinations_with_replacement(h[ifo].keys(), 2):
+                hmhn[ifo][(m,n)] = overlap_cplx(
+                    h[ifo][m],
+                    h[ifo][n],
+                    psd=self.psds[ifo],
+                    low_frequency_cutoff=flow,
+                    high_frequency_cutoff=fhigh,
+                    normalized=False
+                )   
+        ## TODO : Move these calculations in the above loop
+        shm_total = {}
+        hmhn_total = {}
+        for ifo in shm.keys():
+            for m in shm[ifo].keys():
+                if m in shm_total:
+                    shm_total[m] += shm[ifo][m]
+                else:
+                    shm_total[m] = shm[ifo][m]
+        for ifo in hmhn.keys():
+            for (m,n) in hmhn[ifo].keys():
+                if (m,n) in hmhn_total:
+                    hmhn_total[(m,n)] += hmhn[ifo][(m,n)]
+                else:
+                    hmhn_total[(m,n)] = hmhn[ifo][(m,n)]
+        self.shm = shm_total
+        self.hmhn = hmhn_total
+        self.peaks = hm_phase_peaks(shm_total,hmhn_total,self.dominant_mode_peak,self.weighted_mode_peak)
+        return hm_phase_marginalize(shm_total,hmhn_total, self.numerical,self.grid,
+                                    self.grid_points,self.first_order_correction,self.offset,
+                                    self.dominant_mode_peak,self.weighted_mode_peak)

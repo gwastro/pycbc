@@ -4,15 +4,15 @@
 import logging
 import warnings
 from distutils.util import strtobool
-
+import time
 import numpy
 import numpy.random
 import tqdm
 
-from scipy.special import logsumexp, i0e
+from scipy.special import logsumexp, i0e, factorial
 from scipy.interpolate import RectBivariateSpline, interp1d
 from pycbc.distributions import JointDistribution
-
+from scipy.integrate import quad
 from pycbc.detector import Detector
 
 
@@ -966,3 +966,188 @@ def marginalize_likelihood(sh, hh,
     if return_peak:
         return vloglr, maxv, maxl
     return vloglr
+
+def hm_phase_marginalize(shm, hmhn, numerical, grid, grid_points,
+                         first_order_correction, offset,
+                         dominant_mode_peak,weighted_mode_peak):
+    ''' 
+    returns the likelihood marginalized over the phase provided the
+    inner products between each modes
+
+    Inputs:
+    shm : A dictionary of <s|hm>
+
+    hmhn : A dictionary of <hm|hn>
+    
+    '''
+    _m_max = max(shm.keys())
+    z = {p:0 for p in range(1,_m_max+1)}
+    for p in shm:
+        z[p] = -shm[p]
+    hmhm = 0
+    for (m,n) in hmhn:
+        p_val = n-m
+        if p_val in z:
+            z[p_val] += hmhn[(m,n)]
+        if p_val == 0:
+            hmhm += numpy.real(hmhn[(m,n)])
+    
+    if grid:
+        print(f'using grid with {grid_points} points')
+        start_time = time.perf_counter()
+        phi = numpy.linspace(0,2*numpy.pi,grid_points)
+        logl_phi = (-sum((z[m].real*numpy.cos(m*phi)-z[m].imag*numpy.sin(m*phi))
+                        for m in z)-numpy.abs(z[2]))
+        marg_lr = logsumexp(logl_phi) - numpy.log(grid_points) + numpy.abs(z[2]) - (hmhm/2)
+        end_time = time.perf_counter()
+        print(end_time-start_time)
+        return marg_lr
+
+    if numerical:
+        print('using numerical')
+        start_time = time.perf_counter()
+        def integrand(phi):
+            l_phi = (-sum((z[m].real*numpy.cos(m*phi)-z[m].imag*numpy.sin(m*phi))
+                        for m in z)-numpy.abs(z[2]))
+            return numpy.exp(l_phi)
+        quad_int = quad(integrand,0,2*numpy.pi)[0]
+        marg_lr = numpy.log(quad_int) - (hmhm/2) - numpy.log(2*numpy.pi) + numpy.abs(z[2])
+        end_time = time.perf_counter()
+        print(end_time-start_time)
+        return marg_lr
+
+    else:
+        print('using analytic approximation')
+        start_time = time.perf_counter()
+        _roots = hm_phase_peaks(shm, hmhn, dominant_mode_peak,weighted_mode_peak)
+
+        roots = _roots + offset  # shape: (R,)
+
+        # Precompute z arrays once
+        p_vals = numpy.array(list(z.keys()), dtype=float)       # shape: (P,)
+        z_real = numpy.array([z[p].real for p in p_vals])       # shape: (P,)
+        z_imag = numpy.array([z[p].imag for p in p_vals])       # shape: (P,)
+
+        # n values: 0..6
+        ns = numpy.arange(7)  # shape: (N,)
+
+        # Broadcast shapes: roots (R,1,1), p_vals (1,P,1), ns (1,1,N)
+        R = roots[:, None, None]      # (R,1,1)
+        P = p_vals[None, :, None]     # (1,P,1)
+        N = ns[None, None, :]         # (1,1,N)
+
+        angles = P * R + (N * numpy.pi / 2)                           # (R,P,N)
+        p_pow_n = P ** N                                               # (1,P,N)
+
+        contrib = (p_pow_n * z_real[None, :, None] * numpy.cos(angles)
+                 - p_pow_n * z_imag[None, :, None] * numpy.sin(angles))  # (R,P,N)
+
+        a_raw = contrib.sum(axis=1)  # (R,N) — sum over p
+
+        factorials = numpy.array([factorial(n) for n in range(7)])
+        a = a_raw / factorials[None, :]  # (R,N)
+
+        # Only keep roots where a[:,2] > 0
+        valid = a[:, 2] > 0
+        a = a[valid]  # (V,N)
+
+        a0, a1, a2, a3, a4, a5, a6 = (a[:, n] for n in range(7))
+
+        if first_order_correction:
+            cf = numpy.sqrt(numpy.pi) * (
+                  a2**(-1/2)
+                + (1/2)*(0.5*a1*a1)                * a2**(-3/2)
+                + (3/4)*(a1*a3 - a4)                * a2**(-5/2)
+                + (15/8)*(0.5*a3*a3 + a1*a5 - a6)  * a2**(-7/2)
+                + (105/16)*(0.5*a4*a4 + a5*a3)      * a2**(-9/2)
+                + (945/32)*(0.5*a5*a5 + a4*a6)      * a2**(-11/2)
+                + (10395/64)*(0.5*a6*a6)             * a2**(-13/2)
+            )
+        else:
+            cf = numpy.sqrt(numpy.pi) * (
+                  a2**(-1/2)
+                + (3/4)*(-a4)                        * a2**(-5/2)
+                + (15/8)*(0.5*a3*a3 - a6)            * a2**(-7/2)
+                + (105/16)*(0.5*a4*a4 + a5*a3)       * a2**(-9/2)
+                + (945/32)*(0.5*a5*a5 + a4*a6)       * a2**(-11/2)
+                + (10395/64)*(0.5*a6*a6)              * a2**(-13/2)
+            )
+
+        peak_vals = -a0
+        correction_factors = cf
+
+        marg_loglr = (logsumexp(peak_vals, b=correction_factors)
+                      - numpy.log(2 * numpy.pi) - (hmhm / 2))
+        end_time = time.perf_counter()
+        print(end_time - start_time)
+        return marg_loglr
+
+def hm_phase_peaks(shm,hmhn,dominant_mode_peak,weighted_mode_peak):
+        """
+        Returns the maximas and minimas of the likelihood in phase
+        within (0,2pi)
+
+        if dominant_mode_peak = True, then it returns the peaks assuming 
+        only the dominant (2,2) mode
+
+        else, returns the maximas and minimas assuming all higher modes 
+        are present
+        
+        """
+
+        if dominant_mode_peak:
+            print('using dominant mode peak')
+            sp = numpy.zeros(4)
+            for i,n in enumerate(range(0,4)):
+                sp[i] = 0.5*(numpy.arctan(-shm[2].imag/shm[2].real) + n*numpy.pi)
+                if sp[i] < 0 :
+                    sp[i] += 2*numpy.pi
+            return sp
+        if weighted_mode_peak:
+            print('using weighted peak')
+            n2 = numpy.arange(4)
+            phi2 = 0.5*(numpy.arctan(-shm[2].imag/shm[2].real) + n2*numpy.pi)
+            phi2[phi2 < 0] += 2 * numpy.pi
+            n3 = numpy.arange(6)
+            phi3 = (1/3)*(numpy.arctan(-shm[3].imag/shm[3].real) + n3*numpy.pi)
+            phi3[phi3 < 0] += 2*numpy.pi
+            diff = numpy.abs(phi2[:,None] - phi3[None,:])
+            i2,i3 = numpy.where(diff < 0.2)
+            weighted_peak = (numpy.abs(shm[2])*phi2[i2] + numpy.abs(shm[3])*phi3[i3])/(numpy.abs(shm[2])+numpy.abs(shm[3]))
+            return weighted_peak
+        else:
+            print('using all peaks')
+            _m_max = max(shm.keys())
+            z = {p:0 for p in range(1,_m_max+1)}
+            for p in shm:
+                z[p] = -shm[p]
+            hmhm = 0
+            for (m,n) in hmhn:
+                p_val = n-m
+                if p_val in z:
+                    z[p_val] += hmhn[(m,n)]
+                if p_val == 0:
+                    hmhm += numpy.real(hmhn[(m,n)])
+        
+            N = len(z)
+            w = numpy.zeros(2*N + 1, dtype=complex)
+            z_array = numpy.array([z[i] for i in range(1, N+1)])
+            w[:N] = 1j * numpy.arange(N, 0, -1) * numpy.conj(z_array[::-1])  # (N-k) * conj(z[N-k])
+            w[N] = 0
+            w[N+1:] = -1j*numpy.arange(1, N+1) * z_array  # (k-N) * z[k-N]
+
+            F_last_row = -w[:-1]/w[-1]
+            size = len(F_last_row)
+            ## Create off diagonal matrix of size (2N-1,2N)
+            F = numpy.diag(numpy.ones(size-1, dtype=complex), k=1)
+            F[-1, :] = F_last_row
+
+            eigvals, _ = numpy.linalg.eig(F)
+            all_sp = numpy.angle(eigvals) - 1j*numpy.log(numpy.abs(eigvals))
+        
+            ## Take only the purely real roots
+            ## NOTE : is there a better way of doing this?
+            threshold = 1e-3
+            sp = numpy.real(all_sp[numpy.abs(numpy.imag(all_sp)) < threshold])
+            sp = sp % (2*numpy.pi)
+            return sp
