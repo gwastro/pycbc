@@ -23,6 +23,7 @@ import logging
 import numpy
 import scipy
 from scipy import special
+import warnings
 
 from pycbc.types import FrequencySeries
 from pycbc.detector import Detector
@@ -59,6 +60,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._lognorm = {}
         self._gatetimes = {}
         self._det_lognls = {}
+        self._cond = {}
         # cache samples and linear regression for determinant extrapolation
         self._cov_samples = {}
         self._cov_regressions = {}
@@ -350,6 +352,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         gate_times = self.get_gate_times()
         out = {}
+        conds = {}
         for det, d in self.td_data.items():
             # make sure the cache at least has the detectors in it
             try:
@@ -358,6 +361,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 cache = self._gated_data[det] = {}
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
+            # check if the inpainting is numerically stable
+            gate_len = dgatedelay * 2 / d.delta_t
+            if gate_len not in self._cond.keys():
+                lindex, rindex = d.get_gate_indices(gatestartdelay, dgatedelay)
+                conds[det] = self.condition_number(invpsd, lindex, rindex)
             try:
                 dtilde = cache[gatestartdelay, dgatedelay]
             except KeyError:
@@ -370,6 +378,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 # save for next time
                 cache[gatestartdelay, dgatedelay] = dtilde
             out[det] = dtilde
+        # cache the condition numbers for this gate length
+        if gate_len not in self._cond.keys():
+            self._cond[gate_len] = conds
         return out
 
     def get_gate_times(self):
@@ -477,6 +488,35 @@ class BaseGatedGaussian(BaseGaussianNoise):
             gatestartdelay = min(gatestartdelay, params['t_gate_start'])
             gatetimes[det] = (gatestartdelay, dgate)
         return gatetimes
+    
+    def condition_number(self, invpsd, lindex, rindex):
+        """Calculate the condition number associated with the inverse
+        covariance matrix used to gate and inpaint. Throws a warning if the
+        condition number is greater than 1e16.
+        
+        Parameters
+        ----------
+        invpsd : FrequencySeries
+            The inverse of the PSD.
+        lindex : int
+            The start index of the gate.
+        rindex : int
+            The end index of the gate.
+
+        Returns
+        -------
+        float :
+            The condition number of the inverse covariance matrix constructed
+            from the inverse PSD with the given gate length.
+        """
+        # construct the matrix
+        tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
+        mat = scipy.linalg.toeplitz(tdfilter[:rindex-lindex])
+        rcond = numpy.linalg.cond(mat)
+        if rcond >= 1e16:
+            warnings.warn(f'Condition number of inverse covariance matrix is '
+                          f'{rcond}; inpainting may be numerically unstable')
+        return rcond
 
     def _lognl(self):
         """Calculates the log of the noise likelihood.
