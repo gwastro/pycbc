@@ -530,6 +530,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # make sure invpsd truncation is set to hanning
             logging.info("Using Hann window to truncate inverse PSD")
             opts.invpsd_trunc_method = 'hann'
+            # make sure the low frequency fill value is set to kmin
+            logging.info("Setting values below low frequency cutoff equal to "
+                         "inverse PSD at cutoff")
+            opts.invpsd_trunc_low_freq_fill_value = 'kmin'
+            opts.invpsd_trunc_which_spectrum = 'invpsd'
         lfs = None
         if opts.psd_estimation:
             # make sure low frequency cutoff is zero

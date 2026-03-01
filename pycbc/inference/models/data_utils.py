@@ -514,6 +514,9 @@ def fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict=None):
     if psd_strain_dict is None:
         psd_strain_dict = strain_dict
 
+    # force truncation to use inverse PSD if specifying psd-inverse-length
+    if opts.psd_inverse_length:
+        opts.invpsd_trunc_which_spectrum = 'invpsd'
     # get PSD as frequency series
     psd_dict = psd_from_cli_multi_ifos(
         opts, length_dict, delta_f_dict, opts.low_frequency_cutoff,
