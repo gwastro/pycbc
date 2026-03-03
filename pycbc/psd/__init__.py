@@ -45,7 +45,9 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     delta_f : float
         The frequency step of the output PSD in hertz.
     low_frequency_cutoff: float
-        The low frequency cutoff to use when calculating the PSD, in hertz.
+        The low frequency cutoff to use when calculating the PSD, in hertz. If
+        the option `psd-low-frequency-cutoff` is supplied in `opt`, that value
+        is used for the cutoff instead.
     strain : {None, TimeSeries}
         Time series containing the data from which the PSD should be measured,
         when psd_estimation is in use.
@@ -65,7 +67,10 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     psd : FrequencySeries
         The frequency series containing the PSD.
     """
-    f_low = low_frequency_cutoff
+    try:
+        f_low = float(opt.psd_low_frequency_cutoff)
+    except:
+        f_low = low_frequency_cutoff
     sample_rate = (length -1) * 2 * delta_f
 
     try:
@@ -104,7 +109,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
                                ifo_string=opt.psd_file_xml_ifo_string,
                                root_name=opt.psd_file_xml_root_name)
         # Set values < flow to the value at flow (if flow > 0)
-        kmin = int(low_frequency_cutoff / psd.delta_f)
+        kmin = int(f_low / psd.delta_f)
         if kmin > 0:
             psd[0:kmin] = psd[kmin]
 
@@ -215,6 +220,10 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              help="(Optional) The maximum length of the "
                              "impulse response of the overwhitening "
                              "filter (s)")
+    psd_options.add_argument("--psd-low-frequency-cutoff", default=None,
+                             help="(Optional) The low frequency cutoff for the "
+                                  "PSD. By default, uses the low frequency "
+                                  "cutoff given by the model if using a model.")
     # Truncation options if specifying psd-inverse-length
     psd_options.add_argument("--invpsd-trunc-method", default=None,
                              choices=["hann"],
@@ -335,6 +344,11 @@ def insert_psd_option_group_multi_ifo(parser):
                           help="Measure PSD from the data, using given "
                           "average method. Choose from "
                           "mean, median or median-mean.")
+    psd_options.add_argument("--psd-low-frequency-cutoff", nargs="+",
+                             action=MultiDetOptionAction, metavar='IFO:FREQ',
+                             help="(Optional) The low frequency cutoff for the "
+                                  "PSD. By default, uses the low frequency "
+                                  "cutoff given by the model if using a model.")
     psd_options.add_argument("--psd-segment-length", type=float, nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:LENGTH',
                           help="(Required for --psd-estimation) The segment "
