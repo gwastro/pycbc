@@ -293,7 +293,7 @@ def main():
                     seg_snr_sqs.append(snrs)
                     seg_fine_mappings.append(fine_indices)
                     seg_h_norms.append(h_norm)
-                    seg_coarse_ids.append(i)
+                    seg_coarse_ids.append(coarse_idx)
                     seg_chi.append(chi)
                     seg_chi_dof.append(chi_dof)
 
