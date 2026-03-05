@@ -71,7 +71,6 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         f_low = opt.psd_low_frequency_cutoff
     else:
         f_low = low_frequency_cutoff
-    print(f_low)
     sample_rate = (length -1) * 2 * delta_f
 
     try:
@@ -219,14 +218,12 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              "impulse response of the overwhitening "
                              "filter (s)")
     psd_options.add_argument("--psd-low-frequency-cutoff", type=float,
-                             default=None,
                              help="(Optional) The low frequency cutoff for the "
                                   "PSD. If not specified, the low frequency "
                                   "cutoff of the matched filter/likelihood "
                                   "integral will be used.")
     # Truncation options if specifying psd-inverse-length
-    psd_options.add_argument("--invpsd-trunc-method", default=None,
-                             choices=["hann"],
+    psd_options.add_argument("--invpsd-trunc-method", choices=["hann"],
                              help="(Optional) What truncation method to use "
                                   "when applying psd-inverse-length. If not "
                                   "provided, a hard truncation will be used.")
@@ -295,7 +292,7 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                                  help="(Required for --psd-estimation) "
                                  "The separation between consecutive "
                                  "segments (s)")
-        psd_options.add_argument("--psd-num-segments", type=int, default=None,
+        psd_options.add_argument("--psd-num-segments", type=int,
                                  help="(Optional, used only with "
                                  "--psd-estimation). If given, PSDs will "
                                  "be estimated using only this number of "
@@ -360,7 +357,6 @@ def insert_psd_option_group_multi_ifo(parser):
                           help="(Required for --psd-estimation) The separation"
                                " between consecutive segments (s)")
     psd_options.add_argument("--psd-num-segments", type=int, nargs="+",
-                          default=None,
                           action=MultiDetOptionAction, metavar='IFO:NUM',
                           help="(Optional, used only with --psd-estimation). "
                                "If given PSDs will be estimated using only "
@@ -373,8 +369,7 @@ def insert_psd_option_group_multi_ifo(parser):
                           action=MultiDetOptionAction, metavar='IFO:LENGTH',
                           help="(Optional) The maximum length of the impulse"
                           " response of the overwhitening filter (s)")
-    psd_options.add_argument("--invpsd-trunc-method", default=None,
-                             choices=["hann"],
+    psd_options.add_argument("--invpsd-trunc-method", choices=["hann"],
                              help="(Optional) What truncation method to use "
                                   "when applying psd-inverse-length. If not "
                                   "provided, a hard truncation will be used.")
@@ -387,6 +382,7 @@ def insert_psd_option_group_multi_ifo(parser):
                                   "PSD.")
     psd_options.add_argument("--invpsd-trunc-low-freq-fill-value", default=0.,
                              action=MultiDetOptionAction, metavar='IFO:VALUE',
+                             nargs="+",
                              help="(Optional) Value to set the inverse PSD to "
                                   "for frequencies below the low frequency "
                                   "cutoff when applying psd-inverse-length. "
