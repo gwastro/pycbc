@@ -45,7 +45,9 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     delta_f : float
         The frequency step of the output PSD in hertz.
     low_frequency_cutoff: float
-        The low frequency cutoff to use when calculating the PSD, in hertz.
+        The low frequency cutoff to use when calculating the PSD, in hertz. If
+        the option `psd-low-frequency-cutoff` is supplied in `opt`, that value
+        is used for the cutoff instead.
     strain : {None, TimeSeries}
         Time series containing the data from which the PSD should be measured,
         when psd_estimation is in use.
@@ -65,7 +67,10 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     psd : FrequencySeries
         The frequency series containing the PSD.
     """
-    f_low = low_frequency_cutoff
+    if opt.psd_low_frequency_cutoff is not None:
+        f_low = opt.psd_low_frequency_cutoff
+    else:
+        f_low = low_frequency_cutoff
     sample_rate = (length -1) * 2 * delta_f
 
     try:
@@ -104,7 +109,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
                                ifo_string=opt.psd_file_xml_ifo_string,
                                root_name=opt.psd_file_xml_root_name)
         # Set values < flow to the value at flow (if flow > 0)
-        kmin = int(low_frequency_cutoff / psd.delta_f)
+        kmin = int(f_low / psd.delta_f)
         if kmin > 0:
             psd[0:kmin] = psd[kmin]
 
@@ -126,9 +131,19 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         raise RuntimeError("Shouldn't be possible to raise this!")
 
     if opt.psd_inverse_length:
-        psd = inverse_spectrum_truncation(psd,
+        try:
+            which_spectrum = opt.invpsd_trunc_which_spectrum
+        except AttributeError:
+            which_spectrum = 'invasd'
+        try:
+            fill_value = opt.invpsd_trunc_low_freq_fill_value
+        except AttributeError:
+            fill_value = 0
+        psd = inverse_spectrum_truncation(psd, 
             int(opt.psd_inverse_length * sample_rate),
+            which_spectrum=which_spectrum,
             low_frequency_cutoff=f_low,
+            low_frequency_fill_value=fill_value,
             trunc_method=opt.invpsd_trunc_method)
 
     if hasattr(opt, 'psd_output') and opt.psd_output:
@@ -202,11 +217,32 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              help="(Optional) The maximum length of the "
                              "impulse response of the overwhitening "
                              "filter (s)")
-    psd_options.add_argument("--invpsd-trunc-method", default=None,
-                             choices=["hann"],
+    psd_options.add_argument("--psd-low-frequency-cutoff", type=float,
+                             help="(Optional) The low frequency cutoff for the "
+                                  "PSD. If not specified, the low frequency "
+                                  "cutoff of the matched filter/likelihood "
+                                  "integral will be used.")
+    # Truncation options if specifying psd-inverse-length
+    psd_options.add_argument("--invpsd-trunc-method", choices=["hann"],
                              help="(Optional) What truncation method to use "
                                   "when applying psd-inverse-length. If not "
                                   "provided, a hard truncation will be used.")
+    psd_options.add_argument("--invpsd-trunc-which-spectrum", type=str,
+                             default='invasd', choices=["invasd", "invpsd"],
+                             help="(Optional) Which spectrum to use to perform "
+                                  "truncation when applying psd-inverse-length. "
+                                  "The default ('invasd') truncates the inverse "
+                                  "ASD, while 'invpsd' truncates the inverse "
+                                  "PSD.")
+    psd_options.add_argument("--invpsd-trunc-low-freq-fill-value", default=0.,
+                             help="(Optional) Value to set the inverse PSD to "
+                                  "for frequencies below the low frequency "
+                                  "cutoff when applying psd-inverse-length. "
+                                  "Default 0; accepts any float. Also accepts "
+                                  "'fmin'; this sets values below the cutoff "
+                                  "to the inverse PSD value specified by "
+                                  "`psd-low-frequency-cutoff` (or the matched "
+                                  "filter/likelihood integral otherwise).")
     # Options specific to XML PSD files
     psd_options.add_argument("--psd-file-xml-ifo-string",
                              help="If using an XML PSD file, use the PSD in "
@@ -256,7 +292,7 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                                  help="(Required for --psd-estimation) "
                                  "The separation between consecutive "
                                  "segments (s)")
-        psd_options.add_argument("--psd-num-segments", type=int, default=None,
+        psd_options.add_argument("--psd-num-segments", type=int,
                                  help="(Optional, used only with "
                                  "--psd-estimation). If given, PSDs will "
                                  "be estimated using only this number of "
@@ -306,6 +342,12 @@ def insert_psd_option_group_multi_ifo(parser):
                           help="Measure PSD from the data, using given "
                           "average method. Choose from "
                           "mean, median or median-mean.")
+    psd_options.add_argument("--psd-low-frequency-cutoff", nargs="+", type=float,
+                             action=MultiDetOptionAction, metavar='IFO:FREQ',
+                             help="(Optional) The low frequency cutoff for the "
+                                  "PSD. If not specified, the low frequency "
+                                  "cutoff of the matched filter/likelihood "
+                                  "integral will be used.")
     psd_options.add_argument("--psd-segment-length", type=float, nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:LENGTH',
                           help="(Required for --psd-estimation) The segment "
@@ -315,7 +357,6 @@ def insert_psd_option_group_multi_ifo(parser):
                           help="(Required for --psd-estimation) The separation"
                                " between consecutive segments (s)")
     psd_options.add_argument("--psd-num-segments", type=int, nargs="+",
-                          default=None,
                           action=MultiDetOptionAction, metavar='IFO:NUM',
                           help="(Optional, used only with --psd-estimation). "
                                "If given PSDs will be estimated using only "
@@ -328,11 +369,28 @@ def insert_psd_option_group_multi_ifo(parser):
                           action=MultiDetOptionAction, metavar='IFO:LENGTH',
                           help="(Optional) The maximum length of the impulse"
                           " response of the overwhitening filter (s)")
-    psd_options.add_argument("--invpsd-trunc-method", default=None,
-                             choices=["hann"],
+    psd_options.add_argument("--invpsd-trunc-method", choices=["hann"],
                              help="(Optional) What truncation method to use "
                                   "when applying psd-inverse-length. If not "
                                   "provided, a hard truncation will be used.")
+    psd_options.add_argument("--invpsd-trunc-which-spectrum", type=str,
+                             default='invasd', choices=["invasd", "invpsd"],
+                             help="(Optional) Which spectrum to use to perform "
+                                  "truncation when applying psd-inverse-length. "
+                                  "The default ('invasd') truncates the inverse "
+                                  "ASD, while 'invpsd' truncates the inverse "
+                                  "PSD.")
+    psd_options.add_argument("--invpsd-trunc-low-freq-fill-value", default=0.,
+                             action=MultiDetOptionAction, metavar='IFO:VALUE',
+                             nargs="+",
+                             help="(Optional) Value to set the inverse PSD to "
+                                  "for frequencies below the low frequency "
+                                  "cutoff when applying psd-inverse-length. "
+                                  "Default 0; accepts any float. Also accepts "
+                                  "'fmin'; this sets values below the cutoff "
+                                  "to the inverse PSD value specified by "
+                                  "`psd-low-frequency-cutoff` (or the matched "
+                                  "filter/likelihood integral otherwise).")
     psd_options.add_argument("--psd-output", nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:FILE',
                           help="(Optional) Write PSD to specified file")
