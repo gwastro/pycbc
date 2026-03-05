@@ -9,6 +9,7 @@ from tqdm import tqdm
 from collections import defaultdict
 import pycbc
 import pycbc.psd
+import scipy.linalg
 from pycbc.filter import match, overlap, sigmasq
 from pycbc.waveform.bank import FilterBank
 from pycbc.types import TimeSeries, FrequencySeries
@@ -94,13 +95,28 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
   
 
     # Solve
-    import scipy.linalg
-    try:
-        h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)    
-    except:
-        h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_drier='gelss')
 
+    try:
+        h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver='gelss')
+        #h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)    
+    except:
+        logging.info('Exception with numpy least squares, moving to scipy')
+        h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver='gelss')
+        logging.info('Scipy suceeded')
     return h_optimal     
+    
+import numpy as np
+
+def rolling_median(arr, k):
+    # Calculate padding for left and right to handle even/odd symmetry
+    pad_left = k // 2
+    pad_right = (k - 1) // 2
+    
+    # Apply padding to maintain input length
+    padded = np.pad(arr, (pad_left, pad_right), mode='edge')
+    
+    # Create the sliding window view and compute median across the window axis
+    return np.mean(np.lib.stride_tricks.sliding_window_view(padded, k), axis=-1)
         
 # --- 2. Verification (Double Precision) ---
 def verify_filter_match(taps, h_ref, h_fine, psd, f_low):
@@ -108,9 +124,6 @@ def verify_filter_match(taps, h_ref, h_fine, psd, f_low):
     K = len(taps)
     h_fir_time = np.zeros(N, dtype=np.float64)
     
-    if K == 0: # Handle zero-tap (identity) filter
-         return match(h_fine, h_ref, psd=psd, low_frequency_cutoff=f_low)[0]
-
     if K % 2 == 1: k_start = -(K - 1) // 2
     else: k_start = -K // 2 + 1
     indices = (np.arange(k_start, k_start + K) + N) % N
@@ -132,18 +145,7 @@ def process_template(i):
     """
     Worker function that runs the full design loop for a single template index 'i'.
     """
-    h_fine = g_fine_bank[i].copy()[::g_args.dec_factor]
-    if sigmasq(h_fine, psd=g_psd, low_frequency_cutoff=g_args.f_low) <= 0:
-        return i, 0.0, -1, 0.0, np.array([], dtype=np.float64)
-
-    
-#    best_match = 0.0
-#    best_c_idx = -1
-#    for c_idx, h_ref in enumerate(g_coarse_waveforms):
-#        m, _ = match(h_fine, h_ref, psd=g_psd, low_frequency_cutoff=g_args.f_low)
-#        if m > best_match:
-#            best_match = m
-#            best_c_idx = c_idx
+    h_fine = g_fine_bank[i].copy()
 
     matches = []
     for c_idx, h_ref in enumerate(g_coarse_waveforms):
@@ -155,71 +157,88 @@ def process_template(i):
     msearch = morder[:g_args.search_depth]
 
     current_taps = g_args.n_taps
+    
+    best = (i, -1, -1, -1, -1)
     while current_taps <= g_args.max_taps:
-        best_qa_match = -1
-        best_qa_idx = -1
-        coarse_match = -1
-        for best_c_idx in msearch:
-            best_match = matches[best_c_idx]
+        round_matches = []
+        for c_idx in msearch:
+            best_match = matches[c_idx]
 
-            h_ref = g_coarse_waveforms[best_c_idx]
+            h_ref = g_coarse_waveforms[c_idx]
             h_ref_np = h_ref.numpy()
 
-            ref_mag = np.abs(h_ref_np)
-            safe_threshold = np.max(ref_mag) * 1e-9
-            good_ref = (ref_mag > safe_threshold)
-
-            ratio = np.zeros_like(h_fine.numpy(), dtype=np.complex128)
-            np.divide(h_fine.numpy(), h_ref_np, out=ratio, where=good_ref)
-            
-            psd_np = g_psd.numpy()
             freqs = h_fine.sample_frequencies.numpy()
             band_mask = (freqs >= g_args.f_low) & (freqs < g_args.sample_rate / 2.0)
-            valid_psd = (psd_np > 0)
+            ratio = h_fine.numpy() / h_ref.numpy()
             
+            # PSD based weights
+            psd_np = g_psd.numpy()
             weights_snr = np.zeros_like(psd_np, dtype=np.float64)
-            np.divide(ref_mag**2, psd_np, out=weights_snr, where=(band_mask & valid_psd))
-            
+            ref_mag = np.abs(h_ref.numpy())
+            np.divide(ref_mag**2, psd_np, out=weights_snr, where=band_mask)
+    
+            # Clean up potential divide errors and normalize            
             ratio = np.nan_to_num(ratio, copy=False)
             weights_snr = np.nan_to_num(weights_snr, copy=False)
-            this_valid_mask = band_mask & good_ref
-
-            if np.sum(this_valid_mask) < g_args.n_taps:
-                 return i, 0.0, best_c_idx, best_match, np.array([], dtype=np.float64)
-
             H_target_raw = ratio * g_args.sample_rate
-            final_taps_data = np.array([], dtype=np.float64)
-             
-     
+
+            H_target_raw2 = rolling_median(H_target_raw, g_args.dec_factor)
+
             try:
-                taps = design_optimal_real_filter(H_target_raw, this_valid_mask, 
-                                              current_taps, weights_pos=weights_snr,
-                                              reg_type=g_args.regularization_type,
-                                              reg_val=g_args.regularization_magnitude)
+                taps = design_optimal_real_filter(H_target_raw[::g_args.dec_factor],
+                                                  band_mask[::g_args.dec_factor], 
+                                                  current_taps, weights_pos=weights_snr,
+                                                  reg_type=g_args.regularization_type,
+                                                  reg_val=g_args.regularization_magnitude)
             except Exception as e:
-                print(e)
+                logging.info(e)
                 continue
+
+            if False:
+                from matplotlib import pyplot
                 
+                N = (len(h_ref) - 1) * 2
+                K = len(taps)
+                h_fir_time = np.zeros(N, dtype=np.float64)
+
+                if K % 2 == 1: k_start = -(K - 1) // 2
+                else: k_start = -K // 2 + 1
+                indices = (np.arange(k_start, k_start + K) + N) % N
+                h_fir_time[indices] = taps
+
+                delta_t = 1.0 / (N * h_ref.delta_f)
+                ts = TimeSeries(h_fir_time, delta_t=delta_t)
+                H_fir = ts.to_frequencyseries(delta_f=h_ref.delta_f)
+                
+                pyplot.plot(freqs, ratio)
+                pyplot.plot(freqs, H_target_raw2 / g_args.sample_rate)
+                H_fir.real().plot()
+                pyplot.xscale('log')
+                pyplot.xlim(25, 1000) # This is the band we monitor
+                pyplot.ylim(-2, 2)
+                pyplot.grid()
+                pyplot.xlabel('Frequency [Hz]')
+                pyplot.ylabel('Ratio')
+                pyplot.show()
+
+
             qa_match = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
-            
-            if qa_match > best_qa_match:
-                best_qa_match = qa_match
-                final_taps_data = taps
-                best_qa_idx = best_c_idx
-                coarse_match = best_match
-
-            if g_args.verbose >= 2: 
-                 print(f"[Worker {i}] Taps={current_taps}, Match={qa_match:.5f}")
-
+            round_matches.append(qa_match)
             print(best_match, qa_match, len(taps))
             
-            if best_qa_match >= g_args.min_match: break
-        if best_qa_match >= g_args.min_match: break
-        msearch = [best_qa_idx] # Simple alg for now, resort to best from initial step
+            if best[3] < qa_match:
+                best = (i, best_match, c_idx, qa_match, taps)
             
-        current_taps += g_args.tap_step
+            if qa_match >= g_args.min_match: break
+        if qa_match >= g_args.min_match: break
         
-    return i, coarse_match, best_qa_idx, best_qa_match, final_taps_data
+        round_matches = np.array(round_matches)
+        top = round_matches.argsort()[::-1]
+        tnum = int(max(1, len(round_matches) * 0.8))
+        print(top[:tnum], round_matches[top[:tnum]])
+        msearch = msearch[top[:tnum]]
+        current_taps += g_args.tap_step
+    return best
 
 # --- 4. MAIN PROCESS ---
 def main():
@@ -258,7 +277,7 @@ def main():
     flen_small = int(f_final / df) + 1
     logging.info(f"Setup: Rate={args.sample_rate}, df={args.delta_f}, flen={flen}")
 
-    psd = pycbc.psd.from_cli(args, length=flen_small, delta_f=df, 
+    psd = pycbc.psd.from_cli(args, length=flen, delta_f=args.delta_f, 
                              low_frequency_cutoff=args.f_low)
 
     logging.info("Loading coarse bank references...")
@@ -266,7 +285,7 @@ def main():
                              dtype=np.complex128, 
                              enable_compressed_waveforms=False)
     show_progress = (args.verbose == 0)
-    coarse_waveforms = [h.copy()[::args.dec_factor] for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
+    coarse_waveforms = [h.copy() for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
 
     if not coarse_waveforms: sys.exit("ERROR: Coarse bank empty!")
 
@@ -275,9 +294,6 @@ def main():
                            dtype=np.complex128,
                            enable_compressed_waveforms=False)
     n_fine = len(fine_bank)
-    
-    #logging.info("Preparing fine bank (pre-loading all waveforms to RAM)...")
-    #fine_waveforms = [h.copy()[::args.dec_factor] for h in tqdm(fine_bank, desc="Generating Fine Waveforms", disable=not show_progress, file=sys.stderr)]
     
     # --- PHASE 1: Write File Headers via TemplateBank reuse ---
     logging.info("Writing bank parameters to output file...")
