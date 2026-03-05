@@ -67,10 +67,11 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     psd : FrequencySeries
         The frequency series containing the PSD.
     """
-    try:
-        f_low = float(opt.psd_low_frequency_cutoff)
-    except:
+    if opt.psd_low_frequency_cutoff is not None:
+        f_low = opt.psd_low_frequency_cutoff
+    else:
         f_low = low_frequency_cutoff
+    print(f_low)
     sample_rate = (length -1) * 2 * delta_f
 
     try:
@@ -136,10 +137,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         except AttributeError:
             which_spectrum = 'invasd'
         try:
-            try:
-                fill_value = float(opt.invpsd_trunc_low_freq_fill_value)
-            except (TypeError, ValueError):
-                fill_value = opt.invpsd_trunc_low_freq_fill_value
+            fill_value = opt.invpsd_trunc_low_freq_fill_value
         except AttributeError:
             fill_value = 0
         psd = inverse_spectrum_truncation(psd, 
@@ -220,7 +218,8 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              help="(Optional) The maximum length of the "
                              "impulse response of the overwhitening "
                              "filter (s)")
-    psd_options.add_argument("--psd-low-frequency-cutoff", default=None,
+    psd_options.add_argument("--psd-low-frequency-cutoff", type=float,
+                             default=None,
                              help="(Optional) The low frequency cutoff for the "
                                   "PSD. If not specified, the low frequency "
                                   "cutoff of the matched filter/likelihood "
@@ -346,7 +345,7 @@ def insert_psd_option_group_multi_ifo(parser):
                           help="Measure PSD from the data, using given "
                           "average method. Choose from "
                           "mean, median or median-mean.")
-    psd_options.add_argument("--psd-low-frequency-cutoff", nargs="+",
+    psd_options.add_argument("--psd-low-frequency-cutoff", nargs="+", type=float,
                              action=MultiDetOptionAction, metavar='IFO:FREQ',
                              help="(Optional) The low frequency cutoff for the "
                                   "PSD. If not specified, the low frequency "
@@ -387,6 +386,7 @@ def insert_psd_option_group_multi_ifo(parser):
                                   "ASD, while 'invpsd' truncates the inverse "
                                   "PSD.")
     psd_options.add_argument("--invpsd-trunc-low-freq-fill-value", default=0.,
+                             action=MultiDetOptionAction, metavar='IFO:VALUE',
                              help="(Optional) Value to set the inverse PSD to "
                                   "for frequencies below the low frequency "
                                   "cutoff when applying psd-inverse-length. "
