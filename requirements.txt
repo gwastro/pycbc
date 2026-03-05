@@ -36,7 +36,7 @@ urllib3
 markupsafe <= 2.0.1
 
 # Requirements for LIGO Light-Weight XML format access needed by some workflows
-igwn-ligolw
+igwn-ligolw>=2.1.0
 
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1
