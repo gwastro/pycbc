@@ -222,8 +222,9 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              "filter (s)")
     psd_options.add_argument("--psd-low-frequency-cutoff", default=None,
                              help="(Optional) The low frequency cutoff for the "
-                                  "PSD. By default, uses the low frequency "
-                                  "cutoff given by the model if using a model.")
+                                  "PSD. If not specified, the low frequency "
+                                  "cutoff of the matched filter/likelihood "
+                                  "integral will be used.")
     # Truncation options if specifying psd-inverse-length
     psd_options.add_argument("--invpsd-trunc-method", default=None,
                              choices=["hann"],
@@ -237,14 +238,15 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                                   "The default ('invasd') truncates the inverse "
                                   "ASD, while 'invpsd' truncates the inverse "
                                   "PSD.")
-    psd_options.add_argument("--invpsd-trunc-low-freq-fill-value", default=0,
+    psd_options.add_argument("--invpsd-trunc-low-freq-fill-value", default=0.,
                              help="(Optional) Value to set the inverse PSD to "
                                   "for frequencies below the low frequency "
                                   "cutoff when applying psd-inverse-length. "
                                   "Default 0; accepts any float. Also accepts "
-                                  "'kmin'; this sets values below the cutoff "
-                                  "to the inverse PSD value at the low "
-                                  "frequency cutoff.")
+                                  "'fmin'; this sets values below the cutoff "
+                                  "to the inverse PSD value specified by "
+                                  "`psd-low-frequency-cutoff` (or the matched "
+                                  "filter/likelihood integral otherwise).")
     # Options specific to XML PSD files
     psd_options.add_argument("--psd-file-xml-ifo-string",
                              help="If using an XML PSD file, use the PSD in "
@@ -347,8 +349,9 @@ def insert_psd_option_group_multi_ifo(parser):
     psd_options.add_argument("--psd-low-frequency-cutoff", nargs="+",
                              action=MultiDetOptionAction, metavar='IFO:FREQ',
                              help="(Optional) The low frequency cutoff for the "
-                                  "PSD. By default, uses the low frequency "
-                                  "cutoff given by the model if using a model.")
+                                  "PSD. If not specified, the low frequency "
+                                  "cutoff of the matched filter/likelihood "
+                                  "integral will be used.")
     psd_options.add_argument("--psd-segment-length", type=float, nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:LENGTH',
                           help="(Required for --psd-estimation) The segment "
@@ -383,14 +386,15 @@ def insert_psd_option_group_multi_ifo(parser):
                                   "The default ('invasd') truncates the inverse "
                                   "ASD, while 'invpsd' truncates the inverse "
                                   "PSD.")
-    psd_options.add_argument("--invpsd-trunc-low-freq-fill-value", default=0,
+    psd_options.add_argument("--invpsd-trunc-low-freq-fill-value", default=0.,
                              help="(Optional) Value to set the inverse PSD to "
                                   "for frequencies below the low frequency "
                                   "cutoff when applying psd-inverse-length. "
                                   "Default 0; accepts any float. Also accepts "
-                                  "'kmin'; this sets values below the cutoff "
-                                  "to the inverse PSD value at the low "
-                                  "frequency cutoff.")
+                                  "'fmin'; this sets values below the cutoff "
+                                  "to the inverse PSD value specified by "
+                                  "`psd-low-frequency-cutoff` (or the matched "
+                                  "filter/likelihood integral otherwise).")
     psd_options.add_argument("--psd-output", nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:FILE',
                           help="(Optional) Write PSD to specified file")
