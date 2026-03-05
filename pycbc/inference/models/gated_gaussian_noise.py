@@ -573,7 +573,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # make sure the low frequency fill value is set to kmin
             logging.info("Setting values below low frequency cutoff equal to "
                          "inverse PSD at cutoff")
-            opts.invpsd_trunc_low_freq_fill_value = 'kmin'
+            opts.invpsd_trunc_low_freq_fill_value = 'fmin'
             opts.invpsd_trunc_which_spectrum = 'invpsd'
         lfs = None
         if opts.psd_estimation:
