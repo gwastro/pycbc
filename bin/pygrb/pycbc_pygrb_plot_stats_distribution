@@ -51,7 +51,7 @@ parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("-F", "--trig-file", action="store", required=True,
                     help="Location of off-source trigger file")
 parser.add_argument("-x", "--x-variable", required=True,
-                    choices=["bestnr", "snr", "snruncut"],
+                    choices=["bestnr", "snr", "snraftercuts"],
                     help="Quantity to plot on the horizontal axis.")
 ppu.pygrb_add_bestnr_cut_opt(parser)
 ppu.pygrb_add_slide_opts(parser)
@@ -114,13 +114,13 @@ trig_data = ppu.extract_trig_properties(
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}
 time_veto_max_bestnr = {}
-time_veto_max_snr_uncut = {}
+time_veto_max_snr_aftercuts = {}
 
 for slide_id in slide_dict:
     num_slide_segs = len(trial_dict[slide_id])
     time_veto_max_snr[slide_id] = np.zeros(num_slide_segs)
     time_veto_max_bestnr[slide_id] = np.zeros(num_slide_segs)
-    time_veto_max_snr_uncut[slide_id] = np.zeros(num_slide_segs)
+    time_veto_max_snr_aftercuts[slide_id] = np.zeros(num_slide_segs)
 
 for slide_id in slide_dict:
     for j, trial in enumerate(trial_dict[slide_id]):
@@ -134,16 +134,16 @@ for slide_id in slide_dict:
         # Max BestNR
         time_veto_max_bestnr[slide_id][j] = \
             max(trig_data[keys[2]][slide_id][trial_cut])
-        # Max SNR for triggers passing SBVs
-        sbv_cut = trig_data[keys[2]][slide_id][:] != 0
+        # Max SNR for triggers passing the cut on reweighted SNR
+        sbv_cut = trig_data[keys[2]][slide_id][:] >= opts.newsnr_threshold
         if not (trial_cut & sbv_cut).any():
             continue
-        time_veto_max_snr_uncut[slide_id][j] =\
+        time_veto_max_snr_aftercuts[slide_id][j] =\
             max(trig_data[keys[1]][slide_id][trial_cut & sbv_cut])
 
 # This is the data that will be plotted
 full_time_veto_max_snr = ppu.sort_stat(time_veto_max_snr)
-full_time_veto_max_snr_uncut = ppu.sort_stat(time_veto_max_snr_uncut)
+full_time_veto_max_snr_aftercuts = ppu.sort_stat(time_veto_max_snr_aftercuts)
 _, _, full_time_veto_max_bestnr = \
     ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_data[keys[2]],
                         total_trials)
@@ -151,8 +151,8 @@ _, _, full_time_veto_max_bestnr = \
 # returned a no-event (i.e., BestNR = 0)
 if full_time_veto_max_bestnr[0] != 0.:
     full_time_veto_max_snr = np.concatenate(([0.], full_time_veto_max_snr))
-    full_time_veto_max_snr_uncut = \
-        np.concatenate(([0.], full_time_veto_max_snr_uncut))
+    full_time_veto_max_snr_aftercuts = \
+        np.concatenate(([0.], full_time_veto_max_snr_aftercuts))
     full_time_veto_max_bestnr = \
         np.concatenate(([0.], full_time_veto_max_bestnr))
 
@@ -164,10 +164,10 @@ logging.info("SNR and bestNR maxima calculated.")
 # =========
 x_label_dict = {"bestnr": "BestNR",
                 "snr": "SNR",
-                "snruncut": "SNR after signal based vetoes"}
+                "snraftercuts": "SNR after signal based vetoes"}
 data_dict = {"bestnr": full_time_veto_max_bestnr,
              "snr": full_time_veto_max_snr,
-             "snruncut": full_time_veto_max_snr_uncut}
+             "snraftercuts": full_time_veto_max_snr_aftercuts}
 fig = plt.figure()
 ax = fig.gca()
 ax.grid(True)
