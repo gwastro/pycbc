@@ -46,6 +46,11 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   yum -y install openssl-devel
   yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static swig fftw-static gsl-static gsl gsl-devel --skip-broken
 
+  # FIXME Temporary hack in order to build PyPMC from source.
+  # Remove once PyPMC 1.2.6 is released.
+  dnf install gcc-toolset-12
+  scl enable gcc-toolset-12 bash
+
   CVMFS_PATH=/cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
 
