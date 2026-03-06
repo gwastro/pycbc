@@ -2,6 +2,11 @@
 
 set -e
 
+# FIXME Temporary hack in order to build PyPMC from source.
+# Remove once PyPMC 1.2.6 is released.
+dnf -y install gcc-toolset-12
+scl enable gcc-toolset-12 bash
+
 # Install PyCBC
 cd /scratch
 python -m pip install --upgrade pip
