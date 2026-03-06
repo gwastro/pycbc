@@ -84,7 +84,7 @@ class TestIOHFile(unittest.TestCase):
                 f.create_dataset(
                     "data_np_str_array", data=np.array(str_list, dtype="S1")
                 )
-                should_not_be_checksummed.append("data_np_str_array")
+                should_be_checksummed.append("data_np_str_array")
 
                 # Make a dataset from some string data
                 f.create_dataset(
