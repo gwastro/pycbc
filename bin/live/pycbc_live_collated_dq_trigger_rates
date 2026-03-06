@@ -31,7 +31,7 @@ from igwn_segments import segmentlist, segment
 import pycbc
 import pycbc.dq
 from pycbc.io import HFile
-from pycbc.frame.frame import read_frame
+from pycbc.frame.frame import read_frame, query_and_read_frame
 
 
 def find_frames(ifo, frame_dir, frame_type, start, end):
@@ -57,39 +57,6 @@ def find_frames(ifo, frame_dir, frame_type, start, end):
     return files
 
 
-def timeseries_to_segmentlist(ts_bool, epoch=None):
-    """
-    Convert a boolean pycbc TimeSeries (True when condition holds) to
-    an igwn_segments.segmentlist of (start, end) in GPS seconds.
-    `ts_bool` may be a pycbc TimeSeries or numpy-like array with delta_t and epoch.
-    """
-    # Ensure we can read epoch/delta_t; pycbc.TimeSeries has .start_time and .delta_t
-    start_time = float(ts_bool.start_time)
-    dt = float(ts_bool.delta_t)
-
-    segs = segmentlist([])
-    in_seg = False
-    curr_start = None
-    n = len(ts_bool)
-    # iterate by index to avoid float index issues
-    for i in range(n):
-        if ts_bool[i]:  # True -> inside flagged region
-            if not in_seg:
-                in_seg = True
-                curr_start = start_time + i * dt
-        else:
-            if in_seg:
-                # close current seg; end is start of this index
-                curr_end = start_time + i * dt
-                segs.append(segment(curr_start, curr_end))
-                in_seg = False
-    # close at end
-    if in_seg:
-        curr_end = start_time + n * dt
-        segs.append(segment(curr_start, curr_end))
-    return segs.coalesce()
-
-
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--trigger-file", required=True)
 parser.add_argument("--ifo", required=True)
@@ -103,7 +70,7 @@ parser.add_argument("--frame-directory",
                     help='Directory containing frame files. Required if '
                          'not using gwdatafind.')
 parser.add_argument("--frame-type", required=True)
-parser.add_argument("--analysis-flag-name", required=True)
+parser.add_argument("--analysis-flag-name")
 parser.add_argument("--dq-channel", required=True)
 parser.add_argument("--dq-ok-channel", required=True)
 parser.add_argument("--dq-thresh", required=True, type=float)
@@ -118,16 +85,22 @@ pycbc.init_logging(args.verbose)
 if not args.use_gwdatafind and args.frame_directory is None:
     raise ValueError('Must provide frame-directory if not using gwdatafind.')
 
-# Get observing segs
-ar_flag_name = args.analysis_flag_name.format(ifo=args.ifo)
-observing_flag = pycbc.dq.query_flag(
-    args.ifo, ar_flag_name, args.gps_start_time, args.gps_end_time
-)
+if args.analysis_flag_name is not None:
+    # Get observing segs
+    ar_flag_name = args.analysis_flag_name.format(ifo=args.ifo)
+    observing_flag = pycbc.dq.query_flag(
+        args.ifo, ar_flag_name, args.gps_start_time, args.gps_end_time
+    )
+else:
+    # If we are not querying the database for segments, just assume that the
+    # full time is in observing mode
+    observing_flag = segmentlist(
+        [segment(args.gps_start_time, args.gps_end_time)]
+    )
 
 # shift observing flag to current time
 observing_flag.protract(args.replay_offset)
 
-observing_segs = observing_flag
 livetime = abs(observing_flag)
 logging.info(f'Found {livetime} seconds of observing time at {args.ifo}.')
 
@@ -135,14 +108,13 @@ logging.info(f'Found {livetime} seconds of observing time at {args.ifo}.')
 flagged_time = 0
 dq_channel = args.dq_channel.format(ifo=args.ifo)
 dq_ok_channel = args.dq_ok_channel.format(ifo=args.ifo)
-for seg in observing_segs:
+for seg in observing_flag:
     if args.use_gwdatafind:
-        frame_type = args.analysis_frame_type.format(ifo=args.ifo)
-        frames = gwdatafind.find_urls(
-            args.ifo[0],
-            frame_type,
-            seg[0],
-            seg[1],
+        ts_dq_channel, ts_dq_ok_channel = query_and_read_frame(
+            args.frame_type.format(ifo=args.ifo),
+            [dq_channel, dq_ok_channel],
+            start_time=seg[0],
+            end_time=seg[1]
         )
     else:
         frames = find_frames(
@@ -153,22 +125,20 @@ for seg in observing_segs:
             seg[1],
         )
 
-    try:
         ts_dq_channel, ts_dq_ok_channel = read_frame(
             frames, [dq_channel, dq_ok_channel],
             start_time=seg[0], end_time=seg[1]
         )
-    except Exception:
-        raise
 
     # build segmentlists:
     # Is the channel actually working?
-    dq_ok_mask = (ts_dq_ok_channel == 1)
-    dq_ok_segs = timeseries_to_segmentlist(dq_ok_mask)
+    dq_ok_segs = ts_dq_ok_channel.bool_to_segmentlist()
 
     # Is the channel above threshold?
     dq_mask = (ts_dq_channel <= args.dq_thresh)
-    dq_segs = timeseries_to_segmentlist(dq_mask)
+    # If not, set it to zero
+    ts_dq_channel.data[dq_mask] = 0
+    dq_segs = ts_dq_channel.bool_to_segmentlist()
 
     # these are the times where dq channel is working, and
     # the dq channel is above threshold
