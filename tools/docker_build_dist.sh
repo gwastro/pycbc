@@ -47,7 +47,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static swig fftw-static gsl-static gsl gsl-devel --skip-broken
 
   # FIXME Temporary hack in order to build PyPMC from source.
-  # Remove this, and the `scl enable gcc-toolset-14` wrappers further below,
+  # Remove this, and the `scl enable gcc-toolset-12` wrappers further below,
   # once PyPMC 1.2.6 is released.
   dnf -y install gcc-toolset-12
 

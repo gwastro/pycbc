@@ -3,7 +3,7 @@
 set -e
 
 # FIXME Temporary hack in order to build PyPMC from source.
-# Remove this, and the `scl enable gcc-toolset-14` wrappers further below,
+# Remove this, and the `scl enable gcc-toolset-12` wrappers further below,
 # once PyPMC 1.2.6 is released.
 dnf -y install gcc-toolset-12
 
