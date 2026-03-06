@@ -6,6 +6,7 @@ set -e
 # Remove once PyPMC 1.2.6 is released.
 dnf -y install gcc-toolset-14
 scl enable gcc-toolset-14 bash
+gcc -v
 
 # Install PyCBC
 cd /scratch

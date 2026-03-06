@@ -6,6 +6,9 @@ ADD docker/etc/cvmfs/default.local /etc/cvmfs/default.local
 ADD docker/etc/cvmfs/60-osg.conf /etc/cvmfs/60-osg.conf
 ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.opensciencegrid.org.conf
 
+# We are going to use pip as root a lot; tell it not to complain
+ENV PIP_ROOT_USER_ACTION=ignore
+
 # Set up extra repositories
 RUN <<EOF
 dnf -y install https://cvmrepo.s3.cern.ch/cvmrepo/yum/cvmfs-release-latest.noarch.rpm
@@ -40,6 +43,8 @@ alternatives --set python /usr/bin/python3.11
 python -m pip install --upgrade pip setuptools wheel cython
 python -m pip install mkl ipython jupyter jupyterhub jupyterlab lalsuite
 dnf -y install https://repo.opensciencegrid.org/osg/3.5/el8/testing/x86_64/osg-wn-client-3.5-5.osg35.el8.noarch.rpm
+dnf clean all
+python -m pip cache purge
 EOF
 
 # set up environment
@@ -71,6 +76,8 @@ dnf -y install \
 python -m pip install schwimmbad
 MPICC=/lib64/openmpi/bin/mpicc CFLAGS='-I /usr/include/openmpi-x86_64/ -L /usr/lib64/openmpi/lib/ -lmpi' python -m pip install --no-cache-dir mpi4py
 echo "/usr/lib64/openmpi/lib/" > /etc/ld.so.conf.d/openmpi.conf
+dnf clean all
+python -m pip cache purge
 EOF
 
 # Now update all of our library installations
