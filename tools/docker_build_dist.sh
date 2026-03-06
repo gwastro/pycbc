@@ -49,7 +49,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   # FIXME Temporary hack in order to build PyPMC from source.
   # Remove this, and the `scl enable gcc-toolset-14` wrappers further below,
   # once PyPMC 1.2.6 is released.
-  dnf -y install gcc-toolset-14
+  dnf -y install gcc-toolset-12
 
   CVMFS_PATH=/cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
@@ -69,12 +69,12 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
-  scl enable gcc-toolset-14 bash -c "pip install -r requirements.txt"
-  scl enable gcc-toolset-14 bash -c "pip install -r requirements-igwn.txt"
-  scl enable gcc-toolset-14 bash -c "pip install -r companion.txt"
+  scl enable gcc-toolset-12 "pip install -r requirements.txt"
+  scl enable gcc-toolset-12 "pip install -r requirements-igwn.txt"
+  scl enable gcc-toolset-12 "pip install -r companion.txt"
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"
-  scl enable gcc-toolset-14 pip install .
+  scl enable gcc-toolset-12 "pip install ."
 
   echo -e "\\n>> [`date`] Installing ipython and jupyter"
   pip install jupyter

@@ -5,15 +5,15 @@ set -e
 # FIXME Temporary hack in order to build PyPMC from source.
 # Remove this, and the `scl enable gcc-toolset-14` wrappers further below,
 # once PyPMC 1.2.6 is released.
-dnf -y install gcc-toolset-14
+dnf -y install gcc-toolset-12
 
 # Install PyCBC
 cd /scratch
 python -m pip install --upgrade pip
-scl enable gcc-toolset-14 bash -c "python -m pip install -r requirements.txt"
-scl enable gcc-toolset-14 bash -c "python -m pip install -r requirements-igwn.txt"
-scl enable gcc-toolset-14 bash -c "python -m pip install -r companion.txt"
-scl enable gcc-toolset-14 bash -c "python -m pip install ."
+scl enable gcc-toolset-12 "python -m pip install -r requirements.txt"
+scl enable gcc-toolset-12 "python -m pip install -r requirements-igwn.txt"
+scl enable gcc-toolset-12 "python -m pip install -r companion.txt"
+scl enable gcc-toolset-12 "python -m pip install ."
 cd /
 
 # Copy PyCBC source repository into the image
