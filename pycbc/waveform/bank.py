@@ -629,7 +629,7 @@ class LiveFilterBank(TemplateBank):
         if delta_f is None:
             delta_f = self.freq_resolution_for_template(index)
 
-        flen = int(self.sample_rate / (2 * delta_f) + 1)
+        flen = round(self.sample_rate / (2 * delta_f) + 1)
 
         if f_end is None or f_end >= (flen * delta_f):
             f_end = (flen - 1) * delta_f
