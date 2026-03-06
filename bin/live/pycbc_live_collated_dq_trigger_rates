@@ -25,7 +25,6 @@ import glob
 
 import numpy as np
 
-import gwdatafind
 from igwn_segments import segmentlist, segment
 
 import pycbc
