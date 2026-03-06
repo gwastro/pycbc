@@ -69,9 +69,9 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
-  scl enable gcc-toolset-14 pip install -r requirements.txt
-  scl enable gcc-toolset-14 pip install -r requirements-igwn.txt
-  scl enable gcc-toolset-14 pip install -r companion.txt
+  scl enable gcc-toolset-14 bash -c "pip install -r requirements.txt"
+  scl enable gcc-toolset-14 bash -c "pip install -r requirements-igwn.txt"
+  scl enable gcc-toolset-14 bash -c "pip install -r companion.txt"
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"
   scl enable gcc-toolset-14 pip install .

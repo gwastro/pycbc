@@ -10,10 +10,10 @@ dnf -y install gcc-toolset-14
 # Install PyCBC
 cd /scratch
 python -m pip install --upgrade pip
-scl enable gcc-toolset-14 python -m pip install -r requirements.txt
-scl enable gcc-toolset-14 python -m pip install -r requirements-igwn.txt
-scl enable gcc-toolset-14 python -m pip install -r companion.txt
-scl enable gcc-toolset-14 python -m pip install .
+scl enable gcc-toolset-14 bash -c "python -m pip install -r requirements.txt"
+scl enable gcc-toolset-14 bash -c "python -m pip install -r requirements-igwn.txt"
+scl enable gcc-toolset-14 bash -c "python -m pip install -r companion.txt"
+scl enable gcc-toolset-14 bash -c "python -m pip install ."
 cd /
 
 # Copy PyCBC source repository into the image
