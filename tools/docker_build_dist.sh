@@ -48,8 +48,8 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
   # FIXME Temporary hack in order to build PyPMC from source.
   # Remove once PyPMC 1.2.6 is released.
-  dnf -y install gcc-toolset-12
-  scl enable gcc-toolset-12 bash
+  dnf -y install gcc-toolset-14
+  scl enable gcc-toolset-14 bash
 
   CVMFS_PATH=/cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
