@@ -142,7 +142,7 @@ for seg in observing_flag:
 
     # these are the times where dq channel is working, and
     # the dq channel is above threshold
-    valid_bad_dq = (dq_segs & dq_ok_segs)
+    valid_bad_dq = dq_segs & dq_ok_segs
 
     # pad / expand segments outwards by dq_padding seconds
     valid_bad_dq.protract(args.dq_padding)
@@ -228,3 +228,5 @@ with HFile(args.output, 'w') as f:
     setting_str = ' '.join([str(s) for s in settings_to_hash])
     hash_object = hashlib.sha256(setting_str.encode())
     f.attrs['settings_hash'] = hash_object.hexdigest()
+
+logging.info('Done')
