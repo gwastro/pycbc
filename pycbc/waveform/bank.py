@@ -630,6 +630,7 @@ class LiveFilterBank(TemplateBank):
             delta_f = self.freq_resolution_for_template(index)
 
         flen = round(self.sample_rate / (2 * delta_f) + 1)
+        assert flen & 1, f'flen should be odd, but got {flen}'
 
         if f_end is None or f_end >= (flen * delta_f):
             f_end = (flen - 1) * delta_f
