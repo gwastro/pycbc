@@ -1105,16 +1105,15 @@ def hm_phase_peaks(shm,hmhn,dominant_mode_peak,weighted_mode_peak):
             return sp
         if weighted_mode_peak:
             print('using weighted peak')
-            n2 = numpy.arange(4)
-            phi2 = 0.5*(numpy.arctan(-shm[2].imag/shm[2].real) + n2*numpy.pi)
-            phi2[phi2 < 0] += 2 * numpy.pi
-            n3 = numpy.arange(6)
-            phi3 = (1/3)*(numpy.arctan(-shm[3].imag/shm[3].real) + n3*numpy.pi)
-            phi3[phi3 < 0] += 2*numpy.pi
-            diff = numpy.abs(phi2[:,None] - phi3[None,:])
-            i2,i3 = numpy.where(diff < 0.2)
-            weighted_peak = (numpy.abs(shm[2])*phi2[i2] + numpy.abs(shm[3])*phi3[i3])/(numpy.abs(shm[2])+numpy.abs(shm[3]))
-            return weighted_peak
+            alpha2 = numpy.angle(shm[2])%(2*numpy.pi) ## angle in range(0,2pi)
+            alpha3 = numpy.angle(shm[3])%(2*numpy.pi)
+            n2,n3 = numpy.arange(2),numpy.arange(3)
+            phi2 = numpy.sort((2*numpy.pi*n2 - alpha2)/2) %(2*numpy.pi)
+            phi3 = numpy.sort((2*numpy.pi*n3 - alpha3)/3) % (2*numpy.pi)
+            cos_matrix =numpy.cos(phi2[:,None] - phi3[None,:])
+            phi3_tilde = phi3[numpy.argmax(cos_matrix,axis=1)]
+            w = numpy.abs(shm[2])*numpy.e**(1j*phi2) + numpy.abs(shm[3])*numpy.e**(1j*phi3_tilde)
+            return numpy.angle(w) %(2*numpy.pi)
         else:
             print('using all peaks')
             _m_max = max(shm.keys())
