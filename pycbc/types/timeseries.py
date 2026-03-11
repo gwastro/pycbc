@@ -626,7 +626,7 @@ class TimeSeries(Array):
                 raise ValueError("If taper_method is 'constant', taper_window must be set")
             
             gate_params = []
-            if location in ('TAPER_START', 'start' 'TAPER_STARTEND'):
+            if location in ('TAPER_START', 'start', 'TAPER_STARTEND'):
                 first_nonzero = _numpy.nonzero(tsdata)[0][0]
                 nonzero_starttime = tsdata.start_time + first_nonzero * tsdata.delta_t
                 gate_params.append((nonzero_starttime, 0, taper_window))
