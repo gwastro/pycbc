@@ -1,0 +1,8 @@
+<map id="inheritance065e2e1370" name="inheritance065e2e1370">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="14,4,181,24"/>
+<area shape="rect" id="node5" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="4,61,190,80"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO" target="_top" title="Provides functions for reading/writing MCMC metadata to file." alt="" coords="498,4,727,24"/>
+<area shape="rect" id="node4" href="../pycbc.inference.io.html#pycbc.inference.io.base_multitemper.CommonMultiTemperedMetadataIO" target="_top" title="Adds support for reading/writing multi&#45;tempered metadata to" alt="" coords="461,61,764,80"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.EnsembleMCMCMetadataIO" target="_top" title="Provides functions for reading/writing metadata to file for ensemble" alt="" coords="209,61,442,80"/>
+<area shape="rect" id="node6" href="../pycbc.inference.io.html#pycbc.inference.io.ptemcee.PTEmceeFile" target="_top" title="Class to handle file IO for the ``ptemcee`` sampler." alt="" coords="255,117,396,137"/>
+</map>

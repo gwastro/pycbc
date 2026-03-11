@@ -1,0 +1,130 @@
+.. _inheritance-cpnest:
+
+* ``cpnest``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.cpnest.CPNestSampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-dummy:
+
+* ``dummy``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.dummy.DummySampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-dynesty:
+
+* ``dynesty``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.dynesty.DynestySampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-emcee:
+
+* ``emcee``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.emcee.EmceeEnsembleSampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-emcee_pt:
+
+* ``emcee_pt``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.emcee_pt.EmceePTSampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-epsie:
+
+* ``epsie``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.epsie.EpsieSampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-games:
+
+* ``games``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.games.GameSampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-multinest:
+
+* ``multinest``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.multinest.MultinestSampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-nessai:
+
+* ``nessai``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.nessai.NessaiSampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-ptemcee:
+
+* ``ptemcee``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.ptemcee.PTEmceeSampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-refine:
+
+* ``refine``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.refine.RefineSampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-snowline:
+
+* ``snowline``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.snowline.SnowlineSampler
+   :parts: 3
+
+|
+
+
+.. _inheritance-ultranest:
+
+* ``ultranest``:
+
+.. inheritance-diagram:: pycbc.inference.sampler.ultranest.UltranestSampler
+   :parts: 3
+
+|
+
+
