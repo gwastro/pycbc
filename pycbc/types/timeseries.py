@@ -667,7 +667,8 @@ class TimeSeries(Array):
         return lindex, rindex
 
     def gate(self, time, window=0.25, method='taper', copy=True,
-             taper_width=0.25, invpsd=None):
+             taper_width=0.25, invpsd=None, paint_method='toeplitz',
+             paint_invmat=None):
         """ Gate out portion of time series
 
         Parameters
@@ -687,6 +688,14 @@ class TimeSeries(Array):
         invpsd: pycbc.types.FrequencySeries
             The inverse PSD to use for painting method. If not given,
             a PSD is generated using default settings.
+        paint_method: str
+            Which method to use for inpainting the gated region if
+            method='paint'. If 'toeplitz', use a Toeplitz solver. If 'matmul',
+            use explicit matrix inversion and multiplication.
+        paint_invmat: array
+            The uninverted covariance matrix to use to calculate inpainting if
+            paint_method='matmul'. If None (default), calculate from given
+            invpsd.
 
         Returns
         -------
@@ -700,7 +709,8 @@ class TimeSeries(Array):
         elif method == 'paint':
             # Uses the hole-filling method of
             # https://arxiv.org/pdf/1908.05644.pdf
-            from pycbc.strain.gate import gate_and_paint
+            from pycbc.strain.gate import (gate_and_paint, 
+                                           gate_and_paint_matmul)
             from pycbc.waveform.utils import apply_fd_time_shift
             if invpsd is None:
                 # These are some bare minimum settings, normally you
@@ -710,14 +720,27 @@ class TimeSeries(Array):
             rindex_time = float(self.start_time + rindex * self.delta_t)
             offset = rindex_time - (time + window)
             if offset == 0:
-                return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+                print(paint_method)
+                if paint_method == 'toeplitz':
+                    return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+                elif paint_method == 'matmul':
+                    return gate_and_paint_matmul(data, lindex, rindex, invpsd,
+                                                 invmat=paint_invmat, copy=False)
+                else:
+                    raise ValueError(f'Unrecognized paint_method input {paint_method}')
             else:
                 # time shift such that gate end time lands on a specific data sample
                 fdata = data.to_frequencyseries()
                 fdata = apply_fd_time_shift(fdata, offset + fdata.epoch, copy=False)
                 # gate and paint in time domain
                 data = fdata.to_timeseries()
-                data = gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+                if paint_method == 'toeplitz':
+                    data = gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+                elif paint_method == 'matmul':
+                    data = gate_and_paint_matmul(data, lindex, rindex, invpsd,
+                                                 invmat=paint_invmat, copy=False)
+                else:
+                    raise ValueError(f'Unrecognized paint_method input {paint_method}')
                 # shift back to the original time
                 fdata = data.to_frequencyseries()
                 fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=False)
