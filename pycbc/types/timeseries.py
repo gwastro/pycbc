@@ -699,7 +699,7 @@ class TimeSeries(Array):
 
         Returns
         -------
-        data: pycbc.types.TimeSeris
+        data: pycbc.types.TimeSeries
             Gated time series
         """
         data = self.copy() if copy else self
@@ -720,7 +720,6 @@ class TimeSeries(Array):
             rindex_time = float(self.start_time + rindex * self.delta_t)
             offset = rindex_time - (time + window)
             if offset == 0:
-                print(paint_method)
                 if paint_method == 'toeplitz':
                     return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
                 elif paint_method == 'matmul':
