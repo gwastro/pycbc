@@ -226,7 +226,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                     end_time=opt.gps_end_time+opt.pad_data,
                     sieve=sieve)
         elif opt.frame_files or opt.frame_cache:
-            strain = pycbc.frame.read_gw_data(
+            strain = pycbc.frame.read_frame(
                     frame_source, opt.channel_name,
                     start_time=opt.gps_start_time-opt.pad_data,
                     end_time=opt.gps_end_time+opt.pad_data,
