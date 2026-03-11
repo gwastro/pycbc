@@ -323,7 +323,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         and cache to memory.
         """
         cache_matrices = {}
-        print('inverting matrices for the first time')
         # get gate length and invpsd
         for det in self._invpsds:
             lindex, rindex = self.gate_indices(det)
@@ -333,7 +332,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             cache_matrices[det] = invmat
         # cache results
         self._cov_matrices[rindex-lindex] = cache_matrices
-        print(rindex-lindex)
         return invmat
 
     @abstractmethod
@@ -1180,8 +1178,6 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             recalibration=self.recalibration,
             generator_class=generator.FDomainDetFrameTwoPhaseGenerator,
             **self.static_params)
-        print(kwargs)
-        print(self.paint_method)
 
     def get_waveforms(self):
         r"""Generate the waveforms.
