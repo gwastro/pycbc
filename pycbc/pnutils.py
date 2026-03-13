@@ -153,7 +153,7 @@ def mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(mass1, mass2,
 def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     """
     Calculate the various PN spin combinations from the masses and spins.
-    See <http://arxiv.org/pdf/0810.5336v3.pdf>.
+    See <https://arxiv.org/pdf/0810.5336v3.pdf>.
 
     Parameters
     -----------
