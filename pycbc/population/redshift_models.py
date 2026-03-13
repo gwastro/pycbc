@@ -312,16 +312,36 @@ class BaseRedshiftEvolution(ABC):
 
 
 
-class PowerLawRedshift(RedshiftEvolution):
+class PowerLawRedshift(BaseRedshiftEvolution):
     """
     Power-law redshift distribution model.
 
-    ψ(z) = (1 + z)^k
+    psi(z) = (1 + z)^k
     """
+    name = "power_law"
+    param_names = ("k",)
 
-    def __call__(self, redshift, parameters):
-        return self.prob_redshift(redshift, parameters)
+    def __call__(self, redshift, **parameters):
+        return self.prob_redshift(redshift, **parameters)
 
+    def psi_z(self, redshift, *, k: float):
+        """
+        Redshift evolution function psi(z):
+            psi(z) = (1 + z)^k
+
+        Parameters
+        ----------
+        redshift : array_like
+            Dimensionless redshift.
+        k : float
+            Power-law index.
+
+        Returns
+        -------
+        ndarray
+            Dimensionless evolution factor.
+        """
+        return (1.0 + np.asarray(redshift)) ** k
 
 # Default instance
 power_law_redshift = PowerLawRedshift()
