@@ -46,6 +46,11 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   yum -y install openssl-devel
   yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static swig fftw-static gsl-static gsl gsl-devel --skip-broken
 
+  # FIXME Temporary hack in order to build PyPMC from source.
+  # Remove this, and the `scl enable gcc-toolset-12` wrappers further below,
+  # once PyPMC 1.2.6 is released.
+  dnf -y install gcc-toolset-12
+
   CVMFS_PATH=/cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
 
@@ -64,12 +69,12 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
-  pip install -r requirements.txt
-  pip install -r requirements-igwn.txt
-  pip install -r companion.txt
+  scl enable gcc-toolset-12 "pip install -r requirements.txt"
+  scl enable gcc-toolset-12 "pip install -r requirements-igwn.txt"
+  scl enable gcc-toolset-12 "pip install -r companion.txt"
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"
-  pip install .
+  scl enable gcc-toolset-12 "pip install ."
 
   echo -e "\\n>> [`date`] Installing ipython and jupyter"
   pip install jupyter
