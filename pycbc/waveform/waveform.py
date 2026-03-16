@@ -719,8 +719,12 @@ def get_fd_waveform_from_td(**params):
         hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
         hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
     else:
-        hp = hp.taper_timeseries(location=params['taper'], tapermethod=params['taper_method'], taper_window=params['taper_window'])
-        hc = hc.taper_timeseries(location=params['taper'], tapermethod=params['taper_method'], taper_window=params['taper_window'])
+        hp = hp.taper_timeseries(location=params['taper'],
+                                 tapermethod=params['taper_method'],
+                                 taper_window=params['taper_window'])
+        hc = hc.taper_timeseries(location=params['taper'],
+                                 tapermethod=params['taper_method'],
+                                 taper_window=params['taper_window'])
 
     # avoid wraparound
     hp = hp.to_frequencyseries().cyclic_time_shift(hp.start_time)
