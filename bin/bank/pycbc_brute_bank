@@ -22,7 +22,8 @@
 import numpy
 import logging
 import signal
-import os
+import tqdm
+import sys, os
 import argparse
 import numpy.random
 from scipy.stats import gaussian_kde
@@ -39,19 +40,11 @@ parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--output-file', required=True,
     help='Output file name for template bank.')
-parser.add_argument('--input-file',
+parser.add_argument('--input-file', nargs='*', default=[],
     help='Bank to use as an initial set of starting samples.')
 parser.add_argument('--keep-entire-input-file', help="All of the templates in the input file will be kept in the output file, even if they do not pass normal mismatch criteria.", action='store_true')
 parser.add_argument('--input-config',
     help='Draw parameters from the given configure file.')
-parser.add_argument('--params',
-    help='list of paramaters to use', nargs='+')
-parser.add_argument('--min',
-    help='list of the minimum parameter values', nargs='+', type=float)
-parser.add_argument('--max',
-    help='list of the maximum parameter values', nargs='+', type=float)
-parser.add_argument('--approximant',  required=False,
-    help='The waveform approximant to place.')
 parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
@@ -72,11 +65,6 @@ parser.add_argument('--placement-iterations', default=1000, type=int,
     help='Specify the number of attempts the bank should make when placing points. Use this option if the bank fails to place any points.')
 parser.add_argument('--seed', type=int, default=0)
 parser.add_argument('--tolerance', type=float)
-parser.add_argument('--max-mtotal', type=float)
-parser.add_argument('--min-mchirp', type=float)
-parser.add_argument('--max-mchirp', type=float)
-parser.add_argument('--fixed-params', type=str, nargs='*')
-parser.add_argument('--fixed-values', type=float, nargs='*')
 parser.add_argument('--use-cross', action='store_true')
 parser.add_argument('--max-q', type=float)
 parser.add_argument('--tau0-crawl', type=float)
@@ -98,30 +86,47 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 numpy.random.seed(args.seed)
 
-# Read the .ini file if it's in the input.
-if args.input_config is not None:
-    config_parser = pycbc.types.config.InterpolatingConfigParser()
-    file = open(args.input_config, 'r')
-    config_parser.read_file(file)
-    file.close()
+config_parser = pycbc.types.config.InterpolatingConfigParser()
+file = open(args.input_config, 'r')
+config_parser.read_file(file)
+file.close()
 
-    variable_args, static_args = read_params_from_config(
-        config_parser, prior_section='prior',
-        vargs_section='variable_params',
-        sargs_section='static_params')
+variable_args, static_args = read_params_from_config(
+    config_parser, prior_section='prior',
+    vargs_section='variable_params',
+    sargs_section='static_params')
 
-    if any(config_parser.get_subsections('waveform_transforms')):
-        waveform_transforms = transforms.read_transforms_from_config(
-                config_parser, 'waveform_transforms')
-    else:
-        waveform_transforms = None
+if any(config_parser.get_subsections('waveform_transforms')):
+    waveform_transforms = transforms.read_transforms_from_config(
+            config_parser, 'waveform_transforms')
+else:
+    waveform_transforms = None
 
-    dists_joint = prior_from_config(cp=config_parser)
+dists_joint = prior_from_config(cp=config_parser)
 
-fdict = {}
-if args.fixed_params:
-    fdict = {p: v for (p, v) in zip(args.fixed_params, args.fixed_values)}
+def get_stable_match(p_inj, p_tmplt):
+    """Iteratively doubles buffer length until the match stabilizes."""
+    current_buflen = args.buffer_length if args.full_resolution_buffer_length is None else args.full_resolution_buffer_length
+    last_match = -1.0
+    
+    # We loop until convergence or a safety cap (e.g., 64s)
+    while (last_match == -1.0) or (current_buflen <= 64):
+        # Create a transient generator for this specific resolution
+        tmp_gen = GenUniformWaveform(current_buflen, args.sample_rate, args.low_frequency_cutoff)
+        h_inj = tmp_gen.generate(**p_inj)
+        h_tmplt = tmp_gen.generate(**p_tmplt)
+        current_match = tmp_gen.match(h_inj, h_tmplt)
 
+        # If the change is sub-leading, we are done
+        if (args.full_resolution_buffer_length) is not None or (abs(current_match - last_match) < 1e-4):
+            return current_match, current_buflen
+            
+        last_match = current_match
+        current_buflen *= 2
+        
+    return last_match, current_buflen
+    
+    
 class Shrinker(object):
     def __init__(self, data):
         self.data = data
@@ -256,14 +261,6 @@ class TriangleBank(object):
 
             hc = self[j]
 
-            # Defensive initialization if matches/indices are missing
-            if not hasattr(hc, 'matches'):
-                hc.matches = numpy.empty(2)
-                hc.matches[:] = numpy.nan
-
-            if not hasattr(hc, 'indices'):
-                hc.indices = numpy.arange(2)
-
             m = hp.gen.match(hp, hc)
             matches[j] = m
             mnum += 1
@@ -284,37 +281,43 @@ class TriangleBank(object):
 
     def check_params(self, gen, params, threshold,
                            force_add=False,
-                           parallel_check=False):
+                           parallel_check=False, progress=False):
         num_added = 0
         total_num = len(tuple(params.values())[0])
-        waveform_cache = []
 
-        pool = pycbc.pool.choose_pool(args.nprocesses)
-        for return_wf in pool.imap_unordered(
-                wf_wrapper,
-                (({k: params[k][idx] for k in params}, parallel_check, threshold) for idx in range(total_num))
-            ):
-            waveform_cache += [return_wf]
+        idxs = numpy.arange(0, total_num)
+        chunks = numpy.array_split(idxs, max(total_num // args.nprocesses // 4, 1))
 
-        pool.close_pool()
-        del pool
+        for chunk in chunks:
+            waveform_cache = []
+            pool = pycbc.pool.choose_pool(args.nprocesses)
 
-        for hp in waveform_cache:
-            if hp is not None:
-                if hp.checked is None:
-                    hp.gen = gen
-                    hp.checked = hp not in self
+            for return_wf in tqdm.tqdm(pool.imap_unordered(
+                    wf_wrapper,
+                    (({k: params[k][idx] for k in params}, parallel_check, threshold) for idx in chunk)),
+                    total=total_num, disable=not progress):
+                waveform_cache += [return_wf]
+
+
+            for hp in waveform_cache:
+                if hp is not None:
+                    if hp.checked is None:
+                        hp.gen = gen
+                        hp.checked = hp not in self
  
-                if hp.checked:
-                    self.max_matches.append(hp.max_match)
+                    if hp.checked:
+                        self.max_matches.append(hp.max_match)
                 
-                if hp.checked or force_add:
-                    num_added += 1
-                    self.insert(hp)    
-            else:
-                logging.info("Waveform generation failed!")
-                continue
-                
+                    if hp.checked or force_add:
+                        num_added += 1
+                        self.insert(hp)
+                else:
+                    logging.info("Waveform generation failed!")
+                    continue
+
+            pool.close_pool()
+            del pool
+
         return bank, num_added / total_num
 
 def decimate_frequency_domain(template, target_df):
@@ -354,7 +357,7 @@ def handle_exit_signal(signum, frame):
     # Force exit so the script doesn't try to resume the loops
     os._exit(0)
 
-def save_bank():
+def save_bank(): # Use a local name
     logging.info("Saving current bank to %s", args.output_file)
     with HFile(args.output_file, 'w') as o:
         o.attrs['minimal_match'] = args.minimal_match
@@ -388,7 +391,6 @@ class GenUniformWaveform(object):
             self.md2 = q._data[0:100]
 
     def generate(self, **kwds):
-        kwds.update(fdict)
         if args.max_signal_length is not None:
                 flow = numpy.arange(self.f_lower, 100, .1)[::-1]
                 length = spa_length_in_time(mass1=kwds['mass1'], mass2=kwds['mass2'], f_lower=flow, phase_order=-1)
@@ -399,7 +401,9 @@ class GenUniformWaveform(object):
         else:
                 f = self.f_lower
 
-        kwds['f_lower'] = f
+        if 'f_lower' not in kwds:
+            kwds['f_lower'] = f
+
         if hasattr(kwds['approximant'], 'decode'):
             kwds['approximant'] = kwds['approximant'].decode()
 
@@ -431,16 +435,18 @@ class GenUniformWaveform(object):
         else:
             dt = 1.0 / args.sample_rate
             hp = pycbc.waveform.get_waveform_filter(
-                        pycbc.types.zeros(self.flen, dtype=numpy.complex64),
-                        delta_f=self.delta_f, delta_t=dt,
+                        pycbc.types.zeros(buff_len * args.sample_rate // 2 + 1,
+                        dtype=numpy.complex64),
+                        delta_f=1.0 / buff_len, delta_t=dt,
                         **kwds)
 
         if args.full_resolution_buffer_length is not None:
             # Decimate the generated signal to a reduced frequency resolution
-            hp = decimate_frequency_domain(hp, 1 / args.buffer_length)
+            hp = decimate_frequency_domain(hp, self.delta_f)
 
         hp.resize(self.flen)
         hp = hp.astype(numpy.complex64)
+        
         hp[self.kmin:-1] *= self.w
         s = float(1.0 / pycbc.filter.sigmasq(hp,
                                              low_frequency_cutoff=f) ** 0.5)
@@ -491,81 +497,53 @@ def wf_wrapper(args):
         print(e)
         return None
 
-if args.input_file:
-    f = HFile(args.input_file, 'r')
-    params = {k: f[k][:] for k in f}
-    bank, _ = bank.check_params(gen, params, args.minimal_match, 
-                                force_add=args.keep_entire_input_file)
+if len(args.input_file) > 0:
+    total_raw_templates = 0
+    for input_file in args.input_file:
+        logging.info("Loading: %s", input_file)
+        with HFile(input_file, 'r') as f:
+            params = {k: f[k][:] for k in f.keys() if k not in ['max_matches']}
+            total_raw_templates += len(params[list(params.keys())[0]])
+            bank, _ = bank.check_params(gen, params, args.minimal_match,
+                                        force_add=args.keep_entire_input_file,
+                                        parallel_check=args.parallel_check,
+                                        progress=True)
+            reduction = total_raw_templates - len(bank)
+            logging.info("Combined Size: %i (Naive Total: %i, Removed: %i)", 
+                         len(bank), total_raw_templates, reduction)
 
 def draw(rtype):
     if rtype == 'uniform':
-        if args.input_config is None:
-            params = {name: numpy.random.uniform(pmin, pmax, size=size)
-                      for name, pmin, pmax in zip(args.params, args.min, args.max)}
-        else:
-            # `draw_samples_from_config` has its own fixed seed, so must overwrite it.
-            random_seed = numpy.random.randint(low=0, high=2**32-1)
-            samples = draw_samples_from_config(args.input_config, size, random_seed)
-            params = {name: samples[name] for name in samples.fieldnames}
-            # Add `static_args` back.
-            if static_args is not None:
-                for k in static_args.keys():
-                    params[k] = numpy.array([static_args[k]]*size)
+        # `draw_samples_from_config` has its own fixed seed, so must overwrite it.
+        random_seed = numpy.random.randint(low=0, high=2**32-1)
+        samples = draw_samples_from_config(args.input_config, size, random_seed)
+        params = {name: samples[name] for name in samples.fieldnames}
+        # Add `static_args` back.
+        if static_args is not None:
+            for k in static_args.keys():
+                params[k] = numpy.array([static_args[k]]*size)
 
     elif rtype == 'kde':
         trail = 300
         if trail > len(bank):
             trail = len(bank)
-        p = bank.keys()
-        p = [k for k in p if k not in fdict]
-        p.remove('approximant')
-        p.remove('f_lower')
-        if args.input_config is not None:
-            p = variable_args
+        p = variable_args
         bdata = numpy.array([bank.key(k)[-trail:] for k in p])
         kde = gaussian_kde(bdata)
         points = kde.resample(size=size)
         params = {k: v for k, v in zip(p, points)}
 
         # Add `static_args` back, some transformations may need them.
-        if args.input_config is not None and static_args is not None:
+        if static_args is not None:
             for k in static_args.keys():
                 params[k] = numpy.array([static_args[k]]*size)
 
         # Apply `waveform_transforms` defined in the .ini file to samples.
-        if args.input_config is not None and waveform_transforms is not None:
+        if waveform_transforms is not None:
             params = transforms.apply_transforms(params, waveform_transforms)
 
-    if args.approximant is not None:
-        params['approximant'] = numpy.array([args.approximant]*size)
-
     # Filter out stuff (kde method may also generate samples outside boundaries).
-    l = None
-    if args.input_config is None:
-        for name, pmin, pmax in zip(args.params, args.min, args.max):
-            nl = (params[name] < pmax) & (params[name] > pmin)
-            l = (nl & l) if l is not None else nl
-
-        if args.max_q:
-            q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
-            l &= q < args.max_q
-
-        if args.max_mtotal:
-            l &= params['mass1'] + params['mass2'] < args.max_mtotal
-
-        if args.max_mchirp:
-            from pycbc.conversions import mchirp_from_mass1_mass2
-            mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
-            l &= mc < args.max_mchirp
-
-        if args.min_mchirp:
-            from pycbc.conversions import mchirp_from_mass1_mass2
-            mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
-            l &= mc > args.min_mchirp
-
-    else:
-        l = dists_joint.contains(params)
-
+    l = dists_joint.contains(params)
     params = {k: params[k][l] for k in params}
     return params
 
@@ -583,13 +561,13 @@ def cdraw(rtype, ts, te):
     while len(p[list(p.keys())[0]]) < size:
 
         tp = draw(rtype)
-        p = {k: numpy.concatenate([p[k], tp[k]]) for k in p}
-
-        if  len(p[list(p.keys())[0]]) > 0:
-            t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
+        if  len(tp[list(tp.keys())[0]]) > 0:
+            t = tau0_from_mass1_mass2(tp['mass1'], tp['mass2'],
                                       args.tau0_cutoff_frequency)
             l = (t < te) & (t > ts)
-            p = {k: p[k][l] for k in p}
+            tp = {k: tp[k][l] for k in tp}
+            
+        p = {k: numpy.concatenate([p[k], tp[k]]) for k in p}
 
         i += 1
         if i > args.placement_iterations:
@@ -610,6 +588,9 @@ go = True
 
 region = 0
 while tau0s < args.tau0_end:
+
+    tau0e = min(tau0e, args.tau0_end)
+
     conv = 1
     r = 0
     while conv > tolerance:
@@ -641,7 +622,8 @@ while tau0s < args.tau0_end:
             trail_matches = numpy.array(bank.max_matches[int(len(bank.max_matches)*0.9):])
             ave = numpy.mean(trail_matches)
             logging.info("%s: Round (K) (%s): %s Size: %s conv: %0.4f added: %s Trail Ave: %0.4f Trail Min: %0.4f",
-                         region, kloop, r, len(bank), kconv, len(bank) - blen, ave, trail_matches.min())
+                         region, kloop, r, len(bank), kconv, len(bank) - blen,
+                         ave, trail_matches.min())
 
 
             if uconv:
@@ -656,7 +638,8 @@ while tau0s < args.tau0_end:
                 break
 
     bank.culltau0(tau0s - args.tau0_threshold * 2.0)
-    logging.info("Region Done %3.1f-%3.1f, %s stored", tau0s, tau0e, bank.activelen())
+    logging.info("Region Done %3.1f-%3.1f, %s stored",
+                 tau0s, tau0e, bank.activelen())
     region += 1
     tau0s += args.tau0_crawl / 2
     tau0e += args.tau0_crawl / 2
