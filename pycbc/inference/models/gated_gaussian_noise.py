@@ -328,7 +328,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             invpsd = self._invpsds[det]
             # invert
             invmat = invert_covariance(invpsd, lindex, rindex)
-            print(numpy.shape(invmat), rindex, lindex, det)
+            print('from scratch: ', numpy.shape(invmat), rindex, lindex, det)
             # cache results
             try:
                 # time window dict already exists; fill in entry
@@ -404,6 +404,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                     try:
                         lidx, ridx = self.gate_indices(det)
                         invmat = self._cov_matrices[int(ridx-lidx)][det]
+                        print('from cache: ', invmat.shape, ridx, lidx, det)
                     except KeyError:
                         invmat = self.invert_covariance(det)
                 else:
