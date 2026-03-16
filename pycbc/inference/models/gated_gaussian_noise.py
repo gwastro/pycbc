@@ -322,16 +322,19 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """Get the uninverted covariance matrix for the model's inverse PSDs
         and cache to memory.
         """
-        cache_matrices = {}
         # get gate length and invpsd
         for det in self._invpsds:
             lindex, rindex = self.gate_indices(det)
             invpsd = self._invpsds[det]
             # invert
             invmat = invert_covariance(invpsd, lindex, rindex)
-            cache_matrices[det] = invmat
-        # cache results
-        self._cov_matrices[rindex-lindex] = cache_matrices
+            # cache results
+            try:
+                # time window dict already exists; fill in entry
+                self._cov_matrices[int(rindex-lindex)][det] = invmat
+            except:
+                # time window dict does not exist; populate w/ new dict
+                self._cov_matrices[int(rindex-lindex)] = {det: invmat}
         return invmat
 
     @abstractmethod
@@ -399,7 +402,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 if self.paint_method == 'matmul':
                     try:
                         lidx, ridx = self.gate_indices(det)
-                        invmat = self._cov_matrices[ridx-lidx][det]
+                        invmat = self._cov_matrices[int(ridx-lidx)][det]
                     except KeyError:
                         invmat = self.invert_covariance(det)
                 else:
@@ -594,7 +597,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             if self.paint_method == 'matmul':
                 try:
                     lidx, ridx = self.gate_indices(det)
-                    invmat = self._cov_matrices[ridx-lidx][det]
+                    invmat = self._cov_matrices[int(ridx-lidx)][det]
                 except KeyError:
                     invmat = self.invert_covariance(det)
             else:
@@ -770,7 +773,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
             if self.paint_method == 'matmul':
                 try:
                     lidx, ridx = self.gate_indices(det)
-                    invmat = self._cov_matrices[ridx-lidx][det]
+                    invmat = self._cov_matrices[int(ridx-lidx)][det]
                 except KeyError:
                     invmat = self.invert_covariance(det)
             else:
@@ -859,7 +862,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
             if self.paint_method == 'matmul':
                 try:
                     lidx, ridx = self.gate_indices(det)
-                    invmat = self._cov_matrices[ridx-lidx][det]
+                    invmat = self._cov_matrices[int(ridx-lidx)][det]
                 except KeyError:
                     invmat = self.invert_covariance(det)
             else:
@@ -942,7 +945,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                 if self.paint_method == 'matmul':
                     try:
                         lidx, ridx = self.gate_indices(det)
-                        invmat = self._cov_matrices[ridx-lidx][det]
+                        invmat = self._cov_matrices[int(ridx-lidx)][det]
                     except KeyError:
                         invmat = self.invert_covariance(det)
                 else:
@@ -1219,7 +1222,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             if self.paint_method == 'matmul':
                 try:
                     lidx, ridx = self.gate_indices(det)
-                    invmat = self._cov_matrices[ridx-lidx][det]
+                    invmat = self._cov_matrices[int(ridx-lidx)][det]
                 except KeyError:
                     invmat = self.invert_covariance(det)
             else:
