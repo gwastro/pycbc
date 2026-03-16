@@ -575,7 +575,7 @@ def cdraw(rtype, ts, te):
 
     if len(p[list(p.keys())[0]]) == 0:
         return None
-
+        
     return p
 
 signal.signal(signal.SIGINT, handle_exit_signal)
