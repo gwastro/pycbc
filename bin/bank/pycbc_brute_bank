@@ -412,20 +412,19 @@ class GenUniformWaveform(object):
         else:
             buff_len = 1.0 / self.delta_f
 
+        if kwds['approximant'] in pycbc.waveform.td_approximants() or args.use_td_waveform:
+
+            hp, hc = pycbc.waveform.get_td_waveform(delta_t=1.0 / args.sample_rate,
+                                                **kwds)
+
+            hp = hp.to_frequencyseries(delta_f = 1.0 / buff_len)
+            hc = hc.to_frequencyseries(delta_f = 1.0 / buff_len)
+
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
 
-            # Optionally generate time-domain waveform
-            if args.use_td_waveform:
-                hp, hc = pycbc.waveform.get_td_waveform(delta_t=1.0 / args.sample_rate,
-                                                    **kwds)
+            hp, hc = pycbc.waveform.get_fd_waveform(delta_f = 1.0 / buff_len,
+                                                **kwds)
 
-                hp = hp.to_frequencyseries(delta_f = 1.0 / buff_len)
-                hc = hc.to_frequencyseries(delta_f = 1.0 / buff_len)
-   
-            else:
-                hp, hc = pycbc.waveform.get_fd_waveform(delta_f = 1.0 / buff_len,
-                                                    **kwds)
-      
             if  args.use_cross:
                 hp = hc
 
