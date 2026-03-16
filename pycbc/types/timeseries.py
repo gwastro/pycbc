@@ -64,7 +64,6 @@ class TimeSeries(Array):
         self._epoch = determine_epoch(epoch, initial_array)
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
-        self._epoch = epoch
 
     def to_astropy(self, name='pycbc'):
         """ Return an astropy.timeseries.TimeSeries instance
@@ -83,7 +82,7 @@ class TimeSeries(Array):
     def epoch_close(self, other):
         """ Check if the epoch is close enough to allow operations """
         if self._epoch is None or other._epoch is None:
-                    return False
+            return False
         dt = abs(float(self.start_time - other.start_time))
         return dt <= 1e-7
 
@@ -202,13 +201,13 @@ class TimeSeries(Array):
 
     @property
     def delta_f(self):
-        """Return time series start time.
+        """Return the delta_f this ts would have in the frequency domain
         """
         return 1.0 / self.duration
 
     @property
     def start_time(self):
-        """Return time series start time as a LIGOTimeGPS.
+        """Return time series start time.
         """
         return self._epoch
 
@@ -476,7 +475,7 @@ class TimeSeries(Array):
             LAL time series object containing the same data as self.
             The actual type depends on the sample's dtype.  If the epoch of
             self is 'None', the epoch of the returned LAL object will be
-            LIGOTimeGPS(0,0); otherwise, the same as that of self.
+            the same as that of self.
 
         Raises
         ------
@@ -605,7 +604,7 @@ class TimeSeries(Array):
             _numpy.dtype(float64): sim.SimInspiralREAL8WaveTaper}
 
         tsdata = self
-        
+
         if location is None:
             raise ValueError("Must specify a tapering method (function was called"
                             "with location=None)")
