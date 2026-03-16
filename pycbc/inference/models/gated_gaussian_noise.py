@@ -328,6 +328,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             invpsd = self._invpsds[det]
             # invert
             invmat = invert_covariance(invpsd, lindex, rindex)
+            print(numpy.shape(invmat), rindex, lindex, det)
             # cache results
             try:
                 # time window dict already exists; fill in entry
