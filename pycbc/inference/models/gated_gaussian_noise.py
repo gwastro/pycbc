@@ -323,19 +323,17 @@ class BaseGatedGaussian(BaseGaussianNoise):
         and cache to memory.
         """
         # get gate length and invpsd
-        for det in self._invpsds:
-            lindex, rindex = self.gate_indices(det)
-            invpsd = self._invpsds[det]
-            # invert
-            invmat = invert_covariance(invpsd, lindex, rindex)
-            print('from scratch: ', numpy.shape(invmat), rindex, lindex, det)
-            # cache results
-            try:
-                # time window dict already exists; fill in entry
-                self._cov_matrices[int(rindex-lindex)][det] = invmat
-            except:
-                # time window dict does not exist; populate w/ new dict
-                self._cov_matrices[int(rindex-lindex)] = {det: invmat}
+        lindex, rindex = self.gate_indices(det)
+        invpsd = self._invpsds[det]
+        # invert
+        invmat = invert_covariance(invpsd, lindex, rindex)
+        # cache results
+        try:
+            # time window dict already exists; fill in entry
+            self._cov_matrices[int(rindex-lindex)][det] = invmat
+        except:
+            # time window dict does not exist; populate w/ new dict
+            self._cov_matrices[int(rindex-lindex)] = {det: invmat}
         return invmat
 
     @abstractmethod
@@ -404,7 +402,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
                     try:
                         lidx, ridx = self.gate_indices(det)
                         invmat = self._cov_matrices[int(ridx-lidx)][det]
-                        print('from cache: ', invmat.shape, ridx, lidx, det)
                     except KeyError:
                         invmat = self.invert_covariance(det)
                 else:
