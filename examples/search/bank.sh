@@ -1,5 +1,9 @@
 #!/bin/bash
 set -e
+
+LDIR=`dirname -- "${BASH_SOURCE[0]}"`
+echo $LDIR
+
 export OMP_NUM_THREADS=1
 pycbc_brute_bank \
 --verbose \
@@ -12,7 +16,7 @@ pycbc_brute_bank \
 --tau0-crawl 5 \
 --tau0-start 0 \
 --tau0-end 15 \
---input-config ${BASH_SOURCE%/*}/bank.ini \
+--input-config $LDIR/bank.ini \
 --psd-model aLIGOZeroDetLowPower \
 --seed 1 \
 --low-frequency-cutoff 20.0
