@@ -118,8 +118,8 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
 
     if source == "file":
         local_file_path = \
-            resolve_url(cp.get_opt_tag("workflow-segments",
-                                       option_name+"-file", tags))
+            resolve_url(cp.get_opt_tags("workflow-segments",
+                                        option_name+"-file", tags))
         pfn = os.path.join(out_dir, os.path.basename(local_file_path))
         shutil.move(local_file_path, pfn)
         return SegFile.from_segment_xml(pfn)
