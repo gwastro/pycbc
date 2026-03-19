@@ -338,7 +338,7 @@ else :
 #          the background time.
 
 # This is a workaround for the case that we have no foreground, so that the
-# while loop comparison doesnt fail straight away
+# while loop comparison does not fail straight away
 ifar_foreground = numpy.append(ifar_foreground, 0)
 
 while numpy.any(ifar_foreground >= background_time):
