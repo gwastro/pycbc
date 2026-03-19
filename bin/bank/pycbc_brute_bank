@@ -106,7 +106,8 @@ dists_joint = prior_from_config(cp=config_parser)
 
 def get_stable_match(p_inj, p_tmplt):
     """Iteratively doubles buffer length until the match stabilizes."""
-    current_buflen = args.buffer_length if args.full_resolution_buffer_length is None else args.full_resolution_buffer_length
+    frbl = args.full_resolution_buffer_length
+    current_buflen = args.buffer_length if frbl is None else frbl
     last_match = -1.0
     
     # We loop until convergence or a safety cap (e.g., 64s)
