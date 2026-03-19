@@ -43,7 +43,7 @@ parser.add_argument('--output-file', required=True,
 parser.add_argument('--input-file', nargs='*', default=[],
     help='Bank to use as an initial set of starting samples.')
 parser.add_argument('--keep-entire-input-file', help="All of the templates in the input file will be kept in the output file, even if they do not pass normal mismatch criteria.", action='store_true')
-parser.add_argument('--input-config',
+parser.add_argument('--input-config', required=True,
     help='Draw parameters from the given configure file.')
 parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
