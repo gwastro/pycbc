@@ -570,17 +570,20 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # make sure invpsd truncation is set to hanning
             logging.info("Using Hann window to truncate inverse PSD")
             opts.invpsd_trunc_method = 'hann'
-            # make sure the low frequency fill value is set to kmin
-            logging.info("Setting values below low frequency cutoff equal to "
-                         "inverse PSD at cutoff")
-            opts.invpsd_trunc_low_freq_fill_value = 'fmin'
-            opts.invpsd_trunc_which_spectrum = 'invpsd'
+        # make sure the low freq fill value is set to fmin
+        logging.info("Setting values below low frequency cutoff equal to "
+                     "inverse PSD at cutoff")
+        opts.invpsd_trunc_low_freq_fill_value = 'fmin'
         lfs = None
-        if opts.psd_estimation:
-            # make sure low frequency cutoff is zero
-            logging.info("Setting low frequency cutoff of PSD to 0")
-            lfs = opts.low_frequency_cutoff.copy()
-            opts.low_frequency_cutoff = {d: 0. for d in lfs}
+        # set low frequency cutoff
+        logging.info("Setting low frequency cutoff of PSD")
+        lfs = opts.low_frequency_cutoff.copy()
+        if opts.psd_low_frequency_cutoff:
+            # set to specified psd cutoffs
+            opts.low_frequency_cutoff = opts.psd_low_frequency_cutoff
+        else:
+            # set to half the model's likelihood cutoffs
+            opts.low_frequency_cutoff = {d: lfs[d]/2. for d in lfs}
         out = fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
         # set back
         if lfs is not None:

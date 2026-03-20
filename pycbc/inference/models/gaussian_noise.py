@@ -634,6 +634,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
                                      args['low_frequency_cutoff'])
         if data is None or psds is None:
             strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
+            # force psd truncation to use inverse PSD
+            opts.invpsd_trunc_which_spectrum = 'invpsd'
             # convert to frequency domain and get psds
             stilde_dict, psds = cls._fd_data_from_strain_dict(
                 opts, strain_dict, psd_strain_dict)
