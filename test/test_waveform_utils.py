@@ -107,7 +107,13 @@ class TestFDTimeShift(unittest.TestCase):
 
 
 class TestRedshiftWaveform(unittest.TestCase):
-    """Tests ``redshift_waveform`` against detector-frame generation."""
+    """Tests ``redshift_waveform`` against detector-frame generation.
+    
+    Specifically, this tests that a waveform generated in the source frame and
+    then redshifted using ``redshift_waveform`` matches a waveform generated
+    directly in the detector frame with redshifted masses. This is done for
+    both TD and FD waveforms.
+    """
 
     def setUp(self):
         self.srcm1 = 30.0
@@ -127,13 +133,6 @@ class TestRedshiftWaveform(unittest.TestCase):
 
         self.detm1 = self.srcm1 * (1 + self.z)
         self.detm2 = self.srcm2 * (1 + self.z)
-
-    def _relative_l2_error(self, test, ref):
-        """Returns the relative L2 norm of test-ref on shared samples."""
-        n = min(len(test), len(ref))
-        t = test.numpy()[:n]
-        r = ref.numpy()[:n]
-        return numpy.linalg.norm(t - r) / numpy.linalg.norm(r)
 
     def test_td_redshift_matches_redshifted_masses(self):
         """Redshifting a source-frame TD waveform matches detector-frame TD."""
