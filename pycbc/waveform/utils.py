@@ -519,8 +519,6 @@ def redshift_waveform(srch, z, tref=0):
     shift = (tnew - tref)/redshifted.delta_t
     # for integer shifts, we can just change the epoch
     remainder = (shift % 1)
-    #print('remainder:', remainder)
-    #shift = int(shift) * redshifted.delta_t
     redshifted._epoch -= shift * redshifted.delta_t
     # if there was any remaining, we'll need to do sub-sample interpolation
     if remainder or isfs:
