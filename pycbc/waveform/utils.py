@@ -522,7 +522,7 @@ def redshift_waveform(srch, z, tref=0):
     redshifted._epoch -= shift * redshifted.delta_t
     # if there was any remaining, we'll need to do sub-sample interpolation
     if remainder or isfs:
-        redshifted = redshifted.to_frequencyseries()                   
+        redshifted = redshifted.to_frequencyseries()
     if remainder:
         shifttime = redshifted.start_time+((1-remainder)*redshifted.delta_t)
         apply_fd_time_shift(redshifted, shifttime, copy=False)
