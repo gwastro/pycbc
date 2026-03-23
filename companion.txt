@@ -18,9 +18,6 @@ https://github.com/willvousden/ptemcee/archive/master.tar.gz
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 nessai>=0.11.0
-# TEMPORARY - REMOVE THIS ONCE PYPMC HAS A RELEASE v1.2.6
-git+https://github.com/pypmc/pypmc@dc5ff5f
-snowline
 
 # useful to look at PyCBC Live with htop
 setproctitle
