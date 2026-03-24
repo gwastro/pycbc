@@ -217,10 +217,12 @@ args.instruments.sort()
 
 pycbc.init_logging(args.verbose)
 
-if 'Uniform' in args.input_dist:
+# Coverage argument is needed only for non uniform input distribution 
+if args.input_dist.startswith('Uniform'):
     assert args.coverage is None
 else:
-    assert args.coverage is not None
+    if args.coverage is None:
+        parser.error("please specify the coverage when using a non-uniform distribution")
 
 if len(args.instruments) == 1:
     sky_grid = make_single_det_grid(args)
