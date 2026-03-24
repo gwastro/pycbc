@@ -518,14 +518,23 @@ def redshift_waveform(srch, z, tref=0):
     # the difference
     shift = (tnew - tref)/redshifted.delta_t
     # for integer shifts, we can just change the epoch
-    remainder = (shift % 1)
-    redshifted._epoch -= shift * redshifted.delta_t
+    remainder = shift - int(shift)
+    redshifted._epoch -= int(shift) * redshifted.delta_t
     # if there was any remaining, we'll need to do sub-sample interpolation
-    if remainder or isfs:
-        redshifted = redshifted.to_frequencyseries()
     if remainder:
-        shifttime = redshifted.start_time+((1-remainder)*redshifted.delta_t)
+        # if the input was a FrequencySeries, what should be the first sample
+        # will be at the end after the shift due to the wrap around for fd
+        # waveforms. So we need to roll forward by 1 first 
+        if isfs:
+            redshifted.roll(1)
+            redshifted._epoch -= redshifted.delta_t
+        # shift back by the remainding amount
+        shifttime = redshifted.start_time - remainder*redshifted.delta_t
+        # convert to frequency series for the shift
+        redshifted = redshifted.to_frequencyseries()
         apply_fd_time_shift(redshifted, shifttime, copy=False)
         if not isfs:
             redshifted = redshifted.to_timeseries()
+    if isfs:
+        redshifted = redshifted.to_frequencyseries()
     return redshifted
