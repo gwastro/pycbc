@@ -219,7 +219,8 @@ pycbc.init_logging(args.verbose)
 
 # Coverage argument is needed only for non uniform input distribution 
 if args.input_dist.startswith('Uniform'):
-    assert args.coverage is None
+    if args.coverage is not None:
+        parser.error("please do not specify the coverage when using an uniform distribution")
 else:
     if args.coverage is None:
         parser.error("please specify the coverage when using a non-uniform distribution")
