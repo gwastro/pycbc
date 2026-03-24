@@ -47,7 +47,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  static_params=None, highpass_waveforms=False,
-                 **kwargs):
+                 check_condition_number=False, **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
         # cache the overwhitened data
@@ -60,6 +60,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._lognorm = {}
         self._gatetimes = {}
         self._det_lognls = {}
+        # caches for checking condition numbers in inpainting
+        self.check_condition_number = check_condition_number
         self._cond = {}
         # cache samples and linear regression for determinant extrapolation
         self._cov_samples = {}
@@ -363,7 +365,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             gatestartdelay, dgatedelay = gate_times[det]
             # check if the inpainting is numerically stable
             gate_len = dgatedelay * 2 / d.delta_t
-            if gate_len not in self._cond.keys():
+            if gate_len not in self._cond.keys() and self.check_condition_number:
                 lindex, rindex = d.get_gate_indices(gatestartdelay, dgatedelay)
                 conds[det] = self.condition_number(invpsd, lindex, rindex)
             try:
@@ -379,7 +381,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 cache[gatestartdelay, dgatedelay] = dtilde
             out[det] = dtilde
         # cache the condition numbers for this gate length
-        if gate_len not in self._cond.keys():
+        if gate_len not in self._cond.keys() and self.check_condition_number:
             self._cond[gate_len] = conds
         return out
 
@@ -658,11 +660,12 @@ class GatedGaussianNoise(BaseGatedGaussian):
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, **kwargs):
+                 static_params=None, check_condition_number=False, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            check_condition_number=check_condition_number,
             static_params=static_params, **kwargs)
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
@@ -811,12 +814,13 @@ class GatedGaussianMargPol(BaseGatedGaussian):
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None,
+                 static_params=None, check_condition_number=False,
                  polarization_samples=1000, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            check_condition_number=check_condition_number,
             static_params=static_params, **kwargs)
         # the polarization parameters
         self.polarization_samples = polarization_samples
@@ -1055,12 +1059,15 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, phase_samples=500000, phase_names=None,
+                 static_params=None, 
+                 check_condition_number=False,
+                 phase_samples=500000, phase_names=None,
                  ref_phase=None, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            check_condition_number=check_condition_number,
             static_params=static_params, **kwargs)
         self.det_names = list(self.data.keys())
         self.dets = {}
