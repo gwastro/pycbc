@@ -63,6 +63,7 @@ class PyCBCOptimalSNRExecutable(Executable):
         _, ext = os.path.splitext(inj_file.name)
         node.add_input_opt('--input-file', inj_file)
         node.add_opt('--injection-fraction-range', group_str)
+        node.add_opt('--snr-columns', ' '.join([f'{ifo}:optimal_snr_{ifo}' for ifo in workflow.ifos]))
         node.add_input_list_opt('--time-varying-psds', precalc_psd_files)
         node.new_output_file_opt(workflow.analysis_time, ext,
                                  '--output-file')
