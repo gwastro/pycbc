@@ -20,6 +20,7 @@
 Make workflow for the archival, targeted, coherent inspiral pipeline.
 """
 
+
 import sys
 import os
 import argparse
@@ -27,13 +28,17 @@ import logging
 import matplotlib
 matplotlib.use('agg')
 
-from igwn_segments import segment, segmentlistdict
+from igwn_segments import segment, segmentlist, segmentlistdict
 
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.events.veto import select_segments_by_definer
 import pycbc.workflow as _workflow
-from pycbc.workflow.core import configparser_value_to_file
+from pycbc.workflow.core import configparser_value_to_file, FileList, resolve_url_to_file, SegFile
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
+
+from pycbc.workflow.injection import compute_inj_optimal_snr
+from pycbc.workflow.psd import make_psd_file
+from pycbc.types import FrequencySeries
 
 workflow_name = "pygrb_offline"
 
@@ -327,6 +332,41 @@ splitbank_files = _workflow.setup_splittable_workflow(wflow,
 all_files.append(full_bank_file)
 all_files.extend(splitbank_files)
 
+# --- TIME VARYING PSDS ---
+# Directory where time-varying PSD files will be written
+if wflow.cp.has_section("calculate_psd"):
+    psd_dir = os.path.join(output_dir, "psd_timevarying")
+    os.makedirs(psd_dir, exist_ok=True)
+  
+    tv_psd_files = FileList([])
+      
+    for ifo in wflow.ifos:
+        logging.info("Creating time-varying PSD job for %s", ifo)
+        
+        # Segment file containing the FULL analysis segment
+        psd_segfile = SegFile.from_segment_list(
+            description=f"psd_{ifo}",
+            segmentlist=segmentlist([wflow.analysis_time]),
+            name="psd",
+            ifo=ifo,
+            seg_summ_list=segmentlist([wflow.analysis_time]),
+            directory=psd_dir,
+            extension="xml"
+        )
+        
+        psd_file = make_psd_file(
+            workflow=wflow,
+            frame_files=None,   # ok: datafind cache already in workflow
+            segment_file=psd_segfile,
+            segment_name="psd",
+            out_dir=psd_dir,
+            tags=["TVPSD"]
+        )
+        
+        tv_psd_files.append(psd_file)
+    
+    logging.info("Created %d time-varying PSDs", len(tv_psd_files))
+
 # INJECTIONS
 injs = None
 inj_tags = []
@@ -370,6 +410,26 @@ if wflow.cp.has_section("workflow-injections"):
     inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, inj_dir)
     all_files.extend(inj_files)
     injs = inj_files
+
+     # Here we compute the optimal SNR for the injections before splitting them
+    if wflow.cp.has_section("optimal_snr"):
+        snr_dir = os.path.join(inj_dir, "optimal_snr")
+        os.makedirs(snr_dir, exist_ok = True)
+        
+        optimal_snr_files = _workflow.FileList([])
+        for inj, inj_tag in zip(injs, inj_tags):
+            snr_file = compute_inj_optimal_snr(
+                wflow,
+                inj,
+                tv_psd_files,
+                snr_dir,
+                tags=[inj_tag]
+            )
+            optimal_snr_files.append(snr_file)
+            logging.info("Optimal SNR workflow node created for injection tag %s", inj_tag)
+        all_files.extend(optimal_snr_files)
+        injs = optimal_snr_files
+        inj_files = optimal_snr_files
 
     # Either split template bank for injections jobs or use same split banks
     # as for standard matched filter jobs
