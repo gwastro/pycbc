@@ -134,6 +134,7 @@ class TestRedshiftWaveform(unittest.TestCase):
         self.detm1 = self.srcm1 * (1 + self.z)
         self.detm2 = self.srcm2 * (1 + self.z)
 
+
     def test_td_redshift_matches_redshifted_masses(self):
         """Redshifting a source-frame TD waveform matches detector-frame TD."""
         src_hp, _ = get_td_waveform(
@@ -154,8 +155,8 @@ class TestRedshiftWaveform(unittest.TestCase):
             delta_t=1.0 / self.sample_rate,
             f_lower=self.flow,
         )
+        numpy.testing.assert_allclose(redshifted_hp.numpy(), det_hp.numpy())
 
-        self.assertTrue(numpy.isclose(redshifted_hp.numpy(), det_hp.numpy()).all())
 
     def test_fd_redshift_matches_redshifted_masses(self):
         """Redshifting a source-frame FD waveform matches detector-frame FD."""
@@ -182,7 +183,8 @@ class TestRedshiftWaveform(unittest.TestCase):
 
         redshifted_hp = redshifted_hptilde.to_timeseries()
         det_hp = det_hptilde.to_timeseries()
-        self.assertTrue(numpy.isclose(redshifted_hp.numpy(), det_hp.numpy()).all())
+        numpy.testing.assert_allclose(redshifted_hp.numpy(), det_hp.numpy())
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFDTimeShift))
