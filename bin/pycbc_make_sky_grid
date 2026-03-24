@@ -84,18 +84,15 @@ def make_multi_det_grid(args):
     # based on the input arguments
     if (args.ra and args.dec and args.sky_error) is not None:
         # --ra/--dec/--sky-error arguments
-        assert args.coverage is None
         args.input_dist = f'UniformDiskSky(mean_ra="{args.ra}", mean_dec="{args.dec}", radius="{args.sky_error}")'
         sky_dist = dist_from_str(args.input_dist)
         grid = np.vstack((np.empty((0, 2)), (args.ra, args.dec)))
     elif args.input_dist == 'UniformSky()':
         # Covering the whole sky
-        assert args.coverage is None
         sky_dist = dist_from_str(args.input_dist)
         grid = np.vstack((np.empty((0, 2)), (0.0, 0.0)))
     else:
         # Restricted non-uniform input distribution
-        assert args.coverage is not None
         sky_dist = dist_from_str(args.input_dist)
         grid = np.vstack(
             (
@@ -219,6 +216,11 @@ args = parser.parse_args()
 args.instruments.sort()
 
 pycbc.init_logging(args.verbose)
+
+if 'Uniform' in args.input_dist:
+    assert args.coverage is None
+else:
+    assert args.coverage is not None
 
 if len(args.instruments) == 1:
     sky_grid = make_single_det_grid(args)
