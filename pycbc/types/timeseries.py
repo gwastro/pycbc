@@ -1237,17 +1237,17 @@ class TimeSeries(Array):
 
     def bool_to_segmentlist(self, epoch=None):
         """
-        Convert a boolean pycbc TimeSeries (Truth-like when condition holds) to
+        Convert a boolean pycbc TimeSeries (this must be bool or integer) to
         an igwn_segments.segmentlist of (start, end) in GPS seconds.
         """
 
         # Is the data truthlike?
         # bools or numbers are OK, but we require finite values
         arr = self.numpy()
-        if arr.dtype.kind != 'b' and not _numpy.issubdtype(arr.dtype, _numpy.number):
-            raise RuntimeError(
+        if arr.dtype.kind not in ['b', 'i']:
+            raise TypeError(
                 'To use bool_to_segmentlist, we require that the timeseries '
-                'is truthlike'
+                'is boolean or integer'
             )
 
         segs = segmentlist([])
@@ -1255,8 +1255,8 @@ class TimeSeries(Array):
         if arr.size == 0:
             return segs.coalesce()
 
-        # Convert to bool Treat NaNs as zeros
-        b = _numpy.nan_to_num(arr, nan=0).astype(bool)
+        # Convert to bool
+        b = arr.astype(bool)
 
         # Pad with a leading/trailing False to detect edges at boundaries.
         b = _numpy.concatenate(([False], b, [False]))

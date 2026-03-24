@@ -131,12 +131,13 @@ for seg in observing_flag:
 
     # build segmentlists:
     # Is the channel actually working?
+    ts_dq_ok_channel._data = ts_dq_ok_channel._data.astype(bool)
     dq_ok_segs = ts_dq_ok_channel.bool_to_segmentlist()
 
     # Is the channel above threshold?
-    dq_mask = (ts_dq_channel <= args.dq_thresh)
-    # If not, set it to zero
-    ts_dq_channel.data[dq_mask] = 0
+    dq_mask = (ts_dq_channel >= args.dq_thresh)
+    # If not, set it to zero / one accordingly
+    ts_dq_channel._data = dq_mask
     dq_segs = ts_dq_channel.bool_to_segmentlist()
 
     # these are the times where dq channel is working, and
