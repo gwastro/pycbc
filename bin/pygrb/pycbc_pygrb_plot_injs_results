@@ -57,6 +57,7 @@ def process_var_strings(qty):
     qty = qty.replace('spin1a', 'spin1_a')
     qty = qty.replace('spin2a', 'spin2_a')
     qty = qty.replace('chip', 'chi_p')
+    qty = qty.replace('optsnr', 'opt_snr')
 
     return qty
 
@@ -139,6 +140,15 @@ def complete_sky_error_data(injs, tag):
     return data
 
 
+def complete_opt_snr_data (injs, tag, ifos=[]):
+    optimal_snr = np.empty((injs[tag + '/tc'].size, len(ifos)))
+    for i, ifo in enumerate(ifos):
+        optimal_snr[:, i] = injs[tag + '/optimal_snr_' + ifo]
+        
+    data = np.sqrt((optimal_snr ** 2).sum(axis=1))
+
+    return data
+
 # These are keys in the found-missed-file under 'found' and 'missed'
 # TODO: also in the found-missed injs file is 'inclination'
 easy_keys = ['distance', 'mass1', 'mass2', 'polarization',
@@ -146,7 +156,7 @@ easy_keys = ['distance', 'mass1', 'mass2', 'polarization',
              'spin2_a', 'spin2x', 'spin2y', 'spin2z',
              'spin1_azimuthal', 'spin1_polar',
              'spin2_azimuthal', 'spin2_polar',
-             'dec', 'ra', 'phi_ref']
+             'dec', 'ra', 'phi_ref', 'optimal_snr_H1', 'optimal_snr_L1']
 
 
 def complete_inj_data(injs, keys, tag, ifos=[]):
@@ -169,6 +179,8 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
                 data_dict[key] = complete_incl_data(injs, key, tag)
             elif key == 'sky_error':
                 data_dict[key] = complete_sky_error_data(injs, tag)
+            elif key == 'opt_snr':
+                data_dict[key] = complete_opt_snr_data(injs, tag, ifos)
             elif key == 'eff_dist':
                 eff_dists = np.empty((injs[tag + '/tc'].size, len(ifos)))
                 for i, ifo in enumerate(ifos):
@@ -213,7 +225,8 @@ admitted_vars = easy_keys + ['mtotal', 'q', 'mchirp',
                              'sky_error', 'skyerror', 'end_time', 'endtime',
                              'dec', 'ra', 'coaphase', 'coa_phase',
                              'eff_site_dist', 'eff_dist',
-                             'effsitedist', 'effdist', 'chip', 'chi_p']
+                             'effsitedist', 'effdist', 'chip', 'chi_p',
+                             'optsnr', 'opt_snr']
 admitted_vars = sorted(set(admitted_vars))
 
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
@@ -447,7 +460,8 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'spin2x': "Spin x-component of 2nd binary component",
                     'spin2y': "Spin y-component of 2nd binary component",
                     'spin2z': "Spin z-component of 2nd binary component",
-                    'chi_p': "Effective precession spin"}
+                    'chi_p': "Effective precession spin",
+                    'opt_snr': "Network optimal SNR"}
 
 fig = plt.figure()
 ax = fig.gca()
@@ -626,7 +640,8 @@ if plot_title is None:
                   'spin2x': "spin x-component",
                   'spin2y': "spin y-component",
                   'spin2z': "spin z-component",
-                  'chi_p': "Effective precession spin"}
+                  'chi_p': "Effective precession spin",
+                  'opt_snr': "Network optimal SNR"}
 
     if "sky_error" in [x_qty, y_qty]:
         plot_title = "Sky error of recovered injections"
