@@ -156,7 +156,8 @@ easy_keys = ['distance', 'mass1', 'mass2', 'polarization',
              'spin2_a', 'spin2x', 'spin2y', 'spin2z',
              'spin1_azimuthal', 'spin1_polar',
              'spin2_azimuthal', 'spin2_polar',
-             'dec', 'ra', 'phi_ref', 'optimal_snr_H1', 'optimal_snr_L1']
+             'dec', 'ra', 'phi_ref', 'optimal_snr_H1', 'optimal_snr_L1',
+             'optimal_snr_V1', 'optimal_snr_K1']
 
 
 def complete_inj_data(injs, keys, tag, ifos=[]):
