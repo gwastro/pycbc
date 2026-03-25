@@ -33,12 +33,11 @@ from igwn_segments import segment, segmentlist, segmentlistdict
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.events.veto import select_segments_by_definer
 import pycbc.workflow as _workflow
-from pycbc.workflow.core import configparser_value_to_file, FileList, resolve_url_to_file, SegFile
+from pycbc.workflow.core import configparser_value_to_file, FileList, SegFile
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
 
 from pycbc.workflow.injection import compute_inj_optimal_snr
 from pycbc.workflow.psd import make_psd_file
-from pycbc.types import FrequencySeries
 
 workflow_name = "pygrb_offline"
 
