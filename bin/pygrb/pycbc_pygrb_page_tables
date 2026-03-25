@@ -657,7 +657,7 @@ if found_missed_file is not None:
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##'])
-    format_strings.extend(['##.##' for ifo in ifos])
+    format_strings.extend(['##.##' for _ in ifos])
     format_strings.extend(['##.##' for _ in range(len(ifos) + 1)])
     format_strings.extend(['##.##', '#.######',
                            '##.##', '##.##', '##.##',
