@@ -20,3 +20,17 @@ pycbc_brute_bank \
 --psd-model aLIGOZeroDetLowPower \
 --seed 1 \
 --low-frequency-cutoff 20.0
+
+pycbc_coinc_bank2hdf --bank-file bank.hdf --output-file H1L1V1-BANK2HDF-1186740100-3400.hdf
+
+mkdir bank_full
+pycbc_hdf5_splitbank \
+--random-sort \
+--bank-file H1L1V1-BANK2HDF-1186740100-3400.hdf \
+--output-filenames bank_full/H1L1V1-BANK2HDF_SPLITBANK_BANK0_FULL_DATA-1186740100-3400.hdf bank_full/H1L1V1-BANK2HDF_SPLITBANK_BANK1_FULL_DATA-1186740100-3400.hdf \
+
+mkdir bank_inj
+pycbc_hdf5_splitbank \
+--random-sort  \
+--bank-file H1L1V1-BANK2HDF-1186740100-3400.hdf \
+--output-filenames bank_inj/H1L1V1-BANK2HDF_SPLITBANK_BANK0_INJECTIONS-1186740100-3400.hdf bank_inj/H1L1V1-BANK2HDF_SPLITBANK_BANK1_INJECTIONS-1186740100-3400.hdf
