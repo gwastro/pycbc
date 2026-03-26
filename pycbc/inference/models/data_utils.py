@@ -516,7 +516,7 @@ def fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict=None):
 
     # get PSD as frequency series
     psd_dict = psd_from_cli_multi_ifos(
-        opts, length_dict, delta_f_dict, opts.low_frequency_cutoff,
+        opts, length_dict, delta_f_dict, opts.psd_low_frequency_cutoff,
         list(psd_strain_dict.keys()), strain_dict=psd_strain_dict,
         precision="double")
 

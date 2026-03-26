@@ -603,6 +603,9 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             args['det_frame_waveform'] = True
         if cp.has_option('model', 'no-save-data'):
             args['no_save_data'] = True
+        # set inverse spectrum to truncate if not set
+        if cp.has_option(data_section, 'invpsd-trunc-which-spectrum'):
+            cp.set(data_section, 'invpsd-trunc-which-spectrum', 'invpsd')
         # get any other keyword arguments provided in the model section
         ignore_args = [
             'name',
@@ -634,8 +637,6 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
                                      args['low_frequency_cutoff'])
         if data is None or psds is None:
             strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
-            # force psd truncation to use inverse PSD
-            opts.invpsd_trunc_which_spectrum = 'invpsd'
             # convert to frequency domain and get psds
             stilde_dict, psds = cls._fd_data_from_strain_dict(
                 opts, strain_dict, psd_strain_dict)

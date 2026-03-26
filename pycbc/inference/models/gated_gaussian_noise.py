@@ -80,16 +80,21 @@ class BaseGatedGaussian(BaseGaussianNoise):
     @classmethod
     def from_config(cls, cp, data_section='data', data=None, psds=None,
                     **kwargs):
-        """Adds addiotional keyword arguments based on config file.
+        """Adds additional keyword arguments based on config file.
 
         Additional keyword arguments are:
 
            * ``highpass_waveforms`` : waveforms will be highpassed.
+
+        Also forces ``invpsd-trunc-low-freq-fill-value`` to ``fmin`` if not
+        specified.
         """
         if cp.has_option(data_section, 'strain-high-pass') and \
             'highpass_waveforms' not in kwargs:
             kwargs['highpass_waveforms'] = float(cp.get(data_section,
                                                         'strain-high-pass'))
+        if not cp.has_option(data_section, 'invpsd-trunc-low-freq-fill-value'):
+            cp.set(data_section, 'invpsd-trunc-low-freq-fill-value', 'fmin')
         return super().from_config(cp, data_section=data_section,
                                    data=data, psds=psds,
                                    **kwargs)
@@ -572,24 +577,16 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # make sure invpsd truncation is set to hanning
             logging.info("Using Hann window to truncate inverse PSD")
             opts.invpsd_trunc_method = 'hann'
-        # make sure the low freq fill value is set to fmin
-        logging.info("Setting values below low frequency cutoff equal to "
-                     "inverse PSD at cutoff")
-        opts.invpsd_trunc_low_freq_fill_value = 'fmin'
-        lfs = None
-        # set low frequency cutoff
-        logging.info("Setting low frequency cutoff of PSD")
-        lfs = opts.low_frequency_cutoff.copy()
-        if opts.psd_low_frequency_cutoff:
-            # set to specified psd cutoffs
-            opts.low_frequency_cutoff = opts.psd_low_frequency_cutoff
-        else:
-            # set to half the model's likelihood cutoffs
-            opts.low_frequency_cutoff = {d: lfs[d]/2. for d in lfs}
+        # set low frequency cutoff for PSDs
+        if opts.psd_low_frequency_cutoff is None:
+            opts.psd_low_frequency_cutoff = {}
+        for d, lfs in opts.low_frequency_cutoff.items():
+            if d not in opts.psd_low_frequency_cutoff:
+                # set to half the model's likelihood cutoffs
+                logging.info(f"Setting low frequency cutoff of {d} PSD to "
+                             f"{lfs/2.}")
+                opts.psd_low_frequency_cutoff[d] = lfs/2.
         out = fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
-        # set back
-        if lfs is not None:
-            opts.low_frequency_cutoff = lfs
         return out
 
     def write_metadata(self, fp, group=None):
