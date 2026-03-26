@@ -140,7 +140,7 @@ def complete_sky_error_data(injs, tag):
     return data
 
 
-def complete_opt_snr_data (injs, tag, ifos=[]):
+def complete_opt_snr_data (injs, tag, ifos):
     optimal_snr = np.empty((injs[tag + '/tc'].size, len(ifos)))
     for i, ifo in enumerate(ifos):
         optimal_snr[:, i] = injs[tag + '/optimal_snr_' + ifo]
