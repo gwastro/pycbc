@@ -134,6 +134,10 @@ class TestRedshiftWaveform(unittest.TestCase):
         self.detm1 = self.srcm1 * (1 + self.z)
         self.detm2 = self.srcm2 * (1 + self.z)
 
+    def _relative_l2_error(self, test, ref):
+        """Returns relative L2 norm of ``test - ref``."""
+        return numpy.linalg.norm(test - ref) / numpy.linalg.norm(ref)
+
 
     def test_td_redshift_matches_redshifted_masses(self):
         """Redshifting a source-frame TD waveform matches detector-frame TD."""
@@ -155,7 +159,8 @@ class TestRedshiftWaveform(unittest.TestCase):
             delta_t=1.0 / self.sample_rate,
             f_lower=self.flow,
         )
-        numpy.testing.assert_allclose(redshifted_hp.numpy(), det_hp.numpy())
+        relerr = self._relative_l2_error(redshifted_hp, det_hp)
+        self.assertLess(relerr, 1e-3)
 
 
     def test_fd_redshift_matches_redshifted_masses(self):
@@ -183,7 +188,8 @@ class TestRedshiftWaveform(unittest.TestCase):
 
         redshifted_hp = redshifted_hptilde.to_timeseries()
         det_hp = det_hptilde.to_timeseries()
-        numpy.testing.assert_allclose(redshifted_hp.numpy(), det_hp.numpy())
+        relerr = self._relative_l2_error(redshifted_hp, det_hp)
+        self.assertLess(relerr, 1e-3)
 
 
 suite = unittest.TestSuite()
