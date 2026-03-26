@@ -141,9 +141,6 @@ def setup_splittable_manual_directory(workflow, tags=None):
     # Get directory from config
     bank_dir = cp.get_opt_tags("workflow-splittable", "tmpltbank-directory", tags)
     
-    if not os.path.isabs(bank_dir):
-        bank_dir = os.path.abspath(bank_dir)
-
     # Glob all HDF files
     bank_paths = sorted(glob.glob(os.path.join(bank_dir, '*.hdf')))
     if not bank_paths:
@@ -227,4 +224,3 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
         workflow.add_node(node)
         out_file_groups += node.output_files
     return out_file_groups
-
