@@ -20,7 +20,6 @@
 Make workflow for the archival, targeted, coherent inspiral pipeline.
 """
 
-
 import sys
 import os
 import argparse
