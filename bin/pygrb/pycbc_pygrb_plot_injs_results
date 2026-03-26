@@ -57,7 +57,7 @@ def process_var_strings(qty):
     qty = qty.replace('spin1a', 'spin1_a')
     qty = qty.replace('spin2a', 'spin2_a')
     qty = qty.replace('chip', 'chi_p')
-    qty = qty.replace('optsnr', 'opt_snr')
+    qty = qty.replace('netoptsnr', 'net_opt_snr')
 
     return qty
 
@@ -180,7 +180,7 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
                 data_dict[key] = complete_incl_data(injs, key, tag)
             elif key == 'sky_error':
                 data_dict[key] = complete_sky_error_data(injs, tag)
-            elif key == 'opt_snr':
+            elif key == 'net_opt_snr':
                 data_dict[key] = complete_opt_snr_data(injs, tag, ifos)
             elif key == 'eff_dist':
                 eff_dists = np.empty((injs[tag + '/tc'].size, len(ifos)))
@@ -227,7 +227,7 @@ admitted_vars = easy_keys + ['mtotal', 'q', 'mchirp',
                              'dec', 'ra', 'coaphase', 'coa_phase',
                              'eff_site_dist', 'eff_dist',
                              'effsitedist', 'effdist', 'chip', 'chi_p',
-                             'optsnr', 'opt_snr']
+                             'netoptsnr', 'net_opt_snr']
 admitted_vars = sorted(set(admitted_vars))
 
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
@@ -462,7 +462,7 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'spin2y': "Spin y-component of 2nd binary component",
                     'spin2z': "Spin z-component of 2nd binary component",
                     'chi_p': "Effective precession spin",
-                    'opt_snr': "Network optimal SNR"}
+                    'net_opt_snr': "Network optimal SNR"}
 
 fig = plt.figure()
 ax = fig.gca()
@@ -642,7 +642,7 @@ if plot_title is None:
                   'spin2y': "spin y-component",
                   'spin2z': "spin z-component",
                   'chi_p': "Effective precession spin",
-                  'opt_snr': "Network optimal SNR"}
+                  'net_opt_snr': "Network optimal SNR"}
 
     if "sky_error" in [x_qty, y_qty]:
         plot_title = "Sky error of recovered injections"
