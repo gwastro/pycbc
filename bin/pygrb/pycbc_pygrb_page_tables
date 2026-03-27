@@ -67,6 +67,8 @@ def additional_injection_data(data, ifos):
 
     net_opt_snr_sq = 0
     for ifo in ifos:
+        if 'optimal_snr_'+ifo not in data:
+            data['optimal_snr_'+ifo] = np.full(len(data['mass1']), np.nan)
         net_opt_snr_sq += data['optimal_snr_'+ifo]**2
     data['net_opt_snr'] = np.sqrt(net_opt_snr_sq)
 
