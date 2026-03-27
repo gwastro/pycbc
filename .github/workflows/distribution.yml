@@ -39,26 +39,26 @@ jobs:
     runs-on: ubuntu-24.04
     needs: build_wheels
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    - uses: actions/download-artifact@v4.1.7
-      with:
-        pattern: wheel-*
-        merge-multiple: true
-        path: dist/
-    - name: Build source distribution
-      run: |
-        python -c 'import setuptools ; print("setuptools version", setuptools.__version__)'
-        pip install pip setuptools --upgrade
-        python setup.py sdist
-        ls -lh dist
-    - name: Publish to PyPI
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
-      with:
-        password: ${{ secrets.pypi_password }}
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4.1.7
+        with:
+          pattern: wheel-*
+          merge-multiple: true
+          path: dist/
+      - name: Build source distribution
+        run: |
+          python -c 'import setuptools ; print("setuptools version", setuptools.__version__)'
+          pip install pip setuptools --upgrade
+          python setup.py sdist
+          ls -lh dist
+      - name: Publish to PyPI
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
+        with:
+          password: ${{ secrets.pypi_password }}
