@@ -333,7 +333,7 @@ all_files.extend(splitbank_files)
 # --- TIME VARYING PSDS ---
 # Directory where time-varying PSD files will be written
 if wflow.cp.has_section("calculate_psd"):
-    psd_dir = os.path.join(output_dir, "psd_timevarying")
+    psd_dir = os.path.join(output_dir, "psds")
     os.makedirs(psd_dir, exist_ok=True)
   
     tv_psd_files = FileList([])
@@ -358,7 +358,6 @@ if wflow.cp.has_section("calculate_psd"):
             segment_file=psd_segfile,
             segment_name="psd",
             out_dir=psd_dir,
-            tags=["TVPSD"]
         )
         
         tv_psd_files.append(psd_file)
