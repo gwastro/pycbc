@@ -3,7 +3,12 @@ import numpy
 
 from utils import simple_exit
 
-from pycbc.waveform.utils import apply_fd_time_shift
+from pycbc import cosmology
+from pycbc.waveform import get_td_waveform, get_fd_waveform
+from pycbc.waveform.utils import (
+    apply_fd_time_shift,
+    redshift_waveform,
+)
 from pycbc.types import (TimeSeries)
 
 
@@ -100,8 +105,96 @@ class TestFDTimeShift(unittest.TestCase):
         fseries = self.fdsinx.sample_frequencies.numpy()
         self._test_apply_fd_time_shift(fdsinx, fseries)
 
+
+class TestRedshiftWaveform(unittest.TestCase):
+    """Tests ``redshift_waveform`` against detector-frame generation.
+    
+    Specifically, this tests that a waveform generated in the source frame and
+    then redshifted using ``redshift_waveform`` matches a waveform generated
+    directly in the detector frame with redshifted masses. This is done for
+    both TD and FD waveforms.
+    """
+
+    def setUp(self):
+        self.srcm1 = 30.0
+        self.srcm2 = 20.0
+        self.distance = 4000.0
+        self.z = cosmology.redshift(self.distance)
+
+        # Detector-frame settings.
+        self.flow = 30.0
+        self.sample_rate = 4096.0
+        self.seglen = 64.0
+
+        # Source-frame settings.
+        self.srcflow = self.flow * (1 + self.z)
+        self.srcsr = self.sample_rate * (1 + self.z)
+        self.srcseglen = self.seglen / (1 + self.z)
+
+        self.detm1 = self.srcm1 * (1 + self.z)
+        self.detm2 = self.srcm2 * (1 + self.z)
+
+    def _relative_l2_error(self, test, ref):
+        """Returns relative L2 norm of ``test - ref``."""
+        return numpy.linalg.norm(test - ref) / numpy.linalg.norm(ref)
+
+
+    def test_td_redshift_matches_redshifted_masses(self):
+        """Redshifting a source-frame TD waveform matches detector-frame TD."""
+        src_hp, _ = get_td_waveform(
+            approximant='SEOBNRv4',
+            mass1=self.srcm1,
+            mass2=self.srcm2,
+            distance=self.distance,
+            delta_t=1.0 / self.srcsr,
+            f_lower=self.srcflow,
+        )
+        redshifted_hp = redshift_waveform(src_hp, self.z)
+
+        det_hp, _ = get_td_waveform(
+            approximant='SEOBNRv4',
+            mass1=self.detm1,
+            mass2=self.detm2,
+            distance=self.distance,
+            delta_t=1.0 / self.sample_rate,
+            f_lower=self.flow,
+        )
+        relerr = self._relative_l2_error(redshifted_hp, det_hp)
+        self.assertLess(relerr, 1e-3)
+
+
+    def test_fd_redshift_matches_redshifted_masses(self):
+        """Redshifting a source-frame FD waveform matches detector-frame FD."""
+        src_hptilde, _ = get_fd_waveform(
+            approximant='IMRPhenomXPHM',
+            mass1=self.srcm1,
+            mass2=self.srcm2,
+            distance=self.distance,
+            delta_f=1.0 / self.srcseglen,
+            f_lower=self.srcflow,
+            f_final=self.srcsr / 2.0,
+        )
+        redshifted_hptilde = redshift_waveform(src_hptilde, self.z)
+
+        det_hptilde, _ = get_fd_waveform(
+            approximant='IMRPhenomXPHM',
+            mass1=self.detm1,
+            mass2=self.detm2,
+            distance=self.distance,
+            delta_f=1.0 / self.seglen,
+            f_lower=self.flow,
+            f_final=self.sample_rate / 2.0,
+        )
+
+        redshifted_hp = redshifted_hptilde.to_timeseries()
+        det_hp = det_hptilde.to_timeseries()
+        relerr = self._relative_l2_error(redshifted_hp, det_hp)
+        self.assertLess(relerr, 1e-3)
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFDTimeShift))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestRedshiftWaveform))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
