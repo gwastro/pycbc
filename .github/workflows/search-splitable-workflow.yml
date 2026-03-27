@@ -48,8 +48,9 @@ jobs:
       run: bash -e examples/search/stats.sh
     - name: running workflow
       run: |
+        cp examples/search/*.ini
         cp examples/search_splittable/*.ini ./
-        bash -e examples/search_splittable/gen.sh
+        bash -e examples/search/gen.sh
         cp *.gwf output/
         cd output
         python ../examples/search/check_job.py
