@@ -41,18 +41,18 @@ jobs:
         pip install -r requirements.txt
         pip install .
     - name: retrieving frame data
-      run: bash -e examples/search_splittable/get.sh
+      run: bash -e examples/search/get.sh
     - name: generating template bank
       run: bash -e examples/search_splittable/bank.sh
     - name: generating statistic files
-      run: bash -e examples/search_splittable/stats.sh
+      run: bash -e examples/search/stats.sh
     - name: running workflow
       run: |
         cp examples/search_splittable/*.ini ./
         bash -e examples/search_splittable/gen.sh
         cp *.gwf output/
         cd output
-        python ../examples/search_splittable/check_job.py
+        python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
       if: always()
