@@ -59,6 +59,7 @@ def make_single_det_grid(args):
     if (args.ra and args.dec and args.sky_error) is not None:
         # --ra/--dec arguments
         ra, dec = args.ra, args.dec
+        args.input_dist = f'UniformDiskSky(mean_ra="{ra}", mean_dec="{dec}", radius="{args.sky_error}")'
     elif args.input_dist == 'UniformSky()':
         # Covering the whole sky, just pick a reference point
         ra, dec = 0., 0.
@@ -231,18 +232,17 @@ else:
     sky_grid = make_multi_det_grid(args)
 
 # Record the input arguments as extra attributes
-if "Uniform" not in args.input_dist and args.coverage is not None:
-    extra_attributes = {
-        'coverage': args.coverage,
-    }
-elif (args.ra and args.dec and args.sky_error) is not None:
-    extra_attributes = {
-        'trigger_ra': args.ra,
-        'trigger_dec': args.dec,
-        'sky_error': args.sky_error,
-    }
+extra_attributes = {
+    'input_distribution': args.input_dist,
+    'timing_uncertainty': args.timing_uncertainty,
+}
 
-extra_attributes['input_distribution'] = args.input_dist
-extra_attributes['timing_uncertainty'] = args.timing_uncertainty
+if "Uniform" not in args.input_dist and args.coverage is not None:
+    extra_attributes['coverage'] = args.coverage,
+
+elif (args.ra and args.dec and args.sky_error) is not None:
+    extra_attributes['trigger_ra'] = args.ra
+    extra_attributes['trigger_dec'] = args.dec
+    extra_attributes['sky_error'] = args.sky_error
 
 sky_grid.write_to_file(args.output, extra_attributes)
