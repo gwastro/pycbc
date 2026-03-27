@@ -59,6 +59,7 @@ def make_single_det_grid(args):
     if (args.ra and args.dec and args.sky_error) is not None:
         # --ra/--dec arguments
         ra, dec = args.ra, args.dec
+        args.input_dist = f'UniformDiskSky(mean_ra="{ra}", mean_dec="{dec}", radius="{args.sky_error}")'
     elif args.input_dist == 'UniformSky()':
         # Covering the whole sky, just pick a reference point
         ra, dec = 0., 0.
