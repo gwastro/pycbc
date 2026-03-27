@@ -514,9 +514,15 @@ def fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict=None):
     if psd_strain_dict is None:
         psd_strain_dict = strain_dict
 
+    # set the PSD low frequency cutoff
+    if opts.psd_low_frequency_cutoff in (None, {}):
+        lfs = opts.low_frequency_cutoff
+    else:
+        lfs = opts.psd_low_frequency_cutoff
+
     # get PSD as frequency series
     psd_dict = psd_from_cli_multi_ifos(
-        opts, length_dict, delta_f_dict, opts.psd_low_frequency_cutoff,
+        opts, length_dict, delta_f_dict, lfs,
         list(psd_strain_dict.keys()), strain_dict=psd_strain_dict,
         precision="double")
 
