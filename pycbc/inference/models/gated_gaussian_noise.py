@@ -46,8 +46,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
     """
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, highpass_waveforms=False,
-                 check_condition_number=False, **kwargs):
+                 static_params=None, highpass_waveforms=False, **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
         # cache the overwhitened data
@@ -60,8 +59,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._lognorm = {}
         self._gatetimes = {}
         self._det_lognls = {}
-        # caches for checking condition numbers in inpainting
-        self.check_condition_number = check_condition_number
+        # cache condition number calculations
+        self.check_condition_number = bool(kwargs.get('check-condition-number', 
+                                                      False))
         self._cond = {}
         # cache samples and linear regression for determinant extrapolation
         self._cov_samples = {}
@@ -359,7 +359,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         gate_times = self.get_gate_times()
         out = {}
-        conds = {}
         for det, d in self.td_data.items():
             # make sure the cache at least has the detectors in it
             try:
@@ -368,11 +367,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 cache = self._gated_data[det] = {}
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
-            # check if the inpainting is numerically stable
-            gate_len = dgatedelay * 2 / d.delta_t
-            if gate_len not in self._cond.keys() and self.check_condition_number:
-                lindex, rindex = d.get_gate_indices(gatestartdelay, dgatedelay)
-                conds[det] = self.condition_number(invpsd, lindex, rindex)
             try:
                 dtilde = cache[gatestartdelay, dgatedelay]
             except KeyError:
@@ -385,9 +379,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 # save for next time
                 cache[gatestartdelay, dgatedelay] = dtilde
             out[det] = dtilde
-        # cache the condition numbers for this gate length
-        if gate_len not in self._cond.keys() and self.check_condition_number:
-            self._cond[gate_len] = conds
         return out
 
     def get_gate_times(self):
@@ -398,6 +389,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
         parameters; see ``get_gate_times_hmeco`` for details. Otherwise, the
         gate times will just be retrieved from the ``t_gate_start`` and
         ``t_gate_end`` parameters.
+        
+        If the user flagged ``check_condition_number``, also checks if
+        inpainting with the calculated gate times will be numerically
+        stable. See ``self.condition_number()`` for more info.
 
         Returns
         -------
@@ -424,6 +419,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
             self._gatetimes.clear()
             gatetimes = self._get_gate_times(gatestart, gateend, ra, dec)
             self._gatetimes[gatestart, gateend, ra, dec] = gatetimes
+        # check if the inpainting is numerically stable
+        if self.check_condition_number:
+            for det, d in self.td_data.items():
+                lindex, rindex = d.get_gate_indices(gatetimes[det][0],
+                                                    gatetimes[det][1]/2.)
+                self.condition_number(det, lindex, rindex)
         return gatetimes
 
     def _get_gate_times(self, gatestart, gateend, ra, dec):
@@ -496,15 +497,15 @@ class BaseGatedGaussian(BaseGaussianNoise):
             gatetimes[det] = (gatestartdelay, dgate)
         return gatetimes
     
-    def condition_number(self, invpsd, lindex, rindex):
+    def condition_number(self, det, lindex, rindex):
         """Calculate the condition number associated with the inverse
         covariance matrix used to gate and inpaint. Throws a warning if the
         condition number is greater than 1e16.
         
         Parameters
         ----------
-        invpsd : FrequencySeries
-            The inverse of the PSD.
+        det : str
+            The detector described by the inverse PSD.
         lindex : int
             The start index of the gate.
         rindex : int
@@ -516,13 +517,26 @@ class BaseGatedGaussian(BaseGaussianNoise):
             The condition number of the inverse covariance matrix constructed
             from the inverse PSD with the given gate length.
         """
-        # construct the matrix
-        tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
-        mat = scipy.linalg.toeplitz(tdfilter[:rindex-lindex])
-        rcond = numpy.linalg.cond(mat)
+        gate_idx_len = int(rindex - lindex)
+        if gate_idx_len not in self._cond.keys():
+            conds = {}
+        else:
+            conds = self._cond[gate_idx_len]
+        if det not in conds.keys():
+            # construct the matrix
+            invpsd = self._invpsds[det]
+            tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
+            mat = scipy.linalg.toeplitz(tdfilter[:rindex-lindex])
+            rcond = numpy.linalg.cond(mat)
+            # cache the value
+            conds[det] = rcond
+            self._cond[gate_idx_len] = conds
+        else:
+            # pull from cache
+            rcond = self._cond[gate_idx_len][det]
         if rcond >= 1e16:
             warnings.warn(f'Condition number of inverse covariance matrix is '
-                          f'{rcond}; inpainting may be numerically unstable')
+                      f'{rcond}; inpainting may be numerically unstable')
         return rcond
 
     def _lognl(self):
@@ -570,8 +584,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """Wrapper around :py:func:`data_utils.fd_data_from_strain_dict`.
 
         Ensures that if the PSD is estimated from data, the inverse spectrum
-        truncation uses a Hann window, and that the low frequency cutoff is
-        zero.
+        truncation uses a Hann window. Sets the low frequency cutoff for the
+        inverse PSD to half the likelihood cutoff if not specified by the user.
         """
         if opts.psd_inverse_length and opts.invpsd_trunc_method is None:
             # make sure invpsd truncation is set to hanning
@@ -657,12 +671,11 @@ class GatedGaussianNoise(BaseGatedGaussian):
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, check_condition_number=False, **kwargs):
+                 static_params=None, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
-            check_condition_number=check_condition_number,
             static_params=static_params, **kwargs)
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
@@ -810,14 +823,13 @@ class GatedGaussianMargPol(BaseGatedGaussian):
     name = 'gated_gaussian_margpol'
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
-                 high_frequency_cutoff=None, normalize=False,
-                 static_params=None, check_condition_number=False,
+                 high_frequency_cutoff=None, normalize=False, 
+                 static_params=None,
                  polarization_samples=1000, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
-            check_condition_number=check_condition_number,
             static_params=static_params, **kwargs)
         # the polarization parameters
         self.polarization_samples = polarization_samples
@@ -1056,15 +1068,13 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, 
-                 check_condition_number=False,
+                 static_params=None,
                  phase_samples=500000, phase_names=None,
                  ref_phase=None, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
-            check_condition_number=check_condition_number,
             static_params=static_params, **kwargs)
         self.det_names = list(self.data.keys())
         self.dets = {}
