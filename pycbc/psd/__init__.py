@@ -138,7 +138,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         try:
             fill_value = opt.invpsd_trunc_low_freq_fill_value
         except AttributeError:
-            fill_value = 0
+            fill_value = 0.
         psd = inverse_spectrum_truncation(psd, 
             int(opt.psd_inverse_length * sample_rate),
             which_spectrum=which_spectrum,

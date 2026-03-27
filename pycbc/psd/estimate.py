@@ -251,7 +251,8 @@ def inverse_spectrum_truncation(psd, max_filter_len, which_spectrum='invasd',
     if low_frequency_cutoff is not None and \
             (low_frequency_cutoff < 0. or
              low_frequency_cutoff > psd.sample_frequencies[-1]):
-        raise ValueError('low_frequency_cutoff must be within the bandwidth of the PSD')
+        raise ValueError('low_frequency_cutoff must be within the bandwidth of '
+                         'the PSD')
 
     N = (len(psd)-1)*2
 
@@ -266,7 +267,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, which_spectrum='invasd',
     if low_frequency_fill_value != 0.:
         if low_frequency_fill_value == 'fmin':
             low_frequency_fill_value = 1./psd[kmin]
-        inv_spectrum[:kmin] = low_frequency_fill_value
+        inv_spectrum[:kmin] = float(low_frequency_fill_value)
 
     inv_spectrum[kmin:N//2] = (1.0 / psd[kmin:N//2])
 
