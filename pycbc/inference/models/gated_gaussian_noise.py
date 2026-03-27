@@ -31,6 +31,7 @@ from pycbc import types
 from pycbc.waveform.utils import time_from_frequencyseries
 from pycbc.waveform import generator
 from pycbc.filter import highpass
+from pycbc.strain.gate import invert_covariance
 from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator,
                              catch_waveform_error)
 from .base_data import BaseDataModel
@@ -45,8 +46,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
     """
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, highpass_waveforms=False,
-                 **kwargs):
+                 static_params=None, highpass_waveforms=False, **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
         # cache the overwhitened data
@@ -59,6 +59,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._lognorm = {}
         self._gatetimes = {}
         self._det_lognls = {}
+        # cache inpainting options
+        self.paint_method = kwargs.get('paint-method', 'toeplitz')
+        self._cov_matrices = {}
         # cache samples and linear regression for determinant extrapolation
         self._cov_samples = {}
         self._cov_regressions = {}
@@ -300,6 +303,33 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 else:
                     raise ValueError("whiten must be either 0, 1, or 2")
         return data
+    
+    def invert_covariance(self, det):
+        """Get the uninverted covariance matrix for the model's inverse PSDs.
+        Once the inverse matrix is calculated for a given gate time in this
+        detector, store to cache; future calls of this function will pull from
+        that cache instead.
+        """
+        # don't bother with covariance matrix if we're using toeplitz solver
+        if self.paint_method == 'toeplitz':
+            return None
+        # check if there are cache results for this gate length
+        lindex, rindex = self.gate_indices(det)
+        try:
+            cov_matrices = self._cov_matrices[int(rindex-lindex)]
+        except KeyError:
+            cov_matrices = {}
+        # check if this det has a precalculated matrix for this gate length
+        try:
+            invmat = cov_matrices[det]
+        except KeyError:
+            invpsd = self._invpsds[det]
+            # construct and invert covariance matrix
+            invmat = invert_covariance(invpsd, lindex, rindex)
+            cov_matrices[det] = invmat
+            # cache results
+            self._cov_matrices[int(rindex-lindex)] = cov_matrices
+        return invmat
 
     @abstractmethod
     def get_waveforms(self):
@@ -363,9 +393,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
             except KeyError:
                 # doesn't exist yet, or the gate times changed
                 cache.clear()
+                invmat = self.invert_covariance(det)
                 d = d.gate(gatestartdelay + dgatedelay/2,
                            window=dgatedelay/2, copy=True,
-                           invpsd=invpsd, method='paint')
+                           invpsd=invpsd, method='paint',
+                           paint_method=self.paint_method,
+                           paint_invmat=invmat)
                 dtilde = d.to_frequencyseries()
                 # save for next time
                 cache[gatestartdelay, dgatedelay] = dtilde
@@ -496,9 +529,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
             slc = slice(self._kmin[det], self._kmax[det])
             # gate the data
             data = self.td_data[det]
+            invmat = self.invert_covariance(det)
             gated_dt = data.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
-                                 invpsd=invpsd, method='paint')
+                                 invpsd=invpsd, method='paint',
+                                 paint_method=self.paint_method,
+                                 paint_invmat=invmat)
             # convert to the frequency series
             gated_d = gated_dt.to_frequencyseries()
             # overwhiten
@@ -662,9 +698,12 @@ class GatedGaussianNoise(BaseGatedGaussian):
             ht = h.to_timeseries()
             res = data - ht
             rtilde = res.to_frequencyseries()
+            invmat = self.invert_covariance(det)
             gated_res = res.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
-                                 invpsd=invpsd, method='paint')
+                                 invpsd=invpsd, method='paint',
+                                 paint_method=self.paint_method,
+                                 paint_invmat=invmat)
             gated_rtilde = gated_res.to_frequencyseries()
             # overwhiten
             gated_rtilde *= invpsd
@@ -741,9 +780,12 @@ class GatedGaussianNoise(BaseGatedGaussian):
             invpsd = self._invpsds[det]
             gate_times = self.get_gate_times()
             gatestartdelay, dgatedelay = gate_times[det]
+            invmat = self.invert_covariance(det)
             ht = ht.gate(gatestartdelay + dgatedelay/2,
-                            window=dgatedelay/2, copy=False,
-                            invpsd=invpsd, method='paint')
+                         window=dgatedelay/2, copy=False,
+                         invpsd=invpsd, method='paint',
+                         paint_method=self.paint_method,
+                         paint_invmat=invmat)
             h = ht.to_frequencyseries()
             out[det] = h
         return out
@@ -814,9 +856,12 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             pols = []
             for h in wfs[det]:
                 ht = h.to_timeseries()
+                invmat = self.invert_covariance(det)
                 ht = ht.gate(gatestartdelay + dgatedelay/2,
-                            window=dgatedelay/2, copy=False,
-                            invpsd=invpsd, method='paint')
+                             window=dgatedelay/2, copy=False,
+                             invpsd=invpsd, method='paint',
+                             paint_method=self.paint_method,
+                             paint_invmat=invmat)
                 h = ht.to_frequencyseries()
                 pols.append(h)
             out[det] = tuple(pols)
@@ -1080,12 +1125,17 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             invpsd = self._invpsds[det]
             gate_times = self.get_gate_times()
             gatestartdelay, dgatedelay = gate_times[det]
+            invmat = self.invert_covariance(det)
             hct = hct.gate(gatestartdelay + dgatedelay/2,
                            window=dgatedelay/2, copy=False,
-                           invpsd=invpsd, method='paint')
+                           invpsd=invpsd, method='paint',
+                           paint_method=self.paint_method,
+                           paint_invmat=invmat)
             hst = hst.gate(gatestartdelay + dgatedelay/2,
                            window=dgatedelay/2, copy=False,
-                           invpsd=invpsd, method='paint')
+                           invpsd=invpsd, method='paint',
+                           paint_method=self.paint_method,
+                           paint_invmat=invmat)
             hc = hct.to_frequencyseries()
             hs = hst.to_frequencyseries()
             out[det] = (hc, hs)
