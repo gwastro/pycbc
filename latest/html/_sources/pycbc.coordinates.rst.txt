@@ -1,0 +1,29 @@
+pycbc.coordinates package
+=========================
+
+Submodules
+----------
+
+pycbc.coordinates.base module
+-----------------------------
+
+.. automodule:: pycbc.coordinates.base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.coordinates.space module
+------------------------------
+
+.. automodule:: pycbc.coordinates.space
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.coordinates
+   :members:
+   :undoc-members:
+   :show-inheritance:
