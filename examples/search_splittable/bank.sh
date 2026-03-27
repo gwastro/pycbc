@@ -16,7 +16,7 @@ pycbc_brute_bank \
 --tau0-crawl 5 \
 --tau0-start 0 \
 --tau0-end 15 \
---input-config $LDIR/bank.ini \
+--input-config $LDIR/../search/bank.ini \
 --psd-model aLIGOZeroDetLowPower \
 --seed 1 \
 --low-frequency-cutoff 20.0
