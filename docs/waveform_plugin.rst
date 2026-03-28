@@ -62,7 +62,7 @@ parameter passed to setup.py.
         long_description = open('descr.rst').read(),
         author = 'The PyCBC team',
         author_email = 'alex.nitz@gmail.org',
-        url = 'http://www.pycbc.org/',
+        url = 'https://www.pycbc.org/',
         download_url = 'https://github.com/gwastro/revchirp/tarball/v%s' % VERSION,
         keywords = ['pycbc', 'signal processing', 'gravitational waves'],
         install_requires = ['pycbc'],
