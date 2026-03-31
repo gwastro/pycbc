@@ -65,7 +65,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
                                                       False))
         self._cond = {}
         # cache inpainting options
-        self.paint_method = kwargs.get('paint-method', 'toeplitz')
+        paint_method = kwargs.get('paint_method')
+        if paint_method is None:
+            paint_method = kwargs.get('paint-method', 'toeplitz')
+        self.paint_method = paint_method
         self._cov_matrices = {}
         # cache samples and linear regression for determinant extrapolation
         self._cov_samples = {}
@@ -132,6 +135,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._invpsds.clear()
         self._invasds.clear()
         self._gated_data.clear()
+        self._cov_matrices.clear()
+        self._cov_samples.clear()
+        self._cov_regressions.clear()
         # store the psds
         for det, d in self._data.items():
             if psds is None:
