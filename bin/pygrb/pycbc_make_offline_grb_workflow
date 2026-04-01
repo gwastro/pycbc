@@ -408,7 +408,7 @@ if wflow.cp.has_section("workflow-injections"):
     all_files.extend(inj_files)
     injs = inj_files
 
-     # Here we compute the optimal SNR for the injections before splitting them
+    # Here we compute the optimal SNR for the injections before splitting them
     if wflow.cp.has_section("optimal_snr") and if wflow.cp.has_section("calculate_psd"):
         snr_dir = os.path.join(inj_dir, "optimal_snr")
         os.makedirs(snr_dir, exist_ok = True)
@@ -427,6 +427,11 @@ if wflow.cp.has_section("workflow-injections"):
         all_files.extend(optimal_snr_files)
         injs = optimal_snr_files
         inj_files = optimal_snr_files
+    elif wflow.cp.has_section("optimal_snr") and not wflow.cp.has_section("calculate_psd"):
+        msg = "Config Error: The [optimal_snr] section is present, but [calculate_psd] is missing. "
+        msg += "Optimal SNR calculation requires PSD files."
+        logging.error(msg)
+        sys.exit()
 
     # Either split template bank for injections jobs or use same split banks
     # as for standard matched filter jobs
