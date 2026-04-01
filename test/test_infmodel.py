@@ -97,6 +97,14 @@ class TestModels(unittest.TestCase):
         cls.variable2 = cls.variable + ['polarization']
         cls.prior2 = JointDistribution(cls.variable2, inclination_prior,
                                        distance_prior, pol)
+        
+        # set up for gated model tests
+        cls.static3 = cls.static.copy()
+        cls.static3['t_gate_start'] = cls.static3['tc']
+        cls.static3['t_gate_end'] = cls.static3['tc'] + 0.2
+        cls.variable3 = cls.variable
+        cls.prior3 = JointDistribution(cls.variable3, inclination_prior,
+                                       distance_prior)
 
         ###### Expected answers
         # Answer taken from marginalized gaussian model
@@ -106,6 +114,9 @@ class TestModels(unittest.TestCase):
         # answer taken from brute marginize pol + phase
         cls.a2 = 542.581
         cls.pol_samples = 200
+        
+        # answer with gate applied, no normalization
+        cls.a3 = -1245.8677296410897
 
     def test_base_phase_marg(self):
         model = models.MarginalizedPhaseGaussianNoise(
@@ -153,6 +164,28 @@ class TestModels(unittest.TestCase):
                         )
         model.update(**self.q1)
         self.assertAlmostEqual(self.a2, model.loglr, delta=0.04)
+    
+    def test_gated_gaussian_psd_opts(self):
+        model_toeplitz = models.GatedGaussianNoise(
+                                 self.variable3, copy.deepcopy(self.data),
+                                 low_frequency_cutoff=self.flow,
+                                 psds=self.psds,
+                                 static_params=self.static3,
+                                 prior=self.prior3,)
+        model_matmul = models.GatedGaussianNoise(
+                                 self.variable3, copy.deepcopy(self.data),
+                                 low_frequency_cutoff=self.flow,
+                                 psds=self.psds,
+                                 static_params=self.static3,
+                                 prior=self.prior3, paint_method='matmul',)
+        model_toeplitz.update(**self.q1)
+        model_matmul.update(**self.q1)
+        # check likelihoods match calculated
+        self.assertAlmostEqual(self.a3, model_toeplitz.loglr, delta=0.01)
+        self.assertAlmostEqual(self.a3, model_matmul.loglr, delta=0.01)
+        # check paint method is being set correctly
+        self.assertEqual('toeplitz', model_toeplitz.paint_method)
+        self.assertEqual('matmul', model_matmul.paint_method)
 
     def test_brute_pol_phase_marg(self):
         # Uses the old polarization syntax untill we decide to remove it.
