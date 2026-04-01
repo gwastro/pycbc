@@ -767,26 +767,17 @@ with ctx:
                     # geocenter due to sky location is applied, i.e., require
                     # them to be between 0 and len(snr_dict[ifo]).
                     # idx[ifo] - time_delay_idx[slide][position_index][ifo]
-<<<<<<< HEAD
-                    # (which applies the necessary time shift by operating on
-                    # indices) to be between 0 and len(snr_dict[ifo]).
-=======
                     # operates on indices to apply a time shift from detctor
                     # to geocenter. The trimming here is carried out on the
                     # zerolag indices, i.e., setting slide to 0, to ensure that
                     # the starting indices are legitimate. Later, when looking
                     # for coincidences, one must wrap around the timeslid
                     # idx[ifo] - time_delay_idx[slide][position_index][ifo].
->>>>>>> 6dfc2bf11 (Check bounds on zerolag indices; then slide, wraparound, and search for coincidences)
                     idx_dict = {
                         ifo: idx[ifo][
                             np.logical_and(
                                 idx[ifo]
-<<<<<<< HEAD
-                                > time_delay_idx[slide][position_index][ifo],
-=======
                                 > time_delay_idx[0][position_index][ifo],
->>>>>>> 6dfc2bf11 (Check bounds on zerolag indices; then slide, wraparound, and search for coincidences)
                                 idx[ifo]
                                 < time_delay_idx[0][position_index][ifo]
                                 + wraparound_dict[ifo],
