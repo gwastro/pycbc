@@ -409,7 +409,7 @@ if wflow.cp.has_section("workflow-injections"):
     injs = inj_files
 
      # Here we compute the optimal SNR for the injections before splitting them
-    if wflow.cp.has_section("optimal_snr"):
+    if wflow.cp.has_section("optimal_snr") and if wflow.cp.has_section("calculate_psd"):
         snr_dir = os.path.join(inj_dir, "optimal_snr")
         os.makedirs(snr_dir, exist_ok = True)
         
