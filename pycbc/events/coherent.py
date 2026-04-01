@@ -32,7 +32,7 @@ from .eventmgr_cython import get_coinc_indexes_cython_twodet_twocoinc
 logger = logging.getLogger('pycbc.events.coherent')
 
 
-def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
+def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos, wraparound_dict):
     """Return the indexes corresponding to coincident triggers. If only one
     detector is available in the network, the list of its unique indexes is
     simply returned.
@@ -48,6 +48,8 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
     min_nifos: int
         The minimum number of detectors needed to be above threshold
         for a coincidence to be produced
+    wraparound_dict: dict
+        The length at which indices (at the detector) must be wrapped around
 
     Returns
     -------
@@ -71,6 +73,8 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
             idxarr2,
             time_delay_idx[ifos[0]],
             time_delay_idx[ifos[1]],
+            wraparound_dict[ifos[0]],
+            wraparound_dict[ifos[1]],
             outarr
         )
         return outarr[:num_idxs]
@@ -78,11 +82,15 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
     for ifo in idx_dict.keys():
         # Create list of indexes above single detector threshold, in geocent
         # time (-time_delay_idx[ifo] applies the time delay for the specific
-        # detector). This can be searched later for triggers appearing in
-        # multiple detectors.
+        # detector). The periodic boundary condition of time slides is
+        # enforced by wrapping around the index list of each detector. This
+        # collective list will later be searched for repeating index values as
+        # these represent triggers appearing in multiple detectors.
+        # SHOULD IT BE idx_dict[ifo] % wraparound_dict[ifo] THEN ENFORCING
+        # 0 <= WRAPPED INDEX - time_delay_idx[ifo] < wraparound_dict[ifo]?
         if len(idx_dict[ifo]) != 0:
             coinc_list = np.hstack(
-                [coinc_list, idx_dict[ifo] - time_delay_idx[ifo]]
+                [coinc_list, (idx_dict[ifo] - time_delay_idx[ifo]) % wraparound_dict[ifo]]
             )
     # Search through coinc_idx for repeated indexes. These must have been loud
     # in at least min_nifos detectors if the analysis uses more than 1
