@@ -167,19 +167,19 @@ class TestModels(unittest.TestCase):
     
     def test_gated_gaussian_psd_opts(self):
         assert True
-        if False:
-            model_toeplitz = models.GatedGaussianNoise(
+        model_toeplitz = models.GatedGaussianNoise(
                                  self.variable3, copy.deepcopy(self.data),
                                  low_frequency_cutoff=self.flow,
                                  psds=self.psds,
                                  static_params=self.static3,
                                  prior=self.prior3,)
-            model_matmul = models.GatedGaussianNoise(
+        model_matmul = models.GatedGaussianNoise(
                                  self.variable3, copy.deepcopy(self.data),
                                  low_frequency_cutoff=self.flow,
                                  psds=self.psds,
                                  static_params=self.static3,
                                  prior=self.prior3, paint_method='matmul',)
+        if False:
             model_toeplitz.update(**self.q1)
             model_matmul.update(**self.q1)
             # check likelihoods match calculated
