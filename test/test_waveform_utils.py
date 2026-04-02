@@ -118,7 +118,7 @@ class TestRedshiftWaveform(unittest.TestCase):
     def setUp(self):
         self.srcm1 = 30.0
         self.srcm2 = 20.0
-        self.distance = 4000.0
+        self.distance = 5672.12 #4000.0
         self.z = cosmology.redshift(self.distance)
 
         # Detector-frame settings.
@@ -188,6 +188,15 @@ class TestRedshiftWaveform(unittest.TestCase):
 
         redshifted_hp = redshifted_hptilde.to_timeseries()
         det_hp = det_hptilde.to_timeseries()
+        # Small differences in the epochs may arise due to floating point
+        # errors. That may cause a failure when we compute the relative L2
+        # error, so we'll check that the epochs are close enough (here, we're
+        # allowing for up to 0.1% of a delta_t)
+        self.assertTrue(numpy.isclose(redshifted_hp._epoch, det_hp._epoch,
+                                      rtol=0., atol=0.001/self.sample_rate))
+        # if passed, set the redshifted_hp epoch to be the same as the det_hp
+        # epoch, so that we can compare the waveforms directly
+        redshifted_hp._epoch = det_hp._epoch
         relerr = self._relative_l2_error(redshifted_hp, det_hp)
         self.assertLess(relerr, 1e-3)
 
