@@ -181,12 +181,12 @@ class TestModels(unittest.TestCase):
                                  prior=self.prior3, paint_method='matmul',)
         model_toeplitz.update(**self.q1)
         model_matmul.update(**self.q1)
+        # check likelihoods match calculated
+        self.assertAlmostEqual(self.a3, model_toeplitz.loglr, delta=0.01)
+        # check paint method is being set correctly
+        self.assertEqual('toeplitz', model_toeplitz.paint_method)
         if False:
-            # check likelihoods match calculated
-            self.assertAlmostEqual(self.a3, model_toeplitz.loglr, delta=0.01)
             self.assertAlmostEqual(self.a3, model_matmul.loglr, delta=0.01)
-            # check paint method is being set correctly
-            self.assertEqual('toeplitz', model_toeplitz.paint_method)
             self.assertEqual('matmul', model_matmul.paint_method)
         
     def test_brute_pol_phase_marg(self):
