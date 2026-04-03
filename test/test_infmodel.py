@@ -166,7 +166,6 @@ class TestModels(unittest.TestCase):
         self.assertAlmostEqual(self.a2, model.loglr, delta=0.04)
     
     def test_gated_gaussian_psd_opts(self):
-        assert True
         model_toeplitz = models.GatedGaussianNoise(
                                  self.variable3, copy.deepcopy(self.data),
                                  low_frequency_cutoff=self.flow,
@@ -183,10 +182,10 @@ class TestModels(unittest.TestCase):
         model_matmul.update(**self.q1)
         # check likelihoods match calculated
         self.assertAlmostEqual(self.a3, model_toeplitz.loglr, delta=0.01)
+        self.assertAlmostEqual(self.a3, model_matmul.loglr, delta=0.01)
         # check paint method is being set correctly
         self.assertEqual('toeplitz', model_toeplitz.paint_method)
         if False:
-            self.assertAlmostEqual(self.a3, model_matmul.loglr, delta=0.01)
             self.assertEqual('matmul', model_matmul.paint_method)
         
     def test_brute_pol_phase_marg(self):
