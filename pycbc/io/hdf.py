@@ -251,7 +251,7 @@ class DictArray(object):
         data: dict, optional
             Dictionary of equal length numpy arrays
         files: list of filenames, optional
-            List of hdf5 file filenames. Incompatibile with the `data` option.
+            List of hdf5 file filenames. Incompatible with the `data` option.
         groups: dict or list of strings. Required by the files option.
             If dict: Mapping from group name to desired dtype (e.g. 'stat': np.float64). 
             If list: List of keys into each file. 
