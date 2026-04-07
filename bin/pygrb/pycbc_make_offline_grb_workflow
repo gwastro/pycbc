@@ -410,28 +410,26 @@ if wflow.cp.has_section("workflow-injections"):
 
     # Here we compute the optimal SNR for the injections before splitting them
     if wflow.cp.has_section("optimal_snr") and if wflow.cp.has_section("calculate_psd"):
-        snr_dir = os.path.join(inj_dir, "optimal_snr")
-        os.makedirs(snr_dir, exist_ok = True)
+        if not wflow.cp.has_section('calculate_psd'):
+            raise ValueError('Optimal SNR calculation requires PSD estimation')
+        else:
+            snr_dir = os.path.join(inj_dir, "optimal_snr")
+            os.makedirs(snr_dir, exist_ok = True)
         
-        optimal_snr_files = _workflow.FileList([])
-        for inj, inj_tag in zip(injs, inj_tags):
-            snr_file = compute_inj_optimal_snr(
-                wflow,
-                inj,
-                tv_psd_files,
-                snr_dir,
-                tags=[inj_tag]
-            )
-            optimal_snr_files.append(snr_file)
-            logging.info("Optimal SNR workflow node created for injection tag %s", inj_tag)
-        all_files.extend(optimal_snr_files)
-        injs = optimal_snr_files
-        inj_files = optimal_snr_files
-    elif wflow.cp.has_section("optimal_snr") and not wflow.cp.has_section("calculate_psd"):
-        msg = "Config Error: The [optimal_snr] section is present, but [calculate_psd] is missing. "
-        msg += "Optimal SNR calculation requires PSD files."
-        logging.error(msg)
-        sys.exit()
+            optimal_snr_files = _workflow.FileList([])
+            for inj, inj_tag in zip(injs, inj_tags):
+                snr_file = compute_inj_optimal_snr(
+                    wflow,
+                    inj,
+                    tv_psd_files,
+                    snr_dir,
+                    tags=[inj_tag]
+                )
+                optimal_snr_files.append(snr_file)
+                logging.info("Optimal SNR workflow node created for injection tag %s", inj_tag)
+            all_files.extend(optimal_snr_files)
+            injs = optimal_snr_files
+            inj_files = optimal_snr_files
 
     # Either split template bank for injections jobs or use same split banks
     # as for standard matched filter jobs
