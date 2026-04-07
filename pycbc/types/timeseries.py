@@ -1235,7 +1235,7 @@ class TimeSeries(Array):
             plot2 = pyplot.plot(self.sample_times, self.imag(), **kwds)
             return plot1, plot2
 
-    def bool_to_segmentlist(self, epoch=None):
+    def bool_to_segmentlist(self):
         """
         Convert a boolean pycbc TimeSeries (this must be bool or integer) to
         an igwn_segments.segmentlist of (start, end) in GPS seconds.
@@ -1251,7 +1251,7 @@ class TimeSeries(Array):
             )
 
         segs = segmentlist([])
-        
+
         if arr.size == 0:
             return segs.coalesce()
 
