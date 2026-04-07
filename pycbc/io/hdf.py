@@ -252,9 +252,13 @@ class DictArray(object):
             Dictionary of equal length numpy arrays
         files: list of filenames, optional
             List of hdf5 file filenames. Incompatibile with the `data` option.
-        groups: list of strings
-            List of keys into each file. Required by the files option.
+        groups: dict or list of strings. Required by the files option.
+            If dict: Mapping from group name to desired dtype (e.g. 'stat': np.float64). 
+            If list: List of keys into each file. 
         """
+        if groups is not None and not isinstance(groups, dict):
+            groups = {g: None for g in groups}
+
         # Check that input fits with how the DictArray is set up
         if data and files:
             raise RuntimeError('DictArray can only have data or files as '
@@ -282,7 +286,17 @@ class DictArray(object):
 
             for k in self.data:
                 if not len(self.data[k]) == 0:
-                    self.data[k] = np.concatenate(self.data[k])
+                    arr = np.concatenate(self.data[k])
+                    target_dtype = self.groups[k]
+                    if target_dtype is not None:
+                        if arr.dtype != target_dtype:
+                            # For float to int conversion, check for NaN
+                            if np.issubdtype(arr.dtype, np.floating) and np.any(np.isnan(arr)):
+                                raise ValueError(
+                                    f"Cannot convert field '{k}' to {target_dtype} because it contains NaN"
+                                )
+                            arr = arr.astype(target_dtype)
+                    self.data[k] = arr
 
         for k in self.data:
             setattr(self, k, self.data[k])
@@ -339,9 +353,18 @@ class DictArray(object):
 
 class StatmapData(DictArray):
     def __init__(self, data=None, seg=None, attrs=None, files=None,
-                 groups=('stat', 'time1', 'time2', 'trigger_id1',
-                         'trigger_id2', 'template_id', 'decimation_factor',
-                         'timeslide_id')):
+                 groups=None):
+        if groups is None:
+            groups = {
+                'stat': np.float64,
+                'time1': np.float64,
+                'time2': np.float64,
+                'trigger_id1': np.int64,
+                'trigger_id2': np.int64,
+                'template_id': np.int64,
+                'decimation_factor': np.float64,
+                'timeslide_id': np.int64,
+            }
         super(StatmapData, self).__init__(data=data, files=files,
                                           groups=groups)
 
@@ -354,7 +377,8 @@ class StatmapData(DictArray):
             self.attrs = f.attrs
 
     def _return(self, data):
-        return self.__class__(data=data, attrs=self.attrs, seg=self.seg)
+        return self.__class__(data=data, attrs=self.attrs, seg=self.seg,
+                              groups=self.groups)
 
     def cluster(self, window):
         """ Cluster the dict array, assuming it has the relevant Coinc colums,
@@ -380,10 +404,13 @@ class StatmapData(DictArray):
 class MultiifoStatmapData(StatmapData):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None, ifos=None):
-        groups = ['decimation_factor', 'stat', 'template_id', 'timeslide_id']
+        groups = {'decimation_factor': np.float64,
+                  'stat': np.float64,
+                  'template_id': np.int64,
+                  'timeslide_id': np.int64}
         for ifo in ifos:
-            groups += ['%s/time' % ifo]
-            groups += ['%s/trigger_id' % ifo]
+            groups[f'{ifo}/time'] = np.float64
+            groups[f'{ifo}/trigger_id'] = np.int64
 
         super(MultiifoStatmapData, self).__init__(data=data, files=files,
                                                   groups=groups, attrs=attrs,
