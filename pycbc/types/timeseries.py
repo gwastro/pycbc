@@ -22,6 +22,7 @@ import h5py
 
 import numpy as _numpy
 from scipy.io.wavfile import write as write_wav
+from igwn_segments import segmentlist, segment
 
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.utils import determine_epoch
@@ -1233,6 +1234,48 @@ class TimeSeries(Array):
             plot1 = pyplot.plot(self.sample_times, self.real(), **kwds)
             plot2 = pyplot.plot(self.sample_times, self.imag(), **kwds)
             return plot1, plot2
+
+    def bool_to_segmentlist(self):
+        """
+        Convert a boolean pycbc TimeSeries (this must be bool or integer) to
+        an igwn_segments.segmentlist of (start, end) in GPS seconds.
+        """
+
+        # Is the data truthlike?
+        # bools or numbers are OK, but we require finite values
+        arr = self.numpy()
+        if arr.dtype.kind not in ['b', 'i']:
+            raise TypeError(
+                'To use bool_to_segmentlist, we require that the timeseries '
+                'is boolean or integer'
+            )
+
+        segs = segmentlist([])
+
+        if arr.size == 0:
+            return segs.coalesce()
+
+        # Convert to bool
+        b = arr.astype(bool)
+
+        # Pad with a leading/trailing False to detect edges at boundaries.
+        b = _numpy.concatenate(([False], b, [False]))
+
+        # Work out the transitions between true and false.
+        # starts = False to True transitions
+        starts = _numpy.flatnonzero((~b[:-1]) & b[1:])
+        # ends = True to False Transitions
+        ends = _numpy.flatnonzero(b[:-1] & (~b[1:])) 
+
+        # Convert indices to GPS times
+        starts_time = self.start_time + starts * self.delta_t
+        ends_time = self.start_time + ends * self.delta_t
+
+        # Convert to segments
+        for s, e in zip(starts_time, ends_time):
+            segs.append(segment(s, e))
+
+        return segs.coalesce()
 
 def load_timeseries(path, group=None):
     """Load a TimeSeries from an HDF5, ASCII or Numpy file. The file type is
