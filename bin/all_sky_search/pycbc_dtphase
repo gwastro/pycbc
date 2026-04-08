@@ -234,12 +234,12 @@ for ifo0 in args.ifos:
         bind = []
         keep = None
         for ifo1 in other_ifos:
-            dt = data[ifo0]["t"] - data[ifo1]["t"]
-            dp = (data[ifo0]["p"] - data[ifo1]["p"]) % (2.0 * np.pi)
-            sr = data[ifo1]["s"] / data[ifo0]["s"]
-            dtbin = (dt / twidth).astype(int)
-            dpbin = (dp / pwidth).astype(int)
-            srbin = (sr / swidth).astype(int)
+            dt = (data[ifo0]['t'] - data[ifo1]['t'])
+            dp = (data[ifo0]['p'] - data[ifo1]['p']) % (2.0 * np.pi)
+            sr = (data[ifo1]['s'] / data[ifo0]['s'])
+            dtbin = np.rint(dt / twidth).astype(int)
+            dpbin = np.rint(dp / pwidth).astype(int)
+            srbin = np.rint(sr / swidth).astype(int)
 
             # We'll only store a limited range of ratios
             if keep is None:
