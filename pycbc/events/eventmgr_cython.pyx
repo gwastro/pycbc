@@ -314,7 +314,7 @@ ctypedef fused numeric_type:
 
 @boundscheck(False)
 @wraparound(False)
-@cdivision(True)
+@cdivision(False) # Needed to emulate Python behaviour of % operator
 def get_coinc_indexes_cython_twodet_twocoinc(
     numeric_type [::1] idxarr1,
     numeric_type [::1] idxarr2,
@@ -332,17 +332,15 @@ def get_coinc_indexes_cython_twodet_twocoinc(
     cdef numeric_type cpos1
     cdef numeric_type cpos2
 
-    while arr1pos < arr1_size and arr2pos < arr2_size:
+    while arr1pos < arr1_size:
         cpos1 = (idxarr1[arr1pos] - offset1) % wraparound1
-        cpos2 = (idxarr2[arr2pos] - offset2) % wraparound2
-        if cpos1 == cpos2:
-            outputs[outpos] = cpos1
-            outpos += 1
-            arr1pos += 1
+        while arr2pos < arr2_size:
+            cpos2 = (idxarr2[arr2pos] - offset2) % wraparound2
+            if cpos1 == cpos2:
+                outputs[outpos] = cpos1
+                outpos += 1
             arr2pos += 1
-        elif cpos1 < cpos2:
-            arr1pos += 1
-        else:
-            arr2pos += 1
+        arr2pos = 0
+        arr1pos += 1
     return outpos
 
