@@ -685,8 +685,8 @@ def get_fd_waveform_from_td(**params):
             full_duration = get_waveform_filter_length_in_time(**nparams)
             nparams['f_lower'] -= 1
 
-    if 'f_fref' not in nparams:
-        nparams['f_ref'] = params['f_lower']
+    if 'f_ref' not in nparams and 'f_lower' in nparams:
+        nparams['f_ref'] = nparams['f_lower']
 
     # We'll try to do the right thing and figure out what the frequency
     # end is. Otherwise, we'll just assume 2048 Hz.
