@@ -714,7 +714,7 @@ def get_fd_waveform_from_td(**params):
 
     if not 'taper_method' in params:
         # apply the tapering, we will use a safety factor here to allow for
-        # somewhat innacurate duration difference estimation.
+        # somewhat inaccurate duration difference estimation.
         window = (full_duration - duration) * 0.8
         hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
         hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
