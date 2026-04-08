@@ -638,7 +638,7 @@ with ctx:
     # Loop over templates
     for t_num, template in enumerate(bank):
         # Loop over segments
-        for s_num in range(len(segments[args.instruments[0]]))
+        for s_num in range(len(segments[args.instruments[0]])):
             stilde = {ifo: segments[ifo][s_num] for ifo in args.instruments}
             # Checks the 'inj_filter_rejector' options to determine whether
             # to filter this template/segment if injections are present
