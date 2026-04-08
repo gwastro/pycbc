@@ -286,17 +286,10 @@ class DictArray(object):
 
             for k in self.data:
                 if not len(self.data[k]) == 0:
-                    arr = np.concatenate(self.data[k])
-                    target_dtype = self.groups[k]
-                    if target_dtype is not None:
-                        if arr.dtype != target_dtype:
-                            # For float to int conversion, check for NaN
-                            if np.issubdtype(arr.dtype, np.floating) and np.any(np.isnan(arr)):
-                                raise ValueError(
-                                    f"Cannot convert field '{k}' to {target_dtype} because it contains NaN"
-                                )
-                            arr = arr.astype(target_dtype)
-                    self.data[k] = arr
+                    self.data[k] = np.concatenate(self.data[k])
+                    if self.groups[k] is not None and self.data[k].dtype != self.groups[k]:
+                        raise ValueError(f"Data for group {k} has dtype {self.data[k].dtype} "
+                                         f"but target dtype is {self.groups[k]}")
 
         for k in self.data:
             setattr(self, k, self.data[k])
