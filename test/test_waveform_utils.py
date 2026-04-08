@@ -146,8 +146,12 @@ class TestRedshiftWaveform(unittest.TestCase):
         errors. That may cause a failure when we compute the relative L2
         error, so we'll check that the epochs are close enough.
         """
-        self.assertTrue(numpy.isclose(redshifted_hp._epoch, det_hp._epoch,
-                                      rtol=0., atol=err/self.sample_rate))
+        isclose = numpy.isclose(redshifted_hp._epoch, det_hp._epoch,
+                                      rtol=0., atol=err*det_hp.delta_t)
+        self.assertTrue(isclose,
+                        msg=f"Epochs differ by more than {err*det_hp.delta_t}:"
+                            f" |redshifted - detector epoch| = "
+                            f"{abs(redshifted_hp._epoch - det_hp._epoch)}")
 
     def test_td_redshift_matches_redshifted_masses(self):
         """Redshifting a source-frame TD waveform matches detector-frame TD."""
