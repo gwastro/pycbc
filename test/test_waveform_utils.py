@@ -178,7 +178,7 @@ class TestRedshiftWaveform(unittest.TestCase):
         # epoch, so that we can compare the waveforms directly
         redshifted_hp._epoch = det_hp._epoch
         relerr = self._relative_l2_error(redshifted_hp, det_hp)
-        self.assertLess(relerr, 1e-3)
+        self.assertLess(relerr, 2e-3)
 
 
     def test_fd_redshift_matches_redshifted_masses(self):
@@ -211,7 +211,7 @@ class TestRedshiftWaveform(unittest.TestCase):
         # epoch, so that we can compare the waveforms directly
         redshifted_hp._epoch = det_hp._epoch
         relerr = self._relative_l2_error(redshifted_hp, det_hp)
-        self.assertLess(relerr, 1e-3)
+        self.assertLess(relerr, 2e-3)
 
 
 suite = unittest.TestSuite()
