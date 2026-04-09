@@ -177,7 +177,7 @@ data = {"stat": stat_all,
         "timeslide_id": np.zeros_like(stat_all),
         "template_id": template_ids_all,
         "%s/time" % ifo : trigger_times_all,
-        "%s/trigger_id" % ifo: trigger_ids_all}
+        "%s/trigger_id" % ifo: np.array(trigger_ids_all, dtype=int)}
 
 logging.info("saving triggers")
 f = io.HFile(args.output_file, 'w')
