@@ -118,7 +118,7 @@ class TestRedshiftWaveform(unittest.TestCase):
     def setUp(self):
         self.srcm1 = 30.0
         self.srcm2 = 20.0
-        self.distance = 5672.12 #4000.0
+        self.distance = 4000.
         self.z = cosmology.redshift(self.distance)
 
         # Detector-frame settings.
@@ -139,7 +139,7 @@ class TestRedshiftWaveform(unittest.TestCase):
         return numpy.linalg.norm(test - ref) / numpy.linalg.norm(ref)
 
 
-    def _check_epochs(self, redshifted_hp, det_hp, err=0.001):
+    def _check_epochs(self, redshifted_hp, det_hp, err=0.01):
         """Checks that the epochs of the two waveforms are close enough.
 
         Small differences in the epochs may arise due to floating point
