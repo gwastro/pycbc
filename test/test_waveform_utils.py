@@ -146,12 +146,12 @@ class TestRedshiftWaveform(unittest.TestCase):
         errors. That may cause a failure when we compute the relative L2
         error, so we'll check that the epochs are close enough.
         """
-        isclose = numpy.isclose(redshifted_hp._epoch, det_hp._epoch,
+        isclose = numpy.isclose(redshifted_hp.start_time, det_hp.start_time,
                                       rtol=0., atol=err*det_hp.delta_t)
         self.assertTrue(isclose,
                         msg=f"Epochs differ by more than {err*det_hp.delta_t}:"
                             f" |redshifted - detector epoch| = "
-                            f"{abs(redshifted_hp._epoch - det_hp._epoch)}")
+                            f"{abs(redshifted_hp.start_time - det_hp.start_time)}")
 
     def test_td_redshift_matches_redshifted_masses(self):
         """Redshifting a source-frame TD waveform matches detector-frame TD."""
@@ -176,7 +176,7 @@ class TestRedshiftWaveform(unittest.TestCase):
         self._check_epochs(redshifted_hp, det_hp)
         # if passed, set the redshifted_hp epoch to be the same as the det_hp
         # epoch, so that we can compare the waveforms directly
-        redshifted_hp._epoch = det_hp._epoch
+        redshifted_hp.start_time = det_hp.start_time
         relerr = self._relative_l2_error(redshifted_hp, det_hp)
         self.assertLess(relerr, 2e-3)
 
@@ -209,7 +209,7 @@ class TestRedshiftWaveform(unittest.TestCase):
         self._check_epochs(redshifted_hp, det_hp)
         # if passed, set the redshifted_hp epoch to be the same as the det_hp
         # epoch, so that we can compare the waveforms directly
-        redshifted_hp._epoch = det_hp._epoch
+        redshifted_hp.start_time = det_hp.start_time
         relerr = self._relative_l2_error(redshifted_hp, det_hp)
         self.assertLess(relerr, 2e-3)
 
