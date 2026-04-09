@@ -2,7 +2,7 @@ import numpy as np
 cimport numpy as cnp
 import cython
 from cython import wraparound, boundscheck, cdivision
-from libc.math cimport M_PI, sqrt
+from libc.math cimport M_PI, sqrt, rint
 from libc.math cimport round as cround
 
 
@@ -75,9 +75,9 @@ def logsignalrateinternals_computepsignalbins(
         sdif[idx] = (s[ridx] * sense * sqrt(sigref[ridx])) / (sref[ridx] * senseref * sqrt(sig[ridx]))
 
     for idx in range(length):
-        tbin[idx] = <int>(tdif[idx] / twidth)
-        pbin[idx] = <int>(pdif[idx] / pwidth)
-        sbin[idx] = <int>(sdif[idx] / swidth)
+        tbin[idx] = <int>rint(tdif[idx] / twidth)
+        pbin[idx] = <int>rint(pdif[idx] / pwidth)
+        sbin[idx] = <int>rint(sdif[idx] / swidth)
 
 
 @boundscheck(False)
