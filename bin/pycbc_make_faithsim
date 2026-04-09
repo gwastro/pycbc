@@ -16,7 +16,7 @@ class BaseJob(CondorDAGJob, CondorJob):
         CondorDAGJob.__init__(self, "vanilla", executable)
 
         # These are all python jobs so need to pull in the env
-        self.add_condor_cmd('getenv', 'False')
+        self.add_condor_cmd('getenv', 'True')
         self.add_condor_cmd('+Allow_OGrid', 'True')
         log_base = os.path.join(
             log_dir, os.path.basename(executable) + '-$(cluster)-$(process)')

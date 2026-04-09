@@ -19,7 +19,7 @@ class BaseJob(CondorDAGJob, CondorJob):
         if gpu:
             CondorJob.__init__(self, "vanilla", executable, 2)
         # These are all python jobs so need to pull in the env
-        self.add_condor_cmd('getenv', 'False')
+        self.add_condor_cmd('getenv', 'True')
         log_base = os.path.join(
             log_dir, os.path.basename(executable) + '-$(cluster)-$(process)')
         self.set_stderr_file(log_base + '.err')
