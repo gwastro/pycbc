@@ -222,8 +222,6 @@ def add_osg_site(sitecat, cp):
                       value="0")
     site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid",
                       value="True")
-    site.add_profiles(Namespace.CONDOR, key="getenv",
-                      value="False")
     site.add_profiles(Namespace.CONDOR, key="ulog_execute_attrs",
                       value="GLIDEIN_Site")
     site.add_profiles(Namespace.CONDOR, key="My.InitializeModulesEnv",
