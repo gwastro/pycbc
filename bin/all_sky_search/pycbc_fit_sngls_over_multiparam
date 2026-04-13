@@ -241,6 +241,8 @@ kwarg_dict = {}
 for inputstr in smooth_kwargs:
     try:
         key, value = inputstr.split(':')
+        if key == 'total_trigs':
+            value = int(value)
         kwarg_dict[key] = value
     except ValueError:
         err_txt = "--smoothing-keywords must take input in the " \
