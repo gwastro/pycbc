@@ -78,7 +78,7 @@ def add_local_site(sitecat, cp, local_path, local_url):
     local.add_directories(local_dir)
 
     local.add_profiles(Namespace.PEGASUS, key="style", value="condor")
-    local.add_profiles(Namespace.CONDOR, key="getenv", value="True")
+    local.add_profiles(Namespace.CONDOR, key="getenv", value="False")
     sitecat.add_sites(local)
 
 
@@ -100,7 +100,7 @@ def add_condorpool_symlink_site(sitecat, cp):
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
-    site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
+    site.add_profiles(Namespace.CONDOR, key="getenv", value="False")
     site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites",
                       value='"nogrid"')
     site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN",
@@ -132,7 +132,7 @@ def add_condorpool_copy_site(sitecat, cp):
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
-    site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
+    site.add_profiles(Namespace.CONDOR, key="getenv", value="False")
     site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites",
                       value='"nogrid"')
     site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN",
@@ -173,7 +173,7 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
-    site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
+    site.add_profiles(Namespace.CONDOR, key="getenv", value="False")
     site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites",
                       value='"nogrid"')
     site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN",
