@@ -419,7 +419,10 @@ if len(parvals) == 1 and args.smoothing_method == 'smooth_tophat':
     logging.info("Using efficient 1D tophat smoothing")
     sort = parvals[0].argsort()
     parvals_0 = parvals[0][sort]
-
+    ntotal = ntotal[sort]
+    nabove = nabove[sort]
+    invalphan = invalphan[sort]
+    
     # For each template, find the range of nearby templates which fall within
     # the chosen window.
     left = numpy.searchsorted(parvals_0, parvals[0] - args.smoothing_width[0])
