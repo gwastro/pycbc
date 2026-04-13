@@ -63,7 +63,6 @@ class TimeSeries(Array):
             raise ValueError('delta_t must be a positive number')
 
         self._epoch = determine_epoch(epoch, initial_array)
-
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
 
@@ -477,7 +476,7 @@ class TimeSeries(Array):
             LAL time series object containing the same data as self.
             The actual type depends on the sample's dtype.  If the epoch of
             self is 'None', the epoch of the returned LAL object will be
-            LIGOTimeGPS(0,0);
+            the same as that of self.
 
         Raises
         ------
@@ -585,6 +584,12 @@ class TimeSeries(Array):
             PyCBC time series.
         """
         import lalsimulation as sim
+        
+        if hasattr(location, 'decode'):
+            location = location.decode()
+            
+        if hasattr(tapermethod, 'decode'):
+            tapermethod = tapermethod.decode()
 
         taper_map = {
             'TAPER_NONE'    : None,
