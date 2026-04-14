@@ -1,0 +1,79 @@
+name: Populate caches (LAL aux + example GW data)
+description: "Composite action that restores LAL auxiliary data and example GW data caches and downloads missing files."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Restore LAL auxiliary data cache
+      id: restore-lal-aux
+      uses: actions/cache@v4
+      with:
+        key: lal-aux-data
+        path: $HOME/lal_aux_data
+
+    - name: Download LAL auxiliary data files on miss
+      if: ${{ steps.restore-lal-aux.outputs.cache-hit != 'true' }}
+      run: |
+        mkdir -p $HOME/lal_aux_data
+        pushd $HOME/lal_aux_data
+        curl --show-error --silent --fail --retry 3 --retry-delay 5 --retry-connrefused \
+          --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
+          --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
+        popd
+
+    - name: Restore example GW data cache
+      name: Populate caches (LAL aux + example GW data)
+      description: "Composite action that restores LAL auxiliary data and example GW data caches and downloads missing files."
+
+      runs:
+        using: "composite"
+        steps:
+          - name: Restore LAL auxiliary data cache
+            id: restore-lal-aux
+            uses: actions/cache@v4
+            with:
+              key: lal-aux-data
+              path: $HOME/lal_aux_data
+
+          - name: Download LAL auxiliary data files on miss
+            if: ${{ steps.restore-lal-aux.outputs.cache-hit != 'true' }}
+            run: |
+              mkdir -p $HOME/lal_aux_data
+              pushd $HOME/lal_aux_data
+              curl --show-error --silent --fail --retry 3 --retry-delay 5 --retry-connrefused \
+                --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
+                --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
+              popd
+
+          - name: Restore example GW data cache
+            id: restore-example-gw
+            uses: actions/cache@v4
+            with:
+              key: example-gw-data
+              path: |
+                docs/_include/*_TDI_v2.gwf
+                docs/_include/*_GWOSC_4KHZ_R1-1126257415-4096.gwf
+                docs/_include/*_LOSC_CLN_4_V1-1187007040-2048.gwf
+                examples/inference/lisa_smbhb_ldc/*_psd.txt
+                examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
+                examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
+                examples/inference/margtime/*.gwf
+                examples/inference/multisignal/*.gwf
+                examples/inference/relative/*.gwf
+                examples/inference/relmarg/*.gwf
+                examples/inference/single/*.gwf
+                examples/search/*.gwf
+
+          - name: Set path outputs for cached data
+            id: set_paths
+            run: |
+              echo "lal_data_path=$HOME/lal_aux_data" >> $GITHUB_OUTPUT
+              echo "example_gw_cache_key=example-gw-data" >> $GITHUB_OUTPUT
+
+      outputs:
+        lal_data_path:
+          description: "Path where LAL auxiliary data is stored on the runner"
+          value: ${{ steps.set_paths.outputs.lal_data_path }}
+        example_gw_cache_key:
+          description: "Cache key used for example GW data"
+          value: ${{ steps.set_paths.outputs.example_gw_cache_key }}
