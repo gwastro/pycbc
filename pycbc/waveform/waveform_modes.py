@@ -229,6 +229,56 @@ def get_nrhybsur_modes(**params):
         ret = ret.next
     return hlms
 
+def get_imrphenomtphmj_modes(**params):
+    """Generates IMRPhenomTPHM waveform in J-frame mode-by-mode.
+
+    All waveform parameters should be provided as keyword arguments.
+    Recognized parameters are listed below. Unrecognized arguments are ignored.
+
+    Parameters
+    ----------
+    {delta_t}
+    {mass1}
+    {mass2}
+    {spin1x}
+    {spin1y}
+    {spin1z}
+    {spin2x}
+    {spin2y}
+    {spin2z}
+    {f_lower}
+    {f_ref}
+    {distance}
+    {mode_array}
+
+    Returns
+    -------
+    dict :
+        Dictionary of ``(l, m)`` -> ``(h_+, -h_x)`` ``TimeSeries``.
+    """
+    laldict = _check_lal_pars(params)
+    ret, _, _, _, _ = lalsimulation.SimIMRPhenomTPHM_JModes(
+        params['mass1']*lal.MSUN_SI,
+        params['mass2']*lal.MSUN_SI,
+        params['spin1x'], params['spin1y'], params['spin1z'],
+        params['spin2x'], params['spin2y'], params['spin2z'],
+        params['distance']*1e6*lal.PC_SI,
+        0,  # inclination is not used in this approximant
+        params['delta_t'],
+        params['f_lower'],
+        params['f_ref'],
+        0,  # coa_phase is not used in this approximant
+        laldict,
+        0, # only22 is set to be False, that is, using all the modes
+        )
+
+    hlms = {}
+    while ret:
+        hlm = TimeSeries(ret.mode.data.data, delta_t=ret.mode.deltaT,
+                         epoch=ret.mode.epoch)
+        hlms[ret.l, ret.m] = (hlm.real(), hlm.imag())
+        ret = ret.next
+    return hlms
 
 get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 get_nrhybsur_modes.__doc__ = _formatdocstr(get_nrhybsur_modes.__doc__)
@@ -356,6 +406,7 @@ def get_imrphenomxh_modes(**params):
 _mode_waveform_td = {'EOBNRv2': get_lalsimulation_modes,
                      'EOBNRv2HM': get_lalsimulation_modes,
                      'IMRPhenomTPHM': get_lalsimulation_modes,
+                     'IMRPhenomTPHM_J': get_imrphenomtphmj_modes,
                      'NRSur7dq2': get_lalsimulation_modes,
                      'NRSur7dq4': get_nrsur_modes,
                      'NRHybSur3dq8': get_nrhybsur_modes,
