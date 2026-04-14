@@ -261,7 +261,7 @@ total_time = abs(all_segments)
 # do pruning (removal of trigs at N loudest times defined over param bins)
 if args.prune_param:
     logging.info('Getting min and max param values')
-    templateid = np.arange(len(templatef['template_hash'][:]))
+    templateid = np.arange(len(templatef['mass1'])) # get the full range
     pars = triggers.get_param(args.prune_param, args, templatef, templateid)
     minpar = min(pars)
     maxpar = max(pars)
