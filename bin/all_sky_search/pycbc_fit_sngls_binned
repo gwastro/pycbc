@@ -188,7 +188,7 @@ def get_pars(args, tag, bank, tid):
     # here used for both pruning and binning params
     paramarg = getattr(args, tag+'_param')
     try:
-        # will fail if m1 is a float rather than a sequence
+        # will fail if mass1 is not in the bank
         logging.info('Getting %s values for %i triggers' % (paramarg, len(bank['mass1'])))
     except:
         pass
@@ -196,7 +196,7 @@ def get_pars(args, tag, bank, tid):
 
 if args.prune_param:
     logging.info('Getting min and max param values')
-    templateid = np.arange(len(templatef['template_hash'][:]))
+    templateid = np.arange(len(templatef['mass1'])) # get the full range
     prpars = get_pars(args, 'prune', templatef, templateid)
     minprpar = min(prpars)
     maxprpar = max(prpars)
