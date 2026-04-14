@@ -1,23 +1,51 @@
-name: Flake8 check
+name: Code quality checks
 on: [pull_request]
 jobs:
-    flake8_unused_imports:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Check out repository
-              uses: actions/checkout@v3
-            - name: Set up Python
-              uses: actions/setup-python@v4
-              with:
-                  python-version: 3.11
-            - name: Install flake8
-              run: pip install flake8
-            - name: Checking executables for unused imports
-              run: flake8 --select=F401 $(find bin -type f -name pycbc_*)
-            - name: Checking modules for unused imports
-              run: |
-                flake8 --select=F401 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py')
-            - name: Checking tests for unused imports
-              run: |
-                flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
+
+  linters:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install linters
+        run: pip install flake8 pylint
+
+      - name: Check executables for unused imports
+        run: flake8 --select=F401 $(find bin -type f -name pycbc_*)
+      - name: Check executables for unused variables (report only)
+        run: flake8 --select=F841 $(find bin -type f -name pycbc_*) || true
+      - name: Check modules for unused imports
+        run: |
+          flake8 --select=F401 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py')
+      - name: Check modules for unused variables (report only)
+        run: |
+          flake8 --select=F841 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py') || true
+      - name: Check tests for unused imports
+        run: |
+          flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
+      - name: Check tests for unused variables (report only)
+        run: |
+          flake8 --select=F841 $(find test | grep '\.py$' | grep -v test_schemes) || true
+      - name: Run pylint (this step should always pass)
+        id: pylint
+        run: |
+          python -m pylint --disable=all --enable=unreachable,unused-argument pycbc > pylint.output 2>&1 || true
+          echo "Wrote pylint.output (size $(wc -c < pylint.output) bytes)"
+
+      - name: Report unused-arguments (report only)
+        run: grep unused-argument pylint.output
+
+      - name: Fail on unreachable code
+        run: |
+          if grep -q "unreachable" pylint.output; then
+            echo "Unreachable found:"
+            grep -n "unreachable" pylint.output
+            exit 1
+          fi
+
+
 
