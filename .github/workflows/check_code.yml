@@ -1,7 +1,15 @@
-name: Flake8 check
-on: [pull_request]
+name: Code quality checks
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+
 jobs:
     flake8_unused_imports:
+        # Run these checks for pull_request actions except when a label is added
+        if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' }}
         runs-on: ubuntu-latest
         steps:
             - name: Check out repository
@@ -20,4 +28,62 @@ jobs:
             - name: Checking tests for unused imports
               run: |
                 flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
+
+    coverage:
+      name: Coverage
+      runs-on: ubuntu-latest
+      # Run on push to master OR on pull_request when the PR has the 'coverage' label
+      if: >
+        (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'coverage') && (needs.flake8_unused_imports.result == 'success' || needs.flake8_unused_imports.result == 'skipped'))
+
+      needs: flake8_unused_imports
+      steps:
+        - name: Check out repository
+          uses: actions/checkout@v4
+        - name: Set up Python
+          uses: actions/setup-python@v5
+          with: 
+            python-version: '3.11'
+        - name: installing system packages
+          run: |
+            sudo apt-get -o Acquire::Retries=3 update
+            sudo apt-get -o Acquire::Retries=3 install *fftw3* mpi intel-mkl* graphviz \
+              build-essential python3-dev libopenblas-dev liblapack-dev libgsl-dev libfftw3-dev
+        - name: Upgrade pip and setuptools
+          run: python -m pip install --upgrade pip setuptools
+        - name: Install test deps
+          run: |
+            python -m pip install -r requirements.txt
+            python -m pip install .
+            python setup.py build_ext --inplace
+            python -m pip install coverage pytest
+        - name: Cache LAL auxiliary data files
+          id: cache-lal-aux-data
+          uses: actions/cache@v4
+          with:
+            key: lal-aux-data
+            path: ~/lal_aux_data
+        - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
+          name: Download LAL auxiliary data files
+          run: |
+            mkdir -p ~/lal_aux_data
+            pushd ~/lal_aux_data
+            curl --show-error --silent \
+              --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
+              --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
+            popd
+        - name: Run tests with coverage
+          run: |
+            export LAL_DATA_PATH=$HOME/lal_aux_data
+            python -m coverage run --source=pycbc -m pytest test
+        - name: Generate HTML report
+          run: python -m coverage html -d htmlcov
+        - name: Print coverage report
+          run: python -m coverage report -m
+        - name: Upload HTML coverage report
+          uses: actions/upload-artifact@v4
+          with:
+            name: htmlcov
+            path: htmlcov
 
