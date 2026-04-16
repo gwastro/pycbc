@@ -570,6 +570,7 @@ class TemplateBank(object):
             tau0_inj, _ = \
                 pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
                                                        fref)
+                                                       
             lid = np.searchsorted(tau0_temp, tau0_inj - threshold)
             rid = np.searchsorted(tau0_temp, tau0_inj + threshold)
             inj_indices = sort[lid:rid]
@@ -1176,14 +1177,18 @@ class RatioFilterBank(FilterBank):
             tau0_inj, _ = \
                 pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
                                                        fref)
+            print(tau0_inj, tau0_temp)
             lid = np.searchsorted(tau0_temp, tau0_inj - threshold)
             rid = np.searchsorted(tau0_temp, tau0_inj + threshold)
             inj_indices = sort[lid:rid]
             indices.append(inj_indices)
 
-        indices_combined = np.concatenate(indices)
-        indices_unique= np.unique(indices_combined)
-        self.coarse_indices = indices_unique
+        if len(indices) > 0:
+            indices_combined = np.concatenate(indices)
+            indices_unique= np.unique(indices_combined)
+            self.coarse_indices = indices_unique
+        else:
+            self.coarse_indices = []
 
     def get_coarse_template(self, coarse_index):
         """Wrapper to get the frequency-domain waveform from the internal coarse bank.
