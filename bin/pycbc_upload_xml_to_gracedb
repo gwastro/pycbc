@@ -23,11 +23,13 @@ Take a coinc xml file containing multiple events and upload to gracedb.
 import os
 import argparse
 import logging
+import certifi
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
 
 from ligo.gracedb.rest import GraceDb
+from ligo.gracedb.kafka import GraceDbKafkaProducer
 import lal
 import lal.series
 from igwn_ligolw import lsctables
@@ -113,9 +115,18 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose, default_level=1)
 
 if args.production_server:
-    gracedb = GraceDb()
+    gracedb = GraceDb(api_version='v2')
 else:
-    gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
+    gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/', api_version='v2')
+
+logging.info("Creating Kafka producer...")
+ca_bundle = certifi.where()
+producer = GraceDbKafkaProducer(
+    bootstrap_servers='kafka-dev.ligo.org:9092',
+    service_url=gracedb._service_url,
+    ca_cert_path=ca_bundle,
+)
+
 
 xmldoc = ligolw_utils.load_filename(args.input_file,
                              contenthandler=LIGOLWContentHandler)
@@ -235,7 +246,8 @@ for event in coinc_table:
             filename_xml,
             filecontents=open(fullpath_xml, "rb").read(),
             search=id_str,
-            offline=True
+            offline=True,
+            kafka=producer,
         ).json()
 
         logging.info("Uploaded event %s.", r["graceid"])

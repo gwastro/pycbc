@@ -7,6 +7,7 @@ import os
 import numpy
 import json
 import copy
+import certifi
 from multiprocessing.dummy import threading
 
 import lal
@@ -388,7 +389,7 @@ class CandidateForGraceDB(object):
         # connect to GraceDB if we are not reusing a connection
         if not hasattr(self, 'gracedb'):
             logger.info('Connecting to GraceDB')
-            gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+            gdbargs = {'reload_certificate': True, 'reload_buffer': 300, 'api_version': 'v2'}
             if kwargs is not None:
                 gdbargs.update(kwargs)
             if gracedb_server:
@@ -396,6 +397,7 @@ class CandidateForGraceDB(object):
             try:
                 from ligo.gracedb.rest import GraceDb
                 self.gracedb = GraceDb(**gdbargs)
+                
             except Exception as exc:
                 logger.error('Failed to create GraceDB client')
                 logger.error(exc)
@@ -405,12 +407,22 @@ class CandidateForGraceDB(object):
         group = 'Test' if testing else 'CBC'
         gid = None
         try:
+            from ligo.gracedb.kafka import GraceDbKafkaProducer
+            logger.info("Creating Kafka producer...")
+            ca_bundle = certifi.where()
+        
+            producer = GraceDbKafkaProducer(
+                bootstrap_servers='kafka-dev.ligo.org:9092',
+                service_url=self.gracedb._service_url,
+                ca_cert_path=ca_bundle,
+            )
             response = self.gracedb.create_event(
                 group,
                 "pycbc",
                 fname,
                 search=search,
-                labels=labels
+                labels=labels,
+                kafka=producer
             )
             gid = response.json()["graceid"]
             logger.info("Uploaded event %s", gid)

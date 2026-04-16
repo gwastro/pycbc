@@ -466,10 +466,11 @@ class LiveEventManager(object):
         # https://ligo-gracedb.readthedocs.io/en/latest/api.html#ligo.gracedb.rest.GraceDb
         # Because we do not change any of the request session values when running the
         # code, it should remain thread safe.
-        gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+        gdbargs = {'reload_certificate': True, 'reload_buffer': 300, 'api_version': 'v2'}
         if self.gracedb_server:
             gdbargs['service_url'] = self.gracedb_server
         self.gracedb = GraceDb(**gdbargs)
+
 
     def upload_in_thread(self, event, fname, comment, cmd, out_dir_path,
                          upload_checks, optimize_snr_checks):
