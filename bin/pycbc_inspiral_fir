@@ -301,7 +301,6 @@ def main():
                 t2 = time.time()
                 tperf = (stilde.analyze.stop - stilde.analyze.start) * stilde.delta_t / (t2 - t1) * len(taps)
                 logging.info(f"batch perf: {tperf} templates s/s")
-               
                 
         logging.info(f"Grouping triggers...")
         
@@ -374,7 +373,7 @@ def main():
     event_mgr.save_performance(1, len(segments), len(bank), run_time, tsetup)    
     
     logging.info("Consolidating and writing events...")
-    event_mgr.consolidate_events(args, gwstrain=strain_segments)
+    event_mgr.consolidate_events(args, gwstrain=gwstrain)
     event_mgr.finalize_events()
     event_mgr.write_events(args.output)
     
