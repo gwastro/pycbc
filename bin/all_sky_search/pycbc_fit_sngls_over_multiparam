@@ -193,6 +193,7 @@ parser.add_argument("--fit-param", nargs='+',
                     help="Parameter(s) over which to regress the background "
                          "fit coefficients. Required. Either read from "
                          "template fit file or choose from mchirp, mtotal, "
+                         "q, eccentricity, "
                          "chi_eff, eta, tau_0, tau_3, template_duration, "
                          "a frequency cutoff in pnutils or a frequency function"
                          "in LALSimulation. To regress the background over "
@@ -388,13 +389,12 @@ if args.smoothing_method == 'n_closest' and n_required > nabove.sum():
 
 logging.info('Calculating template parameter values')
 bank = HFile(args.bank_file, 'r')
-m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
 
 parvals = []
 parnames = []
 
 for param, slog in zip(args.fit_param, args.log_param):
-    data = triggers.get_param(param, args, m1, m2, s1z, s2z)
+    data = triggers.get_param(param, args, bank, tid)
     if slog in ['false', 'False', 'FALSE']:
         logging.info('Using param: %s', param)
         parvals.append(data)
@@ -502,6 +502,14 @@ else:
             **kwarg_dict
         )
 
+non_positive_mask = smoothed_vals[:, 0] <= 0
+if numpy.any(non_positive_mask):
+    n_bad = numpy.sum(non_positive_mask)
+    raise ValueError(
+        f"{n_bad} template(s) have zero triggers above threshold. "
+        "This will cause problems for the fit coefficient values, and is likely "
+        "due to too small smoothing width or too large fitting threshold. "
+    )
 logging.info("Writing output")
 outfile = HFile(args.output, 'w')
 outfile['template_id'] = tid
