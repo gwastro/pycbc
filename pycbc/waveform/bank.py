@@ -1153,9 +1153,11 @@ class RatioFilterBank(FilterBank):
         # Convert to sorted integers for deterministic iteration order
         self.coarse_indices = np.array([int(k) for k in self.coarse_keys], dtype=int)
         self.coarse_indices.sort()
+        print(self.coarse_indices)
 
     def template_thinning(self, inj_filter_rejector):
         """Remove templates from bank that are far from all injections."""
+        print(self.coarse_indices)
         if not inj_filter_rejector.enabled or \
                 inj_filter_rejector.chirp_time_window is None:
             # Do nothing!
@@ -1168,6 +1170,7 @@ class RatioFilterBank(FilterBank):
         m1 = self.coarse_bank.table['mass1']
         m2 = self.coarse_bank.table['mass2']
         tau0_temp, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
+        tau0_temp = tau0_temp[self.coarse_indices]
         indices = []
 
         sort = tau0_temp.argsort()
@@ -1177,10 +1180,9 @@ class RatioFilterBank(FilterBank):
             tau0_inj, _ = \
                 pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
                                                        fref)
-            print(tau0_inj, tau0_temp)
             lid = np.searchsorted(tau0_temp, tau0_inj - threshold)
             rid = np.searchsorted(tau0_temp, tau0_inj + threshold)
-            inj_indices = sort[lid:rid]
+            inj_indices = self.coarse_indices[sort[lid:rid]]
             indices.append(inj_indices)
 
         if len(indices) > 0:
