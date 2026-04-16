@@ -1157,7 +1157,6 @@ class RatioFilterBank(FilterBank):
 
     def template_thinning(self, inj_filter_rejector):
         """Remove templates from bank that are far from all injections."""
-        print(self.coarse_indices)
         if not inj_filter_rejector.enabled or \
                 inj_filter_rejector.chirp_time_window is None:
             # Do nothing!
