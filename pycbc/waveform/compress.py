@@ -254,7 +254,12 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     hdecomp = hdecomp[:kmax]
     s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)    
     s2 = filter.sigma(htilde, psd=psd, low_frequency_cutoff=fmin)
-    htilde2 = htilde / psd / s2
+    
+    if psd is not None:
+        htilde2 = htilde / psd / s2
+    else:
+        htilde2 = htilde / s2
+    
     mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
                                   low_frequency_cutoff=fmin, normalized=False))
     if mismatch > tolerance:
