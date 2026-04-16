@@ -142,7 +142,7 @@ def add_gate_option_group(parser):
 
 
 def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
-    """Gates and in-paints data.
+    """Gates and in-paints data using a Toeplitz solver.
 
     Parameters
     ----------
@@ -176,5 +176,66 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     # remove the projection into the null space
     proj = linalg.solve_toeplitz(tdfilter[:(rindex - lindex)],
                                  owhgated_data[lindex:rindex])
+    data[lindex:rindex] -= proj
+    return data
+
+def invert_covariance(invpsd, lindex, rindex):
+    """Calculate the uninverted covariance matrix.
+    Parameters
+    ----------
+    invpsd : FrequencySeries
+        The inverse of the PSD.
+    lindex : int
+        The start index of the gate.
+    rindex : int
+        The end index of the gate.
+
+    Returns
+    -------
+    array :
+        The uninverted covariance matrix associated with the inverse PSD in the
+        time window [lindex, rindex].
+    """
+    tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
+    mat = linalg.toeplitz(tdfilter[:(rindex-lindex)])
+    invmat = linalg.inv(mat)
+    return invmat
+
+def gate_and_paint_matmul(data, lindex, rindex, invpsd, invmat=None, copy=True):
+    """Gates and in-paints data using explicit matrix multiplication.
+
+    Parameters
+    ----------
+    data : TimeSeries
+        The data to gate.
+    lindex : int
+        The start index of the gate.
+    rindex : int
+        The end index of the gate.
+    invpsd : FrequencySeries
+        The inverse of the PSD.
+    invmat : array, optional
+        The uninverted covariance matrix. If None, calculate on function call.
+    copy : bool, optional
+        Copy the data before applying the gate. Otherwise, the gate will
+        be applied in-place. Default is True.
+    
+    Returns
+    -------
+    TimeSeries :
+        The gated and in-painted time series.
+    """
+    if copy:
+        data = data.copy()
+    data[lindex:rindex] = 0
+    # get the over-whitened gated data
+    owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()
+
+    # invert the matrix if not provided
+    if invmat is None:
+        invmat = invert_covariance(invpsd, lindex, rindex)
+
+    # remove the projection into the null space
+    proj = invmat @ owhgated_data[lindex:rindex]
     data[lindex:rindex] -= proj
     return data
