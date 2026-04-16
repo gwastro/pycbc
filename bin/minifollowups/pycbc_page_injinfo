@@ -72,7 +72,7 @@ labels = {
     'chieff': '&chi;<sub>eff</sub>',
     'chip': '&chi;<sub>p</sub>',
     'eccentricity': 'eccentricity',
-    'rel_anomaly': 'relanomaly',
+    'rel_anomaly': 'anomaly',
 }
 
 params += ['tc']

@@ -205,7 +205,7 @@ try:
     data[0].append('%5.2f' % sngl_file.eccentricity[0])
     data[0].append('%5.2f' % sngl_file.rel_anomaly[0])
     headers.append("eccentricity")
-    headers.append("rel_anomaly")
+    headers.append("anomaly")
 except KeyError:
     pass
 
