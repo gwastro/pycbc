@@ -638,7 +638,7 @@ with ctx:
     # Loop over templates
     for t_num, template in enumerate(bank):
         # Loop over segments
-        for s_num, stilde in enumerate(segments[args.instruments[0]]):
+        for s_num in range(len(segments[args.instruments[0]])):
             stilde = {ifo: segments[ifo][s_num] for ifo in args.instruments}
             # Checks the 'inj_filter_rejector' options to determine whether
             # to filter this template/segment if injections are present
@@ -694,6 +694,8 @@ with ctx:
             #   Typically only a tiny fraction will be populated.
             power_chisq_arrays = dict.fromkeys(args.instruments)
             power_chisq_dof_arrays = dict.fromkeys(args.instruments)
+            # For convenience also store the lengths of the snr_dict values
+            wraparound_dict = dict.fromkeys(args.instruments)
             for ifo in args.instruments:
                 logging.debug(
                     "Filtering template %d/%d, ifo %s", t_num + 1, n_bank, ifo
@@ -725,8 +727,9 @@ with ctx:
                 snr_dict[ifo] = (
                     snr_ts[matched_filter[ifo].segments[s_num].analyze] * norm
                 )
+                wraparound_dict[ifo] = len(snr_dict[ifo])
                 assert (
-                    len(snr_dict[ifo]) > 0
+                    wraparound_dict[ifo] > 0
                 ), f'SNR time series for {ifo} is empty'
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
@@ -734,10 +737,10 @@ with ctx:
                 snr[ifo] = snrv * norm
                 # Initialize the cache for power chi^2
                 power_chisq_arrays[ifo] = np.full(
-                    len(snr_dict[ifo]), np.nan, dtype=np.float32
+                    wraparound_dict[ifo], np.nan, dtype=np.float32
                 )
                 power_chisq_dof_arrays[ifo] = np.zeros(
-                    len(snr_dict[ifo]), dtype=np.int32
+                    wraparound_dict[ifo], dtype=np.int32
                 )
                 del snr_ts, norm, corr, ind, snrv
 
@@ -756,22 +759,28 @@ with ctx:
                         position_index + 1,
                         len(sky_positions),
                     )
-                    # Adjust the indices of triggers (if there are any)
-                    # and store trigger indices list in a dictionary;
-                    # when there are no triggers, the dictionary is empty.
-                    # Indices are kept only if they do not get time shifted
-                    # out of the time we are looking at, i.e., require
+                    # Adjust the indices of triggers (if there are any) and
+                    # store trigger indices list in a dictionary; when there
+                    # are no triggers, the dictionary is empty. Indices are
+                    # kept only if they remain within the time being processed
+                    # after they time delay correction from detector to
+                    # geocenter due to sky location is applied, i.e., require
+                    # them to be between 0 and len(snr_dict[ifo]).
                     # idx[ifo] - time_delay_idx[slide][position_index][ifo]
-                    # (which applies the necessary time shift by operating on
-                    # indices) to be between 0 and len(snr_dict[ifo]).
+                    # operates on indices to apply a time shift from detctor
+                    # to geocenter. The trimming here is carried out on the
+                    # zerolag indices, i.e., setting slide to 0, to ensure that
+                    # the starting indices are legitimate. Later, when looking
+                    # for coincidences, one must wrap around the timeslid
+                    # idx[ifo] - time_delay_idx[slide][position_index][ifo].
                     idx_dict = {
                         ifo: idx[ifo][
                             np.logical_and(
                                 idx[ifo]
-                                > time_delay_idx[slide][position_index][ifo],
+                                > time_delay_idx[0][position_index][ifo],
                                 idx[ifo]
-                                < time_delay_idx[slide][position_index][ifo]
-                                + len(snr_dict[ifo]),
+                                < time_delay_idx[0][position_index][ifo]
+                                + wraparound_dict[ifo],
                             )
                         ]
                         for ifo in args.instruments
@@ -782,27 +791,30 @@ with ctx:
                     # and applies the single IFO SNR cut asking for triggers to
                     # have SNR >= args.sngl_snr_threshold in at least
                     # args.nifo_sngl_snr_threshold IFOs; recall that idx_dict
-                    # tracks (at the geocent) triggers above threshold in
+                    # tracks (at the detectors) triggers above threshold in
                     # individual detectors. If only one IFO is available, then
                     # the method returns trigger indices for that IFO. Given
                     # that we are looping over timeslides and sky positions,
                     # the appropriate dictionary of time delays wrt the
-                    # geocenter must be passed to operate at the geocenter.
+                    # geocenter must be passed to operate at the geocenter,
+                    # as well as the dictionary to enable the wrap around at
+                    # each detecotor prior to searching for coincidences.
                     coinc_idx = coh.get_coinc_indexes(
                         idx_dict, time_delay_idx[slide][position_index],
-                        args.nifo_sngl_snr_threshold
+                        args.nifo_sngl_snr_threshold, wraparound_dict
                     )
                     logging.debug(
                         "Found %d coincident triggers", len(coinc_idx)
                     )
-                    # Time delay is applied to indices at the geocenter to have
-                    # them at the IFOs (hence the + which undoes the delay).
+                    # Time delay is applied to (coincident) indices at the
+                    # geocenter to have them at the IFOs (hence the + which
+                    # undoes the delay). The wrap around is performed.
                     coinc_idx_det_frame = {
                         ifo: (
                             coinc_idx
                             + time_delay_idx[slide][position_index][ifo]
                         )
-                        % len(snr_dict[ifo])
+                        % wraparound_dict[ifo]
                         for ifo in args.instruments
                     }
                     # Calculate the quadrature sum of individual detector SNRs,
@@ -985,17 +997,18 @@ with ctx:
                         # Updated coinc_idx_det_frame to account for the
                         # effect of the cuts applied so far (operate on the
                         # time related indices with a +time_delay_idx to
-                        # transform geocenter time to IFO time).
+                        # transform geocenter time to IFO time). The wrap
+                        # around is performed.
                         coinc_idx_det_frame = {
                             ifo: (
                                 coinc_idx
                                 + time_delay_idx[slide][position_index][ifo]
                             )
-                            % len(snr_dict[ifo])
+                            % wraparound_dict[ifo]
                             for ifo in args.instruments
                         }
                         # Build dictionary with per-IFO complex SNR time series
-                        # of the most recent set of triggers
+                        # of the most recent set of triggers.
                         coherent_ifo_trigs = {
                             ifo: snr_dict[ifo][coinc_idx_det_frame[ifo]]
                             for ifo in args.instruments
@@ -1076,6 +1089,7 @@ with ctx:
                                 stilde[ifo],
                                 coherent_ifo_trigs[ifo],
                                 1,  # coherent_ifo_trigs already normalized
+                                # FIXME: why not stilde[ifo].cumulative_index?
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].analyze.start,
                             )
@@ -1084,6 +1098,7 @@ with ctx:
                                 ifo_out_vals['auto_chisq_dof'],
                             ) = autochisq.values(
                                 snr_dict[ifo],
+                                # FIXME: why no + stilde[ifo]...?
                                 coinc_idx_det_frame[ifo],
                                 template,
                                 stilde[ifo].psd,
@@ -1122,8 +1137,11 @@ with ctx:
                         network_out_vals['my_network_chisq'] = np.real(
                             network_chisq_dict
                         )
+                        # coinc_idx has the geocenter indices of triggers.
+                        # The wrap around happened in get_coinc_indices.
                         network_out_vals['time_index'] = (
-                            coinc_idx + stilde[ifo].cumulative_index
+                            coinc_idx
+                            + stilde[args.instruments[0]].cumulative_index
                         )
                         network_out_vals['nifo'] = [nifo] * num_events
                         network_out_vals['dec'] = [
