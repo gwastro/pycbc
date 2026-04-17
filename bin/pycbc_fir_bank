@@ -10,7 +10,7 @@ from collections import defaultdict
 import pycbc
 import pycbc.psd
 import scipy.linalg
-from pycbc.filter import match, overlap, sigmasq
+from pycbc.filter import match, overlap, sigma
 from pycbc.waveform.bank import FilterBank
 from pycbc.types import TimeSeries, FrequencySeries
 
@@ -137,8 +137,12 @@ def verify_filter_match(taps, h_ref, h_fine, psd, f_low):
     elif len(H_fir) < len(h_ref): H_fir.resize(len(h_ref))
 
     h_rec = h_ref * H_fir
+
+    s_rec = sigma(h_rec, psd=psd, low_frequency_cutoff=f_low)
+    s_ref = sigma(h_ref, psd=psd, low_frequency_cutoff=f_low)
+    s_fine = sigma(h_fine, psd=psd, low_frequency_cutoff=f_low)
     m, _ = match(h_fine, h_rec, psd=psd, low_frequency_cutoff=f_low)
-    return m
+    return m, (s_ref, s_rec, s_fine)
 
 # --- 3. WORKER FUNCTION (Executes in parallel) ---
 def process_template(i):
@@ -221,13 +225,11 @@ def process_template(i):
                 pyplot.ylabel('Ratio')
                 pyplot.show()
 
-
-            qa_match = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
+            qa_match, sigmas = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
             round_matches.append(qa_match)
-            print(best_match, qa_match, len(taps))
             
             if best[3] < qa_match:
-                best = (i, best_match, c_idx, qa_match, taps)
+                best = (i, best_match, c_idx, qa_match, taps, sigmas)
             
             if qa_match >= g_args.min_match: break
         if qa_match >= g_args.min_match: break
@@ -235,7 +237,6 @@ def process_template(i):
         round_matches = np.array(round_matches)
         top = round_matches.argsort()[::-1]
         tnum = int(max(1, len(round_matches) * 0.8))
-        print(top[:tnum], round_matches[top[:tnum]])
         msearch = msearch[top[:tnum]]
         current_taps += g_args.tap_step
     return best
@@ -333,8 +334,8 @@ def main():
                                      postfix={"failed": 0}, file=sys.stderr)
 
             for result in results_iter:
-                i, coarse_match, c_idx, qa_match, final_taps_data = result
-                all_results[i] = (coarse_match, c_idx, qa_match, final_taps_data)
+                i, coarse_match, c_idx, qa_match, final_taps_data, sigmas = result
+                all_results[i] = (coarse_match, c_idx, qa_match, final_taps_data, sigmas)
                 
                 is_fail = (c_idx == -1) or (qa_match < args.min_match)
                 if is_fail:
@@ -376,9 +377,12 @@ def main():
                                                 chunks=True, compression="gzip", compression_opts=4)
             dset_c_match = c_group.create_dataset('coarse_match', (n_group,), dtype='float32',
                                                   chunks=True, compression="gzip", compression_opts=4)
-            
+            dset_c_sigma = c_group.create_dataset('sigmas', (n_group, 3), dtype='float32',
+                                                  chunks=True, compression="gzip", compression_opts=4)
+
+          
             for j, result in enumerate(results_list):
-                coarse_match, _, qa_match, final_taps_data, i = result
+                coarse_match, _, qa_match, final_taps_data, sigma, i = result
                 
                 taps_padded = np.zeros(k_max_group, dtype=np.float32)
                 taps_padded[:len(final_taps_data)] = final_taps_data.astype(np.float32)
@@ -388,6 +392,7 @@ def main():
                 dset_fine_idx[j] = i
                 dset_match[j] = qa_match
                 dset_c_match[j] = coarse_match
+                dset_c_sigma[j] = sigma
             tap_counts.append(dset_actual[:])
                 
         logging.info(f"Done. Saved to {args.output_file}")
