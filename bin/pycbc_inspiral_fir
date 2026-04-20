@@ -146,7 +146,11 @@ def get_args():
     parser.add_argument("--keep-loudest-stat", default="newsnr",
                         choices=pycbc.events.ranking.sngls_ranking_function_dict.keys(),
                         help="Statistic used to determine loudest to keep")
-    
+    parser.add_argument("--template-normalization-method", 
+                        help="Method to normalize fine templates relative to"
+                             " their reference coarse template",
+                        choices=('precalculated_sigma', 'mchirp'),
+                        default='mchirp')    
 
     return parser, parser.parse_args()
 
@@ -335,7 +339,6 @@ def main():
             out_vals['time_index'] = np.array(time_list)
             
             # Renorm snr
-            norm_rescale = bank.get_snr_rescale
             snr_rescale = bank.snr_rescale(global_id)
             sigmasq_rescale = bank.sigma_rescale(global_id) ** 2.0
             print(snr_rescale, sigmasq_rescale)
