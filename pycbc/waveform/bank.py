@@ -1154,7 +1154,6 @@ class RatioFilterBank(FilterBank):
         # Convert to sorted integers for deterministic iteration order
         self.coarse_indices = np.array([int(k) for k in self.coarse_keys], dtype=int)
         self.coarse_indices.sort()
-        print(self.coarse_indices)
 
     def template_thinning(self, inj_filter_rejector):
         """Remove templates from bank that are far from all injections."""
@@ -1221,9 +1220,10 @@ class RatioFilterBank(FilterBank):
         for coarse_id in self.coarse_indices:
             coarse_id = str(coarse_id)
             c_group = self.fir_group[coarse_id]
-            fine_indices = c_group['fine_bank_index'][:]            
-            rescale = (mc_bank[fine_indices] / mc_coarse[coarse_id]) ** (5.0/6.0)
-            self.mchirp_norm_rescale[fine_indices] = rescale
+            fine_indices = c_group['fine_bank_index'][:]
+            if len(fine_indices) > 0:    
+                rescale = (mc_bank[fine_indices] / mc_coarse[int(coarse_id)]) ** (5.0/6.0)
+                self.mchirp_norm_rescale[fine_indices] = rescale
 
     def snr_rescale(self, indices, method='mchirp'):
         """ Get the SNR normalization factor for templates in the bank
@@ -1239,7 +1239,7 @@ class RatioFilterBank(FilterBank):
         else:
             raise ValueError('undefined fine template normalization method %s' % method)
     
-    def sigma_rescale(self, incdices, method='mchirp'):
+    def sigma_rescale(self, indices, method='mchirp'):
         """ Get the sigma normalization factor for templates in the bank
         relative to their associated coarse template.
         """

@@ -341,7 +341,6 @@ def main():
             # Renorm snr
             snr_rescale = bank.snr_rescale(global_id)
             sigmasq_rescale = bank.sigma_rescale(global_id) ** 2.0
-            print(snr_rescale, sigmasq_rescale)
             
             out_vals['snr'] = np.array(snr) / snr_rescale
             out_vals['sigmasq'] = np.ones(len(time_list)) * norm * sigmasq_rescale
