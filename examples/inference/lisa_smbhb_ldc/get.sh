@@ -1,16 +1,24 @@
 set -e
 
+download_if_absent() {
+    local URL="$1"
+    local FILENAME=$(basename "$URL")
+    if [ ! -f "$FILENAME" ]; then
+        echo "Downloading $FILENAME"
+        curl -O -L --show-error --silent "$URL"
+    else
+        echo "File $FILENAME already exists, download skipped"
+    fi
+}
+
 for channel in A E T
 do
     strain_file=${channel}_TDI_v2.gwf
-    test -f ${strain_file} && continue
-    curl -LO --show-error --silent https://zenodo.org/record/7497853/files/${strain_file}
+    download_if_absent https://zenodo.org/record/7497853/files/${strain_file}
 
     psd_file=${channel}_psd.txt
-    test -f ${psd_file} && continue
-    curl -LO --show-error --silent https://zenodo.org/record/7497853/files/${psd_file}
+    download_if_absent https://zenodo.org/record/7497853/files/${psd_file}
 done
 
 params_file=MBHB_params_v2_LISA_frame.pkl 
-test -f ${params_file} && continue
-curl -LO --show-error --silent https://zenodo.org/record/7497853/files/${params_file}
+download_if_absent https://zenodo.org/record/7497853/files/${params_file}

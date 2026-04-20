@@ -123,11 +123,13 @@ def create_axes_grid(parameters, labels=None, height_ratios=None,
                     ax.set_xlabel('{}'.format(labels[px]), fontsize=18)
                 else:
                     pyplot.setp(ax.get_xticklabels(), visible=False)
+                    ax.xaxis.offsetText.set_visible(False)
                 # y labels only on left
                 if ncolumn == 0:
                     ax.set_ylabel('{}'.format(labels[py]), fontsize=18)
                 else:
                     pyplot.setp(ax.get_yticklabels(), visible=False)
+                    ax.yaxis.offsetText.set_visible(False)
             else:
                 # make non-used axes invisible
                 ax.axis('off')

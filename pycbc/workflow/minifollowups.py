@@ -419,6 +419,12 @@ def get_single_template_params(curr_idx, times, bank_data,
         params['inclination'] = bank_data['inclination'][bank_id]
     except KeyError:
         pass
+    # optional eccentric parameters, present when using eccentric waveform models
+    try:
+        params['eccentricity'] = bank_data['eccentricity'][bank_id]
+        params['rel_anomaly'] = bank_data['rel_anomaly'][bank_id]
+    except KeyError:
+        pass
     return params
 
 
@@ -518,6 +524,10 @@ def make_single_template_files(workflow, segs, ifo, data_read_name,
             except:
                 node.add_opt('--u-val',
                              "%.6f" % params['u_vals_%s' % ifo])
+        # If this is an eccentricity search
+        if 'eccentricity' in params:
+            node.add_opt('--eccentricity', "%.6f" % params['eccentricity'])
+            node.add_opt('--rel-anomaly', "%.6f" % params['rel_anomaly'])
 
     if params[ifo + '_end_time'] > 0 and not use_mean_time:
         trig_time = params[ifo + '_end_time']
@@ -687,6 +697,9 @@ def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
             node.add_opt('--spin2y',"%.6f" % params['spin2y'])
             node.add_opt('--inclination',"%.6f" % params['inclination'])
             node.add_opt('--u-val', "%.6f" % params['u_vals'])
+        if 'eccentricity' in params:
+            node.add_opt('--eccentricity', "%.6f" % params['eccentricity'])
+            node.add_opt('--rel-anomaly', "%.6f" % params['rel_anomaly'])
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                      '--output-file')
         workflow += node
@@ -793,7 +806,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
                     data_segments=None, time_window=100, tags=None):
     """ Generate a make_qscan node and add it to workflow.
 
-    This function generates a single node of the singles_timefreq executable
+    This function generates a single node of the plot_qscan executable
     and adds it to the current workflow. Parent/child relationships are set by
     the input/output files automatically.
 
@@ -812,7 +825,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
         plot.
     data_segments: igwn_segments.segmentlist (optional, default=None)
         The list of segments for which data exists and can be read in. If given
-        the start/end times given to singles_timefreq will be adjusted if
+        the start/end times given to plot_qscan will be adjusted if
         [trig_time - time_window, trig_time + time_window] does not completely
         lie within a valid data segment. A ValueError will be raised if the
         trig_time is not within a valid segment, or if it is not possible to
@@ -820,7 +833,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
         trigger. This **must** be coalesced.
     time_window: int (optional, default=None)
         The amount of data (not including padding) that will be read in by the
-        singles_timefreq job. The default value of 100s should be fine for most
+        plot_qscan job. The default value of 100s should be fine for most
         cases.
     tags: list (optional, default=None)
         List of tags to add to the created nodes, which determine file naming.

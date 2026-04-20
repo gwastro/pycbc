@@ -27,13 +27,16 @@ import logging
 import matplotlib
 matplotlib.use('agg')
 
-from igwn_segments import segment, segmentlistdict
+from igwn_segments import segment, segmentlist, segmentlistdict
 
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.events.veto import select_segments_by_definer
 import pycbc.workflow as _workflow
-from pycbc.workflow.core import configparser_value_to_file
+from pycbc.workflow.core import configparser_value_to_file, FileList, SegFile
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
+
+from pycbc.workflow.injection import compute_inj_optimal_snr
+from pycbc.workflow.psd import make_psd_file
 
 workflow_name = "pygrb_offline"
 
@@ -49,21 +52,16 @@ init_logging(args.verbose, default_level=1)
 wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
 tags = []
-init_dir = os.getcwd()
 
 logging.info("Generating %s workflow" % workflow_name)
 
 # Setup run directory
-if wflow.cp.has_option("workflow", "output-directory"):
-    base_dir = wflow.cp.get("workflow", "output-directory")
-else:
-    base_dir = os.getcwd()
 triggername = str(wflow.cp.get("workflow", "trigger-name"))
-run_dir = os.path.join(base_dir, "GRB%s" % triggername)
-logging.info("Workflow will be generated in %s" % run_dir)
-if not os.path.exists(run_dir):
-    os.makedirs(run_dir)
-os.chdir(run_dir)
+output_dir = os.path.abspath(args.output_dir)
+logging.info("Workflow will be generated in %s", output_dir)
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+os.chdir(output_dir)
 
 # SEGMENTS
 triggertime = int(wflow.cp.get("workflow", "trigger-time"))
@@ -110,12 +108,12 @@ else:
 # Do checks for no/single IFO case
 single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
 if len(sciSegs.keys()) == 0:
-    plot_met = make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
+    make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
                                       triggername, seg_dir)
     logging.error("No science segments available.")
     sys.exit()
 elif len(sciSegs.keys()) < 2 and not single_ifo:
-    plot_met = make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
+    make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
                                       triggertime, triggername, seg_dir)
     msg = "Science segments exist only for %s. " % tuple(sciSegs.keys())[0]
     msg += "If you wish to enable single IFO running add the option "
@@ -130,20 +128,20 @@ else:
 
 sciSegs = segmentlistdict(sciSegs)
 if onSrc is None:
-    plot_met = make_grb_segments_plot(
+    make_grb_segments_plot(
         wflow, sciSegs, triggertime, triggername,
         seg_dir, fail_criterion=offSrc)
     logging.info("Making segment plot and exiting.")
     sys.exit()
-else:
-    plot_met = make_grb_segments_plot(
-        wflow, sciSegs, triggertime, triggername, seg_dir,
-        coherent_seg=offSrc[tuple(offSrc.keys())[0]][0])
-    segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
-                               file_url=plot_met[3])
-    segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
-    sciSegs = offSrc
-    all_files.append(segs_plot)
+
+plot_met = make_grb_segments_plot(
+    wflow, sciSegs, triggertime, triggername, seg_dir,
+    coherent_seg=offSrc[tuple(offSrc.keys())[0]][0])
+segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
+                           file_url=plot_met[3])
+segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
+sciSegs = offSrc
+all_files.append(segs_plot)
 
 if len(sciSegs) == 1:
     logging.info("Generating a single IFO search.")
@@ -176,8 +174,6 @@ elif wflow.cp.has_option("inspiral", "analyse-segment-end"):
 else:
     wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + deadtime + padding,
                                   int(sciSegs[ifo][0][1]) - deadtime - padding)
-
-ext_file = None
 
 # DATAFIND
 df_dir = os.path.join(curr_dir, "datafind")
@@ -334,6 +330,40 @@ splitbank_files = _workflow.setup_splittable_workflow(wflow,
 all_files.append(full_bank_file)
 all_files.extend(splitbank_files)
 
+# --- TIME VARYING PSDS ---
+# Directory where time-varying PSD files will be written
+if wflow.cp.has_section("calculate_psd"):
+    psd_dir = os.path.join(output_dir, "psds")
+    os.makedirs(psd_dir, exist_ok=True)
+  
+    tv_psd_files = FileList([])
+      
+    for ifo in wflow.ifos:
+        logging.info("Creating time-varying PSD job for %s", ifo)
+        
+        # Segment file containing the FULL analysis segment
+        psd_segfile = SegFile.from_segment_list(
+            description=f"psd_{ifo}",
+            segmentlist=segmentlist([wflow.analysis_time]),
+            name="psd",
+            ifo=ifo,
+            seg_summ_list=segmentlist([wflow.analysis_time]),
+            directory=psd_dir,
+            extension="xml"
+        )
+        
+        psd_file = make_psd_file(
+            workflow=wflow,
+            frame_files=None,   # ok: datafind cache already in workflow
+            segment_file=psd_segfile,
+            segment_name="psd",
+            out_dir=psd_dir,
+        )
+        
+        tv_psd_files.append(psd_file)
+    
+    logging.info("Created %d time-varying PSDs", len(tv_psd_files))
+
 # INJECTIONS
 injs = None
 inj_tags = []
@@ -353,7 +383,7 @@ if wflow.cp.has_section("workflow-injections"):
                               "injections-method")
     if inj_method == "IN_WORKFLOW" and \
             wflow.cp.has_option("workflow-injections", "tc-prior-at-runtime"):
-        tc_path = os.path.join(base_dir, "tc_prior.ini")
+        tc_path = os.path.join(output_dir, "tc_prior.ini")
         _workflow.generate_tc_prior(wflow, tc_path, bufferSeg)
 
     # Generate injection files
@@ -377,6 +407,29 @@ if wflow.cp.has_section("workflow-injections"):
     inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, inj_dir)
     all_files.extend(inj_files)
     injs = inj_files
+
+    # Here we compute the optimal SNR for the injections before splitting them
+    if wflow.cp.has_section("optimal_snr"):
+        if not wflow.cp.has_section('calculate_psd'):
+            raise ValueError('Optimal SNR calculation requires PSD estimation')
+        
+        snr_dir = os.path.join(inj_dir, "optimal_snr")
+        os.makedirs(snr_dir, exist_ok = True)
+    
+        optimal_snr_files = _workflow.FileList([])
+        for inj, inj_tag in zip(injs, inj_tags):
+            snr_file = compute_inj_optimal_snr(
+                wflow,
+                inj,
+                tv_psd_files,
+                snr_dir,
+                tags=[inj_tag]
+            )
+            optimal_snr_files.append(snr_file)
+            logging.info("Optimal SNR workflow node created for injection tag %s", inj_tag)
+        all_files.extend(optimal_snr_files)
+        injs = optimal_snr_files
+        inj_files = optimal_snr_files
 
     # Either split template bank for injections jobs or use same split banks
     # as for standard matched filter jobs
@@ -490,9 +543,11 @@ if post_proc_method == "PYGRB_OFFLINE":
         logging.info('Entering results module')
         results_files = _workflow.setup_pygrb_results_workflow(wflow, pp_dir,
                                                                clustered_files,
+                                                               inj_files,
                                                                inj_find_files,
                                                                full_bank_file,
                                                                seg_dir,
+                                                               skygrid_file[0],
                                                                veto_file=veto_file)
         logging.info('Leaving results module')
 

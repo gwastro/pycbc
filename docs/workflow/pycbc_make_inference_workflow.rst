@@ -178,6 +178,27 @@ same directory, you can generate the workflow by running the following script:
 
 :download:`Download <../../examples/workflow/inference/gw150914_gw170814-emcee_pt/create_workflow.sh>`
 
+If you are on the ATLAS cluster (at AEI Hannover) or on an LDG cluster, you
+need to define an accounting group tag (talk to your cluster admins if you do
+not know what this is). Once you know what accounting-group tag to use, add it 
+to your config files. ``request_disk`` and ``request_memory`` may also be required.
+
+.. code-block::
+
+    [pegasus_profile]
+    condor|accounting_group = accounting.tag
+    condor|request_disk = 1024
+
+Here, ``accounting.tag`` should be replaced with the appropriate tag for your workflow.
+
+Once it is running, you can monitor the status of the workflow by running
+``./status`` from within the ``${WORKFLOW_NAME}-output`` directory. If your
+workflow fails for any reason, you can see what caused the failure by running
+``./debug``. If you need to stop the workflow at any point, run ``./stop``.
+To resume a workflow, run ``./start``. If the ``pycbc_inference`` jobs were
+still running, and they had checkpointed, they will resume from their last
+checkpoint upon restart.
+
 Note that you need to set the ``HTML_DIR`` before running. This tells the
 workflow where to save the results page when done. You can also change
 ``WORKFLOW_NAME`` if you like.
@@ -187,39 +208,18 @@ This sets the seed that is passed to ``pycbc_inference`` (you set it here
 because it will be incremented for every ``pycbc_inference`` job that will be
 run in the workflow).
 
-After the workflow has finished it will have created a directory named
+After the workflow generator has finished it will have created a directory named
 ``${WORKFLOW_NAME}-output``. This contains the ``dax`` and all necessary files
-to run the workflow.
+to monitor the workflow.
 
------------------------------
-Plan and execute the workflow
------------------------------
+--------------------
+Monitor the workflow
+--------------------
 
-Change directory into the ``${WORKFLOW_NAME}-output`` directory::
+Change directory into the ``${WORKFLOW_NAME}-output`` directory and run the ``status`` helper script::
 
     cd ${WORKFLOW_NAME}-output
-
-If you are on the ATLAS cluster (at AEI Hannover) or on an LDG cluster, you
-need to define an accounting group tag (talk to your cluster admins if you do
-not know what this is). Once you know what accounting-group tag to use, plan
-and submit the workflow with::
-
-    # submit workflow
-    pycbc_submit_dax --dax ${WORKFLOW_NAME}.dax \
-        --no-grid \
-        --no-create-proxy \
-        --enable-shared-filesystem \
-        --accounting-group ${ACCOUNTING_GROUP}
-
-Here, ``${ACCOUNTING_GROUP}`` is the appropriate tag for your workflow.
-
-Once it is running, you can monitor the status of the workflow by running
-``./status`` from within the ``${WORKFLOW_NAME}-output`` directory. If your
-workflow fails for any reason, you can see what caused the failure by running
-``./debug``. If you need to stop the workflow at any point, run ``./stop``.
-To resume a workflow, run ``./start``. If the ``pycbc_inference`` jobs were
-still running, and they had checkpointed, they will resume from their last
-checkpoint upon restart.
+    ./status
 
 ------------
 Results page
@@ -274,7 +274,7 @@ Note that we could have run both the ``emcee_pt`` analysis, above, and the
 need to remove any diagnostic plots that are unique to each sampler.
 
 Once you have downloaded the necessary files, create the workflow and launch
-it using the same ``create_workflow.sh`` script and ``pycbc_submit_dax``
+it using the same ``create_workflow.sh`` script
 commands as above, making sure to change the ``WORKFLOW_NAME`` and ``SEED``.
 
 This will produce a results page that looks like the example

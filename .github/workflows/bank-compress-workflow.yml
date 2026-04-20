@@ -15,7 +15,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.11'
     - name: install condor
       run: |
         wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
@@ -28,9 +28,9 @@ jobs:
     - name: install pegasus
       run: |
         wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
-        echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu bionic main" | sudo tee -a /etc/apt/sources.list
+        echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu noble main" | sudo tee -a /etc/apt/sources.list
         sudo apt-get -o Acquire::Retries=3 update
-        sudo apt-get -o Acquire::Retries=3 install pegasus=5.0.8-1+ubuntu18
+        sudo apt-get -o Acquire::Retries=3 install pegasus=5.1.1-1+ubuntu24
     - run: sudo apt-get -o Acquire::Retries=3 install *fftw3* intel-mkl*
     - name: Install pycbc
       run: |
@@ -48,7 +48,6 @@ jobs:
         cp examples/tmpltbank/compress_workflow/*.ini ./
         bash -e examples/tmpltbank/compress_workflow/gen.sh
         cd output
-        bash -e ../examples/search/submit.sh
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files

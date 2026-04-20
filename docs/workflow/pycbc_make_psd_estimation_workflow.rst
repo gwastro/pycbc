@@ -149,6 +149,17 @@ The sections below control plotting jobs.::
     analysis-title="PSD Estimation"
     analysis-subtitle="..."
 
+If you are on the ATLAS cluster (at AEI Hannover) or on an LDG cluster, you
+need to define an accounting group tag (talk to your cluster admins if you do
+not know what this is). Once you know what accounting-group tag to use, add it 
+to your config files. ``request_disk`` and ``request_memory`` may also be required.
+
+.. code-block::
+
+    [pegasus_profile]
+    condor|accounting_group = accounting.tag
+    condor|request_disk = 1024
+
 ===================================
 Generating and running the workflow
 ===================================
@@ -161,20 +172,20 @@ following way:
     pycbc_make_psd_estimation_workflow \
         --workflow-name RUN_NAME \
         --output-dir /path/to/run/directory \
-        --config-files /path/to/ini/file
+        --config-files /path/to/ini/file \
+        --submit-now
 
 ``RUN_NAME`` should be replaced with a meaningful descriptive name for the
 workflow and ``/path/to/run/directory`` should point to the directory where the
-run is supposed to take place. Once the workflow is generated, move to
+run is supposed to take place.
+
+If you don't want the workflow to start immediately, omit the ``--submit-now`` option.
+Then after the workflow is generated, move to
 ``/path/to/run/directory`` and start the workflow with
 
 ::
+    ./start
 
-    pycbc_submit_dax \
-        --dax RUN_NAME.dax \
-        --accounting-group ACCOUNTING_TAG
-
-where again ``RUN_NAME`` and ``ACCOUNTING_TAG`` should be given meaningful
-values. When the workflow completes, the average PSDs should be available in
+When the workflow completes, the average PSDs should be available in
 ``/path/to/run/directory/psds`` and diagnostic plots should be in
 ``/path/to/run/directory/plots``.

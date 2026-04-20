@@ -1325,7 +1325,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         if num_zerolag > 0:
             idx = cidx[zerolag_idx][0]
             zerolag_cstat = cstat[cidx][zerolag_idx]
-            ifar, ifar_sat = self.ifar(zerolag_cstat)
+            ifar, ifar_sat = self.ifar(zerolag_cstat[0])
             zerolag_results = {
                 'foreground/ifar': ifar,
                 'foreground/ifar_saturated': ifar_sat,

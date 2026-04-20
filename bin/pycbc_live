@@ -20,7 +20,6 @@ from matplotlib import use
 use('agg')
 from shutil import which
 from mpi4py import MPI as mpi
-from astropy.time import Time
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
 from pycbc.types import MultiDetOptionAction, MultiDetMultiColonOptionAction
@@ -43,6 +42,7 @@ from pycbc.filter import resample
 from pycbc.psd import estimate
 from pycbc.psd import variation
 from pycbc import conversions as conv
+from pycbc.time import gps_to_utc_datetime
 
 # Use cached class-based FFTs in the resample and estimate module
 resample.USE_CACHING_FOR_LFILTER = True
@@ -726,7 +726,7 @@ class LiveEventManager(object):
         """
         path = self.path
         if self.use_date_prefix:
-            time_dt = Time(time_gps, format='gps', scale='utc').to_datetime()
+            time_dt = gps_to_utc_datetime(time_gps)
             path = os.path.join(
                 path,
                 f'{time_dt.year:04d}_{time_dt.month:02d}_{time_dt.day:02d}'

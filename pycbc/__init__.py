@@ -178,23 +178,22 @@ DYN_RANGE_FAC =  5.9029581035870565e+20
 # This is used by the distributions and transforms modules
 VARARGS_DELIM = '+'
 
-# Check for optional components of the PyCBC Package
+# Check for optional CUDA support of the PyCBC Package
 try:
-    # This is a crude check to make sure that the driver is installed
-    try:
-        loaded_modules = subprocess.Popen(['lsmod'], stdout=subprocess.PIPE).communicate()[0]
-        loaded_modules = loaded_modules.decode()
-        if 'nvidia' not in loaded_modules:
-            raise ImportError("nvidia driver may not be installed correctly")
-    except OSError:
-        pass
-
-    # Check that pycuda is installed and can talk to the driver
+    #check if pycuda is installed
     import pycuda.driver as _pycudadrv
-
-    HAVE_CUDA=True
+    #check how many CUDA device is installed
+    try:
+        _pycudadrv.init()
+        device_count = _pycudadrv.Device.count()
+    except Exception:
+        device_count = 0
+    #Set value to true if there is usable device
+    HAVE_CUDA = (device_count > 0)
+    if device_count == 0:
+        warnings.warn("PyCUDA imported but no CUDA device found; disabling CUDA support")
 except ImportError:
-    HAVE_CUDA=False
+    HAVE_CUDA = False
 
 # Check for MKL capability
 try:
@@ -216,12 +215,6 @@ def random_string(stringLength=10):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
 
-def gps_now():
-    """Return the current GPS time as a float using Astropy.
-    """
-    from astropy.time import Time
-
-    return float(Time.now().gps)
 
 # This is needed as a backwards compatibility. The function was removed in
 # python 3.12.
@@ -235,3 +228,12 @@ def load_source(modname, filename):
     # sys.modules[module.__name__] = module
     loader.exec_module(module)
     return module
+
+# Expose some convenience functions at package level for backwards
+# compatibility and convenience: allow `pycbc.gps_now()` as well as
+# `pycbc.time.gps_now()`.
+try:
+    from .time import gps_now  # noqa: F401
+except Exception:
+    # If pycbc imported during build this may fail; silently ignore.
+    gps_now = None

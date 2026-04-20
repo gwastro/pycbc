@@ -32,8 +32,8 @@ requires = []
 setup_requires = ['numpy>=1.16.0']
 install_requires = setup_requires + [
     'cython>=0.29',
-    'numpy>=1.16.0,!=1.19.0,!=2.2.2',
-    'scipy>=0.16.0',
+    'numpy>=1.16.0,!=1.19.0,!=2.2.2,<2.4',
+    'scipy>=0.16.0,<1.17.0',
     'astropy>=2.0.3,!=4.2.1,!=4.0.5',
     'matplotlib>=1.5.1',
     'mpld3>=0.3',
@@ -45,11 +45,8 @@ install_requires = setup_requires + [
     'tqdm',
     'setuptools',
     'gwdatafind',
-    'pegasus-wms.api >= 5.0.8',
-    # FIXME igwn-ligolw 2.1.0 + lalsuite 7.25.1 produce errors arising from the
-    # old python-ligo-lw module. Remove pin when we have moved to a lalsuite
-    # that no longer depends on python-ligo-lw.
-    'igwn-ligolw<2.1.0',
+    'pegasus-wms.api >= 5.1.1',
+    'igwn-ligolw >= 2.1.0',
     'igwn-segments',
     'lalsuite!=7.2',
     'lscsoft-glue>=1.59.3',
@@ -98,7 +95,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.9.dev0'
+        vinfo.version = '2.12.dev1'
         vinfo.release = False
 
     version_script = f"""# coding: utf-8
@@ -262,13 +259,12 @@ setup(
         'pycbc.neutron_stars': find_files('pycbc/neutron_stars')
     },
     ext_modules = ext,
-    python_requires='>=3.9',
+    python_requires='>=3.11',
     classifiers=[
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Intended Audience :: Science/Research',
         'Natural Language :: English',
         'Topic :: Scientific/Engineering',

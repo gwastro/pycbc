@@ -20,8 +20,11 @@
 from abc import (ABCMeta, abstractmethod)
 
 import numpy as np
+import glob, os
 from scipy.interpolate import UnivariateSpline
 from pycbc.types import FrequencySeries
+from pycbc.frame.gwosc import get_run
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 
 class Recalibrate(metaclass=ABCMeta):
@@ -512,3 +515,107 @@ class PhysicalModel(object):
                               kappa_pu_re=calib_args[6],
                               kappa_pu_im=calib_args[7])
         return strain_adjusted
+
+
+def read_calibration_envelop_file(calibration_file, correction_type,
+                                  minimum_frequency, maximum_frequency, n_nodes):
+    """
+    This function reads the calibration envelop file and provide arrays
+    needed to construct cubic splines
+
+    Input:
+      calibration_file: Calibration envelop file
+      correction_type: Specify the correction type between 'data' and 'template'
+      minimum_frequency: Lower cut-off frequency to apply calibration
+      maximum_frequency: Upper cut-off frequency to apply calibration
+      n_nodes: Nodal points for cubic-splines
+
+    Output:
+      log_nodes: Values of log-frequency for nodal points
+      amplitude_median_nodes: Median values of Amplitude correction at frequency nodal points
+      amplitude_sigma_nodes: Standard deviation values of Amplitude correction at frequency nodal points
+      phase_median_nodes: Median values of Phase correction at frequency nodal points
+      phase_sigma_nodes: Standard deviation values of Phase correction at frequency nodal points
+    """
+    calibration_data = np.loadtxt(calibration_file).T
+    log_frequency_array = np.log(calibration_data[0])
+
+    log_nodes = np.linspace(np.log(minimum_frequency),
+                            np.log(maximum_frequency), n_nodes)
+
+    if correction_type.lower()=='template':
+        amplitude_median = calibration_data[1] - 1
+        phase_median = calibration_data[2]
+        amplitude_sigma = abs(calibration_data[5] - calibration_data[3]) / 2
+        phase_sigma = abs(calibration_data[6] - calibration_data[4]) / 2
+
+    elif correction_type.lower()=='data':
+        amplitude_median = 1/calibration_data[1] -1
+        phase_median = -calibration_data[2]
+        amplitude_sigma = abs(1/calibration_data[3] - 1/calibration_data[5]) / 2
+        phase_sigma = abs(calibration_data[6] - calibration_data[4]) / 2
+
+    # Some sanity checks
+    if calibration_data[0][-1] < maximum_frequency:
+        if maximum_frequency - calibration_data[0][-1] < 0.5:
+            maximum_frequency = calibration_data[0][-1]
+        else:
+            raise ValueError("Maximum frequency (=%d) for tc=%s is more than"
+                         "maximum frequency in calibration envelop (=%.3g)"%(maximum_frequency,gps_time,calibration_data[0][-1]))
+    else:
+        pass
+
+    if calibration_data[0][0] > minimum_frequency:
+        raise ValueError("Minimum frequency (=%d) for tc=%s is less than"
+                         "minimum frequency in calibration envelop (=%.3g)"%(minimum_frequency,gps_time,calibration_data[0][0]))
+    else:
+        pass
+
+    amplitude_median_nodes = \
+            InterpolatedUnivariateSpline(log_frequency_array, amplitude_median)(log_nodes)
+    amplitude_sigma_nodes = \
+            InterpolatedUnivariateSpline(log_frequency_array, amplitude_sigma)(log_nodes)
+    phase_median_nodes = \
+            InterpolatedUnivariateSpline(log_frequency_array, phase_median)(log_nodes)
+    phase_sigma_nodes = \
+            InterpolatedUnivariateSpline(log_frequency_array, phase_sigma)(log_nodes)
+
+    return log_nodes, amplitude_median_nodes, amplitude_sigma_nodes, phase_median_nodes, phase_sigma_nodes
+
+
+def get_calibration_files_O1_O2_O3(ifos, gps_time, calibration_file_path):
+    """
+    This function provides a dictionary of calibration envelop files
+    for each IFO around a given GPS time for O1, O2, and O3 observation
+    run.
+
+    Input:
+     ifos: List of detectors in the network
+     gps_time: GPS time around which the calibration envelop is required
+     calibration_file_path: Top level directory of locally downloaded calibration envelopes
+
+    Output:
+     A dictionary of calibration envelop file path for each IFO.
+    """
+    dict_calibration_file = {}
+    for ifo in ifos:
+        all_calibration_files = glob.glob('%s/%s/*FinalResults.txt'%(calibration_file_path, ifo))
+        if ifo !='V1':
+            # H1 and L1 detector files are treated seperately compared to V1 detector
+            # This list of GPS times can be coded in a better way!!!
+            list_gpstimes = np.array([int(item.split('_')[-4]) for item in all_calibration_files])
+            dt_list = abs(list_gpstimes - gps_time)
+            ifo_calibration_file = '%s/%s'%(os.getcwd(), all_calibration_files[dt_list.argmin()])
+        else:
+            RUN_NAME = get_run(gps_time).split('_')[0]
+            if RUN_NAME=='O2':
+                ifo_calibration_file = '%s/calibration_envelops/V1/V_calibrationUncertaintyEnvelope_magnitude5p1percent_phase40mraddeg20microsecond.txt'%os.getcwd()
+            elif RUN_NAME=='O3a':
+                ifo_calibration_file = '%s/calibration_envelops/V1/V_O3a_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt'%os.getcwd()
+            elif RUN_NAME=='O3b':
+                ifo_calibration_file = '%s/calibration_envelops/V1/V_O3b_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt'%os.getcwd()
+            else:
+                raise ValueError("Virgo GPS time is not in valid range")
+
+        dict_calibration_file[ifo] = '%s/%s/%s'%(calibration_file_path, ifo,ifo_calibration_file.split('/')[-1])
+    return dict_calibration_file

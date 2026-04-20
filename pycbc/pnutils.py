@@ -29,10 +29,10 @@ between quantities.
 import logging
 import numpy
 
-import lal
 from scipy.optimize import bisect, brentq, minimize
 
 from pycbc import conversions, libutils
+from pycbc.constants import MSUN_SI, PI, MTSUN_SI, PC_SI
 
 logger = logging.getLogger('pycbc.pnutils')
 
@@ -190,10 +190,10 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     return beta, sigma, gamma
 
 def solar_mass_to_kg(solar_masses):
-    return solar_masses * lal.MSUN_SI
+    return solar_masses * MSUN_SI
 
 def parsecs_to_meters(distance):
-    return distance * lal.PC_SI
+    return distance * PC_SI
 
 def megaparsecs_to_meters(distance):
     return parsecs_to_meters(distance) * 1e6
@@ -258,7 +258,7 @@ def f_LightRing(M):
     f : float or numpy.array
         Frequency in Hz
     """
-    return 1.0 / (3.0**(1.5) * lal.PI * M * lal.MTSUN_SI)
+    return 1.0 / (3.0**(1.5) * PI * M * MTSUN_SI)
 
 def f_ERD(M):
     """
@@ -277,7 +277,7 @@ def f_ERD(M):
     f : float or numpy.array
         Frequency in Hz
     """
-    return 1.07 * 0.5326 / (2*lal.PI * 0.955 * M * lal.MTSUN_SI)
+    return 1.07 * 0.5326 / (2*PI * 0.955 * M * MTSUN_SI)
 
 def f_FRD(m1, m2):
     """
@@ -301,7 +301,7 @@ def f_FRD(m1, m2):
     m_total, eta = mass1_mass2_to_mtotal_eta(m1, m2)
     tmp = ( (1. - 0.63*(1. - 3.4641016*eta + 2.9*eta**2)**(0.3)) /
     (1. - 0.057191*eta - 0.498*eta**2) )
-    return tmp / (2.*lal.PI * m_total*lal.MTSUN_SI)
+    return tmp / (2.*PI * m_total*MTSUN_SI)
 
 def f_LRD(m1, m2):
     """
@@ -536,26 +536,26 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
     if approximant == "SEOBNRv2":
         chi = lalsim.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
         time_length = lalsim.SimIMRSEOBNRv2ChirpTimeSingleSpin(
-                                m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, f_low)
+                                m1 * MSUN_SI, m2 * MSUN_SI, chi, f_low)
     elif approximant == "IMRPhenomXAS":
         time_length = lalsim.SimIMRPhenomXASDuration(
-                           m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
+                           m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z, f_low)
     elif approximant == "IMRPhenomD":
         time_length = lalsim.SimIMRPhenomDChirpTime(
-                           m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
+                           m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z, f_low)
     elif approximant in ["SEOBNRv4", "SEOBNRv4_ROM"]:
         # NB the LALSim function has f_low as first argument
         time_length = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
-                           f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
+                           f_low, m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z)
     elif approximant in ["SEOBNRv5", "SEOBNRv5_ROM"]:
         time_length = lalsim.SimIMRSEOBNRv5ROMTimeOfFrequency(
-                           f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
+                           f_low, m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z)
     elif approximant in ["SPAtmplt", "TaylorF2"]:
         chi = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(
             m1, m2, s1z, s2z
         )
         time_length = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(
-            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, -1
+            f_low, m1 * MSUN_SI, m2 * MSUN_SI, chi, -1
         )
     else:
         raise RuntimeError("I can't calculate a duration for %s" % approximant)
@@ -659,7 +659,7 @@ def _energy_coeffs(m1, m2, chi1, chi2):
     energy4 = -3.375 + (19*eta)/8. - pow(eta,2)/24.
     energy5 = 0.
     energy6 = -10.546875 - (155*pow(eta,2))/96. - (35*pow(eta,3))/5184. \
-                + eta*(59.80034722222222 - (205*pow(lal.PI,2))/96.)
+                + eta*(59.80034722222222 - (205*pow(PI,2))/96.)
 
     energy3 += (32*beta)/113. + (52*chisym*eta)/113.
 
@@ -718,12 +718,12 @@ def _dtdv_coeffs(m1, m2, chi1, chi2):
 
     dtdv0 = 1. # FIXME: Wrong but doesn't matter for now.
     dtdv2 = (1./336.) * (743. + 924.*eta)
-    dtdv3 = -4. * lal.PI + beta
+    dtdv3 = -4. * PI + beta
     dtdv4 = (3058673. + 5472432.*eta + 4353552.*eta*eta)/1016064. - sigma12 - sigmaqm
-    dtdv5 = (1./672.) * lal.PI * (-7729. + 1092.*eta) + (146597.*beta/18984. + 42.*beta*eta/113. - 417307.*chisym*eta/18984. - 1389.*chisym*eta*eta/226.)
+    dtdv5 = (1./672.) * PI * (-7729. + 1092.*eta) + (146597.*beta/18984. + 42.*beta*eta/113. - 417307.*chisym*eta/18984. - 1389.*chisym*eta*eta/226.)
     dtdv6 = 22.065 + 165.416*eta - 2.20067*eta*eta + 4.93152*eta*eta*eta
     dtdv6log = 1712./315.
-    dtdv7 = (lal.PI/1016064.) * (-15419335. - 12718104.*eta + 4975824.*eta*eta)
+    dtdv7 = (PI/1016064.) * (-15419335. - 12718104.*eta + 4975824.*eta*eta)
 
     return (dtdv0, dtdv2, dtdv3, dtdv4, dtdv5, dtdv6, dtdv6log, dtdv7)
 
@@ -788,7 +788,7 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
         ecof[5] = 0
     if phase_order >= 6:
         ecof[6] = - 675.0/64.0 + ( 34445.0/576.0    \
-              - 205.0/96.0 * lal.PI * lal.PI ) * eta  \
+              - 205.0/96.0 * PI * PI ) * eta  \
               - (155.0/96.0) *eta * eta - 35.0/5184.0 * eta * eta
     # Spin terms
 
@@ -1074,7 +1074,7 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
     inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = \
         lalsim.SimInspiralTransformPrecessingNewInitialConditions(
             thetajn, phijl, spin1_polar, spin2_polar, spin12_deltaphi,
-            spin1_a, spin2_a, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, f_ref,
+            spin1_a, spin2_a, mass1*MSUN_SI, mass2*MSUN_SI, f_ref,
             phiref)
     out = {'inclination': inclination,
            'spin1x': spin1x,

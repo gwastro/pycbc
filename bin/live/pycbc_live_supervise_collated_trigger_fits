@@ -14,13 +14,11 @@ import numpy as np
 
 from datetime import datetime, timedelta
 
-import lal
-from lal import gpstime
-
 import pycbc
 from pycbc.live import supervision as sv
 from pycbc.types.config import InterpolatingConfigParser as icp
 from pycbc.io import HFile
+from pycbc.time import gps_to_utc_datetime, utc_datetime_to_gps
 
 
 def read_options(args):
@@ -44,16 +42,7 @@ def get_true_date(replay_day_dt, controls):
     replay_start_time = int(controls['replay-start-time'])
     true_start_time = int(controls['true-start-time'])
     replay_duration = int(controls['replay-duration'])
-    rep_start_utc = lal.GPSToUTC(replay_start_time)[0:6]
-
-    dt_replay_start = datetime(
-        year=rep_start_utc[0],
-        month=rep_start_utc[1],
-        day=rep_start_utc[2],
-        hour=rep_start_utc[3],
-        minute=rep_start_utc[4],
-        second=rep_start_utc[5]
-    )
+    dt_replay_start = gps_to_utc_datetime(replay_start_time)
 
     td = (replay_day_dt - dt_replay_start).total_seconds()
 
@@ -62,15 +51,8 @@ def get_true_date(replay_day_dt, controls):
 
     # Add this on to the original start time to get the current time of
     # the replay data
-    true_utc = lal.GPSToUTC(true_start_time)[0:6]
-    dt_true_start = datetime(
-        year=true_utc[0],
-        month=true_utc[1],
-        day=true_utc[2],
-        hour=true_utc[3],
-        minute=true_utc[4],
-        second=true_utc[5]
-    )
+    dt_true_start = gps_to_utc_datetime(true_start_time)
+
     # Original time of the data being replayed right now
     return dt_true_start + timedelta(seconds=time_since_replay)
 
@@ -91,8 +73,8 @@ def trigger_collation(
         'pycbc_live_collate_triggers',
     ]
     collate_args += sv.dict_to_args(collation_options)
-    gps_start = gpstime.utc_to_gps(day_dt).gpsSeconds
-    gps_end = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
+    gps_start = int(utc_datetime_to_gps(day_dt))
+    gps_end = int(utc_datetime_to_gps(day_dt + timedelta(days=1)))
 
     trig_merge_file = os.path.join(
         output_dir,
@@ -326,8 +308,9 @@ def single_significance_fits(
     )
     daily_args = ['pycbc_live_single_significance_fits']
 
-    gps_start_time = gpstime.utc_to_gps(day_dt).gpsSeconds
-    gps_end_time = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
+    gps_start_time = int(utc_datetime_to_gps(day_dt))
+    gps_end_time = int(utc_datetime_to_gps(day_dt)+ timedelta(days=1))
+
     daily_fit_options['gps-start-time'] = f'{gps_start_time:d}'
     daily_fit_options['gps-end-time'] = f'{gps_end_time:d}'
     daily_args += sv.dict_to_args(daily_fit_options)
@@ -497,10 +480,9 @@ def daily_dq_trigger_rates(
 
     start_time = get_true_date(day_dt, daily_dq_controls)
 
-    gps_start_time = gpstime.utc_to_gps(start_time).gpsSeconds
-    gps_end_time = gpstime.utc_to_gps(start_time + timedelta(days=1)).gpsSeconds
-
-    offset = gpstime.utc_to_gps(day_dt).gpsSeconds - gps_start_time
+    gps_start_time = int(utc_datetime_to_gps(start_time))
+    gps_end_time = int(utc_datetime_to_gps(start_time + timedelta(days=1)))
+    offset = int(utc_datetime_to_gps(day_dt) - gps_start_time)
 
     ddtr_out_full = os.path.join(output_dir, ddtr_out_fname)
     daily_dq_args = ['pycbc_live_collated_dq_trigger_rates']

@@ -124,6 +124,8 @@ parser.add_argument('--fits-file',
 parser.add_argument('--title',
     help="A title for the plot. If not given, the files supplied "
          "and the number of templates will be used")
+parser.add_argument('--no-suptitle', action='store_true',
+                    help="If true no suptitle is shown.")
 
 add_style_opt_to_parser(parser)
 args = parser.parse_args()
@@ -293,7 +295,9 @@ title_text = f"{os.path.basename(args.bank_file)}"
 if args.fits_file is not None:
     title_text += f", {os.path.basename(args.fits_file)}"
 title_text += f" - {banklen}\u00a0templates"
-fig.suptitle('\n'.join(wrap(args.title if args.title is not None else title_text, 60)))
+title_text = '\n'.join(wrap(args.title if args.title is not None else title_text, 60))
+if not args.no_suptitle:
+    fig.suptitle(title_text)
 for k, v in axis_dict.items():
     # Some may be long labels - tilt the label a little to fit together
     xlab = v[0].get_xlabel()
@@ -345,7 +349,7 @@ caption = ("Template bank as a corner plot with "
 metadata.save_fig_with_metadata(
                  fig, args.output_plot_file,
                  cmd=" ".join(sys.argv),
-                 title="Template bank corner plot",
+                 title=title_text,
                  caption=caption,
                  fig_kwds={'bbox_inches': 'tight'})
 

@@ -296,7 +296,7 @@ tempBank = zip(mass1, mass2, spin1z, spin2z)
 bank_output.output_bank_to_file(
     opts.output_file,
     tempBank,
-    programName=__program__,
+    programName="pycbc_aligned_stoch_bank",
     optDict=opts.__dict__
 )
 

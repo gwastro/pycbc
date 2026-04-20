@@ -16,7 +16,7 @@ from igwn_ligolw import utils as ligolw_utils
 
 import pycbc
 from pycbc import version as pycbc_version
-from pycbc import pnutils
+from pycbc import pnutils, constants
 from pycbc.io.ligolw import (
     return_empty_sngl,
     create_process_table,
@@ -213,7 +213,7 @@ class CandidateForGraceDB(object):
         coinc_inspiral_row.end_time = sngl_populated.end_time
         coinc_inspiral_row.end_time_ns = sngl_populated.end_time_ns
         coinc_inspiral_row.snr = network_snrsq ** 0.5
-        far = 1.0 / (lal.YRJUL_SI * coinc_results['foreground/ifar'])
+        far = 1.0 / (constants.YRJUL_SI * coinc_results['foreground/ifar'])
         coinc_inspiral_row.combined_far = far
         coinc_inspiral_table.append(coinc_inspiral_row)
         outdoc.childNodes[0].appendChild(coinc_inspiral_table)
@@ -344,7 +344,8 @@ class CandidateForGraceDB(object):
             logger.info('P_astro file saved as %s', self.pastro_file)
 
     def upload(self, fname, gracedb_server=None, testing=True,
-               extra_strings=None, search='AllSky', labels=None):
+               extra_strings=None, search='AllSky', labels=None,
+               **kwargs):
         """Upload this candidate to GraceDB, and annotate it with a few useful
         plots and comments.
 
@@ -362,6 +363,9 @@ class CandidateForGraceDB(object):
             String going into the "search" field of the GraceDB event.
         labels: list
             Optional list of labels to tag the new event with.
+        kwargs: named keyword arguments
+            Extra keyword arguments to be passed to GraceDB upload function.
+            Can also overwrite reload_certificate and reload_buffer here.
         """
         from matplotlib import pyplot as plt
 
@@ -385,6 +389,8 @@ class CandidateForGraceDB(object):
         if not hasattr(self, 'gracedb'):
             logger.info('Connecting to GraceDB')
             gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+            if kwargs is not None:
+                gdbargs.update(kwargs)
             if gracedb_server:
                 gdbargs['service_url'] = gracedb_server
             try:

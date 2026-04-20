@@ -16,7 +16,7 @@
 #
 # =============================================================================
 #
-#                                   Preamble
+#                           Preamble
 #
 # =============================================================================
 #
@@ -26,7 +26,10 @@ domain waveforms.
 import numpy
 from ..types import real_same_precision_as
 from ..types import complex_same_precision_as
-from .decompress_cpu_cython import decomp_ccode_double, decomp_ccode_float
+from .decompress_cpu_cython import (decomp_ccode_double, decomp_ccode_float,
+                                    decomp_qcode_double, decomp_qcode_float,
+                                    decomp_tcode_double, decomp_tcode_float,
+                                    decomp_Qcode_double, decomp_Qcode_float)
 
 def inline_linear_interp(amp, phase, sample_frequencies, output,
                          df, f_lower, imin, start_index):
@@ -46,5 +49,68 @@ def inline_linear_interp(amp, phase, sample_frequencies, output,
     else:
         decomp_ccode_double(h, delta_f, hlen, start_index, sample_frequencies,
                             amp, phase, sflen, imin)
+
+    return output
+
+def inline_quadratic_interp(amp, phase, sample_frequencies, output,
+                            df, f_lower, imin, start_index):
+
+    rprec = real_same_precision_as(output)
+    cprec = complex_same_precision_as(output)
+    sample_frequencies = numpy.asarray(sample_frequencies, dtype=rprec)
+    amp = numpy.asarray(amp, dtype=rprec)
+    phase = numpy.asarray(phase, dtype=rprec)
+    sflen = len(sample_frequencies)
+    h = numpy.array(output.data, copy=False, dtype=cprec)
+    hlen = len(output)
+    delta_f = float(df)
+    if output.precision == 'single':
+        decomp_qcode_float(h, delta_f, hlen, start_index,
+                                   sample_frequencies, amp, phase, sflen, imin)
+    else:
+        decomp_qcode_double(h, delta_f, hlen, start_index,
+                                    sample_frequencies, amp, phase, sflen, imin)
+
+    return output
+
+def inline_cubic_interp(amp, phase, sample_frequencies, output,
+                        df, f_lower, imin, start_index):
+
+    rprec = real_same_precision_as(output)
+    cprec = complex_same_precision_as(output)
+    sample_frequencies = numpy.asarray(sample_frequencies, dtype=rprec)
+    amp = numpy.asarray(amp, dtype=rprec)
+    phase = numpy.asarray(phase, dtype=rprec)
+    sflen = len(sample_frequencies)
+    h = numpy.array(output.data, copy=False, dtype=cprec)
+    hlen = len(output)
+    delta_f = float(df)
+    if output.precision == 'single':
+        decomp_tcode_float(h, delta_f, hlen, start_index,
+                           sample_frequencies, amp, phase, sflen, imin)
+    else:
+        decomp_tcode_double(h, delta_f, hlen, start_index,
+                            sample_frequencies, amp, phase, sflen, imin)
+
+    return output
+
+def inline_quartic_interp(amp, phase, sample_frequencies, output,
+                          df, f_lower, imin, start_index):
+
+    rprec = real_same_precision_as(output)
+    cprec = complex_same_precision_as(output)
+    sample_frequencies = numpy.asarray(sample_frequencies, dtype=rprec)
+    amp = numpy.asarray(amp, dtype=rprec)
+    phase = numpy.asarray(phase, dtype=rprec)
+    sflen = len(sample_frequencies)
+    h = numpy.array(output.data, copy=False, dtype=cprec)
+    hlen = len(output)
+    delta_f = float(df)
+    if output.precision == 'single':
+        decomp_Qcode_float(h, delta_f, hlen, start_index,
+                           sample_frequencies, amp, phase, sflen, imin)
+    else:
+        decomp_Qcode_double(h, delta_f, hlen, start_index,
+                            sample_frequencies, amp, phase, sflen, imin)
 
     return output

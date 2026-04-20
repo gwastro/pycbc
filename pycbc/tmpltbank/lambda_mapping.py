@@ -17,10 +17,11 @@ import re
 import logging
 import numpy
 
-from lal import MTSUN_SI, PI, CreateREAL8Vector
 
+from pycbc.constants import MTSUN_SI, PI
 import pycbc.libutils
 
+lal = pycbc.libutils.import_optional('lal')
 lalsimulation = pycbc.libutils.import_optional('lalsimulation')
 
 logger = logging.getLogger('pycbc.tmpltbank.lambda_mapping')
@@ -225,21 +226,21 @@ def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order,
     if lambda2 is None:
         lambda2 = numpy.zeros(len(mass1), dtype=float)
 
-    mass1_v = CreateREAL8Vector(len(mass1))
+    mass1_v = lal.CreateREAL8Vector(len(mass1))
     mass1_v.data[:] = mass1[:]
-    mass2_v = CreateREAL8Vector(len(mass1))
+    mass2_v = lal.CreateREAL8Vector(len(mass1))
     mass2_v.data[:] = mass2[:]
-    spin1z_v = CreateREAL8Vector(len(mass1))
+    spin1z_v = lal.CreateREAL8Vector(len(mass1))
     spin1z_v.data[:] = spin1z[:]
-    spin2z_v = CreateREAL8Vector(len(mass1))
+    spin2z_v = lal.CreateREAL8Vector(len(mass1))
     spin2z_v.data[:] = spin2z[:]
-    lambda1_v = CreateREAL8Vector(len(mass1))
+    lambda1_v = lal.CreateREAL8Vector(len(mass1))
     lambda1_v.data[:] = lambda1[:]
-    lambda2_v = CreateREAL8Vector(len(mass1))
+    lambda2_v = lal.CreateREAL8Vector(len(mass1))
     lambda2_v.data[:] = lambda2[:]
-    dquadparam1_v = CreateREAL8Vector(len(mass1))
+    dquadparam1_v = lal.CreateREAL8Vector(len(mass1))
     dquadparam1_v.data[:] = quadparam1[:] - 1.
-    dquadparam2_v = CreateREAL8Vector(len(mass1))
+    dquadparam2_v = lal.CreateREAL8Vector(len(mass1))
     dquadparam2_v.data[:] = quadparam2[:] - 1.
 
     phasing_arr = lalsimulation.SimInspiralTaylorF2AlignedPhasingArray\

@@ -26,7 +26,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: cp39-* cp310-* cp311-* cp312-*
+          CIBW_BUILD: cp311-* cp312-* cp313-*
           CIBW_SKIP: "*musllinux*"
           CIBW_ARCHS_MACOS: x86_64 arm64
       - name: Upload wheels
@@ -53,6 +53,8 @@ jobs:
         path: dist/
     - name: Build source distribution
       run: |
+        python -c 'import setuptools ; print("setuptools version", setuptools.__version__)'
+        pip install pip setuptools --upgrade
         python setup.py sdist
         ls -lh dist
     - name: Publish to PyPI

@@ -25,7 +25,7 @@ You also need to be authorized on the gracedb end to do the upload. The initial 
 Finding input files
 ============================
 
-To run this code requires some input files from your run. These can be found as follows where RUN_DIR is the place where you ran pycbc_submit_dax::
+To run this code requires some input files from your run. These can be found as follows where RUN_DIR is your run directory::
 
    TRIG_FILE=${RUN_DIR}/results/7._result/H1L1-PAGE_FOREGROUND_XMLLOUDEST-1130754617-1019335.xml
 

@@ -17,7 +17,7 @@ pycbc_geom_nonspinbank \
     --filter-cutoff SchwarzISCO \
     --asd-file ZERO_DET_high_P.txt
 
-ligolw_print \
+igwn_ligolw_print \
     -t sngl_inspiral \
     -c mass1 \
     -c mass2 \

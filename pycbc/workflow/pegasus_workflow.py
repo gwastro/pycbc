@@ -403,7 +403,8 @@ class Workflow(object):
 
     def add_explicit_dependancy(self, parent, child):
         """
-        Add an explicit dependancy between two Nodes in this workflow.
+        Add an explicit dependancy between Nodes, Workflows or SubWorkflows in
+        this workflow.
 
         Most dependencies (in PyCBC and Pegasus thinking) are added by
         declaring file linkages. However, there are some cases where you might
@@ -411,12 +412,19 @@ class Workflow(object):
 
         Parameters
         ----------
-        parent : Node instance
-            The parent Node.
-        child : Node instance
-            The child Node
+        parent : Node, Workflow or SubWorkflow instance
+        child : Node, Workflow or SubWorkflow instance
         """
-        self._adag.add_dependency(parent._dax_node, children=[child._dax_node])
+        def convert(thing):
+            if isinstance(thing, Workflow):
+                return thing._as_job
+            if isinstance(thing, Node):
+                return thing._dax_node
+            if isinstance(thing, SubWorkflow):
+                return thing
+            raise TypeError('ayee, cannot handle this dependancy!')
+
+        self._adag.add_dependency(convert(parent), children=[convert(child)])
 
     def add_subworkflow_dependancy(self, parent_workflow, child_workflow):
         """
@@ -437,8 +445,7 @@ class Workflow(object):
             The sub-workflow to add as the child dependence.
             Must be a sub-workflow of this workflow.
         """
-        self._adag.add_dependency(parent_workflow._as_job,
-                                  children=[child_workflow._as_job])
+        self.add_explicit_dependancy(parent_workflow, child_workflow)
 
     def add_transformation(self, tranformation):
         """ Add a transformation to this workflow
@@ -640,12 +647,11 @@ class Workflow(object):
                 with open('additional_planner_args.dat', 'w') as f:
                     stage_site_str = self.staging_site_str
                     exec_sites = self.exec_sites_str
-                    # For now we don't include --config as this can be added to
-                    # in submit_dax. We should add an option to add additional
+                    # We should add an option to add additional
                     # pegasus properties (through the config files?) here.
-                    #prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
-                    #                         'pegasus-properties.conf')
-                    #f.write('--conf {} '.format(prop_file))
+                    prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
+                                            'pegasus-properties.conf')
+                    f.write('--conf {} '.format(prop_file))
                     if self.cache_file is not None:
                         f.write('--cache {} '.format(self.cache_file))
 
@@ -662,18 +668,8 @@ class Workflow(object):
         os.chdir(olddir)
 
     def plan_and_submit(self, submit_now=True):
-        """ Plan and submit the workflow now.
+        """ Plan and optionally submit the workflow now.
         """
-        # New functionality, this might still need some work. Here's things
-        # that this might want to do, that submit_dax does:
-        # * Checks proxy (ignore this, user should already have this done)
-        # * Pulls properties file in (DONE)
-        # * Send necessary options to the planner (DONE)
-        # * Some logging about hostnames (NOT DONE, needed?)
-        # * Setup the helper scripts (start/debug/stop/status) .. (DONE)
-        # * Copy some of the interesting files into workflow/ (DONE)
-        # * Checks for dashboard URL (NOT DONE)
-        # * Does something with condor_reschedule (NOT DONE, needed?)
 
         planner_args = {}
         planner_args['submit'] = submit_now
@@ -724,22 +720,28 @@ class Workflow(object):
         #        file. This is overridden for subworkflows, but is not for
         #        main workflows with submit_dax. If we ever remove submit_dax
         #        we should include the location explicitly here.
+
+        # Need to set this to avoid pegasus pulling in other environment
+        os.environ['PEGASUS_UPDATE_PYTHONPATH'] = '0'
+
         self._adag.plan(**planner_args)
 
         # Set up convenience scripts
         with open('status', 'w') as fp:
-            fp.write('pegasus-status --verbose ')
-            fp.write('--long {}/work $@'.format(submitdir))
+            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-status ')
+            fp.write(f'--long {submitdir}/work $@')
 
         with open('debug', 'w') as fp:
-            fp.write('pegasus-analyzer -r ')
-            fp.write('-v {}/work $@'.format(submitdir))
+            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-analyzer -r ')
+            fp.write(f'-v {submitdir}/work $@')
 
         with open('stop', 'w') as fp:
-            fp.write('pegasus-remove {}/work $@'.format(submitdir))
+            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-remove ')
+            fp.write(f'{submitdir}/work $@')
 
         with open('start', 'w') as fp:
-            fp.write('pegasus-run {}/work $@'.format(submitdir))
+            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-run ')
+            fp.write(f'{submitdir}/work $@')
 
         os.chmod('status', 0o755)
         os.chmod('debug', 0o755)

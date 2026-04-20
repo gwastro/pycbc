@@ -603,6 +603,9 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             args['det_frame_waveform'] = True
         if cp.has_option('model', 'no-save-data'):
             args['no_save_data'] = True
+        # set inverse spectrum to truncate if not set
+        if cp.has_option(data_section, 'invpsd-trunc-which-spectrum'):
+            cp.set(data_section, 'invpsd-trunc-which-spectrum', 'invpsd')
         # get any other keyword arguments provided in the model section
         ignore_args = [
             'name',

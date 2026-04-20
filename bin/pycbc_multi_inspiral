@@ -397,6 +397,9 @@ strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(
 # Context manager to handle the various possible processing schemes
 ctx = scheme.from_cli(args)
 with ctx:
+    num_cpu_cores = 1
+    if hasattr(ctx, "num_threads"):
+        num_cpu_cores = ctx.num_threads
     fft.from_cli(args)
     # Set some convenience variables: number of IFOs, lower frequency,
     # GRB time, sky positions to search (either a grid or single sky point)
@@ -562,7 +565,7 @@ with ctx:
         'bank_chisq': None,
         'bank_chisq_dof': None,
         'auto_chisq': None,
-        'auto_chisq_dof': int,
+        'auto_chisq_dof': None,
         'slide_id': None,
     }
     ifo_names = sorted(ifo_out_vals.keys())
@@ -628,6 +631,9 @@ with ctx:
     logging.info("Calculating antenna pattern functions at every sky position")
     antenna_pattern = sky_positions.calculate_antenna_patterns()
 
+    # Record the time at which we finished setting things up
+    time_setup = time.time() - time_init
+
     logging.info("Starting the filtering...")
     # Loop over templates
     for t_num, template in enumerate(bank):
@@ -684,6 +690,10 @@ with ctx:
             idx = dict.fromkeys(args.instruments)
             # - The list of normalized SNR values at the trigger locations
             snr = dict.fromkeys(args.instruments)
+            # - Cache for power chi^2 and corresponding DoF for each time sample.
+            #   Typically only a tiny fraction will be populated.
+            power_chisq_arrays = dict.fromkeys(args.instruments)
+            power_chisq_dof_arrays = dict.fromkeys(args.instruments)
             for ifo in args.instruments:
                 logging.debug(
                     "Filtering template %d/%d, ifo %s", t_num + 1, n_bank, ifo
@@ -696,6 +706,22 @@ with ctx:
                 ].matched_filter_and_cluster(
                     s_num, template.sigmasq(stilde[ifo].psd), window=0
                 )
+                # change to integer indexes because we will have to do
+                # arithmetic with time_delay_idx, which can be positive
+                # or negative
+                ind = ind.astype(np.int32)
+                if inj_filter_rejector[ifo].enabled:
+                    trig_times = (
+                        (ind + stilde[ifo].cumulative_index) /
+                        snr_ts.sample_rate +
+                        args.gps_start_time[ifo]
+                    )
+                    inj_idxs = inj_filter_rejector[ifo].find_indices_in_injection_intervals(
+                        trig_times
+                    )
+                    ind = ind[inj_idxs]
+                    snrv = snrv[inj_idxs]
+
                 snr_dict[ifo] = (
                     snr_ts[matched_filter[ifo].segments[s_num].analyze] * norm
                 )
@@ -704,11 +730,16 @@ with ctx:
                 ), f'SNR time series for {ifo} is empty'
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
-                # change to integer indexes because we will have to do
-                # arithmetic with time_delay_idx, which can be positive
-                # or negative
-                idx[ifo] = ind.astype(np.int32)
+                idx[ifo] = ind
                 snr[ifo] = snrv * norm
+                # Initialize the cache for power chi^2
+                power_chisq_arrays[ifo] = np.full(
+                    len(snr_dict[ifo]), np.nan, dtype=np.float32
+                )
+                power_chisq_dof_arrays[ifo] = np.zeros(
+                    len(snr_dict[ifo]), dtype=np.int32
+                )
+                del snr_ts, norm, corr, ind, snrv
 
             # Move onto next segment if there are no triggers.
             n_trigs = [len(snr[ifo]) for ifo in args.instruments]
@@ -975,15 +1006,28 @@ with ctx:
                         chisq = {}
                         chisq_dof = {}
                         for ifo in args.instruments:
-                            chisq[ifo], chisq_dof[ifo] = power_chisq.values(
-                                corr_dict[ifo],
-                                coherent_ifo_trigs[ifo] / norm_dict[ifo],
-                                norm_dict[ifo],
-                                stilde[ifo].psd,
-                                coinc_idx_det_frame[ifo]
-                                + stilde[ifo].analyze.start,
-                                template,
+                            # Figure out which new indices we need to calculate
+                            # the chi^2 for
+                            needed_idx = coinc_idx_det_frame[ifo]
+                            unavailable_mask = np.isnan(
+                                power_chisq_arrays[ifo][needed_idx]
                             )
+                            if unavailable_mask.any():
+                                new_needed_idx = needed_idx[unavailable_mask]
+                                new_chisq, new_chisq_dof = power_chisq.values(
+                                    corr_dict[ifo],
+                                    snr_dict[ifo][new_needed_idx] / norm_dict[ifo],
+                                    norm_dict[ifo],
+                                    stilde[ifo].psd,
+                                    new_needed_idx + stilde[ifo].analyze.start,
+                                    template,
+                                )
+                                power_chisq_arrays[ifo][new_needed_idx] = new_chisq
+                                power_chisq_dof_arrays[ifo][new_needed_idx] = new_chisq_dof
+                                del new_chisq, new_chisq_dof, new_needed_idx
+                            chisq[ifo] = power_chisq_arrays[ifo][needed_idx]
+                            chisq_dof[ifo] = power_chisq_dof_arrays[ifo][needed_idx]
+                            del needed_idx, unavailable_mask
                         # Calculate network chisq value
                         network_chisq_dict = coh.network_chisq(
                             chisq, chisq_dof, coherent_ifo_trigs
@@ -1030,8 +1074,8 @@ with ctx:
                                 template,
                                 stilde[ifo].psd,
                                 stilde[ifo],
-                                coherent_ifo_trigs[ifo] / norm_dict[ifo],
-                                norm_dict[ifo],
+                                coherent_ifo_trigs[ifo],
+                                1,  # coherent_ifo_trigs already normalized
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].analyze.start,
                             )
@@ -1039,11 +1083,11 @@ with ctx:
                                 ifo_out_vals['auto_chisq'],
                                 ifo_out_vals['auto_chisq_dof'],
                             ) = autochisq.values(
-                                snr_dict[ifo] / norm_dict[ifo],
+                                snr_dict[ifo],
                                 coinc_idx_det_frame[ifo],
                                 template,
                                 stilde[ifo].psd,
-                                norm_dict[ifo],
+                                1,  # snr_dict already normalized
                                 stilde=stilde[ifo],
                                 low_frequency_cutoff=flow,
                             )
@@ -1111,8 +1155,19 @@ with ctx:
     # Left loop over templates
     logging.info("Filtering completed")
 
+# Record some stats about performance
+time_stop = time.time()
+run_time = time_stop - time_init
+event_mgr.save_performance(
+    num_cpu_cores,
+    len(segments[args.instruments[0]]),
+    n_bank,
+    run_time,
+    time_setup
+)
+
 logging.info("Writing output")
 event_mgr.write_events(args.output)
 
 logging.info("Finished")
-logging.info("Time to complete analysis: %d", int(time.time() - time_init))
+logging.info("Time to complete analysis: %.0f s", time.time() - time_init)

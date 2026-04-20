@@ -27,63 +27,77 @@ testing the "similarity" of templates and injections.
 """
 
 import numpy as np
+from igwn_segments import segment
+from igwn_segments import segmentlist
 from pycbc import DYN_RANGE_FAC
 from pycbc.filter import match
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3
 from pycbc.types import FrequencySeries, zeros
 from pycbc.types import MultiDetOptionAction
+from pycbc.types import positive_float
 
-_injfilterrejector_group_help = \
-    ("Options that, if injections are present in "
-     "this run, are responsible for performing pre-checks between injections "
-     "in the data being filtered and the current search template to determine "
-     "if the template has any chance of actually detecting the injection. "
-     "The parameters of this test are given by the various options below. "
-     "The --injection-filter-rejector-chirp-time-window and "
-     "--injection-filter-rejector-match-threshold options need to be provided "
-     "if those tests are desired. Other options will take default values "
-     "unless overriden. More details on these options follow.")
-
-_injfilterer_cthresh_help = \
-    ("If this value is not None and an "
-     "injection file is given then we will calculate the difference in "
-     "chirp time (tau_0) between the template and each injection in the "
-     "analysis segment. If the difference is greate than this threshold for "
-     "all injections then filtering is not performed. By default this will "
-     "be None.")
-_injfilterer_mthresh_help = \
-    ("If this value is not None and an "
-     "injection file is provided then we will calculate a 'coarse match' "
-     "between the template and each injection in the analysis segment. If the "
-     "match is less than this threshold for all injections then filtering is "
-     "not performed. Parameters for the 'coarse match' follow. By default "
-     "this value will be None.")
-_injfilterer_deltaf_help = \
-    ("If injections are present and a match threshold is "
-     "provided, this option specifies the frequency spacing that will be used "
-     "for injections, templates and PSD when computing the 'coarse match'. "
-     "Templates will be generated directly with this spacing. The PSD and "
-     "injections will be resampled.")
-_injfilterer_fmax_help = \
-    ("If injections are present and a match threshold is "
-     "provided, this option specifies the maximum frequency that will be used "
-     "for injections, templates and PSD when computing the 'coarse match'. "
-     "Templates will be generated directly with this max frequency. The PSD "
-     "and injections' frequency series will be truncated.")
-_injfilterer_buffer_help = \
-    ("If injections are present and either a match "
-     "threshold or a chirp-time window is given, we will determine if "
-     "injections are 'in' the specified analysis chunk by using the end "
-     "times. If this value is non-zero the analysis chunk is extended on both "
-     "sides by this amount before determining if injections are within the "
-     "given window.")
-_injfilterer_flower_help = \
-    ("If injections are present and either a match "
-     "threshold or a chirp-time window is given, this value is used to set "
-     "the lower frequency for determine chirp times or for calculating "
-     "matches. If this value is None the lower frequency used for the full "
-     "matched-filter is used. Otherwise this value is used.")
+_injfilterrejector_group_help = (
+    "Options that, if injections are present in "
+    "this run, are responsible for performing pre-checks between injections "
+    "in the data being filtered and the current search template to determine "
+    "if the template has any chance of actually detecting the injection. "
+    "The parameters of this test are given by the various options below. "
+    "The --injection-filter-rejector-chirp-time-window and "
+    "--injection-filter-rejector-match-threshold options need to be provided "
+    "if those tests are desired. Other options will take default values "
+    "unless overriden. More details on these options follow."
+)
+_injfilterer_cthresh_help = (
+    "If this value is not None and an "
+    "injection file is given then we will calculate the difference in "
+    "chirp time (tau_0) between the template and each injection in the "
+    "analysis segment. If the difference is greate than this threshold for "
+    "all injections then filtering is not performed. By default this will "
+    "be None."
+)
+_injfilterer_mthresh_help = (
+    "If this value is not None and an "
+    "injection file is provided then we will calculate a 'coarse match' "
+    "between the template and each injection in the analysis segment. If the "
+    "match is less than this threshold for all injections then filtering is "
+    "not performed. Parameters for the 'coarse match' follow. By default "
+    "this value will be None."
+)
+_injfilterer_deltaf_help = (
+    "If injections are present and a match threshold is "
+    "provided, this option specifies the frequency spacing that will be used "
+    "for injections, templates and PSD when computing the 'coarse match'. "
+    "Templates will be generated directly with this spacing. The PSD and "
+    "injections will be resampled."
+)
+_injfilterer_fmax_help = (
+    "If injections are present and a match threshold is "
+    "provided, this option specifies the maximum frequency that will be used "
+    "for injections, templates and PSD when computing the 'coarse match'. "
+    "Templates will be generated directly with this max frequency. The PSD "
+    "and injections' frequency series will be truncated."
+)
+_injfilterer_buffer_help = (
+    "If injections are present and either a match "
+    "threshold or a chirp-time window is given, we will determine if "
+    "injections are 'in' the specified analysis chunk by using the end "
+    "times. If this value is non-zero the analysis chunk is extended on both "
+    "sides by this amount before determining if injections are within the "
+    "given window."
+)
+_injfilterer_flower_help = (
+    "If injections are present and either a match "
+    "threshold or a chirp-time window is given, this value is used to set "
+    "the lower frequency for determine chirp times or for calculating "
+    "matches. If this value is None the lower frequency used for the full "
+    "matched-filter is used. Otherwise this value is used."
+)
+_injfilterer_trwindow_help = (
+    "After computing triggers, reject triggers that are not within this "
+    "window of injection times. This avoids doing expensive chi-squared "
+    "computation on triggers not associated with injections."
+)
 
 
 def insert_injfilterrejector_option_group(parser):
@@ -108,6 +122,10 @@ def insert_injfilterrejector_option_group(parser):
     curr_arg = "--injection-filter-rejector-f-lower"
     injfilterrejector_group.add_argument(curr_arg, type=int, default=None,
                                          help=_injfilterer_flower_help)
+    curr_arg = "--injection-filter-rejector-trigger-window"
+    injfilterrejector_group.add_argument(curr_arg, type=positive_float,
+                                         default=None,
+                                         help=_injfilterer_trwindow_help)
 
 
 def insert_injfilterrejector_option_group_multi_ifo(parser):
@@ -138,6 +156,11 @@ def insert_injfilterrejector_option_group_multi_ifo(parser):
     injfilterrejector_group.add_argument(
         curr_arg, type=int, default=None, help=_injfilterer_flower_help,
         metavar='IFO:VALUE', action=MultiDetOptionAction, nargs='+')
+    curr_arg = "--injection-filter-rejector-trigger-window"
+    injfilterrejector_group.add_argument(
+        curr_arg, type=positive_float, default=None,
+        help=_injfilterer_trwindow_help,
+        metavar='IFO:VALUE', action=MultiDetOptionAction, nargs='+')
 
 
 class InjFilterRejector(object):
@@ -150,15 +173,20 @@ class InjFilterRejector(object):
 
     def __init__(self, injection_file, chirp_time_window,
                  match_threshold, f_lower, coarsematch_deltaf=1.,
-                 coarsematch_fmax=256, seg_buffer=10):
+                 coarsematch_fmax=256, seg_buffer=10, inj_trigger_window=None):
         """Initialise InjFilterRejector instance."""
         # Determine if InjFilterRejector is to be enabled
-        if injection_file is None or injection_file == 'False' or\
-                (chirp_time_window is None and match_threshold is None):
+        if (
+            injection_file is None or injection_file == 'False' or
+            (
+                chirp_time_window is None and
+                match_threshold is None and
+                inj_trigger_window is None
+            )
+        ):
             self.enabled = False
             return
-        else:
-            self.enabled = True
+        self.enabled = True
 
         # Store parameters
         self.chirp_time_window = chirp_time_window
@@ -167,6 +195,7 @@ class InjFilterRejector(object):
         self.coarsematch_fmax = coarsematch_fmax
         self.seg_buffer = seg_buffer
         self.f_lower = f_lower
+        self.inj_trigger_window = inj_trigger_window
         assert(self.f_lower is not None)
 
         # Variables for storing arrays (reduced injections, memory
@@ -175,6 +204,8 @@ class InjFilterRejector(object):
         self._short_template_mem = None
         self._short_psd_storage = {}
         self._short_template_id = None
+        self._end_times = None
+        self._injection_intervals = None
 
     @classmethod
     def from_cli(cls, opt):
@@ -186,6 +217,7 @@ class InjFilterRejector(object):
         coarsematch_deltaf = opt.injection_filter_rejector_coarsematch_deltaf
         coarsematch_fmax = opt.injection_filter_rejector_coarsematch_fmax
         seg_buffer = opt.injection_filter_rejector_seg_buffer
+        trig_window = opt.injection_filter_rejector_trigger_window
         if opt.injection_filter_rejector_f_lower is not None:
             f_lower = opt.injection_filter_rejector_f_lower
         else:
@@ -197,7 +229,7 @@ class InjFilterRejector(object):
         return cls(injection_file, chirp_time_window, match_threshold,
                    f_lower, coarsematch_deltaf=coarsematch_deltaf,
                    coarsematch_fmax=coarsematch_fmax,
-                   seg_buffer=seg_buffer)
+                   seg_buffer=seg_buffer, inj_trigger_window=trig_window)
 
     @classmethod
     def from_cli_single_ifo(cls, opt, ifo):
@@ -210,6 +242,7 @@ class InjFilterRejector(object):
             opt.injection_filter_rejector_coarsematch_deltaf[ifo]
         coarsematch_fmax = opt.injection_filter_rejector_coarsematch_fmax[ifo]
         seg_buffer = opt.injection_filter_rejector_seg_buffer[ifo]
+        trig_window = opt.injection_filter_rejector_trigger_window[ifo]
         if opt.injection_filter_rejector_f_lower[ifo] is not None:
             f_lower = opt.injection_filter_rejector_f_lower[ifo]
         else:
@@ -221,7 +254,7 @@ class InjFilterRejector(object):
         return cls(injection_file, chirp_time_window,
                    match_threshold, f_lower,
                    coarsematch_deltaf, coarsematch_fmax,
-                   seg_buffer=seg_buffer)
+                   seg_buffer=seg_buffer, inj_trigger_window=trig_window)
 
     @classmethod
     def from_cli_multi_ifos(cls, opt, ifos):
@@ -230,6 +263,67 @@ class InjFilterRejector(object):
         for ifo in ifos:
             inj_filter_rejectors[ifo] = cls.from_cli_single_ifo(opt, ifo)
         return inj_filter_rejectors
+
+    def get_inj_end_times(self):
+        """Return a list of the sorted injection end times."""
+        if self._end_times is None:
+            self._end_times = np.array(self.injection_params.end_times())
+            self._end_times.sort()
+        return self._end_times
+
+    # Written together with Google Gemini
+    def precompute_injection_intervals(self):
+        """
+        Precompute and merge windows around the injections to speed up later
+        determination of whether triggers are within the injection times.
+        """
+        window = self.inj_trigger_window
+        # This function returns sorted injection times
+        inj_times = self.get_inj_end_times()
+        if inj_times.size == 0:
+            return np.empty((0, 2))
+
+        # Create individual intervals
+        starts = inj_times - window
+        ends = inj_times + window
+        intervals = segmentlist([segment(s,e) for s,e in zip(starts, ends)])
+        intervals.coalesce()
+
+        return np.array(intervals)
+
+    # Written together with Google Gemini
+    def find_indices_in_injection_intervals(self, trig_times):
+        """
+        Identify indices within trig_times that corresponds to times within
+        the injection intervals.
+        """
+        if not self.enabled or self.inj_trigger_window is None:
+            return slice(None) # Pythonic way to say "take all triggers"
+
+        if self._injection_intervals is None:
+            self._injection_intervals = self.precompute_injection_intervals()
+
+        merged_intervals = self._injection_intervals
+        if trig_times.size == 0 or merged_intervals.size == 0:
+            return np.array([], dtype=int)
+
+        # Initialize a boolean array to mark matching elements in trig_times
+        # This array will be True at positions where trig_times elements
+        # fall into any interval
+        is_matching = np.zeros(trig_times.shape, dtype=bool)
+
+        # Iterate through each precomputed merged interval
+        for start, end in merged_intervals:
+            # Perform a vectorized comparison for the current interval
+            # This finds all elements in trig_times that are >= start AND <= end
+            curr_interval_matches = (trig_times >= start) & (trig_times <= end)
+
+            # Use bitwise OR assignment to accumulate the matches.
+            # If an element in trig_times matches ANY of the intervals,
+            # its corresponding position in 'is_matching' will become True.
+            is_matching |= curr_interval_matches
+
+        return is_matching
 
     def generate_short_inj_from_inj(self, inj_waveform, simulation_id):
         """Generate and a store a truncated representation of inj_waveform."""

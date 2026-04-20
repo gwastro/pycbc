@@ -24,7 +24,7 @@ logger = logging.getLogger('pycbc.distributions.uniform')
 
 
 class Uniform(bounded.BoundedDist):
-    """
+    r"""
     A uniform distribution on the given parameters. The parameters are
     independent of each other. Instances of this class can be called like
     a function. By default, logpdf will be called, but this can be changed

@@ -13,4 +13,5 @@ pycbc_make_inference_workflow \
     --seed ${SEED} \
     --config-files workflow_config.ini events.ini \
     --workflow-name ${WORKFLOW_NAME} \
-    --config-overrides results_page:output-path:${HTML_DIR}/${WORKFLOW_NAME}
+    --config-overrides results_page:output-path:${HTML_DIR}/${WORKFLOW_NAME} \
+    --submit-now

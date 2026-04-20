@@ -280,11 +280,39 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             err_msg += "must be a multiple of 15 seconds."
             raise ValueError(err_msg)
 
+    if opt.injection_frame_files or opt.injection_frame_type:
+        if opt.injection_frame_files and opt.injection_frame_type:
+            err_msg = (
+                "You cannot supply both injection-frame-files and "
+                "injection-frame-type"
+            )
+            raise ValueError(err_msg)
+
+        logging.info("Reading Frames containing injections")
+
+        if opt.injection_frame_type:
+            injection_strain = pycbc.frame.query_and_read_frame(
+                opt.injection_frame_type,
+                opt.injection_channel_name,
+                start_time=opt.gps_start_time-opt.pad_data,
+                end_time=opt.gps_end_time+opt.pad_data,
+                sieve=None
+            )
+        else:
+            injection_strain = pycbc.frame.read_frame(
+                opt.injection_frame_files,
+                opt.injection_channel_name,
+                start_time=opt.gps_start_time-opt.pad_data,
+                end_time=opt.gps_end_time+opt.pad_data,
+                sieve=None
+            )
+        strain.inject(injection_strain, copy=False)
+
     if not opt.channel_name and (opt.injection_file \
                                  or opt.sgburst_injection_file):
         raise ValueError('Please provide channel names with the format '
                          'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
-                         'simulated signals into fake strain')
+                         'simulated signals into strain')
 
     if opt.zpk_z and opt.zpk_p and opt.zpk_k:
         logger.info("Highpass Filtering")
@@ -317,13 +345,15 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             injector.apply(strain, opt.channel_name.split(':')[0],
                            distance_scale=opt.injection_scale_factor,
                            injection_sample_rate=opt.injection_sample_rate,
-                           inj_filter_rejector=inj_filter_rejector)
+                           inj_filter_rejector=inj_filter_rejector,
+                           generate_injections=opt.generate_injections)
 
     if opt.sgburst_injection_file:
         logger.info("Applying sine-Gaussian burst injections")
         injector = SGBurstInjectionSet(opt.sgburst_injection_file)
         injector.apply(strain, opt.channel_name.split(':')[0],
-                         distance_scale=opt.injection_scale_factor)
+                       distance_scale=opt.injection_scale_factor,
+                       generate_injections=opt.generate_injections)
 
     if precision == 'single':
         logger.info("Converting to float32")
@@ -550,6 +580,16 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
                       help="(optional) Injection file containing parameters"
                       "of sine-Gaussian burst signals to add to the strain")
+    data_reading_group.add_argument("--do-not-inject-from-file",
+                      action="store_false", dest="generate_injections",
+                      default=True,
+                      help="If this options are given, the injections in "
+                           "injection-file or sgburst-injection-file are not "
+                           "added into the data. This can be used for "
+                           "debugging (ie. in minifollowups), or if using "
+                           "injections from frame files where you need to "
+                           "know injection parameters to allow the "
+                           "injection optimization settings.")
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                       default=1,
                       help="Divide injections by this factor "
@@ -565,6 +605,18 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--injection-f-final", type=float,
                       help="Override the f_final field of a CBC XML "
                            "injection file (frequency in Hz)")
+    # Options for getting injection from frame files
+    data_reading_group.add_argument("--injection-channel-name", type=str,
+                      help="The channel containing the injection strain data")
+    data_reading_group.add_argument("--injection-frame-type", type=str,
+                      help="We are going to add injections from frame files. "
+                           "This will use datafind to get the needed frame "
+                           "files of this type.")
+    data_reading_group.add_argument("--injection-frame-files",
+                      type=str, nargs="+",
+                      help="We are going to add injections from frame files. "
+                           "This provides the list of frame files containing "
+                           "injection strain.")
 
     # Gating options
     data_reading_group.add_argument("--gating-file", type=str,
@@ -761,6 +813,17 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                     metavar='IFO:FILE',
                     help="(optional) Injection file containing parameters"
                          "of CBC signals to be added to the strain")
+    data_reading_group_multi.add_argument("--do-not-inject-from-file",
+                    default=True, action="store_false",
+                    dest="generate_injections",
+                    help="If this options are given, the injections in "
+                          "injection-file or sgburst-injection-file are not "
+                          "added into the data. This can be used for "
+                          "debugging (ie. in minifollowups), or if using "
+                          "injections from frame files where you need to "
+                          "know injection parameters to allow the "
+                          "injection optimization settings.")
+
     data_reading_group_multi.add_argument("--sgburst-injection-file", type=str,
                     nargs="+", action=MultiDetOptionAction,
                     metavar='IFO:FILE',
@@ -787,6 +850,21 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                     action=MultiDetOptionAction, metavar='IFO:VALUE',
                     help="Override the f_final field of a CBC XML "
                          "injection file (frequency in Hz)")
+    # Options for getting injection from frame files
+    data_reading_group_multi.add_argument("--injection-channel-name", type=str,
+                      action=MultiDetOptionAction, metavar='IFO:VALUE',
+                      help="The channel containing the injection strain data")
+    data_reading_group_multi.add_argument("--injection-frame-type", type=str,
+                      action=MultiDetOptionAction, metavar='IFO:VALUE',
+                      help="We are going to add injections from frame files. "
+                           "This will use datafind to get the needed frame "
+                           "files of this type.")
+    data_reading_group_multi.add_argument("--injection-frame-files",
+                      type=str, nargs="+", metavar='IFO:FRAME_FILES',
+                      action=MultiDetOptionAppendAction, 
+                      help="We are going to add injections from frame files. "
+                           "This provides the list of frame files containing "
+                           "injection strain.")
 
     # Gating options
     data_reading_group_multi.add_argument("--gating-file", nargs="+",

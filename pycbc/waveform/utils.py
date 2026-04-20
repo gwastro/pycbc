@@ -24,12 +24,18 @@
 #
 """This module contains convenience utilities for manipulating waveforms
 """
-from pycbc.types import TimeSeries, FrequencySeries, Array, float32, float64, complex_same_precision_as, real_same_precision_as
-import lal
+
 from math import frexp
 import numpy
-from pycbc.scheme import schemed
+
 from scipy import signal
+
+from pycbc.scheme import schemed
+from pycbc.types import (
+    TimeSeries, FrequencySeries, Array,
+    complex_same_precision_as, real_same_precision_as
+)
+from pycbc.constants import PI
 
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""
@@ -293,70 +299,11 @@ def frequency_from_polarizations(h_plus, h_cross):
 
     """
     phase = phase_from_polarizations(h_plus, h_cross)
-    freq = numpy.diff(phase) / ( 2 * lal.PI * phase.delta_t )
+    freq = numpy.diff(phase) / ( 2 * PI * phase.delta_t )
     start_time = phase.start_time + phase.delta_t / 2
     return TimeSeries(freq.astype(real_same_precision_as(h_plus)),
         delta_t=phase.delta_t, epoch=start_time)
 
-# map between tapering string in sim_inspiral table or inspiral
-# code option and lalsimulation constants
-try:
-    import lalsimulation as sim
-
-    taper_map = {
-        'TAPER_NONE'    : None,
-        'TAPER_START'   : sim.SIM_INSPIRAL_TAPER_START,
-        'start'         : sim.SIM_INSPIRAL_TAPER_START,
-        'TAPER_END'     : sim.SIM_INSPIRAL_TAPER_END,
-        'end'           : sim.SIM_INSPIRAL_TAPER_END,
-        'TAPER_STARTEND': sim.SIM_INSPIRAL_TAPER_STARTEND,
-        'startend'      : sim.SIM_INSPIRAL_TAPER_STARTEND
-    }
-
-    taper_func_map = {
-        numpy.dtype(float32): sim.SimInspiralREAL4WaveTaper,
-        numpy.dtype(float64): sim.SimInspiralREAL8WaveTaper
-    }
-except ImportError:
-    taper_map = {}
-    taper_func_map = {}
-
-def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
-    """
-    Taper either or both ends of a time series using wrapped
-    LALSimulation functions
-
-    Parameters
-    ----------
-    tsdata : TimeSeries
-        Series to be tapered, dtype must be either float32 or float64
-    tapermethod : string
-        Should be one of ('TAPER_NONE', 'TAPER_START', 'TAPER_END',
-        'TAPER_STARTEND', 'start', 'end', 'startend') - NB 'TAPER_NONE' will
-        not change the series!
-    return_lal : Boolean
-        If True, return a wrapped LAL time series object, else return a
-        PyCBC time series.
-    """
-    if tapermethod is None:
-        raise ValueError("Must specify a tapering method (function was called"
-                         "with tapermethod=None)")
-    if tapermethod not in taper_map.keys():
-        raise ValueError("Unknown tapering method %s, valid methods are %s" % \
-                         (tapermethod, ", ".join(taper_map.keys())))
-    if tsdata.dtype not in (float32, float64):
-        raise TypeError("Strain dtype must be float32 or float64, not "
-                    + str(tsdata.dtype))
-    taper_func = taper_func_map[tsdata.dtype]
-    # make a LAL TimeSeries to pass to the LALSim function
-    ts_lal = tsdata.astype(tsdata.dtype).lal()
-    if taper_map[tapermethod] is not None:
-        taper_func(ts_lal.data, taper_map[tapermethod])
-    if return_lal:
-        return ts_lal
-    else:
-        return TimeSeries(ts_lal.data.data[:], delta_t=ts_lal.deltaT,
-                          epoch=ts_lal.epoch)
 
 @schemed("pycbc.waveform.utils_")
 def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
@@ -533,3 +480,46 @@ def fd_to_td(htilde, delta_t=None, left_window=None, right_window=None,
         start, end = right_window
         htilde = fd_taper(htilde, start, end, side='right', beta=right_beta)
     return htilde.to_timeseries(delta_t=delta_t)
+
+
+def redshift_waveform(srch, z, tref=0):
+    """Redshifts a time-domain or frequency-domain waveform.
+
+    The waveform is stretched in time by :math:`(1+z)` and its (time-domain)
+    amplitude increased by :math:`(1+z)`. A time shift is also applied to the
+    waveform so that the specified `tref` occurs at the same point in the
+    red-shifted time series as it did in the source-frame time series.
+
+    Parameters
+    ----------
+    srch : TimeSeries or FrequencySeries
+        The waveform to redshift.
+    z : float
+        The redshift to apply.
+    tref : float, optional
+        The reference time to preserve. Default is 0.
+
+    Returns
+    -------
+    TimeSeries or FrequencySeries
+        The red-shifted waveform. The return type will be the same as `srch`.
+    """
+    isfs = isinstance(srch, FrequencySeries)
+    if isfs:
+        redshifted = srch.to_timeseries()
+        redshifted *= 1+z
+    else:
+        redshifted = (1+z) * srch
+    redshifted._delta_t *= 1+z
+    # find the location of tref in the original time series
+    tindex = (tref - srch.start_time)/srch.delta_t
+    # find what it's been stretched to and subtract that off from the start
+    # time so as to keep the reference time in the same spot
+    tnew = tindex * redshifted.delta_t + redshifted.start_time
+    # the difference
+    shift = tnew - tref
+    redshifted._epoch -= shift
+    if isfs:
+        # convert back to frequency domain
+        redshifted = redshifted.to_frequencyseries()
+    return redshifted

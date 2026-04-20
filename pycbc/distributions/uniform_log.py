@@ -24,7 +24,7 @@ logger = logging.getLogger('pycbc.distributions.uniform_log')
 
 
 class UniformLog10(uniform.Uniform):
-    """ A uniform distribution on the log base 10 of the given parameters.
+    r""" A uniform distribution on the log base 10 of the given parameters.
     The parameters are independent of each other. Instances of this class can
     be called like a function. By default, logpdf will be called.
 

@@ -92,7 +92,7 @@ def get_signum(val, err, max_sig=numpy.inf):
 
 def format_value(value, error, plus_error=None, use_scientific_notation=3,
         include_error=True, use_relative_error=False, ndecs=None):
-    """Given a numerical value and some bound on it, formats the number into a
+    r"""Given a numerical value and some bound on it, formats the number into a
     string such that the value is rounded to the nearest significant figure,
     which is determined by the error = abs(value-bound).
 

@@ -8,4 +8,5 @@ pycbc_make_bank_compression_workflow \
   compress.ini \
   executables.ini \
 --config-overrides \
-  results_page:output-path:$(pwd)/html
+  results_page:output-path:$(pwd)/html \
+--submit-now
