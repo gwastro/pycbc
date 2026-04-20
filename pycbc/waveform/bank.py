@@ -35,6 +35,7 @@ from igwn_ligolw import lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
+from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 import pycbc.io
@@ -1207,6 +1208,51 @@ class RatioFilterBank(FilterBank):
         # FIX: Use bracket access instead of .get_template()
         # FilterBank uses __getitem__ to handle waveform generation/decompression
         return self.coarse_bank[coarse_index]
+
+    def setup_mchirp_norm(self):
+        # Setup the normalization mapping between fine template and course
+        # reference. Ideally call this once.
+        mc_bank = mchirp_from_mass1_mass2(self.table['mass1'], 
+                                          self.table['mass2']) 
+        mc_coarse = mchirp_from_mass1_mass2(self.coarse_bank.table['mass1'],
+                                            self.coarse_bank.table['mass2'])
+         
+        self.mchirp_norm_rescale = numpy.ones(len(self.table))      
+        for coarse_id in self.coarse_indices:
+            coarse_id = str(coarse_id)
+            c_group = self.fir_group[coarse_id]
+            fine_indices = c_group['fine_bank_index'][:]            
+            rescale = (mc_bank[fine_indices] / mc_coarse[coarse_id]) ** (5.0/6.0)
+            self.mchirp_norm_rescale[fine_indices] = rescale
+
+    def snr_rescale(self, indices, method='mchirp'):
+        """ Get the SNR normalization factor for templates in the bank
+        relative to their associated coarse template.
+        """
+        if method == 'mchirp':
+            if not hassattr(self.mchirp_norm_rescale):
+                self.setup_mchirp_norm()
+            return self.mchirp_norm_rescale[indices]
+                
+        elif method == 'precalculated_sigma':
+            pass
+        else:
+            raise ValueError('undefined fine template normalization method %s' % method)
+    
+    def sigma_rescale(self, incdices method='mchirp'):
+        """ Get the sigma normalization factor for templates in the bank
+        relative to their associated coarse template.
+        """
+        if method == 'mchirp':
+            if not hassattr(self.mchirp_norm_rescale):
+                self.setup_mchirp_norm()
+            return self.mchirp_norm_rescale[indices]
+
+        elif method == 'precalculated_sigma':
+            pass
+        else:
+            raise ValueError('undefined fine template normalization method %s' % method)
+    
 
     def get_firs(self, coarse_index):
         """Retrieve the FIR tap information for the batch of fine templates
