@@ -2190,6 +2190,7 @@ def optimized_match(
 
     res = minimize_scalar(
         to_minimize,
+        bounds=(-delta_t, delta_t),
         method="bounded",
         options={'xatol': 1e-6}
     )
