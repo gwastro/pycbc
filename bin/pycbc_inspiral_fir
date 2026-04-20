@@ -20,7 +20,6 @@ import pycbc.fft
 import pycbc.inject
 import pycbc.vetoes
 from pycbc.types import complex64, float32, zeros
-from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 
 # --- Imports for Ratio Logic ---
@@ -329,10 +328,6 @@ def main():
                 triggers_by_template[global_idx][4].append(chi[j])
                 triggers_by_template[global_idx][5].append(chi_dof[j])
 
-        mc_bank = mchirp_from_mass1_mass2(bank.table['mass1'], bank.table['mass2']) 
-        mc_coarse = mchirp_from_mass1_mass2(bank.coarse_bank.table['mass1'],
-                                            bank.coarse_bank.table['mass2'])
-
         # C. Store
         for global_id, (snr, time_list, norm, coarse_id, chi, chi_dof) in triggers_by_template.items():
             
@@ -340,9 +335,13 @@ def main():
             out_vals['time_index'] = np.array(time_list)
             
             # Renorm snr
-            norm_rescale = (mc_bank[global_id] / mc_coarse[coarse_id]) ** (5.0/6.0)
-            out_vals['snr'] = np.array(snr) / norm_rescale
-            out_vals['sigmasq'] = np.ones(len(time_list)) * norm * norm_rescale ** 2.0
+            norm_rescale = bank.get_snr_rescale
+            snr_rescale = bank.snr_rescale(global_id)
+            sigmasq_rescale = bank.sigma_rescale(global_id) ** 2.0
+            print(snr_rescale, sigmasq_rescale)
+            
+            out_vals['snr'] = np.array(snr) / snr_rescale
+            out_vals['sigmasq'] = np.ones(len(time_list)) * norm * sigmasq_rescale
             out_vals['chisq'] = chi
             out_vals['chisq_dof'] = chi_dof
 
