@@ -1217,7 +1217,7 @@ class RatioFilterBank(FilterBank):
         mc_coarse = mchirp_from_mass1_mass2(self.coarse_bank.table['mass1'],
                                             self.coarse_bank.table['mass2'])
          
-        self.mchirp_norm_rescale = numpy.ones(len(self.table))      
+        self.mchirp_norm_rescale = np.ones(len(self.table))      
         for coarse_id in self.coarse_indices:
             coarse_id = str(coarse_id)
             c_group = self.fir_group[coarse_id]
@@ -1230,7 +1230,7 @@ class RatioFilterBank(FilterBank):
         relative to their associated coarse template.
         """
         if method == 'mchirp':
-            if not hassattr(self.mchirp_norm_rescale):
+            if not hasattr(self, 'mchirp_norm_rescale'):
                 self.setup_mchirp_norm()
             return self.mchirp_norm_rescale[indices]
                 
@@ -1239,12 +1239,12 @@ class RatioFilterBank(FilterBank):
         else:
             raise ValueError('undefined fine template normalization method %s' % method)
     
-    def sigma_rescale(self, incdices method='mchirp'):
+    def sigma_rescale(self, incdices, method='mchirp'):
         """ Get the sigma normalization factor for templates in the bank
         relative to their associated coarse template.
         """
         if method == 'mchirp':
-            if not hassattr(self.mchirp_norm_rescale):
+            if not hasattr(self, 'mchirp_norm_rescale'):
                 self.setup_mchirp_norm()
             return self.mchirp_norm_rescale[indices]
 
