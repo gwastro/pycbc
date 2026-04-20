@@ -1225,6 +1225,30 @@ class RatioFilterBank(FilterBank):
                 rescale = (mc_bank[fine_indices] / mc_coarse[int(coarse_id)]) ** (5.0/6.0)
                 self.mchirp_norm_rescale[fine_indices] = rescale
 
+    def setup_sigma_norm(self):
+        # Setup the normalization mapping between fine template and course
+        # reference. Ideally call this once.  
+        self.sigma_snr_rescale = np.ones(len(self.table)) 
+        self.sigma_sigma_rescale = np.ones(len(self.table))
+        for coarse_id in self.coarse_indices:
+            coarse_id = str(coarse_id)
+            c_group = self.fir_group[coarse_id]
+            fine_indices = c_group['fine_bank_index'][:]
+            sigmas = c_group['sigmas'][:]
+            if len(fine_indices) > 0:
+                ref_sigma = sigmas[:,0]
+                rec_sigma = sigmas[:,1]
+                target_sigma = sigmas[:,2]   
+
+                # Fix the SNR normalization
+                self.sigma_snr_rescale[fine_indices] = rec_sigma / ref_sigma
+                
+                # Make sure the stored sigmasq matches the target template
+                # value. The reconstrcuted should already be close, but
+                # this accounts for potential minor variance between the
+                # reconstructed and the original in amplitude
+                self.sigma_sigma_rescale[fine_indices] = target_sigma / ref_sigma     
+
     def snr_rescale(self, indices, method='mchirp'):
         """ Get the SNR normalization factor for templates in the bank
         relative to their associated coarse template.
@@ -1235,7 +1259,9 @@ class RatioFilterBank(FilterBank):
             return self.mchirp_norm_rescale[indices]
                 
         elif method == 'precalculated_sigma':
-            pass
+            if not hasattr(self, 'sigma_snr_rescale'):
+                self.setup_sigma_norm()
+            return self.sigma_snr_rescale[indices]
         else:
             raise ValueError('undefined fine template normalization method %s' % method)
     
@@ -1247,9 +1273,11 @@ class RatioFilterBank(FilterBank):
             if not hasattr(self, 'mchirp_norm_rescale'):
                 self.setup_mchirp_norm()
             return self.mchirp_norm_rescale[indices]
-
+                
         elif method == 'precalculated_sigma':
-            pass
+            if not hasattr(self, 'sigma_snr_rescale'):
+                self.setup_sigma_norm()
+            return self.sigma_sigma_rescale[indices]
         else:
             raise ValueError('undefined fine template normalization method %s' % method)
     

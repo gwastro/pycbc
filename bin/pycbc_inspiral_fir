@@ -339,8 +339,10 @@ def main():
             out_vals['time_index'] = np.array(time_list)
             
             # Renorm snr
-            snr_rescale = bank.snr_rescale(global_id)
-            sigmasq_rescale = bank.sigma_rescale(global_id) ** 2.0
+            snr_rescale = bank.snr_rescale(global_id, 
+                             method=args.template_normalization_method)
+            sigmasq_rescale = bank.sigma_rescale(global_id, 
+                             method=args.template_normalization_method) ** 2.0
             
             out_vals['snr'] = np.array(snr) / snr_rescale
             out_vals['sigmasq'] = np.ones(len(time_list)) * norm * sigmasq_rescale
