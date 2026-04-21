@@ -351,7 +351,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         added_points.extend(new_addidxs)
         
         # --- 6. Iteration Logging ---
-        logging.info(
+        logging.debug(
             "Iter %i: mismatch %.6f, added %i points (total %i), iter time %.2f ms",
             iteration_count, mismatch, len(new_addidxs), len(sample_points),
             (time.time() - iteration_start_time) * 1000
