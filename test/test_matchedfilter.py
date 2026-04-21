@@ -192,10 +192,10 @@ class TestMatchedFilter(unittest.TestCase):
             self._check_accuracy_subsample_offset(
                 o, i, ph
             )
-    
+
     def test_optimized_match_valid(self):
         with self.context:
-            NL_waveform, L_waveform, ligo_psd = testing_data.load_match_testing_waveforms_from_hdf5()
+            L_waveform, NL_waveform, ligo_psd = testing_data.load_match_testing_waveforms_from_hdf5()
 
             NL_waveform = FrequencySeries(NL_waveform, delta_f=0.25)
             L_waveform = FrequencySeries(L_waveform, delta_f=0.25)
