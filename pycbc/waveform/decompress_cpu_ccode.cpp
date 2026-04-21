@@ -172,30 +172,36 @@ static inline void _decomp_tcode_segment(
     double f0, double f1, double f2, double f3, 
     double a0, double a1, double a2, double a3, 
     double p0, double p1, double p2, double p3,
-    double df, int64_t k_start, const int64_t kmax, // Renamed k to k_start
+    double df, int64_t k_start, const int64_t kmax,
     const int update_interval)
 {
-    double f;
+    double f, x;
     double h2 = df * df;
     double h3 = h2 * df;
 
-    // --- Denominators for Lagrange basis (constant for segment) ---
-    double denom0 = (f0-f1)*(f0-f2)*(f0-f3);
-    double denom1 = (f1-f0)*(f1-f2)*(f1-f3);
-    double denom2 = (f2-f0)*(f2-f1)*(f2-f3);
-    double denom3 = (f3-f0)*(f3-f1)*(f3-f2);
+    // --- ORIGIN SHIFT ---
+    double x0 = 0.0;
+    double x1 = f1 - f0;
+    double x2 = f2 - f0;
+    double x3 = f3 - f0;
 
-    // --- Get power-basis coefficients: c3*f^3 + c2*f^2 + c1*f + c0 ---
+    // --- Denominators for Lagrange basis ---
+    double denom0 = (x0-x1)*(x0-x2)*(x0-x3);
+    double denom1 = (x1-x0)*(x1-x2)*(x1-x3);
+    double denom2 = (x2-x0)*(x2-x1)*(x2-x3);
+    double denom3 = (x3-x0)*(x3-x1)*(x3-x2);
+
+    // --- Get shifted power-basis coefficients ---
     // --- Amplitude ---
     double c_a3 = a0/denom0 + a1/denom1 + a2/denom2 + a3/denom3;
-    double c_a2 = -a0*(f1+f2+f3)/denom0 - a1*(f0+f2+f3)/denom1 - a2*(f0+f1+f3)/denom2 - a3*(f0+f1+f2)/denom3;
-    double c_a1 = a0*(f1*f2 + f1*f3 + f2*f3)/denom0 + a1*(f0*f2 + f0*f3 + f2*f3)/denom1 + a2*(f0*f1 + f0*f3 + f1*f3)/denom2 + a3*(f0*f1 + f0*f2 + f1*f2)/denom3;
-    double c_a0 = -a0*(f1*f2*f3)/denom0 - a1*(f0*f2*f3)/denom1 - a2*(f0*f1*f3)/denom2 - a3*(f0*f1*f2)/denom3;
+    double c_a2 = -a0*(x1+x2+x3)/denom0 - a1*(x0+x2+x3)/denom1 - a2*(x0+x1+x3)/denom2 - a3*(x0+x1+x2)/denom3;
+    double c_a1 = a0*(x1*x2 + x1*x3 + x2*x3)/denom0 + a1*(x0*x2 + x0*x3 + x2*x3)/denom1 + a2*(x0*x1 + x0*x3 + x1*x3)/denom2 + a3*(x0*x1 + x0*x2 + x1*x2)/denom3;
+    double c_a0 = -a0*(x1*x2*x3)/denom0 - a1*(x0*x2*x3)/denom1 - a2*(x0*x1*x3)/denom2 - a3*(x0*x1*x2)/denom3;
     // --- Phase ---
     double c_p3 = p0/denom0 + p1/denom1 + p2/denom2 + p3/denom3;
-    double c_p2 = -p0*(f1+f2+f3)/denom0 - p1*(f0+f2+f3)/denom1 - p2*(f0+f1+f3)/denom2 - p3*(f0+f1+f2)/denom3;
-    double c_p1 = p0*(f1*f2 + f1*f3 + f2*f3)/denom0 + p1*(f0*f2 + f0*f3 + f2*f3)/denom1 + p2*(f0*f1 + f0*f3 + f1*f3)/denom2 + p3*(f0*f1 + f0*f2 + f1*f2)/denom3;
-    double c_p0 = -p0*(f1*f2*f3)/denom0 - p1*(f0*f2*f3)/denom1 - p2*(f0*f1*f3)/denom2 - p3*(f0*f1*f2)/denom3;
+    double c_p2 = -p0*(x1+x2+x3)/denom0 - p1*(x0+x2+x3)/denom1 - p2*(x0+x1+x3)/denom2 - p3*(x0+x1+x2)/denom3;
+    double c_p1 = p0*(x1*x2 + x1*x3 + x2*x3)/denom0 + p1*(x0*x2 + x0*x3 + x2*x3)/denom1 + p2*(x0*x1 + x0*x3 + x1*x3)/denom2 + p3*(x0*x1 + x0*x2 + x1*x2)/denom3;
+    double c_p0 = -p0*(x1*x2*x3)/denom0 - p1*(x0*x2*x3)/denom1 - p2*(x0*x1*x3)/denom2 - p3*(x0*x1*x2)/denom3;
 
     // --- Finite difference constants (constant for segment) ---
     double d3_a_const = 6 * c_a3 * h3;
@@ -206,48 +212,45 @@ static inline void _decomp_tcode_segment(
     double a, p, d1_a, d1_p, d2_a, d2_p;
     std::complex<double> phase, d1_phase, d2_phase;
     int64_t k_sub_max;
-    int64_t k = k_start; // k is now the local loop variable
+    int64_t k = k_start; 
 
     for (; k < kmax; ) {
-        // --- Re-calculate steppers to correct FP error ---
         f = k * df;
+        x = f - f0; // --- EVALUATE RELATIVE TO ORIGIN ---
         k_sub_max = k + update_interval;
         if (k_sub_max > kmax) k_sub_max = kmax;
 
         // Initial values for this sub-block
-        a = c_a3*f*f*f + c_a2*f*f + c_a1*f + c_a0;
-        p = c_p3*f*f*f + c_p2*f*f + c_p1*f + c_p0;
+        a = c_a3*x*x*x + c_a2*x*x + c_a1*x + c_a0;
+        p = c_p3*x*x*x + c_p2*x*x + c_p1*x + c_p0;
 
-        // First differences at f (Delta_f)
-        d1_a = c_a3*(3*f*f*df + 3*f*h2 + h3) + c_a2*(2*f*df + h2) + c_a1*df;
-        d1_p = c_p3*(3*f*f*df + 3*f*h2 + h3) + c_p2*(2*f*df + h2) + c_p1*df;
+        // First differences at x (Delta_x)
+        d1_a = c_a3*(3*x*x*df + 3*x*h2 + h3) + c_a2*(2*x*df + h2) + c_a1*df;
+        d1_p = c_p3*(3*x*x*df + 3*x*h2 + h3) + c_p2*(2*x*df + h2) + c_p1*df;
 
-        // Second differences at f (Delta^2_f)
-        d2_a = c_a3*(6*f*h2 + 6*h3) + c_a2*(2*h2);
-        d2_p = c_p3*(6*f*h2 + 6*h3) + c_p2*(2*h2);
+        // Second differences at x (Delta^2_x)
+        d2_a = c_a3*(6*x*h2 + 6*h3) + c_a2*(2*h2);
+        d2_p = c_p3*(6*x*h2 + 6*h3) + c_p2*(2*h2);
 
         // Complex phase steppers
         phase = std::polar(1.0, p);
         d1_phase = std::polar(1.0, d1_p);
         d2_phase = std::polar(1.0, d2_p);
 
-        // --- Fast Inner Loop ---
+        // --- Fast Inner Loop (Remains Identical) ---
         for (; k < k_sub_max; k++) {
-            h_seg[k - k_start] = (T_COMPLEX)(a * phase); // Corrected indexing and cast
+            h_seg[k - k_start] = (T_COMPLEX)(a * phase); 
 
-            // Step phase forward
             phase = phase * d1_phase;
             d1_phase = d1_phase * d2_phase;
             d2_phase = d2_phase * d3_phase_const;
 
-            // Step amplitude forward
             a = a + d1_a;
             d1_a = d1_a + d2_a;
             d2_a = d2_a + d3_a_const;
         }
     }
 }
-
 
 /* =====================================================================
  *
@@ -265,31 +268,39 @@ static inline void _decomp_Qcode_segment(
     double df, int64_t k_start, const int64_t kmax,
     const int update_interval)
 {
-    double f;
+    double f, x;
     double h2 = df * df;
     double h3 = h2 * df;
     double h4 = h3 * df;
 
-    // --- Denominators for Lagrange basis (constant for segment) ---
-    double denom0 = (f0-f1)*(f0-f2)*(f0-f3)*(f0-f4);
-    double denom1 = (f1-f0)*(f1-f2)*(f1-f3)*(f1-f4);
-    double denom2 = (f2-f0)*(f2-f1)*(f2-f3)*(f2-f4);
-    double denom3 = (f3-f0)*(f3-f1)*(f3-f2)*(f3-f4);
-    double denom4 = (f4-f0)*(f4-f1)*(f4-f2)*(f4-f3);
+    // --- ORIGIN SHIFT ---
+    double x0 = 0.0; // f0 - f0
+    double x1 = f1 - f0;
+    double x2 = f2 - f0;
+    double x3 = f3 - f0;
+    double x4 = f4 - f0;
 
-    // --- Get power-basis coefficients: c4*f^4 + c3*f^3 + c2*f^2 + c1*f + c0 ---
+    // --- Denominators for Lagrange basis ---
+    // (x_i - x_j) is mathematically identical to (f_i - f_j)
+    double denom0 = (x0-x1)*(x0-x2)*(x0-x3)*(x0-x4);
+    double denom1 = (x1-x0)*(x1-x2)*(x1-x3)*(x1-x4);
+    double denom2 = (x2-x0)*(x2-x1)*(x2-x3)*(x2-x4);
+    double denom3 = (x3-x0)*(x3-x1)*(x3-x2)*(x3-x4);
+    double denom4 = (x4-x0)*(x4-x1)*(x4-x2)*(x4-x3);
+
+    // --- Get shifted power-basis coefficients ---
     // --- Amplitude ---
     double c_a4 = a0/denom0 + a1/denom1 + a2/denom2 + a3/denom3 + a4/denom4;
-    double c_a3 = -a0*(f1+f2+f3+f4)/denom0 - a1*(f0+f2+f3+f4)/denom1 - a2*(f0+f1+f3+f4)/denom2 - a3*(f0+f1+f2+f4)/denom3 - a4*(f0+f1+f2+f3)/denom4;
-    double c_a2 = a0*(f1*f2+f1*f3+f1*f4+f2*f3+f2*f4+f3*f4)/denom0 + a1*(f0*f2+f0*f3+f0*f4+f2*f3+f2*f4+f3*f4)/denom1 + a2*(f0*f1+f0*f3+f0*f4+f1*f3+f1*f4+f3*f4)/denom2 + a3*(f0*f1+f0*f2+f0*f4+f1*f2+f1*f4+f2*f4)/denom3 + a4*(f0*f1+f0*f2+f0*f3+f1*f2+f1*f3+f2*f3)/denom4;
-    double c_a1 = -a0*(f1*f2*f3+f1*f2*f4+f1*f3*f4+f2*f3*f4)/denom0 - a1*(f0*f2*f3+f0*f2*f4+f0*f3*f4+f2*f3*f4)/denom1 - a2*(f0*f1*f3+f0*f1*f4+f0*f3*f4+f1*f3*f4)/denom2 - a3*(f0*f1*f2+f0*f1*f4+f0*f2*f4+f1*f2*f4)/denom3 - a4*(f0*f1*f2+f0*f1*f3+f0*f2*f3+f1*f2*f3)/denom4;
-    double c_a0 = a0*(f1*f2*f3*f4)/denom0 + a1*(f0*f2*f3*f4)/denom1 + a2*(f0*f1*f3*f4)/denom2 + a3*(f0*f1*f2*f4)/denom3 + a4*(f0*f1*f2*f3)/denom4;
+    double c_a3 = -a0*(x1+x2+x3+x4)/denom0 - a1*(x0+x2+x3+x4)/denom1 - a2*(x0+x1+x3+x4)/denom2 - a3*(x0+x1+x2+x4)/denom3 - a4*(x0+x1+x2+x3)/denom4;
+    double c_a2 = a0*(x1*x2+x1*x3+x1*x4+x2*x3+x2*x4+x3*x4)/denom0 + a1*(x0*x2+x0*x3+x0*x4+x2*x3+x2*x4+x3*x4)/denom1 + a2*(x0*x1+x0*x3+x0*x4+x1*x3+x1*x4+x3*x4)/denom2 + a3*(x0*x1+x0*x2+x0*x4+x1*x2+x1*x4+x2*x4)/denom3 + a4*(x0*x1+x0*x2+x0*x3+x1*x2+x1*x3+x2*x3)/denom4;
+    double c_a1 = -a0*(x1*x2*x3+x1*x2*x4+x1*x3*x4+x2*x3*x4)/denom0 - a1*(x0*x2*x3+x0*x2*x4+x0*x3*x4+x2*x3*x4)/denom1 - a2*(x0*x1*x3+x0*x1*x4+x0*x3*x4+x1*x3*x4)/denom2 - a3*(x0*x1*x2+x0*x1*x4+x0*x2*x4+x1*x2*x4)/denom3 - a4*(x0*x1*x2+x0*x1*x3+x0*x2*x3+x1*x2*x3)/denom4;
+    double c_a0 = a0*(x1*x2*x3*x4)/denom0 + a1*(x0*x2*x3*x4)/denom1 + a2*(x0*x1*x3*x4)/denom2 + a3*(x0*x1*x2*x4)/denom3 + a4*(x0*x1*x2*x3)/denom4;
     // --- Phase ---
     double c_p4 = p0/denom0 + p1/denom1 + p2/denom2 + p3/denom3 + p4/denom4;
-    double c_p3 = -p0*(f1+f2+f3+f4)/denom0 - p1*(f0+f2+f3+f4)/denom1 - p2*(f0+f1+f3+f4)/denom2 - p3*(f0+f1+f2+f4)/denom3 - p4*(f0+f1+f2+f3)/denom4;
-    double c_p2 = p0*(f1*f2+f1*f3+f1*f4+f2*f3+f2*f4+f3*f4)/denom0 + p1*(f0*f2+f0*f3+f0*f4+f2*f3+f2*f4+f3*f4)/denom1 + p2*(f0*f1+f0*f3+f0*f4+f1*f3+f1*f4+f3*f4)/denom2 + p3*(f0*f1+f0*f2+f0*f4+f1*f2+f1*f4+f2*f4)/denom3 + p4*(f0*f1+f0*f2+f0*f3+f1*f2+f1*f3+f2*f3)/denom4;
-    double c_p1 = -p0*(f1*f2*f3+f1*f2*f4+f1*f3*f4+f2*f3*f4)/denom0 - p1*(f0*f2*f3+f0*f2*f4+f0*f3*f4+f2*f3*f4)/denom1 - p2*(f0*f1*f3+f0*f1*f4+f0*f3*f4+f1*f3*f4)/denom2 - p3*(f0*f1*f2+f0*f1*f4+f0*f2*f4+f1*f2*f4)/denom3 - p4*(f0*f1*f2+f0*f1*f3+f0*f2*f3+f1*f2*f3)/denom4;
-    double c_p0 = p0*(f1*f2*f3*f4)/denom0 + p1*(f0*f2*f3*f4)/denom1 + p2*(f0*f1*f3*f4)/denom2 + p3*(f0*f1*f2*f4)/denom3 + p4*(f0*f1*f2*f3)/denom4;
+    double c_p3 = -p0*(x1+x2+x3+x4)/denom0 - p1*(x0+x2+x3+x4)/denom1 - p2*(x0+x1+x3+x4)/denom2 - p3*(x0+x1+x2+x4)/denom3 - p4*(x0+x1+x2+x3)/denom4;
+    double c_p2 = p0*(x1*x2+x1*x3+x1*x4+x2*x3+x2*x4+x3*x4)/denom0 + p1*(x0*x2+x0*x3+x0*x4+x2*x3+x2*x4+x3*x4)/denom1 + p2*(x0*x1+x0*x3+x0*x4+x1*x3+x1*x4+x3*x4)/denom2 + p3*(x0*x1+x0*x2+x0*x4+x1*x2+x1*x4+x2*x4)/denom3 + p4*(x0*x1+x0*x2+x0*x3+x1*x2+x1*x3+x2*x3)/denom4;
+    double c_p1 = -p0*(x1*x2*x3+x1*x2*x4+x1*x3*x4+x2*x3*x4)/denom0 - p1*(x0*x2*x3+x0*x2*x4+x0*x3*x4+x2*x3*x4)/denom1 - p2*(x0*x1*x3+x0*x1*x4+x0*x3*x4+x1*x3*x4)/denom2 - p3*(x0*x1*x2+x0*x1*x4+x0*x2*x4+x1*x2*x4)/denom3 - p4*(x0*x1*x2+x0*x1*x3+x0*x2*x3+x1*x2*x3)/denom4;
+    double c_p0 = p0*(x1*x2*x3*x4)/denom0 + p1*(x0*x2*x3*x4)/denom1 + p2*(x0*x1*x3*x4)/denom2 + p3*(x0*x1*x2*x4)/denom3 + p4*(x0*x1*x2*x3)/denom4;
 
     // --- Finite difference constants (constant for segment) ---
     double d4_a_const = 24 * c_a4 * h4;
@@ -300,29 +311,30 @@ static inline void _decomp_Qcode_segment(
     double a, p, d1_a, d1_p, d2_a, d2_p, d3_a, d3_p;
     std::complex<double> phase, d1_phase, d2_phase, d3_phase;
     int64_t k_sub_max;
-    int64_t k = k_start; // k is now the local loop variable
+    int64_t k = k_start; 
 
     for (; k < kmax; ) {
-        // --- Re-calculate steppers to correct FP error ---
         f = k * df;
+        x = f - f0; // --- EVALUATE RELATIVE TO ORIGIN ---
+        
         k_sub_max = k + update_interval;
         if (k_sub_max > kmax) k_sub_max = kmax;
 
-        // Initial values for this sub-block
-        a = c_a4*f*f*f*f + c_a3*f*f*f + c_a2*f*f + c_a1*f + c_a0;
-        p = c_p4*f*f*f*f + c_p3*f*f*f + c_p2*f*f + c_p1*f + c_p0;
+        // Initial values for this sub-block using x
+        a = c_a4*x*x*x*x + c_a3*x*x*x + c_a2*x*x + c_a1*x + c_a0;
+        p = c_p4*x*x*x*x + c_p3*x*x*x + c_p2*x*x + c_p1*x + c_p0;
 
-        // First differences at f (Delta_f)
-        d1_a = c_a4*(4*f*f*f*df + 6*f*f*h2 + 4*f*h3 + h4) + c_a3*(3*f*f*df + 3*f*h2 + h3) + c_a2*(2*f*df + h2) + c_a1*df;
-        d1_p = c_p4*(4*f*f*f*df + 6*f*f*h2 + 4*f*h3 + h4) + c_p3*(3*f*f*df + 3*f*h2 + h3) + c_p2*(2*f*df + h2) + c_p1*df;
+        // First differences at x (Delta_x)
+        d1_a = c_a4*(4*x*x*x*df + 6*x*x*h2 + 4*x*h3 + h4) + c_a3*(3*x*x*df + 3*x*h2 + h3) + c_a2*(2*x*df + h2) + c_a1*df;
+        d1_p = c_p4*(4*x*x*x*df + 6*x*x*h2 + 4*x*h3 + h4) + c_p3*(3*x*x*df + 3*x*h2 + h3) + c_p2*(2*x*df + h2) + c_p1*df;
 
-        // Second differences at f (Delta^2_f)
-        d2_a = c_a4*(12*f*f*h2 + 24*f*h3 + 14*h4) + c_a3*(6*f*h2 + 6*h3) + c_a2*(2*h2);
-        d2_p = c_p4*(12*f*f*h2 + 24*f*h3 + 14*h4) + c_p3*(6*f*h2 + 6*h3) + c_p2*(2*h2);
+        // Second differences at x (Delta^2_x)
+        d2_a = c_a4*(12*x*x*h2 + 24*x*h3 + 14*h4) + c_a3*(6*x*h2 + 6*h3) + c_a2*(2*h2);
+        d2_p = c_p4*(12*x*x*h2 + 24*x*h3 + 14*h4) + c_p3*(6*x*h2 + 6*h3) + c_p2*(2*h2);
         
-        // Third differences at f (Delta^3_f)
-        d3_a = c_a4*(24*f*h3 + 36*h4) + c_a3*(6*h3);
-        d3_p = c_p4*(24*f*h3 + 36*h4) + c_p3*(6*h3);
+        // Third differences at x (Delta^3_x)
+        d3_a = c_a4*(24*x*h3 + 36*h4) + c_a3*(6*h3);
+        d3_p = c_p4*(24*x*h3 + 36*h4) + c_p3*(6*h3);
 
         // Complex phase steppers
         phase = std::polar(1.0, p);
@@ -330,17 +342,15 @@ static inline void _decomp_Qcode_segment(
         d2_phase = std::polar(1.0, d2_p);
         d3_phase = std::polar(1.0, d3_p);
 
-        // --- Fast Inner Loop ---
+        // --- Fast Inner Loop (Remains Identical) ---
         for (; k < k_sub_max; k++) {
-            h_seg[k - k_start] = (T_COMPLEX)(a * phase); // Corrected indexing and cast
+            h_seg[k - k_start] = (T_COMPLEX)(a * phase); 
 
-            // Step phase forward
             phase = phase * d1_phase;
             d1_phase = d1_phase * d2_phase;
             d2_phase = d2_phase * d3_phase;
             d3_phase = d3_phase * d4_phase_const;
 
-            // Step amplitude forward
             a = a + d1_a;
             d1_a = d1_a + d2_a;
             d2_a = d2_a + d3_a;
@@ -348,7 +358,6 @@ static inline void _decomp_Qcode_segment(
         }
     }
 }
-
 
 /* =====================================================================
  *

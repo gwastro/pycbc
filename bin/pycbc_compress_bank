@@ -62,7 +62,7 @@ parser.add_argument("--tmplt-index", nargs=2, type=int, default=None,
                     "and a stop index. Default is to compress all of the "
                     "templates in the bank file.")
 parser.add_argument("--compression-algorithm", type=str, required=True,
-                    choices=compress.compression_algorithms.keys(),
+                    choices=list(compress.compression_algorithms.keys()) + ['bounds'],
                     help="The compression algorithm to use for selecting "
                     "frequency points.")
 parser.add_argument("--t-pad", type=float, default=0.001,
@@ -173,6 +173,11 @@ for ii in range(templates.size):
     logging.info("... %.2f ms to generate normally", htime * 1000)
     fmin=tmplt.f_lower
     template_duration = htilde.chirp_length
+    
+    if template_duration is None:
+        template_duration = args.segment_length // 2
+        logging.info("Warning: was not able to determine template duration, setting half segment length")
+    
     output['template_duration'][ii] = template_duration
     # check that the segment length is at least twice the template duration
     if args.segment_length < 2*template_duration:
@@ -180,12 +185,14 @@ for ii in range(templates.size):
                          "({}) of template {}".format(template_duration,
                          tmplt.template_hash))
     kmin = int(numpy.ceil(fmin / df))
+    htilde[:kmin] = 0 # This ensures proper phase unwrapping
     if numpy.abs(htilde[kmin]) == 0:
         raise ValueError("""The amplitude of the waveform at the
                          low_frequency_cutoff is zero. A non-zero value
                          is required.""")
+                         
     kmax = numpy.nonzero(abs(htilde))[0][-1]
-
+    
     # get the compressed sample points
     if args.compression_algorithm == 'mchirp':
         sample_points = compress.mchirp_compression(tmplt.mass1, tmplt.mass2,
@@ -196,6 +203,8 @@ for ii in range(templates.size):
         sample_points = compress.spa_compression(htilde, fmin, kmax*df,
             min_seglen=args.t_pad,
             scale=args.scale).astype(real_same_precision_as(htilde))
+    elif args.compression_algorithm == 'bounds':
+        sample_points = numpy.array([fmin, kmax*df])
     else:
         raise ValueError("unrecognized compression algorithm %s" %(
             args.compression_algorithm))
