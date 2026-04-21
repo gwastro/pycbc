@@ -272,7 +272,6 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     # is > than the desired tolerance
     added_points = []
     while mismatch > tolerance:
-        print(mismatch, len(sample_points))
         minpt = vecdiffs.argmax()
         # add a point at the frequency halfway between minpt and minpt+1
         add_freq = sample_points[[minpt, minpt+1]].mean()
@@ -322,20 +321,6 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
                                             normalized=False,
                                            ))
 
-        from matplotlib import pyplot as plt
-        if len(sample_points) % 1000 == 0:
-            #htilde.real().plot(alpha=0.5, label='target')
-            #hdecomp.real().plot(alpha=0.5, label='reconstructed match=%s' % (1-mismatch))
-            phase.plot(label='target')
-            phase2 = utils.phase_from_frequencyseries(hdecomp)
-            phase2.plot(label='reconstructed')
-            
-            plt.xscale('log')
-            plt.xlim(30, 1024)
-            plt.legend()
-            plt.show()
-
-        
         if mismatch <= tolerance:
             s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)
             mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,

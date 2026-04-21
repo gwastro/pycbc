@@ -45,20 +45,25 @@ static inline void _decomp_ccode_segment(
 {
     T* outptr = (T*) h_seg;
     double inv_sdf = 1.0 / (f2 - f1);
+    
+    // Slopes
     double m_amp = (a2 - a1) * inv_sdf;
-    double b_amp = a1 - m_amp * f1;
     double m_phi = (p2 - p1) * inv_sdf;
-    double b_phi = p1 - m_phi * f1;
+    // Intercepts (b_amp, b_phi) are implicitly a1 and p1 when shifted!
 
     double h_re, h_im, g_re, g_im, dphi_re, dphi_im;
-    double incrh_re, incrh_im, incrg_re, incrg_im, f;
+    double incrh_re, incrh_im, incrg_re, incrg_im, f, x;
     int64_t findex = k;
     int64_t k_sub_max;
 
     while (findex < kmax) {
         f = findex * df;
-        double interp_amp = m_amp * f + b_amp;
-        double interp_phi = m_phi * f + b_phi;
+        x = f - f1; // --- ORIGIN SHIFT ---
+        
+        // Evaluate relative to the start of the segment
+        double interp_amp = m_amp * x + a1;
+        double interp_phi = m_phi * x + p1;
+        
         dphi_re = cos(m_phi * df);
         dphi_im = sin(m_phi * df);
         h_re = interp_amp * cos(interp_phi);
@@ -74,6 +79,7 @@ static inline void _decomp_ccode_segment(
         k_sub_max = findex + update_interval;
         if (k_sub_max > kmax) k_sub_max = kmax;
 
+        // --- Fast Inner Loop (Remains Identical) ---
         while (findex < k_sub_max) {
             incrh_re = h_re * dphi_re - h_im * dphi_im;
             incrh_im = h_re * dphi_im + h_im * dphi_re;
@@ -92,7 +98,6 @@ static inline void _decomp_ccode_segment(
     }
 }
 
-
 /* =====================================================================
  *
  * FAST QUADRATIC INTERPOLATION (HELPER)
@@ -104,24 +109,29 @@ template <class T, class T_COMPLEX>
 static inline void _decomp_qcode_segment(
     T_COMPLEX* h_seg,
     double f0, double f1, double f2, double a0, double a1, double a2, double p0, double p1, double p2,
-    double df, int64_t k_start, const int64_t kmax, // Renamed k to k_start
+    double df, int64_t k_start, const int64_t kmax,
     const int update_interval)
 {
-    double f;
+    double f, x;
     double h2 = df * df;
 
-    // Denominators for Lagrange basis (constant for segment)
-    double denom0 = (f0 - f1) * (f0 - f2);
-    double denom1 = (f1 - f0) * (f1 - f2);
-    double denom2 = (f2 - f0) * (f2 - f1);
+    // --- ORIGIN SHIFT ---
+    double x0 = 0.0;
+    double x1 = f1 - f0;
+    double x2 = f2 - f0;
 
-    // --- Get power-basis coefficients: c2*f^2 + c1*f + c0 ---
+    // --- Denominators for Lagrange basis ---
+    double denom0 = (x0 - x1) * (x0 - x2);
+    double denom1 = (x1 - x0) * (x1 - x2);
+    double denom2 = (x2 - x0) * (x2 - x1);
+
+    // --- Get shifted power-basis coefficients: c2*x^2 + c1*x + c0 ---
     double c_a2 = a0/denom0 + a1/denom1 + a2/denom2;
     double c_p2 = p0/denom0 + p1/denom1 + p2/denom2;
-    double c_a1 = -a0*(f1+f2)/denom0 - a1*(f0+f2)/denom1 - a2*(f0+f1)/denom2;
-    double c_p1 = -p0*(f1+f2)/denom0 - p1*(f0+f2)/denom1 - p2*(f0+f1)/denom2;
-    double c_a0 = a0*f1*f2/denom0 + a1*f0*f2/denom1 + a2*f0*f1/denom2;
-    double c_p0 = p0*f1*f2/denom0 + p1*f0*f2/denom1 + p2*f0*f1/denom2;
+    double c_a1 = -a0*(x1+x2)/denom0 - a1*(x0+x2)/denom1 - a2*(x0+x1)/denom2;
+    double c_p1 = -p0*(x1+x2)/denom0 - p1*(x0+x2)/denom1 - p2*(x0+x1)/denom2;
+    double c_a0 = a0*x1*x2/denom0 + a1*x0*x2/denom1 + a2*x0*x1/denom2;
+    double c_p0 = p0*x1*x2/denom0 + p1*x0*x2/denom1 + p2*x0*x1/denom2;
 
     // --- Finite difference constants (constant for segment) ---
     double d2_a_const = 2 * c_a2 * h2;
@@ -132,32 +142,38 @@ static inline void _decomp_qcode_segment(
     double a, p, d1_a, d1_p;
     std::complex<double> phase, d_phase;
     int64_t k_sub_max;
-    int64_t k = k_start; // k is now the local loop variable
+    int64_t k = k_start; 
 
     for (; k < kmax; ) {
-        // --- Re-calculate steppers to correct FP error ---
         f = k * df;
+        x = f - f0; // --- EVALUATE RELATIVE TO ORIGIN ---
+        
         k_sub_max = k + update_interval;
         if (k_sub_max > kmax) k_sub_max = kmax;
 
-        a = c_a2*f*f + c_a1*f + c_a0;
-        p = c_p2*f*f + c_p1*f + c_p0;
-        d1_a = c_a2*(2*f*df + h2) + c_a1*df;
-        d1_p = c_p2*(2*f*df + h2) + c_p1*df;
+        // Initial values for this sub-block using x
+        a = c_a2*x*x + c_a1*x + c_a0;
+        p = c_p2*x*x + c_p1*x + c_p0;
+        
+        // First differences at x (Delta_x)
+        d1_a = c_a2*(2*x*df + h2) + c_a1*df;
+        d1_p = c_p2*(2*x*df + h2) + c_p1*df;
+        
         phase = std::polar(1.0, p);
         d_phase = std::polar(1.0, d1_p);
 
-        // --- Fast Inner Loop ---
+        // --- Fast Inner Loop (Remains Identical) ---
         for (; k < k_sub_max; k++) {
-            h_seg[k - k_start] = (T_COMPLEX)(a * phase); // Corrected indexing and cast
+            h_seg[k - k_start] = (T_COMPLEX)(a * phase); 
+            
             phase = phase * d_phase;
             d_phase = d_phase * d2_phase_const;
+            
             a = a + d1_a;
             d1_a = d1_a + d2_a_const;
         }
     }
 }
-
 
 /* =====================================================================
  *
@@ -426,10 +442,10 @@ static inline void _decomp_main_loop(
         // Start with the highest requested degree
         int current_degree = degree; 
 
-        // Degrade based on start position
-        if (i == imin) current_degree = 1; // First segment must be linear
-        else if (i == imin + 1 && current_degree > 2) current_degree = 2;
-        else if (i == imin + 2 && current_degree > 3) current_degree = 3;
+        // Degrade based on absolute array boundaries, NOT the f_lower index (imin).
+        // Because all higher-order stencils look back exactly one index (i-1), 
+        // only absolute index 0 lacks the leftward memory to run them.
+        if (i == 0) current_degree = 1; 
 
         // Degrade based on end position (Quartic needs i+3, Cubic needs i+2)
         if (current_degree > 3 && i >= sflen - 3) current_degree = 3;
