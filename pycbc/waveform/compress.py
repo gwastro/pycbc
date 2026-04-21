@@ -231,7 +231,6 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     CompressedWaveform
         The compressed waveform data; see `CompressedWaveform` for details.
     """
-  
     fmin = sample_points.min()
     df = htilde.delta_f
     
