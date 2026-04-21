@@ -2192,13 +2192,10 @@ def optimized_match(
         to_minimize,
         bounds=(-delta_t, delta_t),
         method="bounded",
-        options={'xatol': 1e-6}
+        options={'xatol': 1e-8}
     )
 
-    # Refine the result
-    refined_result = minimize_scalar(to_minimize, x0=res.x, method='brent', options={'xatol': 1e-8})
-
-    m, angle = product_offset(refined_result.x)
+    m, angle = product_offset(res.x)
 
     if return_phase:
         return m / norm, res.x / delta_t + max_id, -angle
