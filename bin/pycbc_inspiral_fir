@@ -29,7 +29,7 @@ from pycbc.waveform.bank import RatioFilterBank
 tstart = time.time()
 
 def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
-                        fine_indices, stilde, bank, chisq_estimator, engine,
+                        fine_indices, tstarts, stilde, bank, chisq_estimator, engine,
                         filters_f, ref_template,
                         args):
     logging.info('starting chisq calculation')
@@ -64,12 +64,14 @@ def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
             snrv = snrs[idx]
             t_idx = t_idxs[idx]
             target_global_id = global_ids[idx]
+            tstart = tstarts[idx]
             
             local_id = ids_local[idx] # Within batch id
             
-            
+            logging.info('regenerating template')
             ratio_filter = bank.get_fd_fir(target_global_id, len(stilde), 
                                            delta_f=stilde.delta_f)     
+            logging.info('finished template regeneration')
             template = ratio_filter * ref_template
             template.params = ratio_filter.params
             template.f_lower = ref_template.f_lower
@@ -87,8 +89,43 @@ def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
             
             # I think the psd and template here are really only needed to determine the
             # chisq bin boundaries. Is this really needed?
-            chi, dof = chisq_estimator.values(corr, snrvs, 1, stilde.psd, tids, template)     
+            logging.info('prepared input')
             
+            psd = stilde.psd.copy()
+            psd[:] = 1
+            template = template / stilde.psd ** 0.5
+            template[:] = abs(template)
+            template.params = ratio_filter.params
+            template.f_lower = ref_template.f_lower
+            
+            # Reconstruct template (decimated)
+            ratio = filters_f[local_id]
+            w = ref_template / stilde.psd ** 0.5
+            df = args.sample_rate / args.fir_length     
+            newf = np.arange(0, args.fir_length) * df       
+            w_new = np.interp(newf, w.sample_frequencies, w)
+            template2 = FrequencySeries(ratio * w_new, delta_f=df, dtype=stilde.dtype)
+            template2[:] = abs(template2) / args.sample_rate
+            template2.params = ratio_filter.params
+            template2.f_lower = ref_template.f_lower
+            
+            psd2 = FrequencySeries(np.ones(len(ratio), dtype=np.float32), delta_f=df)
+            
+            # Reconstruct fd correlation vector
+            import mkl_fft
+            ref = engine.ref_snr[tstart:tstart+args.fir_length]
+            corr2 = FrequencySeries(ratio *  mkl_fft.fft(ref), delta_f=df) / rescale * stilde.delta_t
+            tids2 = tids - tstart
+            
+            
+            chi, dof = chisq_estimator.values(corr, snrvs, 1, psd, tids, template)    
+            
+            print(type(corr2), type(template2))
+
+            chi2, dof2 = chisq_estimator.values(corr2, snrvs, 1, psd2, tids2, template2)   
+            print(chi, chi2, chi2 / chi, (chi2 / chi)**0.5)   
+            chi = chi2
+            #exit()
             # Determine which points we should use the same chisq value for
             window_mask = (abs(t_idxs - t_idx) <= chisq_window_samp)
             update_mask = window_mask & (~assigned_mask)
@@ -300,7 +337,7 @@ def main():
                 logging.info(f"Processing Segment {s_num}")
                 t1 = time.time()
 
-                ids_local, t_idxs, snrs, h_norm = engine.process_segment(
+                ids_local, t_idxs, snrs, tstarts, h_norm = engine.process_segment(
                     stilde, stilde.psd, ref_template, filters_f, counts,
                     np.arange(len(fine_indices)),
                     valid_slice=stilde.analyze,
@@ -309,7 +346,7 @@ def main():
 
                 if len(ids_local) > 0:
                     chi, chi_dof = compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
-                        fine_indices, stilde, bank, power_chisq, engine, filters_f, ref_template, args)
+                        fine_indices, tstarts, stilde, bank, power_chisq, engine, filters_f, ref_template, args)
                     
                     t_idxs += (-stilde.analyze.start + stilde.cumulative_index)
                     seg_ids_local.append(ids_local)
