@@ -24,8 +24,8 @@ class RatioMatchedFilterControl(object):
         
         # 2. Intermediate Buffers (Batch x Block)
         total_batch_size = batch_size * fir_fft_length
-        self.temp_freq_mult = zeros(total_batch_size, dtype=complex64)
-        self.corr_output_buffer = zeros(total_batch_size, dtype=complex64)
+        self.temp_freq_mult = zeros(total_batch_size, dtype=complex64).data.reshape(self.batch_size, fir_fft_length)
+        self.corr_output_buffer = zeros(total_batch_size, dtype=complex64).data.reshape(self.batch_size, fir_fft_length)
 
         # 3. Filter Preparation Buffers
         self.filters_padded = zeros(total_batch_size, dtype=complex64)
@@ -67,18 +67,19 @@ class RatioMatchedFilterControl(object):
             high_frequency_cutoff=self.f_high,
             h_norm=h_norm
         )
+        self.ref_snr = snr.numpy() * (norm * stilde.delta_t)
 
         # 3. Execute Blocked Kernel
-        local_idxs, t_idxs, snr_vals = self._execute_blocked_kernel(
-            snr.numpy() * (norm * stilde.delta_t), filters_f, n_taps, valid_slice
+        local_idxs, t_idxs, snr_vals, tstarts = self._execute_blocked_kernel(
+            self.ref_snr, filters_f, n_taps, valid_slice
         )
         
         # 4. Map indices
         if len(local_idxs) > 0:
             global_ids = indices[local_idxs]
-            return global_ids, t_idxs, snr_vals, h_norm
+            return global_ids, t_idxs, snr_vals, tstarts, h_norm
         else:
-            return [], [], [], h_norm
+            return [], [], [], tstarts, h_norm
 
     def _fft_all_filters(self, taps, counts):
         """Helper to FFT all filters using mkl_fft."""
@@ -131,10 +132,10 @@ class RatioMatchedFilterControl(object):
         all_f_idxs = []
         all_t_idxs = []
         all_snrs = []
-        
-        # Reshape views for Cython kernel
-        freq_mult_view = self.temp_freq_mult.data.reshape(self.batch_size, N_FFT)
-        corr_out_view = self.corr_output_buffer.data.reshape(self.batch_size, N_FFT)
+        all_tstarts = []
+
+        freq_mult_view = self.temp_freq_mult
+        corr_out_view = self.corr_output_buffer
 
         if valid_slice:
             v_start = valid_slice.start
@@ -190,6 +191,7 @@ class RatioMatchedFilterControl(object):
                 if t_start not in block_f_cache:
                     block_in_view = np.zeros(self.fir_fft_len, dtype=complex64)
                     block_in_view[0:t_end-t_start] = data[t_start:t_end]
+                    
                     block_f_view = self.fft_lib.fft(block_in_view)
                     block_f_cache[t_start] = block_f_view
                 
@@ -218,7 +220,9 @@ class RatioMatchedFilterControl(object):
                     all_f_idxs.extend(f_list)
                     all_t_idxs.extend(t_list)
                     all_snrs.extend(s_list)
+                    all_tstarts.extend([t_start] * len(s_list)) 
                     
         return (np.array(all_f_idxs, dtype=np.int32), 
                 np.array(all_t_idxs, dtype=np.int64), 
-                np.array(all_snrs, dtype=np.complex64))
+                np.array(all_snrs, dtype=np.complex64),
+                np.array(all_tstarts, dtype=np.int32))
