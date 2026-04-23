@@ -37,7 +37,7 @@ import pycbc.pnutils
 import pycbc.waveform.compress
 from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc import DYN_RANGE_FAC
-from pycbc.types import FrequencySeries, zeros
+from pycbc.types import FrequencySeries, zeros, TimeSeries
 import pycbc.io
 from pycbc.io.ligolw import LIGOLWContentHandler
 import hashlib
@@ -1154,6 +1154,15 @@ class RatioFilterBank(FilterBank):
         # Convert to sorted integers for deterministic iteration order
         self.coarse_indices = np.array([int(k) for k in self.coarse_keys], dtype=int)
         self.coarse_indices.sort()
+    
+        # Setup a mapping from the fine template index to the coarse index
+        self.fine_coarse_map = np.zeros((len(self.table), 2), dtype=int) - 1
+        for coarse_id in self.coarse_keys:
+            fine_indices = self.fir_group[coarse_id]['fine_bank_index'][:]
+            if len(fine_indices) > 0:    
+                mapback = np.column_stack([np.ones(len(fine_indices)) * int(coarse_id),
+                                     np.arange(len(fine_indices))])
+                self.fine_coarse_map[fine_indices] = mapback
 
     def template_thinning(self, inj_filter_rejector):
         """Remove templates from bank that are far from all injections."""
@@ -1280,7 +1289,22 @@ class RatioFilterBank(FilterBank):
             return self.sigma_sigma_rescale[indices]
         else:
             raise ValueError('undefined fine template normalization method %s' % method)
-    
+ 
+    def get_fd_fir(self, fine_index, flen, delta_f):
+        coarse, local = self.fine_coarse_map[fine_index]
+        taps = self.fir_group[str(coarse)]['taps'][local]
+        size = self.fir_group[str(coarse)]['actual_tap_count'][local]
+
+        tlen = int(self.sample_rate / delta_f)
+        ts = np.zeros(tlen)
+        start = size // 2
+        end = len(taps) - start
+        ts[:end] = taps[-end:]
+        ts[-start:] = taps[:start]
+        ts = TimeSeries(ts, delta_t=1.0/self.sample_rate)
+        fs = ts.to_frequencyseries().astype(self.dtype)
+        fs.params = self.table[fine_index]
+        return fs
 
     def get_firs(self, coarse_index):
         """Retrieve the FIR tap information for the batch of fine templates

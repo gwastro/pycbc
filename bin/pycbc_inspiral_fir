@@ -19,7 +19,7 @@ import pycbc.scheme
 import pycbc.fft
 import pycbc.inject
 import pycbc.vetoes
-from pycbc.types import complex64, float32, zeros
+from pycbc.types import complex64, float32, zeros, FrequencySeries
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 
 # --- Imports for Ratio Logic ---
@@ -29,7 +29,10 @@ from pycbc.waveform.bank import RatioFilterBank
 tstart = time.time()
 
 def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
-                        fine_indices, stilde, bank, chisq_estimator, args):
+                        fine_indices, stilde, bank, chisq_estimator, engine,
+                        filters_f, ref_template,
+                        args):
+    logging.info('starting chisq calculation')
     chisq_window_samp = int(args.chisq_window * stilde.sample_rate)
     max_iterations = args.chisq_iterations
     
@@ -62,13 +65,31 @@ def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
             t_idx = t_idxs[idx]
             target_global_id = global_ids[idx]
             
-            # This is super slow and wasteful, but might be good enough for right now...
-            template = bank[target_global_id]
-            corr = template.conj() * stilde / stilde.psd * (4 * stilde.delta_f / h_norm ** 0.5)
-            corr.resize((len(stilde) - 1)*2)
-            chi, dof = chisq_estimator.values(corr, np.array([snrv], ndmin=1), 1, stilde.psd,
-                                              np.array([t_idx], ndmin=1), template)     
+            local_id = ids_local[idx] # Within batch id
             
+            
+            ratio_filter = bank.get_fd_fir(target_global_id, len(stilde), 
+                                           delta_f=stilde.delta_f)     
+            template = ratio_filter * ref_template
+            template.params = ratio_filter.params
+            template.f_lower = ref_template.f_lower
+            
+            # Regenerate full resolution correlation vector
+            rescale = bank.snr_rescale(target_global_id, 
+                                       method=args.template_normalization_method)
+            corr = template.conj() * stilde / stilde.psd * (4 * stilde.delta_f / h_norm ** 0.5 / rescale)
+            corr.resize((len(stilde) - 1)*2)
+            
+            # We do one point at a time, this is just the snr vallue array
+            # and time index array that we need to calculate the chisq at
+            snrvs = np.array([snrv], ndmin=1) / rescale
+            tids = np.array([t_idx], ndmin=1)
+            
+            # I think the psd and template here are really only needed to determine the
+            # chisq bin boundaries. Is this really needed?
+            chi, dof = chisq_estimator.values(corr, snrvs, 1, stilde.psd, tids, template)     
+            
+            # Determine which points we should use the same chisq value for
             window_mask = (abs(t_idxs - t_idx) <= chisq_window_samp)
             update_mask = window_mask & (~assigned_mask)
             
@@ -128,7 +149,7 @@ def get_args():
     parser.add_argument("--chisq-threshold", type=float, default=0,
                         help="FIXME: ADD")
     parser.add_argument("--chisq-window", type=float, default=1.0)
-    parser.add_argument("--chisq-iterations", type=int, default=10)
+    parser.add_argument("--chisq-iterations", type=int, default=100)
     parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
     
     # Clustering
@@ -288,7 +309,7 @@ def main():
 
                 if len(ids_local) > 0:
                     chi, chi_dof = compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
-                        fine_indices, stilde, bank, power_chisq, args)
+                        fine_indices, stilde, bank, power_chisq, engine, filters_f, ref_template, args)
                     
                     t_idxs += (-stilde.analyze.start + stilde.cumulative_index)
                     seg_ids_local.append(ids_local)
