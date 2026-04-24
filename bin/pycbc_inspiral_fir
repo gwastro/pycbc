@@ -104,30 +104,36 @@ def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
             else: # Fast chisq
                 # Reconstruct template (decimated)
                 logging.info('regenerating chisq inputs')
-                df = args.sample_rate / args.fir_length 
+                refine = 1 # hmm doesn't work for some reason
+                df = args.sample_rate / args.fir_length
+                
+                dfr = df / refine
                 ratio = filters_f[local_id]
 
                 # This block can be precalculated once per 
                 if _ref_weight is None:
-                    dec = int(df / stilde.delta_f)
+                    dec = int(dfr / stilde.delta_f)
                     w = ref_template[::dec] / stilde.psd[::dec] ** 0.5    
-                    newf = np.arange(0, args.fir_length) * df      
+                    newf = np.arange(0, args.fir_length) * dfr
                     
                     # Only bother with this because I didn't want to handle
                     # delta_f exact decimation issues
                     _ref_weight = np.interp(newf, w.sample_frequencies, w)
                 
-                template2 = FrequencySeries(ratio * _ref_weight, delta_f=df, dtype=stilde.dtype)
+                template2 = FrequencySeries(ratio * _ref_weight, delta_f=dfr, dtype=stilde.dtype)
                 template2[:] = abs(template2) / args.sample_rate
                 template2.params = bank.table[target_global_id]
                 template2.f_lower = ref_template.f_lower
                 
-                psd2 = FrequencySeries(np.ones(len(ratio), dtype=np.float32), delta_f=df)
+                
+                psd2 = FrequencySeries(np.ones(len(ratio), dtype=np.float32), delta_f=dfr)
                 
                 # Reconstruct fd correlation vector
                 import mkl_fft
                 ref = engine.ref_snr[tstart:tstart+args.fir_length]
-                corr2 = FrequencySeries(ratio *  mkl_fft.fft(ref), delta_f=df) / rescale * stilde.delta_t
+                corr2 = FrequencySeries(ratio *  mkl_fft.fft(ref), delta_f=df) / rescale / args.fir_length
+                corr2 = corr2.to_timeseries().to_frequencyseries(delta_f=dfr) / refine
+                
                 tids2 = tids - tstart
                 logging.info('...done')
                 chi, dof = chisq_estimator.values(corr2, snrvs, 1, psd2, tids2, template2)   
