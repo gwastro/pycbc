@@ -233,10 +233,9 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     """
     fmin = sample_points.min()
     df = htilde.delta_f
-    
-    # Original truncation restored per your requirement
+
     sample_index = (sample_points / df).astype(int)
-    
+
     amp = utils.amplitude_from_frequencyseries(htilde)
     phase = utils.phase_from_frequencyseries(htilde)
 
@@ -254,19 +253,28 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     kmax = min(len(htilde), len(hdecomp))
     htilde = htilde[:kmax]
     hdecomp = hdecomp[:kmax]
-    
+
+    s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)    
     s2 = filter.sigma(htilde, psd=psd, low_frequency_cutoff=fmin)
     if psd is not None:
         htilde2 = htilde / (psd * s2)
     else:
         htilde2 = htilde / s2
-    
-    s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)
+
+    # Do a first test to see if we are done
     mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
-                                  low_frequency_cutoff=fmin, normalized=False))
-    
+                                  low_frequency_cutoff=fmin, normalized=False))  
     if mismatch > tolerance:
+        # Calculate the overlap erros within each frequency bins.
+        # We use this to determine where to add more interpolation points
         vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
+
+
+    # We will find where in the frequency series the interpolated waveform
+    # has the smallest overlap with the full waveform, 
+    # We try to add a new interpolation point in every frequency bin
+    # that fails this check. Continue untill the overall reconstruction 
+    # waveform meets our mismatch target with the origianl waveform
 
     added_points = []
     iteration_count = 0
@@ -285,6 +293,8 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
             selected_segments = bad_segments[:max_batch_size]
         else:
             # Scalpel phase
+            # If we don't have that many bad segments, but still haven't
+            # converged, add at least a small number to see if that helps
             num_to_add = min(20, len(vecdiffs))
             selected_segments = vecdiffs.argsort()[::-1][:num_to_add]
         
@@ -293,7 +303,6 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         for minpt in selected_segments:
             # Calculate midpoint using indices to avoid float drift issues
             add_freq = (sample_points[minpt] + sample_points[minpt+1]) / 2.0
-            # Restoration of original truncation logic for midpoint placement
             addidx = int(add_freq / df) 
             
             if addidx not in sample_index and addidx not in new_addidxs:
@@ -344,8 +353,9 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
             mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
                                             low_frequency_cutoff=fmin,
                                             normalized=False))
-            
-        if mismatch > tolerance:
+        else mismatch > tolerance:
+            # Calculate the overlap erros within each frequency bins.
+            # We use this to determine where to add more interpolation points
             vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
             
         added_points.extend(new_addidxs)

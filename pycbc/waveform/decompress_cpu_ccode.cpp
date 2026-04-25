@@ -79,7 +79,6 @@ static inline void _decomp_ccode_segment(
         k_sub_max = findex + update_interval;
         if (k_sub_max > kmax) k_sub_max = kmax;
 
-        // --- Fast Inner Loop (Remains Identical) ---
         while (findex < k_sub_max) {
             incrh_re = h_re * dphi_re - h_im * dphi_im;
             incrh_im = h_re * dphi_im + h_im * dphi_re;

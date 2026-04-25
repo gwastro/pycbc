@@ -23,14 +23,13 @@ hdf file."""
 import argparse
 import numpy
 import logging
-import time
 import multiprocessing
 
 import pycbc
-from pycbc import psd
+import pycbc.psd
 from pycbc.waveform import compress
 from pycbc import waveform
-from pycbc.types import FrequencySeries, real_same_precision_as
+from pycbc.types import real_same_precision_as
 
 # --- WORKER FUNCTION ---
 def _worker(ii):
@@ -153,6 +152,10 @@ if __name__ == "__main__":
 
     pycbc.init_logging(args.verbose)
 
+    # Verify if the input options for calculating the psd are correct, if
+    # a PSD is to be used while calculating the overlaps in compress.py . If
+    # using a PSD is not desired, this check would prevent raising an error
+    # asking for PSD options.
     if args.psd_model or args.psd_file or args.asd_file:
         pycbc.psd.verify_psd_options(args, parser)
 
@@ -170,6 +173,8 @@ if __name__ == "__main__":
     dtype = numpy.complex128
 
     logging.info("loading bank")
+    # we'll do everything in double precision; if single is desired, we'll
+    # cast to single when saving the waveforms
     bank_obj = waveform.FilterBank(args.bank_file, N//2+1, df_val, dtype,
                                    low_frequency_cutoff=args.low_frequency_cutoff,
                                    approximant=args.approximant,
