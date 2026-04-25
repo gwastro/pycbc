@@ -949,4 +949,5 @@ class CompressedWaveform(object):
             tolerance=fp_group.attrs['tolerance'],
             mismatch=fp_group.attrs['mismatch'],
             precision=fp_group.attrs['precision'],
+            compression_factor=fp_group.attrs['compression_factor'],
             load_to_memory=load_to_memory)
