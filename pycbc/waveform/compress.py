@@ -265,7 +265,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
                                   low_frequency_cutoff=fmin, normalized=False))  
     if mismatch > tolerance:
-        # Calculate the overlap erros within each frequency bins.
+        # Calculate the overlap errors within each frequency bins.
         # We use this to determine where to add more interpolation points
         vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
 
@@ -353,8 +353,8 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
             mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
                                             low_frequency_cutoff=fmin,
                                             normalized=False))
-        else mismatch > tolerance:
-            # Calculate the overlap erros within each frequency bins.
+        else:
+            # Calculate the overlap errors within each frequency bins.
             # We use this to determine where to add more interpolation points
             vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
             
