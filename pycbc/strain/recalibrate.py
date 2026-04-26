@@ -583,7 +583,7 @@ def read_calibration_envelop_file(calibration_file, correction_type,
     return log_nodes, amplitude_median_nodes, amplitude_sigma_nodes, phase_median_nodes, phase_sigma_nodes
 
 
-def get_calibration_files_O1_O2_O3(ifos, gps_time, calibration_file_path):
+def get_calibration_files(ifos, gps_time, calibration_file_path):
     """
     This function provides a dictionary of calibration envelop files
     for each IFO around a given GPS time for O1, O2, and O3 observation
@@ -597,9 +597,15 @@ def get_calibration_files_O1_O2_O3(ifos, gps_time, calibration_file_path):
     Output:
      A dictionary of calibration envelop file path for each IFO.
     """
+    
+    RUN_NAME=get_run(gps_time).split('_')[0]
+    get_run(gps_time)
     dict_calibration_file = {}
     for ifo in ifos:
-        all_calibration_files = glob.glob('%s/%s/*FinalResults.txt'%(calibration_file_path, ifo))
+        if RUN_NAME=='O4a':
+            all_calibration_files = glob.glob('%s/%s_%s/*.txt'%(calibration_file_path, ifo, RUN_NAME))
+        else:
+            all_calibration_files = glob.glob('%s/%s/*FinalResults.txt'%(calibration_file_path, ifo))
         if ifo !='V1':
             # H1 and L1 detector files are treated seperately compared to V1 detector
             # This list of GPS times can be coded in a better way!!!
@@ -607,7 +613,7 @@ def get_calibration_files_O1_O2_O3(ifos, gps_time, calibration_file_path):
             dt_list = abs(list_gpstimes - gps_time)
             ifo_calibration_file = '%s/%s'%(os.getcwd(), all_calibration_files[dt_list.argmin()])
         else:
-            RUN_NAME = get_run(gps_time).split('_')[0]
+            #RUN_NAME = get_run(gps_time).split('_')[0]
             if RUN_NAME=='O2':
                 ifo_calibration_file = '%s/calibration_envelops/V1/V_calibrationUncertaintyEnvelope_magnitude5p1percent_phase40mraddeg20microsecond.txt'%os.getcwd()
             elif RUN_NAME=='O3a':
