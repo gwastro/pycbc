@@ -161,7 +161,7 @@ static inline void _decomp_qcode_segment(
         phase = std::polar(1.0, p);
         d_phase = std::polar(1.0, d1_p);
 
-        // --- Fast Inner Loop (Remains Identical) ---
+        // --- Fast Inner Loop  ---
         for (; k < k_sub_max; k++) {
             h_seg[k - k_start] = (T_COMPLEX)(a * phase); 
             
@@ -252,7 +252,7 @@ static inline void _decomp_tcode_segment(
         d1_phase = std::polar(1.0, d1_p);
         d2_phase = std::polar(1.0, d2_p);
 
-        // --- Fast Inner Loop (Remains Identical) ---
+        // --- Fast Inner Loop ---
         for (; k < k_sub_max; k++) {
             h_seg[k - k_start] = (T_COMPLEX)(a * phase); 
 
@@ -357,7 +357,7 @@ static inline void _decomp_Qcode_segment(
         d2_phase = std::polar(1.0, d2_p);
         d3_phase = std::polar(1.0, d3_p);
 
-        // --- Fast Inner Loop (Remains Identical) ---
+        // --- Fast Inner Loop  ---
         for (; k < k_sub_max; k++) {
             h_seg[k - k_start] = (T_COMPLEX)(a * phase); 
 
