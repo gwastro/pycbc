@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 import logging
 
 from pycbc.types import MultiDetOptionAction
-from pycbc.strain.recalibrate import get_calibration_files_O1_O2_O3, read_calibration_envelop_file
+from pycbc.strain.recalibrate import get_calibration_files, read_calibration_envelop_file
 
 
 parser = argparse.ArgumentParser()
