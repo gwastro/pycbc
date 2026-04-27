@@ -609,11 +609,13 @@ def get_calibration_files(ifos, gps_time, calibration_file_path):
         if ifo !='V1':
             # H1 and L1 detector files are treated seperately compared to V1 detector
             # This list of GPS times can be coded in a better way!!!
-            list_gpstimes = np.array([int(item.split('_')[-4]) for item in all_calibration_files])
+            if RUN_NAME=='O4a':
+                list_gpstimes = np.array([int(item.split('_')[-1].split('.')[0]) for item in all_calibration_files])
+            else:
+                list_gpstimes = np.array([int(item.split('_')[-4]) for item in all_calibration_files])
             dt_list = abs(list_gpstimes - gps_time)
-            ifo_calibration_file = '%s/%s'%(os.getcwd(), all_calibration_files[dt_list.argmin()])
+            ifo_calibration_file = all_calibration_files[dt_list.argmin()]
         else:
-            #RUN_NAME = get_run(gps_time).split('_')[0]
             if RUN_NAME=='O2':
                 ifo_calibration_file = '%s/calibration_envelops/V1/V_calibrationUncertaintyEnvelope_magnitude5p1percent_phase40mraddeg20microsecond.txt'%os.getcwd()
             elif RUN_NAME=='O3a':
@@ -623,5 +625,8 @@ def get_calibration_files(ifos, gps_time, calibration_file_path):
             else:
                 raise ValueError("Virgo GPS time is not in valid range")
 
-        dict_calibration_file[ifo] = '%s/%s/%s'%(calibration_file_path, ifo,ifo_calibration_file.split('/')[-1])
+        if RUN_NAME=='O4a':
+            dict_calibration_file[ifo] = '%s/%s_%s/%s'%(calibration_file_path, ifo,RUN_NAME,ifo_calibration_file.split('/')[-1])
+        else:
+            dict_calibration_file[ifo] = '%s/%s/%s'%(calibration_file_path, ifo,ifo_calibration_file.split('/')[-1])
     return dict_calibration_file
