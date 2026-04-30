@@ -424,12 +424,7 @@ static inline void _decomp_main_loop(
         p2 = (double)phase[i+1];
 
         // Calculate start and end indices for this segment
-        if (i == imin) {
-            k = start_index;
-        } else {
-            k = (int64_t)ceil(f1 / delta_f);
-        }
-
+        k = last_findex;
         if (i == sflen - 2) {
            kmax = (int64_t)(f2 / delta_f) + 1;
         } else {
