@@ -283,8 +283,7 @@ def main():
 
     logging.info("Loading coarse bank references...")
     coarse_bank = FilterBank(args.coarse_bank, flen, args.delta_f,
-                             dtype=np.complex128, 
-                             enable_compressed_waveforms=False)
+                             dtype=np.complex128)
     show_progress = (args.verbose == 0)
     coarse_waveforms = [h.copy() for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
 
@@ -292,8 +291,7 @@ def main():
 
     logging.info("Opening fine bank...")
     fine_bank = FilterBank(args.fine_bank, flen, args.delta_f,
-                           dtype=np.complex128,
-                           enable_compressed_waveforms=False)
+                           dtype=np.complex128)
     n_fine = len(fine_bank)
     
     # --- PHASE 1: Write File Headers via TemplateBank reuse ---
