@@ -214,13 +214,14 @@ def process_template(i):
                 ts = TimeSeries(h_fir_time, delta_t=delta_t)
                 H_fir = ts.to_frequencyseries(delta_f=h_ref.delta_f)
                 
-                pyplot.plot(freqs, ratio)
-                pyplot.plot(freqs, H_target_raw2 / g_args.sample_rate)
-                H_fir.real().plot()
+                pyplot.plot(freqs, ratio, label='target')
+                pyplot.plot(freqs, H_target_raw2 / g_args.sample_rate, label='something else')
+                H_fir.real().plot(label='achieved')
                 pyplot.xscale('log')
                 pyplot.xlim(25, 1000) # This is the band we monitor
                 pyplot.ylim(-2, 2)
                 pyplot.grid()
+                pyplot.legend()
                 pyplot.xlabel('Frequency [Hz]')
                 pyplot.ylabel('Ratio')
                 pyplot.show()
@@ -283,7 +284,8 @@ def main():
 
     logging.info("Loading coarse bank references...")
     coarse_bank = FilterBank(args.coarse_bank, flen, args.delta_f,
-                             dtype=np.complex128)
+                             dtype=np.complex128, 
+                             enable_compressed_waveforms=False)
     show_progress = (args.verbose == 0)
     coarse_waveforms = [h.copy() for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
 
@@ -291,20 +293,18 @@ def main():
 
     logging.info("Opening fine bank...")
     fine_bank = FilterBank(args.fine_bank, flen, args.delta_f,
-                           dtype=np.complex128)
+                           dtype=np.complex128,
+                           enable_compressed_waveforms=False)
     n_fine = len(fine_bank)
     
     # --- PHASE 1: Write File Headers via TemplateBank reuse ---
     logging.info("Writing bank parameters to output file...")
     
     # 1. Write Fine Bank to Root
-    # CHANGE: Set write_compressed_waveforms=False. 
-    # We rely on FIR taps + References for these, so we don't want the bloat of compressed waveforms.
     f_out = fine_bank.write_to_hdf(args.output_file, force=True, 
-                                   write_compressed_waveforms=False)
+                                   write_compressed_waveforms=True)
 
     # 2. Write Coarse Bank to Subgroup
-    # We keep compressed waveforms here (default=True) because these ARE the references.
     coarse_bank.write_to_hdf(args.output_file, file_handler=f_out, 
                              group_key="fir_data/coarse_bank_params",
                              write_compressed_waveforms=True)
