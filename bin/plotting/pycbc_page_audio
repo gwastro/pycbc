@@ -1,0 +1,111 @@
+import sys
+import argparse
+
+import logging
+
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
+from matplotlib.colors import LogNorm
+
+import pycbc.strain
+import pycbc.results
+import pycbc.catalog
+
+import math
+import numpy as np
+
+import scipy
+import scipy.signal
+from scipy.io.wavfile import write
+
+# https://stackoverflow.com/questions/9978880/python-argument-parser-list-of-list-or-tuple-of-tuples
+def t_window(s):
+    try:
+        start, end = map(float, s.split(','))
+        return [start, end]
+    except:
+        raise argparse.ArgumentTypeError("Input must be start,end start,end")
+
+parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument('--output-file', required=True, help='Output plot')
+parser.add_argument('--center-time', type=float,
+                    help='Center plot on the given GPS time. If omitted, use '
+                         'center of interval set via --gps-start-time and '
+                         '--gps-end-time')
+parser.add_argument('--time-windows', required=True, type=t_window,
+                    nargs='+', metavar='START,END',
+                    help='Use these set of times for time windows. Each '
+                         'window produces a different panel. Should '
+                         'be provided as start1,end1 start2,end2 ... '
+                         'where start/end times are relative to --center-time '
+                         'and both positive')
+
+
+
+parser.add_argument('--title',
+                    help="If given, use this as the title")
+parser.add_argument('--caption',
+                    help="If given, use this as the caption")
+
+
+
+pycbc.strain.insert_strain_option_group(parser)
+opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose, default_level=1)
+
+if opts.center_time is None:
+    center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
+else:
+    center_time = opts.center_time
+
+
+logging.info("Loading Strain")
+strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
+logging.info("Loaded Strain")
+
+rem_corrupted = True
+if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
+    rem_corrupted = False
+
+logging.info("processing")
+strain = strain.whiten(4, 4, remove_corrupted=rem_corrupted)
+
+# Band-pass filter
+strain = strain.highpass_fir(30.0, 8)
+strain = strain.lowpass_fir(400.0, 8)
+logging.info("processed")
+
+wins = opts.time_windows
+
+logging.info(f"Using time windows: {wins}")
+for curr_idx in range(len(wins)):
+    curr_win = wins[curr_idx]
+    # Catch the case that not enough data is available.
+    if opts.center_time - curr_win[0] < strain.start_time:
+        curr_win[0] = float(opts.center_time - strain.start_time - 0.01)
+    if opts.center_time + curr_win[1] > strain.end_time:
+        curr_win[1] = float(strain.end_time - opts.center_time - 0.01)
+    strain_zoom = strain.time_slice(opts.center_time - curr_win[0],
+                                    opts.center_time + curr_win[1])
+logging.info(f"Using time window: {curr_win}")
+
+
+### Audio Conversion ###
+
+
+
+audio = strain_zoom.numpy()
+audio /= np.max(np.abs(audio))
+
+
+
+logging.info(f"Saving audio to {opts.output_file}")
+#  write(f"gw_{ifo}_audio_{event}.wav", 4096, audio.astype(np.float32))
+write(opts.output_file, int(opts.sample_rate), audio.astype(np.float32))
+logging.info("Saved audio")
+
+### Audio Conversion ###
+
