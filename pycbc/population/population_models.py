@@ -113,16 +113,13 @@ def sfr_madau_fragos_2017(z, k_imf=0.66, mode='high'):
     )
 
 
-
-
-
 def merger_rate_density(sfr_func, td_model, rho_local, maxz=10.0,
                         npoints=10000, z_array=None, **kwargs):
-    r""" This function uses the symbolic integral to calculate
-        the merger rate density of CBC sources. This function converts the
+    r""" This function uses the numerical integral to calculate
+        the merger rate density of CBC sources. This function calculates the
         convolution of the star formation rate SFR(tau) and the time delay
         probability P(tau) on the time delay 'tau' into the convolution on
-        the redshift 'z'. This function relies on `convolution_trans`.
+        the redshift 'z'.
 
     Parameters
     ----------
@@ -156,33 +153,30 @@ def merger_rate_density(sfr_func, td_model, rho_local, maxz=10.0,
     """
     from sympy import symbols, lambdify
 
-    import warnings
-    warnings.warn(
-        "merger_rate_density is now a wrapper. "
-        "Please consider migrating to `pycbc.population.redshift_models.SFRTimeDelayRedshift` "
-        "for native OOP support and performance.",
-        DeprecationWarning
-    )
-
     if z_array is None:
         z_array = np.linspace(0, maxz, npoints)
+    else:
+        maxz = max(maxz, np.max(z_array))
 
     if td_model not in ['log_normal', 'gaussian', 'power_law', 'inverse']:
         raise ValueError("'td_model' must choose from \
         ['log_normal', 'gaussian', 'power_law', 'inverse'].")
+
+    td_kwargs = {}
+    for key in ['td_min', 'td_max']:
+        if key in kwargs:
+            td_kwargs[key] = kwargs.pop(key)
 
     cosmology = get_cosmology(**kwargs)
 
     from .redshift_models import SFRTimeDelayRedshift
     model = SFRTimeDelayRedshift(
         sfr_model=sfr_func, td_model=td_model, 
-        zmax=maxz, num_zbins=npoints, cosmology=cosmology
+        zmax=maxz, num_zbins=1000, cosmology=cosmology, **td_kwargs
     )
 
     f_z = model.psi_z(z_array)
-    if f_z[0] == 0:
-        f_z = np.zeros_like(f_z)
-    else:
+    if f_z[0] != 0:
         f_z = f_z / f_z[0] * rho_local  # Normalize & Rescale
     
     rho_z = scipy_interpolate.interp1d(z_array, f_z)

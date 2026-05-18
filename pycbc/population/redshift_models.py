@@ -194,7 +194,8 @@ class BaseRedshiftEvolution(ABC):
             p_t = np.exp(-(tau-t_g)**2/(2*sigma_g**2)) / (np.sqrt(2*np.pi)*sigma_g)
         elif td_model == "power_law":
             alpha_t = 0.81
-            p_t = tau**(-alpha_t)
+            valid = (tau > 0)
+            p_t[valid] = tau[valid]**(-alpha_t)
         elif td_model == "inverse":
             norm_const = 1/np.log(self.td_max/self.td_min)
             valid = (tau >= self.td_min) & (tau <= self.td_max)
@@ -462,14 +463,22 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
     param_names = ()
 
     def __init__(self, sfr_model, td_model, zmax=10.0, num_zbins=1000, 
-                 cosmology=Planck15, z_grid=None, z_formation_max=20.0):
+                 cosmology=None, z_grid=None, z_formation_max=20.0, **kwargs):
         super().__init__(zmax, num_zbins, cosmology, z_grid)
         self.sfr_model = sfr_model
         self.td_model = td_model
         self.z_formation_max = z_formation_max
         
+        from astropy.cosmology import Planck18
+        import astropy.units as u
+        self.cosmology = cosmology if cosmology is not None else Planck18
+        
+        # Define boundaries for time delay
+        self.td_min = kwargs.get('td_min', 0.02)  # Gyr (20 Myr)
+        self.td_max = kwargs.get('td_max', self.cosmology.lookback_time(self.z_formation_max).to(u.Gyr).value)
+        
         # Precompute lookback times for formation redshift grid
-        # Use a dense grid for formation redshifts
+        # 5000 points is enough because adaptive quad handles sharp features perfectly
         self._zf_grid = np.linspace(0, self.z_formation_max, 5000)
         self._tf_grid = self.cosmology.lookback_time(self._zf_grid).to(u.Gyr).value
         
@@ -480,19 +489,74 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         # Evaluate SFR on the grid
         self._sfr_f = self.sfr_model(self._zf_grid)
         
-        # Precompute convolution psi_z on the BaseRedshiftEvolution's self._z_grid
-        self._psi_z_grid = np.zeros_like(self._z_grid)
+        self._update_psi_z_grid()
+
+    def _update_psi_z_grid(self):
+        """
+        Evaluate and cache the convolution over the redshift grid.
+        Uses fast numeric grid integration for bounded models, and exact scipy quad 
+        for models with integrable singularities (power_law) or discontinuities (inverse).
+        """
+        self._psi_z_grid = np.zeros(len(self._z_grid))
+        
+        # Pre-compute time grid for z_grid to vectorize delay calculation
         tm_grid = self.cosmology.lookback_time(self._z_grid).to(u.Gyr).value
         
-        for i, (zm, tm) in enumerate(zip(self._z_grid, tm_grid)):
-            valid = self._zf_grid >= zm
-            zf_valid = self._zf_grid[valid]
-            tf_valid = self._tf_grid[valid]
-            td = tf_valid - tm
+        if self.td_model in ["power_law", "inverse"]:
+            import scipy.integrate as scipy_integrate
+            from scipy.interpolate import CubicSpline
+            import warnings
             
-            p_td = self.time_delay_prob(td, self.td_model)
-            integrand = self._sfr_f[valid] * p_td * self._dt_dz_f[valid]
-            self._psi_z_grid[i] = np.trapz(integrand, zf_valid)
+            # Use CubicSpline to ensure C2 continuous derivatives for quad convergence
+            sfr_spline = CubicSpline(self._zf_grid, self._sfr_f, extrapolate=True)
+            dt_dz_spline = CubicSpline(self._zf_grid, self._dt_dz_f, extrapolate=True)
+            tf_spline = CubicSpline(self._zf_grid, self._tf_grid, extrapolate=True)
+            
+            if self.td_model == "inverse":
+                # Ensure strictly monotonic for inverse mapping
+                valid_idx = np.argsort(self._tf_grid)
+                z_of_t_spline = CubicSpline(self._tf_grid[valid_idx], self._zf_grid[valid_idx], extrapolate=True)
+            
+            for i, zm in enumerate(self._z_grid):
+                # Pin the singularity mathematically perfectly to the zm boundary
+                tm_local = tf_spline(zm)
+                
+                z_start = zm
+                if self.td_model == "inverse":
+                    t_start = tm_local + self.td_min
+                    if t_start >= self._tf_grid[-1]:
+                        self._psi_z_grid[i] = 0.0
+                        continue
+                    z_start = max(zm, float(z_of_t_spline(t_start)))
+                
+                def integrand(zf):
+                    td = tf_spline(zf) - tm_local
+                    if td <= 0:
+                        return 0.0
+                    p_td = float(self.time_delay_prob(td, self.td_model))
+                    return sfr_spline(zf) * p_td * dt_dz_spline(zf)
+                
+                # Guide quad to densely sample the incredibly narrow peak near z_start
+                # when td_min is extremely small (e.g. 1e-10) to prevent missing the peak entirely.
+                pts = [z_start + 1e-8, z_start + 1e-6, z_start + 1e-4, z_start + 1e-2]
+                pts = [p for p in pts if p < self.z_formation_max]
+                
+                # Catch any minor roundoff warnings from quad to keep terminal clean
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    self._psi_z_grid[i] = scipy_integrate.quad(
+                        integrand, z_start, self.z_formation_max, points=pts, limit=1000
+                    )[0]
+        else:
+            for i, (zm, tm) in enumerate(zip(self._z_grid, tm_grid)):
+                valid = self._zf_grid >= zm
+                zf_valid = self._zf_grid[valid]
+                tf_valid = self._tf_grid[valid]
+                td = tf_valid - tm
+                
+                p_td = self.time_delay_prob(td, self.td_model)
+                integrand = self._sfr_f[valid] * p_td * self._dt_dz_f[valid]
+                self._psi_z_grid[i] = np.trapz(integrand, zf_valid)
 
     def psi_z(self, redshift, **parameters):
         """
@@ -509,7 +573,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
             Dimensionless evolution factor.
         """
         redshift = np.asarray(redshift)
-        return np.interp(redshift, self._z_grid, self._psi_z_grid, left=0.0, right=0.0)
+        return np.interp(redshift, self._z_grid, self._psi_z_grid, right=0.0)
 
     def __call__(self, redshift, **parameters):
         return self.prob_redshift(redshift, **parameters)
