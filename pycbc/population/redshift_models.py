@@ -23,6 +23,7 @@
 #
 
 import numpy as np
+import warnings
 import astropy.units as u
 from astropy.cosmology import Planck15, Planck18
 from abc import ABC, abstractmethod
@@ -61,10 +62,9 @@ class BaseRedshiftEvolution(ABC):
 
         # Redshift grid (dimensionless)
         if z_grid is None:
-            self._z_grid = np.linspace(1e-3, zmax, num_zbins)
+            self._z_grid = np.linspace(1e-3, self.zmax, num_zbins)
         else:
             self._z_grid = np.asarray(z_grid)
-        #self._z_grid = np.linspace(1e-3, self.zmax, self.num_zbins)
 
         # Differential comoving volume on grid
         # Full-sky differential comoving volume dVc/dz = 4pi dVc/dz/dOmega
@@ -345,4 +345,94 @@ class PowerLawRedshift(BaseRedshiftEvolution):
 
 # Default instance
 power_law_redshift = PowerLawRedshift()
+
+
+class SFRTimeDelayRedshift(BaseRedshiftEvolution):
+    """
+    Redshift evolution from convoluting a star formation rate (SFR) with a time delay distribution.
+    """
+    name = "sfr_time_delay"
+    param_names = ()
+
+    def __init__(self, sfr_model, td_model, zmax=10.0, num_zbins=1000, 
+                 cosmology=Planck15, z_grid=None, z_formation_max=20.0):
+        super().__init__(zmax, num_zbins, cosmology, z_grid)
+        self.sfr_model = sfr_model
+        self.td_model = td_model
+        self.z_formation_max = z_formation_max
+
+        # Time delay max based on cosmology
+        self.td_max = self.cosmology.age(0).to(u.Gyr).value
+        self.td_min = 0.02 # Gyr
+        
+        # Precompute lookback times for formation redshift grid
+        # Use a dense grid for formation redshifts
+        self._zf_grid = np.linspace(0, self.z_formation_max, 5000)
+        self._tf_grid = self.cosmology.lookback_time(self._zf_grid).to(u.Gyr).value
+        
+        # dt/dz = 1 / (H(z) * (1+z))
+        H_z = self.cosmology.H(self._zf_grid).to(1/u.Gyr).value
+        self._dt_dz_f = 1.0 / (H_z * (1.0 + self._zf_grid))
+        
+        # Evaluate SFR on the grid
+        self._sfr_f = self.sfr_model(self._zf_grid)
+        
+        # Precompute convolution psi_z on the BaseRedshiftEvolution's self._z_grid
+        self._psi_z_grid = np.zeros_like(self._z_grid)
+        tm_grid = self.cosmology.lookback_time(self._z_grid).to(u.Gyr).value
+        
+        for i, (zm, tm) in enumerate(zip(self._z_grid, tm_grid)):
+            valid = self._zf_grid >= zm
+            zf_valid = self._zf_grid[valid]
+            tf_valid = self._tf_grid[valid]
+            td = tf_valid - tm
+            
+            p_td = self._p_tau_numpy(td, self.td_model)
+            integrand = self._sfr_f[valid] * p_td * self._dt_dz_f[valid]
+            self._psi_z_grid[i] = np.trapz(integrand, zf_valid)
+
+    def _p_tau_numpy(self, tau, td_model):
+        """Pure numpy array evaluation of time delay models."""
+        tau = np.asarray(tau, dtype=float)
+        p_t = np.zeros_like(tau)
+        
+        if td_model == "log_normal":
+            t_ln = 2.9  # Gyr
+            sigma_ln = 0.2
+            p_t = np.exp(-(np.log(tau)-np.log(t_ln))**2/(2*sigma_ln**2)) / (np.sqrt(2*np.pi)*sigma_ln)
+        elif td_model == "gaussian":
+            t_g = 2  # Gyr
+            sigma_g = 0.3
+            p_t = np.exp(-(tau-t_g)**2/(2*sigma_g**2)) / (np.sqrt(2*np.pi)*sigma_g)
+        elif td_model == "power_law":
+            alpha_t = 0.81
+            p_t = tau**(-alpha_t)
+        elif td_model == "inverse":
+            norm_const = 1/np.log(self.td_max/self.td_min)
+            valid = (tau >= self.td_min) & (tau <= self.td_max)
+            p_t[valid] = norm_const * tau[valid]**(-0.999)
+        else:
+            raise ValueError(f"'td_model' must choose from "
+                             f"['log_normal', 'gaussian', 'power_law', 'inverse'].")
+        return p_t
+
+    def psi_z(self, redshift, **parameters):
+        """
+        Redshift evolution function from convolution.
+        
+        Parameters
+        ----------
+        redshift : array_like
+            Dimensionless redshift.
+
+        Returns
+        -------
+        ndarray
+            Dimensionless evolution factor.
+        """
+        redshift = np.asarray(redshift)
+        return np.interp(redshift, self._z_grid, self._psi_z_grid, left=0.0, right=0.0)
+
+    def __call__(self, redshift, **parameters):
+        return self.prob_redshift(redshift, **parameters)
 

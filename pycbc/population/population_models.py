@@ -293,6 +293,14 @@ def merger_rate_density(sfr_func, td_model, rho_local, maxz=10.0,
     """
     from sympy import symbols, lambdify
 
+    import warnings
+    warnings.warn(
+        "merger_rate_density is now a wrapper. "
+        "Please consider migrating to `pycbc.population.redshift_models.SFRTimeDelayRedshift` "
+        "for native OOP support and performance.",
+        DeprecationWarning
+    )
+
     if z_array is None:
         z_array = np.linspace(0, maxz, npoints)
 
@@ -300,19 +308,20 @@ def merger_rate_density(sfr_func, td_model, rho_local, maxz=10.0,
         raise ValueError("'td_model' must choose from \
         ['log_normal', 'gaussian', 'power_law', 'inverse'].")
 
-    z = symbols('z')
-    z_0 = symbols('z_0')
-    f_z = np.zeros(len(z_array))
+    cosmology = get_cosmology(**kwargs)
 
-    func_1 = convolution_trans(
-                sfr=sfr_func, diff_lookback_t=diff_lookback_time,
-                model_td=td_model, **kwargs)
-    for i in range(len(z_array)):
-        func_2 = lambdify(z, func_1.subs(z_0, z_array[i]), 'scipy')
-        f_z[i] = scipy_integrate.quad(
-                    func_2, z_array[i], np.inf, epsabs=1.49e-3)[0]
+    from .redshift_models import SFRTimeDelayRedshift
+    model = SFRTimeDelayRedshift(
+        sfr_model=sfr_func, td_model=td_model, 
+        zmax=maxz, num_zbins=npoints, cosmology=cosmology
+    )
 
-    f_z = f_z/f_z[0]*rho_local  # Normalize & Rescale
+    f_z = model.psi_z(z_array)
+    if f_z[0] == 0:
+        f_z = np.zeros_like(f_z)
+    else:
+        f_z = f_z / f_z[0] * rho_local  # Normalize & Rescale
+    
     rho_z = scipy_interpolate.interp1d(z_array, f_z)
     return rho_z
 
