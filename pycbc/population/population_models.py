@@ -53,12 +53,8 @@ def sfr_grb_2008(z):
         Please see Eq.(5) in <arXiv:0804.4008> for more details.
     """
 
-    rho_local = 0.02  # Msolar/yr/Mpc^3
-    eta = -10
-
-    rho_z = rho_local*((1+z)**(3.4*eta) + ((1+z)/5000)**(-0.3*eta) +
-                       ((1+z)/9)**(-3.5*eta))**(1./eta)
-    return rho_z
+    from .redshift_models import sfr_grb_2008_redshift
+    return sfr_grb_2008_redshift.psi_z(z)
 
 
 def sfr_madau_dickinson_2014(z, gamma=2.7, kappa=5.6, z_peak=1.9):
@@ -79,8 +75,10 @@ def sfr_madau_dickinson_2014(z, gamma=2.7, kappa=5.6, z_peak=1.9):
          Pease see Eq.(15) in <arXiv:1403.0007> for more details.
     """
 
-    rho_z = 0.015 * (1+z)**gamma / (1 + ((1+z)/(1+z_peak))**kappa)
-    return rho_z
+    from .redshift_models import sfr_madau_dickinson_2014_redshift
+    return sfr_madau_dickinson_2014_redshift.psi_z(
+        z, gamma=gamma, kappa=kappa, z_peak=z_peak
+    )
 
 
 def sfr_madau_fragos_2017(z, k_imf=0.66, mode='high'):
@@ -109,148 +107,13 @@ def sfr_madau_fragos_2017(z, k_imf=0.66, mode='high'):
          Pease see <arXiv:1606.07887> and <arXiv:1706.07053> for more details.
     """
 
-    if mode == 'low':
-        factor_a = 2.6
-        factor_b = 3.2
-        factor_c = 6.2
-    elif mode == 'high':
-        factor_a = 2.7
-        factor_b = 3.0
-        factor_c = 5.35
-    else:
-        raise ValueError("'mode' must choose from 'high' or 'low'.")
-    rho_z = k_imf * 0.015 * (1+z)**factor_a / (1 + ((1+z)/factor_b)**factor_c)
-
-    return rho_z
+    from .redshift_models import sfr_madau_fragos_2017_redshift
+    return sfr_madau_fragos_2017_redshift.psi_z(
+        z, k_imf=k_imf, mode=mode
+    )
 
 
-def diff_lookback_time(z, **kwargs):
-    r""" The derivative of lookback time t(z)
-         with respect to redshit z.
 
-    Parameters
-    ----------
-    z : float
-         The redshift.
-
-    Returns
-    -------
-    dt_dz : float
-            The value of dt/dz at the redshift z.
-    \**kwargs :
-        All other keyword args are passed to :py:func:`get_cosmology` to
-        select a cosmology. If none provided, will use
-        :py:attr:`DEFAULT_COSMOLOGY`.
-
-    Notes
-    -----
-         Pease see Eq.(A3) in <arXiv:2011.02717v3> for more details.
-    """
-    from sympy import sqrt
-
-    cosmology = get_cosmology(**kwargs)
-    H0 = cosmology.H0.value * \
-        (3.0856776E+19)**(-1)/(1/24/3600/365*1e-9)  # Gyr^-1
-    dt_dz = 1/H0/(1+z)/sqrt((cosmology.Ode0+cosmology.Om0*(1+z)**3))
-    return dt_dz
-
-
-def p_tau(tau, td_model="inverse"):
-    r""" The probability distribution of the time delay.
-
-    Parameters
-    ----------
-    tau : float
-         The merger delay time from the
-         formation of the binary system and the orbital
-         decay timescale through gravitational wave radiation.
-    td_model : str
-         The time delay model.
-
-    Returns
-    -------
-    p_t : float or ndarray or sympy.core.mul.Mul based on input
-          The probability at time delay tau.
-
-    Notes
-    -----
-         Pease see the Appendix in <arXiv:2011.02717v3> for more details.
-    """
-    from sympy import sqrt, exp, log, Piecewise
-
-    if td_model == "log_normal":
-        t_ln = 2.9  # Gyr
-        sigma_ln = 0.2
-        p_t = exp(-(log(tau)-log(t_ln))**2/(2*sigma_ln**2)) / \
-                 (sqrt(2*np.pi)*sigma_ln)
-    elif td_model == "gaussian":
-        t_g = 2  # Gyr
-        sigma_g = 0.3
-        p_t = exp(-(tau-t_g)**2/(2*sigma_g**2)) / (sqrt(2*np.pi)*sigma_g)
-    elif td_model == "power_law":
-        alpha_t = 0.81
-        p_t = tau**(-alpha_t)
-    elif td_model == "inverse":
-        # make sure that there is a minimum and maximum time delay
-        td_min = 0.02 # Taken from Regimbau et al. https://journals.aps.org/prd/abstract/10.1103/PhysRevD.86.122001
-        td_max = cosmological_quantity_from_redshift(0, 'age')
-        norm_const = 1/np.log(td_max/td_min)
-        if isinstance(tau, (float, int)) or isinstance(tau, np.ndarray):
-            p_t = np.where((tau < td_min) | (tau > td_max), 0, norm_const * tau**(-0.999))
-        else:
-            p_t = Piecewise((0, tau < td_min), (0, tau > td_max), (norm_const * tau**(-0.999), True))
-
-    else:
-        raise ValueError("'model' must choose from \
-        ['log_normal', 'gaussian', 'power_law', 'inverse'].")
-
-    return p_t
-
-
-def convolution_trans(sfr, diff_lookback_t, model_td, **kwargs):
-    r""" This function is used in a symbolic integral, which to calculate
-        the merger rate density of CBC sources. This function converts the
-        convolution of the star formation rate SFR(tau) and the time delay
-        probability P(tau) on the time delay 'tau' into the convolution on
-        the redshift 'z'.
-
-    Parameters
-    ----------
-    sfr : function
-            The star formation rate function used in the convolution.
-    diff_lookback_t : function
-            The derivative of lookback time t(z)
-            with respect to redshit z.
-    model_td : str
-            The name of time delay model.
-    \**kwargs :
-        All other keyword args are passed to :py:func:`get_cosmology` to
-        select a cosmology. If none provided, will use
-        :py:attr:`DEFAULT_COSMOLOGY`.
-
-    Returns
-    -------
-    func : sympy.core.symbol.Symbol
-          The product of SFR(z), P(tau(z)) and dt(z)/dz.
-
-    Notes
-    -----
-         Pease see Eq.(A2) in <arXiv:2011.02717v3> for more details.
-    """
-    from sympy import integrate, symbols
-
-    if model_td not in ['log_normal', 'gaussian', 'power_law', 'inverse']:
-        raise ValueError("'model_td' must choose from \
-        ['log_normal', 'gaussian', 'power_law', 'inverse'].")
-
-    # Fix the cosmology, set 'z/z_0' to be the only
-    # parameter in the symbolic integration.
-    diff_lookback_time_z = partial(diff_lookback_t, **kwargs)
-    z = symbols('z')
-    z_0 = symbols('z_0')
-    tau = integrate(diff_lookback_time_z(z), (z, z_0, z))
-    func = sfr(z) * p_tau(tau, model_td) * diff_lookback_time_z(z)
-    return func
 
 
 def merger_rate_density(sfr_func, td_model, rho_local, maxz=10.0,
@@ -524,7 +387,6 @@ def distance_from_rate(
 
 
 __all__ = ['sfr_grb_2008', 'sfr_madau_dickinson_2014',
-           'sfr_madau_fragos_2017', 'diff_lookback_time',
-           'p_tau', 'merger_rate_density', 'coalescence_rate',
+           'sfr_madau_fragos_2017', 'merger_rate_density', 'coalescence_rate',
            'norm_redshift_distribution', 'total_rate_upto_redshift',
            'distance_from_rate', 'average_time_between_signals']

@@ -79,6 +79,10 @@ class BaseRedshiftEvolution(ABC):
         self._cached_z = None
         self._cached_dvc_dz = None
 
+        # Time delay boundaries (in Gyr)
+        self.td_max = self.cosmology.age(0).to(u.Gyr).value
+        self.td_min = 0.02
+
     # ------------------------------------------------------------------
     # Utilities; it makes it compatible with scalar/numpy.arrays
     # ------------------------------------------------------------------
@@ -160,6 +164,45 @@ class BaseRedshiftEvolution(ABC):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def time_delay_prob(self, tau, td_model):
+        """
+        Pure numpy array evaluation of time delay probability distributions.
+        
+        Parameters
+        ----------
+        tau : array_like
+            Time delay in Gyr.
+        td_model : str
+            The name of time delay model.
+            
+        Returns
+        -------
+        ndarray
+            Probability density at tau.
+        """
+        tau = np.asarray(tau, dtype=float)
+        p_t = np.zeros_like(tau)
+        
+        if td_model == "log_normal":
+            t_ln = 2.9  # Gyr
+            sigma_ln = 0.2
+            p_t = np.exp(-(np.log(tau)-np.log(t_ln))**2/(2*sigma_ln**2)) / (np.sqrt(2*np.pi)*sigma_ln)
+        elif td_model == "gaussian":
+            t_g = 2  # Gyr
+            sigma_g = 0.3
+            p_t = np.exp(-(tau-t_g)**2/(2*sigma_g**2)) / (np.sqrt(2*np.pi)*sigma_g)
+        elif td_model == "power_law":
+            alpha_t = 0.81
+            p_t = tau**(-alpha_t)
+        elif td_model == "inverse":
+            norm_const = 1/np.log(self.td_max/self.td_min)
+            valid = (tau >= self.td_min) & (tau <= self.td_max)
+            p_t[valid] = norm_const * tau[valid]**(-0.999)
+        else:
+            raise ValueError(f"'td_model' must choose from "
+                             f"['log_normal', 'gaussian', 'power_law', 'inverse'].")
+        return p_t
 
     def _cache_dvc_dz(self, redshift):
         """
@@ -347,6 +390,70 @@ class PowerLawRedshift(BaseRedshiftEvolution):
 power_law_redshift = PowerLawRedshift()
 
 
+class GRB2008Redshift(BaseRedshiftEvolution):
+    """
+    The star formation rate (SFR) calibrated by high-z GRBs data.
+    """
+    name = "sfr_grb_2008"
+    param_names = ()
+
+    def __call__(self, redshift, **parameters):
+        return self.prob_redshift(redshift, **parameters)
+
+    def psi_z(self, redshift, **parameters):
+        redshift = np.asarray(redshift)
+        rho_local = 0.02  # Msolar/yr/Mpc^3
+        eta = -10
+        return rho_local*((1+redshift)**(3.4*eta) + ((1+redshift)/5000)**(-0.3*eta) +
+                       ((1+redshift)/9)**(-3.5*eta))**(1./eta)
+
+sfr_grb_2008_redshift = GRB2008Redshift()
+
+
+class MadauDickinson2014Redshift(BaseRedshiftEvolution):
+    """
+    The madau-dickinson 2014 star formation rate (SFR).
+    """
+    name = "sfr_madau_dickinson_2014"
+    param_names = ("gamma", "kappa", "z_peak")
+
+    def __call__(self, redshift, **parameters):
+        return self.prob_redshift(redshift, **parameters)
+
+    def psi_z(self, redshift, *, gamma=2.7, kappa=5.6, z_peak=1.9):
+        redshift = np.asarray(redshift)
+        return 0.015 * (1+redshift)**gamma / (1 + ((1+redshift)/(1+z_peak))**kappa)
+
+sfr_madau_dickinson_2014_redshift = MadauDickinson2014Redshift()
+
+
+class MadauFragos2017Redshift(BaseRedshiftEvolution):
+    """
+    The madau-fragos 2017 star formation rate (SFR).
+    """
+    name = "sfr_madau_fragos_2017"
+    param_names = ("k_imf", "mode")
+
+    def __call__(self, redshift, **parameters):
+        return self.prob_redshift(redshift, **parameters)
+
+    def psi_z(self, redshift, *, k_imf=0.66, mode='high'):
+        redshift = np.asarray(redshift)
+        if mode == 'low':
+            factor_a = 2.6
+            factor_b = 3.2
+            factor_c = 6.2
+        elif mode == 'high':
+            factor_a = 2.7
+            factor_b = 3.0
+            factor_c = 5.35
+        else:
+            raise ValueError("'mode' must choose from 'high' or 'low'.")
+        return k_imf * 0.015 * (1+redshift)**factor_a / (1 + ((1+redshift)/factor_b)**factor_c)
+
+sfr_madau_fragos_2017_redshift = MadauFragos2017Redshift()
+
+
 class SFRTimeDelayRedshift(BaseRedshiftEvolution):
     """
     Redshift evolution from convoluting a star formation rate (SFR) with a time delay distribution.
@@ -360,10 +467,6 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         self.sfr_model = sfr_model
         self.td_model = td_model
         self.z_formation_max = z_formation_max
-
-        # Time delay max based on cosmology
-        self.td_max = self.cosmology.age(0).to(u.Gyr).value
-        self.td_min = 0.02 # Gyr
         
         # Precompute lookback times for formation redshift grid
         # Use a dense grid for formation redshifts
@@ -387,34 +490,9 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
             tf_valid = self._tf_grid[valid]
             td = tf_valid - tm
             
-            p_td = self._p_tau_numpy(td, self.td_model)
+            p_td = self.time_delay_prob(td, self.td_model)
             integrand = self._sfr_f[valid] * p_td * self._dt_dz_f[valid]
             self._psi_z_grid[i] = np.trapz(integrand, zf_valid)
-
-    def _p_tau_numpy(self, tau, td_model):
-        """Pure numpy array evaluation of time delay models."""
-        tau = np.asarray(tau, dtype=float)
-        p_t = np.zeros_like(tau)
-        
-        if td_model == "log_normal":
-            t_ln = 2.9  # Gyr
-            sigma_ln = 0.2
-            p_t = np.exp(-(np.log(tau)-np.log(t_ln))**2/(2*sigma_ln**2)) / (np.sqrt(2*np.pi)*sigma_ln)
-        elif td_model == "gaussian":
-            t_g = 2  # Gyr
-            sigma_g = 0.3
-            p_t = np.exp(-(tau-t_g)**2/(2*sigma_g**2)) / (np.sqrt(2*np.pi)*sigma_g)
-        elif td_model == "power_law":
-            alpha_t = 0.81
-            p_t = tau**(-alpha_t)
-        elif td_model == "inverse":
-            norm_const = 1/np.log(self.td_max/self.td_min)
-            valid = (tau >= self.td_min) & (tau <= self.td_max)
-            p_t[valid] = norm_const * tau[valid]**(-0.999)
-        else:
-            raise ValueError(f"'td_model' must choose from "
-                             f"['log_normal', 'gaussian', 'power_law', 'inverse'].")
-        return p_t
 
     def psi_z(self, redshift, **parameters):
         """
