@@ -763,7 +763,7 @@ with ctx:
                     # store trigger indices list in a dictionary; when there
                     # are no triggers, the dictionary is empty. Indices are
                     # kept only if they remain within the time being processed
-                    # after they time delay correction from detector to
+                    # after the time delay correction from detector to
                     # geocenter due to sky location is applied, i.e., require
                     # them to be between 0 and len(snr_dict[ifo]).
                     # idx[ifo] - time_delay_idx[slide][position_index][ifo]
