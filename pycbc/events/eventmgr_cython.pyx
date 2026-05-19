@@ -314,7 +314,7 @@ ctypedef fused numeric_type:
 
 @boundscheck(False)
 @wraparound(False)
-@cdivision(False) # Needed to emulate Python behaviour of % operator
+@cdivision(False) # Ensure the behaviour of the Python % operator is emulated
 def get_coinc_indexes_cython_twodet_twocoinc(
     numeric_type [::1] idxarr1,
     numeric_type [::1] idxarr2,
