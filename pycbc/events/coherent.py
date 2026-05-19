@@ -86,8 +86,6 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos, wraparound_dict):
         # enforced by wrapping around the index list of each detector. This
         # collective list will later be searched for repeating index values as
         # these represent triggers appearing in multiple detectors.
-        # SHOULD IT BE idx_dict[ifo] % wraparound_dict[ifo] THEN ENFORCING
-        # 0 <= WRAPPED INDEX - time_delay_idx[ifo] < wraparound_dict[ifo]?
         if len(idx_dict[ifo]) != 0:
             coinc_list = np.hstack(
                 [coinc_list, (idx_dict[ifo] - time_delay_idx[ifo]) % wraparound_dict[ifo]]
