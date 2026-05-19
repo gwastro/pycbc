@@ -1089,7 +1089,6 @@ with ctx:
                                 stilde[ifo],
                                 coherent_ifo_trigs[ifo],
                                 1,  # coherent_ifo_trigs already normalized
-                                # FIXME: why not stilde[ifo].cumulative_index?
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].analyze.start,
                             )
@@ -1098,7 +1097,6 @@ with ctx:
                                 ifo_out_vals['auto_chisq_dof'],
                             ) = autochisq.values(
                                 snr_dict[ifo],
-                                # FIXME: why no + stilde[ifo]...?
                                 coinc_idx_det_frame[ifo],
                                 template,
                                 stilde[ifo].psd,
