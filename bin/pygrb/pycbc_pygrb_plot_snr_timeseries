@@ -144,12 +144,14 @@ inj_data = ppu.load_data(inj_file, ifos, data_tag='injs',
                          slide_id=0)
 
 # Specify HDF file keys for x quantity (time) and y quantity (SNR)
+x_key = 'network/end_time_gc'
+y_key = 'network/' + opts.y_variable + '_snr'
 if opts.y_variable == 'single':
-    x_key = opts.ifo + '/end_time'
     y_key = opts.ifo + '/snr'
-else:
-    x_key = 'network/end_time_gc'
-    y_key = 'network/' + opts.y_variable + '_snr'
+    # When looking at a single slide in a detector use the time at the detector
+    # Otherwise use the time at the geocenter to look at all slides at once
+    if opts.slide_id != 'all':
+        x_key = opts.ifo + '/end_time'
 
 # Extract needed trigger properties and store them as dictionaries
 # Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
