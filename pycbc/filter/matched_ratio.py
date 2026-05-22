@@ -95,7 +95,8 @@ class RatioMatchedFilterControl(object):
         bank_sample_rate = self.tap_sr
         engine_sample_rate = self.engine_sr
         # Alternatively, determine the downsampling factor directly:
-        decimation_factor = int(np.round(bank_sample_rate / engine_sample_rate))
+        exact_ratio = (bank_sample_rate / engine_sample_rate)
+        decimation_factor = int(np.round(exact_ratio))
 
         if abs(exact_ratio - decimation_factor) > 1e-5 or decimation_factor < 1:
             raise ValueError(
