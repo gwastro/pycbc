@@ -71,7 +71,7 @@ class RatioMatchedFilterControl(object):
             h_norm=h_norm
         )
 
-        decimate = self.tap_sr / self.engine_sr
+        decimate = int(np.round(self.tap_sr / self.engine_sr))
         self.ref_snr = snr.numpy() * (norm * stilde.delta_t)  / decimate
 
         # 3. Execute Blocked Kernel
@@ -87,10 +87,7 @@ class RatioMatchedFilterControl(object):
             return [], [], [], tstarts, h_norm
 
     def _fft_all_filters(self, taps, counts):
-        """
-        Helper to transform native 2048 Hz FIR taps into frequency-domain 
-        filters that match a downsampled data stream.
-        """
+        """Helper to FFT all filters using mkl_fft."""
         n_filters, n_taps_alloc = taps.shape
         filters_f = np.zeros((n_filters, self.fir_fft_len), dtype=np.complex64)
         
@@ -98,8 +95,17 @@ class RatioMatchedFilterControl(object):
         bank_sample_rate = self.tap_sr
         engine_sample_rate = self.engine_sr
         # Alternatively, determine the downsampling factor directly:
-        decimation_factor = int(bank_sample_rate / engine_sample_rate) # e.g., 2048 / 512 = 4
-        
+        decimation_factor = int(np.round(bank_sample_rate / engine_sample_rate))
+
+        if abs(exact_ratio - decimation_factor) > 1e-5 or decimation_factor < 1:
+            raise ValueError(
+                f"Multi-rate Error: The bank sample rate ({self.tap_sr} Hz) must be "
+                f"an exact integer multiple of the engine sample "
+                f"rate ({self.engine_sr} Hz).\n"
+                f"Calculated ratio was {exact_ratio:.4f}. Please use standard power-of-2 "
+                f"downsampling scales (e.g., 2048/512)."
+            )
+
         # 2. Establish the high-resolution FFT padding length to preserve delta_f
         # 512/4096 = 0.125   2048/(4*4096) = 0.125 preserving delta_f
         # 4096/4096 = 1      2048/(1/2*4096) = 1 for 4096 engine 2048 bank
