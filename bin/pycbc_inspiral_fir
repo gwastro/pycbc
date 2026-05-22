@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+ #!/usr/bin/env python
 """
 pycbc_inspiral_ratio: A pipeline-compatible script for inspiral analysis 
 using the Ratio Matched Filter method.
@@ -279,8 +279,10 @@ def main():
             delta_f=delta_f,
             high_frequency_cutoff=args.high_frequency_cutoff,
             fir_fft_length=args.fir_length,
-            batch_size=args.batch_size
-        )
+            batch_size=args.batch_size,
+            tap_sample_rate=bank.sample_rate,
+            engine_sample_rate=args.sample_rate
+            )
         
         power_chisq = pycbc.vetoes.SingleDetPowerChisq(args.chisq_bins,
                                                        args.chisq_snr_threshold)
