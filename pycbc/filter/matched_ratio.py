@@ -11,12 +11,15 @@ class RatioMatchedFilterControl(object):
     Uses mkl_fft for ALL FFT operations to maximize throughput and consistency.
     """
 
-    def __init__(self, snr_threshold, delta_f, 
-                 high_frequency_cutoff=None, fir_fft_length=4096, batch_size=64):
+    def __init__(self, snr_threshold, delta_f,
+                 high_frequency_cutoff=None, fir_fft_length=4096, batch_size=64, tap_sample_rate=2048, engine_sample_rate=2048):
         self.delta_f = delta_f
         self.snr_threshold = snr_threshold
         self.f_high = high_frequency_cutoff
-        
+    
+        self.tap_sr = int(tap_sample_rate)
+        self.engine_sr = int(engine_sample_rate)
+
         self.threshold_sq = float(snr_threshold**2)
         
         self.fir_fft_len = fir_fft_length
@@ -67,7 +70,9 @@ class RatioMatchedFilterControl(object):
             high_frequency_cutoff=self.f_high,
             h_norm=h_norm
         )
-        self.ref_snr = snr.numpy() * (norm * stilde.delta_t)
+
+        decimate = self.tap_sr / self.engine_sr
+        self.ref_snr = snr.numpy() * (norm * stilde.delta_t)  / decimate
 
         # 3. Execute Blocked Kernel
         local_idxs, t_idxs, snr_vals, tstarts = self._execute_blocked_kernel(
@@ -82,39 +87,58 @@ class RatioMatchedFilterControl(object):
             return [], [], [], tstarts, h_norm
 
     def _fft_all_filters(self, taps, counts):
-        """Helper to FFT all filters using mkl_fft."""
+        """
+        Helper to transform native 2048 Hz FIR taps into frequency-domain 
+        filters that match a downsampled data stream.
+        """
         n_filters, n_taps_alloc = taps.shape
         filters_f = np.zeros((n_filters, self.fir_fft_len), dtype=np.complex64)
         
-        padded_view = self.filters_padded.data
-        padded_reshaped = padded_view.reshape(self.batch_size, self.fir_fft_len)
+        # 1. Read metadata from the bank to determine the source generation rate
+        bank_sample_rate = self.tap_sr
+        engine_sample_rate = self.engine_sr
+        # Alternatively, determine the downsampling factor directly:
+        decimation_factor = int(bank_sample_rate / engine_sample_rate) # e.g., 2048 / 512 = 4
+        
+        # 2. Establish the high-resolution FFT padding length to preserve delta_f
+        # 512/4096 = 0.125   2048/(4*4096) = 0.125 preserving delta_f
+        # 4096/4096 = 1      2048/(1/2*4096) = 1 for 4096 engine 2048 bank
+        high_res_fft_len = self.fir_fft_len * decimation_factor
+        
+        # Temp allocations for high-resolution processing
+        high_res_padded = np.zeros((self.batch_size, high_res_fft_len), dtype=np.complex64)
 
         for start in range(0, n_filters, self.batch_size):
             end = min(start + self.batch_size, n_filters)
             batch_len = end - start
             
-            # 1. Zero out and Fill
-            padded_reshaped[:batch_len, :] = 0
+            # Zero out processing buffer for next call
+            high_res_padded[:batch_len, :] = 0.0
             
+            # Copy raw 2048 Hz taps into the start of the buffer
             tmp_taps = taps[start:end]
-            padded_reshaped[:batch_len, :n_taps_alloc] = tmp_taps
+            high_res_padded[:batch_len, :n_taps_alloc] = tmp_taps
             
-            # 2. Variable Roll Logic
+            # 3. Handle Variable Time-Domain Roll Logic at the native 2048 Hz rate
             current_counts = counts[start:end]
             roll_offsets = -(current_counts // 2)
             
-            cols = np.arange(self.fir_fft_len)
+            cols_high = np.arange(high_res_fft_len)
             rows = np.arange(batch_len)[:, None]
-            shifted_cols = (cols[None, :] - roll_offsets[:, None]) % self.fir_fft_len
+            shifted_cols_high = (cols_high[None, :] - roll_offsets[:, None]) % high_res_fft_len
             
-            current_data = padded_reshaped[:batch_len].copy()
-            padded_reshaped[:batch_len] = current_data[rows, shifted_cols]
+            current_data = high_res_padded[:batch_len].copy()
+            high_res_padded[:batch_len] = current_data[rows, shifted_cols_high]
 
-            # 3. Execute FFT (Direct MKL call)
-            fft_out = self.fft_lib.fft(padded_reshaped[:batch_len], axis=-1)
+            # 4. Transform to Frequency Domain at native resolution
+            fft_high_res = self.fft_lib.fft(high_res_padded[:batch_len], axis=-1)
             
-            # 4. Conjugate & Store
-            filters_f[start:end] = np.conj(fft_out)
+            # 5. Brick-Wall Frequency Slicing (Anti-Aliasing & Decimation Match)
+            # Because the data engine goes up to 256Hz (the 512Hz Nyquist limit), only need the first 4096 bins of that spectrum
+            fft_sliced = fft_high_res[:batch_len, :self.fir_fft_len]
+            
+            # 6. Conjugate & Store back into the 512 Hz buffer block
+            filters_f[start:end] = np.conj(fft_sliced)
             
         return filters_f
 
