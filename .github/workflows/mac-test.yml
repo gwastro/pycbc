@@ -25,6 +25,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install libraries with Homebrew
+      run: |
+        brew install fftw gsl lapack
+
     - name: Install tox
       run: |
         python -m pip install --upgrade pip setuptools tox
