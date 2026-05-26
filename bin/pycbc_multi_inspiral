@@ -798,7 +798,7 @@ with ctx:
                     # the appropriate dictionary of time delays wrt the
                     # geocenter must be passed to operate at the geocenter,
                     # as well as the dictionary to enable the wrap around at
-                    # each detecotor prior to searching for coincidences.
+                    # each detector prior to searching for coincidences.
                     coinc_idx = coh.get_coinc_indexes(
                         idx_dict, time_delay_idx[slide][position_index],
                         args.nifo_sngl_snr_threshold, wraparound_dict
