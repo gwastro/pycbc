@@ -29,8 +29,8 @@ jobs:
           mpi \
           intel-mkl* \
           graphviz \
-          libgsl \
-          liblapacke
+          libgsl-dev \
+          liblapacke-dev
         pip install tox pip setuptools --upgrade
     - name: Cache LAL auxiliary data files
       id: cache-lal-aux-data
