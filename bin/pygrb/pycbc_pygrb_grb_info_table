@@ -91,7 +91,7 @@ headers.append('UTC Time')
 if opts.input_dist is not None:
     if opts.ra is not None or opts.dec is not None:
         parser.error(
-            "You can't use input-dist argument and (ra,dec) at the same, please choose one"
+            "You can't use input-dist argument and (ra,dec) at the same time, please choose one"
         ) 
     input_dist = eval('pycbc.distributions.' + opts.input_dist)
     ra, dec = input_dist.get_max_prob_point()

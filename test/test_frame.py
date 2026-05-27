@@ -26,12 +26,12 @@ These are the unittests for the pycbc frame/cache reading functions
 '''
 
 
-import pycbc
 import unittest
-import pycbc.frame
 import numpy
 from astropy.utils.data import download_file
-import lal
+
+import pycbc
+import pycbc.frame
 from pycbc.types import TimeSeries
 from utils import parse_args_cpu_only, simple_exit
 
@@ -53,7 +53,7 @@ class FrameTestBase(unittest.TestCase):
             self.data2 += numpy.random.rand(self.size) * 1j
 
         self.delta_t = .5
-        self.epoch = lal.LIGOTimeGPS(123456,0)
+        self.epoch = 123456.0
         self.expected_data1 = TimeSeries(self.data1,dtype=self.dtype,
                                          epoch=self.epoch,delta_t=self.delta_t)
         self.expected_data2 = TimeSeries(self.data2,dtype=self.dtype,

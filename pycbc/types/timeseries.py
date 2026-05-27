@@ -19,14 +19,19 @@ Provides a class representing a time series.
 """
 import os as _os
 import h5py
+
+import numpy as _numpy
+from scipy.io.wavfile import write as write_wav
+from igwn_segments import segmentlist, segment
+
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
+from pycbc.types.utils import determine_epoch
 from pycbc.types.array import _nocomplex
 from pycbc.types.frequencyseries import FrequencySeries
 from pycbc.types import float32, float64
-import lal as _lal
-import numpy as _numpy
-from scipy.io.wavfile import write as write_wav
+from pycbc.libutils import import_optional
 
+_lal = import_optional('lal')
 
 class TimeSeries(Array):
     """Models a time series consisting of uniformly sampled scalar values.
@@ -46,7 +51,7 @@ class TimeSeries(Array):
     """
 
     def __init__(self, initial_array, delta_t=None,
-                 epoch=None, dtype=None, copy=True):
+                 epoch="", dtype=None, copy=True):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
         if delta_t is None:
@@ -57,23 +62,9 @@ class TimeSeries(Array):
         if not delta_t > 0:
             raise ValueError('delta_t must be a positive number')
 
-        # Get epoch from initial_array if epoch not given (or is None)
-        # If initialy array has no epoch, set epoch to 0.
-        # If epoch is provided, use that.
-        if not isinstance(epoch, _lal.LIGOTimeGPS):
-            if epoch is None:
-                if isinstance(initial_array, TimeSeries):
-                    epoch = initial_array._epoch
-                else:
-                    epoch = _lal.LIGOTimeGPS(0)
-            elif epoch is not None:
-                try:
-                    epoch = _lal.LIGOTimeGPS(epoch)
-                except:
-                    raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
+        self._epoch = determine_epoch(epoch, initial_array)
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
-        self._epoch = epoch
 
     def to_astropy(self, name='pycbc'):
         """ Return an astropy.timeseries.TimeSeries instance
@@ -91,6 +82,8 @@ class TimeSeries(Array):
 
     def epoch_close(self, other):
         """ Check if the epoch is close enough to allow operations """
+        if self._epoch is None or other._epoch is None:
+            return False
         dt = abs(float(self.start_time - other.start_time))
         return dt <= 1e-7
 
@@ -125,8 +118,8 @@ class TimeSeries(Array):
                     self.start_time, other.start_time))
 
     def _getslice(self, index):
-        # Set the new epoch---note that index.start may also be None
-        if index.start is None:
+        # Set the new epoch - index.start or self._epoch may be None
+        if index.start is None or self._epoch is None:
             new_epoch = self._epoch
         else:
             if index.start < 0:
@@ -215,7 +208,7 @@ class TimeSeries(Array):
 
     @property
     def start_time(self):
-        """Return time series start time as a LIGOTimeGPS.
+        """Return time series start time.
         """
         return self._epoch
 
@@ -223,14 +216,14 @@ class TimeSeries(Array):
     def start_time(self, time):
         """ Set the start time
         """
-        self._epoch = _lal.LIGOTimeGPS(time)
+        self._epoch = float64(time)
 
     def get_end_time(self):
-        """Return time series end time as a LIGOTimeGPS.
+        """Return time series end time.
         """
         return self._epoch + self.get_duration()
     end_time = property(get_end_time,
-                        doc="Time series end time as a LIGOTimeGPS.")
+                        doc="Time series end time.")
 
     def get_sample_times(self):
         """Return an Array containing the sample times.
@@ -483,7 +476,7 @@ class TimeSeries(Array):
             LAL time series object containing the same data as self.
             The actual type depends on the sample's dtype.  If the epoch of
             self is 'None', the epoch of the returned LAL object will be
-            LIGOTimeGPS(0,0); otherwise, the same as that of self.
+            the same as that of self.
 
         Raises
         ------
@@ -491,7 +484,7 @@ class TimeSeries(Array):
             If time series is stored in GPU memory.
         """
         lal_data = None
-        ep = self._epoch
+        ep = _lal.LIGOTimeGPS(self._epoch)
 
         if self._data.dtype == _numpy.float32:
             lal_data = _lal.CreateREAL4TimeSeries("",ep,0,self.delta_t,_lal.SecondUnit,len(self))
@@ -591,6 +584,12 @@ class TimeSeries(Array):
             PyCBC time series.
         """
         import lalsimulation as sim
+        
+        if hasattr(location, 'decode'):
+            location = location.decode()
+            
+        if hasattr(tapermethod, 'decode'):
+            tapermethod = tapermethod.decode()
 
         taper_map = {
             'TAPER_NONE'    : None,
@@ -633,7 +632,7 @@ class TimeSeries(Array):
                 raise ValueError("If taper_method is 'constant', taper_window must be set")
             
             gate_params = []
-            if location in ('TAPER_START', 'start' 'TAPER_STARTEND'):
+            if location in ('TAPER_START', 'start', 'TAPER_STARTEND'):
                 first_nonzero = _numpy.nonzero(tsdata)[0][0]
                 nonzero_starttime = tsdata.start_time + first_nonzero * tsdata.delta_t
                 gate_params.append((nonzero_starttime, 0, taper_window))
@@ -1240,6 +1239,48 @@ class TimeSeries(Array):
             plot1 = pyplot.plot(self.sample_times, self.real(), **kwds)
             plot2 = pyplot.plot(self.sample_times, self.imag(), **kwds)
             return plot1, plot2
+
+    def bool_to_segmentlist(self):
+        """
+        Convert a boolean pycbc TimeSeries (this must be bool or integer) to
+        an igwn_segments.segmentlist of (start, end) in GPS seconds.
+        """
+
+        # Is the data truthlike?
+        # bools or numbers are OK, but we require finite values
+        arr = self.numpy()
+        if arr.dtype.kind not in ['b', 'i']:
+            raise TypeError(
+                'To use bool_to_segmentlist, we require that the timeseries '
+                'is boolean or integer'
+            )
+
+        segs = segmentlist([])
+
+        if arr.size == 0:
+            return segs.coalesce()
+
+        # Convert to bool
+        b = arr.astype(bool)
+
+        # Pad with a leading/trailing False to detect edges at boundaries.
+        b = _numpy.concatenate(([False], b, [False]))
+
+        # Work out the transitions between true and false.
+        # starts = False to True transitions
+        starts = _numpy.flatnonzero((~b[:-1]) & b[1:])
+        # ends = True to False Transitions
+        ends = _numpy.flatnonzero(b[:-1] & (~b[1:])) 
+
+        # Convert indices to GPS times
+        starts_time = self.start_time + starts * self.delta_t
+        ends_time = self.start_time + ends * self.delta_t
+
+        # Convert to segments
+        for s, e in zip(starts_time, ends_time):
+            segs.append(segment(s, e))
+
+        return segs.coalesce()
 
 def load_timeseries(path, group=None):
     """Load a TimeSeries from an HDF5, ASCII or Numpy file. The file type is
