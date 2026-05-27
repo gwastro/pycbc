@@ -165,14 +165,10 @@ compression_algorithms = {
         }
 
 def _vecdiff(htilde, hinterp, fmin, fmax, psd=None):
-    return abs(filter.overlap_cplx(htilde, htilde,
+    return 1 - abs(filter.overlap_cplx(htilde, hinterp,
                           low_frequency_cutoff=fmin,
                           high_frequency_cutoff=fmax,
-                          normalized=False, psd=psd)
-               - filter.overlap_cplx(htilde, hinterp,
-                          low_frequency_cutoff=fmin,
-                          high_frequency_cutoff=fmax,
-                          normalized=False, psd=psd))
+                          psd=psd))
 
 def vecdiff(htilde, hinterp, sample_points, psd=None):
     """Computes a statistic indicating between which sample points a waveform
@@ -233,103 +229,127 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     """
     fmin = sample_points.min()
     df = htilde.delta_f
+
     sample_index = (sample_points / df).astype(int)
+
     amp = utils.amplitude_from_frequencyseries(htilde)
     phase = utils.phase_from_frequencyseries(htilde)
 
     comp_amp = amp.take(sample_index)
     comp_phase = phase.take(sample_index)
-    if decomp_scratch is None:
-        outdf = df
-    else:
-        outdf = None
+    outdf = df if decomp_scratch is None else None
     
     t1 = time.time()
     hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
                             out=decomp_scratch, df=outdf, f_lower=fmin,
                             interpolation=interpolation)
+    # This will be overwritten in the loop to store the final pass time
     htime = time.time() - t1
+    
     kmax = min(len(htilde), len(hdecomp))
     htilde = htilde[:kmax]
     hdecomp = hdecomp[:kmax]
-    s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)    
+
+    s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)
     s2 = filter.sigma(htilde, psd=psd, low_frequency_cutoff=fmin)
-    htilde2 = htilde / psd / s2
+
+    if psd is not None:
+        htilde2 = htilde / (psd[:len(htilde)] * s2)
+    else:
+        htilde2 = htilde / s2
+
+    # Do a first test to see if we are done
     mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
-                                  low_frequency_cutoff=fmin, normalized=False))
+                                  low_frequency_cutoff=fmin, normalized=False))  
     if mismatch > tolerance:
-        # we'll need the difference in the waveforms as a function of frequency
+        # Calculate the overlap errors within each frequency bins.
+        # We use this to determine where to add more interpolation points
         vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
 
+
     # We will find where in the frequency series the interpolated waveform
-    # has the smallest overlap with the full waveform, add a sample point
-    # there, and re-interpolate. We repeat this until the overall mismatch
-    # is > than the desired tolerance
+    # has the smallest overlap with the full waveform, 
+    # We try to add a new interpolation point in every frequency bin
+    # that fails this check. Continue untill the overall reconstruction 
+    # waveform meets our mismatch target with the origianl waveform
     added_points = []
+    iteration_count = 0
+    max_batch_size = 100
+
     while mismatch > tolerance:
-        minpt = vecdiffs.argmax()
-        # add a point at the frequency halfway between minpt and minpt+1
-        add_freq = sample_points[[minpt, minpt+1]].mean()
-        addidx = int(round(add_freq/df))
-        # ensure that only new points are added
-        if addidx in sample_index:
-            diffidx = vecdiffs.argsort()
-            addpt = -1
-            while addidx in sample_index:
-                addpt -= 1
-                try:
-                    minpt = diffidx[addpt]
-                except IndexError:
-                    raise ValueError("unable to compress to desired tolerance")
-                add_freq = sample_points[[minpt, minpt+1]].mean()
-                addidx = int(round(add_freq/df))
-        new_index = numpy.zeros(sample_index.size+1, dtype=int)
-        new_index[:minpt+1] = sample_index[:minpt+1]
-        new_index[minpt+1] = addidx
-        new_index[minpt+2:] = sample_index[minpt+1:]
-        sample_index = new_index
-        sample_points = (sample_index * df).astype(
-            real_same_precision_as(htilde))
-            
-        # get the new compressed points
+        iteration_start_time = time.time()
+        iteration_count += 1
+        
+        # Pick the worst bins
+        num_bad = (vecdiffs > tolerance).sum()
+        vsort = vecdiffs.argsort()[::-1]
+        
+        # This add fraction of the bad segments, up to a maximum 
+        # If there are no bad segments, we still try to add the first single
+        # one (can be large numerical error in the veddiff calculation, so
+        # rounding cause all to be below the tolerance yet thte full fails).
+        num_select = min(max_batch_size, (num_bad // 4 + 1))
+        selected_segments = vsort[:num_select]
+
+        # --- 2. Propose new points ---
+        new_addidxs = []
+        for minpt in selected_segments:
+            # Calculate midpoint using indices to avoid float drift issues
+            add_freq = (sample_points[minpt] + sample_points[minpt+1]) / 2.0
+            addidx = int(add_freq / df)     
+            if addidx not in sample_index and addidx not in new_addidxs:
+                new_addidxs.append(addidx)
+
+        # --- 3. Update and Sort ---
+        sample_index = numpy.unique(numpy.concatenate((sample_index, new_addidxs)))
+        sample_index.sort()
+        sample_index = sample_index.astype(int)
+        sample_points = (sample_index * df).astype(real_same_precision_as(htilde))
         comp_amp = amp.take(sample_index)
         comp_phase = phase.take(sample_index)
-        # update the vecdiffs and mismatch
         
+        # --- 4. Decompress ---
         t1 = time.time()
         hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
                                 out=decomp_scratch, df=outdf,
                                 f_lower=fmin, interpolation=interpolation)
         htime = time.time() - t1
-        hdecomp = hdecomp[:kmax]
-        new_vecdiffs = numpy.zeros(vecdiffs.size+1)
-        new_vecdiffs[:minpt] = vecdiffs[:minpt]
-        new_vecdiffs[minpt+2:] = vecdiffs[minpt+1:]
-        new_vecdiffs[minpt:minpt+2] = vecdiff(htilde, hdecomp,
-                                              sample_points[minpt:minpt+2],
-                                              psd=psd)
-        vecdiffs = new_vecdiffs
-  
-        mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s2, htilde2,
+
+        s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)
+
+        # --- 5. Re-evaluate global mismatch ---
+        mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
                                             low_frequency_cutoff=fmin,
-                                            normalized=False,
-                                           ))
-        
+                                            normalized=False))
+
+        o = filter.overlap_cplx(hdecomp / s1, htilde2,
+                                low_frequency_cutoff=fmin,
+                                normalized=False)
+
         if mismatch <= tolerance:
-            s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)
             mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
                                             low_frequency_cutoff=fmin,
-                                            normalized=False,
-                                           ))
-        added_points.append(addidx)
-    compression_factor = len(htilde) / len(sample_points)
+                                            normalized=False))
+        else:
+            # Calculate the overlap errors within each frequency bins.
+            # We use this to determine where to add more interpolation points
+            vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
+
+        added_points.extend(new_addidxs)
+
+        # --- 6. Iteration Logging ---
+        logging.debug(
+            "Iter %i: mismatch %.6f, added %i points (total %i), iter time %.2f ms",
+            iteration_count, mismatch, len(new_addidxs), len(sample_points),
+            (time.time() - iteration_start_time) * 1000
+        )
+
+    # Cast compression_factor to float to avoid HDF5 TypeErrors
+    compression_factor = float(len(htilde)) / float(len(sample_points))
+    
     logging.info(
-        "mismatch: %f, N points: %i (%i added), compression:%.3e, time %.2f ms",
-        mismatch,
-        len(comp_amp),
-        len(added_points),
-        compression_factor,
-        htime * 1000,
+        "mismatch: %f, N points: %i (%i added), compression:%.3e, final decomp time %.2f ms",
+        mismatch, len(comp_amp), len(added_points), compression_factor, htime * 1000,
     )
 
     return CompressedWaveform(sample_points, comp_amp, comp_phase,
@@ -337,7 +357,6 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
                               tolerance=tolerance, mismatch=mismatch,
                               precision=precision,
                               compression_factor=compression_factor)
-
 _precision_map = {
     'float32': 'single',
     'float64': 'double',
@@ -930,4 +949,5 @@ class CompressedWaveform(object):
             tolerance=fp_group.attrs['tolerance'],
             mismatch=fp_group.attrs['mismatch'],
             precision=fp_group.attrs['precision'],
+            compression_factor=fp_group.attrs['compression_factor'],
             load_to_memory=load_to_memory)

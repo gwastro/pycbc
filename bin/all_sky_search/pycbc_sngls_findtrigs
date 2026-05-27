@@ -197,7 +197,7 @@ for i, tnum in enumerate(template_ids):
 dec_facs = np.ones_like(template_ids_all)
 stat_all = np.array(stat_all)
 template_ids_all = np.array(template_ids_all, dtype=int)
-trigger_ids_all = np.array(trigger_ids_all)
+trigger_ids_all = np.array(trigger_ids_all, dtype=int)
 trigger_times_all = np.array(trigger_times_all)
 
 logging.info("%d events", dec_facs.size)
