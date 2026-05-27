@@ -206,6 +206,10 @@ if inj_file:
 # Generate plots
 logging.info("Plotting...")
 
+# Prepare the horizontal axis label
+x_label = "Geocenter" if 'network' in x_key else opts.ifo
+x_label += f" time since {central_time:.3f} (s)"
+
 # Determine what goes on the vertical axis
 y_labels = {'coherent': "Coherent SNR",
             'single': f"{ifo} SNR",
@@ -226,5 +230,5 @@ if not opts.x_lims:
     opts.x_lims = f"{start},{end}"
 plu.pygrb_plotter([trig_data_time, trig_data_snr],
                   [inj_data_time, inj_data_snr],
-                  f"Time since {central_time:.3f} (s)", y_label,
+                  x_label, y_label,
                   opts, cmd=' '.join(sys.argv))

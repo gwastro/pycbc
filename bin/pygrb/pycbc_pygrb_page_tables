@@ -445,7 +445,7 @@ if lofft_outfile:
 
     # th: table header
     # Check against pycbc_pygrb_minifollowups prior to changing any of these
-    th = ['Trial', 'Slide Num', 'p-value', 'GPS time',
+    th = ['Trial', 'Slide Num', 'p-value', 'GC GPS time (s)',
           'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z', 'Rec. spin2z',
           'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR']
     th.extend([ifo+' SNR' for ifo in ifos])
@@ -480,12 +480,12 @@ if lofft_outfile:
     td = [np.asarray(d) for d in td]
 
     # Format of table data
-    format_strings = ['##.##', '##.##', None, '##.#####',
+    format_strings = ['##.##', '##.##', None, '##.###',
                       '##.##', '##.##', '##.##', '##.##', '##.##',
                       '##.##', '##.##', '##.##', '##.##', '##.##']
     format_strings.extend(['##.##' for _ in ifos])
     format_strings.extend(['##.##' for _ in ifos])
-    format_strings.extend(['##.##' for _ in ifos])
+    format_strings.extend(['##.###' for _ in ifos])
     format_strings.extend(['##.##'])
     html_table = pycbc.results.html_table(td, th,
                                           format_strings=format_strings,
@@ -569,7 +569,7 @@ if onsource_file:
 
     # Table header
     # Check against pycbc_pygrb_minifollowups prior to changing any of these
-    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc',
+    th = ['p-value', 'GC GPS time (s)', 'Rec. m1', 'Rec. m2', 'Rec. Mc',
           'Rec. spin1z', 'Rec. spin2z', 'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2',
           'Null SNR'] + [ifo+' SNR' for ifo in ifos] + \
           [ifo+' GPS time (s)' for ifo in ifos] + ['BestNR']
@@ -590,10 +590,10 @@ if onsource_file:
     logging.info("Writing loudest onsource trigger to html file.")
 
     # Format of table data
-    format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
+    format_strings = [None, '##.###', '##.##', '##.##', '##.##', '##.##',
                       '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
     format_strings.extend(['##.##' for _ in ifos])
-    format_strings.extend(['##.##' for _ in ifos])
+    format_strings.extend(['##.###' for _ in ifos])
     format_strings.extend(['##.##'])
 
     # Table data: assemble human readable message when no trigger is recovered
@@ -651,7 +651,7 @@ if found_missed_file is not None:
     # Check against pycbc_pygrb_minifollowups prior to changing any of these
     # Injections are in zero-lag so no timing information at the IFOs is needed
     th = ['Dist'] + ['Eff. Dist. '+site for site in sites] +\
-         ['GPS time', 'GPS time - Rec. Time'] +\
+         ['GC GPS time (s)', 'GPS time - Rec. Time'] +\
          ['Inj. m1', 'Inj. m2', 'Inj. Mc', 'Rec. m1', 'Rec. m2', 'Rec. Mc',
           'Inj. inc', 'Inj. RA', 'Inj. Dec', 'Rec. RA', 'Rec. Dec', 'SNR',
           'Chi^2', 'Null SNR'] +\
