@@ -74,7 +74,7 @@ jobs:
         tox -e py-inference
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: documentation-page
         path: _gh-pages
