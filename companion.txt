@@ -1,6 +1,3 @@
-# other tools which may be useful
-gwpy>=0.8.1
-
 # HEALPix is very useful for some analysis.
 healpy
 
@@ -18,8 +15,6 @@ https://github.com/willvousden/ptemcee/archive/master.tar.gz
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 nessai>=0.11.0
-# TEMPORARY - REMOVE THIS ONCE PYPMC HAS A RELEASE v1.2.6
-git+https://github.com/pypmc/pypmc@dc5ff5f
 snowline
 
 # useful to look at PyCBC Live with htop
@@ -29,5 +24,5 @@ setproctitle
 sympy>=1.9
 
 # Needed for KDE trigger statistics
-git+https://github.com/mennthor/awkde.git@master
+git+https://github.com/mennthor/awkde.git@5b601fe4d92229d5deb8737fd121dce193bac552
 scikit-learn
