@@ -27,7 +27,7 @@ waveforms.
 """
 
 import os
-import lal, numpy, copy
+import lal, numpy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import real_same_precision_as, complex_same_precision_as
 import pycbc.scheme as _scheme
@@ -414,7 +414,14 @@ def parse_mode_array(input_params):
                 ma = str(int(ma))
             # if ma is a str convert to (int, int) (e.g., '22' -> (2, 2))
             if isinstance(ma, str):
-                l, m = ma
+                if len(ma) == 2: # format is "22", presumed m is positive
+                    l, m = ma
+                elif len(ma) == 3: # format is "2+2", "2-2", signed m
+                    l = ma[0]
+                    m = ma[1:]
+                else:
+                    raise ValueError(f"Unknown lm mode string format: {ma}")
+
                 ma = (int(l), int(m))
             mode_array[ii] = ma
         input_params['mode_array'] = mode_array
@@ -674,17 +681,19 @@ def get_fd_waveform_from_td(**params):
     hc: pycbc.types.FrequencySeries
         Cross polarization time series
     """
-
-    # determine the duration to use
-    full_duration = duration = get_waveform_filter_length_in_time(**params)
     nparams = params.copy()
+    if not 'taper_method' in params:
+        # determine the duration to use for an automatic tapering choice.
+        # If taper method specified, assume they have set f_lower as they
+        # want exactly.
+        full_duration = duration = get_waveform_filter_length_in_time(**params)
 
-    while full_duration < duration * 1.5:
-        full_duration = get_waveform_filter_length_in_time(**nparams)
-        nparams['f_lower'] -= 1
+        while full_duration < duration * 1.5:
+            full_duration = get_waveform_filter_length_in_time(**nparams)
+            nparams['f_lower'] -= 1
 
-    if 'f_fref' not in nparams:
-        nparams['f_ref'] = params['f_lower']
+    if 'f_ref' not in nparams and 'f_lower' in nparams:
+        nparams['f_ref'] = nparams['f_lower']
 
     # We'll try to do the right thing and figure out what the frequency
     # end is. Otherwise, we'll just assume 2048 Hz.
@@ -710,11 +719,19 @@ def get_fd_waveform_from_td(**params):
     hp.resize(tsamples)
     hc.resize(tsamples)
 
-    # apply the tapering, we will use a safety factor here to allow for
-    # somewhat innacurate duration difference estimation.
-    window = (full_duration - duration) * 0.8
-    hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
-    hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
+    if not 'taper_method' in params:
+        # apply the tapering, we will use a safety factor here to allow for
+        # somewhat inaccurate duration difference estimation.
+        window = (full_duration - duration) * 0.8
+        hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
+        hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
+    else:
+        hp = hp.taper_timeseries(location=params['taper'],
+                                 tapermethod=params['taper_method'],
+                                 taper_window=params['taper_window'])
+        hc = hc.taper_timeseries(location=params['taper'],
+                                 tapermethod=params['taper_method'],
+                                 taper_window=params['taper_window'])
 
     # avoid wraparound
     hp = hp.to_frequencyseries().cyclic_time_shift(hp.start_time)
@@ -1158,7 +1175,7 @@ def td_fd_waveform_transform(approximant):
         # We can make a fd version of td approximants
         cpu_fd[approximant] = get_fd_waveform_from_td
 
-    if approximant in fd_apx:
+    if approximant in fd_apx and (approximant in _filter_time_lengths):
         # We can do interpolation for waveforms that have a time length
         apx_int = approximant + '_INTERP'
         cpu_fd[apx_int] = get_interpolated_fd_waveform
@@ -1169,9 +1186,8 @@ def td_fd_waveform_transform(approximant):
         # (ex. IMRPhenomXX)
         cpu_td[approximant] = get_td_waveform_from_fd
 
-for apx in copy.copy(_filter_time_lengths):
+for apx in list(_filter_time_lengths.keys()) + list(cpu_fd.keys()):
     td_fd_waveform_transform(apx)
-
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()

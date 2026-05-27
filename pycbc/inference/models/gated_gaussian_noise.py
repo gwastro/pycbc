@@ -23,6 +23,7 @@ import logging
 import numpy
 import scipy
 from scipy import special
+import warnings
 
 from pycbc.types import FrequencySeries
 from pycbc.detector import Detector
@@ -45,8 +46,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
     """
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, highpass_waveforms=False,
-                 **kwargs):
+                 static_params=None, highpass_waveforms=False, **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
         # cache the overwhitened data
@@ -59,6 +59,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._lognorm = {}
         self._gatetimes = {}
         self._det_lognls = {}
+        # cache condition number calculations
+        self.check_condition_number = bool(kwargs.get('check-condition-number', 
+                                                      False))
+        self._cond = {}
         # cache samples and linear regression for determinant extrapolation
         self._cov_samples = {}
         self._cov_regressions = {}
@@ -76,16 +80,21 @@ class BaseGatedGaussian(BaseGaussianNoise):
     @classmethod
     def from_config(cls, cp, data_section='data', data=None, psds=None,
                     **kwargs):
-        """Adds addiotional keyword arguments based on config file.
+        """Adds additional keyword arguments based on config file.
 
         Additional keyword arguments are:
 
            * ``highpass_waveforms`` : waveforms will be highpassed.
+
+        Also forces ``invpsd-trunc-low-freq-fill-value`` to ``fmin`` if not
+        specified.
         """
         if cp.has_option(data_section, 'strain-high-pass') and \
             'highpass_waveforms' not in kwargs:
             kwargs['highpass_waveforms'] = float(cp.get(data_section,
                                                         'strain-high-pass'))
+        if not cp.has_option(data_section, 'invpsd-trunc-low-freq-fill-value'):
+            cp.set(data_section, 'invpsd-trunc-low-freq-fill-value', 'fmin')
         return super().from_config(cp, data_section=data_section,
                                    data=data, psds=psds,
                                    **kwargs)
@@ -380,6 +389,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
         parameters; see ``get_gate_times_hmeco`` for details. Otherwise, the
         gate times will just be retrieved from the ``t_gate_start`` and
         ``t_gate_end`` parameters.
+        
+        If the user flagged ``check_condition_number``, also checks if
+        inpainting with the calculated gate times will be numerically
+        stable. See ``self.condition_number()`` for more info.
 
         Returns
         -------
@@ -406,6 +419,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
             self._gatetimes.clear()
             gatetimes = self._get_gate_times(gatestart, gateend, ra, dec)
             self._gatetimes[gatestart, gateend, ra, dec] = gatetimes
+        # check if the inpainting is numerically stable
+        if self.check_condition_number:
+            for det, d in self.td_data.items():
+                lindex, rindex = d.get_gate_indices(gatetimes[det][0],
+                                                    gatetimes[det][1]/2.)
+                self.condition_number(det, lindex, rindex)
         return gatetimes
 
     def _get_gate_times(self, gatestart, gateend, ra, dec):
@@ -477,6 +496,48 @@ class BaseGatedGaussian(BaseGaussianNoise):
             gatestartdelay = min(gatestartdelay, params['t_gate_start'])
             gatetimes[det] = (gatestartdelay, dgate)
         return gatetimes
+    
+    def condition_number(self, det, lindex, rindex):
+        """Calculate the condition number associated with the inverse
+        covariance matrix used to gate and inpaint. Throws a warning if the
+        condition number is greater than 1e16.
+        
+        Parameters
+        ----------
+        det : str
+            The detector described by the inverse PSD.
+        lindex : int
+            The start index of the gate.
+        rindex : int
+            The end index of the gate.
+
+        Returns
+        -------
+        float :
+            The condition number of the inverse covariance matrix constructed
+            from the inverse PSD with the given gate length.
+        """
+        gate_idx_len = int(rindex - lindex)
+        if gate_idx_len not in self._cond.keys():
+            conds = {}
+        else:
+            conds = self._cond[gate_idx_len]
+        if det not in conds.keys():
+            # construct the matrix
+            invpsd = self._invpsds[det]
+            tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
+            mat = scipy.linalg.toeplitz(tdfilter[:rindex-lindex])
+            rcond = numpy.linalg.cond(mat)
+            # cache the value
+            conds[det] = rcond
+            self._cond[gate_idx_len] = conds
+        else:
+            # pull from cache
+            rcond = self._cond[gate_idx_len][det]
+        if rcond >= 1e16:
+            warnings.warn(f'Condition number of inverse covariance matrix is '
+                      f'{rcond}; inpainting may be numerically unstable')
+        return rcond
 
     def _lognl(self):
         """Calculates the log of the noise likelihood.
@@ -523,23 +584,23 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """Wrapper around :py:func:`data_utils.fd_data_from_strain_dict`.
 
         Ensures that if the PSD is estimated from data, the inverse spectrum
-        truncation uses a Hann window, and that the low frequency cutoff is
-        zero.
+        truncation uses a Hann window. Sets the low frequency cutoff for the
+        inverse PSD to half the likelihood cutoff if not specified by the user.
         """
         if opts.psd_inverse_length and opts.invpsd_trunc_method is None:
             # make sure invpsd truncation is set to hanning
             logging.info("Using Hann window to truncate inverse PSD")
             opts.invpsd_trunc_method = 'hann'
-        lfs = None
-        if opts.psd_estimation:
-            # make sure low frequency cutoff is zero
-            logging.info("Setting low frequency cutoff of PSD to 0")
-            lfs = opts.low_frequency_cutoff.copy()
-            opts.low_frequency_cutoff = {d: 0. for d in lfs}
+        # set low frequency cutoff for PSDs
+        if opts.psd_low_frequency_cutoff is None:
+            opts.psd_low_frequency_cutoff = {}
+        for d, lfs in opts.low_frequency_cutoff.items():
+            if d not in opts.psd_low_frequency_cutoff:
+                # set to half the model's likelihood cutoffs
+                logging.info(f"Setting low frequency cutoff of {d} PSD to "
+                             f"{lfs/2.}")
+                opts.psd_low_frequency_cutoff[d] = lfs/2.
         out = fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
-        # set back
-        if lfs is not None:
-            opts.low_frequency_cutoff = lfs
         return out
 
     def write_metadata(self, fp, group=None):
@@ -762,7 +823,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
     name = 'gated_gaussian_margpol'
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
-                 high_frequency_cutoff=None, normalize=False,
+                 high_frequency_cutoff=None, normalize=False, 
                  static_params=None,
                  polarization_samples=1000, **kwargs):
         # set up the boiler-plate attributes
@@ -1007,7 +1068,8 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, phase_samples=500000, phase_names=None,
+                 static_params=None,
+                 phase_samples=500000, phase_names=None,
                  ref_phase=None, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(

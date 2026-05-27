@@ -480,3 +480,46 @@ def fd_to_td(htilde, delta_t=None, left_window=None, right_window=None,
         start, end = right_window
         htilde = fd_taper(htilde, start, end, side='right', beta=right_beta)
     return htilde.to_timeseries(delta_t=delta_t)
+
+
+def redshift_waveform(srch, z, tref=0):
+    """Redshifts a time-domain or frequency-domain waveform.
+
+    The waveform is stretched in time by :math:`(1+z)` and its (time-domain)
+    amplitude increased by :math:`(1+z)`. A time shift is also applied to the
+    waveform so that the specified `tref` occurs at the same point in the
+    red-shifted time series as it did in the source-frame time series.
+
+    Parameters
+    ----------
+    srch : TimeSeries or FrequencySeries
+        The waveform to redshift.
+    z : float
+        The redshift to apply.
+    tref : float, optional
+        The reference time to preserve. Default is 0.
+
+    Returns
+    -------
+    TimeSeries or FrequencySeries
+        The red-shifted waveform. The return type will be the same as `srch`.
+    """
+    isfs = isinstance(srch, FrequencySeries)
+    if isfs:
+        redshifted = srch.to_timeseries()
+        redshifted *= 1+z
+    else:
+        redshifted = (1+z) * srch
+    redshifted._delta_t *= 1+z
+    # find the location of tref in the original time series
+    tindex = (tref - srch.start_time)/srch.delta_t
+    # find what it's been stretched to and subtract that off from the start
+    # time so as to keep the reference time in the same spot
+    tnew = tindex * redshifted.delta_t + redshifted.start_time
+    # the difference
+    shift = tnew - tref
+    redshifted._epoch -= shift
+    if isfs:
+        # convert back to frequency domain
+        redshifted = redshifted.to_frequencyseries()
+    return redshifted
