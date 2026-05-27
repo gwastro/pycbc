@@ -194,8 +194,8 @@ seg_files = wf.FileList(
 # proxy for the valid science segments, and ignore vetoed time inside it.
 valid_segs = segmentlist([ppu._read_seg_files(seg_file_abs_paths)['off']])
 
-# As opposed to injections, (loudest) off/on-source events are on data that
-# can be time-slid so the try finds the time shift dataset and succeeds.
+# Determine if we are following up injections or loudest off/on-source triggers.
+# If the time shift dataset exists, then assume we are doing the latter.
 is_injection_followup = True
 try:
     time_shift = fp[ifos[0]+' time shift (s)'][0]
