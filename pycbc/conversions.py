@@ -215,6 +215,14 @@ def mchirp_from_mass1_mass2(mass1, mass2):
     """Returns the chirp mass from mass1 and mass2."""
     return eta_from_mass1_mass2(mass1, mass2)**(3./5) * (mass1 + mass2)
 
+def mchirp_eccentric_from_mass1_mass2_eccentricity(mass1, mass2, eccentricity):
+    """Returns the eccentric chirp mass from mass1, mass2 and eccentricity
+
+    The definition is based on Eq. 1.1, Favata et al., Phy. Rev. D, 105, 023003 (2022)
+    """
+    mchirp = mchirp_from_mass1_mass2(mass1, mass2)
+    mchirp_eccentric = mchirp / ( 1 - 157./24 * eccentricity * eccentricity )**(3./5)
+    return mchirp_eccentric
 
 def eccmchirp_from_mass1_mass2_eccentricity(mass1, mass2, eccentricity, method='spa_phase'):
     """Returns the effective eccentric chirp mass from mass1, mass2 and eccentricity
