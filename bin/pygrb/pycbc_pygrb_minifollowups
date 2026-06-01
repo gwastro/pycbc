@@ -216,7 +216,7 @@ for num_event in range(num_events):
     # Handle injections
     # They are on unslid data so geocenter time is used
     if is_injection_followup:
-        gps_time = fp['GPS time'][num_event]
+        gps_time = fp['GC GPS time (s)'][num_event]
         gps_time = gps_time.astype(float)
         for snr_type in ['reweighted', 'coherent']:
             files += make_timeseries_plot(workflow, trig_file,
