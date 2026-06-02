@@ -449,8 +449,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
         gatestart = params['t_gate_start']
         gateend = params['t_gate_end']
         # we'll need the sky location for determining time shifts
-        ra = self.current_params['ra']
-        dec = self.current_params['dec']
+        if 'RF' not in self.detectors:
+            ra = self.current_params['ra']
+            dec = self.current_params['dec']
+        else:
+            ra = None
+            dec = None
         # try to get from cache
         try:
             gatetimes = self._gatetimes[gatestart, gateend, ra, dec]
@@ -488,14 +492,19 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         gatetimes = {}
         for det in self._invpsds:
-            thisdet = Detector(det)
-            # account for the time delay between the waveforms of the
-            # different detectors
-            refdet = self.current_params.get('tc_ref_frame', 'geocentric')
-            gatestartdelay = thisdet.arrival_time(gatestart, ra, dec, refdet)
-            gateenddelay = thisdet.arrival_time(gateend, ra, dec, refdet)
-            dgatedelay = gateenddelay - gatestartdelay
-            gatetimes[det] = (gatestartdelay, dgatedelay)
+            if det != 'RF':
+                thisdet = Detector(det)
+                # account for the time delay between the waveforms of the
+                # different detectors
+                refdet = self.current_params.get('tc_ref_frame', 'geocentric')
+                gatestartdelay = thisdet.arrival_time(gatestart, ra, dec, refdet)
+                gateenddelay = thisdet.arrival_time(gateend, ra, dec, refdet)
+                dgatedelay = gateenddelay - gatestartdelay
+                gatetimes[det] = (gatestartdelay, dgatedelay)
+            else:
+                # take the gate times as geocentric
+                dgate = gateend - gatestart
+                gatetimes[det] = (gatestart, dgate)
         return gatetimes
 
     def get_gate_times_hmeco(self):

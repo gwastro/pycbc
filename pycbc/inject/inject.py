@@ -85,20 +85,22 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     """ Use the injection row to project the polarizations into the
     detector frame
     """
-    detector = Detector(detector_name)
-
     hp /= distance_scale
     hc /= distance_scale
+    
+    if detector_name != 'RF':
+        detector = Detector(detector_name)
+        try:
+            ra = inj.ra
+            dec = inj.dec
+        except:
+            ra = inj.longitude
+            dec = inj.latitude
 
     try:
         tc = inj.tc
-        ra = inj.ra
-        dec = inj.dec
     except:
         tc = inj.time_geocent
-        ra = inj.longitude
-        dec = inj.latitude
-
     hp.start_time += tc
     hc.start_time += tc
 
@@ -121,10 +123,13 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     logger.info('Injecting at %s, method is %s', tc, projection_method)
 
     # compute the detector response and add it to the strain
-    signal = detector.project_wave(hp_tapered, hc_tapered,
-                                   ra, dec, inj.polarization,
-                                   method=projection_method,
-                                   reference_time=tc,)
+    if detector_name != 'RF':
+        signal = detector.project_wave(hp_tapered, hc_tapered,
+                                       ra, dec, inj.polarization,
+                                       method=projection_method,
+                                       reference_time=tc,)
+    else:
+        signal = hp_tapered
     return signal
 
 def legacy_approximant_name(apx):

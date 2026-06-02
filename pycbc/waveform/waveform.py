@@ -42,6 +42,7 @@ import pycbc
 from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
                       spa_length_in_time
+import warnings
 
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
@@ -808,6 +809,15 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
         if 't_obs_start' in nparams and \
            full_duration >= nparams['t_obs_start']:
             break
+    
+    # workaround for high-mass bug
+    if full_duration < 0:
+        full_duration = 1.5 * duration
+        nparams['f_lower'] = 2 / 3 * params['f_lower']
+        warnings.warn('Waveform filter length function returned negative '
+                      'value during injection tapering. This is likely due '
+                      'to a bug when inputting high masses. Setting taper '
+                      'window starting from 2/3 the input f_lower.')
 
     if 'f_ref' not in nparams:
         nparams['f_ref'] = params['f_lower']
@@ -826,9 +836,13 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
 
     if nparams['approximant'] not in fd_det:
         hp, hc = get_fd_waveform(**nparams)
+        print(fudge_duration, hp.duration)
+        print(params)
+        print(hp.delta_f, nparams['delta_f'])
         # Resize to the right sample rate
         hp.resize(fsize)
         hc.resize(fsize)
+        print(hp.delta_f, fsize)
 
         # avoid wraparound
         hp = hp.cyclic_time_shift(-rwrap)
