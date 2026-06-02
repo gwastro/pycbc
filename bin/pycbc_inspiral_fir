@@ -1,4 +1,4 @@
- #!/usr/bin/env python
+#!/usr/bin/env python
 """
 pycbc_inspiral_ratio: A pipeline-compatible script for inspiral analysis 
 using the Ratio Matched Filter method.
