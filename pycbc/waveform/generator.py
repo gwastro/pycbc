@@ -611,7 +611,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
         self.recalib = recalib
         # if detectors are provided, convert to detector type; also ensure that
         # location variables are specified
-        if detectors is not None:
+        if detectors is not None and 'RF' not in detectors:
             self.detectors = {det: Detector(det) for det in detectors}
             missing_args = [
                 arg
