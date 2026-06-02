@@ -194,8 +194,8 @@ seg_files = wf.FileList(
 # proxy for the valid science segments, and ignore vetoed time inside it.
 valid_segs = segmentlist([ppu._read_seg_files(seg_file_abs_paths)['off']])
 
-# (Loudest) off/on-source events are on time-slid data so the
-# try will succeed, as it finds the time shift columns.
+# Determine if we are following up injections or loudest off/on-source triggers.
+# If the time shift dataset exists, then assume we are doing the latter.
 is_injection_followup = True
 try:
     time_shift = fp[ifos[0]+' time shift (s)'][0]
@@ -207,16 +207,17 @@ except KeyError:
 for num_event in range(num_events):
     files = FileList([])
     logging.info('Processing event: %s', num_event+1)
-    gps_time = fp['GPS time'][num_event]
-    gps_time = gps_time.astype(float)
     tags = args.tags + [str(num_event+1)]
     if wiki_file:
         row = []
         for key in fp.keys():
             row.append(fp[key][num_event])
         add_wiki_row(wiki_file, row)
-    # Handle injections (which are on unslid data)
+    # Handle injections
+    # They are on unslid data so geocenter time is used
     if is_injection_followup:
+        gps_time = fp['GC GPS time (s)'][num_event]
+        gps_time = gps_time.astype(float)
         for snr_type in ['reweighted', 'coherent']:
             files += make_timeseries_plot(workflow, trig_file,
                                           snr_type, gps_time,
@@ -229,12 +230,12 @@ for num_event in range(num_events):
                                           args.output_dir,
                                           tags=tags,
                                           data_segments=valid_segs)
-    # Handle off/on-source loudest triggers follow-up (which may be on slid
-    # data in the case of the off-source)
+    # Handle off/on-source loudest triggers follow-up
+    # They are data that may be slid so detector time is used
     else:
         for i_ifo, ifo in enumerate(ifos):
-            time_shift = fp[ifo+' time shift (s)'][num_event]
-            ifo_time = gps_time + time_shift
+            ifo_time = fp[ifo+' GPS time (s)'][num_event]
+            ifo_time = ifo_time.astype(float)
             files += make_timeseries_plot(workflow, trig_file,
                                           'single', ifo_time,
                                           args.output_dir, ifo=ifo,
