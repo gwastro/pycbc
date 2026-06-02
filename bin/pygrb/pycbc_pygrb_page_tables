@@ -428,15 +428,19 @@ if lofft_outfile:
         d.extend([trig_data[ifo+'/snr'][ifo_trig_index[ifo]]
                   for ifo in ifos])
         d.extend([slide_dict[trig_slide_id][ifo] for ifo in ifos])
+        d.extend([trig_data[ifo+'/end_time'][ifo_trig_index[ifo]]
+                  for ifo in ifos])
         d.append(bestnr)
         td.append(d)
 
-    # th: table header [pycbc_pygrb_minifollowups looks for 'Slide Num']
-    th = ['Trial', 'Slide Num', 'p-value', 'GPS time',
+    # th: table header
+    # Check against pycbc_pygrb_minifollowups prior to changing any of these
+    th = ['Trial', 'Slide Num', 'p-value', 'GC GPS time (s)',
           'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z', 'Rec. spin2z',
           'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR']
     th.extend([ifo+' SNR' for ifo in ifos])
     th.extend([ifo+' time shift (s)' for ifo in ifos])
+    th.extend([ifo+' GPS time (s)' for ifo in ifos])
     th.append('BestNR')
 
     # When len(offsource_trigs) == 0, the loop above leaves td = [] unchanged
@@ -466,11 +470,12 @@ if lofft_outfile:
     td = [np.asarray(d) for d in td]
 
     # Format of table data
-    format_strings = ['##.##', '##.##', None, '##.#####',
+    format_strings = ['##.##', '##.##', None, '##.###',
                       '##.##', '##.##', '##.##', '##.##', '##.##',
                       '##.##', '##.##', '##.##', '##.##', '##.##']
-    format_strings.extend(['##.##' for ifo in ifos])
-    format_strings.extend(['##.##' for ifo in ifos])
+    format_strings.extend(['##.##' for _ in ifos])
+    format_strings.extend(['##.##' for _ in ifos])
+    format_strings.extend(['##.###' for _ in ifos])
     format_strings.extend(['##.##'])
     html_table = pycbc.results.html_table(td, th,
                                           format_strings=format_strings,
@@ -548,13 +553,16 @@ if onsource_file:
              on_trigs['network/my_network_chisq'][trig_index],
              on_trigs['network/null_snr'][trig_index]] + \
             [on_trigs[ifo+'/snr'][ifo_trig_index[ifo]] for ifo in ifos] + \
-            [loud_on_bestnr]
+            [on_trigs[ifo+'/end_time'][ifo_trig_index[ifo]]
+             for ifo in ifos] + [loud_on_bestnr]
         td.append(d)
 
     # Table header
-    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc',
+    # Check against pycbc_pygrb_minifollowups prior to changing any of these
+    th = ['p-value', 'GC GPS time (s)', 'Rec. m1', 'Rec. m2', 'Rec. Mc',
           'Rec. spin1z', 'Rec. spin2z', 'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2',
-          'Null SNR'] + [ifo+' SNR' for ifo in ifos] + ['BestNR']
+          'Null SNR'] + [ifo+' SNR' for ifo in ifos] + \
+          [ifo+' GPS time (s)' for ifo in ifos] + ['BestNR']
 
     td = list(zip(*td))
 
@@ -572,9 +580,10 @@ if onsource_file:
     logging.info("Writing loudest onsource trigger to html file.")
 
     # Format of table data
-    format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
+    format_strings = [None, '##.###', '##.##', '##.##', '##.##', '##.##',
                       '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
-    format_strings.extend(['##.##' for ifo in ifos])
+    format_strings.extend(['##.##' for _ in ifos])
+    format_strings.extend(['##.###' for _ in ifos])
     format_strings.extend(['##.##'])
 
     # Table data: assemble human readable message when no trigger is recovered
@@ -628,8 +637,11 @@ if found_missed_file is not None:
 
     # Write quiet triggers to file
     sites = [ifo[0] for ifo in ifos]
+    # Table header
+    # Check against pycbc_pygrb_minifollowups prior to changing any of these
+    # Injections are in zero-lag so no timing information at the IFOs is needed
     th = ['Dist'] + ['Eff. Dist. '+site for site in sites] +\
-         ['GPS time', 'GPS time - Rec. Time'] +\
+         ['GC GPS time (s)', 'GPS time - Rec. Time'] +\
          ['Inj. m1', 'Inj. m2', 'Inj. Mc', 'Rec. m1', 'Rec. m2', 'Rec. Mc',
           'Inj. inc', 'Inj. RA', 'Inj. Dec', 'Rec. RA', 'Rec. Dec', 'SNR',
           'Chi^2', 'Null SNR'] +\
@@ -640,7 +652,7 @@ if found_missed_file is not None:
           'Rec S1z', 'Rec S2z']
     # Format of table data
     format_strings = ['##.##']
-    format_strings.extend(['##.##' for ifo in ifos])
+    format_strings.extend(['##.##' for _ in ifos])
     format_strings.extend(['##.#####', '##.#####',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
