@@ -2212,5 +2212,6 @@ __all__ = ['eccmchirp_from_mchirp_eccentricity',
            'remnant_mass_from_mass1_mass2_cartesian_spin_eos',
            'lambda1_from_delta_lambda_tilde_lambda_tilde',
            'lambda2_from_delta_lambda_tilde_lambda_tilde',
-           'delta_lambda_tilde', 'hypertriangle'
+           'delta_lambda_tilde', 'hypertriangle', 
+           'Emchirp_from_mass1_mass2_eccentricity'
           ]
