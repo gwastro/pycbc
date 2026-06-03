@@ -215,7 +215,7 @@ def mchirp_from_mass1_mass2(mass1, mass2):
     """Returns the chirp mass from mass1 and mass2."""
     return eta_from_mass1_mass2(mass1, mass2)**(3./5) * (mass1 + mass2)
 
-def Emchirp_from_mass1_mass2_eccentricity(mass1, mass2, eccentricity, method='SPA_Phase'):
+def Emchirp_from_mass1_mass2_eccentricity(mass1, mass2, eccentricity, method='spa_phase'):
     """Returns the effective eccentric chirp mass from mass1, mass2 and eccentricity
 
     Parameters
@@ -225,14 +225,14 @@ def Emchirp_from_mass1_mass2_eccentricity(mass1, mass2, eccentricity, method='SP
     mass2 : float or array
         Mass of the secondary object
     eccentricity : float or array
-        Eccentricity of the orbit (For "Fit" method, eccentricity must be defined at 10 Hz.
-        For "SPA_Phase" method, eccentricity can be defined at any frequency, usually the start
+        Eccentricity of the orbit (For "fit" method, eccentricity must be defined at 10 Hz.
+        For "spa_phase" method, eccentricity can be defined at any frequency, usually the start
         frequency of the waveform.)
     method : str, optiona
-        Method to use for the calculation ("SPA_Phase", "Fit").
+        Method to use for the calculation ("spa_phase", "fit").
         See `Emchirp_from_mchirp_eccentricity` for details.
     """
-    allowed_methods = ("SPA_Phase", "Fit")
+    allowed_methods = ("spa_phase", "fit")
     if method not in allowed_methods:
         raise ValueError("method must be one of {}".format(allowed_methods))
     mchirp = mchirp_from_mass1_mass2(mass1, mass2)
@@ -704,10 +704,10 @@ def mchirp_from_Emchirp_ecc(Emchirp, eccentricity, method="SPA_Phase"):
         Effective eccentric chirp mass of the system
     eccentricity : float or array
         Eccentricity of the system
-    method : {"SPA_Phase", "Fit"},
-         Method to use for calculation (default is "SPA_Phase")
+    method : {"spa_phase", "fit"},
+         Method to use for calculation (default is "spa_phase")
 
-        "SPA_Phase":
+        "spa_phase":
             Inverse of the effective eccentric mchirp parameter from
             Eq. 1.1 of https://arxiv.org/abs/2108.05861. Eccentricity
             can be defined at any frequency, usually start frequency
@@ -716,13 +716,13 @@ def mchirp_from_Emchirp_ecc(Emchirp, eccentricity, method="SPA_Phase"):
             The SPA phase only contain dominat (2,2) mode contribution with no
             higher eccentric harmonics.
 
-        "Fit":
+        "fit":
             Inverse of the effective eccentric mchirp parameter derived from
             fitting to time-frequency track. The fitting formula is given in
             Eq. 8 of https://arxiv.org/abs/2107.14736. Eccentricity must be
             defined at the dominant (2,2) mode GW frequency of 10 Hz.
     """
-    allowed_methods = ("SPA_Phase", "Fit")
+    allowed_methods = ("spa_phase", "fit")
 
     if method not in allowed_methods:
         raise ValueError("method must be one of {}".format(allowed_methods))
@@ -731,10 +731,10 @@ def mchirp_from_Emchirp_ecc(Emchirp, eccentricity, method="SPA_Phase"):
 
     e2 = eccentricity * eccentricity
 
-    if method == "SPA_Phase":
+    if method == "spa_phase":
         m = Emchirp * ( 1 - 157/24 * e2 )**(3/5)
 
-    elif method == "Fit":
+    elif method == "fit":
         # Constants from Table 1 of https://arxiv.org/abs/2107.14736
         xi = 0.06110974175360381
         delta = -0.4193723077257345
@@ -2212,6 +2212,6 @@ __all__ = ['eccmchirp_from_mchirp_eccentricity',
            'remnant_mass_from_mass1_mass2_cartesian_spin_eos',
            'lambda1_from_delta_lambda_tilde_lambda_tilde',
            'lambda2_from_delta_lambda_tilde_lambda_tilde',
-           'delta_lambda_tilde', 'hypertriangle', 
+           'delta_lambda_tilde', 'hypertriangle',
            'Emchirp_from_mass1_mass2_eccentricity'
           ]
