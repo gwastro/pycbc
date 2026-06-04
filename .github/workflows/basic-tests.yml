@@ -58,8 +58,6 @@ jobs:
           examples/inference/relative/*.gwf
           examples/inference/relmarg/*.gwf
           examples/inference/single/*.gwf
-    - name: Debug GWOSC JSON URL
-      run: curl --location https://gwosc.org/archive/links/O2_16KHZ_R1/H1/1187008674/1187009090/json/
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
