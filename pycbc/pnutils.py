@@ -561,6 +561,10 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
         raise RuntimeError("I can't calculate a duration for %s" % approximant)
     if time_length <= 0.:
         # FD approximants can overflow for high masses; use default if so
+        logging.warning(f'IMR duration estimator for approximant {approximant} '
+                        'returns a negative value. This is likely due to '
+                        'overflow at high masses. Calculating duration with '
+                        'SEOBNRv4')
         time_length = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
                            f_low, m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z)
     # FIXME Add an extra factor of 1.1 for 'safety' since the duration
