@@ -6,10 +6,13 @@ jobs:
         steps:
             - name: Check out repository
               uses: actions/checkout@v3
+            - name: Load defaults
+              id: defaults
+              uses: ./.github/actions/defaults
             - name: Set up Python
               uses: actions/setup-python@v4
               with:
-                  python-version: 3.11
+                  python-version: ${{ steps.defaults.outputs.python_version }}
             - name: Install flake8
               run: pip install flake8
             - name: Checking executables for unused imports
