@@ -260,7 +260,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
 
     # Do a first test to see if we are done
     mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
-                                  low_frequency_cutoff=fmin, normalized=False))  
+                                  low_frequency_cutoff=fmin, normalized=False))
     if mismatch > tolerance:
         # Calculate the overlap errors within each frequency bins.
         # We use this to determine where to add more interpolation points
@@ -274,7 +274,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     # waveform meets our mismatch target with the origianl waveform
     added_points = []
     iteration_count = 0
-    max_batch_size = 100
+    max_batch_size = 1000
 
     while mismatch > tolerance:
         iteration_start_time = time.time()
@@ -289,6 +289,8 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         # one (can be large numerical error in the veddiff calculation, so
         # rounding cause all to be below the tolerance yet thte full fails).
         num_select = min(max_batch_size, (num_bad // 4 + 1))
+        # Hueristic to add multiple points if size is already large
+        num_select = max(num_select, len(vecdiffs) // 50)
         selected_segments = vsort[:num_select]
 
         # --- 2. Propose new points ---
@@ -296,9 +298,14 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         for minpt in selected_segments:
             # Calculate midpoint using indices to avoid float drift issues
             add_freq = (sample_points[minpt] + sample_points[minpt+1]) / 2.0
-            addidx = int(add_freq / df)     
+            addidx = int(add_freq / df)
             if addidx not in sample_index and addidx not in new_addidxs:
                 new_addidxs.append(addidx)
+
+            # Don't propose points within a sample of existing ones
+            new_addidxs = numpy.array(new_addidxs)
+            valid = ~numpy.any(abs(new_addidxs[:, None] - numpy.array(added_points)) <= 2, axis=1)
+            new_addidxs = list(new_addidxs[valid])
 
         # --- 3. Update and Sort ---
         sample_index = numpy.unique(numpy.concatenate((sample_index, new_addidxs)))
@@ -343,6 +350,10 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
             iteration_count, mismatch, len(new_addidxs), len(sample_points),
             (time.time() - iteration_start_time) * 1000
         )
+
+        if len(new_addidxs) == 0:
+            logging.info("Can't add any more points, stopping here..")
+            break
 
     # Cast compression_factor to float to avoid HDF5 TypeErrors
     compression_factor = float(len(htilde)) / float(len(sample_points))
@@ -622,7 +633,9 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     else:
         # check for precision compatibility
         if out.precision == 'double' and precision == 'single':
-            raise ValueError("cannot cast single precision to double")
+            amp = amp.astype(numpy.float64)
+            phase = phase.astype(numpy.float64)
+            sample_frequencies = sample_frequencies.astype(numpy.float64)
         df = out.delta_f
         hlen = len(out)
     if f_lower is None:
@@ -892,7 +905,11 @@ class CompressedWaveform(object):
         outdtype = _real_dtypes[precision]
         group = '%scompressed_waveforms/%s' %(root, str(template_hash))
         for param in ['amplitude', 'phase', 'sample_points']:
-            fp['%s/%s' %(group, param)] = self._get(param).astype(outdtype)
+            fp.create_dataset('%s/%s' %(group, param),
+                              data=self._get(param).astype(outdtype),
+                              compression='gzip',
+                              shuffle=True,
+                              compression_opts=9)
         fp_group = fp[group]
         fp_group.attrs['mismatch'] = self.mismatch
         fp_group.attrs['interpolation'] = self.interpolation
