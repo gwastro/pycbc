@@ -25,7 +25,7 @@
 import numpy as np
 import warnings
 import astropy.units as u
-from astropy.cosmology import Planck15, Planck18
+from pycbc.cosmology import get_cosmology
 from abc import ABC, abstractmethod
 
 class BaseRedshiftEvolution(ABC):
@@ -47,7 +47,7 @@ class BaseRedshiftEvolution(ABC):
     """
 
     def __init__(self, zmax: float = 2.0, num_zbins: int = 1000, 
-                 cosmology=Planck15, z_grid = None):
+                 cosmology=None, z_grid = None):
         """
         Parameters
         ----------
@@ -58,7 +58,10 @@ class BaseRedshiftEvolution(ABC):
         """
         self.zmax = float(zmax)
         self.num_zbins = int(num_zbins)
-        self.cosmology = cosmology
+	if cosmology is not None:
+            self.cosmology = cosmology
+        else:
+            self.cosmology = get_cosmology()
 
         # Redshift grid (dimensionless)
         if z_grid is None:
@@ -71,7 +74,7 @@ class BaseRedshiftEvolution(ABC):
         self._dvc_dz_grid = (
             4.0
             * np.pi
-            * Planck15.differential_comoving_volume(self._z_grid)
+            * self.cosmology.differential_comoving_volume(self._z_grid)
             .to(u.Gpc**3 / u.sr)
         )
 
@@ -469,9 +472,9 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         self.td_model = td_model
         self.z_formation_max = z_formation_max
         
-        from astropy.cosmology import Planck18
-        import astropy.units as u
-        self.cosmology = cosmology if cosmology is not None else Planck18
+        #from astropy.cosmology import Planck18
+        #import astropy.units as u
+        #self.cosmology = cosmology if cosmology is not None else Planck18
         
         # Define boundaries for time delay
         self.td_min = kwargs.get('td_min', 0.02)  # Gyr (20 Myr)
