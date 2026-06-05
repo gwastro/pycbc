@@ -215,7 +215,8 @@ def mchirp_from_mass1_mass2(mass1, mass2):
     """Returns the chirp mass from mass1 and mass2."""
     return eta_from_mass1_mass2(mass1, mass2)**(3./5) * (mass1 + mass2)
 
-def Emchirp_from_mass1_mass2_eccentricity(mass1, mass2, eccentricity, method='spa_phase'):
+
+def eccmchirp_from_mass1_mass2_eccentricity(mass1, mass2, eccentricity, method='spa_phase'):
     """Returns the effective eccentric chirp mass from mass1, mass2 and eccentricity
 
     Parameters
@@ -230,14 +231,15 @@ def Emchirp_from_mass1_mass2_eccentricity(mass1, mass2, eccentricity, method='sp
         frequency of the waveform.)
     method : str, optiona
         Method to use for the calculation ("spa_phase", "fit").
-        See `Emchirp_from_mchirp_eccentricity` for details.
+        See `eccmchirp_from_mchirp_eccentricity` for details.
     """
     allowed_methods = ("spa_phase", "fit")
     if method not in allowed_methods:
         raise ValueError("method must be one of {}".format(allowed_methods))
     mchirp = mchirp_from_mass1_mass2(mass1, mass2)
-    mchirp_eccentric = Emchirp_from_mchirp_eccentricity(mchirp, eccentricity, method=method)
+    mchirp_eccentric = eccmchirp_from_mchirp_eccentricity(mchirp, eccentricity, method=method)
     return mchirp_eccentric
+
 
 def mass1_from_mtotal_q(mtotal, q):
     """Returns a component mass from the given total mass and mass ratio.
@@ -501,8 +503,8 @@ def mass2_from_tau0_tau3(tau0, tau3, f_lower):
     return mass2_from_mtotal_eta(mtotal, eta)
 
 
-def Emchirp_from_mchirp_eccentricity(mchirp, eccentricity, method="spa_phase"):
-    """Return the effective eccentric chirp mass: Emchirp.
+def eccmchirp_from_mchirp_eccentricity(mchirp, eccentricity, method="spa_phase"):
+    """Return the effective eccentric chirp mass: eccmchirp.
 
     Parameters
     ----------
@@ -573,12 +575,12 @@ def Emchirp_from_mchirp_eccentricity(mchirp, eccentricity, method="spa_phase"):
         Emchirp = mchirp * (1 + e2 * (alpha + e2 * (beta + e2 * gamma)))
     return formatreturn(Emchirp, input_is_array)
 
-def mchirp_from_Emchirp_ecc(Emchirp, eccentricity, method="spa_phase"):
+def mchirp_from_eccmchirp_eccentricity(eccmchirp, eccentricity, method="spa_phase"):
     """Return the chirp mass from the effective eccentric chirp mass and eccentricity.
 
     Parameters
     ----------
-    Emchirp : float or array
+    eccmchirp : float or array
         Effective eccentric chirp mass of the system
     eccentricity : float or array
         Eccentricity of the system
@@ -605,12 +607,12 @@ def mchirp_from_Emchirp_ecc(Emchirp, eccentricity, method="spa_phase"):
     if method not in allowed_methods:
         raise ValueError("method must be one of {}".format(allowed_methods))
 
-    Emchirp, eccentricity, input_is_array = ensurearray(Emchirp, eccentricity)
+    eccmchirp, eccentricity, input_is_array = ensurearray(eccmchirp, eccentricity)
 
     e2 = eccentricity * eccentricity
 
     if method == "spa_phase":
-        m = Emchirp * ( 1 - 157/24 * e2 )**(3/5)
+        m = eccmchirp * ( 1 - 157/24 * e2 )**(3/5)
 
     elif method == "fit":
         # Constants from Table 1 of https://arxiv.org/abs/2107.14736
@@ -629,8 +631,8 @@ def mchirp_from_Emchirp_ecc(Emchirp, eccentricity, method="spa_phase"):
         # Initial guess using the quadratic approximation
         A = xi * e2
         B = 1 + delta * e2
-        C = - Emchirp
-        m = numpy.where(A > 0, (-B + numpy.sqrt(B**2 - 4*A*C)) / (2*A), Emchirp)
+        C = - eccmchirp
+        m = numpy.where(A > 0, (-B + numpy.sqrt(B**2 - 4*A*C)) / (2*A), eccmchirp)
 
         for _ in range(5):
             m2 = m * m
@@ -2047,7 +2049,9 @@ def nltides_gw_phase_diff_isco(f_low, f0, amplitude, n, m1, m2):
     return formatreturn(phi_i - phi_l, input_is_array)
 
 
-__all__ = ['Emchirp_from_mchirp_ecc', 'mchirp_from_Emchirp_ecc',
+__all__ = ['eccmchirp_from_mchirp_eccentricity',
+           'mchirp_from_eccmchirp_eccentricity',
+           'eccmchirp_from_mass1_mass2_eccentricity',
            'dquadmon_from_lambda', 'lambda_tilde',
            'lambda_from_mass_tov_file', 'primary_mass',
            'secondary_mass', 'mtotal_from_mass1_mass2',
@@ -2088,6 +2092,5 @@ __all__ = ['Emchirp_from_mchirp_ecc', 'mchirp_from_Emchirp_ecc',
            'remnant_mass_from_mass1_mass2_cartesian_spin_eos',
            'lambda1_from_delta_lambda_tilde_lambda_tilde',
            'lambda2_from_delta_lambda_tilde_lambda_tilde',
-           'delta_lambda_tilde', 'hypertriangle',
-           'Emchirp_from_mass1_mass2_eccentricity'
+           'delta_lambda_tilde', 'hypertriangle'
           ]
