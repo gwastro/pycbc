@@ -1392,7 +1392,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         hsd = 0.0
         dd = 0.0
         for det in self.det_names:
-            if det not in self.dets:
+            if det not in self.dets and det != 'RF':
                 self.dets[det] = Detector(det)
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
