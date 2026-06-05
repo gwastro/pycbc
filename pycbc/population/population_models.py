@@ -151,7 +151,7 @@ def merger_rate_density(sfr_func, td_model, rho_local, maxz=10.0,
     -----
          Pease see Eq.(A1), Eq.(A2) in <arXiv:2011.02717v3> for more details.
     """
-    from sympy import symbols, lambdify
+    #from sympy import symbols, lambdify
 
     if z_array is None:
         z_array = np.linspace(0, maxz, npoints)
