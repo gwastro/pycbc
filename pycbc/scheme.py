@@ -382,7 +382,6 @@ class ChooseBySchemeDict(dict):
         for base in scheme.__mro__[0:-1]:
             try:
                 return dict.__getitem__(self, base)
-                break
             except:
                 pass
 
