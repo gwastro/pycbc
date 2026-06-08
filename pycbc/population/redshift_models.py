@@ -58,7 +58,7 @@ class BaseRedshiftEvolution(ABC):
         """
         self.zmax = float(zmax)
         self.num_zbins = int(num_zbins)
-	if cosmology is not None:
+        if cosmology is not None:
             self.cosmology = cosmology
         else:
             self.cosmology = get_cosmology()
