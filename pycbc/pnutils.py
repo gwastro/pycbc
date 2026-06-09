@@ -567,6 +567,19 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
                         'SEOBNRv4')
         time_length = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
                            f_low, m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z)
+    elif approximant not in ["SEOBNRv4", "SEOBNRv4_ROM"] and m1 + m2 >= 1e5:
+        # Catch significant numerical error accumulation before the sign flip
+        seobnrv4_time = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
+                           f_low, m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z)
+        diff = abs(time_length - seobnrv4_time)
+        # Fallback if relative error is > 1%
+        if seobnrv4_time > 0 and (diff / seobnrv4_time > 0.01):
+            logging.warning('IMR duration estimator for approximant '
+                            f'{approximant} deviates significantly from '
+                            'SEOBNRv4. This is likely due to numerical error '
+                            'at high masses. Calculating duration with '
+                            'SEOBNRv4')
+            time_length = seobnrv4_time
     # FIXME Add an extra factor of 1.1 for 'safety' since the duration
     # functions are approximate
     return time_length * 1.1
