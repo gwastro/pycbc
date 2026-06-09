@@ -8,6 +8,9 @@ from .gracedb import *
 
 logger = logging.getLogger('pycbc.io')
 
+# Backup URL in case GWOSC fails
+base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{}"
+base_lfs_backup_url = "https://media.githubusercontent.com/media/gwastro/pycbc_data/master/{}"
 
 def get_file(url, retry=5, **args):
     """ Retrieve file with retry upon failure
@@ -15,12 +18,18 @@ def get_file(url, retry=5, **args):
     Uses the astropy download_file but adds a retry feature for flaky
     connections. See astropy for full options
     """
-    # DEBUGGING, will be removed
     if os.getenv("GITHUB_ACTIONS") == "true":
+        # Accessing GWOSC from GitHub Actions is a pain and often fails.
+        # If this is in GitHub Actions we divert the URLs to a backup path
         if "gwosc.org/" in url:
-            print("CANNOT ACCESS GWOSC FROM GITHUB CI")
-            print(url)
-            raise ValueError()
+            basename = os.path.basename(urlparse(url).path)
+            if basename.endswith('hdf5') or basename.endswith('gwf'):
+                # Just download file directly from backup
+                url = base_backup_url.format(basename)
+            else:
+                print(url)
+                raise ValueError("Need to handle this")
+
     i = 0
     while True:
         i += 1
