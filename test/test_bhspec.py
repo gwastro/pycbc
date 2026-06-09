@@ -9,8 +9,6 @@ from pycbc.inference import io
 from pycbc.inference.models import read_from_config
 from pycbc.workflow import WorkflowConfigParser
 
-base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{}"
-
 class TestBHSpecModel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
