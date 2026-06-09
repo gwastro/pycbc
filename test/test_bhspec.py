@@ -9,6 +9,8 @@ from pycbc.inference import io
 from pycbc.inference.models import read_from_config
 from pycbc.workflow import WorkflowConfigParser
 
+base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{}"
+
 class TestBHSpecModel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -33,8 +35,12 @@ class TestBHSpecModel(unittest.TestCase):
             # strip off the instrument name
             frame_file = frame_file.split(":")[-1]
             if not os.path.exists(frame_file):
-                url = os.path.join(cls.frame_files_url, frame_file)
-                urllib.request.urlretrieve(url, frame_file)
+                if os.getenv("GITHUB_ACTIONS") == "true":
+                    # GWOSC is flaky on GitHub Actions.
+                    get_file(base_backup_url.format(frame_file))
+                else:
+                    url = os.path.join(cls.frame_files_url, frame_file)
+                    urllib.request.urlretrieve(url, frame_file)
 
         # Load expected parameter values and expected loglikelihood from
         # the JSON file
