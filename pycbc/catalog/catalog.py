@@ -27,6 +27,7 @@ compact binary mergers
 """
 import logging
 import json
+import socket # To catch timeout exception
 
 from pycbc.io import get_file
 
@@ -37,10 +38,17 @@ logger = logging.getLogger('pycbc.catalog.catalog')
 
 # LVC catalogs
 base_lvc_url = "https://www.gwosc.org/eventapi/jsonfull/{}/"
+# Backup URL in case GWOSC fails
+base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/{}"
 
 def lvk_catalogs():
     _catalog_source = "https://gwosc.org/eventapi/json/"
-    catalog_list = json.load(open(get_file(_catalog_source), 'r'))
+    _backup_source = base_backup_url.format('catalog_list.json')
+    try:
+        catalog_list = json.load(open(get_file(_catalog_source), 'r'))
+    except (socket.timeout) as exc: # Might need more potential errors here
+        logger.warn("GWOSC failed. Using backup which may not be up to date")
+        catalog_list = json.load(open(get_file(_backup_source), 'r'))
     return catalog_list
     
 def populate_catalogs():
@@ -77,7 +85,13 @@ def get_source(source):
     if source in _catalogs:
         catalog_type = _catalogs[source]
         if catalog_type == 'LVK':
-            fname = get_file(base_lvc_url.format(source), cache=True)
+            try:
+                fname = get_file(base_lvc_url.format(source), cache=True)
+            except (socket.timeout) as exc: # Might need more potential errors
+                logger.warn("GWOSC failed. Using backup which may not be up to date")
+                backup_url = base_backup_url.format('catalog_{source}.json')
+                fname = get_file(backup_url, cache=True)
+
             data = json.load(open(fname, 'r'))
     else:
         raise ValueError('Unkown catalog source {}'.format(source))
