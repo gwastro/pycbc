@@ -13,6 +13,12 @@ def get_file(url, retry=5, **args):
     Uses the astropy download_file but adds a retry feature for flaky
     connections. See astropy for full options
     """
+    # DEBUGGING, will be removed
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        if "gwosc.org/" in url:
+            print("CANNOT ACCESS GWOSC FROM GITHUB CI")
+            print(url)
+            raise ValueError()
     i = 0
     while True:
         i += 1
