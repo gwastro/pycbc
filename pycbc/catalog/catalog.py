@@ -25,9 +25,9 @@
 """ This modules contains information about the announced LIGO/Virgo
 compact binary mergers
 """
+import os
 import logging
 import json
-from urllib.error import URLError # For error catching
 
 from pycbc.io import get_file
 
@@ -44,11 +44,12 @@ base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{
 def lvk_catalogs():
     _catalog_source = "https://gwosc.org/eventapi/json/"
     _backup_source = base_backup_url.format('catalog_list.json')
-    try:
-        catalog_list = json.load(open(get_file(_catalog_source), 'r'))
-    except (URLError) as exc: # Might need more potential errors here
-        logger.warn("GWOSC failed. Using backup which may not be up to date")
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        # GWOSC is flaky on GitHub Actions. Use backup server instead
+        # Backup is likely out of date, so this is only for the CI
         catalog_list = json.load(open(get_file(_backup_source), 'r'))
+    else:
+        catalog_list = json.load(open(get_file(_catalog_source), 'r'))
     return catalog_list
     
 def populate_catalogs():
@@ -85,12 +86,13 @@ def get_source(source):
     if source in _catalogs:
         catalog_type = _catalogs[source]
         if catalog_type == 'LVK':
-            try:
-                fname = get_file(base_lvc_url.format(source), cache=True)
-            except (URLError) as exc: # Might need more potential errors
-                logger.warn("GWOSC failed. Using backup which may not be up to date")
+            if os.getenv("GITHUB_ACTIONS") == "true":
+                # GWOSC is flaky on GitHub Actions. Use backup server instead
+                # Backup is likely out of date, so this is only for the CI
                 backup_url = base_backup_url.format(f'catalog_{source}.json')
                 fname = get_file(backup_url, cache=True)
+            else:
+                fname = get_file(base_lvc_url.format(source), cache=True)
 
             data = json.load(open(fname, 'r'))
     else:
