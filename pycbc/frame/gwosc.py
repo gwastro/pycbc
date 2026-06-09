@@ -102,7 +102,7 @@ def gwosc_frame_json(ifo, start_time, end_time):
     if os.getenv("GITHUB_ACTIONS") == "true":
         # GWOSC is flaky on GitHub Actions. Use backup server instead
         # Backup is likely out of date, so this is only for the CI
-        backup_fname = 'gwosc_frame_json_{ifo}_{start_time}_{end_time}.json'
+        backup_fname = f'gwosc_frame_json_{ifo}_{start_time}_{end_time}.json'
         # REMOVE THIS BEFORE MERGING
         print(backup_fname, "GWOSC BACKUP")
         url = base_backup_url.format(backup_fname)
