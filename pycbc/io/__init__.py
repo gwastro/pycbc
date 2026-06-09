@@ -25,7 +25,7 @@ def get_file(url, retry=5, **args):
             basename = os.path.basename(urlparse(url).path)
             if basename.endswith('hdf5') or basename.endswith('gwf'):
                 # Just download file directly from backup
-                url = base_backup_url.format(basename)
+                url = base_lfs_backup_url.format(basename)
             else:
                 print(url)
                 raise ValueError("Need to handle this")
