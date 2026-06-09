@@ -531,8 +531,13 @@ def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
 
 def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
     """Wrapper of lalsimulation template duration approximate formula"""
-    m1, m2, s1z, s2z, f_low = float(m1), float(m2), float(s1z), float(s2z),\
-                              float(f_low)
+    m1_raw, m2_raw, s1z, s2z, f_low_raw = float(m1), float(m2), float(s1z),\
+                                            float(s2z), float(f_low)
+    # scale masses and frequency to avoid high-mass overflow errors
+    scale = (m1 + m2)/70.
+    m1 = m1_raw / scale
+    m2 = m2_raw / scale
+    f_low = f_low_raw * scale
     if approximant == "SEOBNRv2":
         chi = lalsim.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
         time_length = lalsim.SimIMRSEOBNRv2ChirpTimeSingleSpin(
@@ -559,30 +564,9 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
         )
     else:
         raise RuntimeError("I can't calculate a duration for %s" % approximant)
-    if time_length <= 0.:
-        # FD approximants can overflow for high masses; use default if so
-        logging.warning(f'IMR duration estimator for approximant {approximant} '
-                        'returns a negative value. This is likely due to '
-                        'overflow at high masses. Calculating duration with '
-                        'SEOBNRv4')
-        time_length = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
-                           f_low, m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z)
-    elif approximant not in ["SEOBNRv4", "SEOBNRv4_ROM"] and m1 + m2 >= 1e5:
-        # Catch significant numerical error accumulation before the sign flip
-        seobnrv4_time = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
-                           f_low, m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z)
-        diff = abs(time_length - seobnrv4_time)
-        # Fallback if relative error is > 1%
-        if seobnrv4_time > 0 and (diff / seobnrv4_time > 0.01):
-            logging.warning('IMR duration estimator for approximant '
-                            f'{approximant} deviates significantly from '
-                            'SEOBNRv4. This is likely due to numerical error '
-                            'at high masses. Calculating duration with '
-                            'SEOBNRv4')
-            time_length = seobnrv4_time
     # FIXME Add an extra factor of 1.1 for 'safety' since the duration
     # functions are approximate
-    return time_length * 1.1
+    return time_length * 1.1 * scale
 
 get_imr_duration = numpy.vectorize(_get_imr_duration)
 
