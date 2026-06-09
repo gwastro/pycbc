@@ -7,6 +7,7 @@ from pycbc import inference
 from pycbc.inference import io
 from pycbc.inference.models import read_from_config
 from pycbc.workflow import WorkflowConfigParser
+from pycbc.io import get_file
 
 class TestBHSpecModel(unittest.TestCase):
     @classmethod
