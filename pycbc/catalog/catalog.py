@@ -27,7 +27,7 @@ compact binary mergers
 """
 import logging
 import json
-import socket # To catch timeout exception
+from urllib.error import URLError # For error catching
 
 from pycbc.io import get_file
 
@@ -46,7 +46,7 @@ def lvk_catalogs():
     _backup_source = base_backup_url.format('catalog_list.json')
     try:
         catalog_list = json.load(open(get_file(_catalog_source), 'r'))
-    except (socket.timeout) as exc: # Might need more potential errors here
+    except (URLError) as exc: # Might need more potential errors here
         logger.warn("GWOSC failed. Using backup which may not be up to date")
         catalog_list = json.load(open(get_file(_backup_source), 'r'))
     return catalog_list
@@ -87,7 +87,7 @@ def get_source(source):
         if catalog_type == 'LVK':
             try:
                 fname = get_file(base_lvc_url.format(source), cache=True)
-            except (socket.timeout) as exc: # Might need more potential errors
+            except (URLError) as exc: # Might need more potential errors
                 logger.warn("GWOSC failed. Using backup which may not be up to date")
                 backup_url = base_backup_url.format('catalog_{source}.json')
                 fname = get_file(backup_url, cache=True)
