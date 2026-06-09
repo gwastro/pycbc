@@ -1,3 +1,4 @@
+import os
 import logging
 from astropy.utils.data import download_file
 from .hdf import *
