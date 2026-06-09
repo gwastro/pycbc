@@ -1,7 +1,6 @@
 import os
 import json
 import unittest
-import urllib.request
 import pycbc
 from pycbc import conversions
 from pycbc import inference
