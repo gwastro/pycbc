@@ -39,7 +39,7 @@ logger = logging.getLogger('pycbc.catalog.catalog')
 # LVC catalogs
 base_lvc_url = "https://www.gwosc.org/eventapi/jsonfull/{}/"
 # Backup URL in case GWOSC fails
-base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/{}"
+base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{}"
 
 def lvk_catalogs():
     _catalog_source = "https://gwosc.org/eventapi/json/"
