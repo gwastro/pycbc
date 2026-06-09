@@ -35,12 +35,8 @@ class TestBHSpecModel(unittest.TestCase):
             # strip off the instrument name
             frame_file = frame_file.split(":")[-1]
             if not os.path.exists(frame_file):
-                if os.getenv("GITHUB_ACTIONS") == "true":
-                    # GWOSC is flaky on GitHub Actions.
-                    get_file(base_backup_url.format(frame_file))
-                else:
-                    url = os.path.join(cls.frame_files_url, frame_file)
-                    urllib.request.urlretrieve(url, frame_file)
+                url = os.path.join(cls.frame_files_url, frame_file)
+                get_file(url)
 
         # Load expected parameter values and expected loglikelihood from
         # the JSON file
