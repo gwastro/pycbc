@@ -28,6 +28,7 @@ compact binary mergers
 import os
 import logging
 import numpy
+from urllib.parse import urlparse
 
 logger = logging.getLogger('pycbc.catalog')
 
