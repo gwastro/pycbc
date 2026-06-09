@@ -1,6 +1,7 @@
 import os
 import logging
 from astropy.utils.data import download_file
+from urllib.parse import urlparse
 from .hdf import *
 from .record import *
 from .gracedb import *
