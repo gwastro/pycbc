@@ -89,7 +89,7 @@ def get_source(source):
                 fname = get_file(base_lvc_url.format(source), cache=True)
             except (URLError) as exc: # Might need more potential errors
                 logger.warn("GWOSC failed. Using backup which may not be up to date")
-                backup_url = base_backup_url.format('catalog_{source}.json')
+                backup_url = base_backup_url.format(f'catalog_{source}.json')
                 fname = get_file(backup_url, cache=True)
 
             data = json.load(open(fname, 'r'))
