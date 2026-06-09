@@ -17,9 +17,11 @@
 This modules contains functions for getting data from the Gravitational Wave
 Open Science Center (GWOSC).
 """
+import os
 import logging
 import json
 from urllib.request import urlopen
+from urllib.parse import urlparse
 
 from pycbc.io import get_file
 from pycbc.frame import read_frame
@@ -27,6 +29,7 @@ from pycbc.frame import read_frame
 logger = logging.getLogger('pycbc.frame.gwosc')
 
 _GWOSC_URL = "https://www.gwosc.org/archive/links/%s/%s/%s/%s/json/"
+base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{}"
 
 
 def get_run(time, ifo=None):
@@ -69,20 +72,6 @@ def _get_channel(time):
     return 'GWOSC-16KHZ_R1_STRAIN'
 
 
-# GWOSC calls can be flaky in the github test CI. Therefore we provide a
-# fallback for the github CI calls here and store data on github so that the
-# CI doesn't fail if GWOSC refuses to serve data.
-_TEST_FALLBACK_MAPs = {
-    ("H1", 1126259446, 1126259478): (
-        "https://raw.githubusercontent.com/your-username/your-test-repo/"
-        "main/data/H1-1126259446-32.json"
-    ),
-    ("L1", 1126259446, 1126259478): (
-        "https://raw.githubusercontent.com/your-username/your-test-repo/"
-        "main/data/L1-1126259446-32.json"
-    ),
-}
-
 def gwosc_frame_json(ifo, start_time, end_time):
     """Get the information about the public data files in a duration of time.
 
@@ -111,26 +100,21 @@ def gwosc_frame_json(ifo, start_time, end_time):
 
     url = _GWOSC_URL % (run, ifo, int(start_time), int(end_time))
 
-    try:
-        print("GWOSC GWOSC GWOSC", run, ifo, start_time, end_time)
-        return json.loads(urlopen(url).read().decode())
-    except Exception as exc:
-        # If GWOSC doesn't respond test the fallback for CI calls
-        input_key = (ifo, int(start_time), int(end_time))
-        if input_key in _TEST_FALLBACK_MAPs:
-            fallback_url = _TEST_FALLBACK_MAPs[input_key]
-            try:
-                # NOTE: May need to change this. Likely will not be JSON!
-                return json.loads(urlopen(fallback_url).read().decode())
-            except Exception as fallback_exc:
-                # If the fallback fails, raise an error indicating both failed
-                raise ValueError(
-                    f"Failed to find gwf files via primary URL and fallback for {input_key}"
-                ) from fallback_exc
-        # If not a CI test case, fail if GWOSC doesn't respond
-        msg = ('Failed to find gwf files for '
-               f'ifo={ifo}, run={run}, between {start_time}-{end_time}')
-        raise ValueError(msg) from exc
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        # GWOSC is flaky on GitHub Actions. Use backup server instead
+        # Backup is likely out of date, so this is only for the CI
+        backup_fname = 'gwosc_frame_json_{ifo}_{start_time}_{end_time}.json'
+        # REMOVE THIS BEFORE MERGING
+        print(backup_fname, "GWOSC BACKUP")
+        url = base_backup_url.format(backup_fname)
+        json.loads(urlopen(url).read().decode())
+    else:
+        try:
+            return json.loads(urlopen(url).read().decode())
+        except Exception as exc:
+            msg = ('Failed to find gwf files for '
+                   f'ifo={ifo}, run={run}, between {start_time}-{end_time}')
+            raise ValueError(msg) from exc
 
 
 def gwosc_frame_urls(ifo, start_time, end_time):
@@ -185,7 +169,13 @@ def read_frame_gwosc(channels, start_time, end_time):
     fnames = {ifo: [] for ifo in ifos}
     for ifo in ifos:
         for url in urls[ifo]:
-            fname = get_file(url, cache=True)
+            if os.getenv("GITHUB_ACTIONS") == "true":
+            # GWOSC is flaky on GitHub Actions. Use backup server instead
+            # Backup is likely out of date, so this is only for the CI
+                backup_name = os.path.basename(urlparse(url).path)
+                fname = get_file(base_backup_url.format(backup_name))
+            else:
+                fname = get_file(url, cache=True)
             fnames[ifo].append(fname)
 
     ts_list = [read_frame(fnames[channel[0:2]], channel,
