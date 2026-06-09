@@ -25,6 +25,7 @@
 """ This package provides information about LIGO/Virgo detections of
 compact binary mergers
 """
+import os
 import logging
 import numpy
 
@@ -37,6 +38,9 @@ _aliases['mass2'] = 'mass_2_source'
 _aliases['snr'] = 'network_matched_filter_snr'
 _aliases['z'] = _aliases['redshift'] = 'redshift'
 _aliases['distance'] = 'luminosity_distance'
+
+# Backup URL in case GWOSC fails
+base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{}"
 
 def find_event_in_catalog(name, source=None):
     """ Get event data from a catalog
@@ -160,7 +164,13 @@ class Merger(object):
         channel = "{}:GWOSC-{}_{}_STRAIN".format(
                 ifo, sampling_map[sample_rate], ver)
 
-        filename = get_file(url, cache=True)
+        if os.getenv("GITHUB_ACTIONS") == "true":
+            # GWOSC is flaky on GitHub Actions. Use backup server instead
+            # Backup is likely out of date, so this is only for the CI
+            backup_name = os.path.basename(urlparse(url).path)
+            filename = get_file(base_backup_url.format(backup_name))
+        else:
+            filename = get_file(url, cache=True)
         return read_frame(str(filename), str(channel))
 
 
