@@ -170,8 +170,8 @@ def read_frame_gwosc(channels, start_time, end_time):
     for ifo in ifos:
         for url in urls[ifo]:
             if os.getenv("GITHUB_ACTIONS") == "true":
-            # GWOSC is flaky on GitHub Actions. Use backup server instead
-            # Backup is likely out of date, so this is only for the CI
+                # GWOSC is flaky on GitHub Actions. Use backup server instead
+                # Backup is likely out of date, so this is only for the CI
                 backup_name = os.path.basename(urlparse(url).path)
                 fname = get_file(base_backup_url.format(backup_name))
             else:
