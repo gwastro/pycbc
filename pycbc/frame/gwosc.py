@@ -20,6 +20,7 @@ Open Science Center (GWOSC).
 import os
 import logging
 import json
+import hashlib
 from urllib.request import urlopen
 
 from pycbc.io import get_file
@@ -99,26 +100,12 @@ def gwosc_frame_json(ifo, start_time, end_time):
 
     url = _GWOSC_URL % (run, ifo, int(start_time), int(end_time))
 
-    if os.getenv("GITHUB_ACTIONS") == "true":
-        # GWOSC is flaky on GitHub Actions. Use backup server instead
-        # Backup is likely out of date, so this is only for the CI
-        backup_fname = f'gwosc_frame_json_{ifo}_{start_time}_{end_time}.json'
-        # REMOVE THIS BEFORE MERGING
-        print("GWOSC DEBUG GWOSC DEBUG")
-        cleaned_url = url.strip().lower()
-        hash_object = hashlib.md5(cleaned_url.encode('utf-8'))
-        hh = hash_object.hexdigest()
-        print(url, hh)
-
-        url = base_backup_url.format(backup_fname)
-        json.loads(urlopen(url).read().decode())
-    else:
-        try:
-            return json.loads(urlopen(url).read().decode())
-        except Exception as exc:
-            msg = ('Failed to find gwf files for '
-                   f'ifo={ifo}, run={run}, between {start_time}-{end_time}')
-            raise ValueError(msg) from exc
+    try:
+        return json.load(open(get_file(url, cache=False), 'r'))
+    except Exception as exc:
+        msg = ('Failed to find gwf files for '
+                f'ifo={ifo}, run={run}, between {start_time}-{end_time}')
+        raise ValueError(msg) from exc
 
 
 def gwosc_frame_urls(ifo, start_time, end_time):
