@@ -27,6 +27,7 @@ compact binary mergers
 """
 import os
 import logging
+import hashlib
 import json
 
 from pycbc.io import get_file
@@ -38,18 +39,10 @@ logger = logging.getLogger('pycbc.catalog.catalog')
 
 # LVC catalogs
 base_lvc_url = "https://www.gwosc.org/eventapi/jsonfull/{}/"
-# Backup URL in case GWOSC fails
-base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{}"
 
 def lvk_catalogs():
     _catalog_source = "https://gwosc.org/eventapi/json/"
-    _backup_source = base_backup_url.format('catalog_list.json')
-    if os.getenv("GITHUB_ACTIONS") == "true":
-        # GWOSC is flaky on GitHub Actions. Use backup server instead
-        # Backup is likely out of date, so this is only for the CI
-        catalog_list = json.load(open(get_file(_backup_source), 'r'))
-    else:
-        catalog_list = json.load(open(get_file(_catalog_source), 'r'))
+    catalog_list = json.load(open(get_file(_catalog_source), 'r'))
     return catalog_list
     
 def populate_catalogs():
@@ -86,14 +79,7 @@ def get_source(source):
     if source in _catalogs:
         catalog_type = _catalogs[source]
         if catalog_type == 'LVK':
-            if os.getenv("GITHUB_ACTIONS") == "true":
-                # GWOSC is flaky on GitHub Actions. Use backup server instead
-                # Backup is likely out of date, so this is only for the CI
-                backup_url = base_backup_url.format(f'catalog_{source}.json')
-                fname = get_file(backup_url, cache=True)
-            else:
-                fname = get_file(base_lvc_url.format(source), cache=True)
-
+            fname = get_file(base_lvc_url.format(source), cache=True)
             data = json.load(open(fname, 'r'))
     else:
         raise ValueError('Unkown catalog source {}'.format(source))

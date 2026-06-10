@@ -104,7 +104,12 @@ def gwosc_frame_json(ifo, start_time, end_time):
         # Backup is likely out of date, so this is only for the CI
         backup_fname = f'gwosc_frame_json_{ifo}_{start_time}_{end_time}.json'
         # REMOVE THIS BEFORE MERGING
-        print(backup_fname, "GWOSC BACKUP")
+        print("GWOSC DEBUG GWOSC DEBUG")
+        cleaned_url = url.strip().lower()
+        hash_object = hashlib.md5(cleaned_url.encode('utf-8'))
+        hh = hash_object.hexdigest()
+        print(url, hh)
+
         url = base_backup_url.format(backup_fname)
         json.loads(urlopen(url).read().decode())
     else:

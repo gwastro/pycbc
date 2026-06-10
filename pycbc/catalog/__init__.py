@@ -38,7 +38,6 @@ _aliases['snr'] = 'network_matched_filter_snr'
 _aliases['z'] = _aliases['redshift'] = 'redshift'
 _aliases['distance'] = 'luminosity_distance'
 
-
 def find_event_in_catalog(name, source=None):
     """ Get event data from a catalog
     

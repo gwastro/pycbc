@@ -31,11 +31,11 @@ def get_file(url, retry=5, **args):
             else:
                 cleaned_url = url.strip().lower()
                 hash_object = hashlib.md5(cleaned_url.encode('utf-8'))
-                new_url = base_backup_url.format(hash_object + '.json')
+                hh = hash_object.hexdigest()
+                new_url = base_backup_url.format(hh + '.json')
                 print("GWOSC DEBUG GWOSC DEBUG")
-                print(url, hash_object + '.json')
-                # url = new_url
-                raise ValueError("Need to handle this")
+                print(url, hh + '.json')
+                url = new_url
 
     i = 0
     while True:
