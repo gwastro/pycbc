@@ -1,6 +1,7 @@
 import os
 import logging
 from astropy.utils.data import download_file
+import hashlib
 from urllib.parse import urlparse
 from .hdf import *
 from .record import *
@@ -28,7 +29,12 @@ def get_file(url, retry=5, **args):
                 logger.warning("Redirecting %s to backup URL", url)
                 url = base_lfs_backup_url.format(basename)
             else:
-                print(url)
+                cleaned_url = url.strip().lower()
+                hash_object = hashlib.md5(cleaned_url.encode('utf-8'))
+                new_url = base_backup_url.format(hash_object + '.json')
+                print("GWOSC DEBUG GWOSC DEBUG")
+                print(url, hash_object + '.json')
+                # url = new_url
                 raise ValueError("Need to handle this")
 
     i = 0
