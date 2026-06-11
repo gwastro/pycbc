@@ -13,6 +13,11 @@ logger = logging.getLogger('pycbc.io')
 base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{}"
 base_lfs_backup_url = "https://media.githubusercontent.com/media/gwastro/pycbc_data/master/{}"
 
+# spoofed browser headers might help(?)
+custom_headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
+
 def get_file(url, retry=5, **args):
     """ Retrieve file with retry upon failure
 
@@ -36,6 +41,10 @@ def get_file(url, retry=5, **args):
                 print("GWOSC DEBUG GWOSC DEBUG")
                 print(url, hh + '.json')
                 url = new_url
+            # Set some args specific for the GitHub -> GOWSC redirect case
+            args['cache'] = False # Don't allow caching here
+            args['timeout'] = 60 
+            args['http_headers'] = custom_headers
 
     i = 0
     while True:
