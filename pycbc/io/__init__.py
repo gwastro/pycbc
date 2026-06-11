@@ -33,6 +33,7 @@ def get_file(url, retry=5, **args):
                 # Just download file directly from backup
                 logger.warning("Redirecting %s to backup URL", url)
                 url = base_lfs_backup_url.format(basename)
+                logger.warning("New URL is %s", url)
             else:
                 cleaned_url = url.strip().lower()
                 hash_object = hashlib.md5(cleaned_url.encode('utf-8'))
