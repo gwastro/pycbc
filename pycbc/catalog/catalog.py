@@ -25,9 +25,7 @@
 """ This modules contains information about the announced LIGO/Virgo
 compact binary mergers
 """
-import os
 import logging
-import hashlib
 import json
 
 from pycbc.io import get_file

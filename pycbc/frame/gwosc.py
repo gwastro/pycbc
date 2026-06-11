@@ -17,11 +17,8 @@
 This modules contains functions for getting data from the Gravitational Wave
 Open Science Center (GWOSC).
 """
-import os
 import logging
 import json
-import hashlib
-from urllib.request import urlopen
 
 from pycbc.io import get_file
 from pycbc.frame import read_frame
@@ -29,7 +26,6 @@ from pycbc.frame import read_frame
 logger = logging.getLogger('pycbc.frame.gwosc')
 
 _GWOSC_URL = "https://www.gwosc.org/archive/links/%s/%s/%s/%s/json/"
-base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{}"
 
 
 def get_run(time, ifo=None):
@@ -104,7 +100,7 @@ def gwosc_frame_json(ifo, start_time, end_time):
         return json.load(open(get_file(url, cache=False), 'r'))
     except Exception as exc:
         msg = ('Failed to find gwf files for '
-                f'ifo={ifo}, run={run}, between {start_time}-{end_time}')
+               f'ifo={ifo}, run={run}, between {start_time}-{end_time}')
         raise ValueError(msg) from exc
 
 
