@@ -169,9 +169,9 @@ class Merger(object):
                 ifo, sampling_map[sample_rate], ver)
 
         filename = get_file(url, cache=True)
-        head(filename)
-        head(str(filename))
-        return read_frame(str(filename), str(channel))
+        #head(filename)
+        #head(str(filename))
+        return read_frame(filename, str(channel))
 
 
 class Catalog(object):
