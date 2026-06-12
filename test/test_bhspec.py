@@ -1,6 +1,7 @@
 import os
 import json
 import unittest
+import shutil
 import pycbc
 from pycbc import conversions
 from pycbc import inference
@@ -34,7 +35,8 @@ class TestBHSpecModel(unittest.TestCase):
             frame_file = frame_file.split(":")[-1]
             if not os.path.exists(frame_file):
                 url = os.path.join(cls.frame_files_url, frame_file)
-                get_file(url)
+                tmp_path = get_file(url)
+                shutil.move(tmp_path, frame_file)
 
         # Load expected parameter values and expected loglikelihood from
         # the JSON file
