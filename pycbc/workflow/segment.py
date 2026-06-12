@@ -319,7 +319,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     min_seg = segments.segment(triggertime - onbefore - minbefore - padding,
                                triggertime + onafter + minafter + padding)
     scisegs = segments.segmentlistdict({ifo: sciencesegs[ifo]
-            for ifo in sciencesegs.keys() if min_seg in sciencesegs[ifo]
+            for ifo in sciencesegs if min_seg in sciencesegs[ifo]
             and abs(sciencesegs[ifo]) >= minduration})
     # Find highest number of IFOs that give an acceptable coherent segment
     num_ifos = len(scisegs)
@@ -337,30 +337,26 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                     workflow, segs)
 
         # Which combination gives the longest coherent segment?
-        valid_combs = [iifos for iifos in onsource.keys()
+        valid_combs = [iifos for iifos in onsource
                        if onsource[iifos] is not None]
 
         if len(valid_combs) == 0:
             # If none, offsource dict will contain segments showing criteria
             # that have not been met, for use in plotting
-            if len(offsource.keys()) > 1:
-                seg_lens = {ifos: abs(next(offsource[ifos].values())[0])
-                            for ifos in offsource.keys()}
-                best_comb = max(seg_lens.iterkeys(),
-                                key=(lambda key: seg_lens[key]))
-            else:
-                best_comb = tuple(offsource.keys())[0]
+            seg_lens = {
+                ifos: abs(next(iter(offsource[ifos].values()))[0])
+                for ifos in offsource
+            }
+            best_comb = max(seg_lens, key=seg_lens.get)
             logger.info("No combination of %d IFOs with suitable science "
                         "segment.", num_ifos)
         else:
             # Identify best analysis segment
-            if len(valid_combs) > 1:
-                seg_lens = {ifos: abs(next(offsource[ifos].values())[0])
-                            for ifos in valid_combs}
-                best_comb = max(seg_lens.iterkeys(),
-                                key=(lambda key: seg_lens[key]))
-            else:
-                best_comb = valid_combs[0]
+            seg_lens = {
+                ifos: abs(next(iter(offsource[ifos].values()))[0])
+                for ifos in valid_combs
+            }
+            best_comb = max(seg_lens, key=seg_lens.get)
             logger.info("Calculated science segments.")
 
             offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
