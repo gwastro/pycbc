@@ -28,6 +28,14 @@ compact binary mergers
 import logging
 import numpy
 
+def head(filename, num_lines=10):
+    with open(filename, 'r', encoding='utf-8') as file:
+        for _ in range(num_lines):
+            line = file.readline()
+            if not line:
+                break  # Stop if the file has fewer lines than num_lines
+            print(line, end='')  # end='' prevents double spacing
+
 logger = logging.getLogger('pycbc.catalog')
 
 _aliases = {}
@@ -161,6 +169,8 @@ class Merger(object):
                 ifo, sampling_map[sample_rate], ver)
 
         filename = get_file(url, cache=True)
+        head(filename)
+        head(str(filename))
         return read_frame(str(filename), str(channel))
 
 
