@@ -51,7 +51,15 @@ def get_file(url, retry=5, **args):
     while True:
         i += 1
         try:
-            return download_file(url, **args)
+            filpath = download_file(url, **args)
+            print("GWOSC DEBUG", filpath)
+            with open(filpath, "rb") as f:
+                # Pass the file object directly to file_digest
+                digest = hashlib.file_digest(f, "md5")
+
+            # Print the hex string
+            print("DEBUG", digest.hexdigest())
+            return filpath
         except Exception as e:
             logger.warning("Failed on attempt %d to download %s", i, url)
             if i >= retry:
