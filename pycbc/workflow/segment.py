@@ -161,8 +161,9 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     Returns
     --------
-    onsource : igwn_segments.segmentlistdict
-        A dictionary containing the on source segments for network IFOs
+    onsource : igwn_segments.segmentlistdict or None
+        A dictionary containing the on source segments for network IFOs,
+        or None if no segments are available for the onsource.
 
     offsource : igwn_segments.segmentlistdict
         A dictionary containing the off source segments for network IFOs
@@ -207,7 +208,10 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
                                  triggertime + minduration / 2. + padding])
         logger.warning("Available network segment shorter than minimum "
                        "allowed duration.")
-        return None, fail
+        offsource = segments.segmentlistdict()
+        for iifo in sciencesegs:
+            offsource[iifo] = segments.segmentlist([fail])
+        return None, offsource
 
     # Will segment duration be the maximum desired length or not?
     if abs(offsrc) >= maxduration + 2 * padding:
@@ -239,7 +243,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
                                     0.5 * maxduration))
 
     # Construct off-source
-    if (idealsegment in offsrc):
+    if idealsegment in offsrc:
         offsrc = idealsegment
 
     elif idealsegment[1] not in offsrc:
@@ -281,9 +285,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
     # Put segments into segmentlistdicts
     onsource = segments.segmentlistdict()
     offsource = segments.segmentlistdict()
-    ifos = ''
     for iifo in sciencesegs.keys():
-        ifos += str(iifo)
         onsource[iifo] = onsrc
         offsource[iifo] = offsrc
 
@@ -333,7 +335,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
             logger.info("Calculating optimal segment for %s.", ifos)
             segs = segments.segmentlistdict({ifo: scisegs[ifo]
                                              for ifo in ifo_combo})
-            onsource[ifos], offsource[ifos] = get_triggered_coherent_segment(\
+            onsource[ifos], offsource[ifos] = get_triggered_coherent_segment(
                     workflow, segs)
 
         # Which combination gives the longest coherent segment?
@@ -357,7 +359,10 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                 for ifos in valid_combs
             }
             best_comb = max(seg_lens, key=seg_lens.get)
-            logger.info("Calculated science segments.")
+            logger.info(
+                "Calculated science segments, best combination is %s",
+                best_comb
+            )
 
             offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
             segmentsUtils.tosegwizard(open(offsourceSegfile, "w"),
@@ -372,7 +377,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
             bufferright = int(cp.get('workflow-exttrig_segments',
                                      'num-buffer-after'))
             onlen = onbefore + onafter
-            bufferSegment = segments.segment(\
+            bufferSegment = segments.segment(
                     triggertime - onbefore - bufferleft * onlen,
                     triggertime + onafter + bufferright * onlen)
             bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
