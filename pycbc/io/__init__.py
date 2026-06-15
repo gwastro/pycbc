@@ -43,7 +43,7 @@ def get_file(url, retry=5, **args):
                 print(url, hh + '.json')
                 url = new_url
             # Set some args specific for the GitHub -> GOWSC redirect case
-            args['cache'] = False # Don't allow caching here
+            args['cache'] = True # Enforce caching here
             args['timeout'] = 60 
             args['http_headers'] = custom_headers
 
