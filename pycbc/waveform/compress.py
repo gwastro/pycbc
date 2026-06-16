@@ -288,9 +288,9 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         # If there are no bad segments, we still try to add the first single
         # one (can be large numerical error in the veddiff calculation, so
         # rounding cause all to be below the tolerance yet thte full fails).
-        num_select = min(max_batch_size, (num_bad // 4 + 1))
+        num_select = min(max_batch_size, (num_bad // 2 + 1))
         # Hueristic to add multiple points if size is already large
-        num_select = max(num_select, len(vecdiffs) // 50)
+        num_select = max(num_select, len(vecdiffs) // 20)
         selected_segments = vsort[:num_select]
 
         # --- 2. Propose new points ---
