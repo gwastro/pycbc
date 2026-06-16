@@ -46,6 +46,14 @@ def get_file(url, retry=5, **args):
             args['cache'] = True # Enforce caching here
             args['timeout'] = 60 
             args['http_headers'] = custom_headers
+    else:
+        if "gwosc.org/" in url:
+            cleaned_url = url.strip().lower()
+            hash_object = hashlib.md5(cleaned_url.encode('utf-8'))
+            hh = hash_object.hexdigest()
+            new_url = base_backup_url.format(hh + '.json')
+            print("GWOSC DEBUG GWOSC DEBUG")
+            print(url, hh + '.json')
 
     i = 0
     while True:
