@@ -1,6 +1,6 @@
 import matplotlib.pyplot as pp
-from urllib.request import urlretrieve
 from pycbc.frame import read_frame
+from pycbc.io import get_file
 from pycbc.filter import highpass_fir, matched_filter
 from pycbc.waveform import get_fd_waveform
 from pycbc.psd import welch, interpolate
@@ -9,8 +9,8 @@ from pycbc.psd import welch, interpolate
 # Read data and remove low frequency content
 fname = 'H-H1_LOSC_4_V2-1126259446-32.gwf'
 url = "https://www.gwosc.org/GW150914data/" + fname
-urlretrieve(url, filename=fname)
-h1 = read_frame('H-H1_LOSC_4_V2-1126259446-32.gwf', 'H1:LOSC-STRAIN')
+local_fname = get_file(url, cache=True)
+h1 = read_frame(local_fname, 'H1:LOSC-STRAIN')
 h1 = highpass_fir(h1, 15, 8)
 
 # Calculate the noise spectrum
