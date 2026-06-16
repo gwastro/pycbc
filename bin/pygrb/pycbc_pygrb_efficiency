@@ -591,11 +591,10 @@ if opts.background_output_file:
                 label='No marginalisation')
         ax.errorbar(dist_plot_vals, (fraction_no_mc),
                     yerr=[yerr_low_no_mc, yerr_high_no_mc], c='green')
-        marg_eff = fraction_mc
-        if np.nansum(marg_eff) > 0:
-            ax.plot(dist_plot_vals, marg_eff, 'r-', label='Marginalised')
+        if np.nansum(fraction_mc) > 0:
+            ax.plot(dist_plot_vals, fraction_mc, 'r-', label='Marginalised')
             ax.errorbar(dist_plot_vals,
-                        marg_eff,
+                        fraction_mc,
                         yerr=[yerr_low_mc, yerr_high_mc],
                         c='red')
         ax.legend()
@@ -661,17 +660,13 @@ if opts.exclusion_dist_output_file:
     excl_dist['inj_set'] = inj_set_name
     excl_dist['trial_name'] = opts.trial_name
     excl_dist['inj_dist'] = dist_plot_vals
-    marg_eff = fraction_mc
-    if np.nansum(fraction_no_mc) > 0:
-        excl_dist['eff_no_marg'] = list(np.nan_to_num(fraction_no_mc))
-        excl_dist['eff_no_marg_err_low'] = list(np.nan_to_num(yerr_low_no_mc))
-        excl_dist['eff_no_marg_err_high'] = list(np.nan_to_num(yerr_high_no_mc))
-    if np.nansum(marg_eff) > 0:
-        excl_dist['marg_eff'] = list(np.nan_to_num(marg_eff))
-        excl_dist['marg_eff_err_low'] = list(np.nan_to_num(yerr_low))
-        excl_dist['marg_eff_err_high'] = list(np.nan_to_num(yerr_high))
-    if np.nansum(red_efficiency) > 0:
-        excl_dist['eff_inc_count_err'] = list(np.nan_to_num(red_efficiency))
+    excl_dist['eff_no_marg'] = list(fraction_no_mc)
+    excl_dist['eff_no_marg_err_low'] = list(yerr_low_no_mc)
+    excl_dist['eff_no_marg_err_high'] = list(yerr_high_no_mc)
+    excl_dist['marg_eff'] = list(fraction_mc)
+    excl_dist['marg_eff_err_low'] = list(yerr_low)
+    excl_dist['marg_eff_err_high'] = list(yerr_high)
+    excl_dist['eff_inc_count_err'] = list(red_efficiency)
     with open(opts.exclusion_dist_output_file, 'w') as excl_dist_file:
         json.dump(excl_dist, excl_dist_file)
 
@@ -685,9 +680,9 @@ if opts.onsource_output_file:
                 label='No marginalisation')
         ax.errorbar(dist_plot_vals, (fraction_no_mc),
                     yerr=[yerr_low_no_mc, yerr_high_no_mc], c='green')
-        if np.nansum(marg_eff) > 0:
-            ax.plot(dist_plot_vals, marg_eff, 'r-', label='Marginalised')
-            ax.errorbar(dist_plot_vals, marg_eff, yerr=[yerr_low, yerr_high],
+        if np.nansum(fraction_mc) > 0:
+            ax.plot(dist_plot_vals, fraction_mc, 'r-', label='Marginalised')
+            ax.errorbar(dist_plot_vals, fraction_mc, yerr=[yerr_low, yerr_high],
                         c='red')
         if np.nansum(red_efficiency) > 0:
             ax.plot(dist_plot_vals, red_efficiency, 'm-',
