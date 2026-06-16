@@ -35,8 +35,7 @@ class TestBHSpecModel(unittest.TestCase):
             frame_file = frame_file.split(":")[-1]
             if not os.path.exists(frame_file):
                 url = os.path.join(cls.frame_files_url, frame_file)
-                tmp_path = get_file(url)
-                shutil.move(tmp_path, frame_file)
+                frame_file = get_file(url, cache=True)
 
         # Load expected parameter values and expected loglikelihood from
         # the JSON file
