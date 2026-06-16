@@ -35,7 +35,7 @@ class TestBHSpecModel(unittest.TestCase):
             frame_file = frame_file.split(":")[-1]
             if not os.path.exists(frame_file):
                 url = os.path.join(cls.frame_files_url, frame_file)
-                frame_file = get_file(url, cache=False)
+                tmp_path = get_file(url, cache=False)
                 # Naming matters here, so we move the file to something named
                 # in accordance with the frame-file specification.
                 shutil.move(tmp_path, frame_file)
