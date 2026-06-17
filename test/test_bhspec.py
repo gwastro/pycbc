@@ -1,13 +1,14 @@
 import os
 import json
 import unittest
-import urllib.request
+import shutil
 import pycbc
 from pycbc import conversions
 from pycbc import inference
 from pycbc.inference import io
 from pycbc.inference.models import read_from_config
 from pycbc.workflow import WorkflowConfigParser
+from pycbc.io import get_file
 
 class TestBHSpecModel(unittest.TestCase):
     @classmethod
@@ -34,7 +35,10 @@ class TestBHSpecModel(unittest.TestCase):
             frame_file = frame_file.split(":")[-1]
             if not os.path.exists(frame_file):
                 url = os.path.join(cls.frame_files_url, frame_file)
-                urllib.request.urlretrieve(url, frame_file)
+                tmp_path = get_file(url, cache=False)
+                # Naming matters here, so we move the file to something named
+                # in accordance with the frame-file specification.
+                shutil.move(tmp_path, frame_file)
 
         # Load expected parameter values and expected loglikelihood from
         # the JSON file
