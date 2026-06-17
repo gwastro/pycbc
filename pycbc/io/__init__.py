@@ -28,16 +28,23 @@ def get_file(url, retry=5, **args):
             basename = os.path.basename(urlparse(url).path)
             if basename.endswith('hdf5') or basename.endswith('gwf'):
                 # Just download file directly from backup
-                logger.warning("Redirecting %s to backup URL", url)
-                url = base_lfs_backup_url.format(basename)
-                logger.warning("New URL is %s", url)
+                new_url = base_lfs_backup_url.format(basename)
+                logger.warning(
+                    "Redirecting GWOSC URL %s to backup url %s",
+                    url,
+                    new_url
+                )
+                url = new_url
             else:
                 cleaned_url = url.strip().lower()
                 hash_object = hashlib.md5(cleaned_url.encode('utf-8'))
                 hh = hash_object.hexdigest()
                 new_url = base_backup_url.format(hh + '.json')
-                logger.warning("Redirecting %s to backup URL", url)
-                logger.warning("New URL is %s", new_url)
+                logger.warning(
+                    "Redirecting GWOSC URL %s to backup url %s",
+                    url,
+                    new_url
+                )
                 url = new_url
     while True:
         i += 1

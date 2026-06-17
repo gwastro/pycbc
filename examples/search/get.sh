@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-# Not downloading frames from GWOSC to avoid failure to respond errors on
-# the test suite.
-# The commented commands below are how to get the frame files from GWOSC if you
+# Not downloading frames from dcc.ligo.org to avoid failures.
+# DCC often is not responsive to queries from within the GitHub CI.
+# The commented commands below are how to get the frame files from DCC if you
 # wanted to verify they are the same.
 
 #wget -nv https://dcc.ligo.org/public/0146/P1700341/001/H-H1_LOSC_CLN_4_V1-1186740069-3584.gwf

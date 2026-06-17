@@ -5,8 +5,8 @@ do
     file=${ifo}_GWOSC_4KHZ_R1-1126257415-4096.gwf
     test -f ${file} && continue
 
-    # Not downloading frames from GWOSC to avoid failure to respond errors on
-    # the test suite.
+    # Not downloading frames from GWOSC to avoid failures.
+    # GWOSC often is not responsive to queries from within the GitHub CI.
     # The commented command below is how to get the frame from GWOSC if you
     # wanted to verify they are the same.
 
