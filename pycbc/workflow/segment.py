@@ -105,6 +105,10 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
     if cp.has_option("workflow-segments", "segments-veto-definer-url"):
         veto_definer = save_veto_definer(workflow.cp, out_dir)
 
+    cache = cp.has_option_tags("workflow-segments", 'enable-query-caching', tags)
+    if cache:
+        logger.info('Caching query')
+
     # Check for provided server
     server = "https://segments.ligo.org"
     if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
@@ -128,7 +132,7 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
     for ifo in workflow.ifos:
         flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
         key = ifo + ':' + name
-        
+
         if flag_str.upper() == "OFF":
             segs[key] = segments.segmentlist([])
         elif flag_str.upper() == "ON":
@@ -137,7 +141,7 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
         else:
             segs[key] = query_str(ifo, flag_str, start, end,
                                   source=source, server=server,
-                                  veto_definer=veto_definer)
+                                  veto_definer=veto_definer, cache=cache)
         logger.info("%s: got %s flags", ifo, option_name)
 
     return SegFile.from_segment_list_dict(name, segs,
@@ -432,6 +436,10 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
     if cp.has_option("workflow-segments", "segments-veto-definer-url"):
         veto_definer = save_veto_definer(workflow.cp, out_dir)
 
+    cache = cp.has_option_tags("workflow-segments", 'enable-query-caching', tags)
+    if cache:
+        logger.info('Caching query')
+
     # Check for provided server
     server = "https://segments.ligo.org"
     if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
@@ -461,7 +469,7 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
                 key = ifo + ':' + flag_name
                 segs[key] = query_str(ifo, flag, start, end,
                                       source=source, server=server,
-                                      veto_definer=veto_definer)
+                                      veto_definer=veto_definer, cache=cache)
                 logger.info("%s: got %s segments", ifo, flag_name)
         else:
             logger.info("%s: no segments requested", ifo)

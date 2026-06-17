@@ -162,7 +162,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
         # LIGO / Virgo operation!!!!
         if (('_HW_INJ' in segment_name and 'NO' not in segment_name) or
                 'VETO' in segment_name):
-            data = query_flag(ifo, 'DATA', start_time, end_time)
+            data = query_flag(ifo, 'DATA', start_time, end_time, cache=cache)
 
             if '_HW_INJ' in segment_name:
                 name = 'NO_' + segment_name
@@ -177,7 +177,6 @@ def query_flag(ifo, segment_name, start_time, end_time,
             url = GWOSC_URL.format(get_run(start_time + duration/2, ifo),
                                    ifo, segment_name,
                                    int(start_time), int(duration))
-
             fname = get_file(url, cache=cache, timeout=10)
             data = json.load(open(fname, 'r'))
             if 'segments' in data:
@@ -385,7 +384,8 @@ def parse_flag_str(flag_str):
 
 
 def query_str(ifo, flag_str, start_time, end_time, source='any',
-              server="https://segments.ligo.org", veto_definer=None):
+              server="https://segments.ligo.org", veto_definer=None, 
+              cache=False):
     """ Query for flags based on a special str syntax
 
     Parameters
@@ -411,6 +411,8 @@ def query_str(ifo, flag_str, start_time, end_time, source='any',
     veto_definer: str, Optional
         The path to a veto definer to define groups of flags which
         themselves define a set of segments.
+    cache: boolean, Optional
+        Cache the output. The default is False
 
     Returns
     -------
@@ -429,7 +431,8 @@ def query_str(ifo, flag_str, start_time, end_time, source='any',
                                   veto_definer=veto_definer,
                                   bounds=bounds,
                                   padding=padding,
-                                  override_ifos=ifos)
+                                  override_ifos=ifos,
+                                  cache=cache)
 
     mseg = query_cumulative_flags(ifo, down, start_time, end_time,
                                   source=source,
@@ -437,7 +440,8 @@ def query_str(ifo, flag_str, start_time, end_time, source='any',
                                   veto_definer=veto_definer,
                                   bounds=bounds,
                                   padding=padding,
-                                  override_ifos=ifos)
+                                  override_ifos=ifos,
+                                  cache=cache)
 
     segs = (segs - mseg).coalesce()
     return segs
