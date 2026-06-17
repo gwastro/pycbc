@@ -39,8 +39,6 @@ def get_file(url, retry=5, **args):
                 logger.warning("Redirecting %s to backup URL", url)
                 logger.warning("New URL is %s", new_url)
                 url = new_url
-            # Set some args specific for the GitHub -> GOWSC redirect case
-            args['cache'] = True # Enforce caching here
     while True:
         i += 1
         try:
