@@ -15,9 +15,9 @@ jobs:
         os: [ubuntu-24.04]
         test-type: [simple_subworkflow_data, multilevel_subworkflow_data]
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.11'
     - name: install condor
@@ -50,7 +50,7 @@ jobs:
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: logs-${{matrix.test-type}}
         path: examples/workflow/generic/${{matrix.test-type}}/submitdir/work
