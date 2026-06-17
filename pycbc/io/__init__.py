@@ -20,6 +20,7 @@ def get_file(url, retry=5, **args):
     Uses the astropy download_file but adds a retry feature for flaky
     connections. See astropy for full options
     """
+    i = 0
     if os.getenv("GITHUB_ACTIONS") == "true":
         # Accessing GWOSC from GitHub Actions is a pain and often fails.
         # If this is in GitHub Actions we divert the URLs to a backup path
