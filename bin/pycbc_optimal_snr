@@ -200,6 +200,8 @@ if __name__ == '__main__':
         for tvpsd_file in opts.time_varying_psds:
             tvpsd = TimeVaryingPSD(tvpsd_file, flen, delta_f, f_low)
             psds[tvpsd.detector] = tvpsd
+        if set(detectors) > set(psd.keys()):
+            detectors = [d for d in detectors if d in psds.keys()]
         if set(detectors) != set(psds.keys()):
             parser.error('Inconsistent detector list in time-varying PSD ' \
                          'specification (%s vs %s)' % (detectors, psds.keys()))
