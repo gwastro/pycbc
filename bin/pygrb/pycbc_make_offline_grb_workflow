@@ -129,9 +129,11 @@ else:
 sciSegs = segmentlistdict(sciSegs)
 if onSrc is None:
     logging.info("Making segment plot and exiting.")
+    # `make_grb_segments_plot()` wants a single segment for fail_criterion.
+    fail_criterion = offSrc[wflow.ifos[0]][0]
     make_grb_segments_plot(
         wflow, sciSegs, triggertime, triggername,
-        seg_dir, fail_criterion=offSrc)
+        seg_dir, fail_criterion=fail_criterion)
     sys.exit()
 
 plot_met = make_grb_segments_plot(

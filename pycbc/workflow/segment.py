@@ -163,7 +163,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
     --------
     onsource : igwn_segments.segmentlistdict or None
         A dictionary containing the on source segments for network IFOs,
-        or None if no segments are available for the onsource.
+        or None if no segments are available that meet the requirements.
 
     offsource : igwn_segments.segmentlistdict
         A dictionary containing the off source segments for network IFOs
