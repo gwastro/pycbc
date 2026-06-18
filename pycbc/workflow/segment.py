@@ -392,6 +392,11 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     try:
         return None, offsource[best_comb], None
     except UnboundLocalError:
+        # Catches the case where the while loop above is never taken.
+        min_seg = segments.segmentlistdict({
+            ifo: segments.segmentlist([min_seg])
+            for ifo in sciencesegs
+        })
         return None, min_seg, None
 
 def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
