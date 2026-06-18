@@ -86,11 +86,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 numpy.random.seed(args.seed)
 
-config_parser = pycbc.types.config.InterpolatingConfigParser()
-file = open(args.input_config, 'r')
-config_parser.read_file(file)
-file.close()
-
+config_parser = pycbc.types.config.InterpolatingConfigParser([args.input_config])
 variable_args, static_args = read_params_from_config(
     config_parser, prior_section='prior',
     vargs_section='variable_params',
