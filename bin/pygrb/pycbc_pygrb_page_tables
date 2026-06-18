@@ -103,7 +103,9 @@ def load_missed_found_injections(hdf_file, ifos, bank_file, snr_threshold=None,
                   'polarization', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
                   'spin2y', 'spin2z', 'tc']
     for ifo in ifos:
-        inj_params.append('optimal_snr_'+ifo)
+        param = 'optimal_snr_'+ifo
+        if param in inj_data['missed'] and param in inj_data['found']:
+            inj_params.append(param)
 
     found_data = {}
     # Missed injections (ones not recovered at all)
