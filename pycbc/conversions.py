@@ -133,7 +133,7 @@ def hypertriangle(*params, bounds=(0, 1)):
     ref_shape = numpy.shape(params[0])
     assert numpy.all([numpy.shape(params[i]) == ref_shape for i in range(len(params))]), \
         "All inputs must have the same number of elements"
-    
+
     # map to numpy array
     params, input_is_array = ensurearray(params)
 
@@ -143,7 +143,7 @@ def hypertriangle(*params, bounds=(0, 1)):
 
     # rescale the parameters to the unit hypercube
     scaled_params = (params - bounds[0])/(bounds[1] - bounds[0])
-    
+
     # hypertriangulate
     try:
         K, num_pts = scaled_params.shape
@@ -214,6 +214,31 @@ def eta_from_mass1_mass2(mass1, mass2):
 def mchirp_from_mass1_mass2(mass1, mass2):
     """Returns the chirp mass from mass1 and mass2."""
     return eta_from_mass1_mass2(mass1, mass2)**(3./5) * (mass1 + mass2)
+
+
+def eccmchirp_from_mass1_mass2_eccentricity(mass1, mass2, eccentricity, method='spa_phase'):
+    """Returns the effective eccentric chirp mass from mass1, mass2 and eccentricity
+
+    Parameters
+    ----------
+    mass1 : float or array
+        Mass of the primary object
+    mass2 : float or array
+        Mass of the secondary object
+    eccentricity : float or array
+        Eccentricity of the orbit (For "fit" method, eccentricity must be defined at 10 Hz.
+        For "spa_phase" method, eccentricity can be defined at any frequency, usually the start
+        frequency of the waveform.)
+    method : str, optiona
+        Method to use for the calculation ("spa_phase", "fit").
+        See `eccmchirp_from_mchirp_eccentricity` for details.
+    """
+    allowed_methods = ("spa_phase", "fit")
+    if method not in allowed_methods:
+        raise ValueError("method must be one of {}".format(allowed_methods))
+    mchirp = mchirp_from_mass1_mass2(mass1, mass2)
+    mchirp_eccentric = eccmchirp_from_mchirp_eccentricity(mchirp, eccentricity, method=method)
+    return mchirp_eccentric
 
 
 def mass1_from_mtotal_q(mtotal, q):
@@ -477,6 +502,161 @@ def mass2_from_tau0_tau3(tau0, tau3, f_lower):
     eta = eta_from_tau0_tau3(tau0, tau3, f_lower)
     return mass2_from_mtotal_eta(mtotal, eta)
 
+
+def eccmchirp_from_mchirp_eccentricity(mchirp, eccentricity, method="spa_phase"):
+    """Return the effective eccentric chirp mass: eccmchirp.
+
+    Parameters
+    ----------
+    mchirp : float or array
+        Chirp mass of the system
+    eccentricity : float or array
+        Eccentricity of the system
+    method : {"spa_phase", "fit"},
+         Method to use for calculation (default is "spa_phase")
+
+        "spa_phase":
+            Effective eccentric mchirp parameter derived from the
+            leading term of the stationary phase approximation (SPA)
+            of the phase of low eccentric system as defined in Eq. 1.1
+            of https://arxiv.org/abs/2108.05861. The eccentricity can
+            be defined at any frequency, usually start frequency of the
+            waveform. The eccentriciy is defiend as the time component
+            of eccentricity from the quasi-Keplerian parametrization of
+            the orbit. The SPA phase only contain dominat (2,2) mode
+            contribution with no higher eccentric harmonics.
+
+        "fit":
+            Effective eccentric mchirp parameter derived from fitting to
+            time-frequency track. The fitting formula is given in Eq. 8 of
+            https://arxiv.org/abs/2107.14736. Eccentricity must be defined
+            at the dominant (2,2) mode GW frequency of 10 Hz.
+    """
+    allowed_methods = ("spa_phase", "fit")
+
+    if method not in allowed_methods:
+        raise ValueError("method must be one of {}".format(allowed_methods))
+
+    mchirp, eccentricity, input_is_array = ensurearray(mchirp, eccentricity)
+
+    e2 = eccentricity * eccentricity
+
+    if method == "spa_phase":
+        Emchirp =  mchirp / (1.0 - 157.0 / 24.0 * e2)**(3.0 / 5.0)
+
+    elif method == "fit":
+        # Constants from Table 1 of https://arxiv.org/abs/2107.14736
+        xi = 0.06110974175360381
+        delta = -0.4193723077257345
+
+        Xi_beta = 0.00801015132110059
+        Delta_beta = -2.14807199936756e-5
+        kappa_beta = 1.12702400406416e-8
+        zeta_beta = -1.9753003183066e-12
+
+        Xi_gamma = 0.024204222771565382
+        Delta_gamma = -6.261945897154536e-6
+        kappa_gamma = 1.1175104924576945e-8
+        zeta_gamma = -3.681726165703978e-12
+
+        mchirp2 = mchirp * mchirp
+
+        # Calculate coefficients (Eq 9)
+        alpha = xi * mchirp + delta
+
+        beta = mchirp2 * ( Xi_beta  +
+                           mchirp2 * ( Delta_beta  +
+                           mchirp2 * ( kappa_beta  +
+                           mchirp2 * zeta_beta )))
+        gamma = mchirp2 * ( Xi_gamma +
+                            mchirp2 * ( Delta_gamma +
+                            mchirp2 * ( kappa_gamma  +
+                            mchirp2 * zeta_gamma )))
+        Emchirp = mchirp * (1 + e2 * (alpha + e2 * (beta + e2 * gamma)))
+    return formatreturn(Emchirp, input_is_array)
+
+def mchirp_from_eccmchirp_eccentricity(eccmchirp, eccentricity, method="spa_phase"):
+    """Return the chirp mass from the effective eccentric chirp mass and eccentricity.
+
+    Parameters
+    ----------
+    eccmchirp : float or array
+        Effective eccentric chirp mass of the system
+    eccentricity : float or array
+        Eccentricity of the system
+    method : {"spa_phase", "fit"},
+         Method to use for calculation (default is "spa_phase")
+
+        "spa_phase":
+            Inverse of the effective eccentric mchirp parameter from
+            Eq. 1.1 of https://arxiv.org/abs/2108.05861. Eccentricity
+            can be defined at any frequency, usually start frequency
+            of the waveform. The eccentriciy is defiend as the time component
+            of eccentricity from the quasi-Keplerian parametrization of the orbit.
+            The SPA phase only contain dominat (2,2) mode contribution with no
+            higher eccentric harmonics.
+
+        "fit":
+            Inverse of the effective eccentric mchirp parameter derived from
+            fitting to time-frequency track. The fitting formula is given in
+            Eq. 8 of https://arxiv.org/abs/2107.14736. Eccentricity must be
+            defined at the dominant (2,2) mode GW frequency of 10 Hz.
+    """
+    allowed_methods = ("spa_phase", "fit")
+
+    if method not in allowed_methods:
+        raise ValueError("method must be one of {}".format(allowed_methods))
+
+    eccmchirp, eccentricity, input_is_array = ensurearray(eccmchirp, eccentricity)
+
+    e2 = eccentricity * eccentricity
+
+    if method == "spa_phase":
+        m = eccmchirp * ( 1 - 157/24 * e2 )**(3/5)
+
+    elif method == "fit":
+        # Constants from Table 1 of https://arxiv.org/abs/2107.14736
+        xi = 0.06110974175360381
+        delta = -0.4193723077257345
+        Xi_beta = 0.00801015132110059
+        Delta_beta = -2.14807199936756e-5
+        kappa_beta = 1.12702400406416e-8
+        zeta_beta = -1.9753003183066e-12
+        Xi_gamma = 0.024204222771565382
+        Delta_gamma = -6.261945897154536e-6
+        kappa_gamma = 1.1175104924576945e-8
+        zeta_gamma = -3.681726165703978e-12
+
+        # Use Newton's method to solve the equation for mchirp
+        # Initial guess using the quadratic approximation
+        A = xi * e2
+        B = 1 + delta * e2
+        C = - eccmchirp
+        m = numpy.where(A > 0, (-B + numpy.sqrt(B**2 - 4*A*C)) / (2*A), eccmchirp)
+
+        for _ in range(5):
+            m2 = m * m
+            alpha = xi * m + delta
+            beta = m2 * ( Xi_beta + m2 * ( Delta_beta +
+                                    m2 * ( kappa_beta +
+                                    m2 * zeta_beta )))
+            gamma = m2 * ( Xi_gamma +
+                                m2 * ( Delta_gamma +
+                                m2 * ( kappa_gamma  +
+                                m2 * zeta_gamma )))
+            f = m * (1 + e2 * (alpha + e2 * ( beta + e2 *gamma ))) - Emchirp
+            d_alpha = xi
+            d_beta = m * ( 2 * Xi_beta + m2 * ( 4 * Delta_beta +
+                                                m2 *( 6 * kappa_beta +
+                                                m2 * 8 * zeta_beta )))
+            d_gamma = m * ( 2 * Xi_gamma + m2 * ( 4 * Delta_gamma +
+                                           m2 * ( 6 * kappa_gamma +
+                                           m2 * 8 * zeta_gamma )))
+            df = (1 + e2 * (alpha  + e2 * ( beta + e2 * gamma )) +
+                 m * e2 * (d_alpha + e2 * ( d_beta + e2 * d_gamma )))
+            m = m - f / df
+
+    return formatreturn(m, input_is_array)
 
 def lambda_tilde(mass1, mass2, lambda1, lambda2):
     """ The effective lambda parameter
@@ -1869,7 +2049,10 @@ def nltides_gw_phase_diff_isco(f_low, f0, amplitude, n, m1, m2):
     return formatreturn(phi_i - phi_l, input_is_array)
 
 
-__all__ = ['dquadmon_from_lambda', 'lambda_tilde',
+__all__ = ['eccmchirp_from_mchirp_eccentricity',
+           'mchirp_from_eccmchirp_eccentricity',
+           'eccmchirp_from_mass1_mass2_eccentricity',
+           'dquadmon_from_lambda', 'lambda_tilde',
            'lambda_from_mass_tov_file', 'primary_mass',
            'secondary_mass', 'mtotal_from_mass1_mass2',
            'q_from_mass1_mass2', 'invq_from_mass1_mass2',
