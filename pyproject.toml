@@ -55,3 +55,6 @@ mpi4py = "*"
 
 [tool.pixi.feature.docs.target.linux-64.pypi-dependencies]
 cupy-cuda12x = "*"
+
+[tool.pixi.target.linux-64.dependencies]
+mkl = "*"
