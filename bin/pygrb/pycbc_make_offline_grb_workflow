@@ -415,8 +415,6 @@ if wflow.cp.has_section("workflow-injections"):
         if not wflow.cp.has_section('calculate_psd'):
             raise ValueError('Optimal SNR calculation requires PSD estimation')
 
-        wflow.cp.set("optimal_snr", "snr-columns", ' '.join([f'{ifo}:optimal_snr_{ifo}' for ifo in wflow.ifos]))
-
         snr_dir = os.path.join(inj_dir, "optimal_snr")
         os.makedirs(snr_dir, exist_ok = True)
     
