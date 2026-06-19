@@ -15,6 +15,7 @@ cxx-compiler = "*"
 gsl = "*"
 mysqlclient = "*"
 blas = { version = "*", build = "*openblas" }
+mpi = { version = "*", build = "openmpi" }
 fftw = "*"
 pytest = "*"
 graphviz = "*"
