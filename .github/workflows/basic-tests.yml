@@ -13,24 +13,19 @@ jobs:
       max-parallel: 60
       matrix:
         os: [ubuntu-24.04]
-        python-env: [py311, py312, py313]
+        python-version: ['3.11', '3.12', '3.13']
         test-type: [unittest, search, docs]
     steps:
     - uses: actions/checkout@v5
 
-    - name: Determine Pixi Environment
-      id: set-pixi-env
-      run: |
-        if [ "${{ matrix.test-type }}" = "unittest" ]; then
-          echo "PIXI_ENV=${{ matrix.python-env }}" >> $GITHUB_ENV
-        else
-          echo "PIXI_ENV=${{ matrix.python-env }}-${{ matrix.test-type }}" >> $GITHUB_ENV
-        fi
-
     - name: Setup Pixi
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
-        environments: ${{ env.PIXI_ENV }}
+        pixi-version: latest
+
+    - name: Inject Python Version
+      run: |
+        pixi add python="${{ matrix.python-version }}.*"
 
     - name: Cache LAL auxiliary data files
       id: cache-lal-aux-data
@@ -70,22 +65,22 @@ jobs:
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
-        pixi run -e ${{ env.PIXI_ENV }} test-${{matrix.test-type}}
+        pixi run -e ${{matrix.test-type}} test-${{matrix.test-type}}
 
     - name: check help messages work
       if: matrix.test-type == 'unittest'
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
-        pixi run -e ${{ env.PIXI_ENV }} test-help
+        pixi run -e help test-help
 
     - name: run inference tests
       if: matrix.test-type == 'search'
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
-        pixi run -e ${{ env.PIXI_ENV }} test-inference
+        pixi run -e inference test-inference
 
     - name: store documentation page
-      if: matrix.test-type == 'docs' && matrix.python-env == 'py312'
+      if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
       uses: actions/upload-artifact@v7
       with:
         name: documentation-page
