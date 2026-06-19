@@ -180,7 +180,13 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
         )
 
     noise_data = psd_freq_series.data.data[:]
-    freq_data = numpy.arange(len(noise_data)) * psd_freq_series.deltaF
+    f0 = psd_freq_series.f0
+    if f0 != 0.0:
+        logger.warning(
+            "XML PSD has non-zero start frequency f0=%.4f Hz; "
+            "applying offset to frequency axis.", f0
+        )
+    freq_data = f0 + numpy.arange(len(noise_data)) * psd_freq_series.deltaF
 
     return from_numpy_arrays(freq_data, noise_data, length, delta_f,
                              low_freq_cutoff)
