@@ -13,7 +13,10 @@ jobs:
       max-parallel: 4
       matrix:
         os: [macos-latest]
-        environment: [py311, py312, py313]
+        python-version:
+          - '3.11'
+          - '3.12'
+          - '3.13'
 
     steps:
     - uses: actions/checkout@v5
@@ -21,8 +24,12 @@ jobs:
     - name: Setup Pixi
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
-        environments: ${{ matrix.environment }}
+        pixi-version: latest
+
+    - name: Inject Python Version
+      run: |
+        pixi add python="${{ matrix.python-version }}.*"
 
     - name: Run basic pycbc test suite
       run: |
-        pixi run -e ${{ matrix.environment }} test-unittest
+        pixi run -e unittest test-unittest

@@ -182,6 +182,18 @@ extras_require = {
     ],
 }
 
+def get_reqs_from_file(filename):
+    reqs = []
+    if os.path.exists(filename):
+        with open(filename, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and not line.startswith('--') and 'git+' not in line and 'http' not in line:
+                    reqs.append(line)
+    return reqs
+
+extras_require['test'] = get_reqs_from_file('requirements.txt') + get_reqs_from_file('companion.txt')
+
 # do the actual work of building the package
 VERSION = get_version_info()
 

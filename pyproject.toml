@@ -4,3 +4,54 @@ requires = ["setuptools>=70.0.0",
             "cython>=0.29.21",
             "numpy>=2.0.0,!=2.2.2",
             ]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+
+[tool.pixi.dependencies]
+c-compiler = "*"
+cxx-compiler = "*"
+gsl = "*"
+mysqlclient = "*"
+blas = { version = "*", build = "*openblas" }
+fftw = "*"
+pytest = "*"
+graphviz = "*"
+
+[tool.pixi.pypi-dependencies]
+pycbc = { path = ".", editable = true, extras = ["test"] }
+
+[tool.pixi.environments]
+default = { features = ["bbhx"], solve-group = "default" }
+unittest = { features = ["bbhx"], solve-group = "default" }
+help = { features = ["help", "bbhx"], solve-group = "default" }
+search = { features = ["search", "bbhx"], solve-group = "default" }
+inference = { features = ["inference", "bbhx"], solve-group = "default" }
+docs = { features = ["docs", "bbhx"], solve-group = "default" }
+
+[tool.pixi.tasks]
+test-unittest = "pytest"
+test-help = { cmd = "bash tools/pycbc_test_suite.sh", env = { PYCBC_TEST_TYPE = "help" } }
+test-search = { cmd = "bash tools/pycbc_test_suite.sh", env = { PYCBC_TEST_TYPE = "search" } }
+test-inference = { cmd = "bash tools/pycbc_test_suite.sh", env = { PYCBC_TEST_TYPE = "inference" } }
+test-docs = { cmd = "bash tools/pycbc_test_suite.sh", env = { PYCBC_TEST_TYPE = "docs" } }
+
+[tool.pixi.feature.bbhx.dependencies]
+liblapacke = "*"
+openblas = "*"
+
+[tool.pixi.feature.bbhx.target.linux-64.pypi-dependencies]
+BBHx = { git = "https://github.com/titodalcanton/BBHx.git", rev = "py39-and-cleanup" }
+pycbc-bbhx-plugin = { git = "https://github.com/gwastro/BBHX-waveform-model.git" }
+
+[tool.pixi.feature.help.dependencies]
+mpi4py = "*"
+
+[tool.pixi.feature.search.dependencies]
+mpi4py = "*"
+
+[tool.pixi.feature.inference.dependencies]
+
+[tool.pixi.feature.docs.target.linux-64.pypi-dependencies]
+cupy-cuda12x = "*"
