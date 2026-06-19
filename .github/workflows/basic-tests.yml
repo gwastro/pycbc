@@ -13,25 +13,32 @@ jobs:
       max-parallel: 60
       matrix:
         os: [ubuntu-24.04]
-        python-version: ['3.11', '3.12', '3.13']
+        python-env: [py311, py312, py313]
         test-type: [unittest, search, docs]
     steps:
     - uses: actions/checkout@v5
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: installing system packages
+
+    - name: Determine Pixi Environment
+      id: set-pixi-env
       run: |
-        sudo apt-get -o Acquire::Retries=3 update
-        sudo apt-get -o Acquire::Retries=3 install *fftw3* mpi intel-mkl* graphviz
-        pip install tox pip setuptools --upgrade
+        if [ "${{ matrix.test-type }}" = "unittest" ]; then
+          echo "PIXI_ENV=${{ matrix.python-env }}" >> $GITHUB_ENV
+        else
+          echo "PIXI_ENV=${{ matrix.python-env }}-${{ matrix.test-type }}" >> $GITHUB_ENV
+        fi
+
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+        environments: ${{ env.PIXI_ENV }}
+
     - name: Cache LAL auxiliary data files
       id: cache-lal-aux-data
       uses: actions/cache@v5
       with:
         key: lal-aux-data
         path: ~/lal_aux_data
+
     - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
       name: Download LAL auxiliary data files
       run: |
@@ -41,6 +48,7 @@ jobs:
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
         popd
+
     - name: Cache example GW data
       id: cache-example-gw-data
       uses: actions/cache@v5
@@ -58,26 +66,31 @@ jobs:
           examples/inference/relative/*.gwf
           examples/inference/relmarg/*.gwf
           examples/inference/single/*.gwf
+
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
-        tox -e py-${{matrix.test-type}}
+        pixi run -e ${{ env.PIXI_ENV }} test-${{matrix.test-type}}
+
     - name: check help messages work
       if: matrix.test-type == 'unittest'
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
-        tox -e py-help
+        pixi run -e ${{ env.PIXI_ENV }} test-help
+
     - name: run inference tests
       if: matrix.test-type == 'search'
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
-        tox -e py-inference
+        pixi run -e ${{ env.PIXI_ENV }} test-inference
+
     - name: store documentation page
-      if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
+      if: matrix.test-type == 'docs' && matrix.python-env == 'py312'
       uses: actions/upload-artifact@v7
       with:
         name: documentation-page
         path: _gh-pages
+
   deploy_documentation:
     runs-on: ubuntu-latest
     needs: build
