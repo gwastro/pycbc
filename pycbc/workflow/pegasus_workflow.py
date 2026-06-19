@@ -594,9 +594,9 @@ class Workflow(object):
         for wf in self.sub_workflows:
             wf.traverse_workflow_io()
 
-    def save(self, filename=None, submit_now=False,
+    def save(self, filename=None, submit_now=False, plan_now=False,
              output_map_path=None, root=True):
-        """ Write this workflow to DAX file
+        """ Write this workflow to DAX file and plan/submit it if necessary
         """
         if filename is None:
             filename = self.filename
@@ -641,7 +641,8 @@ class Workflow(object):
         os.chdir(self.out_dir)
         self._adag.write(filename)
         if not self.in_workflow:
-            self.plan_and_submit(submit_now=submit_now)
+            if submit_now or plan_now:
+                self.plan_and_submit(submit_now=submit_now)
         os.chdir(olddir)
 
     def plan_and_submit(self, submit_now=True):
