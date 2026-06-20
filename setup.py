@@ -188,7 +188,7 @@ def get_reqs_from_file(filename):
         with open(filename, 'r') as f:
             for line in f:
                 line = line.strip()
-                if line and not line.startswith('#') and not line.startswith('--') and 'git+' not in line and 'http' not in line:
+                if line and not line.startswith('#') and not line.startswith('--'):
                     reqs.append(line)
     return reqs
 
