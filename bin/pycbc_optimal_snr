@@ -175,7 +175,7 @@ if __name__ == '__main__':
 
     if opts.ifos is not None:
         detectors = opts.ifos
-        if opts.snr_columns is not None:
+        if opts.snr_columns:
             parser.error("Can't use both --ifos and --snr-columns !")
         opts.snr_columns = {i: 'optimal_snr_' + i for i in opts.ifos}
     else:
