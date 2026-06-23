@@ -511,6 +511,7 @@ def get_fd_waveform_sequence(template=None, **kwds):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -547,6 +548,7 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -583,6 +585,7 @@ def get_td_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to subsitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -617,6 +620,7 @@ def get_fd_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -688,7 +692,7 @@ def get_fd_waveform_from_td(**params):
             full_duration = get_waveform_filter_length_in_time(**nparams)
             nparams['f_lower'] -= 1
 
-    if 'f_fref' not in nparams and 'f_lower' in nparams:
+    if 'f_ref' not in nparams and 'f_lower' in nparams:
         nparams['f_ref'] = nparams['f_lower']
 
     # We'll try to do the right thing and figure out what the frequency
@@ -717,7 +721,7 @@ def get_fd_waveform_from_td(**params):
 
     if not 'taper_method' in params:
         # apply the tapering, we will use a safety factor here to allow for
-        # somewhat innacurate duration difference estimation.
+        # somewhat inaccurate duration difference estimation.
         window = (full_duration - duration) * 0.8
         hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
         hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
@@ -743,6 +747,7 @@ def get_fd_det_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. An example would be a row in an xml table.
+
     {params}
 
     Returns
