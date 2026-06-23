@@ -210,7 +210,7 @@ def spa_tmplt(**kwds):
 
     amp_factor = spa_amplitude_factor(mass1=mass1, mass2=mass2) / distance
 
-    lal_pars = CreateDict()
+    lal_pars = lal.CreateDict()
     if phase_order != -1:
         lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(
             lal_pars, phase_order)
