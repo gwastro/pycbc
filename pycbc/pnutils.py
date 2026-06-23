@@ -29,10 +29,10 @@ between quantities.
 import logging
 import numpy
 
+import lal
 from scipy.optimize import bisect, brentq, minimize
 
 from pycbc import conversions, libutils
-from pycbc.constants import MSUN_SI, PI, MTSUN_SI, PC_SI
 
 logger = logging.getLogger('pycbc.pnutils')
 
@@ -190,10 +190,10 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     return beta, sigma, gamma
 
 def solar_mass_to_kg(solar_masses):
-    return solar_masses * MSUN_SI
+    return solar_masses * lal.MSUN_SI
 
 def parsecs_to_meters(distance):
-    return distance * PC_SI
+    return distance * lal.PC_SI
 
 def megaparsecs_to_meters(distance):
     return parsecs_to_meters(distance) * 1e6
@@ -258,7 +258,7 @@ def f_LightRing(M):
     f : float or numpy.array
         Frequency in Hz
     """
-    return 1.0 / (3.0**(1.5) * PI * M * MTSUN_SI)
+    return 1.0 / (3.0**(1.5) * lal.PI * M * lal.MTSUN_SI)
 
 def f_ERD(M):
     """
@@ -277,7 +277,7 @@ def f_ERD(M):
     f : float or numpy.array
         Frequency in Hz
     """
-    return 1.07 * 0.5326 / (2*PI * 0.955 * M * MTSUN_SI)
+    return 1.07 * 0.5326 / (2*lal.PI * 0.955 * M * lal.MTSUN_SI)
 
 def f_FRD(m1, m2):
     """
@@ -301,7 +301,7 @@ def f_FRD(m1, m2):
     m_total, eta = mass1_mass2_to_mtotal_eta(m1, m2)
     tmp = ( (1. - 0.63*(1. - 3.4641016*eta + 2.9*eta**2)**(0.3)) /
     (1. - 0.057191*eta - 0.498*eta**2) )
-    return tmp / (2.*PI * m_total*MTSUN_SI)
+    return tmp / (2.*lal.PI * m_total*lal.MTSUN_SI)
 
 def f_LRD(m1, m2):
     """
@@ -536,26 +536,26 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
     if approximant == "SEOBNRv2":
         chi = lalsim.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
         time_length = lalsim.SimIMRSEOBNRv2ChirpTimeSingleSpin(
-                                m1 * MSUN_SI, m2 * MSUN_SI, chi, f_low)
+                                m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, f_low)
     elif approximant == "IMRPhenomXAS":
         time_length = lalsim.SimIMRPhenomXASDuration(
-                           m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z, f_low)
+                           m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
     elif approximant == "IMRPhenomD":
         time_length = lalsim.SimIMRPhenomDChirpTime(
-                           m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z, f_low)
+                           m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
     elif approximant in ["SEOBNRv4", "SEOBNRv4_ROM"]:
         # NB the LALSim function has f_low as first argument
         time_length = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
-                           f_low, m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z)
+                           f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
     elif approximant in ["SEOBNRv5", "SEOBNRv5_ROM"]:
         time_length = lalsim.SimIMRSEOBNRv5ROMTimeOfFrequency(
-                           f_low, m1 * MSUN_SI, m2 * MSUN_SI, s1z, s2z)
+                           f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
     elif approximant in ["SPAtmplt", "TaylorF2"]:
         chi = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(
             m1, m2, s1z, s2z
         )
         time_length = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(
-            f_low, m1 * MSUN_SI, m2 * MSUN_SI, chi, -1
+            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, -1
         )
     else:
         raise RuntimeError("I can't calculate a duration for %s" % approximant)
@@ -566,7 +566,7 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
 get_imr_duration = numpy.vectorize(_get_imr_duration)
 
 def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
-        pn_2order=7, approximant='TaylorF2'):
+        pn_2order=7, eccentricity=None, approximant='TaylorF2'):
     """Compute the time-frequency evolution of an inspiral signal.
 
     Return a tuple of time and frequency vectors tracking the evolution of an
@@ -580,6 +580,8 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
     params.mass2 = mass2
     params.spin1z = spin1
     params.spin2z = spin2
+    if eccentricity is not None:
+        params.eccentricity = eccentricity
     try:
         approximant = eval(approximant, {'__builtins__': None},
                            dict(params=params))
@@ -630,6 +632,15 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
                 float(spin2),
                 f
             )
+    elif approximant=='TaylorF2Ecc':
+        f_high = f_SchwarzISCO(mass1 + mass2)
+        from pycbc.waveform.spa_tmplt import eccentric_chirp_time
+        def tof_func(f):
+            return eccentric_chirp_time(
+                    float(mass1),
+                    float(mass2),
+                    float(eccentricity),
+                    f)
     else:
         raise ValueError(f'Approximant {approximant} not supported')
     track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high), n_points)
@@ -637,6 +648,132 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
     track_t = tc - tof_func_vec(track_f)
     return (track_t, track_f)
 
+# Functions adapted from https://github.com/gmorras/pyEFPE/blob/main/pyEFPE/waveform/functions.py
+#      Original function --->  Functions here
+#      tLO_func          --->  eccentric_newtonian_time
+#      F_tLO_series      --->  _eccentric_enhancement_function
+#      F_tLO_series_at_0 --->  _enhancement_function_low
+#      F_tLO_series_at_1 --->  _enhancement_function_high
+
+def eccentric_newtonian_time(m1, m2, eccentricity, f_low):
+    """Returns the Newtonian eccentric-binary time to coalescence.
+
+    This computes the leading-order inspiral time for an eccentric compact
+    binary using Eq. (119) of Morras et al., arXiv:2502.03929. The
+    eccentricity correction is evaluated with
+    :func:`_eccentric_enhancement_function`.
+
+    Parameters
+    ----------
+    m1, m2 : float or array_like
+        Component masses in solar masses. Inputs must be broadcastable to a
+        common shape.
+    eccentricity : float or array_like
+        Orbital eccentricity defined at ``f_low``.
+    f_low : float or array_like
+        Starting gravitational-wave frequency in Hz.
+
+    Returns
+    -------
+    float or numpy.ndarray
+        Newtonian time to coalescence in seconds. Scalar inputs return a
+        scalar; array-like inputs return a NumPy array.
+    """
+    m1, m2, eccentricity, f_low = numpy.broadcast_arrays(
+        numpy.asarray(m1, dtype=float),
+        numpy.asarray(m2, dtype=float),
+        numpy.asarray(eccentricity, dtype=float),
+        numpy.asarray(f_low, dtype=float),
+    )
+
+    M = m1 + m2
+    ecc_sq = eccentricity * eccentricity
+    one_minus_ecc_sq = 1 - ecc_sq
+    one_minus_ecc_sq_sqrt = numpy.sqrt(one_minus_ecc_sq)
+    velocity = frequency_to_velocity(f_low, M)
+    # weighted_velocity is the `y` variable in Morras et al., arXiv:2502.03929
+    weighted_velocity = velocity / one_minus_ecc_sq_sqrt
+    eta = conversions.eta_from_mass1_mass2(m1, m2)
+    M_sec = M * lal.MTSUN_SI
+    t_N = (5 / (256 * one_minus_ecc_sq_sqrt * eta) * M_sec *
+            (weighted_velocity**-8) * _eccentric_enhancement_function(ecc_sq))
+    return t_N.item() if t_N.ndim == 0 else t_N
+
+
+def _eccentric_enhancement_function(eccentricity_sq):
+
+    eccentricity_sq_arr = numpy.asarray(eccentricity_sq, dtype=float)
+
+    # Value of eccentricity^2 to decide which enhancement function to be used,
+    # based on Morras et al., arXiv:2502.03929
+    eccentricity_sq_switch = 0.4
+
+    #if eccentricity^2 <= 0.4  use series expansion from `_enhancement_function_low`,
+    #                otherwise use series expansion from `_enhancement_function_high`
+
+    if eccentricity_sq_arr.ndim == 0:
+        eccentricity_sq_scalar = float(eccentricity_sq_arr)
+        if eccentricity_sq_scalar <= eccentricity_sq_switch:
+            return _enhancement_function_low(eccentricity_sq_scalar)
+        else:
+            return _enhancement_function_high(eccentricity_sq_scalar)
+
+    else:
+        F = numpy.empty_like(eccentricity_sq_arr, dtype=float)
+        low_ecc_index = eccentricity_sq_arr <= eccentricity_sq_switch
+        high_ecc_index = numpy.logical_not(low_ecc_index)
+        if numpy.any(low_ecc_index):
+            F[low_ecc_index] = _enhancement_function_low(eccentricity_sq_arr[low_ecc_index])
+        if numpy.any(high_ecc_index):
+            F[high_ecc_index] = _enhancement_function_high(eccentricity_sq_arr[high_ecc_index])
+        return F
+
+#coefficeints of polynomials for `_enhancement_function_low`
+_LOW_ECC_COEFFS = numpy.array([
+    1.000000000000000, -0.1511627906976744, 0.2656836084021005, 0.007463780007501875,
+    0.08800790590714085, 0.03153077124184580, 0.04185392210761341, 0.02761371124737777,
+    0.02642686119635599, 0.02145414169943131, 0.01926563742403364, 0.01677217450181226,
+    0.01503898450331388, 0.01347003088516929, 0.01220348405026613, 0.01110346195121149,
+    0.01016749330223870, 0.009352447459389354, 0.008642114232972108, 0.008016709107501086,
+    0.007463457161231162, 0.006970902964332086, 0.006530253812462707, 0.006134111124121483,
+    0.005776451398258840, 0.005452229768143720, 0.005157232928828976, 0.004887901117379935,
+    0.004641215172072290, 0.004414596725230578, 0.004205833180162198, 0.004013015784562471,
+    0.003834490347048246, 0.003668816871424952, 0.003514736646109113, 0.003371145103099870,
+    0.003237069368178693, 0.003111649567641214, 0.002994123194217794, 0.002883811964918853,
+    0.002780110725151045, 0.002682478039498533, 0.002590428180410570, 0.002503524280447905,
+    0.002421372457429333, 0.002343616756405161, 0.002269934780185545, 0.002200033902499887,
+    0.002133647975961232, 0.002070534461714599, 0.002010471919657125,
+])
+
+#coefficeints of polynomials for `_enhancement_function_high`
+_HIGH_ECC_COEFFS = numpy.array([
+    0.40941176470588236, 0.02286320645905421, 0.008142925951557094, 0.004155878512401501,
+    0.0024847568765827364, 0.001633290511588348, 0.0011455395465032605, 0.000842577094447224,
+    0.0006427195446513564, 0.0005045715814217113, 0.00040544477831148924, 0.0003321116545345162,
+    0.0002764636962467965, 0.00023331895675436905, 0.0001992473575067662, 0.00017190919726595898,
+    0.00014966654751355843, 0.000131346469484909, 0.00011609207361015848, 0.00010326617525262309,
+    9.238740896587563e-05, 8.308691874613337e-05, 7.50784086790562e-05, 6.813705814151314e-05,
+    6.20844345948999e-05, 5.677753690123865e-05, 5.210072977646673e-05, 4.7959732146031274e-05,
+    4.427708468062032e-05, 4.0988696117937945e-05, 3.80411855904995e-05, 3.538981870077757e-05,
+    3.2996890965966614e-05, 3.083045152872919e-05, 2.886328796018351e-05, 2.707211306399751e-05,
+    2.543690918050699e-05, 2.3940396192787112e-05, 2.256759736012561e-05, 2.1305483020854193e-05,
+    2.014267666038337e-05, 1.906921121897629e-05, 1.8076326095558655e-05, 1.7156297290322297e-05,
+    1.6302294667351972e-05, 1.550826151746742e-05, 1.4768812541410176e-05, 1.407914711455732e-05,
+])
+
+def _enhancement_function_low(eccentricity_sq):
+    # Maclaurin seies of Eq. D6. Morras et al., arXiv:2502.03929
+    return numpy.polyval(numpy.flip(_LOW_ECC_COEFFS), eccentricity_sq)
+
+def _enhancement_function_high(eccentricity_sq):
+    # Series expansion of Eq. D7, Morras et al., arXiv:2502.03929
+    # around sqrt(1 - eccentricity^2) = 0
+    cns = _HIGH_ECC_COEFFS
+    pre_factor = (48/19)*((425/304)**(1181/2299))
+    u = 1 - eccentricity_sq
+    eccentric_factor = eccentricity_sq**(-24 / 19) * (1 + (121 / 304) * eccentricity_sq)**(-3480 / 2299)
+    eccentric_factor *= 1 - 1.4555165803216864*numpy.sqrt(u) + u*numpy.polyval(numpy.flip(cns),u)
+    return pre_factor * eccentric_factor
 
 ##############################This code was taken from Andy ###########
 
@@ -659,7 +796,7 @@ def _energy_coeffs(m1, m2, chi1, chi2):
     energy4 = -3.375 + (19*eta)/8. - pow(eta,2)/24.
     energy5 = 0.
     energy6 = -10.546875 - (155*pow(eta,2))/96. - (35*pow(eta,3))/5184. \
-                + eta*(59.80034722222222 - (205*pow(PI,2))/96.)
+                + eta*(59.80034722222222 - (205*pow(lal.PI,2))/96.)
 
     energy3 += (32*beta)/113. + (52*chisym*eta)/113.
 
@@ -718,12 +855,12 @@ def _dtdv_coeffs(m1, m2, chi1, chi2):
 
     dtdv0 = 1. # FIXME: Wrong but doesn't matter for now.
     dtdv2 = (1./336.) * (743. + 924.*eta)
-    dtdv3 = -4. * PI + beta
+    dtdv3 = -4. * lal.PI + beta
     dtdv4 = (3058673. + 5472432.*eta + 4353552.*eta*eta)/1016064. - sigma12 - sigmaqm
-    dtdv5 = (1./672.) * PI * (-7729. + 1092.*eta) + (146597.*beta/18984. + 42.*beta*eta/113. - 417307.*chisym*eta/18984. - 1389.*chisym*eta*eta/226.)
+    dtdv5 = (1./672.) * lal.PI * (-7729. + 1092.*eta) + (146597.*beta/18984. + 42.*beta*eta/113. - 417307.*chisym*eta/18984. - 1389.*chisym*eta*eta/226.)
     dtdv6 = 22.065 + 165.416*eta - 2.20067*eta*eta + 4.93152*eta*eta*eta
     dtdv6log = 1712./315.
-    dtdv7 = (PI/1016064.) * (-15419335. - 12718104.*eta + 4975824.*eta*eta)
+    dtdv7 = (lal.PI/1016064.) * (-15419335. - 12718104.*eta + 4975824.*eta*eta)
 
     return (dtdv0, dtdv2, dtdv3, dtdv4, dtdv5, dtdv6, dtdv6log, dtdv7)
 
@@ -788,7 +925,7 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
         ecof[5] = 0
     if phase_order >= 6:
         ecof[6] = - 675.0/64.0 + ( 34445.0/576.0    \
-              - 205.0/96.0 * PI * PI ) * eta  \
+              - 205.0/96.0 * lal.PI * lal.PI ) * eta  \
               - (155.0/96.0) *eta * eta - 35.0/5184.0 * eta * eta
     # Spin terms
 
@@ -1074,7 +1211,7 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
     inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = \
         lalsim.SimInspiralTransformPrecessingNewInitialConditions(
             thetajn, phijl, spin1_polar, spin2_polar, spin12_deltaphi,
-            spin1_a, spin2_a, mass1*MSUN_SI, mass2*MSUN_SI, f_ref,
+            spin1_a, spin2_a, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, f_ref,
             phiref)
     out = {'inclination': inclination,
            'spin1x': spin1x,

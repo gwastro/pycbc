@@ -27,7 +27,7 @@ waveforms.
 """
 
 import os
-import lal, numpy
+import lal, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import real_same_precision_as, complex_same_precision_as
 import pycbc.scheme as _scheme
@@ -41,7 +41,7 @@ from pycbc.filter import interpolate_complex_frequency, resample_to_delta_t
 import pycbc
 from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
-                      spa_length_in_time
+                      spa_length_in_time, eccentric_spa_length_in_time
 
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
@@ -369,7 +369,7 @@ def get_obj_attrs(obj):
     """
     pr = {}
     if obj is not None:
-        if isinstance(obj, numpy.record):
+        if isinstance(obj, numpy.core.records.record):
             for name in obj.dtype.names:
                 pr[name] = getattr(obj, name)
         elif hasattr(obj, '__dict__') and obj.__dict__:
@@ -414,14 +414,7 @@ def parse_mode_array(input_params):
                 ma = str(int(ma))
             # if ma is a str convert to (int, int) (e.g., '22' -> (2, 2))
             if isinstance(ma, str):
-                if len(ma) == 2: # format is "22", presumed m is positive
-                    l, m = ma
-                elif len(ma) == 3: # format is "2+2", "2-2", signed m
-                    l = ma[0]
-                    m = ma[1:]
-                else:
-                    raise ValueError(f"Unknown lm mode string format: {ma}")
-
+                l, m = ma
                 ma = (int(l), int(m))
             mode_array[ii] = ma
         input_params['mode_array'] = mode_array
@@ -511,7 +504,6 @@ def get_fd_waveform_sequence(template=None, **kwds):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-
     {params}
 
     Returns
@@ -548,7 +540,6 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-
     {params}
 
     Returns
@@ -572,10 +563,10 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
 
 get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
-           include_label=False))
+           include_label=False).lstrip(' '))
 get_fd_det_waveform_sequence.__doc__ = get_fd_det_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
-           include_label=False))
+           include_label=False).lstrip(' '))
 
 def get_td_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain waveform.
@@ -585,7 +576,6 @@ def get_td_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to subsitute
         for keyword arguments. A common example would be a row in an xml table.
-
     {params}
 
     Returns
@@ -610,7 +600,7 @@ def get_td_waveform(template=None, **kwargs):
 
 get_td_waveform.__doc__ = get_td_waveform.__doc__.format(
     params=parameters.td_waveform_params.docstr(prefix="    ",
-           include_label=False))
+           include_label=False).lstrip(' '))
 
 def get_fd_waveform(template=None, **kwargs):
     """Return a frequency domain gravitational waveform.
@@ -620,7 +610,6 @@ def get_fd_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-
     {params}
 
     Returns
@@ -660,7 +649,7 @@ def get_fd_waveform(template=None, **kwargs):
 
 get_fd_waveform.__doc__ = get_fd_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
-           include_label=False))
+           include_label=False).lstrip(' '))
 
 def get_fd_waveform_from_td(**params):
     """ Return time domain version of fourier domain approximant.
@@ -681,19 +670,17 @@ def get_fd_waveform_from_td(**params):
     hc: pycbc.types.FrequencySeries
         Cross polarization time series
     """
+
+    # determine the duration to use
+    full_duration = duration = get_waveform_filter_length_in_time(**params)
     nparams = params.copy()
-    if not 'taper_method' in params:
-        # determine the duration to use for an automatic tapering choice.
-        # If taper method specified, assume they have set f_lower as they
-        # want exactly.
-        full_duration = duration = get_waveform_filter_length_in_time(**params)
 
-        while full_duration < duration * 1.5:
-            full_duration = get_waveform_filter_length_in_time(**nparams)
-            nparams['f_lower'] -= 1
+    while full_duration < duration * 1.5:
+        full_duration = get_waveform_filter_length_in_time(**nparams)
+        nparams['f_lower'] -= 1
 
-    if 'f_ref' not in nparams and 'f_lower' in nparams:
-        nparams['f_ref'] = nparams['f_lower']
+    if 'f_fref' not in nparams:
+        nparams['f_ref'] = params['f_lower']
 
     # We'll try to do the right thing and figure out what the frequency
     # end is. Otherwise, we'll just assume 2048 Hz.
@@ -719,19 +706,11 @@ def get_fd_waveform_from_td(**params):
     hp.resize(tsamples)
     hc.resize(tsamples)
 
-    if not 'taper_method' in params:
-        # apply the tapering, we will use a safety factor here to allow for
-        # somewhat inaccurate duration difference estimation.
-        window = (full_duration - duration) * 0.8
-        hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
-        hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
-    else:
-        hp = hp.taper_timeseries(location=params['taper'],
-                                 tapermethod=params['taper_method'],
-                                 taper_window=params['taper_window'])
-        hc = hc.taper_timeseries(location=params['taper'],
-                                 tapermethod=params['taper_method'],
-                                 taper_window=params['taper_window'])
+    # apply the tapering, we will use a safety factor here to allow for
+    # somewhat innacurate duration difference estimation.
+    window = (full_duration - duration) * 0.8
+    hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
+    hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
 
     # avoid wraparound
     hp = hp.to_frequencyseries().cyclic_time_shift(hp.start_time)
@@ -747,7 +726,6 @@ def get_fd_det_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. An example would be a row in an xml table.
-
     {params}
 
     Returns
@@ -770,7 +748,7 @@ def get_fd_det_waveform(template=None, **kwargs):
 
 get_fd_det_waveform.__doc__ = get_fd_det_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
-           include_label=False))
+           include_label=False).lstrip(' '))
 
 def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
     """ The base function to calculate time domain version of fourier
@@ -824,7 +802,7 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
     tsize = int(1.0 / nparams['delta_t'] /  nparams['delta_f'])
     fsize = tsize // 2 + 1
 
-    if nparams['approximant'] not in fd_det:
+    if nparams['approximant'] not in fd_det or nparams['approximant'] !='TaylorF2Ecc':
         hp, hc = get_fd_waveform(**nparams)
         # Resize to the right sample rate
         hp.resize(fsize)
@@ -903,7 +881,7 @@ def get_td_det_waveform_from_fd_det(template=None, rwrap=None, **params):
 get_td_det_waveform_from_fd_det.__doc__ = \
     get_td_det_waveform_from_fd_det.__doc__.format(
         params=parameters.td_waveform_params.docstr(prefix="    ",
-            include_label=False))
+            include_label=False).lstrip(' '))
 
 def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
                                  **params):
@@ -1096,6 +1074,7 @@ _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
 _filter_ends["SPAtmplt"] = spa_tmplt_end
 _filter_ends["TaylorF2"] = spa_tmplt_end
+_filter_ends["TaylorF2Ecc"] = spa_tmplt_end
 #_filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrv2_final_frequency
 #_filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrv2_final_frequency
 #_filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrv2_final_frequency
@@ -1108,6 +1087,7 @@ _filter_ends["TaylorF2"] = spa_tmplt_end
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
 _filter_time_lengths["TaylorF2"] = spa_length_in_time
+_filter_time_lengths["TaylorF2Ecc"] = eccentric_spa_length_in_time
 _filter_time_lengths["SpinTaylorT5"] = spa_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_EffectiveSpin"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrv2_length_in_time
@@ -1175,7 +1155,7 @@ def td_fd_waveform_transform(approximant):
         # We can make a fd version of td approximants
         cpu_fd[approximant] = get_fd_waveform_from_td
 
-    if approximant in fd_apx and (approximant in _filter_time_lengths):
+    if approximant in fd_apx:
         # We can do interpolation for waveforms that have a time length
         apx_int = approximant + '_INTERP'
         cpu_fd[apx_int] = get_interpolated_fd_waveform
@@ -1186,8 +1166,9 @@ def td_fd_waveform_transform(approximant):
         # (ex. IMRPhenomXX)
         cpu_td[approximant] = get_td_waveform_from_fd
 
-for apx in list(_filter_time_lengths.keys()) + list(cpu_fd.keys()):
+for apx in copy.copy(_filter_time_lengths):
     td_fd_waveform_transform(apx)
+
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
@@ -1333,12 +1314,10 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         # taper the time series hp if required
         if 'taper' in input_params.keys() and \
                 input_params['taper'] is not None:
-            hp = hp.taper_timeseries(location=input_params['taper'], 
-            tapermethod=input_params.get('taper_method', 'lal'), 
-            taper_window=input_params.get('taper_window'), return_lal=False)
-            hc = hc.taper_timeseries(location=input_params['taper'], 
-            tapermethod=input_params.get('taper_method', 'lal'), 
-            taper_window=input_params.get('taper_window'), return_lal=False)
+            hp = wfutils.taper_timeseries(hp, input_params['taper'],
+                                          return_lal=False)
+            hc = wfutils.taper_timeseries(hc, input_params['taper'],
+                                          return_lal=False)
         # total duration of the waveform
         tmplt_length = len(hp) * hp.delta_t
         # for IMR templates the zero of time is at max amplitude (merger)
