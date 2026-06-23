@@ -107,7 +107,7 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
 
     cache = cp.has_option_tags("workflow-segments", 'enable-query-caching', tags)
     if cache:
-        logger.info('Caching query')
+        logger.info('Caching queries enabled')
 
     # Check for provided server
     server = "https://segments.ligo.org"
