@@ -169,7 +169,7 @@ class TestParams(unittest.TestCase):
                              fd_taper=False):
 
             # Generate a waveform at the detector-frame.
-            hp, hc = get_td_waveform(approximant=model, 
+            hp, hc = get_fd_waveform(approximant=model, 
                         mass1=params['mass1'], mass2=params['mass2'],
                         spin1x=0, spin1y=0,
                         spin1z=params['spin1z'], spin2x=0,
