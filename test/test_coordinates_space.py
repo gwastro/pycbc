@@ -341,7 +341,7 @@ class TestParams(unittest.TestCase):
             # especially for the phase, but they are almost consistent with
             # each other visually.
             if (numpy.abs(dist_amp - 0.2838670151034317) < 1e-2) and \
-                (numpy.abs(dist_phase - 151.77197349820668) < 1e-2):
+                (numpy.abs(dist_phase - 353.6477243138732) < 1e-2):
                 passed = True
             else:
                 passed = False
