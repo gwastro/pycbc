@@ -301,8 +301,7 @@ class TestParams(unittest.TestCase):
                                             params=params_3g,
                                             fd_taper=False)          
                 E3_signal_fd = {
-                    'DIY_E3':E3_signal[0].to_frequencyseries(
-                                            params_3g['delta_f'])
+                    'DIY_E3':E3_signal[0].to_frequencyseries()
                 }
 
                 index_E3 = numpy.where(numpy.abs(
