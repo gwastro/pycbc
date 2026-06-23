@@ -156,6 +156,8 @@ class TestParams(unittest.TestCase):
         from pycbc.detector import Detector, add_detector_on_earth
         from pycbc.waveform import get_fd_waveform
         import importlib
+        
+        YRSID_SI = 31558149.763545603
 
         def is_module_installed(module_name):
             try:
@@ -177,7 +179,7 @@ class TestParams(unittest.TestCase):
                         distance=params['distance'],
                         coa_phase=params['coa_phase'],
                         inclination=params['inclination'], f_lower=flow,
-                        f_ref=fref, delta_t=1.0/fs)
+                        f_ref=fref, delta_t=1.0/fs, delta_f=fs/YRSID_SI)
 
             # Set merger time to 'tc'.
             hp.start_time += tc
@@ -221,7 +223,6 @@ class TestParams(unittest.TestCase):
 
             # set parameters
             params = {}
-            YRSID_SI = 31558149.763545603
             params['tdi'] = '1.5'
             params['ref_frame'] = 'SSB'
             params['approximant'] = 'BBHX_PhenomD'
