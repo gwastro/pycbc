@@ -52,6 +52,7 @@ jobs:
         bash -e examples/search/gen.sh
         cp *.gwf output/
         cd output
+        ./start
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
