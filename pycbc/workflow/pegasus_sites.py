@@ -120,7 +120,7 @@ def add_condorpool_copy_site(sitecat, cp):
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
-                      value="nonsharedfs")
+                      value="condorio")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
                       value="true")
     # This explicitly disables symlinking
