@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/opt/homebrew/Caskroom/miniconda/base/envs/pycbc_test_py312/bin/python3.12
 
 # Copyright (C) 2013 Ian W. Harry
 #
@@ -35,6 +35,7 @@ import pycbc.strain
 import pycbc.version
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.io.hdf import HFile
+from pycbc.types import positive_float
 
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
@@ -51,79 +52,27 @@ parser.add_argument("-i", "--input-glob",
                     help="file glob the list of paramters")
 parser.add_argument("-I", "--input-files", nargs='+',
                     help="Explicit list of input files.")
+parser.add_argument("-O", "--output-file",
+                    help="Output file to write the bank to.")
 parser.add_argument("--metadata-file", metavar="METADATA_FILE",
                   help="XML file containing the process and process_params "
                   "tables that the aligned_bank code was run with.")
+parser.add_argument("--f-low", action="store", type=positive_float,
+                    required=True,
+                    help="Lower frequency cutoff used in computing the "
+                    "parameter space metric.  REQUIRED. UNITS=Hz")
+parser.add_argument("--f-upper", action="store", type=positive_float,
+                    required=True,
+                    help="Upper frequency cutoff used in computing the "
+                    "parameter space metric.  REQUIRED. UNITS=Hz")
 
-
-# Insert the metric calculation options
-tmpltbank.insert_metric_calculation_options(parser)
-
-# Insert the PSD options
-pycbc.psd.insert_psd_option_group(parser)
-
-# Insert the data reading options
-pycbc.strain.insert_strain_option_group(parser)
-
-# Add the ethinca calculation options
-tmpltbank.insert_ethinca_metric_options(parser)
-
-tmpltbank.insert_base_bank_options(parser, match_req=False)
 
 options = parser.parse_args()
+options.output_f_final = True
 
 pycbc.init_logging(options.verbose)
 
-# Sanity check options
-if not options.output_file:
-    parser.error("Must supply --output-file.")
 
-tmpltbank.verify_metric_calculation_options(options, parser)
-metricParams=tmpltbank.metricParameters.from_argparse(options)
-pycbc.psd.verify_psd_options(options, parser)
-if options.psd_estimation:
-    pycbc.strain.verify_strain_options(options, parser)
-tmpltbank.verify_ethinca_metric_options(options, parser)
-ethincaParams=tmpltbank.ethincaParameters.from_argparse(options)
-# delete default ethinca frequency step if calculation is not done
-if ethincaParams.doEthinca==False:
-    ethincaParams.freqStep = None
-
-# Ensure consistency of ethinca and bank metric parameters
-tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
-
-# Ethinca calculation should currently only be done for non-spin templates
-if ethincaParams.full_ethinca and (massRangeParams.maxNSSpinMag>0.0 or
-                                massRangeParams.maxBHSpinMag>0.0):
-    parser.error("Ethinca metric calculation is currently not valid for "
-                 "nonzero spins!")
-
-# If we are going to use h(t) to estimate a PSD we need h(t)
-if options.psd_estimation:
-    logging.info("Obtaining h(t) for PSD generation")
-    strain = pycbc.strain.from_cli(options, pycbc.DYN_RANGE_FAC)
-else:
-    strain = None
-
-# Get the PSD using the pycbc interface
-logging.info("Obtaining PSD")
-# Want the number of samples to be a binary number and Nyquist must be above
-# opts.f_upper. All this assumes that 1 / deltaF is a binary number
-nyquistFreq = 2**numpy.ceil(numpy.log2(options.f_upper))
-numSamples = int(round(nyquistFreq / options.delta_f)) + 1
-psd = pycbc.psd.from_cli(options, length=numSamples, delta_f=options.delta_f,
-                         low_frequency_cutoff=options.f_low, strain=strain,
-                         dyn_range_factor=pycbc.DYN_RANGE_FAC)
-metricParams.psd = psd
-
-# Begin by calculating a metric
-logging.info("Calculating metric")
-metricParams = tmpltbank.determine_eigen_directions(metricParams,
-    vary_fmax=ethincaParams.doEthinca, vary_density=ethincaParams.freqStep)
-
-# Read in template params
-# NOTE: Files must be set out so that the columns are:
-# Mass1, Mass2, Spin1z, Spin2z
 if options.input_files:
     input_files = options.input_files
 else:
@@ -146,10 +95,6 @@ for inp_file in input_files:
 
 temp_bank = numpy.array([mass1,mass2,spin1z,spin2z]).T
 
-# FIXME: Currently the aligned spin bank will not output the ethinca components.
-# They are not meaningful for an aligned spin bank anyway. If these values are
-# needed for any reason, this code would have to be able to recalculate the
-# moments (or read them in) and use the correct value of f0 and pn-order
 if options.metadata_file:
     outdoc = utils.load_filename(options.metadata_file,
                                  compress='auto',
