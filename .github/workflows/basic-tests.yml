@@ -16,10 +16,10 @@ jobs:
         python-version: ['3.11', '3.12', '3.13']
         test-type: [unittest, search, docs]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
     - name: Setup Pixi
-      uses: prefix-dev/setup-pixi@v0.8.1
+      uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
       with:
         pixi-version: latest
 
@@ -29,7 +29,7 @@ jobs:
 
     - name: Cache LAL auxiliary data files
       id: cache-lal-aux-data
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         key: lal-aux-data
         path: ~/lal_aux_data
@@ -46,7 +46,7 @@ jobs:
 
     - name: Cache example GW data
       id: cache-example-gw-data
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         key: example-gw-data
         path: |
@@ -81,7 +81,7 @@ jobs:
 
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: documentation-page
         path: _gh-pages
@@ -92,7 +92,7 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     steps:
     - name: retrieve built documentation
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       with:
         name: documentation-page
     - name: debug
@@ -100,7 +100,7 @@ jobs:
         mkdir _gh-pages
         mv latest _gh-pages
     - name: deploying to gh-pages
-      uses: JamesIves/github-pages-deploy-action@3.7.1
+      uses: JamesIves/github-pages-deploy-action@132898c54c57c7cc6b80eb3a89968de8fc283505 # v3.7.1
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages
