@@ -10,7 +10,7 @@ epsie>=1.0
 cpnest
 pymultinest
 ultranest
-https://github.com/willvousden/ptemcee/archive/master.tar.gz
+ptemcee @ https://github.com/willvousden/ptemcee/archive/master.tar.gz
 # Force the cpu-only version of PyTorch
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
@@ -24,5 +24,5 @@ setproctitle
 sympy>=1.9
 
 # Needed for KDE trigger statistics
-git+https://github.com/mennthor/awkde.git@5b601fe4d92229d5deb8737fd121dce193bac552
+awkde @ git+https://github.com/mennthor/awkde.git@5b601fe4d92229d5deb8737fd121dce193bac552
 scikit-learn
