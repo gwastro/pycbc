@@ -16,22 +16,24 @@ jobs:
         python-version: ['3.11', '3.12', '3.13']
         test-type: [unittest, search, docs]
     steps:
-    - uses: actions/checkout@v5
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: installing system packages
+        pixi-version: latest
+
+    - name: Inject Python Version
       run: |
-        sudo apt-get -o Acquire::Retries=3 update
-        sudo apt-get -o Acquire::Retries=3 install *fftw3* mpi intel-mkl* graphviz
-        pip install tox pip setuptools --upgrade
+        pixi add python="${{ matrix.python-version }}.*"
+
     - name: Cache LAL auxiliary data files
       id: cache-lal-aux-data
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         key: lal-aux-data
         path: ~/lal_aux_data
+
     - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
       name: Download LAL auxiliary data files
       run: |
@@ -41,9 +43,10 @@ jobs:
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
         popd
+
     - name: Cache example GW data
       id: cache-example-gw-data
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         key: example-gw-data
         path: |
@@ -58,33 +61,38 @@ jobs:
           examples/inference/relative/*.gwf
           examples/inference/relmarg/*.gwf
           examples/inference/single/*.gwf
+
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
-        tox -e py-${{matrix.test-type}}
+        pixi run -e ${{matrix.test-type}} test-${{matrix.test-type}}
+
     - name: check help messages work
       if: matrix.test-type == 'unittest'
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
-        tox -e py-help
+        pixi run -e help test-help
+
     - name: run inference tests
       if: matrix.test-type == 'search'
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
-        tox -e py-inference
+        pixi run -e inference test-inference
+
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: documentation-page
         path: _gh-pages
+
   deploy_documentation:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     steps:
     - name: retrieve built documentation
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       with:
         name: documentation-page
     - name: debug
@@ -92,7 +100,7 @@ jobs:
         mkdir _gh-pages
         mv latest _gh-pages
     - name: deploying to gh-pages
-      uses: JamesIves/github-pages-deploy-action@3.7.1
+      uses: JamesIves/github-pages-deploy-action@132898c54c57c7cc6b80eb3a89968de8fc283505 # v3.7.1
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages
