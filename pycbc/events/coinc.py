@@ -1033,7 +1033,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
     def background_time(self):
         """Return the amount of background time that the buffers contain"""
         time = 1.0 / self.timeslide_interval
-        # Dirty chunks are excluded from coincidence formation in both
+        # Loud chunks are excluded from coincidence formation in both
         # detectors, so they do not contribute to the background time
         loud_time = len(self.loud_chunks) * self.analysis_block
         for ifo in self.singles:
@@ -1324,19 +1324,18 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                     c for c in self.loud_chunks
                     if (c + 1) * self.analysis_block > min_end
                 }
-                # Remove coincs with a trigger inside a loud chunk in
-                # either detector before clustering, so they enter neither
-                # the background nor the foreground
+                # Exclude background (timeslide) coincs in loud chunks;
+                # zerolag coincs are kept so loud signals/injections are
+                # always reported as candidates.
                 if self.loud_chunks:
-                    loud = numpy.fromiter(self.loud_chunks,
-                                           dtype=numpy.int64)
                     chunk0 = (ctime0 // self.analysis_block).astype(numpy.int64)
                     chunk1 = (ctime1 // self.analysis_block).astype(numpy.int64)
-                    keep = ~(numpy.isin(chunk0, loud)
-                             | numpy.isin(chunk1, loud))
-                    good = numpy.flatnonzero(keep)
+                    loud = numpy.fromiter(self.loud_chunks, dtype=numpy.int64)
+                    in_loud_block = (numpy.isin(chunk0, loud)
+                                     | numpy.isin(chunk1, loud))
+                    good = numpy.flatnonzero(~(in_loud_block & (offsets != 0)))
                     if len(good) < len(cstat):
-                        logger.info("Removing %d coincs in loud chunks",
+                        logger.info("Removing %d background coincs in loud chunks",
                                     len(cstat) - len(good))
 
             logger.info("Clustering %s coincs", ppdets(self.ifos, "-"))
@@ -1373,7 +1372,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                         self.loud_chunks.add(chunk)
                         new_loud.append(chunk)
                         logger.info(
-                            "Dirty chunk [%d, %d): zerolag coinc with "
+                            "Loud chunk [%d, %d): zerolag coinc with "
                             "IFAR %.2f above %.2f",
                             chunk * self.analysis_block,
                             (chunk + 1) * self.analysis_block,
