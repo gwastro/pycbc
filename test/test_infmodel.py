@@ -110,7 +110,7 @@ class TestModels(unittest.TestCase):
         # set up for gated model tests
         cls.static3 = cls.static.copy()
         cls.static3['t_gate_start'] = cls.static3['tc']
-        cls.static3['t_gate_end'] = cls.static3['tc'] + 0.2
+        cls.static3['t_gate_end'] = cls.static3['tc'] + 0.05
         cls.variable3 = cls.variable
         cls.prior3 = JointDistribution(cls.variable3, inclination_prior,
                                        distance_prior)
@@ -125,7 +125,7 @@ class TestModels(unittest.TestCase):
         cls.pol_samples = 200
 
         # answer with gate applied, no normalization
-        cls.a3 = -1245.8677296410897
+        cls.a3 = -1246.1948739646468
 
     def test_base_phase_marg(self):
         model = models.MarginalizedPhaseGaussianNoise(
