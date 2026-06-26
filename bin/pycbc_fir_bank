@@ -186,12 +186,12 @@ def process_template(i):
             weights_snr = np.nan_to_num(weights_snr, copy=False)
             H_target_raw = ratio * g_args.sample_rate
 
-            H_target_raw2 = rolling_median(H_target_raw, g_args.dec_factor)
+            bank_mask[abs(ratio) > g_args.ratio_cap] = False
 
             try:
                 taps = design_optimal_real_filter(H_target_raw[::g_args.dec_factor],
                                                   band_mask[::g_args.dec_factor], 
-                                                  current_taps, weights_pos=weights_snr,
+                                                  current_taps, weights_pos=weights_snr[::g_args.dec_factor],
                                                   reg_type=g_args.regularization_type,
                                                   reg_val=g_args.regularization_magnitude)
             except Exception as e:
@@ -262,6 +262,8 @@ def main():
     parser.add_argument('--decimation-factor', default=1, type=int, dest='dec_factor')
     parser.add_argument('--search-depth', default=3, type=int,
                         help="Number of coarse templates to check for a good FIR representation")
+    parser.add_argument('--ratio-cap', default=1000, type=int,
+                        help="Don't fit ratio values above this number to avoid numerical instability of the fitting procedure")
     pycbc.psd.insert_psd_option_group(parser)
     args = parser.parse_args()
 
