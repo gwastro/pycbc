@@ -24,11 +24,6 @@
 """
 These are the unittests for pycbc.inference.models
 """
-import os
-os.environ["OMP_NUM_THREADS"] = '1'
-os.environ["OPENBLAS_NUM_THREADS"] = '1'
-os.environ["MKL_NUM_THREADS"] = '1'
-os.environ["JULIA_NUM_THREADS"] = '1'
 
 import unittest
 import copy
