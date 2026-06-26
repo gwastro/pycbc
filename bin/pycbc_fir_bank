@@ -94,8 +94,13 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
     else: # Default 'ridge'
         reg_matrix = np.eye(K_taps) * np.sqrt(reg_val)
         target_reg = np.zeros(K_taps)
+
+    A_final = np.vstack([A_real, reg_matrix])
+    b_final = np.concatenate([b_real, target_reg])
+        
     try:
-        h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)    
+        h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver='gelss')
+        #h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)    
     except:
         logging.info('Exception with numpy least squares, moving to scipy')
         h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver='gelss')
@@ -219,6 +224,7 @@ def process_template(i):
             else:
                 qa_match, sigmas = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
 
+            logging.debug(f"CoarseTemp:{c_idx} QA-Match:{qa_match} Taps:{current_taps} Max Tap Val: {max_tap_val}")
             round_matches.append(qa_match)
             
             if best[3] < qa_match:
