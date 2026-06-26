@@ -68,33 +68,32 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
     A_real = np.vstack([A_complex.real, A_complex.imag])
     b_real = np.concatenate([b_complex.real, b_complex.imag])
     
-    # --- REGULARIZATION ---
-    if reg_val > 0:
-        if reg_type == 'derivative':
-            # Create Difference Matrix (size K-1 x K)
-            # Row 0: [1, -1, 0, ...]
-            reg_matrix = np.zeros((K_taps - 1, K_taps))
-            for i in range(K_taps - 1):
-                reg_matrix[i, i] = 1
-                reg_matrix[i, i+1] = -1
-            
-            # Scale by sqrt(lambda)
-            reg_matrix *= np.sqrt(reg_val)
-            target_reg = np.zeros(K_taps - 1)
-            
-        else: # Default 'ridge'
-            reg_matrix = np.eye(K_taps) * np.sqrt(reg_val)
-            target_reg = np.zeros(K_taps)
+    if reg_type == 'derivative':
+        reg_matrix = np.zeros((K_taps - 1, K_taps))
+        for i in range(K_taps - 1):
+            reg_matrix[i, i] = 1
+            reg_matrix[i, i+1] = -1
+        reg_matrix *= np.sqrt(reg_val)
+        target_reg = np.zeros(K_taps - 1)
+        
+    elif reg_type == 'composite':
+        # 1. Ridge component (Size control)
+        reg_ridge = np.eye(K_taps) * np.sqrt(reg_val * 0.5)
+        
+        # 2. Derivative component (Smoothness control)
+        reg_deriv = np.zeros((K_taps - 1, K_taps))
+        for i in range(K_taps - 1):
+            reg_deriv[i, i] = 1
+            reg_deriv[i, i+1] = -1
+        reg_deriv *= np.sqrt(reg_val * 0.5)
+        
+        # Stack both penalties together
+        reg_matrix = np.vstack([reg_ridge, reg_deriv])
+        target_reg = np.zeros(K_taps + K_taps - 1)
 
-        # Stack onto system
-        A_final = np.vstack([A_real, reg_matrix])
-        b_final = np.concatenate([b_real, target_reg])
-    else:
-        A_final, b_final = A_real, b_real
-  
-
-    # Solve
-
+    else: # Default 'ridge'
+        reg_matrix = np.eye(K_taps) * np.sqrt(reg_val)
+        target_reg = np.zeros(K_taps)
     try:
         h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)    
     except:
@@ -211,7 +210,15 @@ def process_template(i):
                 pyplot.ylabel('Ratio')
                 pyplot.show()
 
-            qa_match, sigmas = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
+            # Check if the taps are sane or if they contains a crazy number of
+            # extreme / large values
+            max_tap_val = np.max(np.abs(taps))
+            if max_tap_val > g_args.max_tap_value:
+                logging.warning(f"Template {i} (Ref {c_idx}, {current_taps} taps) rejected: Max tap value {max_tap_val:.2e} exceeded safety threshold.")
+                qa_match = -1
+            else:
+                qa_match, sigmas = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
+
             round_matches.append(qa_match)
             
             if best[3] < qa_match:
@@ -243,12 +250,14 @@ def main():
     parser.add_argument('--n-processes', '-n', type=int, default=1)
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--regularization-type', default='ridge', type=str)
-    parser.add_argument('--regularization-magnitude', default=1e-2, type=float)
+    parser.add_argument('--regularization-magnitude', default=1e-1, type=float)
     parser.add_argument('--decimation-factor', default=1, type=int, dest='dec_factor')
     parser.add_argument('--search-depth', default=3, type=int,
                         help="Number of coarse templates to check for a good FIR representation")
     parser.add_argument('--ratio-cap', default=1000, type=int,
                         help="Don't fit ratio values above this number to avoid numerical instability of the fitting procedure")
+    parser.add_argument('--max-tap-value', default=1e5, type=float,
+                        help="If the calculated taps are larger in magnitude than this value, consider the constructionf failed")
     pycbc.psd.insert_psd_option_group(parser)
     args = parser.parse_args()
 
