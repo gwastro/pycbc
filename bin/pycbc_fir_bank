@@ -171,8 +171,8 @@ def process_template(i):
             ratio = np.nan_to_num(ratio, copy=False)
             weights_snr = np.nan_to_num(weights_snr, copy=False)
             H_target_raw = ratio * g_args.sample_rate
-
             band_mask[abs(ratio) > g_args.ratio_cap] = False
+            weights_snr /= weights_snr[band_mask].max()
 
             try:
                 taps = design_optimal_real_filter(H_target_raw[::g_args.dec_factor],
