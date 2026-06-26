@@ -40,7 +40,6 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
     reg_type='ridge'      -> Minimizes energy (Standard)
     reg_type='derivative' -> Minimizes roughness (Smooth coefficients)
     """
-    weights_pos = None
     # 1. Setup Grid
     N_nyquist = len(H_target_pos)
     N_full = 2 * (N_nyquist - 1)
@@ -97,26 +96,12 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
     # Solve
 
     try:
-        h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver='gelss')
-        #h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)    
+        h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)    
     except:
         logging.info('Exception with numpy least squares, moving to scipy')
         h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver='gelss')
         logging.info('Scipy suceeded')
     return h_optimal     
-    
-import numpy as np
-
-def rolling_median(arr, k):
-    # Calculate padding for left and right to handle even/odd symmetry
-    pad_left = k // 2
-    pad_right = (k - 1) // 2
-    
-    # Apply padding to maintain input length
-    padded = np.pad(arr, (pad_left, pad_right), mode='edge')
-    
-    # Create the sliding window view and compute median across the window axis
-    return np.mean(np.lib.stride_tricks.sliding_window_view(padded, k), axis=-1)
         
 # --- 2. Verification (Double Precision) ---
 def verify_filter_match(taps, h_ref, h_fine, psd, f_low):
@@ -162,7 +147,8 @@ def process_template(i):
 
     current_taps = g_args.n_taps
     
-    best = (i, -1, -1, -1, -1)
+    best = (i, -1, -1, -1.0, [], [])
+    qa_match = -1
     while current_taps <= g_args.max_taps:
         round_matches = []
         for c_idx in msearch:
@@ -186,7 +172,7 @@ def process_template(i):
             weights_snr = np.nan_to_num(weights_snr, copy=False)
             H_target_raw = ratio * g_args.sample_rate
 
-            bank_mask[abs(ratio) > g_args.ratio_cap] = False
+            band_mask[abs(ratio) > g_args.ratio_cap] = False
 
             try:
                 taps = design_optimal_real_filter(H_target_raw[::g_args.dec_factor],
@@ -215,7 +201,6 @@ def process_template(i):
                 H_fir = ts.to_frequencyseries(delta_f=h_ref.delta_f)
                 
                 pyplot.plot(freqs, ratio, label='target')
-                pyplot.plot(freqs, H_target_raw2 / g_args.sample_rate, label='something else')
                 H_fir.real().plot(label='achieved')
                 pyplot.xscale('log')
                 pyplot.xlim(25, 1000) # This is the band we monitor
