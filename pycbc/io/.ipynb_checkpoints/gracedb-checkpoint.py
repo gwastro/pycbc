@@ -427,8 +427,7 @@ class CandidateForGraceDB(object):
                 fname,
                 search=search,
                 labels=labels,
-                kafka=self.producer,
-                http_fallback=True,
+                kafka=self.producer
             )
             gid = response.json()["graceid"]
             logger.info("Uploaded event %s", gid)
