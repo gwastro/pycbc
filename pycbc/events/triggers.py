@@ -104,9 +104,10 @@ def get_mass_spin(bank, tid):
     return m1, m2, s1z, s2z
 
 
-def get_param(par, args, m1, m2, s1z, s2z):
+def get_param(par, args, bank, tid):
     """
-    Helper function
+    Helper function to extract parameters from bank and calculate
+    derived parameters
 
     Parameters
     ----------
@@ -114,22 +115,29 @@ def get_param(par, args, m1, m2, s1z, s2z):
         Name of parameter to calculate
     args : Namespace object returned from ArgumentParser instance
         Calling code command line options, used for f_lower value
-    m1 : float or array of floats
-        First binary component mass (etc.)
+    bank : h5py File object
+        Bank parameter file
+    tid : integer or array of int
+        Indices of the entries to be returned
 
     Returns
     -------
     parvals : float or array of floats
         Calculated parameter values
     """
+    m1, m2, s1z, s2z = get_mass_spin(bank, tid)
     if par == 'mchirp':
         parvals = conversions.mchirp_from_mass1_mass2(m1, m2)
     elif par == 'mtotal':
         parvals = m1 + m2
     elif par == 'eta':
         parvals = conversions.eta_from_mass1_mass2(m1, m2)
+    elif par == 'q':
+        parvals = conversions.q_from_mass1_mass2(m1, m2)
     elif par in ['chi_eff', 'effective_spin']:
         parvals = conversions.chi_eff(m1, m2, s1z, s2z)
+    elif par == 'eccentricity':
+        parvals = bank['eccentricity'][:][tid]
     elif par == 'template_duration':
         # default to SEOBNRv4 duration function
         if not hasattr(args, 'approximant') or args.approximant is None:
