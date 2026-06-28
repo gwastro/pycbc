@@ -20,7 +20,7 @@ This module provides a list of implemented samplers for parameter estimation.
 import logging
 
 # pylint: disable=unused-import
-from .base import (initial_dist_from_config, create_new_output_file)
+from .base import (BaseSampler, initial_dist_from_config, create_new_output_file)
 from .multinest import MultinestSampler
 from .ultranest import UltranestSampler
 from .dummy import DummySampler
@@ -76,6 +76,13 @@ try:
 except ImportError:
     pass
 
+# GPrySampler integration
+try:
+    from .gpry import GPrySampler
+    samplers[GPrySampler.name] = GPrySampler
+except ImportError:
+    logging.info("GPry sampler not available; ensure 'gpry' is installed.")
+    pass
 
 def load_from_config(cp, model, **kwargs):
     """Loads a sampler from the given config file.
