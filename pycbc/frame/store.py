@@ -71,5 +71,13 @@ def read_store(fname, channel, start_time, end_time):
 
     start = int((start_time - stime) * sample_rate)
     end = int((end_time - stime) * sample_rate)
+
+    if start < 0:
+        raise ValueError("Start index is out of bounds")
+    if end > len(data):
+        raise ValueError("End index is out of bounds")
+    if start >= end:
+        raise ValueError("Start index must be less than end index")
+
     return TimeSeries(data[start:end], delta_t=1.0/sample_rate,
                       epoch=start_time)
