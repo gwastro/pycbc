@@ -271,12 +271,16 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         from pycbc.filter import matched_filter_core
 
         params = self.current_params
-        if self.all_ifodata_same_rate_length:
-            wfs = self.waveform_generator.generate(**params)
+        # Custom waveform is only being used with the brute marginalized total mass model
+        if "custom_waveform" in params:
+            wfs = params["custom_waveform"]
         else:
-            wfs = {}
-            for det in self.data:
-                wfs.update(self.waveform_generator[det].generate(**params))
+            if  self.all_ifodata_same_rate_length:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
         sh_total = hh_total = 0.
         snr_estimate = {}
         cplx_hpd = {}
