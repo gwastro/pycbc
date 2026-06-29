@@ -1224,7 +1224,7 @@ class File(pegasus_workflow.File):
             if stage_out:
                 if not stage_out.endswith('/'):
                     stage_out += '/'
-                file_url = urllib.parse.urljoin(stage_out, filename)
+                file_url = stage_out + filename
             else:
                 path = os.path.join(directory, filename)
                 if not os.path.isabs(path):
