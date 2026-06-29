@@ -869,6 +869,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                  coinc_window_pad=.002,
                  statistic_refresh_rate=None,
                  return_background=False,
+                 return_background_info=False,
                  ifar_remove_threshold=None,
                  injection_veto_chunks=None,
                  boundary_veto_window=0.1,
@@ -912,6 +913,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             chunks do not count towards the background time. The zerolag
             candidate itself is still reported. Default None, which
             disables this removal.
+        return_background_info: boolean
+            If true, per-coinc metadata (stat, end times, template id,
+            timeslide offset) for background triggers found in each update
+            are included in the coinc results under the
+            'background_coincs/' namespace.
         injection_veto_chunks: list of int or None
             Integer chunk indices (gps_time // analysis_block) that are
             permanently excluded from background estimation regardless of
@@ -942,6 +948,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
+        self.return_background_info = return_background_info
         self.coinc_window_pad = coinc_window_pad
         self.ifar_remove_threshold = ifar_remove_threshold
         self.boundary_veto_window = boundary_veto_window
@@ -1424,6 +1431,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # (both zerolag and shifted are handled together)
         num_zerolag = 0
         num_background = 0
+        _bkg_info = None
 
         if len(cstat) > 0:
             offsets = numpy.concatenate(offsets)
@@ -1517,6 +1525,19 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             self.coincs.add(cstat[cidx][bkg_idx], single_expire, valid_ifos)
             num_zerolag = zerolag_idx.sum()
             num_background = bkg_idx.sum()
+
+            # Capture per-coinc metadata for offline diagnostics.
+            # offsets is already re-indexed to cidx, so offsets[bkg_idx]
+            # aligns with cstat[cidx][bkg_idx].
+            if self.return_background_info and num_background > 0:
+                bkg_cidx = cidx[bkg_idx]
+                _bkg_info = {
+                    'stat':        cstat[bkg_cidx],
+                    'end_time_0':  ctime0[bkg_cidx],
+                    'end_time_1':  ctime1[bkg_cidx],
+                    'template_id': template_ids[bkg_cidx].astype(numpy.int32),
+                    'offset':      offsets[bkg_idx],
+                }
         elif len(valid_ifos) > 0:
             self.coincs.increment(valid_ifos)
 
@@ -1549,6 +1570,21 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # Save all the background triggers
         if self.return_background:
             coinc_results['background/stat'] = self.coincs.data
+
+        # Per-coinc metadata (end times, template id, offset) for this
+        # update's background triggers; only when return_background_info=True.
+        if _bkg_info is not None:
+            coinc_results['background_coincs/stat'] = _bkg_info['stat']
+            coinc_results[f'background_coincs/{self.ifos[0]}/end_time'] = (
+                _bkg_info['end_time_0']
+            )
+            coinc_results[f'background_coincs/{self.ifos[1]}/end_time'] = (
+                _bkg_info['end_time_1']
+            )
+            coinc_results['background_coincs/template_id'] = (
+                _bkg_info['template_id']
+            )
+            coinc_results['background_coincs/offset'] = _bkg_info['offset']
 
         return num_background, coinc_results
 
