@@ -1029,12 +1029,49 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             parser.error(f"The single ifo ranking stat {args.sngl_ranking} "
                          "requires --psd-variation.")
 
+    def _filter_loud_coincs(self, cstat, ctime0, ctime1, offsets):
+        """Remove background coincs that fall in loud chunks.
+
+        Prunes stale loud chunks, then returns an index array selecting
+        only the coincs that are *not* in a loud chunk (background coincs
+        in loud chunks are excluded; zerolag coincs are always kept).
+        Returns slice(None) when no filtering is needed so the caller can
+        treat all cases uniformly.
+        """
+        # Prune loud chunks older than the lookback time: their triggers
+        # have expired from the singles buffers, so they must no longer
+        # reduce the background time.
+        min_end = max(ctime0.max(), ctime1.max()) - self.lookback_time
+        self.loud_chunks = {
+            c for c in self.loud_chunks
+            if (c + 1) * self.analysis_block > min_end
+        }
+        if not self.loud_chunks:
+            return slice(None)
+        # Exclude background (timeslide) coincs in loud chunks; zerolag
+        # coincs are kept so loud signals/injections are always reported.
+        chunk0 = (ctime0 // self.analysis_block).astype(numpy.int64)
+        chunk1 = (ctime1 // self.analysis_block).astype(numpy.int64)
+        loud = numpy.fromiter(self.loud_chunks, dtype=numpy.int64)
+        in_loud_block = numpy.isin(chunk0, loud) | numpy.isin(chunk1, loud)
+        good = numpy.flatnonzero(~(in_loud_block & (offsets != 0)))
+        if len(good) < len(cstat):
+            logger.info(
+                "Removing %d background coincs in loud chunks",
+                len(cstat) - len(good),
+            )
+        return good
+
     @property
     def background_time(self):
-        """Return the amount of background time that the buffers contain"""
+        """Return the amount of background time that the buffers contain.
+
+        A loud chunk is an analysis_block-length time segment identified as
+        containing a loud candidate (IFAR above ifar_remove_threshold). Loud
+        chunks are excluded from background coincidence formation in both
+        detectors, so they do not contribute to the background time.
+        """
         time = 1.0 / self.timeslide_interval
-        # Loud chunks are excluded from coincidence formation in both
-        # detectors, so they do not contribute to the background time
         loud_time = len(self.loud_chunks) * self.analysis_block
         for ifo in self.singles:
             livetime = self.singles[ifo].filled_time * self.analysis_block
@@ -1314,41 +1351,24 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
             ctime1 = numpy.concatenate(ctimes[self.ifos[1]]).astype(numpy.float64)
-            good = None
+            good = slice(None)
             if self.ifar_remove_threshold is not None and self.loud_chunks:
-                # Prune loud chunks older than the lookback time: their
-                # triggers have expired from the singles buffers, so they
-                # must no longer reduce the background time
-                min_end = max(ctime0.max(), ctime1.max()) - self.lookback_time
-                self.loud_chunks = {
-                    c for c in self.loud_chunks
-                    if (c + 1) * self.analysis_block > min_end
-                }
-                # Exclude background (timeslide) coincs in loud chunks;
-                # zerolag coincs are kept so loud signals/injections are
-                # always reported as candidates.
-                if self.loud_chunks:
-                    chunk0 = (ctime0 // self.analysis_block).astype(numpy.int64)
-                    chunk1 = (ctime1 // self.analysis_block).astype(numpy.int64)
-                    loud = numpy.fromiter(self.loud_chunks, dtype=numpy.int64)
-                    in_loud_block = (numpy.isin(chunk0, loud)
-                                     | numpy.isin(chunk1, loud))
-                    good = numpy.flatnonzero(~(in_loud_block & (offsets != 0)))
-                    if len(good) < len(cstat):
-                        logger.info("Removing %d background coincs in loud chunks",
-                                    len(cstat) - len(good))
+                good = self._filter_loud_coincs(cstat, ctime0, ctime1, offsets)
 
             logger.info("Clustering %s coincs", ppdets(self.ifos, "-"))
             cluster_window = self.analysis_block + 2 * self.time_window
-            if good is None:
-                cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
-                                      self.timeslide_interval,
-                                      cluster_window, method='cython')
-            elif len(good):
-                cidx = good[cluster_coincs(cstat[good], ctime0[good],
-                                           ctime1[good], offsets[good],
-                                           self.timeslide_interval,
-                                           cluster_window, method='cython')]
+            good_cstat = cstat[good]
+            if len(good_cstat):
+                sub = cluster_coincs(
+                    good_cstat,
+                    ctime0[good],
+                    ctime1[good],
+                    offsets[good],
+                    self.timeslide_interval,
+                    cluster_window,
+                    method='cython',
+                )
+                cidx = numpy.arange(len(cstat), dtype=numpy.int64)[good][sub]
             else:
                 cidx = numpy.array([], dtype=numpy.int64)
 
