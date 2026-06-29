@@ -1,0 +1,29 @@
+pycbc.detector package
+======================
+
+Submodules
+----------
+
+pycbc.detector.ground module
+----------------------------
+
+.. automodule:: pycbc.detector.ground
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.detector.space module
+---------------------------
+
+.. automodule:: pycbc.detector.space
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.detector
+   :members:
+   :undoc-members:
+   :show-inheritance:

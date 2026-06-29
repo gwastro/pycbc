@@ -1,0 +1,78 @@
+/*
+ * Fix caption text color in PyData/Book Sphinx themes.
+ */
+
+.scbs-carousel h5, .scbs-carousel p {
+    color: revert;
+}
+
+.scbs-carousel h5 {
+    font-weight: bold;
+}
+
+/*
+ * Fix padding in RTD theme: https://github.com/Robpol86/sphinx-carousel/issues/31
+ */
+
+.rst-content section>.scbs-carousel {
+    margin-bottom: 24px
+}
+
+/*
+ * Buttons on top.
+ */
+
+.scc-top-control {
+    align-items: start;
+}
+
+.scc-top-indicator {
+    bottom: unset;
+}
+
+.scc-below-control {  /* https://scottdorman.blog/2019/03/02/bootstrap-carousel-caption-placement/ */
+    position: relative;
+    left: 0;
+    top: 0;
+    font-family: var(--bs-font-sans-serif);
+}
+
+/*
+ * Shadows.
+ */
+
+:not(.scbs-carousel-dark) .scc-shadow-control {
+    filter:
+        drop-shadow(0 0 0.4rem var(--bs-dark))
+        drop-shadow(0 0 0.4rem var(--bs-dark))
+        drop-shadow(0 0 0.4rem var(--bs-dark))
+        drop-shadow(0 0 0.4rem var(--bs-dark))
+        ;
+}
+
+.scbs-carousel-dark .scc-shadow-control {
+    filter:
+        drop-shadow(0 0 0.4rem var(--bs-light))
+        drop-shadow(0 0 0.4rem var(--bs-light))
+        drop-shadow(0 0 0.4rem var(--bs-light))
+        drop-shadow(0 0 0.4rem var(--bs-light))
+        ;
+}
+
+:not(.scbs-carousel-dark) .scc-shadow-indicator {
+    filter:
+        drop-shadow(-0.6rem 0 0.4rem var(--bs-dark))
+        drop-shadow( 0.6rem 0 0.4rem var(--bs-dark))
+        drop-shadow(-0.6rem 0 0.4rem var(--bs-dark))
+        drop-shadow( 0.6rem 0 0.4rem var(--bs-dark))
+        ;
+}
+
+.scbs-carousel-dark .scc-shadow-indicator {
+    filter:
+        drop-shadow(-0.6rem 0 0.4rem var(--bs-light))
+        drop-shadow( 0.6rem 0 0.4rem var(--bs-light))
+        drop-shadow(-0.6rem 0 0.4rem var(--bs-light))
+        drop-shadow( 0.6rem 0 0.4rem var(--bs-light))
+        ;
+}
