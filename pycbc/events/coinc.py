@@ -1386,9 +1386,15 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                     ifar_val, _ = self.ifar(cstat[idx])
                     if ifar_val <= self.ifar_remove_threshold:
                         continue
+                    # Both times are within the light travel time of each
+                    # other (zerolag), so this set almost always has one
+                    # element; two elements only if a trigger straddles a
+                    # block boundary.
                     chunks = {int(ctime0[idx] // self.analysis_block),
                               int(ctime1[idx] // self.analysis_block)}
-                    for chunk in chunks - self.loud_chunks:
+                    for chunk in chunks:
+                        if chunk in self.loud_chunks:
+                            continue
                         self.loud_chunks.add(chunk)
                         new_loud.append(chunk)
                         logger.info(
