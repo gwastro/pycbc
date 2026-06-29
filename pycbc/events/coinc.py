@@ -829,6 +829,36 @@ class CoincExpireBuffer(object):
         return self.buffer[:self.index]
 
 
+def chunk_indices_with_boundary(times, analysis_block, boundary_window):
+    """Return the set of chunk indices covering *times*, expanding into
+    neighbouring chunks when a time falls within *boundary_window* seconds
+    of a chunk edge.
+
+    Parameters
+    ----------
+    times : iterable of float
+        GPS trigger or injection times.
+    analysis_block : int or float
+        Chunk duration in seconds.
+    boundary_window : float
+        If a time is within this many seconds of a chunk boundary, the
+        adjacent chunk index is also included.
+
+    Returns
+    -------
+    set of int
+    """
+    indices = set()
+    for t in times:
+        c = int(t // analysis_block)
+        indices.add(c)
+        if t - c * analysis_block < boundary_window:
+            indices.add(c - 1)
+        if (c + 1) * analysis_block - t < boundary_window:
+            indices.add(c + 1)
+    return indices
+
+
 class LiveCoincTimeslideBackgroundEstimator(object):
     """Rolling buffer background estimation."""
 
@@ -840,6 +870,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                  statistic_refresh_rate=None,
                  return_background=False,
                  ifar_remove_threshold=None,
+                 boundary_veto_window=0.1,
                  **kwargs):
         """
         Parameters
@@ -872,6 +903,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         return_background: boolean
             If true, background triggers will also be included in the file
             output.
+        boundary_veto_window: float
+            If a loud trigger falls within this many seconds of a chunk
+            boundary, the neighbouring chunk is also flagged as loud.
+            Default 0.1 s. Applies to both IFAR-based and injection vetoes.
         kwargs: dict
             Additional options for the statistic to use. See stat.py
             for more details on statistic options.
@@ -895,6 +930,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.return_background = return_background
         self.coinc_window_pad = coinc_window_pad
         self.ifar_remove_threshold = ifar_remove_threshold
+        self.boundary_veto_window = boundary_veto_window
         # Set of integer chunk indices (gps_time // analysis_block) whose
         # triggers are excluded from coincidence formation
         self.loud_chunks = set()
@@ -1386,12 +1422,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                     ifar_val, _ = self.ifar(cstat[idx])
                     if ifar_val <= self.ifar_remove_threshold:
                         continue
-                    # Both times are within the light travel time of each
-                    # other (zerolag), so this set almost always has one
-                    # element; two elements only if a trigger straddles a
-                    # block boundary.
-                    chunks = {int(ctime0[idx] // self.analysis_block),
-                              int(ctime1[idx] // self.analysis_block)}
+                    chunks = chunk_indices_with_boundary(
+                        [ctime0[idx], ctime1[idx]],
+                        self.analysis_block,
+                        self.boundary_veto_window,
+                    )
                     for chunk in chunks:
                         if chunk in self.loud_chunks:
                             continue
