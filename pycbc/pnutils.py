@@ -531,8 +531,13 @@ def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
 
 def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
     """Wrapper of lalsimulation template duration approximate formula"""
-    m1, m2, s1z, s2z, f_low = float(m1), float(m2), float(s1z), float(s2z),\
-                              float(f_low)
+    m1_raw, m2_raw, s1z, s2z, f_low_raw = float(m1), float(m2), float(s1z),\
+                                            float(s2z), float(f_low)
+    # scale masses and frequency to avoid high-mass overflow errors
+    scale = (m1 + m2)/70.
+    m1 = m1_raw / scale
+    m2 = m2_raw / scale
+    f_low = f_low_raw * scale
     if approximant == "SEOBNRv2":
         chi = lalsim.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
         time_length = lalsim.SimIMRSEOBNRv2ChirpTimeSingleSpin(
@@ -561,7 +566,7 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
         raise RuntimeError("I can't calculate a duration for %s" % approximant)
     # FIXME Add an extra factor of 1.1 for 'safety' since the duration
     # functions are approximate
-    return time_length * 1.1
+    return time_length * 1.1 * scale
 
 get_imr_duration = numpy.vectorize(_get_imr_duration)
 

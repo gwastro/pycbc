@@ -154,8 +154,10 @@ class TestParams(unittest.TestCase):
         from pycbc.waveform import get_fd_det_waveform
 
         from pycbc.detector import Detector, add_detector_on_earth
-        from pycbc.waveform import get_td_waveform
+        from pycbc.waveform import get_fd_waveform
         import importlib
+        
+        YRSID_SI = 31558149.763545603
 
         def is_module_installed(module_name):
             try:
@@ -169,7 +171,7 @@ class TestParams(unittest.TestCase):
                              fd_taper=False):
 
             # Generate a waveform at the detector-frame.
-            hp, hc = get_td_waveform(approximant=model, 
+            hp, hc = get_fd_waveform(approximant=model, 
                         mass1=params['mass1'], mass2=params['mass2'],
                         spin1x=0, spin1y=0,
                         spin1z=params['spin1z'], spin2x=0,
@@ -177,7 +179,7 @@ class TestParams(unittest.TestCase):
                         distance=params['distance'],
                         coa_phase=params['coa_phase'],
                         inclination=params['inclination'], f_lower=flow,
-                        f_ref=fref, delta_t=1.0/fs)
+                        f_ref=fref, delta_t=1.0/fs, delta_f=fs/YRSID_SI)
 
             # Set merger time to 'tc'.
             hp.start_time += tc
@@ -221,7 +223,6 @@ class TestParams(unittest.TestCase):
 
             # set parameters
             params = {}
-            YRSID_SI = 31558149.763545603
             params['tdi'] = '1.5'
             params['ref_frame'] = 'SSB'
             params['approximant'] = 'BBHX_PhenomD'
@@ -300,8 +301,7 @@ class TestParams(unittest.TestCase):
                                             params=params_3g,
                                             fd_taper=False)          
                 E3_signal_fd = {
-                    'DIY_E3':E3_signal[0].to_frequencyseries(
-                                            params_3g['delta_f'])
+                    'DIY_E3':E3_signal[0].to_frequencyseries()
                 }
 
                 index_E3 = numpy.where(numpy.abs(
@@ -341,7 +341,7 @@ class TestParams(unittest.TestCase):
             # especially for the phase, but they are almost consistent with
             # each other visually.
             if (numpy.abs(dist_amp - 0.2838670151034317) < 1e-2) and \
-                (numpy.abs(dist_phase - 151.77197349820668) < 1e-2):
+                (numpy.abs(dist_phase - 353.6477243138732) < 1e-2):
                 passed = True
             else:
                 passed = False
