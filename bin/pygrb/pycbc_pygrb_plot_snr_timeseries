@@ -144,14 +144,18 @@ inj_data = ppu.load_data(inj_file, ifos, data_tag='injs',
                          slide_id=0)
 
 # Specify HDF file keys for x quantity (time) and y quantity (SNR)
+# and start preparing the horizontal axis label
 x_key = 'network/end_time_gc'
+x_label = "Geocenter"
 y_key = 'network/' + opts.y_variable + '_snr'
 if opts.y_variable == 'single':
     y_key = opts.ifo + '/snr'
-    # When looking at a single slide in a detector use the time at the detector
-    # Otherwise use the time at the geocenter to look at all slides at once
-    if opts.slide_id != 'all':
+    # When plotting all slides (in which case opts.slide_id stores None), use
+    # the geocenter time. Otherwise, a single slide is being considered (and
+    # opts.slide_id stores an integer) and the detector time is used.
+    if opts.slide_id != None:
         x_key = opts.ifo + '/end_time'
+        x_label = opts.ifo
 
 # Extract needed trigger properties and store them as dictionaries
 # Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
@@ -206,8 +210,7 @@ if inj_file:
 # Generate plots
 logging.info("Plotting...")
 
-# Prepare the horizontal axis label
-x_label = "Geocenter" if 'network' in x_key else opts.ifo
+# Complete the horizontal axis label
 x_label += f" time since {central_time:.3f} (s)"
 
 # Determine what goes on the vertical axis
