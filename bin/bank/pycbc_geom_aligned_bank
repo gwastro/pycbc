@@ -23,12 +23,10 @@ translation between points in the chirp parameters parameter space is done
 in a workflow.
 """
 
-import os
 import copy
 import argparse
 import numpy
 import logging
-import configparser
 from scipy import spatial
 
 from igwn_ligolw import ligolw

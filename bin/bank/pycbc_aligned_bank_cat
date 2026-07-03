@@ -21,7 +21,6 @@ Program for concatenating the output of the geometric aligned bank dagman.
 This will gather all the meta-output files and create a valid template bank
 xml file.
 """
-import logging
 import glob
 import argparse
 import numpy
