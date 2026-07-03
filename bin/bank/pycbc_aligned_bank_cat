@@ -65,10 +65,11 @@ parser.add_argument("--f-upper", action="store", type=positive_float,
                     required=True,
                     help="Upper frequency cutoff used in computing the "
                     "parameter space metric.  REQUIRED. UNITS=Hz")
+parser.add_argument('--output-f-final', action='store_true', default=False,
+                    help="Include 'f_final' in the output hdf file.")
 
 
 options = parser.parse_args()
-options.output_f_final = True
 
 pycbc.init_logging(options.verbose)
 
