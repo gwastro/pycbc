@@ -1312,6 +1312,186 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
         string.
         """
         return select_waveform_modes_generator(approximant, domain)
+    
+
+class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
+    r"""Generates frequency-domain waveform modes in a specific frame.
+
+    Generates both polarizations of every waveform mode using the given
+    radiation frame generator class, and applies the time shift. Detector
+    response functions are not applied.
+
+    Parameters
+    ----------
+    rFrameGeneratorClass : class
+        The class to use for generating the waveform modes in the radiation
+        frame, e.g., :py:class:`FDomainCBCModesGenerator`. This should be the
+        class, not an instance of the class (the class will be initialized with
+        the appropriate arguments internally). The class should have a generate
+        function that returns a dictionary of waveforms keyed by the modes.
+    detectors : {None, list of strings}
+        The names of the detectors to use. If provided, all location parameters
+        must be included in either the variable args or the frozen params. If
+        None, the generate function will just return the plus polarization
+        returned by the rFrameGeneratorClass shifted by any desired time shift.
+    epoch : float
+        The epoch start time to set the waveform to. A time shift = tc - epoch is
+        applied to waveforms before returning.
+    variable_args : {(), list or tuple}
+        A list or tuple of strings giving the names and order of parameters
+        that will be passed to the generate function.
+    ref_phase : str
+        The phase used as a reference for generating h_c and h_s. If multiple
+        phases are in the signal, the relative difference between phases is
+        maintained during generation. For example, if a waveform has two phases
+        phi1 = pi/3 and phi2 = pi/2, with phi1 set as the reference, h_c will
+        be generated with phi1 = 0 and phi2 = pi/6, and h_s will be generated
+        with phi1 = pi/2 and phi2 = 2pi/3.
+    phases : {list, None}, optional
+        The names of the phase parameters taken in by the waveform approximant.
+        If None, it is assumed that the ref_phase argument is the only phase in
+        the signal.
+    \**frozen_params
+        Keyword arguments setting the parameters that will not be changed from
+        call-to-call of the generate function.
+
+    Attributes
+    ----------
+    detectors : dict
+        The dictionary of detectors that antenna patterns are calculated for
+        on each call of generate. If no detectors were provided, will be
+        ``{'RF': None}``, where "RF" means "radiation frame".
+    detector_names : list
+        The list of detector names. If no detectors were provided, then this
+        will be ['RF'] for "radiation frame".
+    epoch : float
+        The GPS start time of the frequency series returned by the generate
+        function. A time shift is applied to the waveform equal to tc-epoch.
+        Update by using ``set_epoch``.
+    current_params : dict
+        A dictionary of name, value pairs of the arguments that were last
+        used by the generate function.
+    rframe_generator : instance of rFrameGeneratorClass
+        The instance of the radiation-frame generator that is used for waveform
+        generation. All parameters in current_params except for the
+        location params are passed to this class's generate function.
+    frozen_location_args : dict
+        Any location parameters that were included in the frozen_params.
+    variable_args : tuple
+        The list of names of arguments that are passed to the generate
+        function.
+
+    """
+    location_args = set(['tc', 'ra', 'dec'])
+    """ set(['tc', 'ra', 'dec']):
+        The set of location parameters. These are not passed to the rFrame
+        generator class; instead, they are used to apply the detector response
+        function and/or shift the waveform in time. The parameters are:
+
+          * tc: The GPS time of coalescence (should be geocentric time).
+          * ra: Right ascension.
+          * dec: declination
+          * tc_ref_frame (optional): reference frame in which tc is defined.
+            Must be one of: 'geocentric', for geocentric time, or one of the
+            detector names. Default 'geocentric.'
+
+        All of these must be provided in either the variable args or the
+        frozen params if detectors is not None. If detectors
+        is None, tc may optionally be provided.
+    """
+
+    def generate(self, phases=None, ref_phase=None, **kwargs):
+        """Generates and returns a waveform decompsed into separate modes.
+
+        Returns
+        -------
+        dict :
+            Dictionary of ``detector names -> modes -> (ulm, vlm)``, where
+            ``ulm, vlm`` are the frequency-domain representations of the real
+            and imaginary parts, respectively, of the complex time series
+            representation of the ``hlm``.
+        """
+        self.current_params.update(kwargs)
+        rfparams = {param: self.current_params[param]
+            for param in kwargs if param not in self.location_args}
+        # generate the cosine terms: ref_phase = 0
+        if rfparams[ref_phase] != 0.:
+            raise ValueError(f'Reference phase {ref_phase}={rfparams[ref_phase]} is '
+                              'not zero')
+        hlms_cos = self.rframe_generator.generate(**rfparams)
+        # generate the sine term: shift all phases by pi/2
+        sin_params = rfparams.copy()
+        for i in phases:
+            sin_params[i] = rfparams[i] + pi/2
+        hlms_sin = self.rframe_generator.generate(**rfparams)
+        hlm = {det: {} for det in self.detectors}
+        for mode in hlms_cos:
+            ulm_cos, vlm_cos = hlms_cos[mode]
+            ulm_sin, vlm_sin = hlms_sin[mode]
+            if isinstance(ulm_cos, TimeSeries):
+                df = self.current_params['delta_f']
+                ulm_cos = ulm_cos.to_frequencyseries(delta_f=df)
+                vlm_cos = vlm_cos.to_frequencyseries(delta_f=df)
+                ulm_sin = ulm_sin.to_frequencyseries(delta_f=df)
+                vlm_sin = vlm_sin.to_frequencyseries(delta_f=df)
+                # time-domain waveforms will not be shifted so that the peak
+                # amplitude happens at the end of the time series (as they are
+                # for f-domain), so we add an additional shift to account for
+                # it
+                tshift = 1./df - abs(ulm_cos._epoch)
+            else:
+                tshift = 0.
+            ulm_cos._epoch = vlm_cos._epoch = self._epoch
+            ulm_sin._epoch = vlm_sin._epoch = self._epoch
+            if self.detector_names != ['RF']:
+                ra = self.current_params['ra']
+                dec = self.current_params['dec']
+                ref_tc = self.current_params['tc']
+                pol = self.current_params['polarization']
+                refframe = self.current_params.get('tc_ref_frame', 'geocentric')
+                for detname, det in self.detectors.items():
+                    tc = det.arrival_time(ref_tc, ra, dec, refframe)
+                    # apply response function
+                    fp, fc = det.antenna_pattern(ra, dec, pol, tc)
+                    thishlmc = fp*ulm_cos + fc*vlm_cos
+                    thishlms = fp*ulm_sin + fc*vlm_sin
+                    # apply time shift
+                    dethlm_cos = apply_fd_time_shift(thishlmc, tc+tshift, 
+                                                     copy=True)
+                    dethlm_sin = apply_fd_time_shift(thishlms, tc+tshift, 
+                                                     copy=True)
+                    if self.recalib:
+                        # recalibrate with given calibration model
+                        dethlm_cos = self.recalib[detname].map_to_adjust(
+                            dethlm_cos, **self.current_params)
+                        dethlm_sin = self.recalib[detname].map_to_adjust(
+                            dethlm_sin, **self.current_params)
+                    hlm[detname][mode] = (dethlm_cos, dethlm_sin)
+            else:
+                # no detector response, just us + pol and apply time shift
+                if 'tc' in self.current_params:
+                    ulm_cos = apply_fd_time_shift(ulm_cos,
+                                              self.current_params['tc']+tshift,
+                                              copy=False)
+                    ulm_sin = apply_fd_time_shift(ulm_sin,
+                                              self.current_params['tc']+tshift,
+                                              copy=False)
+                hlm['RF'][mode] = (ulm_cos, ulm_sin)
+            if self.gates is not None:
+                # resize all to nearest power of 2
+                hclms = {}
+                hslms = {}
+                for det in hlm:
+                    hclm, hslm = hlm[det][mode]
+                    hclm.resize(ceilpow2(len(hclm)-1) + 1)
+                    hslm.resize(ceilpow2(len(hslm)-1) + 1)
+                    hclms[det] = hclm
+                    hslms[det] = hslm
+                hclm = strain.apply_gates_to_fd(hclm, self.gates)
+                hslm = strain.apply_gates_to_fd(hslm, self.gates)
+                for det in hlm:
+                    hlm[det][mode] = (hclm[det], hslm[det])
+        return hlm
 
 
 class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
