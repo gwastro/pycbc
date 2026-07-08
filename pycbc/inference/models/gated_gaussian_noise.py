@@ -1518,9 +1518,12 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                 gated_hs *= 2 * invpsd.delta_f * invpsd
                 # calculate hc inner product and get scale
                 thishchc = hc[slc].inner(gated_hc[slc]).real
-                sampled_snr = self.current_params[f'amp{mode}_snr']
-                scale = self.snr_scale_factor(thishchc, sampled_snr)
-                scalesq = scale*scale
+                if self.sample_snrs:
+                    sampled_snr = self.current_params[f'amp{mode}_snr']
+                    scale = self.snr_scale_factor(thishchc, sampled_snr)
+                    scalesq = scale*scale
+                else:
+                    scale = scalesq = 1.
                 # add scaled hh products to running total
                 hchc += scalesq * thishchc
                 hchs += scalesq * hc[slc].inner(gated_hs[slc]).real
