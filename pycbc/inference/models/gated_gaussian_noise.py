@@ -1308,3 +1308,273 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             combine[det] = sum([x[det] for x in wfs])
         self._current_wfs = combine
         return self._loglikelihood()
+
+
+class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
+    r"""Gated Gaussian noise model that analytically marginalizes over the
+    phase of a signal.
+
+    The phase to be marginalized over is specified by the user using the 
+    `ref_phase` argument. If a model consists of multiple modes each with their
+    own phase, only the reference phase is marginalized over. All phases must
+    be specified with the `phase_names` argument. This can be passed as a list
+    or a string delimited by spaces (e.g. 'phase1 phase2 phase3').
+
+    Marginalization is done using explicit numerical integration over 500
+    thousand integration points by default. This method assumes that the
+    waveform h can be written in terms of an overall phase phi as
+
+        h = h_c * cos(phi) + h_s * sin(phi),
+
+    where h_c and h_s are the waveform with phi set to zero and pi/2
+    respectively. The number of integration points can be controlled via the
+    `phase_samples` argument.
+    
+    This class also allows functionality to sample over the optimal SNR of each
+    mode in the signal. User must specify the names of the amplitude parameters
+    for the modes the user wants to sample in SNR space. These specified
+    parameters are set to a fiducial value for the purposes of waveform
+    generation. A helper function then scales the amplitude of each mode to
+    match the sampled SNR.
+    """
+    name = 'gated_gaussian_multimargphase'
+
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, normalize=False,
+                 static_params=None,
+                 phase_samples=500000, phase_names=None,
+                 ref_phase=None, sample_snrs=False,
+                 snr_to_amp_names=None, fiducial_amp_value=1.,
+                 **kwargs):
+        # set up the boiler-plate attributes
+        super().__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            static_params=static_params, **kwargs)
+        self.det_names = list(self.data.keys())
+        self.dets = {}
+        # phase marginalization parameters
+        self.phase_samples = int(phase_samples)
+        self.phases = numpy.linspace(0, 2*numpy.pi, self.phase_samples)
+        if ref_phase is None:
+            raise KeyError('ref_phase is set to None. Please specify the '
+                           'name of the phase parameter to marginalize '
+                           'over')
+        self.ref_phase = ref_phase
+        if phase_names is None:
+            logging.warning('No phase_names provided. Assuming single mode '
+                            f'specified by ref_phase {ref_phase}')
+            self.phase_names = [ref_phase]
+        elif type(phase_names) == list:
+            self.phase_names = phase_names
+        elif type(phase_names) == str:
+            self.phase_names = phase_names.split(' ')
+        else:
+            raise TypeError('Unrecognized format for phase_names arg. Accepts '
+                            'string, list, or None')
+        # flag whether to sample each mode in SNR space or amplitude space
+        self.sample_snrs = sample_snrs
+        self.fiducial_amp_value = fiducial_amp_value
+        # if sampling in snr, set names of snr and amp params
+        if self.sample_snrs:
+            if snr_to_amp_names is None:
+                raise ValueError('Must provide names of amplitude parameters '
+                                 'if specifying sample_snrs')
+            elif type(snr_to_amp_names) == list:
+                self.amp_names = snr_to_amp_names
+            elif type(snr_to_amp_names) == str:
+                self.amp_names = snr_to_amp_names.split(' ')
+            else:
+                raise TypeError('Unrecognized format for snr_to_amp_names. '
+                                'Accepts string or list')
+            self.snr_names = [i + '_snr' for i in self.amp_names]
+        # create the waveform generator
+        self.waveform_generator = create_waveform_generator(
+            self.variable_params, self.data,
+            waveform_transforms=self.waveform_transforms,
+            recalibration=self.recalibration,
+            generator_class=generator.FDomainDetFrameTwoPhaseModesGenerator,
+            **self.static_params)
+
+    def get_waveforms(self):
+        r"""Generate the waveforms.
+        """
+        if self._current_wfs is None:
+            params = self.current_params.copy()
+            # set specified amplitudes to fiducial value
+            for amp in self.amp_names:
+                params[amp] = self.fiducial_amp_value
+            # generate the cosine and sine terms
+            wfs = self.waveform_generator.generate(phases=self.phase_names, 
+                                                   ref_phase=self.ref_phase,
+                                                   **params)
+            for det in wfs:
+                for mode in wfs[det]:
+                    hc, hs = wfs[det][mode]
+                    # make the same length as the data
+                    hc.resize(len(self.data[det]))
+                    hs.resize(len(self.data[det]))
+                    # apply high pass
+                    if self.highpass_waveforms:
+                        hc = highpass(
+                            hc.to_timeseries(),
+                            frequency=self.highpass_waveforms).to_frequencyseries()
+                        hs = highpass(
+                            hs.to_timeseries(),
+                            frequency=self.highpass_waveforms).to_frequencyseries()
+                    wfs[det][mode] = (hc, hs)
+            self._current_wfs = wfs
+        return self._current_wfs
+
+    def get_gated_waveforms(self):
+        r"""Generate the gated waveforms.
+        """
+        wfs = self.get_waveforms()
+        out = {}
+        # apply the gate
+        for det in wfs:
+            for mode in wfs[det]:
+                hc, hs = wfs[det][mode]
+                hct = hc.to_timeseries()
+                hst = hs.to_timeseries()
+                invpsd = self._invpsds[det]
+                gate_times = self.get_gate_times()
+                gatestartdelay, dgatedelay = gate_times[det]
+                invmat = self.invert_covariance(det, mode)
+                hct = hct.gate(gatestartdelay + dgatedelay/2,
+                               window=dgatedelay/2, copy=False,
+                               invpsd=invpsd, method='paint',
+                               paint_method=self.paint_method,
+                               paint_invmat=invmat)
+                hst = hst.gate(gatestartdelay + dgatedelay/2,
+                               window=dgatedelay/2, copy=False,
+                               invpsd=invpsd, method='paint',
+                               paint_method=self.paint_method,
+                               paint_invmat=invmat)
+                hc = hct.to_frequencyseries()
+                hs = hst.to_frequencyseries()
+                out[det] = (hc, hs)
+        return out
+
+    @property
+    def _extra_stats(self):
+        """Adds the maxL phase and corresponding likelihood."""
+        return ['maxl_phase', 'maxl_logl']
+
+    def snr_scale_factor(self, hh, snr):
+        """Conpute scale factor to get the desired SNR given a waveform's self
+           inner product"""
+        snr_fid = hh**0.5
+        return snr/snr_fid
+
+# below:
+    # 0. get dd and all the things you usually need
+    # 1. for each mode get hh_i and plug into above
+    # 2. multiply hh_i by corresponding scale factors squared
+    # 3. calculate hd_i and dh_i and multiply by scale factors
+    # 4. check the math to see how the inner products add together (should be linear)
+    # 5. should just be standard phase marg from there
+
+    @catch_waveform_error
+    def _loglikelihood(self):
+        r"""Computes the log likelihood.
+        """
+        # get waveforms
+        wfs = self.get_waveforms()
+        gated_wfs = self.get_gated_waveforms()
+        # get data
+        data = self.get_data()
+        gated_data = self.get_gated_data()
+        # cycle over all detectors
+        norm = 0.
+        hchc = 0.
+        hchs = 0.
+        hshc = 0.
+        hshs = 0.
+        dhc = 0.
+        dhs = 0.
+        hcd = 0.
+        hsd = 0.
+        dd = 0.
+        for det in self.det_names:
+            if det not in self.dets:
+                self.dets[det] = Detector(det)
+            # we always filter the entire segment starting from kmin, since the
+            # gated series may have high frequency components
+            slc = slice(self._kmin[det], self._kmax[det])
+            invpsd = self._invpsds[det]
+            d = data[det].copy()
+            gated_d = gated_data[det].copy()
+            # overwhiten gated data and get inner product
+            gated_d *= 2 * invpsd.delta_f * invpsd
+            # get dd inner product
+            dd += d[slc].inner(gated_d[slc]).real
+            # get hh inner product + scales
+            for mode in wfs[det]:
+                hc, hs = wfs[det][mode]
+                gated_hc, gated_hs = gated_wfs[det][mode]
+                # overwhiten gated waveforms
+                gated_hc *= 2 * invpsd.delta_f * invpsd
+                gated_hs *= 2 * invpsd.delta_f * invpsd
+                # calculate hc inner product and get scale
+                thishchc = hc[slc].inner(gated_hc[slc]).real
+                sampled_snr = self.current_params[f'amp{mode}_snr']
+                scale = self.snr_scale_factor(thishchc, sampled_snr)
+                scalesq = scale*scale
+                # add scaled hh products to running total
+                hchc += scalesq * thishchc
+                hchs += scalesq * hc[slc].inner(gated_hs[slc]).real
+                hshc += scalesq * hs[slc].inner(gated_hc[slc]).real
+                hshs += scalesq * hs[slc].inner(gated_hs[slc]).real
+                # evaluate hd cross terms
+                dhc += scale * d[slc].inner(gated_hc[slc]).real
+                dhs += scale * d[slc].inner(gated_hs[slc]).real
+                hcd += scale * hc[slc].inner(gated_d[slc]).real
+                hsd += scale * hs[slc].inner(gated_d[slc]).real
+            # get the normalization in this detector
+            if self.normalize:
+                start_index, end_index = self.gate_indices(det)
+            else:
+                start_index = end_index = None
+            norm += self.det_lognorm(det, start_index, end_index)
+        # numerical marginalization over phases
+        cphi = numpy.cos(self.phases)
+        sphi = numpy.sin(self.phases)
+        hh = cphi*cphi*hchc + sphi*sphi*hshs + cphi*sphi*(hchs+hshc)
+        dh = cphi*dhc + sphi*dhs
+        hd = cphi*hcd + sphi*hsd
+        loglr = -(hh-dh-hd)
+        lognl = -dd
+        # get the maxL phase
+        maxlidx = loglr.argmax()
+        setattr(self._current_stats, 'maxl_phase', self.phases[maxlidx])
+        setattr(self._current_stats, 'maxl_logl', loglr[maxlidx] + lognl + norm)
+        # get the marginalized log likelihood ratio
+        marglogl = special.logsumexp(loglr) + lognl + norm - numpy.log(self.phase_samples)
+        return marglogl
+
+    @property
+    def multi_signal_support(self):
+        """ The list of classes that this model supports in a multi-signal
+        likelihood
+        """
+        return [type(self)]
+
+    @catch_waveform_error
+    def multi_loglikelihood(self, models):
+        """ Calculate a multi-model (signal) likelihood
+        """
+        # Generate the waveforms for each submodel
+        wfs = []
+        for m in models + [self]:
+            wf = m.get_waveforms()
+            wfs.append(wf)
+        # combine into a single waveform
+        combine = {}
+        for det in self.data:
+            # get max waveform length
+            mlen = max([len(x[det]) for x in wfs])
+            [x[det].resize(mlen) for x in wfs]
+            combine[det] = sum([x[det] for x in wfs])
+        self._current_wfs = combine
+        return self._loglikelihood()
