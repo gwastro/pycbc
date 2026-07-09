@@ -1388,6 +1388,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                 raise TypeError('Unrecognized format for snr_to_amp_names. '
                                 'Accepts string or list')
             self.snr_names = [i + '_snr' for i in self.amp_names]
+        self.mode_names = []
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
             self.variable_params, self.data,
@@ -1423,6 +1424,8 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                             hs.to_timeseries(),
                             frequency=self.highpass_waveforms).to_frequencyseries()
                     wfs[det][mode] = (hc, hs)
+            self.mode_names = [mode for mode in 
+                               self._current_wfs[self.det_names[0]]]
             self._current_wfs = wfs
         return self._current_wfs
 
@@ -1461,19 +1464,28 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         """Adds the maxL phase and corresponding likelihood."""
         return ['maxl_phase', 'maxl_logl']
 
-    def snr_scale_factor(self, hh, snr):
-        """Conpute scale factor to get the desired SNR given a waveform's self
-           inner product"""
-        snr_fid = hh**0.5
-        return snr/snr_fid
-
-# below:
-    # 0. get dd and all the things you usually need
-    # 1. for each mode get hh_i and plug into above
-    # 2. multiply hh_i by corresponding scale factors squared
-    # 3. calculate hd_i and dh_i and multiply by scale factors
-    # 4. check the math to see how the inner products add together (should be linear)
-    # 5. should just be standard phase marg from there
+    def _snr_scale_factor(self, wfs, gated_wfs, mode, snr=None):
+        """Compute scale factor to get the desired network SNR given a set of 
+        waveforms."""
+        thismode = {det: wfs[det][mode] for det in self.det_names}
+        thisgatedmode = {det: gated_wfs[det][mode] for det in self.det_names}
+        hhs = {}
+        # get the fiducial network SNR
+        fid_snr = 0.
+        for det in thismode:
+            invpsd = self._invpsds[det]
+            slc = slice(self._kmin[det], self._kmax[det])
+            hc, _ = thismode[det]
+            gated_hc, _ = thisgatedmode[det]
+            gated_hc *= 2 * invpsd.delta_f * invpsd
+            hhs[det] = hc[slc].inner(gated_hc[slc]).real
+            fid_snr += hhs[det]*hhs[det]
+        # get the scale between fiducal and specified SNR
+        if snr is None:
+            return 1., hhs
+        snr_scale = snr / fid_snr**0.25
+        hhs[det] *= snr_scale
+        return snr_scale, hhs
 
     @catch_waveform_error
     def _loglikelihood(self):
@@ -1496,6 +1508,14 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         hcd = 0.
         hsd = 0.
         dd = 0.
+        # cache scale factors
+        scale_factors = {}
+        hchcs = {}
+        for mode in self.mode_names:
+            sampled_snr = self.current_params.get([f'amp{mode}_snr'])
+            s, ip = self._snr_scale_factor(wfs, gated_wfs, mode, sampled_snr)
+            scale_factors[mode] = s
+            hchcs[mode] = ip
         for det in self.det_names:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
@@ -1516,16 +1536,11 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                 # overwhiten gated waveforms
                 gated_hc *= 2 * invpsd.delta_f * invpsd
                 gated_hs *= 2 * invpsd.delta_f * invpsd
-                # calculate hc inner product and get scale
-                thishchc = hc[slc].inner(gated_hc[slc]).real
-                if self.sample_snrs:
-                    sampled_snr = self.current_params[f'amp{mode}_snr']
-                    scale = self.snr_scale_factor(thishchc, sampled_snr)
-                    scalesq = scale*scale
-                else:
-                    scale = scalesq = 1.
-                # add scaled hh products to running total
-                hchc += scalesq * thishchc
+                # call scaled hchc and scale factor
+                hchc += hchcs[mode][det]
+                scale = scale_factors[mode]
+                scalesq = scale*scale
+                # evaluate remaining hh cross terms
                 hchs += scalesq * hc[slc].inner(gated_hs[slc]).real
                 hshc += scalesq * hs[slc].inner(gated_hc[slc]).real
                 hshs += scalesq * hs[slc].inner(gated_hs[slc]).real
@@ -1555,6 +1570,11 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         # get the marginalized log likelihood ratio
         marglogl = special.logsumexp(loglr) + lognl + norm - numpy.log(self.phase_samples)
         return marglogl
+
+### FIXME: tests to do
+# sample_snrs turned off should just work as normal
+# generate signal with known optimal mode snrs; those snrs loaded as params should give zeroish likelihood
+# should work with qnm and wav
 
     @property
     def multi_signal_support(self):
