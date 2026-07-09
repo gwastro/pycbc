@@ -1492,6 +1492,13 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
                 for det in hlm:
                     hlm[det][mode] = (hclm[det], hslm[det])
         return hlm
+    
+    @staticmethod
+    def select_rframe_generator(approximant, domain):
+        """Returns a radiation frame generator class based on the approximant
+        string.
+        """
+        return select_waveform_modes_generator(approximant, domain)
 
 
 class FDomainDirectDetFrameGenerator(BaseCBCGenerator):

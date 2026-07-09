@@ -1344,7 +1344,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                  static_params=None,
                  phase_samples=500000, phase_names=None,
                  ref_phase=None, sample_snrs=False,
-                 snr_to_amp_names=None, fiducial_amp_value=1.,
+                 amp_names=None, fiducial_amp_value=1.,
                  **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
@@ -1373,19 +1373,23 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             raise TypeError('Unrecognized format for phase_names arg. Accepts '
                             'string, list, or None')
         # flag whether to sample each mode in SNR space or amplitude space
-        self.sample_snrs = sample_snrs
-        self.fiducial_amp_value = fiducial_amp_value
+        ### FIXME: should be able to call `sample_snrs =` to set as True...
+        ### empty string is the only string that returns False
+        if sample_snrs == '':
+            sample_snrs = True
+        self.sample_snrs = bool(sample_snrs)
+        self.fiducial_amp_value = float(fiducial_amp_value)
         # if sampling in snr, set names of snr and amp params
         if self.sample_snrs:
-            if snr_to_amp_names is None:
+            if amp_names is None:
                 raise ValueError('Must provide names of amplitude parameters '
                                  'if specifying sample_snrs')
-            elif type(snr_to_amp_names) == list:
-                self.amp_names = snr_to_amp_names
-            elif type(snr_to_amp_names) == str:
-                self.amp_names = snr_to_amp_names.split(' ')
+            elif type(amp_names) == list:
+                self.amp_names = amp_names
+            elif type(amp_names) == str:
+                self.amp_names = amp_names.split(' ')
             else:
-                raise TypeError('Unrecognized format for snr_to_amp_names. '
+                raise TypeError('Unrecognized format for amp_names. '
                                 'Accepts string or list')
             self.snr_names = [i + '_snr' for i in self.amp_names]
         self.mode_names = []
@@ -1424,16 +1428,15 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                             hs.to_timeseries(),
                             frequency=self.highpass_waveforms).to_frequencyseries()
                     wfs[det][mode] = (hc, hs)
-            self.mode_names = [mode for mode in 
-                               self._current_wfs[self.det_names[0]]]
             self._current_wfs = wfs
+            self.mode_names = [mode for mode in wfs[self.det_names[0]]]
         return self._current_wfs
 
     def get_gated_waveforms(self):
         r"""Generate the gated waveforms.
         """
         wfs = self.get_waveforms()
-        out = {}
+        out = {det: {} for det in wfs}
         # apply the gate
         for det in wfs:
             for mode in wfs[det]:
@@ -1443,7 +1446,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                 invpsd = self._invpsds[det]
                 gate_times = self.get_gate_times()
                 gatestartdelay, dgatedelay = gate_times[det]
-                invmat = self.invert_covariance(det, mode)
+                invmat = self.invert_covariance(det)
                 hct = hct.gate(gatestartdelay + dgatedelay/2,
                                window=dgatedelay/2, copy=False,
                                invpsd=invpsd, method='paint',
@@ -1456,7 +1459,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                                paint_invmat=invmat)
                 hc = hct.to_frequencyseries()
                 hs = hst.to_frequencyseries()
-                out[det] = (hc, hs)
+                out[det][mode] = (hc, hs)
         return out
 
     @property
@@ -1512,7 +1515,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         scale_factors = {}
         hchcs = {}
         for mode in self.mode_names:
-            sampled_snr = self.current_params.get([f'amp{mode}_snr'])
+            sampled_snr = self.current_params.get(f'amp{mode}_snr')
             s, ip = self._snr_scale_factor(wfs, gated_wfs, mode, sampled_snr)
             scale_factors[mode] = s
             hchcs[mode] = ip
