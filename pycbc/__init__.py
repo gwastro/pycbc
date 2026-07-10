@@ -186,6 +186,11 @@ VARARGS_DELIM = '+'
 # Check for optional CUDA support of the PyCBC Package
 try:
     #check if pycuda is installed
+    import pycuda
+    # If running documentation the import doesn't fail, but it's only a mock
+    # import, so detect that
+    if type(pycuda).__name__ in ('MagicMock', '_MockModule'):
+        raise ImportError
     import pycuda.driver as _pycudadrv
     #check how many CUDA device is installed
     try:
