@@ -2074,7 +2074,7 @@ class Log(BaseTransform):
 
 
 class Logit(BaseTransform):
-    """Applies a logit transform from an `inputvar` parameter to an `outputvar`
+    r"""Applies a logit transform from an `inputvar` parameter to an `outputvar`
     parameter. This is the inverse of the logistic transform.
 
     Typically, the input of the logit function is assumed to have domain
@@ -2683,7 +2683,7 @@ class Exponent(Log):
 
 
 class Logistic(Logit):
-    """Applies a logistic transform from an `input` parameter to an `output`
+    r"""Applies a logistic transform from an `input` parameter to an `output`
     parameter. This is the inverse of the logit transform.
 
     Typically, the output of the logistic function has range :math:`\in [0,1)`.
