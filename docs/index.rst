@@ -16,36 +16,31 @@ gravitational-wave astronomy, please consider `contributing <https://github.com/
 providing feedback, examples, documentation or helping to improve the core
 library and application suite.
 
-.. carousel::
-    :show_controls:
-    :show_indicators:
-    :show_dark:
-    :show_shadows:
-    :show_captions_below:
+.. card-carousel:: 1
 
-    .. figure:: https://pycbc.org/pycbc/latest/html/_images/data.png
-        :height: 400px
-        :target: catalog.html
+    .. card:: Working with gravitational wave data
+        :link: catalog.html
 
-        Working with gravitational wave data
+        .. image:: https://pycbc.org/pycbc/latest/html/_images/data.png
+            :height: 400px
 
-    .. figure:: https://pycbc.org/pycbc/latest/html/_images/plot_detwaveform.png
-        :height: 400px
-        :target: waveform.html
+    .. card:: Your interface to generating gravitational wave signals
+        :link: waveform.html
 
-        Your interface to generating gravitational wave signals
+        .. image:: https://pycbc.org/pycbc/latest/html/_images/plot_detwaveform.png
+            :height: 400px
 
-    .. figure:: https://collincapano.com/wp-content/uploads/2020/02/posterior3d-gw150914_masses-e1581860222179.png
-        :height: 400px
-        :target: inference.html
+    .. card:: Flexible, easy-to-use, parameter estimation for GW Astronomy
+        :link: inference.html
 
-        Flexible, easy-to-use, parameter estimation for GW Astronomy
+        .. image:: https://collincapano.com/wp-content/uploads/2020/02/posterior3d-gw150914_masses-e1581860222179.png
+            :height: 400px
 
-    .. figure:: https://pycbc.org/pycbc/latest/html/_images/demarg_150914.png
-        :height: 400px
-        :target: inference/examples/margtime.html
-        
-        Fast Parameter Estimation with Advanced Marginalizations
+    .. card:: Fast Parameter Estimation with Advanced Marginalizations
+        :link: inference/examples/margtime.html
+
+        .. image:: https://pycbc.org/pycbc/latest/html/_images/demarg_150914.png
+            :height: 400px
         
 
 .. toctree::
