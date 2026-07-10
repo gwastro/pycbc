@@ -372,7 +372,7 @@ class UniformSolidAngle(bounded.BoundedDist):
 
 
     def _pdf(self, **kwargs):
-        """
+        r"""
         Returns the pdf at the given angles.
 
         Parameters
@@ -392,7 +392,7 @@ class UniformSolidAngle(bounded.BoundedDist):
 
 
     def _logpdf(self, **kwargs):
-        """
+        r"""
         Returns the logpdf at the given angles.
 
         Parameters
