@@ -276,7 +276,7 @@ suppress_warnings = ['image.nonlocal_uri']
 
 
 # autodoc mock imports
-autodoc_mock_imports = ['cupy', 'mkl', 'pycuda', 'lalsimulation']
+autodoc_mock_imports = ['cupy', 'mkl', 'pycuda', 'skcuda', 'cpnest', 'foton', 'pyfft', 'pytools']
 
 # Mock ctypes library loading so Sphinx can document modules like pycbc.fft.mkl without raising ImportError
 import pycbc.libutils
