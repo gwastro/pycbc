@@ -73,13 +73,9 @@ def call_prepare(self, sz, allocator):
     return result, block_count, seq_count, grid_size, block_size
 
 class LowerLatencyReductionKernel(ReductionKernel):
-    def __init__(self, dtype_out=None,
-                 neutral=None, reduce_expr=None, map_expr=None, arguments=None,
+    def __init__(self, dtype_out,
+                 neutral, reduce_expr, map_expr=None, arguments=None,
                  name="reduce_kernel", keep=False, options=None, preamble=""):
-
-        if type(ReductionKernel).__name__ in ('MagicMock', '_MockModule'):
-            return
-
         ReductionKernel.__init__(self, dtype_out,
                                  neutral, reduce_expr, map_expr, arguments,
                                  name, keep, options, preamble)
