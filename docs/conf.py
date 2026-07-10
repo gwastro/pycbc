@@ -38,7 +38,6 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
               'sphinx.ext.napoleon', 'sphinx.ext.mathjax',
               'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary',
               'sphinx.ext.inheritance_diagram', 'sphinx_design',
-              'sphinx_carousel.carousel',
               "sphinxcontrib.jquery",
               ]
 
@@ -275,6 +274,14 @@ napoleon_use_ivar = False
 suppress_warnings = ['image.nonlocal_uri']
 
 
+
+# autodoc mock imports
+autodoc_mock_imports = ['cupy', 'mkl', 'pycuda', 'lalsimulation']
+
+# Mock ctypes library loading so Sphinx can document modules like pycbc.fft.mkl without raising ImportError
+import pycbc.libutils
+from unittest.mock import MagicMock
+pycbc.libutils.get_ctypes_library = MagicMock()
 
 def build_includes():
     """Creates rst files in the _include directory using the python scripts
