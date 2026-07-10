@@ -36,6 +36,6 @@ chisq = pycbc.vetoes.power_chisq(hp, stilde, num_bins, psd,
 chisq /= (num_bins * 2) - 2
 
 pp.plot(chisq.sample_times, chisq)
-pp.ylabel('$\chi^2_r$')
+pp.ylabel(r'$\chi^2_r$')
 pp.xlabel('time (s)')
 pp.show()
