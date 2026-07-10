@@ -137,8 +137,10 @@ def insert_base_bank_options(parser, match_req=True):
                         help='If given, store the lower frequency cutoff into '
                              'column NAME of the single-inspiral table. '
                              '(Requires an output file ending in .xml)')
-    parser.add_argument('--output-f-final', action='store_true',
-            help="Include 'f_final' in the output hdf file.")
+    parser.add_argument(
+            '--output-f-final', action='store_true', default=False,
+            help="Include 'f_final' in the output hdf file."
+    )
 
 def insert_metric_calculation_options(parser):
     """

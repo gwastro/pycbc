@@ -380,6 +380,7 @@ class WorkflowConfigParser(InterpolatingConfigParser):
             parsedFilePath,
             deleteTuples,
             skip_extended=True,
+            delete_sharedoptions_sections=False
         )
         # expand executable which statements
         self.perform_exe_expansion()
@@ -390,6 +391,9 @@ class WorkflowConfigParser(InterpolatingConfigParser):
 
         # Check for any substitutions that can be made
         self.perform_extended_interpolation()
+
+        # Clean out sharedoptions sections now
+        self.delete_sharedoptions()
 
     def perform_exe_expansion(self):
         """

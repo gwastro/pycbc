@@ -67,6 +67,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         deleteTuples=None,
         skip_extended=False,
         sanitize_newline=True,
+        delete_sharedoptions_sections=True
     ):
         """
          Initialize an InterpolatingConfigParser. This reads the input configuration
@@ -123,7 +124,9 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         self.split_multi_sections()
 
         # Populate shared options from the [sharedoptions] section
-        self.populate_shared_sections()
+        self.populate_shared_sections(
+            delete_sections=delete_sharedoptions_sections
+        )
 
         # Do deletes from command line
         for delete in deleteTuples:
@@ -427,7 +430,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 self.add_options_to_section(new_sec, self.items(section))
             self.remove_section(section)
 
-    def populate_shared_sections(self):
+    def populate_shared_sections(self, delete_sections=True):
         """Parse the [sharedoptions] section of the ini file.
 
         That section should contain entries according to:
@@ -439,6 +442,9 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         copied into the [inspiral] and [tmpltbank] sections and the options
         in [sharedoptions-dataparams] being copited into [tmpltbank].
         In the case of duplicates an error will be raised.
+
+        Unless delete_sections is given as False, all sharedoptions sections
+        will be deleted
         """
         if not self.has_section("sharedoptions"):
             # No sharedoptions, exit
@@ -460,6 +466,25 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                             % (arg, "sharedoptions-%s" % (key))
                         )
                     self.set(section, arg, val)
+            if delete_sections:
+                self.remove_section("sharedoptions-%s" % (key))
+        if delete_sections:
+            self.remove_section("sharedoptions")
+
+    def delete_sharedoptions(self):
+        """
+        This will remove the sharedoptions sections from the configparser object
+
+        Normally this would be done in populate_shared_sections, but in some
+        cases one might delay doing that in case the config file contains
+        other references to this section so one might run populate sections
+        early in initialisation and then later run this at the end of
+        initialisation. configparse options should not contain the
+        sharedoptions sections after initialization.
+        """
+        if not self.has_section("sharedoptions"):
+            return
+        for key, value in self.items("sharedoptions"):
             self.remove_section("sharedoptions-%s" % (key))
         self.remove_section("sharedoptions")
 
