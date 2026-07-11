@@ -70,7 +70,7 @@ def format_attr(val):
     except AttributeError:
         pass
     if isinstance(val, numpy.ndarray) and val.dtype.type == numpy.bytes_:
-        val = val.astype(numpy.unicode_).tolist()
+        val = val.astype(numpy.str_).tolist()
     return val
 
 
