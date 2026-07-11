@@ -95,15 +95,16 @@ def thermodynamic_integration(log_likelihood, betas,
 
     Parameters
     ----------
-    log_likelihood : 3d array of shape (betas, walker, iteration)
+    log_likelihood : numpy.ndarray
+        3d array of shape (ntemps, nwalkers, niterations)
         The log likelihood for each temperature separated by
         temperature, walker, and iteration.
 
-    betas : 1d array
+    betas : numpy.ndarray
         The inverse temperatures used in the MCMC.
 
-    method : {"trapzoid", "trapezoid_corrected", "simpsons"},
-             optional.
+    method : string
+        Optional. Can be one of {"trapzoid", "trapezoid_corrected", "simpsons"}
         The numerical integration method to use for the
         thermodynamic integration. Choices include: "trapezoid",
         "trapezoid_corrected", "simpsons", for the trapezoid rule,
@@ -197,12 +198,13 @@ def stepping_stone_algorithm(log_likelihood, betas):
 
     Parameters
     ----------
-    log_likelihood : 3d array of shape (betas, walker, iteration)
+    log_likelihood : numpy.ndarray
+        3d array of shape (ntemps, nwalkers, niterations)
         The log likelihood for each temperature separated by
         temperature, walker, and iteration.
 
-    betas          : 1d array
-                     The inverse temperatures used in the MCMC.
+    betas          : numpy.ndarray
+        The inverse temperatures used in the MCMC.
 
     Returns
     -------
