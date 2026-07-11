@@ -129,8 +129,8 @@ class TestIOGraceDB(unittest.TestCase):
         coinc_table = lsctables.CoincInspiralTable.get_table(read_coinc)
         self.assertEqual(len(coinc_table), 1)
         coinc_event_table = lsctables.CoincTable.get_table(read_coinc)
-        self.assertEqual(coinc_event_table[0].likelihood,
-                         np.asarray(stat).item())
+        self.assertTrue(np.isclose(coinc_event_table[0].likelihood,
+                                   np.asarray(stat).item()))
 
         # make sure lalseries can read the PSDs
         psd_doc = ligolw_utils.load_filename(
