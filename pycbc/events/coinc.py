@@ -1330,7 +1330,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             zerolag_results = {
                 'foreground/ifar': ifar,
                 'foreground/ifar_saturated': ifar_sat,
-                'foreground/stat': zerolag_stat,
+                'foreground/stat': zerolag_cstat,
                 'foreground/type': '-'.join(self.ifos)
             }
             template = template_ids[idx]
