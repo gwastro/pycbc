@@ -30,6 +30,11 @@ from pycbc.mchirp_area import calc_probabilities
 logger = logging.getLogger('pycbc.io.gracedb')
 
 
+def _single_value(value):
+    """Return a Python scalar from scalar or single-element array input."""
+    return numpy.asarray(value).item()
+
+
 class CandidateForGraceDB(object):
     """This class provides an interface for uploading candidates to GraceDB.
     """
@@ -137,7 +142,8 @@ class CandidateForGraceDB(object):
         coinc_event_row.process_id = proc_id
         coinc_event_row.coinc_event_id = coinc_id
         if 'foreground/stat' in coinc_results:
-            coinc_event_row.likelihood = coinc_results['foreground/stat']
+            coinc_event_row.likelihood = _single_value(
+                coinc_results['foreground/stat'])
         else:
             coinc_event_row.likelihood = 0.
         coinc_event_table.append(coinc_event_row)
