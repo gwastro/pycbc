@@ -152,27 +152,29 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                         self.assertEqual(a.ndim, 1)
                         self.assertEqual(len(a), 1)
                         self.assert_foreground_stat_hdf_readable(a)
+                        self.assertEqual(len(a), len(np.atleast_1d(b)))
+                        self.assertTrue(np.isclose(a, np.atleast_1d(b)).all())
+                        continue
 
-                    # Normalise scalars and 1-element arrays so that a value
-                    # stored as a scalar compares equal to the same value
-                    # stored as a 1-element array.
-                    a_comp = np.atleast_1d(a)
-                    b_comp = np.atleast_1d(b)
-                    self.assertEqual(len(a_comp), len(b_comp))
+                    if isinstance(a, np.ndarray):
+                        # compare shapes and values
+                        self.assertEqual(len(a), len(b))
 
-                    # For background/stat, order by time as the sort is not stable
-                    if key == 'background/stat' and len(a_comp) > 1:
-                        tnew = newout.get('background/time', None)
-                        told = oldout.get('background/time', None)
-                        idx_new = np.argsort(tnew, kind='stable')
-                        idx_old = np.argsort(told, kind='stable')
-                        a_comp = a_comp[idx_new]
-                        b_comp = b_comp[idx_old]
+                        a_comp = a
+                        b_comp = b
 
-                    if np.issubdtype(a_comp.dtype, np.number):
+                        # For background/stat, order by time as the sort is not stable
+                        if key == 'background/stat' and len(a) > 1:
+                            tnew = newout.get('background/time', None)
+                            told = oldout.get('background/time', None)
+                            idx_new = np.argsort(tnew, kind='stable')
+                            idx_old = np.argsort(told, kind='stable')
+                            a_comp = a[idx_new]
+                            b_comp = b[idx_old]
+
                         self.assertTrue(np.isclose(a_comp, b_comp).all())
                     else:
-                        self.assertTrue((a_comp == b_comp).all())
+                        self.assertEqual(a,b)
 
         for i in range(self.num_iterations):
             logging.info("Iteration %d", i)
