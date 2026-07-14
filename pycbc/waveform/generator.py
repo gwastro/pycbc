@@ -1423,7 +1423,7 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
         sin_params = rfparams.copy()
         for i in phases:
             sin_params[i] = rfparams[i] + pi/2
-        hlms_sin = self.rframe_generator.generate(**rfparams)
+        hlms_sin = self.rframe_generator.generate(**sin_params)
         hlm = {det: {} for det in self.detectors}
         for mode in hlms_cos:
             ulm_cos, vlm_cos = hlms_cos[mode]

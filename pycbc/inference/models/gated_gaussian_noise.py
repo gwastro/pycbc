@@ -24,6 +24,7 @@ import numpy
 import scipy
 from scipy import special
 import warnings
+from copy import deepcopy
 
 from pycbc.types import FrequencySeries
 from pycbc.detector import Detector
@@ -1478,16 +1479,17 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         for det in thismode:
             invpsd = self._invpsds[det]
             slc = slice(self._kmin[det], self._kmax[det])
-            hc, _ = thismode[det]
-            gated_hc, _ = thisgatedmode[det]
-            gated_hc *= 2 * invpsd.delta_f * invpsd
+            hc, _ = deepcopy(thismode[det])
+            gated_hc, _ = deepcopy(thisgatedmode[det])
+            gated_hc *= 4 * invpsd.delta_f * invpsd
             hhs[det] = hc[slc].inner(gated_hc[slc]).real
-            fid_snr += hhs[det]*hhs[det]
+            fid_snr += hhs[det]
         # get the scale between fiducal and specified SNR
         if snr is None:
             return 1., hhs
-        snr_scale = snr / fid_snr**0.25
-        hhs[det] *= snr_scale
+        for det in thismode:
+            snr_scale = snr / fid_snr**0.5
+            hhs[det] *= snr_scale*snr_scale
         return snr_scale, hhs
 
     @catch_waveform_error
@@ -1534,13 +1536,13 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             dd += d[slc].inner(gated_d[slc]).real
             # get hh inner product + scales
             for mode in wfs[det]:
-                hc, hs = wfs[det][mode]
-                gated_hc, gated_hs = gated_wfs[det][mode]
+                hc, hs = deepcopy(wfs[det][mode])
+                gated_hc, gated_hs = deepcopy(gated_wfs[det][mode])
                 # overwhiten gated waveforms
                 gated_hc *= 2 * invpsd.delta_f * invpsd
                 gated_hs *= 2 * invpsd.delta_f * invpsd
                 # call scaled hchc and scale factor
-                hchc += hchcs[mode][det]
+                hchc += hchcs[mode][det]/2
                 scale = scale_factors[mode]
                 scalesq = scale*scale
                 # evaluate remaining hh cross terms
