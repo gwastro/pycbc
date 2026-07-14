@@ -563,7 +563,16 @@ class BaseModel(metaclass=ABCMeta):
     def _logprior(self):
         """Calculates the log prior at the current parameters."""
         logj = self.logjacobian
-        logp = self.prior_distribution(**self.current_params) + logj
+        # allow using constraint in the config which sets
+        # vector marginalized parameters
+        if hasattr(self, 'marginalize_vector_params'):
+            current_params_no_vec_margin = {
+                k: v for k, v in self.current_params.items()
+                if k not in self.marginalize_vector_params
+            }
+        else:
+            current_params_no_vec_margin = self.current_params
+        logp = self.prior_distribution(**current_params_no_vec_margin) + logj
         if numpy.isnan(logp):
             logp = -numpy.inf
         return logp
