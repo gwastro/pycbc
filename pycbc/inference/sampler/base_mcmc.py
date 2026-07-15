@@ -33,8 +33,8 @@ import numpy
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import (validate_checkpoint_files, loadfile)
 from pycbc.inference.io.base_mcmc import nsamples_in_chain
-from .base import initial_dist_from_config
-
+from .base import initial_dist_from_config   
+    
 #
 # =============================================================================
 #

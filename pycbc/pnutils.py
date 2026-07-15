@@ -587,8 +587,8 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
         pass
 
     if approximant in ['TaylorF2', 'SPAtmplt']:
-        from pycbc.waveform.spa_tmplt import findchirp_chirptime
-
+        from pycbc.waveform.spa_tmplt import findchirp_chirptime   
+    
         # FIXME spins are not taken into account
         f_high = f_SchwarzISCO(mass1 + mass2)
         def tof_func(f):

@@ -17,8 +17,8 @@
 """
 
 import numpy
-from pycbc.types import TimeSeries, zeros
-
+from pycbc.types import TimeSeries, zeros   
+    
 def complex_median(complex_list):
     """ Get the median value of a list of complex numbers.
 

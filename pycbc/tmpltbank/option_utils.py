@@ -1070,7 +1070,8 @@ class ethincaParameters(object):
     This class holds all of the options that are parsed in the function
     insert_ethinca_metric_options
     and all products produced using these options. It can also be initialized
-    from the __init__ function, providing directly the options normally
+    from the __init__ function, providing directly the options normally   
+    
     provided on the command line
     """
     def __init__(self, pnOrder, cutoff, freqStep, fLow=None, full_ethinca=False,
