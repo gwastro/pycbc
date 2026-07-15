@@ -7,6 +7,11 @@ config_version = "0"
 # and checks.method-lines. Qlty's file/function complexity smells are based on
 # cognitive complexity, not raw line/method counts, so there's no faithful
 # translation for these three.
+#
+# Also not carried over: plugins.pylint. Qlty has no pylint plugin at all
+# (its Python linters are flake8, mypy, ruff, bandit, and radarlint-python) --
+# ruff, added below in place of plugins.pep8, is the closest available
+# substitute for general-purpose linting.
 
 exclude_patterns = [
   "docs/**",
@@ -38,14 +43,6 @@ enabled = false # was checks.method-complexity.threshold = 1000000 (effectively 
 # checks.similar-code / checks.identical-code had no explicit threshold set
 # (language defaults), so similar_code / identical_code are left at Qlty's
 # defaults here too.
-
-[[plugin]]
-name = "pylint"
-
-# was plugins.pylint.checks.import-error.enabled = false
-[[triage]]
-match.rules = ["pylint:import-error"]
-set.ignored = true
 
 # Replaces plugins.pep8; ruff is Qlty's recommended modern Python linter and
 # a superset of pep8/pycodestyle, so expect it to surface more than pep8 did.
