@@ -38,9 +38,20 @@ jobs:
 
             - name: Run Qlty check
               run: |
+                set +e
                 qlty check --sarif --no-progress \
                   --upstream origin/${{ github.event.pull_request.base.ref }} \
-                  > qlty-results.sarif
+                  > qlty-raw.sarif
+                qlty_exit_code=$?
+                set -e
+
+                # Qlty's SARIF output includes fields GitHub's stricter validator
+                # rejects (upload-sarif then fails even when qlty itself succeeded).
+                # Known upstream issue: https://github.com/qltysh/qlty/issues/2701
+                jq 'del(.runs[].tool.driver.notifications) | del(.runs[].results[].taxa[].name)' \
+                  qlty-raw.sarif > qlty-results.sarif
+
+                exit $qlty_exit_code
 
             - name: Upload results to GitHub Code Scanning
               if: always()
