@@ -48,7 +48,13 @@ jobs:
                 # Qlty's SARIF output includes fields GitHub's stricter validator
                 # rejects (upload-sarif then fails even when qlty itself succeeded).
                 # Known upstream issue: https://github.com/qltysh/qlty/issues/2701
-                jq 'del(.runs[].tool.driver.notifications) | del(.runs[].results[].taxa[].name)' \
+                # `fixes` is dropped too: Qlty puts `replacements` directly on
+                # fixes[], but GitHub requires it nested under
+                # fixes[].artifactChanges[].replacements. Dropping it only loses
+                # the inline "apply suggested fix" button, not the finding itself.
+                jq 'del(.runs[].tool.driver.notifications)
+                    | del(.runs[].results[].taxa[].name)
+                    | del(.runs[].results[].fixes)' \
                   qlty-raw.sarif > qlty-results.sarif
 
                 exit $qlty_exit_code
