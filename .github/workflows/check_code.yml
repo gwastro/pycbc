@@ -40,6 +40,7 @@ jobs:
               run: |
                 set +e
                 qlty check --all --sarif --no-progress \
+                  --upstream origin/${{ github.event.pull_request.base.ref }} \
                   > qlty-raw.sarif
                 qlty_exit_code=$?
                 set -e
