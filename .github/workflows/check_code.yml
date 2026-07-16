@@ -52,9 +52,22 @@ jobs:
                 # fixes[], but GitHub requires it nested under
                 # fixes[].artifactChanges[].replacements. Dropping it only loses
                 # the inline "apply suggested fix" button, not the finding itself.
+                #
+                # Separately: Qlty populates each rule's `helpUri` but never a
+                # `help` block, and GitHub's alert UI only ever renders
+                # help.text/help.markdown (or short/fullDescription) -- helpUri
+                # alone is silently ignored. Synthesize help.markdown from the
+                # existing helpUri so the rule's docs link actually shows up.
                 jq 'del(.runs[].tool.driver.notifications)
                     | del(.runs[].results[].taxa[].name)
-                    | del(.runs[].results[].fixes)' \
+                    | del(.runs[].results[].fixes)
+                    | .runs[].tool.driver.rules[] |= (
+                        if (.helpUri != null) and (.help == null) then
+                          . + {help: {text: .helpUri, markdown: ("[View rule documentation](" + .helpUri + ")")}}
+                        else
+                          .
+                        end
+                      )' \
                   qlty-raw.sarif > qlty-results.sarif
 
                 exit $qlty_exit_code
