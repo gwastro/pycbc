@@ -1929,8 +1929,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         """Advanced buffer blocksize seconds.
 
         Add blocksize seconds more to the buffer, push blocksize seconds
-        from the beginning.   
-    
+        from the beginning.
+
         Parameters
         ----------
         blocksize: int

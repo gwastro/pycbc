@@ -28,8 +28,8 @@ whether or not its memory is aligned.  It further provides functions for
 creating zeros and empty (unitialized) arrays with this class.
 """
 import numpy as _np
-from pycbc import PYCBC_ALIGNMENT   
-    
+from pycbc import PYCBC_ALIGNMENT
+
 def check_aligned(ndarr):
     return ((ndarr.ctypes.data % PYCBC_ALIGNMENT) == 0)
 

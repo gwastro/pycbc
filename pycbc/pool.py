@@ -186,8 +186,7 @@ def choose_pool(processes, mpi=False, **kwargs):
     do_mpi, size, rank = use_mpi(require_mpi=mpi)
     if do_mpi:
         try:
-            import schwimmbad   
-    
+            import schwimmbad
             pool = schwimmbad.choose_pool(mpi=do_mpi,
                                           processes=(size - 1),
                                           **kwargs)

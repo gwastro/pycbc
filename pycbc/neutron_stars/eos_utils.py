@@ -23,12 +23,12 @@ from scipy.interpolate import interp1d
 from . import NS_SEQUENCES, NS_DATA_DIRECTORY
 from .pg_isso_solver import PG_ISSO_solver
 
-from pycbc.libutils import import_optional   
+from pycbc.libutils import import_optional
 #  Imports needed if we implement the lalsimulation EOS interface
 # from pycbc.constants import (
 #     MSUN_SI, G_SI, C_SI
 # )
-    
+
 lalsim = import_optional('lalsimulation')
 
 
