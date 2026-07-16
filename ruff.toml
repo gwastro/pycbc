@@ -5,14 +5,70 @@
 # than in pyproject.toml.
 
 [lint]
-# E4/E7/E9/F is ruff's own out-of-the-box default. Added on top of that:
-#   W - pycodestyle warnings (trailing whitespace, blank-line whitespace, etc.)
-#   B - flake8-bugbear (common bug-prone patterns, e.g. mutable default args)
-#   I - isort (import ordering/formatting)
-#select = ["E4", "E7", "E9", "F", "W", "B", "I"]
+select = [
+    # pycodestyle / Pyflakes / isort baseline
+    "E4", "E7", "E9", "E101", "E501",
+    "W",
+    "F",
+    "I",
+    # pydocstyle (scoped by the numpy convention below)
+    "D",
+    # flake8-bugbear
+    "B",
+    # Bug-prone / correctness
+    "S",      # flake8-bandit (security)
+    "BLE",    # flake8-blind-except
+    "PLE",    # Pylint (error)
+    "TRY",    # tryceratops (exception-handling anti-patterns)
+    "ASYNC",  # flake8-async (blocking calls in async def)
+    "DTZ",    # flake8-datetimez (naive datetime usage)
+    "ISC",    # flake8-implicit-str-concat
+    "PGH",    # pygrep-hooks
+    "YTT",    # flake8-2020 (sys.version_info comparisons)
+    # Style / simplification / modernization
+    "RUF",    # Ruff-specific rules
+    "UP",     # pyupgrade
+    "PTH",    # flake8-use-pathlib
+    "SIM",    # flake8-simplify
+    "FURB",   # refurb
+    "C4",     # flake8-comprehensions
+    "N",      # pep8-naming
+    "PLW",    # Pylint (warning)
+    "PLR",    # Pylint (refactor)
+    "PLC",    # Pylint (convention)
+    "PIE",    # flake8-pie
+    "RET",    # flake8-return
+    "Q",      # flake8-quotes
+    "ICN",    # flake8-import-conventions
+    "SLOT",   # flake8-slots
+    "TID",    # flake8-tidy-imports
+    "ERA",    # eradicate (commented-out code)
+    "FLY",    # flynt
+    "RSE",    # flake8-raise
+    "SLF",    # flake8-self
+    "ARG",    # flake8-unused-arguments
+    "EXE",    # flake8-executable
+    "INP",    # flake8-no-pep420
+    "T20",    # flake8-print
+    "TC",     # flake8-type-checking
+    "G",      # flake8-logging-format
+    "LOG",    # flake8-logging
+    "ANN",    # flake8-annotations
+    # Domain-specific
+    "PD",     # pandas-vet
+    "NPY",    # NumPy-specific rules
+    "PERF",   # Perflint
+    # Test style
+    "PT",     # flake8-pytest-style
+]
 
-# To do a one-off deep dive into the codebase's full lint surface, swap the
-# line above for the one below. This enables ruff's entire rule catalog and
-# will likely surface a large volume of findings -- not recommended to leave
-# on as the standing PR gate.
-select = ["ALL"]
+# numpy convention excludes D107/D212/D213/D402/D413/D415/D416/D417 by
+# default. We want D213 (see ruff.toml history/PR discussion for why), plus
+# D107/D402/D413/D416/D417 -- all re-enabled explicitly since `select` above
+# doesn't override convention filtering (see the `extend-select` docs).
+# D212 (conflicts with D213) and D415 (redundant with D400, which is already
+# on) are deliberately left off.
+extend-select = ["D213", "D107", "D402", "D413", "D416", "D417"]
+
+[lint.pydocstyle]
+convention = "numpy"
