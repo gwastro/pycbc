@@ -1393,6 +1393,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                 raise TypeError('Unrecognized format for amp_names. '
                                 'Accepts string or list')
             self.snr_names = [i + '_snr' for i in self.amp_names]
+            ### FIXME: should be a more agnostic way to get the mode names
             self.sampled_mode_names = [i[3:] for i in self.amp_names]
         self.ref_amp = ref_amp
         if self.ref_amp is not None and self.ref_amp not in self.amp_names:
@@ -1472,7 +1473,10 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     @property
     def _extra_stats(self):
         """Adds the maxL phase and corresponding likelihood."""
-        return ['maxl_phase', 'maxl_logl']
+        ### FIXME: this only saves the modes explicitly listed to sample over
+        ### relative modes and other modes sampled in amp space are excluded
+        return ['maxl_phase', 'maxl_logl'] + \
+            [f'scale_factor_{mode}' for mode in self.sampled_mode_names]
 
     def _snr_scale_factor(self, wfs, gated_wfs, mode, snr=None):
         """Compute scale factor to get the desired network SNR given a set of 
@@ -1522,6 +1526,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             # scale all other modes by reference mode's scale factor
             if self.ref_mode_name is not None and mode not in self.sampled_mode_names:
                 scale_factors[mode] *= scale_factors[self.ref_mode_name]
+            setattr(self._current_stats, f'scale_factor_{mode}', scale_factors[mode])
         for det in self.det_names:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
@@ -1584,11 +1589,6 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         # get the marginalized log likelihood ratio
         marglogl = special.logsumexp(loglr) + lognl + norm - numpy.log(self.phase_samples)
         return marglogl
-
-### FIXME: tests to do
-# sample_snrs turned off should just work as normal
-# generate signal with known optimal mode snrs; those snrs loaded as params should give zeroish likelihood
-# should work with qnm and wav
 
     @property
     def multi_signal_support(self):
