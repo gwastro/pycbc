@@ -1345,7 +1345,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                  static_params=None,
                  phase_samples=500000, phase_names=None,
                  ref_phase=None, sample_snrs=False,
-                 amp_names=None, fiducial_amp_value=1.,
+                 amp_names=None, fiducial_amp_value=1., ref_amp=None,
                  **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
@@ -1393,7 +1393,11 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                 raise TypeError('Unrecognized format for amp_names. '
                                 'Accepts string or list')
             self.snr_names = [i + '_snr' for i in self.amp_names]
-        self.mode_names = []
+            self.sampled_mode_names = [i[3:] for i in self.amp_names]
+        self.ref_amp = ref_amp
+        if self.ref_amp is not None and self.ref_amp not in self.amp_names:
+            raise ValueError(f'ref_amp {ref_amp} not in amp_names {amp_names}')
+        self.ref_mode_name = None
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
             self.variable_params, self.data,
@@ -1430,7 +1434,9 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                             frequency=self.highpass_waveforms).to_frequencyseries()
                     wfs[det][mode] = (hc, hs)
             self._current_wfs = wfs
-            self.mode_names = [mode for mode in wfs[self.det_names[0]]]
+            if self.ref_amp is not None:
+                mode_bools = [i in self.ref_amp for i in self.sampled_mode_names]
+                self.ref_mode_name = self.sampled_mode_names[mode_bools.index(True)]
         return self._current_wfs
 
     def get_gated_waveforms(self):
@@ -1473,7 +1479,6 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         waveforms."""
         thismode = {det: wfs[det][mode] for det in self.det_names}
         thisgatedmode = {det: gated_wfs[det][mode] for det in self.det_names}
-        hhs = {}
         # get the fiducial network SNR
         fid_snr = 0.
         for det in thismode:
@@ -1482,15 +1487,11 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             hc, _ = deepcopy(thismode[det])
             gated_hc, _ = deepcopy(thisgatedmode[det])
             gated_hc *= 4 * invpsd.delta_f * invpsd
-            hhs[det] = hc[slc].inner(gated_hc[slc]).real
-            fid_snr += hhs[det]
+            fid_snr += hc[slc].inner(gated_hc[slc]).real
         # get the scale between fiducal and specified SNR
         if snr is None:
-            return 1., hhs
-        for det in thismode:
-            snr_scale = snr / fid_snr**0.5
-            hhs[det] *= snr_scale*snr_scale
-        return snr_scale, hhs
+            return 1.
+        return snr / fid_snr**0.5
 
     @catch_waveform_error
     def _loglikelihood(self):
@@ -1515,12 +1516,12 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         dd = 0.
         # cache scale factors
         scale_factors = {}
-        hchcs = {}
-        for mode in self.mode_names:
+        for mode in wfs[self.det_names[0]]:
             sampled_snr = self.current_params.get(f'amp{mode}_snr')
-            s, ip = self._snr_scale_factor(wfs, gated_wfs, mode, sampled_snr)
-            scale_factors[mode] = s
-            hchcs[mode] = ip
+            scale_factors[mode] = self._snr_scale_factor(wfs, gated_wfs, mode, sampled_snr)
+            # scale all other modes by reference mode's scale factor
+            if self.ref_mode_name is not None and mode not in self.sampled_mode_names:
+                scale_factors[mode] *= scale_factors[self.ref_mode_name]
         for det in self.det_names:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
@@ -1534,26 +1535,34 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             gated_d *= 2 * invpsd.delta_f * invpsd
             # get dd inner product
             dd += d[slc].inner(gated_d[slc]).real
-            # get hh inner product + scales
+            # get full waveforms
+            hc = 0.
+            hs = 0.
+            gated_hc = 0.
+            gated_hs = 0.
             for mode in wfs[det]:
-                hc, hs = deepcopy(wfs[det][mode])
-                gated_hc, gated_hs = deepcopy(gated_wfs[det][mode])
-                # overwhiten gated waveforms
-                gated_hc *= 2 * invpsd.delta_f * invpsd
-                gated_hs *= 2 * invpsd.delta_f * invpsd
-                # call scaled hchc and scale factor
-                hchc += hchcs[mode][det]/2
-                scale = scale_factors[mode]
-                scalesq = scale*scale
-                # evaluate remaining hh cross terms
-                hchs += scalesq * hc[slc].inner(gated_hs[slc]).real
-                hshc += scalesq * hs[slc].inner(gated_hc[slc]).real
-                hshs += scalesq * hs[slc].inner(gated_hs[slc]).real
-                # evaluate hd cross terms
-                dhc += scale * d[slc].inner(gated_hc[slc]).real
-                dhs += scale * d[slc].inner(gated_hs[slc]).real
-                hcd += scale * hc[slc].inner(gated_d[slc]).real
-                hsd += scale * hs[slc].inner(gated_d[slc]).real
+                thishc, thishs = deepcopy(wfs[det][mode])
+                thisgatedhc, thisgatedhs = deepcopy(gated_wfs[det][mode])
+                # scale and overwhiten waveforms
+                thishc *= scale_factors[mode]
+                thishs *= scale_factors[mode]
+                thisgatedhc *= 2 * invpsd.delta_f * invpsd * scale_factors[mode]
+                thisgatedhs *= 2 * invpsd.delta_f * invpsd * scale_factors[mode]
+                # add to full wfs
+                hc += thishc
+                hs += thishs
+                gated_hc += thisgatedhc
+                gated_hs += thisgatedhs
+            # template inner products
+            hchc += hc[slc].inner(gated_hc[slc]).real
+            hchs += hc[slc].inner(gated_hs[slc]).real
+            hshc += hs[slc].inner(gated_hc[slc]).real
+            hshs += hs[slc].inner(gated_hs[slc]).real
+            # data/template cross terms
+            dhc += d[slc].inner(gated_hc[slc]).real
+            dhs += d[slc].inner(gated_hs[slc]).real
+            hcd += hc[slc].inner(gated_d[slc]).real
+            hsd += hs[slc].inner(gated_d[slc]).real
             # get the normalization in this detector
             if self.normalize:
                 start_index, end_index = self.gate_indices(det)
