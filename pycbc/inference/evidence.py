@@ -104,7 +104,7 @@ def thermodynamic_integration(log_likelihood, betas,
         The inverse temperatures used in the MCMC.
 
     method : string
-        Optional. Can be one of {"trapzoid", "trapezoid_corrected", "simpsons"}
+        Optional. Can be one of {"trapezoid", "trapezoid_corrected", "simpsons"}
         The numerical integration method to use for the
         thermodynamic integration. Choices include: "trapezoid",
         "trapezoid_corrected", "simpsons", for the trapezoid rule,
