@@ -1,8 +1,11 @@
 """Mock simulation to easily test and profile PyCBC Live's coincidence code."""
 
 import unittest
+import os
+import tempfile
 from types import SimpleNamespace
 import numpy as np
+import h5py
 import logging
 from astropy.utils.data import download_file
 from pycbc import gps_now
@@ -144,6 +147,15 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                     a = newout[key]
                     b = oldout[key]
 
+                    if key == 'foreground/stat':
+                        self.assertIsInstance(a, np.ndarray)
+                        self.assertEqual(a.ndim, 1)
+                        self.assertEqual(len(a), 1)
+                        self.assert_foreground_stat_hdf_readable(a)
+                        self.assertEqual(len(a), len(np.atleast_1d(b)))
+                        self.assertTrue(np.isclose(a, np.atleast_1d(b)).all())
+                        continue
+
                     if isinstance(a, np.ndarray):
                         # compare shapes and values
                         self.assertEqual(len(a), len(b))
@@ -183,6 +195,23 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                 # Check that all singles, for all templates, are identical
                 lgc = lgc & (new_coincer.singles[ifo].data(temp) == old_coincer.singles[ifo].data(temp)).all()
             self.assertTrue(lgc)
+
+    def test_foreground_stat_hdf_contract(self):
+        self.assert_foreground_stat_hdf_readable(np.array([12.5]))
+
+    def assert_foreground_stat_hdf_readable(self, stat):
+        """Check live HDF output keeps foreground/stat slice-readable."""
+        fd, path = tempfile.mkstemp(suffix='.hdf')
+        os.close(fd)
+        try:
+            with h5py.File(path, 'w') as fp:
+                fp['foreground/stat'] = stat
+            with h5py.File(path, 'r') as fp:
+                saved = fp['foreground/stat'][:]
+        finally:
+            os.remove(path)
+        self.assertEqual(saved.shape, (1,))
+        self.assertTrue(np.isclose(saved, stat).all())
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPyCBCLiveCoinc))

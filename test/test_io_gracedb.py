@@ -54,7 +54,7 @@ class TestIOGraceDB(unittest.TestCase):
 
         self.possible_ifos = 'H1 L1 V1 K1 I1'.split()
 
-    def do_test(self, n_ifos, n_ifos_extra):
+    def do_test(self, n_ifos, n_ifos_extra, stat_as_array=False):
         # choose a random selection of interferometers
         # n_ifos will be used to generate the simulated trigger including
         # significance followup
@@ -64,7 +64,10 @@ class TestIOGraceDB(unittest.TestCase):
         # take 2 ifos to represent the initial coinc trigger
         coinc_ifos = all_ifos[0:2]
 
-        results = {'foreground/stat': np.random.uniform(4, 20),
+        stat = np.random.uniform(4, 20)
+        if stat_as_array:
+            stat = np.array([stat])
+        results = {'foreground/stat': stat,
                    'foreground/ifar': np.random.uniform(0.01, 1000)}
         skyloc_data = {}
         for ifo in all_ifos:
@@ -125,6 +128,9 @@ class TestIOGraceDB(unittest.TestCase):
         self.assertEqual(len(single_table), len(all_ifos))
         coinc_table = lsctables.CoincInspiralTable.get_table(read_coinc)
         self.assertEqual(len(coinc_table), 1)
+        coinc_event_table = lsctables.CoincTable.get_table(read_coinc)
+        self.assertTrue(np.isclose(coinc_event_table[0].likelihood,
+                                   np.asarray(stat).item()))
 
         # make sure lalseries can read the PSDs
         psd_doc = ligolw_utils.load_filename(
@@ -137,6 +143,9 @@ class TestIOGraceDB(unittest.TestCase):
 
     def test_2_ifos_no_followup(self):
         self.do_test(2, 0)
+
+    def test_2_ifos_no_followup_array_stat(self):
+        self.do_test(2, 0, stat_as_array=True)
 
     def test_3_ifos_no_followup(self):
         self.do_test(3, 0)

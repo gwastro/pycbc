@@ -6,6 +6,12 @@ import logging
 from pycbc.conversions import chirp_distance
 from . import bin_utils
 
+# numpy renamed trapz to trapezoid in 2.0 and removed trapz in 2.x
+try:
+    from numpy import trapezoid
+except ImportError:  # numpy < 2.0
+    from numpy import trapz as trapezoid
+
 logger = logging.getLogger('pycbc.sensitivity')
 
 
@@ -55,7 +61,7 @@ def compute_search_volume_in_bins(found, total, ndbins, sim_to_bins_function):
     errors = bin_utils.BinnedArray(bin_utils.NDBins(ndbins[1:]))
 
     # integrate efficiency to obtain volume
-    vol.array = numpy.trapz(eff.array.T * 4. * numpy.pi * r**2, r, dx)
+    vol.array = trapezoid(eff.array.T * 4. * numpy.pi * r**2, r, dx)
 
     # propagate errors in eff to errors in V
     errors.array = numpy.sqrt(
