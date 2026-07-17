@@ -271,9 +271,8 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
             value = value[idx_out]
         elif parameter == "sigma_multiple":
             if isinstance(triggers, ReadByTemplate):
-                ifo_grp = triggers.file[triggers.ifo]
-                value = np.sqrt(ifo_grp['sigmasq'][idx_out])
-                template_ids = ifo_grp['template_id'][idx_out]
+                value = np.sqrt(triggers['sigmasq'][idx_out])
+                template_ids = triggers['template_id'][idx_out]
                 # Get a cut threshold value, this will be different
                 # depending on the template ID, so we rewrite cut_thresh
                 # as a value for each trigger, numpy comparison functions
@@ -291,10 +290,7 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
                 or (hasattr(triggers, "file")
                     and parameter in triggers.file[triggers.ifo])):
             # parameter can be read direct from the trigger dictionary / file
-            if not hasattr(triggers, 'file') and parameter in triggers:
-                value = triggers[parameter]
-            else:
-                value = triggers.file[triggers.ifo][parameter]
+            value = triggers[parameter]
             # Apply any previous cuts to the value for comparison
             value = value[idx_out]
         elif parameter in sngl_rank_keys:
