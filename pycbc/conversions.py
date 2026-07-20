@@ -1237,7 +1237,7 @@ def det_tc(detector_name, ra, dec, tc, ref_frame='geocentric', relative=False):
     Parameters
     ----------
     detector_name : string
-        The name of the detector, e.g., 'H1'.
+        The name of the detector, e.g., 'H1', or 'geocentric'.
     ra : float
         The right ascension of the signal, in radians.
     dec : float
@@ -1259,6 +1259,9 @@ def det_tc(detector_name, ra, dec, tc, ref_frame='geocentric', relative=False):
 
     if ref_frame == detector_name:
         return tc
+    if detector_name == 'geocentric':
+        refdet = Detector(ref_frame)
+        return tc - refdet.time_delay_from_earth_center(ra, dec, ref_time)
     if detector_name not in _detector_cache:
         _detector_cache[detector_name] = Detector(detector_name)
     detector = _detector_cache[detector_name]
