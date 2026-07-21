@@ -272,12 +272,11 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
         elif parameter == "sigma_multiple":
             if isinstance(triggers, ReadByTemplate):
                 value = np.sqrt(triggers['sigmasq'][idx_out])
-                template_ids = triggers['template_id'][idx_out]
                 # Get a cut threshold value, this will be different
                 # depending on the template ID, so we rewrite cut_thresh
                 # as a value for each trigger, numpy comparison functions
                 # allow this
-                cut_thresh = sigma_multiple_cut_thresh(template_ids,
+                cut_thresh = sigma_multiple_cut_thresh(triggers.template_num,
                                                        statistic,
                                                        cut_thresh,
                                                        triggers.ifo)
