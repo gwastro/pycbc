@@ -1,0 +1,543 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.types.array_cuda &mdash; PyCBC 0.0a1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=fe1e55ce"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.types.array_cuda</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.types.array_cuda</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Alex Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;Pycuda based </span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycuda</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycuda.driver</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycuda.elementwise</span><span class="w"> </span><span class="kn">import</span> <span class="n">ElementwiseKernel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycuda.reduction</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReductionKernel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycuda.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_or_register_dtype</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycuda.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">context_dependent_memoize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycuda.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">dtype_to_ctype</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pytools</span><span class="w"> </span><span class="kn">import</span> <span class="n">match_precision</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycuda.gpuarray</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_common_dtype</span><span class="p">,</span> <span class="n">empty</span><span class="p">,</span> <span class="n">GPUArray</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycuda.gpuarray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycuda.scan</span><span class="w"> </span><span class="kn">import</span> <span class="n">InclusiveScanKernel</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">include_complex</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">#include &lt;pycuda-complex.hpp&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="nd">@context_dependent_memoize</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_cumsum_kernel</span><span class="p">(</span><span class="n">dtype</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">InclusiveScanKernel</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;a+b&quot;</span><span class="p">,</span> <span class="n">preamble</span><span class="o">=</span><span class="n">include_complex</span><span class="p">)</span>
+
+<div class="viewcode-block" id="icumsum">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.icumsum">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">icumsum</span><span class="p">(</span><span class="n">vec</span><span class="p">):</span>
+    <span class="n">krnl</span> <span class="o">=</span> <span class="n">get_cumsum_kernel</span><span class="p">(</span><span class="n">vec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">krnl</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span></div>
+
+
+<span class="nd">@context_dependent_memoize</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">call_prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sz</span><span class="p">,</span> <span class="n">allocator</span><span class="p">):</span>
+    <span class="n">MAX_BLOCK_COUNT</span> <span class="o">=</span> <span class="mi">1024</span>
+    <span class="n">SMALL_SEQ_COUNT</span> <span class="o">=</span> <span class="mi">4</span>        
+
+    <span class="k">if</span> <span class="n">sz</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="o">*</span><span class="n">SMALL_SEQ_COUNT</span><span class="o">*</span><span class="n">MAX_BLOCK_COUNT</span><span class="p">:</span>
+        <span class="n">total_block_size</span> <span class="o">=</span> <span class="n">SMALL_SEQ_COUNT</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">block_size</span>
+        <span class="n">block_count</span> <span class="o">=</span> <span class="p">(</span><span class="n">sz</span> <span class="o">+</span> <span class="n">total_block_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">total_block_size</span>
+        <span class="n">seq_count</span> <span class="o">=</span> <span class="n">SMALL_SEQ_COUNT</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">block_count</span> <span class="o">=</span> <span class="n">MAX_BLOCK_COUNT</span>
+        <span class="n">macroblock_size</span> <span class="o">=</span> <span class="n">block_count</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">block_size</span>
+        <span class="n">seq_count</span> <span class="o">=</span> <span class="p">(</span><span class="n">sz</span> <span class="o">+</span> <span class="n">macroblock_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">macroblock_size</span>
+
+    <span class="k">if</span> <span class="n">block_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">empty</span><span class="p">((),</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype_out</span><span class="p">,</span> <span class="n">allocator</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">empty</span><span class="p">((</span><span class="n">block_count</span><span class="p">,),</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype_out</span><span class="p">,</span> <span class="n">allocator</span><span class="p">)</span>
+
+    <span class="n">grid_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_count</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">block_size</span> <span class="o">=</span>  <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="n">block_count</span><span class="p">,</span> <span class="n">seq_count</span><span class="p">,</span> <span class="n">grid_size</span><span class="p">,</span> <span class="n">block_size</span>
+
+<div class="viewcode-block" id="LowerLatencyReductionKernel">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.LowerLatencyReductionKernel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LowerLatencyReductionKernel</span><span class="p">(</span><span class="n">ReductionKernel</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype_out</span><span class="p">,</span>
+                 <span class="n">neutral</span><span class="p">,</span> <span class="n">reduce_expr</span><span class="p">,</span> <span class="n">map_expr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">arguments</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s2">&quot;reduce_kernel&quot;</span><span class="p">,</span> <span class="n">keep</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preamble</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="n">ReductionKernel</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype_out</span><span class="p">,</span>
+                                 <span class="n">neutral</span><span class="p">,</span> <span class="n">reduce_expr</span><span class="p">,</span> <span class="n">map_expr</span><span class="p">,</span> <span class="n">arguments</span><span class="p">,</span>
+                                 <span class="n">name</span><span class="p">,</span> <span class="n">keep</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">preamble</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shared_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype_out</span><span class="o">.</span><span class="n">itemsize</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stage1_func</span>
+        <span class="n">s1_invocation_args</span> <span class="o">=</span> <span class="p">[]</span> 
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="n">s1_invocation_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">gpudata</span><span class="p">)</span>
+        <span class="n">sz</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+
+        <span class="n">result</span><span class="p">,</span> <span class="n">block_count</span><span class="p">,</span> <span class="n">seq_count</span><span class="p">,</span> <span class="n">grid_size</span><span class="p">,</span> <span class="n">block_size</span> <span class="o">=</span> <span class="n">call_prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sz</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">allocator</span><span class="p">)</span>
+
+        <span class="n">f</span><span class="p">(</span><span class="n">grid_size</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="o">*</span><span class="p">([</span><span class="n">result</span><span class="o">.</span><span class="n">gpudata</span><span class="p">]</span><span class="o">+</span><span class="n">s1_invocation_args</span><span class="o">+</span><span class="p">[</span><span class="n">seq_count</span><span class="p">,</span> <span class="n">sz</span><span class="p">]),</span>
+                <span class="n">shared_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shared_size</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stage2_func</span>
+            <span class="n">sz</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">size</span>
+            <span class="n">result2</span> <span class="o">=</span> <span class="n">result</span>
+            <span class="n">result</span><span class="p">,</span> <span class="n">block_count</span><span class="p">,</span> <span class="n">seq_count</span><span class="p">,</span> <span class="n">grid_size</span><span class="p">,</span> <span class="n">block_size</span> <span class="o">=</span> <span class="n">call_prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sz</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">allocator</span><span class="p">)</span>
+
+            <span class="n">f</span><span class="p">(</span><span class="n">grid_size</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="o">*</span><span class="p">([</span><span class="n">result</span><span class="o">.</span><span class="n">gpudata</span><span class="p">,</span> <span class="n">result2</span><span class="o">.</span><span class="n">gpudata</span><span class="p">]</span><span class="o">+</span><span class="n">s1_invocation_args</span><span class="o">+</span><span class="p">[</span><span class="n">seq_count</span><span class="p">,</span> <span class="n">sz</span><span class="p">]),</span>
+                    <span class="n">shared_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shared_size</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">block_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+
+<span class="nd">@context_dependent_memoize</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_norm_kernel</span><span class="p">(</span><span class="n">dtype_x</span><span class="p">,</span> <span class="n">dtype_out</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ElementwiseKernel</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">%(tp_x)s</span><span class="s2"> *x, </span><span class="si">%(tp_z)s</span><span class="s2"> *z&quot;</span> <span class="o">%</span> <span class="p">{</span>
+                <span class="s2">&quot;tp_x&quot;</span><span class="p">:</span> <span class="n">dtype_to_ctype</span><span class="p">(</span><span class="n">dtype_x</span><span class="p">),</span>
+                <span class="s2">&quot;tp_z&quot;</span><span class="p">:</span> <span class="n">dtype_to_ctype</span><span class="p">(</span><span class="n">dtype_out</span><span class="p">),</span>
+                <span class="p">},</span>
+            <span class="s2">&quot;z[i] = norm(x[i])&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;normalize&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="squared_norm">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.squared_norm">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">squared_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">dtype_out</span> <span class="o">=</span> <span class="n">match_precision</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">),</span> <span class="n">a</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">_new_like_me</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype_out</span><span class="p">)</span>
+    <span class="n">krnl</span> <span class="o">=</span> <span class="n">get_norm_kernel</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">dtype_out</span><span class="p">)</span>
+    <span class="n">krnl</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>     </div>
+
+
+<span class="c1"># FIXME: Write me!</span>
+<span class="c1">#def multiply_and_add(self, other, mult_fac):</span>
+<span class="c1">#    &quot;&quot;&quot;</span>
+<span class="c1">#    Return other multiplied by mult_fac and with self added.</span>
+<span class="c1">#    Self will be modified in place. This requires all inputs to be of the same</span>
+<span class="c1">#    precision.</span>
+<span class="c1">#    &quot;&quot;&quot;</span>
+ 
+<span class="nd">@context_dependent_memoize</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_weighted_inner_kernel</span><span class="p">(</span><span class="n">dtype_x</span><span class="p">,</span> <span class="n">dtype_y</span><span class="p">,</span> <span class="n">dtype_w</span><span class="p">,</span> <span class="n">dtype_out</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">dtype_x</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">dtype_x</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">):</span>
+        <span class="n">inner_map</span><span class="o">=</span><span class="s2">&quot;conj(x[i])*y[i]/w[i]&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">inner_map</span><span class="o">=</span><span class="s2">&quot;x[i]*y[i]/w[i]&quot;</span>       
+    <span class="k">return</span> <span class="n">LowerLatencyReductionKernel</span><span class="p">(</span><span class="n">dtype_out</span><span class="p">,</span>
+            <span class="n">neutral</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">,</span>
+            <span class="n">arguments</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(tp_x)s</span><span class="s2"> *x, </span><span class="si">%(tp_y)s</span><span class="s2"> *y,  </span><span class="si">%(tp_w)s</span><span class="s2"> *w&quot;</span> <span class="o">%</span> <span class="p">{</span>
+                <span class="s2">&quot;tp_x&quot;</span><span class="p">:</span> <span class="n">dtype_to_ctype</span><span class="p">(</span><span class="n">dtype_x</span><span class="p">),</span>
+                <span class="s2">&quot;tp_y&quot;</span><span class="p">:</span> <span class="n">dtype_to_ctype</span><span class="p">(</span><span class="n">dtype_y</span><span class="p">),</span>
+                <span class="s2">&quot;tp_w&quot;</span><span class="p">:</span> <span class="n">dtype_to_ctype</span><span class="p">(</span><span class="n">dtype_w</span><span class="p">),</span>
+                <span class="p">},</span>
+            <span class="n">reduce_expr</span><span class="o">=</span><span class="s2">&quot;a+b&quot;</span><span class="p">,</span>
+            <span class="n">map_expr</span><span class="o">=</span><span class="n">inner_map</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;weighted_inner&quot;</span><span class="p">)</span>
+
+<span class="nd">@context_dependent_memoize</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_inner_kernel</span><span class="p">(</span><span class="n">dtype_x</span><span class="p">,</span> <span class="n">dtype_y</span><span class="p">,</span> <span class="n">dtype_out</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">dtype_x</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">dtype_x</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">):</span>
+        <span class="n">inner_map</span><span class="o">=</span><span class="s2">&quot;conj(x[i])*y[i]&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">inner_map</span><span class="o">=</span><span class="s2">&quot;x[i]*y[i]&quot;</span>           
+    <span class="k">return</span> <span class="n">LowerLatencyReductionKernel</span><span class="p">(</span><span class="n">dtype_out</span><span class="p">,</span>
+            <span class="n">neutral</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">,</span>
+            <span class="n">arguments</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(tp_x)s</span><span class="s2"> *x, </span><span class="si">%(tp_y)s</span><span class="s2"> *y&quot;</span> <span class="o">%</span> <span class="p">{</span>
+                <span class="s2">&quot;tp_x&quot;</span><span class="p">:</span> <span class="n">dtype_to_ctype</span><span class="p">(</span><span class="n">dtype_x</span><span class="p">),</span>
+                <span class="s2">&quot;tp_y&quot;</span><span class="p">:</span> <span class="n">dtype_to_ctype</span><span class="p">(</span><span class="n">dtype_y</span><span class="p">),</span>
+                <span class="p">},</span>
+            <span class="n">reduce_expr</span><span class="o">=</span><span class="s2">&quot;a+b&quot;</span><span class="p">,</span>
+            <span class="n">map_expr</span><span class="o">=</span><span class="n">inner_map</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="inner">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.inner">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">inner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">dtype_out</span> <span class="o">=</span> <span class="n">_get_common_dtype</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">krnl</span> <span class="o">=</span> <span class="n">get_inner_kernel</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">dtype_out</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">krnl</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+    
+<span class="n">vdot</span> <span class="o">=</span> <span class="n">inner</span>
+
+<div class="viewcode-block" id="weighted_inner">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.weighted_inner">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">weighted_inner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">w</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>  
+    <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">dtype_out</span> <span class="o">=</span> <span class="n">_get_common_dtype</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">krnl</span> <span class="o">=</span> <span class="n">get_weighted_inner_kernel</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">dtype_out</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">krnl</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+
+<span class="c1"># Define PYCUDA MAXLOC for both single and double precission ################## </span>
+       
+<span class="n">maxloc_preamble</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+
+<span class="s2">    struct MAXLOCN{</span>
+<span class="s2">        TTYPE max;</span>
+<span class="s2">        LTYPE   loc;</span>
+<span class="s2">        </span>
+<span class="s2">        __device__</span>
+<span class="s2">        MAXLOCN()</span><span class="si">{}</span>
+<span class="s2">        </span>
+<span class="s2">        __device__</span>
+<span class="s2">        MAXLOCN(MAXLOCN const &amp;src): max(src.max), loc(src.loc)</span><span class="si">{}</span>
+<span class="s2">        __device__</span>
+<span class="s2">        MAXLOCN(MAXLOCN const volatile &amp;src): max(src.max), loc(src.loc)</span><span class="si">{}</span>
+<span class="s2">        </span>
+<span class="s2">        __device__</span>
+<span class="s2">        MAXLOCN volatile &amp;operator=( MAXLOCN const &amp;src) volatile{</span>
+<span class="s2">            max = src.max;</span>
+<span class="s2">            loc = src.loc;</span>
+<span class="s2">            return *this;</span>
+<span class="s2">        }</span>
+<span class="s2">    };</span>
+<span class="s2">    </span>
+<span class="s2">    __device__</span>
+<span class="s2">    MAXLOCN maxloc_red(MAXLOCN a, MAXLOCN b){</span>
+<span class="s2">        if (a.max &gt; b.max)</span>
+<span class="s2">            return a;</span>
+<span class="s2">        else </span>
+<span class="s2">            return b;  </span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    __device__</span>
+<span class="s2">    MAXLOCN maxloc_start(){</span>
+<span class="s2">        MAXLOCN t;</span>
+<span class="s2">        t.max=0;</span>
+<span class="s2">        t.loc=0;</span>
+<span class="s2">        return t;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    __device__</span>
+<span class="s2">    MAXLOCN maxloc_map(TTYPE val, LTYPE loc){</span>
+<span class="s2">        MAXLOCN t;</span>
+<span class="s2">        t.max = val;</span>
+<span class="s2">        t.loc = loc;</span>
+<span class="s2">        return t;</span>
+<span class="s2">    }</span>
+
+<span class="s2">    &quot;&quot;&quot;</span>
+    
+<span class="n">maxloc_preamble_single</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    #define MAXLOCN maxlocs</span>
+<span class="s2">    #define TTYPE float</span>
+<span class="s2">    #define LTYPE int</span>
+<span class="s2">&quot;&quot;&quot;</span> <span class="o">+</span> <span class="n">maxloc_preamble</span>
+
+<span class="n">maxloc_preamble_double</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    #define MAXLOCN maxlocd</span>
+<span class="s2">    #define TTYPE double</span>
+<span class="s2">    #define LTYPE long</span>
+<span class="s2">&quot;&quot;&quot;</span> <span class="o">+</span> <span class="n">maxloc_preamble</span>
+    
+<span class="n">maxloc_dtype_double</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)])</span>
+<span class="n">maxloc_dtype_single</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)])</span>
+
+<span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">pycuda</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;MagicMock&#39;</span><span class="p">,</span> <span class="s1">&#39;_MockModule&#39;</span><span class="p">):</span>
+    <span class="n">maxloc_dtype_single</span> <span class="o">=</span> <span class="n">get_or_register_dtype</span><span class="p">(</span><span class="s2">&quot;maxlocs&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">maxloc_dtype_single</span><span class="p">)</span>
+    <span class="n">maxloc_dtype_double</span> <span class="o">=</span> <span class="n">get_or_register_dtype</span><span class="p">(</span><span class="s2">&quot;maxlocd&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">maxloc_dtype_double</span><span class="p">)</span>
+
+    <span class="n">mls</span> <span class="o">=</span> <span class="n">LowerLatencyReductionKernel</span><span class="p">(</span><span class="n">maxloc_dtype_single</span><span class="p">,</span> <span class="n">neutral</span> <span class="o">=</span> <span class="s2">&quot;maxloc_start()&quot;</span><span class="p">,</span>
+            <span class="n">reduce_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_red(a, b)&quot;</span><span class="p">,</span> <span class="n">map_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_map(x[i], i)&quot;</span><span class="p">,</span>
+            <span class="n">arguments</span><span class="o">=</span><span class="s2">&quot;float *x&quot;</span><span class="p">,</span> <span class="n">preamble</span><span class="o">=</span><span class="n">maxloc_preamble_single</span><span class="p">)</span>
+
+    <span class="n">mld</span> <span class="o">=</span> <span class="n">LowerLatencyReductionKernel</span><span class="p">(</span><span class="n">maxloc_dtype_double</span><span class="p">,</span> <span class="n">neutral</span> <span class="o">=</span> <span class="s2">&quot;maxloc_start()&quot;</span><span class="p">,</span>
+            <span class="n">reduce_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_red(a, b)&quot;</span><span class="p">,</span> <span class="n">map_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_map(x[i], i)&quot;</span><span class="p">,</span>
+            <span class="n">arguments</span><span class="o">=</span><span class="s2">&quot;double *x&quot;</span><span class="p">,</span> <span class="n">preamble</span><span class="o">=</span><span class="n">maxloc_preamble_double</span><span class="p">)</span>
+
+    <span class="n">max_loc_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;single&#39;</span><span class="p">:</span><span class="n">mls</span><span class="p">,</span><span class="s1">&#39;double&#39;</span><span class="p">:</span><span class="n">mld</span><span class="p">}</span>
+
+
+    <span class="n">amls</span> <span class="o">=</span> <span class="n">LowerLatencyReductionKernel</span><span class="p">(</span><span class="n">maxloc_dtype_single</span><span class="p">,</span> <span class="n">neutral</span> <span class="o">=</span> <span class="s2">&quot;maxloc_start()&quot;</span><span class="p">,</span>
+            <span class="n">reduce_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_red(a, b)&quot;</span><span class="p">,</span> <span class="n">map_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_map(abs(x[i]), i)&quot;</span><span class="p">,</span>
+            <span class="n">arguments</span><span class="o">=</span><span class="s2">&quot;float *x&quot;</span><span class="p">,</span> <span class="n">preamble</span><span class="o">=</span><span class="n">maxloc_preamble_single</span><span class="p">)</span>
+
+    <span class="n">amld</span> <span class="o">=</span> <span class="n">LowerLatencyReductionKernel</span><span class="p">(</span><span class="n">maxloc_dtype_double</span><span class="p">,</span> <span class="n">neutral</span> <span class="o">=</span> <span class="s2">&quot;maxloc_start()&quot;</span><span class="p">,</span>
+            <span class="n">reduce_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_red(a, b)&quot;</span><span class="p">,</span> <span class="n">map_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_map(abs(x[i]), i)&quot;</span><span class="p">,</span>
+            <span class="n">arguments</span><span class="o">=</span><span class="s2">&quot;double *x&quot;</span><span class="p">,</span> <span class="n">preamble</span><span class="o">=</span><span class="n">maxloc_preamble_double</span><span class="p">)</span>
+
+    <span class="n">amlsc</span> <span class="o">=</span> <span class="n">LowerLatencyReductionKernel</span><span class="p">(</span><span class="n">maxloc_dtype_single</span><span class="p">,</span> <span class="n">neutral</span> <span class="o">=</span> <span class="s2">&quot;maxloc_start()&quot;</span><span class="p">,</span>
+            <span class="n">reduce_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_red(a, b)&quot;</span><span class="p">,</span> <span class="n">map_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_map(abs(x[i]), i)&quot;</span><span class="p">,</span>
+            <span class="n">arguments</span><span class="o">=</span><span class="s2">&quot;pycuda::complex&lt;float&gt; *x&quot;</span><span class="p">,</span> <span class="n">preamble</span><span class="o">=</span><span class="n">maxloc_preamble_single</span><span class="p">)</span>
+
+    <span class="n">amldc</span> <span class="o">=</span> <span class="n">LowerLatencyReductionKernel</span><span class="p">(</span><span class="n">maxloc_dtype_double</span><span class="p">,</span> <span class="n">neutral</span> <span class="o">=</span> <span class="s2">&quot;maxloc_start()&quot;</span><span class="p">,</span>
+            <span class="n">reduce_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_red(a, b)&quot;</span><span class="p">,</span> <span class="n">map_expr</span><span class="o">=</span><span class="s2">&quot;maxloc_map(abs(x[i]), i)&quot;</span><span class="p">,</span>
+            <span class="n">arguments</span><span class="o">=</span><span class="s2">&quot;pycuda::complex&lt;double&gt; *x&quot;</span><span class="p">,</span> <span class="n">preamble</span><span class="o">=</span><span class="n">maxloc_preamble_double</span><span class="p">)</span>
+
+    <span class="n">abs_max_loc_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;single&#39;</span><span class="p">:{</span> <span class="s1">&#39;real&#39;</span><span class="p">:</span><span class="n">amls</span><span class="p">,</span> <span class="s1">&#39;complex&#39;</span><span class="p">:</span><span class="n">amlsc</span> <span class="p">},</span> <span class="s1">&#39;double&#39;</span><span class="p">:{</span> <span class="s1">&#39;real&#39;</span><span class="p">:</span><span class="n">amld</span><span class="p">,</span> <span class="s1">&#39;complex&#39;</span><span class="p">:</span><span class="n">amldc</span> <span class="p">}}</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">max_loc_map</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">abs_max_loc_map</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="zeros">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.zeros">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">zeros</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">GPUArray</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">nwords</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">nbytes</span> <span class="o">/</span> <span class="mi">4</span>
+    <span class="n">pycuda</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">memset_d32</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">gpudata</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">nwords</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="ptr">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.ptr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ptr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">ptr</span></div>
+
+
+<div class="viewcode-block" id="dot">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.dot">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">gpuarray</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span><span class="n">other</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="min">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.min">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">gpuarray</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="abs_max_loc">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.abs_max_loc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">abs_max_loc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">maxloc</span> <span class="o">=</span> <span class="n">abs_max_loc_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">precision</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+    <span class="n">maxloc</span> <span class="o">=</span> <span class="n">maxloc</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">maxloc</span><span class="p">[</span><span class="s1">&#39;max&#39;</span><span class="p">]),</span><span class="nb">int</span><span class="p">(</span><span class="n">maxloc</span><span class="p">[</span><span class="s1">&#39;loc&#39;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="cumsum">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.cumsum">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">*</span><span class="mi">1</span>
+    <span class="k">return</span> <span class="n">icumsum</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="max">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.max">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">gpuarray</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="max_loc">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.max_loc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">max_loc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">maxloc</span> <span class="o">=</span> <span class="n">max_loc_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">precision</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+    <span class="n">maxloc</span> <span class="o">=</span> <span class="n">maxloc</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">maxloc</span><span class="p">[</span><span class="s1">&#39;max&#39;</span><span class="p">]),</span><span class="nb">int</span><span class="p">(</span><span class="n">maxloc</span><span class="p">[</span><span class="s1">&#39;loc&#39;</span><span class="p">])</span></div>
+
+    
+<div class="viewcode-block" id="take">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.take">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">gpuarray</span><span class="o">.</span><span class="n">GPUArray</span><span class="p">):</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">gpuarray</span><span class="o">.</span><span class="n">to_gpu</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">gpuarray</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="numpy">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.numpy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">get</span><span class="p">()</span></div>
+
+     
+<span class="k">def</span><span class="w"> </span><span class="nf">_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">self_ref</span><span class="p">,</span> <span class="n">other_ref</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">other_ref</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">self_ref</span><span class="p">))</span> <span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycuda.elementwise</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_copy_kernel</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">get_copy_kernel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">other_ref</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">func</span><span class="o">.</span><span class="n">prepared_async_call</span><span class="p">(</span><span class="n">self_ref</span><span class="o">.</span><span class="n">_grid</span><span class="p">,</span> <span class="n">self_ref</span><span class="o">.</span><span class="n">_block</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">self_ref</span><span class="o">.</span><span class="n">gpudata</span><span class="p">,</span> <span class="n">other_ref</span><span class="o">.</span><span class="n">gpudata</span><span class="p">,</span>
+                <span class="n">self_ref</span><span class="o">.</span><span class="n">mem_size</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The arrays must the same length&quot;</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_getvalue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+    
+<div class="viewcode-block" id="sum">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.sum">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">gpuarray</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="clear">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array_cuda.clear">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">n32</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">nbytes</span> <span class="o">/</span> <span class="mi">4</span>
+    <span class="n">pycuda</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">memset_d32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n32</span><span class="p">)</span></div>
+
+    
+<span class="k">def</span><span class="w"> </span><span class="nf">_scheme_matches_base_array</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">gpuarray</span><span class="o">.</span><span class="n">GPUArray</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_copy_base_array</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">gpuarray</span><span class="o">.</span><span class="n">GPUArray</span><span class="p">((</span><span class="n">array</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">array</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">pycuda</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">memcpy_dtod</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span><span class="p">,</span> <span class="n">array</span><span class="o">.</span><span class="n">gpudata</span><span class="p">,</span> <span class="n">array</span><span class="o">.</span><span class="n">nbytes</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_to_device</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">gpuarray</span><span class="o">.</span><span class="n">to_gpu</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+    
+   
+   
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Jul 22, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

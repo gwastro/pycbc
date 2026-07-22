@@ -1,0 +1,109 @@
+pycbc.filter package
+====================
+
+Submodules
+----------
+
+pycbc.filter.autocorrelation module
+-----------------------------------
+
+.. automodule:: pycbc.filter.autocorrelation
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.fotonfilter module
+-------------------------------
+
+.. automodule:: pycbc.filter.fotonfilter
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.matchedfilter module
+---------------------------------
+
+.. automodule:: pycbc.filter.matchedfilter
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.matchedfilter\_cpu module
+--------------------------------------
+
+.. automodule:: pycbc.filter.matchedfilter_cpu
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.matchedfilter\_cuda module
+---------------------------------------
+
+.. automodule:: pycbc.filter.matchedfilter_cuda
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.matchedfilter\_cupy module
+---------------------------------------
+
+.. automodule:: pycbc.filter.matchedfilter_cupy
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.matchedfilter\_numpy module
+----------------------------------------
+
+.. automodule:: pycbc.filter.matchedfilter_numpy
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.qtransform module
+------------------------------
+
+.. automodule:: pycbc.filter.qtransform
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.resample module
+----------------------------
+
+.. automodule:: pycbc.filter.resample
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.simd\_correlate module
+-----------------------------------
+
+.. automodule:: pycbc.filter.simd_correlate
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.simd\_correlate\_cython module
+-------------------------------------------
+
+.. automodule:: pycbc.filter.simd_correlate_cython
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.filter.zpk module
+-----------------------
+
+.. automodule:: pycbc.filter.zpk
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.filter
+   :members:
+   :show-inheritance:
+   :undoc-members:

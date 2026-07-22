@@ -1,0 +1,149 @@
+pycbc.inference.sampler package
+===============================
+
+Submodules
+----------
+
+pycbc.inference.sampler.base module
+-----------------------------------
+
+.. automodule:: pycbc.inference.sampler.base
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.base\_cube module
+-----------------------------------------
+
+.. automodule:: pycbc.inference.sampler.base_cube
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.base\_mcmc module
+-----------------------------------------
+
+.. automodule:: pycbc.inference.sampler.base_mcmc
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.base\_multitemper module
+------------------------------------------------
+
+.. automodule:: pycbc.inference.sampler.base_multitemper
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.cpnest module
+-------------------------------------
+
+.. automodule:: pycbc.inference.sampler.cpnest
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.dummy module
+------------------------------------
+
+.. automodule:: pycbc.inference.sampler.dummy
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.dynesty module
+--------------------------------------
+
+.. automodule:: pycbc.inference.sampler.dynesty
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.emcee module
+------------------------------------
+
+.. automodule:: pycbc.inference.sampler.emcee
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.emcee\_pt module
+----------------------------------------
+
+.. automodule:: pycbc.inference.sampler.emcee_pt
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.epsie module
+------------------------------------
+
+.. automodule:: pycbc.inference.sampler.epsie
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.games module
+------------------------------------
+
+.. automodule:: pycbc.inference.sampler.games
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.multinest module
+----------------------------------------
+
+.. automodule:: pycbc.inference.sampler.multinest
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.nessai module
+-------------------------------------
+
+.. automodule:: pycbc.inference.sampler.nessai
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.ptemcee module
+--------------------------------------
+
+.. automodule:: pycbc.inference.sampler.ptemcee
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.refine module
+-------------------------------------
+
+.. automodule:: pycbc.inference.sampler.refine
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.snowline module
+---------------------------------------
+
+.. automodule:: pycbc.inference.sampler.snowline
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inference.sampler.ultranest module
+----------------------------------------
+
+.. automodule:: pycbc.inference.sampler.ultranest
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.inference.sampler
+   :members:
+   :show-inheritance:
+   :undoc-members:

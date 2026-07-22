@@ -1,0 +1,544 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.SpinTaylorF2 &mdash; PyCBC 0.0a1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=fe1e55ce"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.SpinTaylorF2</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.SpinTaylorF2</h1><div class="highlight"><pre>
+<span></span><span class="c1">#  Copyright (C) 2013 Haris K</span>
+<span class="c1">#  Ported from LALSimulation&#39;s LALSimInspiralSpinTaylorF2.c</span>
+<span class="c1">#</span>
+<span class="c1">#  This program is free software; you can redistribute it and/or modify</span>
+<span class="c1">#  it under the terms of the GNU General Public License as published by</span>
+<span class="c1">#  the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1">#  (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  This program is distributed in the hope that it will be useful,</span>
+<span class="c1">#  but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1">#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1">#  GNU General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1">#  You should have received a copy of the GNU General Public License</span>
+<span class="c1">#  along with with program; see the file COPYING. If not, write to the</span>
+<span class="c1">#  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,</span>
+<span class="c1">#  MA  02111-1307  USA</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">double</span><span class="p">,</span> <span class="n">complex128</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="nb">pow</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span> <span class="n">acos</span><span class="p">,</span> <span class="n">atan2</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycuda.elementwise</span><span class="w"> </span><span class="kn">import</span> <span class="n">ElementwiseKernel</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.libutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">pkg_config_header_strings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrequencySeries</span><span class="p">,</span> <span class="n">zeros</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">ceilpow2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">MTSUN_SI</span><span class="p">,</span> <span class="n">PC_SI</span><span class="p">,</span> <span class="n">PI</span><span class="p">,</span> <span class="n">MRSUN_SI</span><span class="p">,</span> <span class="n">GAMMA</span>
+
+<span class="n">preamble</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">#include &lt;cuComplex.h&gt;</span>
+<span class="s2">#include &lt;math.h&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">spintaylorf2_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    const double f = (i + kmin ) * delta_f;</span>
+<span class="s2">    const double v0 = cbrt(piM *  kmin * delta_f);</span>
+<span class="s2">    const double v = cbrt(piM*f);</span>
+<span class="s2">    const double v2 = v * v;</span>
+<span class="s2">    const double v3 = v * v2;</span>
+<span class="s2">    const double v4 = v * v3;</span>
+<span class="s2">    const double v5 = v * v4;</span>
+<span class="s2">    const double v6 = v * v5;</span>
+<span class="s2">    const double v7 = v * v6;</span>
+<span class="s2">    const double v8 = v * v7;</span>
+<span class="s2">    const double v9 = v * v8;</span>
+<span class="s2">    const double v10 = v * v9;</span>
+<span class="s2">    double phasing = 0.;</span>
+<span class="s2">    double dEnergy = 0.;</span>
+<span class="s2">    double flux = 0.;</span>
+<span class="s2">    double amp;</span>
+<span class="s2">    double shft = -(2.0 * PI) * tC;</span>
+<span class="s2">    double RE_prec_facP;</span>
+<span class="s2">    double IM_prec_facP;</span>
+<span class="s2">    double RE_prec_facC;</span>
+<span class="s2">    double IM_prec_facC;</span>
+
+<span class="s2">    switch (phase_order)</span>
+<span class="s2">    {</span>
+<span class="s2">        case -1:</span>
+<span class="s2">        case 7:</span>
+<span class="s2">            phasing += pfa7 * v7;</span>
+<span class="s2">        case 6:</span>
+<span class="s2">            phasing += (pfa6 + pfl6 * log(4.*v) ) * v6;</span>
+<span class="s2">        case 5:</span>
+<span class="s2">            phasing += (pfa5 + pfl5 * log(v/v0)) * v5;</span>
+<span class="s2">        case 4:</span>
+<span class="s2">            phasing += pfa4 * v4;</span>
+<span class="s2">        case 3:</span>
+<span class="s2">            phasing += pfa3 * v3;</span>
+<span class="s2">        case 2:</span>
+<span class="s2">            phasing += pfa2 * v2;</span>
+<span class="s2">        case 0:</span>
+<span class="s2">            phasing += 1.;</span>
+<span class="s2">            break;</span>
+<span class="s2">        default:</span>
+<span class="s2">            break;</span>
+<span class="s2">    }</span>
+<span class="s2">    switch (amplitude_order)</span>
+<span class="s2">    {</span>
+<span class="s2">        case -1:</span>
+<span class="s2">        case 7:</span>
+<span class="s2">            flux +=  FTa7 * v7;</span>
+<span class="s2">        case 6:</span>
+<span class="s2">            flux += ( FTa6 +  FTl6*log(16.*v2)) * v6;</span>
+<span class="s2">            dEnergy +=  dETa3 * v6;</span>
+<span class="s2">        case 5:</span>
+<span class="s2">            flux +=  FTa5 * v5;</span>
+<span class="s2">        case 4:</span>
+<span class="s2">            flux +=  FTa4 * v4;</span>
+<span class="s2">            dEnergy +=  dETa2 * v4;</span>
+<span class="s2">        case 3:</span>
+<span class="s2">            flux +=  FTa3 * v3;</span>
+<span class="s2">        case 2:</span>
+<span class="s2">            flux +=  FTa2 * v2;</span>
+<span class="s2">            dEnergy +=  dETa1 * v2;</span>
+<span class="s2">        case 0:</span>
+<span class="s2">            flux += 1;</span>
+<span class="s2">            dEnergy += 1.;</span>
+<span class="s2">            break;</span>
+<span class="s2">    }</span>
+
+<span class="s2">    phasing *= pfaN / v5;</span>
+<span class="s2">    flux *= FTaN * v10;</span>
+<span class="s2">    dEnergy *= dETaN * v;</span>
+
+<span class="s2">    const double gam = gamma0*v;</span>
+<span class="s2">    const double sqrtfac = sqrt(1. + 2.*kappa*gam + gam*gam);</span>
+<span class="s2">    const double logv = log(v);</span>
+<span class="s2">    const double logfac1 = log(1. + kappa*gam + sqrtfac);</span>
+<span class="s2">    const double logfac2 = log(kappa + gam + sqrtfac);</span>
+<span class="s2">    const double kappa2 = kappa * kappa;</span>
+<span class="s2">    const double kappa3 = kappa2 * kappa;</span>
+<span class="s2">    const double gamma02 = gamma0 * gamma0;</span>
+<span class="s2">    const double gamma03 = gamma02 *gamma0;</span>
+
+<span class="s2">    const double alpha = prec_fac0*(  logfac2 *( dtdv2*gamma0 + dtdv3*kappa -</span>
+<span class="s2">        dtdv5*kappa/(2.*gamma02) + dtdv4/(2.*gamma0) -</span>
+<span class="s2">        dtdv4*kappa2/(2.*gamma0) + (dtdv5*kappa3)/(2.*gamma02) )  +</span>
+<span class="s2">        logfac1*( - dtdv2*gamma0*kappa - dtdv3 + kappa*gamma03/2. -</span>
+<span class="s2">        gamma03*kappa3/2. ) + logv *( dtdv2*gamma0*kappa + dtdv3 -</span>
+<span class="s2">        kappa*gamma03/2. + gamma03*kappa3/2. ) + sqrtfac *( dtdv3 +</span>
+<span class="s2">        dtdv4*v/2. + dtdv5/gamma02/3. + dtdv4*kappa/(2.*gamma0) +</span>
+<span class="s2">        dtdv5*kappa*v/(6.*gamma0) - dtdv5*kappa2/(2.*gamma02) - 1/(3.*v3) -</span>
+<span class="s2">        gamma0*kappa/(6.*v2) - dtdv2/v - gamma02/(3.*v) +</span>
+<span class="s2">        gamma02*kappa2/(2.*v) + dtdv5*v2/3. )) - alpha_ref;</span>
+
+<span class="s2">    const double beta = acos((1. + kappa*gamma0*v)/sqrt(1. + 2.*kappa*gamma0*v + gamma0*gamma0*v*v));</span>
+
+<span class="s2">    const double zeta = prec_fac0*( dtdv3*gamma0*kappa*v + dtdv4*v +</span>
+<span class="s2">        logfac2 *(-dtdv2*gamma0 - dtdv3*kappa + dtdv5*kappa/(2.*gamma02) -</span>
+<span class="s2">        dtdv4/(2.*gamma0) + dtdv4*kappa2/(2.*gamma0) -</span>
+<span class="s2">        dtdv5*kappa3/(2.*gamma02) ) + logv *( kappa*gamma03/2. -</span>
+<span class="s2">        gamma03*kappa3/2. ) + logfac1 *( dtdv2*gamma0*kappa + dtdv3 -</span>
+<span class="s2">        kappa*gamma03/2. + gamma03*kappa3/2. ) - 1/(3.*v3) -</span>
+<span class="s2">        gamma0*kappa/(2.*v2) - dtdv2/v + dtdv4*gamma0*kappa*v2/2. +</span>
+<span class="s2">        dtdv5*v2/2. + sqrtfac *( -dtdv3 - dtdv4*v/2. - dtdv5/(3.*gamma02) -</span>
+<span class="s2">        dtdv4*kappa/(2.*gamma0) - dtdv5*kappa*v/(6.*gamma0) +</span>
+<span class="s2">        dtdv5*kappa2/(2.*gamma02) + 1/(3.*v3) + gamma0*kappa/(6.*v2) +</span>
+<span class="s2">        dtdv2/v + gamma02/(3.*v) - gamma02*kappa2/(2.*v) - dtdv5*v2/3. ) +</span>
+<span class="s2">        dtdv5*gamma0*kappa*v3/3. ) - zeta_ref;</span>
+
+<span class="s2">    double CBeta;</span>
+<span class="s2">    double SBeta;</span>
+<span class="s2">    double SAlpha1;</span>
+<span class="s2">    double SAlpha2;</span>
+<span class="s2">    double SAlpha3;</span>
+<span class="s2">    double SAlpha4;</span>
+<span class="s2">    double CAlpha1;</span>
+<span class="s2">    double CAlpha2;</span>
+<span class="s2">    double CAlpha3;</span>
+<span class="s2">    double CAlpha4;</span>
+<span class="s2">    sincos(beta/2.,&amp;SBeta,&amp;CBeta);</span>
+<span class="s2">    sincos(-alpha,&amp;SAlpha1,&amp;CAlpha1);</span>
+<span class="s2">    sincos(-2.*alpha,&amp;SAlpha2,&amp;CAlpha2);</span>
+<span class="s2">    sincos(-3.*alpha,&amp;SAlpha3,&amp;CAlpha3);</span>
+<span class="s2">    sincos(-4.*alpha,&amp;SAlpha4,&amp;CAlpha4);</span>
+<span class="s2">    const double CBeta2 = CBeta * CBeta;</span>
+<span class="s2">    const double CBeta3 = CBeta * CBeta2;</span>
+<span class="s2">    const double CBeta4 = CBeta * CBeta3;</span>
+<span class="s2">    const double SBeta2 = SBeta * SBeta;</span>
+<span class="s2">    const double SBeta3 = SBeta * SBeta2;</span>
+<span class="s2">    const double SBeta4 = SBeta * SBeta3;</span>
+
+<span class="s2">    RE_prec_facP = ( cos(2.*psiJ_P) *</span>
+<span class="s2">            ( SBeta4 * RE_SBfac4 * CAlpha4</span>
+<span class="s2">            + CBeta * SBeta3 * RE_SBfac3 * CAlpha3</span>
+<span class="s2">            + CBeta2 * SBeta2 * RE_SBfac2 * CAlpha2</span>
+<span class="s2">            + CBeta3 * SBeta * RE_SBfac1 * CAlpha1</span>
+<span class="s2">            + CBeta4 * RE_SBfac0 )</span>
+<span class="s2">                 - sin(2.*psiJ_P) *</span>
+<span class="s2">            ( SBeta4 * IM_SBfac4 * SAlpha4</span>
+<span class="s2">            + CBeta * SBeta3 * IM_SBfac3 * SAlpha3</span>
+<span class="s2">            + CBeta2 * SBeta2 * IM_SBfac2 * SAlpha2</span>
+<span class="s2">            + CBeta3 * SBeta * IM_SBfac1 * SAlpha1</span>
+<span class="s2">            + CBeta4 * IM_SBfac0 * 0 ));</span>
+
+<span class="s2">    IM_prec_facP = ( cos(2.*psiJ_P) *</span>
+<span class="s2">            (  SBeta4 * RE_SBfac4 * SAlpha4</span>
+<span class="s2">            + CBeta * SBeta3 * RE_SBfac3 * SAlpha3</span>
+<span class="s2">            + CBeta2 * SBeta2 * RE_SBfac2 * SAlpha2</span>
+<span class="s2">            + CBeta3 * SBeta * RE_SBfac1 * SAlpha1</span>
+<span class="s2">            + CBeta4 * RE_SBfac0 * 0 )</span>
+<span class="s2">                  + sin(2.*psiJ_P) *</span>
+<span class="s2">            ( SBeta4 * IM_SBfac4 * CAlpha4</span>
+<span class="s2">            + CBeta * SBeta3 * IM_SBfac3 * CAlpha3</span>
+<span class="s2">            + CBeta2 * SBeta2 * IM_SBfac2 * CAlpha2</span>
+<span class="s2">            + CBeta3 * SBeta * IM_SBfac1 * CAlpha1</span>
+<span class="s2">            + CBeta4 * IM_SBfac0 ));</span>
+
+<span class="s2">    RE_prec_facC = ( cos(2.*psiJ_C) *</span>
+<span class="s2">            ( SBeta4 * RE_SBfac4 * CAlpha4</span>
+<span class="s2">            + CBeta * SBeta3 * RE_SBfac3 * CAlpha3</span>
+<span class="s2">            + CBeta2 * SBeta2 * RE_SBfac2 * CAlpha2</span>
+<span class="s2">            + CBeta3 * SBeta * RE_SBfac1 * CAlpha1</span>
+<span class="s2">            + CBeta4 * RE_SBfac0 )</span>
+<span class="s2">                 - sin(2.*psiJ_C) *</span>
+<span class="s2">            ( SBeta4 * IM_SBfac4 * SAlpha4</span>
+<span class="s2">            + CBeta * SBeta3 * IM_SBfac3 * SAlpha3</span>
+<span class="s2">            + CBeta2 * SBeta2 * IM_SBfac2 * SAlpha2</span>
+<span class="s2">            + CBeta3 * SBeta * IM_SBfac1 * SAlpha1</span>
+<span class="s2">            + CBeta4 * IM_SBfac0 * 0 ));</span>
+
+<span class="s2">    IM_prec_facC = ( cos(2.*psiJ_C) *</span>
+<span class="s2">            (  SBeta4 * RE_SBfac4 * SAlpha4</span>
+<span class="s2">            + CBeta * SBeta3 * RE_SBfac3 * SAlpha3</span>
+<span class="s2">            + CBeta2 * SBeta2 * RE_SBfac2 * SAlpha2</span>
+<span class="s2">            + CBeta3 * SBeta * RE_SBfac1 * SAlpha1</span>
+<span class="s2">            + CBeta4 * RE_SBfac0 * 0 )</span>
+<span class="s2">                  + sin(2.*psiJ_C) *</span>
+<span class="s2">            ( SBeta4 * IM_SBfac4 * CAlpha4</span>
+<span class="s2">            + CBeta * SBeta3 * IM_SBfac3 * CAlpha3</span>
+<span class="s2">            + CBeta2 * SBeta2 * IM_SBfac2 * CAlpha2</span>
+<span class="s2">            + CBeta3 * SBeta * IM_SBfac1 * CAlpha1</span>
+<span class="s2">            + CBeta4 * IM_SBfac0 ));</span>
+
+
+<span class="s2">    phasing += shft * f - 2. * phi0; // FIXME:: Sign of phi0?</span>
+<span class="s2">    phasing += 2.*zeta;</span>
+<span class="s2">    amp = amp0 * sqrt(-dEnergy/flux) * v;</span>
+
+<span class="s2">    const double CPhasing = amp * cos(phasing - (PI / 4.0));</span>
+<span class="s2">    const double SPhasing = amp * sin(phasing - (PI / 4.0));</span>
+<span class="s2">    htildeP[i]._M_re = RE_prec_facP * CPhasing + IM_prec_facP * SPhasing ;</span>
+<span class="s2">    htildeP[i]._M_im = IM_prec_facP * CPhasing - RE_prec_facP * SPhasing ;</span>
+<span class="s2">    htildeC[i]._M_re = RE_prec_facC * CPhasing + IM_prec_facC * SPhasing ;</span>
+<span class="s2">    htildeC[i]._M_im = IM_prec_facC * CPhasing - RE_prec_facC * SPhasing ;</span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">spintaylorf2_kernel</span> <span class="o">=</span> <span class="n">ElementwiseKernel</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;pycuda::complex&lt;double&gt; *htildeP,</span>
+<span class="s2">                                           pycuda::complex&lt;double&gt; *htildeC,</span>
+<span class="s2">                                           int kmin, int phase_order,</span>
+<span class="s2">                                           int amplitude_order, double delta_f, double PI,</span>
+<span class="s2">                                           double piM, double pfaN,</span>
+<span class="s2">                                           double pfa2, double pfa3,</span>
+<span class="s2">                                           double pfa4, double pfa5,</span>
+<span class="s2">                                           double pfl5, double pfa6,</span>
+<span class="s2">                                           double pfl6, double pfa7,</span>
+<span class="s2">                                           double FTaN, double FTa2,</span>
+<span class="s2">                                           double FTa3, double FTa4,</span>
+<span class="s2">                                           double FTa5, double FTa6,</span>
+<span class="s2">                                           double FTl6, double FTa7,</span>
+<span class="s2">                                           double dETaN, double dETa1,</span>
+<span class="s2">                                           double dETa2, double dETa3,</span>
+<span class="s2">                                           double amp0, double tC, double phi0,</span>
+<span class="s2">                                           double kappa, double prec_fac0,</span>
+<span class="s2">                                           double alpha_ref, double zeta_ref,</span>
+<span class="s2">                                           double dtdv2, double dtdv3,</span>
+<span class="s2">                                           double dtdv4, double dtdv5,</span>
+<span class="s2">                                           double RE_SBfac0, double RE_SBfac1,</span>
+<span class="s2">                                           double RE_SBfac2, double RE_SBfac3,</span>
+<span class="s2">                                           double RE_SBfac4, double IM_SBfac0,</span>
+<span class="s2">                                           double IM_SBfac1, double IM_SBfac2,</span>
+<span class="s2">                                           double IM_SBfac3, double IM_SBfac4,</span>
+<span class="s2">                                           double psiJ_P, double psiJ_C,</span>
+<span class="s2">                                           double gamma0&quot;&quot;&quot;</span><span class="p">,</span>
+                    <span class="n">spintaylorf2_text</span><span class="p">,</span> <span class="s2">&quot;spintaylorf2_kernel&quot;</span><span class="p">,</span>
+                    <span class="n">preamble</span><span class="o">=</span><span class="n">preamble</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">pkg_config_header_strings</span><span class="p">([]))</span>
+
+<div class="viewcode-block" id="spintaylorf2">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.SpinTaylorF2.spintaylorf2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spintaylorf2</span><span class="p">(</span><span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return a SpinTaylorF2 waveform using CUDA to generate the phase and amplitude</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#####Pull out the input arguments#####</span>
+    <span class="n">f_lower</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">])</span>
+    <span class="n">delta_f</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">])</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">])</span>
+    <span class="n">mass1</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">])</span>
+    <span class="n">mass2</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">])</span>
+    <span class="n">spin1x</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;spin1x&#39;</span><span class="p">])</span>
+    <span class="n">spin1y</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;spin1y&#39;</span><span class="p">])</span>
+    <span class="n">spin1z</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">])</span>
+    <span class="n">phi0</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;coa_phase&#39;</span><span class="p">])</span>               <span class="c1">#Orbital Phase at coalescence</span>
+    <span class="n">phase_order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;phase_order&#39;</span><span class="p">])</span>
+    <span class="n">amplitude_order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;amplitude_order&#39;</span><span class="p">])</span>
+    <span class="n">inclination</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">])</span>
+    <span class="n">lnhatx</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">inclination</span><span class="p">)</span>
+    <span class="n">lnhaty</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">lnhatz</span> <span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="n">inclination</span><span class="p">)</span>
+    <span class="n">psi</span> <span class="o">=</span> <span class="mf">0.</span>
+
+    <span class="n">tC</span><span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">delta_f</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">mass1</span> <span class="o">+</span> <span class="n">mass2</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">mass1</span> <span class="o">*</span> <span class="n">mass2</span> <span class="o">/</span> <span class="p">(</span><span class="n">M</span> <span class="o">*</span> <span class="n">M</span><span class="p">)</span>
+    <span class="n">m_sec</span> <span class="o">=</span> <span class="n">M</span> <span class="o">*</span> <span class="n">MTSUN_SI</span>
+    <span class="n">piM</span> <span class="o">=</span> <span class="n">PI</span> <span class="o">*</span> <span class="n">m_sec</span>
+
+    <span class="n">vISCO</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span><span class="mf">6.</span><span class="p">)</span>
+    <span class="n">fISCO</span> <span class="o">=</span> <span class="n">vISCO</span> <span class="o">*</span> <span class="n">vISCO</span> <span class="o">*</span> <span class="n">vISCO</span> <span class="o">/</span> <span class="n">piM</span>
+    <span class="n">f_max</span> <span class="o">=</span> <span class="n">ceilpow2</span><span class="p">(</span><span class="n">fISCO</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f_max</span> <span class="o">/</span> <span class="n">delta_f</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">kmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fISCO</span> <span class="o">/</span> <span class="n">delta_f</span><span class="p">)</span>
+    <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">f_lower</span> <span class="o">/</span> <span class="n">delta_f</span><span class="p">))</span>
+    <span class="n">kmax</span> <span class="o">=</span> <span class="n">kmax</span> <span class="k">if</span> <span class="p">(</span><span class="n">kmax</span><span class="o">&lt;</span><span class="n">n</span><span class="p">)</span> <span class="k">else</span> <span class="n">n</span>
+
+    <span class="c1">#####Calculate the Orientation#####</span>
+    <span class="n">v0</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">piM</span> <span class="o">*</span>  <span class="n">kmin</span> <span class="o">*</span> <span class="n">delta_f</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">chi</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">spin1x</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">spin1y</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">spin1z</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">kappa</span> <span class="o">=</span> <span class="p">(</span><span class="n">lnhatx</span><span class="o">*</span><span class="n">spin1x</span><span class="o">+</span><span class="n">lnhaty</span><span class="o">*</span><span class="n">spin1y</span><span class="o">+</span><span class="n">lnhatz</span><span class="o">*</span><span class="n">spin1z</span><span class="p">)</span><span class="o">/</span><span class="n">chi</span> <span class="k">if</span> <span class="p">(</span><span class="n">chi</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">)</span>  <span class="k">else</span> <span class="mf">1.</span>
+    <span class="n">Jx0</span> <span class="o">=</span> <span class="n">mass1</span><span class="o">*</span><span class="n">mass2</span><span class="o">*</span><span class="n">lnhatx</span><span class="o">/</span><span class="n">v0</span> <span class="o">+</span> <span class="n">mass1</span><span class="o">*</span><span class="n">mass1</span><span class="o">*</span><span class="n">spin1x</span>
+    <span class="n">Jy0</span> <span class="o">=</span> <span class="n">mass1</span><span class="o">*</span><span class="n">mass2</span><span class="o">*</span><span class="n">lnhaty</span><span class="o">/</span><span class="n">v0</span> <span class="o">+</span> <span class="n">mass1</span><span class="o">*</span><span class="n">mass1</span><span class="o">*</span><span class="n">spin1y</span>
+    <span class="n">Jz0</span> <span class="o">=</span> <span class="n">mass1</span><span class="o">*</span><span class="n">mass2</span><span class="o">*</span><span class="n">lnhatz</span><span class="o">/</span><span class="n">v0</span> <span class="o">+</span> <span class="n">mass1</span><span class="o">*</span><span class="n">mass1</span><span class="o">*</span><span class="n">spin1z</span>
+    <span class="n">thetaJ</span> <span class="o">=</span> <span class="n">acos</span><span class="p">(</span><span class="n">Jz0</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">Jx0</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">Jy0</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">Jz0</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">psiJ</span> <span class="o">=</span> <span class="n">atan2</span><span class="p">(</span><span class="n">Jy0</span><span class="p">,</span> <span class="o">-</span><span class="n">Jx0</span><span class="p">)</span> <span class="c1"># FIXME: check that Jy0 and Jx0 are not both 0</span>
+    <span class="c1"># Rotate Lnhat back to frame where J is along z, to figure out initial alpha</span>
+    <span class="n">rotLx</span> <span class="o">=</span> <span class="n">lnhatx</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">thetaJ</span><span class="p">)</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">psiJ</span><span class="p">)</span> <span class="o">-</span> <span class="n">lnhaty</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">thetaJ</span><span class="p">)</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">psiJ</span><span class="p">)</span> <span class="o">+</span> <span class="n">lnhatz</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">thetaJ</span><span class="p">)</span>
+    <span class="n">rotLy</span> <span class="o">=</span> <span class="n">lnhatx</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">psiJ</span><span class="p">)</span> <span class="o">+</span> <span class="n">lnhaty</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">psiJ</span><span class="p">)</span>
+    <span class="n">alpha0</span> <span class="o">=</span> <span class="n">atan2</span><span class="p">(</span><span class="n">rotLy</span><span class="p">,</span> <span class="n">rotLx</span><span class="p">)</span> <span class="c1"># FIXME: check that rotLy and rotLx are not both 0</span>
+    <span class="n">psiJ_P</span> <span class="o">=</span><span class="n">psiJ</span> <span class="o">+</span> <span class="n">psi</span>
+    <span class="n">psiJ_C</span> <span class="o">=</span><span class="n">psiJ</span> <span class="o">+</span> <span class="n">psi</span> <span class="o">+</span> <span class="n">PI</span><span class="o">/</span><span class="mf">4.</span>
+
+    <span class="c1">#####Calculate the Coefficients#####</span>
+    <span class="c1">#quadparam = 1.</span>
+    <span class="n">gamma0</span> <span class="o">=</span> <span class="n">mass1</span><span class="o">*</span><span class="n">chi</span><span class="o">/</span><span class="n">mass2</span>
+    <span class="c1">#Calculate the spin corrections</span>
+    <span class="c1"># FIXME should use pycbc&#39;s function, but sigma has different expression</span>
+    <span class="c1"># in Andy&#39;s code, double check</span>
+    <span class="c1"># pn_beta, pn_sigma, pn_gamma = pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(</span>
+    <span class="c1">#                               mass1, mass2, chi*kappa, 0) # FIXME: spin2 is taken to be 0</span>
+    <span class="n">pn_beta</span> <span class="o">=</span> <span class="p">(</span><span class="mf">113.</span><span class="o">*</span><span class="n">mass1</span><span class="o">/</span><span class="p">(</span><span class="mf">12.</span><span class="o">*</span><span class="n">M</span><span class="p">)</span> <span class="o">-</span> <span class="mf">19.</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">6.</span><span class="p">)</span><span class="o">*</span><span class="n">chi</span><span class="o">*</span><span class="n">kappa</span>
+    <span class="n">pn_sigma</span> <span class="o">=</span> <span class="p">(</span>  <span class="p">(</span><span class="mf">5.</span><span class="o">*</span><span class="p">(</span><span class="mf">3.</span><span class="o">*</span><span class="n">kappa</span><span class="o">*</span><span class="n">kappa</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">7.</span> <span class="o">-</span> <span class="n">kappa</span><span class="o">*</span><span class="n">kappa</span><span class="p">)</span><span class="o">/</span><span class="mf">96.</span>  <span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">mass1</span><span class="o">*</span><span class="n">mass1</span><span class="o">*</span><span class="n">chi</span><span class="o">*</span><span class="n">chi</span><span class="o">/</span><span class="n">M</span><span class="o">/</span><span class="n">M</span><span class="p">)</span>
+    <span class="n">pn_gamma</span> <span class="o">=</span> <span class="p">(</span><span class="mf">5.</span><span class="o">*</span><span class="p">(</span><span class="mf">146597.</span> <span class="o">+</span> <span class="mf">7056.</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span><span class="o">*</span><span class="n">mass1</span><span class="o">/</span><span class="p">(</span><span class="mf">2268.</span><span class="o">*</span><span class="n">M</span><span class="p">)</span> <span class="o">-</span> <span class="mf">10.</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="p">(</span><span class="mf">1276.</span> <span class="o">+</span> <span class="mf">153.</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span><span class="o">/</span><span class="mf">81.</span><span class="p">)</span><span class="o">*</span><span class="n">chi</span><span class="o">*</span><span class="n">kappa</span>
+    <span class="n">prec_fac0</span> <span class="o">=</span> <span class="mf">5.</span><span class="o">*</span><span class="p">(</span><span class="mf">4.</span> <span class="o">+</span> <span class="mf">3.</span><span class="o">*</span><span class="n">mass2</span><span class="o">/</span><span class="n">mass1</span><span class="p">)</span><span class="o">/</span><span class="mf">64.</span>
+    <span class="n">dtdv2</span> <span class="o">=</span> <span class="mf">743.</span><span class="o">/</span><span class="mf">336.</span> <span class="o">+</span> <span class="mf">11.</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">4.</span>
+    <span class="n">dtdv3</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.</span><span class="o">*</span><span class="n">PI</span> <span class="o">+</span> <span class="n">pn_beta</span>
+    <span class="n">dtdv4</span> <span class="o">=</span> <span class="mf">3058673.</span><span class="o">/</span><span class="mf">1016064.</span> <span class="o">+</span> <span class="mf">5429.</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">1008.</span> <span class="o">+</span> <span class="mf">617.</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">144.</span> <span class="o">-</span> <span class="n">pn_sigma</span>
+    <span class="n">dtdv5</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">7729.</span><span class="o">/</span><span class="mf">672.</span><span class="o">+</span><span class="mf">13.</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">8.</span><span class="p">)</span><span class="o">*</span><span class="n">PI</span> <span class="o">+</span> <span class="mf">9.</span><span class="o">*</span><span class="n">pn_gamma</span><span class="o">/</span><span class="mf">40.</span>
+
+    <span class="c1">#####Calculate the Initial Euler Angles alpha_ref, beta_ref=0 and zeta_ref#####</span>
+    <span class="n">gam</span> <span class="o">=</span> <span class="n">gamma0</span><span class="o">*</span><span class="n">v0</span>
+    <span class="n">sqrtfac</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">2.</span><span class="o">*</span><span class="n">kappa</span><span class="o">*</span><span class="n">gam</span> <span class="o">+</span> <span class="n">gam</span><span class="o">*</span><span class="n">gam</span><span class="p">)</span>
+    <span class="n">logv0</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="n">v0</span><span class="p">)</span>
+    <span class="n">logfac1</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">kappa</span><span class="o">*</span><span class="n">gam</span> <span class="o">+</span> <span class="n">sqrtfac</span><span class="p">)</span>
+    <span class="n">logfac2</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="n">kappa</span> <span class="o">+</span> <span class="n">gam</span> <span class="o">+</span> <span class="n">sqrtfac</span><span class="p">)</span>
+    <span class="n">v02</span> <span class="o">=</span> <span class="n">v0</span> <span class="o">*</span> <span class="n">v0</span>
+    <span class="n">v03</span> <span class="o">=</span> <span class="n">v0</span> <span class="o">*</span> <span class="n">v02</span>
+    <span class="n">kappa2</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">kappa</span>
+    <span class="n">kappa3</span> <span class="o">=</span> <span class="n">kappa2</span> <span class="o">*</span> <span class="n">kappa</span>
+    <span class="n">gamma02</span> <span class="o">=</span> <span class="n">gamma0</span> <span class="o">*</span> <span class="n">gamma0</span>
+    <span class="n">gamma03</span> <span class="o">=</span> <span class="n">gamma02</span> <span class="o">*</span><span class="n">gamma0</span>
+
+    <span class="n">alpha_ref</span> <span class="o">=</span> <span class="n">prec_fac0</span><span class="o">*</span><span class="p">(</span>  <span class="n">logfac2</span> <span class="o">*</span><span class="p">(</span> <span class="n">dtdv2</span><span class="o">*</span><span class="n">gamma0</span> <span class="o">+</span> <span class="n">dtdv3</span><span class="o">*</span><span class="n">kappa</span> <span class="o">-</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">kappa</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma02</span><span class="p">)</span> <span class="o">+</span> <span class="n">dtdv4</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma0</span><span class="p">)</span> <span class="o">-</span> <span class="n">dtdv4</span><span class="o">*</span><span class="n">kappa2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">dtdv5</span><span class="o">*</span><span class="n">kappa3</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma02</span><span class="p">)</span> <span class="p">)</span>  <span class="o">+</span>  <span class="n">logfac1</span><span class="o">*</span><span class="p">(</span> <span class="o">-</span> <span class="n">dtdv2</span><span class="o">*</span><span class="n">gamma0</span><span class="o">*</span><span class="n">kappa</span> <span class="o">-</span> <span class="n">dtdv3</span> <span class="o">+</span> <span class="n">kappa</span><span class="o">*</span><span class="n">gamma03</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="n">gamma03</span><span class="o">*</span><span class="n">kappa3</span><span class="o">/</span><span class="mf">2.</span> <span class="p">)</span> <span class="o">+</span> <span class="n">logv0</span> <span class="o">*</span><span class="p">(</span> <span class="n">dtdv2</span><span class="o">*</span><span class="n">gamma0</span><span class="o">*</span><span class="n">kappa</span> <span class="o">+</span> <span class="n">dtdv3</span> <span class="o">-</span> <span class="n">kappa</span><span class="o">*</span><span class="n">gamma03</span><span class="o">/</span><span class="mf">2.</span> <span class="o">+</span> <span class="n">gamma03</span><span class="o">*</span><span class="n">kappa3</span><span class="o">/</span><span class="mf">2.</span> <span class="p">)</span> <span class="o">+</span> <span class="n">sqrtfac</span> <span class="o">*</span><span class="p">(</span> <span class="n">dtdv3</span> <span class="o">+</span> <span class="n">dtdv4</span><span class="o">*</span><span class="n">v0</span><span class="o">/</span><span class="mf">2.</span> <span class="o">+</span> <span class="n">dtdv5</span><span class="o">/</span><span class="n">gamma02</span><span class="o">/</span><span class="mf">3.</span> <span class="o">+</span> <span class="n">dtdv4</span><span class="o">*</span><span class="n">kappa</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma0</span><span class="p">)</span> <span class="o">+</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">kappa</span><span class="o">*</span><span class="n">v0</span><span class="o">/</span><span class="p">(</span><span class="mf">6.</span><span class="o">*</span><span class="n">gamma0</span><span class="p">)</span> <span class="o">-</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">kappa2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma02</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mf">3.</span><span class="o">*</span><span class="n">v03</span><span class="p">)</span> <span class="o">-</span> <span class="n">gamma0</span><span class="o">*</span><span class="n">kappa</span><span class="o">/</span><span class="p">(</span><span class="mf">6.</span><span class="o">*</span><span class="n">v02</span><span class="p">)</span> <span class="o">-</span> <span class="n">dtdv2</span><span class="o">/</span><span class="n">v0</span> <span class="o">-</span> <span class="n">gamma02</span><span class="o">/</span><span class="p">(</span><span class="mf">3.</span><span class="o">*</span><span class="n">v0</span><span class="p">)</span> <span class="o">+</span> <span class="n">gamma02</span><span class="o">*</span><span class="n">kappa2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">v0</span><span class="p">)</span> <span class="o">+</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">v02</span><span class="o">/</span><span class="mf">3.</span> <span class="p">))</span>  <span class="o">-</span> <span class="n">alpha0</span>
+
+    <span class="n">zeta_ref</span> <span class="o">=</span> <span class="n">prec_fac0</span><span class="o">*</span><span class="p">(</span> <span class="n">dtdv3</span><span class="o">*</span><span class="n">gamma0</span><span class="o">*</span><span class="n">kappa</span><span class="o">*</span><span class="n">v0</span> <span class="o">+</span> <span class="n">dtdv4</span><span class="o">*</span><span class="n">v0</span> <span class="o">+</span> <span class="n">logfac2</span> <span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">dtdv2</span><span class="o">*</span><span class="n">gamma0</span> <span class="o">-</span> <span class="n">dtdv3</span><span class="o">*</span><span class="n">kappa</span> <span class="o">+</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">kappa</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma02</span><span class="p">)</span> <span class="o">-</span> <span class="n">dtdv4</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma0</span><span class="p">)</span> <span class="o">+</span> <span class="n">dtdv4</span><span class="o">*</span><span class="n">kappa2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma0</span><span class="p">)</span> <span class="o">-</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">kappa3</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma02</span><span class="p">)</span> <span class="p">)</span> <span class="o">+</span> <span class="n">logv0</span> <span class="o">*</span><span class="p">(</span> <span class="n">kappa</span><span class="o">*</span><span class="n">gamma03</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="n">gamma03</span><span class="o">*</span><span class="n">kappa3</span><span class="o">/</span><span class="mf">2.</span> <span class="p">)</span> <span class="o">+</span> <span class="n">logfac1</span> <span class="o">*</span><span class="p">(</span> <span class="n">dtdv2</span><span class="o">*</span><span class="n">gamma0</span><span class="o">*</span><span class="n">kappa</span> <span class="o">+</span> <span class="n">dtdv3</span> <span class="o">-</span> <span class="n">kappa</span><span class="o">*</span><span class="n">gamma03</span><span class="o">/</span><span class="mf">2.</span> <span class="o">+</span> <span class="n">gamma03</span><span class="o">*</span><span class="n">kappa3</span><span class="o">/</span><span class="mf">2.</span> <span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mf">3.</span><span class="o">*</span><span class="n">v03</span><span class="p">)</span> <span class="o">-</span> <span class="n">gamma0</span><span class="o">*</span><span class="n">kappa</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">v02</span><span class="p">)</span> <span class="o">-</span> <span class="n">dtdv2</span><span class="o">/</span><span class="n">v0</span> <span class="o">+</span> <span class="n">dtdv4</span><span class="o">*</span><span class="n">gamma0</span><span class="o">*</span><span class="n">kappa</span><span class="o">*</span><span class="n">v02</span><span class="o">/</span><span class="mf">2.</span> <span class="o">+</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">v02</span><span class="o">/</span><span class="mf">2.</span> <span class="o">+</span> <span class="n">sqrtfac</span> <span class="o">*</span><span class="p">(</span> <span class="o">-</span><span class="n">dtdv3</span> <span class="o">-</span> <span class="n">dtdv4</span><span class="o">*</span><span class="n">v0</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="n">dtdv5</span><span class="o">/</span><span class="p">(</span><span class="mf">3.</span><span class="o">*</span><span class="n">gamma02</span><span class="p">)</span> <span class="o">-</span> <span class="n">dtdv4</span><span class="o">*</span><span class="n">kappa</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma0</span><span class="p">)</span> <span class="o">-</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">kappa</span><span class="o">*</span><span class="n">v0</span><span class="o">/</span><span class="p">(</span><span class="mf">6.</span><span class="o">*</span><span class="n">gamma0</span><span class="p">)</span> <span class="o">+</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">kappa2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">gamma02</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mf">3.</span><span class="o">*</span><span class="n">v03</span><span class="p">)</span> <span class="o">+</span> <span class="n">gamma0</span><span class="o">*</span><span class="n">kappa</span><span class="o">/</span><span class="p">(</span><span class="mf">6.</span><span class="o">*</span><span class="n">v02</span><span class="p">)</span> <span class="o">+</span> <span class="n">dtdv2</span><span class="o">/</span><span class="n">v0</span> <span class="o">+</span> <span class="n">gamma02</span><span class="o">/</span><span class="p">(</span><span class="mf">3.</span><span class="o">*</span><span class="n">v0</span><span class="p">)</span> <span class="o">-</span> <span class="n">gamma02</span><span class="o">*</span><span class="n">kappa2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">v0</span><span class="p">)</span> <span class="o">-</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">v02</span><span class="o">/</span><span class="mf">3.</span> <span class="p">)</span> <span class="o">+</span> <span class="n">dtdv5</span><span class="o">*</span><span class="n">gamma0</span><span class="o">*</span><span class="n">kappa</span><span class="o">*</span><span class="n">v03</span><span class="o">/</span><span class="mf">3.</span> <span class="p">)</span>
+
+    <span class="c1">#####Calculate the Complex sideband factors, mm=2 is first entry#####</span>
+    <span class="n">RE_SBfac0</span><span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">cos</span><span class="p">(</span><span class="n">thetaJ</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="n">RE_SBfac1</span><span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">thetaJ</span><span class="p">)</span>
+    <span class="n">RE_SBfac2</span><span class="o">=</span> <span class="mf">3.</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">thetaJ</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">RE_SBfac3</span><span class="o">=</span> <span class="o">-</span><span class="n">sin</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">thetaJ</span><span class="p">)</span>
+    <span class="n">RE_SBfac4</span><span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">cos</span><span class="p">(</span><span class="n">thetaJ</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="n">IM_SBfac0</span><span class="o">=</span> <span class="o">-</span><span class="n">cos</span><span class="p">(</span><span class="n">thetaJ</span><span class="p">)</span>
+    <span class="n">IM_SBfac1</span><span class="o">=</span> <span class="o">-</span><span class="mf">2.</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">thetaJ</span><span class="p">)</span>
+    <span class="n">IM_SBfac2</span><span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">IM_SBfac3</span><span class="o">=</span> <span class="o">-</span><span class="mf">2.</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">thetaJ</span><span class="p">)</span>
+    <span class="n">IM_SBfac4</span><span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="n">thetaJ</span><span class="p">)</span>
+
+    <span class="c1">#####Calculate the PN terms#####</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="o">-</span><span class="mf">11831.</span><span class="o">/</span><span class="mf">9240.</span>
+    <span class="n">lambdaa</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1987.</span><span class="o">/</span><span class="mf">3080.0</span>
+    <span class="n">pfaN</span> <span class="o">=</span> <span class="mf">3.0</span><span class="o">/</span><span class="p">(</span><span class="mf">128.0</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="n">pfa2</span> <span class="o">=</span> <span class="mf">5.0</span><span class="o">*</span><span class="p">(</span><span class="mf">743.0</span><span class="o">/</span><span class="mi">84</span> <span class="o">+</span> <span class="mf">11.0</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span><span class="o">/</span><span class="mf">9.0</span>
+    <span class="n">pfa3</span> <span class="o">=</span> <span class="o">-</span><span class="mf">16.0</span><span class="o">*</span><span class="n">PI</span> <span class="o">+</span> <span class="mf">4.0</span><span class="o">*</span><span class="n">pn_beta</span>
+    <span class="n">pfa4</span> <span class="o">=</span> <span class="mf">5.0</span><span class="o">*</span><span class="p">(</span><span class="mf">3058.673</span><span class="o">/</span><span class="mf">7.056</span> <span class="o">+</span> <span class="mf">5429.0</span><span class="o">/</span><span class="mf">7.0</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">+</span> <span class="mf">617.0</span> <span class="o">*</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span><span class="o">/</span><span class="mf">72.0</span> <span class="o">-</span> \
+            <span class="mf">10.0</span><span class="o">*</span><span class="n">pn_sigma</span>
+    <span class="n">pfa5</span> <span class="o">=</span> <span class="mf">5.0</span><span class="o">/</span><span class="mf">9.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">7729.0</span><span class="o">/</span><span class="mf">84.0</span> <span class="o">-</span> <span class="mf">13.0</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span> <span class="o">*</span> <span class="n">PI</span> <span class="o">-</span> <span class="n">pn_gamma</span>
+    <span class="n">pfl5</span> <span class="o">=</span> <span class="mf">5.0</span><span class="o">/</span><span class="mf">3.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">7729.0</span><span class="o">/</span><span class="mf">84.0</span> <span class="o">-</span> <span class="mf">13.0</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span> <span class="o">*</span> <span class="n">PI</span> <span class="o">-</span> <span class="n">pn_gamma</span> <span class="o">*</span> <span class="mi">3</span>
+    <span class="n">pfa6</span> <span class="o">=</span> <span class="p">(</span><span class="mf">11583.231236531</span><span class="o">/</span><span class="mf">4.694215680</span> <span class="o">-</span> <span class="mf">640.0</span><span class="o">/</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">PI</span> <span class="o">*</span> <span class="n">PI</span><span class="o">-</span> \
+            <span class="mf">6848.0</span><span class="o">/</span><span class="mf">21.0</span><span class="o">*</span><span class="n">GAMMA</span><span class="p">)</span> <span class="o">+</span> \
+            <span class="n">eta</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">15335.597827</span><span class="o">/</span><span class="mf">3.048192</span> <span class="o">+</span> <span class="mf">2255.</span><span class="o">/</span><span class="mf">12.</span> <span class="o">*</span> <span class="n">PI</span> <span class="o">*</span> \
+            <span class="n">PI</span> <span class="o">-</span> <span class="mf">1760.</span><span class="o">/</span><span class="mf">3.</span><span class="o">*</span><span class="n">theta</span> <span class="o">+</span><span class="mf">12320.</span><span class="o">/</span><span class="mf">9.</span><span class="o">*</span><span class="n">lambdaa</span><span class="p">)</span> <span class="o">+</span> \
+            <span class="n">eta</span><span class="o">*</span><span class="n">eta</span> <span class="o">*</span> <span class="mf">76055.0</span><span class="o">/</span><span class="mf">1728.0</span> <span class="o">-</span> \
+            <span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span>  <span class="mf">127825.0</span><span class="o">/</span><span class="mf">1296.0</span>
+    <span class="n">pfl6</span> <span class="o">=</span> <span class="o">-</span><span class="mf">6848.0</span><span class="o">/</span><span class="mf">21.0</span>
+    <span class="n">pfa7</span> <span class="o">=</span> <span class="n">PI</span> <span class="o">*</span> <span class="mf">5.0</span><span class="o">/</span><span class="mf">756.0</span> <span class="o">*</span> <span class="p">(</span> <span class="mf">15419335.0</span><span class="o">/</span><span class="mf">336.0</span> <span class="o">+</span> <span class="mf">75703.0</span><span class="o">/</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">-</span> \
+            <span class="mf">14809.0</span> <span class="o">*</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span>
+
+    <span class="n">FTaN</span> <span class="o">=</span> <span class="mf">32.0</span> <span class="o">*</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span> <span class="o">/</span> <span class="mf">5.0</span>
+    <span class="n">FTa2</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mf">12.47</span><span class="o">/</span><span class="mf">3.36</span> <span class="o">+</span> <span class="mf">3.5</span><span class="o">/</span><span class="mf">1.2</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="n">FTa3</span> <span class="o">=</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">PI</span>
+    <span class="n">FTa4</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mf">44.711</span><span class="o">/</span><span class="mf">9.072</span> <span class="o">-</span> <span class="mf">92.71</span><span class="o">/</span><span class="mf">5.04</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">-</span> <span class="mf">6.5</span><span class="o">/</span><span class="mf">1.8</span> <span class="o">*</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span>
+    <span class="n">FTa5</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mf">81.91</span><span class="o">/</span><span class="mf">6.72</span> <span class="o">+</span> <span class="mf">58.3</span><span class="o">/</span><span class="mf">2.4</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span> <span class="o">*</span> <span class="n">PI</span>
+    <span class="n">FTa6</span> <span class="o">=</span> <span class="p">(</span><span class="mf">664.3739519</span><span class="o">/</span><span class="mf">6.9854400</span> <span class="o">+</span> <span class="mf">16.0</span><span class="o">/</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">PI</span><span class="o">*</span><span class="n">PI</span> <span class="o">-</span>
+            <span class="mf">17.12</span><span class="o">/</span><span class="mf">1.05</span> <span class="o">*</span> <span class="n">GAMMA</span> <span class="o">+</span>
+         <span class="p">(</span><span class="mf">4.1</span><span class="o">/</span><span class="mf">4.8</span> <span class="o">*</span> <span class="n">PI</span><span class="o">*</span><span class="n">PI</span> <span class="o">-</span> <span class="mf">134.543</span><span class="o">/</span><span class="mf">7.776</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">-</span>
+         <span class="mf">94.403</span><span class="o">/</span><span class="mf">3.024</span> <span class="o">*</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span> <span class="o">-</span> <span class="mf">7.75</span><span class="o">/</span><span class="mf">3.24</span> <span class="o">*</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span>
+    <span class="n">FTl6</span> <span class="o">=</span> <span class="o">-</span><span class="mf">8.56</span><span class="o">/</span><span class="mf">1.05</span>
+    <span class="n">FTa7</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mf">162.85</span><span class="o">/</span><span class="mf">5.04</span> <span class="o">-</span> <span class="mf">214.745</span><span class="o">/</span><span class="mf">1.728</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">-</span> <span class="mf">193.385</span><span class="o">/</span><span class="mf">3.024</span> <span class="o">*</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span> \
+            <span class="o">*</span> <span class="n">PI</span>
+
+    <span class="n">dETaN</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="o">-</span><span class="n">eta</span><span class="o">/</span><span class="mf">2.0</span>
+    <span class="n">dETa1</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="o">-</span><span class="p">(</span><span class="mf">3.0</span><span class="o">/</span><span class="mf">4.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">12.0</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="n">dETa2</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="o">-</span><span class="p">(</span><span class="mf">27.0</span><span class="o">/</span><span class="mf">8.0</span> <span class="o">-</span> <span class="mf">19.0</span><span class="o">/</span><span class="mf">8.0</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">+</span> <span class="mf">1.</span><span class="o">/</span><span class="mf">24.0</span> <span class="o">*</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span>
+    <span class="n">dETa3</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="o">-</span><span class="p">(</span><span class="mf">67.5</span><span class="o">/</span><span class="mf">6.4</span> <span class="o">-</span> <span class="p">(</span><span class="mf">344.45</span><span class="o">/</span><span class="mf">5.76</span> <span class="o">-</span> <span class="mf">20.5</span><span class="o">/</span><span class="mf">9.6</span> <span class="o">*</span> <span class="n">PI</span><span class="o">*</span><span class="n">PI</span><span class="p">)</span> <span class="o">*</span>
+                             <span class="n">eta</span> <span class="o">+</span> <span class="mf">15.5</span><span class="o">/</span><span class="mf">9.6</span> <span class="o">*</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span> <span class="o">+</span> <span class="mf">3.5</span><span class="o">/</span><span class="mf">518.4</span> <span class="o">*</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span>
+
+    <span class="n">amp0</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.</span> <span class="o">*</span> <span class="n">mass1</span> <span class="o">*</span> <span class="n">mass2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0e+06</span> <span class="o">*</span> <span class="n">distance</span> <span class="o">*</span> <span class="n">PC_SI</span> <span class="p">)</span> <span class="o">*</span> \
+                    <span class="n">MRSUN_SI</span> <span class="o">*</span> <span class="n">MTSUN_SI</span> <span class="o">*</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">PI</span><span class="o">/</span><span class="mf">12.0</span><span class="p">)</span>
+
+    <span class="n">htildeP</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">complex128</span><span class="p">),</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">htildeC</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">complex128</span><span class="p">),</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">spintaylorf2_kernel</span><span class="p">(</span><span class="n">htildeP</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">kmax</span><span class="p">],</span> <span class="n">htildeC</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">kmax</span><span class="p">],</span>
+                        <span class="n">kmin</span><span class="p">,</span> <span class="n">phase_order</span><span class="p">,</span> <span class="n">amplitude_order</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">PI</span><span class="p">,</span> <span class="n">piM</span><span class="p">,</span> <span class="n">pfaN</span><span class="p">,</span>
+                        <span class="n">pfa2</span><span class="p">,</span> <span class="n">pfa3</span><span class="p">,</span> <span class="n">pfa4</span><span class="p">,</span> <span class="n">pfa5</span><span class="p">,</span> <span class="n">pfl5</span><span class="p">,</span>
+                        <span class="n">pfa6</span><span class="p">,</span> <span class="n">pfl6</span><span class="p">,</span> <span class="n">pfa7</span><span class="p">,</span> <span class="n">FTaN</span><span class="p">,</span> <span class="n">FTa2</span><span class="p">,</span>
+                        <span class="n">FTa3</span><span class="p">,</span> <span class="n">FTa4</span><span class="p">,</span> <span class="n">FTa5</span><span class="p">,</span> <span class="n">FTa6</span><span class="p">,</span>
+                        <span class="n">FTl6</span><span class="p">,</span> <span class="n">FTa7</span><span class="p">,</span> <span class="n">dETaN</span><span class="p">,</span> <span class="n">dETa1</span><span class="p">,</span> <span class="n">dETa2</span><span class="p">,</span>  <span class="n">dETa3</span><span class="p">,</span>
+                        <span class="n">amp0</span><span class="p">,</span> <span class="n">tC</span><span class="p">,</span> <span class="n">phi0</span><span class="p">,</span>
+                        <span class="n">kappa</span><span class="p">,</span> <span class="n">prec_fac0</span><span class="p">,</span> <span class="n">alpha_ref</span><span class="p">,</span> <span class="n">zeta_ref</span><span class="p">,</span>
+                        <span class="n">dtdv2</span><span class="p">,</span> <span class="n">dtdv3</span><span class="p">,</span> <span class="n">dtdv4</span><span class="p">,</span> <span class="n">dtdv5</span><span class="p">,</span>
+                        <span class="n">RE_SBfac0</span><span class="p">,</span> <span class="n">RE_SBfac1</span><span class="p">,</span> <span class="n">RE_SBfac2</span><span class="p">,</span> <span class="n">RE_SBfac3</span><span class="p">,</span> <span class="n">RE_SBfac4</span><span class="p">,</span>
+                        <span class="n">IM_SBfac0</span><span class="p">,</span> <span class="n">IM_SBfac1</span><span class="p">,</span> <span class="n">IM_SBfac2</span><span class="p">,</span> <span class="n">IM_SBfac3</span><span class="p">,</span> <span class="n">IM_SBfac4</span><span class="p">,</span>
+                        <span class="n">psiJ_P</span><span class="p">,</span> <span class="n">psiJ_C</span><span class="p">,</span> <span class="n">gamma0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">htildeP</span><span class="p">,</span> <span class="n">htildeC</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Jul 22, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
