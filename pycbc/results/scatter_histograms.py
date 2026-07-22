@@ -163,7 +163,7 @@ def construct_kde(samples_array, use_kombine=False, kdeargs=None):
 
     Returns
     -------
-    kde :
+    kde : scipy.stats.gaussian_kde
         The KDE.
     """
     # make sure samples are randomly sorted

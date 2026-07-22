@@ -966,7 +966,7 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
 
 
 class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
-    """Generates frequency-domain waveform in a specific frame.
+    r"""Generates frequency-domain waveform in a specific frame.
     
     This class assumes that the radiation-frame waveform can be decomposed in
     terms of a phase phi such that

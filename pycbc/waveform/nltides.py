@@ -6,7 +6,7 @@ import pycbc.conversions
 from pycbc.constants import PI
 
 def nltides_fourier_phase_difference(f, delta_f, f0, amplitude, n, m1, m2):
-    """Calculate the change to the Fourier phase change due
+    r"""Calculate the change to the Fourier phase change due
     to non-linear tides. Note that the Fourier phase Psi(f)
     is not the same as the gravitational-wave phase phi(f) and
     is computed by

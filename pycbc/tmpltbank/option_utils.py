@@ -176,8 +176,8 @@ def insert_metric_calculation_options(parser):
     metricOpts.add_argument("--delta-f", action="store", type=positive_float,
                 required=True,
                 help="Frequency spacing used in computing the parameter "
-                     "space metric:  integrals of the form \int F(f) df "
-                     "are approximated as \sum F(f) delta_f.  REQUIRED. "
+                     r"space metric:  integrals of the form \int F(f) df "
+                     r"are approximated as \sum F(f) delta_f.  REQUIRED. "
                      "UNITS=Hz")
     metricOpts.add_argument("--write-metric", action="store_true",
                 default=False, help="If given write the metric components "

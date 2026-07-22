@@ -1026,4 +1026,4 @@ def _params_for_pegasus(parameters):
     """
     if isinstance(parameters, list):
         parameters = " ".join(parameters)
-    return parameters.replace('\\', '\\\\').replace('$', '\$')
+    return parameters.replace('\\', '\\\\').replace('$', '\\$')
