@@ -325,6 +325,13 @@ def get_imrphenomxh_modes(**params):
     mode_array = params.pop('mode_array', None)
     if mode_array is None:
         mode_array = default_modes(approx)
+    else:
+        # IMRPhenomXHM has no eccentric content, so it only knows how to select modes by (l, m);
+        # see the note on the extra harmonic index n in parse_mode_array's docstring.
+        bad = [entry for entry in mode_array if len(entry) != 2]
+        if bad:
+            raise ValueError("mode_array entries %s have more than (l, m); %s only supports selecting "
+                             "modes by (l, m), not by an additional harmonic index n."%(bad, approx))
     if 'f_final' not in params:
         # setting to 0 will default to ringdown frequency
         params['f_final'] = 0.
