@@ -129,6 +129,16 @@ def _check_lal_pars(p):
     if p['side_bands']:
         lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
     if p['mode_array'] is not None:
+        # LAL's mode array only understands (l, m) pairs: it has no concept of the eccentric/sub-harmonic
+        # index n that some (non-LAL) plugin waveforms use to sub-divide a mode further, see parse_mode_array.
+        # Most LAL approximants have no eccentricity content at all (at most higher-order modes), so fail
+        # loudly here instead of silently dropping n or letting the "for l, m in ..." unpack raise a
+        # confusing ValueError.
+        bad = [entry for entry in p['mode_array'] if len(entry) != 2]
+        if bad:
+            raise ValueError("mode_array entries %s have more than (l, m); this LAL-based approximant only "
+                             "supports selecting modes by (l, m), not by an additional harmonic index n. "
+                             "Pass a plain (l, m) mode_array for this approximant." % (bad,))
         ma = lalsimulation.SimInspiralCreateModeArray()
         for l,m in p['mode_array']:
             lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
@@ -400,6 +410,14 @@ def parse_mode_array(input_params):
     ints (e.g., ``[(2, 2), (3, 3), (4, 4)]``), a space-separated string giving
     the modes (e.g., ``22 33 44``), or an array of ints or floats (e.g.,
     ``[22., 33., 44.]``.
+
+    Some (non-LAL) mode-by-mode plugin waveforms further sub-divide a mode by an integer harmonic
+    index n (e.g. eccentric waveforms, where a given (l, m) multipole has contributions at several
+    harmonics of the orbital frequency). For those, ``mode_array`` entries may instead be 3-tuples
+    ``(l, m, n)``; these are passed through unchanged (only the string/scalar shorthand above is
+    restricted to plain (l, m)). Approximants that do not support this extra index (which is most of
+    them; at most LAL approximants support higher-order modes, not eccentric sub-harmonics) will raise
+    a clear error if given a 3-tuple, rather than silently ignoring n or failing an unpack.
     """
     if 'mode_array' in input_params and input_params['mode_array'] is not None:
         mode_array = input_params['mode_array']
@@ -1081,7 +1099,8 @@ def seobnrv4hm_length_in_time(**kwargs):
 def get_hm_length_in_time(lor_approx, maxm_default, **kwargs):
     kwargs = parse_mode_array(kwargs)
     if 'mode_array' in kwargs and kwargs['mode_array'] is not None:
-        maxm = max(m for _, m in kwargs['mode_array'])
+        # entries may be (l, m) or (l, m, n) (see parse_mode_array); m is always the second element
+        maxm = max(entry[1] for entry in kwargs['mode_array'])
     else:
         maxm = maxm_default
     try:
