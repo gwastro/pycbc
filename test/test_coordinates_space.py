@@ -170,8 +170,13 @@ class TestParams(unittest.TestCase):
                              flow=2, fref=2, tc=0, params=None,
                              fd_taper=False):
 
-            # Generate a waveform at the detector-frame.
-            hp, hc = get_fd_waveform(approximant=model, 
+            # Generate a waveform at the detector-frame. Use the same
+            # `delta_f` as the LISA-side waveform (passed in via `df`), so
+            # both sides land on the same frequency grid; a mismatched grid
+            # means the "nearest bin to f_ref" on each side is not really
+            # the same frequency, which becomes significant for a fast-
+            # evolving phase near f_ref for these masses.
+            hp, hc = get_fd_waveform(approximant=model,
                         mass1=params['mass1'], mass2=params['mass2'],
                         spin1x=0, spin1y=0,
                         spin1z=params['spin1z'], spin2x=0,
@@ -179,7 +184,7 @@ class TestParams(unittest.TestCase):
                         distance=params['distance'],
                         coa_phase=params['coa_phase'],
                         inclination=params['inclination'], f_lower=flow,
-                        f_ref=fref, delta_t=1.0/fs, delta_f=fs/YRSID_SI)
+                        f_ref=fref, delta_t=1.0/fs, delta_f=df)
 
             # Set merger time to 'tc'.
             hp.start_time += tc
@@ -248,9 +253,8 @@ class TestParams(unittest.TestCase):
                             0, 2*numpy.pi, num=nx, endpoint=False)
 
             amp_E3_psi = []
-            phase_E3_psi = []
             amp_LISA3_psi = []
-            phase_LISA3_psi = []
+            phase_diff_psi = []
 
             for polarization_lisa in numpy.linspace(
                     0, 2*numpy.pi, endpoint=False, num=nx):
@@ -295,53 +299,71 @@ class TestParams(unittest.TestCase):
 
                 E3_signal = strain_generator(det='D1', model='IMRPhenomD',
                                             fs=1./params_3g['delta_t'],
+                                            df=params_3g['delta_f'],
                                             flow=params_3g['f_lower'],
                                             fref=params_3g['f_ref'],
                                             tc=params_3g['tc'],
                                             params=params_3g,
-                                            fd_taper=False)          
+                                            fd_taper=False)
                 E3_signal_fd = {
                     'DIY_E3':E3_signal[0].to_frequencyseries()
                 }
 
-                index_E3 = numpy.where(numpy.abs(
+                # Use the nearest frequency bin to f_ref on each side, rather
+                # than the first bin within an absolute tolerance: with
+                # `delta_f` now matched between E3 and LISA that tolerance
+                # window can still span several bins, and phase evolves fast
+                # enough at f_ref for these masses that which of those bins
+                # gets used matters.
+                index_E3 = numpy.argmin(numpy.abs(
                             E3_signal_fd['DIY_E3'].sample_frequencies -
-                            params_3g['f_ref']) < 1e-7)
-                index_LISA3 = numpy.where(numpy.abs(
-                            bbhx_fd['LISA_A'].sample_frequencies - 
-                            params['f_ref']) < 1e-7)
-                amp_E3 = numpy.abs(E3_signal_fd['DIY_E3'])[index_E3[0][0]]
-                amp_LISA3 = numpy.abs(
-                            channel_xyz_fd['LISA_Z'][index_LISA3[0][0]])
-                phase_E3 = numpy.rad2deg(numpy.angle(
-                            E3_signal_fd['DIY_E3'][index_E3[0][0]]))
-                phase_LISA3 = numpy.rad2deg(numpy.angle(
-                            channel_xyz_fd['LISA_Z'][index_LISA3[0][0]]))
+                            params_3g['f_ref']))
+                index_LISA3 = numpy.argmin(numpy.abs(
+                            bbhx_fd['LISA_A'].sample_frequencies -
+                            params['f_ref']))
+                val_E3 = E3_signal_fd['DIY_E3'][index_E3]
+                val_LISA3 = channel_xyz_fd['LISA_Z'][index_LISA3]
 
-                amp_E3_psi.append(amp_E3)
-                phase_E3_psi.append(phase_E3)
-                amp_LISA3_psi.append(amp_LISA3)
-                phase_LISA3_psi.append(phase_LISA3)
+                amp_E3_psi.append(numpy.abs(val_E3))
+                amp_LISA3_psi.append(numpy.abs(val_LISA3))
+                # Compare phase through the angle of E3 relative to LISA-Z,
+                # instead of differencing two independently-computed
+                # `numpy.angle` values in degrees: two phases that are a
+                # fraction of a degree apart, but fall on either side of the
+                # +-180 deg branch cut, would otherwise show up as a
+                # spurious ~360 deg difference.
+                phase_diff_psi.append(numpy.angle(val_E3 * numpy.conj(val_LISA3)))
 
             dist_amp = curve_similarity(amp_E3_psi/numpy.mean(amp_E3_psi),
                                         amp_LISA3_psi/numpy.mean(
                                             amp_LISA3_psi))
-            dist_phase = curve_similarity(numpy.array(phase_E3_psi),
-                                        numpy.array(phase_LISA3_psi))
-            # Here we compare the amplitude and phase as a function of the
+            # E3 and LISA-Z are generated from different waveform models
+            # (IMRPhenomD vs BBHX_PhenomD) with different reference-phase
+            # conventions, so a constant offset between their phases is
+            # expected and not itself meaningful. What the frame/
+            # polarization transforms in `pycbc.coordinates.space` are
+            # responsible for is that this offset stays constant as the
+            # polarization angle changes -- a bug there (e.g. a sign error
+            # or a missing factor of 2 in the polarization angle) would show
+            # up as the relative phase oscillating with the polarization
+            # angle instead of sitting at a fixed value. So we unwrap the
+            # relative phase across the polarization-angle sweep and check
+            # how much it scatters around its mean, rather than comparing
+            # its absolute value to a hard-coded number.
+            phase_diff_psi = numpy.unwrap(phase_diff_psi)
+            phase_resid_std = numpy.rad2deg(
+                numpy.std(phase_diff_psi - numpy.mean(phase_diff_psi)))
+            # Here we compare the amplitude as a function of the
             # polarization angle in the LISA frame, because E3 and LISA-Z are
-            # almost co-aligned and co-located, their detector response should
-            # be very similar (when long-wavelength approximation holds),
-            # in our case, `dist_amp` and `dist_phase` should be very similar
-            # (if the frame transform functions work correctly), users can
-            # modify this script to plot those curves (amp_E3_psi,
-            # amp_LISA3_psi, phase_E3_psi, amp_LISA3_psi). The hard-coded
-            # values below are the reference values for the difference which
-            # I got on my laptop, those curves are not exactly the same,
-            # especially for the phase, but they are almost consistent with
-            # each other visually.
+            # almost co-aligned and co-located, their detector response
+            # should be very similar (when long-wavelength approximation
+            # holds); `dist_amp` should stay close to the hard-coded
+            # reference value below (obtained on the author's laptop) if the
+            # frame transform functions work correctly. Users can modify
+            # this script to plot amp_E3_psi, amp_LISA3_psi, and
+            # phase_diff_psi to inspect the curves directly.
             if (numpy.abs(dist_amp - 0.2838670151034317) < 1e-2) and \
-                (numpy.abs(dist_phase - 353.6477243138732) < 1e-2):
+                (phase_resid_std < 2.0):
                 passed = True
             else:
                 passed = False
