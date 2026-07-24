@@ -41,7 +41,7 @@ from pycbc.filter import interpolate_complex_frequency, resample_to_delta_t
 import pycbc
 from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
-                      spa_length_in_time
+                      spa_length_in_time, eccentric_spa_length_in_time
 
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
@@ -824,7 +824,7 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
     tsize = int(1.0 / nparams['delta_t'] /  nparams['delta_f'])
     fsize = tsize // 2 + 1
 
-    if nparams['approximant'] not in fd_det:
+    if nparams['approximant'] not in fd_det or nparams['approximant'] !='TaylorF2Ecc':
         hp, hc = get_fd_waveform(**nparams)
         # Resize to the right sample rate
         hp.resize(fsize)
@@ -1096,6 +1096,7 @@ _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
 _filter_ends["SPAtmplt"] = spa_tmplt_end
 _filter_ends["TaylorF2"] = spa_tmplt_end
+_filter_ends["TaylorF2Ecc"] = spa_tmplt_end
 #_filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrv2_final_frequency
 #_filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrv2_final_frequency
 #_filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrv2_final_frequency
@@ -1108,6 +1109,7 @@ _filter_ends["TaylorF2"] = spa_tmplt_end
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
 _filter_time_lengths["TaylorF2"] = spa_length_in_time
+_filter_time_lengths["TaylorF2Ecc"] = eccentric_spa_length_in_time
 _filter_time_lengths["SpinTaylorT5"] = spa_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_EffectiveSpin"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrv2_length_in_time
@@ -1188,6 +1190,7 @@ def td_fd_waveform_transform(approximant):
 
 for apx in list(_filter_time_lengths.keys()) + list(cpu_fd.keys()):
     td_fd_waveform_transform(apx)
+
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
@@ -1333,12 +1336,13 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         # taper the time series hp if required
         if 'taper' in input_params.keys() and \
                 input_params['taper'] is not None:
-            hp = hp.taper_timeseries(location=input_params['taper'], 
-            tapermethod=input_params.get('taper_method', 'lal'), 
+            hp = hp.taper_timeseries(location=input_params['taper'],
+            tapermethod=input_params.get('taper_method', 'lal'),
             taper_window=input_params.get('taper_window'), return_lal=False)
-            hc = hc.taper_timeseries(location=input_params['taper'], 
-            tapermethod=input_params.get('taper_method', 'lal'), 
+            hc = hc.taper_timeseries(location=input_params['taper'],
+            tapermethod=input_params.get('taper_method', 'lal'),
             taper_window=input_params.get('taper_window'), return_lal=False)
+
         # total duration of the waveform
         tmplt_length = len(hp) * hp.delta_t
         # for IMR templates the zero of time is at max amplitude (merger)

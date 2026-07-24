@@ -104,6 +104,23 @@ def spa_length_in_time(**kwds):
     return findchirp_chirptime(m1, m2, flow, porder)
 
 
+def eccentric_chirp_time(m1, m2, e0, fLower):
+    return pycbc.pnutils.eccentric_newtonian_time(m1, m2, e0, fLower)
+
+
+def eccentric_spa_length_in_time(**kwds):
+    """
+    Returns the length in time of the template,
+    based on masses, eccentricity and low-frequency
+    cut-off (eccentricity is defined at the low-frequency
+    cut-off).
+    """
+    m1 = kwds['mass1']
+    m2 = kwds['mass2']
+    e0 = kwds['eccentricity']
+    f_low = kwds['f_lower']
+    return eccentric_chirp_time(m1, m2, e0, f_low)
+
 def spa_amplitude_factor(**kwds):
     m1 = kwds['mass1']
     m2 = kwds['mass2']
