@@ -32,6 +32,8 @@ def set_backend(backend_list):
             break
 
 def get_backend():
+    if mkl_backend is None:
+        raise RuntimeError('No MKL backend available')
     return _adict[mkl_backend]
 
 set_backend(_backend_list)
