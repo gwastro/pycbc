@@ -45,31 +45,31 @@ def read_store(fname, channel, start_time, end_time):
         Time series containing the requested data
 
     """
-    fhandle = HFile(fname, 'r')
-    if channel not in fhandle:
-        raise ValueError('Could not find channel name {}'.format(channel))
+    with HFile(fname, 'r') as fhandle:
+        if channel not in fhandle:
+            raise ValueError('Could not find channel name {}'.format(channel))
 
-    # Determine which segment data lies in (can only read contiguous data now)
-    starts = fhandle[channel]['segments']['start'][:]
-    ends = fhandle[channel]['segments']['end'][:]
+        # Determine which segment data lies in (can only read contiguous data now)
+        starts = fhandle[channel]['segments']['start'][:]
+        ends = fhandle[channel]['segments']['end'][:]
 
-    diff = start_time - starts
-    loc = numpy.where(diff >= 0)[0]
-    sidx = loc[diff[loc].argmin()]
+        diff = start_time - starts
+        loc = numpy.where(diff >= 0)[0]
+        sidx = loc[diff[loc].argmin()]
 
-    stime = starts[sidx]
-    etime = ends[sidx]
+        stime = starts[sidx]
+        etime = ends[sidx]
 
-    if stime > start_time:
-        raise ValueError("Cannot read data segment before {}".format(stime))
+        if stime > start_time:
+            raise ValueError("Cannot read data segment before {}".format(stime))
 
-    if etime < end_time:
-        raise ValueError("Cannot read data segment past {}".format(etime))
+        if etime < end_time:
+            raise ValueError("Cannot read data segment past {}".format(etime))
 
-    data = fhandle[channel][str(sidx)]
-    sample_rate = len(data) / (etime - stime)
+        data = fhandle[channel][str(sidx)]
+        sample_rate = len(data) / (etime - stime)
 
-    start = int((start_time - stime) * sample_rate)
-    end = int((end_time - stime) * sample_rate)
-    return TimeSeries(data[start:end], delta_t=1.0/sample_rate,
-                      epoch=start_time)
+        start = int((start_time - stime) * sample_rate)
+        end = int((end_time - stime) * sample_rate)
+        return TimeSeries(data[start:end], delta_t=1.0/sample_rate,
+                          epoch=start_time)
