@@ -24,18 +24,20 @@ Plot distribution of BestNR/SNR/SNR after cuts of triggers in a PyGRB run.
 # =============================================================================
 # Preamble
 # =============================================================================
-import os
 import logging
+import os
 import sys
+
 import matplotlib.pyplot as plt
-from matplotlib import rc
 import numpy as np
 import pycbc.version
-from pycbc import init_logging
-from pycbc.results import save_fig_with_metadata
-from pycbc.results import pygrb_postprocessing_utils as ppu
+from matplotlib import rc
 
-plt.switch_backend('Agg')
+from pycbc import init_logging
+from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.results import save_fig_with_metadata
+
+plt.switch_backend("Agg")
 rc("image", cmap="cividis_r")
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
@@ -48,11 +50,20 @@ __program__ = "pycbc_pygrb_plot_stats_distribution"
 # Main script starts here
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
-parser.add_argument("-F", "--trig-file", action="store", required=True,
-                    help="Location of off-source trigger file")
-parser.add_argument("-x", "--x-variable", required=True,
-                    choices=["bestnr", "snr", "snraftercuts"],
-                    help="Quantity to plot on the horizontal axis.")
+parser.add_argument(
+    "-F",
+    "--trig-file",
+    action="store",
+    required=True,
+    help="Location of off-source trigger file",
+)
+parser.add_argument(
+    "-x",
+    "--x-variable",
+    required=True,
+    choices=["bestnr", "snr", "snraftercuts"],
+    help="Quantity to plot on the horizontal axis.",
+)
 ppu.pygrb_add_bestnr_cut_opt(parser)
 ppu.pygrb_add_slide_opts(parser)
 opts = parser.parse_args()
@@ -87,28 +98,23 @@ segment_dict = ppu.load_segment_dict(trig_file)
 
 # Construct trials removing vetoed times
 trial_dict, total_trials = ppu.construct_trials(
-    opts.seg_files,
-    segment_dict,
-    ifos,
-    slide_dict,
-    opts.veto_file
+    opts.seg_files, segment_dict, ifos, slide_dict, opts.veto_file
 )
 
 # Load triggers (apply reweighted SNR cut, not vetoes)
-all_off_trigs = ppu.load_data(trig_file, ifos, data_tag='trigs',
-                              rw_snr_threshold=opts.newsnr_threshold,
-                              slide_id=opts.slide_id)
+all_off_trigs = ppu.load_data(
+    trig_file,
+    ifos,
+    data_tag="trigs",
+    rw_snr_threshold=opts.newsnr_threshold,
+    slide_id=opts.slide_id,
+)
 
 # Extract needed trigger properties and store them as dictionaries
 # Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
-keys = \
-    ['network/end_time_gc', 'network/coherent_snr', 'network/reweighted_snr']
+keys = ["network/end_time_gc", "network/coherent_snr", "network/reweighted_snr"]
 trig_data = ppu.extract_trig_properties(
-    trial_dict,
-    all_off_trigs,
-    slide_dict,
-    segment_dict,
-    keys
+    trial_dict, all_off_trigs, slide_dict, segment_dict, keys
 )
 
 # Calculate SNR and BestNR values and maxima
@@ -124,37 +130,37 @@ for slide_id in slide_dict:
 
 for slide_id in slide_dict:
     for j, trial in enumerate(trial_dict[slide_id]):
-        trial_cut = (trial[0] <= trig_data[keys[0]][slide_id][:])\
-                          & (trig_data[keys[0]][slide_id][:] < trial[1])
+        trial_cut = (trial[0] <= trig_data[keys[0]][slide_id][:]) & (
+            trig_data[keys[0]][slide_id][:] < trial[1]
+        )
         if not trial_cut.any():
             continue
         # Max SNR
-        time_veto_max_snr[slide_id][j] = \
-            max(trig_data[keys[1]][slide_id][trial_cut])
+        time_veto_max_snr[slide_id][j] = max(trig_data[keys[1]][slide_id][trial_cut])
         # Max BestNR
-        time_veto_max_bestnr[slide_id][j] = \
-            max(trig_data[keys[2]][slide_id][trial_cut])
+        time_veto_max_bestnr[slide_id][j] = max(trig_data[keys[2]][slide_id][trial_cut])
         # Max SNR for triggers passing the cut on reweighted SNR
         sbv_cut = trig_data[keys[2]][slide_id][:] >= opts.newsnr_threshold
         if not (trial_cut & sbv_cut).any():
             continue
-        time_veto_max_snr_aftercuts[slide_id][j] =\
-            max(trig_data[keys[1]][slide_id][trial_cut & sbv_cut])
+        time_veto_max_snr_aftercuts[slide_id][j] = max(
+            trig_data[keys[1]][slide_id][trial_cut & sbv_cut]
+        )
 
 # This is the data that will be plotted
 full_time_veto_max_snr = ppu.sort_stat(time_veto_max_snr)
 full_time_veto_max_snr_aftercuts = ppu.sort_stat(time_veto_max_snr_aftercuts)
-_, _, full_time_veto_max_bestnr = \
-    ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_data[keys[2]],
-                        total_trials)
+_, _, full_time_veto_max_bestnr = ppu.max_median_stat(
+    slide_dict, time_veto_max_bestnr, trig_data[keys[2]], total_trials
+)
 # The 0.'s here force the histograms to start at (0, 1) if no trial
 # returned a no-event (i.e., BestNR = 0)
-if full_time_veto_max_bestnr[0] != 0.:
-    full_time_veto_max_snr = np.concatenate(([0.], full_time_veto_max_snr))
-    full_time_veto_max_snr_aftercuts = \
-        np.concatenate(([0.], full_time_veto_max_snr_aftercuts))
-    full_time_veto_max_bestnr = \
-        np.concatenate(([0.], full_time_veto_max_bestnr))
+if full_time_veto_max_bestnr[0] != 0.0:
+    full_time_veto_max_snr = np.concatenate(([0.0], full_time_veto_max_snr))
+    full_time_veto_max_snr_aftercuts = np.concatenate(
+        ([0.0], full_time_veto_max_snr_aftercuts)
+    )
+    full_time_veto_max_bestnr = np.concatenate(([0.0], full_time_veto_max_bestnr))
 
 logging.info("SNR and bestNR maxima calculated.")
 
@@ -162,12 +168,16 @@ logging.info("SNR and bestNR maxima calculated.")
 # =========
 # Make plot
 # =========
-x_label_dict = {"bestnr": "BestNR",
-                "snr": "SNR",
-                "snraftercuts": "SNR after signal based vetoes"}
-data_dict = {"bestnr": full_time_veto_max_bestnr,
-             "snr": full_time_veto_max_snr,
-             "snraftercuts": full_time_veto_max_snr_aftercuts}
+x_label_dict = {
+    "bestnr": "BestNR",
+    "snr": "SNR",
+    "snraftercuts": "SNR after signal based vetoes",
+}
+data_dict = {
+    "bestnr": full_time_veto_max_bestnr,
+    "snr": full_time_veto_max_snr,
+    "snraftercuts": full_time_veto_max_snr_aftercuts,
+}
 fig = plt.figure()
 ax = fig.gca()
 ax.grid(True)
@@ -176,14 +186,14 @@ ax.set_xlabel(x_label_dict[stat])
 ax.set_ylabel("False alarm probability")
 # Some standard plot settings
 ymax = 1.2
-normalization = 1.
+normalization = 1.0
 epsilon = 1e-8
 num_bins = 50
 # Figure out binning
 min_stat = min(data_dict[stat])
 max_stat = max(data_dict[stat])
 bins = np.linspace(min_stat, max_stat, num_bins + 1, endpoint=True)
-bins_bg = np.append(bins, float('Inf'))
+bins_bg = np.append(bins, float("Inf"))
 dx = bins[1] - bins[0]
 # Histogram each background instance separately and take stats
 hist_sum = np.zeros(len(bins), dtype=float)
@@ -194,37 +204,37 @@ for instance in data_dict[stat]:
     x = np.delete(x, -1)
     y = y[::-1].cumsum()[::-1]
     hist_sum += y
-    sq_hist_sum += y*y
+    sq_hist_sum += y * y
 # Get statistics
 N = len(data_dict[stat])
 means = hist_sum / N
-stds = np.sqrt((sq_hist_sum - hist_sum*means) / (N - 1))
+stds = np.sqrt((sq_hist_sum - hist_sum * means) / (N - 1))
 means[means <= epsilon] = epsilon
 upper = means + stds
 lower = means - stds
 lower[lower <= epsilon] = epsilon
 # Normalize
-means = means*normalization
-upper = upper*normalization
-lower = lower*normalization
+means = means * normalization
+upper = upper * normalization
+lower = lower * normalization
 # Plot mean
-ax.plot(x + dx/2, means, 'r+', markersize=12)
+ax.plot(x + dx / 2, means, "r+", markersize=12)
 # 3 lines for aesthetic reasons: ensure that the width of the
 # bar on the far right right is the same as all the others
-x = np.append(x, x[-1]+dx/2)
+x = np.append(x, x[-1] + dx / 2)
 upper = np.append(upper, upper[-1])
 lower = np.append(lower, lower[-1])
 # Shade in the 1-standard deviation area
-ax.fill_between(x + dx/2, lower, upper, alpha=0.3, facecolor='y', step='mid')
+ax.fill_between(x + dx / 2, lower, upper, alpha=0.3, facecolor="y", step="mid")
 # Wrap up
 ax.set_xlim((0.9 * min_stat, 1.1 * max_stat))
-ax.set_ylim((0.6/N, ymax))
+ax.set_ylim((0.6 / N, ymax))
 plot_title = "Cumulative distribution of background triggers"
-plot_caption = \
-    f"Background cumulative distribution of the {x_label_dict[stat]}"
+plot_caption = f"Background cumulative distribution of the {x_label_dict[stat]}"
 fig_path = opts.output_file
-save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
-                       title=plot_title, caption=plot_caption)
+save_fig_with_metadata(
+    fig, fig_path, cmd=" ".join(sys.argv), title=plot_title, caption=plot_caption
+)
 plt.close()
 
 logging.info("Plots complete.")

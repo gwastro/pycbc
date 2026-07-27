@@ -25,12 +25,15 @@ take a look at:
 https://github.com/gwastro/pycbc/blob/master/examples/multi_inspiral/run.sh
 """
 
+import argparse
 import logging
 import time
-import argparse
+
 import numpy as np
 
 from pycbc import (
+    DYN_RANGE_FAC,
+    add_common_pycbc_options,
     fft,
     init_logging,
     inject,
@@ -40,18 +43,17 @@ from pycbc import (
     strain,
     vetoes,
     waveform,
-    DYN_RANGE_FAC,
-    add_common_pycbc_options,
 )
-from pycbc.events import ranking, coherent as coh, EventManagerCoherent
+from pycbc.events import EventManagerCoherent, ranking
+from pycbc.events import coherent as coh
 from pycbc.filter import MatchedFilterControl
-from pycbc.types import zeros, float32, complex64, angle_as_radians
-from pycbc.vetoes import sgchisq
 from pycbc.tmpltbank.sky_grid import SkyGrid
+from pycbc.types import angle_as_radians, complex64, float32, zeros
+from pycbc.vetoes import sgchisq
 
 
 def slide_limiter(n_ifos, slide_shift, segment_length):
-    '''
+    """
     This function computes the number of shortslides used by the coherent
     matched filter statistic to obtain as many background triggers as
     possible.
@@ -72,17 +74,18 @@ def slide_limiter(n_ifos, slide_shift, segment_length):
     -------
     num_slides: int
         The number of independent timeslides
-    '''
+
+    """
     low, upp = 1, segment_length
     if n_ifos == 1:
         return 1
-    stride_dur = segment_length/2
-    num_slides = 1 + int(stride_dur /
-                         (slide_shift*(n_ifos-1)))
-    assert (num_slides >= low) and (num_slides <= upp), \
-           "the combination (slideshift, segment_dur)"\
-           f" = ({slide_shift:.2f},{stride_dur*2:.2f})"\
-           f" goes over the allowed upper bound {upp}"
+    stride_dur = segment_length / 2
+    num_slides = 1 + int(stride_dur / (slide_shift * (n_ifos - 1)))
+    assert (num_slides >= low) and (num_slides <= upp), (
+        "the combination (slideshift, segment_dur)"
+        f" = ({slide_shift:.2f},{stride_dur * 2:.2f})"
+        f" goes over the allowed upper bound {upp}"
+    )
 
     return num_slides
 
@@ -93,10 +96,7 @@ time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
 parser.add_argument(
-    "--output",
-    type=str,
-    required=True,
-    help="Path to the output file."
+    "--output", type=str, required=True, help="Path to the output file."
 )
 parser.add_argument(
     "--instruments",
@@ -106,10 +106,7 @@ parser.add_argument(
     help="List of instruments to analyze.",
 )
 parser.add_argument(
-    "--bank-file",
-    type=str,
-    required=True,
-    help="Path to the template bank file."
+    "--bank-file", type=str, required=True, help="Path to the template bank file."
 )
 parser.add_argument(
     "--low-frequency-cutoff",
@@ -149,52 +146,75 @@ parser.add_argument(
 parser.add_argument(
     "--bank-veto-bank-file",
     type=str,
-    help="Path to the "
-    "bank file used to compute the the bank chi-square veto.",
+    help="Path to the bank file used to compute the the bank chi-square veto.",
 )
 parser.add_argument("--chisq-bins", default=0)
 # Commenting out unused options: remove if they remain unused
 # parser.add_argument("--chisq-threshold", type=float, default=0)
 # parser.add_argument("--chisq-delta", type=float, default=0)
-parser.add_argument("--autochi-number-points", type=int, default=0,
-                    help="The number of points to use, in both directions if"
-                         "doing a two-sided auto-chisq, to calculate the"
-                         "auto-chisq statistic.")
-parser.add_argument("--autochi-stride", type=int, default=0,
-                    help="The gap, in sample points, between the points at"
-                         "which to calculate auto-chisq.")
-parser.add_argument("--autochi-two-phase", action="store_true",
-                    default=False,
-                    help="If given auto-chisq will be calculated by testing "
-                         "against both phases of the SNR time-series. "
-                         "If not given, only the phase matching the trigger "
-                         "will be used.")
-parser.add_argument("--autochi-onesided", action='store',
-                    choices=['left', 'right'],
-                    help="Decide whether to calculate auto-chisq using"
-                         "points on both sides of the trigger or only on one"
-                         "side. If not given points on both sides will be"
-                         "used. If given, with either 'left' or 'right',"
-                         "only points on that side (right = forward in time,"
-                         "left = back in time) will be used.")
-parser.add_argument("--autochi-reverse-template", action="store_true",
-                    default=False,
-                    help="If given, time-reverse the template before"
-                         "calculating the auto-chisq statistic. This will"
-                         "come at additional computational cost as the SNR"
-                         "time-series will need recomputing for the time-"
-                         "reversed template.")
-parser.add_argument("--autochi-max-valued", action="store_true",
-                    default=False,
-                    help="If given, store only the maximum value of the auto-"
-                         "chisq over all points tested. A disadvantage of "
-                         "this is that the mean value will not be known "
-                         "analytically.")
-parser.add_argument("--autochi-max-valued-dof", action="store", metavar="INT",
-                    type=int,
-                    help="If using --autochi-max-valued this value denotes "
-                         "the pre-calculated mean value that will be stored "
-                         "as the auto-chisq degrees-of-freedom value.")
+parser.add_argument(
+    "--autochi-number-points",
+    type=int,
+    default=0,
+    help="The number of points to use, in both directions if"
+    "doing a two-sided auto-chisq, to calculate the"
+    "auto-chisq statistic.",
+)
+parser.add_argument(
+    "--autochi-stride",
+    type=int,
+    default=0,
+    help="The gap, in sample points, between the points at"
+    "which to calculate auto-chisq.",
+)
+parser.add_argument(
+    "--autochi-two-phase",
+    action="store_true",
+    default=False,
+    help="If given auto-chisq will be calculated by testing "
+    "against both phases of the SNR time-series. "
+    "If not given, only the phase matching the trigger "
+    "will be used.",
+)
+parser.add_argument(
+    "--autochi-onesided",
+    action="store",
+    choices=["left", "right"],
+    help="Decide whether to calculate auto-chisq using"
+    "points on both sides of the trigger or only on one"
+    "side. If not given points on both sides will be"
+    "used. If given, with either 'left' or 'right',"
+    "only points on that side (right = forward in time,"
+    "left = back in time) will be used.",
+)
+parser.add_argument(
+    "--autochi-reverse-template",
+    action="store_true",
+    default=False,
+    help="If given, time-reverse the template before"
+    "calculating the auto-chisq statistic. This will"
+    "come at additional computational cost as the SNR"
+    "time-series will need recomputing for the time-"
+    "reversed template.",
+)
+parser.add_argument(
+    "--autochi-max-valued",
+    action="store_true",
+    default=False,
+    help="If given, store only the maximum value of the auto-"
+    "chisq over all points tested. A disadvantage of "
+    "this is that the mean value will not be known "
+    "analytically.",
+)
+parser.add_argument(
+    "--autochi-max-valued-dof",
+    action="store",
+    metavar="INT",
+    type=int,
+    help="If using --autochi-max-valued this value denotes "
+    "the pre-calculated mean value that will be stored "
+    "as the auto-chisq degrees-of-freedom value.",
+)
 parser.add_argument(
     "--downsample-factor",
     type=int,
@@ -207,13 +227,12 @@ parser.add_argument(
 parser.add_argument(
     "--upsample-threshold",
     type=float,
-    help="The fraction of the SNR threshold to check the "
-    "sparse SNR sample.",
+    help="The fraction of the SNR threshold to check the sparse SNR sample.",
 )
 parser.add_argument(
     "--upsample-method",
     choices=["pruned_fft"],
-    default='pruned_fft',
+    default="pruned_fft",
     help="The method to find the SNR points between the sparse SNR sample.",
 )
 parser.add_argument(
@@ -228,13 +247,13 @@ parser.add_argument(
     "--ra",
     type=angle_as_radians,
     help="Right ascension of a single sky point to search. Use the rad or deg "
-    "suffix to specify units, otherwise radians are assumed."
+    "suffix to specify units, otherwise radians are assumed.",
 )
 parser.add_argument(
     "--dec",
     type=angle_as_radians,
     help="Declination of a single sky point to search. Use the rad or deg "
-    "suffix to specify units, otherwise radians are assumed."
+    "suffix to specify units, otherwise radians are assumed.",
 )
 parser.add_argument(
     "--sky-grid",
@@ -246,8 +265,7 @@ parser.add_argument(
     "--coinc-threshold",
     type=float,
     default=0.0,
-    help="Triggers with coincident/coherent SNR below this "
-    "value will be discarded.",
+    help="Triggers with coincident/coherent SNR below this value will be discarded.",
 )
 parser.add_argument(
     "--nifo-sngl-snr-threshold",
@@ -256,14 +274,14 @@ parser.add_argument(
     default=2,
     help="How many detectors must pass the --sngl-snr-threshold cut in order "
     "to generate a trigger; the cut is only applied when more than 1 detector "
-    "is used in the analysis (default 2)."
+    "is used in the analysis (default 2).",
 )
 parser.add_argument(
     "--sngl-snr-threshold",
     action="store",
     type=float,
     default=4.0,
-    metavar='THRESHOLD',
+    metavar="THRESHOLD",
     help="Single detector SNR threshold for trigger generation required in "
     "at least --nifo-sngl-snr-threshold detectors (default: 4).",
 )
@@ -285,7 +303,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--do-null-cut",
-    action='store_true',
+    action="store_true",
     help="Apply a cut based on null SNR: retained triggers have null SNR "
     "smaller than null-min and coherent SNR smaller than null-step, or null "
     "SNR smaller than (null-grad * coherent SNR + null_min) and coherent SNR "
@@ -333,10 +351,7 @@ parser.add_argument(
     default=1.0,
     help="Size of each time slide shift.",
 )
-parser.add_argument(
-    "--do-shortslides",
-    action="store_true"
-)
+parser.add_argument("--do-shortslides", action="store_true")
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
 strain.StrainSegments.insert_segment_option_group_multi_ifo(parser)
@@ -353,27 +368,25 @@ nifo = len(args.instruments)
 num_slides = 1
 if args.do_shortslides:
     num_slides = slide_limiter(
-        nifo,
-        args.slide_shift,
-        args.segment_length[args.instruments[0]]
+        nifo, args.slide_shift, args.segment_length[args.instruments[0]]
     )
 # Arrange detectors alphabetically so they are always called in the same order
 args.instruments.sort()
 # Check that the number of IFOs requested to have single SNR above threshold
 # is compatible with the number of detectors in the analysis
 if nifo > 1 and nifo < args.nifo_sngl_snr_threshold:
-    parser.error("--nifo-sngl-snr-threshold "
-                 f"({args.nifo_sngl_snr_threshold}) cannot exceed the "
-                 "number of detectors in the analysis "
-                 f"({nifo}) because this would "
-                 "never yield any trigger.")
+    parser.error(
+        "--nifo-sngl-snr-threshold "
+        f"({args.nifo_sngl_snr_threshold}) cannot exceed the "
+        "number of detectors in the analysis "
+        f"({nifo}) because this would "
+        "never yield any trigger."
+    )
 # Use class verification methods to check whether input CLI options provided
 # by parser to pycbc.strain, pycbc.strain.StrainSegments, pycbc.psd,
 # pycbc.scheme, and pycbc.fft modules are sane.
 strain.verify_strain_options_multi_ifo(args, parser, args.instruments)
-strain.StrainSegments.verify_segment_options_multi_ifo(
-    args, parser, args.instruments
-)
+strain.StrainSegments.verify_segment_options_multi_ifo(args, parser, args.instruments)
 psd.verify_psd_options_multi_ifo(args, parser, args.instruments)
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
@@ -424,15 +437,12 @@ with ctx:
             vname = "Time length"
             assert tlen == strain_segments_dict[ifo].time_len, vname + err_msg
             vname = "delta_f (=segment length inverse)"
-            assert delta_f == strain_segments_dict[ifo].delta_f, (
-                vname + err_msg
-            )
+            assert delta_f == strain_segments_dict[ifo].delta_f, vname + err_msg
     # segments is a dictionary of frequency domain objects, each one of which
     # is the Fourier transform of the segments in strain_segments_dict
     logging.info("Making frequency-domain data segments")
     segments = {
-        ifo: strain_segments_dict[ifo].fourier_segments()
-        for ifo in args.instruments
+        ifo: strain_segments_dict[ifo].fourier_segments() for ifo in args.instruments
     }
     # Memory cleaning
     del strain_segments_dict
@@ -447,7 +457,7 @@ with ctx:
         flow,
         args.instruments,
         dyn_range_factor=DYN_RANGE_FAC,
-        precision='single',
+        precision="single",
     )
 
     logging.info("Determining time slide shifts and time delays")
@@ -465,10 +475,7 @@ with ctx:
         slide: {
             position_index: {
                 ifo: round(
-                    (
-                        time_delays_zerolag[ifo][position_index]
-                        + time_slides[ifo][slide]
-                    )
+                    (time_delays_zerolag[ifo][position_index] + time_slides[ifo][slide])
                     * sample_rate
                 )
                 for ifo in args.instruments
@@ -533,7 +540,7 @@ with ctx:
         twophase=args.autochi_two_phase,
         reverse_template=args.autochi_reverse_template,
         take_maximum_value=args.autochi_max_valued,
-        maximal_value_dof=args.autochi_max_valued_dof
+        maximal_value_dof=args.autochi_max_valued_dof,
     )
 
     # Overwhiten all frequency-domain segments by dividing by the PSD estimate
@@ -545,51 +552,51 @@ with ctx:
     logging.info("Setting up event manager")
     # But first build dictionaries to initialize and feed the event manager
     ifo_out_types = {
-        'time_index': int,
-        'ifo': int,  # IFO is stored as an int internally!
-        'snr': complex64,
-        'chisq': float32,
-        'chisq_dof': int,
-        'bank_chisq': float32,
-        'bank_chisq_dof': int,
-        'auto_chisq': float32,
-        'auto_chisq_dof': int,
-        'slide_id': int,
+        "time_index": int,
+        "ifo": int,  # IFO is stored as an int internally!
+        "snr": complex64,
+        "chisq": float32,
+        "chisq_dof": int,
+        "bank_chisq": float32,
+        "bank_chisq_dof": int,
+        "auto_chisq": float32,
+        "auto_chisq_dof": int,
+        "slide_id": int,
     }
     ifo_out_vals = {
-        'time_index': None,
-        'ifo': None,
-        'snr': None,
-        'chisq': None,
-        'chisq_dof': None,
-        'bank_chisq': None,
-        'bank_chisq_dof': None,
-        'auto_chisq': None,
-        'auto_chisq_dof': None,
-        'slide_id': None,
+        "time_index": None,
+        "ifo": None,
+        "snr": None,
+        "chisq": None,
+        "chisq_dof": None,
+        "bank_chisq": None,
+        "bank_chisq_dof": None,
+        "auto_chisq": None,
+        "auto_chisq_dof": None,
+        "slide_id": None,
     }
     ifo_names = sorted(ifo_out_vals.keys())
     network_out_types = {
-        'dec': float32,
-        'ra': float32,
-        'time_index': int,
-        'coherent_snr': float32,
-        'null_snr': float32,
-        'nifo': int,
-        'my_network_chisq': float32,
-        'reweighted_snr': float32,
-        'slide_id': int,
+        "dec": float32,
+        "ra": float32,
+        "time_index": int,
+        "coherent_snr": float32,
+        "null_snr": float32,
+        "nifo": int,
+        "my_network_chisq": float32,
+        "reweighted_snr": float32,
+        "slide_id": int,
     }
     network_out_vals = {
-        'dec': None,
-        'ra': None,
-        'time_index': None,
-        'coherent_snr': None,
-        'null_snr': None,
-        'nifo': None,
-        'my_network_chisq': None,
-        'reweighted_snr': None,
-        'slide_id': None,
+        "dec": None,
+        "ra": None,
+        "time_index": None,
+        "coherent_snr": None,
+        "null_snr": None,
+        "nifo": None,
+        "my_network_chisq": None,
+        "reweighted_snr": None,
+        "slide_id": None,
     }
     network_names = network_out_vals.keys()
     event_mgr = EventManagerCoherent(
@@ -675,7 +682,7 @@ with ctx:
                 t_num + 1,
                 n_bank,
                 s_num + 1,
-                len(segments[ifo])
+                len(segments[ifo]),
             )
             # The following dicts with IFOs as keys are created to store
             # copies of the matched filtering results computed below.
@@ -714,13 +721,11 @@ with ctx:
                 ind = ind.astype(np.int32)
                 if inj_filter_rejector[ifo].enabled:
                     trig_times = (
-                        (ind + stilde[ifo].cumulative_index) /
-                        snr_ts.sample_rate +
-                        args.gps_start_time[ifo]
-                    )
-                    inj_idxs = inj_filter_rejector[ifo].find_indices_in_injection_intervals(
-                        trig_times
-                    )
+                        ind + stilde[ifo].cumulative_index
+                    ) / snr_ts.sample_rate + args.gps_start_time[ifo]
+                    inj_idxs = inj_filter_rejector[
+                        ifo
+                    ].find_indices_in_injection_intervals(trig_times)
                     ind = ind[inj_idxs]
                     snrv = snrv[inj_idxs]
 
@@ -728,9 +733,7 @@ with ctx:
                     snr_ts[matched_filter[ifo].segments[s_num].analyze] * norm
                 )
                 wraparound_dict[ifo] = len(snr_dict[ifo])
-                assert (
-                    wraparound_dict[ifo] > 0
-                ), f'SNR time series for {ifo} is empty'
+                assert wraparound_dict[ifo] > 0, f"SNR time series for {ifo} is empty"
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
                 idx[ifo] = ind
@@ -777,8 +780,7 @@ with ctx:
                     idx_dict = {
                         ifo: idx[ifo][
                             np.logical_and(
-                                idx[ifo]
-                                > time_delay_idx[0][position_index][ifo],
+                                idx[ifo] > time_delay_idx[0][position_index][ifo],
                                 idx[ifo]
                                 < time_delay_idx[0][position_index][ifo]
                                 + wraparound_dict[ifo],
@@ -801,20 +803,17 @@ with ctx:
                     # as well as the dictionary to enable the wrap around at
                     # each detector prior to searching for coincidences.
                     coinc_idx = coh.get_coinc_indexes(
-                        idx_dict, time_delay_idx[slide][position_index],
-                        args.nifo_sngl_snr_threshold, wraparound_dict
+                        idx_dict,
+                        time_delay_idx[slide][position_index],
+                        args.nifo_sngl_snr_threshold,
+                        wraparound_dict,
                     )
-                    logging.debug(
-                        "Found %d coincident triggers", len(coinc_idx)
-                    )
+                    logging.debug("Found %d coincident triggers", len(coinc_idx))
                     # Time delay is applied to (coincident) indices at the
                     # geocenter to have them at the IFOs (hence the + which
                     # undoes the delay). The wrap around is performed.
                     coinc_idx_det_frame = {
-                        ifo: (
-                            coinc_idx
-                            + time_delay_idx[slide][position_index][ifo]
-                        )
+                        ifo: (coinc_idx + time_delay_idx[slide][position_index][ifo])
                         % wraparound_dict[ifo]
                         for ifo in args.instruments
                     }
@@ -869,10 +868,10 @@ with ctx:
                         }
                         # The cut is applied after the left vs right
                         # comparison to ensure the arrays have equal lengths
-                        if args.projection == 'left+right':
+                        if args.projection == "left+right":
                             # Left polarized coherent SNR
                             project_l = coh.get_projection_matrix(
-                                fp, fc, sigma, projection='left'
+                                fp, fc, sigma, projection="left"
                             )
                             (
                                 rho_coh_l,
@@ -888,7 +887,7 @@ with ctx:
                             )
                             # Right polarized coherent SNR
                             project_r = coh.get_projection_matrix(
-                                fp, fc, sigma, projection='right'
+                                fp, fc, sigma, projection="right"
                             )
                             (
                                 rho_coh_r,
@@ -912,24 +911,16 @@ with ctx:
                             coinc_idx_l = coinc_idx_l[lr_above]
                             coinc_idx_r = coinc_idx_r[lr_above]
                             for ifo in coinc_triggers_l.keys():
-                                coinc_triggers_l[ifo] = coinc_triggers_l[ifo][
-                                    lr_above
-                                ]
+                                coinc_triggers_l[ifo] = coinc_triggers_l[ifo][lr_above]
                             for ifo in coinc_triggers_r.keys():
-                                coinc_triggers_r[ifo] = coinc_triggers_r[ifo][
-                                    lr_above
-                                ]
+                                coinc_triggers_r[ifo] = coinc_triggers_r[ifo][lr_above]
                             rho_coinc_l = rho_coinc_l[lr_above]
                             rho_coinc_r = rho_coinc_r[lr_above]
                             # Point by point, track the larger of the two
                             # and store its information
                             max_idx = np.argmax([rho_coh_l, rho_coh_r], axis=0)
-                            rho_coh = np.where(
-                                max_idx == 0, rho_coh_l, rho_coh_r
-                            )
-                            coinc_idx = np.where(
-                                max_idx == 0, coinc_idx_l, coinc_idx_r
-                            )
+                            rho_coh = np.where(max_idx == 0, rho_coh_l, rho_coh_r)
+                            coinc_idx = np.where(max_idx == 0, coinc_idx_l, coinc_idx_r)
                             coinc_triggers = {
                                 ifo: np.where(
                                     max_idx == 0,
@@ -938,9 +929,7 @@ with ctx:
                                 )
                                 for ifo in coinc_triggers_l
                             }
-                            rho_coinc = np.where(
-                                max_idx == 0, rho_coinc_l, rho_coinc_r
-                            )
+                            rho_coinc = np.where(max_idx == 0, rho_coinc_l, rho_coinc_r)
                         else:
                             project = coh.get_projection_matrix(
                                 fp, fc, sigma, projection=args.projection
@@ -962,9 +951,7 @@ with ctx:
                             len(rho_coh),
                         )
                         if len(coinc_idx) != 0:
-                            logging.debug(
-                                "With max coherent SNR = %.2f", max(rho_coh)
-                            )
+                            logging.debug("With max coherent SNR = %.2f", max(rho_coh))
                             # Calculate the null SNR and apply the null SNR cut
                             (
                                 null,
@@ -982,13 +969,9 @@ with ctx:
                                 snrv=coinc_triggers,
                                 index=coinc_idx,
                             )
-                            logging.debug(
-                                "%d triggers above null threshold", len(null)
-                            )
+                            logging.debug("%d triggers above null threshold", len(null))
                             if len(coinc_idx) != 0:
-                                logging.debug(
-                                    "With max null SNR = %.2f", max(null)
-                                )
+                                logging.debug("With max null SNR = %.2f", max(null))
                     # Now calculate the individual detector chi2 values
                     # and the SNR reweighted by chi2 and by null SNR
                     # (no cut on reweighted SNR is applied).
@@ -1002,8 +985,7 @@ with ctx:
                         # around is performed.
                         coinc_idx_det_frame = {
                             ifo: (
-                                coinc_idx
-                                + time_delay_idx[slide][position_index][ifo]
+                                coinc_idx + time_delay_idx[slide][position_index][ifo]
                             )
                             % wraparound_dict[ifo]
                             for ifo in args.instruments
@@ -1037,7 +1019,9 @@ with ctx:
                                     template,
                                 )
                                 power_chisq_arrays[ifo][new_needed_idx] = new_chisq
-                                power_chisq_dof_arrays[ifo][new_needed_idx] = new_chisq_dof
+                                power_chisq_dof_arrays[ifo][new_needed_idx] = (
+                                    new_chisq_dof
+                                )
                                 del new_chisq, new_chisq_dof, new_needed_idx
                             chisq[ifo] = power_chisq_arrays[ifo][needed_idx]
                             chisq_dof[ifo] = power_chisq_dof_arrays[ifo][needed_idx]
@@ -1082,20 +1066,19 @@ with ctx:
                         # remaining triggers
                         for ifo in args.instruments:
                             (
-                                ifo_out_vals['bank_chisq'],
-                                ifo_out_vals['bank_chisq_dof'],
+                                ifo_out_vals["bank_chisq"],
+                                ifo_out_vals["bank_chisq_dof"],
                             ) = bank_chisq.values(
                                 template,
                                 stilde[ifo].psd,
                                 stilde[ifo],
                                 coherent_ifo_trigs[ifo],
                                 1,  # coherent_ifo_trigs already normalized
-                                coinc_idx_det_frame[ifo]
-                                + stilde[ifo].analyze.start,
+                                coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start,
                             )
                             (
-                                ifo_out_vals['auto_chisq'],
-                                ifo_out_vals['auto_chisq_dof'],
+                                ifo_out_vals["auto_chisq"],
+                                ifo_out_vals["auto_chisq_dof"],
                             ) = autochisq.values(
                                 snr_dict[ifo],
                                 coinc_idx_det_frame[ifo],
@@ -1105,51 +1088,47 @@ with ctx:
                                 stilde=stilde[ifo],
                                 low_frequency_cutoff=flow,
                             )
-                            ifo_out_vals['chisq'] = chisq[ifo]
-                            ifo_out_vals['chisq_dof'] = chisq_dof[ifo]
-                            ifo_out_vals['time_index'] = (
-                                coinc_idx_det_frame[ifo]
-                                + stilde[ifo].cumulative_index
+                            ifo_out_vals["chisq"] = chisq[ifo]
+                            ifo_out_vals["chisq_dof"] = chisq_dof[ifo]
+                            ifo_out_vals["time_index"] = (
+                                coinc_idx_det_frame[ifo] + stilde[ifo].cumulative_index
                             )
-                            ifo_out_vals['snr'] = coherent_ifo_trigs[ifo]
+                            ifo_out_vals["snr"] = coherent_ifo_trigs[ifo]
                             # IFO is stored as an int
-                            ifo_out_vals['ifo'] = [
-                                event_mgr.ifo_dict[ifo]
-                            ] * num_events
+                            ifo_out_vals["ifo"] = [event_mgr.ifo_dict[ifo]] * num_events
                             # Time slide ID
-                            ifo_out_vals['slide_id'] = [slide] * num_events
+                            ifo_out_vals["slide_id"] = [slide] * num_events
                             event_mgr.add_template_events_to_ifo(
                                 ifo,
                                 ifo_names,
                                 [ifo_out_vals[n] for n in ifo_names],
                             )
                         if nifo > 1:
-                            network_out_vals['coherent_snr'] = rho_coh
-                            network_out_vals['null_snr'] = null
+                            network_out_vals["coherent_snr"] = rho_coh
+                            network_out_vals["null_snr"] = null
                         else:
-                            network_out_vals['coherent_snr'] = abs(
+                            network_out_vals["coherent_snr"] = abs(
                                 snr_dict[args.instruments[0]][
                                     coinc_idx_det_frame[args.instruments[0]]
                                 ]
                             )
-                        network_out_vals['reweighted_snr'] = reweighted_snr
-                        network_out_vals['my_network_chisq'] = np.real(
+                        network_out_vals["reweighted_snr"] = reweighted_snr
+                        network_out_vals["my_network_chisq"] = np.real(
                             network_chisq_dict
                         )
                         # coinc_idx has the geocenter indices of triggers.
                         # The wrap around happened in get_coinc_indices.
-                        network_out_vals['time_index'] = (
-                            coinc_idx
-                            + stilde[args.instruments[0]].cumulative_index
+                        network_out_vals["time_index"] = (
+                            coinc_idx + stilde[args.instruments[0]].cumulative_index
                         )
-                        network_out_vals['nifo'] = [nifo] * num_events
-                        network_out_vals['dec'] = [
+                        network_out_vals["nifo"] = [nifo] * num_events
+                        network_out_vals["dec"] = [
                             sky_positions.decs[position_index]
                         ] * num_events
-                        network_out_vals['ra'] = [
+                        network_out_vals["ra"] = [
                             sky_positions.ras[position_index]
                         ] * num_events
-                        network_out_vals['slide_id'] = [slide] * num_events
+                        network_out_vals["slide_id"] = [slide] * num_events
                         event_mgr.add_template_events_to_network(
                             network_names,
                             [network_out_vals[n] for n in network_names],
@@ -1165,7 +1144,7 @@ with ctx:
             for slide in range(num_slides):
                 logging.debug("Clustering slide %d", slide)
                 event_mgr.cluster_template_network_events(
-                    'time_index', 'reweighted_snr', cluster_window, slide=slide
+                    "time_index", "reweighted_snr", cluster_window, slide=slide
                 )
         # Left loop over segments
         event_mgr.finalize_template_events()
@@ -1176,11 +1155,7 @@ with ctx:
 time_stop = time.time()
 run_time = time_stop - time_init
 event_mgr.save_performance(
-    num_cpu_cores,
-    len(segments[args.instruments[0]]),
-    n_bank,
-    run_time,
-    time_setup
+    num_cpu_cores, len(segments[args.instruments[0]]), n_bank, run_time, time_setup
 )
 
 logging.info("Writing output")

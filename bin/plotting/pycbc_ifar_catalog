@@ -16,81 +16,94 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import numpy
-import sys
 import logging
-import matplotlib as mpl; mpl.use('Agg')
-from matplotlib import pyplot as plt
+import sys
 
+import matplotlib as mpl
+import numpy
+
+mpl.use("Agg")
+from matplotlib import pyplot as plt
 from scipy.stats import norm, poisson
 
 import pycbc.results
-from pycbc import conversions
-from pycbc import init_logging, add_common_pycbc_options
+from pycbc import add_common_pycbc_options, conversions, init_logging
 from pycbc.io.hdf import HFile
 
-parser = argparse.ArgumentParser(usage='pycbc_ifar_catalog [--options]',
-                    description='Plots cumulative IFAR vs count for'
-                          ' foreground triggers')
+parser = argparse.ArgumentParser(
+    usage="pycbc_ifar_catalog [--options]",
+    description="Plots cumulative IFAR vs count for foreground triggers",
+)
 add_common_pycbc_options(parser)
-parser.add_argument('--trigger-files', nargs='+',
-                    help='Path to coincident trigger HDF file(s)')
-parser.add_argument('--output-file', required=True,
-                    help='Path to output plot')
-parser.add_argument('--truncate-threshold', type=float,
-                    help='Truncate plot above IFAR threshold (units: years)')
-parser.add_argument('--remove-threshold', type=float,
-                    help='Remove detected events with IFAR above threshold'
-                         ' (units years)')
-parser.add_argument('--open-box', action='store_true',
-                    help='Are we putting open box results onto the plot? '
-                         'Default=False.')
-parser.add_argument('--use-tex', action='store_true',
-                    help="Render using latex")
-parser.add_argument('--use-hierarchical-level', type=int, default=None,
-                    help='Indicate which inclusive background and FARs of '
-                         'foreground triggers to plot if there were any '
-                         'hierarchical removals done. Choosing None plots '
-                         'the inclusive backgrounds prior to any '
-                         'hierarchical removals with the updated FARs for '
-                         'foreground triggers after hierarchical removal(s). '
-                         'Choosing 0 means plotting inclusive background '
-                         'from prior to any hierarchical removals with FARs '
-                         'for foreground triggers prior to hierarchical '
-                         'removal. Choosing 1 means plotting the inclusive '
-                         'background after doing 1 hierarchical removal, and '
-                         'includes updated FARs from after 1 hierarchical '
-                         'removal. [default=plot after application of all '
-                         'hierarchical removal iterations]')
-parser.add_argument('--use-exclusive-ifar', action='store_true',
-                    help='Whether to use exclusive background for '
-                         'IFAR calculations. Default=False.')
+parser.add_argument(
+    "--trigger-files", nargs="+", help="Path to coincident trigger HDF file(s)"
+)
+parser.add_argument("--output-file", required=True, help="Path to output plot")
+parser.add_argument(
+    "--truncate-threshold",
+    type=float,
+    help="Truncate plot above IFAR threshold (units: years)",
+)
+parser.add_argument(
+    "--remove-threshold",
+    type=float,
+    help="Remove detected events with IFAR above threshold (units years)",
+)
+parser.add_argument(
+    "--open-box",
+    action="store_true",
+    help="Are we putting open box results onto the plot? Default=False.",
+)
+parser.add_argument("--use-tex", action="store_true", help="Render using latex")
+parser.add_argument(
+    "--use-hierarchical-level",
+    type=int,
+    default=None,
+    help="Indicate which inclusive background and FARs of "
+    "foreground triggers to plot if there were any "
+    "hierarchical removals done. Choosing None plots "
+    "the inclusive backgrounds prior to any "
+    "hierarchical removals with the updated FARs for "
+    "foreground triggers after hierarchical removal(s). "
+    "Choosing 0 means plotting inclusive background "
+    "from prior to any hierarchical removals with FARs "
+    "for foreground triggers prior to hierarchical "
+    "removal. Choosing 1 means plotting the inclusive "
+    "background after doing 1 hierarchical removal, and "
+    "includes updated FARs from after 1 hierarchical "
+    "removal. [default=plot after application of all "
+    "hierarchical removal iterations]",
+)
+parser.add_argument(
+    "--use-exclusive-ifar",
+    action="store_true",
+    help="Whether to use exclusive background for IFAR calculations. Default=False.",
+)
 opts = parser.parse_args()
 
 init_logging(opts.verbose)
 
 if opts.use_tex:
-    plt.rc('text', usetex=True)
-    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    plt.rc("text", usetex=True)
+    plt.rc("font", family="serif", serif=["Computer Modern"])
 
-trigf = [HFile(f, 'r') for f in opts.trigger_files]
+trigf = [HFile(f, "r") for f in opts.trigger_files]
 
 # Parse which inclusive background to use for the plotting
 h_inc_back_num = opts.use_hierarchical_level
 
 if opts.use_exclusive_ifar:
-    ifar_str = 'ifar_exc'
+    ifar_str = "ifar_exc"
 else:
-    ifar_str = 'ifar'
+    ifar_str = "ifar"
 
 try:
-    h_iterations = max([f.attrs['hierarchical_removal_iterations']
-                        for f in trigf])
+    h_iterations = max([f.attrs["hierarchical_removal_iterations"] for f in trigf])
 except KeyError:
     h_iterations = 0
 
 if h_inc_back_num is None:
-    logging.info('Using %d hierarchical removal iterations', h_iterations)
+    logging.info("Using %d hierarchical removal iterations", h_iterations)
     h_inc_back_num = h_iterations
 
 if h_inc_back_num > h_iterations:
@@ -101,18 +114,29 @@ if h_inc_back_num > h_iterations:
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
 
-    output_message = "No more foreground events louder than all background\n" \
-                     "at this removal level.\nAttempted to show " + \
-                     str(h_inc_back_num) + " removal(s),\n" \
-                     "but only " + str(h_iterations) + " removal(s) done."
+    output_message = (
+        "No more foreground events louder than all background\n"
+        "at this removal level.\nAttempted to show "
+        + str(h_inc_back_num)
+        + " removal(s),\n"
+        "but only " + str(h_iterations) + " removal(s) done."
+    )
 
-    ax.text(0.5, 0.5, output_message, horizontalalignment='center',
-            verticalalignment='center')
+    ax.text(
+        0.5,
+        0.5,
+        output_message,
+        horizontalalignment="center",
+        verticalalignment="center",
+    )
 
-    pycbc.results.save_fig_with_metadata(fig, opts.output_file,
-       title='Cumulative Number vs. IFAR',
-       caption=output_message,
-       cmd=' '.join(sys.argv))
+    pycbc.results.save_fig_with_metadata(
+        fig,
+        opts.output_file,
+        title="Cumulative Number vs. IFAR",
+        caption=output_message,
+        cmd=" ".join(sys.argv),
+    )
 
     # Exit the code successfully and bypass the rest of the plotting code.
     sys.exit(0)
@@ -122,9 +146,9 @@ if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
     fore_ifar = numpy.array([])
     supp_fore_ifar = numpy.array([])
     for f in trigf:
-        ifar = f['foreground_h%s/%s' % (h_inc_back_num, ifar_str)][:]
+        ifar = f["foreground_h%s/%s" % (h_inc_back_num, ifar_str)][:]
         # Get ifar of hierarchically removed foreground triggers
-        supp_ifar = f['foreground/' + ifar_str][:]
+        supp_ifar = f["foreground/" + ifar_str][:]
         # increment arrays to be plotted
         fore_ifar = numpy.append(fore_ifar, ifar)
         supp_fore_ifar = numpy.append(supp_fore_ifar, supp_ifar)
@@ -139,7 +163,7 @@ if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
 else:
     fore_ifar = numpy.array([])
     for f in trigf:
-        fore_ifar = numpy.append(fore_ifar, f['foreground/' + ifar_str][:])
+        fore_ifar = numpy.append(fore_ifar, f["foreground/" + ifar_str][:])
 
 if opts.remove_threshold is not None and opts.truncate_threshold is not None:
     raise RuntimeError("Can't both remove and truncate foreground events!")
@@ -153,19 +177,26 @@ fore_cumnum = numpy.arange(len(fore_ifar), 0, -1)
 
 # get expected (noise-only) foreground IFAR values and cumulative number for
 # each IFAR value
-expected_ifar = numpy.logspace(-4., numpy.log10(opts.truncate_threshold or 10000),
-                               num=1000, base=10.0)
+expected_ifar = numpy.logspace(
+    -4.0, numpy.log10(opts.truncate_threshold or 10000), num=1000, base=10.0
+)
 fg_time = 0
 for f in trigf:
-    fg_time += f.attrs['foreground_time']
+    fg_time += f.attrs["foreground_time"]
 expected_cumnum = conversions.sec_to_year(fg_time) / expected_ifar
 
 # make figure
 fig = plt.figure(1)
 
 # plot the expected background
-plt.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=1,
-             color='black', label='Expected Background')
+plt.loglog(
+    expected_ifar,
+    expected_cumnum,
+    linestyle="--",
+    linewidth=1,
+    color="black",
+    label="Expected Background",
+)
 
 # plot the counting error
 lower = {}
@@ -204,36 +235,59 @@ for sigma in [1, 2, 3, 4]:
         upper[sigma].append(nup + 1.5)
 
 plotifar = expected_ifar[::-1]
-plt.fill_between(plotifar, lower[4], lower[3], facecolor='k', alpha=0.15,
-                   label=r'$<4\sigma$')
-plt.fill_between(plotifar, lower[3], lower[2], facecolor='k', alpha=0.3,
-                   label=r'$<3\sigma$')
-plt.fill_between(plotifar, lower[2], lower[1], facecolor='k', alpha=0.45,
-                   label=r'$<2\sigma$')
-plt.fill_between(plotifar, lower[1], upper[1], facecolor='k', alpha=0.6,
-                   label=r'$<1\sigma$')
-plt.fill_between(plotifar, upper[1], upper[2], facecolor='k', alpha=0.45)
-plt.fill_between(plotifar, upper[2], upper[3], facecolor='k', alpha=0.3)
-plt.fill_between(plotifar, upper[3], upper[4], facecolor='k', alpha=0.15)
+plt.fill_between(
+    plotifar, lower[4], lower[3], facecolor="k", alpha=0.15, label=r"$<4\sigma$"
+)
+plt.fill_between(
+    plotifar, lower[3], lower[2], facecolor="k", alpha=0.3, label=r"$<3\sigma$"
+)
+plt.fill_between(
+    plotifar, lower[2], lower[1], facecolor="k", alpha=0.45, label=r"$<2\sigma$"
+)
+plt.fill_between(
+    plotifar, lower[1], upper[1], facecolor="k", alpha=0.6, label=r"$<1\sigma$"
+)
+plt.fill_between(plotifar, upper[1], upper[2], facecolor="k", alpha=0.45)
+plt.fill_between(plotifar, upper[2], upper[3], facecolor="k", alpha=0.3)
+plt.fill_between(plotifar, upper[3], upper[4], facecolor="k", alpha=0.15)
 
 # plot the foreground triggers
 if opts.open_box:
     if opts.truncate_threshold:
         over_trunc = fore_ifar > opts.truncate_threshold
-        fore_ifar[over_trunc] = numpy.ones(over_trunc.sum()) * \
-                                                        opts.truncate_threshold
+        fore_ifar[over_trunc] = numpy.ones(over_trunc.sum()) * opts.truncate_threshold
         for i in fore_cumnum[over_trunc]:
-            plt.arrow(opts.truncate_threshold, i, opts.truncate_threshold, 0,
-                        head_width=0.1 * i, head_length=0.4 * \
-                        opts.truncate_threshold, ec='b', fc='b')
-    plt.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue',
-                 marker='^', ms=6, label='Foreground')
+            plt.arrow(
+                opts.truncate_threshold,
+                i,
+                opts.truncate_threshold,
+                0,
+                head_width=0.1 * i,
+                head_length=0.4 * opts.truncate_threshold,
+                ec="b",
+                fc="b",
+            )
+    plt.loglog(
+        fore_ifar,
+        fore_cumnum,
+        linestyle="None",
+        color="blue",
+        marker="^",
+        ms=6,
+        label="Foreground",
+    )
     max_ifar = max(fore_ifar)
 
     if h_inc_back_num > 0:
         max_ifar = max(max_ifar, max(h_rm_ifar))
-        plt.loglog(h_rm_ifar, h_rm_cumnum, linestyle='None', color='#b66dff',
-                     marker='v', label='Hierarchically Removed Foreground')
+        plt.loglog(
+            h_rm_ifar,
+            h_rm_cumnum,
+            linestyle="None",
+            color="#b66dff",
+            marker="v",
+            label="Hierarchically Removed Foreground",
+        )
 
 # format plot
 if opts.open_box:
@@ -243,20 +297,24 @@ if opts.open_box:
 else:
     plt.ylim(0.7, max(expected_cumnum))
 plt.grid()
-plt.legend(loc='upper right', fontsize=13)
-plt.ylabel('Cumulative Number', size='large')
-ifar_label = 'Inverse False Alarm Rate (yr)'
+plt.legend(loc="upper right", fontsize=13)
+plt.ylabel("Cumulative Number", size="large")
+ifar_label = "Inverse False Alarm Rate (yr)"
 if opts.use_exclusive_ifar:
-    ifar_label = 'Exclusive ' + ifar_label
-plt.xlabel(ifar_label, size='large')
+    ifar_label = "Exclusive " + ifar_label
+plt.xlabel(ifar_label, size="large")
 
 # save
-caption = 'This is a cumulative histogram of triggers. The blue triangles ' \
-          + 'represent foreground triggers. The dashed line ' \
-          + 'represents the expected background given the analysis time. ' \
-          + 'The shaded regions represent counting errors.'
-pycbc.results.save_fig_with_metadata(fig, opts.output_file,
-     title='Cumulative Number vs. IFAR',
-     caption=caption,
-     cmd=' '.join(sys.argv))
-
+caption = (
+    "This is a cumulative histogram of triggers. The blue triangles "
+     "represent foreground triggers. The dashed line "
+     "represents the expected background given the analysis time. "
+     "The shaded regions represent counting errors."
+)
+pycbc.results.save_fig_with_metadata(
+    fig,
+    opts.output_file,
+    title="Cumulative Number vs. IFAR",
+    caption=caption,
+    cmd=" ".join(sys.argv),
+)

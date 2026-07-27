@@ -24,55 +24,75 @@ also be used to generate frames of simulated strain data, with or without
 injections.
 """
 
-import logging
 import argparse
+import logging
 
-import pycbc.strain
-import pycbc.frame
 import pycbc.fft
+import pycbc.frame
+import pycbc.strain
 from pycbc.types import float32, float64
 
 
 def write_strain(file_name, channel, data):
-    logging.info('Writing output strain to %s', file_name)
+    logging.info("Writing output strain to %s", file_name)
 
-    if file_name.endswith('.gwf'):
+    if file_name.endswith(".gwf"):
         pycbc.frame.write_frame(file_name, channel, data)
-    elif file_name.endswith(('.hdf', '.h5')):
+    elif file_name.endswith((".hdf", ".h5")):
         data.save(file_name, group=channel)
     else:
-        raise ValueError('Unknown extension for ' + file_name)
+        raise ValueError("Unknown extension for " + file_name)
 
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--output-strain-file', required=True,
-                    help='Name of output frame file. The file format is '
-                         'selected based on the extension (.gwf, .npy, .hdf '
-                         'and .txt accepted)')
-parser.add_argument('--output-channel-name',
-                    help='Name of channel in output frame file (default: same '
-                         'as input channel)')
-parser.add_argument('--output-gates-file',
-                    help='Save gating info to specified file, in the same '
-                         'format as accepted by the --gating-file option')
-parser.add_argument('--output-precision', type=str,
-                    choices=['single', 'double'], default='double',
-                    help='Precision of output strain, %(default)s by default')
-parser.add_argument('--dyn-range-factor', action='store_true',
-                    help='Scale the output strain by a large factor (%f) '
-                         'to avoid underflows in subsequent '
-                         'calculations' % pycbc.DYN_RANGE_FAC)
-parser.add_argument('--low-frequency-cutoff', type=float,
-                    help='Provide a low-frequency-cutoff for fake strain. '
-                         'This is only needed if fake-strain or '
-                         'fake-strain-from-file is used')
-parser.add_argument('--frame-duration', metavar='SECONDS', type=int,
-                    help='Split the produced data into different frame files '
-                         'of the given duration. The output file name should '
-                         'contain the strings {start} and {duration}, which '
-                         'will be replaced by the start GPS time and duration '
-                         'in seconds')
+parser.add_argument(
+    "--output-strain-file",
+    required=True,
+    help="Name of output frame file. The file format is "
+    "selected based on the extension (.gwf, .npy, .hdf "
+    "and .txt accepted)",
+)
+parser.add_argument(
+    "--output-channel-name",
+    help="Name of channel in output frame file (default: same as input channel)",
+)
+parser.add_argument(
+    "--output-gates-file",
+    help="Save gating info to specified file, in the same "
+    "format as accepted by the --gating-file option",
+)
+parser.add_argument(
+    "--output-precision",
+    type=str,
+    choices=["single", "double"],
+    default="double",
+    help="Precision of output strain, %(default)s by default",
+)
+parser.add_argument(
+    "--dyn-range-factor",
+    action="store_true",
+    help="Scale the output strain by a large factor (%f) "
+    "to avoid underflows in subsequent "
+    "calculations" % pycbc.DYN_RANGE_FAC,
+)
+parser.add_argument(
+    "--low-frequency-cutoff",
+    type=float,
+    help="Provide a low-frequency-cutoff for fake strain. "
+    "This is only needed if fake-strain or "
+    "fake-strain-from-file is used",
+)
+parser.add_argument(
+    "--frame-duration",
+    metavar="SECONDS",
+    type=int,
+    help="Split the produced data into different frame files "
+    "of the given duration. The output file name should "
+    "contain the strings {start} and {duration}, which "
+    "will be replaced by the start GPS time and duration "
+    "in seconds",
+)
 
 pycbc.strain.insert_strain_option_group(parser)
 pycbc.fft.insert_fft_option_group(parser)
@@ -85,23 +105,27 @@ pycbc.fft.verify_fft_options(args, parser)
 pycbc.fft.from_cli(args)
 
 if args.frame_duration is not None and args.frame_duration <= 0:
-    parser.error('Frame duration should be positive integer, {} given'.format(args.frame_duration))
+    parser.error(
+        f"Frame duration should be positive integer, {args.frame_duration} given"
+    )
 
 # read and condition strain as pycbc_inspiral would do
-out_strain = pycbc.strain.from_cli(args, dyn_range_fac=pycbc.DYN_RANGE_FAC,
-                                   precision=args.output_precision)
+out_strain = pycbc.strain.from_cli(
+    args, dyn_range_fac=pycbc.DYN_RANGE_FAC, precision=args.output_precision
+)
 
 # if requested, save the gates while we have them
 if args.output_gates_file:
-    logging.info('Writing output gates')
-    with file(args.output_gates_file, 'wb') as gate_f:
+    logging.info("Writing output gates")
+    with file(args.output_gates_file, "wb") as gate_f:
         for k, v in out_strain.gating_info.items():
             for t, w, p in v:
-                gate_f.write('%.4f %.2f %.2f\n' % (t, w, p))
+                gate_f.write("%.4f %.2f %.2f\n" % (t, w, p))
 
 # force strain precision to be as requested
 out_strain = out_strain.astype(
-        float32 if args.output_precision == 'single' else float64)
+    float32 if args.output_precision == "single" else float64
+)
 
 # unless asked otherwise, revert the dynamic range factor
 if not args.dyn_range_factor:
@@ -116,11 +140,12 @@ if args.frame_duration:
 
     # Last frame duration can be shorter than duration if stop doesn't allow
     for s in range(start, stop, step):
-        ts = out_strain.time_slice(s, s+step if s+step < stop else stop)
+        ts = out_strain.time_slice(s, min(stop, s + step))
         complete_fn = args.output_strain_file.format(
-                start=s, duration=step if s+step < stop else stop - s)
+            start=s, duration=step if s + step < stop else stop - s
+        )
         write_strain(complete_fn, output_channel_name, ts)
 else:
     write_strain(args.output_strain_file, output_channel_name, out_strain)
 
-logging.info('Done')
+logging.info("Done")

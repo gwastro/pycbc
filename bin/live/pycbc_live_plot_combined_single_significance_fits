@@ -12,54 +12,69 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-"""Plot the time evolution of fit parameters of PyCBC Live triggers.
-"""
+"""Plot the time evolution of fit parameters of PyCBC Live triggers."""
 
 import argparse
 import logging
-import numpy as np
+
 import matplotlib
-matplotlib.use('agg')
+import numpy as np
+
+matplotlib.use("agg")
 from matplotlib import pyplot as plt
 
 import pycbc
 from pycbc.io.hdf import HFile
 from pycbc.time import strip_time_from_gps
 
-
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--combined-fits-file", required=True,
-                    help="File containing information on the combined trigger "
-                         "fits.")
-default_plot_format = "{ifo}-TRIGGER-FITS-{type}.png"
-parser.add_argument("--output-plot-name-format",
-                    default=default_plot_format,
-                    help="Format to save plots, must contain '{ifo}' and "
-                         "'{type}' to indicate ifo and 'alphas' or 'counts' "
-                         " in filename. Default: " +
-                         default_plot_format)
-parser.add_argument("--ifos", nargs="+",
-                    help="List of ifos to plot. If not given, use all "
-                         "in the combined file.")
-parser.add_argument("--colormap", default="rainbow_r", choices=plt.colormaps(),
-                    help="Colormap to use for choosing the colours of the "
-                         "duration bin lines. Default=rainbow_r")
-parser.add_argument("--log-colormap", action='store_true',
-                    help="Use log spacing for choosing colormap values "
-                         "based on duration bins.")
 parser.add_argument(
-    '--log-counts',
-    action='store_true',
-    help="Plot the trigger rate above threshold on a log scale."
+    "--combined-fits-file",
+    required=True,
+    help="File containing information on the combined trigger fits.",
+)
+default_plot_format = "{ifo}-TRIGGER-FITS-{type}.png"
+parser.add_argument(
+    "--output-plot-name-format",
+    default=default_plot_format,
+    help="Format to save plots, must contain '{ifo}' and "
+    "'{type}' to indicate ifo and 'alphas' or 'counts' "
+    " in filename. Default: " + default_plot_format,
+)
+parser.add_argument(
+    "--ifos",
+    nargs="+",
+    help="List of ifos to plot. If not given, use all in the combined file.",
+)
+parser.add_argument(
+    "--colormap",
+    default="rainbow_r",
+    choices=plt.colormaps(),
+    help="Colormap to use for choosing the colours of the "
+    "duration bin lines. Default=rainbow_r",
+)
+parser.add_argument(
+    "--log-colormap",
+    action="store_true",
+    help="Use log spacing for choosing colormap values based on duration bins.",
+)
+parser.add_argument(
+    "--log-counts",
+    action="store_true",
+    help="Plot the trigger rate above threshold on a log scale.",
 )
 args = parser.parse_args()
 
-if '{ifo}' not in args.output_plot_name_format or \
-    '{type}' not in args.output_plot_name_format:
-    parser.error("--output-plot-name-format must contain '{ifo}' and "
-                 "'{type}' to indicate ifo and 'alphas' or 'counts' "
-                 " in filename.")
+if (
+    "{ifo}" not in args.output_plot_name_format
+    or "{type}" not in args.output_plot_name_format
+):
+    parser.error(
+        "--output-plot-name-format must contain '{ifo}' and "
+        "'{type}' to indicate ifo and 'alphas' or 'counts' "
+        " in filename."
+    )
 
 pycbc.init_logging(args.verbose)
 
@@ -76,28 +91,30 @@ separate_ends = {}
 separate_times = {}
 
 logging.info("Loading Data")
-with HFile(args.combined_fits_file, 'r') as cff:
-    ifos = args.ifos or cff.attrs['ifos']
-    bins_edges = cff['bins_edges'][:]
-    conservative_percentile = cff.attrs['conservative_percentile']
+with HFile(args.combined_fits_file, "r") as cff:
+    ifos = args.ifos or cff.attrs["ifos"]
+    bins_edges = cff["bins_edges"][:]
+    conservative_percentile = cff.attrs["conservative_percentile"]
     n_bins = len(bins_edges) - 1
     for ifo in ifos:
         logging.info(ifo)
-        live_total[ifo] = cff[ifo].attrs['live_time']
-        mean_count[ifo] = cff[ifo]['mean']['counts'][:]
-        mean_alpha[ifo] = cff[ifo]['mean']['fit_coeff'][:]
-        cons_count[ifo] = cff[ifo]['conservative']['counts'][:]
-        cons_alpha[ifo] = cff[ifo]['conservative']['fit_coeff'][:]
+        live_total[ifo] = cff[ifo].attrs["live_time"]
+        mean_count[ifo] = cff[ifo]["mean"]["counts"][:]
+        mean_alpha[ifo] = cff[ifo]["mean"]["fit_coeff"][:]
+        cons_count[ifo] = cff[ifo]["conservative"]["counts"][:]
+        cons_alpha[ifo] = cff[ifo]["conservative"]["fit_coeff"][:]
 
-        separate_starts[ifo] = cff[ifo]['separate_fits']['start_time'][:]
-        separate_ends[ifo] = cff[ifo]['separate_fits']['end_time'][:]
-        separate_times[ifo] = cff[ifo]['separate_fits']['live_times'][:]
+        separate_starts[ifo] = cff[ifo]["separate_fits"]["start_time"][:]
+        separate_ends[ifo] = cff[ifo]["separate_fits"]["end_time"][:]
+        separate_times[ifo] = cff[ifo]["separate_fits"]["live_times"][:]
 
-        separate_data = cff[ifo]['separate_fits']
-        separate_alphas[ifo] = np.array([separate_data[f'bin_{i}']['fit_coeff'][:]
-                                         for i in range(n_bins)])
-        separate_counts[ifo] = np.array([separate_data[f'bin_{i}']['counts'][:]
-                                         for i in range(n_bins)])
+        separate_data = cff[ifo]["separate_fits"]
+        separate_alphas[ifo] = np.array(
+            [separate_data[f"bin_{i}"]["fit_coeff"][:] for i in range(n_bins)]
+        )
+        separate_counts[ifo] = np.array(
+            [separate_data[f"bin_{i}"]["counts"][:] for i in range(n_bins)]
+        )
 
 bin_starts = bins_edges[:-1]
 bin_ends = bins_edges[1:]
@@ -147,7 +164,7 @@ for ifo in ifos:
             continue
 
         l_times = separate_times[ifo]
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             rate = counts / l_times
 
         ma = mean_alpha[ifo][i]
@@ -158,24 +175,39 @@ for ifo in ifos:
         bin_prop = i / len(bin_starts)
         bin_colour = plt.get_cmap(args.colormap)(bin_prop)
         bin_label = f"duration {bl:.2f}-{bu:.2f}"
-        alpha_lines += ax_alpha.plot(separate_starts[ifo], alphas, c=bin_colour,
-                                     label=bin_label, marker='.',
-                                     markersize=10)
-        alpha_lines.append(ax_alpha.axhline(ma,
-                                            label="total fit = %.2f" % ma,
-                                            c=bin_colour, linestyle='--',))
+        alpha_lines += ax_alpha.plot(
+            separate_starts[ifo],
+            alphas,
+            c=bin_colour,
+            label=bin_label,
+            marker=".",
+            markersize=10,
+        )
+        alpha_lines.append(
+            ax_alpha.axhline(
+                ma,
+                label="total fit = %.2f" % ma,
+                c=bin_colour,
+                linestyle="--",
+            )
+        )
         alpha_lab = f"{conservative_percentile:d}th %ile = {ca:.2f}"
-        alpha_lines.append(ax_alpha.axhline(ca,
-                                            c=bin_colour, linestyle=':',
-                                            label=alpha_lab))
+        alpha_lines.append(
+            ax_alpha.axhline(ca, c=bin_colour, linestyle=":", label=alpha_lab)
+        )
 
         # Invalid counts
         inv_counts = rate <= 0
         rate[inv_counts] = None
 
-        count_lines += ax_count.plot(separate_starts[ifo], rate, c=bin_colour,
-                                     label=bin_label, marker='.',
-                                     markersize=10)
+        count_lines += ax_count.plot(
+            separate_starts[ifo],
+            rate,
+            c=bin_colour,
+            label=bin_label,
+            marker=".",
+            markersize=10,
+        )
 
         if mr < 1e-3:
             mlab = f"mean = {mr:.3e}"
@@ -184,42 +216,47 @@ for ifo in ifos:
             mlab = f"mean = {mr:.3f}"
             clab = f"{conservative_percentile:d}th %ile = {cr:.3f}"
 
-        count_lines.append(ax_count.axhline(mr,
-                                            c=bin_colour, linestyle='--',
-                                            label=mlab))
-        count_lines.append(ax_count.axhline(cr,
-                                            c=bin_colour, linestyle=':',
-                                            label=clab))
+        count_lines.append(
+            ax_count.axhline(mr, c=bin_colour, linestyle="--", label=mlab)
+        )
+        count_lines.append(
+            ax_count.axhline(cr, c=bin_colour, linestyle=":", label=clab)
+        )
 
     alpha_labels = [l.get_label() for l in alpha_lines]
-    ax_alpha.legend(alpha_lines, alpha_labels, loc='lower center',
-                    ncol=5, bbox_to_anchor=(0.5, 1.01))
-    ax_alpha.set_ylabel('Fit coefficient')
+    ax_alpha.legend(
+        alpha_lines,
+        alpha_labels,
+        loc="lower center",
+        ncol=5,
+        bbox_to_anchor=(0.5, 1.01),
+    )
+    ax_alpha.set_ylabel("Fit coefficient")
 
     count_labels = [l.get_label() for l in count_lines]
     if args.log_counts:
         ax_count.semilogy()
-    ax_count.legend(count_lines, count_labels, loc='lower center',
-                    ncol=5, bbox_to_anchor=(0.5, 1.01))
-    ax_count.set_ylabel('Rate of triggers above fit threshold [s$^{-1}$]')
+    ax_count.legend(
+        count_lines,
+        count_labels,
+        loc="lower center",
+        ncol=5,
+        bbox_to_anchor=(0.5, 1.01),
+    )
+    ax_count.set_ylabel("Rate of triggers above fit threshold [s$^{-1}$]")
 
     for ax in [ax_count, ax_alpha]:
         ax.set_xticks(xtix)
         ax.set_xticklabels(xtix_labels, rotation=90)
         # Add 1/4 day padding either side of the lines
         ax.set_xlim(
-            min(separate_starts[ifo]) - 21600,
-            max(separate_starts[ifo]) + 21600
+            min(separate_starts[ifo]) - 21600, max(separate_starts[ifo]) + 21600
         )
         ax.grid(zorder=-30)
 
     fig_count.tight_layout()
-    fig_count.savefig(
-        args.output_plot_name_format.format(ifo=ifo, type='counts')
-    )
+    fig_count.savefig(args.output_plot_name_format.format(ifo=ifo, type="counts"))
     fig_alpha.tight_layout()
-    fig_alpha.savefig(
-        args.output_plot_name_format.format(ifo=ifo, type='fit_coeffs')
-    )
+    fig_alpha.savefig(args.output_plot_name_format.format(ifo=ifo, type="fit_coeffs"))
 
 logging.info("Done")

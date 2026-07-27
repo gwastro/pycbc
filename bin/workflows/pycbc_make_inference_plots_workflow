@@ -15,29 +15,29 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-"""Creates a DAX that generates a posterior file and plots from one or more
+"""
+Creates a DAX that generates a posterior file and plots from one or more
 inference samples files.
 """
 
 import argparse
 import logging
 import os
+import shlex
 import socket
 import sys
-import shlex
+
 import numpy
 
-from pycbc import results, init_logging, add_common_pycbc_options
-from pycbc.results import layout
-from pycbc.workflow import configuration
-from pycbc.workflow import core
-from pycbc.workflow import plotting
-from pycbc.workflow import versioning
 import pycbc.workflow.inference_followups as inffu
+from pycbc import add_common_pycbc_options, init_logging, results
+from pycbc.results import layout
+from pycbc.workflow import configuration, core, plotting, versioning
 
 
 def read_events_from_config(cp):
-    """Gets events to load from a config file.
+    """
+    Gets events to load from a config file.
 
     Each event should have its own section with header ``[event-{{NAME}}]``,
     where ``NAME`` is a unique identifier. The section must have a
@@ -77,9 +77,10 @@ def read_events_from_config(cp):
         List of the configuration file(s) for each event.
     samples-files : lsit of lists
         List of the samples file(s) for each event.
+
     """
     # get the events
-    events = cp.get_subsections('event')
+    events = cp.get_subsections("event")
     # create a dummy command-line parser for getting the config files and
     # options
     cfparser = argparse.ArgumentParser()
@@ -89,13 +90,13 @@ def read_events_from_config(cp):
     config_files = []
     samples_files = []
     for event in events:
-        section = '-'.join(['event', event])
-        if cp.has_option(section, 'label'):
-            label = cp.get(section, 'label')
+        section = "-".join(["event", event])
+        if cp.has_option(section, "label"):
+            label = cp.get(section, "label")
         else:
             label = event
-        cf = shlex.split(cp.get(section, 'config-files'))
-        sf = shlex.split(cp.get(section, 'samples-files'))
+        cf = shlex.split(cp.get(section, "config-files"))
+        sf = shlex.split(cp.get(section, "samples-files"))
         labels.append(label)
         config_files.append(list(map(os.path.abspath, cf)))
         samples_files.append(list(map(os.path.abspath, sf)))
@@ -104,12 +105,11 @@ def read_events_from_config(cp):
 
 def event_slug(label):
     """Slugifies an event label."""
-    return label.replace(' ', '_').replace(':', '_').replace('+', '_')
+    return label.replace(" ", "_").replace(":", "_").replace("+", "_")
 
 
 def symlink_path(f, path):
-    """ Symlinks a path.
-    """
+    """Symlinks a path."""
     if f is None:
         return
     try:
@@ -127,28 +127,27 @@ configuration.add_workflow_command_line_group(parser)
 core.add_workflow_settings_cli(parser, include_subdax_opts=True)
 opts = parser.parse_args()
 
-posterior_file_dir = 'posterior_files'
-config_file_dir = 'config_files'
-config_file_tmplt = 'inference-{}.ini'
+posterior_file_dir = "posterior_files"
+config_file_dir = "config_files"
+config_file_tmplt = "inference-{}.ini"
 
 # make data output directory
 if opts.output_dir is None:
-    opts.output_dir = opts.workflow_name + '_output'
+    opts.output_dir = opts.workflow_name + "_output"
 core.makedir(opts.output_dir)
-core.makedir('{}/{}'.format(opts.output_dir, config_file_dir))
-core.makedir('{}/{}'.format(opts.output_dir, posterior_file_dir))
+core.makedir(f"{opts.output_dir}/{config_file_dir}")
+core.makedir(f"{opts.output_dir}/{posterior_file_dir}")
 
 # log to terminal until we know where the path to log output file
 init_logging(opts.verbose, default_level=1)
 
 # create workflow and sub-workflows
 container = core.Workflow(opts, opts.workflow_name)
-workflow = core.Workflow(opts, 'main')
+workflow = core.Workflow(opts, "main")
 finalize_workflow = core.Workflow(opts, "finalization")
 
 # get the events
-events, labels, infconfig_files, samples_files = \
-    read_events_from_config(workflow.cp)
+events, labels, infconfig_files, samples_files = read_events_from_config(workflow.cp)
 
 # change working directory to the output
 origdir = os.path.abspath(os.curdir)
@@ -158,10 +157,12 @@ os.chdir(opts.output_dir)
 diagnostics = inffu.get_diagnostic_plots(workflow)
 
 # sections for output HTML pages
-rdir = layout.SectionNumber("results",
-                            ["detector_sensitivity", "priors", "posteriors"] +
-                            diagnostics +
-                            ["config_files", "workflow"])
+rdir = layout.SectionNumber(
+    "results",
+    ["detector_sensitivity", "priors", "posteriors"]
+    + diagnostics
+    + ["config_files", "workflow"],
+)
 
 # make results directories
 core.makedir(rdir.base)
@@ -169,10 +170,20 @@ core.makedir(rdir["workflow"])
 core.makedir(rdir["config_files"])
 
 # create files for workflow log
-log_file_txt = core.File(workflow.ifos, "workflow-log", workflow.analysis_time,
-                      extension=".txt", directory=rdir["workflow"])
-log_file_html = core.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
-                        extension=".html", directory=rdir["workflow"])
+log_file_txt = core.File(
+    workflow.ifos,
+    "workflow-log",
+    workflow.analysis_time,
+    extension=".txt",
+    directory=rdir["workflow"],
+)
+log_file_html = core.File(
+    workflow.ifos,
+    "WORKFLOW-LOG",
+    workflow.analysis_time,
+    extension=".html",
+    directory=rdir["workflow"],
+)
 
 # Save log to file as well
 init_logging(opts.verbose, default_level=1, to_file=log_file_txt.storage_path)
@@ -189,10 +200,11 @@ for num_event, event in enumerate(events):
 
     # write the configuration file to the config files directory
     cp = configuration.WorkflowConfigParser(config_fnames)
-    config_file = workflow.save_config(config_file_tmplt.format(event),
-                                           config_file_dir, cp)[0]
+    config_file = workflow.save_config(
+        config_file_tmplt.format(event), config_file_dir, cp
+    )[0]
     # create sym links to config file for results page
-    base = "config_files/{}".format(event)
+    base = f"config_files/{event}"
     layout.single_layout(rdir[base], [config_file])
     symlink_path(config_file, rdir[base])
 
@@ -207,42 +219,59 @@ for num_event, event in enumerate(events):
 
     # create the posterior file and plots
     posterior_file, summary_files, _, _ = inffu.make_posterior_workflow(
-        workflow, samples_filelist, config_file, event, rdir,
-        posterior_file_dir=posterior_file_dir, tags=opts.tags)
+        workflow,
+        samples_filelist,
+        config_file,
+        event,
+        rdir,
+        posterior_file_dir=posterior_file_dir,
+        tags=opts.tags,
+    )
 
     # create the diagnostic plots
-    _ = inffu.make_diagnostic_plots(workflow, diagnostics, samples_filelist,
-                                    event, rdir, tags=opts.tags)
+    _ = inffu.make_diagnostic_plots(
+        workflow, diagnostics, samples_filelist, event, rdir, tags=opts.tags
+    )
 
     # files for detector_sensitivity summary subsection
     base = "detector_sensitivity"
     # we'll just use the first file, and assume the rest are the same
     psd_plot = plotting.make_spectrum_plot(
-        workflow, [samples_filelist[0]], rdir[base],
-        tags=opts.tags+[event],
-        hdf_group="data")
+        workflow,
+        [samples_filelist[0]],
+        rdir[base],
+        tags=opts.tags + [event],
+        hdf_group="data",
+    )
 
     # build the summary page
     zpad = int(numpy.ceil(numpy.log10(len(samples_files))))
-    layout.two_column_layout(rdir.base, summary_files,
-                             unique=str(num_event).zfill(zpad),
-                             title=label, collapse=True)
+    layout.two_column_layout(
+        rdir.base,
+        summary_files,
+        unique=str(num_event).zfill(zpad),
+        title=label,
+        collapse=True,
+    )
 
     # build the psd page
-    layout.single_layout(rdir['detector_sensitivity'], [psd_plot],
-                         unique=str(num_event).zfill(zpad),
-                         title=label, collapse=True)
- 
+    layout.single_layout(
+        rdir["detector_sensitivity"],
+        [psd_plot],
+        unique=str(num_event).zfill(zpad),
+        title=label,
+        collapse=True,
+    )
+
 # Create versioning information
 versioning.make_versioning_page(
     workflow,
     container.cp,
-    rdir['workflow/version'],
+    rdir["workflow/version"],
 )
 
 # create node for making HTML pages
-plotting.make_results_web_page(finalize_workflow,
-    os.path.join(os.getcwd(), rdir.base))
+plotting.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), rdir.base))
 
 # add sub-workflows to workflow
 container += workflow
@@ -262,7 +291,7 @@ layout.single_layout(base, wf_ini)
 
 # close the log and flush to the html file
 logging.shutdown()
-with open (log_file_txt.storage_path, "r") as log_file:
+with open(log_file_txt.storage_path) as log_file:
     log_data = log_file.read()
 log_str = """
 <p>Workflow generation script created workflow in output directory: %s</p>
@@ -270,8 +299,10 @@ log_str = """
 <p>Workflow generation script run on host: %s</p>
 <pre>%s</pre>
 """ % (os.getcwd(), opts.workflow_name, socket.gethostname(), log_data)
-kwds = {"title" : "Workflow Generation Log",
-        "caption" : "Log of the workflow script %s" % sys.argv[0],
-        "cmd" : " ".join(sys.argv)}
+kwds = {
+    "title": "Workflow Generation Log",
+    "caption": "Log of the workflow script %s" % sys.argv[0],
+    "cmd": " ".join(sys.argv),
+}
 results.save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
 layout.single_layout(rdir["workflow"], ([log_file_html]))

@@ -21,36 +21,44 @@ import sys
 
 import numpy
 from matplotlib import use
-use('agg')
+
+use("agg")
 from matplotlib import pyplot as plt
 
 import pycbc
 from pycbc import results
 from pycbc.inference import io
-
 from pycbc.inference.sampler import samplers
 
 # command line usage
 # turn off thin-interval since it won't be used
-parser = io.ResultsArgumentParser(skip_args='thin-interval',
-                                  description="Plots autocorrelation function "
-                                              "from inference samples.")
+parser = io.ResultsArgumentParser(
+    skip_args="thin-interval",
+    description="Plots autocorrelation function from inference samples.",
+)
 pycbc.add_common_pycbc_options(parser)
 # output plot options
-parser.add_argument("--output-file", type=str, required=True,
-                    help="Path to output plot.")
+parser.add_argument(
+    "--output-file", type=str, required=True, help="Path to output plot."
+)
 # add plotting options
-parser.add_argument("--ymin", type=float,
-    help="Minimum value to plot on y-axis.")
-parser.add_argument("--ymax", type=float,
-    help="Maximum value to plot on y-axis.")
-parser.add_argument("--per-walker", action="store_true", default=False,
+parser.add_argument("--ymin", type=float, help="Minimum value to plot on y-axis.")
+parser.add_argument("--ymax", type=float, help="Maximum value to plot on y-axis.")
+parser.add_argument(
+    "--per-walker",
+    action="store_true",
+    default=False,
     help="Plot the ACF for each walker separately. Default is to average "
-         "parameter values over the walkers, then compute the ACF for the "
-         "averaged chain. Warning: turning this option on can significantly "
-         "increase the run time.")
-parser.add_argument("--no-legend", action="store_true", default=False,
-    help="Do not add a legend to the plot.")
+    "parameter values over the walkers, then compute the ACF for the "
+    "averaged chain. Warning: turning this option on can significantly "
+    "increase the run time.",
+)
+parser.add_argument(
+    "--no-legend",
+    action="store_true",
+    default=False,
+    help="Do not add a legend to the plot.",
+)
 
 # parse the command line
 opts = parser.parse_args()
@@ -61,24 +69,26 @@ pycbc.init_logging(opts.verbose)
 # add the temperature args if it exists
 additional_args = {}
 try:
-    additional_args['temps'] = opts.temps
+    additional_args["temps"] = opts.temps
 except AttributeError:
     pass
 
 # load the results
-logging.info('Loading parameters')
+logging.info("Loading parameters")
 fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
 
 
 # calculate autocorrelation function
 logging.info("Calculating autocorrelation functions")
-acfs = samplers[fp.sampler].compute_acf(fp.filename,
-                                        start_index=opts.thin_start,
-                                        end_index=opts.thin_end,
-                                        per_walker=opts.per_walker,
-                                        walkers=opts.walkers,
-                                        parameters=parameters,
-                                        **additional_args)
+acfs = samplers[fp.sampler].compute_acf(
+    fp.filename,
+    start_index=opts.thin_start,
+    end_index=opts.thin_end,
+    per_walker=opts.per_walker,
+    walkers=opts.walkers,
+    parameters=parameters,
+    **additional_args,
+)
 
 # check if we have multiple temperatures
 if opts.per_walker:
@@ -86,42 +96,42 @@ if opts.per_walker:
 else:
     multi_tempered = tuple(acfs.values())[0].ndim == 2
 try:
-    temps = additional_args['temps']
-    if temps == 'all':
+    temps = additional_args["temps"]
+    if temps == "all":
         temps = range(tuple(acfs.values())[0].shape[0])
     if isinstance(temps, int):
         temps = [temps]
 except KeyError:
     temps = [0]
-fig_height = max(6, 3*len(temps))
+fig_height = max(6, 3 * len(temps))
 
 # plot autocorrelation
 logging.info("Plotting autocorrelation functions")
-fig = plt.figure(figsize=(8,fig_height))
-for kk,tk in enumerate(temps):
+fig = plt.figure(figsize=(8, fig_height))
+for kk, tk in enumerate(temps):
     if multi_tempered:
-        logging.info("Temperature {}".format(tk))
+        logging.info(f"Temperature {tk}")
     axnum = len(temps) - kk
     ax = fig.add_subplot(len(temps), 1, axnum)
     for param in parameters:
-        logging.info("Parameter {}".format(param))
+        logging.info(f"Parameter {param}")
         if multi_tempered:
-            acf = acfs[param][kk,...]
+            acf = acfs[param][kk, ...]
         else:
             acf = acfs[param]
         if opts.per_walker:
-            lbl = '{}, walker {}'
+            lbl = "{}, walker {}"
             # account for thinning that was done on the fly
-            xvals = numpy.arange(acf.shape[1])*fp.thinned_by
+            xvals = numpy.arange(acf.shape[1]) * fp.thinned_by
             for wi in range(acf.shape[0]):
                 wnum = opts.walkers[wi] if opts.walkers is not None else wi
-                ax.plot(xvals, acf[wi,:], label=lbl.format(labels[param], wnum))
+                ax.plot(xvals, acf[wi, :], label=lbl.format(labels[param], wnum))
         else:
-            xvals = numpy.arange(len(acf))*fp.thinned_by
+            xvals = numpy.arange(len(acf)) * fp.thinned_by
             ax.plot(xvals, acf, label=labels[param])
     if multi_tempered:
-        t = 1./fp[fp.sampler_group].attrs['betas'][tk]
-        ax.set_title(r'$T = {}$ (chain {})'.format(t, tk))
+        t = 1.0 / fp[fp.sampler_group].attrs["betas"][tk]
+        ax.set_title(rf"$T = {t}$ (chain {tk})")
     if axnum == len(temps):
         ax.set_xlabel("iteration")
     ax.set_ylabel("autocorrelation function")
@@ -137,14 +147,13 @@ plt.tight_layout()
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join(labels),
+    "parameters": ", ".join(labels),
 }
 caption = """Autocorrelation function (ACF)."""
 title = "Autocorrelation Function for {parameters}".format(**caption_kwargs)
-results.save_fig_with_metadata(fig, opts.output_file,
-                               cmd=" ".join(sys.argv),
-                               title=title,
-                               caption=caption)
+results.save_fig_with_metadata(
+    fig, opts.output_file, cmd=" ".join(sys.argv), title=title, caption=caption
+)
 plt.close()
 
 # exit

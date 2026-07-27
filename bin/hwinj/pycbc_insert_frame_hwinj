@@ -18,38 +18,57 @@
 
 import argparse
 import logging
+
 import numpy
 
 from pycbc import add_common_pycbc_options, init_logging
-from pycbc.frame import write_frame
 from pycbc import strain as _strain
+from pycbc.frame import write_frame
 
 # command line usage
-parser = argparse.ArgumentParser(usage='pycbc_insert_frame_hwinj [--options]',
-                                 description="Inserts a single-column ASCII "
-                                             "file into frame data.")
+parser = argparse.ArgumentParser(
+    usage="pycbc_insert_frame_hwinj [--options]",
+    description="Inserts a single-column ASCII file into frame data.",
+)
 add_common_pycbc_options(parser)
 
 # injection options
-parser.add_argument('--hwinj-file', type=str, required=True,
-                    help='Path to single-column ASCII file.')
-parser.add_argument('--hwinj-start-time', type=int, required=True,
-                    help='Start time of the single-column ASCII file.')
-parser.add_argument('--scale-factor', type=float, default=1.0,
-                    help='Scales the waveform amplitude by a float.')
+parser.add_argument(
+    "--hwinj-file", type=str, required=True, help="Path to single-column ASCII file."
+)
+parser.add_argument(
+    "--hwinj-start-time",
+    type=int,
+    required=True,
+    help="Start time of the single-column ASCII file.",
+)
+parser.add_argument(
+    "--scale-factor",
+    type=float,
+    default=1.0,
+    help="Scales the waveform amplitude by a float.",
+)
 
 # frame options
-parser.add_argument('--ifo', type=str, required=True,
-                     help='IFO.')
-parser.add_argument('--output-file', type=str, required=True,
-                    help='Path to output frame file.')
-parser.add_argument('--precision', type=str, default='double',
-                    choices=['single', 'double'],
-                    help='Store as a float32 or float64.')
+parser.add_argument("--ifo", type=str, required=True, help="IFO.")
+parser.add_argument(
+    "--output-file", type=str, required=True, help="Path to output frame file."
+)
+parser.add_argument(
+    "--precision",
+    type=str,
+    default="double",
+    choices=["single", "double"],
+    help="Store as a float32 or float64.",
+)
 
 # fake data options
-parser.add_argument('--low-frequency-cutoff', type=int, required=False,
-                    help='Low-frequency cutoff for generating fake PSD.')
+parser.add_argument(
+    "--low-frequency-cutoff",
+    type=int,
+    required=False,
+    help="Low-frequency cutoff for generating fake PSD.",
+)
 
 # add option groups
 _strain.insert_strain_option_group(parser)
@@ -64,22 +83,22 @@ init_logging(opts.verbose, default_level=2)
 strain = _strain.from_cli(opts, precision=opts.precision)
 
 # load data
-logging.info('Reading the hardware injection data')
+logging.info("Reading the hardware injection data")
 initial_array = numpy.loadtxt(opts.hwinj_file)
 initial_array *= opts.scale_factor
 
 # figure out how much to pad
-start_pad = (opts.hwinj_start_time-strain.start_time) * opts.sample_rate
+start_pad = (opts.hwinj_start_time - strain.start_time) * opts.sample_rate
 start_pad = int(start_pad + 0.5)
 
 # add the two time series
-logging.info('Summing the two time series')
+logging.info("Summing the two time series")
 for i in range(len(initial_array)):
-    strain[start_pad+1+i] += initial_array[i]
+    strain[start_pad + 1 + i] += initial_array[i]
 
 # write frame
-logging.info('Writing data')
-write_frame(opts.output_file, opts.ifo+':HWINJ_INJECTED', strain)
+logging.info("Writing data")
+write_frame(opts.output_file, opts.ifo + ":HWINJ_INJECTED", strain)
 
 # exit
-logging.info('Done.')
+logging.info("Done.")

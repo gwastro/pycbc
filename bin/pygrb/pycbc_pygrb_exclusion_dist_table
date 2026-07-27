@@ -18,28 +18,36 @@
 
 """Create table of exclusion distances."""
 
-import sys
 import argparse
 import json
-import pycbc.version
-import pycbc.results
+import sys
 
+import pycbc.version
+
+import pycbc.results
 
 __author__ = "Jacob Buchanan <jacob.buchanan@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_exclusion_dist_table"
 
-parser = argparse.ArgumentParser(description=__doc__, formatter_class=
-                                 argparse.ArgumentDefaultsHelpFormatter)
+parser = argparse.ArgumentParser(
+    description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--input-files", nargs="+", required=True,
-                    help="List of JSON input files" +
-                    " output by pycbc_pygrb_efficiency" +
-                    " containing exclusion distances.")
-parser.add_argument("--output-file", required=True,
-                    help="HTML output file containing table" +
-                    " of exclusion distances.")
+parser.add_argument(
+    "--input-files",
+    nargs="+",
+    required=True,
+    help="List of JSON input files"
+     " output by pycbc_pygrb_efficiency"
+     " containing exclusion distances.",
+)
+parser.add_argument(
+    "--output-file",
+    required=True,
+    help="HTML output file containing table" + " of exclusion distances.",
+)
 opts = parser.parse_args()
 
 pycbc.init_logging(opts.verbose)
@@ -47,7 +55,7 @@ pycbc.init_logging(opts.verbose)
 # Load JSON files as a list of dictionaries
 file_contents = []
 for file_name in opts.input_files:
-    with open(file_name, "r") as file:
+    with open(file_name) as file:
         file_contents.append(json.load(file))
 
 # Get list of trials (i.e. OFFTRIAL_i, ONSOURCE, etc.)
@@ -87,13 +95,13 @@ for fc in file_contents:
     # Prepare dictionary for each trial + injection set
     results[fc["trial_name"]][fc["inj_set"]] = {}
     # Add exclusion distances to dictionary
-    for percent in ('50%', '90%'):
+    for percent in ("50%", "90%"):
         results[fc["trial_name"]][fc["inj_set"]][percent] = fc[percent]
 
 
 # Set up rows for table
 data = []
-for percent in ('50%', '90%'):
+for percent in ("50%", "90%"):
     for trial in trials:
         row = [f"{trial} ({percent})"]
         for injection_set in injection_sets:
@@ -106,6 +114,6 @@ html = str(pycbc.results.static_table(data, headers))
 # Write as figure
 title = "Exclusion Distances"
 caption = "Table of exclusion distances for each trial and injection set."
-pycbc.results.save_fig_with_metadata(html, opts.output_file,
-                                     cmd=' '.join(sys.argv),
-                                     title=title, caption=caption)
+pycbc.results.save_fig_with_metadata(
+    html, opts.output_file, cmd=" ".join(sys.argv), title=title, caption=caption
+)

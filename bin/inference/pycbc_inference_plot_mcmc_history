@@ -17,13 +17,14 @@
 
 """Makes a plot of MCMC parameters saved over checkpoint history.."""
 
-import sys
-import logging
 import argparse
+import logging
+import sys
 
-import numpy
 import matplotlib
-matplotlib.use('Agg')
+import numpy
+
+matplotlib.use("Agg")
 from matplotlib import pyplot
 
 import pycbc
@@ -32,44 +33,64 @@ from pycbc.results import metadata
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--input-file', type=str, required=True,
-                    help='Path to the input HDF file.')
-parser.add_argument('--output-file', type=str, required=True,
-                    help='Name of the output plot.')
-parser.add_argument('-t', '--plot-checkpoint-dt', action='store_true',
-                    help='Plot the wall-clock time between checkpoints.')
-parser.add_argument('-a', '--plot-act', action='store_true',
-                    help='Plot ACT vs checkpoint iteration.')
-parser.add_argument('-n', '--plot-effective-nsamples', action='store_true',
-                    help='Plot the number of effective samples versus '
-                         'checkpoint iteration.')
-parser.add_argument('-b', '--plot-nchains-burned-in', action='store_true',
-                    help='Plot the number of chains that were burned in '
-                         'versus checkpoint iteration. Note that for '
-                         'ensemble samplers, this will be all or nothing.')
+parser.add_argument(
+    "--input-file", type=str, required=True, help="Path to the input HDF file."
+)
+parser.add_argument(
+    "--output-file", type=str, required=True, help="Name of the output plot."
+)
+parser.add_argument(
+    "-t",
+    "--plot-checkpoint-dt",
+    action="store_true",
+    help="Plot the wall-clock time between checkpoints.",
+)
+parser.add_argument(
+    "-a", "--plot-act", action="store_true", help="Plot ACT vs checkpoint iteration."
+)
+parser.add_argument(
+    "-n",
+    "--plot-effective-nsamples",
+    action="store_true",
+    help="Plot the number of effective samples versus checkpoint iteration.",
+)
+parser.add_argument(
+    "-b",
+    "--plot-nchains-burned-in",
+    action="store_true",
+    help="Plot the number of chains that were burned in "
+    "versus checkpoint iteration. Note that for "
+    "ensemble samplers, this will be all or nothing.",
+)
 opts = parser.parse_args()
 
 # Default logging level is info: --verbose adds to this
 pycbc.init_logging(opts.verbose, default_level=1)
 
-nplots = sum([opts.plot_act, opts.plot_effective_nsamples,
-              opts.plot_nchains_burned_in, opts.plot_checkpoint_dt])
+nplots = sum(
+    [
+        opts.plot_act,
+        opts.plot_effective_nsamples,
+        opts.plot_nchains_burned_in,
+        opts.plot_checkpoint_dt,
+    ]
+)
 if nplots == 0:
     raise ValueError("nothing to plot")
 
 # load the data
-logging.info('Loading data')
+logging.info("Loading data")
 
-fp = io.loadfile(opts.input_file, 'r')
-history = fp['sampler_info/checkpoint_history']
-iterations = history['niterations'][()]
+fp = io.loadfile(opts.input_file, "r")
+history = fp["sampler_info/checkpoint_history"]
+iterations = history["niterations"][()]
 
 if opts.plot_checkpoint_dt:
-    checkpoint_dt = history['checkpoint_dt'][()]
+    checkpoint_dt = history["checkpoint_dt"][()]
 
 if opts.plot_act:
     try:
-        raw_acts = history['act'][()]
+        raw_acts = history["act"][()]
     except KeyError:
         raise ValueError("ACT history was not saved")
     if raw_acts.ndim == 2:
@@ -84,11 +105,11 @@ if opts.plot_act:
         acts = raw_acts
 
 if opts.plot_effective_nsamples:
-    nsamples = history['effective_nsamples'][()]
+    nsamples = history["effective_nsamples"][()]
 
 if opts.plot_nchains_burned_in:
     try:
-        burn_in_iter = history['burn_in_iteration'][()]
+        burn_in_iter = history["burn_in_iteration"][()]
     except KeyError:
         raise ValueError("Burn-in history not saved")
     nchains_burned_in = numpy.zeros(iterations.size, dtype=int)
@@ -96,88 +117,97 @@ if opts.plot_nchains_burned_in:
     for ii in range(nchains_burned_in.size):
         if burn_in_iter.ndim == 1:
             # ensemble sampler; all or none
-            nchains_burned_in[ii] = nchains*(burn_in_iter[ii] > 0)
+            nchains_burned_in[ii] = nchains * (burn_in_iter[ii] > 0)
         else:
             nchains_burned_in[ii] = (burn_in_iter[:, ii] > 0).sum()
 fp.close()
 
 # plot
 logging.info("Plotting")
-fig, axes = pyplot.subplots(nrows=nplots, figsize=(8, 3*nplots))
+fig, axes = pyplot.subplots(nrows=nplots, figsize=(8, 3 * nplots))
 if nplots == 1:
     axes = [axes]
 pi = -1
 dx = iterations.max() - iterations.min()
 if dx == 0:
     dx = 1
-xmin = iterations.min() - 0.025*dx
-xmax = iterations.max() + 0.025*dx
+xmin = iterations.min() - 0.025 * dx
+xmax = iterations.max() + 0.025 * dx
 
-caption = ("Status of the sampler at each checkpoint iteration (indicated by "
-           "the x markers). Shown are:")
+caption = (
+    "Status of the sampler at each checkpoint iteration (indicated by "
+    "the x markers). Shown are:"
+)
 
 if opts.plot_checkpoint_dt:
     pi += 1
     ax = axes[pi]
-    ax.plot(iterations, checkpoint_dt/60., lw=2, marker='x')
-    ax.set_ylabel('wallclock dt (m)')
+    ax.plot(iterations, checkpoint_dt / 60.0, lw=2, marker="x")
+    ax.set_ylabel("wallclock dt (m)")
     ax.set_xlim(xmin, xmax)
-    caption += (" ({}) the amount of wall-clock time between checkpoints "
-                "(in minutes);".format(pi+1))
+    caption += (
+        f" ({pi + 1}) the amount of wall-clock time between checkpoints (in minutes);"
+    )
 
 if opts.plot_act:
     pi += 1
     ax = axes[pi]
-    ax.plot(iterations, acts, lw=2, marker='x', zorder=1)
+    ax.plot(iterations, acts, lw=2, marker="x", zorder=1)
     if raw_acts.ndim == 2:
         # plot each of the chains separately
         for ii in range(raw_acts.shape[0]):
-            ax.plot(iterations, raw_acts[ii, :], lw=1, color='C1',
-                    alpha=0.3,
-                    zorder=0)
-    ax.set_ylabel('ACT')
+            ax.plot(iterations, raw_acts[ii, :], lw=1, color="C1", alpha=0.3, zorder=0)
+    ax.set_ylabel("ACT")
     ax.set_xlim(xmin, xmax)
-    caption += (" ({}) the autocorrelation time (ACT) as computed from the "
-                "estimated burn-in iteration to the end of the chain(s) at "
-                "the checkpoint;".format(pi+1))
+    caption += (
+        f" ({pi + 1}) the autocorrelation time (ACT) as computed from the "
+        "estimated burn-in iteration to the end of the chain(s) at "
+        "the checkpoint;"
+    )
 
 if opts.plot_effective_nsamples:
     pi += 1
     ax = axes[pi]
-    ax.plot(iterations, nsamples, lw=2, marker='x', zorder=1)
-    ax.set_ylabel(r'eff. N samples')
+    ax.plot(iterations, nsamples, lw=2, marker="x", zorder=1)
+    ax.set_ylabel(r"eff. N samples")
     ax.set_xlim(xmin, xmax)
-    caption += (" ({}) the estimateed effective number of samples post "
-                "burn-in at that checkpoint;".format(pi+1))
+    caption += (
+        f" ({pi + 1}) the estimateed effective number of samples post "
+        "burn-in at that checkpoint;"
+    )
 
 if opts.plot_nchains_burned_in:
     pi += 1
     ax = axes[pi]
-    ax.plot(iterations, nchains_burned_in, lw=2, marker='x', zorder=1)
+    ax.plot(iterations, nchains_burned_in, lw=2, marker="x", zorder=1)
     # put a horizontal line at the total number of chains
-    ax.axhline(nchains, ls='--', color='C3', zorder=0)
-    ax.set_ylabel(r'N chains burned in')
+    ax.axhline(nchains, ls="--", color="C3", zorder=0)
+    ax.set_ylabel(r"N chains burned in")
     ax.set_xlim(xmin, xmax)
-    caption += (" ({}) the number of chains that are burned in at the  "
-                "checkpoint (for ensemble samplers, this will either be all "
-                "or nothing), and the total number of chains (red dashed "
-                "line);".format(pi+1))
+    caption += (
+        f" ({pi + 1}) the number of chains that are burned in at the  "
+        "checkpoint (for ensemble samplers, this will either be all "
+        "or nothing), and the total number of chains (red dashed "
+        "line);"
+    )
 
-ax.set_xlabel('iteration')
+ax.set_xlabel("iteration")
 # replace the traling semicolon with a period
 caption = caption[:-1] + "."
 
 # common settings
 for ii, ax in enumerate(axes):
-    ax.grid(ls=':', zorder=-1)
+    ax.grid(ls=":", zorder=-1)
     # turn off x ticks for all but the bottom
     if ii < len(axes) - 1:
         ax.set_xticklabels([])
 
 # save
 metadata.save_fig_with_metadata(
-    fig, opts.output_file,
+    fig,
+    opts.output_file,
     cmd=" ".join(sys.argv),
     title="MCMC history",
     caption=caption,
-    fig_kwds={'bbox_inches': 'tight'})
+    fig_kwds={"bbox_inches": "tight"},
+)

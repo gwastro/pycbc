@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-"""Generate a grid of points in the sky to be used by `pycbc_multi_inspiral` to
+"""
+Generate a grid of points in the sky to be used by `pycbc_multi_inspiral` to
 find multi-detector gravitational wave triggers and calculate the coherent SNRs
 and related statistics. The grid is constructed using a stochastic sampling
 algorithm.  The region of the sky covered by the grid can be optionally
@@ -14,16 +15,17 @@ https://arxiv.org/abs/1410.6042.  Please refer to the documentation of
 for angle arguments.
 """
 
-import logging
-import numpy as np
 import argparse
 import itertools
+import logging
+
+import numpy as np
 
 import pycbc
 import pycbc.distributions
 from pycbc.detector import Detector
-from pycbc.types import angle_as_radians
 from pycbc.tmpltbank.sky_grid import SkyGrid
+from pycbc.types import angle_as_radians
 
 
 def spher_to_cart(sky_points):
@@ -38,21 +40,23 @@ def spher_to_cart(sky_points):
 def angular_distance(test_point, grid):
     grid_cart = spher_to_cart(grid)
     test_cart = spher_to_cart(np.array([test_point]))
-    dot = np.tensordot(grid_cart, test_cart, ((1,),(1,))).ravel()
+    dot = np.tensordot(grid_cart, test_cart, ((1,), (1,))).ravel()
     dists = np.arccos(dot)
     return min(dists)
 
 
 def dist_from_str(s):
-    """Instantiate and return a sky-location distribution from the given
+    """
+    Instantiate and return a sky-location distribution from the given
     string argument.
     """
-    assert s.endswith(')')
-    return eval('pycbc.distributions.' + s)
+    assert s.endswith(")")
+    return eval("pycbc.distributions." + s)
 
 
 def make_single_det_grid(args):
-    """Construct a sky grid for a single-detector analysis.
+    """
+    Construct a sky grid for a single-detector analysis.
     Since a one-detector network has no sky localization capability,
     we just pick a single point.
     """
@@ -60,21 +64,20 @@ def make_single_det_grid(args):
         # --ra/--dec arguments
         ra, dec = args.ra, args.dec
         args.input_dist = f'UniformDiskSky(mean_ra="{ra}", mean_dec="{dec}", radius="{args.sky_error}")'
-    elif args.input_dist == 'UniformSky()':
+    elif args.input_dist == "UniformSky()":
         # Covering the whole sky, just pick a reference point
-        ra, dec = 0., 0.
+        ra, dec = 0.0, 0.0
     else:
         # Restricted non-uniform input distribution
         input_dist = dist_from_str(args.input_dist)
         mpp = input_dist.get_max_prob_point()
         ra, dec = mpp[0], mpp[1]
-    return SkyGrid(
-        ra, dec, args.instruments, args.trigger_time
-    )
+    return SkyGrid(ra, dec, args.instruments, args.trigger_time)
 
 
 def make_multi_det_grid(args):
-    """Construct a sky grid for a network of multiple detectors,
+    """
+    Construct a sky grid for a network of multiple detectors,
     using the time delay among detectors to determine the required spacing
     between points.
     """
@@ -88,7 +91,7 @@ def make_multi_det_grid(args):
         args.input_dist = f'UniformDiskSky(mean_ra="{args.ra}", mean_dec="{args.dec}", radius="{args.sky_error}")'
         sky_dist = dist_from_str(args.input_dist)
         grid = np.vstack((np.empty((0, 2)), (args.ra, args.dec)))
-    elif args.input_dist == 'UniformSky()':
+    elif args.input_dist == "UniformSky()":
         # Covering the whole sky
         sky_dist = dist_from_str(args.input_dist)
         grid = np.vstack((np.empty((0, 2)), (0.0, 0.0)))
@@ -96,37 +99,33 @@ def make_multi_det_grid(args):
         # Restricted non-uniform input distribution
         sky_dist = dist_from_str(args.input_dist)
         grid = np.vstack(
-            (
-                np.empty((0, 2)),
-                np.reshape(sky_dist.get_max_prob_point(), (1, 2))
-            )
+            (np.empty((0, 2)), np.reshape(sky_dist.get_max_prob_point(), (1, 2)))
         )
         sky_dist = sky_dist.to_uniform_patch(args.coverage)
 
     # Calculate the max possible light travel times between detector pairs
-    max_light_travel_times = np.array([
-        a.light_travel_time_to_detector(b)
-        for a, b in detector_pairs
-    ])
+    max_light_travel_times = np.array(
+        [a.light_travel_time_to_detector(b) for a, b in detector_pairs]
+    )
 
     while True:
         prev_size = grid.shape[0]
         sky_dist_samples = sky_dist.rvs(size=10000)
-        sky_ra = sky_dist_samples['ra']
-        sky_dec = sky_dist_samples['dec']
+        sky_ra = sky_dist_samples["ra"]
+        sky_dec = sky_dist_samples["dec"]
         for prop_ra, prop_dec in zip(sky_ra, sky_dec):
             # Calculate the light travel times between detector pairs
             # for the given proposed sky positions
-            light_travel_times = np.array([
-                a.time_delay_from_detector(
-                    b, prop_ra, prop_dec, args.trigger_time
-                )
-                for a, b in detector_pairs
-            ])
+            light_travel_times = np.array(
+                [
+                    a.time_delay_from_detector(b, prop_ra, prop_dec, args.trigger_time)
+                    for a, b in detector_pairs
+                ]
+            )
 
             # Calculate the required angular spacing between the sky points
             ang_spacings = (2 * args.timing_uncertainty) / np.sqrt(
-                max_light_travel_times ** 2 - light_travel_times ** 2
+                max_light_travel_times**2 - light_travel_times**2
             )
             angular_spacing = np.min(ang_spacings)
 
@@ -138,43 +137,39 @@ def make_multi_det_grid(args):
                 # far enough from other points, accept
                 grid = np.vstack((grid, (prop_ra, prop_dec)))
         num_new_accepted = grid.shape[0] - prev_size
-        logging.info(
-            '%d points accepted, %d total', num_new_accepted, grid.shape[0]
-        )
+        logging.info("%d points accepted, %d total", num_new_accepted, grid.shape[0])
         if num_new_accepted == 0:
             # We reached our convergence criterion
             break
-    sky_grid = SkyGrid(
-        grid[:, 0], grid[:, 1], args.instruments, args.trigger_time
-    )
+    sky_grid = SkyGrid(grid[:, 0], grid[:, 1], args.instruments, args.trigger_time)
     return sky_grid
 
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
-    '--ra',
+    "--ra",
     type=angle_as_radians,
     help="Right ascension of the center of the external trigger "
     "error box. Use the rad or deg suffix to specify units, "
     "otherwise radians are assumed.",
 )
 parser.add_argument(
-    '--dec',
+    "--dec",
     type=angle_as_radians,
     help="Declination of the center of the external trigger "
     "error box. Use the rad or deg suffix to specify units, "
     "otherwise radians are assumed.",
 )
 parser.add_argument(
-    '--instruments',
+    "--instruments",
     nargs="+",
     type=str,
     required=True,
     help="List of instruments to analyze.",
 )
 parser.add_argument(
-    '--sky-error',
+    "--sky-error",
     type=angle_as_radians,
     help="3-sigma confidence radius of the external trigger error "
     "box. Use the rad or deg suffix to specify units, otherwise "
@@ -182,34 +177,32 @@ parser.add_argument(
 )
 parser.add_argument(
     "--input-dist",
-    default='UniformSky()',
+    default="UniformSky()",
     help="Input distribution of the sky map that you have, e.g. "
     "HealpixSky or FisherSky. See the sky location documentation for "
     "more details. If not specified, a UniformSky() distribution is used.",
 )
 parser.add_argument(
-    '--coverage',
+    "--coverage",
     type=float,
     help="Fraction of probability in the input distribution that you want "
     "to cover, when using --input-dist with a distribution that is not "
     "UniformSky.",
 )
 parser.add_argument(
-    '--trigger-time',
+    "--trigger-time",
     type=int,
     required=True,
     help="Time (in s) of the external trigger",
 )
 parser.add_argument(
-    '--timing-uncertainty',
+    "--timing-uncertainty",
     type=float,
     default=0.0005,
     help="Timing uncertainty (in s) we are willing to accept to determine "
     "the density of points.",
 )
-parser.add_argument(
-    '--output', required=True, help="Name of the output sky grid file."
-)
+parser.add_argument("--output", required=True, help="Name of the output sky grid file.")
 
 args = parser.parse_args()
 
@@ -218,13 +211,16 @@ args.instruments.sort()
 
 pycbc.init_logging(args.verbose)
 
-# Coverage argument is needed only for non uniform input distribution 
-if args.input_dist.startswith('Uniform'):
+# Coverage argument is needed only for non uniform input distribution
+if args.input_dist.startswith("Uniform"):
     if args.coverage is not None:
-        parser.error("please do not specify the coverage when using an uniform distribution")
-else:
-    if args.coverage is None:
-        parser.error("please specify the coverage when using a non-uniform distribution")
+        parser.error(
+            "please do not specify the coverage when using an uniform distribution"
+        )
+elif args.coverage is None:
+    parser.error(
+        "please specify the coverage when using a non-uniform distribution"
+    )
 
 if len(args.instruments) == 1:
     sky_grid = make_single_det_grid(args)
@@ -233,16 +229,16 @@ else:
 
 # Record the input arguments as extra attributes
 extra_attributes = {
-    'input_distribution': args.input_dist,
-    'timing_uncertainty': args.timing_uncertainty,
+    "input_distribution": args.input_dist,
+    "timing_uncertainty": args.timing_uncertainty,
 }
 
 if "Uniform" not in args.input_dist and args.coverage is not None:
-    extra_attributes['coverage'] = args.coverage,
+    extra_attributes["coverage"] = (args.coverage,)
 
 elif (args.ra and args.dec and args.sky_error) is not None:
-    extra_attributes['trigger_ra'] = args.ra
-    extra_attributes['trigger_dec'] = args.dec
-    extra_attributes['sky_error'] = args.sky_error
+    extra_attributes["trigger_ra"] = args.ra
+    extra_attributes["trigger_dec"] = args.dec
+    extra_attributes["sky_error"] = args.sky_error
 
 sky_grid.write_to_file(args.output, extra_attributes)

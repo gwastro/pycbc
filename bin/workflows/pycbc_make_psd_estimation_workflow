@@ -16,12 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Program for setting up a workflow which estimates the average PSD of a given
-portion of strain data."""
+"""
+Program for setting up a workflow which estimates the average PSD of a given
+portion of strain data.
+"""
 
-import os.path
 import argparse
 import logging
+import os.path
 import sys
 
 import igwn_segments as _segments
@@ -29,7 +31,6 @@ import igwn_segments as _segments
 import pycbc
 import pycbc.workflow
 from pycbc.results import save_fig_with_metadata, two_column_layout
-import pycbc.workflow
 from pycbc.time import gps_to_utc_str
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -43,11 +44,10 @@ pycbc.init_logging(args.verbose, default_level=1)
 # FIXME: opts.tags is currently unused here.
 
 container = pycbc.workflow.Workflow(args)
-workflow = pycbc.workflow.Workflow(args, subworkflow_name='main',
-                                   is_subworkflow=True)
-finalize_workflow = pycbc.workflow.Workflow(args,
-                                            subworkflow_name='finalization',
-                                            is_subworkflow=True)
+workflow = pycbc.workflow.Workflow(args, subworkflow_name="main", is_subworkflow=True)
+finalize_workflow = pycbc.workflow.Workflow(
+    args, subworkflow_name="finalization", is_subworkflow=True
+)
 
 pycbc.workflow.makedir(args.output_dir)
 os.chdir(args.output_dir)
@@ -60,40 +60,50 @@ time = workflow.analysis_time
 s, e = int(time[0]), int(time[1])
 s_utc = gps_to_utc_str(s)
 e_utc = gps_to_utc_str(e)
-time_str = '<center><p><b>GPS Interval [%s,%s). UTC Interval %s - %s. Interval duration = %.3f days.</b></p></center>' % (s, e, s_utc, e_utc, float(e-s)/86400.0)
-time_file = pycbc.workflow.File(workflow.ifos, 'time', workflow.analysis_time,
-                                           extension='.html',
-                                           directory='plots')
-pycbc.workflow.makedir('plots')
-kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)',
-        'caption' : "Wall clock start and end times for this invocation of the workflow. "
-                    " The command line button shows the arguments used to invoke the workflow "
-                    " creation script.",
-        'cmd' :' '.join(sys.argv), }
+time_str = (
+    "<center><p><b>GPS Interval [%s,%s). UTC Interval %s - %s. Interval duration = %.3f days.</b></p></center>"
+    % (s, e, s_utc, e_utc, float(e - s) / 86400.0)
+)
+time_file = pycbc.workflow.File(
+    workflow.ifos, "time", workflow.analysis_time, extension=".html", directory="plots"
+)
+pycbc.workflow.makedir("plots")
+kwds = {
+    "title": "Search Workflow Duration (Wall Clock Time)",
+    "caption": "Wall clock start and end times for this invocation of the workflow. "
+    " The command line button shows the arguments used to invoke the workflow "
+    " creation script.",
+    "cmd": " ".join(sys.argv),
+}
 save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 result_plots += [(time_file,)]
 
 # Get segments and find where the data is
-seg_dir = 'segments'
+seg_dir = "segments"
 
 veto_cat_files = pycbc.workflow.get_files_for_vetoes(
-        workflow, seg_dir, runtime_names=['segments-science-veto'])
+    workflow, seg_dir, runtime_names=["segments-science-veto"]
+)
 
-science_seg_file, science_segs, _ = \
-        pycbc.workflow.get_science_segments(workflow, seg_dir)
+science_seg_file, science_segs, _ = pycbc.workflow.get_science_segments(
+    workflow, seg_dir
+)
 
-sci_ok_seg_file, science_ok_segs, _ = \
-        pycbc.workflow.get_analyzable_segments(workflow, science_segs,
-                                                veto_cat_files, seg_dir)
+sci_ok_seg_file, science_ok_segs, _ = pycbc.workflow.get_analyzable_segments(
+    workflow, science_segs, veto_cat_files, seg_dir
+)
 
-datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
-        pycbc.workflow.setup_datafind_workflow(workflow, science_ok_segs,
-                                               'datafind',
-                                               seg_file=science_seg_file)
+datafind_files, analyzable_file, analyzable_segs, analyzable_name = (
+    pycbc.workflow.setup_datafind_workflow(
+        workflow, science_ok_segs, "datafind", seg_file=science_seg_file
+    )
+)
 
-psd_job_length = int(workflow.cp.get('workflow-matchedfilter', 'analysis-length'))
-pad_data = int(workflow.cp.get('calculate_psd', 'pad-data'))
-max_segs_per_job = int(workflow.cp.get('workflow-matchedfilter', 'max-segments-per-job'))
+psd_job_length = int(workflow.cp.get("workflow-matchedfilter", "analysis-length"))
+pad_data = int(workflow.cp.get("calculate_psd", "pad-data"))
+max_segs_per_job = int(
+    workflow.cp.get("workflow-matchedfilter", "max-segments-per-job")
+)
 
 # calculate noise PSDs over analyzable segments
 psd_files = {}
@@ -121,85 +131,110 @@ for ifo, segments in analyzable_segs.items():
 
     # each batch goes into a PSD estimation job
     for job_index, job_segs in enumerate(batches):
-        tag = 'PART%.4d' % job_index
-        name = 'ANALYZABLE_SPLIT_' + tag
+        tag = "PART%.4d" % job_index
+        name = "ANALYZABLE_SPLIT_" + tag
         job_segs_file = pycbc.workflow.SegFile.from_segment_list(
-                name, job_segs, name, ifo,
-                valid_segment=workflow.analysis_time, extension='xml',
-                directory=seg_dir)
+            name,
+            job_segs,
+            name,
+            ifo,
+            valid_segment=workflow.analysis_time,
+            extension="xml",
+            directory=seg_dir,
+        )
 
         ifo_psd_file = pycbc.workflow.make_psd_file(
-                workflow, datafind_files.find_output_with_ifo(ifo),
-                job_segs_file, name, 'psds', tags=[tag])
+            workflow,
+            datafind_files.find_output_with_ifo(ifo),
+            job_segs_file,
+            name,
+            "psds",
+            tags=[tag],
+        )
 
         if ifo not in psd_files:
             psd_files[ifo] = []
         psd_files[ifo].append(ifo_psd_file)
 
-    flat_split_segments = \
-        _segments.segmentlist([s for batch in batches for s in batch])
-    logging.info('%.1f s of analyzable %s data reduced to %.1f s after '
-                 'segmentation', abs(segments), ifo, abs(flat_split_segments))
+    flat_split_segments = _segments.segmentlist([s for batch in batches for s in batch])
+    logging.info(
+        "%.1f s of analyzable %s data reduced to %.1f s after segmentation",
+        abs(segments),
+        ifo,
+        abs(flat_split_segments),
+    )
 
 # merge all PSDs for each detector
 merged_psd_files = []
 for ifo, ifo_psd_files in psd_files.items():
-    merged_psd_file = pycbc.workflow.merge_psds(workflow, ifo_psd_files, ifo,
-                                                'psds')
+    merged_psd_file = pycbc.workflow.merge_psds(workflow, ifo_psd_files, ifo, "psds")
     merged_psd_files.append(merged_psd_file)
 
 # average noise PSDs and save to .txt and .xml
-pycbc.workflow.make_average_psd(workflow, merged_psd_files, 'psds',
-                                output_fmt='.txt')
-pycbc.workflow.make_average_psd(workflow, merged_psd_files, 'psds',
-                                output_fmt='.xml.gz')
+pycbc.workflow.make_average_psd(workflow, merged_psd_files, "psds", output_fmt=".txt")
+pycbc.workflow.make_average_psd(
+    workflow, merged_psd_files, "psds", output_fmt=".xml.gz"
+)
 
-s = pycbc.workflow.make_spectrum_plot(workflow, merged_psd_files, 'plots')
+s = pycbc.workflow.make_spectrum_plot(workflow, merged_psd_files, "plots")
 result_plots += [(s,)]
 
-pycbc.workflow.make_segments_plot(workflow,
-                                  pycbc.workflow.FileList([science_seg_file]),
-                                  'plots', tags=['SCIENCE_MINUS_CAT1'])
+pycbc.workflow.make_segments_plot(
+    workflow,
+    pycbc.workflow.FileList([science_seg_file]),
+    "plots",
+    tags=["SCIENCE_MINUS_CAT1"],
+)
 
 # get data segments to write to segment summary XML file
-seg_summ_names    = ['DATA', 'SCIENCE_OK', 'ANALYZABLE_DATA']
+seg_summ_names = ["DATA", "SCIENCE_OK", "ANALYZABLE_DATA"]
 seg_summ_seglists = [science_segs, science_ok_segs, analyzable_segs]
 
 # write segment summary XML file
 seg_list = []
 names = []
 ifos = []
-for segment_list,segment_name in zip(seg_summ_seglists, seg_summ_names):
+for segment_list, segment_name in zip(seg_summ_seglists, seg_summ_names):
     for ifo in workflow.ifos:
         seg_list.append(segment_list[ifo])
         names.append(segment_name)
         ifos.append(ifo)
 seg_summ_file = pycbc.workflow.SegFile.from_multi_segment_list(
-                   'WORKFLOW_SEGMENT_SUMMARY', seg_list, names, ifos,
-                   valid_segment=workflow.analysis_time, extension='xml',
-                   directory=seg_dir)
+    "WORKFLOW_SEGMENT_SUMMARY",
+    seg_list,
+    names,
+    ifos,
+    valid_segment=workflow.analysis_time,
+    extension="xml",
+    directory=seg_dir,
+)
 
 # make segment table for summary page
-seg_summ_table = pycbc.workflow.make_seg_table(workflow, [seg_summ_file],
-        seg_summ_names, 'plots', ['SUMMARY'],
-        title_text='Input and output time',
-        description='This shows the total amount of input data, analyzable data, and the time for which PSDs are produced.')
+seg_summ_table = pycbc.workflow.make_seg_table(
+    workflow,
+    [seg_summ_file],
+    seg_summ_names,
+    "plots",
+    ["SUMMARY"],
+    title_text="Input and output time",
+    description="This shows the total amount of input data, analyzable data, and the time for which PSDs are produced.",
+)
 result_plots += [(seg_summ_table,)]
 
-two_column_layout('plots', result_plots)
+two_column_layout("plots", result_plots)
 
 
 # Create versioning information
 pycbc.workflow.make_versioning_page(
     workflow,
     container.cp,
-    rdir['workflow/version'],
+    rdir["workflow/version"],
 )
 
 
-pycbc.workflow.make_results_web_page(finalize_workflow,
-                                     os.path.join(os.getcwd(),
-                                     'plots'))
+pycbc.workflow.make_results_web_page(
+    finalize_workflow, os.path.join(os.getcwd(), "plots")
+)
 
 container += workflow
 container += finalize_workflow

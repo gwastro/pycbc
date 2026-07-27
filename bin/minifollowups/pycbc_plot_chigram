@@ -1,71 +1,77 @@
 #!/bin/env python
-import numpy
 import argparse
 import sys
+
 import matplotlib
-matplotlib.use('Agg')
+import numpy
+
+matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 
-from pycbc import init_logging, add_common_pycbc_options
-import pycbc.types
 import pycbc.results
+import pycbc.types
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.io.hdf import HFile
 
-parser=argparse.ArgumentParser()
+parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument('--single-template-file',
-                    help="HDF output of pycbc_single_template")
-parser.add_argument('--central-time', type=float,
-                    help="Time to center the plot, optional",
-                    default=0)
-parser.add_argument('--window', type=float,
-                    help="Time around central time to plot, optional. "
-                         "Used with the central time option")
-parser.add_argument('--plot-type', choices=['snr', 'chisq'], default='chisq')
-parser.add_argument('--output-file')
+parser.add_argument(
+    "--single-template-file", help="HDF output of pycbc_single_template"
+)
+parser.add_argument(
+    "--central-time", type=float, help="Time to center the plot, optional", default=0
+)
+parser.add_argument(
+    "--window",
+    type=float,
+    help="Time around central time to plot, optional. "
+    "Used with the central time option",
+)
+parser.add_argument("--plot-type", choices=["snr", "chisq"], default="chisq")
+parser.add_argument("--output-file")
 args = parser.parse_args()
 
 init_logging(args.verbose)
 
-f = HFile(args.single_template_file, 'r')
-y = f['chisq_boundaries'][:]
+f = HFile(args.single_template_file, "r")
+y = f["chisq_boundaries"][:]
 fig = plt.figure()
 ax = plt.gca()
 
-snr = pycbc.types.load_timeseries(args.single_template_file, group='snr')
-chisq = pycbc.types.load_timeseries(args.single_template_file, group='chisq')
+snr = pycbc.types.load_timeseries(args.single_template_file, group="snr")
+chisq = pycbc.types.load_timeseries(args.single_template_file, group="chisq")
 
 s = None
-for i in range(len(f['chisq_bins'].keys())):
-    ts = pycbc.types.load_timeseries(args.single_template_file, group='chisq_bins/%s' % i)
+for i in range(len(f["chisq_bins"].keys())):
+    ts = pycbc.types.load_timeseries(
+        args.single_template_file, group="chisq_bins/%s" % i
+    )
 
     delta_t = ts.delta_t
-    st = ts.sample_times.numpy()   
-    
-    
-    if args.plot_type == 'chisq':
-        ts = ts.squared_norm() - snr.squared_norm() / (len(y) -1)
-    elif args.plot_type == 'snr':
+    st = ts.sample_times.numpy()
+
+    if args.plot_type == "chisq":
+        ts = ts.squared_norm() - snr.squared_norm() / (len(y) - 1)
+    elif args.plot_type == "snr":
         ts = ts.squared_norm()
-        
-        
+
     ts = ts.numpy()
     x = numpy.append(st - delta_t / 2.0, [st[-1] + delta_t / 2.0]) - args.central_time
-    l = y[i:i+2]
-    ax.pcolorfast(x, numpy.array([i, i+1]), ts.reshape(1, len(ts)))
+    l = y[i : i + 2]
+    ax.pcolorfast(x, numpy.array([i, i + 1]), ts.reshape(1, len(ts)))
 
-plt.ylabel('Frequency (Hz)')
+plt.ylabel("Frequency (Hz)")
 
-xlabel = 'Time (s)'
+xlabel = "Time (s)"
 if args.central_time:
-    xlabel += ' - %.2f' % args.central_time
+    xlabel += " - %.2f" % args.central_time
     if args.window:
         plt.xlim(xmin=-args.window, xmax=args.window)
 
 plt.xlabel(xlabel)
 c = plt.colorbar(ax.get_children()[2], ax=ax)
 
-if args.plot_type == 'chisq':
+if args.plot_type == "chisq":
     c.set_label("$\\rho_l^2 - \\rho^2/p$")
 else:
     c.set_label("$\\rho_l^2$")
@@ -73,10 +79,12 @@ else:
 # Set the frequency label
 fig.canvas.draw()
 labels = [item.get_text() for item in ax.get_yticklabels()]
-ax.set_yticklabels(['%.0f' % y[int(label)] for label in labels])
+ax.set_yticklabels(["%.0f" % y[int(label)] for label in labels])
 
-pycbc.results.save_fig_with_metadata(fig, args.output_file,
-                cmd=' '.join(sys.argv),
-                title="chisq timeseries for each bin",
-                caption="Plot of the time series of each chisq bin")
-                
+pycbc.results.save_fig_with_metadata(
+    fig,
+    args.output_file,
+    cmd=" ".join(sys.argv),
+    title="chisq timeseries for each bin",
+    caption="Plot of the time series of each chisq bin",
+)

@@ -1,66 +1,71 @@
 #!/usr/bin/env python
-""" Plot PyCBC's background coinc triggers
-"""
+"""Plot PyCBC's background coinc triggers"""
+
 import argparse
+
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
-from pycbc.io.hdf import HFile
 
 from pycbc import add_common_pycbc_options, init_logging
+from pycbc.io.hdf import HFile
+
 
 def get_var(data, name):
     if name in data:
         return data[name][:]
 
+
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
-parser.add_argument('--coinc-file', help="Coincident trigger file. The result"
-                                         " of pycbc_coinc_statmap ")
-parser.add_argument('--x-var', type=str, required=True,
-                    help='Parameter to plot on the x-axis')
-parser.add_argument('--y-var', type=str, required=True,
-                    help='Parameter to plot on the y-axis')
-parser.add_argument('--z-var', required=True,
-                    help='Quantity to plot on the color scale',
-                    choices=['density', 'ranking_stat'])
-parser.add_argument('--min-z', type=float, help='Optional minimum z value')
-parser.add_argument('--max-z', type=float, help='Optional maximum z value')
-parser.add_argument('--grid-size', default=100, help="Number of hexbins", type=int)
-parser.add_argument('--dpi', type=int, default=200)
-parser.add_argument('--output-file')
-args = parser.parse_args()     
+parser.add_argument(
+    "--coinc-file", help="Coincident trigger file. The result of pycbc_coinc_statmap "
+)
+parser.add_argument(
+    "--x-var", type=str, required=True, help="Parameter to plot on the x-axis"
+)
+parser.add_argument(
+    "--y-var", type=str, required=True, help="Parameter to plot on the y-axis"
+)
+parser.add_argument(
+    "--z-var",
+    required=True,
+    help="Quantity to plot on the color scale",
+    choices=["density", "ranking_stat"],
+)
+parser.add_argument("--min-z", type=float, help="Optional minimum z value")
+parser.add_argument("--max-z", type=float, help="Optional maximum z value")
+parser.add_argument("--grid-size", default=100, help="Number of hexbins", type=int)
+parser.add_argument("--dpi", type=int, default=200)
+parser.add_argument("--output-file")
+args = parser.parse_args()
 
 init_logging(args.verbose)
 
 f = HFile(args.coinc_file)
-bdata = f['background_exc']
+bdata = f["background_exc"]
 x = get_var(bdata, args.x_var)
 y = get_var(bdata, args.y_var)
 
-hexbin_style = {
-    'gridsize': args.grid_size,
-    'mincnt': 1,
-    'linewidths': 0.02
-}
+hexbin_style = {"gridsize": args.grid_size, "mincnt": 1, "linewidths": 0.02}
 if args.min_z is not None:
-    hexbin_style['vmin'] = args.min_z
+    hexbin_style["vmin"] = args.min_z
 if args.max_z is not None:
-    hexbin_style['vmax'] = args.max_z
+    hexbin_style["vmax"] = args.max_z
 
 fig = plt.figure()
 ax = fig.gca()
-if args.z_var == 'density':
+if args.z_var == "density":
     hb = ax.hexbin(x, y, norm=LogNorm(), vmin=1, **hexbin_style)
-    fig.colorbar(hb, ticks=LogLocator(subs=range(10)))    
-elif args.z_var == 'ranking_stat':
-    hb = ax.hexbin(x, y, C=bdata['stat'][:], reduce_C_function=max, **hexbin_style)
+    fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
+elif args.z_var == "ranking_stat":
+    hb = ax.hexbin(x, y, C=bdata["stat"][:], reduce_C_function=max, **hexbin_style)
     fig.colorbar(hb)
 
 ax.set_xlabel(args.x_var)
 ax.set_ylabel(args.y_var)
 ax.set_title("Coincident Background Triggers, %s" % args.z_var)
 fig.savefig(args.output_file, dpi=args.dpi)
-                          

@@ -20,59 +20,72 @@
 Read in a tmpltbank and create a file containing the list of chi parameters
 """
 
-
-import pycbc
 import pycbc.version
 
-__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+import pycbc
+
+__author__ = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
+__date__ = pycbc.version.date
 __program__ = "pycbc_bank_verification"
 
 import argparse
 import logging
+
 import numpy
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 
-from igwn_ligolw import lsctables, utils as ligolw_utils
-
-from pycbc import tmpltbank, psd, strain
-from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc import psd, strain, tmpltbank
 from pycbc.io.hdf import HFile
-
+from pycbc.io.ligolw import LIGOLWContentHandler
 
 # Read command line option
-parser = argparse.ArgumentParser(description=__doc__,
-           formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
+parser = argparse.ArgumentParser(
+    description=__doc__, formatter_class=tmpltbank.IndentedHelpFormatterWithNL
+)
 
 # Begin with code specific options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--input-bank", action="store", required=True,
-                    help="The template bank to use an input.")
-parser.add_argument("--output-file", action="store", required=True,
-                    help="The ASCII file to create as output. The columns in "
-                    "this file will hold: mass1, mass2, spin1z, spin2z, chi_1, "
-                    "chi_2, ....")
+parser.add_argument(
+    "--input-bank",
+    action="store",
+    required=True,
+    help="The template bank to use an input.",
+)
+parser.add_argument(
+    "--output-file",
+    action="store",
+    required=True,
+    help="The ASCII file to create as output. The columns in "
+    "this file will hold: mass1, mass2, spin1z, spin2z, chi_1, "
+    "chi_2, ....",
+)
 # Not sure that vary-fupper makes sense in this code.
-#parser.add_argument("-V", "--vary-fupper", action="store_true", default=False,
+# parser.add_argument("-V", "--vary-fupper", action="store_true", default=False,
 #                    help="Use a variable upper frequency cutoff in laying "
 #                    "out the bank.  OPTIONAL.")
-#parser.add_argument("--bank-fupper-step", type=float, default=10.,
+# parser.add_argument("--bank-fupper-step", type=float, default=10.,
 #                    help="Size of discrete frequency steps used when varying "
 #                    "the fupper. If --calculate-ethinca-metric and "
 #                    "--ethinca-freq-step are also given, the code will use "
 #                    "the smaller of the two step values. OPTIONAL. Units=Hz")
-#parser.add_argument("--bank-fupper-formula", default="SchwarzISCO",
+# parser.add_argument("--bank-fupper-formula", default="SchwarzISCO",
 #                    choices=["SchwarzISCO","LightRing","ERD"],
 #                    help="Frequency cutoff formula for varying fupper. "
 #                    "Frequencies will be rounded to the nearest discrete "
 #                    "step. OPTIONAL.")
-parser.add_argument("--random-seed", action="store", type=int,
-                    default=None,
-                    help="Random seed to use when calling numpy.random "
-                    "functions used in obtaining the principal components in "
-                    "parameter space and when translating points back to "
-                    "physical space.  If given, the code should give the "
-                    "same output when run with the same random seed.")
+parser.add_argument(
+    "--random-seed",
+    action="store",
+    type=int,
+    default=None,
+    help="Random seed to use when calling numpy.random "
+    "functions used in obtaining the principal components in "
+    "parameter space and when translating points back to "
+    "physical space.  If given, the code should give the "
+    "same output when run with the same random seed.",
+)
 
 # Insert the metric calculation options
 tmpltbank.insert_metric_calculation_options(parser)
@@ -92,9 +105,9 @@ pycbc.init_logging(opts.verbose)
 
 # Sanity check options
 tmpltbank.verify_metric_calculation_options(opts, parser)
-metricParams=tmpltbank.metricParameters.from_argparse(opts)
+metricParams = tmpltbank.metricParameters.from_argparse(opts)
 tmpltbank.verify_mass_range_options(opts, parser)
-massRangeParams=tmpltbank.massRangeParameters.from_argparse(opts)
+massRangeParams = tmpltbank.massRangeParameters.from_argparse(opts)
 psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
@@ -114,17 +127,23 @@ else:
 logging.info("Obtaining PSD")
 # Want the number of samples to be a binary number and Nyquist must be above
 # opts.f_upper. All this assumes that 1 / deltaF is a binary number
-nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
+nyquistFreq = 2 ** numpy.ceil(numpy.log2(opts.f_upper))
 numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
-psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f,
-                         low_frequency_cutoff=opts.f_low, strain=strain,
-                         dyn_range_factor=pycbc.DYN_RANGE_FAC)
+psd = pycbc.psd.from_cli(
+    opts,
+    length=numSamples,
+    delta_f=opts.delta_f,
+    low_frequency_cutoff=opts.f_low,
+    strain=strain,
+    dyn_range_factor=pycbc.DYN_RANGE_FAC,
+)
 metricParams.psd = psd
 
 # Begin by calculating a metric
 logging.info("Calculating metric")
-metricParams = tmpltbank.determine_eigen_directions(metricParams,
-    vary_fmax=False, vary_density=None)
+metricParams = tmpltbank.determine_eigen_directions(
+    metricParams, vary_fmax=False, vary_density=None
+)
 
 # Choose the frequency values to use for metric calculation
 refFreq = metricParams.fUpper
@@ -132,38 +151,42 @@ refFreq = metricParams.fUpper
 logging.info("Calculating covariance matrix")
 
 vals = tmpltbank.estimate_mass_range(
-    1000000, massRangeParams, metricParams, refFreq, covary=False)
+    1000000, massRangeParams, metricParams, refFreq, covary=False
+)
 cov = numpy.cov(vals)
-evalsCV,evecsCV = numpy.linalg.eig(cov)
+evalsCV, evecsCV = numpy.linalg.eig(cov)
 metricParams.evecsCV = {}
 metricParams.evecsCV[refFreq] = evecsCV
 
 logging.info("Reading template bank.")
-if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
-    indoc = ligolw_utils.load_filename(opts.input_bank,
-                                       contenthandler=LIGOLWContentHandler)
+if opts.input_bank.endswith((".xml", ".xml.gz", ".xmlgz")):
+    indoc = ligolw_utils.load_filename(
+        opts.input_bank, contenthandler=LIGOLWContentHandler
+    )
     template_list = lsctables.SnglInspiralTable.get_table(indoc)
     mass1 = [template.mass1 for template in template_list]
     mass2 = [template.mass2 for template in template_list]
     spin1z = [template.spin1z for template in template_list]
     spin2z = [template.spin2z for template in template_list]
-elif opts.input_bank.endswith(('.h5','.hdf','.hdf5')):
-    h5_fp = HFile(opts.input_bank, 'r')
-    mass1 = h5_fp['mass1'][:]
-    mass2 = h5_fp['mass2'][:]
-    spin1z = h5_fp['spin1z'][:]
-    spin2z = h5_fp['spin2z'][:]
+elif opts.input_bank.endswith((".h5", ".hdf", ".hdf5")):
+    h5_fp = HFile(opts.input_bank, "r")
+    mass1 = h5_fp["mass1"][:]
+    mass2 = h5_fp["mass2"][:]
+    spin1z = h5_fp["spin1z"][:]
+    spin2z = h5_fp["spin2z"][:]
 else:
-    err_msg = "Don't know how to read extension {}.".format(opts.input_bank)
+    err_msg = f"Don't know how to read extension {opts.input_bank}."
     raise NotImplementedError(err_msg)
 
 fP = open(opts.output_file, "w")
 for idx in range(len(mass1)):
-    chi_coords = tmpltbank.get_cov_params(mass1[idx], mass2[idx], spin1z[idx],
-                                          spin2z[idx], metricParams, refFreq)
-    vals = " ".join([str(mass1[idx]), str(mass2[idx]), str(spin1z[idx]),
-                     str(spin2z[idx])])
+    chi_coords = tmpltbank.get_cov_params(
+        mass1[idx], mass2[idx], spin1z[idx], spin2z[idx], metricParams, refFreq
+    )
+    vals = " ".join(
+        [str(mass1[idx]), str(mass2[idx]), str(spin1z[idx]), str(spin2z[idx])]
+    )
     vals += " "
     vals += " ".join([str(i) for i in chi_coords])
-    fP.write("%s\n" %(vals))
+    fP.write("%s\n" % (vals))
 fP.close()
