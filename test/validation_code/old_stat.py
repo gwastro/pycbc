@@ -543,9 +543,9 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 sdif = s / sref * sense / senseref * sigref / sig
 
                 # Put into bins
-                tbin = (tdif / self.twidth).astype(int)
-                pbin = (pdif / self.pwidth).astype(int)
-                sbin = (sdif / self.swidth).astype(int)
+                tbin = numpy.rint(tdif / self.twidth).astype(int)
+                pbin = numpy.rint(pdif / self.pwidth).astype(int)
+                sbin = numpy.rint(sdif / self.swidth).astype(int)
                 binned += [tbin, pbin, sbin]
 
             # Convert binned to same dtype as stored in hist
