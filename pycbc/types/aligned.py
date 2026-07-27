@@ -27,28 +27,33 @@ This module provides a class derived from numpy.ndarray that also indicates
 whether or not its memory is aligned.  It further provides functions for
 creating zeros and empty (unitialized) arrays with this class.
 """
+
 import numpy as _np
+
 from pycbc import PYCBC_ALIGNMENT
 
+
 def check_aligned(ndarr):
-    return ((ndarr.ctypes.data % PYCBC_ALIGNMENT) == 0)
+    return (ndarr.ctypes.data % PYCBC_ALIGNMENT) == 0
+
 
 def zeros(n, dtype):
     d = _np.dtype(dtype)
-    nbytes = (d.itemsize)*int(n)
-    tmp = _np.zeros(nbytes+PYCBC_ALIGNMENT, dtype=_np.uint8)
-    address = tmp.__array_interface__['data'][0]
-    offset = (PYCBC_ALIGNMENT - address%PYCBC_ALIGNMENT)%PYCBC_ALIGNMENT
-    ret_ary = tmp[offset:offset+nbytes].view(dtype=d)
+    nbytes = (d.itemsize) * int(n)
+    tmp = _np.zeros(nbytes + PYCBC_ALIGNMENT, dtype=_np.uint8)
+    address = tmp.__array_interface__["data"][0]
+    offset = (PYCBC_ALIGNMENT - address % PYCBC_ALIGNMENT) % PYCBC_ALIGNMENT
+    ret_ary = tmp[offset : offset + nbytes].view(dtype=d)
     del tmp
     return ret_ary
 
+
 def empty(n, dtype):
     d = _np.dtype(dtype)
-    nbytes = (d.itemsize)*int(n)
-    tmp = _np.empty(nbytes+PYCBC_ALIGNMENT, dtype=_np.uint8)
-    address = tmp.__array_interface__['data'][0]
-    offset = (PYCBC_ALIGNMENT - address%PYCBC_ALIGNMENT)%PYCBC_ALIGNMENT
-    ret_ary = tmp[offset:offset+nbytes].view(dtype=d)
+    nbytes = (d.itemsize) * int(n)
+    tmp = _np.empty(nbytes + PYCBC_ALIGNMENT, dtype=_np.uint8)
+    address = tmp.__array_interface__["data"][0]
+    offset = (PYCBC_ALIGNMENT - address % PYCBC_ALIGNMENT) % PYCBC_ALIGNMENT
+    ret_ary = tmp[offset : offset + nbytes].view(dtype=d)
     del tmp
     return ret_ary

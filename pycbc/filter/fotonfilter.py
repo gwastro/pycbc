@@ -16,17 +16,21 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging
-import numpy
 import sys
-from pycbc import frame
+
+import numpy
 
 # import dependencies that are not standard to pycbc
 from foton import Filter, iir2z
 
-logger = logging.getLogger('pycbc.filter.fotonfilter')
+from pycbc import frame
+
+logger = logging.getLogger("pycbc.filter.fotonfilter")
+
 
 def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):
-    ''' This function just checks the first time in the SWSTAT channel
+    """
+    This function just checks the first time in the SWSTAT channel
     to see if the filter was on, it doesn't check times beyond that.
 
     This is just for a first test on a small chunck of data.
@@ -39,11 +43,11 @@ def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):
     Bit 12 = Filter module output switch on/off
     Bit 13 = Filter module limit switch on/off
     Bit 14 = Filter module history reset momentary switch
-    '''
-
+    """
     # read frames
-    swstat = frame.read_frame(frame_filenames, swstat_channel_name,
-                      start_time=start_time, end_time=end_time)
+    swstat = frame.read_frame(
+        frame_filenames, swstat_channel_name, start_time=start_time, end_time=end_time
+    )
 
     # convert number in channel to binary
     bits = bin(int(swstat[0]))
@@ -56,27 +60,26 @@ def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):
     return bits[-10:], filterbank_off
 
 
-def filter_data(data, filter_name, filter_file, bits, filterbank_off=False,
-                    swstat_channel_name=None):
-    '''
+def filter_data(
+    data, filter_name, filter_file, bits, filterbank_off=False, swstat_channel_name=None
+):
+    """
     A naive function to determine if the filter was on at the time
     and then filter the data.
-    '''
-
+    """
     # if filterbank is off then return a time series of zeroes
     if filterbank_off:
         return numpy.zeros(len(data))
 
     # loop over the 10 filters in the filterbank
     for i in range(10):
-
         # read the filter
         filter = Filter(filter_file[filter_name][i])
 
         # if bit is on then filter the data
-        bit = int(bits[-(i+1)])
+        bit = int(bits[-(i + 1)])
         if bit:
-            logger.info('filtering with filter module %d', i)
+            logger.info("filtering with filter module %d", i)
 
             # if there are second-order sections then filter with them
             if len(filter.sections):
@@ -86,22 +89,21 @@ def filter_data(data, filter_name, filter_file, bits, filterbank_off=False,
             else:
                 coeffs = iir2z(filter_file[filter_name][i])
                 if len(coeffs) > 1:
-                    logger.info(
-                        'Gain-only filter module return more than one number'
-                    )
+                    logger.info("Gain-only filter module return more than one number")
                     sys.exit()
                 gain = coeffs[0]
                 data = gain * data
 
-    return  data
+    return data
+
 
 def read_gain_from_frames(frame_filenames, gain_channel_name, start_time, end_time):
-    '''
+    """
     Returns the gain from the file.
-    '''
-
+    """
     # get timeseries from frame
-    gain = frame.read_frame(frame_filenames, gain_channel_name,
-                      start_time=start_time, end_time=end_time)
+    gain = frame.read_frame(
+        frame_filenames, gain_channel_name, start_time=start_time, end_time=end_time
+    )
 
     return gain[0]

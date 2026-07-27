@@ -22,19 +22,31 @@
 # =============================================================================
 #
 import functools
+
 import lal
 import numpy
 import scipy.signal
-from pycbc.types import TimeSeries, Array, zeros, FrequencySeries, real_same_precision_as
-from pycbc.types import complex_same_precision_as
-from pycbc.fft import ifft, fft
 
-_resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
-                 numpy.dtype('float64'): lal.ResampleREAL8TimeSeries}
+from pycbc.fft import fft, ifft
+from pycbc.types import (
+    Array,
+    FrequencySeries,
+    TimeSeries,
+    complex_same_precision_as,
+    real_same_precision_as,
+    zeros,
+)
+
+_resample_func = {
+    numpy.dtype("float32"): lal.ResampleREAL4TimeSeries,
+    numpy.dtype("float64"): lal.ResampleREAL8TimeSeries,
+}
+
 
 @functools.lru_cache(maxsize=20)
 def cached_firwin(*args, **kwargs):
-    """Cache the FIR filter coefficients.
+    """
+    Cache the FIR filter coefficients.
     This is mostly done for PyCBC Live, which rapidly and repeatedly resamples data.
     """
     return scipy.signal.firwin(*args, **kwargs)
@@ -51,8 +63,10 @@ LFILTER_UNIQUE_ID_1 = 651273657
 LFILTER_UNIQUE_ID_2 = 154687641
 LFILTER_UNIQUE_ID_3 = 548946442
 
+
 def lfilter(coefficients, timeseries):
-    """ Apply filter coefficients to a time series
+    """
+    Apply filter coefficients to a time series
 
     Parameters
     ----------
@@ -65,19 +79,23 @@ def lfilter(coefficients, timeseries):
     -------
     tseries: numpy.ndarray
         filtered array
+
     """
     from pycbc.filter import correlate
+
     fillen = len(coefficients)
 
     # If there aren't many points just use the default scipy method
     if len(timeseries) < 2**7:
         series = scipy.signal.lfilter(coefficients, 1.0, timeseries)
-        return TimeSeries(series,
-                          epoch=timeseries.start_time,
-                          delta_t=timeseries.delta_t)
-    elif (len(timeseries) < fillen * 10) or (len(timeseries) < 2**18):
-        from pycbc.strain.strain import create_memory_and_engine_for_class_based_fft
-        from pycbc.strain.strain import execute_cached_fft
+        return TimeSeries(
+            series, epoch=timeseries.start_time, delta_t=timeseries.delta_t
+        )
+    if (len(timeseries) < fillen * 10) or (len(timeseries) < 2**18):
+        from pycbc.strain.strain import (
+            create_memory_and_engine_for_class_based_fft,
+            execute_cached_fft,
+        )
 
         cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
         cseries.resize(len(timeseries))
@@ -100,21 +118,24 @@ def lfilter(coefficients, timeseries):
             npoints = len(cseries)
             # NOTE: This function is cached!
             ifftouts = create_memory_and_engine_for_class_based_fft(
-                npoints,
-                timeseries.dtype,
-                ifft=True,
-                uid=LFILTER_UNIQUE_ID_1
+                npoints, timeseries.dtype, ifft=True, uid=LFILTER_UNIQUE_ID_1
             )
 
             # FFT contents of cseries into cfreq
-            cfreq = execute_cached_fft(cseries, uid=LFILTER_UNIQUE_ID_2,
-                                       copy_output=False,
-                                       normalize_by_rate=False)
+            cfreq = execute_cached_fft(
+                cseries,
+                uid=LFILTER_UNIQUE_ID_2,
+                copy_output=False,
+                normalize_by_rate=False,
+            )
 
             # FFT contents of timeseries into tfreq
-            tfreq = execute_cached_fft(timeseries, uid=LFILTER_UNIQUE_ID_3,
-                                       copy_output=False,
-                                       normalize_by_rate=False)
+            tfreq = execute_cached_fft(
+                timeseries,
+                uid=LFILTER_UNIQUE_ID_3,
+                copy_output=False,
+                normalize_by_rate=False,
+            )
 
             cout, out, fft_class = ifftouts
 
@@ -123,21 +144,25 @@ def lfilter(coefficients, timeseries):
             # IFFT correlation output into out
             fft_class.execute()
 
-        return TimeSeries(out.numpy()  / len(out), epoch=timeseries.start_time,
-                          delta_t=timeseries.delta_t)
-    else:
-        # recursively perform which saves a bit on memory usage
-        # but must keep within recursion limit
-        chunksize = max(fillen * 5, len(timeseries) // 2)
-        part1 = lfilter(coefficients, timeseries[0:chunksize])
-        part2 = lfilter(coefficients, timeseries[chunksize - fillen:])
-        out = timeseries.copy()
-        out[:len(part1)] = part1
-        out[len(part1):] = part2[fillen:]
-        return out
+        return TimeSeries(
+            out.numpy() / len(out),
+            epoch=timeseries.start_time,
+            delta_t=timeseries.delta_t,
+        )
+    # recursively perform which saves a bit on memory usage
+    # but must keep within recursion limit
+    chunksize = max(fillen * 5, len(timeseries) // 2)
+    part1 = lfilter(coefficients, timeseries[0:chunksize])
+    part2 = lfilter(coefficients, timeseries[chunksize - fillen :])
+    out = timeseries.copy()
+    out[: len(part1)] = part1
+    out[len(part1) :] = part2[fillen:]
+    return out
+
 
 def fir_zero_filter(coeff, timeseries):
-    """Filter the timeseries with a set of FIR coefficients
+    """
+    Filter the timeseries with a set of FIR coefficients
 
     Parameters
     ----------
@@ -151,6 +176,7 @@ def fir_zero_filter(coeff, timeseries):
     filtered_series: pycbc.types.TimeSeries
         Return the filtered timeseries, which has been properly shifted to account
     for the FIR filter delay and the corrupted regions zeroed out.
+
     """
     # apply the filter
     series = lfilter(coeff, timeseries)
@@ -159,12 +185,14 @@ def fir_zero_filter(coeff, timeseries):
     # corruption regions contain zeros
     # If the number of filter coefficients is odd, the central point *should*
     # be included in the output so we only zero out a region of len(coeff) - 1
-    series[:(len(coeff) // 2) * 2] = 0
-    series.roll(-len(coeff)//2)
+    series[: (len(coeff) // 2) * 2] = 0
+    series.roll(-len(coeff) // 2)
     return series
 
-def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
-    """Resmple the time_series to delta_t
+
+def resample_to_delta_t(timeseries, delta_t, method="butterworth"):
+    """
+    Resmple the time_series to delta_t
 
     Resamples the TimeSeries instance time_series to the given time step,
     delta_t. Only powers of two and real valued time series are supported
@@ -192,41 +220,40 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
 
     Examples
     --------
-
     >>> h_plus_sampled = resample_to_delta_t(h_plus, 1.0/2048)
+
     """
-    if not isinstance(timeseries,TimeSeries):
+    if not isinstance(timeseries, TimeSeries):
         raise TypeError("Can only resample time series")
 
-    if timeseries.kind != 'real':
+    if timeseries.kind != "real":
         raise TypeError("Time series must be real")
 
     if timeseries.sample_rate_close(1.0 / delta_t):
         return timeseries * 1
 
-    if method == 'butterworth':
+    if method == "butterworth":
         lal_data = timeseries.lal()
         _resample_func[timeseries.dtype](lal_data, delta_t)
         data = lal_data.data.data
 
-    elif method == 'ldas':
+    elif method == "ldas":
         factor = int(round(delta_t / timeseries.delta_t))
         numtaps = factor * 20 + 1
 
         # The kaiser window has been testing using the LDAS implementation
         # and is in the same configuration as used in the original lalinspiral
-        filter_coefficients = cached_firwin(numtaps, 1.0 / factor,
-                                            window=('kaiser', 5))
+        filter_coefficients = cached_firwin(numtaps, 1.0 / factor, window=("kaiser", 5))
 
         # apply the filter and decimate
         data = fir_zero_filter(filter_coefficients, timeseries)[::factor]
 
     else:
-        raise ValueError('Invalid resampling method: %s' % method)
+        raise ValueError("Invalid resampling method: %s" % method)
 
-    ts = TimeSeries(data, delta_t = delta_t,
-                      dtype=timeseries.dtype,
-                      epoch=timeseries._epoch)
+    ts = TimeSeries(
+        data, delta_t=delta_t, dtype=timeseries.dtype, epoch=timeseries._epoch
+    )
 
     # From the construction of the LDAS FIR filter there will be 10 corrupted samples
     # explanation here https://lscsoft.docs.ligo.org/lalsuite/lal/group___resample_time_series__c.html
@@ -234,14 +261,19 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     return ts
 
 
-_highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
-                 numpy.dtype('float64'): lal.HighPassREAL8TimeSeries}
-_lowpass_func = {numpy.dtype('float32'): lal.LowPassREAL4TimeSeries,
-                 numpy.dtype('float64'): lal.LowPassREAL8TimeSeries}
+_highpass_func = {
+    numpy.dtype("float32"): lal.HighPassREAL4TimeSeries,
+    numpy.dtype("float64"): lal.HighPassREAL8TimeSeries,
+}
+_lowpass_func = {
+    numpy.dtype("float32"): lal.LowPassREAL4TimeSeries,
+    numpy.dtype("float64"): lal.LowPassREAL8TimeSeries,
+}
 
 
 def notch_fir(timeseries, f1, f2, order, beta=5.0):
-    """ notch filter the time series using an FIR filtered generated from
+    """
+    Notch filter the time series using an FIR filtered generated from
     the ideal response passed through a time-domain kaiser window (beta = 5.0)
 
     The suppression of the notch filter is related to the bandwidth and
@@ -264,14 +296,17 @@ def notch_fir(timeseries, f1, f2, order, beta=5.0):
         (Extent of the filter on either side of zero)
     beta: float
         Beta parameter of the kaiser window that sets the side lobe attenuation.
+
     """
-    k1 = f1 / float((int(1.0 / timeseries.delta_t) / 2))
-    k2 = f2 / float((int(1.0 / timeseries.delta_t) / 2))
-    coeff = cached_firwin(order * 2 + 1, [k1, k2], window=('kaiser', beta))
+    k1 = f1 / float(int(1.0 / timeseries.delta_t) / 2)
+    k2 = f2 / float(int(1.0 / timeseries.delta_t) / 2)
+    coeff = cached_firwin(order * 2 + 1, [k1, k2], window=("kaiser", beta))
     return fir_zero_filter(coeff, timeseries)
 
+
 def lowpass_fir(timeseries, frequency, order, beta=5.0):
-    """ Lowpass filter the time series using an FIR filtered generated from
+    """
+    Lowpass filter the time series using an FIR filtered generated from
     the ideal response passed through a kaiser window (beta = 5.0)
 
     Parameters
@@ -284,13 +319,16 @@ def lowpass_fir(timeseries, frequency, order, beta=5.0):
         Number of corrupted samples on each side of the time series
     beta: float
         Beta parameter of the kaiser window that sets the side lobe attenuation.
+
     """
-    k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
-    coeff = cached_firwin(order * 2 + 1, k, window=('kaiser', beta))
+    k = frequency / float(int(1.0 / timeseries.delta_t) / 2)
+    coeff = cached_firwin(order * 2 + 1, k, window=("kaiser", beta))
     return fir_zero_filter(coeff, timeseries)
 
+
 def highpass_fir(timeseries, frequency, order, beta=5.0):
-    """ Highpass filter the time series using an FIR filtered generated from
+    """
+    Highpass filter the time series using an FIR filtered generated from
     the ideal response passed through a kaiser window (beta = 5.0)
 
     Parameters
@@ -303,13 +341,16 @@ def highpass_fir(timeseries, frequency, order, beta=5.0):
         Number of corrupted samples on each side of the time series
     beta: float
         Beta parameter of the kaiser window that sets the side lobe attenuation.
+
     """
-    k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
-    coeff = cached_firwin(order * 2 + 1, k, window=('kaiser', beta), pass_zero=False)
+    k = frequency / float(int(1.0 / timeseries.delta_t) / 2)
+    coeff = cached_firwin(order * 2 + 1, k, window=("kaiser", beta), pass_zero=False)
     return fir_zero_filter(coeff, timeseries)
 
+
 def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
-    """Return a new timeseries that is highpassed.
+    """
+    Return a new timeseries that is highpassed.
 
     Return a new time series that is highpassed above the `frequency`.
 
@@ -337,22 +378,26 @@ def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
         time_series is not real valued
 
     """
-
     if not isinstance(timeseries, TimeSeries):
         raise TypeError("Can only resample time series")
 
-    if timeseries.kind != 'real':
+    if timeseries.kind != "real":
         raise TypeError("Time series must be real")
 
     lal_data = timeseries.lal()
-    _highpass_func[timeseries.dtype](lal_data, frequency,
-                                     1-attenuation, filter_order)
+    _highpass_func[timeseries.dtype](lal_data, frequency, 1 - attenuation, filter_order)
 
-    return TimeSeries(lal_data.data.data, delta_t = lal_data.deltaT,
-                      dtype=timeseries.dtype, epoch=timeseries._epoch)
+    return TimeSeries(
+        lal_data.data.data,
+        delta_t=lal_data.deltaT,
+        dtype=timeseries.dtype,
+        epoch=timeseries._epoch,
+    )
+
 
 def lowpass(timeseries, frequency, filter_order=8, attenuation=0.1):
-    """Return a new timeseries that is lowpassed.
+    """
+    Return a new timeseries that is lowpassed.
 
     Return a new time series that is lowpassed below the `frequency`.
 
@@ -378,24 +423,28 @@ def lowpass(timeseries, frequency, filter_order=8, attenuation=0.1):
         time_series is not an instance of TimeSeries.
     TypeError:
         time_series is not real valued
-    """
 
+    """
     if not isinstance(timeseries, TimeSeries):
         raise TypeError("Can only resample time series")
 
-    if timeseries.kind != 'real':
+    if timeseries.kind != "real":
         raise TypeError("Time series must be real")
 
     lal_data = timeseries.lal()
-    _lowpass_func[timeseries.dtype](lal_data, frequency,
-                                    1-attenuation, filter_order)
+    _lowpass_func[timeseries.dtype](lal_data, frequency, 1 - attenuation, filter_order)
 
-    return TimeSeries(lal_data.data.data, delta_t = lal_data.deltaT,
-                      dtype=timeseries.dtype, epoch=timeseries._epoch)
+    return TimeSeries(
+        lal_data.data.data,
+        delta_t=lal_data.deltaT,
+        dtype=timeseries.dtype,
+        epoch=timeseries._epoch,
+    )
 
 
-def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right'):
-    """Interpolate complex frequency series to desired delta_f.
+def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side="right"):
+    """
+    Interpolate complex frequency series to desired delta_f.
 
     Return a new complex frequency series that has been interpolated to the
     desired delta_f.
@@ -415,30 +464,42 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right')
     -------
     interpolated series : FrequencySeries
         A new FrequencySeries that has been interpolated.
+
     """
-    new_n = int( (len(series)-1) * series.delta_f / delta_f + 1)
-    old_N = int( (len(series)-1) * 2 )
-    new_N = int( (new_n - 1) * 2 )
-    time_series = TimeSeries(zeros(old_N), delta_t =1.0/(series.delta_f*old_N),
-                             dtype=real_same_precision_as(series))
+    new_n = int((len(series) - 1) * series.delta_f / delta_f + 1)
+    old_N = int((len(series) - 1) * 2)
+    new_N = int((new_n - 1) * 2)
+    time_series = TimeSeries(
+        zeros(old_N),
+        delta_t=1.0 / (series.delta_f * old_N),
+        dtype=real_same_precision_as(series),
+    )
 
     ifft(series, time_series)
 
     time_series.roll(-zeros_offset)
     time_series.resize(new_N)
 
-    if side == 'left':
+    if side == "left":
         time_series.roll(zeros_offset + new_N - old_N)
-    elif side == 'right':
+    elif side == "right":
         time_series.roll(zeros_offset)
 
-    out_series = FrequencySeries(zeros(new_n), epoch=series.epoch,
-                           delta_f=delta_f, dtype=series.dtype)
+    out_series = FrequencySeries(
+        zeros(new_n), epoch=series.epoch, delta_f=delta_f, dtype=series.dtype
+    )
     fft(time_series, out_series)
 
     return out_series
 
-__all__ = ['resample_to_delta_t', 'highpass', 'lowpass',
-           'interpolate_complex_frequency', 'highpass_fir',
-           'lowpass_fir', 'notch_fir', 'fir_zero_filter']
 
+__all__ = [
+    "fir_zero_filter",
+    "highpass",
+    "highpass_fir",
+    "interpolate_complex_frequency",
+    "lowpass",
+    "lowpass_fir",
+    "notch_fir",
+    "resample_to_delta_t",
+]

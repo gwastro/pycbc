@@ -20,32 +20,39 @@ packages for parameter estimation.
 """
 
 import logging
-import numpy
-import emcee
 
+import emcee
+import numpy
+
+from pycbc.inference.io import EmceePTFile
 from pycbc.pool import choose_pool
 
-from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, EnsembleSupport, raw_samples_to_dict,
-                        get_optional_arg_from_config)
-from .base_multitemper import (MultiTemperedSupport,
-                               ensemble_compute_acf, ensemble_compute_acl)
-from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
-from pycbc.inference.io import EmceePTFile
 from .. import models
-
+from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
+from .base import BaseSampler, setup_output
+from .base_mcmc import (
+    BaseMCMC,
+    EnsembleSupport,
+    get_optional_arg_from_config,
+    raw_samples_to_dict,
+)
+from .base_multitemper import (
+    MultiTemperedSupport,
+    ensemble_compute_acf,
+    ensemble_compute_acl,
+)
 
 # This is a hack that will allow us to continue using emcee's abandoned
 # PTSampler, which relied on `numpy.float`, until the end of time.
-numpy.float = float
+float = float
 
-if emcee.__version__ >= '3.0.0':
+if emcee.__version__ >= "3.0.0":
     raise ImportError
 
 
-class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
-                     BaseSampler):
-    """This class is used to construct a parallel-tempered MCMC sampler from
+class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC, BaseSampler):
+    """
+    This class is used to construct a parallel-tempered MCMC sampler from
     the emcee package's PTSampler.
 
     Parameters
@@ -70,25 +77,36 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
     use_mpi : bool, optional
         Use MPI for parallelization. Default (False) will use python's
         multiprocessing.
+
     """
+
     name = "emcee_pt"
     _io = EmceePTFile
     burn_in_class = EnsembleMultiTemperedMCMCBurnInTests
 
-    def __init__(self, model, ntemps, nwalkers, betas=None,
-                 checkpoint_interval=None, checkpoint_signal=None,
-                 loglikelihood_function=None,
-                 nprocesses=1, use_mpi=False):
+    def __init__(
+        self,
+        model,
+        ntemps,
+        nwalkers,
+        betas=None,
+        checkpoint_interval=None,
+        checkpoint_signal=None,
+        loglikelihood_function=None,
+        nprocesses=1,
+        use_mpi=False,
+    ):
 
         self.model = model
 
         # create a wrapper for calling the model
         if loglikelihood_function is None:
-            loglikelihood_function = 'loglikelihood'
+            loglikelihood_function = "loglikelihood"
         # frustratingly, emcee_pt does not support blob data, so we have to
         # turn it off
-        model_call = models.CallModel(model, loglikelihood_function,
-                                      return_all_stats=False)
+        model_call = models.CallModel(
+            model, loglikelihood_function, return_all_stats=False
+        )
 
         # these are used to help paralleize over multiple cores / MPI
         models._global_instance = model_call
@@ -99,9 +117,9 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         # construct the sampler: PTSampler needs the likelihood and prior
         # functions separately
         ndim = len(model.variable_params)
-        self._sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                        model_call, prior_call, pool=self.pool,
-                                        betas=betas)
+        self._sampler = emcee.PTSampler(
+            ntemps, nwalkers, ndim, model_call, prior_call, pool=self.pool, betas=betas
+        )
         self.nwalkers = nwalkers
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
@@ -113,7 +131,10 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
 
     @property
     def base_shape(self):
-        return (self.ntemps, self.nwalkers,)
+        return (
+            self.ntemps,
+            self.nwalkers,
+        )
 
     @property
     def betas(self):
@@ -121,7 +142,8 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
 
     @staticmethod
     def compute_acf(filename, **kwargs):
-        r"""Computes the autocorrelation function.
+        r"""
+        Computes the autocorrelation function.
 
         Calls :py:func:`base_multitemper.ensemble_compute_acf`; see that
         function for details.
@@ -141,18 +163,20 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
             ``per-walker=True`` is passed as a keyword argument, the arrays
             will have shape ``ntemps x nwalkers x niterations``. Otherwise, the
             returned array will have shape ``ntemps x niterations``.
+
         """
         return ensemble_compute_acf(filename, **kwargs)
 
     @staticmethod
     def compute_acl(filename, **kwargs):
-        r"""Computes the autocorrelation length.
+        r"""
+        Computes the autocorrelation length.
 
         Calls :py:func:`base_multitemper.ensemble_compute_acl`; see that
         function for details.
 
         Parameters
-        -----------
+        ----------
         filename : str
             Name of a samples file to compute ACLs for.
         \**kwargs :
@@ -163,13 +187,14 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         -------
         dict
             A dictionary of ntemps-long arrays of the ACLs of each parameter.
+
         """
         return ensemble_compute_acl(filename, **kwargs)
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1,
-                    use_mpi=False):
-        """Loads the sampler from the given config file.
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+        """
+        Loads the sampler from the given config file.
 
         The following options are retrieved in the ``[sampler]`` section:
 
@@ -234,11 +259,13 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         -------
         EmceePTSampler :
             The sampler instance.
+
         """
         section = "sampler"
         # check name
         assert cp.get(section, "name") == cls.name, (
-            "name in section [sampler] must match mine")
+            "name in section [sampler] must match mine"
+        )
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
         # get the temps/betas
@@ -247,12 +274,18 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         # get the loglikelihood function
-        logl = get_optional_arg_from_config(cp, section, 'logl-function')
-        obj = cls(model, ntemps, nwalkers, betas=betas,
-                  checkpoint_interval=checkpoint_interval,
-                  checkpoint_signal=checkpoint_signal,
-                  loglikelihood_function=logl, nprocesses=nprocesses,
-                  use_mpi=use_mpi)
+        logl = get_optional_arg_from_config(cp, section, "logl-function")
+        obj = cls(
+            model,
+            ntemps,
+            nwalkers,
+            betas=betas,
+            checkpoint_interval=checkpoint_interval,
+            checkpoint_signal=checkpoint_signal,
+            loglikelihood_function=logl,
+            nprocesses=nprocesses,
+            use_mpi=use_mpi,
+        )
         # set target
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
@@ -269,7 +302,8 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
 
     @property
     def samples(self):
-        """A dict mapping ``variable_params`` to arrays of samples currently
+        """
+        A dict mapping ``variable_params`` to arrays of samples currently
         in memory.
 
         The arrays have shape ``ntemps x nwalkers x niterations``.
@@ -281,7 +315,8 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
 
     @property
     def model_stats(self):
-        """Returns the log likelihood ratio and log prior as a dict of arrays.
+        """
+        Returns the log likelihood ratio and log prior as a dict of arrays.
 
         The returned array has shape ntemps x nwalkers x niterations.
 
@@ -303,12 +338,10 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         # get prior from posterior
         logp = self._sampler.lnprobability - logl
         logjacobian = numpy.zeros(logp.shape)
-        return {'loglikelihood': logl, 'logprior': logp,
-                'logjacobian': logjacobian}
+        return {"loglikelihood": logl, "logprior": logp, "logjacobian": logjacobian}
 
     def clear_samples(self):
-        """Clears the chain and blobs from memory.
-        """
+        """Clears the chain and blobs from memory."""
         # store the iteration that the clear is occuring on
         self._lastclear = self.niterations
         self._itercounter = 0
@@ -316,20 +349,21 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         self._sampler.reset()
 
     def set_state_from_file(self, filename):
-        """Sets the state of the sampler back to the instance saved in a file.
-        """
-        with self.io(filename, 'r') as fp:
+        """Sets the state of the sampler back to the instance saved in a file."""
+        with self.io(filename, "r") as fp:
             rstate = fp.read_random_state()
         # set the numpy random state
         numpy.random.set_state(rstate)
 
     def run_mcmc(self, niterations):
-        """Advance the ensemble for a number of samples.
+        """
+        Advance the ensemble for a number of samples.
 
         Parameters
         ----------
         niterations : int
             Number of samples to get from sampler.
+
         """
         pos = self._pos
         if pos is None:
@@ -340,20 +374,24 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         self._pos = p
 
     def write_results(self, filename):
-        """Writes samples, model stats, acceptance fraction, and random state
+        """
+        Writes samples, model stats, acceptance fraction, and random state
         to the given file.
 
         Parameters
-        -----------
+        ----------
         filename : str
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
+
         """
-        with self.io(filename, 'a') as fp:
+        with self.io(filename, "a") as fp:
             # write samples
-            fp.write_samples(self.samples,
-                             parameters=self.model.variable_params,
-                             last_iteration=self.niterations)
+            fp.write_samples(
+                self.samples,
+                parameters=self.model.variable_params,
+                last_iteration=self.niterations,
+            )
             # write stats
             fp.write_samples(self.model_stats, last_iteration=self.niterations)
             # write accpetance
@@ -362,9 +400,11 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
             fp.write_random_state()
 
     @classmethod
-    def calculate_logevidence(cls, filename, thin_start=None, thin_end=None,
-                              thin_interval=None):
-        """Calculates the log evidence from the given file using ``emcee_pt``'s
+    def calculate_logevidence(
+        cls, filename, thin_start=None, thin_end=None, thin_interval=None
+    ):
+        """
+        Calculates the log evidence from the given file using ``emcee_pt``'s
         thermodynamic integration.
 
         Parameters
@@ -390,14 +430,18 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
             The estimate of log of the evidence.
         dlnZ : float
             The error on the estimate.
+
         """
-        with cls._io(filename, 'r') as fp:
-            logls = fp.read_raw_samples(['loglikelihood'],
-                                        thin_start=thin_start,
-                                        thin_interval=thin_interval,
-                                        thin_end=thin_end,
-                                        temps='all', flatten=False)
-            logls = logls['loglikelihood']
+        with cls._io(filename, "r") as fp:
+            logls = fp.read_raw_samples(
+                ["loglikelihood"],
+                thin_start=thin_start,
+                thin_interval=thin_interval,
+                thin_end=thin_end,
+                temps="all",
+                flatten=False,
+            )
+            logls = logls["loglikelihood"]
             # we need the betas that were used
             betas = fp.betas
             # annoyingly, theromdynaimc integration in PTSampler is an instance
@@ -405,23 +449,24 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
             ntemps = fp.ntemps
             nwalkers = fp.nwalkers
             ndim = len(fp.variable_params)
-        dummy_sampler = emcee.PTSampler(ntemps, nwalkers, ndim, None,
-                                        None, betas=betas)
+        dummy_sampler = emcee.PTSampler(ntemps, nwalkers, ndim, None, None, betas=betas)
         return dummy_sampler.thermodynamic_integration_log_evidence(
-            logls=logls, fburnin=0.)
+            logls=logls, fburnin=0.0
+        )
 
     def _correctjacobian(self, samples):
-        """Corrects the log jacobian values stored on disk.
+        """
+        Corrects the log jacobian values stored on disk.
 
         Parameters
         ----------
         samples : dict
             Dictionary of the samples.
+
         """
         # flatten samples for evaluating
         orig_shape = list(samples.values())[0].shape
-        flattened_samples = {p: arr.ravel()
-                             for p, arr in list(samples.items())}
+        flattened_samples = {p: arr.ravel() for p, arr in list(samples.items())}
         # convert to a list of tuples so we can use map function
         params = list(flattened_samples.keys())
         size = flattened_samples[params[0]].size
@@ -434,7 +479,8 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         return logj.reshape(orig_shape)
 
     def finalize(self):
-        """Calculates the log evidence and writes to the checkpoint file.
+        """
+        Calculates the log evidence and writes to the checkpoint file.
 
         If sampling transforms were used, this also corrects the jacobian
         stored on disk.
@@ -445,27 +491,34 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         if self.model.sampling_transforms is not None:
             # fix the lobjacobian values stored on disk
             logging.info("Correcting logjacobian values on disk")
-            with self.io(self.checkpoint_file, 'r') as fp:
-                samples = fp.read_raw_samples(self.variable_params,
-                                              thin_start=0,
-                                              thin_interval=1, thin_end=None,
-                                              temps='all', flatten=False)
+            with self.io(self.checkpoint_file, "r") as fp:
+                samples = fp.read_raw_samples(
+                    self.variable_params,
+                    thin_start=0,
+                    thin_interval=1,
+                    thin_end=None,
+                    temps="all",
+                    flatten=False,
+                )
             logjacobian = self._correctjacobian(samples)
             # write them back out
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
-                    fp[fp.samples_group]['logjacobian'][()] = logjacobian
+                    fp[fp.samples_group]["logjacobian"][()] = logjacobian
         logging.info("Calculating log evidence")
         # get the thinning settings
-        with self.io(self.checkpoint_file, 'r') as fp:
+        with self.io(self.checkpoint_file, "r") as fp:
             thin_start = fp.thin_start
             thin_interval = fp.thin_interval
             thin_end = fp.thin_end
         # calculate
         logz, dlogz = self.calculate_logevidence(
-            self.checkpoint_file, thin_start=thin_start, thin_end=thin_end,
-            thin_interval=thin_interval)
-        logging.info("log Z, dlog Z: {}, {}".format(logz, dlogz))
+            self.checkpoint_file,
+            thin_start=thin_start,
+            thin_end=thin_end,
+            thin_interval=thin_interval,
+        )
+        logging.info(f"log Z, dlog Z: {logz}, {dlogz}")
         # write to both the checkpoint and backup
         for fn in [self.checkpoint_file, self.backup_file]:
             with self.io(fn, "a") as fp:

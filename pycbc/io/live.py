@@ -1,13 +1,13 @@
+import datetime
 import logging
 import os
 import pathlib
-import datetime
+
 import numpy
 
 from pycbc.time import gps_to_utc_datetime
 
-
-logger = logging.getLogger('pycbc.io.live')
+logger = logging.getLogger("pycbc.io.live")
 
 
 def maximum_string(numbers):
@@ -21,6 +21,7 @@ def maximum_string(numbers):
         A list of integers from which to determine the longest
         common string prefix. E.g. '12345', '12346', '12356'
         returns '123'
+
     """
     # The max length of the number will be the integer above log10
     # of the biggest number
@@ -42,6 +43,7 @@ def filter_file(filename, start_time, end_time):
     """
     Indicate whether the filename indicates that the file is within the
     start and end times
+
     Parameters
     ----------
     filename : string
@@ -58,11 +60,12 @@ def filter_file(filename, start_time, end_time):
     -------
     boolean
         Does any of the file lie within the start/end times
+
     """
     # FIX ME eventually - this uses the gps time and duration from the filename
     # Is there a better way? (i.e. trigger gps times in the file or
     # add an attribute)
-    fend = filename.split('-')[-2:]
+    fend = filename.split("-")[-2:]
     file_start = float(fend[0])
     duration = float(fend[1][:-4])
 
@@ -74,56 +77,59 @@ def add_live_trigger_selection_options(parser):
     Add options required for obtaining the right set of PyCBC live triggers
     into an argument parser
     """
-    finding_group = parser.add_argument_group('Trigger Finding')
+    finding_group = parser.add_argument_group("Trigger Finding")
     finding_group.add_argument(
         "--trigger-directory",
         metavar="PATH",
         required=True,
         help="Directory containing trigger files, directory "
-             "can contain subdirectories. Required."
+        "can contain subdirectories. Required.",
     )
     finding_group.add_argument(
         "--gps-start-time",
         type=int,
         required=True,
-        help="Start time of the analysis. Integer, required"
+        help="Start time of the analysis. Integer, required",
     )
     finding_group.add_argument(
         "--gps-end-time",
         type=int,
         required=True,
-        help="End time of the analysis. Integer, required"
+        help="End time of the analysis. Integer, required",
     )
     finding_group.add_argument(
         "--date-directories",
         action="store_true",
-        help="Indicate if the trigger files are stored in "
-             "directories by date."
+        help="Indicate if the trigger files are stored in directories by date.",
     )
     default_dd_format = "%Y_%m_%d"
     finding_group.add_argument(
         "--date-directory-format",
         default=default_dd_format,
         help="Format of date, see datetime strftime "
-             "documentation for details. Default: "
-             "%%Y_%%m_%%d"
+        "documentation for details. Default: "
+        "%%Y_%%m_%%d",
     )
     finding_group.add_argument(
         "--file-identifier",
         default="H1L1V1-Live",
         help="String required in filename to be considered for "
-             "analysis. Default: 'H1L1V1-Live'."
+        "analysis. Default: 'H1L1V1-Live'.",
     )
 
 
-def find_trigger_files(directory, gps_start_time, gps_end_time,
-                       id_string='*', date_directories=False,
-                       date_directory_format="%Y_%m_%d"):
+def find_trigger_files(
+    directory,
+    gps_start_time,
+    gps_end_time,
+    id_string="*",
+    date_directories=False,
+    date_directory_format="%Y_%m_%d",
+):
     """
     Find a list of PyCBC live trigger files which are between the gps
     start and end times given
     """
-
     # Find the string at the start of the gps time which will match all
     # files in this range - this helps to cut which ones we need to
     # compare later
@@ -132,7 +138,7 @@ def find_trigger_files(directory, gps_start_time, gps_end_time,
     # ** means recursive, so for large directories, this is expensive.
     # It is not too bad if date_directories is set, as we don't waste time
     # in directories where there cant be any files.
-    glob_string = f'**/*{id_string}*{num_match}*.hdf'
+    glob_string = f"**/*{id_string}*{num_match}*.hdf"
     if date_directories:
         # convert the GPS times into dates, and only use the directories
         # of those dates to search
@@ -154,8 +160,9 @@ def find_trigger_files(directory, gps_start_time, gps_end_time,
         matching_files = [f.as_posix() for f in matching_files_gen]
 
     # Is the file in the time window?
-    matching_files = [f for f in matching_files
-                      if filter_file(f, gps_start_time, gps_end_time)]
+    matching_files = [
+        f for f in matching_files if filter_file(f, gps_start_time, gps_end_time)
+    ]
 
     return sorted(matching_files)
 
@@ -171,12 +178,12 @@ def find_trigger_files_from_cli(args):
         args.gps_end_time,
         id_string=args.file_identifier,
         date_directories=args.date_directories,
-        date_directory_format=args.date_directory_format
+        date_directory_format=args.date_directory_format,
     )
 
 
 __all__ = [
-    'add_live_trigger_selection_options',
-    'find_trigger_files',
-    'find_trigger_files_from_cli',
+    "add_live_trigger_selection_options",
+    "find_trigger_files",
+    "find_trigger_files_from_cli",
 ]

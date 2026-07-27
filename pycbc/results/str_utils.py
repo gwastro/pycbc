@@ -38,61 +38,74 @@ mjax_header = """
 
 
 def mathjax_html_header():
-    """Standard header to use for html pages to display latex math.
+    """
+    Standard header to use for html pages to display latex math.
 
     Returns
     -------
     header: str
         The necessary html head needed to use latex on an html page.
+
     """
     return mjax_header
+
 
 def drop_trailing_zeros(num):
     """
     Drops the trailing zeros in a float that is printed.
     """
-    txt = '%f' %(num)
-    txt = txt.rstrip('0')
-    if txt.endswith('.'):
-        txt = txt[:-1]
+    txt = "%f" % (num)
+    txt = txt.rstrip("0")
+    txt = txt.removesuffix(".")
     return txt
+
 
 def get_signum(val, err, max_sig=numpy.inf):
     """
     Given an error, returns a string for val formated to the appropriate
     number of significant figures.
     """
-    coeff, pwr = ('%e' % err).split('e')
-    if pwr.startswith('-'):
+    coeff, pwr = ("%e" % err).split("e")
+    if pwr.startswith("-"):
         pwr = int(pwr[1:])
-        if round(float(coeff)) == 10.:
+        if round(float(coeff)) == 10.0:
             pwr -= 1
         pwr = min(pwr, max_sig)
-        tmplt = '%.' + str(pwr+1) + 'f'
+        tmplt = "%." + str(pwr + 1) + "f"
         return tmplt % val
-    else:
-        pwr = int(pwr[1:])
-        if round(float(coeff)) == 10.:
-            pwr += 1
-        # if the error is large, we can sometimes get 0;
-        # adjust the round until we don't get 0 (assuming the actual
-        # value isn't 0)
-        return_val = round(val, -pwr+1)
-        if val != 0.:
-            loop_count = 0
-            max_recursion = 100
-            while return_val == 0.:
-                pwr -= 1
-                return_val = round(val, -pwr+1)
-                loop_count += 1
-                if loop_count > max_recursion:
-                    raise ValueError("Maximum recursion depth hit! Input " +\
-                        "values are: val = %f, err = %f" %(val, err))
-        return drop_trailing_zeros(return_val)
+    pwr = int(pwr[1:])
+    if round(float(coeff)) == 10.0:
+        pwr += 1
+    # if the error is large, we can sometimes get 0;
+    # adjust the round until we don't get 0 (assuming the actual
+    # value isn't 0)
+    return_val = round(val, -pwr + 1)
+    if val != 0.0:
+        loop_count = 0
+        max_recursion = 100
+        while return_val == 0.0:
+            pwr -= 1
+            return_val = round(val, -pwr + 1)
+            loop_count += 1
+            if loop_count > max_recursion:
+                raise ValueError(
+                    "Maximum recursion depth hit! Input "
+                    + "values are: val = %f, err = %f" % (val, err)
+                )
+    return drop_trailing_zeros(return_val)
 
-def format_value(value, error, plus_error=None, use_scientific_notation=3,
-        include_error=True, use_relative_error=False, ndecs=None):
-    r"""Given a numerical value and some bound on it, formats the number into a
+
+def format_value(
+    value,
+    error,
+    plus_error=None,
+    use_scientific_notation=3,
+    include_error=True,
+    use_relative_error=False,
+    ndecs=None,
+):
+    r"""
+    Given a numerical value and some bound on it, formats the number into a
     string such that the value is rounded to the nearest significant figure,
     which is determined by the error = abs(value-bound).
 
@@ -179,7 +192,7 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
     '3.928\\times 10^{-22}\\,^{+2.1\\%}_{-5.7\\%}'
 
     """
-    minus_sign = '-' if value < 0. else ''
+    minus_sign = "-" if value < 0.0 else ""
     value = abs(value)
     minus_err = abs(error)
     if plus_error is None:
@@ -187,64 +200,69 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
     else:
         plus_err = abs(plus_error)
     error = min(minus_err, plus_err)
-    if value == 0. or abs(numpy.log10(value)) < use_scientific_notation:
-        conversion_factor = 0.
+    if value == 0.0 or abs(numpy.log10(value)) < use_scientific_notation:
+        conversion_factor = 0.0
     else:
         conversion_factor = numpy.floor(numpy.log10(value))
-    value = value * 10**(-conversion_factor)
-    error = error * 10**(-conversion_factor)
-    if conversion_factor == 0.:
-        powfactor = ''
-    elif conversion_factor == 1.:
-        powfactor = r'\times 10'
+    value = value * 10 ** (-conversion_factor)
+    error = error * 10 ** (-conversion_factor)
+    if conversion_factor == 0.0:
+        powfactor = ""
+    elif conversion_factor == 1.0:
+        powfactor = r"\times 10"
     else:
-        powfactor = r'\times 10^{%i}' %(int(conversion_factor))
+        powfactor = r"\times 10^{%i}" % (int(conversion_factor))
 
     if ndecs is not None:
-        decs = value * 10**(-ndecs)
+        decs = value * 10 ** (-ndecs)
     else:
         decs = error
     # now round the the appropriate number of sig figs
     valtxt = get_signum(value, decs)
-    valtxt = '{}{}'.format(minus_sign, valtxt)
+    valtxt = f"{minus_sign}{valtxt}"
 
     if include_error:
         if plus_error is None:
             errtxt = get_signum(error, error)
-            if use_relative_error and float(valtxt) != 0.:
-                relative_err = 100.*float(errtxt)/float(valtxt)
+            if use_relative_error and float(valtxt) != 0.0:
+                relative_err = 100.0 * float(errtxt) / float(valtxt)
                 # we round the relative error to the nearest 1% using
                 # get_signum; Note that if the relative error is < 1%,
                 # get_signum will automatically increase the number of values
                 # after the decimal until it gets to the first non-zero value
-                relative_err = get_signum(relative_err, 1.)
-                txt = r'%s %s \pm%s\%%' %(valtxt, powfactor, relative_err)
+                relative_err = get_signum(relative_err, 1.0)
+                txt = r"%s %s \pm%s\%%" % (valtxt, powfactor, relative_err)
             else:
-                txt = r'%s \pm %s%s' %(valtxt, errtxt, powfactor)
+                txt = r"%s \pm %s%s" % (valtxt, errtxt, powfactor)
         else:
-            plus_err = plus_err * 10**(-conversion_factor)
-            minus_err = minus_err * 10**(-conversion_factor)
+            plus_err = plus_err * 10 ** (-conversion_factor)
+            minus_err = minus_err * 10 ** (-conversion_factor)
             minus_err_txt = get_signum(minus_err, decs)
             plus_err_txt = get_signum(plus_err, decs)
-            if use_relative_error and float(valtxt) != 0.:
+            if use_relative_error and float(valtxt) != 0.0:
                 # same as above, but with plus and minus
                 rel_plus_err = get_signum(
-                    100.*float(plus_err_txt)/float(valtxt), 1.)
+                    100.0 * float(plus_err_txt) / float(valtxt), 1.0
+                )
                 rel_minus_err = get_signum(
-                    100.*float(minus_err_txt)/float(valtxt), 1.)
-                txt = r'%s%s\,^{+%s\%%}_{-%s\%%}' %(valtxt, powfactor,
-                    rel_plus_err, rel_minus_err)
+                    100.0 * float(minus_err_txt) / float(valtxt), 1.0
+                )
+                txt = r"%s%s\,^{+%s\%%}_{-%s\%%}" % (
+                    valtxt,
+                    powfactor,
+                    rel_plus_err,
+                    rel_minus_err,
+                )
             else:
-                txt = r'%s^{+%s}_{-%s}%s' %(valtxt, plus_err_txt,
-                    minus_err_txt, powfactor)
+                txt = r"%s^{+%s}_{-%s}%s" % (
+                    valtxt,
+                    plus_err_txt,
+                    minus_err_txt,
+                    powfactor,
+                )
     else:
-        txt = r'%s%s' %(valtxt, powfactor)
+        txt = r"%s%s" % (valtxt, powfactor)
     return txt
 
 
-__all__ = [
-    "mathjax_html_header",
-    "drop_trailing_zeros",
-    "get_signum",
-    "format_value"
-]
+__all__ = ["drop_trailing_zeros", "format_value", "get_signum", "mathjax_html_header"]

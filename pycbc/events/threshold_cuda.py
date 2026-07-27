@@ -22,14 +22,18 @@
 # =============================================================================
 #
 import logging
-import numpy, mako.template
-from pycuda.tools import dtype_to_ctype
-from pycuda.elementwise import ElementwiseKernel
+
+import mako.template
+import numpy
 from pycuda.compiler import SourceModule
-from .eventmgr import _BaseThresholdCluster
+from pycuda.elementwise import ElementwiseKernel
+from pycuda.tools import dtype_to_ctype
+
 import pycbc.scheme
 
-logger = logging.getLogger('pycbc.events.threshold_cuda')
+from .eventmgr import _BaseThresholdCluster
+
+logger = logging.getLogger("pycbc.events.threshold_cuda")
 
 threshold_op = """
     if (i == 0)
@@ -45,20 +49,24 @@ threshold_op = """
 """
 
 threshold_kernel = ElementwiseKernel(
-            " %(tp_in)s *in, %(tp_out1)s *outv, %(tp_out2)s *outl, %(tp_th)s threshold, %(tp_n)s *bn" % {
-                "tp_in": dtype_to_ctype(numpy.complex64),
-                "tp_out1": dtype_to_ctype(numpy.complex64),
-                "tp_out2": dtype_to_ctype(numpy.uint32),
-                "tp_th": dtype_to_ctype(numpy.float32),
-                "tp_n": dtype_to_ctype(numpy.uint32),
-                },
-            threshold_op,
-            "getstuff")
+    " %(tp_in)s *in, %(tp_out1)s *outv, %(tp_out2)s *outl, %(tp_th)s threshold, %(tp_n)s *bn"
+    % {
+        "tp_in": dtype_to_ctype(numpy.complex64),
+        "tp_out1": dtype_to_ctype(numpy.complex64),
+        "tp_out2": dtype_to_ctype(numpy.uint32),
+        "tp_th": dtype_to_ctype(numpy.float32),
+        "tp_n": dtype_to_ctype(numpy.uint32),
+    },
+    threshold_op,
+    "getstuff",
+)
 
 import pycuda.driver as drv
 
-class T():
+
+class T:
     pass
+
 
 tn = T()
 tv = T()
@@ -66,14 +74,20 @@ tl = T()
 
 # This avoids this code running if in the documentation build process,
 # and we don't have pycuda installed
-if type(drv).__name__ not in ('MagicMock', '_MockModule'):
-    n = drv.pagelocked_empty((1), numpy.uint32, mem_flags=drv.host_alloc_flags.DEVICEMAP)
+if type(drv).__name__ not in ("MagicMock", "_MockModule"):
+    n = drv.pagelocked_empty(
+        (1), numpy.uint32, mem_flags=drv.host_alloc_flags.DEVICEMAP
+    )
     nptr = numpy.intp(n.base.get_device_pointer())
 
-    val = drv.pagelocked_empty((4096*256), numpy.complex64, mem_flags=drv.host_alloc_flags.DEVICEMAP)
+    val = drv.pagelocked_empty(
+        (4096 * 256), numpy.complex64, mem_flags=drv.host_alloc_flags.DEVICEMAP
+    )
     vptr = numpy.intp(val.base.get_device_pointer())
 
-    loc = drv.pagelocked_empty((4096*256), numpy.int32, mem_flags=drv.host_alloc_flags.DEVICEMAP)
+    loc = drv.pagelocked_empty(
+        (4096 * 256), numpy.int32, mem_flags=drv.host_alloc_flags.DEVICEMAP
+    )
     lptr = numpy.intp(loc.base.get_device_pointer())
 
     tn.gpudata = nptr
@@ -215,11 +229,15 @@ __global__ void threshold_and_cluster2(float2* outv, int* outl, float threshold,
 """)
 
 tfn_cache = {}
+
+
 def get_tkernel(slen, window):
     if window < 32:
-        raise ValueError("GPU threshold kernel does not support a window smaller than 32 samples")
+        raise ValueError(
+            "GPU threshold kernel does not support a window smaller than 32 samples"
+        )
 
-    elif window <= 4096:
+    if window <= 4096:
         nt = 128
     elif window <= 16384:
         nt = 256
@@ -245,6 +263,7 @@ def get_tkernel(slen, window):
         tfn_cache[(nt, nb)] = (fn, fn2)
         return tfn_cache[(nt, nb)], nt, nb
 
+
 def threshold_and_cluster(series, threshold, window):
     outl = tl.gpudata
     outv = tv.gpudata
@@ -257,11 +276,20 @@ def threshold_and_cluster(series, threshold, window):
     cl = loc[0:nb]
     cv = val[0:nb]
 
-    fn.prepared_call((nb, 1), (nt, 1, 1), series, outv, outl, window, threshold,)
+    fn.prepared_call(
+        (nb, 1),
+        (nt, 1, 1),
+        series,
+        outv,
+        outl,
+        window,
+        threshold,
+    )
     fn2.prepared_call((1, 1), (nb, 1, 1), outv, outl, threshold, window)
     pycbc.scheme.mgr.state.context.synchronize()
-    w = (cl != -1)
+    w = cl != -1
     return cv[w], cl[w]
+
 
 class CUDAThresholdCluster(_BaseThresholdCluster):
     def __init__(self, series):
@@ -281,12 +309,20 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         cl = loc[0:nb]
         cv = val[0:nb]
 
-        fn((nb, 1), (nt, 1, 1), self.series, self.outv, self.outl, window, threshold,)
+        fn(
+            (nb, 1),
+            (nt, 1, 1),
+            self.series,
+            self.outv,
+            self.outl,
+            window,
+            threshold,
+        )
         fn2((1, 1), (nb, 1, 1), self.outv, self.outl, threshold, window)
         pycbc.scheme.mgr.state.context.synchronize()
-        w = (cl != -1)
+        w = cl != -1
         return cv[w], cl[w]
+
 
 def _threshold_cluster_factory(series):
     return CUDAThresholdCluster
-

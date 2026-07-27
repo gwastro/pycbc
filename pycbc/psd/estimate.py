@@ -13,13 +13,19 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-"""Utilites to estimate PSDs from data.
-"""
+"""Utilites to estimate PSDs from data."""
 
 import numpy
-from pycbc.types import Array, FrequencySeries, TimeSeries, zeros
-from pycbc.types import real_same_precision_as, complex_same_precision_as
+
 from pycbc.fft import fft, ifft
+from pycbc.types import (
+    Array,
+    FrequencySeries,
+    TimeSeries,
+    complex_same_precision_as,
+    real_same_precision_as,
+    zeros,
+)
 
 # Change to True in front-end if you want this function to use caching
 # This is a mostly-hidden optimization option that most users will not want
@@ -32,8 +38,10 @@ USE_CACHING_FOR_INV_SPEC_TRUNC = False
 WELCH_UNIQUE_ID = 438716587
 INVSPECTRUNC_UNIQUE_ID = 100257896
 
+
 def median_bias(n):
-    """Calculate the bias of the median average PSD computed from `n` segments.
+    """
+    Calculate the bias of the median average PSD computed from `n` segments.
 
     Parameters
     ----------
@@ -53,19 +61,29 @@ def median_bias(n):
     Notes
     -----
     See arXiv:gr-qc/0509116 appendix B for details.
+
     """
     if type(n) is not int or n <= 0:
-        raise ValueError('n must be a positive integer')
+        raise ValueError("n must be a positive integer")
     if n >= 1000:
         return numpy.log(2)
     ans = 1
     for i in range(1, (n - 1) // 2 + 1):
-        ans += 1.0 / (2*i + 1) - 1.0 / (2*i)
+        ans += 1.0 / (2 * i + 1) - 1.0 / (2 * i)
     return ans
 
-def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
-          avg_method='median', num_segments=None, require_exact_data_fit=False):
-    """PSD estimator based on Welch's method.
+
+def welch(
+    timeseries,
+    seg_len=4096,
+    seg_stride=2048,
+    window="hann",
+    avg_method="median",
+    num_segments=None,
+    require_exact_data_fit=False,
+):
+    """
+    PSD estimator based on Welch's method.
 
     Parameters
     ----------
@@ -96,27 +114,30 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
     Notes
     -----
     See arXiv:gr-qc/0509116 for details.
+
     """
     from pycbc.strain.strain import execute_cached_fft
 
-    window_map = {
-        'hann': numpy.hanning
-    }
+    window_map = {"hann": numpy.hanning}
 
     # sanity checks
     if isinstance(window, numpy.ndarray) and window.size != seg_len:
-        raise ValueError('Invalid window: incorrect window length')
+        raise ValueError("Invalid window: incorrect window length")
     if not isinstance(window, numpy.ndarray) and window not in window_map:
-        raise ValueError('Invalid window: unknown window {!r}'.format(window))
-    if avg_method not in ('mean', 'median', 'median-mean'):
-        raise ValueError('Invalid averaging method')
-    if type(seg_len) is not int or type(seg_stride) is not int \
-        or seg_len <= 0 or seg_stride <= 0:
-        raise ValueError('Segment length and stride must be positive integers')
+        raise ValueError(f"Invalid window: unknown window {window!r}")
+    if avg_method not in ("mean", "median", "median-mean"):
+        raise ValueError("Invalid averaging method")
+    if (
+        type(seg_len) is not int
+        or type(seg_stride) is not int
+        or seg_len <= 0
+        or seg_stride <= 0
+    ):
+        raise ValueError("Segment length and stride must be positive integers")
 
-    if timeseries.precision == 'single':
+    if timeseries.precision == "single":
         fs_dtype = numpy.complex64
-    elif timeseries.precision == 'double':
+    elif timeseries.precision == "double":
         fs_dtype = numpy.complex128
 
     num_samples = len(timeseries)
@@ -141,19 +162,19 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
             timeseries = timeseries[start:end]
             num_samples = len(timeseries)
         if data_len > num_samples:
-            err_msg = "I was asked to estimate a PSD on %d " %(data_len)
+            err_msg = "I was asked to estimate a PSD on %d " % (data_len)
             err_msg += "data samples. However the data provided only contains "
-            err_msg += "%d data samples." %(num_samples)
+            err_msg += "%d data samples." % (num_samples)
 
     if num_samples != (num_segments - 1) * seg_stride + seg_len:
-        raise ValueError('Incorrect choice of segmentation parameters')
+        raise ValueError("Incorrect choice of segmentation parameters")
 
     if not isinstance(window, numpy.ndarray):
         window = window_map[window](seg_len)
     w = Array(window.astype(timeseries.dtype))
 
     # calculate psd of each segment
-    delta_f = 1. / timeseries.delta_t / seg_len
+    delta_f = 1.0 / timeseries.delta_t / seg_len
     if not USE_CACHING_FOR_WELCH_FFTS:
         segment_tilde = FrequencySeries(
             numpy.zeros(int(seg_len / 2 + 1)),
@@ -170,11 +191,10 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
         if not USE_CACHING_FOR_WELCH_FFTS:
             fft(segment * w, segment_tilde)
         else:
-            segment_tilde = execute_cached_fft(segment * w,
-                                               uid=WELCH_UNIQUE_ID)
+            segment_tilde = execute_cached_fft(segment * w, uid=WELCH_UNIQUE_ID)
         seg_psd = abs(segment_tilde * segment_tilde.conj()).numpy()
 
-        #halve the DC and Nyquist components to be consistent with TO10095
+        # halve the DC and Nyquist components to be consistent with TO10095
         seg_psd[0] /= 2
         seg_psd[-1] /= 2
 
@@ -182,29 +202,35 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
 
     segment_psds = numpy.array(segment_psds)
 
-    if avg_method == 'mean':
+    if avg_method == "mean":
         psd = numpy.mean(segment_psds, axis=0)
-    elif avg_method == 'median':
+    elif avg_method == "median":
         psd = numpy.median(segment_psds, axis=0) / median_bias(num_segments)
-    elif avg_method == 'median-mean':
+    elif avg_method == "median-mean":
         odd_psds = segment_psds[::2]
         even_psds = segment_psds[1::2]
-        odd_median = numpy.median(odd_psds, axis=0) / \
-            median_bias(len(odd_psds))
-        even_median = numpy.median(even_psds, axis=0) / \
-            median_bias(len(even_psds))
+        odd_median = numpy.median(odd_psds, axis=0) / median_bias(len(odd_psds))
+        even_median = numpy.median(even_psds, axis=0) / median_bias(len(even_psds))
         psd = (odd_median + even_median) / 2
 
     w = w.numpy()
-    psd *= 2 * delta_f * seg_len / (w*w).sum()
+    psd *= 2 * delta_f * seg_len / (w * w).sum()
 
-    return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype,
-                           epoch=timeseries.start_time)
+    return FrequencySeries(
+        psd, delta_f=delta_f, dtype=timeseries.dtype, epoch=timeseries.start_time
+    )
 
-def inverse_spectrum_truncation(psd, max_filter_len, which_spectrum='invasd',
-                                low_frequency_cutoff=None, 
-                                low_frequency_fill_value=0., trunc_method=None):
-    """Modify a PSD such that the impulse response associated with its inverse
+
+def inverse_spectrum_truncation(
+    psd,
+    max_filter_len,
+    which_spectrum="invasd",
+    low_frequency_cutoff=None,
+    low_frequency_fill_value=0.0,
+    trunc_method=None,
+):
+    """
+    Modify a PSD such that the impulse response associated with its inverse
     square root is no longer than `max_filter_len` time samples. In practice
     this corresponds to a coarse graining or smoothing of the PSD.
 
@@ -218,7 +244,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, which_spectrum='invasd',
         Which spectrum to truncate. If 'invasd' (default), apply truncation to
         the inverse ASD. If 'invpsd', apply to the inverse PSD.
     low_frequency_cutoff : {None, int}
-        Frequencies below `low_frequency_cutoff` are set to value specified by 
+        Frequencies below `low_frequency_cutoff` are set to value specified by
         `low_frequency_fill_value`.
     low_frequency_fill_value : {float, 'fmin'}
         Value to set PSD to at frequencies below `low_frequency_cutoff`.
@@ -227,7 +253,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, which_spectrum='invasd',
     trunc_method : {None, 'hann'}
         Function used for truncating the time-domain filter.
         None produces a hard truncation at `max_filter_len`.
-    
+
 
     Returns
     -------
@@ -242,62 +268,64 @@ def inverse_spectrum_truncation(psd, max_filter_len, which_spectrum='invasd',
     Notes
     -----
     See arXiv:gr-qc/0509116 for details.
+
     """
     from pycbc.strain.strain import execute_cached_fft, execute_cached_ifft
 
     # sanity checks
     if type(max_filter_len) is not int or max_filter_len <= 0:
-        raise ValueError('max_filter_len must be a positive integer')
-    if low_frequency_cutoff is not None and \
-            (low_frequency_cutoff < 0. or
-             low_frequency_cutoff > psd.sample_frequencies[-1]):
-        raise ValueError('low_frequency_cutoff must be within the bandwidth of '
-                         'the PSD')
+        raise ValueError("max_filter_len must be a positive integer")
+    if low_frequency_cutoff is not None and (
+        low_frequency_cutoff < 0.0 or low_frequency_cutoff > psd.sample_frequencies[-1]
+    ):
+        raise ValueError("low_frequency_cutoff must be within the bandwidth of the PSD")
 
-    N = (len(psd)-1)*2
+    N = (len(psd) - 1) * 2
 
-    inv_spectrum = FrequencySeries(zeros(len(psd)), delta_f=psd.delta_f, \
-        dtype=complex_same_precision_as(psd))
+    inv_spectrum = FrequencySeries(
+        zeros(len(psd)), delta_f=psd.delta_f, dtype=complex_same_precision_as(psd)
+    )
 
     kmin = 1
     if low_frequency_cutoff:
         kmin = int(low_frequency_cutoff / psd.delta_f)
-    
+
     # set values below low frequency cutoff
-    if low_frequency_fill_value != 0.:
-        if low_frequency_fill_value == 'fmin':
-            low_frequency_fill_value = 1./psd[kmin]
+    if low_frequency_fill_value != 0.0:
+        if low_frequency_fill_value == "fmin":
+            low_frequency_fill_value = 1.0 / psd[kmin]
         inv_spectrum[:kmin] = float(low_frequency_fill_value)
 
-    inv_spectrum[kmin:N//2] = (1.0 / psd[kmin:N//2])
+    inv_spectrum[kmin : N // 2] = 1.0 / psd[kmin : N // 2]
 
     # if truncating asd, take sqrt
-    if which_spectrum == 'invasd':
-        inv_spectrum[:N//2] = inv_spectrum[:N//2]**0.5
-    elif which_spectrum != 'invpsd':
-        raise ValueError(f'Invalid which_spectrum input {which_spectrum}; '
-                         f'input must be either "invpsd" or "invasd"')
+    if which_spectrum == "invasd":
+        inv_spectrum[: N // 2] = inv_spectrum[: N // 2] ** 0.5
+    elif which_spectrum != "invpsd":
+        raise ValueError(
+            f"Invalid which_spectrum input {which_spectrum}; "
+            f'input must be either "invpsd" or "invasd"'
+        )
 
     if not USE_CACHING_FOR_INV_SPEC_TRUNC:
         q = TimeSeries(
-            numpy.zeros(N),
-            delta_t=(N / psd.delta_f),
-            dtype=real_same_precision_as(psd)
+            numpy.zeros(N), delta_t=(N / psd.delta_f), dtype=real_same_precision_as(psd)
         )
         ifft(inv_spectrum, q)
     else:
-        q = execute_cached_ifft(inv_spectrum, copy_output=False,
-                                uid=INVSPECTRUNC_UNIQUE_ID)
+        q = execute_cached_ifft(
+            inv_spectrum, copy_output=False, uid=INVSPECTRUNC_UNIQUE_ID
+        )
 
     trunc_start = max_filter_len // 2
     trunc_end = N - max_filter_len // 2
     if trunc_end < trunc_start:
-        raise ValueError('Invalid value in inverse_spectrum_truncation')
+        raise ValueError("Invalid value in inverse_spectrum_truncation")
 
-    if trunc_method == 'hann':
+    if trunc_method == "hann":
         trunc_window = Array(numpy.hanning(max_filter_len), dtype=q.dtype)
         q[0:trunc_start] *= trunc_window[-trunc_start:]
-        q[trunc_end:N] *= trunc_window[0:max_filter_len//2]
+        q[trunc_end:N] *= trunc_window[0 : max_filter_len // 2]
 
     if trunc_start < trunc_end:
         q[trunc_start:trunc_end] = 0
@@ -305,20 +333,21 @@ def inverse_spectrum_truncation(psd, max_filter_len, which_spectrum='invasd',
         psd_trunc = FrequencySeries(
             numpy.zeros(len(psd)),
             delta_f=psd.delta_f,
-            dtype=complex_same_precision_as(psd)
+            dtype=complex_same_precision_as(psd),
         )
         fft(q, psd_trunc)
     else:
-        psd_trunc = execute_cached_fft(q, copy_output=False,
-                                       uid=INVSPECTRUNC_UNIQUE_ID)
-    if which_spectrum == 'invasd':
+        psd_trunc = execute_cached_fft(q, copy_output=False, uid=INVSPECTRUNC_UNIQUE_ID)
+    if which_spectrum == "invasd":
         psd_trunc *= psd_trunc.conj()
-    psd_out = 1. / abs(psd_trunc)
+    psd_out = 1.0 / abs(psd_trunc)
 
     return psd_out
 
+
 def interpolate(series, delta_f, length=None):
-    """Return a new PSD that has been interpolated to the desired delta_f.
+    """
+    Return a new PSD that has been interpolated to the desired delta_f.
 
     Parameters
     ----------
@@ -336,18 +365,24 @@ def interpolate(series, delta_f, length=None):
     -------
     interpolated series : FrequencySeries
         A new FrequencySeries that has been interpolated.
+
     """
     if length is None:
-        new_n = (len(series)-1) * series.delta_f / delta_f + 1
+        new_n = (len(series) - 1) * series.delta_f / delta_f + 1
     else:
         new_n = length
     samples = numpy.arange(0, numpy.rint(new_n)) * delta_f
-    interpolated_series = numpy.interp(samples, series.sample_frequencies.numpy(), series.numpy())
-    return FrequencySeries(interpolated_series, epoch=series.epoch,
-                           delta_f=delta_f, dtype=series.dtype)
+    interpolated_series = numpy.interp(
+        samples, series.sample_frequencies.numpy(), series.numpy()
+    )
+    return FrequencySeries(
+        interpolated_series, epoch=series.epoch, delta_f=delta_f, dtype=series.dtype
+    )
+
 
 def bandlimited_interpolate(series, delta_f):
-    """Return a new PSD that has been interpolated to the desired delta_f.
+    """
+    Return a new PSD that has been interpolated to the desired delta_f.
 
     Parameters
     ----------
@@ -360,8 +395,11 @@ def bandlimited_interpolate(series, delta_f):
     -------
     interpolated series : FrequencySeries
         A new FrequencySeries that has been interpolated.
+
     """
-    series = FrequencySeries(series, dtype=complex_same_precision_as(series), delta_f=series.delta_f)
+    series = FrequencySeries(
+        series, dtype=complex_same_precision_as(series), delta_f=series.delta_f
+    )
 
     N = (len(series) - 1) * 2
     delta_t = 1.0 / series.delta_f / N
@@ -369,15 +407,20 @@ def bandlimited_interpolate(series, delta_f):
     new_N = int(1.0 / (delta_t * delta_f))
     new_n = new_N // 2 + 1
 
-    series_in_time = TimeSeries(zeros(N), dtype=real_same_precision_as(series), delta_t=delta_t)
+    series_in_time = TimeSeries(
+        zeros(N), dtype=real_same_precision_as(series), delta_t=delta_t
+    )
     ifft(series, series_in_time)
 
-    padded_series_in_time = TimeSeries(zeros(new_N), dtype=series_in_time.dtype, delta_t=delta_t)
-    padded_series_in_time[0:N//2] = series_in_time[0:N//2]
-    padded_series_in_time[new_N-N//2:new_N] = series_in_time[N//2:N]
+    padded_series_in_time = TimeSeries(
+        zeros(new_N), dtype=series_in_time.dtype, delta_t=delta_t
+    )
+    padded_series_in_time[0 : N // 2] = series_in_time[0 : N // 2]
+    padded_series_in_time[new_N - N // 2 : new_N] = series_in_time[N // 2 : N]
 
-    interpolated_series = FrequencySeries(zeros(new_n), dtype=series.dtype, delta_f=delta_f)
+    interpolated_series = FrequencySeries(
+        zeros(new_n), dtype=series.dtype, delta_f=delta_f
+    )
     fft(padded_series_in_time, interpolated_series)
 
     return interpolated_series
-

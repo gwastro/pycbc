@@ -23,56 +23,57 @@
 #
 # =============================================================================
 #
-""" This module provides thin wrappers around Pegasus.DAX3 functionality that
+"""
+This module provides thin wrappers around Pegasus.DAX3 functionality that
 provides additional abstraction and argument handling.
 """
+
+import logging
 import os
 import shutil
-import logging
-import tempfile
 import subprocess
+import tempfile
 import warnings
-from packaging import version
-from urllib.request import pathname2url
 from urllib.parse import urljoin, urlsplit
+from urllib.request import pathname2url
 
 import Pegasus.api as dax
+from packaging import version
 
-logger = logging.getLogger('pycbc.workflow.pegasus_workflow')
+logger = logging.getLogger("pycbc.workflow.pegasus_workflow")
 
-PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
-                                      'pegasus_files')
+PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), "pegasus_files")
 
 
-class ProfileShortcuts(object):
-    """ Container of common methods for setting pegasus profile information
+class ProfileShortcuts:
+    """
+    Container of common methods for setting pegasus profile information
     on Executables and nodes. This class expects to be inherited from
     and for a add_profile method to be implemented.
     """
+
     def set_memory(self, size):
-        """ Set the amount of memory that is required in megabytes
-        """
-        self.add_profile('condor', 'request_memory', '%sM' % size)
+        """Set the amount of memory that is required in megabytes"""
+        self.add_profile("condor", "request_memory", "%sM" % size)
 
     def set_storage(self, size):
-        """ Set the amount of storage required in megabytes
-        """
-        self.add_profile('condor', 'request_disk', '%sM' % size)
+        """Set the amount of storage required in megabytes"""
+        self.add_profile("condor", "request_disk", "%sM" % size)
 
     def set_num_cpus(self, number):
-        self.add_profile('condor', 'request_cpus', number)
+        self.add_profile("condor", "request_cpus", number)
 
     def set_universe(self, universe):
-        if universe == 'standard':
+        if universe == "standard":
             self.add_profile("pegasus", "gridstart", "none")
 
         self.add_profile("condor", "universe", universe)
 
     def set_category(self, category):
-        self.add_profile('dagman', 'category', category)
+        self.add_profile("dagman", "category", category)
 
     def set_priority(self, priority):
-        self.add_profile('dagman', 'priority', priority)
+        self.add_profile("dagman", "priority", priority)
 
     def set_num_retries(self, number):
         self.add_profile("dagman", "retry", number)
@@ -82,12 +83,13 @@ class ProfileShortcuts(object):
 
 
 class Executable(ProfileShortcuts):
-    """ The workflow representation of an Executable
-    """
+    """The workflow representation of an Executable"""
+
     id = 0
-    def __init__(self, name, os='linux',
-                 arch='x86_64', installed=False,
-                 container=None):
+
+    def __init__(
+        self, name, os="linux", arch="x86_64", installed=False, container=None
+    ):
         self.logical_name = name + "_ID%s" % str(Executable.id)
         self.pegasus_name = name
         Executable.id += 1
@@ -107,20 +109,15 @@ class Executable(ProfileShortcuts):
             is_stageable=self.installed,
             arch=self.arch,
             os_type=self.os,
-            container=self.container
+            container=self.container,
         )
         transform.pycbc_name = self.pegasus_name
         for (namespace, key), value in self.profiles.items():
-            transform.add_profiles(
-                dax.Namespace(namespace),
-                key=key,
-                value=value
-            )
+            transform.add_profiles(dax.Namespace(namespace), key=key, value=value)
         self.transformations[site] = transform
 
     def add_profile(self, namespace, key, value):
-        """ Add profile information to this executable
-        """
+        """Add profile information to this executable"""
         if self.transformations:
             err_msg = "Need code changes to be able to add profiles "
             err_msg += "after transformations are created."
@@ -129,11 +126,16 @@ class Executable(ProfileShortcuts):
 
 
 class Transformation(dax.Transformation):
-
     def is_same_as(self, other):
-        test_vals = ['namespace', 'version']
-        test_site_vals = ['arch', 'os_type', 'os_release',
-                          'os_version', 'bypass', 'container']
+        test_vals = ["namespace", "version"]
+        test_site_vals = [
+            "arch",
+            "os_type",
+            "os_release",
+            "os_version",
+            "bypass",
+            "container",
+        ]
         # Check for logical name first
         if not self.pycbc_name == other.pycbc_name:
             return False
@@ -172,7 +174,7 @@ class Transformation(dax.Transformation):
 class Node(ProfileShortcuts):
     def __init__(self, transformation):
         self.in_workflow = False
-        self.transformation=transformation
+        self.transformation = transformation
         self._inputs = []
         self._outputs = []
         self._dax_node = dax.Job(transformation)
@@ -189,17 +191,17 @@ class Node(ProfileShortcuts):
         self._raw_options = []
 
     def add_arg(self, arg):
-        """ Add an argument
-        """
+        """Add an argument"""
         if not isinstance(arg, File):
             arg = str(arg)
 
         self._args += [arg]
 
     def add_raw_arg(self, arg):
-        """ Add an argument to the command line of this job, but do *NOT* add
-            white space between arguments. This can be added manually by adding
-            ' ' if needed
+        """
+        Add an argument to the command line of this job, but do *NOT* add
+        white space between arguments. This can be added manually by adding
+        ' ' if needed
         """
         if not isinstance(arg, File):
             arg = str(arg)
@@ -207,10 +209,10 @@ class Node(ProfileShortcuts):
         self._raw_options += [arg]
 
     def add_opt(self, opt, value=None, check_existing_options=True, **kwargs):  # pylint:disable=unused-argument
-        """ Add an option
-        """
-        if check_existing_options and (opt in self._options
-                                       or opt in self._raw_options):
+        """Add an option"""
+        if check_existing_options and (
+            opt in self._options or opt in self._raw_options
+        ):
             err_msg = (
                 "Trying to set option %s with value %s, but it "
                 "has already been provided by the configuration file. "
@@ -225,16 +227,14 @@ class Node(ProfileShortcuts):
         else:
             self._options += [opt]
 
-    #private functions to add input and output data sources/sinks
+    # private functions to add input and output data sources/sinks
     def _add_input(self, inp):
-        """ Add as source of input data
-        """
+        """Add as source of input data"""
         self._inputs += [inp]
         self._dax_node.add_inputs(inp)
 
     def _add_output(self, out):
-        """ Add as destination of output data
-        """
+        """Add as destination of output data"""
         self._outputs += [out]
         out.node = self
         stage_out = out.storage_path is not None
@@ -242,117 +242,93 @@ class Node(ProfileShortcuts):
 
     # public functions to add options, arguments with or without data sources
     def add_input(self, inp):
-        """Declares an input file without adding it as a command-line option.
-        """
+        """Declares an input file without adding it as a command-line option."""
         self._add_input(inp)
 
     def add_output(self, inp):
-        """Declares an output file without adding it as a command-line option.
-        """
+        """Declares an output file without adding it as a command-line option."""
         self._add_output(inp)
 
     def add_input_opt(self, opt, inp, **kwargs):
-        """ Add an option that determines an input
-        """
+        """Add an option that determines an input"""
         self.add_opt(opt, inp._dax_repr(), **kwargs)
         self._add_input(inp)
 
     def add_output_opt(self, opt, out, **kwargs):
-        """ Add an option that determines an output
-        """
+        """Add an option that determines an output"""
         self.add_opt(opt, out._dax_repr(), **kwargs)
         self._add_output(out)
 
     def add_output_list_opt(self, opt, outputs, **kwargs):
-        """ Add an option that determines a list of outputs
-        """
+        """Add an option that determines a list of outputs"""
         self.add_opt(opt, **kwargs)
         # Never check existing options for list option values
-        if 'check_existing_options' in kwargs:
-            kwargs['check_existing_options'] = False
+        if "check_existing_options" in kwargs:
+            kwargs["check_existing_options"] = False
         for out in outputs:
             self.add_opt(out, **kwargs)
             self._add_output(out)
 
     def add_input_list_opt(self, opt, inputs, **kwargs):
-        """ Add an option that determines a list of inputs
-        """
+        """Add an option that determines a list of inputs"""
         self.add_opt(opt, **kwargs)
         # Never check existing options for list option values
-        if 'check_existing_options' in kwargs:
-            del kwargs['check_existing_options']
+        kwargs.pop("check_existing_options", None)
         for inp in inputs:
-            self.add_opt(
-                inp,
-                check_existing_options=False,
-                **kwargs
-            )
+            self.add_opt(inp, check_existing_options=False, **kwargs)
             self._add_input(inp)
 
     def add_list_opt(self, opt, values, **kwargs):
-        """ Add an option with a list of non-file parameters.
-        """
+        """Add an option with a list of non-file parameters."""
         self.add_opt(opt, **kwargs)
         # Never check existing options for list option values
-        if 'check_existing_options' in kwargs:
-            del kwargs['check_existing_options']
+        kwargs.pop("check_existing_options", None)
         for val in values:
-            self.add_opt(
-                val,
-                check_existing_options=False,
-                **kwargs
-            )
+            self.add_opt(val, check_existing_options=False, **kwargs)
 
     def add_input_arg(self, inp):
-        """ Add an input as an argument
-        """
+        """Add an input as an argument"""
         self.add_arg(inp._dax_repr())
         self._add_input(inp)
 
     def add_output_arg(self, out):
-        """ Add an output as an argument
-        """
+        """Add an output as an argument"""
         self.add_arg(out._dax_repr())
         self._add_output(out)
 
     def new_output_file_opt(self, opt, name):
-        """ Add an option and return a new file handle
-        """
+        """Add an option and return a new file handle"""
         fil = File(name)
         self.add_output_opt(opt, fil)
         return fil
 
     # functions to describe properties of this node
     def add_profile(self, namespace, key, value):
-        """ Add profile information to this node at the DAX level
-        """
-        self._dax_node.add_profiles(
-            dax.Namespace(namespace),
-            key=key,
-            value=value
-        )
+        """Add profile information to this node at the DAX level"""
+        self._dax_node.add_profiles(dax.Namespace(namespace), key=key, value=value)
 
     def _finalize(self):
         if len(self._raw_options):
-            raw_args = [''.join([str(a) for a in self._raw_options])]
+            raw_args = ["".join([str(a) for a in self._raw_options])]
         else:
             raw_args = []
         args = self._args + raw_args + self._options
         self._dax_node.add_args(*args)
 
 
-class Workflow(object):
-    """
-    """
-    def __init__(self, name='my_workflow', directory=None, cache_file=None,
-                 dax_file_name=None):
+class Workflow:
+    """ """
+
+    def __init__(
+        self, name="my_workflow", directory=None, cache_file=None, dax_file_name=None
+    ):
         # Pegasus logging is fairly verbose, quieten it down a bit
         # This sets the logger to one level less verbose than the root
         # (pycbc) logger
 
         curr_level = logging.getLogger().level
         # Get the logger associated with the Pegasus workflow import
-        pegasus_logger = logging.getLogger('Pegasus')
+        pegasus_logger = logging.getLogger("Pegasus")
         pegasus_logger.setLevel(curr_level + 10)
         self.name = name
         self._rc = dax.ReplicaCatalog()
@@ -374,19 +350,19 @@ class Workflow(object):
         self.in_workflow = False
         self.sub_workflows = []
         if dax_file_name is None:
-            self.filename = self.name + '.dax'
+            self.filename = self.name + ".dax"
         else:
             self.filename = dax_file_name
         self._adag = dax.Workflow(self.filename)
 
         # A pegasus job version of this workflow for use if it is included
         # within a larger workflow
-        self._as_job = SubWorkflow(self.filename, is_planned=False,
-                                   _id=self.name)
+        self._as_job = SubWorkflow(self.filename, is_planned=False, _id=self.name)
         self._swinputs = []
 
     def add_workflow(self, workflow):
-        """ Add a sub-workflow to this workflow
+        """
+        Add a sub-workflow to this workflow
 
         This function adds a sub-workflow of Workflow class to this workflow.
         Parent child relationships are determined by data dependencies
@@ -395,6 +371,7 @@ class Workflow(object):
         ----------
         workflow : Workflow instance
             The sub-workflow to add to this one
+
         """
         workflow.in_workflow = self
         self.sub_workflows += [workflow]
@@ -414,7 +391,9 @@ class Workflow(object):
         ----------
         parent : Node, Workflow or SubWorkflow instance
         child : Node, Workflow or SubWorkflow instance
+
         """
+
         def convert(thing):
             if isinstance(thing, Workflow):
                 return thing._as_job
@@ -422,7 +401,7 @@ class Workflow(object):
                 return thing._dax_node
             if isinstance(thing, SubWorkflow):
                 return thing
-            raise TypeError('ayee, cannot handle this dependancy!')
+            raise TypeError("ayee, cannot handle this dependancy!")
 
         self._adag.add_dependency(convert(parent), children=[convert(child)])
 
@@ -444,11 +423,13 @@ class Workflow(object):
         child_workflow : Workflow instance
             The sub-workflow to add as the child dependence.
             Must be a sub-workflow of this workflow.
+
         """
         self.add_explicit_dependancy(parent_workflow, child_workflow)
 
     def add_transformation(self, tranformation):
-        """ Add a transformation to this workflow
+        """
+        Add a transformation to this workflow
 
         Adds the input transformation to this workflow.
 
@@ -456,11 +437,13 @@ class Workflow(object):
         ----------
         transformation : Pegasus.api.Transformation
             The transformation to be added.
+
         """
         self._tc.add_transformations(tranformation)
 
     def add_container(self, container):
-        """ Add a container to this workflow
+        """
+        Add a container to this workflow
 
         Adds the input container to this workflow.
 
@@ -468,11 +451,13 @@ class Workflow(object):
         ----------
         container : Pegasus.api.Container
             The container to be added.
+
         """
         self._tc.add_containers(container)
 
     def add_node(self, node):
-        """ Add a node to this workflow
+        """
+        Add a node to this workflow
 
         This function adds nodes to the workflow. It also determines
         parent/child relations from the inputs to this job.
@@ -481,6 +466,7 @@ class Workflow(object):
         ----------
         node : pycbc.workflow.pegasus_workflow.Node
             A node that should be executed as part of this workflow.
+
         """
         node._finalize()
         node.in_workflow = self
@@ -496,9 +482,11 @@ class Workflow(object):
                     break
             else:
                 self._transformations += [node.transformation]
-                lgc = (hasattr(node, 'executable')
-                       and node.executable.container is not None
-                       and node.executable.container not in self._containers)
+                lgc = (
+                    hasattr(node, "executable")
+                    and node.executable.container is not None
+                    and node.executable.container not in self._containers
+                )
                 if lgc:
                     self._containers.append(node.executable.container)
 
@@ -516,14 +504,15 @@ class Workflow(object):
                 # Don't need to do anything here.
                 continue
 
-            elif inp.node is not None and not inp.node.in_workflow:
+            if inp.node is not None and not inp.node.in_workflow:
                 # This error should be rare, but can happen. If a Node hasn't
                 # yet been added to a workflow, this logic breaks. Always add
                 # nodes in order that files will be produced.
-                raise ValueError('Parents of this node must be added to the '
-                                 'workflow first.')
+                raise ValueError(
+                    "Parents of this node must be added to the workflow first."
+                )
 
-            elif inp.node is None:
+            if inp.node is None:
                 # File is external to the workflow (e.g. a pregenerated
                 # template bank). (if inp.node is None)
                 if inp not in self._inputs:
@@ -536,10 +525,12 @@ class Workflow(object):
                     self._inputs += [inp]
                     self._swinputs += [inp]
             else:
-                err_msg = ("I don't understand how to deal with an input file "
-                           "here. Ian doesn't think this message should be "
-                           "possible, but if you get here something has gone "
-                           "wrong and will need debugging!")
+                err_msg = (
+                    "I don't understand how to deal with an input file "
+                    "here. Ian doesn't think this message should be "
+                    "possible, but if you get here something has gone "
+                    "wrong and will need debugging!"
+                )
                 raise ValueError(err_msg)
 
         # Record the outputs that this node generates
@@ -550,17 +541,18 @@ class Workflow(object):
     def __add__(self, other):
         if isinstance(other, Node):
             return self.add_node(other)
-        elif isinstance(other, Workflow):
+        if isinstance(other, Workflow):
             return self.add_workflow(other)
-        else:
-            raise TypeError('Cannot add type %s to this workflow' % type(other))
+        raise TypeError("Cannot add type %s to this workflow" % type(other))
 
     def traverse_workflow_io(self):
-        """ If input is needed from another workflow within a larger
+        """
+        If input is needed from another workflow within a larger
         hierarchical workflow, determine the path for the file to reach
         the destination and add the file to workflows input / output as
         needed.
         """
+
         def root_path(v):
             path = [v]
             while v.in_workflow:
@@ -580,29 +572,34 @@ class Workflow(object):
             # to a workflow that contains the job which needs it.
             for idx in range(input_root.index(common)):
                 child_wflow = input_root[idx]
-                parent_wflow = input_root[idx+1]
+                parent_wflow = input_root[idx + 1]
                 if inp not in child_wflow._as_job.get_outputs():
                     child_wflow._as_job.add_outputs(inp, stage_out=True)
                     parent_wflow._outputs += [inp]
 
             # Set out needed file so it gets staged downwards towards the
             # job that needs it.
-            for wf in workflow_root[:workflow_root.index(common)]:
+            for wf in workflow_root[: workflow_root.index(common)]:
                 if inp not in wf._as_job.get_inputs():
                     wf._as_job.add_inputs(inp)
 
         for wf in self.sub_workflows:
             wf.traverse_workflow_io()
 
-    def save(self, filename=None, submit_now=False, plan_now=False,
-             output_map_path=None, root=True):
-        """ Write this workflow to DAX file and plan/submit it if necessary
-        """
+    def save(
+        self,
+        filename=None,
+        submit_now=False,
+        plan_now=False,
+        output_map_path=None,
+        root=True,
+    ):
+        """Write this workflow to DAX file and plan/submit it if necessary"""
         if filename is None:
             filename = self.filename
 
         if output_map_path is None:
-            output_map_path = 'output.map'
+            output_map_path = "output.map"
 
         # Handle setting up io for inter-workflow file use ahead of time
         # so that when daxes are saved the metadata is complete
@@ -616,7 +613,7 @@ class Workflow(object):
             sub.output_map_file.insert_into_dax(self._rc, self.sites)
             sub_workflow_file = File(sub.filename)
             pfn = os.path.join(os.getcwd(), sub.filename)
-            sub_workflow_file.add_pfn(pfn, site='local')
+            sub_workflow_file.add_pfn(pfn, site="local")
             sub_workflow_file.insert_into_dax(self._rc, self.sites)
 
         # add workflow input files pfns for local site to dax
@@ -628,10 +625,10 @@ class Workflow(object):
         # Add TC into workflow
         self._adag.add_transformation_catalog(self._tc)
 
-        with open(output_map_path, 'w') as f:
+        with open(output_map_path, "w") as f:
             for out in self._outputs:
                 try:
-                    f.write(out.output_map_str() + '\n')
+                    f.write(out.output_map_str() + "\n")
                 except ValueError:
                     # There was no storage path
                     pass
@@ -646,53 +643,50 @@ class Workflow(object):
         os.chdir(olddir)
 
     def plan_and_submit(self, submit_now=True):
-        """ Plan and optionally submit the workflow now.
-        """
-
+        """Plan and optionally submit the workflow now."""
         planner_args = {}
-        planner_args['submit'] = submit_now
+        planner_args["submit"] = submit_now
 
         # Get properties file - would be nice to add extra properties here.
-        prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
-                                 'pegasus-properties.conf')
-        planner_args['conf'] = prop_file
+        prop_file = os.path.join(PEGASUS_FILE_DIRECTORY, "pegasus-properties.conf")
+        planner_args["conf"] = prop_file
 
         # Cache file, if there is one
         if self.cache_file is not None:
-            planner_args['cache'] = [self.cache_file]
+            planner_args["cache"] = [self.cache_file]
 
         # Not really sure what this does, but Karan said to use it. Seems to
         # matter for subworkflows
-        planner_args['output_sites'] = ['local']
+        planner_args["output_sites"] = ["local"]
 
         # Site options
-        planner_args['sites'] = self.sites
-        planner_args['staging_sites'] = self.staging_site
+        planner_args["sites"] = self.sites
+        planner_args["staging_sites"] = self.staging_site
 
         # Make tmpdir for submitfiles
         # default directory is the system default, but is overrideable
         # This should probably be moved to core.py?
-        submit_opts = 'pegasus_profile', 'pycbc|submit-directory'
+        submit_opts = "pegasus_profile", "pycbc|submit-directory"
         submit_dir = None
         if self.cp.has_option(*submit_opts):
             submit_dir = self.cp.get(*submit_opts)
-        submitdir = tempfile.mkdtemp(prefix='pycbc-tmp_', dir=submit_dir)
+        submitdir = tempfile.mkdtemp(prefix="pycbc-tmp_", dir=submit_dir)
         os.chmod(submitdir, 0o755)
         try:
-            os.remove('submitdir')
+            os.remove("submitdir")
         except FileNotFoundError:
             pass
-        os.symlink(submitdir, 'submitdir')
-        planner_args['dir'] = submitdir
+        os.symlink(submitdir, "submitdir")
+        planner_args["dir"] = submitdir
 
         # Other options
-        planner_args['cluster'] = ['label,horizontal']
-        planner_args['relative_dir'] = 'work'
-        planner_args['cleanup'] = 'inplace'
+        planner_args["cluster"] = ["label,horizontal"]
+        planner_args["relative_dir"] = "work"
+        planner_args["cleanup"] = "inplace"
         # This quietens the planner a bit. We cannot set the verbosity
         # directly, which would be better. So be careful, if changing the
         # pegasus.mode property, it will change the verbosity (a lot).
-        planner_args['quiet'] = 1
+        planner_args["quiet"] = 1
 
         # FIXME: The location of output.map is hardcoded in the properties
         #        file. This is overridden for subworkflows, but is not for
@@ -700,44 +694,46 @@ class Workflow(object):
         #        we should include the location explicitly here.
 
         # Need to set this to avoid pegasus pulling in other environment
-        os.environ['PEGASUS_UPDATE_PYTHONPATH'] = '0'
+        os.environ["PEGASUS_UPDATE_PYTHONPATH"] = "0"
 
         self._adag.plan(**planner_args)
 
         # Set up convenience scripts
-        with open('status', 'w') as fp:
-            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-status ')
-            fp.write(f'--long {submitdir}/work $@')
+        with open("status", "w") as fp:
+            fp.write("export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-status ")
+            fp.write(f"--long {submitdir}/work $@")
 
-        with open('debug', 'w') as fp:
-            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-analyzer -r ')
-            fp.write(f'-v {submitdir}/work $@')
+        with open("debug", "w") as fp:
+            fp.write("export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-analyzer -r ")
+            fp.write(f"-v {submitdir}/work $@")
 
-        with open('stop', 'w') as fp:
-            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-remove ')
-            fp.write(f'{submitdir}/work $@')
+        with open("stop", "w") as fp:
+            fp.write("export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-remove ")
+            fp.write(f"{submitdir}/work $@")
 
-        with open('start', 'w') as fp:
-            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-run ')
-            fp.write(f'{submitdir}/work $@')
+        with open("start", "w") as fp:
+            fp.write("export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-run ")
+            fp.write(f"{submitdir}/work $@")
 
-        os.chmod('status', 0o755)
-        os.chmod('debug', 0o755)
-        os.chmod('stop', 0o755)
-        os.chmod('start', 0o755)
+        os.chmod("status", 0o755)
+        os.chmod("debug", 0o755)
+        os.chmod("stop", 0o755)
+        os.chmod("start", 0o755)
 
-        os.makedirs('workflow/planning', exist_ok=True)
+        os.makedirs("workflow/planning", exist_ok=True)
 
-        shutil.copy2(prop_file, 'workflow/planning')
-        shutil.copy2(os.path.join(submitdir, 'work', 'braindump.yml'),
-                     'workflow/planning')
+        shutil.copy2(prop_file, "workflow/planning")
+        shutil.copy2(
+            os.path.join(submitdir, "work", "braindump.yml"), "workflow/planning"
+        )
 
         if self.cache_file is not None:
-            shutil.copy2(self.cache_file, 'workflow/planning')
+            shutil.copy2(self.cache_file, "workflow/planning")
 
 
 class SubWorkflow(dax.SubWorkflow):
-    """Workflow job representation of a SubWorkflow.
+    """
+    Workflow job representation of a SubWorkflow.
 
     This follows the Pegasus nomenclature where there are Workflows, Jobs and
     SubWorkflows. Be careful though! A SubWorkflow is actually a Job, not a
@@ -753,8 +749,7 @@ class SubWorkflow(dax.SubWorkflow):
         self.pycbc_planner_args = {}
 
     def add_into_workflow(self, container_wflow):
-        """Add this Job into a container Workflow
-        """
+        """Add this Job into a container Workflow"""
         self.add_planner_args(**self.pycbc_planner_args)
 
         # Set this to None so code will fail if more planner args are added
@@ -763,51 +758,54 @@ class SubWorkflow(dax.SubWorkflow):
 
     def add_planner_arg(self, value, option):
         if self.pycbc_planner_args is None:
-            err_msg = ("We cannot add arguments to the SubWorkflow planning "
-                       "stage after this is added to the parent workflow.")
+            err_msg = (
+                "We cannot add arguments to the SubWorkflow planning "
+                "stage after this is added to the parent workflow."
+            )
             raise ValueError(err_msg)
 
         self.pycbc_planner_args[value] = option
 
-    def set_subworkflow_properties(self, output_map_file,
-                                   staging_site,
-                                   cache_file):
+    def set_subworkflow_properties(self, output_map_file, staging_site, cache_file):
 
-        self.add_planner_arg('pegasus.dir.storage.mapper.replica.file',
-                             os.path.basename(output_map_file.name))
+        self.add_planner_arg(
+            "pegasus.dir.storage.mapper.replica.file",
+            os.path.basename(output_map_file.name),
+        )
         # Ensure output_map_file has the for_planning flag set. There's no
         # API way to set this after the File is initialized, so we have to
         # change the attribute here.
         # WORSE, we only want to set this if the pegasus *planner* is version
         # 5.0.4 or larger
         try:
-            sproc_out = subprocess.check_output(['pegasus-version']).strip()
+            sproc_out = subprocess.check_output(["pegasus-version"]).strip()
             sproc_out = sproc_out.decode()
-            if version.parse(sproc_out) >= version.parse('5.0.4'):
-                output_map_file.for_planning=True
+            if version.parse(sproc_out) >= version.parse("5.0.4"):
+                output_map_file.for_planning = True
         except:
             logging.warning("Could not execute pegasus-version, assuming >= 5.0.4")
-            output_map_file.for_planning=True
+            output_map_file.for_planning = True
         self.add_inputs(output_map_file)
 
         # I think this is needed to deal with cases where the subworkflow file
         # does not exist at submission time.
         bname = os.path.splitext(os.path.basename(self.file))[0]
-        self.add_planner_arg('basename',  bname)
-        self.add_planner_arg('output_sites', ['local'])
-        self.add_planner_arg('cleanup', 'inplace')
-        self.add_planner_arg('cluster', ['label', 'horizontal'])
-        self.add_planner_arg('verbose', 3)
+        self.add_planner_arg("basename", bname)
+        self.add_planner_arg("output_sites", ["local"])
+        self.add_planner_arg("cleanup", "inplace")
+        self.add_planner_arg("cluster", ["label", "horizontal"])
+        self.add_planner_arg("verbose", 3)
 
         if cache_file:
-            self.add_planner_arg('cache', [cache_file])
+            self.add_planner_arg("cache", [cache_file])
 
         if staging_site:
-            self.add_planner_arg('staging_sites', staging_site)
+            self.add_planner_arg("staging_sites", staging_site)
 
 
 class File(dax.File):
-    """ The workflow representation of a physical file
+    """
+    The workflow representation of a physical file
 
     An object that represents a file from the perspective of setting up a
     workflow. The file may or may not exist at the time of workflow generation.
@@ -815,6 +813,7 @@ class File(dax.File):
     A storage path is also available to indicate the desired final
     destination of this file.
     """
+
     def __init__(self, name):
         self.name = name
         self.node = None
@@ -837,9 +836,8 @@ class File(dax.File):
 
     def output_map_str(self):
         if self.storage_path:
-            return '%s %s pool="%s"' % (self.name, self.storage_path, 'local')
-        else:
-            raise ValueError('This file does not have a storage path')
+            return '%s %s pool="%s"' % (self.name, self.storage_path, "local")
+        raise ValueError("This file does not have a storage path")
 
     def add_pfn(self, url, site):
         """
@@ -847,17 +845,16 @@ class File(dax.File):
         """
         self.input_pfns.append((url, site))
 
-    def has_pfn(self, url, site='local'):
+    def has_pfn(self, url, site="local"):
         """
         Check if the url, site is already associated to this File. If site is
         not provided, we will assume it is 'local'.
         """
-        return (((url, site) in self.input_pfns)
-                or ((url, 'all') in self.input_pfns))
+        return ((url, site) in self.input_pfns) or ((url, "all") in self.input_pfns)
 
     def insert_into_dax(self, rep_cat, sites):
-        for (url, site) in self.input_pfns:
-            if site == 'all':
+        for url, site in self.input_pfns:
+            if site == "all":
                 for curr_site in sites:
                     rep_cat.add_replica(curr_site, self, url)
             else:
@@ -866,18 +863,20 @@ class File(dax.File):
     @classmethod
     def from_path(cls, path):
         """Takes a path and returns a File object with the path as the PFN."""
-        warnings.warn("The from_path method in pegasus_workflow is "
-                      "deprecated. Please use File.from_path (for "
-                      "output files) in core.py or resolve_url_to_file "
-                      "in core.py (for input files) instead.",
-                      DeprecationWarning)
+        warnings.warn(
+            "The from_path method in pegasus_workflow is "
+            "deprecated. Please use File.from_path (for "
+            "output files) in core.py or resolve_url_to_file "
+            "in core.py (for input files) instead.",
+            DeprecationWarning,
+        )
         urlparts = urlsplit(path)
-        site = 'nonlocal'
-        if (urlparts.scheme == '' or urlparts.scheme == 'file'):
+        site = "nonlocal"
+        if urlparts.scheme == "" or urlparts.scheme == "file":
             if os.path.isfile(urlparts.path):
                 path = os.path.abspath(urlparts.path)
-                path = urljoin('file:', pathname2url(path))
-                site = 'local'
+                path = urljoin("file:", pathname2url(path))
+                site = "local"
 
         fil = cls(os.path.basename(path))
         fil.add_pfn(path, site=site)

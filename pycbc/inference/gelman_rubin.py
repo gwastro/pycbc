@@ -12,7 +12,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" This modules provides functions for evaluating the Gelman-Rubin convergence
+"""
+This modules provides functions for evaluating the Gelman-Rubin convergence
 diagnostic statistic.
 """
 
@@ -20,7 +21,8 @@ import numpy
 
 
 def walk(chains, start, end, step):
-    """ Calculates Gelman-Rubin conervergence statistic along chains of data.
+    """
+    Calculates Gelman-Rubin conervergence statistic along chains of data.
     This function will advance along the chains and calculate the
     statistic for each step.
 
@@ -45,8 +47,8 @@ def walk(chains, start, end, step):
     stats : numpy.array
         Array with convergence statistic. It has
         shape (nparameters, ncalculations).
-    """
 
+    """
     # get number of chains, parameters, and iterations
     chains = numpy.array(chains)
     _, nparameters, _ = chains.shape
@@ -67,7 +69,8 @@ def walk(chains, start, end, step):
 
 
 def gelman_rubin(chains, auto_burn_in=True):
-    """ Calculates the univariate Gelman-Rubin convergence statistic
+    """
+    Calculates the univariate Gelman-Rubin convergence statistic
     which compares the evolution of multiple chains in a Markov-Chain Monte
     Carlo process and computes their difference to determine their convergence.
     The between-chain and within-chain variances are computed for each sampling
@@ -88,14 +91,13 @@ def gelman_rubin(chains, auto_burn_in=True):
     psrf : numpy.array
         A numpy.array of shape (nparameters) that has the point estimates of
         the potential scale reduction factor.
-    """
 
+    """
     # remove first half of samples
     # this will have shape (nchains, nparameters, niterations)
     if auto_burn_in:
         _, _, niterations = numpy.array(chains).shape
-        chains = numpy.array([chain[:, niterations // 2 + 1:]
-                              for chain in chains])
+        chains = numpy.array([chain[:, niterations // 2 + 1 :] for chain in chains])
 
     # get number of chains, parameters, and iterations
     chains = numpy.array(chains)
@@ -146,38 +148,37 @@ def gelman_rubin(chains, auto_burn_in=True):
 
     # get V the combined variance of all chains
     # this will have shape (nparameters)
-    v = ((niterations - 1.) * w_diag / niterations +
-         (1. + 1. / nchains) * b_diag / niterations)
+    v = (niterations - 1.0) * w_diag / niterations + (
+        1.0 + 1.0 / nchains
+    ) * b_diag / niterations
 
     # get factors in variance of V calculation
     # this will have shape (nparameters)
     k = 2 * b_diag**2 / (nchains - 1)
-    mid_term = numpy.cov(
-        var, means**2)[nparameters:2*nparameters, 0:nparameters].T
-    end_term = numpy.cov(
-        var, means)[nparameters:2*nparameters, 0:nparameters].T
+    mid_term = numpy.cov(var, means**2)[nparameters : 2 * nparameters, 0:nparameters].T
+    end_term = numpy.cov(var, means)[nparameters : 2 * nparameters, 0:nparameters].T
     wb = niterations / nchains * numpy.diag(mid_term - 2 * mu_hat * end_term)
 
     # get variance of V
     # this will have shape (nparameters)
     var_v = (
-        (niterations - 1.) ** 2 * s +
-        (1. + 1. / nchains) ** 2 * k +
-        2. * (niterations - 1.) * (1. + 1. / nchains) * wb
+        (niterations - 1.0) ** 2 * s
+        + (1.0 + 1.0 / nchains) ** 2 * k
+        + 2.0 * (niterations - 1.0) * (1.0 + 1.0 / nchains) * wb
     ) / niterations**2
 
     # get degrees of freedom
     # this will have shape (nparameters)
-    dof = (2. * v**2) / var_v
+    dof = (2.0 * v**2) / var_v
 
     # more degrees of freedom factors
     # this will have shape (nparameters)
-    df_adj = (dof + 3.) / (dof + 1.)
+    df_adj = (dof + 3.0) / (dof + 1.0)
 
     # estimate R
     # this will have shape (nparameters)
-    r2_fixed = (niterations - 1.) / niterations
-    r2_random = (1. + 1. / nchains) * (1. / niterations) * (b_diag / w_diag)
+    r2_fixed = (niterations - 1.0) / niterations
+    r2_random = (1.0 + 1.0 / nchains) * (1.0 / niterations) * (b_diag / w_diag)
     r2_estimate = r2_fixed + r2_random
 
     # calculate PSRF the potential scale reduction factor

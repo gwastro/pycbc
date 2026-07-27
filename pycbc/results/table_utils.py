@@ -21,11 +21,12 @@
 #
 # =============================================================================
 #
-""" This module provides functions to generate sortable html tables
-"""
-import mako.template
-import uuid
+"""This module provides functions to generate sortable html tables"""
+
 import copy
+import uuid
+
+import mako.template
 import numpy
 
 google_table_template = mako.template.Template("""
@@ -58,8 +59,10 @@ google_table_template = mako.template.Template("""
     <div id='${div_id}'></div>
 """)
 
+
 def html_table(columns, names, page_size=None, format_strings=None):
-    """ Return an HTML table of this data.
+    """
+    Return an HTML table of this data.
 
     Parameters
     ----------
@@ -76,36 +79,37 @@ def html_table(columns, names, page_size=None, format_strings=None):
     -------
     html_table : str
         A str containing the html code to display a table of this data
+
     """
     if len(columns) != len(names):
         raise ValueError(
-            'I need the same number of columns and names, '
-            f'got {len(columns)} and {len(names)} instead'
+            "I need the same number of columns and names, "
+            f"got {len(columns)} and {len(names)} instead"
         )
     if format_strings is not None and len(format_strings) != len(columns):
         raise ValueError(
-            'I need the same number of columns and format strings, '
-            f'got {len(columns)} and {len(names)} instead'
+            "I need the same number of columns and format strings, "
+            f"got {len(columns)} and {len(names)} instead"
         )
     if len({len(column) for column in columns}) != 1:
-        raise ValueError('All columns must have the same length')
+        raise ValueError("All columns must have the same length")
 
     if page_size is None:
-        page = 'disable'
+        page = "disable"
     else:
-        page = 'enable'
+        page = "enable"
 
     div_id = uuid.uuid4()
 
     column_descriptions = []
     for column, name in zip(columns, names):
-        if column.dtype.kind in 'iuf':
+        if column.dtype.kind in "iuf":
             # signed and unsigned integers and floats
-            ctype = 'number'
+            ctype = "number"
         else:
             # this comprises strings, bools, complex, void, etc
             # but we will convert all those to str in a moment
-            ctype = 'string'
+            ctype = "string"
         column_descriptions.append((ctype, name))
 
     data = []
@@ -114,9 +118,9 @@ def html_table(columns, names, page_size=None, format_strings=None):
         # the explicit conversions here are to make sure the JS code
         # sees proper numbers and not something like 'np.float64(12)'
         for item, column in zip(row, columns):
-            if column.dtype.kind == 'f':
+            if column.dtype.kind == "f":
                 row2.append(float(item))
-            elif column.dtype.kind in 'iu':
+            elif column.dtype.kind in "iu":
                 row2.append(int(item))
             else:
                 row2.append(str(item))
@@ -130,6 +134,7 @@ def html_table(columns, names, page_size=None, format_strings=None):
         data=data,
         format_strings=format_strings,
     )
+
 
 static_table_template = mako.template.Template("""
     <table class="table">
@@ -166,8 +171,10 @@ static_table_template = mako.template.Template("""
     </table>
 """)
 
+
 def static_table(data, titles=None, columns_max=None, row_labels=None):
-    """ Return an html table of this data
+    """
+    Return an html table of this data
 
     Parameters
     ----------
@@ -185,6 +192,7 @@ def static_table(data, titles=None, columns_max=None, row_labels=None):
     -------
     html_table : str
         A string containing the html table.
+
     """
     data = copy.deepcopy(data)
     titles = copy.deepcopy(titles)
@@ -194,9 +202,7 @@ def static_table(data, titles=None, columns_max=None, row_labels=None):
         raise ValueError("titles and data lengths do not match")
 
     if row_labels is not None and not len(row_labels) == drows:
-        raise ValueError(
-            "row_labels must be the same number of rows supplied to data"
-        )
+        raise ValueError("row_labels must be the same number of rows supplied to data")
 
     if columns_max is not None:
         n_rows = int(numpy.ceil(len(data[0]) / columns_max))
@@ -204,9 +210,9 @@ def static_table(data, titles=None, columns_max=None, row_labels=None):
         if len(data[0]) < n_rows * n_columns:
             # Pad the data and titles with empty strings
             n_missing = int(n_rows * n_columns - len(data[0]))
-            data = numpy.hstack((data, numpy.zeros((len(data), n_missing), dtype='U1')))
+            data = numpy.hstack((data, numpy.zeros((len(data), n_missing), dtype="U1")))
             if titles is not None:
-                titles += [' '] * n_missing
+                titles += [" "] * n_missing
     else:
         n_rows = 1
         n_columns = len(data[0])

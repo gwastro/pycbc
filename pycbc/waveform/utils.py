@@ -22,36 +22,39 @@
 #
 # =============================================================================
 #
-"""This module contains convenience utilities for manipulating waveforms
-"""
+"""This module contains convenience utilities for manipulating waveforms"""
 
 from math import frexp
-import numpy
 
+import numpy
 from scipy import signal
 
+from pycbc.constants import PI
 from pycbc.scheme import schemed
 from pycbc.types import (
-    TimeSeries, FrequencySeries, Array,
-    complex_same_precision_as, real_same_precision_as
+    Array,
+    FrequencySeries,
+    TimeSeries,
+    complex_same_precision_as,
+    real_same_precision_as,
 )
-from pycbc.constants import PI
+
 
 def ceilpow2(n):
-    """convenience function to determine a power-of-2 upper frequency limit"""
-    signif,exponent = frexp(n)
-    if (signif < 0):
-        return 1;
-    if (signif == 0.5):
-        exponent -= 1;
-    return (1) << exponent;
+    """Convenience function to determine a power-of-2 upper frequency limit"""
+    signif, exponent = frexp(n)
+    if signif < 0:
+        return 1
+    if signif == 0.5:
+        exponent -= 1
+    return (1) << exponent
 
 
-def coalign_waveforms(h1, h2, psd=None,
-                      low_frequency_cutoff=None,
-                      high_frequency_cutoff=None,
-                      resize=True):
-    """ Return two time series which are aligned in time and phase.
+def coalign_waveforms(
+    h1, h2, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=None, resize=True
+):
+    """
+    Return two time series which are aligned in time and phase.
 
     The alignment is only to the nearest sample point and all changes to the
     phase are made to the first input waveform. Waveforms should not be split
@@ -80,8 +83,10 @@ def coalign_waveforms(h1, h2, psd=None,
         The shifted waveform to align with h2
     h2: pycbc.type.TimeSeries
         The resized (if necessary) waveform to align with h1.
+
     """
     from pycbc.filter import matched_filter
+
     mlen = ceilpow2(max(len(h1), len(h2)))
 
     h1 = h1.copy()
@@ -91,23 +96,30 @@ def coalign_waveforms(h1, h2, psd=None,
         h1.resize(mlen)
         h2.resize(mlen)
     elif len(h1) != len(h2) or len(h2) % 2 != 0:
-        raise ValueError("Time series must be the same size and even if you do "
-                         "not allow resizing")
+        raise ValueError(
+            "Time series must be the same size and even if you do not allow resizing"
+        )
 
-    snr = matched_filter(h1, h2, psd=psd,
-                         low_frequency_cutoff=low_frequency_cutoff,
-                         high_frequency_cutoff=high_frequency_cutoff)
+    snr = matched_filter(
+        h1,
+        h2,
+        psd=psd,
+        low_frequency_cutoff=low_frequency_cutoff,
+        high_frequency_cutoff=high_frequency_cutoff,
+    )
 
-    _, l =  snr.abs_max_loc()
-    rotation =  snr[l] / abs(snr[l])
+    _, l = snr.abs_max_loc()
+    rotation = snr[l] / abs(snr[l])
     h1 = (h1.to_frequencyseries() * rotation).to_timeseries()
     h1.roll(l)
 
     h1 = TimeSeries(h1, delta_t=h2.delta_t, epoch=h2.start_time)
     return h1, h2
 
+
 def phase_from_frequencyseries(htilde, remove_start_phase=True):
-    """Returns the phase from the given frequency-domain waveform. This assumes
+    """
+    Returns the phase from the given frequency-domain waveform. This assumes
     that the waveform has been sampled finely enough that the phase cannot
     change by more than pi radians between each step.
 
@@ -122,16 +134,17 @@ def phase_from_frequencyseries(htilde, remove_start_phase=True):
     -------
     FrequencySeries
         The phase of the waveform as a function of frequency.
+
     """
-    p = numpy.unwrap(numpy.angle(htilde.data)).astype(
-            real_same_precision_as(htilde))
+    p = numpy.unwrap(numpy.angle(htilde.data)).astype(real_same_precision_as(htilde))
     if remove_start_phase:
         p += -p[0]
-    return FrequencySeries(p, delta_f=htilde.delta_f, epoch=htilde.epoch,
-        copy=False)
+    return FrequencySeries(p, delta_f=htilde.delta_f, epoch=htilde.epoch, copy=False)
+
 
 def amplitude_from_frequencyseries(htilde):
-    """Returns the amplitude of the given frequency-domain waveform as a
+    """
+    Returns the amplitude of the given frequency-domain waveform as a
     FrequencySeries.
 
     Parameters
@@ -143,14 +156,17 @@ def amplitude_from_frequencyseries(htilde):
     -------
     FrequencySeries
         The amplitude of the waveform as a function of frequency.
+
     """
     amp = abs(htilde.data).astype(real_same_precision_as(htilde))
-    return FrequencySeries(amp, delta_f=htilde.delta_f, epoch=htilde.epoch,
-        copy=False)
+    return FrequencySeries(amp, delta_f=htilde.delta_f, epoch=htilde.epoch, copy=False)
 
-def time_from_frequencyseries(htilde, sample_frequencies=None,
-        discont_threshold=0.99*numpy.pi):
-    """Computes time as a function of frequency from the given
+
+def time_from_frequencyseries(
+    htilde, sample_frequencies=None, discont_threshold=0.99 * numpy.pi
+):
+    """
+    Computes time as a function of frequency from the given
     frequency-domain waveform. This assumes the stationary phase
     approximation. Any frequencies lower than the first non-zero value in
     htilde are assigned the time at the first non-zero value. Times for any
@@ -182,26 +198,32 @@ def time_from_frequencyseries(htilde, sample_frequencies=None,
     -------
     FrequencySeries
         The time evolution of the waveform as a function of frequency.
+
     """
     if sample_frequencies is None:
         sample_frequencies = htilde.sample_frequencies.numpy()
     phase = phase_from_frequencyseries(htilde).data
     dphi = numpy.diff(phase)
-    time = -dphi / (2.*numpy.pi*numpy.diff(sample_frequencies))
+    time = -dphi / (2.0 * numpy.pi * numpy.diff(sample_frequencies))
     nzidx = numpy.nonzero(abs(htilde.data))[0]
     kmin, kmax = nzidx[0], nzidx[-2]
     # exclude everything after a discontinuity
     discont_idx = numpy.where(abs(dphi[kmin:]) >= discont_threshold)[0]
     if discont_idx.size != 0:
-        kmax = min(kmax, kmin + discont_idx[0]-1)
+        kmax = min(kmax, kmin + discont_idx[0] - 1)
     time[:kmin] = time[kmin]
     time[kmax:] = time[kmax]
-    return FrequencySeries(time.astype(real_same_precision_as(htilde)),
-        delta_f=htilde.delta_f, epoch=htilde.epoch,
-        copy=False)
+    return FrequencySeries(
+        time.astype(real_same_precision_as(htilde)),
+        delta_f=htilde.delta_f,
+        epoch=htilde.epoch,
+        copy=False,
+    )
+
 
 def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
-    """Return gravitational wave phase
+    """
+    Return gravitational wave phase
 
     Return the gravitation-wave phase from the h_plus and h_cross
     polarizations of the waveform. The returned phase is always
@@ -222,6 +244,7 @@ def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
         A TimeSeries containing the gravitational wave phase.
 
     Examples
+    --------
     --------s
     >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
     >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10,
@@ -230,14 +253,16 @@ def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
 
     """
     p = numpy.unwrap(numpy.arctan2(h_cross.data, h_plus.data)).astype(
-        real_same_precision_as(h_plus))
+        real_same_precision_as(h_plus)
+    )
     if remove_start_phase:
         p += -p[0]
-    return TimeSeries(p, delta_t=h_plus.delta_t, epoch=h_plus.start_time,
-        copy=False)
+    return TimeSeries(p, delta_t=h_plus.delta_t, epoch=h_plus.start_time, copy=False)
+
 
 def amplitude_from_polarizations(h_plus, h_cross):
-    """Return gravitational wave amplitude
+    """
+    Return gravitational wave amplitude
 
     Return the gravitation-wave amplitude from the h_plus and h_cross
     polarizations of the waveform.
@@ -267,8 +292,10 @@ def amplitude_from_polarizations(h_plus, h_cross):
     amp = (h_plus.squared_norm() + h_cross.squared_norm()) ** (0.5)
     return TimeSeries(amp, delta_t=h_plus.delta_t, epoch=h_plus.start_time)
 
+
 def frequency_from_polarizations(h_plus, h_cross):
-    """Return gravitational wave frequency
+    """
+    Return gravitational wave frequency
 
     Return the gravitation-wave frequency as a function of time
     from the h_plus and h_cross polarizations of the waveform.
@@ -299,20 +326,26 @@ def frequency_from_polarizations(h_plus, h_cross):
 
     """
     phase = phase_from_polarizations(h_plus, h_cross)
-    freq = numpy.diff(phase) / ( 2 * PI * phase.delta_t )
+    freq = numpy.diff(phase) / (2 * PI * phase.delta_t)
     start_time = phase.start_time + phase.delta_t / 2
-    return TimeSeries(freq.astype(real_same_precision_as(h_plus)),
-        delta_t=phase.delta_t, epoch=start_time)
+    return TimeSeries(
+        freq.astype(real_same_precision_as(h_plus)),
+        delta_t=phase.delta_t,
+        epoch=start_time,
+    )
 
 
 @schemed("pycbc.waveform.utils_")
 def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
-    """Shifts a frequency domain waveform in time. The waveform is assumed to
+    """
+    Shifts a frequency domain waveform in time. The waveform is assumed to
     be sampled at equal frequency intervals.
     """
 
+
 def apply_fd_time_shift(htilde, shifttime, kmin=0, fseries=None, copy=True):
-    """Shifts a frequency domain waveform in time. The shift applied is
+    """
+    Shifts a frequency domain waveform in time. The shift applied is
     shiftime - htilde.epoch.
 
     Parameters
@@ -336,27 +369,32 @@ def apply_fd_time_shift(htilde, shifttime, kmin=0, fseries=None, copy=True):
         A frequency series with the waveform shifted to the new time. If makecopy
         is True, will be a new frequency series; if makecopy is False, will be
         the same as htilde.
+
     """
     dt = float(shifttime - htilde.epoch)
-    if dt == 0.:
+    if dt == 0.0:
         # no shift to apply, just copy if desired
         if copy:
-            htilde = 1. * htilde
+            htilde = 1.0 * htilde
     elif isinstance(htilde, FrequencySeries):
         # FrequencySeries means equally sampled in frequency, use faster shifting
         htilde = apply_fseries_time_shift(htilde, dt, kmin=kmin, copy=copy)
     else:
         if fseries is None:
             fseries = htilde.sample_frequencies.numpy()
-        shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries),
-                    dtype=complex_same_precision_as(htilde))
+        shift = Array(
+            numpy.exp(-2j * numpy.pi * dt * fseries),
+            dtype=complex_same_precision_as(htilde),
+        )
         if copy:
-            htilde = 1. * htilde
+            htilde = 1.0 * htilde
         htilde *= shift
     return htilde
 
-def td_taper(out, start, end, beta=8, side='left'):
-    """Applies a taper to the given TimeSeries.
+
+def td_taper(out, start, end, beta=8, side="left"):
+    """
+    Applies a taper to the given TimeSeries.
 
     A half-kaiser window is used for the roll-off.
 
@@ -381,27 +419,30 @@ def td_taper(out, start, end, beta=8, side='left'):
     -------
     TimeSeries
         The tapered time series.
+
     """
     out = out.copy()
     width = end - start
     winlen = 2 * int(width / out.delta_t)
-    window = Array(signal.get_window(('kaiser', beta), winlen))
+    window = Array(signal.get_window(("kaiser", beta), winlen))
     xmin = int((start - out.start_time) / out.delta_t)
-    xmax = xmin + winlen//2
-    if side == 'left':
-        out[xmin:xmax] *= window[:winlen//2]
+    xmax = xmin + winlen // 2
+    if side == "left":
+        out[xmin:xmax] *= window[: winlen // 2]
         if xmin > 0:
             out[:xmin].clear()
-    elif side == 'right':
-        out[xmin:xmax] *= window[winlen//2:]
+    elif side == "right":
+        out[xmin:xmax] *= window[winlen // 2 :]
         if xmax < len(out):
             out[xmax:].clear()
     else:
-        raise ValueError("unrecognized side argument {}".format(side))
+        raise ValueError(f"unrecognized side argument {side}")
     return out
 
-def fd_taper(out, start, end, beta=8, side='left'):
-    """Applies a taper to the given FrequencySeries.
+
+def fd_taper(out, start, end, beta=8, side="left"):
+    """
+    Applies a taper to the given FrequencySeries.
 
     A half-kaiser window is used for the roll-off.
 
@@ -425,27 +466,30 @@ def fd_taper(out, start, end, beta=8, side='left'):
     -------
     FrequencySeries
         The tapered frequency series.
+
     """
     out = out.copy()
     width = end - start
     winlen = 2 * int(width / out.delta_f)
-    window = Array(signal.get_window(('kaiser', beta), winlen))
+    window = Array(signal.get_window(("kaiser", beta), winlen))
     kmin = int(start / out.delta_f)
-    kmax = kmin + winlen//2
-    if side == 'left':
-        out[kmin:kmax] *= window[:winlen//2]
-        out[:kmin] *= 0.
-    elif side == 'right':
-        out[kmin:kmax] *= window[winlen//2:]
-        out[kmax:] *= 0.
+    kmax = kmin + winlen // 2
+    if side == "left":
+        out[kmin:kmax] *= window[: winlen // 2]
+        out[:kmin] *= 0.0
+    elif side == "right":
+        out[kmin:kmax] *= window[winlen // 2 :]
+        out[kmax:] *= 0.0
     else:
-        raise ValueError("unrecognized side argument {}".format(side))
+        raise ValueError(f"unrecognized side argument {side}")
     return out
 
 
-def fd_to_td(htilde, delta_t=None, left_window=None, right_window=None,
-          left_beta=8, right_beta=8):
-    """Converts a FD waveform to TD.
+def fd_to_td(
+    htilde, delta_t=None, left_window=None, right_window=None, left_beta=8, right_beta=8
+):
+    """
+    Converts a FD waveform to TD.
 
     A window can optionally be applied using ``fd_taper`` to the left or right
     side of the waveform before being converted to the time domain.
@@ -472,18 +516,20 @@ def fd_to_td(htilde, delta_t=None, left_window=None, right_window=None,
     -------
     TimeSeries
         The time-series representation of ``htilde``.
+
     """
     if left_window is not None:
         start, end = left_window
-        htilde = fd_taper(htilde, start, end, side='left', beta=left_beta)
+        htilde = fd_taper(htilde, start, end, side="left", beta=left_beta)
     if right_window is not None:
         start, end = right_window
-        htilde = fd_taper(htilde, start, end, side='right', beta=right_beta)
+        htilde = fd_taper(htilde, start, end, side="right", beta=right_beta)
     return htilde.to_timeseries(delta_t=delta_t)
 
 
 def redshift_waveform(srch, z, tref=0):
-    """Redshifts a time-domain or frequency-domain waveform.
+    """
+    Redshifts a time-domain or frequency-domain waveform.
 
     The waveform is stretched in time by :math:`(1+z)` and its (time-domain)
     amplitude increased by :math:`(1+z)`. A time shift is also applied to the
@@ -503,16 +549,17 @@ def redshift_waveform(srch, z, tref=0):
     -------
     TimeSeries or FrequencySeries
         The red-shifted waveform. The return type will be the same as `srch`.
+
     """
     isfs = isinstance(srch, FrequencySeries)
     if isfs:
         redshifted = srch.to_timeseries()
-        redshifted *= 1+z
+        redshifted *= 1 + z
     else:
-        redshifted = (1+z) * srch
-    redshifted._delta_t *= 1+z
+        redshifted = (1 + z) * srch
+    redshifted._delta_t *= 1 + z
     # find the location of tref in the original time series
-    tindex = (tref - srch.start_time)/srch.delta_t
+    tindex = (tref - srch.start_time) / srch.delta_t
     # find what it's been stretched to and subtract that off from the start
     # time so as to keep the reference time in the same spot
     tnew = tindex * redshifted.delta_t + redshifted.start_time

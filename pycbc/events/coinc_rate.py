@@ -5,16 +5,19 @@
 #
 # =============================================================================
 #
-""" This module contains functions for calculating expected rates of noise
-    and signal coincidences.
+"""
+This module contains functions for calculating expected rates of noise
+and signal coincidences.
 """
 
 import itertools
 import logging
+
 import numpy
+
 import pycbc.detector
 
-logger = logging.getLogger('pycbc.events.coinc_rate')
+logger = logging.getLogger("pycbc.events.coinc_rate")
 
 
 def multiifo_noise_lograte(log_rates, slop):
@@ -36,16 +39,16 @@ def multiifo_noise_lograte(log_rates, slop):
     expected_log_rates: dict
         Key: ifo combination string
         Value: expected log coincidence rate in the combination, units log Hz
+
     """
     expected_log_rates = {}
 
     # Order of ifos must be stable in output dict keys, so sort them
     ifos = sorted(list(log_rates.keys()))
-    ifostring = ' '.join(ifos)
+    ifostring = " ".join(ifos)
 
     # Calculate coincidence for all-ifo combination
-    expected_log_rates[ifostring] = \
-        combination_noise_lograte(log_rates, slop)
+    expected_log_rates[ifostring] = combination_noise_lograte(log_rates, slop)
 
     # If more than one possible coincidence type exists,
     # calculate coincidence for subsets through recursion
@@ -83,10 +86,13 @@ def combination_noise_rate(rates, slop):
     -------
     numpy array
         Expected coincidence rate in the combination, units Hz
+
     """
-    logger.warning('combination_noise_rate() is liable to numerical '
-                   'underflows, use combination_noise_lograte '
-                   'instead')
+    logger.warning(
+        "combination_noise_rate() is liable to numerical "
+        "underflows, use combination_noise_lograte "
+        "instead"
+    )
     log_rates = {k: numpy.log(r) for (k, r) in rates.items()}
     # exp may underflow
     return numpy.exp(combination_noise_lograte(log_rates, slop))
@@ -113,11 +119,10 @@ def combination_noise_lograte(log_rates, slop, dets=None):
     -------
     numpy array
         Expected log coincidence rate in the combination, units Hz
+
     """
     # multiply product of trigger rates by the overlap time
-    allowed_area = multiifo_noise_coincident_area(list(log_rates),
-                                                  slop,
-                                                  dets=dets)
+    allowed_area = multiifo_noise_coincident_area(list(log_rates), slop, dets=dets)
     # list(dict.values()) is python-3-proof
     rateprod = numpy.sum(list(log_rates.values()), axis=0)
     return numpy.log(allowed_area) + rateprod
@@ -144,6 +149,7 @@ def multiifo_noise_coincident_area(ifos, slop, dets=None):
     -------
     allowed_area: float
         area in units of seconds^(n_ifos-1) that coincident values can fall in
+
     """
     # set up detector objects
     if dets is None:
@@ -151,8 +157,9 @@ def multiifo_noise_coincident_area(ifos, slop, dets=None):
     n_ifos = len(ifos)
 
     if n_ifos == 2:
-        allowed_area = 2. * \
-            (dets[ifos[0]].light_travel_time_to_detector(dets[ifos[1]]) + slop)
+        allowed_area = 2.0 * (
+            dets[ifos[0]].light_travel_time_to_detector(dets[ifos[1]]) + slop
+        )
     elif n_ifos == 3:
         tofs = numpy.zeros(n_ifos)
         ifo2_num = []
@@ -168,7 +175,7 @@ def multiifo_noise_coincident_area(ifos, slop, dets=None):
         # combine these to calculate allowed area
         allowed_area = 0
         for i, _ in enumerate(ifos):
-            allowed_area += 2 * tofs[i] * tofs[ifo2_num[i]] - tofs[i]**2
+            allowed_area += 2 * tofs[i] * tofs[ifo2_num[i]] - tofs[i] ** 2
     else:
         raise NotImplementedError("Not able to deal with more than 3 ifos")
 
@@ -188,6 +195,7 @@ def multiifo_signal_coincident_area(ifos):
     -------
     allowed_area: float
         area in units of seconds^(n_ifos-1) that coincident signals will occupy
+
     """
     n_ifos = len(ifos)
 
@@ -211,8 +219,9 @@ def multiifo_signal_coincident_area(ifos):
             tofs[i] = det0.light_travel_time_to_detector(det1)
 
         # calculate allowed area
-        phi_12 = numpy.arccos((tofs[0]**2 + tofs[1]**2 - tofs[2]**2)
-                              / (2 * tofs[0] * tofs[1]))
+        phi_12 = numpy.arccos(
+            (tofs[0] ** 2 + tofs[1] ** 2 - tofs[2] ** 2) / (2 * tofs[0] * tofs[1])
+        )
         allowed_area = numpy.pi * tofs[0] * tofs[1] * numpy.sin(phi_12)
     else:
         raise NotImplementedError("Not able to deal with more than 3 ifos")

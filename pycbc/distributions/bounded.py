@@ -15,21 +15,24 @@
 """
 This modules provides classes for evaluating distributions with bounds.
 """
+
 import logging
 import warnings
 from configparser import Error
+
 import numpy
 
-from pycbc import boundaries
-from pycbc import VARARGS_DELIM
+from pycbc import VARARGS_DELIM, boundaries
 
-logger = logging.getLogger('pycbc.distributions.bounded')
+logger = logging.getLogger("pycbc.distributions.bounded")
+
 
 #
 #   Distributions for priors
 #
 def get_param_bounds_from_config(cp, section, tag, param):
-    """Gets bounds for the given parameter from a section in a config file.
+    """
+    Gets bounds for the given parameter from a section in a config file.
 
     Minimum and maximum values for bounds are specified by adding
     `min-{param}` and `max-{param}` options, where `{param}` is the name of
@@ -82,43 +85,46 @@ def get_param_bounds_from_config(cp, section, tag, param):
     bounds : {Bounds instance | None}
         If bounds were provided, a `boundaries.Bounds` instance
         representing the bounds. Otherwise, `None`.
+
     """
     try:
-        minbnd = float(cp.get_opt_tag(section, 'min-'+param, tag))
+        minbnd = float(cp.get_opt_tag(section, "min-" + param, tag))
     except Error:
         minbnd = None
     try:
-        maxbnd = float(cp.get_opt_tag(section, 'max-'+param, tag))
+        maxbnd = float(cp.get_opt_tag(section, "max-" + param, tag))
     except Error:
         maxbnd = None
     if minbnd is None and maxbnd is None:
         bnds = None
     elif minbnd is None or maxbnd is None:
-        raise ValueError("if specifying bounds for %s, " %(param) +
-            "you must provide both a minimum and a maximum")
+        raise ValueError(
+            "if specifying bounds for %s, " % (param)
+            + "you must provide both a minimum and a maximum"
+        )
     else:
-        bndargs = {'min_bound': minbnd, 'max_bound': maxbnd}
+        bndargs = {"min_bound": minbnd, "max_bound": maxbnd}
         # try to get  any other conditions, if provided
         try:
-            minbtype = cp.get_opt_tag(section, 'btype-min-{}'.format(param),
-                                      tag)
+            minbtype = cp.get_opt_tag(section, f"btype-min-{param}", tag)
         except Error:
-            minbtype = 'closed'
+            minbtype = "closed"
         try:
-            maxbtype = cp.get_opt_tag(section, 'btype-max-{}'.format(param),
-                                      tag)
+            maxbtype = cp.get_opt_tag(section, f"btype-max-{param}", tag)
         except Error:
-            maxbtype = 'open'
-        bndargs.update({'btype_min': minbtype, 'btype_max': maxbtype})
-        cyclic = cp.has_option_tag(section, 'cyclic-{}'.format(param), tag)
-        bndargs.update({'cyclic': cyclic})
+            maxbtype = "open"
+        bndargs.update({"btype_min": minbtype, "btype_max": maxbtype})
+        cyclic = cp.has_option_tag(section, f"cyclic-{param}", tag)
+        bndargs.update({"cyclic": cyclic})
         bnds = boundaries.Bounds(**bndargs)
     return bnds
 
 
-def bounded_from_config(cls, cp, section, variable_args,
-        bounds_required=False, additional_opts=None):
-    """Returns a bounded distribution based on a configuration file. The
+def bounded_from_config(
+    cls, cp, section, variable_args, bounds_required=False, additional_opts=None
+):
+    """
+    Returns a bounded distribution based on a configuration file. The
     parameters for the distribution are retrieved from the section titled
     "[`section`-`variable_args`]" in the config file.
 
@@ -151,6 +157,7 @@ def bounded_from_config(cls, cp, section, variable_args,
     -------
     cls
         An instance of the given class.
+
     """
     tag = variable_args
     variable_args = variable_args.split(VARARGS_DELIM)
@@ -159,26 +166,26 @@ def bounded_from_config(cls, cp, section, variable_args,
         additional_opts = {}
 
     # list of args that are used to construct distribution
-    special_args = ["name"] + \
-        ['min-{}'.format(arg) for arg in variable_args] + \
-        ['max-{}'.format(arg) for arg in variable_args] + \
-        ['btype-min-{}'.format(arg) for arg in variable_args] + \
-        ['btype-max-{}'.format(arg) for arg in variable_args] + \
-        ['cyclic-{}'.format(arg) for arg in variable_args] + \
-        list(additional_opts.keys())
+    special_args = (
+        ["name"]
+        + [f"min-{arg}" for arg in variable_args]
+        + [f"max-{arg}" for arg in variable_args]
+        + [f"btype-min-{arg}" for arg in variable_args]
+        + [f"btype-max-{arg}" for arg in variable_args]
+        + [f"cyclic-{arg}" for arg in variable_args]
+        + list(additional_opts.keys())
+    )
 
     # get a dict with bounds as value
     dist_args = {}
     for param in variable_args:
         bounds = get_param_bounds_from_config(cp, section, tag, param)
         if bounds_required and bounds is None:
-            raise ValueError("min and/or max missing for parameter %s"%(
-                param))
+            raise ValueError("min and/or max missing for parameter %s" % (param))
         dist_args[param] = bounds
 
     # add any additional options that user put in that section
     for key in cp.options("-".join([section, tag])):
-
         # ignore options that are already included
         if key in special_args:
             continue
@@ -191,7 +198,7 @@ def bounded_from_config(cls, cp, section, variable_args,
             pass
 
         # add option
-        dist_args.update({key:val})
+        dist_args.update({key: val})
 
     dist_args.update(additional_opts)
 
@@ -199,7 +206,7 @@ def bounded_from_config(cls, cp, section, variable_args,
     return cls(**dist_args)
 
 
-class BoundedDist(object):
+class BoundedDist:
     r"""
     A generic class for storing common properties of distributions in which
     each parameter has a minimum and maximum value.
@@ -210,27 +217,31 @@ class BoundedDist(object):
         The keyword arguments should provide the names of parameters and their
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
+
     """
+
     def __init__(self, **params):
         # convert input bounds to Bounds class, if necessary
-        for param,bnds in params.items():
+        for param, bnds in params.items():
             if bnds is None:
                 params[param] = boundaries.Bounds()
             elif not isinstance(bnds, boundaries.Bounds):
                 params[param] = boundaries.Bounds(bnds[0], bnds[1])
             # warn the user about reflected boundaries
             if isinstance(bnds, boundaries.Bounds) and (
-                    bnds.min.name == 'reflected' or
-                    bnds.max.name == 'reflected'):
-                warnings.warn("Param {} has one or more ".format(param) +
-                              "reflected boundaries. Reflected boundaries "
-                              "can cause issues when used in an MCMC.")
+                bnds.min.name == "reflected" or bnds.max.name == "reflected"
+            ):
+                warnings.warn(
+                    f"Param {param} has one or more "
+                     "reflected boundaries. Reflected boundaries "
+                    "can cause issues when used in an MCMC."
+                )
         self._bounds = params
         self._params = sorted(list(params.keys()))
 
     @property
     def params(self):
-        """list of strings: The list of parameter names."""
+        """List of strings: The list of parameter names."""
         return self._params
 
     @property
@@ -240,14 +251,17 @@ class BoundedDist(object):
 
     def __contains__(self, params):
         try:
-            return all(self._bounds[p].contains_conditioned(params[p])
-                       for p in self._params)
+            return all(
+                self._bounds[p].contains_conditioned(params[p]) for p in self._params
+            )
         except KeyError:
-            raise ValueError("must provide all parameters [%s]" %(
-                ', '.join(self._params)))
+            raise ValueError(
+                "must provide all parameters [%s]" % (", ".join(self._params))
+            )
 
     def apply_boundary_conditions(self, **kwargs):
-        r"""Applies any boundary conditions to the given values (e.g., applying
+        r"""
+        Applies any boundary conditions to the given values (e.g., applying
         cyclic conditions, and/or reflecting values off of boundaries). This
         is done by running `apply_conditions` of each bounds in self on the
         corresponding value. See `boundaries.Bounds.apply_conditions` for
@@ -265,12 +279,19 @@ class BoundedDist(object):
         -------
         dict
             A dictionary of the parameter names and the conditioned values.
+
         """
-        return dict([[p, self._bounds[p].apply_conditions(val)]
-                     for p,val in kwargs.items() if p in self._bounds])
+        return dict(
+            [
+                [p, self._bounds[p].apply_conditions(val)]
+                for p, val in kwargs.items()
+                if p in self._bounds
+            ]
+        )
 
     def pdf(self, **kwargs):
-        """Returns the pdf at the given values. The keyword arguments must
+        """
+        Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
         ignored. Any boundary conditions are applied to the values before the
         pdf is evaluated.
@@ -278,14 +299,16 @@ class BoundedDist(object):
         return self._pdf(**self.apply_boundary_conditions(**kwargs))
 
     def _pdf(self, **kwargs):
-        """The underlying pdf function called by `self.pdf`. This must be set
+        """
+        The underlying pdf function called by `self.pdf`. This must be set
         by any class that inherits from this class. Otherwise, a
         `NotImplementedError` is raised.
         """
         raise NotImplementedError("pdf function not set")
 
     def logpdf(self, **kwargs):
-        """Returns the log of the pdf at the given values. The keyword
+        """
+        Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params.
         Unrecognized arguments are ignored. Any boundary conditions are
         applied to the values before the pdf is evaluated.
@@ -293,7 +316,8 @@ class BoundedDist(object):
         return self._logpdf(**self.apply_boundary_conditions(**kwargs))
 
     def _logpdf(self, **kwargs):
-        """The underlying log pdf function called by `self.logpdf`. This must
+        """
+        The underlying log pdf function called by `self.logpdf`. This must
         be set by any class that inherits from this class. Otherwise, a
         `NotImplementedError` is raised.
         """
@@ -302,11 +326,12 @@ class BoundedDist(object):
     __call__ = logpdf
 
     def _cdfinv_param(self, param, value):
-        """Return the cdfinv for a single given parameter """
+        """Return the cdfinv for a single given parameter"""
         raise NotImplementedError("inverse cdf not set")
 
     def cdfinv(self, **kwds):
-        """Return the inverse cdf to map the unit interval to parameter bounds.
+        """
+        Return the inverse cdf to map the unit interval to parameter bounds.
         You must provide a keyword for every parameter.
         """
         updated = {}
@@ -315,7 +340,7 @@ class BoundedDist(object):
         return updated
 
     def rvs(self, size=1, **kwds):
-        "Draw random value"
+        """Draw random value"""
         dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
         draw = {}
@@ -328,7 +353,8 @@ class BoundedDist(object):
 
     @classmethod
     def from_config(cls, cp, section, variable_args, bounds_required=False):
-        """Returns a distribution based on a configuration file. The parameters
+        """
+        Returns a distribution based on a configuration file. The parameters
         for the distribution are retrieved from the section titled
         "[`section`-`variable_args`]" in the config file.
 
@@ -354,6 +380,8 @@ class BoundedDist(object):
         -------
         BoundedDist
             A distribution instance from the pycbc.distribution subpackage.
+
         """
-        return bounded_from_config(cls, cp, section, variable_args,
-                                    bounds_required=bounds_required)
+        return bounded_from_config(
+            cls, cp, section, variable_args, bounds_required=bounds_required
+        )

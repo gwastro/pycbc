@@ -19,27 +19,39 @@ This package provides classes and functions for evaluating Bayesian statistics
 assuming various noise models.
 """
 
-
 import logging
 from importlib.metadata import entry_points
 
+from .analytic import (
+    TestEggbox,
+    TestNormal,
+    TestPosterior,
+    TestPrior,
+    TestRosenbrock,
+    TestVolcano,
+)
 from .base import BaseModel
 from .base_data import BaseDataModel
-from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
-                       TestPrior, TestPosterior)
+from .brute_marg import BruteLISASkyModesMarginalize, BruteParallelGaussianMarginalize
+from .gated_gaussian_noise import (
+    GatedGaussianMargPhase,
+    GatedGaussianMargPol,
+    GatedGaussianNoise,
+)
 from .gaussian_noise import GaussianNoise
-from .marginalized_gaussian_noise import MarginalizedPhaseGaussianNoise
-from .marginalized_gaussian_noise import MarginalizedPolarization
-from .marginalized_gaussian_noise import MarginalizedHMPolPhase
-from .marginalized_gaussian_noise import MarginalizedTime
-from .brute_marg import BruteParallelGaussianMarginalize
-from .brute_marg import BruteLISASkyModesMarginalize
-from .gated_gaussian_noise import (GatedGaussianNoise, GatedGaussianMargPol,
-                                   GatedGaussianMargPhase)
-from .single_template import SingleTemplate
+from .hierarchical import (
+    HierarchicalModel,
+    JointPrimaryMarginalizedModel,
+    MultiSignalModel,
+)
+from .marginalized_gaussian_noise import (
+    MarginalizedHMPolPhase,
+    MarginalizedPhaseGaussianNoise,
+    MarginalizedPolarization,
+    MarginalizedTime,
+)
 from .relbin import Relative, RelativeTime, RelativeTimeDom
-from .hierarchical import (HierarchicalModel, MultiSignalModel,
-                           JointPrimaryMarginalizedModel)
+from .single_template import SingleTemplate
 
 # Used to manage a model instance across multiple cores or MPI
 _global_instance = None
@@ -51,17 +63,19 @@ def _call_global_model(*args, **kwds):
 
 
 def _call_global_model_logprior(*args, **kwds):
-    """Private function for a calling global's logprior.
+    """
+    Private function for a calling global's logprior.
 
     This is needed for samplers that use a separate function for the logprior,
     like ``emcee_pt``.
     """
     # pylint:disable=not-callable
-    return _global_instance(*args, callstat='logprior', **kwds)
+    return _global_instance(*args, callstat="logprior", **kwds)
 
 
-class CallModel(object):
-    """Wrapper class for calling models from a sampler.
+class CallModel:
+    """
+    Wrapper class for calling models from a sampler.
 
     This class can be called like a function, with the parameter values to
     evaluate provided as a list in the same order as the model's
@@ -125,7 +139,8 @@ class CallModel(object):
         return getattr(self.model, attr)
 
     def __call__(self, param_values, callstat=None, return_all_stats=None):
-        """Updates the model with the given parameter values, then calls the
+        """
+        Updates the model with the given parameter values, then calls the
         call function.
 
         Parameters
@@ -149,6 +164,7 @@ class CallModel(object):
             param values. Any stat that has not be calculated is set to
             ``numpy.nan``. This is only returned if ``return_all_stats`` is
             set to ``True``.
+
         """
         if callstat is None:
             callstat = self.callstat
@@ -159,12 +175,12 @@ class CallModel(object):
         val = getattr(self.model, callstat)
         if return_all_stats:
             return val, self.model.get_current_stats()
-        else:
-            return val
+        return val
 
 
 def read_from_config(cp, **kwargs):
-    r"""Initializes a model from the given config file.
+    r"""
+    Initializes a model from the given config file.
 
     The section must have a ``name`` argument. The name argument corresponds to
     the name of the class to initialize.
@@ -181,72 +197,82 @@ def read_from_config(cp, **kwargs):
     -------
     cls
         The initialized model.
+
     """
     # use the name to get the distribution
     name = cp.get("model", "name")
     return get_model(name).from_config(cp, **kwargs)
 
 
-_models = {_cls.name: _cls for _cls in (
-    TestEggbox,
-    TestNormal,
-    TestRosenbrock,
-    TestVolcano,
-    TestPosterior,
-    TestPrior,
-    GaussianNoise,
-    MarginalizedPhaseGaussianNoise,
-    MarginalizedPolarization,
-    MarginalizedHMPolPhase,
-    MarginalizedTime,
-    BruteParallelGaussianMarginalize,
-    BruteLISASkyModesMarginalize,
-    GatedGaussianNoise,
-    GatedGaussianMargPol,
-    GatedGaussianMargPhase,
-    SingleTemplate,
-    Relative,
-    RelativeTime,
-    HierarchicalModel,
-    MultiSignalModel,
-    RelativeTimeDom,
-    JointPrimaryMarginalizedModel,
-)}
+_models = {
+    _cls.name: _cls
+    for _cls in (
+        TestEggbox,
+        TestNormal,
+        TestRosenbrock,
+        TestVolcano,
+        TestPosterior,
+        TestPrior,
+        GaussianNoise,
+        MarginalizedPhaseGaussianNoise,
+        MarginalizedPolarization,
+        MarginalizedHMPolPhase,
+        MarginalizedTime,
+        BruteParallelGaussianMarginalize,
+        BruteLISASkyModesMarginalize,
+        GatedGaussianNoise,
+        GatedGaussianMargPol,
+        GatedGaussianMargPhase,
+        SingleTemplate,
+        Relative,
+        RelativeTime,
+        HierarchicalModel,
+        MultiSignalModel,
+        RelativeTimeDom,
+        JointPrimaryMarginalizedModel,
+    )
+}
 
 
 class _ModelManager(dict):
-    """Sub-classes dictionary to manage the collection of available models.
+    """
+    Sub-classes dictionary to manage the collection of available models.
 
     The first time this is called, any plugin models that are available will be
     added to the dictionary before returning.
     """
+
     def __init__(self, *args, **kwargs):
         self.retrieve_plugins = True
         super().__init__(*args, **kwargs)
 
     def add_model(self, model):
-        """Adds a model to the dictionary.
+        """
+        Adds a model to the dictionary.
 
         If the given model has the same name as a model already in the
         dictionary, the original model will be overridden. A warning will be
         printed in that case.
         """
         if super().__contains__(model.name):
-            logging.warning("Custom model %s will override a model of the "
-                         "same name. If you don't want this, change the "
-                         "model's name attribute and restart.", model.name)
+            logging.warning(
+                "Custom model %s will override a model of the "
+                "same name. If you don't want this, change the "
+                "model's name attribute and restart.",
+                model.name,
+            )
         self[model.name] = model
 
     def add_plugins(self):
-        """Adds any plugin models that are available.
+        """
+        Adds any plugin models that are available.
 
         This will only add the plugins if ``self.retrieve_plugins = True``.
         After this runs, ``self.retrieve_plugins`` is set to ``False``, so that
         subsequent calls to this will no re-add models.
         """
-
         if self.retrieve_plugins:
-            for plugin in entry_points(group='pycbc.inference.models'):
+            for plugin in entry_points(group="pycbc.inference.models"):
                 self.add_model(plugin.load())
             self.retrieve_plugins = False
 
@@ -312,7 +338,8 @@ models = _ModelManager(_models)
 
 
 def get_models():
-    """Returns the dictionary of current models.
+    """
+    Returns the dictionary of current models.
 
     Ensures that plugins are added to the dictionary first.
     """
@@ -321,7 +348,8 @@ def get_models():
 
 
 def get_model(model_name):
-    """Retrieve the given model.
+    """
+    Retrieve the given model.
 
     Parameters
     ----------
@@ -332,6 +360,7 @@ def get_model(model_name):
     -------
     model :
         The requested model.
+
     """
     return get_models()[model_name]
 
@@ -342,7 +371,8 @@ def available_models():
 
 
 def register_model(model):
-    """Makes a custom model available to PyCBC.
+    """
+    Makes a custom model available to PyCBC.
 
     The provided model will be added to the dictionary of models that PyCBC
     knows about, using the model's ``name`` attribute. If the ``name`` is the
@@ -354,5 +384,6 @@ def register_model(model):
         The model to use. The model should be a sub-class of
         :py:class:`BaseModel <pycbc.inference.models.base.BaseModel>` to ensure
         it has the correct API for use within ``pycbc_inference``.
+
     """
     get_models().add_model(model)

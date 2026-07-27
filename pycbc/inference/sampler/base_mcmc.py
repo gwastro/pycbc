@@ -23,16 +23,16 @@
 #
 """Provides constructor classes and convenience functions for MCMC samplers."""
 
-import logging
-from abc import (ABCMeta, abstractmethod, abstractproperty)
-
 import configparser as ConfigParser
+import logging
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 import numpy
 
 from pycbc.filter import autocorrelation
-from pycbc.inference.io import (validate_checkpoint_files, loadfile)
+from pycbc.inference.io import loadfile, validate_checkpoint_files
 from pycbc.inference.io.base_mcmc import nsamples_in_chain
+
 from .base import initial_dist_from_config
 
 #
@@ -45,7 +45,8 @@ from .base import initial_dist_from_config
 
 
 def raw_samples_to_dict(sampler, raw_samples):
-    """Convenience function for converting ND array to a dict of samples.
+    """
+    Convenience function for converting ND array to a dict of samples.
 
     The samples are assumed to have dimension
     ``[sampler.base_shape x] niterations x len(sampler.sampling_params)``.
@@ -64,23 +65,22 @@ def raw_samples_to_dict(sampler, raw_samples):
         sampling params are not the same as the variable params, they will
         also be included. Each array will have shape
         ``[sampler.base_shape x] niterations``.
+
     """
     sampling_params = sampler.sampling_params
     # convert to dictionary
-    samples = {param: raw_samples[..., ii] for
-               ii, param in enumerate(sampling_params)}
+    samples = {param: raw_samples[..., ii] for ii, param in enumerate(sampling_params)}
     # apply boundary conditions
-    samples = sampler.model.prior_distribution.apply_boundary_conditions(
-        **samples)
+    samples = sampler.model.prior_distribution.apply_boundary_conditions(**samples)
     # apply transforms to go to model's variable params space
     if sampler.model.sampling_transforms is not None:
-        samples = sampler.model.sampling_transforms.apply(
-            samples, inverse=True)
+        samples = sampler.model.sampling_transforms.apply(samples, inverse=True)
     return samples
 
 
 def blob_data_to_dict(stat_names, blobs):
-    """Converts list of "blobs" to a dictionary of model stats.
+    """
+    Converts list of "blobs" to a dictionary of model stats.
 
     Samplers like ``emcee`` store the extra tuple returned by ``CallModel`` to
     a list called blobs. This is a list of lists of tuples with shape
@@ -100,12 +100,14 @@ def blob_data_to_dict(stat_names, blobs):
     dict :
         A dictionary mapping the model's ``default_stats`` to arrays of values.
         Each array will have shape ``nwalkers x niterations``.
+
     """
     # get the dtypes of each of the stats; we'll just take this from the
     # first iteration and walker
     dtypes = [type(val) for val in blobs[0][0]]
     assert len(stat_names) == len(dtypes), (
-        "number of stat names must match length of tuples in the blobs")
+        "number of stat names must match length of tuples in the blobs"
+    )
     # convert to an array; to ensure that we get the dtypes correct, we'll
     # cast to a structured array
     raw_stats = numpy.array(blobs, dtype=list(zip(stat_names, dtypes)))
@@ -116,7 +118,8 @@ def blob_data_to_dict(stat_names, blobs):
 
 
 def get_optional_arg_from_config(cp, section, arg, dtype=str):
-    """Convenience function to retrieve an optional argument from a config
+    """
+    Convenience function to retrieve an optional argument from a config
     file.
 
     Parameters
@@ -135,6 +138,7 @@ def get_optional_arg_from_config(cp, section, arg, dtype=str):
     -------
     val : None or str
         If the argument is present, the value. Otherwise, None.
+
     """
     if cp.has_option(section, arg):
         val = dtype(cp.get(section, arg))
@@ -152,8 +156,9 @@ def get_optional_arg_from_config(cp, section, arg, dtype=str):
 #
 
 
-class BaseMCMC(object, metaclass=ABCMeta):
-    r"""Abstract base class that provides methods common to MCMCs.
+class BaseMCMC(metaclass=ABCMeta):
+    r"""
+    Abstract base class that provides methods common to MCMCs.
 
     This is not a sampler class itself. Sampler classes can inherit from this
     along with ``BaseSampler``.
@@ -185,6 +190,7 @@ class BaseMCMC(object, metaclass=ABCMeta):
         [`classmethod`] Should compute the autocorrelation length using
         the given filename. Also allows for other keyword arguments.
     """
+
     _lastclear = None  # the iteration when samples were cleared from memory
     _itercounter = None  # the number of iterations since the last clear
     _pos = None
@@ -201,14 +207,14 @@ class BaseMCMC(object, metaclass=ABCMeta):
 
     @abstractproperty
     def base_shape(self):
-        """What shape the sampler's samples arrays are in, excluding
+        """
+        What shape the sampler's samples arrays are in, excluding
         the iterations dimension.
 
         For example, if a sampler uses 20 chains and 3 temperatures, this
         would be ``(3, 20)``. If a sampler only uses a single walker and no
         temperatures this would be ``()``.
         """
-        pass
 
     @property
     def nchains(self):
@@ -261,7 +267,8 @@ class BaseMCMC(object, metaclass=ABCMeta):
 
     @thin_interval.setter
     def thin_interval(self, interval):
-        """Sets the thin interval to use.
+        """
+        Sets the thin interval to use.
 
         If ``None`` provided, will default to 1.
         """
@@ -286,21 +293,26 @@ class BaseMCMC(object, metaclass=ABCMeta):
         if n is not None:
             n = int(n)
             if n < self.thin_safety_factor:
-                raise ValueError("max samples per chain must be >= {}"
-                                 .format(self.thin_safety_factor))
+                raise ValueError(
+                    f"max samples per chain must be >= {self.thin_safety_factor}"
+                )
             # also check that this is consistent with the target number of
             # effective samples
             if self.target_eff_nsamples is not None:
-                target_samps_per_chain = int(numpy.ceil(
-                    self.target_eff_nsamples / self.nchains))
+                target_samps_per_chain = int(
+                    numpy.ceil(self.target_eff_nsamples / self.nchains)
+                )
                 if n <= target_samps_per_chain:
-                    raise ValueError("max samples per chain must be > target "
-                                     "effective number of samples per walker "
-                                     "({})".format(target_samps_per_chain))
+                    raise ValueError(
+                        "max samples per chain must be > target "
+                        "effective number of samples per walker "
+                        f"({target_samps_per_chain})"
+                    )
         self._max_samples_per_chain = n
 
     def get_thin_interval(self):
-        """Gets the thin interval to use.
+        """
+        Gets the thin interval to use.
 
         If ``max_samples_per_chain`` is set, this will figure out what thin
         interval is needed to satisfy that criteria. In that case, the thin
@@ -310,7 +322,7 @@ class BaseMCMC(object, metaclass=ABCMeta):
             # the extra factor of 2 is to account for the fact that the thin
             # interval will need to be at least twice as large as a previously
             # used interval
-            thinfactor = 2*(self.niterations // self.max_samples_per_chain)
+            thinfactor = 2 * (self.niterations // self.max_samples_per_chain)
             # make sure it's at least 1
             thinfactor = max(thinfactor, 1)
             # make the new interval is a multiple of the previous, to ensure
@@ -318,36 +330,36 @@ class BaseMCMC(object, metaclass=ABCMeta):
             if thinfactor < self.thin_interval:
                 thin_interval = self.thin_interval
             else:
-                thin_interval = (thinfactor // self.thin_interval) * \
-                    self.thin_interval
+                thin_interval = (thinfactor // self.thin_interval) * self.thin_interval
         else:
             thin_interval = self.thin_interval
         return thin_interval
 
     def set_target(self, niterations=None, eff_nsamples=None):
-        """Sets the target niterations/nsamples for the sampler.
+        """
+        Sets the target niterations/nsamples for the sampler.
 
         One or the other must be provided, not both.
         """
         if niterations is None and eff_nsamples is None:
-            raise ValueError("Must provide a target niterations or "
-                             "eff_nsamples")
+            raise ValueError("Must provide a target niterations or eff_nsamples")
         if niterations is not None and eff_nsamples is not None:
-            raise ValueError("Must provide a target niterations or "
-                             "eff_nsamples, not both")
-        self._target_niterations = int(niterations) \
-            if niterations is not None else None
-        self._target_eff_nsamples = int(eff_nsamples) \
-            if eff_nsamples is not None else None
+            raise ValueError(
+                "Must provide a target niterations or eff_nsamples, not both"
+            )
+        self._target_niterations = int(niterations) if niterations is not None else None
+        self._target_eff_nsamples = (
+            int(eff_nsamples) if eff_nsamples is not None else None
+        )
 
     @abstractmethod
     def clear_samples(self):
         """A method to clear samples from memory."""
-        pass
 
     @property
     def pos(self):
-        """A dictionary of the current walker positions.
+        """
+        A dictionary of the current walker positions.
 
         If the sampler hasn't been run yet, returns p0.
         """
@@ -355,13 +367,15 @@ class BaseMCMC(object, metaclass=ABCMeta):
         if pos is None:
             return self.p0
         # convert to dict
-        pos = {param: self._pos[..., k]
-               for (k, param) in enumerate(self.sampling_params)}
+        pos = {
+            param: self._pos[..., k] for (k, param) in enumerate(self.sampling_params)
+        }
         return pos
 
     @property
     def p0(self):
-        """A dictionary of the initial position of the chains.
+        """
+        A dictionary of the initial position of the chains.
 
         This is set by using ``set_p0``. If not set yet, a ``ValueError`` is
         raised when the attribute is accessed.
@@ -369,12 +383,12 @@ class BaseMCMC(object, metaclass=ABCMeta):
         if self._p0 is None:
             raise ValueError("initial positions not set; run set_p0")
         # convert to dict
-        p0 = {param: self._p0[..., k]
-              for (k, param) in enumerate(self.sampling_params)}
+        p0 = {param: self._p0[..., k] for (k, param) in enumerate(self.sampling_params)}
         return p0
 
     def set_p0(self, samples_file=None, prior=None):
-        """Sets the initial position of the chains.
+        """
+        Sets the initial position of the chains.
 
         Parameters
         ----------
@@ -389,18 +403,20 @@ class BaseMCMC(object, metaclass=ABCMeta):
         -------
         p0 : dict
             A dictionary maping sampling params to the starting positions.
+
         """
         # if samples are given then use those as initial positions
         if samples_file is not None:
-            with self.io(samples_file, 'r') as fp:
-                samples = fp.read_samples(self.variable_params,
-                                          iteration=-1, flatten=False)
+            with self.io(samples_file, "r") as fp:
+                samples = fp.read_samples(
+                    self.variable_params, iteration=-1, flatten=False
+                )
                 # remove the (length 1) niterations dimension
                 samples = samples[..., 0]
                 # make sure we have the same shape
                 assert samples.shape == self.base_shape, (
-                       "samples in file {} have shape {}, but I have shape {}".
-                       format(samples_file, samples.shape, self.base_shape))
+                    f"samples in file {samples_file} have shape {samples.shape}, but I have shape {self.base_shape}"
+                )
             # transform to sampling parameter space
             if self.model.sampling_transforms is not None:
                 samples = self.model.sampling_transforms.apply(samples)
@@ -408,10 +424,11 @@ class BaseMCMC(object, metaclass=ABCMeta):
         else:
             nsamples = numpy.prod(self.base_shape)
             samples = self.model.prior_rvs(size=nsamples, prior=prior).reshape(
-                self.base_shape)
+                self.base_shape
+            )
         # store as ND array with shape [base_shape] x nparams
         ndim = len(self.variable_params)
-        p0 = numpy.ones(list(self.base_shape)+[ndim])
+        p0 = numpy.ones(list(self.base_shape) + [ndim])
         for i, param in enumerate(self.sampling_params):
             p0[..., i] = samples[param]
         self._p0 = p0
@@ -419,26 +436,23 @@ class BaseMCMC(object, metaclass=ABCMeta):
 
     @abstractmethod
     def set_state_from_file(self, filename):
-        """Sets the state of the sampler to the instance saved in a file.
-        """
-        pass
+        """Sets the state of the sampler to the instance saved in a file."""
 
     def set_start_from_config(self, cp):
-        """Sets the initial state of the sampler from config file
-        """
-        if cp.has_option('sampler', 'start-file'):
-            start_file = cp.get('sampler', 'start-file')
+        """Sets the initial state of the sampler from config file"""
+        if cp.has_option("sampler", "start-file"):
+            start_file = cp.get("sampler", "start-file")
             logging.info("Using file %s for initial positions", start_file)
             init_prior = None
         else:
             start_file = None
             init_prior = initial_dist_from_config(
-                cp, self.variable_params, self.static_params)
+                cp, self.variable_params, self.static_params
+            )
         self.set_p0(samples_file=start_file, prior=init_prior)
 
     def resume_from_checkpoint(self):
-        """Resume the sampler from the checkpoint file
-        """
+        """Resume the sampler from the checkpoint file"""
         with self.io(self.checkpoint_file, "r") as fp:
             self._lastclear = fp.niterations
         self.set_p0(samples_file=self.checkpoint_file)
@@ -447,8 +461,10 @@ class BaseMCMC(object, metaclass=ABCMeta):
     def run(self):
         """Runs the sampler."""
         if self.target_eff_nsamples and self.checkpoint_interval is None:
-            raise ValueError("A checkpoint interval must be set if "
-                             "targetting an effective number of samples")
+            raise ValueError(
+                "A checkpoint interval must be set if "
+                "targetting an effective number of samples"
+            )
         # get the starting number of samples:
         # "nsamples" keeps track of the number of samples we've obtained (if
         # target_eff_nsamples is not None, this is the effective number of
@@ -470,8 +486,10 @@ class BaseMCMC(object, metaclass=ABCMeta):
             target_nsamples = self.nchains * self.target_niterations
             nsamples = self._lastclear * self.nchains
         else:
-            raise ValueError("must set either target_eff_nsamples or "
-                             "target_niterations; see set_target")
+            raise ValueError(
+                "must set either target_eff_nsamples or "
+                "target_niterations; see set_target"
+            )
         self._itercounter = 0
         # figure out the interval to use
         iterinterval = self.checkpoint_interval
@@ -481,12 +499,14 @@ class BaseMCMC(object, metaclass=ABCMeta):
         while nsamples < target_nsamples:
             # adjust the interval if we would go past the number of iterations
             if self.target_niterations is not None and (
-                    self.niterations + iterinterval > self.target_niterations):
+                self.niterations + iterinterval > self.target_niterations
+            ):
                 iterinterval = self.target_niterations - self.niterations
             # run sampler and set initial values to None so that sampler
             # picks up from where it left off next call
-            logging.info("Running sampler for {} to {} iterations".format(
-                self.niterations, self.niterations + iterinterval))
+            logging.info(
+                f"Running sampler for {self.niterations} to {self.niterations + iterinterval} iterations"
+            )
             # run the underlying sampler for the desired interval
             self.run_mcmc(iterinterval)
             # update the itercounter
@@ -496,8 +516,7 @@ class BaseMCMC(object, metaclass=ABCMeta):
             # update nsamples for next loop
             if self.target_eff_nsamples is not None:
                 nsamples = self.effective_nsamples
-                logging.info("Have {} effective samples post burn in".format(
-                    nsamples))
+                logging.info(f"Have {nsamples} effective samples post burn in")
             else:
                 nsamples += iterinterval * self.nchains
 
@@ -512,20 +531,18 @@ class BaseMCMC(object, metaclass=ABCMeta):
 
     @abstractmethod
     def effective_nsamples(self):
-        """The effective number of samples post burn-in that the sampler has
+        """
+        The effective number of samples post burn-in that the sampler has
         acquired so far.
         """
-        pass
 
     @abstractmethod
     def run_mcmc(self, niterations):
         """Run the MCMC for the given number of iterations."""
-        pass
 
     @abstractmethod
     def write_results(self, filename):
         """Should write all samples currently in memory to the given file."""
-        pass
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""
@@ -548,12 +565,16 @@ class BaseMCMC(object, metaclass=ABCMeta):
                         thin_interval = fp.thinned_by
                     elif thin_interval > fp.thinned_by:
                         # we need to thin the samples on disk
-                        logging.info("Thinning samples in %s by a factor "
-                                     "of %i", fn, int(thin_interval))
+                        logging.info(
+                            "Thinning samples in %s by a factor of %i",
+                            fn,
+                            int(thin_interval),
+                        )
                         fp.thin(thin_interval)
                 fp_lastiter = fp.last_iteration()
-            logging.info("Writing samples to %s with thin interval %i", fn,
-                         thin_interval)
+            logging.info(
+                "Writing samples to %s with thin interval %i", fn, thin_interval
+            )
             self.write_results(fn)
         # update the running thin interval
         self.thin_interval = thin_interval
@@ -590,14 +611,14 @@ class BaseMCMC(object, metaclass=ABCMeta):
         # check validity
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
-            self.checkpoint_file, self.backup_file)
+            self.checkpoint_file, self.backup_file
+        )
         if not checkpoint_valid:
-            raise IOError("error writing to checkpoint file")
-        elif self.checkpoint_signal:
+            raise OSError("error writing to checkpoint file")
+        if self.checkpoint_signal:
             # kill myself with the specified signal
-            logging.info("Exiting with SIG{}".format(self.checkpoint_signal))
-            kill_cmd="os.kill(os.getpid(), signal.SIG{})".format(
-                self.checkpoint_signal)
+            logging.info(f"Exiting with SIG{self.checkpoint_signal}")
+            kill_cmd = f"os.kill(os.getpid(), signal.SIG{self.checkpoint_signal})"
             exec(kill_cmd)
         # clear the in-memory chain to save memory
         logging.info("Clearing samples from memory")
@@ -605,7 +626,8 @@ class BaseMCMC(object, metaclass=ABCMeta):
 
     @staticmethod
     def checkpoint_from_config(cp, section):
-        """Gets the checkpoint interval from the given config file.
+        """
+        Gets the checkpoint interval from the given config file.
 
         This looks for 'checkpoint-interval' in the section.
 
@@ -620,13 +642,16 @@ class BaseMCMC(object, metaclass=ABCMeta):
         ------
         int or None :
             The checkpoint interval, if it is in the section. Otherw
+
         """
-        return get_optional_arg_from_config(cp, section, 'checkpoint-interval',
-                                            dtype=int)
+        return get_optional_arg_from_config(
+            cp, section, "checkpoint-interval", dtype=int
+        )
 
     @staticmethod
     def ckpt_signal_from_config(cp, section):
-        """Gets the checkpoint signal from the given config file.
+        """
+        Gets the checkpoint signal from the given config file.
 
         This looks for 'checkpoint-signal' in the section.
 
@@ -641,12 +666,13 @@ class BaseMCMC(object, metaclass=ABCMeta):
         ------
         int or None :
             The checkpoint interval, if it is in the section. Otherw
+
         """
-        return get_optional_arg_from_config(cp, section, 'checkpoint-signal',
-                                            dtype=str)
+        return get_optional_arg_from_config(cp, section, "checkpoint-signal", dtype=str)
 
     def set_target_from_config(self, cp, section):
-        """Sets the target using the given config file.
+        """
+        Sets the target using the given config file.
 
         This looks for ``niterations`` to set the ``target_niterations``, and
         ``effective-nsamples`` to set the ``target_eff_nsamples``.
@@ -657,6 +683,7 @@ class BaseMCMC(object, metaclass=ABCMeta):
             Open config parser to retrieve the argument from.
         section : str
             Name of the section to retrieve from.
+
         """
         if cp.has_option(section, "niterations"):
             niterations = int(cp.get(section, "niterations"))
@@ -669,7 +696,8 @@ class BaseMCMC(object, metaclass=ABCMeta):
         self.set_target(niterations=niterations, eff_nsamples=nsamples)
 
     def set_burn_in_from_config(self, cp):
-        """Sets the burn in class from the given config file.
+        """
+        Sets the burn in class from the given config file.
 
         If no burn-in section exists in the file, then this just set the
         burn-in class to None.
@@ -681,8 +709,7 @@ class BaseMCMC(object, metaclass=ABCMeta):
         self.set_burn_in(bit)
 
     def set_thin_interval_from_config(self, cp, section):
-        """Sets thinning options from the given config file.
-        """
+        """Sets thinning options from the given config file."""
         if cp.has_option(section, "thin-interval"):
             thin_interval = int(cp.get(section, "thin-interval"))
             logging.info("Will thin samples using interval %i", thin_interval)
@@ -690,25 +717,28 @@ class BaseMCMC(object, metaclass=ABCMeta):
             thin_interval = None
         if cp.has_option(section, "max-samples-per-chain"):
             max_samps_per_chain = int(cp.get(section, "max-samples-per-chain"))
-            logging.info("Setting max samples per chain to %i",
-                         max_samps_per_chain)
+            logging.info("Setting max samples per chain to %i", max_samps_per_chain)
         else:
             max_samps_per_chain = None
         # check for consistency
         if thin_interval is not None and max_samps_per_chain is not None:
-            raise ValueError("provide either thin-interval or "
-                             "max-samples-per-chain, not both")
+            raise ValueError(
+                "provide either thin-interval or max-samples-per-chain, not both"
+            )
         # check that the thin interval is < then the checkpoint interval
-        if thin_interval is not None and self.checkpoint_interval is not None \
-                and thin_interval >= self.checkpoint_interval:
-            raise ValueError("thin interval must be less than the checkpoint "
-                             "interval")
+        if (
+            thin_interval is not None
+            and self.checkpoint_interval is not None
+            and thin_interval >= self.checkpoint_interval
+        ):
+            raise ValueError("thin interval must be less than the checkpoint interval")
         self.thin_interval = thin_interval
         self.max_samples_per_chain = max_samps_per_chain
 
     @property
     def raw_acls(self):
-        """Dictionary of parameter names -> autocorrelation lengths.
+        """
+        Dictionary of parameter names -> autocorrelation lengths.
 
         Depending on the sampler, the ACLs may be an integer, or an arrray of
         values per chain and/or per temperature.
@@ -724,28 +754,29 @@ class BaseMCMC(object, metaclass=ABCMeta):
 
     @abstractmethod
     def acl(self):
-        """The autocorrelation length.
+        """
+        The autocorrelation length.
 
         This method should convert the raw ACLs into an integer or array that
         can be used to extract independent samples from a chain.
         """
-        pass
 
     @property
     def raw_acts(self):
-        """Dictionary of parameter names -> autocorrelation time(s).
+        """
+        Dictionary of parameter names -> autocorrelation time(s).
 
         Returns ``None`` if no ACLs have been calculated.
         """
         acls = self.raw_acls
         if acls is None:
             return None
-        return {p: acl * self.thin_interval
-                for (p, acl) in acls.items()}
+        return {p: acl * self.thin_interval for (p, acl) in acls.items()}
 
     @property
     def act(self):
-        """The autocorrelation time(s).
+        """
+        The autocorrelation time(s).
 
         The autocorrelation time is defined as the autocorrelation length times
         the ``thin_interval``. It gives the number of iterations between
@@ -761,23 +792,26 @@ class BaseMCMC(object, metaclass=ABCMeta):
 
     @abstractmethod
     def compute_acf(cls, filename, **kwargs):
-        """A method to compute the autocorrelation function of samples in the
-        given file."""
-        pass
+        """
+        A method to compute the autocorrelation function of samples in the
+        given file.
+        """
 
     @abstractmethod
     def compute_acl(cls, filename, **kwargs):
-        """A method to compute the autocorrelation length of samples in the
-        given file."""
-        pass
+        """
+        A method to compute the autocorrelation length of samples in the
+        given file.
+        """
 
 
-class EnsembleSupport(object):
+class EnsembleSupport:
     """Adds support for ensemble MCMC samplers."""
 
     @property
     def nwalkers(self):
-        """The number of walkers used.
+        """
+        The number of walkers used.
 
         Alias of ``nchains``.
         """
@@ -791,7 +825,8 @@ class EnsembleSupport(object):
 
     @property
     def acl(self):
-        """The autocorrelation length of the ensemble.
+        """
+        The autocorrelation length of the ensemble.
 
         This is calculated by taking the maximum over all of the ``raw_acls``.
         This works for both single and parallel-tempered ensemble samplers.
@@ -805,7 +840,8 @@ class EnsembleSupport(object):
 
     @property
     def effective_nsamples(self):
-        """The effective number of samples post burn-in that the sampler has
+        """
+        The effective number of samples post burn-in that the sampler has
         acquired so far.
         """
         if self.burn_in is not None and not self.burn_in.is_burned_in:
@@ -834,16 +870,23 @@ class EnsembleSupport(object):
 #
 
 
-def ensemble_compute_acf(filename, start_index=None, end_index=None,
-                         per_walker=False, walkers=None, parameters=None):
-    """Computes the autocorrleation function for an ensemble MCMC.
+def ensemble_compute_acf(
+    filename,
+    start_index=None,
+    end_index=None,
+    per_walker=False,
+    walkers=None,
+    parameters=None,
+):
+    """
+    Computes the autocorrleation function for an ensemble MCMC.
 
     By default, parameter values are averaged over all walkers at each
     iteration. The ACF is then calculated over the averaged chain. An
     ACF per-walker will be returned instead if ``per_walker=True``.
 
     Parameters
-    -----------
+    ----------
     filename : str
         Name of a samples file to compute ACFs for.
     start_index : int, optional
@@ -868,9 +911,10 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
         Dictionary of arrays giving the ACFs for each parameter. If
         ``per-walker`` is True, the arrays will have shape
         ``nwalkers x niterations``.
+
     """
     acfs = {}
-    with loadfile(filename, 'r') as fp:
+    with loadfile(filename, "r") as fp:
         if parameters is None:
             parameters = fp.variable_params
         if isinstance(parameters, str):
@@ -881,26 +925,34 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
                 if walkers is None:
                     walkers = numpy.arange(fp.nwalkers)
                 arrays = [
-                    ensemble_compute_acf(filename, start_index=start_index,
-                                         end_index=end_index,
-                                         per_walker=False, walkers=ii,
-                                         parameters=param)[param]
-                    for ii in walkers]
+                    ensemble_compute_acf(
+                        filename,
+                        start_index=start_index,
+                        end_index=end_index,
+                        per_walker=False,
+                        walkers=ii,
+                        parameters=param,
+                    )[param]
+                    for ii in walkers
+                ]
                 acfs[param] = numpy.vstack(arrays)
             else:
                 samples = fp.read_raw_samples(
-                    param, thin_start=start_index, thin_interval=1,
-                    thin_end=end_index, walkers=walkers,
-                    flatten=False)[param]
+                    param,
+                    thin_start=start_index,
+                    thin_interval=1,
+                    thin_end=end_index,
+                    walkers=walkers,
+                    flatten=False,
+                )[param]
                 samples = samples.mean(axis=0)
-                acfs[param] = autocorrelation.calculate_acf(
-                    samples).numpy()
+                acfs[param] = autocorrelation.calculate_acf(samples).numpy()
     return acfs
 
 
-def ensemble_compute_acl(filename, start_index=None, end_index=None,
-                         min_nsamples=10):
-    """Computes the autocorrleation length for an ensemble MCMC.
+def ensemble_compute_acl(filename, start_index=None, end_index=None, min_nsamples=10):
+    """
+    Computes the autocorrleation length for an ensemble MCMC.
 
     Parameter values are averaged over all walkers at each iteration.
     The ACL is then calculated over the averaged chain. If an ACL cannot
@@ -908,7 +960,7 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None,
     to ``inf``.
 
     Parameters
-    -----------
+    ----------
     filename : str
         Name of a samples file to compute ACLs for.
     start_index : int, optional
@@ -927,13 +979,18 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None,
     -------
     dict
         A dictionary giving the ACL for each parameter.
+
     """
     acls = {}
-    with loadfile(filename, 'r') as fp:
+    with loadfile(filename, "r") as fp:
         for param in fp.variable_params:
             samples = fp.read_raw_samples(
-                param, thin_start=start_index, thin_interval=1,
-                thin_end=end_index, flatten=False)[param]
+                param,
+                thin_start=start_index,
+                thin_interval=1,
+                thin_end=end_index,
+                flatten=False,
+            )[param]
             samples = samples.mean(axis=0)
             # if < min number of samples, just set to inf
             if samples.size < min_nsamples:
@@ -944,5 +1001,5 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None,
                 acl = numpy.inf
             acls[param] = acl
         maxacl = numpy.array(list(acls.values())).max()
-        logging.info("ACT: %s", str(maxacl*fp.thinned_by))
+        logging.info("ACT: %s", str(maxacl * fp.thinned_by))
     return acls

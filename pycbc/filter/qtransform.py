@@ -30,13 +30,16 @@ the q-transform of that time series
 """
 
 import numpy
-from numpy import ceil, log, exp
-from pycbc.types.timeseries import FrequencySeries, TimeSeries
+from numpy import ceil, exp, log
+
 from pycbc.fft import ifft
 from pycbc.types import zeros
+from pycbc.types.timeseries import FrequencySeries, TimeSeries
+
 
 def qplane(qplane_tile_dict, fseries, return_complex=False):
-    """Performs q-transform on each tile for each q-plane and selects
+    """
+    Performs q-transform on each tile for each q-plane and selects
        tile with the maximum energy. Q-transform can then
        be interpolated to a desired frequency and time resolution.
 
@@ -59,6 +62,7 @@ def qplane(qplane_tile_dict, fseries, return_complex=False):
         The frequencies that the qtransform is samled.
     qplane : numpy.ndarray (2d)
         The two dimensional interpolated qtransform of this time series.
+
     """
     # store q-transforms for each q in a dict
     qplanes = {}
@@ -83,8 +87,10 @@ def qplane(qplane_tile_dict, fseries, return_complex=False):
     plane = numpy.array([v.numpy() for v in plane])
     return max_key, times, frequencies, numpy.array(plane)
 
+
 def qtiling(fseries, qrange, frange, mismatch=0.2):
-    """Iterable constructor of QTile tuples
+    """
+    Iterable constructor of QTile tuples
 
     Parameters
     ----------
@@ -101,6 +107,7 @@ def qtiling(fseries, qrange, frange, mismatch=0.2):
     -------
     qplane_tile_dict: 'dict'
         dictionary containing Q-tile tuples for a set of Q-planes
+
     """
     qplane_tile_dict = {}
     qs = list(_iter_qs(qrange, deltam_f(mismatch)))
@@ -110,8 +117,10 @@ def qtiling(fseries, qrange, frange, mismatch=0.2):
 
     return qplane_tile_dict
 
+
 def deltam_f(mismatch):
-    """Fractional mismatch between neighbouring tiles
+    """
+    Fractional mismatch between neighbouring tiles
 
     Parameters
     ----------
@@ -121,11 +130,14 @@ def deltam_f(mismatch):
     Returns
     -------
     :type: 'float'
+
     """
-    return 2 * (mismatch / 3.) ** (1/2.)
+    return 2 * (mismatch / 3.0) ** (1 / 2.0)
+
 
 def _iter_qs(qrange, deltam):
-    """Iterate over the Q values
+    """
+    Iterate over the Q values
 
     Parameters
     ----------
@@ -138,18 +150,19 @@ def _iter_qs(qrange, deltam):
     -------
     Q-value:
         Q value for Q-tile
-    """
 
+    """
     # work out how many Qs we need
-    cumum = log(float(qrange[1]) / qrange[0]) / 2**(1/2.)
+    cumum = log(float(qrange[1]) / qrange[0]) / 2 ** (1 / 2.0)
     nplanes = int(max(ceil(cumum / deltam), 1))
     dq = cumum / nplanes
     for i in range(nplanes):
-        yield qrange[0] * exp(2**(1/2.) * dq * (i + .5))
-    return
+        yield qrange[0] * exp(2 ** (1 / 2.0) * dq * (i + 0.5))
+
 
 def _iter_frequencies(q, frange, mismatch, dur):
-    """Iterate over the frequencies of this 'QPlane'
+    """
+    Iterate over the frequencies of this 'QPlane'
 
     Parameters
     ----------
@@ -166,22 +179,27 @@ def _iter_frequencies(q, frange, mismatch, dur):
     -------
     frequencies:
         Q-Tile frequency
+
     """
     # work out how many frequencies we need
     minf, maxf = frange
-    fcum_mismatch = log(float(maxf) / minf) * (2 + q**2)**(1/2.) / 2.
+    fcum_mismatch = log(float(maxf) / minf) * (2 + q**2) ** (1 / 2.0) / 2.0
     nfreq = int(max(1, ceil(fcum_mismatch / deltam_f(mismatch))))
     fstep = fcum_mismatch / nfreq
-    fstepmin = 1. / dur
+    fstepmin = 1.0 / dur
     # for each frequency, yield a QTile
     for i in range(nfreq):
-        yield (float(minf) *
-               exp(2 / (2 + q**2)**(1/2.) * (i + .5) * fstep) //
-               fstepmin * fstepmin)
-    return
+        yield (
+            float(minf)
+            * exp(2 / (2 + q**2) ** (1 / 2.0) * (i + 0.5) * fstep)
+            // fstepmin
+            * fstepmin
+        )
+
 
 def qseries(fseries, Q, f0, return_complex=False):
-    """Calculate the energy 'TimeSeries' for the given fseries
+    """
+    Calculate the energy 'TimeSeries' for the given fseries
 
     Parameters
     ----------
@@ -199,33 +217,33 @@ def qseries(fseries, Q, f0, return_complex=False):
     energy: '~pycbc.types.TimeSeries'
         A 'TimeSeries' of the normalized energy from the Q-transform of
         this tile against the data.
+
     """
     # normalize and generate bi-square window
-    qprime = Q / 11**(1/2.)
-    norm = numpy.sqrt(315. * qprime / (128. * f0))
+    qprime = Q / 11 ** (1 / 2.0)
+    norm = numpy.sqrt(315.0 * qprime / (128.0 * f0))
     window_size = 2 * int(f0 / qprime * fseries.duration) + 1
-    xfrequencies = numpy.linspace(-1., 1., window_size)
+    xfrequencies = numpy.linspace(-1.0, 1.0, window_size)
 
     start = int((f0 - (f0 / qprime)) * fseries.duration)
     end = int(start + window_size)
     center = (start + end) // 2
 
-    windowed = fseries[start:end] * (1 - xfrequencies ** 2) ** 2 * norm
+    windowed = fseries[start:end] * (1 - xfrequencies**2) ** 2 * norm
 
-    tlen = (len(fseries)-1) * 2
+    tlen = (len(fseries) - 1) * 2
     windowed.resize(tlen)
     windowed.roll(-center)
 
     # calculate the time series for this q -value
-    windowed = FrequencySeries(windowed, delta_f=fseries.delta_f,
-                            epoch=fseries.start_time)
-    ctseries = TimeSeries(zeros(tlen, dtype=numpy.complex128),
-                            delta_t=fseries.delta_t)
+    windowed = FrequencySeries(
+        windowed, delta_f=fseries.delta_f, epoch=fseries.start_time
+    )
+    ctseries = TimeSeries(zeros(tlen, dtype=numpy.complex128), delta_t=fseries.delta_t)
     ifft(windowed, ctseries)
 
     if return_complex:
         return ctseries
-    else:
-        energy = ctseries.squared_norm()
-        medianenergy = numpy.median(energy.numpy())
-        return  energy / float(medianenergy)
+    energy = ctseries.squared_norm()
+    medianenergy = numpy.median(energy.numpy())
+    return energy / float(medianenergy)

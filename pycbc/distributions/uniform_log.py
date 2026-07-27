@@ -12,19 +12,23 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" This modules provides classes for evaluating distributions whose logarithm
+"""
+This modules provides classes for evaluating distributions whose logarithm
 are uniform.
 """
+
 import logging
+
 import numpy
 
 from pycbc.distributions import uniform
 
-logger = logging.getLogger('pycbc.distributions.uniform_log')
+logger = logging.getLogger("pycbc.distributions.uniform_log")
 
 
 class UniformLog10(uniform.Uniform):
-    r""" A uniform distribution on the log base 10 of the given parameters.
+    r"""
+    A uniform distribution on the log base 10 of the given parameters.
     The parameters are independent of each other. Instances of this class can
     be called like a function. By default, logpdf will be called.
 
@@ -34,41 +38,46 @@ class UniformLog10(uniform.Uniform):
         The keyword arguments should provide the names of parameters and their
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
+
     """
+
     name = "uniform_log10"
 
     def __init__(self, **params):
-        super(UniformLog10, self).__init__(**params)
-        self._norm = numpy.prod([numpy.log10(bnd[1]) - numpy.log10(bnd[0])
-                                   for bnd in self._bounds.values()])
+        super().__init__(**params)
+        self._norm = numpy.prod(
+            [numpy.log10(bnd[1]) - numpy.log10(bnd[0]) for bnd in self._bounds.values()]
+        )
         self._lognorm = numpy.log(self._norm)
 
     def _cdfinv_param(self, param, value):
-        """Return the cdfinv for a single given parameter """
+        """Return the cdfinv for a single given parameter"""
         lower_bound = numpy.log10(self._bounds[param][0])
         upper_bound = numpy.log10(self._bounds[param][1])
-        return 10. ** ((upper_bound - lower_bound) * value + lower_bound)
+        return 10.0 ** ((upper_bound - lower_bound) * value + lower_bound)
 
     def _pdf(self, **kwargs):
-        """Returns the pdf at the given values. The keyword arguments must
+        """
+        Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
         if kwargs in self:
-            vals = numpy.array([numpy.log(10) * self._norm * kwargs[param]
-                                for param in kwargs.keys()])
+            vals = numpy.array(
+                [numpy.log(10) * self._norm * kwargs[param] for param in kwargs]
+            )
             return 1.0 / numpy.prod(vals)
-        else:
-            return 0.
+        return 0.0
 
     def _logpdf(self, **kwargs):
-        """Returns the log of the pdf at the given values. The keyword
+        """
+        Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
         if kwargs in self:
             return numpy.log(self._pdf(**kwargs))
-        else:
-            return -numpy.inf
+        return -numpy.inf
+
 
 __all__ = ["UniformLog10"]

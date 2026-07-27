@@ -17,7 +17,7 @@
 
 from epsie import proposals as epsie_proposals
 
-from .normal import (epsie_from_config, epsie_adaptive_from_config)
+from .normal import epsie_adaptive_from_config, epsie_from_config
 
 
 class EpsieNormalDiscrete(epsie_proposals.NormalDiscrete):
@@ -25,7 +25,8 @@ class EpsieNormalDiscrete(epsie_proposals.NormalDiscrete):
 
     @classmethod
     def from_config(cls, cp, section, tag):
-        r"""Loads a proposal from a config file.
+        r"""
+        Loads a proposal from a config file.
 
         This calls :py:func:`epsie_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.NormalDiscrete` and ``with_boundaries`` set
@@ -50,6 +51,7 @@ class EpsieNormalDiscrete(epsie_proposals.NormalDiscrete):
         -------
         :py:class:`epsie.proposals.BoundedDiscrete`:
             A bounded discrete proposal for use with ``epsie`` samplers.
+
         """
         return epsie_from_config(cls, cp, section, tag, with_boundaries=False)
 
@@ -59,7 +61,8 @@ class EpsieBoundedDiscrete(epsie_proposals.BoundedDiscrete):
 
     @classmethod
     def from_config(cls, cp, section, tag):
-        r"""Loads a proposal from a config file.
+        r"""
+        Loads a proposal from a config file.
 
         This calls :py:func:`epsie_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.BoundedDiscrete` and ``with_boundaries`` set
@@ -86,17 +89,21 @@ class EpsieBoundedDiscrete(epsie_proposals.BoundedDiscrete):
         -------
         :py:class:`epsie.proposals.BoundedDiscrete`:
             A bounded discrete proposal for use with ``epsie`` samplers.
+
         """
         return epsie_from_config(cls, cp, section, tag, with_boundaries=True)
 
 
 class EpsieAdaptiveNormalDiscrete(epsie_proposals.AdaptiveNormalDiscrete):
-    """Adds ``from_config`` method to epsie's adaptive bounded discrete
-    proposal."""
+    """
+    Adds ``from_config`` method to epsie's adaptive bounded discrete
+    proposal.
+    """
 
     @classmethod
     def from_config(cls, cp, section, tag):
-        """Loads a proposal from a config file.
+        """
+        Loads a proposal from a config file.
 
         This calls :py:func:`epsie_adaptive_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.AdaptiveNormalDiscrete`. See that function
@@ -124,18 +131,23 @@ class EpsieAdaptiveNormalDiscrete(epsie_proposals.AdaptiveNormalDiscrete):
         -------
         :py:class:`epsie.proposals.AdaptiveBoundedDiscrete`:
             An adaptive normal proposal for use with ``epsie`` samplers.
+
         """
-        return epsie_adaptive_from_config(cls, cp, section, tag,
-                                          boundary_arg_name='prior_widths')
+        return epsie_adaptive_from_config(
+            cls, cp, section, tag, boundary_arg_name="prior_widths"
+        )
 
 
 class EpsieAdaptiveBoundedDiscrete(epsie_proposals.AdaptiveBoundedDiscrete):
-    """Adds ``from_config`` method to epsie's adaptive bounded discrete
-    proposal."""
+    """
+    Adds ``from_config`` method to epsie's adaptive bounded discrete
+    proposal.
+    """
 
     @classmethod
     def from_config(cls, cp, section, tag):
-        """Loads a proposal from a config file.
+        """
+        Loads a proposal from a config file.
 
         This calls :py:func:`epsie_adaptive_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.AdaptiveBoundedDiscrete`. See that function
@@ -163,5 +175,6 @@ class EpsieAdaptiveBoundedDiscrete(epsie_proposals.AdaptiveBoundedDiscrete):
         -------
         :py:class:`epsie.proposals.AdaptiveBoundedDiscrete`:
             An adaptive normal proposal for use with ``epsie`` samplers.
+
         """
         return epsie_adaptive_from_config(cls, cp, section, tag)

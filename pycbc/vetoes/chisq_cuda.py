@@ -21,22 +21,27 @@
 #
 # =============================================================================
 #
-import pycuda.driver, numpy
-from pycuda.elementwise import ElementwiseKernel
-from pycuda.tools import context_dependent_memoize, dtype_to_ctype
+import numpy
+import pycuda.driver
 import pycuda.gpuarray
 from mako.template import Template
 from pycuda.compiler import SourceModule
+from pycuda.elementwise import ElementwiseKernel
+from pycuda.tools import context_dependent_memoize, dtype_to_ctype
+
 
 @context_dependent_memoize
 def get_accum_diff_sq_kernel(dtype_x, dtype_z):
     return ElementwiseKernel(
-            "%(tp_a)s *x,  %(tp_c)s *z" % {
-                "tp_a": dtype_to_ctype(dtype_x),
-                "tp_c": dtype_to_ctype(dtype_z),
-                },
-            "x[i] += norm(z[i]) ",
-            "chisq_accum")
+        "%(tp_a)s *x,  %(tp_c)s *z"
+        % {
+            "tp_a": dtype_to_ctype(dtype_x),
+            "tp_c": dtype_to_ctype(dtype_z),
+        },
+        "x[i] += norm(z[i]) ",
+        "chisq_accum",
+    )
+
 
 def chisq_accum_bin(chisq, q):
     krnl = get_accum_diff_sq_kernel(chisq.dtype, q.dtype)
@@ -216,6 +221,8 @@ __global__ void power_chisq_at_points_${NP}_pow2(
 """)
 
 _pchisq_cache = {}
+
+
 def get_pchisq_fn(np, fuse_correlate=False):
     if np not in _pchisq_cache:
         nt = 256
@@ -228,12 +235,14 @@ def get_pchisq_fn(np, fuse_correlate=False):
         _pchisq_cache[np] = (fn, nt)
     return _pchisq_cache[np]
 
+
 _pchisq_cache_pow2 = {}
+
+
 def get_pchisq_fn_pow2(np, fuse_correlate=False):
     if np not in _pchisq_cache_pow2:
         nt = 256
-        mod = SourceModule(chisqkernel_pow2.render(NT=nt, NP=np,
-                                                   fuse=fuse_correlate))
+        mod = SourceModule(chisqkernel_pow2.render(NT=nt, NP=np, fuse=fuse_correlate))
         fn = mod.get_function("power_chisq_at_points_%s_pow2" % (np))
         if fuse_correlate:
             fn.prepare("PPPI" + "I" * np + "PPPI")
@@ -242,48 +251,55 @@ def get_pchisq_fn_pow2(np, fuse_correlate=False):
         _pchisq_cache_pow2[np] = (fn, nt)
     return _pchisq_cache_pow2[np]
 
+
 def get_cached_bin_layout(bins):
     bv, kmin, kmax = [], [], []
-    for i in range(len(bins)-1):
-        s, e = bins[i], bins[i+1]
+    for i in range(len(bins) - 1):
+        s, e = bins[i], bins[i + 1]
         BS = 4096
         if (e - s) < BS:
             bv.append(i)
             kmin.append(s)
             kmax.append(e)
         else:
-            k = list(numpy.arange(s, e, BS/2))
+            k = list(numpy.arange(s, e, BS / 2))
             kmin += k
             kmax += k[1:] + [e]
-            bv += [i]*len(k)
+            bv += [i] * len(k)
     bv = pycuda.gpuarray.to_gpu_async(numpy.array(bv, dtype=numpy.uint32))
     kmin = pycuda.gpuarray.to_gpu_async(numpy.array(kmin, dtype=numpy.uint32))
     kmax = pycuda.gpuarray.to_gpu_async(numpy.array(kmax, dtype=numpy.uint32))
     return kmin, kmax, bv
 
+
 def shift_sum_points(num, N, arg_tuple):
-    #fuse = 'fuse' in corr.gpu_callback_method
+    # fuse = 'fuse' in corr.gpu_callback_method
     fuse = False
 
-    fn, nt = get_pchisq_fn(num, fuse_correlate = fuse)
+    fn, nt = get_pchisq_fn(num, fuse_correlate=fuse)
     corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins = arg_tuple
     args = [(nb, 1), (nt, 1, 1)]
     if fuse:
         args += [corr.htilde.data.gpudata, corr.stilde.data.gpudata]
     else:
         args += [corr.data.gpudata]
-    args +=[outp.gpudata, N] + phase[0:num] + [kmin.gpudata, kmax.gpudata, bv.gpudata, nbins]
+    args += (
+        [outp.gpudata, N]
+        + phase[0:num]
+        + [kmin.gpudata, kmax.gpudata, bv.gpudata, nbins]
+    )
     fn.prepared_call(*args)
-    outp = outp[num*nbins:]
+    outp = outp[num * nbins :]
     phase = phase[num:]
     np -= num
     return outp, phase, np
 
+
 def shift_sum_points_pow2(num, arg_tuple):
-    #fuse = 'fuse' in corr.gpu_callback_method
+    # fuse = 'fuse' in corr.gpu_callback_method
     fuse = False
 
-    fn, nt = get_pchisq_fn_pow2(num, fuse_correlate = fuse)
+    fn, nt = get_pchisq_fn_pow2(num, fuse_correlate=fuse)
 
     corr, outp, points, np, nb, N, kmin, kmax, bv, nbins = arg_tuple
     args = [(nb, 1), (nt, 1, 1)]
@@ -291,19 +307,26 @@ def shift_sum_points_pow2(num, arg_tuple):
         args += [corr.htilde.data.gpudata, corr.stilde.data.gpudata]
     else:
         args += [corr.data.gpudata]
-    args += [outp.gpudata, N] + points[0:num] + [kmin.gpudata,
-                                kmax.gpudata, bv.gpudata, nbins]
+    args += (
+        [outp.gpudata, N]
+        + points[0:num]
+        + [kmin.gpudata, kmax.gpudata, bv.gpudata, nbins]
+    )
     fn.prepared_call(*args)
-    outp = outp[num*nbins:]
+    outp = outp[num * nbins :]
     points = points[num:]
     np -= num
     return outp, points, np
 
+
 _pow2_cache = {}
+
+
 def get_cached_pow2(N):
     if N not in _pow2_cache:
-        _pow2_cache[N] = not(N & (N-1))
+        _pow2_cache[N] = not (N & (N - 1))
     return _pow2_cache[N]
+
 
 def shift_sum(corr, points, bins):
     kmin, kmax, bv = get_cached_bin_layout(bins)
@@ -334,16 +357,13 @@ def shift_sum(corr, points, bins):
             cargs = (corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins)
 
             if np >= 4:
-                outp, phase, np = shift_sum_points(4, cargs) # pylint:disable=no-value-for-parameter
+                outp, phase, np = shift_sum_points(4, cargs)  # pylint:disable=no-value-for-parameter
             elif np >= 3:
-                outp, phase, np = shift_sum_points(3, cargs) # pylint:disable=no-value-for-parameter
+                outp, phase, np = shift_sum_points(3, cargs)  # pylint:disable=no-value-for-parameter
             elif np >= 2:
-                outp, phase, np = shift_sum_points(2, cargs) # pylint:disable=no-value-for-parameter
+                outp, phase, np = shift_sum_points(2, cargs)  # pylint:disable=no-value-for-parameter
             elif np == 1:
-                outp, phase, np = shift_sum_points(1, cargs) # pylint:disable=no-value-for-parameter
+                outp, phase, np = shift_sum_points(1, cargs)  # pylint:disable=no-value-for-parameter
 
     o = outc.get()
     return (o.conj() * o).sum(axis=1).real
-
-
-

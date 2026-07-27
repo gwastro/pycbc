@@ -13,23 +13,24 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""This module provides model classes that assume the noise is Gaussian.
-"""
+"""This module provides model classes that assume the noise is Gaussian."""
 
-import logging
-import numpy
 import itertools
+import logging
+
+import numpy
 
 from pycbc import filter as pyfilter
-from pycbc.waveform import get_fd_waveform
 from pycbc.detector import Detector
+from pycbc.waveform import get_fd_waveform
 
 from .gaussian_noise import BaseGaussianNoise
 from .tools import DistMarg
 
 
 class SingleTemplate(DistMarg, BaseGaussianNoise):
-    r"""Model that assumes we know all the intrinsic parameters.
+    r"""
+    Model that assumes we know all the intrinsic parameters.
 
     This model assumes we know all the intrinsic parameters, and are only
     maximizing over the extrinsic ones. We also assume a dominant mode waveform
@@ -56,19 +57,26 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
     \**kwargs :
         All other keyword arguments are passed to
         :py:class:`BaseGaussianNoise`; see that class for details.
-    """
-    name = 'single_template'
 
-    def __init__(self, variable_params, data, low_frequency_cutoff,
-                 sample_rate=32768,
-                 marginalize_phase=True,
-                 **kwargs):
+    """
+
+    name = "single_template"
+
+    def __init__(
+        self,
+        variable_params,
+        data,
+        low_frequency_cutoff,
+        sample_rate=32768,
+        marginalize_phase=True,
+        **kwargs,
+    ):
         variable_params, kwargs = self.setup_marginalization(
-                                   variable_params,
-                                   marginalize_phase=marginalize_phase,
-                                   **kwargs)
-        super(SingleTemplate, self).__init__(
-            variable_params, data, low_frequency_cutoff, **kwargs)
+            variable_params, marginalize_phase=marginalize_phase, **kwargs
+        )
+        super().__init__(
+            variable_params, data, low_frequency_cutoff, **kwargs
+        )
 
         sample_rate = float(sample_rate)
 
@@ -77,12 +85,12 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         self.df = df
         p = self.static_params.copy()
         for k in self.static_params:
-            if p[k] == 'REPLACE':
+            if p[k] == "REPLACE":
                 p.pop(k)
-        if 'distance' in p:
-            _ = p.pop('distance')
-        if 'inclination' in p:
-            _ = p.pop('inclination')
+        if "distance" in p:
+            _ = p.pop("distance")
+        if "inclination" in p:
+            _ = p.pop("inclination")
 
         hp, _ = get_fd_waveform(delta_f=df, distance=1, inclination=0, **p)
 
@@ -102,18 +110,22 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             self.data[ifo].resize(flen)
             self.det[ifo] = Detector(ifo)
             snr, _, norm = pyfilter.matched_filter_core(
-                hp, self.data[ifo],
+                hp,
+                self.data[ifo],
                 psd=self.psds[ifo],
                 low_frequency_cutoff=flow,
-                high_frequency_cutoff=fhigh)
+                high_frequency_cutoff=fhigh,
+            )
 
             self.sh[ifo] = 4 * df * snr
             self.snr[ifo] = snr * norm
 
             self.hh[ifo] = pyfilter.sigmasq(
-                hp, psd=self.psds[ifo],
+                hp,
+                psd=self.psds[ifo],
                 low_frequency_cutoff=flow,
-                high_frequency_cutoff=fhigh)
+                high_frequency_cutoff=fhigh,
+            )
 
         self.waveform = hp
         self.htfs = {}  # Waveform phase / distance transformation factors
@@ -121,28 +133,30 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
 
         # Retrict to analyzing around peaks if chosen and choose what
         # ifos to draw from
-        self.setup_peak_lock(snrs=self.snr,
-                             sample_rate=sample_rate,
-                             **kwargs)
+        self.setup_peak_lock(snrs=self.snr, sample_rate=sample_rate, **kwargs)
         self.draw_ifos(self.snr)
 
     @property
     def multi_signal_support(self):
-        """ The list of classes that this model supports in a multi-signal
+        """
+        The list of classes that this model supports in a multi-signal
         likelihood
         """
         # Check if this model *can* be included in a multi-signal model.
         # All marginalizations must currently be disabled to work!
-        if (self.marginalize_vector_params or
-            self.marginalize_distance or
-            self.marginalize_phase):
-            logging.info("Cannot use single template model inside of"
-                         "multi_signal if marginalizations are enabled")
+        if (
+            self.marginalize_vector_params
+            or self.marginalize_distance
+            or self.marginalize_phase
+        ):
+            logging.info(
+                "Cannot use single template model inside of"
+                "multi_signal if marginalizations are enabled"
+            )
         return [type(self)]
 
     def calculate_hihjs(self, models):
-        """ Pre-calculate the hihj inner products on a grid
-        """
+        """Pre-calculate the hihj inner products on a grid"""
         self.hihj = {}
         for m1, m2 in itertools.combinations(models, 2):
             self.hihj[(m1, m2)] = {}
@@ -152,22 +166,23 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
                 flow = self.kmin[ifo] * self.df
                 fhigh = self.kmax[ifo] * self.df
                 h1h2, _, _ = pyfilter.matched_filter_core(
-                h1, h2,
-                psd=self.psds[ifo],
-                low_frequency_cutoff=flow,
-                high_frequency_cutoff=fhigh)
+                    h1,
+                    h2,
+                    psd=self.psds[ifo],
+                    low_frequency_cutoff=flow,
+                    high_frequency_cutoff=fhigh,
+                )
                 self.hihj[(m1, m2)][ifo] = 4 * self.df * h1h2
 
     def multi_loglikelihood(self, models):
-        """ Calculate a multi-model (signal) likelihood
-        """
+        """Calculate a multi-model (signal) likelihood"""
         models = [self] + models
         loglr = 0
         # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
         for m in models:
             loglr += m.loglr
 
-        if not hasattr(self, 'hihj'):
+        if not hasattr(self, "hihj"):
             self.calculate_hihjs(models)
 
         # finally add in the lognl term from this model
@@ -180,46 +195,46 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
 
                 h1h2 = hihj_vec.at_time(dt, nearest_sample=True)
                 h1h2 *= m1.htfs[det] * m2.htfs[det].conj()
-                loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
+                loglr += -h1h2.real  # This is -0.5 * re(<h1|h2> + <h2|h1>)
         return loglr + self.lognl
 
     def _loglr(self):
-        r"""Computes the log likelihood ratio
+        r"""
+        Computes the log likelihood ratio
 
         Returns
         -------
         float
             The value of the log likelihood ratio.
+
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
         p = self.current_params
 
         phase = 1
-        if 'coa_phase' in p:
-            phase = numpy.exp(-1.0j * 2 * p['coa_phase'])
+        if "coa_phase" in p:
+            phase = numpy.exp(-1.0j * 2 * p["coa_phase"])
 
         sh_total = hh_total = 0
 
-        ic = numpy.cos(p['inclination'])
+        ic = numpy.cos(p["inclination"])
         ip = 0.5 * (1.0 + ic * ic)
-        pol_phase = numpy.exp(-2.0j * p['polarization'])
+        pol_phase = numpy.exp(-2.0j * p["polarization"])
 
         self.snr_draw(snrs=self.snr)
 
         for ifo in self.sh:
-            dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
-                                                            p['tc'])
-            self.dts[ifo] = p['tc'] + dt
+            dt = self.det[ifo].time_delay_from_earth_center(p["ra"], p["dec"], p["tc"])
+            self.dts[ifo] = p["tc"] + dt
 
-            fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
-                                                   0, p['tc'])
+            fp, fc = self.det[ifo].antenna_pattern(p["ra"], p["dec"], 0, p["tc"])
             f = (fp + 1.0j * fc) * pol_phase
 
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
-            htf = (f.real * ip + 1.0j * f.imag * ic) / p['distance'] * phase
+            htf = (f.real * ip + 1.0j * f.imag * ic) / p["distance"] * phase
             self.htfs[ifo] = htf
-            sh = self.sh[ifo].at_time(self.dts[ifo], interpolate='quadratic')
+            sh = self.sh[ifo].at_time(self.dts[ifo], interpolate="quadratic")
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 

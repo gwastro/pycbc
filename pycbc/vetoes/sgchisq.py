@@ -1,25 +1,28 @@
-"""Chisq based on sine-gaussian tiles.
+"""
+Chisq based on sine-gaussian tiles.
 See https://arxiv.org/abs/1709.08974 for a discussion.
 """
 
 import numpy
 
-from pycbc.waveform.utils import apply_fseries_time_shift
-from pycbc.filter import sigma
-from pycbc.waveform import sinegauss
-from pycbc.vetoes.chisq import SingleDetPowerChisq
 from pycbc.events import ranking
+from pycbc.filter import sigma
+from pycbc.vetoes.chisq import SingleDetPowerChisq
+from pycbc.waveform import sinegauss
+from pycbc.waveform.utils import apply_fseries_time_shift
+
 
 class SingleDetSGChisq(SingleDetPowerChisq):
-    """Class that handles precomputation and memory management for efficiently
+    """
+    Class that handles precomputation and memory management for efficiently
     running the sine-Gaussian chisq
     """
-    returns = {'sg_chisq': numpy.float32}
 
-    def __init__(self, bank, num_bins=0,
-                       snr_threshold=None,
-                       chisq_locations=None):
-        """ Create sine-Gaussian Chisq Calculator
+    returns = {"sg_chisq": numpy.float32}
+
+    def __init__(self, bank, num_bins=0, snr_threshold=None, chisq_locations=None):
+        """
+        Create sine-Gaussian Chisq Calculator
 
         Parameters
         ----------
@@ -35,6 +38,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             The offset is relative to the end frequency of the approximant.
             The region is a boolean expression such as 'mtotal>40' indicating
             which templates to apply this set of sine-Gaussians to.
+
         """
         if snr_threshold is not None:
             self.do = True
@@ -43,8 +47,8 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             self.params = {}
             for descr in chisq_locations:
                 region, values = descr.split(":")
-                mask = bank.table.parse_boolargs([(1, region), (0, 'else')])[0]
-                hashes = bank.table['template_hash'][mask.astype(bool)]
+                mask = bank.table.parse_boolargs([(1, region), (0, "else")])[0]
+                hashes = bank.table["template_hash"][mask.astype(bool)]
                 for h in hashes:
                     self.params[h] = values
         else:
@@ -53,24 +57,31 @@ class SingleDetSGChisq(SingleDetPowerChisq):
     @staticmethod
     def insert_option_group(parser):
         group = parser.add_argument_group("Sine-Gaussian Chisq")
-        group.add_argument("--sgchisq-snr-threshold", type=float,
-            help="Minimum SNR threshold to use SG chisq")
-        group.add_argument("--sgchisq-locations", type=str, nargs='+',
+        group.add_argument(
+            "--sgchisq-snr-threshold",
+            type=float,
+            help="Minimum SNR threshold to use SG chisq",
+        )
+        group.add_argument(
+            "--sgchisq-locations",
+            type=str,
+            nargs="+",
             help="Frequency offsets and quality factors of the sine-Gaussians"
-                 " to use, format 'region-boolean:q1-offset1,q2-offset2'. "
-                 "Offset is relative to the end frequency of the approximant."
-                 " Region is a boolean expression selecting templates to "
-                 "apply the sine-Gaussians to, ex. 'mtotal>40'")
+            " to use, format 'region-boolean:q1-offset1,q2-offset2'. "
+            "Offset is relative to the end frequency of the approximant."
+            " Region is a boolean expression selecting templates to "
+            "apply the sine-Gaussians to, ex. 'mtotal>40'",
+        )
 
     @classmethod
     def from_cli(cls, args, bank, chisq_bins):
-        return cls(bank, chisq_bins,
-                   args.sgchisq_snr_threshold,
-                   args.sgchisq_locations)
+        return cls(bank, chisq_bins, args.sgchisq_snr_threshold, args.sgchisq_locations)
 
-    def values(self, stilde, template, psd, snrv, snr_norm,
-                     bchisq, bchisq_dof, indices):
-        """ Calculate sine-Gaussian chisq
+    def values(
+        self, stilde, template, psd, snrv, snr_norm, bchisq, bchisq_dof, indices
+    ):
+        """
+        Calculate sine-Gaussian chisq
 
         Parameters
         ----------
@@ -95,13 +106,14 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         -------
         chisq: Array
             Chisq values, one for each sample index
+
         """
         if not self.do:
             return None
 
         if template.params.template_hash not in self.params:
             return numpy.ones(len(snrv))
-        values = self.params[template.params.template_hash].split(',')
+        values = self.params[template.params.template_hash].split(",")
 
         # Get the chisq bins to use as the frequency reference point
         bins = self.cached_chisq_bins(template, psd)
@@ -110,7 +122,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         chisq = numpy.ones(len(snrv))
         gtem = [None for _ in values]
         for i, snrvi in enumerate(snrv):
-            #Skip if newsnr too low
+            # Skip if newsnr too low
             snr = abs(snrvi * snr_norm)
             nsnr = ranking.newsnr(snr, bchisq[i] / bchisq_dof[i])
             if nsnr < self.snr_threshold:
@@ -133,7 +145,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             # as constant over the last 2 chisq bins. We cannot use the final
             # chisq bin edge as it does not have to be where the waveform
             # terminates.
-            fstep = (bins[-2] - bins[-3])
+            fstep = bins[-2] - bins[-3]
             fpeak = (bins[-2] + fstep) * template.delta_f
 
             # This is 90% of the Nyquist frequency of the data
@@ -145,7 +157,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             # Calculate the sum of SNR^2 for the sine-Gaussians specified
             for idxx, descr in enumerate(values):
                 # Get the q and frequency offset from the descriptor
-                q, offset = descr.split('-')
+                q, offset = descr.split("-")
                 q, offset = float(q), float(offset)
                 fcen = fpeak + offset
                 flow = max(kmin * template.delta_f, fcen - qwindow)
@@ -159,25 +171,32 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                 kmin = int(flow / template.delta_f)
                 kmax = int(fhigh / template.delta_f)
 
-                #Calculate sine-gaussian tile
+                # Calculate sine-gaussian tile
                 if gtem[idxx] is None:
                     # These are always the same values for a template, so
                     # if computing 10 sgchisq points, don't want to call
                     # this 10 times (for each SG template)
-                    gtem[idxx] = sinegauss.fd_sine_gaussian(1.0, q, fcen, flow,
-                                      len(template) * template.delta_f,
-                                      template.delta_f).astype(numpy.complex64)
-                gsigma = sigma(gtem[idxx], psd=psd,
-                                     low_frequency_cutoff=flow,
-                                     high_frequency_cutoff=fhigh)
-                #Calculate the SNR of the tile
+                    gtem[idxx] = sinegauss.fd_sine_gaussian(
+                        1.0,
+                        q,
+                        fcen,
+                        flow,
+                        len(template) * template.delta_f,
+                        template.delta_f,
+                    ).astype(numpy.complex64)
+                gsigma = sigma(
+                    gtem[idxx],
+                    psd=psd,
+                    low_frequency_cutoff=flow,
+                    high_frequency_cutoff=fhigh,
+                )
+                # Calculate the SNR of the tile
                 gsnr = (gtem[idxx][kmin:kmax] * stilde_shift[kmin:kmax]).sum()
                 gsnr *= 4.0 * gtem[idxx].delta_f / gsigma
-                chisq[i] += abs(gsnr)**2.0
+                chisq[i] += abs(gsnr) ** 2.0
                 dof += 2
             if dof == 0:
                 chisq[i] = 1
             else:
                 chisq[i] /= dof
         return chisq
-

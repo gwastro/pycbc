@@ -13,33 +13,34 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""This module provides classes for interacting with epsie samplers.
-"""
-
-
-import numpy
+"""This module provides classes for interacting with epsie samplers."""
 
 import epsie
-from epsie.samplers import ParallelTemperedSampler
+import numpy
 
 # we'll use emcee_pt's default beta ladder for temperature levels
 from emcee.ptsampler import default_beta_ladder
+from epsie.samplers import ParallelTemperedSampler
 
 from pycbc.pool import choose_pool
 
-from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, get_optional_arg_from_config,
-                        nsamples_in_chain)
-from .base_multitemper import (MultiTemperedSupport, compute_acf, compute_acl,
-                               acl_from_raw_acls)
-from ..burn_in import MultiTemperedMCMCBurnInTests
-from ..jump import epsie_proposals_from_config
-from ..io import EpsieFile
 from .. import models
+from ..burn_in import MultiTemperedMCMCBurnInTests
+from ..io import EpsieFile
+from ..jump import epsie_proposals_from_config
+from .base import BaseSampler, setup_output
+from .base_mcmc import BaseMCMC, get_optional_arg_from_config, nsamples_in_chain
+from .base_multitemper import (
+    MultiTemperedSupport,
+    acl_from_raw_acls,
+    compute_acf,
+    compute_acl,
+)
 
 
 class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
-    """Constructs an MCMC sampler using epsie's parallel-tempered sampler.
+    """
+    Constructs an MCMC sampler using epsie's parallel-tempered sampler.
 
     Parameters
     ----------
@@ -84,23 +85,34 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
     use_mpi : bool, optional
         Use MPI for parallelization. Default (False) will use python's
         multiprocessing.
+
     """
+
     name = "epsie"
     _io = EpsieFile
     burn_in_class = MultiTemperedMCMCBurnInTests
 
-    def __init__(self, model, nchains, ntemps=None, betas=None,
-                 proposals=None, default_proposal=None,
-                 default_proposal_args=None, seed=None,
-                 swap_interval=1,
-                 checkpoint_interval=None, checkpoint_signal=None,
-                 loglikelihood_function=None,
-                 nprocesses=1, use_mpi=False):
+    def __init__(
+        self,
+        model,
+        nchains,
+        ntemps=None,
+        betas=None,
+        proposals=None,
+        default_proposal=None,
+        default_proposal_args=None,
+        seed=None,
+        swap_interval=1,
+        checkpoint_interval=None,
+        checkpoint_signal=None,
+        loglikelihood_function=None,
+        nprocesses=1,
+        use_mpi=False,
+    ):
 
         # create the betas if not provided
         if betas is None:
-            betas = default_beta_ladder(len(model.variable_params),
-                                        ntemps=ntemps)
+            betas = default_beta_ladder(len(model.variable_params), ntemps=ntemps)
         self.model = model
         # create a wrapper for calling the model
         model_call = _EpsieCallModel(model, loglikelihood_function)
@@ -114,11 +126,17 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
 
         # initialize the sampler
         self._sampler = ParallelTemperedSampler(
-            model.sampling_params, model_call, nchains, betas=betas,
+            model.sampling_params,
+            model_call,
+            nchains,
+            betas=betas,
             swap_interval=swap_interval,
-            proposals=proposals, default_proposal=default_proposal,
+            proposals=proposals,
+            default_proposal=default_proposal,
             default_proposal_args=default_proposal_args,
-            seed=seed, pool=pool)
+            seed=seed,
+            pool=pool,
+        )
         # set other parameters
         self.nchains = nchains
         self._ntemps = ntemps
@@ -131,7 +149,10 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
 
     @property
     def base_shape(self):
-        return (self.ntemps, self.nchains,)
+        return (
+            self.ntemps,
+            self.nchains,
+        )
 
     @property
     def betas(self):
@@ -140,7 +161,8 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
 
     @property
     def seed(self):
-        """The seed used for epsie's random bit generator.
+        """
+        The seed used for epsie's random bit generator.
 
         This is not the same as the seed used for the prior distributions.
         """
@@ -153,7 +175,8 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
 
     @staticmethod
     def compute_acf(filename, **kwargs):
-        r"""Computes the autocorrelation function.
+        r"""
+        Computes the autocorrelation function.
 
         Calls :py:func:`base_multitemper.compute_acf`; see that
         function for details.
@@ -171,18 +194,20 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         dict :
             Dictionary of arrays giving the ACFs for each parameter. The arrays
             will have shape ``ntemps x nchains x niterations``.
+
         """
         return compute_acf(filename, **kwargs)
 
     @staticmethod
     def compute_acl(filename, **kwargs):
-        r"""Computes the autocorrelation length.
+        r"""
+        Computes the autocorrelation length.
 
         Calls :py:func:`base_multitemper.compute_acl`; see that
         function for details.
 
         Parameters
-        -----------
+        ----------
         filename : str
             Name of a samples file to compute ACLs for.
         \**kwargs :
@@ -193,18 +218,19 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         -------
         dict
             A dictionary of ntemps-long arrays of the ACLs of each parameter.
+
         """
         return compute_acl(filename, **kwargs)
 
     @property
     def acl(self):  # pylint: disable=invalid-overridden-method
-        """The autocorrelation lengths of the chains.
-        """
+        """The autocorrelation lengths of the chains."""
         return acl_from_raw_acls(self.raw_acls)
 
     @property
     def effective_nsamples(self):  # pylint: disable=invalid-overridden-method
-        """The effective number of samples post burn-in that the sampler has
+        """
+        The effective number of samples post burn-in that the sampler has
         acquired so far.
         """
         act = self.act
@@ -224,7 +250,8 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
 
     @property
     def samples(self):
-        """A dict mapping ``variable_params`` to arrays of samples currently
+        """
+        A dict mapping ``variable_params`` to arrays of samples currently
         in memory.
 
         The arrays have shape ``ntemps x nchains x niterations``.
@@ -233,25 +260,23 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         """
         samples = epsie.array2dict(self._sampler.positions)
         # apply boundary conditions
-        samples = self.model.prior_distribution.apply_boundary_conditions(
-            **samples)
+        samples = self.model.prior_distribution.apply_boundary_conditions(**samples)
         # apply transforms to go to model's variable params space
         if self.model.sampling_transforms is not None:
-            samples = self.model.sampling_transforms.apply(
-                samples, inverse=True)
+            samples = self.model.sampling_transforms.apply(samples, inverse=True)
         return samples
 
     @property
     def model_stats(self):
-        """A dict mapping the model's ``default_stats`` to arrays of values.
+        """
+        A dict mapping the model's ``default_stats`` to arrays of values.
 
         The arrays have shape ``ntemps x nchains x niterations``.
         """
         return epsie.array2dict(self._sampler.blobs)
 
     def clear_samples(self):
-        """Clears the chain and blobs from memory.
-        """
+        """Clears the chain and blobs from memory."""
         # store the iteration that the clear is occuring on
         self._lastclear = self.niterations
         self._itercounter = 0
@@ -259,12 +284,10 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         self._sampler.clear()
 
     def set_state_from_file(self, filename):
-        """Sets the state of the sampler back to the instance saved in a file.
-        """
-        with self.io(filename, 'r') as fp:
+        """Sets the state of the sampler back to the instance saved in a file."""
+        with self.io(filename, "r") as fp:
             # get the numpy state
-            numpy_rstate_group = '/'.join([fp.sampler_group,
-                                           'numpy_random_state'])
+            numpy_rstate_group = "/".join([fp.sampler_group, "numpy_random_state"])
             rstate = fp.read_random_state(group=numpy_rstate_group)
             # set the sampler state for epsie
             self._sampler.set_state_from_checkpoint(fp, path=fp.sampler_group)
@@ -272,8 +295,7 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         numpy.random.set_state(rstate)
 
     def set_p0(self, samples_file=None, prior=None):
-        p0 = super(EpsieSampler, self).set_p0(samples_file=samples_file,
-                                              prior=prior)
+        p0 = super().set_p0(samples_file=samples_file, prior=prior)
         self._sampler.start_position = p0
 
     @property
@@ -284,46 +306,55 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         return self._sampler.current_positions
 
     def run_mcmc(self, niterations):
-        """Advance the chains for a number of iterations.
+        """
+        Advance the chains for a number of iterations.
 
         Parameters
         ----------
         niterations : int
             Number of samples to get from sampler.
+
         """
         self._sampler.run(niterations)
 
     def write_results(self, filename):
-        """Writes samples, model stats, acceptance ratios, and random state
+        """
+        Writes samples, model stats, acceptance ratios, and random state
         to the given file.
 
         Parameters
-        -----------
+        ----------
         filename : str
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
+
         """
-        with self.io(filename, 'a') as fp:
+        with self.io(filename, "a") as fp:
             # write samples
-            fp.write_samples(self.samples,
-                             parameters=self.model.variable_params,
-                             last_iteration=self.niterations)
+            fp.write_samples(
+                self.samples,
+                parameters=self.model.variable_params,
+                last_iteration=self.niterations,
+            )
             # write stats
             fp.write_samples(self.model_stats, last_iteration=self.niterations)
             # write accpetance ratio
             acceptance = self._sampler.acceptance
-            fp.write_acceptance_ratio(acceptance['acceptance_ratio'],
-                                      last_iteration=self.niterations)
+            fp.write_acceptance_ratio(
+                acceptance["acceptance_ratio"], last_iteration=self.niterations
+            )
             # write temperature data
             if self.ntemps > 1:
                 temp_ar = self._sampler.temperature_acceptance
                 temp_swaps = self._sampler.temperature_swaps
-                fp.write_temperature_data(temp_swaps, temp_ar,
-                                          self.swap_interval,
-                                          last_iteration=self.niterations)
+                fp.write_temperature_data(
+                    temp_swaps,
+                    temp_ar,
+                    self.swap_interval,
+                    last_iteration=self.niterations,
+                )
             # write numpy's global state (for the distributions)
-            numpy_rstate_group = '/'.join([fp.sampler_group,
-                                           'numpy_random_state'])
+            numpy_rstate_group = "/".join([fp.sampler_group, "numpy_random_state"])
             fp.write_random_state(group=numpy_rstate_group)
             # write the sampler's state
             self._sampler.checkpoint(fp, path=fp.sampler_group)
@@ -332,9 +363,9 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         pass
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1,
-                    use_mpi=False):
-        """Loads the sampler from the given config file.
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+        """
+        Loads the sampler from the given config file.
 
         The following options are retrieved in the ``[sampler]`` section:
 
@@ -417,44 +448,55 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         -------
         EpsiePTSampler :
             The sampler instance.
+
         """
         section = "sampler"
         # check name
         assert cp.get(section, "name") == cls.name, (
-            "name in section [sampler] must match mine")
+            "name in section [sampler] must match mine"
+        )
         nchains = int(cp.get(section, "nchains"))
-        seed = get_optional_arg_from_config(cp, section, 'seed', dtype=int)
+        seed = get_optional_arg_from_config(cp, section, "seed", dtype=int)
         ntemps, betas = cls.betas_from_config(cp, section)
         # get the swap interval
-        swap_interval = get_optional_arg_from_config(cp, section,
-                                                     'swap-interval',
-                                                     dtype=int)
+        swap_interval = get_optional_arg_from_config(
+            cp, section, "swap-interval", dtype=int
+        )
         if swap_interval is None:
             swap_interval = 1
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         # get the loglikelihood function
-        logl = get_optional_arg_from_config(cp, section, 'logl-function')
+        logl = get_optional_arg_from_config(cp, section, "logl-function")
         # get the proposals
         proposals = epsie_proposals_from_config(cp)
         # check that all of the sampling parameters have a specified
         # proposal
         sampling_params = set(model.sampling_params)
-        proposal_params = set(param for prop in proposals
-                              for param in prop.parameters)
+        proposal_params = set(param for prop in proposals for param in prop.parameters)
         missing = sampling_params - proposal_params
         if missing:
-            raise ValueError("Missing jump proposals for sampling parameters "
-                             "{}".format(', '.join(missing)))
+            raise ValueError(
+                "Missing jump proposals for sampling parameters {}".format(
+                    ", ".join(missing)
+                )
+            )
         # initialize
-        obj = cls(model, nchains,
-                  ntemps=ntemps, betas=betas, proposals=proposals,
-                  swap_interval=swap_interval, seed=seed,
-                  checkpoint_interval=checkpoint_interval,
-                  checkpoint_signal=checkpoint_signal,
-                  loglikelihood_function=logl,
-                  nprocesses=nprocesses, use_mpi=use_mpi)
+        obj = cls(
+            model,
+            nchains,
+            ntemps=ntemps,
+            betas=betas,
+            proposals=proposals,
+            swap_interval=swap_interval,
+            seed=seed,
+            checkpoint_interval=checkpoint_interval,
+            checkpoint_signal=checkpoint_signal,
+            loglikelihood_function=logl,
+            nprocesses=nprocesses,
+            use_mpi=use_mpi,
+        )
         # set target
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
@@ -470,8 +512,9 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         return obj
 
 
-class _EpsieCallModel(object):
-    """Model wrapper for epsie.
+class _EpsieCallModel:
+    """
+    Model wrapper for epsie.
 
     Allows model to be called like a function. Returns the loglikelihood
     function, logprior, and the model's default stats.
@@ -480,7 +523,7 @@ class _EpsieCallModel(object):
     def __init__(self, model, loglikelihood_function=None):
         self.model = model
         if loglikelihood_function is None:
-            loglikelihood_function = 'loglikelihood'
+            loglikelihood_function = "loglikelihood"
         self.loglikelihood_function = loglikelihood_function
 
     def __call__(self, **kwargs):

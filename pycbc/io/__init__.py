@@ -1,21 +1,26 @@
-import os
-import logging
-from astropy.utils.data import download_file
 import hashlib
+import logging
+import os
 from urllib.parse import urlparse
+
+from astropy.utils.data import download_file
+
+from .gracedb import *
 from .hdf import *
 from .record import *
-from .gracedb import *
 
-logger = logging.getLogger('pycbc.io')
+logger = logging.getLogger("pycbc.io")
 
 # Backup URL in case GWOSC fails
 base_backup_url = "https://raw.githubusercontent.com/gwastro/pycbc_data/master/{}"
-base_lfs_backup_url = "https://media.githubusercontent.com/media/gwastro/pycbc_data/master/{}"
+base_lfs_backup_url = (
+    "https://media.githubusercontent.com/media/gwastro/pycbc_data/master/{}"
+)
 
 
 def get_file(url, retry=5, **args):
-    """ Retrieve file with retry upon failure
+    """
+    Retrieve file with retry upon failure
 
     Uses the astropy download_file but adds a retry feature for flaky
     connections. See astropy for full options
@@ -26,24 +31,20 @@ def get_file(url, retry=5, **args):
         # If this is in GitHub Actions we divert the URLs to a backup path
         if "gwosc.org/" in url:
             basename = os.path.basename(urlparse(url).path)
-            if basename.endswith('hdf5') or basename.endswith('gwf'):
+            if basename.endswith("hdf5") or basename.endswith("gwf"):
                 # Just download file directly from backup
                 new_url = base_lfs_backup_url.format(basename)
                 logger.warning(
-                    "Redirecting GWOSC URL %s to backup url %s",
-                    url,
-                    new_url
+                    "Redirecting GWOSC URL %s to backup url %s", url, new_url
                 )
                 url = new_url
             else:
                 cleaned_url = url.strip().lower()
-                hash_object = hashlib.md5(cleaned_url.encode('utf-8'))
+                hash_object = hashlib.md5(cleaned_url.encode("utf-8"))
                 hh = hash_object.hexdigest()
-                new_url = base_backup_url.format(hh + '.json')
+                new_url = base_backup_url.format(hh + ".json")
                 logger.warning(
-                    "Redirecting GWOSC URL %s to backup url %s",
-                    url,
-                    new_url
+                    "Redirecting GWOSC URL %s to backup url %s", url, new_url
                 )
                 url = new_url
     while True:

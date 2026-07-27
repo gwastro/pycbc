@@ -12,17 +12,18 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" This module provides classes to describe joint distributions
-"""
+"""This module provides classes to describe joint distributions"""
+
 import logging
+
 import numpy
 
 from pycbc.io.record import FieldArray
 
-logger = logging.getLogger('pycbc.distributions.joint')
+logger = logging.getLogger("pycbc.distributions.joint")
 
 
-class JointDistribution(object):
+class JointDistribution:
     r"""
     Callable class that calculates the joint distribution built from a set of
     distributions.
@@ -73,7 +74,8 @@ class JointDistribution(object):
     >>> print(prior_eval(mass1=20, mass2=1))
 
     """
-    name = 'joint'
+
+    name = "joint"
 
     def __init__(self, variable_args, *distributions, **kwargs):
 
@@ -85,8 +87,9 @@ class JointDistribution(object):
 
         # store the constraints on the parameters defined inside the
         # distributions list
-        self._constraints = kwargs["constraints"] \
-                                  if "constraints" in kwargs.keys() else []
+        self._constraints = (
+            kwargs["constraints"] if "constraints" in kwargs else []
+        )
 
         # store kwargs
         self.kwargs = kwargs
@@ -100,20 +103,25 @@ class JointDistribution(object):
         varset = set(self.variable_args)
         missing_params = distparams - varset
         if missing_params:
-            raise ValueError("provided variable_args do not include "
-                "parameters %s" %(','.join(missing_params)) + " which are "
-                "required by the provided distributions")
+            raise ValueError(
+                "provided variable_args do not include "
+                "parameters %s" % (",".join(missing_params)) + " which are "
+                "required by the provided distributions"
+            )
         extra_params = varset - distparams
         if extra_params:
-            raise ValueError("variable_args %s " %(','.join(extra_params)) +
-                "are not in any of the provided distributions")
+            raise ValueError(
+                "variable_args %s " % (",".join(extra_params))
+                + "are not in any of the provided distributions"
+            )
 
         # if there are constraints then find the renormalization factor
         # since a constraint will cut out part of the space
         # do this by random sampling the full space and find the percent
         # of samples rejected
-        n_test_samples = kwargs["n_test_samples"] \
-                             if "n_test_samples" in kwargs else int(1e6)
+        n_test_samples = (
+            kwargs["n_test_samples"] if "n_test_samples" in kwargs else int(1e6)
+        )
         if self._constraints:
             logger.info("Renormalizing distribution for constraints")
 
@@ -132,9 +140,11 @@ class JointDistribution(object):
             # the fraction of acceptances in random sampling of entire space
             self._pdf_scale = result.sum() / float(n_test_samples)
             if self._pdf_scale == 0.0:
-                raise ValueError("None of the random draws for pdf "
+                raise ValueError(
+                    "None of the random draws for pdf "
                     "renormalization satisfied the constraints. "
-                    " You can try increasing the 'n_test_samples' keyword.")
+                    " You can try increasing the 'n_test_samples' keyword."
+                )
 
         else:
             self._pdf_scale = 1.0
@@ -144,7 +154,8 @@ class JointDistribution(object):
         self._logpdf_scale = numpy.log(self._pdf_scale)
 
     def apply_boundary_conditions(self, **params):
-        """Applies each distributions' boundary conditions to the given list
+        """
+        Applies each distributions' boundary conditions to the given list
         of parameters, returning a new list with the conditions applied.
 
         Parameters
@@ -158,6 +169,7 @@ class JointDistribution(object):
         dict
             A dictionary of the parameters after each distribution's
             `apply_boundary_conditions` function has been applied.
+
         """
         for dist in self.distributions:
             params.update(dist.apply_boundary_conditions(**params))
@@ -165,7 +177,8 @@ class JointDistribution(object):
 
     @staticmethod
     def _return_atomic(params):
-        """Determines if an array or atomic value should be returned given a
+        """
+        Determines if an array or atomic value should be returned given a
         set of input params.
 
         Parameters
@@ -178,24 +191,25 @@ class JointDistribution(object):
         bool :
             Whether or not functions run on the parameters should be returned
             as atomic types or not.
+
         """
         if isinstance(params, dict):
-            return not any(isinstance(val, numpy.ndarray)
-                           for val in params.values())
-        elif isinstance(params, numpy.record):
+            return not any(isinstance(val, numpy.ndarray) for val in params.values())
+        if isinstance(params, numpy.record):
             return True
-        elif isinstance(params, numpy.ndarray):
+        if isinstance(params, numpy.ndarray):
             return False
             params = params.view(type=FieldArray)
-        elif isinstance(params, FieldArray):
+        if isinstance(params, FieldArray):
             return False
-        else:
-            raise ValueError("params must be either dict, FieldArray, "
-                             "record, or structured array")
+        raise ValueError(
+            "params must be either dict, FieldArray, record, or structured array"
+        )
 
     @staticmethod
     def _ensure_fieldarray(params):
-        """Ensures the given params are a ``FieldArray``.
+        """
+        Ensures the given params are a ``FieldArray``.
 
         Parameters
         ----------
@@ -207,22 +221,23 @@ class JointDistribution(object):
         -------
         FieldArray
             The given values as a FieldArray.
+
         """
         if isinstance(params, dict):
             return FieldArray.from_kwargs(**params)
-        elif isinstance(params, numpy.record):
-            return FieldArray.from_records(tuple(params),
-                                           names=params.dtype.names)
-        elif isinstance(params, numpy.ndarray):
+        if isinstance(params, numpy.record):
+            return FieldArray.from_records(tuple(params), names=params.dtype.names)
+        if isinstance(params, numpy.ndarray):
             return params.view(type=FieldArray)
-        elif isinstance(params, FieldArray):
+        if isinstance(params, FieldArray):
             return params
-        else:
-            raise ValueError("params must be either dict, FieldArray, "
-                             "record, or structured array")
+        raise ValueError(
+            "params must be either dict, FieldArray, record, or structured array"
+        )
 
     def within_constraints(self, params):
-        """Evaluates whether the given parameters satisfy the constraints.
+        """
+        Evaluates whether the given parameters satisfy the constraints.
 
         Parameters
         ----------
@@ -235,6 +250,7 @@ class JointDistribution(object):
             If params was an array, or if params a dictionary and one or more
             of the parameters are arrays, will return an array of booleans.
             Otherwise, a boolean.
+
         """
         params = self._ensure_fieldarray(params)
         return_atomic = self._return_atomic(params)
@@ -247,7 +263,8 @@ class JointDistribution(object):
         return result
 
     def contains(self, params):
-        """Evaluates whether the given parameters satisfy the boundary
+        """
+        Evaluates whether the given parameters satisfy the boundary
             conditions, boundaries, and constraints. This method is different
             from `within_constraints`, that method only check the constraints.
 
@@ -262,6 +279,7 @@ class JointDistribution(object):
             If params was an array, or if params a dictionary and one or more
             of the parameters are arrays, will return an array of booleans.
             Otherwise, a boolean.
+
         """
         params = self.apply_boundary_conditions(**params)
         result = True
@@ -279,8 +297,7 @@ class JointDistribution(object):
         return result
 
     def __call__(self, **params):
-        """Evaluate joint distribution for parameters.
-        """
+        """Evaluate joint distribution for parameters."""
         return_atomic = self._return_atomic(params)
         # check if statisfies constraints
         if len(self._constraints) != 0:
@@ -308,8 +325,7 @@ class JointDistribution(object):
         return logp - self._logpdf_scale
 
     def rvs(self, size=1):
-        """ Rejection samples the parameter space.
-        """
+        """Rejection samples the parameter space."""
         # create output FieldArray
         dtype = [(arg, float) for arg in self.variable_args]
         out = FieldArray(size, dtype=dtype)
@@ -331,28 +347,26 @@ class JointDistribution(object):
             nkeep = keep.sum()
             kmin = size - remaining
             kmax = min(nkeep, remaining)
-            out[kmin:kmin+kmax] = scratch[keep][:kmax]
+            out[kmin : kmin + kmax] = scratch[keep][:kmax]
             remaining = max(0, remaining - nkeep)
             # to try to speed up next go around, we'll increase the draw
             # size by the fraction of values that were kept, but cap at 1e6
-            ndraw = int(min(1e6, ndraw * numpy.ceil(ndraw / (nkeep + 1.))))
+            ndraw = int(min(1e6, ndraw * numpy.ceil(ndraw / (nkeep + 1.0))))
         return out
 
     @property
     def well_reflected(self):
-        """ Get list of which parameters are well reflected
-        """
+        """Get list of which parameters are well reflected"""
         reflect = []
         bounds = self.bounds
         for param in bounds:
-            if bounds[param].reflected == 'well':
+            if bounds[param].reflected == "well":
                 reflect.append(param)
         return reflect
 
     @property
     def cyclic(self):
-        """ Get list of which parameters are cyclic
-        """
+        """Get list of which parameters are cyclic"""
         cyclic = []
         bounds = self.bounds
         for param in bounds:
@@ -362,16 +376,16 @@ class JointDistribution(object):
 
     @property
     def bounds(self):
-        """ Get the dict of boundaries
-        """
+        """Get the dict of boundaries"""
         bnds = {}
         for dist in self.distributions:
-            if hasattr(dist, 'bounds'):
+            if hasattr(dist, "bounds"):
                 bnds.update(dist.bounds)
         return bnds
 
     def cdfinv(self, **original):
-        """ Apply the inverse cdf to the array of values [0, 1]. Every
+        """
+        Apply the inverse cdf to the array of values [0, 1]. Every
         variable parameter must be given as a keyword argument.
         """
         updated = {}

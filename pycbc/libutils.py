@@ -20,19 +20,19 @@ allowing it to be specified in an OS-independent way and searched for preferenti
 according to the paths that pkg-config specifies.
 """
 
-import importlib
-import logging
-import inspect
-import os
-import fnmatch
 import ctypes
-import sys
+import fnmatch
+import importlib
+import inspect
+import logging
+import os
 import subprocess
-from ctypes.util import find_library
+import sys
 from collections import deque
+from ctypes.util import find_library
 from subprocess import getoutput
 
-logger = logging.getLogger('pycbc.libutils')
+logger = logging.getLogger("pycbc.libutils")
 
 # Be careful setting the mode for opening libraries! Some libraries (e.g.
 # libgomp) seem to require the DEFAULT_MODE is used. Others (e.g. FFTW when
@@ -42,32 +42,38 @@ DEFAULT_RTLD_MODE = ctypes.DEFAULT_MODE
 
 
 def pkg_config(pkg_libraries):
-    """Use pkg-config to query for the location of libraries, library directories,
-       and header directories
-
-       Arguments:
-           pkg_libries(list): A list of packages as strings
-
-       Returns:
-           libraries(list), library_dirs(list), include_dirs(list)
     """
-    libraries=[]
-    library_dirs=[]
-    include_dirs=[]
+    Use pkg-config to query for the location of libraries, library directories,
+    and header directories
+
+    Arguments:
+        pkg_libries(list): A list of packages as strings
+
+    Returns
+    -------
+        libraries(list), library_dirs(list), include_dirs(list)
+
+    """
+    libraries = []
+    library_dirs = []
+    include_dirs = []
 
     # Check that we have the packages
     for pkg in pkg_libraries:
-        if os.system('pkg-config --exists %s 2>/dev/null' % pkg) == 0:
+        if os.system("pkg-config --exists %s 2>/dev/null" % pkg) == 0:
             pass
         else:
-            print("Could not find library {0}".format(pkg))
+            print(f"Could not find library {pkg}")
             sys.exit(1)
 
     # Get the pck-config flags
-    if len(pkg_libraries)>0 :
+    if len(pkg_libraries) > 0:
         # PKG_CONFIG_ALLOW_SYSTEM_CFLAGS explicitly lists system paths.
         # On system-wide LAL installs, this is needed for swig to find lalswig.i
-        for token in getoutput("PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
+        for token in getoutput(
+            "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s"
+            % " ".join(pkg_libraries)
+        ).split():
             if token.startswith("-l"):
                 libraries.append(token[2:])
             elif token.startswith("-L"):
@@ -77,9 +83,9 @@ def pkg_config(pkg_libraries):
 
     return libraries, library_dirs, include_dirs
 
+
 def pkg_config_header_strings(pkg_libraries):
-    """ Returns a list of header strings that could be passed to a compiler
-    """
+    """Returns a list of header strings that could be passed to a compiler"""
     _, _, header_dirs = pkg_config(pkg_libraries)
 
     header_strings = []
@@ -89,8 +95,10 @@ def pkg_config_header_strings(pkg_libraries):
 
     return header_strings
 
+
 def pkg_config_check_exists(package):
-    return (os.system('pkg-config --exists {0} 2>/dev/null'.format(package)) == 0)
+    return os.system(f"pkg-config --exists {package} 2>/dev/null") == 0
+
 
 def pkg_config_libdirs(packages):
     """
@@ -99,7 +107,6 @@ def pkg_config_libdirs(packages):
     that the package may be found in the standard system locations, irrespective of
     pkg-config.
     """
-
     # don't try calling pkg-config if NO_PKGCONFIG is set in environment
     if os.environ.get("NO_PKGCONFIG", None):
         return []
@@ -110,23 +117,29 @@ def pkg_config_libdirs(packages):
             subprocess.check_call(["pkg-config", "--version"], stdout=FNULL)
         except:
             print(
-                "PyCBC.libutils: pkg-config call failed, "
-                "setting NO_PKGCONFIG=1",
+                "PyCBC.libutils: pkg-config call failed, setting NO_PKGCONFIG=1",
                 file=sys.stderr,
             )
-            os.environ['NO_PKGCONFIG'] = "1"
+            os.environ["NO_PKGCONFIG"] = "1"
             return []
 
     # First, check that we can call pkg-config on each package in the list
     for pkg in packages:
         if not pkg_config_check_exists(pkg):
-            raise ValueError("Package {0} cannot be found on the pkg-config search path".format(pkg))
+            raise ValueError(
+                f"Package {pkg} cannot be found on the pkg-config search path"
+            )
 
     libdirs = []
-    for token in getoutput("PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {0}".format(' '.join(packages))).split():
+    for token in getoutput(
+        "PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {0}".format(
+            " ".join(packages)
+        )
+    ).split():
         if token.startswith("-L"):
             libdirs.append(token[2:])
     return libdirs
+
 
 def get_libpath_from_dirlist(libname, dirs):
     """
@@ -140,26 +153,29 @@ def get_libpath_from_dirlist(libname, dirs):
     None is returned.
     """
     dirqueue = deque(dirs)
-    while (len(dirqueue) > 0):
+    while len(dirqueue) > 0:
         nextdir = dirqueue.popleft()
         possible = []
         # Our directory might be no good, so try/except
         try:
             for libfile in os.listdir(nextdir):
-                if fnmatch.fnmatch(libfile,'lib'+libname+'.so*') or \
-                        fnmatch.fnmatch(libfile,'lib'+libname+'.dylib*') or \
-                        fnmatch.fnmatch(libfile,'lib'+libname+'.*.dylib*') or \
-                        fnmatch.fnmatch(libfile,libname+'.dll') or \
-                        fnmatch.fnmatch(libfile,'cyg'+libname+'-*.dll'):
+                if (
+                    fnmatch.fnmatch(libfile, "lib" + libname + ".so*")
+                    or fnmatch.fnmatch(libfile, "lib" + libname + ".dylib*")
+                    or fnmatch.fnmatch(libfile, "lib" + libname + ".*.dylib*")
+                    or fnmatch.fnmatch(libfile, libname + ".dll")
+                    or fnmatch.fnmatch(libfile, "cyg" + libname + "-*.dll")
+                ):
                     possible.append(libfile)
         except OSError:
             pass
         # There might be more than one library found, we want the highest-numbered
-        if (len(possible) > 0):
+        if len(possible) > 0:
             possible.sort()
-            return os.path.join(nextdir,possible[-1])
+            return os.path.join(nextdir, possible[-1])
     # If we get here, we didn't find it...
     return None
+
 
 def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
     """
@@ -195,14 +211,14 @@ def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
     if fullpath is None:
         # We got nothin'
         return None
-    else:
-        if mode is None:
-            return ctypes.CDLL(fullpath)
-        else:
-            return ctypes.CDLL(fullpath, mode=mode)
+    if mode is None:
+        return ctypes.CDLL(fullpath)
+    return ctypes.CDLL(fullpath, mode=mode)
+
 
 def import_optional(library_name):
-    """ Try to import library but and return stub if not found
+    """
+    Try to import library but and return stub if not found
 
     Parameters
     ----------
@@ -214,18 +230,19 @@ def import_optional(library_name):
     library: library or stub
         Either returns the library if importing is sucessful or it returns
         a stub which raises an import error and message when accessed.
+
     """
     try:
         return importlib.import_module(library_name)
     except ImportError:
         # module wasn't found so let's return a stub instead to inform
         # the user what has happened when they try to use related functions
-        class no_module(object):
+        class no_module:
             def __init__(self, library):
                 self.library = library
 
             def __getattribute__(self, attr):
-                if attr == 'library':
+                if attr == "library":
                     return super().__getattribute__(attr)
 
                 lib = self.library
@@ -233,11 +250,12 @@ def import_optional(library_name):
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
                 fun = calframe[1][3]
-                msg =""" The function {} tried to access
-                         '{}' of library '{}', however,
-                        '{}' is not currently installed. To enable this
-                        functionality install '{}' (e.g. through pip
+                msg = f""" The function {fun} tried to access
+                         '{attr}' of library '{lib}', however,
+                        '{lib}' is not currently installed. To enable this
+                        functionality install '{lib}' (e.g. through pip
                         / conda / system packages / source).
-                      """.format(fun, attr, lib, lib, lib)
+                      """
                 raise ImportError(inspect.cleandoc(msg))
+
         return no_module(library_name)

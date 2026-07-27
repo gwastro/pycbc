@@ -26,28 +26,29 @@ This package provides the utilities to construct an inspiral workflow for
 performing a coincident CBC matched-filter analysis on gravitational-wave
 interferometer data
 """
+
 import os.path
 
+from pycbc.workflow.coincidence import *
 from pycbc.workflow.configuration import *
 from pycbc.workflow.core import *
-from pycbc.workflow.grb_utils import *
-from pycbc.workflow.jobsetup import *
-from pycbc.workflow.psd import *
-from pycbc.workflow.matched_filter import *
 from pycbc.workflow.datafind import *
-from pycbc.workflow.segment import *
-from pycbc.workflow.tmpltbank import *
-from pycbc.workflow.psdfiles import *
-from pycbc.workflow.splittable import *
-from pycbc.workflow.coincidence import *
-from pycbc.workflow.injection import *
-from pycbc.workflow.plotting import *
-from pycbc.workflow.minifollowups import *
 from pycbc.workflow.dq import *
-from pycbc.workflow.versioning import *
+from pycbc.workflow.grb_utils import *
+from pycbc.workflow.injection import *
+from pycbc.workflow.jobsetup import *
+from pycbc.workflow.matched_filter import *
+from pycbc.workflow.minifollowups import *
 
 # Set the pycbc workflow specific pegasus configuration and planning files
 from pycbc.workflow.pegasus_workflow import PEGASUS_FILE_DIRECTORY
+from pycbc.workflow.plotting import *
+from pycbc.workflow.psd import *
+from pycbc.workflow.psdfiles import *
+from pycbc.workflow.segment import *
+from pycbc.workflow.splittable import *
+from pycbc.workflow.tmpltbank import *
+from pycbc.workflow.versioning import *
 
 # Set the configuration file base directory
-INI_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'ini_files')
+INI_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), "ini_files")

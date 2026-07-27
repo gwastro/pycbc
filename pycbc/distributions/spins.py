@@ -15,22 +15,28 @@
 """
 This modules provides spin distributions of CBCs.
 """
+
 import logging
+
 import numpy
 
 from pycbc import conversions
-from pycbc.distributions.uniform import Uniform
 from pycbc.distributions.angular import UniformAngle
-from pycbc.distributions.power_law import UniformPowerLaw
 from pycbc.distributions.arbitrary import Arbitrary
-from pycbc.distributions.bounded import get_param_bounds_from_config, \
-    VARARGS_DELIM, BoundedDist
+from pycbc.distributions.bounded import (
+    VARARGS_DELIM,
+    BoundedDist,
+    get_param_bounds_from_config,
+)
+from pycbc.distributions.power_law import UniformPowerLaw
+from pycbc.distributions.uniform import Uniform
 
-logger = logging.getLogger('pycbc.distributions.spins')
+logger = logging.getLogger("pycbc.distributions.spins")
 
 
 class IndependentChiPChiEff(Arbitrary):
-    r"""A distribution such that :math:`\chi_{\mathrm{eff}}` and
+    r"""
+    A distribution such that :math:`\chi_{\mathrm{eff}}` and
     :math:`\chi_p` are uniform and independent of each other.
 
     To ensure constraints are applied correctly, this distribution produces all
@@ -67,13 +73,22 @@ class IndependentChiPChiEff(Arbitrary):
         random state of numpy will be saved prior to setting the seed. After
         the samples are generated, the state will be set back to what it was.
         If None provided, will use 0.
-    """
-    name = "independent_chip_chieff"
-    _params = ['mass1', 'mass2', 'xi1', 'xi2', 'chi_eff', 'chi_a',
-               'phi_a', 'phi_s']
 
-    def __init__(self, mass1=None, mass2=None, chi_eff=None, chi_a=None,
-                 xi_bounds=None, nsamples=None, seed=None):
+    """
+
+    name = "independent_chip_chieff"
+    _params = ["mass1", "mass2", "xi1", "xi2", "chi_eff", "chi_a", "phi_a", "phi_s"]
+
+    def __init__(
+        self,
+        mass1=None,
+        mass2=None,
+        chi_eff=None,
+        chi_a=None,
+        xi_bounds=None,
+        nsamples=None,
+        seed=None,
+    ):
 
         if isinstance(mass1, BoundedDist):
             self.mass1_distr = mass1
@@ -88,33 +103,36 @@ class IndependentChiPChiEff(Arbitrary):
             self.chieff_distr = chi_eff
         else:
             if chi_eff is None:
-                chi_eff = (-1., 1.)
+                chi_eff = (-1.0, 1.0)
             self.chieff_distr = Uniform(chi_eff=chi_eff)
         if isinstance(chi_a, BoundedDist):
             self.chia_distr = chi_a
         else:
             if chi_a is None:
-                chi_a = (-1., 1.)
+                chi_a = (-1.0, 1.0)
             self.chia_distr = Uniform(chi_a=chi_a)
         # xis
         if xi_bounds is None:
-            xi_bounds = (0, 1.)
-        if (xi_bounds[0] > 1. or xi_bounds[0] < 0.) or (
-            xi_bounds[1] > 1. or xi_bounds[1] < 0.):
+            xi_bounds = (0, 1.0)
+        if (xi_bounds[0] > 1.0 or xi_bounds[0] < 0.0) or (
+            xi_bounds[1] > 1.0 or xi_bounds[1] < 0.0
+        ):
             raise ValueError("xi bounds must be in [0, 1)")
         self.xi1_distr = UniformPowerLaw(dim=0.5, xi1=xi_bounds)
         self.xi2_distr = UniformPowerLaw(dim=0.5, xi2=xi_bounds)
         # the angles
-        self.phia_distr = UniformAngle(phi_a=(0,2))
-        self.phis_distr = UniformAngle(phi_s=(0,2))
-        self.distributions = {'mass1': self.mass1_distr,
-                              'mass2': self.mass2_distr,
-                              'xi1': self.xi1_distr,
-                              'xi2': self.xi2_distr,
-                              'chi_eff': self.chieff_distr,
-                              'chi_a': self.chia_distr,
-                              'phi_a': self.phia_distr,
-                              'phi_s': self.phis_distr}
+        self.phia_distr = UniformAngle(phi_a=(0, 2))
+        self.phis_distr = UniformAngle(phi_s=(0, 2))
+        self.distributions = {
+            "mass1": self.mass1_distr,
+            "mass2": self.mass2_distr,
+            "xi1": self.xi1_distr,
+            "xi2": self.xi2_distr,
+            "chi_eff": self.chieff_distr,
+            "chi_a": self.chia_distr,
+            "phi_a": self.phia_distr,
+            "phi_s": self.phis_distr,
+        }
         # create random variables for the kde
         if nsamples is None:
             nsamples = 1e4
@@ -127,16 +145,24 @@ class IndependentChiPChiEff(Arbitrary):
         rvals = self.rvs(size=int(nsamples))
         # reset the random state back to what it was
         numpy.random.set_state(rstate)
-        bounds = dict(b for distr in self.distributions.values()
-                        for b in distr.bounds.items())
-        super(IndependentChiPChiEff, self).__init__(mass1=rvals['mass1'],
-            mass2=rvals['mass2'], xi1=rvals['xi1'], xi2=rvals['xi2'],
-            chi_eff=rvals['chi_eff'], chi_a=rvals['chi_a'],
-            phi_a=rvals['phi_a'], phi_s=rvals['phi_s'],
-            bounds=bounds)
+        bounds = dict(
+            b for distr in self.distributions.values() for b in distr.bounds.items()
+        )
+        super().__init__(
+            mass1=rvals["mass1"],
+            mass2=rvals["mass2"],
+            xi1=rvals["xi1"],
+            xi2=rvals["xi2"],
+            chi_eff=rvals["chi_eff"],
+            chi_a=rvals["chi_a"],
+            phi_a=rvals["phi_a"],
+            phi_s=rvals["phi_s"],
+            bounds=bounds,
+        )
 
     def _constraints(self, values):
-        """Applies physical constraints to the given parameter values.
+        """
+        Applies physical constraints to the given parameter values.
 
         Parameters
         ----------
@@ -147,28 +173,42 @@ class IndependentChiPChiEff(Arbitrary):
         -------
         bool
             Whether or not the values satisfy physical
+
         """
-        mass1, mass2, phi_a, phi_s, chi_eff, chi_a, xi1, xi2, _ = \
-            conversions.ensurearray(values['mass1'], values['mass2'],
-                                    values['phi_a'], values['phi_s'],
-                                    values['chi_eff'], values['chi_a'],
-                                    values['xi1'], values['xi2'])
+        mass1, mass2, phi_a, phi_s, chi_eff, chi_a, xi1, xi2, _ = (
+            conversions.ensurearray(
+                values["mass1"],
+                values["mass2"],
+                values["phi_a"],
+                values["phi_s"],
+                values["chi_eff"],
+                values["chi_a"],
+                values["xi1"],
+                values["xi2"],
+            )
+        )
         s1x = conversions.spin1x_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s)
-        s2x = conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2,
-            xi2, phi_a, phi_s)
+        s2x = conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s(
+            mass1, mass2, xi2, phi_a, phi_s
+        )
         s1y = conversions.spin1y_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s)
-        s2y = conversions.spin2y_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2,
-            xi2, phi_a, phi_s)
-        s1z = conversions.spin1z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2,
-            chi_eff, chi_a)
-        s2z = conversions.spin2z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2,
-            chi_eff, chi_a)
-        test = ((s1x**2. + s1y**2. + s1z**2.) < 1.) & \
-               ((s2x**2. + s2y**2. + s2z**2.) < 1.)
+        s2y = conversions.spin2y_from_mass1_mass2_xi2_phi_a_phi_s(
+            mass1, mass2, xi2, phi_a, phi_s
+        )
+        s1z = conversions.spin1z_from_mass1_mass2_chi_eff_chi_a(
+            mass1, mass2, chi_eff, chi_a
+        )
+        s2z = conversions.spin2z_from_mass1_mass2_chi_eff_chi_a(
+            mass1, mass2, chi_eff, chi_a
+        )
+        test = ((s1x**2.0 + s1y**2.0 + s1z**2.0) < 1.0) & (
+            (s2x**2.0 + s2y**2.0 + s2z**2.0) < 1.0
+        )
         return test
 
     def __contains__(self, params):
-        """Determines whether the given values are in each parameter's bounds
+        """
+        Determines whether the given values are in each parameter's bounds
         and satisfy the constraints.
         """
         isin = all([params in dist for dist in self.distributions.values()])
@@ -178,63 +218,60 @@ class IndependentChiPChiEff(Arbitrary):
         return self._constraints(params)
 
     def _draw(self, size=1, **kwargs):
-        """Draws random samples without applying physical constrains.
-        """
+        """Draws random samples without applying physical constrains."""
         # draw masses
         try:
-            mass1 = kwargs['mass1']
+            mass1 = kwargs["mass1"]
         except KeyError:
-            mass1 = self.mass1_distr.rvs(size=size)['mass1']
+            mass1 = self.mass1_distr.rvs(size=size)["mass1"]
         try:
-            mass2 = kwargs['mass2']
+            mass2 = kwargs["mass2"]
         except KeyError:
-            mass2 = self.mass2_distr.rvs(size=size)['mass2']
+            mass2 = self.mass2_distr.rvs(size=size)["mass2"]
         # draw angles
         try:
-            phi_a = kwargs['phi_a']
+            phi_a = kwargs["phi_a"]
         except KeyError:
-            phi_a = self.phia_distr.rvs(size=size)['phi_a']
+            phi_a = self.phia_distr.rvs(size=size)["phi_a"]
         try:
-            phi_s = kwargs['phi_s']
+            phi_s = kwargs["phi_s"]
         except KeyError:
-            phi_s = self.phis_distr.rvs(size=size)['phi_s']
+            phi_s = self.phis_distr.rvs(size=size)["phi_s"]
         # draw chi_eff, chi_a
         try:
-            chi_eff = kwargs['chi_eff']
+            chi_eff = kwargs["chi_eff"]
         except KeyError:
-            chi_eff = self.chieff_distr.rvs(size=size)['chi_eff']
+            chi_eff = self.chieff_distr.rvs(size=size)["chi_eff"]
         try:
-            chi_a = kwargs['chi_a']
+            chi_a = kwargs["chi_a"]
         except KeyError:
-            chi_a = self.chia_distr.rvs(size=size)['chi_a']
+            chi_a = self.chia_distr.rvs(size=size)["chi_a"]
         # draw xis
         try:
-            xi1 = kwargs['xi1']
+            xi1 = kwargs["xi1"]
         except KeyError:
-            xi1 = self.xi1_distr.rvs(size=size)['xi1']
+            xi1 = self.xi1_distr.rvs(size=size)["xi1"]
         try:
-            xi2 = kwargs['xi2']
+            xi2 = kwargs["xi2"]
         except KeyError:
-            xi2 = self.xi2_distr.rvs(size=size)['xi2']
+            xi2 = self.xi2_distr.rvs(size=size)["xi2"]
         dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
-        arr['mass1'] = mass1
-        arr['mass2'] = mass2
-        arr['phi_a'] = phi_a
-        arr['phi_s'] = phi_s
-        arr['chi_eff'] = chi_eff
-        arr['chi_a'] = chi_a
-        arr['xi1'] = xi1
-        arr['xi2'] = xi2
+        arr["mass1"] = mass1
+        arr["mass2"] = mass2
+        arr["phi_a"] = phi_a
+        arr["phi_s"] = phi_s
+        arr["chi_eff"] = chi_eff
+        arr["chi_a"] = chi_a
+        arr["xi1"] = xi1
+        arr["xi2"] = xi2
         return arr
 
     def apply_boundary_conditions(self, **kwargs):
         return kwargs
 
-
     def rvs(self, size=1, **kwargs):
-        """Returns random values for all of the parameters.
-        """
+        """Returns random values for all of the parameters."""
         size = int(size)
         dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
@@ -244,15 +281,15 @@ class IndependentChiPChiEff(Arbitrary):
             draws = self._draw(size=remaining, **kwargs)
             mask = self._constraints(draws)
             addpts = mask.sum()
-            arr[keepidx:keepidx+addpts] = draws[mask]
+            arr[keepidx : keepidx + addpts] = draws[mask]
             keepidx += addpts
             remaining = size - keepidx
         return arr
 
-
     @classmethod
     def from_config(cls, cp, section, variable_args):
-        """Returns a distribution based on a configuration file. The parameters
+        """
+        Returns a distribution based on a configuration file. The parameters
         for the distribution are retrieved from the section titled
         "[`section`-`variable_args`]" in the config file.
 
@@ -272,23 +309,30 @@ class IndependentChiPChiEff(Arbitrary):
         -------
         IndependentChiPChiEff
             A distribution instance.
+
         """
         tag = variable_args
         variable_args = variable_args.split(VARARGS_DELIM)
         if not set(variable_args) == set(cls._params):
-            raise ValueError("Not all parameters used by this distribution "
-                             "included in tag portion of section name")
+            raise ValueError(
+                "Not all parameters used by this distribution "
+                "included in tag portion of section name"
+            )
         # get the bounds for the setable parameters
-        mass1 = get_param_bounds_from_config(cp, section, tag, 'mass1')
-        mass2 = get_param_bounds_from_config(cp, section, tag, 'mass2')
-        chi_eff = get_param_bounds_from_config(cp, section, tag, 'chi_eff')
-        chi_a = get_param_bounds_from_config(cp, section, tag, 'chi_a')
-        xi_bounds = get_param_bounds_from_config(cp, section, tag, 'xi_bounds')
-        if cp.has_option('-'.join([section, tag]), 'nsamples'):
-            nsamples = int(cp.get('-'.join([section, tag]), 'nsamples'))
+        mass1 = get_param_bounds_from_config(cp, section, tag, "mass1")
+        mass2 = get_param_bounds_from_config(cp, section, tag, "mass2")
+        chi_eff = get_param_bounds_from_config(cp, section, tag, "chi_eff")
+        chi_a = get_param_bounds_from_config(cp, section, tag, "chi_a")
+        xi_bounds = get_param_bounds_from_config(cp, section, tag, "xi_bounds")
+        if cp.has_option("-".join([section, tag]), "nsamples"):
+            nsamples = int(cp.get("-".join([section, tag]), "nsamples"))
         else:
             nsamples = None
-        return cls(mass1=mass1, mass2=mass2, chi_eff=chi_eff, chi_a=chi_a,
-                   xi_bounds=xi_bounds, nsamples=nsamples)
-
-
+        return cls(
+            mass1=mass1,
+            mass2=mass2,
+            chi_eff=chi_eff,
+            chi_a=chi_a,
+            xi_bounds=xi_bounds,
+            nsamples=nsamples,
+        )
