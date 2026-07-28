@@ -21,3 +21,47 @@ jobs:
               run: |
                 flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
 
+    qlty_check:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            security-events: write
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v5
+              with:
+                  # Full history is needed so Qlty can diff against the PR base branch.
+                  fetch-depth: 0
+
+            - name: Install Qlty CLI
+              uses: qltysh/qlty-action/install@v2
+
+            - name: Run Qlty check
+              run: |
+                set +e
+                qlty check --sarif --no-progress \
+                  --upstream origin/${{ github.event.pull_request.base.ref }} \
+                  > qlty-raw.sarif
+                qlty_exit_code=$?
+                set -e
+
+                # Qlty's SARIF output includes fields GitHub's stricter validator
+                # rejects (upload-sarif then fails even when qlty itself succeeded).
+                # Known upstream issue: https://github.com/qltysh/qlty/issues/2701
+                # `fixes` is dropped too: Qlty puts `replacements` directly on
+                # fixes[], but GitHub requires it nested under
+                # fixes[].artifactChanges[].replacements. Dropping it only loses
+                # the inline "apply suggested fix" button, not the finding itself.
+                jq 'del(.runs[].tool.driver.notifications)
+                    | del(.runs[].results[].taxa[].name)
+                    | del(.runs[].results[].fixes)' \
+                  qlty-raw.sarif > qlty-results.sarif
+
+                exit $qlty_exit_code
+
+            - name: Upload results to GitHub Code Scanning
+              if: always()
+              uses: github/codeql-action/upload-sarif@v4
+              with:
+                  sarif_file: qlty-results.sarif
+
