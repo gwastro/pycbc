@@ -58,7 +58,7 @@ def add_custom_waveform(approximant, function, domain,
 
 
 def add_custom_waveform_modes(approximant, function, domain, force=False):
-    """ Make a custom mode-by-mode waveform generator available to pycbc's
+    """Make a custom mode-by-mode waveform generator available to pycbc's
     get_td_waveform_modes/get_fd_waveform_modes.
 
     Unlike add_custom_waveform (which registers a generator returning the already-summed
@@ -82,22 +82,25 @@ def add_custom_waveform_modes(approximant, function, domain, force=False):
     force : bool, False
         Overwrite an existing registration for this approximant/domain instead of raising.
     """
-    from pycbc.waveform.waveform_modes import _mode_waveform_td, _mode_waveform_fd
+    from pycbc.waveform.waveform_modes import _mode_waveform_fd, _mode_waveform_td
 
-    used = RuntimeError("Can't load plugin waveform modes generator {}, the name is"
-                        " already in use.".format(approximant))
+    used = RuntimeError(
+        "Can't load plugin waveform modes generator {}, the name is"
+        " already in use.".format(approximant)
+    )
 
-    if domain == 'time':
+    if domain == "time":
         if not force and (approximant in _mode_waveform_td):
             raise used
         _mode_waveform_td[approximant] = function
-    elif domain == 'frequency':
+    elif domain == "frequency":
         if not force and (approximant in _mode_waveform_fd):
             raise used
         _mode_waveform_fd[approximant] = function
     else:
-        raise ValueError("Invalid domain ({}), should be "
-                         "'time' or 'frequency'".format(domain))
+        raise ValueError(
+            "Invalid domain ({}), should be 'time' or 'frequency'".format(domain)
+        )
 
 
 def add_length_estimator(approximant, function):

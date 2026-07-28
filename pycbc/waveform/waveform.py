@@ -134,11 +134,13 @@ def _check_lal_pars(p):
         # Most LAL approximants have no eccentricity content at all (at most higher-order modes), so fail
         # loudly here instead of silently dropping n or letting the "for l, m in ..." unpack raise a
         # confusing ValueError.
-        bad = [entry for entry in p['mode_array'] if len(entry) != 2]
+        bad = [entry for entry in p["mode_array"] if len(entry) != 2]
         if bad:
-            raise ValueError("mode_array entries %s have more than (l, m); this LAL-based approximant only "
-                             "supports selecting modes by (l, m), not by an additional harmonic index n. "
-                             "Pass a plain (l, m) mode_array for this approximant." % (bad,))
+            raise ValueError(
+                "mode_array entries %s have more than (l, m); this LAL-based approximant only "
+                "supports selecting modes by (l, m), not by an additional harmonic index n. "
+                "Pass a plain (l, m) mode_array for this approximant." % (bad,)
+            )
         ma = lalsimulation.SimInspiralCreateModeArray()
         for l,m in p['mode_array']:
             lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
@@ -1100,7 +1102,7 @@ def get_hm_length_in_time(lor_approx, maxm_default, **kwargs):
     kwargs = parse_mode_array(kwargs)
     if 'mode_array' in kwargs and kwargs['mode_array'] is not None:
         # entries may be (l, m) or (l, m, n) (see parse_mode_array); m is always the second element
-        maxm = max(entry[1] for entry in kwargs['mode_array'])
+        maxm = max(entry[1] for entry in kwargs["mode_array"])
     else:
         maxm = maxm_default
     try:
