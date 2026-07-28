@@ -446,11 +446,13 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         to not be included. May also specify sampler-specific arguments. Note
         that ``input-file``, ``file-help``, and ``parameters`` are always
         added.
-    defaultparams : {'variable_params', 'all'}, optional
+    defaultparams : {'variable_params', 'samples', 'all'}, optional
         If no ``--parameters`` provided, which collection of parameters to
-        load. If 'all' will load all parameters in the file's
-        ``samples_group``. If 'variable_params' or None (the default) will load
-        the variable parameters.
+        load. If 'samples' will load all parameters in the file's
+        ``samples_group``, excluding likelihood stats (i.e. loglikelihood,
+        logwt). If 'all' will load all parameters in the file's
+        ``samples_group`` including likelihood stats. If 'variable_params' or 
+        None (the default) will load the variable parameters.
     autoparamlabels : bool, optional
         Passed to ``add_results_option_group``; see that function for details.
     \**kwargs :
@@ -462,11 +464,15 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         # add attribute to communicate to arguments what to do when there is
         # no input files
         self.no_input_file_err = False
+        self.skip_params = []
         if skip_args is None:
             skip_args = []
         self.skip_args = skip_args
         if defaultparams is None:
             defaultparams = 'variable_params'
+        if defaultparams == 'samples':
+            defaultparams = 'all'
+            self.skip_params = ['loglikelihood', 'logwt']
         self.defaultparams = defaultparams
         # add the results option grup
         self.add_results_option_group(autoparamlabels=autoparamlabels)
@@ -510,6 +516,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         if opts.parameters is None or opts.parameters == ['*']:
             parameters = get_common_parameters(opts.input_file,
                                                collection=self.defaultparams)
+            parameters = [i for i in parameters if i not in self.skip_params]
             # now call parse parameters action to re-populate the namespace
             self.actions['parameters'](self, opts, parameters)
         # check if we're being greedy or not
@@ -526,7 +533,8 @@ class ResultsArgumentParser(argparse.ArgumentParser):
             add_params = set(all_params) - set(used_params)
             # repopulate the name space with the additional parameters
             if add_params:
-                opts.parameters += list(add_params)
+                add_params = [i for i in add_params if i not in self.skip_params]
+                opts.parameters += add_params
                 # update the labels
                 opts.parameters_labels.update({p: p for p in add_params})
         # parse the sampler-specific options and check for any unknowns
