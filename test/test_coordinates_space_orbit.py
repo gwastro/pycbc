@@ -420,6 +420,65 @@ class TestNumericOrbitsGeneralizesBeyondLisa(unittest.TestCase):
                         1e-6 * TIANQIN_ARMLENGTH)
 
 
+class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
+    """`pycbc.coordinates.space`'s public, PE-facing functions
+    (`t_lisa_from_ssb`, `t_ssb_from_t_lisa`, `ssb_to_lisa`, `lisa_to_ssb`)
+    accept an optional `orbit` argument that swaps out the hard-coded
+    circular LISA orbit for any orbit provider from `space_orbit`. This
+    checks that wiring end to end, both against `space_orbit`'s own
+    functions directly and (for the LISA-equivalent fixture) against the
+    default, `orbit=None` code path these functions already had.
+    """
+    def setUp(self):
+        self.lisa_orbit = AnalyticEqualArmOrbit()
+        self.taiji_orbit = AnalyticTaijiOrbit()
+        self.tianqin_orbit = AnalyticTianQinOrbit()
+        self.times = numpy.random.uniform(1e5, 3.1e7, size=10)
+
+    def test_t_lisa_from_ssb_delegates_to_space_orbit(self):
+        lam, beta = 1.1, -0.2
+        k_ssb = space.localization_to_propagation_vector(
+            lam, beta, use_astropy=False).flatten()
+        for orbit in (self.lisa_orbit, self.taiji_orbit, self.tianqin_orbit):
+            for t_ssb in self.times[:5]:
+                via_space = space.t_lisa_from_ssb(
+                    t_ssb, lam, beta, orbit=orbit)
+                via_space_orbit = space_orbit.t_detector_from_ssb(
+                    t_ssb, k_ssb, orbit)
+                self.assertAlmostEqual(via_space, via_space_orbit, places=6)
+
+    def test_orbit_path_matches_default_for_lisa_equivalent_fixture(self):
+        """Feeding `ssb_to_lisa`/`lisa_to_ssb` the analytic orbit that
+        `pycbc.coordinates.space`'s hard-coded circular LISA path already
+        assumes must reproduce that default (`orbit=None`) path's output,
+        not just be self-consistent with itself.
+        """
+        lam, beta, pol = 0.9, -0.3, 2.4
+        for t_ssb in self.times[:5]:
+            default = space.ssb_to_lisa(t_ssb, lam, beta, pol, t0=T0)
+            via_orbit = space.ssb_to_lisa(
+                t_ssb, lam, beta, pol, t0=T0, orbit=self.lisa_orbit)
+            for d, o in zip(default, via_orbit):
+                self.assertAlmostEqual(d, o, places=3)
+
+    def test_ssb_to_lisa_round_trip_with_taiji_and_tianqin(self):
+        """The full ssb -> detector -> ssb round trip must recover the
+        original parameters, for constellations genuinely different from
+        the LISA special case checked above.
+        """
+        lam, beta, pol = 2.5, 0.1, 1.0
+        for orbit in (self.taiji_orbit, self.tianqin_orbit):
+            for t_ssb in self.times[:5]:
+                t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
+                    t_ssb, lam, beta, pol, orbit=orbit)
+                t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
+                    t_det, lam_det, beta_det, pol_det, orbit=orbit)
+                self.assertAlmostEqual(t_rt, t_ssb, places=3)
+                self.assertAlmostEqual(lam_rt, lam, places=6)
+                self.assertAlmostEqual(beta_rt, beta, places=6)
+                self.assertAlmostEqual(pol_rt, pol, places=6)
+
+
 class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
     """If `lisaorbits` happens to be installed in the test environment,
     verify that a real `lisaorbits.Orbits` instance can be passed directly
@@ -455,6 +514,8 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTaijiOrbit))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTianQinOrbit))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestNumericOrbitsGeneralizesBeyondLisa))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestSpaceAcceptsOrbitProvider))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestOptionalLisaorbitsDuckTyping))
 
