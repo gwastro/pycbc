@@ -2190,9 +2190,11 @@ def optimized_match(
 
     res = minimize_scalar(
         to_minimize,
-        method="brent",
-        bracket=(-delta_t, delta_t)
+        bounds=(-delta_t, delta_t),
+        method="bounded",
+        options={'xatol': 1e-8}
     )
+
     m, angle = product_offset(res.x)
 
     if return_phase:
