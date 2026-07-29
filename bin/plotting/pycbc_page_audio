@@ -28,13 +28,6 @@ parser.add_argument('--time-window', required=True,
                          'be provided as start,end '
                          'where start/end time is relative to --center-time; '
                          'both are positive')
-parser.add_argument('--title',
-                    help="If given, use this as the title")
-parser.add_argument('--caption',
-                    help="If given, use this as the caption")
-
-
-
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
 
