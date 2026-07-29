@@ -25,11 +25,17 @@
 This module provides coordinate transformations related to space-borne
 detectors, such as coordinate transformations between space-borne detectors
 and ground-based detectors. The default orbit assumed throughout is LISA's
-analytic circular orbit; `t_lisa_from_ssb`, `t_ssb_from_t_lisa`, `ssb_to_lisa`
-and `lisa_to_ssb` also accept an optional `orbit` argument (see
-`pycbc.coordinates.space_orbit`) to use an arbitrary numerical or analytic
-constellation orbit (LISA, Taiji, TianQin, ...) instead, with no change in
-behavior when `orbit` is left at its default of None.
+analytic circular orbit; `t_lisa_from_ssb`, `t_ssb_from_t_lisa`, `ssb_to_lisa`,
+`lisa_to_ssb`, `lisa_to_geo` and `geo_to_lisa` also accept an optional `orbit`
+argument (see `pycbc.coordinates.space_orbit`) to use an arbitrary numerical
+or analytic constellation orbit (LISA, Taiji, TianQin, ...) instead, with no
+change in behavior when `orbit` is left at its default of None.
+
+These functions and their parameters/return values keep their original,
+LISA-specific names for backward compatibility even though they now accept
+any constellation via `orbit`: when `orbit` is given, "lisa" in a name
+(`t_lisa`, `ssb_to_lisa`, ...) means "the constellation frame described by
+`orbit`", not literally LISA.
 """
 
 import logging
