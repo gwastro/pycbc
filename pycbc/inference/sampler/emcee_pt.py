@@ -44,7 +44,10 @@ from .base_multitemper import (
 
 # This is a hack that will allow us to continue using emcee's abandoned
 # PTSampler, which relied on `numpy.float`, until the end of time.
-float = float
+# NOTE: ruff's NPY001 fixer will try to "fix" this to `float = float` since
+# it doesn't distinguish an assignment target from a read of the deprecated
+# alias -- that turns this into a no-op and breaks the actual monkey-patch.
+numpy.float = float  # noqa: NPY001
 
 if emcee.__version__ >= "3.0.0":
     raise ImportError
