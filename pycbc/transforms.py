@@ -1693,6 +1693,20 @@ class GEOToSSB(BaseTransform):
         )
 
 
+def _load_constellation_orbit(orbit_file):
+    """Load a `NumericOrbits` from an HDF5 orbit file (see
+    `pycbc.coordinates.space_orbit.NumericOrbits.from_file`), or return None
+    if `orbit_file` is None. Shared by the LISA/Taiji/TianQin-capable
+    transforms below: with no `orbit_file`, they keep using the hard-coded
+    circular LISA orbit (unchanged behavior); with one, they use the
+    constellation orbit it contains instead -- e.g. a numerically-propagated
+    Taiji or TianQin orbit.
+    """
+    if orbit_file is None:
+        return None
+    return coordinates.NumericOrbits.from_file(orbit_file)
+
+
 class LISAToSSB(BaseTransform):
     """Converts arrival time, sky localization, and polarization angle in the
     LISA frame to the corresponding values in the SSB frame."""
@@ -1714,7 +1728,8 @@ class LISAToSSB(BaseTransform):
         self, tc_lisa_param=None, longitude_lisa_param=None,
         latitude_lisa_param=None, polarization_lisa_param=None,
         tc_ssb_param=None, longitude_ssb_param=None,
-        latitude_ssb_param=None, polarization_ssb_param=None
+        latitude_ssb_param=None, polarization_ssb_param=None,
+        orbit_file=None
     ):
         params = [tc_lisa_param, longitude_lisa_param,
                   latitude_lisa_param, polarization_lisa_param,
@@ -1733,6 +1748,8 @@ class LISAToSSB(BaseTransform):
         self.longitude_ssb_param = params[5]
         self.latitude_ssb_param = params[6]
         self.polarization_ssb_param = params[7]
+        self.orbit_file = orbit_file
+        self.orbit = _load_constellation_orbit(orbit_file)
         self._inputs = [self.tc_lisa_param, self.longitude_lisa_param,
                         self.latitude_lisa_param, self.polarization_lisa_param]
         self._outputs = [self.tc_ssb_param, self.longitude_ssb_param,
@@ -1759,7 +1776,8 @@ class LISAToSSB(BaseTransform):
             out[self.latitude_ssb_param], out[self.polarization_ssb_param] = \
             coordinates.lisa_to_ssb(
                 maps[self.tc_lisa_param], maps[self.longitude_lisa_param],
-                maps[self.latitude_lisa_param], maps[self.polarization_lisa_param]
+                maps[self.latitude_lisa_param], maps[self.polarization_lisa_param],
+                orbit=self.orbit
                 )
         return self.format_output(maps, out)
 
@@ -1784,7 +1802,8 @@ class LISAToSSB(BaseTransform):
             out[self.polarization_lisa_param] = \
             coordinates.ssb_to_lisa(
                 maps[self.tc_ssb_param], maps[self.longitude_ssb_param],
-                maps[self.latitude_ssb_param], maps[self.polarization_ssb_param]
+                maps[self.latitude_ssb_param], maps[self.polarization_ssb_param],
+                orbit=self.orbit
                 )
         return self.format_output(maps, out)
 
@@ -1818,6 +1837,13 @@ class LISAToSSB(BaseTransform):
             else:
                 additional_opts.update(
                     {name_underline+'_param': variables[param_name]})
+        # optional: a numerical constellation orbit (LISA, Taiji, TianQin,
+        # ...) to use instead of the default, hard-coded circular LISA
+        # orbit; see pycbc.coordinates.space_orbit.NumericOrbits.from_file
+        if cp.has_option("-".join([section, outputs]), 'orbit-file'):
+            skip_opts.append('orbit-file')
+            additional_opts.update(
+                {'orbit_file': cp.get_opt_tag(section, 'orbit-file', tag)})
 
         return super(LISAToSSB, cls).from_config(
             cp, section, outputs, skip_opts=skip_opts,
@@ -1846,7 +1872,8 @@ class LISAToGEO(BaseTransform):
         self, tc_lisa_param=None, longitude_lisa_param=None,
         latitude_lisa_param=None, polarization_lisa_param=None,
         tc_geo_param=None, longitude_geo_param=None,
-        latitude_geo_param=None, polarization_geo_param=None
+        latitude_geo_param=None, polarization_geo_param=None,
+        orbit_file=None
     ):
         params = [tc_lisa_param, longitude_lisa_param,
                   latitude_lisa_param, polarization_lisa_param,
@@ -1865,6 +1892,8 @@ class LISAToGEO(BaseTransform):
         self.longitude_geo_param = params[5]
         self.latitude_geo_param = params[6]
         self.polarization_geo_param = params[7]
+        self.orbit_file = orbit_file
+        self.orbit = _load_constellation_orbit(orbit_file)
         self._inputs = [self.tc_lisa_param, self.longitude_lisa_param,
                         self.latitude_lisa_param, self.polarization_lisa_param]
         self._outputs = [self.tc_geo_param, self.longitude_geo_param,
@@ -1891,7 +1920,8 @@ class LISAToGEO(BaseTransform):
             out[self.latitude_geo_param], out[self.polarization_geo_param] = \
             coordinates.lisa_to_geo(
                 maps[self.tc_lisa_param], maps[self.longitude_lisa_param],
-                maps[self.latitude_lisa_param], maps[self.polarization_lisa_param]
+                maps[self.latitude_lisa_param], maps[self.polarization_lisa_param],
+                orbit=self.orbit
                 )
         return self.format_output(maps, out)
 
@@ -1916,7 +1946,8 @@ class LISAToGEO(BaseTransform):
             out[self.polarization_lisa_param] = \
             coordinates.geo_to_lisa(
                 maps[self.tc_geo_param], maps[self.longitude_geo_param],
-                maps[self.latitude_geo_param], maps[self.polarization_geo_param]
+                maps[self.latitude_geo_param], maps[self.polarization_geo_param],
+                orbit=self.orbit
                 )
         return self.format_output(maps, out)
 
@@ -1950,6 +1981,10 @@ class LISAToGEO(BaseTransform):
             else:
                 additional_opts.update(
                     {name_underline+'_param': variables[param_name]})
+        if cp.has_option("-".join([section, outputs]), 'orbit-file'):
+            skip_opts.append('orbit-file')
+            additional_opts.update(
+                {'orbit_file': cp.get_opt_tag(section, 'orbit-file', tag)})
 
         return super(LISAToGEO, cls).from_config(
             cp, section, outputs, skip_opts=skip_opts,
@@ -2582,6 +2617,9 @@ class SSBToGEO(GEOToSSB):
                         self.latitude_ssb_param, self.polarization_ssb_param]
         self._outputs = [self.tc_geo_param, self.longitude_geo_param,
                          self.latitude_geo_param, self.polarization_geo_param]
+        # NOTE: intentionally not super(SSBToGEO, self).__init__() -- see
+        # the equivalent note in SSBToLISA.__init__.
+        BaseTransform.__init__(self)
 
 
 class SSBToLISA(LISAToSSB):
@@ -2596,7 +2634,8 @@ class SSBToLISA(LISAToSSB):
         self, tc_lisa_param=None, longitude_lisa_param=None,
         latitude_lisa_param=None, polarization_lisa_param=None,
         tc_ssb_param=None, longitude_ssb_param=None,
-        latitude_ssb_param=None, polarization_ssb_param=None
+        latitude_ssb_param=None, polarization_ssb_param=None,
+        orbit_file=None
     ):
         params = [tc_lisa_param, longitude_lisa_param,
                   latitude_lisa_param, polarization_lisa_param,
@@ -2615,10 +2654,18 @@ class SSBToLISA(LISAToSSB):
         self.longitude_ssb_param = params[5]
         self.latitude_ssb_param = params[6]
         self.polarization_ssb_param = params[7]
+        self.orbit_file = orbit_file
+        self.orbit = _load_constellation_orbit(orbit_file)
         self._inputs = [self.tc_ssb_param, self.longitude_ssb_param,
                         self.latitude_ssb_param, self.polarization_ssb_param]
         self._outputs = [self.tc_lisa_param, self.longitude_lisa_param,
                          self.latitude_lisa_param, self.polarization_lisa_param]
+        # NOTE: intentionally not super(SSBToLISA, self).__init__() -- this
+        # class's MRO is SSBToLISA -> LISAToSSB -> BaseTransform, so that
+        # would re-run LISAToSSB.__init__ with all-default arguments,
+        # clobbering the values just set above. Call BaseTransform.__init__
+        # directly instead, to just set self.inputs/self.outputs.
+        BaseTransform.__init__(self)
 
 
 class GEOToLISA(LISAToGEO):
@@ -2633,7 +2680,8 @@ class GEOToLISA(LISAToGEO):
         self, tc_lisa_param=None, longitude_lisa_param=None,
         latitude_lisa_param=None, polarization_lisa_param=None,
         tc_geo_param=None, longitude_geo_param=None,
-        latitude_geo_param=None, polarization_geo_param=None
+        latitude_geo_param=None, polarization_geo_param=None,
+        orbit_file=None
     ):
         params = [tc_lisa_param, longitude_lisa_param,
                   latitude_lisa_param, polarization_lisa_param,
@@ -2652,10 +2700,15 @@ class GEOToLISA(LISAToGEO):
         self.longitude_geo_param = params[5]
         self.latitude_geo_param = params[6]
         self.polarization_geo_param = params[7]
+        self.orbit_file = orbit_file
+        self.orbit = _load_constellation_orbit(orbit_file)
         self._inputs = [self.tc_geo_param, self.longitude_geo_param,
                         self.latitude_geo_param, self.polarization_geo_param]
         self._outputs = [self.tc_lisa_param, self.longitude_lisa_param,
                          self.latitude_lisa_param, self.polarization_lisa_param]
+        # NOTE: intentionally not super(GEOToLISA, self).__init__() -- see
+        # the equivalent note in SSBToLISA.__init__.
+        BaseTransform.__init__(self)
 
 
 class Exponent(Log):
