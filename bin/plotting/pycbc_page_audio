@@ -51,7 +51,6 @@ except (RuntimeError, IndexError, ValueError):
 
 logging.info("Loading Strain")
 strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
-logging.info("Loaded Strain")
 
 rem_corrupted = True
 if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
