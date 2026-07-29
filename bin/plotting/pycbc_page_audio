@@ -1,23 +1,11 @@
-import sys
+# Copyright (C) 2026 Syazwan Yusuf
+"""
+Convert single-detector gravitational-wave strain data to an audio file
+"""
 import argparse
-
 import logging
 
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import pyplot as plt
-from matplotlib.colors import LogNorm
-
 import pycbc.strain
-import pycbc.results
-import pycbc.catalog
-
-import math
-import numpy as np
-
-import scipy
-import scipy.signal
-from scipy.io.wavfile import write
 
 # https://stackoverflow.com/questions/9978880/python-argument-parser-list-of-list-or-tuple-of-tuples
 def t_window(s):
