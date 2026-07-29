@@ -25,11 +25,14 @@
 
 """Hierarchical model definitions."""
 
-import shlex
 import logging
+import shlex
+
 import numpy
+
 from pycbc import transforms
 from pycbc.workflow import WorkflowConfigParser
+
 from .base import BaseModel
 
 #
@@ -42,7 +45,8 @@ from .base import BaseModel
 
 
 class HierarchicalModel(BaseModel):
-    r"""Model that is a combination of other models.
+    r"""
+    Model that is a combination of other models.
 
     Sub-models are treated as being independent of each other, although
     they can share parameters. In other words, the hierarchical likelihood is:
@@ -79,8 +83,10 @@ class HierarchicalModel(BaseModel):
     \**kwargs :
         All other keyword arguments are passed to
         :py:class:`BaseModel <pycbc.inference.models.base.BaseModel>`.
+
     """
-    name = 'hierarchical'
+
+    name = "hierarchical"
 
     def __init__(self, variable_params, submodels, **kwargs):
         # sub models is assumed to be a dict of model labels -> model instances
@@ -92,11 +98,11 @@ class HierarchicalModel(BaseModel):
         # add any parameters created by waveform transforms
         if self.waveform_transforms is not None:
             derived_params = set()
-            derived_params.update(*[t.outputs
-                                    for t in self.waveform_transforms])
+            derived_params.update(*[t.outputs for t in self.waveform_transforms])
             # convert to hierarchical params
-            derived_params = map_params(hpiter(derived_params,
-                                               list(self.submodels.keys())))
+            derived_params = map_params(
+                hpiter(derived_params, list(self.submodels.keys()))
+            )
             for lbl, pset in derived_params.items():
                 self.param_map[lbl].update(pset)
         # make sure the static parameters of all submodels are set correctly
@@ -107,11 +113,18 @@ class HierarchicalModel(BaseModel):
         self.extra_stats_map = {}
         self.__extra_stats = []
         for lbl, model in self.submodels.items():
-            model.static_params = {p.subname: self.static_params[p.fullname]
-                                   for p in self.static_param_map[lbl]}
-            self.extra_stats_map.update(map_params([
-                HierarchicalParam.from_subname(lbl, p)
-                for p in model._extra_stats+['loglikelihood']]))
+            model.static_params = {
+                p.subname: self.static_params[p.fullname]
+                for p in self.static_param_map[lbl]
+            }
+            self.extra_stats_map.update(
+                map_params(
+                    [
+                        HierarchicalParam.from_subname(lbl, p)
+                        for p in model._extra_stats + ["loglikelihood"]
+                    ]
+                )
+            )
             self.__extra_stats += self.extra_stats_map[lbl]
             # also make sure the model's sampling transforms and waveform
             # transforms are not set, as these are handled by the hierarchical
@@ -120,19 +133,24 @@ class HierarchicalModel(BaseModel):
             # transform with prefix on the submodel's level
             if self.name != "joint_primary_marginalized":
                 if model.sampling_transforms is not None:
-                    raise ValueError("Model {} has sampling transforms "
-                                     "set; in a hierarchical analysis, "
-                                     "these are handled by the "
-                                     "hierarchical model".format(lbl))
+                    raise ValueError(
+                        f"Model {lbl} has sampling transforms "
+                        "set; in a hierarchical analysis, "
+                        "these are handled by the "
+                        "hierarchical model"
+                    )
                 if model.waveform_transforms is not None:
-                    raise ValueError("Model {} has waveform transforms "
-                                     "set; in a hierarchical analysis, "
-                                     "these are handled by the "
-                                     "hierarchical model".format(lbl))
+                    raise ValueError(
+                        f"Model {lbl} has waveform transforms "
+                        "set; in a hierarchical analysis, "
+                        "these are handled by the "
+                        "hierarchical model"
+                    )
 
     @property
     def hvariable_params(self):
-        """The variable params as a tuple of :py:class:`HierarchicalParam`
+        """
+        The variable params as a tuple of :py:class:`HierarchicalParam`
         instances.
         """
         return self._variable_params
@@ -148,12 +166,14 @@ class HierarchicalModel(BaseModel):
         # as HierarchicalParam instances
         if isinstance(variable_params, str):
             variable_params = [variable_params]
-        self._variable_params = tuple(HierarchicalParam(p, self.submodels)
-                                      for p in variable_params)
+        self._variable_params = tuple(
+            HierarchicalParam(p, self.submodels) for p in variable_params
+        )
 
     @property
     def hstatic_params(self):
-        """The static params with :py:class:`HierarchicalParam` instances used
+        """
+        The static params with :py:class:`HierarchicalParam` instances used
         as dictionary keys.
         """
         return self._static_params
@@ -167,8 +187,10 @@ class HierarchicalModel(BaseModel):
     def static_params(self, static_params):
         if static_params is None:
             static_params = {}
-        self._static_params = {HierarchicalParam(p, self.submodels): val
-                               for p, val in static_params.items()}
+        self._static_params = {
+            HierarchicalParam(p, self.submodels): val
+            for p, val in static_params.items()
+        }
 
     @property
     def _extra_stats(self):
@@ -181,13 +203,17 @@ class HierarchicalModel(BaseModel):
 
     def _loglikelihood(self):
         # takes the sum of the constitutent models' loglikelihoods
-        logl = 0.
+        logl = 0.0
         for lbl, model in self.submodels.items():
             # update the model with the current params. This is done here
             # instead of in `update` because waveform transforms are not
             # applied until the loglikelihood function is called
-            model.update(**{p.subname: self.current_params[p.fullname]
-                            for p in self.param_map[lbl]})
+            model.update(
+                **{
+                    p.subname: self.current_params[p.fullname]
+                    for p in self.param_map[lbl]
+                }
+            )
             # now get the loglikelihood from the model
             sublogl = model.loglikelihood
             # store the extra stats
@@ -199,7 +225,8 @@ class HierarchicalModel(BaseModel):
         return logl
 
     def write_metadata(self, fp, group=None):
-        """Adds data to the metadata that's written.
+        """
+        Adds data to the metadata that's written.
 
         Parameters
         ----------
@@ -215,24 +242,25 @@ class HierarchicalModel(BaseModel):
         super().write_metadata(fp, group=group)
         # write information about each submodel into a different group for
         # each one
-        if group is None or group == '/':
-            prefix = ''
+        if group is None or group == "/":
+            prefix = ""
         else:
-            prefix = group+'/'
+            prefix = group + "/"
         for lbl, model in self.submodels.items():
-            model.write_metadata(fp, group=prefix+lbl)
+            model.write_metadata(fp, group=prefix + lbl)
 
         # if all submodels support it, write a combined lognl parameter
         try:
             sampattrs = fp.getattrs(group=fp.samples_group)
             lognl = [self.submodels[k].lognl for k in self.submodels]
-            sampattrs['{}lognl'.format(prefix)] = sum(lognl)
+            sampattrs[f"{prefix}lognl"] = sum(lognl)
         except (AttributeError, ValueError):
             pass
 
     @classmethod
     def from_config(cls, cp, **kwargs):
-        r"""Initializes an instance of this class from the given config file.
+        r"""
+        Initializes an instance of this class from the given config file.
 
         Sub-models are initialized before initializing this class. The model
         section must have a ``submodels`` argument that lists the names of all
@@ -289,25 +317,25 @@ class HierarchicalModel(BaseModel):
             Preferencing a keyword argument by ``{submodel}__`` will send
             the parameter as a keyword argument to the specified submodel's
             ``from_config`` method.
+
         """
         # we need the read from config function from the init; to prevent
         # circular imports, we import it here
         from pycbc.inference.models import read_from_config
+
         # get the submodels
-        submodel_lbls = shlex.split(cp.get('model', 'submodels'))
+        submodel_lbls = shlex.split(cp.get("model", "submodels"))
         # sort parameters by model
-        vparam_map = map_params(hpiter(cp.options('variable_params'),
-                                       submodel_lbls))
-        sparam_map = map_params(hpiter(cp.options('static_params'),
-                                       submodel_lbls))
+        vparam_map = map_params(hpiter(cp.options("variable_params"), submodel_lbls))
+        sparam_map = map_params(hpiter(cp.options("static_params"), submodel_lbls))
 
         # we'll need any waveform transforms for the initializing sub-models,
         # as the underlying models will receive the output of those transforms
-        if any(cp.get_subsections('waveform_transforms')):
+        if any(cp.get_subsections("waveform_transforms")):
             waveform_transforms = transforms.read_transforms_from_config(
-                cp, 'waveform_transforms')
-            wfoutputs = set.union(*[t.outputs
-                                    for t in waveform_transforms])
+                cp, "waveform_transforms"
+            )
+            wfoutputs = set.union(*[t.outputs for t in waveform_transforms])
             wfparam_map = map_params(hpiter(wfoutputs, submodel_lbls))
         else:
             wfparam_map = {lbl: [] for lbl in submodel_lbls}
@@ -322,56 +350,61 @@ class HierarchicalModel(BaseModel):
             # include the [model] section for that model)
             copy_sections = [
                 HierarchicalParam(sec, submodel_lbls)
-                for sec in cp.sections() if lbl in
-                sec.split('-')[0].split(HierarchicalParam.delim, 1)[0]]
+                for sec in cp.sections()
+                if lbl in sec.split("-")[0].split(HierarchicalParam.delim, 1)[0]
+            ]
             for sec in copy_sections:
                 # check that the user isn't trying to set variable or static
                 # params for the model (we won't worry about waveform or
                 # sampling transforms here, since that is checked for in the
                 # __init__)
-                if sec.subname in ['variable_params', 'static_params']:
-                    raise ValueError("Section {} found in the config file; "
-                                     "[variable_params] and [static_params] "
-                                     "sections should not include model "
-                                     "labels. To specify parameters unique to "
-                                     "one or more sub-models, prepend the "
-                                     "individual parameter names with the "
-                                     "model label. See HierarchicalParam for "
-                                     "details.".format(sec))
+                if sec.subname in ["variable_params", "static_params"]:
+                    raise ValueError(
+                        f"Section {sec} found in the config file; "
+                        "[variable_params] and [static_params] "
+                        "sections should not include model "
+                        "labels. To specify parameters unique to "
+                        "one or more sub-models, prepend the "
+                        "individual parameter names with the "
+                        "model label. See HierarchicalParam for "
+                        "details."
+                    )
                 subcp.add_section(sec.subname)
                 for opt, val in cp.items(sec):
                     subcp.set(sec.subname, opt, val)
             # set the static params
-            subcp.add_section('static_params')
+            subcp.add_section("static_params")
             for param in sparam_map[lbl]:
-                subcp.set('static_params', param.subname,
-                          cp.get('static_params', param.fullname))
+                subcp.set(
+                    "static_params",
+                    param.subname,
+                    cp.get("static_params", param.fullname),
+                )
             # set the variable params: for now we'll just set all the
             # variable params as static params
             # so that the model doesn't raise an error looking for
             # prior sections. We'll then manually set the variable
             # params after the model is initialized
 
-            subcp.add_section('variable_params')
+            subcp.add_section("variable_params")
             for param in vparam_map[lbl]:
-                subcp.set('static_params', param.subname, 'REPLACE')
+                subcp.set("static_params", param.subname, "REPLACE")
             # add the outputs from the waveform transforms
             for param in wfparam_map[lbl]:
-                subcp.set('static_params', param.subname, 'REPLACE')
+                subcp.set("static_params", param.subname, "REPLACE")
 
             # extra any kwargs to pass
             subkwargs = {}
             for p, kwarg in list(kwargs.items()):
-                if p.startswith(lbl+'__'):
+                if p.startswith(lbl + "__"):
                     val = kwargs.pop(p)
-                    subkwargs[p.replace(lbl+'__', '', 1)] = val
+                    subkwargs[p.replace(lbl + "__", "", 1)] = val
             # initialize
             submodel = read_from_config(subcp, **subkwargs)
             # move the static params back to variable
             for p in vparam_map[lbl]:
                 submodel.static_params.pop(p.subname)
-            submodel.variable_params = tuple(p.subname
-                                             for p in vparam_map[lbl])
+            submodel.variable_params = tuple(p.subname for p in vparam_map[lbl])
             # remove the waveform transform parameters
             for p in wfparam_map[lbl]:
                 submodel.static_params.pop(p.subname)
@@ -384,7 +417,8 @@ class HierarchicalModel(BaseModel):
 
 
 class HierarchicalParam(str):
-    """Sub-class of str for hierarchical parameter names.
+    """
+    Sub-class of str for hierarchical parameter names.
 
     This adds attributes that keep track of the model label(s) the parameter
     is associated with, along with the name that is passed to the models.
@@ -424,9 +458,11 @@ class HierarchicalParam(str):
     subname : str
         The name of the parameter without the model labels prepended to it.
         For example, ``e1_e2__foo`` yields ``foo``.
+
     """
-    delim = '__'
-    model_delim = '_'
+
+    delim = "__"
+    model_delim = "_"
 
     def __new__(cls, fullname, possible_models):
         fullname = str(fullname)
@@ -439,13 +475,13 @@ class HierarchicalParam(str):
 
     @classmethod
     def from_subname(cls, model_label, subname):
-        """Creates a HierarchicalParam from the given subname and model label.
-        """
+        """Creates a HierarchicalParam from the given subname and model label."""
         return cls(cls.delim.join([model_label, subname]), set([model_label]))
 
     @classmethod
     def parse(cls, fullname, possible_models):
-        """Parses the full parameter name into the models the parameter is
+        """
+        Parses the full parameter name into the models the parameter is
         associated with and the parameter name that is passed to the models.
 
         Parameters
@@ -463,6 +499,7 @@ class HierarchicalParam(str):
         subp : str
             Parameter name that is passed to the models. This is the parameter
             name with the model label(s) stripped from it.
+
         """
         # make sure possible models is a set
         possible_models = set(possible_models)
@@ -478,14 +515,17 @@ class HierarchicalParam(str):
             # make sure the given labels are in the list of possible models
             unknown = models - possible_models
             if any(unknown):
-                raise ValueError('unrecognized model label(s) {} present in '
-                                 'parameter {}'.format(', '.join(unknown),
-                                                       fullname))
+                raise ValueError(
+                    "unrecognized model label(s) {} present in parameter {}".format(
+                        ", ".join(unknown), fullname
+                    )
+                )
         return models, subp
 
 
 def hpiter(params, possible_models):
-    """Turns a list of parameter strings into a list of HierarchicalParams.
+    """
+    Turns a list of parameter strings into a list of HierarchicalParams.
 
     Parameters
     ----------
@@ -498,12 +538,14 @@ def hpiter(params, possible_models):
     -------
     iterator :
         Iterator of :py:class:`HierarchicalParam` instances.
+
     """
     return map(lambda x: HierarchicalParam(x, possible_models), params)
 
 
 def map_params(params):
-    """Creates a map of models -> parameters.
+    """
+    Creates a map of models -> parameters.
 
     Parameters
     ----------
@@ -514,6 +556,7 @@ def map_params(params):
     -------
     dict :
         Dictionary of model labels -> associated parameters.
+
     """
     param_map = {}
     for p in params:
@@ -526,7 +569,8 @@ def map_params(params):
 
 
 class MultiSignalModel(HierarchicalModel):
-    """ Model for multiple signals which share data
+    """
+    Model for multiple signals which share data
 
     Sub models are treated as if the signals overlap in data. This requires
     constituent models to implement a specific method to handle this case.
@@ -539,7 +583,8 @@ class MultiSignalModel(HierarchicalModel):
     configuration files is the same. The primary model is used to determine
     the noise terms <d | d>, which by default will be the first model used.
     """
-    name = 'multi_signal'
+
+    name = "multi_signal"
 
     def __init__(self, variable_params, submodels, **kwargs):
         super().__init__(variable_params, submodels, **kwargs)
@@ -551,27 +596,30 @@ class MultiSignalModel(HierarchicalModel):
             model = self.submodels[lbl]
 
             ctypes.add(type(model))
-            if hasattr(model, 'multi_signal_support'):
+            if hasattr(model, "multi_signal_support"):
                 support[lbl] = set(model.multi_signal_support)
 
         # pick the primary model if it supports the set of constituent models
         for lbl in support:
             if ctypes <= support[lbl]:
                 self.primary_model = lbl
-                logging.info('MultiSignalModel: PrimaryModel == %s', lbl)
+                logging.info("MultiSignalModel: PrimaryModel == %s", lbl)
                 break
         else:
             # Oh, no, we don't support this combo!
-            raise RuntimeError("It looks like the combination of models, {},"
-                               "for the MultiSignal model isn't supported by"
-                               "any of the constituent models.".format(ctypes))
+            raise RuntimeError(
+                f"It looks like the combination of models, {ctypes},"
+                "for the MultiSignal model isn't supported by"
+                "any of the constituent models."
+            )
 
         self.other_models = self.submodels.copy()
         self.other_models.pop(self.primary_model)
         self.other_models = list(self.other_models.values())
 
     def write_metadata(self, fp, group=None):
-        """Adds metadata to the output files
+        """
+        Adds metadata to the output files
 
         Parameters
         ----------
@@ -581,27 +629,32 @@ class MultiSignalModel(HierarchicalModel):
             If provided, the metadata will be written to the attrs specified
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
+
         """
         super().write_metadata(fp, group=group)
         sampattrs = fp.getattrs(group=fp.samples_group)
         # if a group is specified, prepend the lognl names with it
-        if group is None or group == '/':
-            prefix = ''
+        if group is None or group == "/":
+            prefix = ""
         else:
-            prefix = group.replace('/', '__')
-            if not prefix.endswith('__'):
-                prefix += '__'
+            prefix = group.replace("/", "__")
+            if not prefix.endswith("__"):
+                prefix += "__"
         try:
             model = self.submodels[self.primary_model]
-            sampattrs['{}lognl'.format(prefix)] = model.lognl
+            sampattrs[f"{prefix}lognl"] = model.lognl
         except AttributeError:
             pass
 
     def _loglikelihood(self):
         for lbl, model in self.submodels.items():
             # Update the parameters of each
-            model.update(**{p.subname: self.current_params[p.fullname]
-                            for p in self.param_map[lbl]})
+            model.update(
+                **{
+                    p.subname: self.current_params[p.fullname]
+                    for p in self.param_map[lbl]
+                }
+            )
 
         # Calculate the combined loglikelihood
         p = self.primary_model
@@ -616,7 +669,8 @@ class MultiSignalModel(HierarchicalModel):
 
 
 class JointPrimaryMarginalizedModel(HierarchicalModel):
-    """This likelihood model can be used for cases when one of the submodels
+    """
+    This likelihood model can be used for cases when one of the submodels
     can be marginalized to accelerate the total likelihood. This likelihood
     model also allows for further acceleration of other models during
     marginalization, if some extrinsic parameters can be tightly constrained
@@ -625,25 +679,29 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
     multiband observation, SOBHB signals' (tc, ra, dec) can be tightly
     constrained by 3G network, so this model is also useful for this case.
     """
-    name = 'joint_primary_marginalized'
+
+    name = "joint_primary_marginalized"
 
     def __init__(self, variable_params, submodels, **kwargs):
         super().__init__(variable_params, submodels, **kwargs)
 
         # assume the ground-based submodel as the primary model
-        self.primary_model = self.submodels[kwargs['primary_lbl'][0]]
-        self.primary_lbl = kwargs['primary_lbl'][0]
+        self.primary_model = self.submodels[kwargs["primary_lbl"][0]]
+        self.primary_lbl = kwargs["primary_lbl"][0]
         self.other_models = self.submodels.copy()
-        self.other_models.pop(kwargs['primary_lbl'][0])
+        self.other_models.pop(kwargs["primary_lbl"][0])
         self.other_models = list(self.other_models.values())
 
         # determine whether to accelerate total_loglr
         from .tools import str_to_bool
-        self.static_margin_params_in_other_models = \
-            str_to_bool(kwargs['static_margin_params_in_other_models'][0])
+
+        self.static_margin_params_in_other_models = str_to_bool(
+            kwargs["static_margin_params_in_other_models"][0]
+        )
 
     def write_metadata(self, fp, group=None):
-        """Adds metadata to the output files
+        """
+        Adds metadata to the output files
 
         Parameters
         ----------
@@ -653,25 +711,26 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             If provided, the metadata will be written to the attrs specified
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
+
         """
         super().write_metadata(fp, group=group)
         sampattrs = fp.getattrs(group=fp.samples_group)
         # if a group is specified, prepend the lognl names with it
-        if group is None or group == '/':
-            prefix = ''
+        if group is None or group == "/":
+            prefix = ""
         else:
-            prefix = group.replace('/', '__')
-            if not prefix.endswith('__'):
-                prefix += '__'
+            prefix = group.replace("/", "__")
+            if not prefix.endswith("__"):
+                prefix += "__"
         try:
             for lbl, model in self.submodels.items():
-                sampattrs['{}lognl'.format(prefix + '%s__' % lbl)
-                          ] = model.lognl
+                sampattrs["{}lognl".format(prefix + "%s__" % lbl)] = model.lognl
         except AttributeError:
             pass
 
     def total_loglr(self):
-        r"""Computes the total log likelihood ratio,
+        r"""
+        Computes the total log likelihood ratio,
 
         .. math::
 
@@ -685,6 +744,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         -------
         float
             The value of the log likelihood ratio.
+
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
 
@@ -692,8 +752,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         sh_primary, hh_primary = self.primary_model.loglr
         self.primary_model.return_sh_hh = False
         # set logr, otherwise it will store (sh, hh)
-        setattr(self.primary_model._current_stats, 'loglr',
-                self.primary_model.marginalize_loglr(sh_primary, hh_primary))
+        self.primary_model._current_stats.loglr = self.primary_model.marginalize_loglr(sh_primary, hh_primary)
         if isinstance(sh_primary, numpy.ndarray):
             nums = len(sh_primary)
         else:
@@ -709,13 +768,12 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # inclination has a very strong degeneracy, change of inclination
             # will change best match distance, so change the amplitude of
             # waveform. Using SNR will cancel out the effect of amplitude.err
-            i_max_extrinsic = numpy.argmax(
-                numpy.abs(sh_primary) / hh_primary**0.5)
+            i_max_extrinsic = numpy.argmax(numpy.abs(sh_primary) / hh_primary**0.5)
             for p in self.primary_model.marginalized_params_name:
-                if isinstance(self.primary_model.current_params[p],
-                              numpy.ndarray):
-                    margin_params[p] = \
-                        self.primary_model.current_params[p][i_max_extrinsic]
+                if isinstance(self.primary_model.current_params[p], numpy.ndarray):
+                    margin_params[p] = self.primary_model.current_params[p][
+                        i_max_extrinsic
+                    ]
                 else:
                     margin_params[p] = self.primary_model.current_params[p]
         else:
@@ -737,8 +795,11 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             if not self.static_margin_params_in_other_models:
                 for i in range(nums):
                     current_params_other.update(
-                        {key: value[i] if isinstance(value, numpy.ndarray)
-                         else value for key, value in margin_params.items()})
+                        {
+                            key: value[i] if isinstance(value, numpy.ndarray) else value
+                            for key, value in margin_params.items()
+                        }
+                    )
                     other_model.update(**current_params_other)
                     other_model.return_sh_hh = True
                     sh_other, hh_other = other_model.loglr
@@ -746,20 +807,21 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     hh_others[i] += hh_other
                     other_model.return_sh_hh = False
                     # set logr, otherwise it will store (sh, hh)
-                    setattr(other_model._current_stats, 'loglr',
-                            other_model.marginalize_loglr(sh_other, hh_other))
+                    other_model._current_stats.loglr = other_model.marginalize_loglr(sh_other, hh_other)
             else:
                 # use one margin point set to approximate all the others
                 current_params_other.update(
-                    {key: value[0] if isinstance(value, numpy.ndarray)
-                     else value for key, value in margin_params.items()})
+                    {
+                        key: value[0] if isinstance(value, numpy.ndarray) else value
+                        for key, value in margin_params.items()
+                    }
+                )
                 other_model.update(**current_params_other)
                 other_model.return_sh_hh = True
                 sh_other, hh_other = other_model.loglr
                 other_model.return_sh_hh = False
                 # set logr, otherwise it will store (sh, hh)
-                setattr(other_model._current_stats, 'loglr',
-                        other_model.marginalize_loglr(sh_other, hh_other))
+                other_model._current_stats.loglr = other_model.marginalize_loglr(sh_other, hh_other)
                 sh_others += sh_other
                 hh_others += hh_other
 
@@ -784,13 +846,17 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         return total_others_lognl
 
     def update_all_models(self, **params):
-        """This update method is also useful for loglr checking,
+        """
+        This update method is also useful for loglr checking,
         the original update method in base module can't update
-        parameters in submodels correctly in loglr checking."""
+        parameters in submodels correctly in loglr checking.
+        """
         for lbl, model in self.submodels.items():
             if self.param_map != {}:
-                p = {params.subname: self.current_params[params.fullname]
-                     for params in self.param_map[lbl]}
+                p = {
+                    params.subname: self.current_params[params.fullname]
+                    for params in self.param_map[lbl]
+                }
             else:
                 # dummy sampler doesn't have real variables,
                 # which means self.param_map is {}
@@ -802,8 +868,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         self.update_all_models()
 
         # calculate the combined loglikelihood
-        logl = self.total_loglr() + self.primary_model.lognl + \
-            self.others_lognl()
+        logl = self.total_loglr() + self.primary_model.lognl + self.others_lognl()
 
         # store any extra stats from the submodels
         for lbl, model in self.submodels.items():
@@ -814,7 +879,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
     @classmethod
     def from_config(cls, cp, **kwargs):
-        r"""Initializes an instance of this class from the given config file.
+        r"""
+        Initializes an instance of this class from the given config file.
         For more details, see `from_config` in `HierarchicalModel`.
 
         Parameters
@@ -824,23 +890,24 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         \**kwargs :
             All additional keyword arguments are passed to the class. Any
             provided keyword will override what is in the config file.
+
         """
         # we need the read from config function from the init; to prevent
         # circular imports, we import it here
         from pycbc.inference.models import read_from_config
+
         # get the submodels
-        kwargs['primary_lbl'] = shlex.split(cp.get('model', 'primary_model'))
-        kwargs['others_lbls'] = shlex.split(cp.get('model', 'other_models'))
-        submodel_lbls = kwargs['primary_lbl'] + kwargs['others_lbls']
+        kwargs["primary_lbl"] = shlex.split(cp.get("model", "primary_model"))
+        kwargs["others_lbls"] = shlex.split(cp.get("model", "other_models"))
+        submodel_lbls = kwargs["primary_lbl"] + kwargs["others_lbls"]
         # sort parameters by model
-        vparam_map = map_params(hpiter(cp.options('variable_params'),
-                                       submodel_lbls))
-        sparam_map = map_params(hpiter(cp.options('static_params'),
-                                       submodel_lbls))
+        vparam_map = map_params(hpiter(cp.options("variable_params"), submodel_lbls))
+        sparam_map = map_params(hpiter(cp.options("static_params"), submodel_lbls))
 
         # get the acceleration label
-        kwargs['static_margin_params_in_other_models'] = shlex.split(
-            cp.get('model', 'static_margin_params_in_other_models'))
+        kwargs["static_margin_params_in_other_models"] = shlex.split(
+            cp.get("model", "static_margin_params_in_other_models")
+        )
 
         # we'll need any waveform transforms for the initializing sub-models,
         # as the underlying models will receive the output of those transforms
@@ -848,11 +915,11 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # if `waveform_transforms` section doesn't have the prefix of
         # sub-model's name, then add this `waveform_transforms` section
         # into top level, if not, add it into sub-models' config
-        if any(cp.get_subsections('waveform_transforms')):
+        if any(cp.get_subsections("waveform_transforms")):
             waveform_transforms = transforms.read_transforms_from_config(
-                cp, 'waveform_transforms')
-            wfoutputs = set.union(*[t.outputs
-                                    for t in waveform_transforms])
+                cp, "waveform_transforms"
+            )
+            wfoutputs = set.union(*[t.outputs for t in waveform_transforms])
             wfparam_map = map_params(hpiter(wfoutputs, submodel_lbls))
         else:
             wfparam_map = {lbl: [] for lbl in submodel_lbls}
@@ -867,30 +934,36 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # include the [model] section for that model)
             copy_sections = [
                 HierarchicalParam(sec, submodel_lbls)
-                for sec in cp.sections() if lbl in
-                sec.split('-')[0].split(HierarchicalParam.delim, 1)[0]]
+                for sec in cp.sections()
+                if lbl in sec.split("-")[0].split(HierarchicalParam.delim, 1)[0]
+            ]
             for sec in copy_sections:
                 # check that the user isn't trying to set variable or static
                 # params for the model (we won't worry about waveform or
                 # sampling transforms here, since that is checked for in the
                 # __init__)
-                if sec.subname in ['variable_params', 'static_params']:
-                    raise ValueError("Section {} found in the config file; "
-                                     "[variable_params] and [static_params] "
-                                     "sections should not include model "
-                                     "labels. To specify parameters unique to "
-                                     "one or more sub-models, prepend the "
-                                     "individual parameter names with the "
-                                     "model label. See HierarchicalParam for "
-                                     "details.".format(sec))
+                if sec.subname in ["variable_params", "static_params"]:
+                    raise ValueError(
+                        f"Section {sec} found in the config file; "
+                        "[variable_params] and [static_params] "
+                        "sections should not include model "
+                        "labels. To specify parameters unique to "
+                        "one or more sub-models, prepend the "
+                        "individual parameter names with the "
+                        "model label. See HierarchicalParam for "
+                        "details."
+                    )
                 subcp.add_section(sec.subname)
                 for opt, val in cp.items(sec):
                     subcp.set(sec.subname, opt, val)
             # set the static params
-            subcp.add_section('static_params')
+            subcp.add_section("static_params")
             for param in sparam_map[lbl]:
-                subcp.set('static_params', param.subname,
-                          cp.get('static_params', param.fullname))
+                subcp.set(
+                    "static_params",
+                    param.subname,
+                    cp.get("static_params", param.fullname),
+                )
 
             # set the variable params: different from the standard
             # hierarchical model, in this JointPrimaryMarginalizedModel model,
@@ -899,45 +972,47 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # the primary model needs to do marginalization, so we must set
             # variable_params and prior section before initializing it.
 
-            subcp.add_section('variable_params')
+            subcp.add_section("variable_params")
             for param in vparam_map[lbl]:
-                if lbl in kwargs['primary_lbl']:
+                if lbl in kwargs["primary_lbl"]:
                     # set variable_params for the primary model
-                    subcp.set('variable_params', param.subname,
-                              cp.get('variable_params', param.fullname))
+                    subcp.set(
+                        "variable_params",
+                        param.subname,
+                        cp.get("variable_params", param.fullname),
+                    )
                 else:
                     # all variable_params in other models will come
                     # from the primary model during sampling
-                    subcp.set('static_params', param.subname, 'REPLACE')
+                    subcp.set("static_params", param.subname, "REPLACE")
 
             for section in cp.sections():
                 # the primary model needs prior of marginlized parameters
-                if 'prior-' in section and lbl in kwargs['primary_lbl']:
-                    prior_section = '%s' % section
+                if "prior-" in section and lbl in kwargs["primary_lbl"]:
+                    prior_section = "%s" % section
                     subcp[prior_section] = cp[prior_section]
 
             # similar to the standard hierarchical model,
             # add the outputs from the waveform transforms if sub-model
             # doesn't need marginalization
-            if lbl not in kwargs['primary_lbl']:
+            if lbl not in kwargs["primary_lbl"]:
                 for param in wfparam_map[lbl]:
-                    subcp.set('static_params', param.subname, 'REPLACE')
+                    subcp.set("static_params", param.subname, "REPLACE")
 
             # save the vitual config file to disk for later check
-            with open('%s.ini' % lbl, 'w', encoding='utf-8') as file:
+            with open("%s.ini" % lbl, "w", encoding="utf-8") as file:
                 subcp.write(file)
 
             # initialize
             submodel = read_from_config(subcp)
 
-            if lbl not in kwargs['primary_lbl']:
+            if lbl not in kwargs["primary_lbl"]:
                 # similar to the standard hierarchical model,
                 # move the static params back to variable if sub-model
                 # doesn't need marginalization
                 for p in vparam_map[lbl]:
                     submodel.static_params.pop(p.subname)
-                submodel.variable_params = tuple(p.subname
-                                                 for p in vparam_map[lbl])
+                submodel.variable_params = tuple(p.subname for p in vparam_map[lbl])
                 # similar to the standard hierarchical model,
                 # remove the waveform transform parameters if sub-model
                 # doesn't need marginalization
@@ -950,33 +1025,34 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # `variable_params` and `prior` sections
         # here we ignore `coa_phase`, because if it's been marginalized,
         # it will not be listed in `variable_params` and `prior` sections
-        primary_model = submodels[kwargs['primary_lbl'][0]]
+        primary_model = submodels[kwargs["primary_lbl"][0]]
         marginalized_params = primary_model.marginalized_params_name.copy()
 
         for p in primary_model.static_params.keys():
-            p_full = '%s__%s' % (kwargs['primary_lbl'][0], p)
-            if p_full not in cp['static_params']:
-                cp['static_params'][p_full] = "%s" % \
-                    primary_model.static_params[p]
+            p_full = "%s__%s" % (kwargs["primary_lbl"][0], p)
+            if p_full not in cp["static_params"]:
+                cp["static_params"][p_full] = "%s" % primary_model.static_params[p]
 
         for section in cp.sections():
-            if 'prior-' in section:
-                p = section.split('-')[-1]
+            if "prior-" in section:
+                p = section.split("-")[-1]
                 if p in marginalized_params:
-                    cp['variable_params'].pop(p)
+                    cp["variable_params"].pop(p)
                     cp.pop(section)
 
         # save the vitual config file to disk for later check
-        with open('internal_top.ini', 'w', encoding='utf-8') as file:
+        with open("internal_top.ini", "w", encoding="utf-8") as file:
             cp.write(file)
 
         # now load the model
         logging.info("Loading joint_primary_marginalized model")
         return super(HierarchicalModel, cls).from_config(
-                cp, submodels=submodels, **kwargs)
+            cp, submodels=submodels, **kwargs
+        )
 
     def reconstruct(self, rec=None, seed=None):
-        """ Reconstruct marginalized parameters by using the primary
+        """
+        Reconstruct marginalized parameters by using the primary
         model's reconstruct method, total_loglr, and others_lognl.
         """
         if seed:
@@ -990,13 +1066,12 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # the top-level model
             if self.waveform_transforms is not None:
                 self._current_params = transforms.apply_transforms(
-                    self._current_params, self.waveform_transforms,
-                    inverse=False)
+                    self._current_params, self.waveform_transforms, inverse=False
+                )
             self.update_all_models(**rec)
             return self.total_loglr()
 
-        rec = self.primary_model.reconstruct(
-                rec=rec, seed=seed, set_loglr=get_loglr)
+        rec = self.primary_model.reconstruct(rec=rec, seed=seed, set_loglr=get_loglr)
         # the primary model's reconstruct doesn't know lognl in other models
-        rec['loglikelihood'] += self.others_lognl()
+        rec["loglikelihood"] += self.others_lognl()
         return rec

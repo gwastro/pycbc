@@ -20,28 +20,30 @@
 Take a coinc xml file containing multiple events and upload to gracedb.
 """
 
-import os
 import argparse
 import logging
-import numpy as np
-import matplotlib
-matplotlib.use('agg')
+import os
 
-from ligo.gracedb.rest import GraceDb
+import matplotlib
+import numpy as np
+
+matplotlib.use("agg")
+
 import lal
 import lal.series
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_segments import segment, segmentlist
+from ligo.gracedb.rest import GraceDb
 
 import pycbc
-from pycbc.io.gracedb import gracedb_tag_with_version
-from pycbc.io.ligolw import LIGOLWContentHandler
-from pycbc.io.hdf import HFile
-from pycbc.psd import interpolate
-from pycbc.types import FrequencySeries
-from pycbc.results import generate_asd_plot
 from pycbc import conversions as conv
+from pycbc.io.gracedb import gracedb_tag_with_version
+from pycbc.io.hdf import HFile
+from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.psd import interpolate
+from pycbc.results import generate_asd_plot
+from pycbc.types import FrequencySeries
 
 
 def check_gracedb_for_event(gdb_handle, query, far):
@@ -50,63 +52,109 @@ def check_gracedb_for_event(gdb_handle, query, far):
     which matches the FAR given
     """
     gdb_events_match_query = list(gdb_handle.events(query=query))
-    ifar = conv.sec_to_year(1. / far)
+    ifar = conv.sec_to_year(1.0 / far)
     for gdb_event in gdb_events_match_query:
         # Test each gracedb event to see if the FAR matches this event
-        if np.abs(gdb_event['far'] - far) < 1e-16:
+        if np.abs(gdb_event["far"] - far) < 1e-16:
             # If an event has been found which matches the FAR
-            logging.info('Event already exists in GraceDb server with '
-                         'time %.3f and IFAR %.3e: %s',
-                         gdb_event['gpstime'], ifar,
-                         gdb_event['graceid'])
+            logging.info(
+                "Event already exists in GraceDb server with "
+                "time %.3f and IFAR %.3e: %s",
+                gdb_event["gpstime"],
+                ifar,
+                gdb_event["graceid"],
+            )
             return True
 
     # If no event has been found, log this, and return False
-    logging.info('No event found in GraceDb with IFAR %.3e when using '
-                 'query: "%s"', ifar, query)
+    logging.info(
+        'No event found in GraceDb with IFAR %.3e when using query: "%s"', ifar, query
+    )
     return False
 
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--psd-files", nargs='+', required=True,
-                    help='HDF file(s) containing the PSDs to upload')
-parser.add_argument('--input-file', required=True, type=str,
-                    help='Input LIGOLW XML file of coincidences.')
-parser.add_argument('--log-message', type=str, metavar='MESSAGE',
-                    help='Add a log entry to each upload with the given message')
-parser.add_argument('--testing', action="store_true", default=False,
-                    help="Upload event to the TEST group of gracedb.")
-parser.add_argument('--min-ifar', type=float, metavar='YEARS',
-                    help='Only upload events more significant than given IFAR')
-parser.add_argument('--production-server', action="store_true", default=False,
-                    help="Upload event to production graceDB. If not given "
-                         "events will be uploaded to playground server.")
-parser.add_argument('--force-overwrite', action='store_true', default=False,
-                    help="GraceDb instance will be checked for if an event "
-                         "with the same event time and FAR already exist. "
-                         "If so, event will not be uploaded")
-parser.add_argument('--query-string', default='pycbc',
-                    help="If not using --force-overwrite, add a string to "
-                         "gracedb query to further filter events. "
-                         "Default='pycbc'")
-parser.add_argument('--search-id-string', default='AllSky',
-                    help="Using T050017-v1 naming convention for "
-                         "output XML filename. This is a string for "
-                         "search identifier in filename, e.g. 'AllSky' "
-                         "would give H1L1V1-PYCBC_AllSky-1234567890-1.xml. "
-                         "See https://dcc.ligo.org/LIGO-T050017/public. "
-                         "Default: 'AllSky'")
-parser.add_argument('--output-directory', default=os.getcwd(),
-                    help="Output directory for locally stored XML and PSD "
-                         "files. Default: current directory")
-parser.add_argument('--no-upload', action='store_true',
-                    help="Flag used to indicate that we are not uploading to "
-                         "GraceDb.")
-parser.add_argument('--generate-plots', action='store_true',
-                    help="Flag used to indicate that we want to make "
-                         "plots. Uploaded to GraceDB if --no-upload is "
-                         "not given.")
+parser.add_argument(
+    "--psd-files",
+    nargs="+",
+    required=True,
+    help="HDF file(s) containing the PSDs to upload",
+)
+parser.add_argument(
+    "--input-file",
+    required=True,
+    type=str,
+    help="Input LIGOLW XML file of coincidences.",
+)
+parser.add_argument(
+    "--log-message",
+    type=str,
+    metavar="MESSAGE",
+    help="Add a log entry to each upload with the given message",
+)
+parser.add_argument(
+    "--testing",
+    action="store_true",
+    default=False,
+    help="Upload event to the TEST group of gracedb.",
+)
+parser.add_argument(
+    "--min-ifar",
+    type=float,
+    metavar="YEARS",
+    help="Only upload events more significant than given IFAR",
+)
+parser.add_argument(
+    "--production-server",
+    action="store_true",
+    default=False,
+    help="Upload event to production graceDB. If not given "
+    "events will be uploaded to playground server.",
+)
+parser.add_argument(
+    "--force-overwrite",
+    action="store_true",
+    default=False,
+    help="GraceDb instance will be checked for if an event "
+    "with the same event time and FAR already exist. "
+    "If so, event will not be uploaded",
+)
+parser.add_argument(
+    "--query-string",
+    default="pycbc",
+    help="If not using --force-overwrite, add a string to "
+    "gracedb query to further filter events. "
+    "Default='pycbc'",
+)
+parser.add_argument(
+    "--search-id-string",
+    default="AllSky",
+    help="Using T050017-v1 naming convention for "
+    "output XML filename. This is a string for "
+    "search identifier in filename, e.g. 'AllSky' "
+    "would give H1L1V1-PYCBC_AllSky-1234567890-1.xml. "
+    "See https://dcc.ligo.org/LIGO-T050017/public. "
+    "Default: 'AllSky'",
+)
+parser.add_argument(
+    "--output-directory",
+    default=os.getcwd(),
+    help="Output directory for locally stored XML and PSD "
+    "files. Default: current directory",
+)
+parser.add_argument(
+    "--no-upload",
+    action="store_true",
+    help="Flag used to indicate that we are not uploading to GraceDb.",
+)
+parser.add_argument(
+    "--generate-plots",
+    action="store_true",
+    help="Flag used to indicate that we want to make "
+    "plots. Uploaded to GraceDB if --no-upload is "
+    "not given.",
+)
 
 args = parser.parse_args()
 
@@ -115,23 +163,29 @@ pycbc.init_logging(args.verbose, default_level=1)
 if args.production_server:
     gracedb = GraceDb()
 else:
-    gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
+    gracedb = GraceDb(service_url="https://gracedb-playground.ligo.org/api/")
 
-xmldoc = ligolw_utils.load_filename(args.input_file,
-                             contenthandler=LIGOLWContentHandler)
+xmldoc = ligolw_utils.load_filename(
+    args.input_file, contenthandler=LIGOLWContentHandler
+)
+
 
 class psd_segment(segment):
     def __new__(cls, psd, *args):
         return segment.__new__(cls, *args)
+
     def __init__(self, psd, *args):
         self.psd = psd
 
+
 psds = {}
 for psd_file in args.psd_files:
-    (ifo, group), = HFile(psd_file, "r").items()
+    ((ifo, group),) = HFile(psd_file, "r").items()
     psd = [group["psds"][str(i)] for i in range(len(group["psds"].keys()))]
-    psds[ifo] = segmentlist(psd_segment(*segargs) for segargs in zip(
-        psd, group["start_time"], group["end_time"]))
+    psds[ifo] = segmentlist(
+        psd_segment(*segargs)
+        for segargs in zip(psd, group["start_time"], group["end_time"])
+    )
 
 coinc_table = lsctables.CoincTable.get_table(xmldoc)
 coinc_inspiral_table = lsctables.CoincInspiralTable.get_table(xmldoc)
@@ -155,14 +209,17 @@ for event in coinc_table:
         if coinc_insp.coinc_event_id == event.coinc_event_id:
             coinc_inspiral_table_curr.append(coinc_insp)
 
-    if args.min_ifar is not None and \
-            conv.sec_to_year(1. / coinc_inspiral_table_curr[0].combined_far) < args.min_ifar:  # event IFAR is smaller than the minimum
+    if (
+        args.min_ifar is not None
+        and conv.sec_to_year(1.0 / coinc_inspiral_table_curr[0].combined_far)
+        < args.min_ifar
+    ):  # event IFAR is smaller than the minimum
         continue
 
     time = coinc_inspiral_table_curr[0].end_time
     if not args.force_overwrite and not args.no_upload:
         far = coinc_inspiral_table_curr[0].combined_far
-        query = args.query_string + ' %.3f .. %.3f' % (time - 1, time + 1)
+        query = args.query_string + " %.3f .. %.3f" % (time - 1, time + 1)
         if check_gracedb_for_event(gracedb, query, far):
             continue
 
@@ -184,7 +241,9 @@ for event in coinc_table:
             except KeyError:
                 parser.error(
                     "--psd-files {0}: no PSDs found for detector {1}".format(
-                    " ".join(args.psd_files), sngl.ifo))
+                        " ".join(args.psd_files), sngl.ifo
+                    )
+                )
 
             try:
                 psd = psd[psd.find(sngl.end)].psd
@@ -192,22 +251,30 @@ for event in coinc_table:
                 parser.error(
                     "--psd-files {0}: no PSD found for detector {1} "
                     "at GPS time {2}".format(
-                    " ".join(args.psd_files), sngl.ifo, sngl.end))
+                        " ".join(args.psd_files), sngl.ifo, sngl.end
+                    )
+                )
 
             # Resample the psd so it can be uploaded to GDB
             df = 0.25
-            psd_fs = FrequencySeries(psd, delta_f=psd.attrs["delta_f"],
-                                     dtype=np.float64)
+            psd_fs = FrequencySeries(
+                psd, delta_f=psd.attrs["delta_f"], dtype=np.float64
+            )
             psd_fs = interpolate(psd_fs, df)
 
             psddict[sngl.ifo] = psd_fs
 
-            flow = psd.file.attrs['low_frequency_cutoff']
+            flow = psd.file.attrs["low_frequency_cutoff"]
             kmin = int(flow / df)
 
             fseries = lal.CreateREAL8FrequencySeries(
-                "psd", lal.LIGOTimeGPS(int(psd.attrs["epoch"])), kmin * df, df,
-                lal.StrainUnit**2 / lal.HertzUnit, len(psd_fs) - kmin)
+                "psd",
+                lal.LIGOTimeGPS(int(psd.attrs["epoch"])),
+                kmin * df,
+                df,
+                lal.StrainUnit**2 / lal.HertzUnit,
+                len(psd_fs) - kmin,
+            )
             fseries.data.data = psd_fs[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
             lal_psddict[sngl.ifo] = fseries
 
@@ -218,9 +285,9 @@ for event in coinc_table:
     lal.series.make_psd_xmldoc(lal_psddict, xmldoc.childNodes[-1])
 
     ifos = sorted([sngl.ifo for sngl in sngl_inspiral_table_curr])
-    ifos_str = ''.join(ifos)
+    ifos_str = "".join(ifos)
     id_str = args.search_id_string
-    filename_xml = "{}-PYCBC_{}-{:d}-1.xml".format(ifos_str, id_str, time)
+    filename_xml = f"{ifos_str}-PYCBC_{id_str}-{time:d}-1.xml"
     fullpath_xml = os.path.join(args.output_directory, filename_xml)
 
     ligolw_utils.write_filename(xmldoc, fullpath_xml)
@@ -228,36 +295,33 @@ for event in coinc_table:
     if args.no_upload:
         logging.info("Not uploading event")
     else:
-        group_tag = 'Test' if args.testing else 'CBC'
+        group_tag = "Test" if args.testing else "CBC"
         r = gracedb.create_event(
             group_tag,
-            'pycbc',
+            "pycbc",
             filename_xml,
             filecontents=open(fullpath_xml, "rb").read(),
             search=id_str,
-            offline=True
+            offline=True,
         ).json()
 
         logging.info("Uploaded event %s.", r["graceid"])
 
         # add info for tracking code version
-        gracedb_tag_with_version(gracedb, r['graceid'])
+        gracedb_tag_with_version(gracedb, r["graceid"])
 
         # document the absolute path to the input file
-        input_file_str = 'Candidate uploaded from ' \
-            + os.path.abspath(args.input_file)
-        gracedb.write_log(r['graceid'], input_file_str)
+        input_file_str = "Candidate uploaded from " + os.path.abspath(args.input_file)
+        gracedb.write_log(r["graceid"], input_file_str)
 
         # add the custom log message, if provided
         if args.log_message is not None:
             gracedb.write_log(
-                r['graceid'],
-                args.log_message,
-                tag_name=['analyst_comments']
+                r["graceid"], args.log_message, tag_name=["analyst_comments"]
             )
 
     if args.generate_plots:
-        asd_png_filename = f'{ifos_str}-PYCBC_{id_str}_ASD-{time:d}-1.png'
+        asd_png_filename = f"{ifos_str}-PYCBC_{id_str}_ASD-{time:d}-1.png"
         fullpath_asd = os.path.join(args.output_directory, asd_png_filename)
         generate_asd_plot(psddict, fullpath_asd)
         logging.info("Saved ASD plot %s", asd_png_filename)
@@ -267,10 +331,11 @@ for event in coinc_table:
                 "PyCBC ASD estimate from the time of event",
                 filename=fullpath_psd,
                 tag_name=["psd"],
-                displayName=['ASDs']
+                displayName=["ASDs"],
             )
-            logging.info("Uploaded file %s to event %s.", psd_png_filename,
-                         r["graceid"])
+            logging.info(
+                "Uploaded file %s to event %s.", psd_png_filename, r["graceid"]
+            )
 
     xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
@@ -280,5 +345,5 @@ for event in coinc_table:
     # through the tag name. This may not work in future if other things use
     # the LIGO_LW tag which we want to keep
     for cn in xmldoc.childNodes[-1].childNodes:
-        if cn.tagName == 'LIGO_LW':
+        if cn.tagName == "LIGO_LW":
             xmldoc.childNodes[-1].removeChild(cn)

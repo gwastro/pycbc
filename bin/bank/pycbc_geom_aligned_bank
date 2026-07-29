@@ -23,73 +23,109 @@ translation between points in the chirp parameters parameter space is done
 in a workflow.
 """
 
-import copy
 import argparse
-import numpy
+import copy
 import logging
-from scipy import spatial
 
+import numpy
+import pycbc.version
 from igwn_ligolw import ligolw
 from igwn_ligolw import utils as ligolw_utils
+from scipy import spatial
 
 import pycbc
 import pycbc.psd
 import pycbc.strain
-import pycbc.version
 import pycbc.tmpltbank
-
-from pycbc.io.ligolw import create_process_table
 from pycbc.io import HFile
+from pycbc.io.ligolw import create_process_table
 
-__author__  = "Ian Harry <ian.harry@ligo.org>"
+__author__ = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
+__date__ = pycbc.version.date
 __program__ = "pycbc_geom_aligned_bank"
 
 # Read command line options
 _desc = __doc__[1:]
-parser = argparse.ArgumentParser(description=_desc,
-           formatter_class=pycbc.tmpltbank.IndentedHelpFormatterWithNL)
+parser = argparse.ArgumentParser(
+    description=_desc, formatter_class=pycbc.tmpltbank.IndentedHelpFormatterWithNL
+)
 
 # Begin with code specific options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("-s", "--stack-distance", action="store", type=float,\
-                  default=0.2, help="Minimum metric spacing before we "+\
-                               "stack.")
-parser.add_argument("-3", "--threed-lattice", action="store_true", default=False,\
-                    help="Set this to use a 3D lattice. "+\
-                         "OPTIONAL")
-parser.add_argument("-S", "--num-split-jobs", action="store", type=int,\
-                    default=100,\
-                    help="Number of parallel jobs to split the bank into. "+\
-                         "OPTIONAL")
-parser.add_argument("-F", "--filter-points", action="store_true", default=False,
-                    help="Remove nearby points before generating the bank.")
-parser.add_argument("--random-seed", action="store", type=int,\
-                    default=None,
-                    help="""Random seed to use whenever the numpy random
+parser.add_argument(
+    "-s",
+    "--stack-distance",
+    action="store",
+    type=float,
+    default=0.2,
+    help="Minimum metric spacing before we " + "stack.",
+)
+parser.add_argument(
+    "-3",
+    "--threed-lattice",
+    action="store_true",
+    default=False,
+    help="Set this to use a 3D lattice. " + "OPTIONAL",
+)
+parser.add_argument(
+    "-S",
+    "--num-split-jobs",
+    action="store",
+    type=int,
+    default=100,
+    help="Number of parallel jobs to split the bank into. " + "OPTIONAL",
+)
+parser.add_argument(
+    "-F",
+    "--filter-points",
+    action="store_true",
+    default=False,
+    help="Remove nearby points before generating the bank.",
+)
+parser.add_argument(
+    "--random-seed",
+    action="store",
+    type=int,
+    default=None,
+    help="""Random seed to use whenever the numpy random
                             functions are called when doing the monte-carlo
                             for obtaining the principal components and when
                             translating all points back to physical space.
                             If this is used the code should give the same
-                            output if run with the same random seed.""")
-parser.add_argument("--print-chi-points", action="store", default=None,
-                    metavar="FILENAME",
-                    help="Add a node to print off an ASCII list of mass "
-                    "parameters and corresponding location in the xi space "
-                    "using pycbc_tmpltbank_to_chi_params. This will be "
-                    "written to FILENAME. If this argument is not given, no "
-                    "chi points file will be written.")
-parser.add_argument("--metadata-file", type=str, required=True,
-                    help="Location of the output file containing the metadata "
-                    "that will be added to the final XML file.")
-parser.add_argument("--storage-path-base", default=None,
-                    help="If running this code as a sub-workflow then this "
-                    "path is pretended to all storage directories.")
-parser.add_argument("--supplement-config-file", action="append",
-                    help="This can be used to add additional options to those "
-                    "that this code will supply. If there are conflicts the "
-                    "code will fail. Can be supplied multiple times.")
+                            output if run with the same random seed.""",
+)
+parser.add_argument(
+    "--print-chi-points",
+    action="store",
+    default=None,
+    metavar="FILENAME",
+    help="Add a node to print off an ASCII list of mass "
+    "parameters and corresponding location in the xi space "
+    "using pycbc_tmpltbank_to_chi_params. This will be "
+    "written to FILENAME. If this argument is not given, no "
+    "chi points file will be written.",
+)
+parser.add_argument(
+    "--metadata-file",
+    type=str,
+    required=True,
+    help="Location of the output file containing the metadata "
+    "that will be added to the final XML file.",
+)
+parser.add_argument(
+    "--storage-path-base",
+    default=None,
+    help="If running this code as a sub-workflow then this "
+    "path is pretended to all storage directories.",
+)
+parser.add_argument(
+    "--supplement-config-file",
+    action="append",
+    help="This can be used to add additional options to those "
+    "that this code will supply. If there are conflicts the "
+    "code will fail. Can be supplied multiple times.",
+)
 
 pycbc.tmpltbank.insert_base_bank_options(parser)
 
@@ -126,9 +162,9 @@ pycbc.init_logging(opts.verbose)
 opts.max_mismatch = 1 - opts.min_match
 
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
-metricParams=pycbc.tmpltbank.metricParameters.from_argparse(opts)
+metricParams = pycbc.tmpltbank.metricParameters.from_argparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
-massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
+massRangeParams = pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
@@ -137,10 +173,10 @@ ethincaParams = pycbc.tmpltbank.ethincaParameters.from_argparse(opts)
 # Ensure consistency of ethinca and bank metric parameters
 pycbc.tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
 # Ethinca calculation should currently only be done for non-spin templates
-if ethincaParams.full_ethinca and (massRangeParams.maxNSSpinMag>0.0 or
-                                massRangeParams.maxBHSpinMag>0.0):
-    parser.error("Ethinca metric calculation is currently not valid for "
-                 "nonzero spins!")
+if ethincaParams.full_ethinca and (
+    massRangeParams.maxNSSpinMag > 0.0 or massRangeParams.maxBHSpinMag > 0.0
+):
+    parser.error("Ethinca metric calculation is currently not valid for nonzero spins!")
 
 # Set random seed if needed
 if opts.random_seed is not None:
@@ -158,11 +194,16 @@ else:
 logging.info("Obtaining PSD")
 # Want the number of samples to be a binary number and Nyquist must be above
 # opts.f_upper. All this assumes that 1 / deltaF is a binary number
-nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
+nyquistFreq = 2 ** numpy.ceil(numpy.log2(opts.f_upper))
 numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
-psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
-                         low_frequency_cutoff=opts.f_low, strain=strain,
-                         dyn_range_factor=pycbc.DYN_RANGE_FAC)
+psd = pycbc.psd.from_cli(
+    opts,
+    length=numSamples,
+    delta_f=opts.delta_f,
+    low_frequency_cutoff=opts.f_low,
+    strain=strain,
+    dyn_range_factor=pycbc.DYN_RANGE_FAC,
+)
 metricParams.psd = psd
 
 # Begin by calculating a metric
@@ -171,8 +212,9 @@ metricParams = pycbc.tmpltbank.determine_eigen_directions(metricParams)
 
 logging.info("Calculating covariance matrix")
 
-vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams, \
-       metricParams, metricParams.fUpper, covary=False)
+vals = pycbc.tmpltbank.estimate_mass_range(
+    1000000, massRangeParams, metricParams, metricParams.fUpper, covary=False
+)
 cov = numpy.cov(vals)
 evalsCV, evecsCV = numpy.linalg.eig(cov)
 evecsCVdict = {}
@@ -182,8 +224,9 @@ metricParams.evecsCV = evecsCVdict
 
 logging.info("Determining parameter space extent")
 
-vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams, \
-       metricParams, metricParams.fUpper, covary=True)
+vals = pycbc.tmpltbank.estimate_mass_range(
+    1000000, massRangeParams, metricParams, metricParams.fUpper, covary=True
+)
 
 chi1Max = vals[0].max()
 chi1Min = vals[0].min()
@@ -195,18 +238,26 @@ chi2Diff = chi2Max - chi2Min
 logging.info("Calculating lattice")
 
 if not opts.threed_lattice:
-    v1s,v2s = pycbc.tmpltbank.generate_hexagonal_lattice(\
-              chi1Max+(0.02*chi1Diff), chi1Min-(0.02*chi1Diff),\
-              chi2Max+(0.02*chi2Diff), chi2Min-(0.02*chi2Diff),\
-              opts.max_mismatch)
+    v1s, v2s = pycbc.tmpltbank.generate_hexagonal_lattice(
+        chi1Max + (0.02 * chi1Diff),
+        chi1Min - (0.02 * chi1Diff),
+        chi2Max + (0.02 * chi2Diff),
+        chi2Min - (0.02 * chi2Diff),
+        opts.max_mismatch,
+    )
 else:
     chi3Max = vals[2].max()
     chi3Min = vals[2].min()
     chi3Diff = chi3Max - chi3Min
-    v1s, v2s, v3s = pycbc.tmpltbank.generate_anstar_3d_lattice(\
-          chi1Max+(0.02*chi1Diff), chi1Min-(0.02*chi1Diff),\
-          chi2Max+(0.02*chi2Diff), chi2Min-(0.02*chi2Diff),\
-          chi3Max+(0.02*chi3Diff), chi3Min-(0.02*chi3Diff), opts.max_mismatch)
+    v1s, v2s, v3s = pycbc.tmpltbank.generate_anstar_3d_lattice(
+        chi1Max + (0.02 * chi1Diff),
+        chi1Min - (0.02 * chi1Diff),
+        chi2Max + (0.02 * chi2Diff),
+        chi2Min - (0.02 * chi2Diff),
+        chi3Max + (0.02 * chi3Diff),
+        chi3Min - (0.02 * chi3Diff),
+        opts.max_mismatch,
+    )
     chi3Max = vals[2].max()
     chi3Min = vals[2].min()
     chi3Diff = chi3Max - chi3Min
@@ -220,10 +271,13 @@ if opts.filter_points:
     # Create a large set of points and map to xi_i to give a starting point when
     # mapping from xi_i to masses and spins
     # Use the EM constraint only if asked to do so
-    rMass1, rMass2, rSpin1z, rSpin2z = \
-          pycbc.tmpltbank.get_random_mass(2000000, massRangeParams)
+    rMass1, rMass2, rSpin1z, rSpin2z = pycbc.tmpltbank.get_random_mass(
+        2000000, massRangeParams
+    )
 
-    rXis = pycbc.tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z, metricParams, metricParams.fUpper)
+    rXis = pycbc.tmpltbank.get_cov_params(
+        rMass1, rMass2, rSpin1z, rSpin2z, metricParams, metricParams.fUpper
+    )
 
     xis = (numpy.array(rXis)).T
     f0 = opts.f0
@@ -243,11 +297,11 @@ if opts.filter_points:
     # Use scipy's KDtree to quickly calculate Euclidean distances
     logging.info("Setting up KDtree to compute distances.")
     if opts.threed_lattice:
-        tree = spatial.KDTree(xis[:,:3])
-        xi_points = list(zip(v1s,v2s,v3s))
+        tree = spatial.KDTree(xis[:, :3])
+        xi_points = list(zip(v1s, v2s, v3s))
     else:
-        tree = spatial.KDTree(xis[:,:2])
-        xi_points = list(zip(v1s,v2s))
+        tree = spatial.KDTree(xis[:, :2])
+        xi_points = list(zip(v1s, v2s))
 
     logging.info("Computing distances using KDtree.")
     dists, pointargs = tree.query(xi_points)
@@ -255,7 +309,7 @@ if opts.filter_points:
     logging.info("Removing far-away points.")
 
     for i in range(len(v1s)):
-        if dists[i] < 2.:
+        if dists[i] < 2.0:
             newV1s.append(v1s[i])
             newV2s.append(v2s[i])
             if opts.threed_lattice:
@@ -270,12 +324,12 @@ else:
 
 # Now begin to generate the dag
 
-h5file = HFile(opts.output_file, 'w')
+h5file = HFile(opts.output_file, "w")
 # Dump the full bank in \xi_i coordinates
-h5file['full_bank/v1s'] = newV1s
-h5file['full_bank/v2s'] = newV2s
+h5file["full_bank/v1s"] = newV1s
+h5file["full_bank/v2s"] = newV2s
 if opts.threed_lattice:
-    h5file['full_bank/v3s'] = newV3s
+    h5file["full_bank/v3s"] = newV3s
 
 # Now store split banks
 bank_num = 0
@@ -285,33 +339,37 @@ v1s = []
 v2s = []
 v3s = []
 total_points = len(newV1s)
-points_per_job = int(numpy.ceil(total_points / float(opts.num_split_jobs))) if total_points > 0 and opts.num_split_jobs > 0 else 1
+points_per_job = (
+    int(numpy.ceil(total_points / float(opts.num_split_jobs)))
+    if total_points > 0 and opts.num_split_jobs > 0
+    else 1
+)
 
 for i in range(len(newV1s)):
     v1s.append(newV1s[i])
     v2s.append(newV2s[i])
     if opts.threed_lattice:
         v3s.append(newV3s[i])
-    if not (i+1) % points_per_job:
-        h5file['split_banks/split_bank_%05d/v1s' % bank_num] = v1s
-        h5file['split_banks/split_bank_%05d/v2s' % bank_num] = v2s
+    if not (i + 1) % points_per_job:
+        h5file["split_banks/split_bank_%05d/v1s" % bank_num] = v1s
+        h5file["split_banks/split_bank_%05d/v2s" % bank_num] = v2s
         v1s = []
         v2s = []
         if opts.threed_lattice:
-            h5file['split_banks/split_bank_%05d/v3s' % bank_num] = v3s
+            h5file["split_banks/split_bank_%05d/v3s" % bank_num] = v3s
             v3s = []
         bank_num = bank_num + 1
 
-if len(v1s):
+if v1s:
     # There are still templates to dump
-    h5file['split_banks/split_bank_%05d/v1s' % bank_num] = v1s
-    h5file['split_banks/split_bank_%05d/v2s' % bank_num] = v2s
+    h5file["split_banks/split_bank_%05d/v1s" % bank_num] = v1s
+    h5file["split_banks/split_bank_%05d/v2s" % bank_num] = v2s
     if opts.threed_lattice:
-        h5file['split_banks/split_bank_%05d/v3s' % bank_num] = v3s
+        h5file["split_banks/split_bank_%05d/v3s" % bank_num] = v3s
 
-logging.info('Adding metric information to HDF file.')
-h5file['cov_evecs'] = metricParams.evecsCV[metricParams.fUpper]
-h5file['metric_evals'] = metricParams.evals[metricParams.fUpper]
-h5file['metric_evecs'] = metricParams.evecs[metricParams.fUpper]
+logging.info("Adding metric information to HDF file.")
+h5file["cov_evecs"] = metricParams.evecsCV[metricParams.fUpper]
+h5file["metric_evals"] = metricParams.evals[metricParams.fUpper]
+h5file["metric_evecs"] = metricParams.evecs[metricParams.fUpper]
 
 h5file.close()

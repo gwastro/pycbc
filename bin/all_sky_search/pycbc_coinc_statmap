@@ -7,24 +7,35 @@ the capability of doing hierarchical removal of foreground triggers that are
 louder than all of the background triggers. We use this to properly assess
 the FANs of any other gravitational waves in the dataset.
 """
-import argparse
-import logging, numpy
-from pycbc.events import veto, coinc, significance
-import pycbc.pnutils, pycbc.io
-import sys
-import pycbc.conversions as conv
 
-class fw(object):
+import argparse
+import logging
+import sys
+
+import numpy
+
+import pycbc.conversions as conv
+import pycbc.io
+import pycbc.pnutils
+from pycbc.events import coinc, significance, veto
+
+
+class fw:
     def __init__(self, name):
-        self.f = pycbc.io.HFile(name, 'w')
+        self.f = pycbc.io.HFile(name, "w")
         self.attrs = self.f.attrs
 
     def __setitem__(self, name, data):
         # Make a new item if isn't in the hdf file
-        if not name in self.f:
-            self.f.create_dataset(name, data=data, compression="gzip",
-                                  compression_opts=9, shuffle=True,
-                                  maxshape=data.shape)
+        if name not in self.f:
+            self.f.create_dataset(
+                name,
+                data=data,
+                compression="gzip",
+                compression_opts=9,
+                shuffle=True,
+                maxshape=data.shape,
+            )
         # Else reassign values
         else:
             self.f[name][:] = data
@@ -32,64 +43,92 @@ class fw(object):
     def __getitem__(self, *args):
         return self.f.__getitem__(*args)
 
+
 parser = argparse.ArgumentParser()
 # General required options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--coinc-files', nargs='+',
-                    help='List of coincidence files used to calculate the '
-                         'FAP, FAR, etc.')
-parser.add_argument('--ifos', nargs='+',
-                    help='List of ifos used in these coincidence files')
-parser.add_argument('--cluster-window', type=float, default=10,
-                    help='Length of time window in seconds to cluster coinc '
-                         'events [default=10s]')
-parser.add_argument('--veto-window', type=float, default=.1,
-                    help='Time around each zerolag trigger to window out '
-                         '[default=.1s]')
-parser.add_argument('--hierarchical-removal-window', type=float, default=1.0,
-                    help='Time around each trigger to window out for a very '
-                         'louder trigger in the hierarchical removal '
-                         'procedure [default=1.0s]')
-parser.add_argument('--max-hierarchical-removal', type=int, default=0,
-                    help='Maximum number of hierarchical removals to carry '
-                         'out. Choose -1 for unlimited hierarchical removal '
-                         'until no foreground triggers are louder than the '
-                         '(inclusive/exclusive) background. Choose 0 to do '
-                         'no hierarchical removals, choose 1 to do at most '
-                         '1 hierarchical removal and so on. If given, must '
-                         'also provide --hierarchical-removal-against to '
-                         'indicate which background to remove triggers '
-                         'against. [default=0]')
-parser.add_argument('--hierarchical-removal-against', type=str,
-                    default='none', choices=['none', 'inclusive', 'exclusive'],
-                    help='If doing hierarchical removal, remove foreground '
-                         'triggers that are louder than either the "inclusive"'
-                         ' (little-dogs-in) background, or the "exclusive" '
-                         '(little-dogs-out) background. [default="none"]')
-parser.add_argument('--additional-event-times', type=float, nargs="+",
-                    help="Additional event times which will be removed from "
-                         "both inclusive and exclusive background "
-                          "(gps seconds)")
+parser.add_argument(
+    "--coinc-files",
+    nargs="+",
+    help="List of coincidence files used to calculate the FAP, FAR, etc.",
+)
+parser.add_argument(
+    "--ifos", nargs="+", help="List of ifos used in these coincidence files"
+)
+parser.add_argument(
+    "--cluster-window",
+    type=float,
+    default=10,
+    help="Length of time window in seconds to cluster coinc events [default=10s]",
+)
+parser.add_argument(
+    "--veto-window",
+    type=float,
+    default=0.1,
+    help="Time around each zerolag trigger to window out [default=.1s]",
+)
+parser.add_argument(
+    "--hierarchical-removal-window",
+    type=float,
+    default=1.0,
+    help="Time around each trigger to window out for a very "
+    "louder trigger in the hierarchical removal "
+    "procedure [default=1.0s]",
+)
+parser.add_argument(
+    "--max-hierarchical-removal",
+    type=int,
+    default=0,
+    help="Maximum number of hierarchical removals to carry "
+    "out. Choose -1 for unlimited hierarchical removal "
+    "until no foreground triggers are louder than the "
+    "(inclusive/exclusive) background. Choose 0 to do "
+    "no hierarchical removals, choose 1 to do at most "
+    "1 hierarchical removal and so on. If given, must "
+    "also provide --hierarchical-removal-against to "
+    "indicate which background to remove triggers "
+    "against. [default=0]",
+)
+parser.add_argument(
+    "--hierarchical-removal-against",
+    type=str,
+    default="none",
+    choices=["none", "inclusive", "exclusive"],
+    help="If doing hierarchical removal, remove foreground "
+    'triggers that are louder than either the "inclusive"'
+    ' (little-dogs-in) background, or the "exclusive" '
+    '(little-dogs-out) background. [default="none"]',
+)
+parser.add_argument(
+    "--additional-event-times",
+    type=float,
+    nargs="+",
+    help="Additional event times which will be removed from "
+    "both inclusive and exclusive background "
+    "(gps seconds)",
+)
 significance.insert_significance_option_group(parser)
-parser.add_argument('--output-file')
+parser.add_argument("--output-file")
 args = parser.parse_args()
 
 significance.check_significance_options(args, parser)
 # Check that the user chose inclusive or exclusive background to perform
 # hierarchical removals of foreground triggers against.
 if args.max_hierarchical_removal == 0:
-    if args.hierarchical_removal_against != 'none':
-        parser.error("User Error: 0 maximum hierarchical removals chosen but "
-                     "option for --hierarchical-removal-against was given. "
-                     "These are conflicting options. Use with --help for more "
-                     "information.")
-else :
-    if args.hierarchical_removal_against == 'none':
-        parser.error("--max-hierarchical-removal requires a choice of which "
-                     "background to remove foreground triggers against, "
-                     "inclusive or exclusive. Use with --help for more "
-                     "information.")
-
+    if args.hierarchical_removal_against != "none":
+        parser.error(
+            "User Error: 0 maximum hierarchical removals chosen but "
+            "option for --hierarchical-removal-against was given. "
+            "These are conflicting options. Use with --help for more "
+            "information."
+        )
+elif args.hierarchical_removal_against == "none":
+    parser.error(
+        "--max-hierarchical-removal requires a choice of which "
+        "background to remove foreground triggers against, "
+        "inclusive or exclusive. Use with --help for more "
+        "information."
+    )
 
 
 pycbc.init_logging(args.verbose)
@@ -97,29 +136,32 @@ pycbc.init_logging(args.verbose)
 logging.info("Loading coinc triggers")
 logging.info("IFO input: %s" % args.ifos)
 all_trigs = pycbc.io.MultiifoStatmapData(files=args.coinc_files, ifos=args.ifos)
-if 'ifos' in all_trigs.attrs:
-    ifos = all_trigs.attrs['ifos'].split(' ')
-    logging.info('using ifos from file {}'.format(args.coinc_files[0]))
+if "ifos" in all_trigs.attrs:
+    ifos = all_trigs.attrs["ifos"].split(" ")
+    logging.info(f"using ifos from file {args.coinc_files[0]}")
 else:
     ifos = args.ifos
-    logging.info('using ifos from command line input')
+    logging.info("using ifos from command line input")
 
-ifo_combo = ''.join(ifos)
+ifo_combo = "".join(ifos)
 significance_dict = significance.digest_significance_options([ifo_combo], args)
 
 logging.info("We have %s triggers" % len(all_trigs.stat))
 
 # Remove triggers from manually flagged times:
 if args.additional_event_times:
-    logging.info("Removing triggers around times %s",
-                 " ".join([str(et) for et in args.additional_event_times]))
+    logging.info(
+        "Removing triggers around times %s",
+        " ".join([str(et) for et in args.additional_event_times]),
+    )
     rm_cent_times = numpy.array(args.additional_event_times)
     rm_start_times = rm_cent_times - args.veto_window
     rm_end_times = rm_cent_times + args.veto_window
     manual_rm_idx = []
     for ifo in ifos:
-        rm_idx = veto.indices_within_times(all_trigs.data['%s/time' % ifo],
-                                           rm_start_times, rm_end_times)
+        rm_idx = veto.indices_within_times(
+            all_trigs.data["%s/time" % ifo], rm_start_times, rm_end_times
+        )
         manual_rm_idx += list(rm_idx)
     logging.info("Removing %d triggers", len(manual_rm_idx))
     all_trigs = all_trigs.remove(manual_rm_idx)
@@ -130,7 +172,7 @@ fore_locs = all_trigs.timeslide_id == 0
 # Foreground trigger times for ifos
 fore_time = {}
 for ifo in ifos:
-    fore_time[ifo] = all_trigs.data['%s/time' % ifo][fore_locs]
+    fore_time[ifo] = all_trigs.data["%s/time" % ifo][fore_locs]
 # Average times of triggers (note that coincs where not all ifos have triggers
 # will contain -1 sentinel values)
 fore_time_zip = zip(*fore_time.values())
@@ -144,16 +186,17 @@ remove_start_time = ave_fore_time - args.veto_window
 remove_end_time = ave_fore_time + args.veto_window
 
 # Total amount of time removed around foreground triggers
-veto_time = abs(veto.start_end_to_segments(remove_start_time,
-                                           remove_end_time).coalesce())
+veto_time = abs(
+    veto.start_end_to_segments(remove_start_time, remove_end_time).coalesce()
+)
 
 # Veto indices from list of triggers in the windowed times around fg triggers
 # This gives exclusive background triggers
 exc_zero_trigs = all_trigs.remove([])  # Start by copying existing triggers
 for ifo in ifos:
     fg_veto_ids = veto.indices_within_times(
-                       exc_zero_trigs.data['%s/time' % ifo],
-                       remove_start_time, remove_end_time)
+        exc_zero_trigs.data["%s/time" % ifo], remove_start_time, remove_end_time
+    )
     exc_zero_trigs = exc_zero_trigs.remove(fg_veto_ids)
 
 logging.info("Clustering coinc triggers (inclusive of zerolag)")
@@ -168,68 +211,68 @@ exc_zero_trigs = exc_zero_trigs.cluster(args.cluster_window)
 
 logging.info("Dumping foreground triggers")
 f = fw(args.output_file)
-f.attrs['num_of_ifos'] = all_trigs.attrs['num_of_ifos']
-f.attrs['pivot'] = all_trigs.attrs['pivot']
-f.attrs['fixed'] = all_trigs.attrs['fixed']
-if 'ifos' in all_trigs.attrs:
-    f.attrs['ifos'] = all_trigs.attrs['ifos']
+f.attrs["num_of_ifos"] = all_trigs.attrs["num_of_ifos"]
+f.attrs["pivot"] = all_trigs.attrs["pivot"]
+f.attrs["fixed"] = all_trigs.attrs["fixed"]
+if "ifos" in all_trigs.attrs:
+    f.attrs["ifos"] = all_trigs.attrs["ifos"]
 else:
-    f.attrs['ifos'] = ' '.join(sorted(args.ifos))
+    f.attrs["ifos"] = " ".join(sorted(args.ifos))
 
-f.attrs['timeslide_interval'] = all_trigs.attrs['timeslide_interval']
+f.attrs["timeslide_interval"] = all_trigs.attrs["timeslide_interval"]
 
 # Copy over the segment for coincs and singles
 for key in all_trigs.seg.keys():
-    f['segments/%s/start' % key] = all_trigs.seg[key]['start'][:]
-    f['segments/%s/end' % key] = all_trigs.seg[key]['end'][:]
+    f["segments/%s/start" % key] = all_trigs.seg[key]["start"][:]
+    f["segments/%s/end" % key] = all_trigs.seg[key]["end"][:]
 
 if fore_locs.sum() > 0:
-    f['segments/foreground_veto/start'] = remove_start_time
-    f['segments/foreground_veto/end'] = remove_end_time
+    f["segments/foreground_veto/start"] = remove_start_time
+    f["segments/foreground_veto/end"] = remove_end_time
     for k in all_trigs.data:
-        f['foreground/' + k] = all_trigs.data[k][fore_locs]
+        f["foreground/" + k] = all_trigs.data[k][fore_locs]
 else:
     # Put SOMETHING in here to avoid failures later
-    f['segments/foreground_veto/start'] = numpy.array([0])
-    f['segments/foreground_veto/end'] = numpy.array([0])
+    f["segments/foreground_veto/start"] = numpy.array([0])
+    f["segments/foreground_veto/end"] = numpy.array([0])
     for k in all_trigs.data:
-        f['foreground/' + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
+        f["foreground/" + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
 
 # If a particular index of all_trigs.timeslide_id isn't 0, evaluate true.
 # List of locations that is background.
 back_locs = all_trigs.timeslide_id != 0
 
 if (back_locs.sum()) == 0:
-    logging.warning("There were no background events, so we could not "
-                    "assign any statistic values")
+    logging.warning(
+        "There were no background events, so we could not assign any statistic values"
+    )
     sys.exit()
 
 logging.info("Dumping background triggers (inclusive of zerolag)")
 for k in all_trigs.data:
-    f['background/' + k] = all_trigs.data[k][back_locs]
+    f["background/" + k] = all_trigs.data[k][back_locs]
 
 logging.info("Dumping background triggers (exclusive of zerolag)")
 for k in exc_zero_trigs.data:
-    f['background_exc/' + k] = exc_zero_trigs.data[k]
+    f["background_exc/" + k] = exc_zero_trigs.data[k]
 
-maxtime = all_trigs.attrs['%s_foreground_time' % f.attrs['pivot']]
+maxtime = all_trigs.attrs["%s_foreground_time" % f.attrs["pivot"]]
 for ifo in ifos:
-    if all_trigs.attrs['%s_foreground_time' % ifo] > maxtime:
-        maxtime = all_trigs.attrs['%s_foreground_time' % ifo]
+    maxtime = max(maxtime, all_trigs.attrs["%s_foreground_time" % ifo])
 
-mintime = all_trigs.attrs['%s_foreground_time' % f.attrs['pivot']]
+mintime = all_trigs.attrs["%s_foreground_time" % f.attrs["pivot"]]
 for ifo in ifos:
-    if all_trigs.attrs['%s_foreground_time' % ifo] < mintime:
-        mintime = all_trigs.attrs['%s_foreground_time' % ifo]
+    mintime = min(mintime, all_trigs.attrs["%s_foreground_time" % ifo])
 
 maxtime_exc = maxtime - veto_time
 mintime_exc = mintime - veto_time
 
-background_time = int(maxtime / all_trigs.attrs['timeslide_interval']) * mintime
-coinc_time = float(all_trigs.attrs['coinc_time'])
+background_time = int(maxtime / all_trigs.attrs["timeslide_interval"]) * mintime
+coinc_time = float(all_trigs.attrs["coinc_time"])
 
-background_time_exc = int(maxtime_exc / all_trigs.attrs['timeslide_interval']) \
-                          * mintime_exc
+background_time_exc = (
+    int(maxtime_exc / all_trigs.attrs["timeslide_interval"]) * mintime_exc
+)
 coinc_time_exc = coinc_time - veto_time
 
 logging.info("Calculating FAN from background statistic values")
@@ -244,7 +287,8 @@ bg_far, fg_far, sig_info = significance.get_far(
     fore_stat,
     all_trigs.decimation_factor[back_locs],
     background_time,
-    **significance_dict[ifo_combo])
+    **significance_dict[ifo_combo],
+)
 
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
@@ -253,55 +297,48 @@ bg_far_exc, fg_far_exc, exc_sig_info = significance.get_far(
     fore_stat,
     exc_zero_trigs.decimation_factor,
     background_time_exc,
-    **significance_dict[ifo_combo])
+    **significance_dict[ifo_combo],
+)
 
-fg_far = significance.apply_far_limit(
-    fg_far,
-    significance_dict,
-    combo=ifo_combo)
-bg_far = significance.apply_far_limit(
-    bg_far,
-    significance_dict,
-    combo=ifo_combo)
+fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo_combo)
+bg_far = significance.apply_far_limit(bg_far, significance_dict, combo=ifo_combo)
 fg_far_exc = significance.apply_far_limit(
-    fg_far_exc,
-    significance_dict,
-    combo=ifo_combo)
+    fg_far_exc, significance_dict, combo=ifo_combo
+)
 bg_far_exc = significance.apply_far_limit(
-    bg_far_exc,
-    significance_dict,
-    combo=ifo_combo)
+    bg_far_exc, significance_dict, combo=ifo_combo
+)
 
-f['background/ifar'] = conv.sec_to_year(1. / bg_far)
-f['background_exc/ifar'] = conv.sec_to_year(1. / bg_far_exc)
-f.attrs['background_time'] = background_time
-f.attrs['foreground_time'] = coinc_time
-f.attrs['background_time_exc'] = background_time_exc
-f.attrs['foreground_time_exc'] = coinc_time_exc
+f["background/ifar"] = conv.sec_to_year(1.0 / bg_far)
+f["background_exc/ifar"] = conv.sec_to_year(1.0 / bg_far_exc)
+f.attrs["background_time"] = background_time
+f.attrs["foreground_time"] = coinc_time
+f.attrs["background_time_exc"] = background_time_exc
+f.attrs["foreground_time_exc"] = coinc_time_exc
 
 logging.info("calculating ifar/fap values")
 
 if fore_locs.sum() > 0:
-    ifar = 1. / fg_far
-    fap = 1 - numpy.exp(- coinc_time / ifar)
-    f['foreground/ifar'] = conv.sec_to_year(ifar)
-    f['foreground/fap'] = fap
+    ifar = 1.0 / fg_far
+    fap = 1 - numpy.exp(-coinc_time / ifar)
+    f["foreground/ifar"] = conv.sec_to_year(ifar)
+    f["foreground/fap"] = fap
     for key, value in sig_info.items():
-        f['foreground'].attrs[key] = value
-    ifar_exc = 1. / fg_far_exc
-    fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
-    f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
-    f['foreground/fap_exc'] = fap_exc
+        f["foreground"].attrs[key] = value
+    ifar_exc = 1.0 / fg_far_exc
+    fap_exc = 1 - numpy.exp(-coinc_time_exc / ifar_exc)
+    f["foreground/ifar_exc"] = conv.sec_to_year(ifar_exc)
+    f["foreground/fap_exc"] = fap_exc
     for key, value in exc_sig_info.items():
-        f['foreground'].attrs[key + '_exc'] = value
+        f["foreground"].attrs[key + "_exc"] = value
 else:
-    f['foreground/ifar'] = ifar = numpy.array([])
-    f['foreground/fap'] = numpy.array([])
-    f['foreground/ifar_exc'] = ifar_exc = numpy.array([])
-    f['foreground/fap_exc'] = numpy.array([])
+    f["foreground/ifar"] = ifar = numpy.array([])
+    f["foreground/fap"] = numpy.array([])
+    f["foreground/ifar_exc"] = ifar_exc = numpy.array([])
+    f["foreground/fap_exc"] = numpy.array([])
 
-if 'name' in all_trigs.attrs:
-    f.attrs['name'] = all_trigs.attrs['name']
+if "name" in all_trigs.attrs:
+    f.attrs["name"] = all_trigs.attrs["name"]
 
 # Incorporate hierarchical removal for any other loud triggers
 logging.info("Beginning hierarchical removal of foreground triggers")
@@ -320,12 +357,12 @@ orig_fore_stat = fore_stat
 # or exclusive background.
 if args.max_hierarchical_removal != 0:
     # If user wants to remove against inclusive background.
-    if args.hierarchical_removal_against == 'inclusive':
+    if args.hierarchical_removal_against == "inclusive":
         ifar_foreground = ifar
     # Otherwise user wants to remove against exclusive background
-    else :
+    else:
         ifar_foreground = ifar_exc
-else :
+else:
     # It doesn't matter if you choose ifar_foreground = ifar
     # or ifar_exc, the while loop below will break
     # straight away. But this avoids a NameError
@@ -342,24 +379,28 @@ ifar_foreground = numpy.append(ifar_foreground, 0)
 while numpy.any(ifar_foreground >= background_time):
     # If the user wants to stop doing hierarchical removals after a set
     # number of iterations then break when that happens.
-    if (h_iterations == args.max_hierarchical_removal):
+    if h_iterations == args.max_hierarchical_removal:
         break
 
     # Write foreground trigger info before hierarchical removals for
     # downstream codes.
     if h_iterations == 0:
-        f['background_h%s/stat' % h_iterations] = back_stat
-        f['background_h%s/ifar' % h_iterations] = conv.sec_to_year(1. / bg_far)
-        f['background_h%s/timeslide_id' % h_iterations] = all_trigs.data['timeslide_id'][back_locs]
-        f['foreground_h%s/stat' % h_iterations] = fore_stat
-        f['foreground_h%s/ifar' % h_iterations] = conv.sec_to_year(ifar)
-        f['foreground_h%s/fap' % h_iterations] = fap
-        f['foreground_h%s/template_id' % h_iterations] = all_trigs.data['template_id'][fore_locs]
+        f["background_h%s/stat" % h_iterations] = back_stat
+        f["background_h%s/ifar" % h_iterations] = conv.sec_to_year(1.0 / bg_far)
+        f["background_h%s/timeslide_id" % h_iterations] = all_trigs.data[
+            "timeslide_id"
+        ][back_locs]
+        f["foreground_h%s/stat" % h_iterations] = fore_stat
+        f["foreground_h%s/ifar" % h_iterations] = conv.sec_to_year(ifar)
+        f["foreground_h%s/fap" % h_iterations] = fap
+        f["foreground_h%s/template_id" % h_iterations] = all_trigs.data["template_id"][
+            fore_locs
+        ]
         for ifo in args.ifos:
-            trig_id = all_trigs.data['%s/trigger_id' % ifo][fore_locs]
-            trig_time = all_trigs.data['%s/time' % ifo][fore_locs]
-            f['foreground_h%s/%s/time' % (h_iterations,ifo)] = trig_time
-            f['foreground_h%s/%s/trigger_id' % (h_iterations,ifo)] = trig_id
+            trig_id = all_trigs.data["%s/trigger_id" % ifo][fore_locs]
+            trig_time = all_trigs.data["%s/time" % ifo][fore_locs]
+            f["foreground_h%s/%s/time" % (h_iterations, ifo)] = trig_time
+            f["foreground_h%s/%s/trigger_id" % (h_iterations, ifo)] = trig_id
 
     # Add the iteration number of hierarchical removals done.
     h_iterations += 1
@@ -377,28 +418,34 @@ while numpy.any(ifar_foreground >= background_time):
 
     # Store any foreground trigger's information that we want to
     # hierarchically remove.
-    f['foreground/ifar'][orig_fore_idx] = conv.sec_to_year(ifar[max_stat_idx])
-    f['foreground/fap'][orig_fore_idx] = fap[max_stat_idx]
+    f["foreground/ifar"][orig_fore_idx] = conv.sec_to_year(ifar[max_stat_idx])
+    f["foreground/fap"][orig_fore_idx] = fap[max_stat_idx]
 
-    logging.info("Removing foreground trigger that is louder than the inclusive background.")
+    logging.info(
+        "Removing foreground trigger that is louder than the inclusive background."
+    )
 
     # Remove the foreground trigger and all of the background triggers that
     # are associated with it.
     ave_rm_time = 0
     for ifo in args.ifos:
-        ave_rm_time += all_trigs.data['%s/time' % ifo][rm_trig_idx] / len(args.ifos)
+        ave_rm_time += all_trigs.data["%s/time" % ifo][rm_trig_idx] / len(args.ifos)
 
     ind_to_rm = {}
     for ifo in args.ifos:
-        ind_to_rm[ifo] = veto.indices_within_times(all_trigs.data['%s/time' % ifo],
-                              [ave_rm_time - args.hierarchical_removal_window],
-                              [ave_rm_time + args.hierarchical_removal_window])
+        ind_to_rm[ifo] = veto.indices_within_times(
+            all_trigs.data["%s/time" % ifo],
+            [ave_rm_time - args.hierarchical_removal_window],
+            [ave_rm_time + args.hierarchical_removal_window],
+        )
     indices_to_rm = []
     for ifo in args.ifos:
         indices_to_rm = numpy.concatenate([indices_to_rm, ind_to_rm[ifo]])
 
     all_trigs = all_trigs.remove(indices_to_rm.astype(int))
-    logging.info("We have %s triggers after hierarchical removal." % len(all_trigs.stat))
+    logging.info(
+        "We have %s triggers after hierarchical removal." % len(all_trigs.stat)
+    )
 
     # Step 4: Re-cluster the triggers and calculate the inclusive ifar/fap
     logging.info("Clustering coinc triggers (inclusive of zerolag)")
@@ -413,20 +460,18 @@ while numpy.any(ifar_foreground >= background_time):
     logging.info("Dumping foreground triggers")
     logging.info("Dumping background triggers (inclusive of zerolag)")
     for k in all_trigs.data:
-         f['background_h%s/' % h_iterations + k] = all_trigs.data[k][back_locs]
+        f["background_h%s/" % h_iterations + k] = all_trigs.data[k][back_locs]
 
-    maxtime = all_trigs.attrs['%s_foreground_time' % f.attrs['pivot']]
+    maxtime = all_trigs.attrs["%s_foreground_time" % f.attrs["pivot"]]
     for ifo in ifos:
-        if all_trigs.attrs['%s_foreground_time' % ifo] > maxtime:
-            maxtime = all_trigs.attrs['%s_foreground_time' % ifo]
+        maxtime = max(maxtime, all_trigs.attrs["%s_foreground_time" % ifo])
 
-    mintime = all_trigs.attrs['%s_foreground_time' % f.attrs['pivot']]
+    mintime = all_trigs.attrs["%s_foreground_time" % f.attrs["pivot"]]
     for ifo in ifos:
-        if all_trigs.attrs['%s_foreground_time' % ifo] < mintime:
-            mintime = all_trigs.attrs['%s_foreground_time' % ifo]
+        mintime = min(mintime, all_trigs.attrs["%s_foreground_time" % ifo])
 
-    background_time = int(maxtime / all_trigs.attrs['timeslide_interval']) * mintime
-    coinc_time = float(all_trigs.attrs['coinc_time'])
+    background_time = int(maxtime / all_trigs.attrs["timeslide_interval"]) * mintime
+    coinc_time = float(all_trigs.attrs["coinc_time"])
 
     logging.info("Calculating FAN from background statistic values")
     back_stat = all_trigs.stat[back_locs]
@@ -437,13 +482,10 @@ while numpy.any(ifar_foreground >= background_time):
         all_trigs.decimation_factor[back_locs],
         background_time,
         return_counts=True,
-        **significance_dict[ifo_combo])
-
-    fg_far = significance.apply_far_limit(
-        fg_far,
-        significance_dict,
-        combo=ifo_combo
+        **significance_dict[ifo_combo],
     )
+
+    fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo_combo)
     bg_far = significance.apply_far_limit(
         bg_far,
         significance_dict,
@@ -451,76 +493,77 @@ while numpy.any(ifar_foreground >= background_time):
     )
 
     # Update the ifar_foreground criteria depending on whether foreground
-    # triggers are being removed via inclusive or exclusive background.   
-    if args.hierarchical_removal_against == 'inclusive':
-        ifar_foreground = 1. / fg_far
+    # triggers are being removed via inclusive or exclusive background.
+    if args.hierarchical_removal_against == "inclusive":
+        ifar_foreground = 1.0 / fg_far
 
     # Exclusive background doesn't change when removing foreground triggers.
     # So we don't have to take background ifar, just repopulate ifar_foreground
-    else :
+    else:
         _, fg_far_exc, _ = significance.get_far(
             exc_zero_trigs.stat,
             fore_stat,
             exc_zero_trigs.decimation_factor,
             background_time_exc,
-            **significance_dict[ifo_combo])
-        fg_far_exc = significance.apply_far_limit(
-            fg_far_exc,
-            significance_dict,
-            combo=ifo_combo
+            **significance_dict[ifo_combo],
         )
-        ifar_foreground = 1. / fg_far_exc
+        fg_far_exc = significance.apply_far_limit(
+            fg_far_exc, significance_dict, combo=ifo_combo
+        )
+        ifar_foreground = 1.0 / fg_far_exc
     # ifar_foreground has been updated and the code can continue.
 
     logging.info("Calculating ifar/fap values")
-    f['background_h%s/ifar' % h_iterations] = conv.sec_to_year(1. / bg_far)
-    f.attrs['background_time_h%s' % h_iterations] = background_time
-    f.attrs['foreground_time_h%s' % h_iterations] = coinc_time
+    f["background_h%s/ifar" % h_iterations] = conv.sec_to_year(1.0 / bg_far)
+    f.attrs["background_time_h%s" % h_iterations] = background_time
+    f.attrs["foreground_time_h%s" % h_iterations] = coinc_time
 
     if fore_locs.sum() > 0:
         # Write ranking statistic to file just for downstream plotting code
-        f['foreground_h%s/stat' % h_iterations] = fore_stat
+        f["foreground_h%s/stat" % h_iterations] = fore_stat
 
-        ifar = 1. / fg_far
-        fap = 1 - numpy.exp(- coinc_time / ifar)
-        f['foreground_h%s/ifar' % h_iterations] = conv.sec_to_year(ifar)
-        f['foreground_h%s/fap' % h_iterations] = fap
+        ifar = 1.0 / fg_far
+        fap = 1 - numpy.exp(-coinc_time / ifar)
+        f["foreground_h%s/ifar" % h_iterations] = conv.sec_to_year(ifar)
+        f["foreground_h%s/fap" % h_iterations] = fap
         for key, value in sig_info.items():
-            f['foreground_h%' % h_iterations].attrs[key] = value
+            f["foreground_h%" % h_iterations].attrs[key] = value
 
         # Update ifar and fap for other foreground triggers
         for i in range(len(ifar)):
             orig_fore_idx = numpy.where(orig_fore_stat == fore_stat[i])[0][0]
-            f['foreground/ifar'][orig_fore_idx] = conv.sec_to_year(ifar[i])
-            f['foreground/fap'][orig_fore_idx] = fap[i]
+            f["foreground/ifar"][orig_fore_idx] = conv.sec_to_year(ifar[i])
+            f["foreground/fap"][orig_fore_idx] = fap[i]
 
         # Save trigger ids for foreground triggers for downstream plotting code.
         # These don't change with the iterations but should be written at every
         # level.
 
-        f['foreground_h%s/template_id' % h_iterations] = all_trigs.data['template_id'][fore_locs]
+        f["foreground_h%s/template_id" % h_iterations] = all_trigs.data["template_id"][
+            fore_locs
+        ]
         for ifo in args.ifos:
-            trig_id = all_trigs.data['%s/trigger_id' % ifo][fore_locs]
-            trig_time = all_trigs.data['%s/time' % ifo][fore_locs]
-            f['foreground_h%s/%s/time' % (h_iterations,ifo)] = trig_time
-            f['foreground_h%s/%s/trigger_id' % (h_iterations,ifo)] = trig_id
-    else :
-        f['foreground_h%s/stat' % h_iterations] = numpy.array([])
-        f['foreground_h%s/ifar' % h_iterations] = numpy.array([])
-        f['foreground_h%s/fap' % h_iterations] = numpy.array([])
-        f['foreground_h%s/template_id' % h_iterations] = numpy.array([])
+            trig_id = all_trigs.data["%s/trigger_id" % ifo][fore_locs]
+            trig_time = all_trigs.data["%s/time" % ifo][fore_locs]
+            f["foreground_h%s/%s/time" % (h_iterations, ifo)] = trig_time
+            f["foreground_h%s/%s/trigger_id" % (h_iterations, ifo)] = trig_id
+    else:
+        f["foreground_h%s/stat" % h_iterations] = numpy.array([])
+        f["foreground_h%s/ifar" % h_iterations] = numpy.array([])
+        f["foreground_h%s/fap" % h_iterations] = numpy.array([])
+        f["foreground_h%s/template_id" % h_iterations] = numpy.array([])
         for ifo in args.ifos:
-            f['foreground_h%s/%s/time' % (h_iterations,ifo)] = numpy.array([])
-            f['foreground_h%s/%s/trigger_id' % (h_iterations,ifo)] = numpy.array([])
+            f["foreground_h%s/%s/time" % (h_iterations, ifo)] = numpy.array([])
+            f["foreground_h%s/%s/trigger_id" % (h_iterations, ifo)] = numpy.array([])
 
 # Write to file how many hierarchical removals were implemented.
-f.attrs['hierarchical_removal_iterations'] = h_iterations
+f.attrs["hierarchical_removal_iterations"] = h_iterations
 
 # Write whether hierarchical removals were removed against the
 # inclusive background or the exclusive background. Have to use
 # numpy.bytes_ datatype.
 if h_iterations != 0:
     hrm_method = args.hierarchical_removal_against
-    f.attrs['hierarchical_removal_method'] = numpy.bytes_(hrm_method)
+    f.attrs["hierarchical_removal_method"] = numpy.bytes_(hrm_method)
 
 logging.info("Done")

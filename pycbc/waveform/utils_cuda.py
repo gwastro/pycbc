@@ -22,13 +22,16 @@
 #
 # =============================================================================
 #
-"""This module contains the CUDA-specific code for
-   convenience utilities for manipulating waveforms
 """
-from pycbc.types import FrequencySeries
+This module contains the CUDA-specific code for
+convenience utilities for manipulating waveforms
+"""
+
+import numpy
 from mako.template import Template
 from pycuda.compiler import SourceModule
-import numpy
+
+from pycbc.types import FrequencySeries
 
 time_shift_kernel = Template("""
 __global__ void fseries_ts(float2 *out, float phi,
@@ -77,12 +80,16 @@ mod = SourceModule(time_shift_kernel.render(ntpb=nt))
 fseries_ts_fn = mod.get_function("fseries_ts")
 fseries_ts_fn.prepare("Pfii")
 
+
 def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
-    """Shifts a frequency domain waveform in time. The waveform is assumed to
+    """
+    Shifts a frequency domain waveform in time. The waveform is assumed to
     be sampled at equal frequency intervals.
     """
-    if htilde.precision != 'single':
-        raise NotImplementedError("CUDA version of apply_fseries_time_shift only supports single precision")
+    if htilde.precision != "single":
+        raise NotImplementedError(
+            "CUDA version of apply_fseries_time_shift only supports single precision"
+        )
 
     if copy:
         out = htilde.copy()
@@ -98,6 +105,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     phi = numpy.float32(-2 * numpy.pi * dt * htilde.delta_f)
     fseries_ts_fn.prepared_call((nb, 1), (nt, 1, 1), out.data.gpudata, phi, kmin, kmax)
     if copy:
-        htilde = FrequencySeries(out, delta_f=htilde.delta_f, epoch=htilde.epoch,
-                                 copy=False)
+        htilde = FrequencySeries(
+            out, delta_f=htilde.delta_f, epoch=htilde.epoch, copy=False
+        )
     return htilde

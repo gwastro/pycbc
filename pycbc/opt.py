@@ -17,11 +17,13 @@
 """
 This module defines optimization flags and some optimized utilities.
 """
-import os, sys
+
 import logging
+import os
+import sys
 from collections import OrderedDict
 
-logger = logging.getLogger('pycbc.opt')
+logger = logging.getLogger("pycbc.opt")
 
 
 def get_l2_cache_size():
@@ -32,6 +34,7 @@ def get_l2_cache_size():
     -------
     int or None
         The L2 cache size in bytes if the environment variable is set, None otherwise.
+
     """
     cache_size_str = os.environ.get("_PYCBC_L2_CACHE_SIZE", None)
     if cache_size_str is not None:
@@ -47,21 +50,30 @@ def insert_optimization_option_group(parser):
     ----------
     parser : object
         OptionParser instance
-    """
-    optimization_group = parser.add_argument_group("Options for selecting "
-                                   "optimization-specific settings")
 
-    optimization_group.add_argument("--cpu-affinity", help="""
+    """
+    optimization_group = parser.add_argument_group(
+        "Options for selecting optimization-specific settings"
+    )
+
+    optimization_group.add_argument(
+        "--cpu-affinity",
+        help="""
                     A set of CPUs on which to run, specified in a format suitable
-                    to pass to taskset.""")
-    optimization_group.add_argument("--cpu-affinity-from-env", help="""
+                    to pass to taskset.""",
+    )
+    optimization_group.add_argument(
+        "--cpu-affinity-from-env",
+        help="""
                     The name of an enivornment variable containing a set
                     of CPUs on which to run,  specified in a format suitable
-                    to pass to taskset.""")
+                    to pass to taskset.""",
+    )
 
 
 def verify_optimization_options(opt, parser):
-    """Parses the CLI options, verifies that they are consistent and
+    """
+    Parses the CLI options, verifies that they are consistent and
     reasonable, and acts on them if they are
 
     Parameters
@@ -71,16 +83,14 @@ def verify_optimization_options(opt, parser):
         required attributes
     parser : object
         OptionParser instance.
-    """
 
+    """
     # Pin to specified CPUs if requested
     requested_cpus = None
 
     if opt.cpu_affinity_from_env is not None:
         if opt.cpu_affinity is not None:
-            logger.error(
-                "Both --cpu_affinity_from_env and --cpu_affinity specified"
-            )
+            logger.error("Both --cpu_affinity_from_env and --cpu_affinity specified")
             sys.exit(1)
 
         requested_cpus = os.environ.get(opt.cpu_affinity_from_env)
@@ -89,15 +99,15 @@ def verify_optimization_options(opt, parser):
             logger.error(
                 "CPU affinity requested from environment variable %s "
                 "but this variable is not defined",
-                opt.cpu_affinity_from_env
+                opt.cpu_affinity_from_env,
             )
             sys.exit(1)
 
-        if requested_cpus == '':
+        if requested_cpus == "":
             logger.error(
                 "CPU affinity requested from environment variable %s "
                 "but this variable is empty",
-                opt.cpu_affinity_from_env
+                opt.cpu_affinity_from_env,
             )
             sys.exit(1)
 
@@ -105,20 +115,20 @@ def verify_optimization_options(opt, parser):
         requested_cpus = opt.cpu_affinity
 
     if requested_cpus is not None:
-        command = 'taskset -pc %s %d' % (requested_cpus, os.getpid())
+        command = "taskset -pc %s %d" % (requested_cpus, os.getpid())
         retcode = os.system(command)
 
         if retcode != 0:
             logger.error(
-                'taskset command <%s> failed with return code %d',
-                command, retcode
+                "taskset command <%s> failed with return code %d", command, retcode
             )
             sys.exit(1)
 
         logger.info("Pinned to CPUs %s ", requested_cpus)
 
+
 class LimitedSizeDict(OrderedDict):
-    """ Fixed sized dict for FIFO caching"""
+    """Fixed sized dict for FIFO caching"""
 
     def __init__(self, *args, **kwds):
         self.size_limit = kwds.pop("size_limit", None)

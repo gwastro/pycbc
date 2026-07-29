@@ -22,15 +22,17 @@
 #
 # =============================================================================
 #
-""" This modules contains information about the announced LIGO/Virgo
+"""
+This modules contains information about the announced LIGO/Virgo
 compact binary mergers
 """
-import logging
+
 import json
+import logging
 
 from pycbc.io import get_file
 
-logger = logging.getLogger('pycbc.catalog.catalog')
+logger = logging.getLogger("pycbc.catalog.catalog")
 
 # For the time being all quantities are the 1-d median value
 # FIXME with posteriors when available and we can just post-process that
@@ -38,37 +40,40 @@ logger = logging.getLogger('pycbc.catalog.catalog')
 # LVC catalogs
 base_lvc_url = "https://www.gwosc.org/eventapi/jsonfull/{}/"
 
+
 def lvk_catalogs():
     _catalog_source = "https://gwosc.org/eventapi/json/"
-    catalog_list = json.load(open(get_file(_catalog_source), 'r'))
+    catalog_list = json.load(open(get_file(_catalog_source)))
     return catalog_list
-    
+
+
 def populate_catalogs():
-    """ Refresh set of known catalogs
-    """
+    """Refresh set of known catalogs"""
     global _catalogs
     if _catalogs is None:
         # update the LVK catalog information
-         _catalogs = {cname: 'LVK' for cname in lvk_catalogs().keys()}
+        _catalogs = dict.fromkeys(lvk_catalogs().keys(), "LVK")
+
 
 _catalogs = None
 
 # add some aliases
 _aliases = {}
-_aliases['gwtc-1'] = 'GWTC-1-confident'
-_aliases['gwtc-2'] = 'GWTC-2'
-_aliases['gwtc-2.1'] = 'GWTC-2.1-confident'
-_aliases['gwtc-3'] = 'GWTC-3-confident'
-_aliases['gwtc-4.0'] = 'GWTC-4.0'
+_aliases["gwtc-1"] = "GWTC-1-confident"
+_aliases["gwtc-2"] = "GWTC-2"
+_aliases["gwtc-2.1"] = "GWTC-2.1-confident"
+_aliases["gwtc-3"] = "GWTC-3-confident"
+_aliases["gwtc-4.0"] = "GWTC-4.0"
+
 
 def list_catalogs():
     """Return a list of possible GW catalogs to query"""
-    populate_catalogs()    
+    populate_catalogs()
     return list(_catalogs.keys())
 
+
 def get_source(source):
-    """Get the source data for a particular GW catalog
-    """
+    """Get the source data for a particular GW catalog"""
     populate_catalogs()
 
     if source in _aliases:
@@ -76,9 +81,9 @@ def get_source(source):
 
     if source in _catalogs:
         catalog_type = _catalogs[source]
-        if catalog_type == 'LVK':
+        if catalog_type == "LVK":
             fname = get_file(base_lvc_url.format(source), cache=True)
-            data = json.load(open(fname, 'r'))
+            data = json.load(open(fname))
     else:
-        raise ValueError('Unkown catalog source {}'.format(source))
-    return data['events']
+        raise ValueError(f"Unkown catalog source {source}")
+    return data["events"]

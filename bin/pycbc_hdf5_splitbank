@@ -23,44 +23,67 @@ of templates per bank can be specified.
 """
 
 import argparse
-import numpy
 import logging
+
+import numpy
 from numpy import random
 
 import pycbc
 from pycbc.waveform import bank
 
-__author__  = "Soumi De <soumi.de@ligo.org>"
+__author__ = "Soumi De <soumi.de@ligo.org>"
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--bank-file", type=str, required=True,
-                    help="Bank hdf file to load.")
+parser.add_argument(
+    "--bank-file", type=str, required=True, help="Bank hdf file to load."
+)
 outbanks = parser.add_mutually_exclusive_group(required=True)
-outbanks.add_argument("--templates-per-bank", type=int,
-                      help="Number of templates in each output sub-banks. "
-                      "Either specify this or --number-of-banks, not both.")
-outbanks.add_argument("--number-of-banks", type=int,
-                      help="Number of output sub-banks. Either specify this "
-                      "or --templates-per-bank, not both.")
-outbanks.add_argument("--output-filenames", nargs='*',
-                      action="store",
-                      help="Directly specify the names of the output files. "
-                      "The bank will be split equally between files.")
-parser.add_argument("--output-prefix",
-                    help="Prefix to add to the output template bank names, "
-                    "for example 'H1L1-BANK'. Output file names would then be "
-                    "'H1L1-BANK{x}.hdf' where {x} is 1,2,...")
+outbanks.add_argument(
+    "--templates-per-bank",
+    type=int,
+    help="Number of templates in each output sub-banks. "
+    "Either specify this or --number-of-banks, not both.",
+)
+outbanks.add_argument(
+    "--number-of-banks",
+    type=int,
+    help="Number of output sub-banks. Either specify this "
+    "or --templates-per-bank, not both.",
+)
+outbanks.add_argument(
+    "--output-filenames",
+    nargs="*",
+    action="store",
+    help="Directly specify the names of the output files. "
+    "The bank will be split equally between files.",
+)
+parser.add_argument(
+    "--output-prefix",
+    help="Prefix to add to the output template bank names, "
+    "for example 'H1L1-BANK'. Output file names would then be "
+    "'H1L1-BANK{x}.hdf' where {x} is 1,2,...",
+)
 sortopt = parser.add_mutually_exclusive_group()
-sortopt.add_argument("--mchirp-sort", action="store_true", default=False,
-                    help="Sort templates by chirp mass before splitting")
-sortopt.add_argument("--random-sort", action="store_true", default=False,
-                    help="Sort templates randomly before splitting")
-parser.add_argument("--random-seed", type=int,
-                    help="Random seed for --random-sort")
-parser.add_argument("--force", action="store_true", default=False,
-                    help="Overwrite the given hdf file if it exists. "
-                         "Otherwise, an error is raised.")
+sortopt.add_argument(
+    "--mchirp-sort",
+    action="store_true",
+    default=False,
+    help="Sort templates by chirp mass before splitting",
+)
+sortopt.add_argument(
+    "--random-sort",
+    action="store_true",
+    default=False,
+    help="Sort templates randomly before splitting",
+)
+parser.add_argument("--random-seed", type=int, help="Random seed for --random-sort")
+parser.add_argument(
+    "--force",
+    action="store_true",
+    default=False,
+    help="Overwrite the given hdf file if it exists. Otherwise, an error is raised.",
+)
 
 args = parser.parse_args()
 
@@ -128,17 +151,18 @@ for ii in range(num_files):
     if args.output_filenames:
         outname = args.output_filenames[ii]
     elif args.output_prefix:
-        outname = args.output_prefix + str(ii) + '.hdf'
+        outname = args.output_prefix + str(ii) + ".hdf"
     else:
-        raise RuntimeError("I shouldn't be able to reach this point. One out "
-                           "of --output-filenames and --output-prefix must "
-                           "have been supplied!")
+        raise RuntimeError(
+            "I shouldn't be able to reach this point. One out "
+            "of --output-filenames and --output-prefix must "
+            "have been supplied!"
+        )
 
     # Generate the hdf5 output file for the ii'th sub-bank, which would
     # be a slice of the input template bank having a start index and
     # end index as calculated above
-    output = tmplt_bank.write_to_hdf(outname, start_idx, end_idx,
-                                     force=args.force)
+    output = tmplt_bank.write_to_hdf(outname, start_idx, end_idx, force=args.force)
     output.close()
 
     start_idx = end_idx

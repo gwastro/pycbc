@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Functions for adding calibration factors to waveform templates.
-"""
+"""Functions for adding calibration factors to waveform templates."""
+
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 from scipy.interpolate import UnivariateSpline
-from abc import (ABCMeta, abstractmethod)
 
 
 class Recalibrate(metaclass=ABCMeta):
@@ -30,7 +30,8 @@ class Recalibrate(metaclass=ABCMeta):
 
     @abstractmethod
     def apply_calibration(self, strain):
-        """Apply calibration model
+        """
+        Apply calibration model
 
         This method should be overwritten by subclasses
 
@@ -43,11 +44,13 @@ class Recalibrate(metaclass=ABCMeta):
         ------
         strain_adjusted : FrequencySeries
             The recalibrated strain.
+
         """
         return
 
-    def map_to_adjust(self, strain, prefix='recalib_', **params):
-        """Map an input dictionary of sampling parameters to the
+    def map_to_adjust(self, strain, prefix="recalib_", **params):
+        """
+        Map an input dictionary of sampling parameters to the
         adjust_strain function by filtering the dictionary for the
         calibration parameters, then calling adjust_strain.
 
@@ -64,11 +67,15 @@ class Recalibrate(metaclass=ABCMeta):
         ------
         strain_adjusted : FrequencySeries
             The recalibrated strain.
-        """
 
-        self.params.update({
-            key[len(prefix):]: params[key]
-            for key in params if prefix in key and self.ifo_name in key})
+        """
+        self.params.update(
+            {
+                key[len(prefix) :]: params[key]
+                for key in params
+                if prefix in key and self.ifo_name in key
+            }
+        )
 
         strain_adjusted = self.apply_calibration(strain)
 
@@ -76,7 +83,8 @@ class Recalibrate(metaclass=ABCMeta):
 
     @classmethod
     def from_config(cls, cp, ifo, section):
-        """Read a config file to get calibration options and transfer
+        """
+        Read a config file to get calibration options and transfer
         functions which will be used to intialize the model.
 
         Parameters
@@ -93,21 +101,24 @@ class Recalibrate(metaclass=ABCMeta):
         ------
         instance
             An instance of the class.
+
         """
         all_params = dict(cp.items(section))
-        params = {key[len(ifo)+1:]: all_params[key]
-                  for key in all_params if ifo.lower() in key}
-        model = params.pop('model')
-        params['ifo_name'] = ifo.lower()
+        params = {
+            key[len(ifo) + 1 :]: all_params[key]
+            for key in all_params
+            if ifo.lower() in key
+        }
+        model = params.pop("model")
+        params["ifo_name"] = ifo.lower()
 
         return all_models[model](**params)
 
 
 class CubicSpline(Recalibrate):
-    name = 'cubic_spline'
+    name = "cubic_spline"
 
-    def __init__(self, minimum_frequency, maximum_frequency, n_points,
-                 ifo_name):
+    def __init__(self, minimum_frequency, maximum_frequency, n_points, ifo_name):
         """
         Cubic spline recalibration
 
@@ -125,20 +136,22 @@ class CubicSpline(Recalibrate):
             maximum frequency of spline points
         n_points: int
             number of spline points
+
         """
         Recalibrate.__init__(self, ifo_name=ifo_name)
         minimum_frequency = float(minimum_frequency)
         maximum_frequency = float(maximum_frequency)
         n_points = int(n_points)
         if n_points < 4:
-            raise ValueError(
-                'Use at least 4 spline points for calibration model')
+            raise ValueError("Use at least 4 spline points for calibration model")
         self.n_points = n_points
-        self.spline_points = np.logspace(np.log10(minimum_frequency),
-                                         np.log10(maximum_frequency), n_points)
+        self.spline_points = np.logspace(
+            np.log10(minimum_frequency), np.log10(maximum_frequency), n_points
+        )
 
     def apply_calibration(self, strain):
-        """Apply calibration model
+        """
+        Apply calibration model
 
         This applies cubic spline calibration to the strain.
 
@@ -151,26 +164,30 @@ class CubicSpline(Recalibrate):
         ------
         strain_adjusted : FrequencySeries
             The recalibrated strain.
+
         """
-        amplitude_parameters =\
-            [self.params['amplitude_{}_{}'.format(self.ifo_name, ii)]
-             for ii in range(self.n_points)]
-        amplitude_spline = UnivariateSpline(self.spline_points,
-                                            amplitude_parameters)
+        amplitude_parameters = [
+            self.params[f"amplitude_{self.ifo_name}_{ii}"]
+            for ii in range(self.n_points)
+        ]
+        amplitude_spline = UnivariateSpline(self.spline_points, amplitude_parameters)
         delta_amplitude = amplitude_spline(strain.sample_frequencies.numpy())
 
-        phase_parameters =\
-            [self.params['phase_{}_{}'.format(self.ifo_name, ii)]
-             for ii in range(self.n_points)]
+        phase_parameters = [
+            self.params[f"phase_{self.ifo_name}_{ii}"]
+            for ii in range(self.n_points)
+        ]
         phase_spline = UnivariateSpline(self.spline_points, phase_parameters)
         delta_phase = phase_spline(strain.sample_frequencies.numpy())
 
-        strain_adjusted = strain * (1.0 + delta_amplitude)\
-            * (2.0 + 1j * delta_phase) / (2.0 - 1j * delta_phase)
+        strain_adjusted = (
+            strain
+            * (1.0 + delta_amplitude)
+            * (2.0 + 1j * delta_phase)
+            / (2.0 - 1j * delta_phase)
+        )
 
         return strain_adjusted
 
 
-all_models = {
-    CubicSpline.name: CubicSpline
-}
+all_models = {CubicSpline.name: CubicSpline}

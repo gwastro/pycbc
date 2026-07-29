@@ -22,59 +22,74 @@ import logging
 import sys
 
 import numpy
-
 from matplotlib import use
-use('agg')
+
+use("agg")
 from matplotlib import pyplot as plt
 
 import pycbc
-from pycbc import (results, waveform)
-from pycbc.inference.option_utils import ParseParametersArg
+from pycbc import results, waveform
 from pycbc.distributions.utils import prior_from_config
-from pycbc.workflow import WorkflowConfigParser
+from pycbc.inference.option_utils import ParseParametersArg
 from pycbc.results.scatter_histograms import create_multidim_plot
+from pycbc.workflow import WorkflowConfigParser
 
 
 def cartesian(arrays):
-    """ Returns a cartesian product from a list of iterables.
-    """
-    return numpy.array([numpy.array(element)
-                        for element in itertools.product(*arrays)])
+    """Returns a cartesian product from a list of iterables."""
+    return numpy.array([numpy.array(element) for element in itertools.product(*arrays)])
+
 
 # command line usage
 parser = argparse.ArgumentParser(
     usage="pycbc_inference_plot_prior [--options]",
-    description="Plots prior distributions.")
+    description="Plots prior distributions.",
+)
 pycbc.add_common_pycbc_options(parser)
 # add input options
-parser.add_argument("--config-files", type=str, nargs="+", required=True,
-                    help="A file parsable by "
-                         "pycbc.workflow.WorkflowConfigParser.")
-parser.add_argument("--parameters", nargs="+", action=ParseParametersArg,
-                    metavar="PARAM[:LABEL]",
-                    help="Only plot the given parameters. May also provide a "
-                         "label for each parameter. If provided, the "
-                         "parameters can be any of parameters in the "
-                         "[variable_params] section, derived parameters from "
-                         "them, or any function of them. Syntax for "
-                         "functions is python; any math functions in the "
-                         "numpy libary may be used. Can optionally also "
-                         "specify a LABEL for each parameter. If no LABEL is "
-                         "provided, PARAM will used as the LABEL. If LABEL "
-                         "is the same as a parameter in "
-                         "pycbc.waveform.parameters, the label "
-                         "property of that parameter will be used. If not "
-                         "provided, will plot all of the parameters in the "
-                         "[variable_params] section of the config file.")
-parser.add_argument("--prior-section", type=str, default="prior",
-                    help="Name of section with distribution configurations. "
-                         "Default is 'prior'.")
+parser.add_argument(
+    "--config-files",
+    type=str,
+    nargs="+",
+    required=True,
+    help="A file parsable by pycbc.workflow.WorkflowConfigParser.",
+)
+parser.add_argument(
+    "--parameters",
+    nargs="+",
+    action=ParseParametersArg,
+    metavar="PARAM[:LABEL]",
+    help="Only plot the given parameters. May also provide a "
+    "label for each parameter. If provided, the "
+    "parameters can be any of parameters in the "
+    "[variable_params] section, derived parameters from "
+    "them, or any function of them. Syntax for "
+    "functions is python; any math functions in the "
+    "numpy libary may be used. Can optionally also "
+    "specify a LABEL for each parameter. If no LABEL is "
+    "provided, PARAM will used as the LABEL. If LABEL "
+    "is the same as a parameter in "
+    "pycbc.waveform.parameters, the label "
+    "property of that parameter will be used. If not "
+    "provided, will plot all of the parameters in the "
+    "[variable_params] section of the config file.",
+)
+parser.add_argument(
+    "--prior-section",
+    type=str,
+    default="prior",
+    help="Name of section with distribution configurations. Default is 'prior'.",
+)
 # add output options
-parser.add_argument("--nsamples", type=int, default=10000,
-                    help="The number of samples to draw from the prior for "
-                         "plotting. Default is 10000.")
-parser.add_argument("--output-file", type=str, required=True,
-                    help="Path to output plot.")
+parser.add_argument(
+    "--nsamples",
+    type=int,
+    default=10000,
+    help="The number of samples to draw from the prior for plotting. Default is 10000.",
+)
+parser.add_argument(
+    "--output-file", type=str, required=True, help="Path to output plot."
+)
 
 # parse the command line
 opts = parser.parse_args()
@@ -107,14 +122,16 @@ else:
 
 logging.info("Plotting")
 fig, axis_dict = create_multidim_plot(
-    parameters, samples,
+    parameters,
+    samples,
     labels=labels,
     plot_marginal=True,
     marginal_percentiles=[5, 50, 95],
     plot_scatter=False,
     plot_density=True,
     plot_contours=True,
-    contour_percentiles=[50, 90],)
+    contour_percentiles=[50, 90],
+)
 
 
 # set DPI
@@ -124,10 +141,9 @@ fig.set_dpi(200)
 caption = """This plot shows the probability density function (PDF) from the 
 prior distributions."""
 title = "Prior Distribution"
-results.save_fig_with_metadata(fig, opts.output_file,
-                               cmd=" ".join(sys.argv),
-                               title=title,
-                               caption=caption)
+results.save_fig_with_metadata(
+    fig, opts.output_file, cmd=" ".join(sys.argv), title=title, caption=caption
+)
 plt.close()
 
 # exit

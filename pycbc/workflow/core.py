@@ -26,28 +26,29 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os
-import stat
-import subprocess
+
+import configparser as ConfigParser
+import copy
 import logging
 import math
-import string
-import urllib
+import os
 import pickle
-import copy
-import configparser as ConfigParser
-from urllib.request import pathname2url
-from urllib.parse import urljoin
-import numpy
 import random
+import stat
+import string
+import subprocess
+import urllib
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
+from urllib.parse import urljoin
+from urllib.request import pathname2url
 
 import igwn_segments as segments
 import lal
 import lal.utils
+import numpy
 import Pegasus.api  # Try and move this into pegasus_workflow
-from igwn_ligolw import lsctables, ligolw
+from igwn_ligolw import ligolw, lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import segments as ligolw_segments
 
@@ -58,7 +59,7 @@ from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import make_catalog
 
-logger = logging.getLogger('pycbc.workflow.core')
+logger = logging.getLogger("pycbc.workflow.core")
 
 
 def make_analysis_dir(path):
@@ -67,10 +68,11 @@ def make_analysis_dir(path):
     exist, and the 'logs' subdirectory of path.
     """
     if path is not None:
-        makedir(os.path.join(path, 'logs'))
+        makedir(os.path.join(path, "logs"))
 
 
 file_input_from_config_dict = {}
+
 
 class Executable(pegasus_workflow.Executable):
     # These are the file retention levels
@@ -88,11 +90,18 @@ class Executable(pegasus_workflow.Executable):
     # case.
     # These are standard file input arguments used in PyCBC, so we declare
     # these as files if given to any PyCBC job.
-    file_input_options = ['--gating-file', '--frame-files', '--injection-file',
-                          '--statistic-files', '--bank-file', '--config-files',
-                          '--psd-file', '--asd-file',
-                          '--fake-strain-from-file',
-                          '--sgburst-injection-file']
+    file_input_options = [
+        "--gating-file",
+        "--frame-files",
+        "--injection-file",
+        "--statistic-files",
+        "--bank-file",
+        "--config-files",
+        "--psd-file",
+        "--asd-file",
+        "--fake-strain-from-file",
+        "--sgburst-injection-file",
+    ]
 
     # Set this parameter to indicate that this option should take different
     # values based on the time. E.g. something like
@@ -107,18 +116,27 @@ class Executable(pegasus_workflow.Executable):
     # This is the default value. It will give a warning if a class is
     # used where the retention level is not set. The file will still be stored
     KEEP_BUT_RAISE_WARNING = 5
-    _warned_classes_list = ['Executable']
+    _warned_classes_list = ["Executable"]
 
     # Sub classes, or instances, should override this. If not overriden the
     # file will be retained, but a warning given
     current_retention_level = KEEP_BUT_RAISE_WARNING
-    def __init__(self, cp, name, ifos=None, out_dir=None, tags=None,
-                 reuse_executable=True, set_submit_subdir=True):
+
+    def __init__(
+        self,
+        cp,
+        name,
+        ifos=None,
+        out_dir=None,
+        tags=None,
+        reuse_executable=True,
+        set_submit_subdir=True,
+    ):
         """
         Initialize the Executable class.
 
         Parameters
-        -----------
+        ----------
         cp : ConfigParser object
             The ConfigParser object holding the workflow configuration settings
         name : string
@@ -143,6 +161,7 @@ class Executable(pegasus_workflow.Executable):
             Place condor files associated with this executable under a
             sub-directory (named according to the executable name) in the
             submitdir.
+
         """
         if isinstance(ifos, str):
             self.ifo_list = [ifos]
@@ -150,7 +169,7 @@ class Executable(pegasus_workflow.Executable):
             self.ifo_list = ifos
         if self.ifo_list is not None:
             self.ifo_list = sorted(self.ifo_list)
-            self.ifo_string = ''.join(self.ifo_list)
+            self.ifo_string = "".join(self.ifo_list)
         else:
             self.ifo_string = None
         self.cp = cp
@@ -159,8 +178,9 @@ class Executable(pegasus_workflow.Executable):
         self.container_type = None
 
         try:
-            self.installed = cp.getboolean('pegasus_profile-%s' % name,
-                                           'pycbc|installed')
+            self.installed = cp.getboolean(
+                "pegasus_profile-%s" % name, "pycbc|installed"
+            )
         except:
             self.installed = False
 
@@ -169,13 +189,15 @@ class Executable(pegasus_workflow.Executable):
         self.update_output_directory(out_dir=out_dir)
 
         # Determine the level at which output files should be kept
-        if cp.has_option_tags('pegasus_profile-%s' % name,
-                              'pycbc|retention_level', tags):
+        if cp.has_option_tags(
+            "pegasus_profile-%s" % name, "pycbc|retention_level", tags
+        ):
             # Get the retention_level from the config file
             # This method allows us to use the retention levels
             # defined above
-            cfg_ret_level = cp.get_opt_tags('pegasus_profile-%s' % name,
-                    'pycbc|retention_level', tags)
+            cfg_ret_level = cp.get_opt_tags(
+                "pegasus_profile-%s" % name, "pycbc|retention_level", tags
+            )
             self.current_retention_level = getattr(self, cfg_ret_level)
 
         self.update_current_retention_level(self.current_retention_level)
@@ -189,7 +211,7 @@ class Executable(pegasus_workflow.Executable):
         # Check that the executable actually exists locally or
         # looks like a URL, in which case trust Pegasus to be
         # able to fetch it.
-        exe_path = cp.get('executables', name)
+        exe_path = cp.get("executables", name)
         self.needs_fetching = False
 
         exe_url = urllib.parse.urlparse(exe_path)
@@ -200,17 +222,16 @@ class Executable(pegasus_workflow.Executable):
         #  2) Check is primary_site is set globally.
         #  3) Use condorpool_symlink as a fallback.
         self.exe_pfns = {}
-        if cp.has_option_tags('pegasus_profile-%s' % name, 'pycbc|site', tags):
-            exe_site = cp.get_opt_tags('pegasus_profile-%s' % name,
-                                       'pycbc|site', tags)
-        elif cp.has_option('pegasus_profile', 'pycbc|primary_site'):
-            exe_site = cp.get('pegasus_profile', 'pycbc|primary_site')
+        if cp.has_option_tags("pegasus_profile-%s" % name, "pycbc|site", tags):
+            exe_site = cp.get_opt_tags("pegasus_profile-%s" % name, "pycbc|site", tags)
+        elif cp.has_option("pegasus_profile", "pycbc|primary_site"):
+            exe_site = cp.get("pegasus_profile", "pycbc|primary_site")
         else:
-            exe_site = 'condorpool_symlink'
+            exe_site = "condorpool_symlink"
 
         exe_site = exe_site.strip()
 
-        if exe_url.scheme in ['', 'file']:
+        if exe_url.scheme in ["", "file"]:
             # NOTE: There could be a case where the exe is available at a
             #       remote site, but not on the submit host. Currently allowed
             #       for the OSG site, versioning will not work as planned if
@@ -220,10 +241,11 @@ class Executable(pegasus_workflow.Executable):
             # Check that executables at file urls
             #  on the local site exist
             if os.path.isfile(exe_url.path) is False:
-                raise TypeError("Failed to find %s executable "
-                                "at %s on site %s" % (name, exe_path,
-                                exe_site))
-        elif exe_url.scheme == 'singularity':
+                raise TypeError(
+                    "Failed to find %s executable "
+                    "at %s on site %s" % (name, exe_path, exe_site)
+                )
+        elif exe_url.scheme == "singularity":
             # Will use an executable within a singularity container. Don't
             # need to do anything here, as I cannot easily check it exists.
             exe_path = exe_url.path
@@ -239,17 +261,14 @@ class Executable(pegasus_workflow.Executable):
 
         if self.installed:
             # Is installed, so copy from local site, like other inputs
-            self.exe_pfns['local'] = exe_path
+            self.exe_pfns["local"] = exe_path
         else:
             # We must rely on the executables, and accompanying libraries,
             # being directly accessible on the execution site.
             # CVMFS is perfect for this! As is singularity.
             self.exe_pfns[exe_site] = exe_path
         logger.debug(
-            "Using %s executable at %s on site %s",
-            name,
-            exe_url.path,
-            exe_site
+            "Using %s executable at %s on site %s", name, exe_url.path, exe_site
         )
 
         # FIXME: This hasn't yet been ported to pegasus5 and won't work.
@@ -257,50 +276,52 @@ class Executable(pegasus_workflow.Executable):
         #        to figure out which is most appropriate and use that.
         # Determine if this executables should be run in a container
         try:
-            self.container_type = cp.get('pegasus_profile-%s' % name,
-                                         'container|type')
+            self.container_type = cp.get("pegasus_profile-%s" % name, "container|type")
         except:
             pass
 
         if self.container_type is not None:
             # FIXME: Move the actual container setup into pegasus_workflow
-            self.container_img = cp.get('pegasus_profile-%s' % name,
-                                        'container|image')
+            self.container_img = cp.get("pegasus_profile-%s" % name, "container|image")
             try:
-                self.container_site = cp.get('pegasus_profile-%s' % name,
-                                             'container|image_site')
+                self.container_site = cp.get(
+                    "pegasus_profile-%s" % name, "container|image_site"
+                )
             except:
-                self.container_site = 'local'
+                self.container_site = "local"
 
             try:
-                self.container_mount = cp.get('pegasus_profile-%s' % name,
-                                             'container|mount').split(',')
+                self.container_mount = cp.get(
+                    "pegasus_profile-%s" % name, "container|mount"
+                ).split(",")
             except:
                 self.container_mount = None
 
+            self.container_cls = Pegasus.api.Container(
+                f"{name}-container",
+                self.container_type,
+                self.container_img,
+                imagesite=self.container_site,
+                mount=self.container_mount,
+            )
 
-            self.container_cls = Pegasus.api.Container("{}-container".format(
-                                                    name),
-                                                    self.container_type,
-                                                    self.container_img,
-                                                    imagesite=self.container_site,
-                                                    mount=self.container_mount)
-
-            super(Executable, self).__init__(self.pegasus_name,
-                                             installed=self.installed,
-                                             container=self.container_cls)
+            super().__init__(
+                self.pegasus_name,
+                installed=self.installed,
+                container=self.container_cls,
+            )
 
         else:
-            super(Executable, self).__init__(self.pegasus_name,
-                                             installed=self.installed)
+            super().__init__(
+                self.pegasus_name, installed=self.installed
+            )
 
         if hasattr(self, "group_jobs"):
-            self.add_profile('pegasus', 'clusters.size', self.group_jobs)
+            self.add_profile("pegasus", "clusters.size", self.group_jobs)
 
         # This sets up the sub-directory to use in the submit directory
         if set_submit_subdir:
-            self.add_profile('pegasus', 'relative.submit.dir',
-                             self.pegasus_name)
+            self.add_profile("pegasus", "relative.submit.dir", self.pegasus_name)
 
         # Set configurations from the config file, these should override all
         # other settings
@@ -311,110 +332,109 @@ class Executable(pegasus_workflow.Executable):
 
     @property
     def ifo(self):
-        """Return the ifo.
+        """
+        Return the ifo.
 
         If only one ifo in the ifo list this will be that ifo. Otherwise an
         error is raised.
         """
         if self.ifo_list and len(self.ifo_list) == 1:
             return self.ifo_list[0]
-        else:
-            errMsg = "self.ifoList must contain only one ifo to access the "
-            errMsg += "ifo property. %s." %(str(self.ifo_list),)
-            raise TypeError(errMsg)
+        errMsg = "self.ifoList must contain only one ifo to access the "
+        errMsg += "ifo property. %s." % (str(self.ifo_list),)
+        raise TypeError(errMsg)
 
     def get_transformation(self):
         if self.execution_site in self.transformations:
             return self.transformations[self.execution_site]
-        else:
-            self.create_transformation(self.execution_site,
-                                       self.executable_url)
-            return self.get_transformation()
+        self.create_transformation(self.execution_site, self.executable_url)
+        return self.get_transformation()
 
     def add_ini_profile(self, cp, sec):
-        """Add profile from configuration file.
+        """
+        Add profile from configuration file.
 
         Parameters
-        -----------
+        ----------
         cp : ConfigParser object
             The ConfigParser object holding the workflow configuration settings
         sec : string
             The section containing options for this job.
+
         """
         for opt in cp.options(sec):
-            namespace = opt.split('|')[0]
-            if namespace == 'pycbc' or namespace == 'container':
+            namespace = opt.split("|")[0]
+            if namespace == "pycbc" or namespace == "container":
                 continue
 
             value = cp.get(sec, opt).strip()
-            key = opt.split('|')[1]
+            key = opt.split("|")[1]
             self.add_profile(namespace, key, value)
 
     def _add_ini_opts(self, cp, sec, ignore_existing=False):
-        """Add job-specific options from configuration file.
+        """
+        Add job-specific options from configuration file.
 
         Parameters
-        -----------
+        ----------
         cp : ConfigParser object
             The ConfigParser object holding the workflow configuration
             settings
         sec : string
             The section containing options for this job.
+
         """
         for opt in cp.options(sec):
             if opt in self.all_added_options:
                 if ignore_existing:
                     continue
-                else:
-                    raise ValueError("Option %s has already been added" % opt)
+                raise ValueError("Option %s has already been added" % opt)
             self.all_added_options.add(opt)
 
             value = cp.get(sec, opt).strip()
-            opt = f'--{opt}'
+            opt = f"--{opt}"
             if opt in self.file_input_options:
                 # This now expects the option to be a file
                 # Check if we have a list of files
-                values = [path for path in value.split(' ') if path]
+                values = [path for path in value.split(" ") if path]
 
                 self.common_raw_options.append(opt)
-                self.common_raw_options.append(' ')
+                self.common_raw_options.append(" ")
 
                 # Get LFN and PFN
                 for path in values:
                     # Here I decide if the path is URL or
                     # IFO:/path/to/file or IFO:url://path/to/file
                     # That's somewhat tricksy as we used : as delimiter
-                    split_path = path.split(':', 1)
+                    split_path = path.split(":", 1)
                     if len(split_path) == 1:
                         ifo = None
                         path = path
+                    # Have I split a URL or not?
+                    elif split_path[1].startswith("//"):
+                        # URL
+                        ifo = None
+                        path = path
                     else:
-                        # Have I split a URL or not?
-                        if split_path[1].startswith('//'):
-                            # URL
-                            ifo = None
-                            path = path
-                        else:
-                            #IFO:path or IFO:URL
-                            ifo = split_path[0]
-                            path = split_path[1]
+                        # IFO:path or IFO:URL
+                        ifo = split_path[0]
+                        path = split_path[1]
 
                     # If the file exists make sure to use the
                     # fill path as a file:// URL
                     if os.path.isfile(path):
-                        curr_pfn = urljoin('file:',
-                                           pathname2url(os.path.abspath(path)))
+                        curr_pfn = urljoin("file:", pathname2url(os.path.abspath(path)))
                     else:
                         curr_pfn = path
 
                     curr_file = resolve_url_to_file(curr_pfn)
                     self.common_input_files.append(curr_file)
                     if ifo:
-                        self.common_raw_options.append(ifo + ':')
+                        self.common_raw_options.append(ifo + ":")
                         self.common_raw_options.append(curr_file.dax_repr)
                     else:
                         self.common_raw_options.append(curr_file.dax_repr)
-                    self.common_raw_options.append(' ')
+                    self.common_raw_options.append(" ")
             elif opt in self.time_dependent_options:
                 # There is a possibility of time-dependent, file options.
                 # For now we will avoid supporting that complication unless
@@ -427,14 +447,16 @@ class Executable(pegasus_workflow.Executable):
                 self.common_options += [opt, value]
 
     def add_opt(self, opt, value=None):
-        """Add option to job.
+        """
+        Add option to job.
 
         Parameters
-        -----------
+        ----------
         opt : string
             Name of option (e.g. --output-file-format)
         value : string, (default=None)
             The value for the option (no value if set to None).
+
         """
         if value is None:
             self.common_options += [opt]
@@ -442,17 +464,19 @@ class Executable(pegasus_workflow.Executable):
             self.common_options += [opt, value]
 
     def get_opt(self, opt):
-        """Get value of option from configuration file
+        """
+        Get value of option from configuration file
 
         Parameters
-        -----------
+        ----------
         opt : string
             Name of option (e.g. output-file-format)
 
         Returns
-        --------
+        -------
         value : string
             The value for the option. Returns None if option not present.
+
         """
         for sec in self.sections:
             try:
@@ -465,12 +489,14 @@ class Executable(pegasus_workflow.Executable):
         return None
 
     def has_opt(self, opt):
-        """Check if option is present in configuration file
+        """
+        Check if option is present in configuration file
 
         Parameters
-        -----------
+        ----------
         opt : string
             Name of option (e.g. output-file-format)
+
         """
         for sec in self.sections:
             val = self.cp.has_option(sec, opt)
@@ -480,33 +506,36 @@ class Executable(pegasus_workflow.Executable):
         return False
 
     def create_node(self, **kwargs):
-        """Default node constructor.
+        """
+        Default node constructor.
 
         This is usually overridden by subclasses of Executable.
         """
         return Node(self, **kwargs)
 
     def update_current_retention_level(self, value):
-        """Set a new value for the current retention level.
+        """
+        Set a new value for the current retention level.
 
         This updates the value of self.retain_files for an updated value of the
         retention level.
 
         Parameters
-        -----------
+        ----------
         value : int
             The new value to use for the retention level.
+
         """
         # Determine the level at which output files should be kept
         self.current_retention_level = value
         try:
-            global_retention_level = \
-                self.cp.get_opt_tags("workflow", "file-retention-level",
-                                   self.tags+[self.name])
+            global_retention_level = self.cp.get_opt_tags(
+                "workflow", "file-retention-level", self.tags + [self.name]
+            )
         except ConfigParser.Error:
-            msg="Cannot find file-retention-level in [workflow] section "
-            msg+="of the configuration file. Setting a default value of "
-            msg+="retain all files."
+            msg = "Cannot find file-retention-level in [workflow] section "
+            msg += "of the configuration file. Setting a default value of "
+            msg += "retain all files."
             logger.warning(msg)
             self.retain_files = True
             self.global_retention_threshold = 1
@@ -514,18 +543,19 @@ class Executable(pegasus_workflow.Executable):
         else:
             # FIXME: Are these names suitably descriptive?
             retention_choices = {
-                                 'all_files' : 1,
-                                 'all_triggers' : 2,
-                                 'merged_triggers' : 3,
-                                 'results' : 4
-                                }
+                "all_files": 1,
+                "all_triggers": 2,
+                "merged_triggers": 3,
+                "results": 4,
+            }
             try:
-                self.global_retention_threshold = \
-                      retention_choices[global_retention_level]
+                self.global_retention_threshold = retention_choices[
+                    global_retention_level
+                ]
             except KeyError:
                 err_msg = "Cannot recognize the file-retention-level in the "
                 err_msg += "[workflow] section of the ini file. "
-                err_msg += "Got : {0}.".format(global_retention_level)
+                err_msg += f"Got : {global_retention_level}."
                 err_msg += "Valid options are: 'all_files', 'all_triggers',"
                 err_msg += "'merged_triggers' or 'results' "
                 raise ValueError(err_msg)
@@ -535,7 +565,7 @@ class Executable(pegasus_workflow.Executable):
                     pass
                 else:
                     warn_msg = "Attribute current_retention_level has not "
-                    warn_msg += "been set in class {0}. ".format(type(self))
+                    warn_msg += f"been set in class {type(self)}. "
                     warn_msg += "This value should be set explicitly. "
                     warn_msg += "All output from this class will be stored."
                     logger.warning(warn_msg)
@@ -546,7 +576,8 @@ class Executable(pegasus_workflow.Executable):
                 self.retain_files = True
 
     def update_current_tags(self, tags):
-        """Set a new set of tags for this executable.
+        """
+        Set a new set of tags for this executable.
 
         Update the set of tags that this job will use. This updated default
         file naming and shared options. It will *not* update the pegasus
@@ -554,31 +585,31 @@ class Executable(pegasus_workflow.Executable):
         different nodes.
 
         Parameters
-        -----------
+        ----------
         tags : list
             The new list of tags to consider.
+
         """
         if tags is None:
             tags = []
-        if '' in tags:
-            logger.warning('DO NOT GIVE ME EMPTY TAGS (in %s)', self.name)
-            tags.remove('')
+        if "" in tags:
+            logger.warning("DO NOT GIVE ME EMPTY TAGS (in %s)", self.name)
+            tags.remove("")
         tags = [tag.upper() for tag in tags]
         self.tags = tags
 
         if len(tags) > 6:
             warn_msg = "This job has way too many tags. "
-            warn_msg += "Current tags are {}. ".format(' '.join(tags))
-            warn_msg += "Current executable {}.".format(self.name)
+            warn_msg += "Current tags are {}. ".format(" ".join(tags))
+            warn_msg += f"Current executable {self.name}."
             logger.warning(warn_msg)
 
         if len(tags) != 0:
-            self.tagged_name = "{0}-{1}".format(self.name, '_'.join(tags))
+            self.tagged_name = "{0}-{1}".format(self.name, "_".join(tags))
         else:
             self.tagged_name = self.name
         if self.ifo_string is not None:
-            self.tagged_name = "{0}-{1}".format(self.tagged_name,
-                                                self.ifo_string)
+            self.tagged_name = f"{self.tagged_name}-{self.ifo_string}"
 
         # Determine the sections from the ini file that will configure
         # this executable
@@ -590,10 +621,10 @@ class Executable(pegasus_workflow.Executable):
                 sec_tags = tags + self.ifo_list
         else:
             sec_tags = tags
-        for sec_len in range(1, len(sec_tags)+1):
+        for sec_len in range(1, len(sec_tags) + 1):
             for tag_permutation in permutations(sec_tags, sec_len):
-                joined_name = '-'.join(tag_permutation)
-                section = '{0}-{1}'.format(self.name, joined_name.lower())
+                joined_name = "-".join(tag_permutation)
+                section = f"{self.name}-{joined_name.lower()}"
                 if self.cp.has_section(section):
                     sections.append(section)
 
@@ -615,22 +646,25 @@ class Executable(pegasus_workflow.Executable):
                 self._add_ini_opts(self.cp, sec)
             else:
                 warn_string = "warning: config file is missing section "
-                warn_string += "[{0}]".format(sec)
+                warn_string += f"[{sec}]"
                 logger.warning(warn_string)
 
         # get uppermost section
-        if self.cp.has_section(f'{self.name}-defaultvalues'):
-            self._add_ini_opts(self.cp, f'{self.name}-defaultvalues',
-                               ignore_existing=True)
+        if self.cp.has_section(f"{self.name}-defaultvalues"):
+            self._add_ini_opts(
+                self.cp, f"{self.name}-defaultvalues", ignore_existing=True
+            )
 
     def update_output_directory(self, out_dir=None):
-        """Update the default output directory for output files.
+        """
+        Update the default output directory for output files.
 
         Parameters
-        -----------
+        ----------
         out_dir : string (optional, default=None)
             If provided use this as the output directory. Else choose this
             automatically from the tags.
+
         """
         # Determine the output directory
         if out_dir is not None:
@@ -648,7 +682,8 @@ class Executable(pegasus_workflow.Executable):
             make_analysis_dir(self.out_dir)
 
     def _set_pegasus_profile_options(self):
-        """Set the pegasus-profile settings for this Executable.
+        """
+        Set the pegasus-profile settings for this Executable.
 
         These are a property of the Executable and not of nodes that it will
         spawn. Therefore it *cannot* be updated without also changing values
@@ -657,9 +692,8 @@ class Executable(pegasus_workflow.Executable):
         """
         # Executable- and tag-specific profile information
         for sec in self.sections:
-            if self.cp.has_section('pegasus_profile-{0}'.format(sec)):
-                self.add_ini_profile(self.cp,
-                                     'pegasus_profile-{0}'.format(sec))
+            if self.cp.has_section(f"pegasus_profile-{sec}"):
+                self.add_ini_profile(self.cp, f"pegasus_profile-{sec}")
 
 
 class Workflow(pegasus_workflow.Workflow):
@@ -668,6 +702,7 @@ class Workflow(pegasus_workflow.Workflow):
     functions for finding input files using time and keywords. It can also
     generate cache files from the inputs.
     """
+
     def __init__(self, args, name=None):
         """
         Create a pycbc workflow
@@ -676,17 +711,18 @@ class Workflow(pegasus_workflow.Workflow):
         ----------
         args : argparse.ArgumentParser
             The command line options to initialize a CBC workflow.
+
         """
         # Parse ini file
         self.cp = WorkflowConfigParser.from_cli(args)
         self.args = args
 
-        if hasattr(args, 'dax_file'):
+        if hasattr(args, "dax_file"):
             dax_file = args.dax_file or None
         else:
             dax_file = None
 
-        if hasattr(args, 'dax_file_directory'):
+        if hasattr(args, "dax_file_directory"):
             output_dir = args.dax_file_directory or args.output_dir or None
         else:
             output_dir = args.output_dir or None
@@ -697,7 +733,7 @@ class Workflow(pegasus_workflow.Workflow):
         else:
             cache_file = None
 
-        super(Workflow, self).__init__(
+        super().__init__(
             name=name if name is not None else args.workflow_name,
             directory=output_dir,
             cache_file=cache_file,
@@ -706,23 +742,23 @@ class Workflow(pegasus_workflow.Workflow):
 
         # Set global values
         start_time = end_time = 0
-        if self.cp.has_option('workflow', 'start-time'):
+        if self.cp.has_option("workflow", "start-time"):
             start_time = int(self.cp.get("workflow", "start-time"))
 
-        if self.cp.has_option('workflow', 'end-time'):
+        if self.cp.has_option("workflow", "end-time"):
             end_time = int(self.cp.get("workflow", "end-time"))
         self.analysis_time = segments.segment([start_time, end_time])
 
         # Set the ifos to analyse
         ifos = []
-        if self.cp.has_section('workflow-ifos'):
-            for ifo in self.cp.options('workflow-ifos'):
+        if self.cp.has_section("workflow-ifos"):
+            for ifo in self.cp.options("workflow-ifos"):
                 ifos.append(ifo.upper())
 
         self.ifos = ifos
         self.ifos.sort(key=str.lower)
         self.get_ifo_combinations()
-        self.ifo_string = ''.join(self.ifos)
+        self.ifo_string = "".join(self.ifos)
 
         # Set up input and output file lists for workflow
         self._inputs = FileList([])
@@ -733,33 +769,34 @@ class Workflow(pegasus_workflow.Workflow):
     def output_map(self):
         args = self.args
 
-        if hasattr(args, 'output_map') and args.output_map is not None:
+        if hasattr(args, "output_map") and args.output_map is not None:
             return args.output_map
 
         if self.in_workflow is not False:
-            name = self.name + '.map'
+            name = self.name + ".map"
         else:
-            name = 'output.map'
+            name = "output.map"
 
-        path =  os.path.join(self.out_dir, name)
+        path = os.path.join(self.out_dir, name)
         return path
 
     @property
     def sites(self):
         """List of all possible exucution sites for jobs in this workflow"""
         sites = set()
-        sites.add('local')
-        if self.cp.has_option('pegasus_profile', 'pycbc|primary_site'):
-            site = self.cp.get('pegasus_profile', 'pycbc|primary_site')
+        sites.add("local")
+        if self.cp.has_option("pegasus_profile", "pycbc|primary_site"):
+            site = self.cp.get("pegasus_profile", "pycbc|primary_site")
         else:
             # The default if not chosen
-            site = 'condorpool_symlink'
+            site = "condorpool_symlink"
         sites.add(site)
-        subsections = [sec for sec in self.cp.sections()
-                       if sec.startswith('pegasus_profile-')]
+        subsections = [
+            sec for sec in self.cp.sections() if sec.startswith("pegasus_profile-")
+        ]
         for subsec in subsections:
-            if self.cp.has_option(subsec, 'pycbc|site'):
-                site = self.cp.get(subsec, 'pycbc|site')
+            if self.cp.has_option(subsec, "pycbc|site"):
+                site = self.cp.get(subsec, "pycbc|site")
                 sites.add(site)
         return list(sites)
 
@@ -768,23 +805,22 @@ class Workflow(pegasus_workflow.Workflow):
         """Site to use for staging to/from each site"""
         staging_site = {}
         for site in self.sites:
-            if site in ['condorpool_shared']:
+            if site in ["condorpool_shared"]:
                 staging_site[site] = site
             else:
-                staging_site[site] = 'local'
+                staging_site[site] = "local"
         return staging_site
 
     @property
     def staging_site_str(self):
-        return ','.join(['='.join(x) for x in self.staging_site.items()])
+        return ",".join(["=".join(x) for x in self.staging_site.items()])
 
     @property
     def exec_sites_str(self):
-        return ','.join(self.sites)
+        return ",".join(self.sites)
 
-    def execute_node(self, node, verbatim_exe = False):
-        """ Execute this node immediately on the local machine
-        """
+    def execute_node(self, node, verbatim_exe=False):
+        """Execute this node immediately on the local machine"""
         node.executed = True
 
         # Check that the PFN is for a file or path
@@ -796,15 +832,15 @@ class Workflow(pegasus_workflow.Workflow):
                 # or it may have been marked nonlocal.  That's
                 # fine, we'll resolve the URL and make a local
                 # entry.
-                pfn = node.executable.get_pfn('nonlocal')
+                pfn = node.executable.get_pfn("nonlocal")
 
             resolved = resolve_url(
-                pfn,
-                permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+                pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
             )
             node.executable.clear_pfns()
-            node.executable.add_pfn(urljoin('file:', pathname2url(resolved)),
-                                    site='local')
+            node.executable.add_pfn(
+                urljoin("file:", pathname2url(resolved)), site="local"
+            )
 
         cmd_list = node.get_command_line()
 
@@ -814,15 +850,17 @@ class Workflow(pegasus_workflow.Workflow):
         os.chdir(out_dir)
 
         # Make call
-        make_external_call(cmd_list, out_dir=os.path.join(out_dir, 'logs'),
-                           out_basename=node.executable.name)
+        make_external_call(
+            cmd_list,
+            out_dir=os.path.join(out_dir, "logs"),
+            out_basename=node.executable.name,
+        )
         # Change back
         os.chdir(curr_dir)
 
         for fil in node._outputs:
             fil.node = None
-            fil.add_pfn(urljoin('file:', pathname2url(fil.storage_path)),
-                        site='local')
+            fil.add_pfn(urljoin("file:", pathname2url(fil.storage_path)), site="local")
 
     def save(self, filename=None, output_map_path=None, root=True):
         # FIXME: Too close to pegasus to live here and not in pegasus_workflow
@@ -831,14 +869,14 @@ class Workflow(pegasus_workflow.Workflow):
             output_map_path = self.output_map
 
         output_map_file = pegasus_workflow.File(os.path.basename(output_map_path))
-        output_map_file.add_pfn(output_map_path, site='local')
+        output_map_file.add_pfn(output_map_path, site="local")
         self.output_map_file = output_map_file
 
         if self.in_workflow:
             self._as_job.set_subworkflow_properties(
                 output_map_file,
                 staging_site=self.staging_site,
-                cache_file=self.cache_file
+                cache_file=self.cache_file,
             )
             self._as_job.add_planner_args(**self._as_job.pycbc_planner_args)
 
@@ -850,7 +888,7 @@ class Workflow(pegasus_workflow.Workflow):
             self.add_container(container)
 
         # save the configuration file
-        ini_file = os.path.join(self.out_dir, self.name + '.ini')
+        ini_file = os.path.join(self.out_dir, self.name + ".ini")
 
         # This shouldn't already exist, but just in case
         if os.path.isfile(ini_file):
@@ -859,29 +897,32 @@ class Workflow(pegasus_workflow.Workflow):
             err_msg += ini_file
             raise ValueError(err_msg)
 
-        with open(ini_file, 'w') as fp:
+        with open(ini_file, "w") as fp:
             self.cp.write(fp)
 
         # save the sites file
         # checking for in_workflow prevents sub-workflows from making
         # extra unused sites.yml
         if not self.in_workflow:
-            catalog_path = os.path.join(self.out_dir, 'sites.yml')
+            catalog_path = os.path.join(self.out_dir, "sites.yml")
             make_catalog(self.cp, self.out_dir).write(catalog_path)
 
         # save the dax file
-        super(Workflow, self).save(filename=filename,
-                                   output_map_path=output_map_path,
-                                   submit_now=self.args.submit_now,
-                                   plan_now=self.args.plan_now,
-                                   root=root)
+        super().save(
+            filename=filename,
+            output_map_path=output_map_path,
+            submit_now=self.args.submit_now,
+            plan_now=self.args.plan_now,
+            root=root,
+        )
 
     def save_config(self, fname, output_dir, cp=None):
-        """ Writes configuration file to disk and returns a pycbc.workflow.File
+        """
+        Writes configuration file to disk and returns a pycbc.workflow.File
         instance for the configuration file.
 
         Parameters
-        -----------
+        ----------
         fname : string
             The filename of the configuration file written to disk.
         output_dir : string
@@ -893,13 +934,15 @@ class Workflow(pegasus_workflow.Workflow):
         -------
         FileList
             The FileList object with the configuration file.
+
         """
         cp = self.cp if cp is None else cp
         ini_file_path = os.path.abspath(os.path.join(output_dir, fname))
         with open(ini_file_path, "w") as fp:
             cp.write(fp)
-        ini_file = File(self.ifos, "", self.analysis_time,
-                        file_url="file://" + ini_file_path)
+        ini_file = File(
+            self.ifos, "", self.analysis_time, file_url="file://" + ini_file_path
+        )
         # set the physical file name
         ini_file.add_pfn(ini_file_path, "local")
         # set the storage path to be the same
@@ -913,13 +956,14 @@ class Workflow(pegasus_workflow.Workflow):
         """
         self.ifo_combinations = []
         for n in range(len(self.ifos)):
-            self.ifo_combinations += [''.join(ifos).lower() for ifos in
-                                      combinations(self.ifos, n + 1)]
+            self.ifo_combinations += [
+                "".join(ifos).lower() for ifos in combinations(self.ifos, n + 1)
+            ]
 
 
 class Node(pegasus_workflow.Node):
     def __init__(self, executable, valid_seg=None):
-        super(Node, self).__init__(executable.get_transformation())
+        super().__init__(executable.get_transformation())
         self.executable = executable
         self.executed = False
         self.set_category(executable.name)
@@ -947,12 +991,12 @@ class Node(pegasus_workflow.Node):
         tmpargs = []
         for a in arglist:
             if not isinstance(a, File):
-                tmpargs += a.split(' ')
+                tmpargs += a.split(" ")
             else:
                 tmpargs.append(a)
         arglist = tmpargs
 
-        arglist = [a for a in arglist if a != '']
+        arglist = [a for a in arglist if a != ""]
 
         arglist = [a.storage_path if isinstance(a, File) else a for a in arglist]
 
@@ -962,14 +1006,21 @@ class Node(pegasus_workflow.Node):
 
         return [exe_path] + arglist
 
-    def new_output_file_opt(self, valid_seg, extension, option_name, tags=None,
-                            store_file=None, use_tmp_subdirs=False):
+    def new_output_file_opt(
+        self,
+        valid_seg,
+        extension,
+        option_name,
+        tags=None,
+        store_file=None,
+        use_tmp_subdirs=False,
+    ):
         """
         This function will create a workflow.File object corresponding to the given
         information and then add that file as output of this node.
 
         Parameters
-        -----------
+        ----------
         valid_seg : igwn_segments.segment
             The time span over which the job is valid for.
         extension : string
@@ -986,6 +1037,7 @@ class Node(pegasus_workflow.Node):
             This file is to be added to the output mapper and will be stored
             in the specified output location if True. If false file will be
             removed when no longer needed in the workflow.
+
         """
         if tags is None:
             tags = []
@@ -997,55 +1049,73 @@ class Node(pegasus_workflow.Node):
             if tag not in all_tags:
                 all_tags.append(tag)
 
-        store_file = store_file if store_file is not None else self.executable.retain_files
+        store_file = (
+            store_file if store_file is not None else self.executable.retain_files
+        )
 
-        fil = File(self.executable.ifo_list, self.executable.name,
-                   valid_seg, extension=extension, store_file=store_file,
-                   directory=self.executable.out_dir, tags=all_tags,
-                   use_tmp_subdirs=use_tmp_subdirs)
+        fil = File(
+            self.executable.ifo_list,
+            self.executable.name,
+            valid_seg,
+            extension=extension,
+            store_file=store_file,
+            directory=self.executable.out_dir,
+            tags=all_tags,
+            use_tmp_subdirs=use_tmp_subdirs,
+        )
         self.add_output_opt(option_name, fil)
         return fil
 
     def add_multiifo_input_list_opt(self, opt, inputs):
-        """ Add an option that determines a list of inputs from multiple
-            detectors. Files will be supplied as --opt ifo1:input1 ifo2:input2
-            .....
+        """
+        Add an option that determines a list of inputs from multiple
+        detectors. Files will be supplied as --opt ifo1:input1 ifo2:input2
+        .....
         """
         # NOTE: Here we have to use the raw arguments functionality as the
         #       file and ifo are not space separated.
         self.add_raw_arg(opt)
-        self.add_raw_arg(' ')
+        self.add_raw_arg(" ")
         for infile in inputs:
             self.add_raw_arg(infile.ifo)
-            self.add_raw_arg(':')
+            self.add_raw_arg(":")
             self.add_raw_arg(infile.name)
-            self.add_raw_arg(' ')
+            self.add_raw_arg(" ")
             self.add_input(infile)
 
     def add_multiifo_output_list_opt(self, opt, outputs):
-        """ Add an option that determines a list of outputs from multiple
-            detectors. Files will be supplied as --opt ifo1:input1 ifo2:input2
-            .....
+        """
+        Add an option that determines a list of outputs from multiple
+        detectors. Files will be supplied as --opt ifo1:input1 ifo2:input2
+        .....
         """
         # NOTE: Here we have to use the raw arguments functionality as the
         #       file and ifo are not space separated.
         self.add_raw_arg(opt)
-        self.add_raw_arg(' ')
+        self.add_raw_arg(" ")
         for outfile in outputs:
             self.add_raw_arg(outfile.ifo)
-            self.add_raw_arg(':')
+            self.add_raw_arg(":")
             self.add_raw_arg(outfile.name)
-            self.add_raw_arg(' ')
+            self.add_raw_arg(" ")
             self.add_output(outfile)
 
-    def new_multiifo_output_list_opt(self, opt, ifos, analysis_time, extension,
-                                     tags=None, store_file=None,
-                                     use_tmp_subdirs=False):
-        """ Add an option that determines a list of outputs from multiple
-            detectors. Files will be supplied as --opt ifo1:input1 ifo2:input2
-            .....
-            File names are created internally from the provided extension and
-            analysis time.
+    def new_multiifo_output_list_opt(
+        self,
+        opt,
+        ifos,
+        analysis_time,
+        extension,
+        tags=None,
+        store_file=None,
+        use_tmp_subdirs=False,
+    ):
+        """
+        Add an option that determines a list of outputs from multiple
+        detectors. Files will be supplied as --opt ifo1:input1 ifo2:input2
+        .....
+        File names are created internally from the provided extension and
+        analysis time.
         """
         if tags is None:
             tags = []
@@ -1055,14 +1125,21 @@ class Node(pegasus_workflow.Node):
                 all_tags.append(tag)
 
         output_files = FileList([])
-        store_file = store_file if store_file is not None \
-                                              else self.executable.retain_files
+        store_file = (
+            store_file if store_file is not None else self.executable.retain_files
+        )
 
         for ifo in ifos:
-            curr_file = File(ifo, self.executable.name, analysis_time,
-                             extension=extension, store_file=store_file,
-                             directory=self.executable.out_dir, tags=all_tags,
-                             use_tmp_subdirs=use_tmp_subdirs)
+            curr_file = File(
+                ifo,
+                self.executable.name,
+                analysis_time,
+                extension=extension,
+                store_file=store_file,
+                directory=self.executable.out_dir,
+                tags=all_tags,
+                use_tmp_subdirs=use_tmp_subdirs,
+            )
             output_files.append(curr_file)
         self.add_multiifo_output_list_opt(opt, output_files)
 
@@ -1084,13 +1161,13 @@ class Node(pegasus_workflow.Node):
         if len(out_files) != 1:
             err_msg = "output_file property is only valid if there is a single"
             err_msg += " output file. Here there are "
-            err_msg += "%d output files." %(len(out_files))
+            err_msg += "%d output files." % (len(out_files))
             raise ValueError(err_msg)
         return out_files[0]
 
 
 class File(pegasus_workflow.File):
-    '''
+    """
     This class holds the details of an individual output file
     This file(s) may be pre-supplied, generated from within the workflow
     command line script, or generated within the workflow. The important stuff
@@ -1110,10 +1187,20 @@ class File(pegasus_workflow.File):
 
     >> c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
 
-    '''
-    def __init__(self, ifos, exe_name, segs, file_url=None,
-                 extension=None, directory=None, tags=None,
-                 store_file=True, use_tmp_subdirs=False):
+    """
+
+    def __init__(
+        self,
+        ifos,
+        exe_name,
+        segs,
+        file_url=None,
+        extension=None,
+        directory=None,
+        tags=None,
+        store_file=True,
+        use_tmp_subdirs=False,
+    ):
         """
         Create a File instance
 
@@ -1152,6 +1239,7 @@ class File(pegasus_workflow.File):
             This is a list of descriptors describing what this file is. For
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
             These are used in file naming.
+
         """
         self.metadata = {}
 
@@ -1162,9 +1250,9 @@ class File(pegasus_workflow.File):
             self.ifo_list = ifos
 
         if self.ifo_list is not None:
-            self.ifo_string = ''.join(self.ifo_list)
+            self.ifo_string = "".join(self.ifo_list)
         else:
-            self.ifo_string = 'file'
+            self.ifo_string = "file"
 
         self.description = exe_name
 
@@ -1186,14 +1274,14 @@ class File(pegasus_workflow.File):
 
         if tags is None:
             tags = []
-        if '' in tags:
-            logger.warning('DO NOT GIVE EMPTY TAGS (from %s)', exe_name)
-            tags.remove('')
+        if "" in tags:
+            logger.warning("DO NOT GIVE EMPTY TAGS (from %s)", exe_name)
+            tags.remove("")
         self.tags = tags
 
         if len(self.tags):
-            self.tag_str = '_'.join(tags)
-            tagged_description = '_'.join([self.description] + tags)
+            self.tag_str = "_".join(tags)
+            tagged_description = "_".join([self.description] + tags)
         else:
             tagged_description = self.description
 
@@ -1203,26 +1291,31 @@ class File(pegasus_workflow.File):
 
         if not file_url:
             if not extension:
-                raise TypeError("a file extension required if a file_url "
-                                "is not provided")
+                raise TypeError(
+                    "a file extension required if a file_url is not provided"
+                )
             if not directory:
-                raise TypeError("a directory is required if a file_url is "
-                                "not provided")
+                raise TypeError("a directory is required if a file_url is not provided")
 
-            filename = self._filename(self.ifo_string, self.tagged_description,
-                                      extension, self.segment_list.extent())
+            filename = self._filename(
+                self.ifo_string,
+                self.tagged_description,
+                extension,
+                self.segment_list.extent(),
+            )
             path = os.path.join(directory, filename)
             if not os.path.isabs(path):
                 path = os.path.join(os.getcwd(), path)
-            file_url = urllib.parse.urlunparse(['file', 'localhost', path,
-                                                None, None, None])
+            file_url = urllib.parse.urlunparse(
+                ["file", "localhost", path, None, None, None]
+            )
 
         if use_tmp_subdirs and len(self.segment_list):
             pegasus_lfn = str(int(self.segment_list.extent()[0]))[:-4]
-            pegasus_lfn = pegasus_lfn + '/' + os.path.basename(file_url)
+            pegasus_lfn = pegasus_lfn + "/" + os.path.basename(file_url)
         else:
             pegasus_lfn = os.path.basename(file_url)
-        super(File, self).__init__(pegasus_lfn)
+        super().__init__(pegasus_lfn)
 
         if store_file:
             self.storage_path = urllib.parse.urlsplit(file_url).path
@@ -1230,20 +1323,21 @@ class File(pegasus_workflow.File):
             self.storage_path = None
 
     def __getstate__(self):
-        """ Allow the workflow.File to be picklable. This disables the usage of
+        """
+        Allow the workflow.File to be picklable. This disables the usage of
         the internal cache entry.
         """
         for i, seg in enumerate(self.segment_list):
             self.segment_list[i] = segments.segment(float(seg[0]), float(seg[1]))
         self.cache_entry = None
         safe_dict = copy.copy(self.__dict__)
-        safe_dict['cache_entry'] = None
+        safe_dict["cache_entry"] = None
         return safe_dict
 
     # FIXME: This is a pegasus_workflow thing (don't think it's needed at all!)
     #        use the pegasus function directly (maybe not).
     def add_metadata(self, key, value):
-        """ Add arbitrary metadata to this file """
+        """Add arbitrary metadata to this file"""
         self.metadata[key] = value
 
     @property
@@ -1254,10 +1348,9 @@ class File(pegasus_workflow.File):
         """
         if len(self.ifo_list) == 1:
             return self.ifo_list[0]
-        else:
-            err = "self.ifo_list must contain only one ifo to access the "
-            err += "ifo property. %s." %(str(self.ifo_list),)
-            raise TypeError(err)
+        err = "self.ifo_list must contain only one ifo to access the "
+        err += "ifo property. %s." % (str(self.ifo_list),)
+        raise TypeError(err)
 
     @property
     def segment(self):
@@ -1267,10 +1360,9 @@ class File(pegasus_workflow.File):
         """
         if len(self.segment_list) == 1:
             return self.segment_list[0]
-        else:
-            err = "self.segment_list must only contain one segment to access"
-            err += " the segment property. %s." %(str(self.segment_list),)
-            raise TypeError(err)
+        err = "self.segment_list must only contain one segment to access"
+        err += " the segment property. %s." % (str(self.segment_list),)
+        raise TypeError(err)
 
     @property
     def cache_entry(self):
@@ -1278,14 +1370,19 @@ class File(pegasus_workflow.File):
         Returns a CacheEntry instance for File.
         """
         if self.storage_path is None:
-            raise ValueError('This file is temporary and so a lal '
-                             'cache entry cannot be made')
+            raise ValueError(
+                "This file is temporary and so a lal cache entry cannot be made"
+            )
 
-        file_url = urllib.parse.urlunparse(['file', 'localhost',
-                                            self.storage_path, None,
-                                            None, None])
-        cache_entry = lal.utils.CacheEntry(self.ifo_string,
-                   self.tagged_description, self.segment_list.extent(), file_url)
+        file_url = urllib.parse.urlunparse(
+            ["file", "localhost", self.storage_path, None, None, None]
+        )
+        cache_entry = lal.utils.CacheEntry(
+            self.ifo_string,
+            self.tagged_description,
+            self.segment_list.extent(),
+            file_url,
+        )
         cache_entry.workflow_file = self
         return cache_entry
 
@@ -1294,18 +1391,16 @@ class File(pegasus_workflow.File):
         Construct the standard output filename. Should only be used internally
         of the File class.
         """
-        if extension.startswith('.'):
-            extension = extension[1:]
+        extension = extension.removeprefix(".")
 
         # Follow the frame convention of using integer filenames,
         # but stretching to cover partially covered seconds.
         start = int(segment[0])
         end = int(math.ceil(segment[1]))
-        duration = str(end-start)
+        duration = str(end - start)
         start = str(start)
 
-        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start,
-                                   duration, extension)
+        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)
 
     @classmethod
     def from_path(cls, path, attrs=None, **kwargs):
@@ -1314,52 +1409,54 @@ class File(pegasus_workflow.File):
         """
         if attrs is None:
             attrs = {}
-        if attrs and 'ifos' in attrs:
-            ifos = attrs['ifos']
+        if attrs and "ifos" in attrs:
+            ifos = attrs["ifos"]
         else:
-            ifos = ['H1', 'K1', 'L1', 'V1']
-        if attrs and 'exe_name' in attrs:
-            exe_name = attrs['exe_name']
+            ifos = ["H1", "K1", "L1", "V1"]
+        if attrs and "exe_name" in attrs:
+            exe_name = attrs["exe_name"]
         else:
-            exe_name = 'INPUT'
-        if attrs and 'segs' in attrs:
-            segs = attrs['segs']
+            exe_name = "INPUT"
+        if attrs and "segs" in attrs:
+            segs = attrs["segs"]
         else:
             segs = segments.segment([1, 2000000000])
-        if attrs and 'tags' in attrs:
-            tags = attrs['tags']
+        if attrs and "tags" in attrs:
+            tags = attrs["tags"]
         else:
             tags = []
 
         curr_file = cls(ifos, exe_name, segs, path, tags=tags, **kwargs)
         return curr_file
 
+
 class FileList(list):
-    '''
+    """
     This class holds a list of File objects. It inherits from the
     built-in list class, but also allows a number of features. ONLY
     pycbc.workflow.File instances should be within a FileList instance.
-    '''
+    """
+
     entry_class = File
 
     def categorize_by_attr(self, attribute):
-        '''
+        """
         Function to categorize a FileList by a File object
         attribute (eg. 'segment', 'ifo', 'description').
 
         Parameters
-        -----------
+        ----------
         attribute : string
            File object attribute to categorize FileList
 
         Returns
-        --------
+        -------
         keys : list
            A list of values for an attribute
         groups : list
            A list of FileLists
-        '''
 
+        """
         # need to sort FileList otherwise using groupby without sorting does
         # 'AAABBBCCDDAABB' -> ['AAA','BBB','CC','DD','AA','BB']
         # and using groupby with sorting does
@@ -1376,13 +1473,14 @@ class FileList(list):
         return keys, groups
 
     def find_output(self, ifo, time):
-        '''Returns one File most appropriate at the given time/time range.
+        """
+        Returns one File most appropriate at the given time/time range.
 
         Return one File that covers the given time, or is most
         appropriate for the supplied time range.
 
         Parameters
-        -----------
+        ----------
         ifo : string
            Name of the ifo (or ifos) that the file should be valid for.
         time : int/float/LIGOGPStime or tuple containing two values
@@ -1394,31 +1492,32 @@ class FileList(list):
            self.find_output_in_range
 
         Returns
-        --------
+        -------
         pycbc_file : pycbc.workflow.File instance
            The File that corresponds to the time or time range
-        '''
+
+        """
         # Determine whether I have a specific time, or a range of times
         try:
             lenTime = len(time)
         except TypeError:
             # This is if I have a single time
-            outFile = self.find_output_at_time(ifo,time)
+            outFile = self.find_output_at_time(ifo, time)
         else:
             # This is if I have a range of times
             if lenTime == 2:
-                outFile = self.find_output_in_range(ifo,time[0],time[1])
+                outFile = self.find_output_in_range(ifo, time[0], time[1])
             # This is if I got a list that had more (or less) than 2 entries
             if len(time) != 2:
                 raise TypeError("I do not understand the input variable time")
         return outFile
 
     def find_output_at_time(self, ifo, time):
-        '''
+        """
         Return File that covers the given time.
 
         Parameters
-        -----------
+        ----------
         ifo : string
            Name of the ifo (or ifos) that the File should correspond to
         time : int/float/LIGOGPStime
@@ -1426,23 +1525,23 @@ class FileList(list):
            File covers the time this will return None.
 
         Returns
-        --------
+        -------
         list of File classes
            The Files that corresponds to the time.
-         '''
+
+        """
         # Get list of Files that overlap time, for given ifo
         outFiles = [i for i in self if ifo in i.ifo_list and time in i.segment_list]
         if len(outFiles) == 0:
             # No OutFile at this time
             return None
-        elif len(outFiles) == 1:
+        if len(outFiles) == 1:
             # 1 OutFile at this time (good!)
             return outFiles
-        else:
-            # Multiple output files. Currently this is valid, but we may want
-            # to demand exclusivity later, or in certain cases. Hence the
-            # separation.
-            return outFiles
+        # Multiple output files. Currently this is valid, but we may want
+        # to demand exclusivity later, or in certain cases. Hence the
+        # separation.
+        return outFiles
 
     def find_outputs_in_range(self, ifo, current_segment, useSplitLists=False):
         """
@@ -1451,25 +1550,29 @@ class FileList(list):
         largest overlap with the supplied time range.
 
         Parameters
-        -----------
+        ----------
         ifo : string
            Name of the ifo (or ifos) that the File should correspond to
         current_segment : igwn_segments.segment
            The segment of time that files must intersect.
 
         Returns
-        --------
+        -------
         FileList class
            The list of Files that are most appropriate for the time range
+
         """
         currsegment_list = segments.segmentlist([current_segment])
 
         # Get all files overlapping the window
-        overlap_files = self.find_all_output_in_range(ifo, current_segment,
-                                                    useSplitLists=useSplitLists)
+        overlap_files = self.find_all_output_in_range(
+            ifo, current_segment, useSplitLists=useSplitLists
+        )
 
         # By how much do they overlap?
-        overlap_windows = [abs(i.segment_list & currsegment_list) for i in overlap_files]
+        overlap_windows = [
+            abs(i.segment_list & currsegment_list) for i in overlap_files
+        ]
 
         if not overlap_windows:
             return []
@@ -1477,22 +1580,22 @@ class FileList(list):
         # Return the File with the biggest overlap
         # Note if two File have identical overlap, the first is used
         # to define the valid segment
-        overlap_windows = numpy.array(overlap_windows, dtype = int)
+        overlap_windows = numpy.array(overlap_windows, dtype=int)
         segmentLst = overlap_files[overlap_windows.argmax()].segment_list
 
         # Get all output files with the exact same segment definition
-        output_files = [f for f in overlap_files if f.segment_list==segmentLst]
+        output_files = [f for f in overlap_files if f.segment_list == segmentLst]
         return output_files
 
     def find_output_in_range(self, ifo, start, end):
-        '''
+        """
         Return the File that is most appropriate for the supplied
         time range. That is, the File whose coverage time has the
         largest overlap with the supplied time range. If no Files
         overlap the supplied time window, will return None.
 
         Parameters
-        -----------
+        ----------
         ifo : string
            Name of the ifo (or ifos) that the File should correspond to
         start : int/float/LIGOGPStime
@@ -1501,10 +1604,11 @@ class FileList(list):
            The end of the time range of interest
 
         Returns
-        --------
+        -------
         File class
            The File that is most appropriate for the time range
-        '''
+
+        """
         currsegment_list = segments.segmentlist([segments.segment(start, end)])
 
         # First filter Files corresponding to ifo
@@ -1514,24 +1618,21 @@ class FileList(list):
             # No OutFiles correspond to that ifo
             return None
         # Filter OutFiles to those overlapping the given window
-        currSeg = segments.segment([start,end])
-        outFiles = [i for i in outFiles \
-                                  if i.segment_list.intersects_segment(currSeg)]
+        currSeg = segments.segment([start, end])
+        outFiles = [i for i in outFiles if i.segment_list.intersects_segment(currSeg)]
 
         if len(outFiles) == 0:
             # No OutFile overlap that time period
             return None
-        elif len(outFiles) == 1:
+        if len(outFiles) == 1:
             # One OutFile overlaps that period
             return outFiles[0]
-        else:
-            overlap_windows = [abs(i.segment_list & currsegment_list) \
-                                                        for i in outFiles]
-            # Return the File with the biggest overlap
-            # Note if two File have identical overlap, this will return
-            # the first File in the list
-            overlap_windows = numpy.array(overlap_windows, dtype = int)
-            return outFiles[overlap_windows.argmax()]
+        overlap_windows = [abs(i.segment_list & currsegment_list) for i in outFiles]
+        # Return the File with the biggest overlap
+        # Note if two File have identical overlap, this will return
+        # the first File in the list
+        overlap_windows = numpy.array(overlap_windows, dtype=int)
+        return outFiles[overlap_windows.argmax()]
 
     def find_all_output_in_range(self, ifo, currSeg, useSplitLists=False):
         """
@@ -1540,8 +1641,9 @@ class FileList(list):
         if not useSplitLists:
             # Slower, but simpler method
             outFiles = [i for i in self if ifo in i.ifo_list]
-            outFiles = [i for i in outFiles
-                        if i.segment_list.intersects_segment(currSeg)]
+            outFiles = [
+                i for i in outFiles if i.segment_list.intersects_segment(currSeg)
+            ]
         else:
             # Faster, but more complicated
             # Basically only check if a subset of files intersects_segment by
@@ -1549,8 +1651,7 @@ class FileList(list):
             if not self._check_split_list_validity():
                 # FIXME: DO NOT hard code this.
                 self._temporal_split_list(100)
-            startIdx = int((currSeg[0] - self._splitListsStart) /
-                           self._splitListsStep)
+            startIdx = int((currSeg[0] - self._splitListsStart) / self._splitListsStep)
             # Add some small rounding here
             endIdx = (currSeg[1] - self._splitListsStart) / self._splitListsStep
             endIdx = int(endIdx - 0.000001)
@@ -1559,10 +1660,14 @@ class FileList(list):
             for idx in range(startIdx, endIdx + 1):
                 if idx < 0 or idx >= self._splitListsNum:
                     continue
-                outFilesTemp = [i for i in self._splitLists[idx]
-                                if ifo in i.ifo_list]
-                outFiles.extend([i for i in outFilesTemp
-                                 if i.segment_list.intersects_segment(currSeg)])
+                outFilesTemp = [i for i in self._splitLists[idx] if ifo in i.ifo_list]
+                outFiles.extend(
+                    [
+                        i
+                        for i in outFilesTemp
+                        if i.segment_list.intersects_segment(currSeg)
+                    ]
+                )
                 # Remove duplicates
                 outFiles = list(set(outFiles))
 
@@ -1573,7 +1678,7 @@ class FileList(list):
         Find all files who have tag in self.tags
 
         Parameters
-        -----------
+        ----------
         tag : string
            Tag used to seive the file names
         fail_if_not_single_file : boolean
@@ -1581,13 +1686,14 @@ class FileList(list):
            user expects to find a single file with the desired tag in its name
 
         Returns
-        --------
+        -------
         FileList/File class
            If fail_if_not_single_file is False the FileList
            Containing File instances with tag in self.tags is returned,
            otherwise the single File with tag in self.tags is returned
            (if the sanity check requested with fail_if_not_single_file=True is
            passed)
+
         """
         # Enforce upper case
         tag = tag.upper()
@@ -1640,7 +1746,7 @@ class FileList(list):
                 pass
         return lal_cache
 
-    def _temporal_split_list(self,numSubLists):
+    def _temporal_split_list(self, numSubLists):
         """
         This internal function is used to speed the code up in cases where a
         number of operations are being made to determine if files overlap a
@@ -1657,8 +1763,8 @@ class FileList(list):
         invalid. Currently the testing for this is pretty basic
         """
         # Assume segment lists are coalesced!
-        startTime = float( min([i.segment_list[0][0] for i in self]))
-        endTime = float( max([i.segment_list[-1][-1] for i in self]))
+        startTime = float(min([i.segment_list[0][0] for i in self]))
+        endTime = float(max([i.segment_list[-1][-1] for i in self]))
         step = (endTime - startTime) / float(numSubLists)
 
         # Set up storage
@@ -1676,8 +1782,7 @@ class FileList(list):
             startIdx = int(startIdx - 0.001)
             endIdx = int(endIdx + 0.001)
 
-            if startIdx < 0:
-                startIdx = 0
+            startIdx = max(startIdx, 0)
             if endIdx >= numSubLists:
                 endIdx = numSubLists - 1
 
@@ -1698,30 +1803,28 @@ class FileList(list):
         split lists are still valid.
         """
         # FIXME: Currently very primitive, but needs to be fast
-        if not (hasattr(self,"_splitListsSet") and (self._splitListsSet)):
+        if not (hasattr(self, "_splitListsSet") and (self._splitListsSet)) or len(self) != self._splitListsLength:
             return False
-        elif len(self) != self._splitListsLength:
-            return False
-        else:
-            return True
+        return True
 
     @classmethod
     def load(cls, filename):
         """
         Load a FileList from a pickle file
         """
-        f = open(filename, 'r')
+        f = open(filename)
         return pickle.load(f)
 
     def dump(self, filename):
         """
         Output this FileList to a pickle file
         """
-        f = open(filename, 'w')
+        f = open(filename, "w")
         pickle.dump(self, f)
 
     def to_file_object(self, name, out_dir):
-        """Dump to a pickle file and return an File object reference
+        """
+        Dump to a pickle file and return an File object reference
 
         Parameters
         ----------
@@ -1733,24 +1836,38 @@ class FileList(list):
         Returns
         -------
         file : AhopeFile
+
         """
         make_analysis_dir(out_dir)
 
-        file_ref = File('ALL', name, self.get_times_covered_by_files(),
-                             extension='.pkl', directory=out_dir)
+        file_ref = File(
+            "ALL",
+            name,
+            self.get_times_covered_by_files(),
+            extension=".pkl",
+            directory=out_dir,
+        )
         self.dump(file_ref.storage_path)
         return file_ref
 
 
 class SegFile(File):
-    '''
+    """
     This class inherits from the File class, and is designed to store
     workflow output files containing a segment dict. This is identical in
     usage to File except for an additional kwarg for holding the
     segment dictionary, if it is known at workflow run time.
-    '''
-    def __init__(self, ifo_list, description, valid_segment,
-                 segment_dict=None, seg_summ_dict=None, **kwargs):
+    """
+
+    def __init__(
+        self,
+        ifo_list,
+        description,
+        valid_segment,
+        segment_dict=None,
+        seg_summ_dict=None,
+        **kwargs,
+    ):
         """
         See File.__init__ for a full set of documentation for how to
         call this class. The only thing unique and added to this class is
@@ -1759,7 +1876,7 @@ class SegFile(File):
         we key by dict[ifo:name].
 
         Parameters
-        ------------
+        ----------
         ifo_list : string or list (required)
             See File.__init__
         description : string (required)
@@ -1773,8 +1890,7 @@ class SegFile(File):
             instance of the class.
 
         """
-        super(SegFile, self).__init__(ifo_list, description, valid_segment,
-                                      **kwargs)
+        super().__init__(ifo_list, description, valid_segment, **kwargs)
         # To avoid confusion with the segment_list property of the parent class
         # we refer to this as valid_segments here
         self.valid_segments = self.segment_list
@@ -1782,12 +1898,14 @@ class SegFile(File):
         self.seg_summ_dict = seg_summ_dict
 
     @classmethod
-    def from_segment_list(cls, description, segmentlist, name, ifo,
-                          seg_summ_list=None, **kwargs):
-        """ Initialize a SegFile object from a segmentlist.
+    def from_segment_list(
+        cls, description, segmentlist, name, ifo, seg_summ_list=None, **kwargs
+    ):
+        """
+        Initialize a SegFile object from a segmentlist.
 
         Parameters
-        ------------
+        ----------
         description : string (required)
             See File.__init__
         segmentlist : igwn_segments.segmentslist
@@ -1800,23 +1918,27 @@ class SegFile(File):
             Specify the segment_summary segmentlist that goes along with the
             segmentlist. Default=None, in this case segment_summary is taken
             from the valid_segment of the SegFile class.
+
         """
         seglistdict = segments.segmentlistdict()
-        seglistdict[ifo + ':' + name] = segmentlist
+        seglistdict[ifo + ":" + name] = segmentlist
         seg_summ_dict = None
         if seg_summ_list is not None:
             seg_summ_dict = segments.segmentlistdict()
-            seg_summ_dict[ifo + ':' + name] = seg_summ_list
-        return cls.from_segment_list_dict(description, seglistdict,
-                                          seg_summ_dict=seg_summ_dict, **kwargs)
+            seg_summ_dict[ifo + ":" + name] = seg_summ_list
+        return cls.from_segment_list_dict(
+            description, seglistdict, seg_summ_dict=seg_summ_dict, **kwargs
+        )
 
     @classmethod
-    def from_multi_segment_list(cls, description, segmentlists, names, ifos,
-                                seg_summ_lists=None, **kwargs):
-        """ Initialize a SegFile object from a list of segmentlists.
+    def from_multi_segment_list(
+        cls, description, segmentlists, names, ifos, seg_summ_lists=None, **kwargs
+    ):
+        """
+        Initialize a SegFile object from a list of segmentlists.
 
         Parameters
-        ------------
+        ----------
         description : string (required)
             See File.__init__
         segmentlists : List of igwn_segments.segmentslist
@@ -1829,29 +1951,38 @@ class SegFile(File):
             Specify the segment_summary segmentlists that go along with the
             segmentlists. Default=None, in this case segment_summary is taken
             from the valid_segment of the SegFile class.
+
         """
         seglistdict = segments.segmentlistdict()
         for name, ifo, segmentlist in zip(names, ifos, segmentlists):
-            seglistdict[ifo + ':' + name] = segmentlist
+            seglistdict[ifo + ":" + name] = segmentlist
         if seg_summ_lists is not None:
             seg_summ_dict = segments.segmentlistdict()
             for name, ifo, seg_summ_list in zip(names, ifos, seg_summ_lists):
-                seg_summ_dict[ifo + ':' + name] = seg_summ_list
+                seg_summ_dict[ifo + ":" + name] = seg_summ_list
         else:
             seg_summ_dict = None
 
-        return cls.from_segment_list_dict(description, seglistdict,
-                                         seg_summ_dict=seg_summ_dict, **kwargs)
+        return cls.from_segment_list_dict(
+            description, seglistdict, seg_summ_dict=seg_summ_dict, **kwargs
+        )
 
     @classmethod
-    def from_segment_list_dict(cls, description, segmentlistdict,
-                               ifo_list=None, valid_segment=None,
-                               file_exists=False, seg_summ_dict=None,
-                               **kwargs):
-        """ Initialize a SegFile object from a segmentlistdict.
+    def from_segment_list_dict(
+        cls,
+        description,
+        segmentlistdict,
+        ifo_list=None,
+        valid_segment=None,
+        file_exists=False,
+        seg_summ_dict=None,
+        **kwargs,
+    ):
+        """
+        Initialize a SegFile object from a segmentlistdict.
 
         Parameters
-        ------------
+        ----------
         description : string (required)
             See File.__init__
         segmentlistdict : igwn_segments.segmentslistdict
@@ -1867,14 +1998,14 @@ class SegFile(File):
             exists on disk and so there is no need to write again.
         seg_summ_dict : igwn_segments.segmentslistdict
             Optional. See SegFile.__init__.
+
         """
         if ifo_list is None:
-            ifo_set = set([i.split(':')[0] for i in segmentlistdict.keys()])
+            ifo_set = set([i.split(":")[0] for i in segmentlistdict.keys()])
             ifo_list = list(ifo_set)
             ifo_list.sort()
         if valid_segment is None:
-            if seg_summ_dict and \
-                    numpy.any([len(v) for _, v in seg_summ_dict.items()]):
+            if seg_summ_dict and numpy.any([len(v) for _, v in seg_summ_dict.items()]):
                 # Only come here if seg_summ_dict is supplied and it is
                 # not empty.
                 valid_segment = seg_summ_dict.extent_all()
@@ -1884,7 +2015,7 @@ class SegFile(File):
                 except:
                     # Numpty probably didn't supply a
                     # igwn_segments.segmentlistdict
-                    segmentlistdict=segments.segmentlistdict(segmentlistdict)
+                    segmentlistdict = segments.segmentlistdict(segmentlistdict)
                     try:
                         valid_segment = segmentlistdict.extent_all()
                     except ValueError:
@@ -1893,15 +2024,21 @@ class SegFile(File):
                         warn_msg = "No information with which to set valid "
                         warn_msg += "segment."
                         logger.warning(warn_msg)
-                        valid_segment = segments.segment([0,1])
-        instnc = cls(ifo_list, description, valid_segment,
-                     segment_dict=segmentlistdict, seg_summ_dict=seg_summ_dict,
-                     **kwargs)
+                        valid_segment = segments.segment([0, 1])
+        instnc = cls(
+            ifo_list,
+            description,
+            valid_segment,
+            segment_dict=segmentlistdict,
+            seg_summ_dict=seg_summ_dict,
+            **kwargs,
+        )
         if not file_exists:
             instnc.to_segment_xml()
         else:
-            instnc.add_pfn(urljoin('file:', pathname2url(instnc.storage_path)),
-                           site='local')
+            instnc.add_pfn(
+                urljoin("file:", pathname2url(instnc.storage_path)), site="local"
+            )
         return instnc
 
     @classmethod
@@ -1911,14 +2048,16 @@ class SegFile(File):
         xml segment table.
 
         Parameters
-        -----------
+        ----------
         xml_file : file object
             file object for segment xml file
+
         """
         # load xmldocument and SegmentDefTable and SegmentTables
-        fp = open(xml_file, 'rb')
+        fp = open(xml_file, "rb")
         xmldoc = ligolw_utils.load_fileobj(
-                fp, compress='auto', contenthandler=LIGOLWContentHandler)
+            fp, compress="auto", contenthandler=LIGOLWContentHandler
+        )
 
         seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
         seg_table = lsctables.SegmentTable.get_table(xmldoc)
@@ -1930,22 +2069,23 @@ class SegFile(File):
         seg_id = {}
         for seg_def in seg_def_table:
             # Here we want to encode ifo and segment name
-            full_channel_name = ':'.join([str(seg_def.ifos),
-                                          str(seg_def.name)])
+            full_channel_name = ":".join([str(seg_def.ifos), str(seg_def.name)])
             seg_id[int(seg_def.segment_def_id)] = full_channel_name
             segs[full_channel_name] = segments.segmentlist()
             seg_summ[full_channel_name] = segments.segmentlist()
 
         for seg in seg_table:
             seg_obj = segments.segment(
-                    lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
-                    lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns))
+                lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns),
+            )
             segs[seg_id[int(seg.segment_def_id)]].append(seg_obj)
 
         for seg in seg_sum_table:
             seg_obj = segments.segment(
-                    lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
-                    lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns))
+                lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns),
+            )
             seg_summ[seg_id[int(seg.segment_def_id)]].append(seg_obj)
 
         for seg_name in seg_id.values():
@@ -1953,12 +2093,18 @@ class SegFile(File):
 
         xmldoc.unlink()
         fp.close()
-        curr_url = urllib.parse.urlunparse(['file', 'localhost', xml_file,
-                                            None, None, None])
+        curr_url = urllib.parse.urlunparse(
+            ["file", "localhost", xml_file, None, None, None]
+        )
 
-        return cls.from_segment_list_dict('SEGMENTS', segs, file_url=curr_url,
-                                          file_exists=True,
-                                          seg_summ_dict=seg_summ, **kwargs)
+        return cls.from_segment_list_dict(
+            "SEGMENTS",
+            segs,
+            file_url=curr_url,
+            file_exists=True,
+            seg_summ_dict=seg_summ,
+            **kwargs,
+        )
 
     def remove_short_sci_segs(self, minSegLength):
         """
@@ -1967,10 +2113,11 @@ class SegFile(File):
         these segments.
 
         Parameters
-        -----------
+        ----------
         minSegLength : int
             Maximum length of science segments. Segments shorter than this will
             be removed.
+
         """
         newsegment_list = segments.segmentlist()
         for key, seglist in self.segment_dict.items():
@@ -1989,12 +2136,11 @@ class SegFile(File):
         """
         Return ifo and name from the segdict key.
         """
-        splt = key.split(':')
+        splt = key.split(":")
         if len(splt) == 2:
             return splt[0], splt[1]
-        else:
-            err_msg = "Key should be of the format 'ifo:name', got %s." %(key,)
-            raise ValueError(err_msg)
+        err_msg = "Key should be of the format 'ifo:name', got %s." % (key,)
+        raise ValueError(err_msg)
 
     def to_segment_xml(self, override_file_if_exists=False):
         """
@@ -2008,40 +2154,50 @@ class SegFile(File):
         for key, seglist in self.segment_dict.items():
             ifo, name = self.parse_segdict_key(key)
             # Ensure we have LIGOTimeGPS
-            fsegs = [(lal.LIGOTimeGPS(seg[0]),
-                      lal.LIGOTimeGPS(seg[1])) for seg in seglist]
+            fsegs = [
+                (lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) for seg in seglist
+            ]
 
             if self.seg_summ_dict is None:
-                vsegs = [(lal.LIGOTimeGPS(seg[0]),
-                          lal.LIGOTimeGPS(seg[1])) \
-                         for seg in self.valid_segments]
+                vsegs = [
+                    (lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1]))
+                    for seg in self.valid_segments
+                ]
             else:
-                vsegs = [(lal.LIGOTimeGPS(seg[0]),
-                          lal.LIGOTimeGPS(seg[1])) \
-                         for seg in self.seg_summ_dict[key]]
+                vsegs = [
+                    (lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1]))
+                    for seg in self.seg_summ_dict[key]
+                ]
 
             # Add using glue library to set all segment tables
             with ligolw_segments.LigolwSegments(outdoc, process) as x:
-                x.add(ligolw_segments.LigolwSegmentList(active=fsegs,
-                                    instruments=set([ifo]), name=name,
-                                    version=1, valid=vsegs))
+                x.add(
+                    ligolw_segments.LigolwSegmentList(
+                        active=fsegs,
+                        instruments=set([ifo]),
+                        name=name,
+                        version=1,
+                        valid=vsegs,
+                    )
+                )
 
         # write file
-        url = urljoin('file:', pathname2url(self.storage_path))
-        if not override_file_if_exists or not self.has_pfn(url, site='local'):
-            self.add_pfn(url, site='local')
+        url = urljoin("file:", pathname2url(self.storage_path))
+        if not override_file_if_exists or not self.has_pfn(url, site="local"):
+            self.add_pfn(url, site="local")
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 
-def make_external_call(cmdList, out_dir=None, out_basename='external_call',
-                       shell=False, fail_on_error=True):
+def make_external_call(
+    cmdList, out_dir=None, out_basename="external_call", shell=False, fail_on_error=True
+):
     """
     Use this to make an external call using the python subprocess module.
     See the subprocess documentation for more details of how this works.
     http://docs.python.org/2/library/subprocess.html
 
     Parameters
-    -----------
+    ----------
     cmdList : list of strings
         This list of strings contains the command to be run. See the subprocess
         documentation for more details.
@@ -2064,19 +2220,20 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
         and out_basename options.
 
     Returns
-    --------
+    -------
     exitCode : int
         The code returned by the process.
+
     """
     if out_dir:
-        outBase = os.path.join(out_dir,out_basename)
-        errFile = outBase + '.err'
-        errFP = open(errFile, 'w')
-        outFile = outBase + '.out'
-        outFP = open(outFile, 'w')
-        cmdFile = outBase + '.sh'
-        cmdFP = open(cmdFile, 'w')
-        cmdFP.write(' '.join(cmdList))
+        outBase = os.path.join(out_dir, out_basename)
+        errFile = outBase + ".err"
+        errFP = open(errFile, "w")
+        outFile = outBase + ".out"
+        outFP = open(outFile, "w")
+        cmdFile = outBase + ".sh"
+        cmdFP = open(cmdFile, "w")
+        cmdFP.write(" ".join(cmdList))
         cmdFP.close()
     else:
         errFile = None
@@ -2085,18 +2242,22 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
         errFP = None
         outFP = None
 
-    msg = "Making external call %s" %(' '.join(cmdList))
+    msg = "Making external call %s" % (" ".join(cmdList))
     logger.info(msg)
-    errCode = subprocess.call(cmdList, stderr=errFP, stdout=outFP,\
-                              shell=shell)
+    errCode = subprocess.call(cmdList, stderr=errFP, stdout=outFP, shell=shell)
     if errFP:
         errFP.close()
     if outFP:
         outFP.close()
 
     if errCode and fail_on_error:
-        raise CalledProcessErrorMod(errCode, ' '.join(cmdList),
-                errFile=errFile, outFile=outFile, cmdFile=cmdFile)
+        raise CalledProcessErrorMod(
+            errCode,
+            " ".join(cmdList),
+            errFile=errFile,
+            outFile=outFile,
+            cmdFile=cmdFile,
+        )
     logger.info("Call successful, or error checking disabled.")
 
 
@@ -2106,30 +2267,30 @@ class CalledProcessErrorMod(Exception):
     and checking has been requested. This should not be accessed by the user
     it is used only within make_external_call.
     """
-    def __init__(self, returncode, cmd, errFile=None, outFile=None,
-                 cmdFile=None):
+
+    def __init__(self, returncode, cmd, errFile=None, outFile=None, cmdFile=None):
         self.returncode = returncode
         self.cmd = cmd
         self.errFile = errFile
         self.outFile = outFile
         self.cmdFile = cmdFile
+
     def __str__(self):
-        msg = "Command '%s' returned non-zero exit status %d.\n" \
-              %(self.cmd, self.returncode)
+        msg = "Command '%s' returned non-zero exit status %d.\n" % (
+            self.cmd,
+            self.returncode,
+        )
         if self.errFile:
-            msg += "Stderr can be found in %s .\n" %(self.errFile)
+            msg += "Stderr can be found in %s .\n" % (self.errFile)
         if self.outFile:
-            msg += "Stdout can be found in %s .\n" %(self.outFile)
+            msg += "Stdout can be found in %s .\n" % (self.outFile)
         if self.cmdFile:
-            msg += "The failed command has been printed in %s ." %(self.cmdFile)
+            msg += "The failed command has been printed in %s ." % (self.cmdFile)
         return msg
 
 
 def resolve_url_to_file(
-    curr_pfn,
-    attrs=None,
-    hash_max_chunks=10,
-    hash_chunk_size=int(1e6)
+    curr_pfn, attrs=None, hash_max_chunks=10, hash_chunk_size=int(1e6)
 ):
     """
     Resolves a PFN into a workflow.File object.
@@ -2158,9 +2319,9 @@ def resolve_url_to_file(
     hash_max_chunks and hash_chunk_size are used to decide how much of the
     files to check before they are considered the same, and not copied.
     """
-    cvmfsstr1 = 'file:///cvmfs/'
-    cvmfsstr2 = 'file://localhost/cvmfs/'
-    osdfstr1 = 'osdf:///'  # Technically this isn't CVMFS, but same handling!
+    cvmfsstr1 = "file:///cvmfs/"
+    cvmfsstr2 = "file://localhost/cvmfs/"
+    osdfstr1 = "osdf:///"  # Technically this isn't CVMFS, but same handling!
     cvmfsstrs = (cvmfsstr1, cvmfsstr2, osdfstr1)
 
     # Get LFN
@@ -2168,10 +2329,10 @@ def resolve_url_to_file(
     curr_lfn = os.path.basename(urlp.path)
 
     # Does this already exist as a File?
-    if curr_lfn in file_input_from_config_dict.keys():
+    if curr_lfn in file_input_from_config_dict:
         file_pfn = file_input_from_config_dict[curr_lfn][2]
         # If the PFNs are different, but LFNs are the same then fail.
-        assert(file_pfn == curr_pfn)
+        assert file_pfn == curr_pfn
         curr_file = file_input_from_config_dict[curr_lfn][1]
     else:
         # Use resolve_url to download file/symlink as appropriate
@@ -2186,10 +2347,10 @@ def resolve_url_to_file(
         if curr_pfn.startswith(cvmfsstrs):
             # Add PFNs for nonlocal sites for special cases (e.g. CVMFS).
             # This block could be extended as needed
-            curr_file.add_pfn(curr_pfn, site='all')
+            curr_file.add_pfn(curr_pfn, site="all")
         else:
-            pfn_local = urljoin('file:', pathname2url(local_file_path))
-            curr_file.add_pfn(pfn_local, 'local')
+            pfn_local = urljoin("file:", pathname2url(local_file_path))
+            curr_file.add_pfn(pfn_local, "local")
         # Store the file to avoid later duplication
         tuple_val = (local_file_path, curr_file, curr_pfn)
         file_input_from_config_dict[curr_lfn] = tuple_val
@@ -2202,7 +2363,7 @@ def configparser_value_to_file(cp, sec, opt, attrs=None):
     and option in the workflow configuration parser.
 
     Parameters
-    -----------
+    ----------
     cp : ConfigParser object
          The ConfigParser object holding the workflow configuration settings
     sec : string
@@ -2212,9 +2373,10 @@ def configparser_value_to_file(cp, sec, opt, attrs=None):
     attrs : list to specify the 4 attributes of the file.
 
     Returns
-    --------
+    -------
     fileobj_from_path : workflow.File object obtained from the path
         specified by opt, within sec, in cp.
+
     """
     path = cp.get(sec, opt)
     fileobj_from_path = resolve_url_to_file(path, attrs=attrs)
@@ -2227,14 +2389,15 @@ def get_full_analysis_chunk(science_segs):
     and return a single segment spanning that full time.
 
     Parameters
-    -----------
+    ----------
     science_segs : ifo-keyed dictionary of igwn_segments.segmentlist instances
         The list of times that are being analysed in this workflow.
 
     Returns
-    --------
+    -------
     fullSegment : igwn_segments.segment
         The segment spanning the first and last time point contained in science_segs.
+
     """
     extents = [science_segs[ifo].extent() for ifo in science_segs.keys()]
     min, max = extents[0]
@@ -2251,8 +2414,9 @@ def get_random_label():
     """
     Get a random label string to use when clustering jobs.
     """
-    return ''.join(random.choice(string.ascii_uppercase + string.digits) \
-                   for _ in range(15))
+    return "".join(
+        random.choice(string.ascii_uppercase + string.digits) for _ in range(15)
+    )
 
 
 def resolve_td_option(val_str, valid_seg):
@@ -2275,12 +2439,12 @@ def resolve_td_option(val_str, valid_seg):
     The function will just return value_a.
     """
     # Track if we've already found a matching option
-    output = ''
+    output = ""
     # Strip any whitespace, and split on comma
-    curr_vals = val_str.replace(' ', '').strip().split(',')
+    curr_vals = val_str.replace(" ", "").strip().split(",")
 
     # Resolving the simple case is trivial and can be done immediately.
-    if len(curr_vals) == 1 and '[' not in curr_vals[0]:
+    if len(curr_vals) == 1 and "[" not in curr_vals[0]:
         return curr_vals[0]
 
     # Loop over all possible values
@@ -2288,28 +2452,28 @@ def resolve_td_option(val_str, valid_seg):
         start = int(valid_seg[0])
         end = int(valid_seg[1])
         # Extract limits for each case, and check overlap with valid_seg
-        if '[' in cval:
-            bopt = cval.split('[')[1].split(']')[0]
-            start, end = bopt.split(':')
-            cval = cval.replace('[' + bopt + ']', '')
+        if "[" in cval:
+            bopt = cval.split("[")[1].split("]")[0]
+            start, end = bopt.split(":")
+            cval = cval.replace("[" + bopt + "]", "")
         curr_seg = segments.segment(int(start), int(end))
         # The segments module is a bit weird so we need to check if the two
         # overlap using the following code. If valid_seg is fully within
         # curr_seg this will be true.
-        if curr_seg.intersects(valid_seg) and \
-                (curr_seg & valid_seg == valid_seg):
+        if curr_seg.intersects(valid_seg) and (curr_seg & valid_seg == valid_seg):
             if output:
                 err_msg = "Time-dependent options must be disjoint."
                 raise ValueError(err_msg)
             output = cval
     if not output:
-        err_msg = "Could not resolve option {}".format(val_str)
+        err_msg = f"Could not resolve option {val_str}"
         raise ValueError
     return output
 
 
 def add_workflow_settings_cli(parser, include_subdax_opts=False):
-    """Adds workflow options to an argument parser.
+    """
+    Adds workflow options to an argument parser.
 
     Parameters
     ----------
@@ -2319,39 +2483,61 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
         If True, will add output-map and dax-file-directory options
         to the parser. These can be used for workflows that are
         generated as a subdax of another workflow. Default is False.
+
     """
     wfgrp = parser.add_argument_group("Options for setting workflow files")
-    wfgrp.add_argument("--workflow-name", required=True,
-                       help="Name of the workflow.")
-    wfgrp.add_argument("--tags", nargs="+", default=[],
-                       help="Append the given tags to file names.")
-    wfgrp.add_argument("--output-dir", default=None,
-                       help="Path to directory where the workflow will be "
-                            "written. Default is to use "
-                            "{workflow-name}_output.")
-    wfgrp.add_argument("--cache-file", default=None,
-                       help="Path to input file containing list of files to "
-                            "be reused (the 'input_map' file)")
-    wfgrp.add_argument("--plan-now", default=False, action='store_true',
-                       help="If given, workflow will immediately be planned "
-                            "on completion of workflow generation but not "
-                            "submitted to the condor pool. A start script "
-                            "will be created to submit to condor.")
-    wfgrp.add_argument("--submit-now", default=False, action='store_true',
-                       help="If given, workflow will immediately be submitted "
-                            "on completion of workflow generation")
-    wfgrp.add_argument("--dax-file", default=None,
-                       help="Path to DAX file. Default is to write to the "
-                            "output directory with name "
-                            "{workflow-name}.dax.")
+    wfgrp.add_argument("--workflow-name", required=True, help="Name of the workflow.")
+    wfgrp.add_argument(
+        "--tags", nargs="+", default=[], help="Append the given tags to file names."
+    )
+    wfgrp.add_argument(
+        "--output-dir",
+        default=None,
+        help="Path to directory where the workflow will be "
+        "written. Default is to use "
+        "{workflow-name}_output.",
+    )
+    wfgrp.add_argument(
+        "--cache-file",
+        default=None,
+        help="Path to input file containing list of files to "
+        "be reused (the 'input_map' file)",
+    )
+    wfgrp.add_argument(
+        "--plan-now",
+        default=False,
+        action="store_true",
+        help="If given, workflow will immediately be planned "
+        "on completion of workflow generation but not "
+        "submitted to the condor pool. A start script "
+        "will be created to submit to condor.",
+    )
+    wfgrp.add_argument(
+        "--submit-now",
+        default=False,
+        action="store_true",
+        help="If given, workflow will immediately be submitted "
+        "on completion of workflow generation",
+    )
+    wfgrp.add_argument(
+        "--dax-file",
+        default=None,
+        help="Path to DAX file. Default is to write to the "
+        "output directory with name "
+        "{workflow-name}.dax.",
+    )
     if include_subdax_opts:
-        wfgrp.add_argument("--output-map", default=None,
-                           help="Path to an output map file.")
-        wfgrp.add_argument("--dax-file-directory", default=None,
-                           help="Put dax files (including output map, "
-                                "sites.yml etc. in this directory. The use "
-                                "case for this is when running a sub-workflow "
-                                "under pegasus the outputs need to be copied "
-                                "back to the appropriate directory, and "
-                                "using this as --dax-file-directory . allows "
-                                "that to be done.")
+        wfgrp.add_argument(
+            "--output-map", default=None, help="Path to an output map file."
+        )
+        wfgrp.add_argument(
+            "--dax-file-directory",
+            default=None,
+            help="Put dax files (including output map, "
+            "sites.yml etc. in this directory. The use "
+            "case for this is when running a sub-workflow "
+            "under pegasus the outputs need to be copied "
+            "back to the appropriate directory, and "
+            "using this as --dax-file-directory . allows "
+            "that to be done.",
+        )

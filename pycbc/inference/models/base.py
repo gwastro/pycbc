@@ -22,16 +22,16 @@
 # =============================================================================
 #
 
-"""Base class for models.
-"""
+"""Base class for models."""
+
+import logging
+from abc import ABCMeta, abstractmethod
+from configparser import NoSectionError
 
 import numpy
-import logging
-from abc import (ABCMeta, abstractmethod)
-from configparser import NoSectionError
-from pycbc import (transforms, distributions)
-from pycbc.io import FieldArray
 
+from pycbc import distributions, transforms
+from pycbc.io import FieldArray
 
 #
 # =============================================================================
@@ -42,18 +42,18 @@ from pycbc.io import FieldArray
 #
 
 
-class _NoPrior(object):
-    """Dummy class to just return 0 if no prior is given to a model.
-    """
+class _NoPrior:
+    """Dummy class to just return 0 if no prior is given to a model."""
+
     @staticmethod
     def apply_boundary_conditions(**params):
         return params
 
     def __call__(self, **params):
-        return 0.
+        return 0.0
 
 
-class ModelStats(object):
+class ModelStats:
     """Class to hold model's current stat values."""
 
     @property
@@ -62,7 +62,8 @@ class ModelStats(object):
         return list(self.__dict__.keys())
 
     def getstats(self, names, default=numpy.nan):
-        """Get the requested stats as a tuple.
+        """
+        Get the requested stats as a tuple.
 
         If a requested stat is not an attribute (implying it hasn't been
         stored), then the default value is returned for that stat.
@@ -79,11 +80,13 @@ class ModelStats(object):
         -------
         tuple
             A tuple of the requested stats.
+
         """
         return tuple(getattr(self, n, default) for n in names)
 
     def getstatsdict(self, names, default=numpy.nan):
-        """Get the requested stats as a dictionary.
+        """
+        Get the requested stats as a dictionary.
 
         If a requested stat is not an attribute (implying it hasn't been
         stored), then the default value is returned for that stat.
@@ -100,23 +103,28 @@ class ModelStats(object):
         -------
         dict
             A dictionary of the requested stats.
+
         """
         return dict(zip(names, self.getstats(names, default=default)))
 
 
-class SamplingTransforms(object):
-    """Provides methods for transforming between sampling parameter space and
+class SamplingTransforms:
+    """
+    Provides methods for transforming between sampling parameter space and
     model parameter space.
     """
 
-    def __init__(self, variable_params, sampling_params,
-                 replace_parameters, sampling_transforms):
+    def __init__(
+        self, variable_params, sampling_params, replace_parameters, sampling_transforms
+    ):
         assert len(replace_parameters) == len(sampling_params), (
             "number of sampling parameters must be the "
-            "same as the number of replace parameters")
+            "same as the number of replace parameters"
+        )
         # pull out the replaced parameters
-        self.sampling_params = [arg for arg in variable_params
-                                if arg not in replace_parameters]
+        self.sampling_params = [
+            arg for arg in variable_params if arg not in replace_parameters
+        ]
         # add the sampling parameters
         self.sampling_params += sampling_params
         # sort to make sure we have a consistent order
@@ -124,7 +132,8 @@ class SamplingTransforms(object):
         self.sampling_transforms = sampling_transforms
 
     def logjacobian(self, **params):
-        r"""Returns the log of the jacobian needed to transform pdfs in the
+        r"""
+        Returns the log of the jacobian needed to transform pdfs in the
         ``variable_params`` parameter space to the ``sampling_params``
         parameter space.
 
@@ -160,12 +169,19 @@ class SamplingTransforms(object):
         -------
         float :
             The value of the jacobian.
+
         """
-        return numpy.log(abs(transforms.compute_jacobian(
-            params, self.sampling_transforms, inverse=True)))
+        return numpy.log(
+            abs(
+                transforms.compute_jacobian(
+                    params, self.sampling_transforms, inverse=True
+                )
+            )
+        )
 
     def apply(self, samples, inverse=False):
-        """Applies the sampling transforms to the given samples.
+        """
+        Applies the sampling transforms to the given samples.
 
         Parameters
         ----------
@@ -179,13 +195,16 @@ class SamplingTransforms(object):
         -------
         dict or FieldArray
             The transformed samples, along with the original samples.
+
         """
-        return transforms.apply_transforms(samples, self.sampling_transforms,
-                                           inverse=inverse)
+        return transforms.apply_transforms(
+            samples, self.sampling_transforms, inverse=inverse
+        )
 
     @classmethod
     def from_config(cls, cp, variable_params):
-        """Gets sampling transforms specified in a config file.
+        """
+        Gets sampling transforms specified in a config file.
 
         Sampling parameters and the parameters they replace are read from the
         ``sampling_params`` section, if it exists. Sampling transforms are
@@ -206,26 +225,31 @@ class SamplingTransforms(object):
         -------
         SamplingTransforms
             A sampling transforms class.
+
         """
         # Check if a sampling_params section is provided
         try:
-            sampling_params, replace_parameters = \
-                read_sampling_params_from_config(cp)
+            sampling_params, replace_parameters = read_sampling_params_from_config(cp)
         except NoSectionError as e:
             logging.warning("No sampling_params section read from config file")
             raise e
         # get sampling transformations
         sampling_transforms = transforms.read_transforms_from_config(
-            cp, 'sampling_transforms')
-        logging.info("Sampling in {} in place of {}".format(
-            ', '.join(sampling_params), ', '.join(replace_parameters)))
-        return cls(variable_params, sampling_params,
-                   replace_parameters, sampling_transforms)
+            cp, "sampling_transforms"
+        )
+        logging.info(
+            "Sampling in {} in place of {}".format(
+                ", ".join(sampling_params), ", ".join(replace_parameters)
+            )
+        )
+        return cls(
+            variable_params, sampling_params, replace_parameters, sampling_transforms
+        )
 
 
-def read_sampling_params_from_config(cp, section_group=None,
-                                     section='sampling_params'):
-    """Reads sampling parameters from the given config file.
+def read_sampling_params_from_config(cp, section_group=None, section="sampling_params"):
+    """
+    Reads sampling parameters from the given config file.
 
     Parameters are read from the `[({section_group}_){section}]` section.
     The options should list the variable args to transform; the parameters they
@@ -261,18 +285,19 @@ def read_sampling_params_from_config(cp, section_group=None,
         The list of sampling parameters to use instead.
     replaced_params : list
         The list of variable args to replace in the sampler.
+
     """
     if section_group is not None:
-        section_prefix = '{}_'.format(section_group)
+        section_prefix = f"{section_group}_"
     else:
-        section_prefix = ''
+        section_prefix = ""
     section = section_prefix + section
     replaced_params = set()
     sampling_params = set()
     for args in cp.options(section):
         map_args = cp.get(section, args)
-        sampling_params.update(set(map(str.strip, map_args.split(','))))
-        replaced_params.update(set(map(str.strip, args.split(','))))
+        sampling_params.update(set(map(str.strip, map_args.split(","))))
+        replaced_params.update(set(map(str.strip, args.split(","))))
     return sorted(sampling_params), sorted(replaced_params)
 
 
@@ -286,7 +311,8 @@ def read_sampling_params_from_config(cp, section_group=None,
 
 
 class BaseModel(metaclass=ABCMeta):
-    r"""Base class for all models.
+    r"""
+    Base class for all models.
 
     Given some model :math:`h` with parameters :math:`\Theta`, Bayes Theorem
     states that the probability of observing parameter values :math:`\vartheta`
@@ -341,11 +367,20 @@ class BaseModel(metaclass=ABCMeta):
         the likelihood is most easily defined in. Since these are used solely
         for converting parameters, and not for rescaling the parameter space,
         a Jacobian is not required for these transforms.
+
     """
+
     name = None
 
-    def __init__(self, variable_params, static_params=None, prior=None,
-                 sampling_transforms=None, waveform_transforms=None, **kwargs):
+    def __init__(
+        self,
+        variable_params,
+        static_params=None,
+        prior=None,
+        sampling_transforms=None,
+        waveform_transforms=None,
+        **kwargs,
+    ):
         # store variable and static args
         self.variable_params = variable_params
         self.static_params = static_params
@@ -353,8 +388,7 @@ class BaseModel(metaclass=ABCMeta):
         if prior is None:
             self.prior_distribution = _NoPrior()
         elif set(prior.variable_args) != set(variable_params):
-            raise ValueError("variable params of prior and model must be the "
-                             "same")
+            raise ValueError("variable params of prior and model must be the same")
         else:
             self.prior_distribution = prior
         # store transforms
@@ -391,7 +425,8 @@ class BaseModel(metaclass=ABCMeta):
 
     @property
     def sampling_params(self):
-        """Returns the sampling parameters.
+        """
+        Returns the sampling parameters.
 
         If ``sampling_transforms`` is None, this is the same as the
         ``variable_params``.
@@ -403,7 +438,8 @@ class BaseModel(metaclass=ABCMeta):
         return sampling_params
 
     def update(self, **params):
-        """Updates the current parameter positions and resets stats.
+        """
+        Updates the current parameter positions and resets stats.
 
         If any sampling transforms are specified, they are applied to the
         params before being stored.
@@ -417,18 +453,20 @@ class BaseModel(metaclass=ABCMeta):
     @property
     def current_params(self):
         if self._current_params is None:
-            raise ValueError("no parameters values currently stored; "
-                             "run update to add some")
+            raise ValueError(
+                "no parameters values currently stored; run update to add some"
+            )
         return self._current_params
 
     @property
     def default_stats(self):
         """The stats that ``get_current_stats`` returns by default."""
-        return ['logjacobian', 'logprior', 'loglikelihood'] + self._extra_stats
+        return ["logjacobian", "logprior", "loglikelihood"] + self._extra_stats
 
     @property
     def _extra_stats(self):
-        """Allows child classes to add more stats to the default stats.
+        """
+        Allows child classes to add more stats to the default stats.
 
         This returns an empty list; classes that inherit should override this
         property if they want to add extra stats.
@@ -436,7 +474,8 @@ class BaseModel(metaclass=ABCMeta):
         return []
 
     def get_current_stats(self, names=None):
-        """Return one or more of the current stats as a tuple.
+        """
+        Return one or more of the current stats as a tuple.
 
         This function does no computation. It only returns what has already
         been calculated. If a stat hasn't been calculated, it will be returned
@@ -453,6 +492,7 @@ class BaseModel(metaclass=ABCMeta):
         tuple :
             The current values of the requested stats, as a tuple. The order
             of the stats is the same as the names.
+
         """
         if names is None:
             names = self.default_stats
@@ -460,7 +500,8 @@ class BaseModel(metaclass=ABCMeta):
 
     @property
     def current_stats(self):
-        """Return the ``default_stats`` as a dict.
+        """
+        Return the ``default_stats`` as a dict.
 
         This does no computation. It only returns what has already been
         calculated. If a stat hasn't been calculated, it will be returned
@@ -470,11 +511,13 @@ class BaseModel(metaclass=ABCMeta):
         -------
         dict :
             Dictionary of stat names -> current stat values.
+
         """
         return self._current_stats.getstatsdict(self.default_stats)
 
     def _trytoget(self, statname, fallback, apply_transforms=False, **kwargs):
-        r"""Helper function to get a stat from ``_current_stats``.
+        r"""
+        Helper function to get a stat from ``_current_stats``.
 
         If the statistic hasn't been calculated, ``_current_stats`` will raise
         an ``AttributeError``. In that case, the ``fallback`` function will
@@ -497,6 +540,7 @@ class BaseModel(metaclass=ABCMeta):
         -------
         float :
             The value of the property.
+
         """
         try:
             return getattr(self._current_stats, statname)
@@ -504,32 +548,36 @@ class BaseModel(metaclass=ABCMeta):
             # apply waveform transforms if requested
             if apply_transforms and self.waveform_transforms is not None:
                 self._current_params = transforms.apply_transforms(
-                    self._current_params, self.waveform_transforms,
-                    inverse=False)
+                    self._current_params, self.waveform_transforms, inverse=False
+                )
             val = fallback(**kwargs)
             setattr(self._current_stats, statname, val)
             return val
 
     @property
     def loglikelihood(self):
-        """The log likelihood at the current parameters.
+        """
+        The log likelihood at the current parameters.
 
         This will initially try to return the ``current_stats.loglikelihood``.
         If that raises an ``AttributeError``, will call `_loglikelihood`` to
         calculate it and store it to ``current_stats``.
         """
-        return self._trytoget('loglikelihood', self._loglikelihood,
-                              apply_transforms=True)
+        return self._trytoget(
+            "loglikelihood", self._loglikelihood, apply_transforms=True
+        )
 
     @abstractmethod
     def _loglikelihood(self):
-        """Low-level function that calculates the log likelihood of the current
-        params."""
-        pass
+        """
+        Low-level function that calculates the log likelihood of the current
+        params.
+        """
 
     @property
     def logjacobian(self):
-        r"""The log jacobian of the sampling transforms at the current postion.
+        r"""
+        The log jacobian of the sampling transforms at the current postion.
 
         If no sampling transforms were provided, will just return 0.
 
@@ -543,22 +591,22 @@ class BaseModel(metaclass=ABCMeta):
         -------
         float :
             The value of the jacobian.
+
         """
-        return self._trytoget('logjacobian', self._logjacobian)
+        return self._trytoget("logjacobian", self._logjacobian)
 
     def _logjacobian(self):
         """Calculates the logjacobian of the current parameters."""
         if self.sampling_transforms is None:
-            logj = 0.
+            logj = 0.0
         else:
-            logj = self.sampling_transforms.logjacobian(
-                **self.current_params)
+            logj = self.sampling_transforms.logjacobian(**self.current_params)
         return logj
 
     @property
     def logprior(self):
         """Returns the log prior at the current parameters."""
-        return self._trytoget('logprior', self._logprior)
+        return self._trytoget("logprior", self._logprior)
 
     def _logprior(self):
         """Calculates the log prior at the current parameters."""
@@ -570,7 +618,8 @@ class BaseModel(metaclass=ABCMeta):
 
     @property
     def logposterior(self):
-        """Returns the log of the posterior of the current parameter values.
+        """
+        Returns the log of the posterior of the current parameter values.
 
         The logprior is calculated first. If the logprior returns ``-inf``
         (possibly indicating a non-physical point), then the ``loglikelihood``
@@ -579,11 +628,11 @@ class BaseModel(metaclass=ABCMeta):
         logp = self.logprior
         if logp == -numpy.inf:
             return logp
-        else:
-            return logp + self.loglikelihood
+        return logp + self.loglikelihood
 
     def prior_rvs(self, size=1, prior=None):
-        """Returns random variates drawn from the prior.
+        """
+        Returns random variates drawn from the prior.
 
         If the ``sampling_params`` are different from the ``variable_params``,
         the variates are transformed to the `sampling_params` parameter space
@@ -600,6 +649,7 @@ class BaseModel(metaclass=ABCMeta):
         -------
         FieldArray
             A field array of the random values.
+
         """
         # draw values from the prior
         if prior is None:
@@ -609,13 +659,15 @@ class BaseModel(metaclass=ABCMeta):
         if self.sampling_transforms is not None:
             ptrans = self.sampling_transforms.apply(p0)
             # pull out the sampling args
-            p0 = FieldArray.from_arrays([ptrans[arg]
-                                         for arg in self.sampling_params],
-                                        names=self.sampling_params)
+            p0 = FieldArray.from_arrays(
+                [ptrans[arg] for arg in self.sampling_params],
+                names=self.sampling_params,
+            )
         return p0
 
     def _transform_params(self, **params):
-        r"""Applies sampling transforms and boundary conditions to parameters.
+        r"""
+        Applies sampling transforms and boundary conditions to parameters.
 
         Parameters
         ----------
@@ -626,6 +678,7 @@ class BaseModel(metaclass=ABCMeta):
         -------
         dict
             A dictionary of the transformed parameters.
+
         """
         # apply inverse transforms to go from sampling parameters to
         # variable args
@@ -640,7 +693,8 @@ class BaseModel(metaclass=ABCMeta):
     #
     @staticmethod
     def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
-        """Gets any additional keyword in the given config file.
+        """
+        Gets any additional keyword in the given config file.
 
         Parameters
         ----------
@@ -660,14 +714,14 @@ class BaseModel(metaclass=ABCMeta):
         -------
         dict
             Dictionary of keyword arguments read from the config file.
+
         """
         kwargs = {}
         if dtypes is None:
             dtypes = {}
         if skip_args is None:
             skip_args = []
-        read_args = [opt for opt in cp.options(section)
-                     if opt not in skip_args]
+        read_args = [opt for opt in cp.options(section) if opt not in skip_args]
         for opt in read_args:
             val = cp.get(section, opt)
             # try to cast the value if a datatype was specified for this opt
@@ -679,9 +733,11 @@ class BaseModel(metaclass=ABCMeta):
         return kwargs
 
     @staticmethod
-    def prior_from_config(cp, variable_params, static_params, prior_section,
-                          constraint_section):
-        """Gets arguments and keyword arguments from a config file.
+    def prior_from_config(
+        cp, variable_params, static_params, prior_section, constraint_section
+    ):
+        """
+        Gets arguments and keyword arguments from a config file.
 
         Parameters
         ----------
@@ -700,18 +756,22 @@ class BaseModel(metaclass=ABCMeta):
         -------
         pycbc.distributions.JointDistribution
             The prior.
+
         """
         # get prior distribution for each variable parameter
         logging.info("Setting up priors for each parameter")
         dists = distributions.read_distributions_from_config(cp, prior_section)
         constraints = distributions.read_constraints_from_config(
-            cp, constraint_section, static_args=static_params)
-        return distributions.JointDistribution(variable_params, *dists,
-                                               constraints=constraints)
+            cp, constraint_section, static_args=static_params
+        )
+        return distributions.JointDistribution(
+            variable_params, *dists, constraints=constraints
+        )
 
     @classmethod
     def _init_args_from_config(cls, cp):
-        """Helper function for loading parameters.
+        """
+        Helper function for loading parameters.
 
         This retrieves the prior, variable parameters, static parameterss,
         constraints, sampling transforms, and waveform transforms
@@ -729,55 +789,65 @@ class BaseModel(metaclass=ABCMeta):
             ``static_params``, ``prior``, and ``sampling_transforms``. If
             waveform transforms are in the config file, will also have
             ``waveform_transforms``.
+
         """
         section = "model"
         prior_section = "prior"
-        vparams_section = 'variable_params'
-        sparams_section = 'static_params'
-        constraint_section = 'constraint'
+        vparams_section = "variable_params"
+        sparams_section = "static_params"
+        constraint_section = "constraint"
         # check that the name exists and matches
-        name = cp.get(section, 'name')
+        name = cp.get(section, "name")
         if name != cls.name:
-            raise ValueError("section's {} name does not match mine {}".format(
-                             name, cls.name))
+            raise ValueError(
+                f"section's {name} name does not match mine {cls.name}"
+            )
         # get model parameters
         variable_params, static_params = distributions.read_params_from_config(
-            cp, prior_section=prior_section, vargs_section=vparams_section,
-            sargs_section=sparams_section)
+            cp,
+            prior_section=prior_section,
+            vargs_section=vparams_section,
+            sargs_section=sparams_section,
+        )
         # get prior
         prior = cls.prior_from_config(
-            cp, variable_params, static_params, prior_section,
-            constraint_section)
-        args = {'variable_params': variable_params,
-                'static_params': static_params,
-                'prior': prior}
+            cp, variable_params, static_params, prior_section, constraint_section
+        )
+        args = {
+            "variable_params": variable_params,
+            "static_params": static_params,
+            "prior": prior,
+        }
         # try to load sampling transforms
         try:
-            sampling_transforms = SamplingTransforms.from_config(
-                cp, variable_params)
+            sampling_transforms = SamplingTransforms.from_config(cp, variable_params)
         except NoSectionError:
             sampling_transforms = None
-        args['sampling_transforms'] = sampling_transforms
+        args["sampling_transforms"] = sampling_transforms
         # get any waveform transforms
-        if any(cp.get_subsections('waveform_transforms')):
+        if any(cp.get_subsections("waveform_transforms")):
             logging.info("Loading waveform transforms")
             waveform_transforms = transforms.read_transforms_from_config(
-                cp, 'waveform_transforms')
-            args['waveform_transforms'] = waveform_transforms
+                cp, "waveform_transforms"
+            )
+            args["waveform_transforms"] = waveform_transforms
         else:
             waveform_transforms = []
         # safety check for spins
         # we won't do this if the following exists in the config file
         ignore = "no_err_on_missing_cartesian_spins"
-        check_for_cartesian_spins(1, variable_params, static_params,
-                                  waveform_transforms, cp, ignore)
-        check_for_cartesian_spins(2, variable_params, static_params,
-                                  waveform_transforms, cp, ignore)
+        check_for_cartesian_spins(
+            1, variable_params, static_params, waveform_transforms, cp, ignore
+        )
+        check_for_cartesian_spins(
+            2, variable_params, static_params, waveform_transforms, cp, ignore
+        )
         return args
 
     @classmethod
     def from_config(cls, cp, **kwargs):
-        r"""Initializes an instance of this class from the given config file.
+        r"""
+        Initializes an instance of this class from the given config file.
 
         Parameters
         ----------
@@ -786,16 +856,17 @@ class BaseModel(metaclass=ABCMeta):
         \**kwargs :
             All additional keyword arguments are passed to the class. Any
             provided keyword will over ride what is in the config file.
+
         """
         args = cls._init_args_from_config(cp)
         # get any other keyword arguments provided in the model section
-        args.update(cls.extra_args_from_config(cp, "model",
-                                               skip_args=['name']))
+        args.update(cls.extra_args_from_config(cp, "model", skip_args=["name"]))
         args.update(kwargs)
         return cls(**args)
 
     def write_metadata(self, fp, group=None):
-        """Writes metadata to the given file handler.
+        """
+        Writes metadata to the given file handler.
 
         Parameters
         ----------
@@ -805,17 +876,20 @@ class BaseModel(metaclass=ABCMeta):
             If provided, the metadata will be written to the attrs specified
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
+
         """
         attrs = fp.getattrs(group=group)
-        attrs['model'] = self.name
-        attrs['variable_params'] = list(map(str, self.variable_params))
-        attrs['sampling_params'] = list(map(str, self.sampling_params))
+        attrs["model"] = self.name
+        attrs["variable_params"] = list(map(str, self.variable_params))
+        attrs["sampling_params"] = list(map(str, self.sampling_params))
         fp.write_kwargs_to_attrs(attrs, static_params=self.static_params)
 
 
-def check_for_cartesian_spins(which, variable_params, static_params,
-                              waveform_transforms, cp, ignore):
-    """Checks that if any spin parameters exist, cartesian spins also exist.
+def check_for_cartesian_spins(
+    which, variable_params, static_params, waveform_transforms, cp, ignore
+):
+    """
+    Checks that if any spin parameters exist, cartesian spins also exist.
 
     This looks for parameters starting with ``spinN`` in the variable and
     static params, where ``N`` is either  1 or 2 (specified by the ``which``
@@ -842,11 +916,14 @@ def check_for_cartesian_spins(which, variable_params, static_params,
     ignore : str
         The section to check for in the config file. If the section is
         present in the config file, the check will not be done.
+
     """
     # don't do this check if the config file has the ignore section
     if cp.has_section(ignore):
-        logging.info("[{}] found in config file; not performing check for "
-                     "cartesian spin{} parameters".format(ignore, which))
+        logging.info(
+            f"[{ignore}] found in config file; not performing check for "
+            f"cartesian spin{which} parameters"
+        )
         return
     errmsg = (
         "Spin parameters {sp} found in variable/static "
@@ -871,17 +948,21 @@ def check_for_cartesian_spins(which, variable_params, static_params,
         "(e.g., you are using a custom waveform or model) add\n\n"
         "[{ignore}]\n\n"
         "to your config file as an empty section and rerun. This check will "
-        "not be performed in that case.")
+        "not be performed in that case."
+    )
     allparams = set(variable_params) | set(static_params.keys())
-    spinparams = set(p for p in allparams
-                     if p.startswith('spin{}'.format(which)))
+    spinparams = set(p for p in allparams if p.startswith(f"spin{which}"))
     if any(spinparams):
-        cartspins = set('spin{}{}'.format(which, coord)
-                        for coord in ['x', 'y', 'z'])
+        cartspins = set(f"spin{which}{coord}" for coord in ["x", "y", "z"])
         # add any parameters to all params that will be output by waveform
         # transforms
         allparams = allparams.union(*[t.outputs for t in waveform_transforms])
         if not any(allparams & cartspins):
-            raise ValueError(errmsg.format(sp=', '.join(spinparams),
-                                           cp=', '.join(cartspins),
-                                           n=which, ignore=ignore))
+            raise ValueError(
+                errmsg.format(
+                    sp=", ".join(spinparams),
+                    cp=", ".join(cartspins),
+                    n=which,
+                    ignore=ignore,
+                )
+            )

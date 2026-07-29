@@ -26,108 +26,136 @@ __version__ = "0.0"
 __date__ = "31.10.2017"
 
 import argparse
-from numpy import logaddexp, log, newaxis, expm1
+
 import numpy as np
+import pycbc.version
+import scipy.stats as ss
 from matplotlib import cm
 from matplotlib import pyplot as plt
-
-import scipy.stats as ss
+from numpy import expm1, log, logaddexp, newaxis
 
 import pycbc
-import pycbc.version
 from pycbc.io.hdf import HFile
 from pycbc.population import rates_functions as rf
 
 # Parse command line
-parser = argparse.ArgumentParser(
-    description=__doc__
-)
+parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--prior-samples', required=True,
-                              help="File containing rate prior samples")
-parser.add_argument('--posterior-samples', nargs='+', required=True,
-             help="Files(s) containing samples for the rate posterior.")
-parser.add_argument('--population-models', nargs='+', required=True,
-        help="Models to which posteriors belong ('lnm', 'imf', 'bns').")
-parser.add_argument('--output-rates', dest='rate_file', required=True,
-                   help="File saving all the rate posteriors into one.")
-parser.add_argument('--rates-figure', required=True,
-                 help="Name of file to draw rates prior and posterior.")
-parser.add_argument('--pastro-figure', required=True,
-                            help="Name of file to save p_astro figure.")
-parser.add_argument('--plot-labels', nargs='+',
-              required=True, help="Labels for the population models.")
+parser.add_argument(
+    "--prior-samples", required=True, help="File containing rate prior samples"
+)
+parser.add_argument(
+    "--posterior-samples",
+    nargs="+",
+    required=True,
+    help="Files(s) containing samples for the rate posterior.",
+)
+parser.add_argument(
+    "--population-models",
+    nargs="+",
+    required=True,
+    help="Models to which posteriors belong ('lnm', 'imf', 'bns').",
+)
+parser.add_argument(
+    "--output-rates",
+    dest="rate_file",
+    required=True,
+    help="File saving all the rate posteriors into one.",
+)
+parser.add_argument(
+    "--rates-figure",
+    required=True,
+    help="Name of file to draw rates prior and posterior.",
+)
+parser.add_argument(
+    "--pastro-figure", required=True, help="Name of file to save p_astro figure."
+)
+parser.add_argument(
+    "--plot-labels", nargs="+", required=True, help="Labels for the population models."
+)
 
 opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
 
-assert len(opts.posterior_samples) == len(opts.population_models), \
-              "Unequal number of posterior files and population models!"
+assert len(opts.posterior_samples) == len(opts.population_models), (
+    "Unequal number of posterior files and population models!"
+)
 
-#Save rate posteriors in one file
-with HFile(opts.rate_file, 'w') as out:
+# Save rate posteriors in one file
+with HFile(opts.rate_file, "w") as out:
     for fname, model in zip(opts.posterior_samples, opts.population_models):
-
         f = HFile(fname, "r")
-        Rf = f[model + '/Rf'][:]
-        Lf = f[model + '/Lf'][:]
+        Rf = f[model + "/Rf"][:]
+        Lf = f[model + "/Lf"][:]
 
         pl = out.create_group(model)
-        pl.create_dataset('Rf', data=Rf, compression='gzip')
-        pl.create_dataset('Lf', data=Lf, compression='gzip')
+        pl.create_dataset("Rf", data=Rf, compression="gzip")
+        pl.create_dataset("Lf", data=Lf, compression="gzip")
 
         f.close()
 
 # Make prior/posterior plot -- estimate p_astro
 p_astro = []
 plt.figure()
-color=iter(cm.rainbow(np.linspace(0, 1, len(opts.population_models))))
+color = iter(cm.rainbow(np.linspace(0, 1, len(opts.population_models))))
 mods = zip(opts.posterior_samples, opts.population_models, opts.plot_labels)
 
 f = HFile(opts.prior_samples, "r")
 for fpost, model, lbl in mods:
-
     c = next(color)
 
     fpo = HFile(fpost, "r")
-    Rfpr, Rfpo = f[model + '/Rf'][:], fpo[model + '/Rf'][:]
+    Rfpr, Rfpo = f[model + "/Rf"][:], fpo[model + "/Rf"][:]
     prior_alpha, prior_mu, prior_sigma = rf.fit(Rfpr)
     post_alpha, post_mu, post_sigma = rf.fit(Rfpo)
 
     log_R = np.log(Rfpr)
     xs = np.linspace(min(log_R), max(log_R), 200)
-    plt.plot(np.exp(xs), ss.skewnorm.pdf(xs, prior_alpha, prior_mu,
-            prior_sigma), '--', label=lbl + ' Prior', color=c)
-    plt.plot(np.exp(xs), ss.skewnorm.pdf(xs, post_alpha, post_m,
-               post_sigma), label=lbl + ' Posterior', color=c)
+    plt.plot(
+        np.exp(xs),
+        ss.skewnorm.pdf(xs, prior_alpha, prior_mu, prior_sigma),
+        "--",
+        label=lbl + " Prior",
+        color=c,
+    )
+    plt.plot(
+        np.exp(xs),
+        ss.skewnorm.pdf(xs, post_alpha, post_m, post_sigma),
+        label=lbl + " Posterior",
+        color=c,
+    )
 
-    Lfpo, Lbpo = fpo[model + '/Lf'][:], fpo[model + '/Lb'][:]
-    log_fg_ratios = fpo['data/log_fg_bg_ratio'][:]
+    Lfpo, Lbpo = fpo[model + "/Lf"][:], fpo[model + "/Lb"][:]
+    log_fg_ratios = fpo["data/log_fg_bg_ratio"][:]
 
-    log_pastros = logaddexp.reduce(log(Lfpo[:, newaxis]) +\
-                 log_fg_ratios[newaxis,:] - logaddexp(log(Lfpo[:, newaxis]) +\
-                 log_fg_ratios[newaxis,:], log(Lbpo[:, newaxis])), axis=0) -\
-                 log(Lfpo.shape[0])
+    log_pastros = logaddexp.reduce(
+        log(Lfpo[:, newaxis])
+        + log_fg_ratios[newaxis, :]
+        - logaddexp(
+            log(Lfpo[:, newaxis]) + log_fg_ratios[newaxis, :], log(Lbpo[:, newaxis])
+        ),
+        axis=0,
+    ) - log(Lfpo.shape[0])
     p_astro.append(1 + expm1(np.sort(log_pastros)[::-1]))
 
     fpo.close()
 f.close()
 
-plt.xscale('log')
-plt.xlabel(r'$R$ ($\mathrm{Gpc}^{-3} \, \mathrm{yr}^{-1}$)')
-plt.ylabel(r'$RP(R)$')
-plt.legend(loc='best')
+plt.xscale("log")
+plt.xlabel(r"$R$ ($\mathrm{Gpc}^{-3} \, \mathrm{yr}^{-1}$)")
+plt.ylabel(r"$RP(R)$")
+plt.legend(loc="best")
 plt.savefig(opts.rates_figure)
 
 plt.figure()
-color=iter(cm.rainbow(np.linspace(0, 1, len(opts.population_models))))
+color = iter(cm.rainbow(np.linspace(0, 1, len(opts.population_models))))
 for pas, lbl in zip(p_astro, opts.plot_labels):
     c = next(color)
-    plt.plot(log_fg_ratios, 1 - pas, '.', label = lbl, color = c)
+    plt.plot(log_fg_ratios, 1 - pas, ".", label=lbl, color=c)
 
-plt.xlabel(r'$\log p(x\mid f)/p(x\mid b)$')
-plt.ylabel(r'$1-p_\mathrm{astro}$')
-plt.legend(loc='best')
-plt.yscale('log')
+plt.xlabel(r"$\log p(x\mid f)/p(x\mid b)$")
+plt.ylabel(r"$1-p_\mathrm{astro}$")
+plt.legend(loc="best")
+plt.yscale("log")
 plt.savefig(opts.pastro_figure)
 print(p_astro)

@@ -16,22 +16,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
 import argparse
+import sys
 
-from pycbc import init_logging, add_common_pycbc_options
 import pycbc.version
+
 import pycbc.results
+from pycbc import add_common_pycbc_options, init_logging
 
 # parse command line
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument('--output-file', type=str,
-                        help='Path of the output HTML file.')
-parser.add_argument('--html-text', type=str,
-                    help="Contents of output HTML file.")
-parser.add_argument('--title', type=str, default="Title",
-                    help="Title of figure for results webpage.")
+parser.add_argument("--output-file", type=str, help="Path of the output HTML file.")
+parser.add_argument("--html-text", type=str, help="Contents of output HTML file.")
+parser.add_argument(
+    "--title", type=str, default="Title", help="Title of figure for results webpage."
+)
 opts = parser.parse_args()
 
 init_logging(opts.verbose)
@@ -40,7 +40,10 @@ init_logging(opts.verbose)
 caption = opts.html_text
 
 # save the plot as an interactive HTML
-pycbc.results.save_fig_with_metadata(opts.html_text, opts.output_file,
-                                     title=opts.title,
-                                     cmd=' '.join(sys.argv),
-                                     caption=caption)
+pycbc.results.save_fig_with_metadata(
+    opts.html_text,
+    opts.output_file,
+    title=opts.title,
+    cmd=" ".join(sys.argv),
+    caption=caption,
+)

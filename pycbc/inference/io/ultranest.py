@@ -21,12 +21,12 @@
 #
 # =============================================================================
 #
-"""Provides IO for the ultranest sampler.
-"""
+"""Provides IO for the ultranest sampler."""
+
 from .base_nested_sampler import BaseNestedSamplerFile
 
 
 class UltranestFile(BaseNestedSamplerFile):
     """Class to handle file IO for the ``ultranest`` sampler."""
 
-    name = 'ultranest_file'
+    name = "ultranest_file"

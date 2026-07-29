@@ -23,7 +23,7 @@
 
 from pycuda.elementwise import ElementwiseKernel
 
-from pycbc.constants import TWOPI, PI_4
+from pycbc.constants import PI_4, TWOPI
 
 preamble = ""
 
@@ -75,20 +75,51 @@ taylorf2_text = """
     htilde[i]._M_im = - psin * amp2;
 """
 
-taylorf2_kernel = ElementwiseKernel("""pycuda::complex<float> *htilde, int kmin, int phase_order,
+taylorf2_kernel = ElementwiseKernel(
+    """pycuda::complex<float> *htilde, int kmin, int phase_order,
                                        float delta_f, float TWOPI, float PI_4, float piM, float pfaN,
                                        float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
                                        float pfa6, float pfl6, float pfa7, float amp""",
-                    taylorf2_text, "SPAtmplt",
-                    preamble=preamble)
+    taylorf2_text,
+    "SPAtmplt",
+    preamble=preamble,
+)
 
-def spa_tmplt_engine(htilde,  kmin,  phase_order,
-                    delta_f,  piM,  pfaN,
-                    pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, amp_factor):
-    """ Calculate the spa tmplt phase
-    """
-    taylorf2_kernel(htilde.data,  kmin,  phase_order,
-                    delta_f, TWOPI, PI_4, piM,  pfaN,
-                    pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, amp_factor)
+
+def spa_tmplt_engine(
+    htilde,
+    kmin,
+    phase_order,
+    delta_f,
+    piM,
+    pfaN,
+    pfa2,
+    pfa3,
+    pfa4,
+    pfa5,
+    pfl5,
+    pfa6,
+    pfl6,
+    pfa7,
+    amp_factor,
+):
+    """Calculate the spa tmplt phase"""
+    taylorf2_kernel(
+        htilde.data,
+        kmin,
+        phase_order,
+        delta_f,
+        TWOPI,
+        PI_4,
+        piM,
+        pfaN,
+        pfa2,
+        pfa3,
+        pfa4,
+        pfa5,
+        pfl5,
+        pfa6,
+        pfl6,
+        pfa7,
+        amp_factor,
+    )

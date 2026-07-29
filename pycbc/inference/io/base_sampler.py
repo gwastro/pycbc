@@ -15,22 +15,23 @@
 
 """Provides abstract base class for all samplers."""
 
-
 import time
-from abc import (ABCMeta, abstractmethod)
+from abc import ABCMeta, abstractmethod
 
 from .base_hdf import BaseInferenceFile
 
 
 class BaseSamplerFile(BaseInferenceFile, metaclass=ABCMeta):
-    """Base HDF class for all samplers.
+    """
+    Base HDF class for all samplers.
 
     This adds abstract methods ``write_resume_point`` and
     ``write_sampler_metadata`` to :py:class:`BaseInferenceFile`.
     """
 
     def write_run_start_time(self):
-        """Writes the current (UNIX) time to the file.
+        """
+        Writes the current (UNIX) time to the file.
 
         Times are stored as a list in the file's ``attrs``, with name
         ``run_start_time``. If the attrbute already exists, the current time
@@ -46,44 +47,44 @@ class BaseSamplerFile(BaseInferenceFile, metaclass=ABCMeta):
 
     @property
     def run_start_time(self):
-        """The (UNIX) time pycbc inference began running.
+        """
+        The (UNIX) time pycbc inference began running.
 
         If the run resumed from a checkpoint, the time the last checkpoint
         started is reported.
         """
-        return self.attrs['run_start_time'][-1]
+        return self.attrs["run_start_time"][-1]
 
     def write_run_end_time(self):
-        """"Writes the curent (UNIX) time as the ``run_end_time`` attribute.
-        """
+        """ "Writes the curent (UNIX) time as the ``run_end_time`` attribute."""
         self.attrs["run_end_time"] = time.time()
 
     @property
     def run_end_time(self):
-        """The (UNIX) time pycbc inference finished.
-        """
+        """The (UNIX) time pycbc inference finished."""
         return self.attrs["run_end_time"]
 
     @abstractmethod
     def write_resume_point(self):
-        """Should write the point that a sampler starts up.
+        """
+        Should write the point that a sampler starts up.
 
         How the resume point is indexed is up to the sampler. For example,
         MCMC samplers use the number of iterations that are stored in the
         checkpoint file.
         """
-        pass
 
     @abstractmethod
     def write_sampler_metadata(self, sampler):
-        """This should write the given sampler's metadata to the file.
+        """
+        This should write the given sampler's metadata to the file.
 
         This should also include the model's metadata.
         """
-        pass
 
     def update_checkpoint_history(self):
-        """Writes a copy of relevant metadata to the file's checkpoint history.
+        """
+        Writes a copy of relevant metadata to the file's checkpoint history.
 
         All data are written to ``sampler_info/checkpoint_history``. If the
         group does not exist yet, it will be created.
@@ -92,7 +93,7 @@ class BaseSamplerFile(BaseInferenceFile, metaclass=ABCMeta):
         checkpoint to the file. It will also call
         :py:func:`_update_sampler_history` to write sampler-specific history.
         """
-        path = '/'.join([self.sampler_group, 'checkpoint_history'])
+        path = "/".join([self.sampler_group, "checkpoint_history"])
         try:
             history = self[path]
         except KeyError:
@@ -101,10 +102,9 @@ class BaseSamplerFile(BaseInferenceFile, metaclass=ABCMeta):
             history = self[path]
         # write the checkpoint time
         current_time = time.time()
-        self.write_data('checkpoint_time', current_time, path=path,
-                        append=True)
+        self.write_data("checkpoint_time", current_time, path=path, append=True)
         # get the amount of time since the last checkpoint
-        checkpoint_times = history['checkpoint_time'][()]
+        checkpoint_times = history["checkpoint_time"][()]
         if len(checkpoint_times) == 1:
             # this is the first checkpoint, get the run time for comparison
             lasttime = self.run_start_time
@@ -112,24 +112,25 @@ class BaseSamplerFile(BaseInferenceFile, metaclass=ABCMeta):
             lasttime = checkpoint_times[-2]
             # if a resume happened since the last checkpoint, use the resume
             # time instad
-            if lasttime < self.run_start_time:
-                lasttime = self.run_start_time
-        self.write_data('checkpoint_dt', current_time-lasttime, path=path,
-                        append=True)
+            lasttime = max(lasttime, self.run_start_time)
+        self.write_data(
+            "checkpoint_dt", current_time - lasttime, path=path, append=True
+        )
         # write any sampler-specific history
         self._update_sampler_history()
 
     def _update_sampler_history(self):
-        """Writes sampler-specific history to the file.
+        """
+        Writes sampler-specific history to the file.
 
         This function does nothing. Classes that inherit from it may override
         it to add any extra information they would like written. This is
         called by :py:func:`update_checkpoint_history`.
         """
-        pass
 
     def validate(self):
-        """Runs a validation test.
+        """
+        Runs a validation test.
 
         This checks that a samples group exist, and that there are more than
         one sample stored to it.
@@ -138,9 +139,10 @@ class BaseSamplerFile(BaseInferenceFile, metaclass=ABCMeta):
         -------
         bool :
             Whether or not the file is valid as a checkpoint file.
+
         """
         try:
-            group = '{}/{}'.format(self.samples_group, self.variable_params[0])
+            group = f"{self.samples_group}/{self.variable_params[0]}"
             checkpoint_valid = self[group].size != 0
         except KeyError:
             checkpoint_valid = False

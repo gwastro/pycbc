@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2019 Duncan Macleod, Francesco Pannarale, Erin Vincent
 #
@@ -17,25 +16,20 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Cluster triggers from a pyGRB run
-"""
+"""Cluster triggers from a pyGRB run"""
 
 import argparse
+import logging
 import operator
 import os
-import logging
 import re
 from collections import defaultdict
 from functools import reduce
 
-import tqdm
-
-import numpy
-
 import h5py
-
+import numpy
+import tqdm
 from gwdatafind.utils import filename_metadata
-
 from igwn_segments import segmentlist
 from igwn_segments.utils import fromsegwizard
 
@@ -53,9 +47,11 @@ NETWORK_IFO_EVENT_ID_REGEX = re.compile(
 )
 EVENT_ID_REGEX = re.compile(r"event_id\Z")
 
-TQDM_BAR_FORMAT = ("{desc}: |{bar}| "
-                   "{n_fmt}/{total_fmt} {unit} ({percentage:3.0f}%) "
-                   "[{elapsed} | ETA {remaining}]{postfix}")
+TQDM_BAR_FORMAT = (
+    "{desc}: |{bar}| "
+    "{n_fmt}/{total_fmt} {unit} ({percentage:3.0f}%) "
+    "[{elapsed} | ETA {remaining}]{postfix}"
+)
 TQDM_KW = {
     "ascii": " -=#",
     "bar_format": TQDM_BAR_FORMAT,
@@ -66,60 +62,50 @@ TQDM_KW = {
 # -- utilities ----------------------------------
 def find_split_files(filelist, split):
     for fn in filelist:
-        if (split is None and 'SPLIT' not in fn) or split in fn:
+        if (split is None and "SPLIT" not in fn) or split in fn:
             yield fn
 
 
 def read_segment_files(segfiles):
     def _read(name):
-        with open(name, "r") as f:
+        with open(name) as f:
             return fromsegwizard(f)
 
-    return segmentlist(reduce(
-        operator.or_,
-        map(_read, segfiles),
-        segmentlist()))
+    return segmentlist(reduce(operator.or_, map(_read, segfiles), segmentlist()))
 
 
 def read_hdf5_triggers(inputfiles, verbose=False):
-    """Merge several HDF5 files into a single file
+    """
+    Merge several HDF5 files into a single file
 
     Parameters
     ----------
     inputfiles : `list` of `str`
         the paths of the input HDF5 files to merge
+
     """
     datasets = {}
 
     def _scan_dataset(name, obj):
-        if not isinstance(obj, h5py.Dataset):
+        if not isinstance(obj, h5py.Dataset) or (name.startswith("network") and NETWORK_IFO_EVENT_ID_REGEX.match(name)):
             return
-        elif name.startswith("network") and \
-                NETWORK_IFO_EVENT_ID_REGEX.match(name):
+        if "template_id" in name or "search" in name or "gating" in name:
             return
-        elif "template_id" in name:
-            return
-        elif "search" in name:
-            return
-        elif "gating" in name:
-            return
+        shape = obj.shape
+        dtype = obj.dtype
+        try:
+            shape = numpy.sum(datasets[name][0] + shape, keepdims=True)
+        except KeyError:
+            pass
         else:
-            shape = obj.shape
-            dtype = obj.dtype
-            try:
-                shape = numpy.sum(datasets[name][0] + shape, keepdims=True)
-            except KeyError:
-                pass
-            else:
-                assert dtype == datasets[name][1], (
-                    "Cannot merge {0}/{1}, does not match dtype".format(
-                        obj.file.filename, name,
-                    ))
-            datasets[name] = (shape, dtype)
+            assert dtype == datasets[name][1], (
+                f"Cannot merge {obj.file.filename}/{name}, does not match dtype"
+            )
+        datasets[name] = (shape, dtype)
 
     # get list of datasets
     for filename in inputfiles:
-        with HFile(filename, 'r') as h5f:
+        with HFile(filename, "r") as h5f:
             h5f.visititems(_scan_dataset)
 
     position = defaultdict(int)
@@ -132,17 +118,17 @@ def read_hdf5_triggers(inputfiles, verbose=False):
 
     # copy dataset contents
     for filename in inputfiles:
-        with HFile(filename, 'r') as h5in:
+        with HFile(filename, "r") as h5in:
             # Skipping empty files
-            if len(h5in['network']['end_time_gc'][:]):
+            if len(h5in["network"]["end_time_gc"][:]):
                 for dset in datasets:
                     data = h5in[dset][:]
                     size = data.shape[0]
                     pos = position[dset]
                     if EVENT_ID_REGEX.search(dset):
-                        out_dict[dset][pos:pos+size] = data + pos
+                        out_dict[dset][pos : pos + size] = data + pos
                     else:
-                        out_dict[dset][pos:pos+size] = data
+                        out_dict[dset][pos : pos + size] = data
                     position[dset] += size
 
     return out_dict
@@ -190,7 +176,7 @@ parser.add_argument(
     "-W",
     "--time-window",
     type=float,
-    default=0.,
+    default=0.0,
     help="the found time window (default: %(default)s)",
 )
 parser.add_argument(
@@ -205,8 +191,8 @@ parser.add_argument(
     action="append",
     default=[],
     help="ignore injections in segments found within "
-         "these files, e.g. buffer segments (may be given "
-         "more than once",
+    "these files, e.g. buffer segments (may be given "
+    "more than once",
 )
 
 args = parser.parse_args()
@@ -232,14 +218,18 @@ for key in firstfile.keys():
 
 allinjections = None
 
-with tqdm.tqdm(args.inj_files, desc="Finding injections",
-               disable=not args.verbose, unit="files",
-               postfix=dict(found=0, missed=0, excluded=nexcluded),
-               **TQDM_KW) as bar:
+with tqdm.tqdm(
+    args.inj_files,
+    desc="Finding injections",
+    disable=not args.verbose,
+    unit="files",
+    postfix=dict(found=0, missed=0, excluded=nexcluded),
+    **TQDM_KW,
+) as bar:
     for injf in bar:
         # get list of trigger files
         try:
-            split, = SPLIT_FILENAME.search(injf).groups()
+            (split,) = SPLIT_FILENAME.search(injf).groups()
         except AttributeError:  # no regex match
             split = None
         trigfiles = list(find_split_files(args.input_files, split))
@@ -254,41 +244,40 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
 
         # read triggers
         triggers = read_hdf5_triggers(trigfiles)
-        time = triggers['network/end_time_gc']
+        time = triggers["network/end_time_gc"]
         time_sorting = time.argsort()
-        snr = triggers['network/'+args.rank_column][time_sorting]
-        event_id = triggers['network/event_id'][time_sorting]
+        snr = triggers["network/" + args.rank_column][time_sorting]
+        event_id = triggers["network/event_id"][time_sorting]
 
         # determine found or missed
         _left = numpy.searchsorted(
             time[time_sorting],
             injtime - args.time_window,
-            side='left',
+            side="left",
         )
         _right = numpy.searchsorted(
             time[time_sorting],
             injtime + args.time_window,
-            side='right',
+            side="right",
         )
 
         # get indices of found/missed injections and finding trigger
         for i, (l, r) in enumerate(
-                zip(_left, _right),
-                start=len(allinjections if allinjections is not None else []),
+            zip(_left, _right),
+            start=len(allinjections if allinjections is not None else []),
         ):
             if not r - l:
                 missed.append(i)
             else:
                 found.append(i)
                 # the needed event_id is unique within its split_inj file
-                eid = event_id[l] if r - l == 1 \
-                    else event_id[l + snr[l:r].argmax()]
+                eid = event_id[l] if r - l == 1 else event_id[l + snr[l:r].argmax()]
                 for x in triggers:
-                    ij = x.split('/')
+                    ij = x.split("/")
                     # assign a new, overall unique event_id to a found
                     # injection by simply counting found injections
-                    if ij[1] == 'event_id':
-                        out_trigs[ij[0]][ij[1]].append(len(found)-1)
+                    if ij[1] == "event_id":
+                        out_trigs[ij[0]][ij[1]].append(len(found) - 1)
                     else:
                         out_trigs[ij[0]][ij[1]].append(triggers[x][eid])
 
@@ -310,12 +299,7 @@ ifotag, desc, segment = filename_metadata(args.inj_files[0])
 desc = SPLIT_FILENAME.split(desc)[0]
 outfilename = os.path.join(
     args.output_dir,
-    "{}-{}_FOUNDMISSED-{}-{}.h5".format(
-        args.ifo_tag or ifotag,
-        desc,
-        segment[0],
-        abs(segment),
-    ),
+    f"{args.ifo_tag or ifotag}-{desc}_FOUNDMISSED-{segment[0]}-{abs(segment)}.h5",
 )
 
 with HFile(outfilename, "w") as h5out:
@@ -325,7 +309,7 @@ with HFile(outfilename, "w") as h5out:
         injs = allinjections[injlist]
         for field in injs.fieldnames:
             # h5py does not support unicode strings
-            if 'U' not in str(injs[field].dtype):
+            if "U" not in str(injs[field].dtype):
                 grp[field] = injs[field]
             else:
                 grp[field] = [str(s) for s in injs[field]]
@@ -334,7 +318,7 @@ with HFile(outfilename, "w") as h5out:
     for x in out_trigs:
         xgroup = h5out.create_group(x)
         for col in out_trigs[x]:
-            if "template_id" == col:
+            if col == "template_id":
                 continue
             xgroup.create_dataset(
                 col,

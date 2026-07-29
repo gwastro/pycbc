@@ -23,17 +23,18 @@
 #
 # =============================================================================
 #
-"""This module contains convenience pN functions. This includes calculating conversions
+"""
+This module contains convenience pN functions. This includes calculating conversions
 between quantities.
 """
 
 import logging
-import numpy
 
+import numpy
 from scipy.optimize import bisect, brentq, minimize
 
 from pycbc import conversions, libutils
-from pycbc.constants import MSUN_SI, PI, MTSUN_SI, PC_SI
+from pycbc.constants import MSUN_SI, MTSUN_SI, PC_SI, PI
 
 logger = logging.getLogger("pycbc.pnutils")
 
@@ -111,7 +112,8 @@ def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False, force_real=True):
 
 
 def mchirp_q_to_mass1_mass2(mchirp, q):
-    """This function takes a value of mchirp and the mass ratio
+    """
+    This function takes a value of mchirp and the mass ratio
     mass1/mass2 and returns the two component masses.
 
     The map from q to eta is
@@ -127,14 +129,15 @@ def mchirp_q_to_mass1_mass2(mchirp, q):
 
 
 def A0(f_lower):
-    """used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
+    """
+    Used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
     appendix 1, also lalinspiral/python/sbank/tau0tau3.py
     """
     return conversions._a0(f_lower)
 
 
 def A3(f_lower):
-    """another parameter used for chirp times"""
+    """Another parameter used for chirp times"""
     return conversions._a3(f_lower)
 
 
@@ -171,7 +174,7 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     See <http://arxiv.org/pdf/0810.5336v3.pdf>.
 
     Parameters
-    -----------
+    ----------
     eta : float or numpy.array
         Symmetric mass ratio of the input system(s)
     spin1z : float or numpy.array
@@ -180,7 +183,7 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
         Spin(s) parallel to the orbit of the smallest body(ies)
 
     Returns
-    --------
+    -------
     beta : float or numpy.array
         The 1.5PN spin combination
     sigma : float or numpy.array
@@ -189,6 +192,7 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
         The 2.5PN spin combination
     chis : float or numpy.array
         (spin1z + spin2z) / 2.
+
     """
     chiS = 0.5 * (spin1z + spin2z)
     chiA = 0.5 * (spin1z - spin2z)
@@ -238,6 +242,7 @@ def f_SchwarzISCO(M):
     -------
     f : float or numpy.array
         Frequency in Hz
+
     """
     return conversions.f_schwarzchild_isco(M)
 
@@ -259,6 +264,7 @@ def f_BKLISCO(m1, m2):
     -------
     f : float or numpy.array
         Frequency in Hz
+
     """
     # q is defined to be in [0,1] for this formula
     q = numpy.minimum(m1 / m2, m2 / m1)
@@ -279,6 +285,7 @@ def f_LightRing(M):
     -------
     f : float or numpy.array
         Frequency in Hz
+
     """
     return 1.0 / (3.0 ** (1.5) * PI * M * MTSUN_SI)
 
@@ -299,6 +306,7 @@ def f_ERD(M):
     -------
     f : float or numpy.array
         Frequency in Hz
+
     """
     return 1.07 * 0.5326 / (2 * PI * 0.955 * M * MTSUN_SI)
 
@@ -321,6 +329,7 @@ def f_FRD(m1, m2):
     -------
     f : float or numpy.array
         Frequency in Hz
+
     """
     m_total, eta = mass1_mass2_to_mtotal_eta(m1, m2)
     tmp = (1.0 - 0.63 * (1.0 - 3.4641016 * eta + 2.9 * eta**2) ** (0.3)) / (
@@ -345,12 +354,14 @@ def f_LRD(m1, m2):
     -------
     f : float or numpy.array
         Frequency in Hz
+
     """
     return 1.2 * f_FRD(m1, m2)
 
 
 def _get_freq(freqfunc, m1, m2, s1z, s2z):
-    """Wrapper of the LALSimulation function returning the frequency
+    """
+    Wrapper of the LALSimulation function returning the frequency
     for a given frequency function and template parameters.
 
     Parameters
@@ -370,6 +381,7 @@ def _get_freq(freqfunc, m1, m2, s1z, s2z):
     -------
     f : float
         Frequency in Hz
+
     """
     return lalsim.SimInspiralGetFrequency(
         solar_mass_to_kg(m1),
@@ -410,13 +422,15 @@ def get_freq(freqfunc, m1, m2, s1z, s2z):
     -------
     f : float or numpy.array
         Frequency in Hz
+
     """
     lalsim_ffunc = getattr(lalsim, freqfunc)
     return _vec_get_freq(lalsim_ffunc, m1, m2, s1z, s2z)
 
 
 def _get_final_freq(approx, m1, m2, s1z, s2z):
-    """Wrapper of the LALSimulation function returning the final (highest)
+    """
+    Wrapper of the LALSimulation function returning the final (highest)
     frequency for a given approximant an template parameters
 
     Parameters
@@ -436,6 +450,7 @@ def _get_final_freq(approx, m1, m2, s1z, s2z):
     -------
     f : float
         Frequency in Hz
+
     """
     return lalsim.SimInspiralGetFinalFreq(
         solar_mass_to_kg(m1),
@@ -455,7 +470,8 @@ _vec_get_final_freq = numpy.vectorize(_get_final_freq)
 
 
 def get_final_freq(approx, m1, m2, s1z, s2z):
-    """Returns the final (highest) frequency for a given approximant using
+    """
+    Returns the final (highest) frequency for a given approximant using
     given template parameters.
 
     NOTE: TaylorTx and TaylorFx are currently all given an ISCO cutoff !!
@@ -477,6 +493,7 @@ def get_final_freq(approx, m1, m2, s1z, s2z):
     -------
     f : float or numpy.array
         Frequency in Hz
+
     """
     # Unfortunately we need a few special cases (quite hacky in the case of
     # IMRPhenomXAS) because some useful approximants are not understood by
@@ -569,6 +586,7 @@ def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
     -------
     f : float or numpy.array
         Frequency in Hz
+
     """
     params = {"mass1": m1, "mass2": m2, "spin1z": s1z, "spin2z": s2z}
     return named_frequency_cutoffs[name](params)
@@ -636,7 +654,8 @@ def get_inspiral_tf(
     pn_2order=7,
     approximant="TaylorF2",
 ):
-    """Compute the time-frequency evolution of an inspiral signal.
+    """
+    Compute the time-frequency evolution of an inspiral signal.
 
     Return a tuple of time and frequency vectors tracking the evolution of an
     inspiral signal in the time-frequency plane.
@@ -764,6 +783,7 @@ def meco_velocity(m1, m2, chi1, chi2):
     -------
     v : float
         Velocity (dimensionless)
+
     """
     _, energy2, energy3, energy4, energy5, energy6 = _energy_coeffs(m1, m2, chi1, chi2)
 
@@ -837,8 +857,7 @@ def _dtdv_cutoff_velocity(m1, m2, chi1, chi2):
 
     if dtdv_func(1.0) < 0.0:
         return bisect(dtdv_func, 0.05, 1.0)
-    else:
-        return 1.0
+    return 1.0
 
 
 def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
@@ -847,12 +866,12 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     implemented_spin_order = 7
     if phase_order > implemented_phase_order:
         raise ValueError("pN coeffiecients of that order have not been implemented")
-    elif phase_order == -1:
+    if phase_order == -1:
         phase_order = implemented_phase_order
 
     if spin_order > implemented_spin_order:
         raise ValueError("pN coeffiecients of that order have not been implemented")
-    elif spin_order == -1:
+    if spin_order == -1:
         spin_order = implemented_spin_order
 
     qmdef1 = 1.0
@@ -985,12 +1004,12 @@ def kerr_lightring_velocity(chi):
     # If chi > 0.9996, the algorithm cannot solve the function
     if chi >= 0.9996:
         return brentq(kerr_lightring, 0, 0.8, args=(0.9996))
-    else:
-        return brentq(kerr_lightring, 0, 0.8, args=(chi))
+    return brentq(kerr_lightring, 0, 0.8, args=(chi))
 
 
 def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
-    """Return hybrid MECO energy.
+    """
+    Return hybrid MECO energy.
 
     Return the hybrid energy [eq. (6)] whose minimum defines the hybrid MECO
     up to 3.5PN (including the 3PN spin-spin)
@@ -1014,6 +1033,7 @@ def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
     -------
     h_E: float
         The hybrid energy as a function of v
+
     """
     pi_sq = numpy.pi**2
     v2, v3, v4, v5, v6, v7 = v**2, v**3, v**4, v**5, v**6, v**7
@@ -1092,7 +1112,8 @@ def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
 
 
 def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
-    """Return the velocity of the hybrid MECO
+    """
+    Return the velocity of the hybrid MECO
 
     Parameters
     ----------
@@ -1115,8 +1136,8 @@ def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
     -------
     v: float
         The velocity (dimensionless) of the hybrid MECO
-    """
 
+    """
     if qm1 is None:
         qm1 = 1
     if qm2 is None:
@@ -1132,7 +1153,8 @@ def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
 
 
 def hybrid_meco_frequency(m1, m2, chi1, chi2, qm1=None, qm2=None):
-    """Return the frequency of the hybrid MECO
+    """
+    Return the frequency of the hybrid MECO
 
     Parameters
     ----------
@@ -1155,6 +1177,7 @@ def hybrid_meco_frequency(m1, m2, chi1, chi2, qm1=None, qm2=None):
     -------
     f: float
         The frequency (in Hz) of the hybrid MECO
+
     """
     if qm1 is None:
         qm1 = 1
@@ -1179,7 +1202,8 @@ def jframe_to_l0frame(
     spin2_polar=0.0,
     spin12_deltaphi=0.0,
 ):
-    """Converts J-frame parameters into L0 frame.
+    """
+    Converts J-frame parameters into L0 frame.
 
     Parameters
     ----------
@@ -1236,6 +1260,7 @@ def jframe_to_l0frame(
         * spin2z : float
             The z component of the second binary component's
             dimensionless spin.
+
     """
     inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = (
         lalsim.SimInspiralTransformPrecessingNewInitialConditions(
@@ -1277,7 +1302,8 @@ def l0frame_to_jframe(
     spin2y=0.0,
     spin2z=0.0,
 ):
-    """Converts L0-frame parameters to J-frame.
+    """
+    Converts L0-frame parameters to J-frame.
 
     Parameters
     ----------
@@ -1334,6 +1360,7 @@ def l0frame_to_jframe(
         * spin12_deltaphi : float
             Difference between the azimuthal angles of the spin of the larger
             object (S1) and the spin of the smaller object (S2).
+
     """
     # Note: unlike other LALSimulation functions, this one takes masses in
     # solar masses

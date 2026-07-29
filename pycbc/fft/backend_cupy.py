@@ -17,12 +17,13 @@
 
 from .core import _list_available
 
-_backend_dict = {'cupy' : 'cupyfft'}
-_backend_list = ['cupy']
+_backend_dict = {"cupy": "cupyfft"}
+_backend_list = ["cupy"]
 
 _alist, _adict = _list_available(_backend_list, _backend_dict)
 
 cupy_backend = None
+
 
 def set_backend(backend_list):
     global cupy_backend
@@ -31,7 +32,9 @@ def set_backend(backend_list):
             cupy_backend = backend
             break
 
+
 def get_backend():
     return _adict[cupy_backend]
+
 
 set_backend(_backend_list)

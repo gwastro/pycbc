@@ -7,7 +7,8 @@
 #
 # =============================================================================
 #
-""" This module provides default site catalogs, which should be suitable for
+"""
+This module provides default site catalogs, which should be suitable for
 most use cases. You can override individual details here. It should also be
 possible to implement a new site, but not sure how that would work in practice.
 """
@@ -20,13 +21,20 @@ from shutil import which
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 
-from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
-from Pegasus.api import Arch, OS, SiteCatalog
+from Pegasus.api import (
+    OS,
+    Arch,
+    Directory,
+    FileServer,
+    Namespace,
+    Operation,
+    Site,
+    SiteCatalog,
+)
 
-from pycbc.version import last_release, version, release  # noqa
+from pycbc.version import last_release, release, version
 
-
-logger = logging.getLogger('pycbc.workflow.pegasus_sites')
+logger = logging.getLogger("pycbc.workflow.pegasus_sites")
 
 if release:
     sing_version = version
@@ -36,48 +44,55 @@ else:
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
 # We can add schemes explicitly, as below, but be careful with this!
-urllib.parse.uses_relative.append('gsiftp')
-urllib.parse.uses_netloc.append('gsiftp')
+urllib.parse.uses_relative.append("gsiftp")
+urllib.parse.uses_netloc.append("gsiftp")
 
-KNOWN_SITES = ['local', 'condorpool_symlink',
-               'condorpool_copy', 'condorpool_shared', 'osg']
+KNOWN_SITES = [
+    "local",
+    "condorpool_symlink",
+    "condorpool_copy",
+    "condorpool_shared",
+    "osg",
+]
 
 
 def add_site_pegasus_profile(site, cp):
     """Add options from [pegasus_profile] in configparser to site"""
     # Add global profile information
-    if cp.has_section('pegasus_profile'):
-        add_ini_site_profile(site, cp, 'pegasus_profile')
+    if cp.has_section("pegasus_profile"):
+        add_ini_site_profile(site, cp, "pegasus_profile")
     # Add site-specific profile information
-    if cp.has_section('pegasus_profile-{}'.format(site.name)):
-        add_ini_site_profile(site, cp, 'pegasus_profile-{}'.format(site.name))
+    if cp.has_section(f"pegasus_profile-{site.name}"):
+        add_ini_site_profile(site, cp, f"pegasus_profile-{site.name}")
 
 
 def add_ini_site_profile(site, cp, sec):
     """Add options from sec in configparser to site"""
     for opt in cp.options(sec):
-        namespace = opt.split('|')[0]
-        if namespace in ('pycbc', 'container'):
+        namespace = opt.split("|")[0]
+        if namespace in ("pycbc", "container"):
             continue
 
         value = cp.get(sec, opt).strip()
-        key = opt.split('|')[1]
+        key = opt.split("|")[1]
         site.add_profiles(Namespace(namespace), key=key, value=value)
 
 
 def add_local_site(sitecat, cp, local_path, local_url):
     """Add the local site to site catalog"""
     # local_url must end with a '/'
-    if not local_url.endswith('/'):
-        local_url = local_url + '/'
+    if not local_url.endswith("/"):
+        local_url = local_url + "/"
 
     local = Site("local", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(local, cp)
 
-    local_dir = Directory(Directory.SHARED_SCRATCH,
-                          path=os.path.join(local_path, 'local-site-scratch'))
-    local_file_serv = FileServer(urljoin(local_url, 'local-site-scratch'),
-                                 Operation.ALL)
+    local_dir = Directory(
+        Directory.SHARED_SCRATCH, path=os.path.join(local_path, "local-site-scratch")
+    )
+    local_file_serv = FileServer(
+        urljoin(local_url, "local-site-scratch"), Operation.ALL
+    )
     local_dir.add_file_servers(local_file_serv)
     local.add_directories(local_dir)
 
@@ -91,24 +106,19 @@ def add_condorpool_symlink_site(sitecat, cp):
     add_site_pegasus_profile(site, cp)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
-    site.add_profiles(Namespace.PEGASUS, key="data.configuration",
-                      value="nonsharedfs")
-    site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
-                      value="true")
-    site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
-                      value="true")
-    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid",
-                      value="False")
-    site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
-                      value="Yes")
-    site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
-                      value="ON_EXIT_OR_EVICT")
-    site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites",
-                      value='"nogrid"')
-    site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN",
-                      value='"False"')
-    site.add_profiles(Namespace.CONDOR, key="My.flock_local",
-                      value="True")
+    site.add_profiles(Namespace.PEGASUS, key="data.configuration", value="nonsharedfs")
+    site.add_profiles(
+        Namespace.PEGASUS, key="transfer.bypass.input.staging", value="true"
+    )
+    site.add_profiles(Namespace.PEGASUS, key="auxillary.local", value="true")
+    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid", value="False")
+    site.add_profiles(Namespace.CONDOR, key="should_transfer_files", value="Yes")
+    site.add_profiles(
+        Namespace.CONDOR, key="when_to_transfer_output", value="ON_EXIT_OR_EVICT"
+    )
+    site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites", value='"nogrid"')
+    site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN", value='"False"')
+    site.add_profiles(Namespace.CONDOR, key="My.flock_local", value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     sitecat.add_sites(site)
 
@@ -119,27 +129,21 @@ def add_condorpool_copy_site(sitecat, cp):
     add_site_pegasus_profile(site, cp)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
-    site.add_profiles(Namespace.PEGASUS, key="data.configuration",
-                      value="condorio")
-    site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
-                      value="true")
+    site.add_profiles(Namespace.PEGASUS, key="data.configuration", value="condorio")
+    site.add_profiles(
+        Namespace.PEGASUS, key="transfer.bypass.input.staging", value="true"
+    )
     # This explicitly disables symlinking
-    site.add_profiles(Namespace.PEGASUS, key='nosymlink',
-                      value=True)
-    site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
-                      value="true")
-    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid",
-                      value="False")
-    site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
-                      value="Yes")
-    site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
-                      value="ON_EXIT_OR_EVICT")
-    site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites",
-                      value='"nogrid"')
-    site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN",
-                      value='"False"')
-    site.add_profiles(Namespace.CONDOR, key="My.flock_local",
-                      value="True")
+    site.add_profiles(Namespace.PEGASUS, key="nosymlink", value=True)
+    site.add_profiles(Namespace.PEGASUS, key="auxillary.local", value="true")
+    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid", value="False")
+    site.add_profiles(Namespace.CONDOR, key="should_transfer_files", value="Yes")
+    site.add_profiles(
+        Namespace.CONDOR, key="when_to_transfer_output", value="ON_EXIT_OR_EVICT"
+    )
+    site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites", value='"nogrid"')
+    site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN", value='"False"')
+    site.add_profiles(Namespace.CONDOR, key="My.flock_local", value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     sitecat.add_sites(site)
 
@@ -147,53 +151,49 @@ def add_condorpool_copy_site(sitecat, cp):
 def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
     """Add condorpool_shared site to site catalog"""
     # local_url must end with a '/'
-    if not local_url.endswith('/'):
-        local_url = local_url + '/'
+    if not local_url.endswith("/"):
+        local_url = local_url + "/"
 
     site = Site("condorpool_shared", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
 
     # It's annoying that this is needed!
-    local_dir = Directory(Directory.SHARED_SCRATCH,
-                          path=os.path.join(local_path, 'cpool-site-scratch'))
-    local_file_serv = FileServer(urljoin(local_url, 'cpool-site-scratch'),
-                                 Operation.ALL)
+    local_dir = Directory(
+        Directory.SHARED_SCRATCH, path=os.path.join(local_path, "cpool-site-scratch")
+    )
+    local_file_serv = FileServer(
+        urljoin(local_url, "cpool-site-scratch"), Operation.ALL
+    )
     local_dir.add_file_servers(local_file_serv)
     site.add_directories(local_dir)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
-    site.add_profiles(Namespace.PEGASUS, key="data.configuration",
-                      value="sharedfs")
-    site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
-                      value="true")
-    site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
-                      value="true")
-    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid",
-                      value="False")
-    site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
-                      value="Yes")
-    site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
-                      value="ON_EXIT_OR_EVICT")
-    site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites",
-                      value='"nogrid"')
-    site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN",
-                      value='"False"')
-    site.add_profiles(Namespace.CONDOR, key="My.flock_local",
-                      value="True")
+    site.add_profiles(Namespace.PEGASUS, key="data.configuration", value="sharedfs")
+    site.add_profiles(
+        Namespace.PEGASUS, key="transfer.bypass.input.staging", value="true"
+    )
+    site.add_profiles(Namespace.PEGASUS, key="auxillary.local", value="true")
+    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid", value="False")
+    site.add_profiles(Namespace.CONDOR, key="should_transfer_files", value="Yes")
+    site.add_profiles(
+        Namespace.CONDOR, key="when_to_transfer_output", value="ON_EXIT_OR_EVICT"
+    )
+    site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites", value='"nogrid"')
+    site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN", value='"False"')
+    site.add_profiles(Namespace.CONDOR, key="My.flock_local", value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     # Need to set PEGASUS_HOME
-    peg_home = which('pegasus-plan')
+    peg_home = which("pegasus-plan")
     if peg_home is None:
         raise RuntimeError(
-            'pegasus-plan command not found. '
-            'Make sure Pegasus is correctly installed.'
+            "pegasus-plan command not found. Make sure Pegasus is correctly installed."
         )
-    if not peg_home.endswith('bin/pegasus-plan'):
+    if not peg_home.endswith("bin/pegasus-plan"):
         raise RuntimeError(
-            f'path to pegasus-plan is weird: {peg_home}. '
-            'Make sure Pegasus is correctly installed.'
+            f"path to pegasus-plan is weird: {peg_home}. "
+            "Make sure Pegasus is correctly installed."
         )
-    peg_home = peg_home.replace('bin/pegasus-plan', '')
+    peg_home = peg_home.replace("bin/pegasus-plan", "")
     site.add_profiles(Namespace.ENV, key="PEGASUS_HOME", value=peg_home)
     sitecat.add_sites(site)
 
@@ -210,77 +210,83 @@ def add_osg_site(sitecat, cp):
     site = Site("osg", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
-    site.add_profiles(Namespace.PEGASUS, key="data.configuration",
-                      value="condorio")
-    site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
-                      value="true")
-    site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
-                      value="Yes")
-    site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
-                      value="ON_SUCCESS")
-    site.add_profiles(Namespace.CONDOR, key="success_exit_code",
-                      value="0")
-    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid",
-                      value="True")
-    site.add_profiles(Namespace.CONDOR, key="ulog_execute_attrs",
-                      value="GLIDEIN_Site")
-    site.add_profiles(Namespace.CONDOR, key="My.InitializeModulesEnv",
-                      value="False")
-    site.add_profiles(Namespace.CONDOR, key="My.SingularityCleanEnv",
-                      value="True")
+    site.add_profiles(Namespace.PEGASUS, key="data.configuration", value="condorio")
+    site.add_profiles(
+        Namespace.PEGASUS, key="transfer.bypass.input.staging", value="true"
+    )
+    site.add_profiles(Namespace.CONDOR, key="should_transfer_files", value="Yes")
+    site.add_profiles(
+        Namespace.CONDOR, key="when_to_transfer_output", value="ON_SUCCESS"
+    )
+    site.add_profiles(Namespace.CONDOR, key="success_exit_code", value="0")
+    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid", value="True")
+    site.add_profiles(Namespace.CONDOR, key="ulog_execute_attrs", value="GLIDEIN_Site")
+    site.add_profiles(Namespace.CONDOR, key="My.InitializeModulesEnv", value="False")
+    site.add_profiles(Namespace.CONDOR, key="My.SingularityCleanEnv", value="True")
     # These numbers below correspond to the codes in table B.2 here:
     # https://htcondor.readthedocs.io/en/24.0/codes-other-values/job-event-log-codes.html
     # Values recommended by a condor expert
-    site.add_profiles(Namespace.CONDOR, key="My.DAGManNodesMask",
-                      value=r"\"0,1,2,4,5,7,8,9,10,11,12,13,16,17,24,27,35,36,40\"")
-    site.add_profiles(Namespace.CONDOR, key="Requirements",
-                      value="(HAS_SINGULARITY =?= TRUE) && "
-                            "(IS_GLIDEIN =?= True) && "
-                            "(HAS_CVMFS_singularity_opensciencegrid_org =?= True)")
+    site.add_profiles(
+        Namespace.CONDOR,
+        key="My.DAGManNodesMask",
+        value=r"\"0,1,2,4,5,7,8,9,10,11,12,13,16,17,24,27,35,36,40\"",
+    )
+    site.add_profiles(
+        Namespace.CONDOR,
+        key="Requirements",
+        value="(HAS_SINGULARITY =?= TRUE) && "
+        "(IS_GLIDEIN =?= True) && "
+        "(HAS_CVMFS_singularity_opensciencegrid_org =?= True)",
+    )
     cvmfs_loc = '"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v'
     cvmfs_loc += sing_version + '"'
-    site.add_profiles(Namespace.CONDOR, key="My.SingularityImage",
-                      value=cvmfs_loc)
+    site.add_profiles(Namespace.CONDOR, key="My.SingularityImage", value=cvmfs_loc)
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
-    site.add_profiles(Namespace.ENV, key="LAL_DATA_PATH",
-                      value="/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation")
+    site.add_profiles(
+        Namespace.ENV,
+        key="LAL_DATA_PATH",
+        value="/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation",
+    )
     # Add MKL location to LD_LIBRARY_PATH for OSG
-    site.add_profiles(Namespace.ENV, key="LD_LIBRARY_PATH",
-                      value="/usr/local/lib:/.singularity.d/libs")
+    site.add_profiles(
+        Namespace.ENV,
+        key="LD_LIBRARY_PATH",
+        value="/usr/local/lib:/.singularity.d/libs",
+    )
     sitecat.add_sites(site)
 
 
 def add_site(sitecat, sitename, cp, out_dir=None):
     """Add site sitename to site catalog"""
     # Allow local site scratch to be overriden for any site which uses it
-    sec = 'pegasus_profile-{}'.format(sitename)
-    opt = 'pycbc|site-scratch'
+    sec = f"pegasus_profile-{sitename}"
+    opt = "pycbc|site-scratch"
     if cp.has_option(sec, opt):
         out_dir = os.path.abspath(cp.get(sec, opt))
-        if cp.has_option(sec, 'pycbc|unique-scratch'):
-            scratchdir = tempfile.mkdtemp(prefix='pycbc-tmp_', dir=out_dir)
+        if cp.has_option(sec, "pycbc|unique-scratch"):
+            scratchdir = tempfile.mkdtemp(prefix="pycbc-tmp_", dir=out_dir)
             os.chmod(scratchdir, 0o755)
             try:
-                os.symlink(scratchdir, '{}-site-scratch'.format(sitename))
+                os.symlink(scratchdir, f"{sitename}-site-scratch")
             except OSError:
                 pass
             out_dir = scratchdir
     elif out_dir is None:
         out_dir = os.getcwd()
-    local_url = urljoin('file://', pathname2url(out_dir))
-    if sitename == 'local':
+    local_url = urljoin("file://", pathname2url(out_dir))
+    if sitename == "local":
         add_local_site(sitecat, cp, out_dir, local_url)
-    elif sitename == 'condorpool_symlink':
+    elif sitename == "condorpool_symlink":
         add_condorpool_symlink_site(sitecat, cp)
-    elif sitename == 'condorpool_copy':
+    elif sitename == "condorpool_copy":
         add_condorpool_copy_site(sitecat, cp)
-    elif sitename == 'condorpool_shared':
+    elif sitename == "condorpool_shared":
         add_condorpool_shared_site(sitecat, cp, out_dir, local_url)
-    elif sitename == 'osg':
+    elif sitename == "osg":
         add_osg_site(sitecat, cp)
     else:
-        raise ValueError("Do not recognize site {}".format(sitename))
+        raise ValueError(f"Do not recognize site {sitename}")
 
 
 def make_catalog(cp, out_dir):

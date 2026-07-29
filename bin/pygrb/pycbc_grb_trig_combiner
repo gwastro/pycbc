@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2019 Duncan Macleod
 #
@@ -17,33 +16,30 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Combine triggers from a splitbank GRB run
-"""
+"""Combine triggers from a splitbank GRB run"""
 
 import argparse
-import os
 import logging
-
-import numpy
-
-import tqdm
+import os
 
 import h5py
-
-from gwdatafind.utils import (file_segment, filename_metadata)
-
 import igwn_segments as segments
+import numpy
+import tqdm
+from gwdatafind.utils import file_segment, filename_metadata
 from igwn_segments.utils import fromsegwizard
 
 from pycbc import add_common_pycbc_options, init_logging
-from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
 from pycbc.io.hdf import HFile
+from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-TQDM_BAR_FORMAT = ("{desc}: |{bar}| "
-                   "{n_fmt}/{total_fmt} {unit} ({percentage:3.0f}%) "
-                   "[{elapsed} | ETA {remaining}]")
+TQDM_BAR_FORMAT = (
+    "{desc}: |{bar}| "
+    "{n_fmt}/{total_fmt} {unit} ({percentage:3.0f}%) "
+    "[{elapsed} | ETA {remaining}]"
+)
 TQDM_KW = {
     "ascii": " -=#",
     "bar_format": TQDM_BAR_FORMAT,
@@ -53,8 +49,10 @@ TQDM_KW = {
 
 # -- utilities -----------------------------------
 
+
 def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
-    """Merge several HDF5 files into a single file
+    """
+    Merge several HDF5 files into a single file
 
     Parameters
     ----------
@@ -63,6 +61,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
 
     outputfile : `str`
         the path of the output HDF5 file to write
+
     """
     attributes = {}
     datasets = {}
@@ -84,22 +83,26 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
                 pass
             else:
                 assert dtype == datasets[name][1], (
-                    "Cannot merge {0}/{1}, does not match dtype".format(
-                        obj.file.filename, name,
-                    ))
+                    f"Cannot merge {obj.file.filename}/{name}, does not match dtype"
+                )
             datasets[name] = (shape, dtype)
 
             # use default compression options from this file
-            for copt in ('compression', 'compression_opts'):
+            for copt in ("compression", "compression_opts"):
                 compression_kw.setdefault(copt, getattr(obj, copt))
 
     # get list of datasets
     attributes = {}
     datasets = {}
-    for filename in tqdm.tqdm(inputfiles, desc="Scanning trigger files",
-                              disable=not verbose, total=nfiles, unit="files",
-                              **TQDM_KW):
-        with HFile(filename, 'r') as h5f:
+    for filename in tqdm.tqdm(
+        inputfiles,
+        desc="Scanning trigger files",
+        disable=not verbose,
+        total=nfiles,
+        unit="files",
+        **TQDM_KW,
+    ):
+        with HFile(filename, "r") as h5f:
             # note: attributes are only recorded from the last file,
             #       since we presume all files have the same attributes
             attributes = dict(h5f.attrs)
@@ -113,7 +116,8 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     )
 
     def _network_first(name):
-        """Key function to sort datasets in the network group first
+        """
+        Key function to sort datasets in the network group first
 
         This is required so that when we merge the network/X1_event_id
         columns, we can reference the X1/event_id event count from the
@@ -127,12 +131,11 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     dataset_names = sorted(datasets, key=_network_first)
 
     # get list of event_id columns
-    sngl_event_id_names = [
-        x for x in dataset_names if x.endswith("/event_id")
-    ]
+    sngl_event_id_names = [x for x in dataset_names if x.endswith("/event_id")]
     network_event_id_names = [
-        "network/{}".format(x.replace('/', '_')) for
-        x in sngl_event_id_names if not x.startswith("network")
+        "network/{}".format(x.replace("/", "_"))
+        for x in sngl_event_id_names
+        if not x.startswith("network")
     ]
     all_event_id_names = sngl_event_id_names + network_event_id_names
 
@@ -142,7 +145,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     gating_datasets = set(filter(lambda x: "/gating/" in x, dataset_names))
     once_only_datasets = search_datasets.union(gating_datasets)
 
-    with HFile(outputfile, 'w') as h5out:
+    with HFile(outputfile, "w") as h5out:
         h5out.attrs.update(attributes)
 
         # copy dataset contents
@@ -154,19 +157,23 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
 
             logging.info("Merging %s dataset", dset)
             data = []
-            for filename in tqdm.tqdm(inputfiles, desc="Merging trigger files",
-                                      disable=not verbose, total=nfiles,
-                                      unit="files", **TQDM_KW):
-                with HFile(filename, 'r') as h5in:
-                    if len(h5in['network']['event_id']) == 0:
+            for filename in tqdm.tqdm(
+                inputfiles,
+                desc="Merging trigger files",
+                disable=not verbose,
+                total=nfiles,
+                unit="files",
+                **TQDM_KW,
+            ):
+                with HFile(filename, "r") as h5in:
+                    if len(h5in["network"]["event_id"]) == 0:
                         continue
                     data += [h5in[dset][:]]
                     # read the search datasets and gating_datasets only once
                     if dset in once_only_datasets:
                         break
 
-            h5out.create_dataset(dset, data=numpy.concatenate(data),
-                                 **compression_kw)
+            h5out.create_dataset(dset, data=numpy.concatenate(data), **compression_kw)
             del data
         # END OF DATASET LOOP
 
@@ -175,16 +182,21 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
         n_events = 0
         logging.info("Merging %s dataset", dset)
         data = []
-        for filename in tqdm.tqdm(inputfiles, desc="Merging trigger files",
-                                  disable=not verbose, total=nfiles,
-                                  unit="files", **TQDM_KW):
-            with HFile(filename, 'r') as h5in:
-                if len(h5in['network']['event_id']) == 0:
+        for filename in tqdm.tqdm(
+            inputfiles,
+            desc="Merging trigger files",
+            disable=not verbose,
+            total=nfiles,
+            unit="files",
+            **TQDM_KW,
+        ):
+            with HFile(filename, "r") as h5in:
+                if len(h5in["network"]["event_id"]) == 0:
                     continue
 
                 # shift the event ids by the number of events gathered so far
                 n_events_h5in = len(h5in[dset][:])
-                data += [h5in[dset][:] + [n_events]*n_events_h5in]
+                data += [h5in[dset][:] + [n_events] * n_events_h5in]
                 n_events += n_events_h5in
         data = numpy.concatenate(data)
         for dset in all_event_id_names:
@@ -194,23 +206,23 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
 
         # Handling template_id separately
         logging.info("Preparing template IDs")
-        template_ids = template_hash_to_id(
-            trigger_file=h5out, bank_path=args.bank_file
-        )
+        template_ids = template_hash_to_id(trigger_file=h5out, bank_path=args.bank_file)
         logging.info("Storing template IDs")
-        h5out.create_dataset("network/template_id",
-                             data=template_ids,
-                             compression="gzip",
-                             compression_opts=9)
+        h5out.create_dataset(
+            "network/template_id",
+            data=template_ids,
+            compression="gzip",
+            compression_opts=9,
+        )
     # END OF WITH H5OUT
 
     logging.info("Merged triggers written to %s", outputfile)
 
 
-def bin_events(inputfile, bins, outdir, filetag,
-               column="network/end_time_gc", verbose=False):
-    """Separate events in the inputfile into bins
-    """
+def bin_events(
+    inputfile, bins, outdir, filetag, column="network/end_time_gc", verbose=False
+):
+    """Separate events in the inputfile into bins"""
     ifotag, _, seg = filename_metadata(inputfile)
 
     with HFile(inputfile, "r") as h5in:
@@ -220,9 +232,11 @@ def bin_events(inputfile, bins, outdir, filetag,
         for bin_, segl in bins.items():
             # find which network triggers to keep
             if isinstance(segl, list):
+
                 def _in_bin(t):
                     return t in segl
             else:
+
                 def _in_bin(t):
                     return segl[0] <= t < segl[1]
 
@@ -232,27 +246,26 @@ def bin_events(inputfile, bins, outdir, filetag,
             # find which single-ifo events to keep
             ifo_index = {
                 ifo: numpy.unique(
-                    h5in["network/{}_event_id".format(ifo)][()][include],
-                ) for ifo in ifos
+                    h5in[f"network/{ifo}_event_id"][()][include],
+                )
+                for ifo in ifos
             }
 
             # generate output file
             outf = os.path.join(
                 outdir,
-                '{}-{}_{}-{}-{}.h5'.format(
-                    ifotag, filetag, bin_, seg[0], abs(seg),
-                ),
+                f"{ifotag}-{filetag}_{bin_}-{seg[0]}-{abs(seg)}.h5",
             )
 
-            nsets = sum(isinstance(item, h5py.Dataset) for
-                        group in h5in.values() for
-                        item in group.values())
-            msg = "Slicing {} network events for {}".format(
-                include.sum(),
-                bin_,
+            nsets = sum(
+                isinstance(item, h5py.Dataset)
+                for group in h5in.values()
+                for item in group.values()
             )
-            bar = tqdm.tqdm(total=nsets, desc=msg, disable=not verbose,
-                            unit="datasets", **TQDM_KW)
+            msg = f"Slicing {include.sum()} network events for {bin_}"
+            bar = tqdm.tqdm(
+                total=nsets, desc=msg, disable=not verbose, unit="datasets", **TQDM_KW
+            )
             with HFile(outf, "w") as h5out:
                 for old in h5in["network"].values():
                     if isinstance(old, h5py.Dataset):
@@ -290,13 +303,13 @@ def bin_events(inputfile, bins, outdir, filetag,
 def read_segment_files(segdir):
     segs = {}
     for name, filename in {
-            "buffer": "bufferSeg.txt",
-            "off": "offSourceSeg.txt",
-            "on": "onSourceSeg.txt",
+        "buffer": "bufferSeg.txt",
+        "off": "offSourceSeg.txt",
+        "on": "onSourceSeg.txt",
     }.items():
         try:
-            with open(os.path.join(segdir, filename), "r") as f:
-                segs[name], = fromsegwizard(f)
+            with open(os.path.join(segdir, filename)) as f:
+                (segs[name],) = fromsegwizard(f)
         except ValueError as exc:
             exc.args = ("more than one segment, an error has occurred",)
             raise
@@ -328,7 +341,7 @@ parser.add_argument(
     "--job-tag",
     type=str.upper,
     help="the job tag, for use when more than one trig_combiner "
-         "job is included in a workflow",
+    "job is included in a workflow",
 )
 parser.add_argument(
     "-S",
@@ -339,7 +352,8 @@ parser.add_argument(
 
 # run parameters
 parser.add_argument(
-    "-n", "--grb-name",
+    "-n",
+    "--grb-name",
     type=str.upper,
     help="GRB event name, e.g. 010203",
 )
@@ -418,9 +432,9 @@ init_logging(args.verbose)
 logging.info("Welcome to the PyGRB trigger combiner")
 
 if args.grb_name:
-    args.user_tag += "_GRB{}".format(args.grb_name)
+    args.user_tag += f"_GRB{args.grb_name}"
 if args.job_tag:
-    args.user_tag += "_{}".format(args.job_tag)
+    args.user_tag += f"_{args.job_tag}"
 
 analysis = segments.segmentlist([file_segment(args.input_files[0])])
 start, end = analysis[0]
@@ -447,7 +461,7 @@ logging.info("    on-source segment : %s", bins["ONSOURCE"])
 logging.info("       buffer segment : %s", segs["buffer"])
 logging.info(
     "  off-source segments : [%s]",
-    ", \n                         ".join(map(str, bins["OFFSOURCE"]))
+    ", \n                         ".join(map(str, bins["OFFSOURCE"])),
 )
 
 # The onsource should never be the first or the last bin:
@@ -475,10 +489,11 @@ for i, j in enumerate(offtrials):
         j -= offsource_ntrials[0]
     _ts += j * trialtime
     _te = _ts + trialtime
-    bins["OFFTRIAL_{}".format(i+1)] = seg = segments.segment(_ts, _te)
+    bins[f"OFFTRIAL_{i + 1}"] = seg = segments.segment(_ts, _te)
     if seg not in bins["OFFSOURCE"]:
-        raise ValueError(f"off-trial {i+1} not in off-source segments\n"
-                         f"off-trial {i+1} : {seg}\n")
+        raise ValueError(
+            f"off-trial {i + 1} not in off-source segments\noff-trial {i + 1} : {seg}\n"
+        )
     logging.info("          off-trial %d : %s", i + 1, seg)
 
 # -- read triggers ------------------------------
@@ -488,13 +503,9 @@ logging.info("Merging events")
 if args.short_slides and args.long_slides:
     raise NotImplementedError
 
-outfilename = "{}-{}_ALL_TIMES-{}-{}.h5".format(
-    args.ifo_tag, args.user_tag, start, end-start,
-)
+outfilename = f"{args.ifo_tag}-{args.user_tag}_ALL_TIMES-{start}-{end - start}.h5"
 outfile = os.path.join(args.output_dir, outfilename)
-merge_hdf5_files(
-    args.input_files, outfile, verbose=args.verbose, **compression_kw
-)
+merge_hdf5_files(args.input_files, outfile, verbose=args.verbose, **compression_kw)
 
 logging.info("Binning events")
 bin_events(outfile, bins, args.output_dir, args.user_tag, verbose=args.verbose)

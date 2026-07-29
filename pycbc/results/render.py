@@ -14,47 +14,49 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os.path, types
 import codecs
-
+import os.path
+import types
 from configparser import ConfigParser
-from jinja2 import Environment, FileSystemLoader
 from xml.sax.saxutils import unescape
+
+from jinja2 import Environment, FileSystemLoader
 
 import pycbc.results
 from pycbc.results import unescape_table
 from pycbc.results.metadata import save_html_with_metadata
 from pycbc.workflow.core import SegFile, makedir
 
+
 def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
-    """ Writes a template given inputs from the workflow generator. Takes
+    """
+    Writes a template given inputs from the workflow generator. Takes
     a list of tuples. Each tuple is a pycbc File object. Also the name of the
     subtemplate to render and the filename of the output.
     """
-
     dirnam = os.path.dirname(filename)
     makedir(dirnam)
 
     try:
-        filenames = [f.name for filelist in filelists for f in filelist if f is not None]
+        filenames = [
+            f.name for filelist in filelists for f in filelist if f is not None
+        ]
     except TypeError:
         filenames = []
 
     # render subtemplate
-    subtemplate_dir = pycbc.results.__path__[0] + '/templates/wells'
+    subtemplate_dir = pycbc.results.__path__[0] + "/templates/wells"
     env = Environment(loader=FileSystemLoader(subtemplate_dir))
     env.globals.update(get_embedded_config=get_embedded_config)
     env.globals.update(path_exists=os.path.exists)
     env.globals.update(len=len)
     subtemplate = env.get_template(subtemplate)
-    context = {'filelists' : filelists,
-               'dir' : dirnam}
+    context = {"filelists": filelists, "dir": dirnam}
     context.update(kwargs)
     output = subtemplate.render(context)
 
     # save as html page
-    kwds = {'render-function' : 'render_tmplt',
-            'filenames' : ','.join(filenames)}
+    kwds = {"render-function": "render_tmplt", "filenames": ",".join(filenames)}
     kwds.update(kwargs)
 
     for key in kwds:
@@ -62,12 +64,14 @@ def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
 
     save_html_with_metadata(str(output), filename, None, kwds)
 
+
 def get_embedded_config(filename):
-    """ Attempt to load config data attached to file
-    """
+    """Attempt to load config data attached to file"""
+
     def check_option(self, section, name):
-        return (self.has_section(section) and
-               (self.has_option(section, name) or (name in self.defaults())))
+        return self.has_section(section) and (
+            self.has_option(section, name) or (name in self.defaults())
+        )
 
     try:
         cp = pycbc.results.load_metadata_from_file(filename)
@@ -78,18 +82,17 @@ def get_embedded_config(filename):
 
     return cp
 
-def setup_template_render(path, config_path):
-    """ This function is the gateway for rendering a template for a file.
-    """
 
+def setup_template_render(path, config_path):
+    """This function is the gateway for rendering a template for a file."""
     # initialization
     cp = get_embedded_config(path)
-    output = ''
+    output = ""
     filename = os.path.basename(path)
 
     # use meta-data if not empty for rendering
-    if cp.has_option(filename, 'render-function'):
-        render_function_name = cp.get(filename, 'render-function')
+    if cp.has_option(filename, "render-function"):
+        render_function_name = cp.get(filename, "render-function")
         render_function = eval(render_function_name)
         output = render_function(path, cp)
 
@@ -98,8 +101,8 @@ def setup_template_render(path, config_path):
         cp.read(config_path)
 
         # render template
-        if cp.has_option(filename, 'render-function'):
-            render_function_name = cp.get(filename, 'render-function')
+        if cp.has_option(filename, "render-function"):
+            render_function_name = cp.get(filename, "render-function")
             render_function = eval(render_function_name)
             output = render_function(path, cp)
         else:
@@ -112,22 +115,23 @@ def setup_template_render(path, config_path):
 
     return output
 
+
 def render_default(path, cp):
-    """ This is the default function that will render a template to a string of HTML. The
+    """
+    This is the default function that will render a template to a string of HTML. The
     string will be for a drop-down tab that contains a link to the file.
 
     If the file extension requires information to be read, then that is passed to the
     content variable (eg. a segmentlistdict).
     """
-
     # define filename and slug from path
     filename = os.path.basename(path)
-    slug = filename.replace('.', '_')
+    slug = filename.replace(".", "_")
 
     # initializations
     content = None
 
-    if path.endswith('.xml') or path.endswith('.xml.gz'):
+    if path.endswith(".xml") or path.endswith(".xml.gz"):
         # segment or veto file return a segmentslistdict instance
         try:
             wf_file = SegFile.from_segment_xml(path)
@@ -135,111 +139,101 @@ def render_default(path, cp):
             #        for now I just coalesce.
             wf_file.return_union_seglist()
         except Exception as e:
-            print('No segment table found in %s : %s' % (path, e))
+            print("No segment table found in %s : %s" % (path, e))
 
     # render template
-    template_dir = pycbc.results.__path__[0] + '/templates/files'
+    template_dir = pycbc.results.__path__[0] + "/templates/files"
     env = Environment(loader=FileSystemLoader(template_dir))
     env.globals.update(abs=abs)
     env.globals.update(open=open)
     env.globals.update(path_exists=os.path.exists)
-    template = env.get_template('file_default.html')
-    context = {'path'     : path,
-               'filename' : filename,
-               'slug'     : slug,
-               'cp'       : cp,
-               'content'  : content}
+    template = env.get_template("file_default.html")
+    context = {
+        "path": path,
+        "filename": filename,
+        "slug": slug,
+        "cp": cp,
+        "content": content,
+    }
     output = template.render(context)
 
     return output
+
 
 def render_glitchgram(path, cp):
-    """ Render a glitchgram file template.
-    """
-
+    """Render a glitchgram file template."""
     # define filename and slug from path
     filename = os.path.basename(path)
-    slug = filename.replace('.', '_')
+    slug = filename.replace(".", "_")
 
     # render template
-    template_dir = pycbc.results.__path__[0] + '/templates/files'
+    template_dir = pycbc.results.__path__[0] + "/templates/files"
     env = Environment(loader=FileSystemLoader(template_dir))
     env.globals.update(abs=abs)
-    template = env.get_template(cp.get(filename, 'template'))
-    context = {'filename' : filename,
-               'slug'     : slug,
-               'cp'       : cp}
+    template = env.get_template(cp.get(filename, "template"))
+    context = {"filename": filename, "slug": slug, "cp": cp}
     output = template.render(context)
 
     return output
 
-def render_text(path, cp):
-    """ Render a file as text.
-    """
 
+def render_text(path, cp):
+    """Render a file as text."""
     # define filename and slug from path
     filename = os.path.basename(path)
-    slug = filename.replace('.', '_')
+    slug = filename.replace(".", "_")
 
     # initializations
     content = None
 
     # read file as a string
-    with codecs.open(path, 'r', encoding='utf-8', errors='replace') as fp:
+    with codecs.open(path, "r", encoding="utf-8", errors="replace") as fp:
         content = fp.read()
 
     # replace all the escaped characters
     content = unescape(content, unescape_table)
 
     # render template
-    template_dir = pycbc.results.__path__[0] + '/templates/files'
+    template_dir = pycbc.results.__path__[0] + "/templates/files"
     env = Environment(loader=FileSystemLoader(template_dir))
     env.globals.update(abs=abs)
     env.globals.update(path_exists=os.path.exists)
-    template = env.get_template('file_pre.html')
-    context = {'filename' : filename,
-               'slug'     : slug,
-               'cp'       : cp,
-               'content'  : content}
+    template = env.get_template("file_pre.html")
+    context = {"filename": filename, "slug": slug, "cp": cp, "content": content}
     output = template.render(context)
 
     return output
 
-def render_ignore(path, cp):
-    """ Does not render anything.
-    """
 
-    return ''
+def render_ignore(path, cp):
+    """Does not render anything."""
+    return ""
+
 
 def render_tmplt(path, cp):
-    """ Render a file as text.
-    """
-
+    """Render a file as text."""
     # define filename and slug from path
     filename = os.path.basename(path)
-    slug = filename.replace('.', '_')
+    slug = filename.replace(".", "_")
 
     # initializations
     content = None
 
     # read file as a string
-    with open(path, 'r') as fp:
+    with open(path) as fp:
         content = fp.read()
 
     # replace all the escaped characters
     content = unescape(content, unescape_table)
 
     # render template
-    template_dir = '/'.join(path.split('/')[:-1])
+    template_dir = "/".join(path.split("/")[:-1])
     env = Environment(loader=FileSystemLoader(template_dir))
     env.globals.update(setup_template_render=setup_template_render)
     env.globals.update(get_embedded_config=get_embedded_config)
     env.globals.update(path_exists=os.path.exists)
     template = env.get_template(filename)
-    context = {'filename' : filename,
-               'slug'     : slug,
-               'cp'       : cp,
-               'content'  : content}
+    context = {"filename": filename, "slug": slug, "cp": cp, "content": content}
     output = template.render(context)
 
     return output

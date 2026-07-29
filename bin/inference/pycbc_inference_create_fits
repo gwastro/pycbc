@@ -16,7 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Wrapper around ligo-skymap-from-samples that creates fits files from a
+"""
+Wrapper around ligo-skymap-from-samples that creates fits files from a
 inference or posterior hdf file.
 
 Requires ligo.skymap to be installed, which requires python 3.
@@ -30,49 +31,67 @@ same as what is used for the --parameters option in
 pycbc_inference_extract_samples (see that program for details).
 """
 
-import os
-import numpy
 import argparse
+import os
 import subprocess
+
+import numpy
 
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.inference import io
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
-parser.add_argument('--input-file', required=True,
-                    help='The inference or posterior hdf file to load.')
-parser.add_argument('--output-file', required=True,
-                    help='The output file name; it must end in ".fits".')
-parser.add_argument('--maxpts', type=int,
-                    help='The number of posterior samples to extract for '
-                         'making the fits file. Default is to load all. Using '
-                         'fewer points will result in faster runtime, but '
-                         'more error in the result sky map.')
-parser.add_argument('--ra', default='ra',
-                    help='The name of the right ascension parameter in the '
-                         'input file. May also provide a constant, or math '
-                         'operations on multiple parameters. Default is "ra".')
-parser.add_argument('--dec', default='dec',
-                    help='The name of the declination parameter in the '
-                         'input file. May also provide a constant, or math '
-                         'operations on multiple parameters. Default '
-                         'is "dec".')
-parser.add_argument('--distance', default='distance',
-                    help='The name of the distance parameter in the input '
-                         'file. May also provide a constant, or math '
-                         'operations on multiple parameters. Default is '
-                         '"distance".')
-parser.add_argument('--tc', default='tc',
-                    help='The name of the coalesence time parameter in the '
-                         'input file. May also provide a constant, or math '
-                         'operations on multiple parameters. Default is '
-                         '"tc".')
+parser.add_argument(
+    "--input-file", required=True, help="The inference or posterior hdf file to load."
+)
+parser.add_argument(
+    "--output-file", required=True, help='The output file name; it must end in ".fits".'
+)
+parser.add_argument(
+    "--maxpts",
+    type=int,
+    help="The number of posterior samples to extract for "
+    "making the fits file. Default is to load all. Using "
+    "fewer points will result in faster runtime, but "
+    "more error in the result sky map.",
+)
+parser.add_argument(
+    "--ra",
+    default="ra",
+    help="The name of the right ascension parameter in the "
+    "input file. May also provide a constant, or math "
+    'operations on multiple parameters. Default is "ra".',
+)
+parser.add_argument(
+    "--dec",
+    default="dec",
+    help="The name of the declination parameter in the "
+    "input file. May also provide a constant, or math "
+    "operations on multiple parameters. Default "
+    'is "dec".',
+)
+parser.add_argument(
+    "--distance",
+    default="distance",
+    help="The name of the distance parameter in the input "
+    "file. May also provide a constant, or math "
+    "operations on multiple parameters. Default is "
+    '"distance".',
+)
+parser.add_argument(
+    "--tc",
+    default="tc",
+    help="The name of the coalesence time parameter in the "
+    "input file. May also provide a constant, or math "
+    "operations on multiple parameters. Default is "
+    '"tc".',
+)
 opts = parser.parse_args()
 
 init_logging(opts.verbose)
 
-fp = io.loadfile(opts.input_file, 'r')
+fp = io.loadfile(opts.input_file, "r")
 samples = fp.read_samples([opts.ra, opts.dec, opts.distance, opts.tc])
 fp.close()
 
@@ -81,20 +100,19 @@ out[:, 0] = samples[opts.ra]
 out[:, 1] = samples[opts.dec]
 out[:, 2] = samples[opts.distance]
 out[:, 3] = samples[opts.tc]
-basename = opts.output_file.replace('.fits', '')
-txtfile = '{}.dat'.format(basename)
-numpy.savetxt(txtfile, out, header='ra dec distance time')
+basename = opts.output_file.replace(".fits", "")
+txtfile = f"{basename}.dat"
+numpy.savetxt(txtfile, out, header="ra dec distance time")
 
 if opts.maxpts is not None:
-    maxptsarg = '--maxpts {} '.format(opts.maxpts)
+    maxptsarg = f"--maxpts {opts.maxpts} "
 else:
-    maxptsarg = ' '
-cmd = 'ligo-skymap-from-samples {}{} --fitsoutname {}'.format(
-    maxptsarg, txtfile, opts.output_file)
+    maxptsarg = " "
+cmd = f"ligo-skymap-from-samples {maxptsarg}{txtfile} --fitsoutname {opts.output_file}"
 ret = subprocess.run(cmd.split())
 os.remove(txtfile)
 ret.check_returncode()
 try:
-    os.remove('skypost.obj')
+    os.remove("skypost.obj")
 except:
     pass

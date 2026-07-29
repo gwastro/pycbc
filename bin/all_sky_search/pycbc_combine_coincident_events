@@ -3,17 +3,24 @@
 This program combines together a set of STATMAP files from disjoint times.
 The resulting file would contain triggers from the full set of input files
 """
-import numpy
+
 import argparse
+
+import numpy
 
 import pycbc
 from pycbc.io import HFile
 
+
 def com(f, files, group):
-    """ Combine the same column from multiple files into another file f"""
-    f[group] = numpy.concatenate\
-        ([fi[group][:] if group in fi else numpy.array([], dtype=numpy.uint32)\
-         for fi in files])
+    """Combine the same column from multiple files into another file f"""
+    f[group] = numpy.concatenate(
+        [
+            fi[group][:] if group in fi else numpy.array([], dtype=numpy.uint32)
+            for fi in files
+        ]
+    )
+
 
 def com_with_detector_key(f, files, group):
     """
@@ -28,10 +35,10 @@ def com_with_detector_key(f, files, group):
     # It may not be the *same* detector for each file.
 
     # What detector are we dealing with
-    if group.endswith('1'):
-        ifo_name = f.attrs['detector_1']
-    elif group.endswith('2'):
-        ifo_name = f.attrs['detector_2']
+    if group.endswith("1"):
+        ifo_name = f.attrs["detector_1"]
+    elif group.endswith("2"):
+        ifo_name = f.attrs["detector_2"]
     else:
         raise ValueError("Group name must end in 1 or 2, got %s" % group)
 
@@ -40,23 +47,24 @@ def com_with_detector_key(f, files, group):
     # For the remaining files we must check the detector name
     for nfp in files[1:]:
         # What detector do we need in this file
-        if nfp.attrs['detector_1'] == ifo_name:
-            new_det_num = '1'
-        elif nfp.attrs['detector_2'] == ifo_name:
-            new_det_num = '2'
+        if nfp.attrs["detector_1"] == ifo_name:
+            new_det_num = "1"
+        elif nfp.attrs["detector_2"] == ifo_name:
+            new_det_num = "2"
         else:
             raise ValueError("Cannot find detector %s in input file" % ifo_name)
         new_group = group[:-1] + new_det_num
 
         data_for_catting.append(nfp[new_group][:])
     f[group] = numpy.concatenate(data_for_catting)
-    
+
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--statmap-files', nargs='+',
-                    help="List of coinc files to be redistributed")
-parser.add_argument('--output-file', help="name of output file")
+parser.add_argument(
+    "--statmap-files", nargs="+", help="List of coinc files to be redistributed"
+)
+parser.add_argument("--output-file", help="name of output file")
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
@@ -66,34 +74,40 @@ files = [HFile(n) for n in args.statmap_files]
 # Start setting some of the attributes
 f = HFile(args.output_file, "w")
 # It's not guaranteed that all files will follow this, so be careful later!
-f.attrs['detector_1'] = files[0].attrs['detector_1']
-f.attrs['detector_2'] = files[0].attrs['detector_2']
+f.attrs["detector_1"] = files[0].attrs["detector_1"]
+f.attrs["detector_2"] = files[0].attrs["detector_2"]
 
-f.attrs['background_time'] = \
-    sum([cfp.attrs['background_time'] for cfp in files])
-f.attrs['foreground_time'] = \
-    sum([cfp.attrs['foreground_time'] for cfp in files])
-f.attrs['background_time_exc'] = \
-    sum([cfp.attrs['background_time_exc'] for cfp in files])
-f.attrs['foreground_time_exc'] = \
-    sum([cfp.attrs['foreground_time_exc'] for cfp in files])
+f.attrs["background_time"] = sum([cfp.attrs["background_time"] for cfp in files])
+f.attrs["foreground_time"] = sum([cfp.attrs["foreground_time"] for cfp in files])
+f.attrs["background_time_exc"] = sum(
+    [cfp.attrs["background_time_exc"] for cfp in files]
+)
+f.attrs["foreground_time_exc"] = sum(
+    [cfp.attrs["foreground_time_exc"] for cfp in files]
+)
 
 # Combine segments
-for key in files[0]['segments'].keys():
-    com(f, files, 'segments/%s/start' % key)
-    com(f, files, 'segments/%s/end' % key)
+for key in files[0]["segments"].keys():
+    com(f, files, "segments/%s/start" % key)
+    com(f, files, "segments/%s/end" % key)
 
 # copy over all the columns in the foreground group. A few special cases here
-for fg_bg_key in ['foreground', 'background', 'background_exc']:
+for fg_bg_key in ["foreground", "background", "background_exc"]:
     for key in files[0][fg_bg_key].keys():
-        if key not in ['time1', 'time2', 'trigger_id1', 'trigger_id2',
-                       'fap', 'fap_exc']:
-            com(f, files, '%s/%s' % (fg_bg_key,key))
-        elif key in ['time1', 'time2', 'trigger_id1', 'trigger_id2']:
+        if key not in [
+            "time1",
+            "time2",
+            "trigger_id1",
+            "trigger_id2",
+            "fap",
+            "fap_exc",
+        ]:
+            com(f, files, "%s/%s" % (fg_bg_key, key))
+        elif key in ["time1", "time2", "trigger_id1", "trigger_id2"]:
             # Check if all files use the same detector convention
-            com_with_detector_key(f, files, '%s/%s' % (fg_bg_key,key))
+            com_with_detector_key(f, files, "%s/%s" % (fg_bg_key, key))
         else:
             # Do not store FAP numbers ... Could be recalculated.
             continue
-    
+
 f.close()

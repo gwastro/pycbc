@@ -29,7 +29,6 @@ implementations within PyCBC.
 import pycbc
 import pycbc.scheme
 
-
 # These are global variables, that are modified by the various scheme-
 # dependent submodules, to maintain a list of all possible backends
 # for all possible schemes that are available at runtime.  This list
@@ -44,19 +43,24 @@ _all_backends_dict = {}
 # in the global list, and we assume that the keys to the dict are in one-to-one
 # correspondence with the items in the list.
 
+
 def _update_global_available(new_list, new_dict, global_list, global_dict):
     for item in new_list:
         if item not in global_list:
             global_list.append(item)
-            global_dict.update({item:new_dict[item]})
+            global_dict.update({item: new_dict[item]})
+
 
 def get_backend_modules():
     return _all_backends_dict.values()
 
+
 def get_backend_names():
     return list(_all_backends_dict.keys())
 
-BACKEND_PREFIX="pycbc.fft.backend_"
+
+BACKEND_PREFIX = "pycbc.fft.backend_"
+
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def set_backend(backend_list):
@@ -64,20 +68,23 @@ def set_backend(backend_list):
     err_msg += "the scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
 
+
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def get_backend():
     err_msg = "This function is a stub that should be overridden using "
     err_msg += "the scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
 
+
 # Import all scheme-dependent backends, to get _all_backends accurate:
 
 for scheme_name in ["cpu", "mkl", "cuda", "cupy"]:
     try:
-        mod = __import__('pycbc.fft.backend_' + scheme_name, fromlist = ['_alist', '_adict'])
-        _alist = getattr(mod, "_alist")
-        _adict = getattr(mod, "_adict")
-        _update_global_available(_alist, _adict, _all_backends_list,
-                                 _all_backends_dict)
+        mod = __import__(
+            "pycbc.fft.backend_" + scheme_name, fromlist=["_alist", "_adict"]
+        )
+        _alist = mod._alist
+        _adict = mod._adict
+        _update_global_available(_alist, _adict, _all_backends_list, _all_backends_dict)
     except ImportError:
         pass

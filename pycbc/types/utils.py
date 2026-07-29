@@ -1,12 +1,14 @@
 import logging
+
 import numpy as _numpy
-from numpy import  float64
+from numpy import float64
 
 from pycbc.libutils import import_optional
 
-logger = logging.getLogger('pycbc.type.utils')
+logger = logging.getLogger("pycbc.type.utils")
 
-_lal = import_optional('lal')
+_lal = import_optional("lal")
+
 
 def determine_epoch(epoch, initial_array):
     """
@@ -28,7 +30,7 @@ def determine_epoch(epoch, initial_array):
 
     Parameters
     ----------
-    epoch: 
+    epoch:
         float64/number-type, LIGOTimeGPS, None
     initial_array:
         Array - only really matters if this has an _epoch set already
@@ -36,12 +38,11 @@ def determine_epoch(epoch, initial_array):
     Returns
     -------
     epoch: float64 or None - see logic above
+
     """
-
-
     if isinstance(epoch, float64) or epoch is None:
         return epoch
-    
+
     if epoch == "":
         # The default has been given, try these:
         try:
@@ -63,16 +64,15 @@ def determine_epoch(epoch, initial_array):
     # It looks like this is an array/list/tuple, so float conversion could
     # succeed, but we shouldn't be trying it
     if not is_ltg and not _numpy.isscalar(epoch):
-        # Its not a 
+        # Its not a
         raise TypeError("epoch must be a number, not array-like")
-    
+
     try:
         # Okay we have gone through the special cases now, just try it and see
         return float64(epoch)
     except TypeError as e:
         # Give something helpful before failing.
         logger.warning(
-            "epoch cannot be determined: "
-            f"type: {type(epoch)}, value: {epoch}"
+            f"epoch cannot be determined: type: {type(epoch)}, value: {epoch}"
         )
         raise e

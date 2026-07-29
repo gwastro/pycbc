@@ -21,12 +21,12 @@
 #
 # =============================================================================
 #
-"""Provides IO for the emcee sampler.
-"""
+"""Provides IO for the emcee sampler."""
+
 from .base_nested_sampler import BaseNestedSamplerFile
 
 
 class CPNestFile(BaseNestedSamplerFile):
     """Class to handle file IO for the ``cpnest`` sampler."""
 
-    name = 'cpnest_file'
+    name = "cpnest_file"

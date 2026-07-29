@@ -20,41 +20,48 @@
 Reduce a template bank using some input parameter cuts
 """
 
-
-import logging
 import argparse
+import logging
+
 import pycbc
-from pycbc.io import HFile
 from pycbc import load_source
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--input-bank", required=True,
-                    help="Input template bank HDF file.")
-parser.add_argument("--output-bank", required=True,
-                    help="Output template bank HDF file.")
-parser.add_argument("--filter-func-file", required=True,
-                    help="This can be provided to give a function to define "
-                         "which points are covered by the template bank "
-                         "bounds, and which are not. The file should contain "
-                         "a function called filter_tmpltbank, which should "
-                         "take as call profile the template bank HDF object "
-                         "and return a boolean (accept=1/reject=0) array.")
+parser.add_argument("--input-bank", required=True, help="Input template bank HDF file.")
+parser.add_argument(
+    "--output-bank", required=True, help="Output template bank HDF file."
+)
+parser.add_argument(
+    "--filter-func-file",
+    required=True,
+    help="This can be provided to give a function to define "
+    "which points are covered by the template bank "
+    "bounds, and which are not. The file should contain "
+    "a function called filter_tmpltbank, which should "
+    "take as call profile the template bank HDF object "
+    "and return a boolean (accept=1/reject=0) array.",
+)
 
 
 opt = parser.parse_args()
 pycbc.init_logging(opt.verbose)
 
-bank_fd = HFile(opt.input_bank, 'r')
+bank_fd = HFile(opt.input_bank, "r")
 
-modl = load_source('filter_func', opt.filter_func_file)
+modl = load_source("filter_func", opt.filter_func_file)
 func = modl.filter_tmpltbank
 bool_arr = func(bank_fd)
 
-logging.info("Downselecting templates. Started with", len(bool_arr),
-             "templates, now have ", bool_arr.sum(), "after downselecting.")
-bank_ofd = HFile(opt.output_bank, 'w')
+logging.info(
+    "Downselecting templates. Started with",
+    len(bool_arr),
+    "templates, now have ",
+    bool_arr.sum(),
+    "after downselecting.",
+)
+bank_ofd = HFile(opt.output_bank, "w")
 for name in bank_fd.keys():
     bank_ofd[name] = bank_fd[name][:][bool_arr]
 bank_ofd.close()
-

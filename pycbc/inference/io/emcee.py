@@ -21,22 +21,27 @@
 #
 # =============================================================================
 #
-"""Provides IO for the emcee sampler.
-"""
+"""Provides IO for the emcee sampler."""
+
 import numpy
 
+from .base_mcmc import (
+    CommonMCMCMetadataIO,
+    EnsembleMCMCMetadataIO,
+    ensemble_read_raw_samples,
+    write_samples,
+)
 from .base_sampler import BaseSamplerFile
-from .base_mcmc import (EnsembleMCMCMetadataIO, CommonMCMCMetadataIO,
-                        write_samples, ensemble_read_raw_samples)
 
 
 class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
     """Class to handle file IO for the ``emcee`` sampler."""
 
-    name = 'emcee_file'
+    name = "emcee_file"
 
     def write_samples(self, samples, **kwargs):
-        r"""Writes samples to the given file.
+        r"""
+        Writes samples to the given file.
 
         Calls :py:func:`base_mcmc.write_samples`. See that function for
         details.
@@ -49,17 +54,19 @@ class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
         \**kwargs :
             All other keyword arguments are passed to
             :py:func:`base_mcmc.write_samples`.
+
         """
         write_samples(self, samples, **kwargs)
 
     def read_raw_samples(self, fields, **kwargs):
-        r"""Base function for reading samples.
+        r"""
+        Base function for reading samples.
 
         Calls :py:func:`base_mcmc.ensemble_read_raw_samples`. See that function
         for details.
 
         Parameters
-        -----------
+        ----------
         fields : list
             The list of field names to retrieve.
         \**kwargs :
@@ -70,14 +77,16 @@ class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
         -------
         dict
             A dictionary of field name -> numpy array pairs.
+
         """
         return ensemble_read_raw_samples(self, fields, **kwargs)
 
     def read_acceptance_fraction(self, walkers=None):
-        """Reads the acceptance fraction.
+        """
+        Reads the acceptance fraction.
 
         Parameters
-        -----------
+        ----------
         walkers : (list of) int, optional
             The walker index (or a list of indices) to retrieve. If None,
             samples from all walkers will be obtained.
@@ -86,8 +95,9 @@ class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
         -------
         array
             Array of acceptance fractions with shape (requested walkers,).
+
         """
-        group = self.sampler_group + '/acceptance_fraction'
+        group = self.sampler_group + "/acceptance_fraction"
         if walkers is None:
             wmask = numpy.ones(self.nwalkers, dtype=bool)
         else:
@@ -96,15 +106,17 @@ class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
         return self[group][wmask]
 
     def write_acceptance_fraction(self, acceptance_fraction):
-        """Write acceptance_fraction data to file. Results are written to
+        """
+        Write acceptance_fraction data to file. Results are written to
         the ``[sampler_group]/acceptance_fraction``.
 
         Parameters
-        -----------
+        ----------
         acceptance_fraction : numpy.ndarray
             Array of acceptance fractions to write.
+
         """
-        group = self.sampler_group + '/acceptance_fraction'
+        group = self.sampler_group + "/acceptance_fraction"
         try:
             self[group][:] = acceptance_fraction
         except KeyError:

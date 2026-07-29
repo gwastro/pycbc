@@ -22,15 +22,16 @@ This module is primarily used in the pycbc_live_supervise_* programs.
 """
 
 import logging
+import os
 import subprocess
 import time
-import os
 from datetime import datetime
+
 from dateutil.relativedelta import relativedelta
 
 import pycbc
 
-logger = logging.getLogger('pycbc.live.supervision')
+logger = logging.getLogger("pycbc.live.supervision")
 
 
 def symlink(target, link_name):
@@ -43,9 +44,9 @@ def symlink(target, link_name):
     link_name = os.path.abspath(link_name)
     logger.info("Linking %s to %s", target, link_name)
     try:
-        subprocess.run(['ln', '-sf', target, link_name], check=True)
+        subprocess.run(["ln", "-sf", target, link_name], check=True)
     except subprocess.CalledProcessError as sub_err:
-        logging.error("Could not link %s to %s", target, link_name)
+        logging.exception("Could not link %s to %s", target, link_name)
         raise sub_err
 
 
@@ -55,8 +56,8 @@ def dict_to_args(opts_dict):
     """
     dargs = []
     for option, value in opts_dict.items():
-        dargs.append('--' + option.strip())
-        if value == '':
+        dargs.append("--" + option.strip())
+        if value == "":
             # option is a flag, do nothing
             continue
         if len(value.split()) > 1:
@@ -74,21 +75,18 @@ def mail_volunteers_error(controls, mail_body_lines, subject):
     Email a list of people, defined by mail-volunteers-file
     To be used for errors or unusual occurences
     """
-    with open(controls['mail-volunteers-file'], 'r') as mail_volunteers_file:
-        volunteers = [volunteer.strip() for volunteer in
-                      mail_volunteers_file.readlines()]
-    logger.info("Emailing %s with warnings", ' '.join(volunteers))
-    mail_command = [
-        'mail',
-        '-s',
-        subject
-    ]
+    with open(controls["mail-volunteers-file"]) as mail_volunteers_file:
+        volunteers = [
+            volunteer.strip() for volunteer in mail_volunteers_file
+        ]
+    logger.info("Emailing %s with warnings", " ".join(volunteers))
+    mail_command = ["mail", "-s", subject]
     mail_command += volunteers
-    mail_body = '\n'.join(mail_body_lines)
+    mail_body = "\n".join(mail_body_lines)
     try:
         subprocess.run(mail_command, input=mail_body, text=True, check=True)
     except subprocess.CalledProcessError as sub_err:
-        logging.error("Could not send mail on error")
+        logging.exception("Could not send mail on error")
         raise sub_err
 
 
@@ -97,29 +95,28 @@ def run_and_error(command_arguments, controls):
     Wrapper around subprocess.run to catch errors and send emails if required
     """
     logger.info("Running %s", " ".join(command_arguments))
-    command_output = subprocess.run(
-        command_arguments,
-        capture_output=True
-    )
+    command_output = subprocess.run(command_arguments, capture_output=True)
 
     if command_output.returncode:
-        error_contents = [' '.join(command_arguments), '\n',
-                          command_output.stderr.decode()]
-        if 'mail-volunteers-file' in controls:
+        error_contents = [
+            " ".join(command_arguments),
+            "\n",
+            command_output.stderr.decode(),
+        ]
+        if "mail-volunteers-file" in controls:
             mail_volunteers_error(
                 controls,
                 error_contents,
-                f"PyCBC live could not run {command_arguments[0]}"
+                f"PyCBC live could not run {command_arguments[0]}",
             )
         err_msg = f"Could not run {command_arguments[0]}:\n"
-        err_msg += ' '.join(error_contents)
+        err_msg += " ".join(error_contents)
         raise subprocess.SubprocessError(err_msg)
 
 
 def wait_for_utc_time(target_str):
-    """Wait until the UTC time is as given by `target_str`, in HH:MM:SS format.
-    """
-    target_hour, target_minute, target_second = map(int, target_str.split(':'))
+    """Wait until the UTC time is as given by `target_str`, in HH:MM:SS format."""
+    target_hour, target_minute, target_second = map(int, target_str.split(":"))
     now = datetime.utcnow()
     # for today's target, take now and replace the time
     target_today = now + relativedelta(
@@ -131,7 +128,7 @@ def wait_for_utc_time(target_str):
     )
     next_target = target_today if now <= target_today else target_tomorrow
     sleep_seconds = (next_target - now).total_seconds()
-    logger.info('Waiting %.0f s', sleep_seconds)
+    logger.info("Waiting %.0f s", sleep_seconds)
     time.sleep(sleep_seconds)
 
 
@@ -139,16 +136,10 @@ def ensure_directories(control_values, day_str):
     """
     Ensure that the required directories exist
     """
-    output_dir = os.path.join(
-        control_values['output-directory'],
-        day_str
-    )
+    output_dir = os.path.join(control_values["output-directory"], day_str)
     pycbc.makedir(output_dir)
-    if 'public-dir' in control_values:
+    if "public-dir" in control_values:
         # The public directory wil be in subdirectories for the year, month,
         # day, e.g. 2024_04_12 will be in 2024/04/12.
-        public_dir = os.path.join(
-            control_values['public-dir'],
-            *day_str.split('_')
-        )
+        public_dir = os.path.join(control_values["public-dir"], *day_str.split("_"))
         pycbc.makedir(public_dir)

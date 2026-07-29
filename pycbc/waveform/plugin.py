@@ -1,11 +1,16 @@
-""" Utilities for handling waveform plugins
-"""
+"""Utilities for handling waveform plugins"""
 
 
-def add_custom_waveform(approximant, function, domain,
-                        sequence=False, has_det_response=False,
-                        force=False,):
-    """ Make custom waveform available to pycbc
+def add_custom_waveform(
+    approximant,
+    function,
+    domain,
+    sequence=False,
+    has_det_response=False,
+    force=False,
+):
+    """
+    Make custom waveform available to pycbc
 
     Parameters
     ----------
@@ -20,20 +25,27 @@ def add_custom_waveform(approximant, function, domain,
         equal-spaced grid).
     has_det_response : bool, False
         Check if waveform generator has built-in detector response.
+
     """
-    from pycbc.waveform.waveform import (cpu_fd, cpu_td, fd_sequence,
-                                         fd_det, fd_det_sequence,
-                                         td_fd_waveform_transform)
+    from pycbc.waveform.waveform import (
+        cpu_fd,
+        cpu_td,
+        fd_det,
+        fd_det_sequence,
+        fd_sequence,
+        td_fd_waveform_transform,
+    )
 
-    used = RuntimeError("Can't load plugin waveform {}, the name is"
-                        " already in use.".format(approximant))
+    used = RuntimeError(
+        f"Can't load plugin waveform {approximant}, the name is already in use."
+    )
 
-    if domain == 'time':
+    if domain == "time":
         if not force and (approximant in cpu_td):
             raise used
         cpu_td[approximant] = function
         td_fd_waveform_transform(approximant)
-    elif domain == 'frequency':
+    elif domain == "frequency":
         if sequence:
             if not has_det_response:
                 if not force and (approximant in fd_sequence):
@@ -43,22 +55,23 @@ def add_custom_waveform(approximant, function, domain,
                 if not force and (approximant in fd_det_sequence):
                     raise used
                 fd_det_sequence[approximant] = function
+        elif not has_det_response:
+            if not force and (approximant in cpu_fd):
+                raise used
+            cpu_fd[approximant] = function
         else:
-            if not has_det_response:
-                if not force and (approximant in cpu_fd):
-                    raise used
-                cpu_fd[approximant] = function
-            else:
-                if not force and (approximant in fd_det):
-                    raise used
-                fd_det[approximant] = function
+            if not force and (approximant in fd_det):
+                raise used
+            fd_det[approximant] = function
     else:
-        raise ValueError("Invalid domain ({}), should be "
-                         "'time' or 'frequency'".format(domain))
+        raise ValueError(
+            f"Invalid domain ({domain}), should be 'time' or 'frequency'"
+        )
 
 
 def add_length_estimator(approximant, function):
-    """ Add length estimator for an approximant
+    """
+    Add length estimator for an approximant
 
     Parameters
     ----------
@@ -66,19 +79,24 @@ def add_length_estimator(approximant, function):
         Name of approximant
     function : function
         A function which takes kwargs and returns the waveform length
+
     """
     from pycbc.waveform.waveform import _filter_time_lengths
+
     if approximant in _filter_time_lengths:
-        raise RuntimeError("Can't load length estimator {}, the name is"
-                           " already in use.".format(approximant))
+        raise RuntimeError(
+            f"Can't load length estimator {approximant}, the name is already in use."
+        )
     _filter_time_lengths[approximant] = function
 
     from pycbc.waveform.waveform import td_fd_waveform_transform
+
     td_fd_waveform_transform(approximant)
 
 
 def add_end_frequency_estimator(approximant, function):
-    """ Add end frequency estimator for an approximant
+    """
+    Add end frequency estimator for an approximant
 
     Parameters
     ----------
@@ -86,47 +104,55 @@ def add_end_frequency_estimator(approximant, function):
         Name of approximant
     function : function
         A function which takes kwargs and returns the waveform end frequency
+
     """
     from pycbc.waveform.waveform import _filter_ends
+
     if approximant in _filter_ends:
-        raise RuntimeError("Can't load freqeuncy estimator {}, the name is"
-                           " already in use.".format(approximant))
+        raise RuntimeError(
+            f"Can't load freqeuncy estimator {approximant}, the name is already in use."
+        )
 
     _filter_ends[approximant] = function
 
+
 from importlib.metadata import entry_points
 
+
 def retrieve_waveform_plugins():
-    """ Process external waveform plugins
-    """
-    
+    """Process external waveform plugins"""
     # Check for fd waveforms (no detector response)
-    for plugin in entry_points(group='pycbc.waveform.fd'):
-        add_custom_waveform(plugin.name, plugin.load(), 'frequency')
+    for plugin in entry_points(group="pycbc.waveform.fd"):
+        add_custom_waveform(plugin.name, plugin.load(), "frequency")
 
     # Check for fd waveforms (has detector response)
-    for plugin in entry_points(group='pycbc.waveform.fd_det'):
-        add_custom_waveform(plugin.name, plugin.load(), 'frequency',
-                            has_det_response=True)
+    for plugin in entry_points(group="pycbc.waveform.fd_det"):
+        add_custom_waveform(
+            plugin.name, plugin.load(), "frequency", has_det_response=True
+        )
 
     # Check for fd sequence waveforms (no detector response)
-    for plugin in entry_points(group='pycbc.waveform.fd_sequence'):
-        add_custom_waveform(plugin.name, plugin.load(), 'frequency',
-                            sequence=True)
+    for plugin in entry_points(group="pycbc.waveform.fd_sequence"):
+        add_custom_waveform(plugin.name, plugin.load(), "frequency", sequence=True)
 
     # Check for fd sequence waveforms (has detector response)
-    for plugin in entry_points(group='pycbc.waveform.fd_det_sequence'):
-        add_custom_waveform(plugin.name, plugin.load(), 'frequency',
-                            sequence=True, has_det_response=True)
+    for plugin in entry_points(group="pycbc.waveform.fd_det_sequence"):
+        add_custom_waveform(
+            plugin.name,
+            plugin.load(),
+            "frequency",
+            sequence=True,
+            has_det_response=True,
+        )
 
     # Check for td waveforms
-    for plugin in entry_points(group='pycbc.waveform.td'):
-        add_custom_waveform(plugin.name, plugin.load(), 'time')
+    for plugin in entry_points(group="pycbc.waveform.td"):
+        add_custom_waveform(plugin.name, plugin.load(), "time")
 
     # Check for waveform length estimates
-    for plugin in entry_points(group='pycbc.waveform.length'):
+    for plugin in entry_points(group="pycbc.waveform.length"):
         add_length_estimator(plugin.name, plugin.load())
 
     # Check for waveform end frequency estimates
-    for plugin in entry_points(group='pycbc.waveform.end_freq'):
+    for plugin in entry_points(group="pycbc.waveform.end_freq"):
         add_end_frequency_estimator(plugin.name, plugin.load())

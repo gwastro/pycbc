@@ -26,13 +26,16 @@ This package provides a front-end to various fast Fourier transform
 implementations within PyCBC.
 """
 
-from pycbc.types import TimeSeries as _TimeSeries
 from pycbc.types import FrequencySeries as _FrequencySeries
-from .core import _check_fft_args, _check_fwd_args, _check_inv_args
+from pycbc.types import TimeSeries as _TimeSeries
+
 from .backend_support import get_backend
+from .core import _check_fft_args, _check_fwd_args, _check_inv_args
+
 
 def fft(invec, outvec):
-    """ Fourier transform from invec to outvec.
+    """
+    Fourier transform from invec to outvec.
 
     Perform a fourier transform. The type of transform is determined
     by the dtype of invec and outvec.
@@ -43,6 +46,7 @@ def fft(invec, outvec):
         The input vector.
     outvec : TimeSeries or FrequencySeries
         The output.
+
     """
     prec, itype, otype = _check_fft_args(invec, outvec)
     _check_fwd_args(invec, itype, outvec, otype, 1, None)
@@ -54,15 +58,17 @@ def fft(invec, outvec):
     # we should divide by, whether C2C or R2HC transform
     if isinstance(invec, _TimeSeries):
         outvec._epoch = invec._epoch
-        outvec._delta_f = 1.0/(invec._delta_t * len(invec))
+        outvec._delta_f = 1.0 / (invec._delta_t * len(invec))
         outvec *= invec._delta_t
     elif isinstance(invec, _FrequencySeries):
         outvec._epoch = invec._epoch
-        outvec._delta_t = 1.0/(invec._delta_f * len(invec))
+        outvec._delta_t = 1.0 / (invec._delta_f * len(invec))
         outvec *= invec._delta_f
 
+
 def ifft(invec, outvec):
-    """ Inverse fourier transform from invec to outvec.
+    """
+    Inverse fourier transform from invec to outvec.
 
     Perform an inverse fourier transform. The type of transform is determined
     by the dtype of invec and outvec.
@@ -73,6 +79,7 @@ def ifft(invec, outvec):
         The input vector.
     outvec : TimeSeries or FrequencySeries
         The output.
+
     """
     prec, itype, otype = _check_fft_args(invec, outvec)
     _check_inv_args(invec, itype, outvec, otype, 1, None)
@@ -84,10 +91,9 @@ def ifft(invec, outvec):
     # we should divide by, whether C2C or HC2R transform
     if isinstance(invec, _TimeSeries):
         outvec._epoch = invec._epoch
-        outvec._delta_f = 1.0/(invec._delta_t * len(outvec))
+        outvec._delta_f = 1.0 / (invec._delta_t * len(outvec))
         outvec *= invec._delta_t
-    elif isinstance(invec,_FrequencySeries):
+    elif isinstance(invec, _FrequencySeries):
         outvec._epoch = invec._epoch
-        outvec._delta_t = 1.0/(invec._delta_f * len(outvec))
+        outvec._delta_t = 1.0 / (invec._delta_f * len(outvec))
         outvec *= invec._delta_f
-

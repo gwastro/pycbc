@@ -18,29 +18,32 @@
 
 import argparse
 import logging
+
 from matplotlib import use
-use('agg')
-from matplotlib import pyplot as plt
 
-from dynesty import plotting as dyplot
-
-from pycbc.inference import io
-import pycbc
-from pycbc import results
+use("agg")
 import sys
 
+from dynesty import plotting as dyplot
+from matplotlib import pyplot as plt
+
+import pycbc
+from pycbc import results
+from pycbc.inference import io
 
 parser = argparse.ArgumentParser(
-            usage="pycbc_inference_plot_dynesty_traceplots [--options]",
-            description="Plots various figures showing evolution of "
-                        "dynesty run.")
+    usage="pycbc_inference_plot_dynesty_traceplots [--options]",
+    description="Plots various figures showing evolution of dynesty run.",
+)
 
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--input-file", type=str, required=True,
-                    help="Path to input HDF file.")
+parser.add_argument(
+    "--input-file", type=str, required=True, help="Path to input HDF file."
+)
 # output plot options
-parser.add_argument("--output-file", type=str, required=True,
-                    help="Path to output plot.")
+parser.add_argument(
+    "--output-file", type=str, required=True, help="Path to output plot."
+)
 
 # parse the command line
 opts = parser.parse_args()
@@ -57,17 +60,24 @@ fp.close()
 
 # plot evolution of dynesty run
 logging.info("Plotting dynesty tracelots")
-fig, axes = dyplot.traceplot(sampler_state.results, truth_color='black',
-                             show_titles=True, trace_cmap='viridis',
-                             connect=True)
-#plt.savefig()
+fig, axes = dyplot.traceplot(
+    sampler_state.results,
+    truth_color="black",
+    show_titles=True,
+    trace_cmap="viridis",
+    connect=True,
+)
+# plt.savefig()
 # save figure with meta-data
 caption = """Set of plots shows 'evolution of particles (and their marginal
              posterior distributions) in 1-D projections'."""
-results.save_fig_with_metadata(fig, opts.output_file,
-                               cmd=" ".join(sys.argv),
-                               title="Dynesty traceplots",
-                               caption=caption)
+results.save_fig_with_metadata(
+    fig,
+    opts.output_file,
+    cmd=" ".join(sys.argv),
+    title="Dynesty traceplots",
+    caption=caption,
+)
 
 plt.close()
 

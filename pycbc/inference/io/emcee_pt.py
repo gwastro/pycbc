@@ -14,24 +14,25 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-"""Provides I/O support for emcee_pt.
-"""
-
+"""Provides I/O support for emcee_pt."""
 
 import numpy
 
-from .base_sampler import BaseSamplerFile
 from .base_mcmc import EnsembleMCMCMetadataIO
-from .base_multitemper import (CommonMultiTemperedMetadataIO,
-                               write_samples,
-                               ensemble_read_raw_samples)
+from .base_multitemper import (
+    CommonMultiTemperedMetadataIO,
+    ensemble_read_raw_samples,
+    write_samples,
+)
+from .base_sampler import BaseSamplerFile
 
 
-class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
-                  BaseSamplerFile):
+class EmceePTFile(
+    EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO, BaseSamplerFile
+):
     """Class to handle file IO for the ``emcee`` sampler."""
 
-    name = 'emcee_pt_file'
+    name = "emcee_pt_file"
 
     @property
     def betas(self):
@@ -39,7 +40,8 @@ class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         return self[self.sampler_group].attrs["betas"]
 
     def write_samples(self, samples, **kwargs):
-        r"""Writes samples to the given file.
+        r"""
+        Writes samples to the given file.
 
         Calls :py:func:`base_multitemper.write_samples`. See that function for
         details.
@@ -52,17 +54,19 @@ class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         \**kwargs :
             All other keyword arguments are passed to
             :py:func:`base_multitemper.write_samples`.
+
         """
         write_samples(self, samples, **kwargs)
 
     def read_raw_samples(self, fields, **kwargs):
-        r"""Base function for reading samples.
+        r"""
+        Base function for reading samples.
 
         Calls :py:func:`base_multitemper.ensemble_read_raw_samples`. See that
         function for details.
 
         Parameters
-        -----------
+        ----------
         fields : list
             The list of field names to retrieve.
         \**kwargs :
@@ -73,20 +77,21 @@ class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         -------
         dict
             A dictionary of field name -> numpy array pairs.
+
         """
         return ensemble_read_raw_samples(self, fields, **kwargs)
 
     def write_sampler_metadata(self, sampler):
-        """Adds writing betas to MultiTemperedMCMCIO.
-        """
-        super(EmceePTFile, self).write_sampler_metadata(sampler)
+        """Adds writing betas to MultiTemperedMCMCIO."""
+        super().write_sampler_metadata(sampler)
         self[self.sampler_group].attrs["betas"] = sampler.betas
 
     def read_acceptance_fraction(self, temps=None, walkers=None):
-        """Reads the acceptance fraction.
+        """
+        Reads the acceptance fraction.
 
         Parameters
-        -----------
+        ----------
         temps : (list of) int, optional
             The temperature index (or a list of indices) to retrieve. If None,
             acfs from all temperatures and all walkers will be retrieved.
@@ -99,8 +104,9 @@ class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         array
             Array of acceptance fractions with shape (requested temps,
             requested walkers).
+
         """
-        group = self.sampler_group + '/acceptance_fraction'
+        group = self.sampler_group + "/acceptance_fraction"
         if walkers is None:
             wmask = numpy.ones(self.nwalkers, dtype=bool)
         else:
@@ -114,21 +120,24 @@ class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         return self[group][:][numpy.ix_(tmask, wmask)]
 
     def write_acceptance_fraction(self, acceptance_fraction):
-        """Write acceptance_fraction data to file.
+        """
+        Write acceptance_fraction data to file.
 
         Results are written to ``[sampler_group]/acceptance_fraction``; the
         resulting dataset has shape (ntemps, nwalkers).
 
         Parameters
-        -----------
+        ----------
         acceptance_fraction : numpy.ndarray
             Array of acceptance fractions to write. Must have shape
             ntemps x nwalkers.
+
         """
         # check
         assert acceptance_fraction.shape == (self.ntemps, self.nwalkers), (
-            "acceptance fraction must have shape ntemps x nwalker")
-        group = self.sampler_group + '/acceptance_fraction'
+            "acceptance fraction must have shape ntemps x nwalker"
+        )
+        group = self.sampler_group + "/acceptance_fraction"
         try:
             self[group][:] = acceptance_fraction
         except KeyError:

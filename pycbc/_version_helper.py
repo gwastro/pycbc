@@ -18,19 +18,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = 'Adam Mercer <adam.mercer@ligo.org>'
+__author__ = "Adam Mercer <adam.mercer@ligo.org>"
 
-import os
-import time
-import subprocess
-import re
 import distutils.version
 import logging
+import os
+import re
+import subprocess
+import time
 
-logger = logging.getLogger('pycbc._version_helper')
+logger = logging.getLogger("pycbc._version_helper")
 
 
-class GitInfo(object):
+class GitInfo:
     def __init__(self):
         self.date = None
         self.hash = None
@@ -47,9 +47,15 @@ class GitInvocationError(LookupError):
     pass
 
 
-def call(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-         on_error='ignore', returncode=False):
-    """Run the given command (with shell=False) and return the output as a
+def call(
+    command,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    on_error="ignore",
+    returncode=False,
+):
+    """
+    Run the given command (with shell=False) and return the output as a
     string.
 
     Strips the output of enclosing whitespace.
@@ -57,103 +63,96 @@ def call(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     If the return code is non-zero, throw GitInvocationError.
     """
     # start external command process
-    p = subprocess.Popen(command, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # get outputs
     out, _ = p.communicate()
 
     # throw exception if process failed
-    if p.returncode != 0 and on_error == 'raise':
+    if p.returncode != 0 and on_error == "raise":
         raise GitInvocationError('Failed to run "%s"' % " ".join(command))
 
-    out = out.decode('utf-8').strip()
+    out = out.decode("utf-8").strip()
 
     if returncode:
         return out, p.returncode
     return out
 
 
-def get_build_name(git_path='git'):
-    """Find the username of the current builder
-    """
-    name, retcode = call(('git', 'config', 'user.name'), returncode=True)
+def get_build_name(git_path="git"):
+    """Find the username of the current builder"""
+    name, retcode = call(("git", "config", "user.name"), returncode=True)
     if retcode:
         name = "Unknown User"
-    email, retcode = call(('git', 'config', 'user.email'), returncode=True)
+    email, retcode = call(("git", "config", "user.email"), returncode=True)
     if retcode:
         email = ""
     return f"{name} <{email}>"
 
 
 def get_build_date():
-    """Returns the current datetime as the git build date
+    """Returns the current datetime as the git build date"""
+    return time.strftime(r"%Y-%m-%d %H:%M:%S +0000", time.gmtime())
+
+
+def get_last_commit(git_path="git"):
     """
-    return time.strftime(r'%Y-%m-%d %H:%M:%S +0000', time.gmtime())
-
-
-def get_last_commit(git_path='git'):
-    """Returns the details of the last git commit
+    Returns the details of the last git commit
 
     Returns a tuple (hash, date, author name, author e-mail,
     committer name, committer e-mail).
     """
-    hash_, udate, aname, amail, cname, cmail = call((
-        git_path,
-        'log',
-        '-1',
-        r'--pretty=format:%H,%ct,%an,%ae,%cn,%ce'
-    )).split(",")
-    date = time.strftime(r'%Y-%m-%d %H:%M:%S +0000', time.gmtime(float(udate)))
-    author = f'{aname} <{amail}>'
-    committer = f'{cname} <{cmail}>'
+    hash_, udate, aname, amail, cname, cmail = call(
+        (git_path, "log", "-1", r"--pretty=format:%H,%ct,%an,%ae,%cn,%ce")
+    ).split(",")
+    date = time.strftime(r"%Y-%m-%d %H:%M:%S +0000", time.gmtime(float(udate)))
+    author = f"{aname} <{amail}>"
+    committer = f"{cname} <{cmail}>"
     return hash_, date, author, committer
 
 
-def get_git_branch(git_path='git'):
-    """Returns the name of the current git branch
-    """
-    branch_match = call((git_path, 'rev-parse', '--symbolic-full-name', 'HEAD'))
+def get_git_branch(git_path="git"):
+    """Returns the name of the current git branch"""
+    branch_match = call((git_path, "rev-parse", "--symbolic-full-name", "HEAD"))
     if branch_match == "HEAD":
         return None
     return os.path.basename(branch_match)
 
 
-def get_git_tag(hash_, git_path='git'):
-    """Returns the name of the current git tag
-    """
-    tag, status = call((git_path, 'describe', '--exact-match',
-                        '--tags', hash_), returncode=True)
+def get_git_tag(hash_, git_path="git"):
+    """Returns the name of the current git tag"""
+    tag, status = call(
+        (git_path, "describe", "--exact-match", "--tags", hash_), returncode=True
+    )
     if status == 0:
         return tag
     return None
 
 
 def get_num_commits():
-    return call(('git', 'rev-list', '--count', 'HEAD'))
+    return call(("git", "rev-list", "--count", "HEAD"))
 
 
-def get_git_status(git_path='git'):
-    """Returns the state of the git working copy
-    """
-    status_output = subprocess.call((git_path, 'diff-files', '--quiet'))
+def get_git_status(git_path="git"):
+    """Returns the state of the git working copy"""
+    status_output = subprocess.call((git_path, "diff-files", "--quiet"))
     if status_output != 0:
-        return 'UNCLEAN: Modified working tree'
+        return "UNCLEAN: Modified working tree"
     # check index for changes
-    status_output = subprocess.call((git_path, 'diff-index', '--cached',
-                                     '--quiet', 'HEAD'))
+    status_output = subprocess.call(
+        (git_path, "diff-index", "--cached", "--quiet", "HEAD")
+    )
     if status_output != 0:
-        return 'UNCLEAN: Modified index'
-    return 'CLEAN: All modifications committed'
+        return "UNCLEAN: Modified index"
+    return "CLEAN: All modifications committed"
 
 
 def determine_latest_release_version():
-    """Query the git repository for the last released version of the code.
-    """
-    git_path = call(('which', 'git'))
+    """Query the git repository for the last released version of the code."""
+    git_path = call(("which", "git"))
 
     # Get all tags
-    tag_list = call((git_path, 'tag')).split('\n')
+    tag_list = call((git_path, "tag")).split("\n")
 
     # Reduce to only versions
     re_magic = re.compile(r"v\d+\.\d+\.\d+$")
@@ -172,18 +171,16 @@ def determine_latest_release_version():
 
 
 def generate_git_version_info():
-    """Query the git repository information to generate a version module.
-    """
+    """Query the git repository information to generate a version module."""
     info = GitInfo()
-    git_path = call(('which', 'git'))
+    git_path = call(("which", "git"))
 
     # get build info
     info.builder = get_build_name()
     info.build_date = get_build_date()
 
     # parse git ID
-    info.hash, info.date, info.author, info.committer = (
-        get_last_commit(git_path))
+    info.hash, info.date, info.author, info.committer = get_last_commit(git_path)
 
     # determine branch
     info.branch = get_git_branch(git_path)
@@ -193,17 +190,17 @@ def generate_git_version_info():
 
     # determine version
     if info.tag:
-        info.version = info.tag.strip('v')
-        info.release = not re.search('[a-z]', info.version.lower())
+        info.version = info.tag.strip("v")
+        info.release = not re.search("[a-z]", info.version.lower())
     else:
-        info.version = '0.0a' + get_num_commits()
+        info.version = "0.0a" + get_num_commits()
         info.release = False
 
     # Determine *last* stable release
     info.last_release = determine_latest_release_version()
 
     # refresh index
-    call((git_path, 'update-index', '-q', '--refresh'))
+    call((git_path, "update-index", "-q", "--refresh"))
 
     # check working copy for changes
     info.status = get_git_status(git_path)

@@ -28,24 +28,33 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
 """
 
-
-import os
+import configparser as ConfigParser
 import logging
 import math
-import configparser as ConfigParser
+import os
 
 import pycbc
-from pycbc.workflow.core import FileList, Executable
-from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
+from pycbc.workflow.core import (
+    Executable,
+    FileList,
+    make_analysis_dir,
+    resolve_url_to_file,
+)
 from pycbc.workflow.jobsetup import select_tmpltbank_class, sngl_ifo_job_setup
 
-logger = logging.getLogger('pycbc.workflow.tmpltbank')
+logger = logging.getLogger("pycbc.workflow.tmpltbank")
 
 
-def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
-                             output_dir=None, psd_files=None, tags=None,
-                             return_format=None):
-    '''
+def setup_tmpltbank_workflow(
+    workflow,
+    science_segs,
+    datafind_outs,
+    output_dir=None,
+    psd_files=None,
+    tags=None,
+    return_format=None,
+):
+    """
     Setup template bank section of CBC workflow. This function is responsible
     for deciding which of the various template bank workflow generation
     utilities should be used.
@@ -68,10 +77,11 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
         that would be produced in multiple calls to this function.
 
     Returns
-    --------
+    -------
     tmplt_banks : pycbc.workflow.core.FileList
         The FileList holding the details of all the template bank jobs.
-    '''
+
+    """
     if tags is None:
         tags = []
     logger.info("Entering template bank generation module.")
@@ -79,8 +89,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     cp = workflow.cp
 
     # Parse for options in ini file
-    tmpltbankMethod = cp.get_opt_tags("workflow-tmpltbank", "tmpltbank-method",
-                                      tags)
+    tmpltbankMethod = cp.get_opt_tags("workflow-tmpltbank", "tmpltbank-method", tags)
 
     # There can be a large number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
@@ -90,19 +99,24 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     # Else we assume template banks will be generated in the workflow
     elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS":
         logger.info("Adding template bank jobs to workflow.")
-        tmplt_banks = setup_tmpltbank_dax_generated(workflow, science_segs,
-                                         datafind_outs, output_dir, tags=tags,
-                                         psd_files=psd_files)
+        tmplt_banks = setup_tmpltbank_dax_generated(
+            workflow,
+            science_segs,
+            datafind_outs,
+            output_dir,
+            tags=tags,
+            psd_files=psd_files,
+        )
     elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS_NODATA":
         logger.info("Adding template bank jobs to workflow.")
-        tmplt_banks = setup_tmpltbank_without_frames(workflow, output_dir,
-                                         tags=tags, independent_ifos=True,
-                                         psd_files=psd_files)
+        tmplt_banks = setup_tmpltbank_without_frames(
+            workflow, output_dir, tags=tags, independent_ifos=True, psd_files=psd_files
+        )
     elif tmpltbankMethod == "WORKFLOW_NO_IFO_VARIATION_NODATA":
         logger.info("Adding template bank jobs to workflow.")
-        tmplt_banks = setup_tmpltbank_without_frames(workflow, output_dir,
-                                         tags=tags, independent_ifos=False,
-                                         psd_files=psd_files)
+        tmplt_banks = setup_tmpltbank_without_frames(
+            workflow, output_dir, tags=tags, independent_ifos=False, psd_files=psd_files
+        )
     else:
         errMsg = "Template bank method not recognized. Must be either "
         errMsg += "PREGENERATED_BANK, WORKFLOW_INDEPENDENT_IFOS "
@@ -115,28 +129,30 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     # a conversion from xml.gz or xml to hdf is supported, but not vice
     # versa. If a return_format is not specified the function returns
     # the bank in the format as it was inputted.
-    tmplt_bank_filename=tmplt_banks[0].name
-    ext = tmplt_bank_filename.split('.', 1)[1]
+    tmplt_bank_filename = tmplt_banks[0].name
+    ext = tmplt_bank_filename.split(".", 1)[1]
     logger.info("Input bank is a %s file", ext)
-    if return_format is None :
+    if return_format is None:
         tmplt_banks_return = tmplt_banks
-    elif return_format in ('hdf', 'h5', 'hdf5'):
-        if ext in ('hdf', 'h5', 'hdf5') or ext in ('xml.gz' , 'xml'):
-            tmplt_banks_return = pycbc.workflow.convert_bank_to_hdf(workflow,
-                                                        tmplt_banks, "bank")
-    else :
-        if ext == return_format:
-            tmplt_banks_return = tmplt_banks
-        else:
-            raise NotImplementedError("{0} to {1} conversion is not "
-                                      "supported.".format(ext, return_format))
+    elif return_format in ("hdf", "h5", "hdf5"):
+        if ext in ("hdf", "h5", "hdf5") or ext in ("xml.gz", "xml"):
+            tmplt_banks_return = pycbc.workflow.convert_bank_to_hdf(
+                workflow, tmplt_banks, "bank"
+            )
+    elif ext == return_format:
+        tmplt_banks_return = tmplt_banks
+    else:
+        raise NotImplementedError(
+            f"{ext} to {return_format} conversion is not supported."
+        )
     logger.info("Leaving template bank generation module.")
     return tmplt_banks_return
 
-def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
-                                  output_dir, tags=None,
-                                  psd_files=None):
-    '''
+
+def setup_tmpltbank_dax_generated(
+    workflow, science_segs, datafind_outs, output_dir, tags=None, psd_files=None
+):
+    """
     Setup template bank jobs that are generated as part of the CBC workflow.
     This function will add numerous jobs to the CBC workflow using
     configuration options from the .ini file. The following executables are
@@ -163,10 +179,11 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
         The file list containing predefined PSDs, if provided.
 
     Returns
-    --------
+    -------
     tmplt_banks : pycbc.workflow.core.FileList
         The FileList holding the details of all the template bank jobs.
-    '''
+
+    """
     if tags is None:
         tags = []
     cp = workflow.cp
@@ -175,7 +192,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     # will require a bit of effort here ....
 
     ifos = science_segs.keys()
-    tmplt_bank_exe = os.path.basename(cp.get('executables', 'tmpltbank'))
+    tmplt_bank_exe = os.path.basename(cp.get("executables", "tmpltbank"))
     # Select the appropriate class
     exe_class = select_tmpltbank_class(tmplt_bank_exe)
 
@@ -183,24 +200,31 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     tmplt_banks = FileList([])
 
     for ifo in ifos:
-        job_instance = exe_class(workflow.cp, 'tmpltbank', ifo=ifo,
-                                               out_dir=output_dir,
-                                               tags=tags)
+        job_instance = exe_class(
+            workflow.cp, "tmpltbank", ifo=ifo, out_dir=output_dir, tags=tags
+        )
         # Check for the write_psd flag
         if cp.has_option_tags("workflow-tmpltbank", "tmpltbank-write-psd-file", tags):
             job_instance.write_psd = True
         else:
             job_instance.write_psd = False
 
-        sngl_ifo_job_setup(workflow, ifo, tmplt_banks, job_instance,
-                           science_segs[ifo], datafind_outs,
-                           allow_overlap=True)
+        sngl_ifo_job_setup(
+            workflow,
+            ifo,
+            tmplt_banks,
+            job_instance,
+            science_segs[ifo],
+            datafind_outs,
+            allow_overlap=True,
+        )
     return tmplt_banks
 
-def setup_tmpltbank_without_frames(workflow, output_dir,
-                                   tags=None, independent_ifos=False,
-                                   psd_files=None):
-    '''
+
+def setup_tmpltbank_without_frames(
+    workflow, output_dir, tags=None, independent_ifos=False, psd_files=None
+):
+    """
     Setup CBC workflow to use a template bank (or banks) that are generated in
     the workflow, but do not use the data to estimate a PSD, and therefore do
     not vary over the duration of the workflow. This can either generate one
@@ -223,10 +247,11 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
         The file list containing predefined PSDs, if provided.
 
     Returns
-    --------
+    -------
     tmplt_banks : pycbc.workflow.core.FileList
         The FileList holding the details of the template bank(s).
-    '''
+
+    """
     if tags is None:
         tags = []
     cp = workflow.cp
@@ -237,9 +262,9 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
     ifos = workflow.ifos
     fullSegment = workflow.analysis_time
 
-    tmplt_bank_exe = os.path.basename(cp.get('executables','tmpltbank'))
+    tmplt_bank_exe = os.path.basename(cp.get("executables", "tmpltbank"))
     # Can not use lalapps_template bank with this
-    if tmplt_bank_exe == 'lalapps_tmpltbank':
+    if tmplt_bank_exe == "lalapps_tmpltbank":
         errMsg = "Lalapps_tmpltbank cannot be used to generate template banks "
         errMsg += "without using frames. Try another code."
         raise ValueError(errMsg)
@@ -262,18 +287,23 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
         exe_instance.write_psd = False
 
     for ifo in ifoList:
-        job_instance = exe_instance(workflow.cp, 'tmpltbank', ifo=ifo,
-                                               out_dir=output_dir,
-                                               tags=tags,
-                                               psd_files=psd_files)
+        job_instance = exe_instance(
+            workflow.cp,
+            "tmpltbank",
+            ifo=ifo,
+            out_dir=output_dir,
+            tags=tags,
+            psd_files=psd_files,
+        )
         node = job_instance.create_nodata_node(fullSegment)
         workflow.add_node(node)
         tmplt_banks += node.output_files
 
     return tmplt_banks
 
+
 def setup_tmpltbank_pregenerated(workflow, tags=None):
-    '''
+    """
     Setup CBC workflow to use a pregenerated template bank.
     The bank given in cp.get('workflow','pregenerated-template-bank') will be used
     as the input file for all matched-filtering jobs. If this option is
@@ -289,10 +319,11 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
         that would be produced in multiple calls to this function.
 
     Returns
-    --------
+    -------
     tmplt_banks : pycbc.workflow.core.FileList
         The FileList holding the details of the template bank.
-    '''
+
+    """
     if tags is None:
         tags = []
     # Currently this uses the *same* fixed bank for all ifos.
@@ -303,23 +334,26 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
 
     cp = workflow.cp
     global_seg = workflow.analysis_time
-    file_attrs = {'segs' : global_seg, 'tags' : tags}
+    file_attrs = {"segs": global_seg, "tags": tags}
 
     try:
         # First check if we have a bank for all ifos
-        pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
-                                           'tmpltbank-pregenerated-bank', tags)
-        file_attrs['ifos'] = workflow.ifos
+        pre_gen_bank = cp.get_opt_tags(
+            "workflow-tmpltbank", "tmpltbank-pregenerated-bank", tags
+        )
+        file_attrs["ifos"] = workflow.ifos
         curr_file = resolve_url_to_file(pre_gen_bank, attrs=file_attrs)
         tmplt_banks.append(curr_file)
     except ConfigParser.Error:
         # Okay then I must have banks for each ifo
         for ifo in workflow.ifos:
             try:
-                pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
-                                'tmpltbank-pregenerated-bank-%s' % ifo.lower(),
-                                tags)
-                file_attrs['ifos'] = [ifo]
+                pre_gen_bank = cp.get_opt_tags(
+                    "workflow-tmpltbank",
+                    "tmpltbank-pregenerated-bank-%s" % ifo.lower(),
+                    tags,
+                )
+                file_attrs["ifos"] = [ifo]
                 curr_file = resolve_url_to_file(pre_gen_bank, attrs=file_attrs)
                 tmplt_banks.append(curr_file)
 
@@ -327,52 +361,42 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                 err_msg = "Cannot find pregerated template bank in section "
                 err_msg += "[workflow-tmpltbank] or any tagged sections. "
                 if tags:
-                    tagged_secs = " ".join("[workflow-tmpltbank-%s]" \
-                                           %(ifo,) for ifo in workflow.ifos)
-                    err_msg += "Tagged sections are %s. " %(tagged_secs,)
+                    tagged_secs = " ".join(
+                        "[workflow-tmpltbank-%s]" % (ifo,) for ifo in workflow.ifos
+                    )
+                    err_msg += "Tagged sections are %s. " % (tagged_secs,)
                 err_msg += "I looked for 'tmpltbank-pregenerated-bank' option "
-                err_msg += "and 'tmpltbank-pregenerated-bank-%s'." %(ifo,)
+                err_msg += "and 'tmpltbank-pregenerated-bank-%s'." % (ifo,)
                 raise ConfigParser.Error(err_msg)
 
     return tmplt_banks
 
 
-def make_compress_split_banks(workflow, bank_files, out_dir,
-                       tags=None):
+def make_compress_split_banks(workflow, bank_files, out_dir, tags=None):
     tags = [] if tags is None else tags
     compressed_banks = FileList([])
     n_dp = math.ceil(math.log10(len(bank_files)))
     for i, bank_file in enumerate(bank_files):
         node = Executable(
             workflow.cp,
-            'compress',
+            "compress",
             ifos=workflow.ifos,
             out_dir=out_dir,
-            tags=tags + [f'bank%0{n_dp}d' % i]
+            tags=tags + [f"bank%0{n_dp}d" % i],
         ).create_node()
-        node.add_input_opt('--bank-file', bank_file)
-        node.new_output_file_opt(
-            workflow.analysis_time,
-            '.hdf',
-            '--output'
-        )
+        node.add_input_opt("--bank-file", bank_file)
+        node.new_output_file_opt(workflow.analysis_time, ".hdf", "--output")
         workflow += node
         compressed_banks += node.output_files
     return compressed_banks
 
-def make_combine_split_banks(workflow, bank_files, out_dir,
-                       tags=None):
+
+def make_combine_split_banks(workflow, bank_files, out_dir, tags=None):
     tags = [] if tags is None else tags
-    if workflow.cp.has_option_tags(
-        "workflow-splittable",
-        "recombine-num-banks",
-        tags
-    ):
-        n_banks_combined = int(workflow.cp.get_opt_tags(
-            "workflow-splittable",
-            "recombine-num-banks",
-            tags
-        ))
+    if workflow.cp.has_option_tags("workflow-splittable", "recombine-num-banks", tags):
+        n_banks_combined = int(
+            workflow.cp.get_opt_tags("workflow-splittable", "recombine-num-banks", tags)
+        )
     else:
         n_banks_combined = 1
 
@@ -381,20 +405,16 @@ def make_combine_split_banks(workflow, bank_files, out_dir,
     for i in range(n_banks_combined):
         node = Executable(
             workflow.cp,
-            'combine_banks',
+            "combine_banks",
             ifos=workflow.ifos,
             out_dir=out_dir,
-            tags=tags + [f'%0{n_dp}d' % i]
+            tags=tags + [f"%0{n_dp}d" % i],
         ).create_node()
         start = int(i / n_banks_combined * len(bank_files))
         end = int((i + 1) / n_banks_combined * len(bank_files))
         bank_files_subset = bank_files[start:end]
-        node.add_input_list_opt('--input-filenames', bank_files_subset)
-        node.new_output_file_opt(
-            workflow.analysis_time,
-            '.hdf',
-            '--output-file'
-        )
+        node.add_input_list_opt("--input-filenames", bank_files_subset)
+        node.new_output_file_opt(workflow.analysis_time, ".hdf", "--output-file")
         workflow += node
         out_files += node.output_files
 

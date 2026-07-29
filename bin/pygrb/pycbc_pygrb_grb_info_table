@@ -16,7 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Create GRB info table.
+"""
+Create GRB info table.
 
 Please refer to help(pycbc.types.angle_as_radians) for the recommended
 configuration file syntax for angle arguments.
@@ -25,19 +26,19 @@ configuration file syntax for angle arguments.
 # =============================================================================
 # Preamble
 # =============================================================================
-import sys
 import argparse
 import math
+import sys
 
-from pycbc import add_common_pycbc_options, init_logging
 import pycbc.version
-import pycbc.results
+
 import pycbc.distributions
+import pycbc.results
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.detector import Detector, ppdets
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_dist_factor
-from pycbc.types import angle_as_radians
 from pycbc.time import gps_to_utc_str
-
+from pycbc.types import angle_as_radians
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -47,32 +48,54 @@ __program__ = "pycbc_pygrb_grb_info_table"
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = argparse.ArgumentParser(description=__doc__, formatter_class=
-                                 argparse.ArgumentDefaultsHelpFormatter)
+parser = argparse.ArgumentParser(
+    description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
 add_common_pycbc_options(parser)
-parser.add_argument("--trigger-time", type=int,
-                    required=True,
-                    help="GPS time of the GRB.")
-parser.add_argument("--input-dist", type=str,
-                    help="Input Distribution of the GRB. Use distribution "
-                    "functions in pycbc.distributions.sky_location code.")
-parser.add_argument("--ra", type=angle_as_radians,
-                    help="Right ascension of the GRB. Use the rad or deg "
-                    "suffix to specify units, otherwise radians are assumed.")
-parser.add_argument("--dec", type=angle_as_radians,
-                    help="Declination of the GRB. Use the rad or deg suffix "
-                    "to specify units, otherwise radians are assumed.")
-parser.add_argument("--sky-error", type=angle_as_radians,
-                    default=0,
-                    help="Sky-localisation error of the GRB. Use the rad or "
-                    "deg suffix to specify units, otherwise radians are "
-                    "assumed.")
-parser.add_argument("--ifos", action="store", nargs='+',
-                    default=None, required=True,
-                    help="List containing the active IFOs.")
-parser.add_argument("--output-file", action="store",
-                    default=None, required=True,
-                    help="The output file to write tha table to.")
+parser.add_argument(
+    "--trigger-time", type=int, required=True, help="GPS time of the GRB."
+)
+parser.add_argument(
+    "--input-dist",
+    type=str,
+    help="Input Distribution of the GRB. Use distribution "
+    "functions in pycbc.distributions.sky_location code.",
+)
+parser.add_argument(
+    "--ra",
+    type=angle_as_radians,
+    help="Right ascension of the GRB. Use the rad or deg "
+    "suffix to specify units, otherwise radians are assumed.",
+)
+parser.add_argument(
+    "--dec",
+    type=angle_as_radians,
+    help="Declination of the GRB. Use the rad or deg suffix "
+    "to specify units, otherwise radians are assumed.",
+)
+parser.add_argument(
+    "--sky-error",
+    type=angle_as_radians,
+    default=0,
+    help="Sky-localisation error of the GRB. Use the rad or "
+    "deg suffix to specify units, otherwise radians are "
+    "assumed.",
+)
+parser.add_argument(
+    "--ifos",
+    action="store",
+    nargs="+",
+    default=None,
+    required=True,
+    help="List containing the active IFOs.",
+)
+parser.add_argument(
+    "--output-file",
+    action="store",
+    default=None,
+    required=True,
+    help="The output file to write tha table to.",
+)
 
 opts = parser.parse_args()
 
@@ -82,18 +105,18 @@ headers = []
 data = [[]]
 
 data[0].append(str(opts.trigger_time))
-headers.append('GPS Time')
+headers.append("GPS Time")
 
 utc_time_str = gps_to_utc_str(float(opts.trigger_time))
 data[0].append(utc_time_str)
-headers.append('UTC Time')
+headers.append("UTC Time")
 
 if opts.input_dist is not None:
     if opts.ra is not None or opts.dec is not None:
         parser.error(
             "You can't use input-dist argument and (ra,dec) at the same time, please choose one"
-        ) 
-    input_dist = eval('pycbc.distributions.' + opts.input_dist)
+        )
+    input_dist = eval("pycbc.distributions." + opts.input_dist)
     ra, dec = input_dist.get_max_prob_point()
     sky_error = None
 
@@ -101,43 +124,37 @@ else:
     ra = opts.ra
     dec = opts.dec
     sky_error = opts.sky_error
-    
-data[0].append(f'{math.degrees(ra):.3f}')
-headers.append('R.A. (deg)')
 
-data[0].append(f'{math.degrees(dec):.3f}')
-headers.append('Dec (deg)')
+data[0].append(f"{math.degrees(ra):.3f}")
+headers.append("R.A. (deg)")
+
+data[0].append(f"{math.degrees(dec):.3f}")
+headers.append("Dec (deg)")
 
 if sky_error is not None:
-    data[0].append(f'{math.degrees(sky_error):.3f}')
-    headers.append('Sky Error (deg)')
+    data[0].append(f"{math.degrees(sky_error):.3f}")
+    headers.append("Sky Error (deg)")
 
-data[0].append(ppdets(opts.ifos, ''))
-headers.append('IFOs')
+data[0].append(ppdets(opts.ifos, ""))
+headers.append("IFOs")
 
 for ifo in opts.ifos:
     antenna = Detector(ifo)
-    factor = get_antenna_dist_factor(
-        antenna, ra, dec, float(opts.trigger_time)
-    )
-    data[0].append(f'{factor:.3f}')
-    headers.append(ifo + ' Antenna Factor')
+    factor = get_antenna_dist_factor(antenna, ra, dec, float(opts.trigger_time))
+    data[0].append(f"{factor:.3f}")
+    headers.append(ifo + " Antenna Factor")
 
-html = pycbc.results.dq.redirect_javascript + \
-        str(pycbc.results.static_table(data, headers))
+html = pycbc.results.dq.redirect_javascript + str(
+    pycbc.results.static_table(data, headers)
+)
 
-title = 'External Trigger Summary Information'
+title = "External Trigger Summary Information"
 caption = (
-    'Parameters of the external trigger. The reported antenna factors are the '
-    'dist / eff distance as defined by Eq (4.3) in '
-    'https://arxiv.org/abs/0705.1514.'
+    "Parameters of the external trigger. The reported antenna factors are the "
+    "dist / eff distance as defined by Eq (4.3) in "
+    "https://arxiv.org/abs/0705.1514."
 )
 
 pycbc.results.save_fig_with_metadata(
-    html,
-    opts.output_file,
-    {},
-    cmd=' '.join(sys.argv),
-    title=title,
-    caption=caption
+    html, opts.output_file, {}, cmd=" ".join(sys.argv), title=title, caption=caption
 )

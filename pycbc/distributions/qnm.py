@@ -15,18 +15,20 @@
 
 import logging
 import re
+
 import numpy
 
 import pycbc
-from pycbc import conversions, boundaries
+from pycbc import boundaries, conversions
 
-from . import uniform, bounded
+from . import bounded, uniform
 
-logger = logging.getLogger('pycbc.distributions.qnm')
+logger = logging.getLogger("pycbc.distributions.qnm")
 
 
 class UniformF0Tau(uniform.Uniform):
-    """A distribution uniform in QNM frequency and damping time.
+    """
+    A distribution uniform in QNM frequency and damping time.
 
     Constraints may be placed to exclude frequencies and damping times
     corresponding to specific masses and spins.
@@ -65,7 +67,6 @@ class UniformF0Tau(uniform.Uniform):
 
     Examples
     --------
-
     Create a distribution:
 
     >>> dist = UniformF0Tau(f0=(10., 2048.), tau=(1e-4,1e-2))
@@ -103,11 +104,19 @@ class UniformF0Tau(uniform.Uniform):
 
     """
 
-    name = 'uniform_f0_tau'
+    name = "uniform_f0_tau"
 
-    def __init__(self, f0=None, tau=None, final_mass=None, final_spin=None,
-                 rdfreq='f0', damping_time='tau', norm_tolerance=1e-3,
-                 norm_seed=0):
+    def __init__(
+        self,
+        f0=None,
+        tau=None,
+        final_mass=None,
+        final_spin=None,
+        rdfreq="f0",
+        damping_time="tau",
+        norm_tolerance=1e-3,
+        norm_seed=0,
+    ):
         if f0 is None:
             raise ValueError("must provide a range for f0")
         if tau is None:
@@ -115,35 +124,39 @@ class UniformF0Tau(uniform.Uniform):
         self.rdfreq = rdfreq
         self.damping_time = damping_time
         parent_args = {rdfreq: f0, damping_time: tau}
-        super(UniformF0Tau, self).__init__(**parent_args)
+        super().__init__(**parent_args)
         if final_mass is None:
-            final_mass = (0., numpy.inf)
+            final_mass = (0.0, numpy.inf)
         if final_spin is None:
             final_spin = (-0.996, 0.996)
         self.final_mass_bounds = boundaries.Bounds(
-            min_bound=final_mass[0], max_bound=final_mass[1])
+            min_bound=final_mass[0], max_bound=final_mass[1]
+        )
         self.final_spin_bounds = boundaries.Bounds(
-            min_bound=final_spin[0], max_bound=final_spin[1])
+            min_bound=final_spin[0], max_bound=final_spin[1]
+        )
         # Re-normalize to account for cuts: we'll do this by just sampling
         # a large number of spaces f0 taus, and seeing how many are in the
         # desired range.
         # perseve the current random state
         s = numpy.random.get_state()
         numpy.random.seed(norm_seed)
-        nsamples = int(1./norm_tolerance**2)
-        draws = super(UniformF0Tau, self).rvs(size=nsamples)
+        nsamples = int(1.0 / norm_tolerance**2)
+        draws = super().rvs(size=nsamples)
         # reset the random state
         numpy.random.set_state(s)
         num_in = self._constraints(draws).sum()
         # if num_in is 0, than the requested tolerance is too large
         if num_in == 0:
-            raise ValueError("the normalization is < then the norm_tolerance; "
-                             "try again with a smaller nrom_tolerance")
+            raise ValueError(
+                "the normalization is < then the norm_tolerance; "
+                "try again with a smaller nrom_tolerance"
+            )
         self._lognorm += numpy.log(num_in) - numpy.log(nsamples)
         self._norm = numpy.exp(self._lognorm)
 
     def __contains__(self, params):
-        isin = super(UniformF0Tau, self).__contains__(params)
+        isin = super().__contains__(params)
         if isin:
             isin &= self._constraints(params)
         return isin
@@ -152,8 +165,8 @@ class UniformF0Tau(uniform.Uniform):
         f0 = params[self.rdfreq]
         tau = params[self.damping_time]
         # check if we need to specify a particular mode (l,m) != (2,2)
-        if re.match(r'f_\d{3}', self.rdfreq):
-            mode = self.rdfreq.strip('f_')
+        if re.match(r"f_\d{3}", self.rdfreq):
+            mode = self.rdfreq.strip("f_")
             l, m = int(mode[0]), int(mode[1])
         else:
             l, m = 2, 2
@@ -163,11 +176,13 @@ class UniformF0Tau(uniform.Uniform):
             mf = conversions.final_mass_from_f0_tau(f0, tau, l=l, m=m)
             sf = conversions.final_spin_from_f0_tau(f0, tau, l=l, m=m)
             isin = (self.final_mass_bounds.__contains__(mf)) & (
-                    self.final_spin_bounds.__contains__(sf))
+                self.final_spin_bounds.__contains__(sf)
+            )
         return isin
 
     def rvs(self, size=1):
-        """Draw random samples from this distribution.
+        """
+        Draw random samples from this distribution.
 
         Parameters
         ----------
@@ -178,6 +193,7 @@ class UniformF0Tau(uniform.Uniform):
         -------
         array
             A structured array of the random draws.
+
         """
         size = int(size)
         dtype = [(p, float) for p in self.params]
@@ -185,17 +201,18 @@ class UniformF0Tau(uniform.Uniform):
         remaining = size
         keepidx = 0
         while remaining:
-            draws = super(UniformF0Tau, self).rvs(size=remaining)
+            draws = super().rvs(size=remaining)
             mask = self._constraints(draws)
             addpts = mask.sum()
-            arr[keepidx:keepidx+addpts] = draws[mask]
+            arr[keepidx : keepidx + addpts] = draws[mask]
             keepidx += addpts
             remaining = size - keepidx
         return arr
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
-        """Initialize this class from a config file.
+        """
+        Initialize this class from a config file.
 
         Bounds on ``f0``, ``tau``, ``final_mass`` and ``final_spin`` should
         be specified by providing ``min-{param}`` and ``max-{param}``. If
@@ -233,38 +250,45 @@ class UniformF0Tau(uniform.Uniform):
         UniformF0Tau :
             This class initialized with the parameters provided in the config
             file.
+
         """
         tag = variable_args
         variable_args = set(variable_args.split(pycbc.VARARGS_DELIM))
         # get f0 and tau
-        f0 = bounded.get_param_bounds_from_config(cp, section, tag, 'f0')
-        tau = bounded.get_param_bounds_from_config(cp, section, tag, 'tau')
+        f0 = bounded.get_param_bounds_from_config(cp, section, tag, "f0")
+        tau = bounded.get_param_bounds_from_config(cp, section, tag, "tau")
         # see if f0 and tau should be renamed
-        if cp.has_option_tag(section, 'rdfreq', tag):
-            rdfreq = cp.get_opt_tag(section, 'rdfreq', tag)
+        if cp.has_option_tag(section, "rdfreq", tag):
+            rdfreq = cp.get_opt_tag(section, "rdfreq", tag)
         else:
-            rdfreq = 'f0'
-        if cp.has_option_tag(section, 'damping_time', tag):
-            damping_time = cp.get_opt_tag(section, 'damping_time', tag)
+            rdfreq = "f0"
+        if cp.has_option_tag(section, "damping_time", tag):
+            damping_time = cp.get_opt_tag(section, "damping_time", tag)
         else:
-            damping_time = 'tau'
+            damping_time = "tau"
         # check that they match whats in the variable args
         if not variable_args == set([rdfreq, damping_time]):
-            raise ValueError("variable args do not match rdfreq and "
-                             "damping_time names")
+            raise ValueError("variable args do not match rdfreq and damping_time names")
         # get the final mass and spin values, if provided
         final_mass = bounded.get_param_bounds_from_config(
-            cp, section, tag, 'final_mass')
+            cp, section, tag, "final_mass"
+        )
         final_spin = bounded.get_param_bounds_from_config(
-            cp, section, tag, 'final_spin')
+            cp, section, tag, "final_spin"
+        )
         extra_opts = {}
-        if cp.has_option_tag(section, 'norm_tolerance', tag):
-            extra_opts['norm_tolerance'] = float(
-                cp.get_opt_tag(section, 'norm_tolerance', tag))
-        if cp.has_option_tag(section, 'norm_seed', tag):
-            extra_opts['norm_seed'] = int(
-                cp.get_opt_tag(section, 'norm_seed', tag))
-        return cls(f0=f0, tau=tau,
-                   final_mass=final_mass, final_spin=final_spin,
-                   rdfreq=rdfreq, damping_time=damping_time,
-                   **extra_opts)
+        if cp.has_option_tag(section, "norm_tolerance", tag):
+            extra_opts["norm_tolerance"] = float(
+                cp.get_opt_tag(section, "norm_tolerance", tag)
+            )
+        if cp.has_option_tag(section, "norm_seed", tag):
+            extra_opts["norm_seed"] = int(cp.get_opt_tag(section, "norm_seed", tag))
+        return cls(
+            f0=f0,
+            tau=tau,
+            final_mass=final_mass,
+            final_spin=final_spin,
+            rdfreq=rdfreq,
+            damping_time=damping_time,
+            **extra_opts,
+        )

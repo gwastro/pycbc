@@ -22,29 +22,32 @@
 #
 # =============================================================================
 #
-"""PyCBC contains a toolkit for CBC gravitational wave analysis
-"""
-import subprocess, os, sys, signal, warnings
+"""PyCBC contains a toolkit for CBC gravitational wave analysis"""
+
+import os
+import signal
+import subprocess
+import sys
+import warnings
 
 # Filter annoying Cython warnings that serve no good purpose.
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+import importlib.machinery
+import importlib.util
 import logging
 import random
 import string
-import importlib.util
-import importlib.machinery
 from datetime import datetime as dt
 
 try:
     # This will fail when pycbc is imported during the build process,
     # before version.py has been generated.
-    from .version import git_hash
+    from .version import PyCBCVersionAction, git_hash
     from .version import version as pycbc_version
-    from .version import PyCBCVersionAction
 except:
-    git_hash = 'none'
-    pycbc_version = 'none'
+    git_hash = "none"
+    pycbc_version = "none"
     PyCBCVersionAction = None
 
 __version__ = pycbc_version
@@ -58,13 +61,14 @@ class LogFormatter(logging.Formatter):
     https://en.wikipedia.org/wiki/ISO_8601
     e.g. 2022-11-18T09:53:01.554+00:00
     """
+
     converter = dt.fromtimestamp
 
     def formatTime(self, record, datefmt=None):
         ct = self.converter(record.created).astimezone()
         t = ct.strftime("%Y-%m-%dT%H:%M:%S")
         s = f"{t}.{int(record.msecs):03d}"
-        timezone = ct.strftime('%z')
+        timezone = ct.strftime("%z")
         timezone_colon = f"{timezone[:-2]}:{timezone[-2:]}"
         s += timezone_colon
         return s
@@ -78,33 +82,39 @@ def add_common_pycbc_options(parser):
     ----------
     parser : argparse.ArgumentParser
         The argument parser to which the options will be added
+
     """
     group = parser.add_argument_group(
         title="PyCBC common options",
         description="Common options for PyCBC executables.",
     )
     group.add_argument(
-        '-v',
-        '--verbose',
-        action='count',
+        "-v",
+        "--verbose",
+        action="count",
         default=0,
         help=(
-            'Add verbosity to logging. Adding the option '
-            'multiple times makes logging progressively '
-            'more verbose, e.g. --verbose or -v provides '
-            'logging at the info level, but -vv or '
-            '--verbose --verbose provides debug logging.'
-        )
+            "Add verbosity to logging. Adding the option "
+            "multiple times makes logging progressively "
+            "more verbose, e.g. --verbose or -v provides "
+            "logging at the info level, but -vv or "
+            "--verbose --verbose provides debug logging."
+        ),
     )
     group.add_argument(
-        '--version',
+        "--version",
         action=PyCBCVersionAction,
     )
 
 
-def init_logging(verbose=False, default_level=0, to_file=None,
-                 format='%(asctime)s %(levelname)s : %(message)s'):
-    """Common utility for setting up logging in PyCBC.
+def init_logging(
+    verbose=False,
+    default_level=0,
+    to_file=None,
+    format="%(asctime)s %(levelname)s : %(message)s",
+):
+    """
+    Common utility for setting up logging in PyCBC.
 
     Installs a signal handler such that verbosity can be activated at
     run-time by sending a SIGUSR1 to the process.
@@ -124,16 +134,17 @@ def init_logging(verbose=False, default_level=0, to_file=None,
         overwritten if it already exists.
     format : str, optional
         The format to use for logging messages.
+
     """
+
     def sig_handler(signum, frame):
         logger = logging.getLogger()
         log_level = logger.level
         if log_level == logging.DEBUG:
-            log_level = logging.WARN
+            log_level = logging.WARNING
         else:
             log_level = logging.DEBUG
-        logging.warning('Got signal %d, setting log level to %d',
-                        signum, log_level)
+        logging.warning("Got signal %d, setting log level to %d", signum, log_level)
         logger.setLevel(log_level)
 
     signal.signal(signal.SIGUSR1, sig_handler)
@@ -146,11 +157,10 @@ def init_logging(verbose=False, default_level=0, to_file=None,
     # Otherwise, you may see duplicate messages
     logger.handlers.clear()
 
-    verbose_int = default_level if verbose is None \
-        else int(verbose) + default_level
+    verbose_int = default_level if verbose is None else int(verbose) + default_level
     logger.setLevel(logging.WARNING - verbose_int * 10)  # Initial setting
     if to_file is not None:
-        handler = logging.FileHandler(to_file, mode='w')
+        handler = logging.FileHandler(to_file, mode="w")
     else:
         handler = logging.StreamHandler()
     logger.addHandler(handler)
@@ -177,61 +187,66 @@ PYCBC_ALIGNMENT = 32
 # Dynamic range factor: a large constant for rescaling
 # GW strains.  This is 2**69 rounded to 17 sig.fig.
 
-DYN_RANGE_FAC =  5.9029581035870565e+20
+DYN_RANGE_FAC = 5.9029581035870565e20
 
 # String used to separate parameters in configuration file section headers.
 # This is used by the distributions and transforms modules
-VARARGS_DELIM = '+'
+VARARGS_DELIM = "+"
 
 # Check for optional CUDA support of the PyCBC Package
 try:
-    #check if pycuda is installed
+    # check if pycuda is installed
     import pycuda
+
     # If running documentation the import doesn't fail, but it's only a mock
     # import, so detect that
-    if type(pycuda).__name__ in ('MagicMock', '_MockModule'):
+    if type(pycuda).__name__ in ("MagicMock", "_MockModule"):
         raise ImportError
     import pycuda.driver as _pycudadrv
-    #check how many CUDA device is installed
+
+    # check how many CUDA device is installed
     try:
         _pycudadrv.init()
         device_count = _pycudadrv.Device.count()
     except Exception:
         device_count = 0
-    #Set value to true if there is usable device
-    HAVE_CUDA = (device_count > 0)
+    # Set value to true if there is usable device
+    HAVE_CUDA = device_count > 0
     if device_count == 0:
-        warnings.warn("PyCUDA imported but no CUDA device found; disabling CUDA support")
+        warnings.warn(
+            "PyCUDA imported but no CUDA device found; disabling CUDA support"
+        )
 except ImportError:
     HAVE_CUDA = False
 
 # Check for MKL capability
 try:
     import pycbc.fft.mkl
-    HAVE_MKL=True
+
+    HAVE_MKL = True
 except (ImportError, OSError):
-    HAVE_MKL=False
+    HAVE_MKL = False
 
 # Check for openmp suppport, currently we pressume it exists, unless on
 # platforms (mac) that are silly and don't use the standard gcc.
-if sys.platform == 'darwin':
+if sys.platform == "darwin":
     HAVE_OMP = False
 else:
     HAVE_OMP = True
 
+
 # https://pynative.com/python-generate-random-string/
 def random_string(stringLength=10):
-    """Generate a random string of fixed length """
+    """Generate a random string of fixed length"""
     letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(stringLength))
+    return "".join(random.choice(letters) for i in range(stringLength))
 
 
 # This is needed as a backwards compatibility. The function was removed in
 # python 3.12.
 def load_source(modname, filename):
     loader = importlib.machinery.SourceFileLoader(modname, filename)
-    spec = importlib.util.spec_from_file_location(modname, filename,
-                                                  loader=loader)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
     module = importlib.util.module_from_spec(spec)
     # The module is always executed and not cached in sys.modules.
     # Uncomment the following line to cache the module.
@@ -239,11 +254,12 @@ def load_source(modname, filename):
     loader.exec_module(module)
     return module
 
+
 # Expose some convenience functions at package level for backwards
 # compatibility and convenience: allow `pycbc.gps_now()` as well as
 # `pycbc.time.gps_now()`.
 try:
-    from .time import gps_now  # noqa: F401
+    from .time import gps_now
 except Exception:
     # If pycbc imported during build this may fail; silently ignore.
     gps_now = None

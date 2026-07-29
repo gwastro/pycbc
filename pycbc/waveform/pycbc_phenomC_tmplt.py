@@ -17,14 +17,12 @@
 
 
 import numpy
-from numpy import sqrt, log, longdouble as float128
-
+from numpy import log, sqrt
+from numpy import longdouble as float128
 from pycuda.elementwise import ElementwiseKernel
 
-from pycbc.types import FrequencySeries, zeros, Array, complex64
-from pycbc.constants import (
-    C_SI, PI, G_SI, MSUN_SI, MTSUN_SI, PC_SI, MRSUN_SI, GAMMA
-)
+from pycbc.constants import C_SI, G_SI, GAMMA, MRSUN_SI, MSUN_SI, MTSUN_SI, PC_SI, PI
+from pycbc.types import Array, FrequencySeries, complex64, zeros
 
 preamble = ""
 
@@ -110,7 +108,8 @@ phenomC_text = """
 
 """
 
-phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, double delta_f, double PI,
+phenomC_kernel = ElementwiseKernel(
+    """pycuda::complex<double> *htilde, int kmin, double delta_f, double PI,
                                        double eta, double Xi, double distance,
                                        double m_sec, double piM, double Mfrd,
                                        double pfaN, double pfa2, double pfa3, double pfa4,
@@ -125,11 +124,13 @@ phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin,
                                        double A2, double A3, double A4, double A5,
                                        double A5imag, double A6, double A6log, double A6imag,
                                        double g1, double del1, double del2, double Q""",
-                    phenomC_text, "phenomC_kernel",
-                    preamble=preamble)
+    phenomC_text,
+    "phenomC_kernel",
+    preamble=preamble,
+)
 
 
-def FinalSpin( Xi, eta ):
+def FinalSpin(Xi, eta):
     """Computes the spin of the final BH that gets formed after merger. This is done usingn Eq 5-6 of arXiv:0710.3345"""
     s4 = -0.129
     s5 = -0.384
@@ -137,39 +138,52 @@ def FinalSpin( Xi, eta ):
     t2 = -3.454
     t3 = 2.353
     etaXi = eta * Xi
-    eta2 = eta*eta
-    finspin = (Xi + s4*Xi*etaXi + s5*etaXi*eta + t0*etaXi + 2.*(3.**0.5)*eta + t2*eta2 + t3*eta2*eta)
+    eta2 = eta * eta
+    finspin = (
+        Xi
+        + s4 * Xi * etaXi
+        + s5 * etaXi * eta
+        + t0 * etaXi
+        + 2.0 * (3.0**0.5) * eta
+        + t2 * eta2
+        + t3 * eta2 * eta
+    )
     if finspin > 1.0:
         raise ValueError("Value of final spin > 1.0. Aborting")
-    else:
-        return finspin
+    return finspin
 
-def fRD( a, M):
+
+def fRD(a, M):
     """Calculate the ring-down frequency for the final Kerr BH. Using Eq. 5.5 of Main paper"""
-    f = (C_SI**3.0 / (2.0*PI*G_SI*M*MSUN_SI)) * (1.5251 - 1.1568*(1.0-a)**0.1292)
+    f = (C_SI**3.0 / (2.0 * PI * G_SI * M * MSUN_SI)) * (
+        1.5251 - 1.1568 * (1.0 - a) ** 0.1292
+    )
     return f
 
-def Qa( a ):
-    """Calculate the quality factor of ring-down, using Eq 5.6 of Main paper"""
-    return (0.7 + 1.4187*(1.0-a)**-0.4990)
 
-#Functions to calculate the Tanh window, defined in Eq 5.8 of the main paper
+def Qa(a):
+    """Calculate the quality factor of ring-down, using Eq 5.6 of Main paper"""
+    return 0.7 + 1.4187 * (1.0 - a) ** -0.4990
+
+
+# Functions to calculate the Tanh window, defined in Eq 5.8 of the main paper
 def imrphenomc_tmplt(**kwds):
-    """ Return an IMRPhenomC waveform using CUDA to generate the phase and amplitude
-      Main Paper: arXiv:1005.3306
+    """
+    Return an IMRPhenomC waveform using CUDA to generate the phase and amplitude
+    Main Paper: arXiv:1005.3306
     """
     # Pull out the input arguments
-    f_min = float128(kwds['f_lower'])
-    f_max = float128(kwds['f_final'])
-    delta_f = float128(kwds['delta_f'])
-    distance = float128(kwds['distance'])
-    mass1 = float128(kwds['mass1'])
-    mass2 = float128(kwds['mass2'])
-    spin1z = float128(kwds['spin1z'])
-    spin2z = float128(kwds['spin2z'])
+    f_min = float128(kwds["f_lower"])
+    f_max = float128(kwds["f_final"])
+    delta_f = float128(kwds["delta_f"])
+    distance = float128(kwds["distance"])
+    mass1 = float128(kwds["mass1"])
+    mass2 = float128(kwds["mass2"])
+    spin1z = float128(kwds["spin1z"])
+    spin2z = float128(kwds["spin2z"])
 
-    if 'out' in kwds:
-        out = kwds['out']
+    if "out" in kwds:
+        out = kwds["out"]
     else:
         out = None
 
@@ -177,15 +191,17 @@ def imrphenomc_tmplt(**kwds):
     M = mass1 + mass2
     eta = mass1 * mass2 / (M * M)
     Xi = (mass1 * spin1z / M) + (mass2 * spin2z / M)
-    Xisum = 2.*Xi
-    Xiprod = Xi*Xi
-    Xi2 = Xi*Xi
+    Xisum = 2.0 * Xi
+    Xiprod = Xi * Xi
+    Xi2 = Xi * Xi
 
     m_sec = M * MTSUN_SI
     piM = PI * m_sec
 
     ## The units of distance given as input is taken to pe Mpc. Converting to SI
-    distance *= (1.0e6 * PC_SI / (2. * sqrt(5. / (64.*PI)) * M * MRSUN_SI * M * MTSUN_SI))
+    distance *= (
+        1.0e6 * PC_SI / (2.0 * sqrt(5.0 / (64.0 * PI)) * M * MRSUN_SI * M * MTSUN_SI)
+    )
 
     # Check if the value of f_max is correctly given, else replace with the fCut
     # used in the PhenomB code in lalsimulation. The various coefficients come
@@ -205,38 +221,38 @@ def imrphenomc_tmplt(**kwds):
     z201 = 5.962e-01
     z202 = -5.600e-02
     z211 = 1.520e-01
-    z210 = -2.970e+00
-    z220 = 1.312e+01
+    z210 = -2.970e00
+    z220 = 1.312e01
 
-    z301 = -3.283e+01
-    z302 = 8.859e+00
-    z311 = 2.931e+01
-    z310 = 7.954e+01
-    z320 = -4.349e+02
+    z301 = -3.283e01
+    z302 = 8.859e00
+    z311 = 2.931e01
+    z310 = 7.954e01
+    z320 = -4.349e02
 
-    z401 = 1.619e+02
-    z402 = -4.702e+01
-    z411 = -1.751e+02
-    z410 = -3.225e+02
-    z420 = 1.587e+03
+    z401 = 1.619e02
+    z402 = -4.702e01
+    z411 = -1.751e02
+    z410 = -3.225e02
+    z420 = 1.587e03
 
-    z501 = -6.320e+02
-    z502 = 2.463e+02
-    z511 = 1.048e+03
-    z510 = 3.355e+02
-    z520 = -5.115e+03
+    z501 = -6.320e02
+    z502 = 2.463e02
+    z511 = 1.048e03
+    z510 = 3.355e02
+    z520 = -5.115e03
 
-    z601 = -4.809e+01
-    z602 = -3.643e+02
-    z611 = -5.215e+02
-    z610 = 1.870e+03
-    z620 = 7.354e+02
+    z601 = -4.809e01
+    z602 = -3.643e02
+    z611 = -5.215e02
+    z610 = 1.870e03
+    z620 = 7.354e02
 
-    z701 = 4.149e+00
-    z702 = -4.070e+00
-    z711 = -8.752e+01
-    z710 = -4.897e+01
-    z720 = 6.665e+02
+    z701 = 4.149e00
+    z702 = -4.070e00
+    z711 = -8.752e01
+    z710 = -4.897e01
+    z720 = 6.665e02
 
     z801 = -5.472e-02
     z802 = 2.094e-02
@@ -244,13 +260,13 @@ def imrphenomc_tmplt(**kwds):
     z810 = 1.151e-01
     z820 = 9.640e-01
 
-    z901 = -1.235e+00
+    z901 = -1.235e00
     z902 = 3.423e-01
-    z911 = 6.062e+00
-    z910 = 5.949e+00
-    z920 = -1.069e+01
+    z911 = 6.062e00
+    z910 = 5.949e00
+    z920 = -1.069e01
 
-    eta2 = eta*eta
+    eta2 = eta * eta
     Xi2 = Xiprod
 
     # Calculate alphas, gamma, deltas from Table II and Eq 5.14 of Main paper
@@ -267,11 +283,11 @@ def imrphenomc_tmplt(**kwds):
     del2 = z901 * Xi + z902 * Xi2 + z911 * eta * Xi + z910 * eta + z920 * eta2
 
     # Get the spin of the final BH
-    afin = FinalSpin( Xi, eta )
-    Q = Qa( abs(afin) )
+    afin = FinalSpin(Xi, eta)
+    Q = Qa(abs(afin))
 
     # Get the fRD
-    frd = fRD( abs(afin), M)
+    frd = fRD(abs(afin), M)
     Mfrd = frd * m_sec
 
     # Define the frequencies where SPA->PM->RD
@@ -287,88 +303,152 @@ def imrphenomc_tmplt(**kwds):
 
     # Now use this frequency for calculation of betas
     # calculate beta1 and beta2, that appear in Eq 5.7 in the main paper.
-    b2 = ((-5./3.)* a1 * pow(Mfrd,(-8./3.)) - a2/(Mfrd*Mfrd) - \
-      (a3/3.)*pow(Mfrd,(-4./3.)) + (2./3.)* a5 * pow(Mfrd,(-1./3.)) + a6)/eta
+    b2 = (
+        (-5.0 / 3.0) * a1 * pow(Mfrd, (-8.0 / 3.0))
+        - a2 / (Mfrd * Mfrd)
+        - (a3 / 3.0) * pow(Mfrd, (-4.0 / 3.0))
+        + (2.0 / 3.0) * a5 * pow(Mfrd, (-1.0 / 3.0))
+        + a6
+    ) / eta
 
-    psiPMrd = (a1 * pow(Mfrd,(-5./3.)) + a2/Mfrd + a3 * pow(Mfrd,(-1./3.)) + \
-      a4 + a5 * pow(Mfrd,(2./3.)) + a6 * Mfrd)/eta
+    psiPMrd = (
+        a1 * pow(Mfrd, (-5.0 / 3.0))
+        + a2 / Mfrd
+        + a3 * pow(Mfrd, (-1.0 / 3.0))
+        + a4
+        + a5 * pow(Mfrd, (2.0 / 3.0))
+        + a6 * Mfrd
+    ) / eta
     b1 = psiPMrd - (b2 * Mfrd)
 
     ### Calculate the PN coefficients, Eq A3 - A5 of main paper ###
-    pfaN = 3.0/(128.0 * eta)
-    pfa2 = (3715./756.) + (55.*eta/9.0)
-    pfa3 = -16.0*PI + (113./3.)*Xi - 38.*eta*Xisum/3.
-    pfa4 = (152.93365/5.08032) - 50.*Xi2 + eta*(271.45/5.04 + 1.25*Xiprod) + \
-        3085.*eta2/72.
-    pfa5 = PI*(386.45/7.56 - 65.*eta/9.) - \
-        Xi*(735.505/2.268 + 130.*eta/9.) + Xisum*(1285.0*eta/8.1 + 170.*eta2/9.) - \
-        10.*Xi2*Xi/3. + 10.*eta*Xi*Xiprod
-    pfa6 = 11583.231236531/4.694215680 - 640.0*PI*PI/3. - \
-        6848.0*GAMMA/21. - 684.8*log(64.)/6.3 + \
-        eta*(2255.*PI*PI/12. - 15737.765635/3.048192) + \
-        76.055*eta2/1.728 - (127.825*eta2*eta/1.296) + \
-        2920.*PI*Xi/3. - (175. - 1490.*eta)*Xi2/3. - \
-        (1120.*PI/3. - 1085.*Xi/3.)*eta*Xisum + \
-        (269.45*eta/3.36 - 2365.*eta2/6.)*Xiprod
+    pfaN = 3.0 / (128.0 * eta)
+    pfa2 = (3715.0 / 756.0) + (55.0 * eta / 9.0)
+    pfa3 = -16.0 * PI + (113.0 / 3.0) * Xi - 38.0 * eta * Xisum / 3.0
+    pfa4 = (
+        (152.93365 / 5.08032)
+        - 50.0 * Xi2
+        + eta * (271.45 / 5.04 + 1.25 * Xiprod)
+        + 3085.0 * eta2 / 72.0
+    )
+    pfa5 = (
+        PI * (386.45 / 7.56 - 65.0 * eta / 9.0)
+        - Xi * (735.505 / 2.268 + 130.0 * eta / 9.0)
+        + Xisum * (1285.0 * eta / 8.1 + 170.0 * eta2 / 9.0)
+        - 10.0 * Xi2 * Xi / 3.0
+        + 10.0 * eta * Xi * Xiprod
+    )
+    pfa6 = (
+        11583.231236531 / 4.694215680
+        - 640.0 * PI * PI / 3.0
+        - 6848.0 * GAMMA / 21.0
+        - 684.8 * log(64.0) / 6.3
+        + eta * (2255.0 * PI * PI / 12.0 - 15737.765635 / 3.048192)
+        + 76.055 * eta2 / 1.728
+        - (127.825 * eta2 * eta / 1.296)
+        + 2920.0 * PI * Xi / 3.0
+        - (175.0 - 1490.0 * eta) * Xi2 / 3.0
+        - (1120.0 * PI / 3.0 - 1085.0 * Xi / 3.0) * eta * Xisum
+        + (269.45 * eta / 3.36 - 2365.0 * eta2 / 6.0) * Xiprod
+    )
 
-    pfa6log = -6848./63.
+    pfa6log = -6848.0 / 63.0
 
-    pfa7 = PI*(770.96675/2.54016 + 378.515*eta/1.512 - 740.45*eta2/7.56) - \
-        Xi*(20373.952415/3.048192 + 1509.35*eta/2.24 - 5786.95*eta2/4.32) + \
-        Xisum*(4862.041225*eta/1.524096 + 1189.775*eta2/1.008 - 717.05*eta2*eta/2.16 - 830.*eta*Xi2/3. + 35.*eta2*Xiprod/3.) - \
-        560.*PI*Xi2 + 20.*PI*eta*Xiprod + \
-        Xi2*Xi*(945.55/1.68 - 85.*eta) + Xi*Xiprod*(396.65*eta/1.68 + 255.*eta2)
+    pfa7 = (
+        PI * (770.96675 / 2.54016 + 378.515 * eta / 1.512 - 740.45 * eta2 / 7.56)
+        - Xi * (20373.952415 / 3.048192 + 1509.35 * eta / 2.24 - 5786.95 * eta2 / 4.32)
+        + Xisum
+        * (
+            4862.041225 * eta / 1.524096
+            + 1189.775 * eta2 / 1.008
+            - 717.05 * eta2 * eta / 2.16
+            - 830.0 * eta * Xi2 / 3.0
+            + 35.0 * eta2 * Xiprod / 3.0
+        )
+        - 560.0 * PI * Xi2
+        + 20.0 * PI * eta * Xiprod
+        + Xi2 * Xi * (945.55 / 1.68 - 85.0 * eta)
+        + Xi * Xiprod * (396.65 * eta / 1.68 + 255.0 * eta2)
+    )
 
+    xdotaN = 64.0 * eta / 5.0
+    xdota2 = -7.43 / 3.36 - 11.0 * eta / 4.0
+    xdota3 = 4.0 * PI - 11.3 * Xi / 1.2 + 19.0 * eta * Xisum / 6.0
+    xdota4 = (
+        3.4103 / 1.8144
+        + 5 * Xi2
+        + eta * (13.661 / 2.016 - Xiprod / 8.0)
+        + 5.9 * eta2 / 1.8
+    )
+    xdota5 = (
+        -PI * (41.59 / 6.72 + 189.0 * eta / 8.0)
+        - Xi * (31.571 / 1.008 - 116.5 * eta / 2.4)
+        + Xisum * (21.863 * eta / 1.008 - 79.0 * eta2 / 6.0)
+        - 3 * Xi * Xi2 / 4.0
+        + 9.0 * eta * Xi * Xiprod / 4.0
+    )
+    xdota6 = (
+        164.47322263 / 1.39708800
+        - 17.12 * GAMMA / 1.05
+        + 16.0 * PI * PI / 3
+        - 8.56 * log(16.0) / 1.05
+        + eta * (45.1 * PI * PI / 4.8 - 561.98689 / 2.17728)
+        + 5.41 * eta2 / 8.96
+        - 5.605 * eta * eta2 / 2.592
+        - 80.0 * PI * Xi / 3.0
+        + eta * Xisum * (20.0 * PI / 3.0 - 113.5 * Xi / 3.6)
+        + Xi2 * (64.153 / 1.008 - 45.7 * eta / 3.6)
+        - Xiprod * (7.87 * eta / 1.44 - 30.37 * eta2 / 1.44)
+    )
 
-    xdotaN = 64.*eta/5.
-    xdota2 = -7.43/3.36 - 11.*eta/4.
-    xdota3 = 4.*PI - 11.3*Xi/1.2 + 19.*eta*Xisum/6.
-    xdota4 = 3.4103/1.8144 + 5*Xi2 + eta*(13.661/2.016 - Xiprod/8.) + 5.9*eta2/1.8
-    xdota5 = -PI*(41.59/6.72 + 189.*eta/8.) - Xi*(31.571/1.008 - 116.5*eta/2.4) + \
-          Xisum*(21.863*eta/1.008 - 79.*eta2/6.) - 3*Xi*Xi2/4. + \
-          9.*eta*Xi*Xiprod/4.
-    xdota6 = 164.47322263/1.39708800 - 17.12*GAMMA/1.05 + \
-          16.*PI*PI/3 - 8.56*log(16.)/1.05 + \
-          eta*(45.1*PI*PI/4.8 - 561.98689/2.17728) + \
-          5.41*eta2/8.96 - 5.605*eta*eta2/2.592 - 80.*PI*Xi/3. + \
-          eta*Xisum*(20.*PI/3. - 113.5*Xi/3.6) + \
-          Xi2*(64.153/1.008 - 45.7*eta/3.6) - \
-          Xiprod*(7.87*eta/1.44 - 30.37*eta2/1.44)
+    xdota6log = -856.0 / 105.0
 
-    xdota6log = -856./105.
+    xdota7 = (
+        -PI * (4.415 / 4.032 - 358.675 * eta / 6.048 - 91.495 * eta2 / 1.512)
+        - Xi * (252.9407 / 2.7216 - 845.827 * eta / 6.048 + 415.51 * eta2 / 8.64)
+        + Xisum
+        * (
+            158.0239 * eta / 5.4432
+            - 451.597 * eta2 / 6.048
+            + 20.45 * eta2 * eta / 4.32
+            + 107.0 * eta * Xi2 / 6.0
+            - 5.0 * eta2 * Xiprod / 24.0
+        )
+        + 12.0 * PI * Xi2
+        - Xi2 * Xi * (150.5 / 2.4 + eta / 8.0)
+        + Xi * Xiprod * (10.1 * eta / 2.4 + 3.0 * eta2 / 8.0)
+    )
 
-    xdota7 = -PI*(4.415/4.032 - 358.675*eta/6.048 - 91.495*eta2/1.512) - \
-          Xi*(252.9407/2.7216 - 845.827*eta/6.048 + 415.51*eta2/8.64) + \
-          Xisum*(158.0239*eta/5.4432 - 451.597*eta2/6.048 + 20.45*eta2*eta/4.32 + 107.*eta*Xi2/6. - 5.*eta2*Xiprod/24.) + \
-          12.*PI*Xi2 - Xi2*Xi*(150.5/2.4 + eta/8.) + \
-          Xi*Xiprod*(10.1*eta/2.4 + 3.*eta2/8.)
+    AN = 8.0 * eta * sqrt(PI / 5.0)
+    A2 = (-107.0 + 55.0 * eta) / 42.0
+    A3 = 2.0 * PI - 4.0 * Xi / 3.0 + 2.0 * eta * Xisum / 3.0
+    A4 = -2.173 / 1.512 - eta * (10.69 / 2.16 - 2.0 * Xiprod) + 2.047 * eta2 / 1.512
+    A5 = -10.7 * PI / 2.1 + eta * (3.4 * PI / 2.1)
 
+    A5imag = -24.0 * eta
 
-    AN = 8.*eta*sqrt(PI/5.)
-    A2 = (-107. + 55.*eta)/42.
-    A3 = 2.*PI - 4.*Xi/3. + 2.*eta*Xisum/3.
-    A4 = -2.173/1.512 - eta*(10.69/2.16 - 2.*Xiprod) + 2.047*eta2/1.512
-    A5 = -10.7*PI/2.1 + eta*(3.4*PI/2.1)
+    A6 = (
+        270.27409 / 6.46800
+        - 8.56 * GAMMA / 1.05
+        + 2.0 * PI * PI / 3.0
+        + eta * (4.1 * PI * PI / 9.6 - 27.8185 / 3.3264)
+        - 20.261 * eta2 / 2.772
+        + 11.4635 * eta * eta2 / 9.9792
+        - 4.28 * log(16.0) / 1.05
+    )
 
-    A5imag = -24.*eta
+    A6log = -428.0 / 105.0
 
-    A6 = 270.27409/6.46800 - 8.56*GAMMA/1.05 + \
-      2.*PI*PI/3. + \
-      eta*(4.1*PI*PI/9.6 - 27.8185/3.3264) - \
-      20.261*eta2/2.772 + 11.4635*eta*eta2/9.9792 - \
-      4.28*log(16.)/1.05
-
-    A6log = -428./105.
-
-    A6imag = 4.28*PI/1.05
+    A6imag = 4.28 * PI / 1.05
 
     ### Define other parameters needed by waveform generation ###
     kmin = int(f_min / delta_f)
     kmax = int(f_max / delta_f)
-    n = kmax + 1;
-
+    n = kmax + 1
     if not out:
-        htilde = FrequencySeries(zeros(n,dtype=numpy.complex128), delta_f=delta_f, copy=False)
+        htilde = FrequencySeries(
+            zeros(n, dtype=numpy.complex128), delta_f=delta_f, copy=False
+        )
     else:
         if type(out) is not Array:
             raise TypeError("Output must be an instance of Array")
@@ -378,16 +458,61 @@ def imrphenomc_tmplt(**kwds):
             raise TypeError("Output array is the wrong dtype")
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
 
-    phenomC_kernel(htilde.data[kmin:kmax], kmin, delta_f, PI, eta, Xi, distance,
-                                       m_sec,  piM,  Mfrd,
-                                       pfaN,  pfa2,  pfa3,  pfa4, pfa5,  pfa6,  pfa6log,  pfa7,
-                                       a1,  a2,  a3,  a4, a5,  a6,  b1,  b2,
-                                       Mf1,  Mf2,  Mf0, d1,  d2,  d0,
-                                       xdota2,  xdota3,  xdota4, xdota5,  xdota6,  xdota6log,
-                                       xdota7,  xdotaN,  AN, A2,  A3,  A4,  A5,
-                                       A5imag,  A6,  A6log,  A6imag,
-                                       g1,  del1,  del2,  Q )
+    phenomC_kernel(
+        htilde.data[kmin:kmax],
+        kmin,
+        delta_f,
+        PI,
+        eta,
+        Xi,
+        distance,
+        m_sec,
+        piM,
+        Mfrd,
+        pfaN,
+        pfa2,
+        pfa3,
+        pfa4,
+        pfa5,
+        pfa6,
+        pfa6log,
+        pfa7,
+        a1,
+        a2,
+        a3,
+        a4,
+        a5,
+        a6,
+        b1,
+        b2,
+        Mf1,
+        Mf2,
+        Mf0,
+        d1,
+        d2,
+        d0,
+        xdota2,
+        xdota3,
+        xdota4,
+        xdota5,
+        xdota6,
+        xdota6log,
+        xdota7,
+        xdotaN,
+        AN,
+        A2,
+        A3,
+        A4,
+        A5,
+        A5imag,
+        A6,
+        A6log,
+        A6imag,
+        g1,
+        del1,
+        del2,
+        Q,
+    )
     hp = htilde
     hc = htilde * 1j
     return hp, hc
-

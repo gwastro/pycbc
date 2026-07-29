@@ -14,35 +14,44 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Make tables describing a missed injection"""
+"""Make tables describing a missed injection"""
+
 import argparse
 import sys
+
 import numpy
 
-import pycbc.results
-from pycbc import conversions as conv
 import pycbc.pnutils
-from pycbc import init_logging, add_common_pycbc_options
+import pycbc.results
+from pycbc import add_common_pycbc_options, init_logging
+from pycbc import conversions as conv
 from pycbc.detector import Detector
 from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument('--output-file')
-parser.add_argument('--injection-file', required=True,
-    help="The HDF format injection file. Required")
-parser.add_argument('--injection-index', type=int, required=True,
-    help="The index of the injection to print out. Required")
-parser.add_argument('--n-nearest', type=int,
-    help="Optional, used in the title")
-parser.add_argument('--max-columns', type=int,
-    help="Optional, maximum number of columns used for the table")
+parser.add_argument("--output-file")
+parser.add_argument(
+    "--injection-file", required=True, help="The HDF format injection file. Required"
+)
+parser.add_argument(
+    "--injection-index",
+    type=int,
+    required=True,
+    help="The index of the injection to print out. Required",
+)
+parser.add_argument("--n-nearest", type=int, help="Optional, used in the title")
+parser.add_argument(
+    "--max-columns",
+    type=int,
+    help="Optional, maximum number of columns used for the table",
+)
 
 args = parser.parse_args()
 
 init_logging(args.verbose)
 
-f = HFile(args.injection_file, 'r')
+f = HFile(args.injection_file, "r")
 iidx = args.injection_index
 
 # make a table for the coincident information #################################
@@ -51,85 +60,102 @@ headers = []
 data = []
 
 labels = {
-    'tc': 'End&nbsp;time',
-    'dec_chirp_dist': 'Dec.&nbsp;chirp dist (HL)',
-    'eff_dist_h'    : 'D<sub>eff</sub>&nbsp;H',
-    'eff_dist_l'    : 'D<sub>eff</sub>&nbsp;L',
-    'eff_dist_v'    : 'D<sub>eff</sub>&nbsp;V',
-    'mass1'      : 'm<sub>1</sub>',
-    'mass2'      : 'm<sub>2</sub>',
-    'mchirp'     : 'M<sub>c</sub>',
-    'eta'        : '&eta;',
-    'ra'  : 'RA',
-    'dec'   : 'Dec',
-    'inclination': '&iota;',
-    'spin1x': 's<sub>1x</sub>',
-    'spin1y': 's<sub>1y</sub>',
-    'spin1z': 's<sub>1z</sub>',
-    'spin2x': 's<sub>2x</sub>',
-    'spin2y': 's<sub>2y</sub>',
-    'spin2z': 's<sub>2z</sub>',
-    'chieff': '&chi;<sub>eff</sub>',
-    'chip': '&chi;<sub>p</sub>',
-    'eccentricity': 'eccentricity',
-    'rel_anomaly': 'anomaly',
+    "tc": "End&nbsp;time",
+    "dec_chirp_dist": "Dec.&nbsp;chirp dist (HL)",
+    "eff_dist_h": "D<sub>eff</sub>&nbsp;H",
+    "eff_dist_l": "D<sub>eff</sub>&nbsp;L",
+    "eff_dist_v": "D<sub>eff</sub>&nbsp;V",
+    "mass1": "m<sub>1</sub>",
+    "mass2": "m<sub>2</sub>",
+    "mchirp": "M<sub>c</sub>",
+    "eta": "&eta;",
+    "ra": "RA",
+    "dec": "Dec",
+    "inclination": "&iota;",
+    "spin1x": "s<sub>1x</sub>",
+    "spin1y": "s<sub>1y</sub>",
+    "spin1z": "s<sub>1z</sub>",
+    "spin2x": "s<sub>2x</sub>",
+    "spin2y": "s<sub>2y</sub>",
+    "spin2z": "s<sub>2z</sub>",
+    "chieff": "&chi;<sub>eff</sub>",
+    "chip": "&chi;<sub>p</sub>",
+    "eccentricity": "eccentricity",
+    "rel_anomaly": "anomaly",
 }
 
-params += ['tc']
+params += ["tc"]
 
-m1, m2 = f['injections']['mass1'][iidx], f['injections']['mass2'][iidx]
-s1x, s2x = f['injections']['spin1x'][iidx], f['injections']['spin2x'][iidx]
-s1y, s2y = f['injections']['spin1y'][iidx], f['injections']['spin2y'][iidx]
-s1z, s2z = f['injections']['spin1z'][iidx], f['injections']['spin2z'][iidx]
+m1, m2 = f["injections"]["mass1"][iidx], f["injections"]["mass2"][iidx]
+s1x, s2x = f["injections"]["spin1x"][iidx], f["injections"]["spin2x"][iidx]
+s1y, s2y = f["injections"]["spin1y"][iidx], f["injections"]["spin2y"][iidx]
+s1z, s2z = f["injections"]["spin1z"][iidx], f["injections"]["spin2z"][iidx]
 try:
-    eccentricity, rel_anomaly = f['injections']['eccentricity'][iidx], f['injections']['rel_anomaly'][iidx]
+    eccentricity, rel_anomaly = (
+        f["injections"]["eccentricity"][iidx],
+        f["injections"]["rel_anomaly"][iidx],
+    )
 except KeyError:
     eccentricity, rel_anomaly = 0, 0
 
 derived = {}
-derived['mchirp'], derived['eta'] = \
-    pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-derived['mtotal'] = conv.mtotal_from_mass1_mass2(m1, m2)
-derived['chieff'] = conv.chi_eff(m1, m2, s1z, s2z)
-derived['chip'] = conv.chi_p(m1, m2, s1x, s1y, s2x, s2y)
+derived["mchirp"], derived["eta"] = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+derived["mtotal"] = conv.mtotal_from_mass1_mass2(m1, m2)
+derived["chieff"] = conv.chi_eff(m1, m2, s1z, s2z)
+derived["chip"] = conv.chi_p(m1, m2, s1x, s1y, s2x, s2y)
 
-if 'optimal_snr' in ' '.join(list(f['injections'].keys())):
-    ifolist = f.attrs['ifos'].split(' ')
+if "optimal_snr" in " ".join(list(f["injections"].keys())):
+    ifolist = f.attrs["ifos"].split(" ")
     for ifo in ifolist:
-        labels['optimal_snr_%s' % ifo] = 'Opt.&nbsp;SNR %s' % ifo
-        params += ['optimal_snr_%s' % ifo]
+        labels["optimal_snr_%s" % ifo] = "Opt.&nbsp;SNR %s" % ifo
+        params += ["optimal_snr_%s" % ifo]
 else:
     eff_dist = {}
-    for ifo in ['H1', 'L1', 'V1']:
+    for ifo in ["H1", "L1", "V1"]:
         eff_dist[ifo] = Detector(ifo).effective_distance(
-            f['injections/distance'][iidx],
-            f['injections/ra'][iidx],
-            f['injections/dec'][iidx],
-            f['injections/polarization'][iidx],
-            f['injections/tc'][iidx],
-            f['injections/inclination'][iidx]
+            f["injections/distance"][iidx],
+            f["injections/ra"][iidx],
+            f["injections/dec"][iidx],
+            f["injections/polarization"][iidx],
+            f["injections/tc"][iidx],
+            f["injections/inclination"][iidx],
         )
-    params += ['dec_chirp_dist', 'eff_dist_h', 'eff_dist_l', 'eff_dist_v']
-    dec_dist = max(eff_dist['H1'], eff_dist['L1'])
+    params += ["dec_chirp_dist", "eff_dist_h", "eff_dist_l", "eff_dist_v"]
+    dec_dist = max(eff_dist["H1"], eff_dist["L1"])
     dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
-params += ['mass1', 'mass2', 'mchirp', 'eta', 'ra', 'dec',
-            'inclination', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
-            'spin2z', 'chieff', 'chip','eccentricity', 'rel_anomaly']
+params += [
+    "mass1",
+    "mass2",
+    "mchirp",
+    "eta",
+    "ra",
+    "dec",
+    "inclination",
+    "spin1x",
+    "spin1y",
+    "spin1z",
+    "spin2x",
+    "spin2y",
+    "spin2z",
+    "chieff",
+    "chip",
+    "eccentricity",
+    "rel_anomaly",
+]
 
 for p in params:
-
-    if p in f['injections']:
-        data += ["%.2f" % f['injections'][p][iidx]]
-    elif p in derived.keys():
-        data += [f'{derived[p]:.2f}']
-    elif 'eff_dist' in p:
-        ifo = '%s1' % p.split('_')[-1]
+    if p in f["injections"]:
+        data += ["%.2f" % f["injections"][p][iidx]]
+    elif p in derived:
+        data += [f"{derived[p]:.2f}"]
+    elif "eff_dist" in p:
+        ifo = "%s1" % p.split("_")[-1]
         data += ["%.2f" % eff_dist[ifo.upper()]]
-    elif p == 'dec_chirp_dist':
+    elif p == "dec_chirp_dist":
         data += ["%.2f" % dec_chirp_dist]
     else:
-        print("No data for {}, so skipping".format(p))
+        print(f"No data for {p}, so skipping")
         continue
 
     headers += [labels[p]]
@@ -137,11 +163,15 @@ for p in params:
 table = numpy.array([data], dtype=str)
 html = str(pycbc.results.static_table(table, headers, columns_max=args.max_columns))
 
-tag = ''
+tag = ""
 if args.n_nearest is not None:
-    tag = ':%s' % (args.n_nearest + 1)
+    tag = ":%s" % (args.n_nearest + 1)
 
-pycbc.results.save_fig_with_metadata(html, args.output_file, {},
-                        cmd = ' '.join(sys.argv),
-                        title = 'Parameters of missed injection' + tag,
-                        caption = "Parameters of this injection")
+pycbc.results.save_fig_with_metadata(
+    html,
+    args.output_file,
+    {},
+    cmd=" ".join(sys.argv),
+    title="Parameters of missed injection" + tag,
+    caption="Parameters of this injection",
+)

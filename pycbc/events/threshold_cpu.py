@@ -22,19 +22,22 @@
 # =============================================================================
 #
 import logging
-import numpy
-from .simd_threshold_cython import parallel_thresh_cluster, parallel_threshold
-from .eventmgr import _BaseThresholdCluster
-from .. import opt
 
-logger = logging.getLogger('pycbc.events.threshold_cpu')
+import numpy
+
+from .. import opt
+from .eventmgr import _BaseThresholdCluster
+from .simd_threshold_cython import parallel_thresh_cluster, parallel_threshold
+
+logger = logging.getLogger("pycbc.events.threshold_cpu")
 
 l2_cache_size = opt.get_l2_cache_size()
 if l2_cache_size is not None:
-    default_segsize = l2_cache_size // numpy.dtype('complex64').itemsize
+    default_segsize = l2_cache_size // numpy.dtype("complex64").itemsize
 else:
     # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?
     default_segsize = 32768
+
 
 def threshold_numpy(series, value):
     arr = series.data
@@ -46,6 +49,8 @@ def threshold_numpy(series, value):
 outl = None
 outv = None
 count = None
+
+
 def threshold_inline(series, value):
     arr = numpy.array(series.data, copy=False, dtype=numpy.complex64)
     global outl, outv, count
@@ -60,8 +65,8 @@ def threshold_inline(series, value):
     num = count[0]
     if num > 0:
         return outl[0:num], outv[0:num]
-    else:
-        return numpy.array([], numpy.uint32), numpy.array([], numpy.float32)
+    return numpy.array([], numpy.uint32), numpy.array([], numpy.float32)
+
 
 # threshold_numpy can also be used here, but for now we use the inline code
 # in all instances. Not sure why we're defining threshold *and* threshold_only
@@ -69,25 +74,30 @@ def threshold_inline(series, value):
 threshold = threshold_inline
 threshold_only = threshold_inline
 
+
 class CPUThresholdCluster(_BaseThresholdCluster):
     def __init__(self, series):
-        self.series = numpy.array(series.data, copy=False,
-                                  dtype=numpy.complex64)
+        self.series = numpy.array(series.data, copy=False, dtype=numpy.complex64)
         self.slen = numpy.uint32(len(series))
         self.outv = numpy.zeros(self.slen, numpy.complex64)
         self.outl = numpy.zeros(self.slen, numpy.uint32)
         self.segsize = numpy.uint32(default_segsize)
 
     def threshold_and_cluster(self, threshold, window):
-        self.count = parallel_thresh_cluster(self.series, self.slen,
-                                             self.outv, self.outl,
-                                             numpy.float32(threshold),
-                                             numpy.uint32(window),
-                                             self.segsize)
+        self.count = parallel_thresh_cluster(
+            self.series,
+            self.slen,
+            self.outv,
+            self.outl,
+            numpy.float32(threshold),
+            numpy.uint32(window),
+            self.segsize,
+        )
         if self.count > 0:
-            return self.outv[0:self.count], self.outl[0:self.count]
-        else:
-            return numpy.array([], dtype = numpy.complex64), numpy.array([], dtype = numpy.uint32)
+            return self.outv[0 : self.count], self.outl[0 : self.count]
+        return numpy.array([], dtype=numpy.complex64), numpy.array(
+            [], dtype=numpy.uint32
+        )
 
 
 def _threshold_cluster_factory(series):

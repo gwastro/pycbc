@@ -21,51 +21,69 @@ Program for concatenating the output of the geometric aligned bank dagman.
 This will gather all the meta-output files and create a valid template bank
 xml file.
 """
-import glob
+
 import argparse
+import glob
+
 import numpy
+import pycbc.version
 from igwn_ligolw import utils
-from pycbc import tmpltbank
-# Old ligolw output functions no longer imported at package level
-import pycbc.tmpltbank.bank_output_utils as bank_output
+
 import pycbc
 import pycbc.psd
 import pycbc.strain
-import pycbc.version
-from pycbc.io.ligolw import LIGOLWContentHandler
+
+# Old ligolw output functions no longer imported at package level
+import pycbc.tmpltbank.bank_output_utils as bank_output
+from pycbc import tmpltbank
 from pycbc.io.hdf import HFile
+from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.types import positive_float
 
-
-__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__author__ = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
+__date__ = pycbc.version.date
 __program__ = "pycbc_aligned_bank_cat"
 
 # Read command line options
-parser = argparse.ArgumentParser(description=__doc__,
-           formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
+parser = argparse.ArgumentParser(
+    description=__doc__, formatter_class=tmpltbank.IndentedHelpFormatterWithNL
+)
 
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("-i", "--input-glob",
-                    help="file glob the list of paramters")
-parser.add_argument("-I", "--input-files", nargs='+',
-                    help="Explicit list of input files.")
-parser.add_argument("-O", "--output-file",
-                    help="Output file to write the bank to.")
-parser.add_argument("--metadata-file", metavar="METADATA_FILE",
-                  help="XML file containing the process and process_params "
-                  "tables that the aligned_bank code was run with.")
-parser.add_argument("--f-low", action="store", type=positive_float,
-                    required=True,
-                    help="Lower frequency cutoff used in computing the "
-                    "parameter space metric.  REQUIRED. UNITS=Hz")
-parser.add_argument("--f-upper", action="store", type=positive_float,
-                    required=True,
-                    help="Upper frequency cutoff used in computing the "
-                    "parameter space metric.  REQUIRED. UNITS=Hz")
-parser.add_argument('--output-f-final', action='store_true', default=False,
-                    help="Include 'f_final' in the output hdf file.")
+parser.add_argument("-i", "--input-glob", help="file glob the list of paramters")
+parser.add_argument(
+    "-I", "--input-files", nargs="+", help="Explicit list of input files."
+)
+parser.add_argument("-O", "--output-file", help="Output file to write the bank to.")
+parser.add_argument(
+    "--metadata-file",
+    metavar="METADATA_FILE",
+    help="XML file containing the process and process_params "
+    "tables that the aligned_bank code was run with.",
+)
+parser.add_argument(
+    "--f-low",
+    action="store",
+    type=positive_float,
+    required=True,
+    help="Lower frequency cutoff used in computing the "
+    "parameter space metric.  REQUIRED. UNITS=Hz",
+)
+parser.add_argument(
+    "--f-upper",
+    action="store",
+    type=positive_float,
+    required=True,
+    help="Upper frequency cutoff used in computing the "
+    "parameter space metric.  REQUIRED. UNITS=Hz",
+)
+parser.add_argument(
+    "--output-f-final",
+    action="store_true",
+    default=False,
+    help="Include 'f_final' in the output hdf file.",
+)
 
 
 options = parser.parse_args()
@@ -83,22 +101,22 @@ mass2 = []
 spin1z = []
 spin2z = []
 for inp_file in input_files:
-    inp_fp = HFile(inp_file, 'r')
-    data = inp_fp['accepted_templates'][:]
+    inp_fp = HFile(inp_file, "r")
+    data = inp_fp["accepted_templates"][:]
     if len(data) == 0:
         continue
-    mass1.extend(data[:,0])
-    mass2.extend(data[:,1])
-    spin1z.extend(data[:,2])
-    spin2z.extend(data[:,3])
+    mass1.extend(data[:, 0])
+    mass2.extend(data[:, 1])
+    spin1z.extend(data[:, 2])
+    spin2z.extend(data[:, 3])
     inp_fp.close()
 
-temp_bank = numpy.array([mass1,mass2,spin1z,spin2z]).T
+temp_bank = numpy.array([mass1, mass2, spin1z, spin2z]).T
 
 if options.metadata_file:
-    outdoc = utils.load_filename(options.metadata_file,
-                                 compress='auto',
-                                 contenthandler=LIGOLWContentHandler)
+    outdoc = utils.load_filename(
+        options.metadata_file, compress="auto", contenthandler=LIGOLWContentHandler
+    )
 else:
     outdoc = None
 
@@ -109,5 +127,5 @@ bank_output.output_bank_to_file(
     output_duration=True,
     approximant="TaylorF2",
     optDict=options.__dict__,
-    outdoc=outdoc
+    outdoc=outdoc,
 )

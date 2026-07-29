@@ -21,8 +21,7 @@
 #
 # =============================================================================
 #
-"""Provides simplified standard format just for posterior data
-"""
+"""Provides simplified standard format just for posterior data"""
 
 from .base_hdf import BaseInferenceFile
 
@@ -30,7 +29,7 @@ from .base_hdf import BaseInferenceFile
 class PosteriorFile(BaseInferenceFile):
     """Class to handle file IO for the simplified Posterior file."""
 
-    name = 'posterior_file'
+    name = "posterior_file"
 
     def read_raw_samples(self, fields, **kwargs):
         return read_raw_samples_from_file(self, fields, **kwargs)
@@ -53,14 +52,15 @@ def read_raw_samples_from_file(fp, fields, **kwargs):
 
 
 def write_samples_to_file(fp, samples, parameters=None, group=None):
-    """Writes samples to the given file.
+    """
+    Writes samples to the given file.
 
     Results are written to ``samples_group/{vararg}``, where ``{vararg}``
     is the name of a model params. The samples are written as an
     array of length ``niterations``.
 
     Parameters
-    -----------
+    ----------
     fp : self
         Pass the 'self' from BaseInferenceFile class.
     samples : dict
@@ -69,19 +69,20 @@ def write_samples_to_file(fp, samples, parameters=None, group=None):
     parameters : list, optional
         Only write the specified parameters to the file. If None, will
         write all of the keys in the ``samples`` dict.
-        """
+
+    """
     # check data dimensions; we'll just use the first array in samples
     arr = list(samples.values())[0]
     if not arr.ndim == 1:
         raise ValueError("samples must be 1D arrays")
     niterations = arr.size
-    assert all(len(p) == niterations
-               for p in samples.values()), (
-        "all samples must have the same shape")
+    assert all(len(p) == niterations for p in samples.values()), (
+        "all samples must have the same shape"
+    )
     if group is not None:
-        group = group + '/{name}'
+        group = group + "/{name}"
     else:
-        group = fp.samples_group + '/{name}'
+        group = fp.samples_group + "/{name}"
     if parameters is None:
         parameters = samples.keys()
     # loop over number of dimensions
@@ -94,8 +95,11 @@ def write_samples_to_file(fp, samples, parameters=None, group=None):
                 fp[dataset_name].resize(niterations, axis=0)
         except KeyError:
             # dataset doesn't exist yet
-            fp.create_dataset(dataset_name, (niterations,),
-                              maxshape=(None,),
-                              dtype=samples[param].dtype,
-                              fletcher32=True)
+            fp.create_dataset(
+                dataset_name,
+                (niterations,),
+                maxshape=(None,),
+                dtype=samples[param].dtype,
+                fletcher32=True,
+            )
         fp[dataset_name][:] = samples[param]

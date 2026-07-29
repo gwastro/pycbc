@@ -4,29 +4,46 @@ The program combines coincident output files generated
 by pycbc_coinc_findtrigs to generated a mapping between SNR and FAP, along
 with producing the combined foreground and background triggers
 """
-import argparse, logging, pycbc.io, numpy
-from pycbc.events import significance
+
+import argparse
+import logging
+
+import numpy
+
 import pycbc.conversions as conv
+import pycbc.io
 from pycbc import init_logging
+from pycbc.events import significance
 
 parser = argparse.ArgumentParser()
 # General required options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--cluster-window', type=float, default=10,
-                    help='Length of time window in seconds to cluster coinc '
-                         'events [default=10s]')
-parser.add_argument('--zero-lag-coincs', nargs='+',
-                    help='Files containing the injection zerolag coincidences')
-parser.add_argument('--full-data-background',
-                    help='background file from full data for use in analyzing '
-                         'injection coincs')
-parser.add_argument('--veto-window', type=float, default=.1,
-                    help='Time around each zerolag trigger to window out '
-                         '[default=.1s]')
-parser.add_argument('--ifos', nargs='+',
-                    help='List of ifos used in these coincidence files')
+parser.add_argument(
+    "--cluster-window",
+    type=float,
+    default=10,
+    help="Length of time window in seconds to cluster coinc events [default=10s]",
+)
+parser.add_argument(
+    "--zero-lag-coincs",
+    nargs="+",
+    help="Files containing the injection zerolag coincidences",
+)
+parser.add_argument(
+    "--full-data-background",
+    help="background file from full data for use in analyzing injection coincs",
+)
+parser.add_argument(
+    "--veto-window",
+    type=float,
+    default=0.1,
+    help="Time around each zerolag trigger to window out [default=.1s]",
+)
+parser.add_argument(
+    "--ifos", nargs="+", help="List of ifos used in these coincidence files"
+)
 significance.insert_significance_option_group(parser)
-parser.add_argument('--output-file')
+parser.add_argument("--output-file")
 args = parser.parse_args()
 
 init_logging(args.verbose)
@@ -38,62 +55,58 @@ window = args.cluster_window
 logging.info("Loading coinc zerolag triggers")
 zdata = pycbc.io.MultiifoStatmapData(files=args.zero_lag_coincs, ifos=args.ifos)
 
-if 'ifos' in zdata.attrs:
-    ifos = zdata.attrs['ifos'].split(' ')
-    logging.info('using ifos from file {}'.format(args.zero_lag_coincs[0]))
+if "ifos" in zdata.attrs:
+    ifos = zdata.attrs["ifos"].split(" ")
+    logging.info(f"using ifos from file {args.zero_lag_coincs[0]}")
 else:
     ifos = args.ifos
-    logging.info('using ifos from command line input')
+    logging.info("using ifos from command line input")
 
-ifo_key = ''.join(ifos)
+ifo_key = "".join(ifos)
 significance_dict = significance.digest_significance_options([ifo_key], args)
 
 zdata = zdata.cluster(window)
 
 f = pycbc.io.HFile(args.output_file, "w")
 
-f.attrs['num_of_ifos'] = zdata.attrs['num_of_ifos']
-f.attrs['pivot'] = zdata.attrs['pivot']
-f.attrs['fixed'] = zdata.attrs['fixed']
-f.attrs['timeslide_interval'] = zdata.attrs['timeslide_interval']
-f.attrs['ifos'] = ' '.join(sorted(ifos))
+f.attrs["num_of_ifos"] = zdata.attrs["num_of_ifos"]
+f.attrs["pivot"] = zdata.attrs["pivot"]
+f.attrs["fixed"] = zdata.attrs["fixed"]
+f.attrs["timeslide_interval"] = zdata.attrs["timeslide_interval"]
+f.attrs["ifos"] = " ".join(sorted(ifos))
 
 # Copy over the segment for coincs and singles
 for key in zdata.seg.keys():
-    f['segments/%s/start' % key] = zdata.seg[key]['start'][:]
-    f['segments/%s/end' % key] = zdata.seg[key]['end'][:]
+    f["segments/%s/start" % key] = zdata.seg[key]["start"][:]
+    f["segments/%s/end" % key] = zdata.seg[key]["end"][:]
 
-logging.info('writing zero lag triggers')
+logging.info("writing zero lag triggers")
 if len(zdata) > 0:
     for key in zdata.data:
-        f['foreground/%s' % key] = zdata.data[key]
+        f["foreground/%s" % key] = zdata.data[key]
 else:
     for key in zdata.data:
-        f['foreground/%s' % key] = numpy.array([], dtype=zdata.data[key].dtype)
+        f["foreground/%s" % key] = numpy.array([], dtype=zdata.data[key].dtype)
 
-logging.info('calculating statistics excluding zerolag')
+logging.info("calculating statistics excluding zerolag")
 fb = pycbc.io.HFile(args.full_data_background, "r")
 
 # we expect the injfull file to contain injection data as pivot
 # and fullinj to contain full data as pivot
-background_time = float(fb.attrs['background_time'])
-coinc_time = float(fb.attrs['foreground_time'])
-back_stat = fb['background_exc/stat'][:]
-dec_fac = fb['background_exc/decimation_factor'][:]
+background_time = float(fb.attrs["background_time"])
+coinc_time = float(fb.attrs["foreground_time"])
+back_stat = fb["background_exc/stat"][:]
+dec_fac = fb["background_exc/decimation_factor"][:]
 
-f.attrs['background_time_exc'] = background_time
-f.attrs['foreground_time_exc'] = coinc_time
-f.attrs['background_time'] = background_time
-f.attrs['foreground_time'] = coinc_time
+f.attrs["background_time_exc"] = background_time
+f.attrs["foreground_time_exc"] = coinc_time
+f.attrs["background_time"] = background_time
+f.attrs["foreground_time"] = coinc_time
 
 if len(zdata) > 0:
-
     _, fg_far_exc, exc_sig_info = significance.get_far(
-        back_stat,
-        zdata.stat,
-        dec_fac,
-        background_time,
-        **significance_dict[ifo_key])
+        back_stat, zdata.stat, dec_fac, background_time, **significance_dict[ifo_key]
+    )
 
     fg_far_exc = significance.apply_far_limit(
         fg_far_exc,
@@ -101,15 +114,15 @@ if len(zdata) > 0:
         combo=ifo_key,
     )
 
-    ifar_exc = 1. / fg_far_exc
-    fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
-    f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
-    f['foreground/fap_exc'] = fap_exc
+    ifar_exc = 1.0 / fg_far_exc
+    fap_exc = 1 - numpy.exp(-coinc_time / ifar_exc)
+    f["foreground/ifar_exc"] = conv.sec_to_year(ifar_exc)
+    f["foreground/fap_exc"] = fap_exc
     for key, value in exc_sig_info.items():
-        f['foreground'].attrs[key + '_exc'] = value
+        f["foreground"].attrs[key + "_exc"] = value
 
 else:
-    f['foreground/ifar_exc'] = numpy.array([])
-    f['foreground/fap_exc'] = numpy.array([])
+    f["foreground/ifar_exc"] = numpy.array([])
+    f["foreground/fap_exc"] = numpy.array([])
 
 logging.info("Done")
