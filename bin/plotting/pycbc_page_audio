@@ -57,10 +57,6 @@ if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
 logging.info("Whitening")
 strain = strain.whiten(4, 4, remove_corrupted=rem_corrupted)
 
-# Band-pass filter
-strain = strain.highpass_fir(30.0, 8)
-strain = strain.lowpass_fir(400.0, 8)
-logging.info("processed")
 
 wins = opts.time_windows
 
