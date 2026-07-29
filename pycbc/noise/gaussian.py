@@ -104,7 +104,7 @@ def noise_from_psd(length, delta_t, psd, seed=None):
 
     randomness = lal.gsl_rng("ranlux", seed)
 
-    N = int (1.0 / delta_t / psd.delta_f)
+    N = round(1.0 / delta_t / psd.delta_f)
     n = N//2+1
     stride = N//2
 
@@ -159,6 +159,6 @@ def noise_from_string(psd_name, length, delta_t, seed=None, low_frequency_cutoff
 
     # We just need enough resolution to resolve lines
     delta_f = 1.0 / 8
-    flen = int(.5 / delta_t / delta_f) + 1
+    flen = round(.5 / delta_t / delta_f) + 1
     psd = pycbc.psd.from_string(psd_name, flen, delta_f, low_frequency_cutoff)
     return noise_from_psd(int(length), delta_t, psd, seed=seed)
