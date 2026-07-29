@@ -7,13 +7,6 @@ import logging
 
 import pycbc.strain
 
-# https://stackoverflow.com/questions/9978880/python-argument-parser-list-of-list-or-tuple-of-tuples
-def t_window(s):
-    try:
-        start, end = map(float, s.split(','))
-        return [start, end]
-    except:
-        raise argparse.ArgumentTypeError("Input must be start,end start,end")
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
