@@ -245,7 +245,6 @@ def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
 
     Examples
     --------
-    --------s
     >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
     >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10,
                          f_lower=30, delta_t=1.0/4096)
