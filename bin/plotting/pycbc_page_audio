@@ -54,7 +54,7 @@ rem_corrupted = True
 if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
     rem_corrupted = False
 
-logging.info("processing")
+logging.info("Whitening")
 strain = strain.whiten(4, 4, remove_corrupted=rem_corrupted)
 
 # Band-pass filter
