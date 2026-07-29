@@ -62,21 +62,6 @@ strain_zoom = strain.time_slice(
     args.center_time - win_start,
     args.center_time + win_end
 )
-
-
-### Audio Conversion ###
-
-
-
-audio = strain_zoom.numpy()
-audio /= np.max(np.abs(audio))
-
-
-
-logging.info(f"Saving audio to {opts.output_file}")
-#  write(f"gw_{ifo}_audio_{event}.wav", 4096, audio.astype(np.float32))
-write(opts.output_file, int(opts.sample_rate), audio.astype(np.float32))
-logging.info("Saved audio")
-
-### Audio Conversion ###
+logging.info("Saving audio to %s", args.output_file)
+strain_zoom.save_to_wav(args.output_file)
 
