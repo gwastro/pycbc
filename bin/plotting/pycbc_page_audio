@@ -22,16 +22,12 @@ parser.add_argument('--center-time', type=float,
                     help='Center plot on the given GPS time. If omitted, use '
                          'center of interval set via --gps-start-time and '
                          '--gps-end-time')
-parser.add_argument('--time-windows', required=True, type=t_window,
-                    nargs='+', metavar='START,END',
-                    help='Use these set of times for time windows. Each '
-                         'window produces a different panel. Should '
-                         'be provided as start1,end1 start2,end2 ... '
-                         'where start/end times are relative to --center-time '
-                         'and both positive')
-
-
-
+parser.add_argument('--time-window', required=True,
+                    metavar='START,END',
+                    help='Use these set of times for time window. Should '
+                         'be provided as start,end '
+                         'where start/end time is relative to --center-time; '
+                         'both are positive')
 parser.add_argument('--title',
                     help="If given, use this as the title")
 parser.add_argument('--caption',
