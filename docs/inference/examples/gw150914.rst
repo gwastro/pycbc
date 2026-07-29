@@ -3,7 +3,7 @@ GW150914 example with gaussian noise model
 ------------------------------------------
 
 To run on GW150914, we can use the same :download:`sampler
-<../../../examples/inference/samplers/emcee_pt-gw150914_like.ini>`, :download:`prior
+<../../../examples/inference/samplers/ptemcee-gw150914_like.ini>`, :download:`prior
 and model <../../../examples/inference/priors/gw150914_like.ini>` configuration files
 as was :ref:`used for the simulated BBH example<inference_example_bbh>`. We only need to change the
 data configuration file, so that we will run on real gravitational-wave data.
