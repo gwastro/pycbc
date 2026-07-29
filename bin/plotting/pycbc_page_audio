@@ -37,7 +37,17 @@ if opts.center_time is None:
     center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
 else:
     center_time = opts.center_time
-
+# Set up the time window to be audified
+try:
+    split = args.time_window.split(',')
+    win_start = float(args.time_window.split(',')[0])
+    win_end = float(args.time_window.split(',')[1])
+    if win_start <= 0 or win_end <= 0:
+        raise RuntimeError
+except (RuntimeError, IndexError, ValueError):
+    parser.error(
+        f'--time-window input error. Got {args.time_window}. See help.'
+    )
 
 logging.info("Loading Strain")
 strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
