@@ -910,7 +910,8 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
 
 
 def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
-                t0=TIME_OFFSET_20_DEGREES, use_astropy=True):
+                t0=TIME_OFFSET_20_DEGREES, use_astropy=True, orbit=None,
+                sc=(1, 2, 3)):
     """ Converting the arrive time, the sky localization, and the polarization
     from the LISA frame to the geocentric frame.
 
@@ -929,10 +930,18 @@ def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
     t0 : float
         The initial time offset of LISA, in the unit of 's',
         default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees.
+        the Earth by 19-23 degrees. Ignored if `orbit` is given.
     use_astropy : bool
         Using Astropy to calculate the sky localization or not.
         Default is True.
+    orbit : OrbitProvider, optional
+        See `ssb_to_lisa`. Default None, which reproduces the behavior of
+        previous versions of this function exactly. Only the LISA-side
+        (`lisa_to_ssb`) leg of this transform depends on the constellation
+        orbit; the geocentric frame itself is unaffected.
+    sc : tuple, optional
+        1-indexed spacecraft labels defining the constellation. Only used
+        if `orbit` is given. Default (1, 2, 3).
 
     Returns
     -------
@@ -951,7 +960,8 @@ def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
         In the unit of 'radian'.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = lisa_to_ssb(
-        t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, t0)
+        t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, t0,
+        orbit=orbit, sc=sc)
     t_geo, longitude_geo, latitude_geo, polarization_geo = ssb_to_geo(
         t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, use_astropy)
 
@@ -959,7 +969,8 @@ def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
 
 
 def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
-                t0=TIME_OFFSET_20_DEGREES, use_astropy=True):
+                t0=TIME_OFFSET_20_DEGREES, use_astropy=True, orbit=None,
+                sc=(1, 2, 3)):
     """ Converting the arrive time, the sky localization, and the polarization
     from the geocentric frame to the LISA frame.
 
@@ -980,10 +991,18 @@ def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
     t0 : float
         The initial time offset of LISA, in the unit of 's',
         default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees.
+        the Earth by 19-23 degrees. Ignored if `orbit` is given.
     use_astropy : bool
         Using Astropy to calculate the sky localization or not.
         Default is True.
+    orbit : OrbitProvider, optional
+        See `ssb_to_lisa`. Default None, which reproduces the behavior of
+        previous versions of this function exactly. Only the LISA-side
+        (`ssb_to_lisa`) leg of this transform depends on the constellation
+        orbit; the geocentric frame itself is unaffected.
+    sc : tuple, optional
+        1-indexed spacecraft labels defining the constellation. Only used
+        if `orbit` is given. Default (1, 2, 3).
 
     Returns
     -------
@@ -1002,7 +1021,8 @@ def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = geo_to_ssb(
         t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy)
     t_lisa, longitude_lisa, latitude_lisa, polarization_lisa = ssb_to_lisa(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, t0)
+        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, t0,
+        orbit=orbit, sc=sc)
 
     return (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa)
 

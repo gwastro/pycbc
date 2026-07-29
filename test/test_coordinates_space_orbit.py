@@ -478,6 +478,25 @@ class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
                 self.assertAlmostEqual(beta_rt, beta, places=6)
                 self.assertAlmostEqual(pol_rt, pol, places=6)
 
+    def test_lisa_to_geo_and_back_passes_orbit_through(self):
+        """`lisa_to_geo`/`geo_to_lisa` compose `lisa_to_ssb`/`ssb_to_lisa`
+        with `ssb_to_geo`/`geo_to_ssb`; the `orbit`/`sc` arguments must
+        reach the LISA-side leg of that composition, not be silently
+        dropped in favor of the hard-coded circular orbit.
+        """
+        lam, beta, pol = 1.0, 0.2, 0.5
+        for orbit in (self.taiji_orbit, self.tianqin_orbit):
+            for t_ssb in self.times[:5]:
+                lisa_params = space.ssb_to_lisa(
+                    t_ssb, lam, beta, pol, orbit=orbit)
+                t_geo, lam_geo, beta_geo, pol_geo = space.lisa_to_geo(
+                    *lisa_params, orbit=orbit, use_astropy=False)
+                lisa_rt = space.geo_to_lisa(
+                    t_geo, lam_geo, beta_geo, pol_geo, orbit=orbit,
+                    use_astropy=False)
+                for a, b in zip(lisa_params, lisa_rt):
+                    self.assertAlmostEqual(a, b, places=3)
+
 
 class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
     """If `lisaorbits` happens to be installed in the test environment,
