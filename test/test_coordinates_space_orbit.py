@@ -42,10 +42,14 @@ heliocentric guiding center coincident with the Earth (consistent with how
 the LISA/Taiji guiding center above is also treated as the zero-eccentricity
 limit of the same family of orbits).
 """
+import os
+import tempfile
+import h5py
 import numpy
 import unittest
 from astropy.constants import au
 
+from pycbc import transforms
 from pycbc.coordinates import space
 from pycbc.coordinates import space_orbit
 from utils import simple_exit
@@ -498,6 +502,94 @@ class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
                     self.assertAlmostEqual(a, b, places=3)
 
 
+class TestTransformsAcceptOrbitFile(unittest.TestCase):
+    """`pycbc.transforms`' SSB<->LISA<->GEO transform plugins
+    (`ssb_to_lisa`/`lisa_to_ssb`/`lisa_to_geo`/`geo_to_lisa`) accept an
+    optional `orbit-file` config option (an HDF5 file readable by
+    `space_orbit.NumericOrbits.from_file`) so a PE config can select any
+    constellation orbit (LISA, Taiji, TianQin, numerical, ...), not just the
+    default hard-coded circular LISA orbit. This checks that option reaches
+    `pycbc.coordinates.space`'s already-generalized functions correctly,
+    both when constructing the transform class directly and via
+    `from_config`.
+    """
+    @classmethod
+    def setUpClass(cls):
+        orbit = AnalyticTianQinOrbit()
+        t_grid = numpy.linspace(0.0, 3.15e7, 20000)
+        positions = orbit.compute_position(t_grid)
+        cls.tmpdir = tempfile.mkdtemp()
+        cls.orbit_file = os.path.join(cls.tmpdir, 'tianqin_orbit.hdf5')
+        with h5py.File(cls.orbit_file, 'w') as f:
+            f.create_dataset('t', data=t_grid)
+            f.create_dataset('positions', data=positions)
+        cls.numeric_orbit = space_orbit.NumericOrbits.from_file(
+            cls.orbit_file)
+
+    def test_ssb_to_lisa_orbit_file_matches_direct_orbit(self):
+        t = transforms.SSBToLISA(orbit_file=self.orbit_file)
+        out = t.transform({
+            'tc': 1.5e7, 'eclipticlongitude': 1.0,
+            'eclipticlatitude': 0.2, 'polarization': 0.5})
+        expected = space.ssb_to_lisa(
+            1.5e7, 1.0, 0.2, 0.5, orbit=self.numeric_orbit)
+        self.assertAlmostEqual(out['tc'], expected[0], places=3)
+        self.assertAlmostEqual(
+            out['eclipticlongitude'], expected[1], places=6)
+
+    def test_lisa_to_geo_orbit_file_matches_direct_orbit(self):
+        t = transforms.LISAToGEO(orbit_file=self.orbit_file)
+        out = t.transform({
+            'tc': 1.5e7, 'eclipticlongitude': 1.0,
+            'eclipticlatitude': 0.2, 'polarization': 0.5})
+        expected = space.lisa_to_geo(
+            1.5e7, 1.0, 0.2, 0.5, orbit=self.numeric_orbit,
+            use_astropy=True)
+        self.assertAlmostEqual(out['tc'], expected[0], places=3)
+
+    def test_default_orbit_file_none_matches_hardcoded_lisa(self):
+        """With no orbit-file, behavior must be unchanged from before this
+        option existed.
+        """
+        t = transforms.SSBToLISA()
+        out = t.transform({
+            'tc': 1.5e7, 'eclipticlongitude': 1.0,
+            'eclipticlatitude': 0.2, 'polarization': 0.5})
+        expected = space.ssb_to_lisa(1.5e7, 1.0, 0.2, 0.5)
+        self.assertAlmostEqual(out['tc'], expected[0], places=6)
+
+    def test_from_config_parses_orbit_file(self):
+        from pycbc.workflow.configuration import WorkflowConfigParser
+        ini_text = f"""
+[waveform_transforms-tc_lisa+eclipticlongitude_lisa+eclipticlatitude_lisa+polarization_lisa]
+name = ssb_to_lisa
+tc-ssb = tc
+longitude-ssb = eclipticlongitude
+latitude-ssb = eclipticlatitude
+polarization-ssb = polarization
+tc-lisa = tc_lisa
+longitude-lisa = eclipticlongitude_lisa
+latitude-lisa = eclipticlatitude_lisa
+polarization-lisa = polarization_lisa
+orbit-file = {self.orbit_file}
+"""
+        ini_path = os.path.join(self.tmpdir, 'from_config_test.ini')
+        with open(ini_path, 'w') as f:
+            f.write(ini_text)
+        cp = WorkflowConfigParser([ini_path])
+        t = transforms.SSBToLISA.from_config(
+            cp, 'waveform_transforms',
+            'tc_lisa+eclipticlongitude_lisa+eclipticlatitude_lisa+'
+            'polarization_lisa')
+        self.assertEqual(t.orbit_file, self.orbit_file)
+        out = t.transform({
+            'tc': 1.5e7, 'eclipticlongitude': 1.0,
+            'eclipticlatitude': 0.2, 'polarization': 0.5})
+        expected = space.ssb_to_lisa(
+            1.5e7, 1.0, 0.2, 0.5, orbit=self.numeric_orbit)
+        self.assertAlmostEqual(out['tc_lisa'], expected[0], places=3)
+
+
 class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
     """If `lisaorbits` happens to be installed in the test environment,
     verify that a real `lisaorbits.Orbits` instance can be passed directly
@@ -535,6 +627,8 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestNumericOrbitsGeneralizesBeyondLisa))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestSpaceAcceptsOrbitProvider))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestTransformsAcceptOrbitFile))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestOptionalLisaorbitsDuckTyping))
 

@@ -39,6 +39,7 @@ only `scipy`.
 This module does not change or replace anything in `pycbc.coordinates.space`;
 it is purely additive.
 """
+import h5py
 import numpy as np
 from scipy.interpolate import make_interp_spline
 from scipy.optimize import fsolve
@@ -168,6 +169,44 @@ class NumericOrbits:
             Spacecraft velocity/ies in the SSB frame [m/s].
         """
         return self._evaluate(self._vel_splines, t, sc)
+
+    @classmethod
+    def from_file(cls, path, group=None, interp_order=5):
+        """Load a numerical constellation orbit from an HDF5 file.
+
+        The file (or the given group within it) must contain datasets `t`
+        (shape (N,), SSB time [s]) and `positions` (shape (N, M, 3), SSB-
+        frame spacecraft positions [m]). An optional `velocities` dataset
+        (same shape as `positions`) is used if present; otherwise
+        velocities are computed as the analytic derivative of the position
+        spline, as in `__init__`. This is the file format any of LISA,
+        Taiji, TianQin (or a numerically-propagated orbit for any of them)
+        can be supplied in, e.g. from a PE config's `orbit-file` option
+        (see `pycbc.transforms`).
+
+        Parameters
+        ----------
+        path : str
+            Path to the HDF5 orbit file.
+        group : str, optional
+            Name of an HDF5 group within the file to read the datasets
+            from. Default None (read from the file's root).
+        interp_order : int, optional
+            See `__init__`. Default 5.
+
+        Returns
+        -------
+        NumericOrbits
+            A `NumericOrbits` instance built from the file's contents.
+        """
+        with h5py.File(path, 'r') as f:
+            node = f[group] if group is not None else f
+            t_interp = node['t'][:]
+            positions = node['positions'][:]
+            velocities = node['velocities'][:] \
+                if 'velocities' in node else None
+        return cls(t_interp, positions, velocities=velocities,
+                   interp_order=interp_order)
 
 
 def constellation_frame(t, orbit, sc=(1, 2, 3)):
