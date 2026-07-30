@@ -103,7 +103,7 @@ if snr_type == 'single':
     if ifo is None:
         err_msg = "Please specify an interferometer for a single IFO plot"
         parser.error(err_msg)
-    if opts.slide_id !=0:
+    if opts.slide_id != 0:
         err_msg = "The single IFO SNR plot is possible only for slide-id=0."
         parser.error(err_msg)
 
