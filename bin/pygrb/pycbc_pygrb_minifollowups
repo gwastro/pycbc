@@ -62,16 +62,26 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
 
     tags = [] if tags is None else tags
 
+    exec_name = 'pygrb_plot_snr_timeseries'
+
     # Ensure that zero-lag data is used in these follow-up plots and store
-    # the slide-id option originally provided
+    # the slide-id option originally provided.  This may be passed by the user
+    # as part of the [pygrb_plot_snr_timeseries] section or in one of its
+    # subsections: this is tracked to then be restored appropriately.
     orig_slide_id = None
-    if workflow.cp.has_option('pygrb_plot_snr_timeseries', 'slide-id'):
-        orig_slide_id = workflow.cp.get('pygrb_plot_snr_timeseries',
-                                        'slide-id')
+    mod_tag = exec_name
+    if workflow.cp.has_option(exec_name, 'slide-id'):
+        orig_slide_id = workflow.cp.get(exec_name, 'slide-id')
+    elif workflow.cp.has_option_tag(exec_name, 'slide-id', snr_type):
+        orig_slide_id = workflow.cp.get_opt_tag(
+            exec_name,
+            'slide-id',
+            snr_type)
+        mod_tag = exec_name + '-' + snr_type
     workflow.cp.add_options_to_section(
-        'pygrb_plot_snr_timeseries',
+        mod_tag,
         [('slide-id', '0')],
-        True
+        overwrite_options=True
     )
 
     # Initialize job node with its tags
@@ -80,7 +90,7 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
     extra_tags += [snr_type]
     if ifo is not None:
         extra_tags += [ifo]
-    node = PlotExecutable(workflow.cp, 'pygrb_plot_snr_timeseries',
+    node = PlotExecutable(workflow.cp, exec_name,
                           ifos=workflow.ifos, out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
     node.add_input_opt('--trig-file', trig_file)
@@ -113,12 +123,12 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
     # Revert the config parser back to how it was given
     if orig_slide_id:
         workflow.cp.add_options_to_section(
-            'pygrb_plot_snr_timeseries',
+            mod_tag,
             [('slide-id', orig_slide_id)],
-            True
+            overwrite_options=True
         )
     else:
-        workflow.cp.remove_option('pygrb_plot_snr_timeseries', 'slide-id')
+        workflow.cp.remove_option(mod_tag, 'slide-id')
 
     return node.output_files
 
@@ -194,7 +204,8 @@ seg_files = wf.FileList(
 # proxy for the valid science segments, and ignore vetoed time inside it.
 valid_segs = segmentlist([ppu._read_seg_files(seg_file_abs_paths)['off']])
 
-# Determine if we are following up injections or loudest off/on-source triggers.
+# Determine whether injections or loudest off/on-source triggers are
+# being followed up.
 # If the time shift dataset exists, then assume we are doing the latter.
 is_injection_followup = True
 try:
