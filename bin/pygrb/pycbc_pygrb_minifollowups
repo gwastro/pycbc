@@ -77,7 +77,7 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
             exec_name,
             'slide-id',
             snr_type)
-        mod_tag = exec_name+'-'+snr_type
+        mod_tag = exec_name + '-' + snr_type
     workflow.cp.add_options_to_section(
         mod_tag,
         [('slide-id', '0')],
