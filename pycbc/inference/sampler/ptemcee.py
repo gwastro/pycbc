@@ -15,7 +15,7 @@
 
 
 """
-This modules provides classes and functions for using the ptemcee sampler
+This module provides classes and functions for using the ptemcee sampler
 packages for parameter estimation.
 """
 
