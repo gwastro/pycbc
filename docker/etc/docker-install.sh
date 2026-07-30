@@ -3,7 +3,7 @@
 set -e
 
 echo //// DEBUG ///////////////////////////////////////
-python -c "import sys; print(sys.executable); import traceback; import importlib; print('stdlib OK')"
+python -c "import sys; print(sys.executable); print(sys.path); import traceback; import importlib; print('stdlib OK')"
 echo //////////////////////////////////////////////////
 
 # Install PyCBC
@@ -11,8 +11,9 @@ cd /scratch
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 echo //// DEBUG ///////////////////////////////////////
-python -c "import sys; print(sys.executable); import traceback; import importlib; print('stdlib OK')"
+python -c "import sys; print(sys.executable); print(sys.path); import traceback; import importlib; print('stdlib OK')"
 echo //////////////////////////////////////////////////
+export PYTHONVERBOSE=true
 python -m pip install -r requirements-igwn.txt
 python -m pip install -r companion.txt
 python -m pip install .
