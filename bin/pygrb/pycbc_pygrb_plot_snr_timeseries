@@ -99,9 +99,13 @@ inj_file = \
     os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
 snr_type = opts.y_variable
 ifo = opts.ifo
-if snr_type == 'single' and ifo is None:
-    err_msg = "Please specify an interferometer for a single IFO plot"
-    parser.error(err_msg)
+if snr_type == 'single':
+    if ifo is None:
+        err_msg = "Please specify an interferometer for a single IFO plot"
+        parser.error(err_msg)
+    if opts.slide_id !=0:
+        err_msg = "The single IFO SNR plot is possible only for slide-id=0."
+        parser.error(err_msg)
 
 logging.info("Imported and ready to go.")
 
@@ -147,15 +151,13 @@ inj_data = ppu.load_data(inj_file, ifos, data_tag='injs',
 # and start preparing the horizontal axis label
 x_key = 'network/end_time_gc'
 x_label = "Geocenter"
-y_key = 'network/' + opts.y_variable + '_snr'
-if opts.y_variable == 'single':
+y_key = 'network/' + snr_type + '_snr'
+if snr_type == 'single':
+    # When plotting single IFO SNR, a single timeslide (slide-id=0) can be used
+    # and the horizontal axis shows detector time.
+    x_key = opts.ifo + '/end_time'
+    x_label = opts.ifo
     y_key = opts.ifo + '/snr'
-    # When plotting all slides (in which case opts.slide_id stores None), use
-    # the geocenter time. Otherwise, a single slide is being considered (and
-    # opts.slide_id stores an integer) and the detector time is used.
-    if opts.slide_id != None:
-        x_key = opts.ifo + '/end_time'
-        x_label = opts.ifo
 
 # Extract needed trigger properties and store them as dictionaries
 # Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
