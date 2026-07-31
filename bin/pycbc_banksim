@@ -17,6 +17,7 @@
 """Calculate the fitting factors of simulated signals with a template bank."""
 
 
+import os
 import logging
 from tqdm import tqdm
 from numpy import complex64, array
@@ -34,6 +35,8 @@ from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, complex_same_precision_as
 from pycbc.filter import match, sigmasq
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io import HFile, WaveformArray
+from pycbc.inject import InjectionSet
 import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
 from pycbc.waveform import TemplateBank
@@ -133,15 +136,69 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
                                  f_lower=start_frequency,
                                  amplitude_order=amplitude_order)
         if hasattr(wf_params, 'taper'):
-            hp = hp.taper_timeseries(location=wf_params.taper, 
-                                     tapermethod=wf_params.get('taper_method', 'lal'), 
-                                     taper_window=wf_params.get('taper_window'))
-            hc = hc.taper_timeseries(location=wf_params.taper, 
-                                     tapermethod=wf_params.get('taper_method', 'lal'), 
-                                     taper_window=wf_params.get('taper_window'))
+            hp = hp.taper_timeseries(location=wf_params.taper,
+                                     tapermethod=getattr(wf_params, 'taper_method', 'lal'),
+                                     taper_window=getattr(wf_params, 'taper_window', None))
+            hc = hc.taper_timeseries(location=wf_params.taper,
+                                     tapermethod=getattr(wf_params, 'taper_method', 'lal'),
+                                     taper_window=getattr(wf_params, 'taper_window', None))
         hvec = generate_detector_strain(wf_params, hp, hc)
 
     return make_padded_frequency_series(hvec, filter_N, delta_f=delta_f)
+
+def read_hdf_table(hdf_file):
+    """Read a plain HDF table of equal-length columns (one dataset per
+    parameter), as used for HDF template banks.
+    """
+    with HFile(hdf_file, 'r') as f:
+        params = list(f.attrs['parameters']) if 'parameters' in f.attrs \
+            else list(f.keys())
+        params = [p.decode() if hasattr(p, 'decode') else p for p in params]
+        num = f[params[0]].size
+        dtype = [(p, f[p][:].dtype) for p in params]
+        table = WaveformArray(num, dtype=dtype)
+        for p in params:
+            table[p] = f[p][:]
+    return table
+
+
+def read_injections(sim_file):
+    """Read injection/signal parameters from a SimInspiral or SnglInspiral
+    LIGOLW XML file, or from an HDF file.
+
+    HDF files are normally read as an injection set (as written by
+    `pycbc_create_injections`, including files with static parameters,
+    which requires a 'tc' column); if that fails, falls back to reading
+    it as a plain HDF table (e.g. an HDF template bank re-used as a
+    signal file).
+    """
+    ext = os.path.basename(sim_file)
+    if ext.endswith(('.hdf', '.h5', '.hdf5')):
+        try:
+            return InjectionSet(sim_file).table
+        except ValueError:
+            return read_hdf_table(sim_file)
+
+    indoc = ligolw_utils.load_filename(sim_file, False,
+                                       contenthandler=LIGOLWContentHandler)
+    try:
+        return lsctables.SimInspiralTable.get_table(indoc)
+    except ValueError:
+        return lsctables.SnglInspiralTable.get_table(indoc)
+
+
+def describe_waveform_params(wf_params, approximant):
+    """Return a human-readable description of the parameters used to
+    generate a waveform, for use in error logging when generation fails.
+    """
+    fields = ['mass1', 'mass2', 'spin1x', 'spin1y', 'spin1z',
+             'spin2x', 'spin2y', 'spin2z', 'inclination', 'f_lower']
+    parts = ['approximant=%s' % approximant]
+    for field in fields:
+        if hasattr(wf_params, field):
+            parts.append('%s=%s' % (field, getattr(wf_params, field)))
+    return ', '.join(parts)
+
 
 aprs = sorted(list(set(td_approximants() + fd_approximants())))
 
@@ -175,8 +232,10 @@ parser.add_argument("--template-sample-rate", type=float,
 
 #Signal Settings
 parser.add_argument("--signal-file", dest="sim_file", metavar="FILE",
-                    required=True, help="SimInspiral or SnglInspiral XML file "
-                                        "containing the signal parameters")
+                    required=True, help="File specifying the signal "
+                                        "parameters, either in HDF or as a "
+                                        "SimInspiral or SnglInspiral LIGOLW "
+                                        "XML file.")
 parser.add_argument("--signal-approximant", choices=aprs, required=True,
                     help="Waveform approximant for signals")
 parser.add_argument("--signal-phase-order", default=-1, type=int,
@@ -288,12 +347,7 @@ template_table = temp_bank.table
 logging.info("  %d templates", len(template_table))
 
 logging.info('Reading simulation list')
-indoc = ligolw_utils.load_filename(options.sim_file, False,
-                                   contenthandler=LIGOLWContentHandler)
-try:
-    signal_table = lsctables.SimInspiralTable.get_table(indoc)
-except ValueError:
-    signal_table = lsctables.SnglInspiralTable.get_table(indoc)
+signal_table = read_injections(options.sim_file)
 logging.info("  %d signal waveforms", len(signal_table))
 
 logging.info("Matches will be written to %s", options.out_file)
@@ -323,14 +377,21 @@ with ctx:
         if not options.use_sky_location and hasattr(signal_params, 'latitude'):
             signal_params.latitude = 0.
             signal_params.longitude = 0.
-        stilde = get_waveform(options.signal_approximant,
-                              options.signal_phase_order,
-                              options.signal_amplitude_order,
-                              options.signal_spin_order,
-                              signal_params,
-                              options.signal_start_frequency,
-                              signal_sample_rate,
-                              filter_N, options.filter_sample_rate)
+        try:
+            stilde = get_waveform(options.signal_approximant,
+                                  options.signal_phase_order,
+                                  options.signal_amplitude_order,
+                                  options.signal_spin_order,
+                                  signal_params,
+                                  options.signal_start_frequency,
+                                  signal_sample_rate,
+                                  filter_N, options.filter_sample_rate)
+        except Exception:
+            logging.error("Failed to generate signal waveform %d: %s",
+                         index,
+                         describe_waveform_params(signal_params,
+                                                  options.signal_approximant))
+            raise
         s_norm = sigmasq(stilde, psd=psd,
                          low_frequency_cutoff=options.filter_low_frequency_cutoff)
         stilde /= psd
@@ -396,14 +457,22 @@ with ctx:
                     if options.total_mass_divide is not None and (template_params.mass1+template_params.mass2) >= options.total_mass_divide:
                         this_approximant = options.highmass_approximant
 
-                htilde = get_waveform(this_approximant,
-                                      options.template_phase_order,
-                                      options.template_amplitude_order,
-                                      options.template_spin_order,
-                                      template_params,
-                                      options.template_start_frequency,
-                                      template_sample_rate,
-                                      filter_N, options.filter_sample_rate)
+                try:
+                    htilde = get_waveform(this_approximant,
+                                          options.template_phase_order,
+                                          options.template_amplitude_order,
+                                          options.template_spin_order,
+                                          template_params,
+                                          options.template_start_frequency,
+                                          template_sample_rate,
+                                          filter_N, options.filter_sample_rate)
+                except Exception:
+                    logging.error(
+                        "Failed to generate template waveform %d: %s",
+                        index,
+                        describe_waveform_params(template_params,
+                                                 this_approximant))
+                    raise
 
                 h_norm = sigmasq(htilde, psd=psd, low_frequency_cutoff=f_lower)
 

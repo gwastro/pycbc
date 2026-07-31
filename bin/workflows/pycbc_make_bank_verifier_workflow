@@ -219,7 +219,10 @@ def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
         inj_file = node.output_file
     elif inspinj_exe is PycbcCreateInjectionsExecutable:
         # Ensure pycbc_create_injections dedicated configuration files
-        # are copied over to the results directory
+        # are copied over to the results directory. The --config-files
+        # option itself is already passed to the executable automatically:
+        # it is in Executable.file_input_options, so is resolved to a
+        # tracked input File and added to the command line for us.
         shutil.copy2(inspinj_job.get_opt('config-files'), conf_dir)
         node, inj_file = inspinj_job.create_node()
         node.add_opt("--gps-start-time", int_gps_time_to_str(t_seg[0]))
@@ -318,32 +321,36 @@ point_inj_summ_files = []
 # Nothing in this yet, so not sure how to set this.
 broad_inj_summ_files = []
 
-# Set the point injection names
-for f in sorted(output_pointinjs):
-    rdir['point_injection_sets/{}'.format(f)]
+# Only plan the point-injection summary jobs if there are actually any
+# point-injection sets configured. Otherwise these jobs have no input
+# files and fail immediately when run. See gwastro/pycbc#4931.
+if output_pointinjs:
+    # Set the point injection names
+    for f in sorted(output_pointinjs):
+        rdir['point_injection_sets/{}'.format(f)]
 
-curr_node = point_injs_table_exe.create_node\
-    (workflow.analysis_time,
-     [output_pointinjs[f] for f in sorted(output_pointinjs)],
-     ['../' + rdir.name['point_injection_sets/{}'.format(f)]
-      for f in sorted(output_pointinjs)])
-workflow += curr_node
-plotting_nodes.append(curr_node)
-point_inj_summ_files.append((curr_node.output_file,))
-
-secs = workflow.cp.get_subsections('banksim_plot_eff_fitting_fac')
-for tag in secs:
-    eff_fitting_facs_exe.update_current_tags([tag])
-    curr_node = eff_fitting_facs_exe.create_node\
+    curr_node = point_injs_table_exe.create_node\
         (workflow.analysis_time,
-         [output_pointinjs[f] for f in output_pointinjs])
+         [output_pointinjs[f] for f in sorted(output_pointinjs)],
+         ['../' + rdir.name['point_injection_sets/{}'.format(f)]
+          for f in sorted(output_pointinjs)])
     workflow += curr_node
     plotting_nodes.append(curr_node)
-    summary_page_files.append(curr_node.output_file)
+    point_inj_summ_files.append((curr_node.output_file,))
 
-# Set up layouts
-layout.group_layout(rdir.base, summary_page_files)
-layout.two_column_layout(rdir['point_injection_sets'], point_inj_summ_files)
+    secs = workflow.cp.get_subsections('banksim_plot_eff_fitting_fac')
+    for tag in secs:
+        eff_fitting_facs_exe.update_current_tags([tag])
+        curr_node = eff_fitting_facs_exe.create_node\
+            (workflow.analysis_time,
+             [output_pointinjs[f] for f in output_pointinjs])
+        workflow += curr_node
+        plotting_nodes.append(curr_node)
+        summary_page_files.append(curr_node.output_file)
+
+    # Set up layouts
+    layout.group_layout(rdir.base, summary_page_files)
+    layout.two_column_layout(rdir['point_injection_sets'], point_inj_summ_files)
 # Also add broad_injs when ready
 
 secs = workflow.cp.get_subsections('banksim_plot_fitting_factors')
