@@ -44,6 +44,7 @@ import numpy as np
 from scipy.interpolate import make_interp_spline
 from scipy.optimize import fsolve
 from astropy.constants import c as SPEED_OF_LIGHT
+from astropy.constants import au as ASTRONOMICAL_UNIT
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -207,6 +208,179 @@ class NumericOrbits:
                 if 'velocities' in node else None
         return cls(t_interp, positions, velocities=velocities,
                    interp_order=interp_order)
+
+
+def _real_earth_ecliptic_longitude(t=0.0):
+    """Real Earth's ecliptic longitude at SSB time `t` [s], from
+    `pycbc.coordinates.space.earth_position_ssb` (astropy-based real
+    ephemeris). Imported lazily (not at module level) to avoid a circular
+    import: `pycbc.coordinates.space` imports from this module.
+    """
+    from pycbc.coordinates.space import earth_position_ssb
+    return earth_position_ssb(t)[1]
+
+
+EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s], ~1 sidereal year
+
+
+class TaijiAnalyticOrbit:
+    """Idealized analytic Taiji heliocentric orbit: a rigid, circular
+    (first order in eccentricity) triangular constellation, per Rubbo,
+    Cornish & Poujade 2004 (Phys. Rev. D 69, 082003) -- the same
+    functional form underlying the LISA orbit in
+    `pycbc.coordinates.space.lisa_position_ssb`/`rotation_matrix_ssb_to_lisa`
+    -- leading the Earth-like guiding center by `lead_angle` (design value
+    20 degrees) instead of trailing it, with Taiji's own arm length.
+
+    This is an idealized reference orbit intended for prototyping and
+    methods development (e.g. single-link response and TDI work) ahead of
+    an official numerical orbit product. It is not a substitute for real
+    mission ephemeris in science-quality analysis -- use
+    `NumericOrbits.from_file` with an official orbit file for that once
+    one exists.
+
+    Parameters
+    ----------
+    armlength : float, optional
+        Constellation arm length [m]. Default 3.0e9 (design value).
+    lead_angle : float, optional
+        Angle by which the constellation leads the Earth-like guiding
+        center [rad]. Default ``deg2rad(20)`` (design value).
+    kappa0 : float or None, optional
+        Reference ecliptic longitude of the Earth-like guiding center at
+        `t=0` [rad], before `lead_angle` is added. Default None, which
+        anchors it to the real Earth's ecliptic longitude at SSB time 0
+        (via `pycbc.coordinates.space.earth_position_ssb`), so that
+        `TaijiAnalyticOrbit()` with no arguments is roughly realistic
+        "today". Pass an explicit value for an arbitrary or
+        scenario-specific reference epoch instead.
+    """
+
+    def __init__(self, armlength=3.0e9, lead_angle=np.deg2rad(20.0),
+                kappa0=None):
+        self.armlength = float(armlength)
+        self.lead_angle = float(lead_angle)
+        if kappa0 is None:
+            kappa0 = _real_earth_ecliptic_longitude(0.0)
+        self.kappa0 = float(kappa0)
+        self.eccentricity = self.armlength / (
+            2 * ASTRONOMICAL_UNIT.value * np.sqrt(3))
+
+    def compute_position(self, t, sc=(1, 2, 3)):
+        """Spacecraft position(s) at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft position(s) in the SSB frame [m].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
+            + self.lead_angle
+        a = ASTRONOMICAL_UNIT.value
+        e = self.eccentricity
+        out = np.empty((len(t), len(sc), 3))
+        for k, n in enumerate(sc):
+            beta_n = (n - 1) * 2 * np.pi / 3.0
+            out[:, k, 0] = a * np.cos(alpha) + a * e * (
+                np.sin(alpha) * np.cos(alpha) * np.sin(beta_n)
+                - (1 + np.sin(alpha) ** 2) * np.cos(beta_n))
+            out[:, k, 1] = a * np.sin(alpha) + a * e * (
+                np.sin(alpha) * np.cos(alpha) * np.cos(beta_n)
+                - (1 + np.cos(alpha) ** 2) * np.sin(beta_n))
+            out[:, k, 2] = -np.sqrt(3) * a * e * np.cos(alpha - beta_n)
+        return out
+
+
+class TianQinAnalyticOrbit:
+    """Idealized analytic TianQin geocentric orbit: a fast, rigidly-
+    rotating triangular constellation whose plane is fixed in inertial
+    space (pointing towards the calibration source RX J0806.3+1527),
+    around a guiding center coincident with the Earth, per Hu et al 2018
+    (Class. Quantum Grav. 35, 095008). The guiding center itself is
+    approximated here as a pure circular heliocentric orbit (Earth's real
+    ~1.7% orbital eccentricity is neglected).
+
+    This is an idealized reference orbit intended for prototyping and
+    methods development ahead of an official numerical orbit product. It
+    is not a substitute for real mission ephemeris in science-quality
+    analysis -- use `NumericOrbits.from_file` with an official orbit file
+    for that once one exists.
+
+    Parameters
+    ----------
+    armlength : float, optional
+        Constellation arm length [m]. Default 1.7e8 (design value).
+    lambda_s, beta_s : float, optional
+        Ecliptic longitude/latitude of the calibration source RX
+        J0806.3+1527 [rad], which fixes the constellation plane's
+        orientation. Defaults are the design values (120.5 deg, -4.7 deg).
+    rotation_period : float, optional
+        Constellation self-rotation period [s]. Default 3.65 days (design
+        value).
+    initial_orbit_phase : float, optional
+        Initial fast-rotation phase of the first spacecraft [rad].
+        Default 0 -- unlike `kappa0` below, there is no "real" reference
+        for this (it is an arbitrary, mission-dependent choice).
+    kappa0 : float or None, optional
+        Reference ecliptic longitude of the Earth-like guiding center at
+        `t=0` [rad]. Default None, which anchors it to the real Earth's
+        ecliptic longitude at SSB time 0 (via
+        `pycbc.coordinates.space.earth_position_ssb`), so that
+        `TianQinAnalyticOrbit()` with no arguments is roughly realistic
+        "today". Pass an explicit value for an arbitrary or
+        scenario-specific reference epoch instead.
+    """
+
+    def __init__(self, armlength=1.7e8, lambda_s=np.deg2rad(120.5),
+                beta_s=np.deg2rad(-4.7), rotation_period=3.65 * 86400.0,
+                initial_orbit_phase=0.0, kappa0=None):
+        self.armlength = float(armlength)
+        self.lambda_s = float(lambda_s)
+        self.beta_s = float(beta_s)
+        self.rotation_period = float(rotation_period)
+        self.initial_orbit_phase = float(initial_orbit_phase)
+        if kappa0 is None:
+            kappa0 = _real_earth_ecliptic_longitude(0.0)
+        self.kappa0 = float(kappa0)
+
+    def compute_position(self, t, sc=(1, 2, 3)):
+        """Spacecraft position(s) at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft position(s) in the SSB frame [m].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        a = ASTRONOMICAL_UNIT.value
+        alpha_earth = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0
+        earth = a * np.stack([
+            np.cos(alpha_earth), np.sin(alpha_earth),
+            np.zeros_like(t)], axis=-1)
+        f_sc = 1.0 / self.rotation_period
+        out = np.empty((len(t), len(sc), 3))
+        for k, n in enumerate(sc):
+            kappa_n = 2 * np.pi / 3.0 * (n - 1) + self.initial_orbit_phase
+            phase = 2 * np.pi * f_sc * t + kappa_n
+            xn = (self.armlength / np.sqrt(3)) * (
+                np.sin(self.beta_s) * np.cos(self.lambda_s)
+                * np.sin(phase)
+                + np.sin(self.lambda_s) * np.cos(phase))
+            yn = (self.armlength / np.sqrt(3)) * (
+                np.sin(self.beta_s) * np.sin(self.lambda_s)
+                * np.sin(phase)
+                - np.cos(self.lambda_s) * np.cos(phase))
+            zn = -(self.armlength / np.sqrt(3)) \
+                * np.cos(self.beta_s) * np.sin(phase)
+            out[:, k, 0] = earth[:, 0] + xn
+            out[:, k, 1] = earth[:, 1] + yn
+            out[:, k, 2] = earth[:, 2] + zn
+        return out
 
 
 def constellation_frame(t, orbit, sc=(1, 2, 3)):
@@ -405,6 +579,8 @@ def t_ssb_from_t_detector(t_detector, k_ssb, orbit, sc=(1, 2, 3)):
 
 __all__ = [
     'NumericOrbits',
+    'TaijiAnalyticOrbit',
+    'TianQinAnalyticOrbit',
     'constellation_frame',
     'link_vector',
     't_detector_from_ssb',

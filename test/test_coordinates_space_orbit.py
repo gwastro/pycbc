@@ -585,6 +585,96 @@ class TestTianQinOrbit(unittest.TestCase):
             self.assertAlmostEqual(t_ssb_roundtrip, t_ssb, places=3)
 
 
+class TestProductionAnalyticOrbits(unittest.TestCase):
+    """`space_orbit.TaijiAnalyticOrbit`/`TianQinAnalyticOrbit` are the
+    production (not test-only) analytic reference orbits: unlike the
+    hand-written `AnalyticTaijiOrbit`/`AnalyticTianQinOrbit` fixtures above
+    (used purely to give `constellation_frame` etc. an independent
+    implementation to check against), these are importable, user-facing
+    classes intended for prototyping single-link response/TDI work before
+    an official numeric orbit product exists.
+
+    The key check here is that this *separately implemented* production
+    class agrees with the hand-written test fixture bit for bit when given
+    the same reference phase -- i.e. that promoting the fixtures' math to
+    a real, documented, parameterized class did not introduce any
+    transcription error.
+    """
+    def test_taiji_matches_independent_fixture_implementation(self):
+        production = space_orbit.TaijiAnalyticOrbit(kappa0=PHI0_REAL)
+        fixture = AnalyticTaijiOrbit()
+        times = numpy.random.uniform(0.0, 3.15e7, size=20)
+        pos_production = production.compute_position(times)
+        pos_fixture = fixture.compute_position(times)
+        self.assertLess(
+            numpy.max(numpy.abs(pos_production - pos_fixture)), 1e-3,
+            'TaijiAnalyticOrbit does not match the independent '
+            'AnalyticTaijiOrbit test fixture')
+
+    def test_tianqin_matches_independent_fixture_implementation(self):
+        production = space_orbit.TianQinAnalyticOrbit(kappa0=PHI0_REAL)
+        fixture = AnalyticTianQinOrbit()
+        times = numpy.random.uniform(0.0, 3.15e7, size=20)
+        pos_production = production.compute_position(times)
+        pos_fixture = fixture.compute_position(times)
+        self.assertLess(
+            numpy.max(numpy.abs(pos_production - pos_fixture)), 1e-3,
+            'TianQinAnalyticOrbit does not match the independent '
+            'AnalyticTianQinOrbit test fixture')
+
+    def test_default_kappa0_anchors_to_real_earth(self):
+        for cls in (space_orbit.TaijiAnalyticOrbit,
+                    space_orbit.TianQinAnalyticOrbit):
+            orbit = cls()
+            self.assertAlmostEqual(orbit.kappa0, PHI0_REAL, places=9)
+
+    def test_custom_kappa0_overrides_default(self):
+        for cls in (space_orbit.TaijiAnalyticOrbit,
+                    space_orbit.TianQinAnalyticOrbit):
+            orbit = cls(kappa0=0.0)
+            self.assertEqual(orbit.kappa0, 0.0)
+            default_orbit = cls()
+            # different kappa0 must give a different position at a fixed
+            # time (sanity check that the parameter actually does
+            # something, not a silently-ignored constructor argument)
+            self.assertGreater(
+                numpy.max(numpy.abs(
+                    orbit.compute_position([1e7])
+                    - default_orbit.compute_position([1e7]))),
+                1e6)
+
+    def test_usable_as_orbit_provider(self):
+        """Both classes must work as a drop-in `orbit=` argument to the
+        already-generalized `pycbc.coordinates.space` functions, exactly
+        like any other orbit provider (NumericOrbits, a test fixture, or a
+        real lisaorbits.Orbits instance).
+        """
+        lam, beta, pol = 1.3, -0.2, 0.8
+        for cls in (space_orbit.TaijiAnalyticOrbit,
+                    space_orbit.TianQinAnalyticOrbit):
+            orbit = cls()
+            t_ssb = 2.0e7
+            t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
+                t_ssb, lam, beta, pol, orbit=orbit)
+            t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
+                t_det, lam_det, beta_det, pol_det, orbit=orbit)
+            self.assertAlmostEqual(t_rt, t_ssb, places=3)
+            self.assertAlmostEqual(lam_rt, lam, places=6)
+            self.assertAlmostEqual(beta_rt, beta, places=6)
+            self.assertAlmostEqual(pol_rt, pol, places=6)
+
+    def test_arm_lengths_match_design_values(self):
+        cases = [
+            (space_orbit.TaijiAnalyticOrbit(), TAIJI_ARMLENGTH),
+            (space_orbit.TianQinAnalyticOrbit(), TIANQIN_ARMLENGTH),
+        ]
+        times = numpy.random.uniform(0.0, 3.15e7, size=20)
+        for orbit, expected_armlength in cases:
+            for d in _arm_lengths(orbit, times):
+                self.assertLess(
+                    numpy.max(numpy.abs(d - expected_armlength)), 1.0)
+
+
 class TestNumericOrbitsGeneralizesBeyondLisa(unittest.TestCase):
     """`NumericOrbits` must interpolate Taiji- and TianQin-shaped orbits
     accurately too, not just the LISA special case in `TestNumericOrbits`
@@ -816,6 +906,8 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNumericOrbits))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestLisaOrbit))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTaijiOrbit))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTianQinOrbit))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestProductionAnalyticOrbits))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestNumericOrbitsGeneralizesBeyondLisa))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
