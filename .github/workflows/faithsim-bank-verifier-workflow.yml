@@ -41,9 +41,9 @@ jobs:
       env:
           _CONDOR_DAGMAN_USE_STRICT: "0"
       run: |
-        cp examples/faith/faithsim_workflow_test/*.ini ./
+        cp examples/faith/faithsim_workflow_config.ini ./
         cp examples/faith/injection_priors.ini ./
-        bash -e examples/faith/faithsim_workflow_test/gen.sh
+        bash -e examples/faith/run_workflow.sh
         condor_status
         cd output
         ./status
@@ -61,10 +61,10 @@ jobs:
       env:
           _CONDOR_DAGMAN_USE_STRICT: "0"
       run: |
-        cp examples/banksim/bank_verifier_workflow_test/*.ini ./
+        cp examples/banksim/bank_verifier_config.ini ./
         cp examples/banksim/injection_priors.ini ./
         cp examples/banksim/bank0.hdf ./
-        bash -e examples/banksim/bank_verifier_workflow_test/gen.sh
+        bash -e examples/banksim/run_verifier.sh
         condor_status
         cd output
         ./status
