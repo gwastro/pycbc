@@ -39,7 +39,7 @@ markupsafe <= 2.0.1
 igwn-ligolw>=2.1.0
 
 # Needed for Parameter Estimation Tasks
-emcee==2.2.1
+emcee>=3.0.0
 dynesty<3.0
 
 # For building documentation

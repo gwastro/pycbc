@@ -54,7 +54,7 @@ def _call_global_model_logprior(*args, **kwds):
     """Private function for a calling global's logprior.
 
     This is needed for samplers that use a separate function for the logprior,
-    like ``emcee_pt``.
+    like ``ptemcee``.
     """
     # pylint:disable=not-callable
     return _global_instance(*args, callstat='logprior', **kwds)
