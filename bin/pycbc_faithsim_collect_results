@@ -5,74 +5,11 @@ Program for collecting the results of pycbc_faithsim comparing two approximants
 computing the match between them and creating a .dat file with the results. 
 """
 
-import os
 import argparse
 import numpy as np
 
-from igwn_ligolw import utils, lsctables
-
 from pycbc import add_common_pycbc_options, init_logging
-from pycbc.io.ligolw import LIGOLWContentHandler
-from pycbc.io import HFile, WaveformArray
-from pycbc.inject import InjectionSet
-
-
-def read_hdf_table(hdf_file):
-    """Read a plain HDF table of equal-length columns (one dataset per
-    parameter), as used for HDF template banks.
-    """
-    with HFile(hdf_file, 'r') as f:
-        params = list(f.attrs['parameters']) if 'parameters' in f.attrs \
-            else list(f.keys())
-        params = [p.decode() if hasattr(p, 'decode') else p for p in params]
-        num = f[params[0]].size
-        dtype = [(p, f[p][:].dtype) for p in params]
-        table = WaveformArray(num, dtype=dtype)
-        for p in params:
-            table[p] = f[p][:]
-    return table
-
-
-def read_param_table(param_file):
-    """Read waveform parameters from a Sim/SnglInspiral LIGOLW XML file, or
-    from an HDF file.
-
-    HDF files are normally read as an injection set (as written by
-    `pycbc_create_injections`, which requires a 'tc' column); if that
-    fails, falls back to reading it as a plain HDF table (e.g. an HDF
-    template bank re-used as a parameter file).
-    """
-    ext = os.path.basename(param_file)
-    if ext.endswith(('.hdf', '.h5', '.hdf5')):
-        try:
-            return InjectionSet(param_file).table
-        except ValueError:
-            return read_hdf_table(param_file)
-
-    indoc = utils.load_filename(param_file, False,
-                                contenthandler=LIGOLWContentHandler)
-    try:
-        return lsctables.SimInspiralTable.get_table(indoc)
-    except ValueError:
-        return lsctables.SnglInspiralTable.get_table(indoc)
-
-
-def get_column(table, field):
-    """Return the given field/column from a waveform parameter table,
-    whether it is a WaveformArray (HDF) or a ligolw Table (XML).
-
-    A ligolw SimInspiral/SnglInspiral row always has every standard column
-    (defaulting to 0 if not explicitly set), but an HDF WaveformArray only
-    has the fields it was actually given. To make the two behave the same
-    way, fields missing (and not derivable) from an HDF file default to 0,
-    e.g. for an aligned-spin-only injection set with no spin1x/spin1y.
-    """
-    if isinstance(table, WaveformArray):
-        try:
-            return table[field]
-        except (ValueError, TypeError):
-            return np.zeros(len(table))
-    return table.getColumnByName(field).asarray()
+from pycbc.inject import read_injection_table, get_table_column
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
@@ -151,7 +88,7 @@ for i in range(len(match_files)):
     match = match_files[i]
     bname = bank_files[i]
     if bname not in btables:
-        btables[bname] = read_param_table(bname)
+        btables[bname] = read_injection_table(bname)
     bt = btables[bname]
     try:
         md = np.loadtxt(match, dtype=dtypem)
@@ -166,7 +103,7 @@ for i in range(len(match_files)):
 
     for field in bfields:
         if field not in mfields:
-            pdata[field] = get_column(bt, field)
+            pdata[field] = get_table_column(bt, field)
 
     data = np.append(data, pdata)
 

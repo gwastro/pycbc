@@ -1285,6 +1285,85 @@ class InjectionSet(object):
         return InjectionSet(opt.injection_file, **kwa)
 
 
+def read_hdf_param_table(hdf_file):
+    """Read a plain HDF table of equal-length columns (one dataset per
+    parameter), as used for HDF template banks.
+    """
+    with pycbc.io.HFile(hdf_file, 'r') as f:
+        params = list(f.attrs['parameters']) if 'parameters' in f.attrs \
+            else list(f.keys())
+        params = [p.decode() if hasattr(p, 'decode') else p for p in params]
+        num = f[params[0]].size
+        dtype = [(p, f[p][:].dtype) for p in params]
+        table = pycbc.io.WaveformArray(num, dtype=dtype)
+        for p in params:
+            table[p] = f[p][:]
+    return table
+
+
+def read_injection_table(file_path, xml_tables=('sim_inspiral', 'sngl_inspiral')):
+    """Read a table of waveform parameters from an HDF or LIGOLW XML file.
+
+    HDF files are normally read as an injection set (as written by
+    ``pycbc_create_injections``, which requires a 'tc' column); if that
+    fails, falls back to reading it as a plain HDF table (e.g. an HDF
+    template bank re-used as a parameter file).
+
+    For XML files, each name in ``xml_tables`` is tried in turn until one
+    is found in the document (e.g. a parameter file may hold a
+    ``sim_inspiral`` table of injections, or a ``sngl_inspiral`` template
+    bank, depending on context). The last name given is not caught, so its
+    error propagates if none of the tables are present.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the file to read. HDF and XML are distinguished by
+        extension (``.hdf``/``.h5``/``.hdf5`` vs anything else).
+    xml_tables : tuple of str, optional
+        LIGOLW table names to try, in order, for XML files. Default is
+        ``('sim_inspiral', 'sngl_inspiral')``.
+
+    Returns
+    -------
+    table : pycbc.io.WaveformArray or igwn_ligolw table
+        The parameter table, one row per entry.
+    """
+    ext = os.path.basename(file_path)
+    if ext.endswith(('.hdf', '.h5', '.hdf5')):
+        try:
+            return InjectionSet(file_path).table
+        except ValueError:
+            return read_hdf_param_table(file_path)
+
+    indoc = ligolw_utils.load_filename(file_path, False,
+                                       contenthandler=LIGOLWContentHandler)
+    for name in xml_tables[:-1]:
+        try:
+            return ligolw.Table.get_table(indoc, name)
+        except ValueError:
+            continue
+    return ligolw.Table.get_table(indoc, xml_tables[-1])
+
+
+def get_table_column(table, field):
+    """Return the given field/column from a waveform parameter table,
+    whether it is a WaveformArray (HDF) or an igwn_ligolw Table (XML).
+
+    A ligolw SimInspiral/SnglInspiral row always has every standard column
+    (defaulting to 0 if not explicitly set), but an HDF WaveformArray only
+    has the fields it was actually given. To make the two behave the same
+    way, fields missing (and not derivable) from an HDF file default to 0,
+    e.g. for an aligned-spin-only injection set with no spin1x/spin1y.
+    """
+    if isinstance(table, pycbc.io.WaveformArray):
+        try:
+            return table[field]
+        except (ValueError, TypeError):
+            return np.zeros(len(table))
+    return table.getColumnByName(field).asarray()
+
+
 class SGBurstInjectionSet(object):
     """Manages sets of sine-Gaussian burst injections: reads injections
     from LIGOLW XML files and injects them into time series.

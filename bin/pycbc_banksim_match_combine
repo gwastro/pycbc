@@ -22,56 +22,15 @@ a set of injection files. The *order* of the injection files *must* match the
 bank files, and the number of injections in each must correspond one-to-one.
 """
 
-import os
 import argparse
 import numpy as np
-
-from igwn_ligolw import utils, ligolw
 
 import pycbc
 from pycbc import pnutils
 from pycbc.waveform import TemplateBank
-from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.io.hdf import HFile
-from pycbc.io import WaveformArray
-from pycbc.inject import InjectionSet
+from pycbc.inject import read_injection_table
 from pycbc import load_source
-
-
-def read_hdf_table(hdf_file):
-    """Read a plain HDF table of equal-length columns (one dataset per
-    parameter), as used for HDF template banks.
-    """
-    with HFile(hdf_file, 'r') as f:
-        params = list(f.attrs['parameters']) if 'parameters' in f.attrs \
-            else list(f.keys())
-        params = [p.decode() if hasattr(p, 'decode') else p for p in params]
-        num = f[params[0]].size
-        dtype = [(p, f[p][:].dtype) for p in params]
-        table = WaveformArray(num, dtype=dtype)
-        for p in params:
-            table[p] = f[p][:]
-    return table
-
-
-def read_sim_table(sim_file):
-    """Read injection parameters from a sim_inspiral LIGOLW XML file, or
-    from an HDF file.
-
-    HDF files are normally read as an injection set (as written by
-    `pycbc_create_injections`, which requires a 'tc' column); if that
-    fails, falls back to reading it as a plain HDF table.
-    """
-    ext = os.path.basename(sim_file)
-    if ext.endswith(('.hdf', '.h5', '.hdf5')):
-        try:
-            return InjectionSet(sim_file).table
-        except ValueError:
-            return read_hdf_table(sim_file)
-
-    indoc = utils.load_filename(sim_file, False,
-                                contenthandler=LIGOLWContentHandler)
-    return ligolw.Table.get_table(indoc, "sim_inspiral")
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
@@ -148,7 +107,9 @@ for idx, row in enumerate(res):
         btables[row['bank']] = temp_bank.table
 
     if row['sim'] not in itables:
-        itables[row['sim']] = read_sim_table(row['sim'])
+        itables[row['sim']] = read_injection_table(
+            row['sim'], xml_tables=('sim_inspiral',)
+        )
     
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]
