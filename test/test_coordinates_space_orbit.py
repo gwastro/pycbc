@@ -364,11 +364,15 @@ class TestLisaOrbit(unittest.TestCase):
     that is a different kind of test; these are the same direct,
     self-contained checks the other two missions get, for consistency.
 
-    Unlike Taiji, checking a "trails Earth by 20 degrees"-style angle
-    against a zero-phase circular reference does not give a clean constant
-    (this fixture's `T0` offset is calibrated to match the pre-existing
-    `TIME_OFFSET_20_DEGREES`/real-epoch convention, not a simple angular
-    offset from a toy reference), so that particular check is omitted here.
+    Unlike Taiji's fixture (whose 20 degree lead is a bare angular offset
+    added directly to its own phase, checked against an equally-invented
+    zero-phase circular proxy for the Earth), this fixture's `T0` is a time
+    shift, not an angle, and it does not correspond to a clean angle offset
+    from an arbitrary zero-phase circular reference -- comparing against
+    one gives a constant but physically meaningless ~84 degrees. Comparing
+    instead against the real Earth position (`space.earth_position_ssb`,
+    real ephemeris) does give the intended ~20 degree lag, matching the
+    documented 19-23 degree range for `TIME_OFFSET_20_DEGREES`.
     """
     def setUp(self):
         self.orbit = AnalyticEqualArmOrbit()
@@ -380,6 +384,26 @@ class TestLisaOrbit(unittest.TestCase):
                 numpy.max(numpy.abs(d - ARMLENGTH)), 1.0,
                 'LISA arm length deviates from the 2.5e6 km design value '
                 'by more than 1 m')
+
+    def test_trails_real_earth_by_documented_lag(self):
+        """The guiding center must trail the real Earth (not a zero-phase
+        circular proxy) by the 19-23 degree range documented for
+        `TIME_OFFSET_20_DEGREES`, at any time -- not just near the
+        particular epoch that constant happens to have been tuned at.
+        """
+        centroid, _ = space_orbit.constellation_frame(self.times, self.orbit)
+        for i, t in enumerate(self.times):
+            earth_pos = space.earth_position_ssb(t)[0].flatten().astype(
+                float)
+            cos_angle = numpy.dot(centroid[i], earth_pos) / (
+                numpy.linalg.norm(centroid[i]) * numpy.linalg.norm(
+                    earth_pos))
+            angle_deg = numpy.rad2deg(numpy.arccos(
+                numpy.clip(cos_angle, -1, 1)))
+            self.assertTrue(
+                17.0 < angle_deg < 24.0,
+                f'LISA-to-real-Earth angle {angle_deg} deg at t={t} is '
+                f'outside the documented ~19-23 degree range')
 
     def test_rotation_orthonormal(self):
         _, rotation = space_orbit.constellation_frame(self.times, self.orbit)
