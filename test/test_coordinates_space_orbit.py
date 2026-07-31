@@ -1098,6 +1098,42 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
         centroid_au = numpy.linalg.norm(centroid, axis=-1) / SEMI_MAJOR_AXIS
         self.assertTrue(numpy.all(numpy.abs(centroid_au - 1.0) < 0.05))
 
+    def test_ssb_to_lisa_round_trip_with_real_esa_orbit(self):
+        """The lower-level geometric checks above (arm length,
+        constellation_frame orthonormality) do not exercise
+        `pycbc.coordinates.space`'s actual PE-facing transforms
+        (`ssb_to_lisa`/`lisa_to_ssb`, sky-localization + polarization
+        angle). This checks those directly against a real numeric orbit,
+        not just the analytic toy fixtures used in
+        `TestSpaceAcceptsOrbitProvider`.
+        """
+        try:
+            import lisaorbits
+        except ImportError:
+            self.skipTest('lisaorbits not installed; skipping ESA OEM '
+                          'orbit-file cross-check')
+        try:
+            oem_orbit = lisaorbits.OEMOrbits.from_included(
+                'esa-trailing', version='2.0.0')
+        except Exception as exc:  # pylint: disable=broad-except
+            self.skipTest('could not fetch official ESA lisa-orbit-files '
+                          f'orbit ({exc!r}); skipping cross-check')
+
+        esa_orbit = space_orbit.ICRSOrbitAdapter(oem_orbit)
+        # Well inside the valid range, away from the interpolation edges.
+        t_ssb = (oem_orbit.t_start + oem_orbit.t_end) / 2.0
+        lam, beta, pol = 0.9, -0.3, 2.4
+
+        t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
+            t_ssb, lam, beta, pol, orbit=esa_orbit)
+        self.assertTrue(numpy.isfinite(t_det))
+        t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
+            t_det, lam_det, beta_det, pol_det, orbit=esa_orbit)
+        self.assertAlmostEqual(t_rt, t_ssb, places=3)
+        self.assertAlmostEqual(lam_rt, lam, places=6)
+        self.assertAlmostEqual(beta_rt, beta, places=6)
+        self.assertAlmostEqual(pol_rt, pol, places=6)
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
