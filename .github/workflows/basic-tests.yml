@@ -62,6 +62,16 @@ jobs:
           examples/inference/relmarg/*.gwf
           examples/inference/single/*.gwf
 
+    - name: Install lisaorbits (optional ESA lisa-orbit-files cross-check)
+      # lisaorbits requires Python >= 3.12 (see its pyproject.toml), so this
+      # is skipped on the 3.11 leg; the tests it enables
+      # (test_coordinates_space_orbit.py's TestOptionalLisaorbitsDuckTyping,
+      # TestOptionalESAOemOrbitFiles) already skip gracefully if it's absent,
+      # so this step is purely additive coverage, not a hard requirement.
+      if: matrix.test-type == 'unittest' && matrix.python-version != '3.11'
+      run: |
+        pixi run -e unittest pip install lisaorbits
+
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
