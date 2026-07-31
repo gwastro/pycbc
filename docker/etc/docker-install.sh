@@ -3,8 +3,10 @@
 set -e
 
 # Install PyCBC
+#
+# pip 26.2 excluded, see https://github.com/gwastro/pycbc/pull/5391
 cd /scratch
-python -m pip install --upgrade pip
+python -m pip install --upgrade 'pip!=26.2'
 python -m pip install -r requirements.txt
 python -m pip install -r requirements-igwn.txt
 python -m pip install -r companion.txt
