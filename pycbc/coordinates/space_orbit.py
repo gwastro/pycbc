@@ -210,6 +210,79 @@ class NumericOrbits:
                    interp_order=interp_order)
 
 
+_ICRS_TO_ECLIPTIC_ROTATION = None
+
+
+def _icrs_to_ecliptic_rotation_matrix():
+    """The fixed 3x3 rotation matrix from ICRS (equatorial, e.g. EME2000)
+    to the BarycentricMeanEcliptic(equinox='J2000') convention this module
+    and `pycbc.coordinates.space` use. Both frames are barycentric (no
+    origin shift), and the equinox is pinned to a fixed epoch, so this is a
+    pure, time-independent axis rotation; it is computed once (by rotating
+    the ICRS unit basis vectors) and cached, rather than invoking the full
+    astropy frame-transform machinery on every call.
+    """
+    global _ICRS_TO_ECLIPTIC_ROTATION
+    if _ICRS_TO_ECLIPTIC_ROTATION is None:
+        from astropy import units
+        from astropy.coordinates import ICRS, BarycentricMeanEcliptic
+        basis = np.eye(3)
+        icrs = ICRS(x=basis[0] * units.m, y=basis[1] * units.m,
+                    z=basis[2] * units.m, representation_type='cartesian')
+        ecl = icrs.transform_to(
+            BarycentricMeanEcliptic(equinox='J2000')).cartesian
+        # transform(e_k) gives the k-th column of the ICRS->ecliptic
+        # rotation matrix directly (no transpose): stacking ecl.x/y/z as
+        # rows already places ecl.{x,y,z}[k] (the i-th ecliptic coordinate
+        # of ICRS basis vector e_k) at matrix position [i, k].
+        _ICRS_TO_ECLIPTIC_ROTATION = np.array([
+            ecl.x.to(units.m).value,
+            ecl.y.to(units.m).value,
+            ecl.z.to(units.m).value,
+        ])
+    return _ICRS_TO_ECLIPTIC_ROTATION
+
+
+class ICRSOrbitAdapter:
+    """Wrap an `OrbitProvider` given in the ICRS (equatorial) frame so it
+    can be used as a drop-in `OrbitProvider` in pycbc's own
+    BarycentricMeanEcliptic convention.
+
+    Real spacecraft ephemerides are most often published in an equatorial
+    frame (e.g. CCSDS OEM files use EME2000, which `lisaorbits.OEMOrbits`
+    reads without further rotation, so any `lisaorbits.Orbits` instance
+    built from such files reports positions in ICRS). This module and
+    `pycbc.coordinates.space` assume the SSB ecliptic frame throughout, so
+    such an orbit cannot be passed to `constellation_frame`/`link_vector`/
+    etc. directly without producing silently-wrong frame-dependent
+    quantities (e.g. `constellation_frame`'s rotation matrix and centroid
+    components) -- even though frame-independent quantities like arm
+    length happen to come out correct either way.
+
+    This class only wraps `compute_position`/`compute_velocity`; both are
+    rotated with the same fixed matrix, since the ICRS -> ecliptic
+    transform (fixed equinox, no origin shift) commutes with time
+    differentiation.
+
+    Parameters
+    ----------
+    orbit : OrbitProvider
+        Any object exposing `compute_position(t, sc)` (and, optionally,
+        `compute_velocity(t, sc)`) with positions/velocities in the ICRS
+        frame -- for example a real `lisaorbits.OEMOrbits` instance built
+        from official ESA lisa-orbit-files data.
+    """
+    def __init__(self, orbit):
+        self._orbit = orbit
+        self._rotation = _icrs_to_ecliptic_rotation_matrix()
+
+    def compute_position(self, t, sc=(1, 2, 3)):
+        return self._orbit.compute_position(t, sc) @ self._rotation.T
+
+    def compute_velocity(self, t, sc=(1, 2, 3)):
+        return self._orbit.compute_velocity(t, sc) @ self._rotation.T
+
+
 def _real_earth_ecliptic_longitude(t=0.0):
     """Real Earth's ecliptic longitude at SSB time `t` [s], from
     `pycbc.coordinates.space.earth_position_ssb` (astropy-based real
@@ -641,6 +714,7 @@ __all__ = [
     'LisaAnalyticOrbit',
     'TaijiAnalyticOrbit',
     'TianQinAnalyticOrbit',
+    'ICRSOrbitAdapter',
     'constellation_frame',
     'link_vector',
     't_detector_from_ssb',

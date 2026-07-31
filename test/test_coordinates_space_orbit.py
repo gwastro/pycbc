@@ -947,6 +947,105 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
                 numpy.max(numpy.abs(r @ r.T - numpy.eye(3))), 1e-8)
 
 
+class TestICRSOrbitAdapter(unittest.TestCase):
+    """`ICRSOrbitAdapter` wraps an ICRS-frame orbit provider (as produced by
+    real spacecraft ephemerides, e.g. CCSDS OEM files) so it can be used as
+    a drop-in `OrbitProvider` in pycbc's own SSB-ecliptic convention. These
+    tests build a synthetic "ICRS-frame" fixture by rotating one of this
+    module's own ecliptic-frame analytic orbits with the *inverse* of the
+    adapter's own rotation matrix, then check the adapter recovers the
+    original ecliptic-frame values -- a self-contained round trip that
+    does not depend on `lisaorbits` or any external orbit file.
+    """
+    def setUp(self):
+        self.ecliptic_orbit = space_orbit.LisaAnalyticOrbit()
+        self.rotation = space_orbit._icrs_to_ecliptic_rotation_matrix()
+        self.times = numpy.linspace(1e6, 3.15e7, 50)
+
+    def _fake_icrs_orbit(self):
+        ecliptic_orbit = self.ecliptic_orbit
+        rotation = self.rotation
+
+        class _FakeICRSOrbit:
+            def compute_position(self, t, sc=(1, 2, 3)):
+                pos_ecliptic = ecliptic_orbit.compute_position(t, sc)
+                return pos_ecliptic @ rotation  # ecliptic -> ICRS
+
+        return _FakeICRSOrbit()
+
+    def test_round_trip_recovers_ecliptic_positions(self):
+        adapter = space_orbit.ICRSOrbitAdapter(self._fake_icrs_orbit())
+        recovered = adapter.compute_position(self.times, (1, 2, 3))
+        expected = self.ecliptic_orbit.compute_position(self.times, (1, 2, 3))
+        self.assertLess(numpy.max(numpy.abs(recovered - expected)), 1e-3)
+
+    def test_rotation_is_orthogonal(self):
+        r = self.rotation
+        self.assertLess(numpy.max(numpy.abs(r @ r.T - numpy.eye(3))), 1e-10)
+
+    def test_rotation_matches_independent_astropy_transform(self):
+        """A round trip through the adapter alone cannot catch a sign or
+        transpose error in the cached rotation matrix (composing a matrix
+        with its own transpose is the identity regardless of whether the
+        matrix itself is correct). This test instead compares the cached
+        matrix's action on an arbitrary, non-basis vector against a fresh,
+        independent call to astropy's ICRS -> BarycentricMeanEcliptic
+        transform, so a transpose/sign bug in the matrix construction
+        cannot hide behind a self-consistent-but-wrong round trip.
+        """
+        from astropy import units as apy_units
+        from astropy.coordinates import ICRS, BarycentricMeanEcliptic
+
+        v_icrs = numpy.array([1.3, -0.7, 2.1])
+        icrs = ICRS(x=v_icrs[0] * apy_units.m, y=v_icrs[1] * apy_units.m,
+                    z=v_icrs[2] * apy_units.m, representation_type='cartesian')
+        ecl = icrs.transform_to(
+            BarycentricMeanEcliptic(equinox='J2000')).cartesian
+        expected = numpy.array([ecl.x.to(apy_units.m).value,
+                                 ecl.y.to(apy_units.m).value,
+                                 ecl.z.to(apy_units.m).value])
+
+        result = self.rotation @ v_icrs
+        self.assertLess(numpy.max(numpy.abs(result - expected)), 1e-8)
+
+    def test_compute_velocity_rotates_consistently(self):
+        t_grid = numpy.linspace(0.0, 3.15e7, 400)
+        pos_ecliptic = self.ecliptic_orbit.compute_position(t_grid)
+        numeric_ecliptic = space_orbit.NumericOrbits(t_grid, pos_ecliptic)
+
+        rotation = self.rotation
+
+        class _FakeICRSOrbit:
+            def compute_position(self, t, sc=(1, 2, 3)):
+                return numeric_ecliptic.compute_position(t, sc) @ rotation
+
+            def compute_velocity(self, t, sc=(1, 2, 3)):
+                return numeric_ecliptic.compute_velocity(t, sc) @ rotation
+
+        adapter = space_orbit.ICRSOrbitAdapter(_FakeICRSOrbit())
+        query_t = numpy.linspace(1e6, 3.1e7, 50)
+        recovered_vel = adapter.compute_velocity(query_t, (1, 2, 3))
+        expected_vel = numeric_ecliptic.compute_velocity(query_t, (1, 2, 3))
+        self.assertLess(
+            numpy.max(numpy.abs(recovered_vel - expected_vel)), 1e-3)
+
+    def test_usable_directly_with_constellation_frame_and_link_vector(self):
+        adapter = space_orbit.ICRSOrbitAdapter(self._fake_icrs_orbit())
+        centroid, rotation = space_orbit.constellation_frame(
+            self.times, adapter)
+        expected_centroid, expected_rotation = space_orbit.constellation_frame(
+            self.times, self.ecliptic_orbit)
+        self.assertLess(
+            numpy.max(numpy.abs(centroid - expected_centroid)), 1e-3)
+        self.assertLess(
+            numpy.max(numpy.abs(rotation - expected_rotation)), 1e-8)
+
+        _, length = space_orbit.link_vector(self.times, adapter, 1, 2)
+        _, expected_length = space_orbit.link_vector(
+            self.times, self.ecliptic_orbit, 1, 2)
+        self.assertLess(numpy.max(numpy.abs(length - expected_length)), 1e-3)
+
+
 class TestOptionalESAOemOrbitFiles(unittest.TestCase):
     """If `lisaorbits` (and its optional `oem` dependency) are installed and
     network access is available, verify that `space_orbit` correctly
@@ -957,11 +1056,9 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
     Unlike `lisaorbits`' own analytic orbits (e.g. `EqualArmlengthOrbits`,
     used in `TestOptionalLisaorbitsDuckTyping` above), OEM files are given in
     the EME2000 (~ICRS) equatorial frame, not the SSB ecliptic frame that
-    `space_orbit`/`space` assume. This test therefore also exercises the
-    ICRS -> BarycentricMeanEcliptic conversion (the same astropy transform
-    already used by `pycbc.coordinates.space.earth_position_ssb`) that any
-    caller must apply before treating OEM-derived positions as a `space_orbit`
-    `OrbitProvider`.
+    `space_orbit`/`space` assume. This test therefore also exercises
+    `ICRSOrbitAdapter`, which any caller must use (or replicate) before
+    treating OEM-derived positions as a `space_orbit` `OrbitProvider`.
 
     Skipped entirely if `lisaorbits`/`oem` are not installed, or if the
     one-time download of the (~600 kB total) orbit files fails for any
@@ -971,8 +1068,6 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
     def test_esa_oem_orbit_matches_design_arm_length(self):
         try:
             import lisaorbits
-            from astropy import units as apy_units
-            from astropy.coordinates import ICRS, BarycentricMeanEcliptic
         except ImportError:
             self.skipTest('lisaorbits not installed; skipping ESA OEM '
                           'orbit-file cross-check')
@@ -986,19 +1081,7 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
         t_grid = numpy.linspace(
             oem_orbit.t_start + 5 * 86400.0,
             oem_orbit.t_end - 5 * 86400.0, 100)
-        positions_icrs = oem_orbit.compute_position(t_grid)
-
-        flat = positions_icrs.reshape(-1, 3)
-        icrs = ICRS(x=flat[:, 0] * apy_units.m, y=flat[:, 1] * apy_units.m,
-                    z=flat[:, 2] * apy_units.m, representation_type='cartesian')
-        ecl = icrs.transform_to(
-            BarycentricMeanEcliptic(equinox='J2000')).cartesian
-        positions_ecliptic = numpy.stack(
-            [ecl.x.to(apy_units.m).value, ecl.y.to(apy_units.m).value,
-             ecl.z.to(apy_units.m).value], axis=-1
-        ).reshape(positions_icrs.shape)
-
-        esa_orbit = space_orbit.NumericOrbits(t_grid, positions_ecliptic)
+        esa_orbit = space_orbit.ICRSOrbitAdapter(oem_orbit)
         unit_vec, length = space_orbit.link_vector(t_grid, esa_orbit, 1, 2)
         self.assertTrue(numpy.all(numpy.isfinite(length)))
         self.assertLess(
@@ -1032,6 +1115,8 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestSpaceAcceptsOrbitProvider))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestTransformsAcceptOrbitFile))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestICRSOrbitAdapter))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestOptionalLisaorbitsDuckTyping))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(

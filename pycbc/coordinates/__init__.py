@@ -36,7 +36,7 @@ __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            't_geo_from_ssb', 't_ssb_from_t_geo', 'ssb_to_geo', 'geo_to_ssb',
            'lisa_to_geo', 'geo_to_lisa',
            'NumericOrbits', 'LisaAnalyticOrbit', 'TaijiAnalyticOrbit',
-           'TianQinAnalyticOrbit',
+           'TianQinAnalyticOrbit', 'ICRSOrbitAdapter',
            'constellation_frame', 'link_vector',
            't_detector_from_ssb', 't_ssb_from_t_detector',
            ]
