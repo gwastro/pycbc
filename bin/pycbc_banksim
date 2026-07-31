@@ -21,8 +21,6 @@ import os
 from argparse import ArgumentParser
 from math import ceil, log
 
-from igwn_ligolw import lsctables
-from igwn_ligolw import utils as ligolw_utils
 from numpy import array, complex64
 from tqdm import tqdm
 
@@ -33,9 +31,7 @@ import pycbc.strain
 from pycbc import DYN_RANGE_FAC
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
 from pycbc.filter import match, sigmasq
-from pycbc.inject import InjectionSet
-from pycbc.io import HFile, WaveformArray
-from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.inject import read_injection_table
 from pycbc.pnutils import (
     mass1_mass2_to_mchirp_eta,
     mass1_mass2_to_tau0_tau3,
@@ -177,47 +173,6 @@ def get_waveform(
         hvec = generate_detector_strain(wf_params, hp, hc)
 
     return make_padded_frequency_series(hvec, filter_N, delta_f=delta_f)
-
-
-def read_hdf_table(hdf_file):
-    """Read a plain HDF table of equal-length columns (one dataset per
-    parameter), as used for HDF template banks.
-    """
-    with HFile(hdf_file, 'r') as f:
-        params = list(f.attrs['parameters']) if 'parameters' in f.attrs \
-            else list(f.keys())
-        params = [p.decode() if hasattr(p, 'decode') else p for p in params]
-        num = f[params[0]].size
-        dtype = [(p, f[p][:].dtype) for p in params]
-        table = WaveformArray(num, dtype=dtype)
-        for p in params:
-            table[p] = f[p][:]
-    return table
-
-
-def read_injections(sim_file):
-    """Read injection/signal parameters from a SimInspiral or SnglInspiral
-    LIGOLW XML file, or from an HDF file.
-
-    HDF files are normally read as an injection set (as written by
-    `pycbc_create_injections`, including files with static parameters,
-    which requires a 'tc' column); if that fails, falls back to reading
-    it as a plain HDF table (e.g. an HDF template bank re-used as a
-    signal file).
-    """
-    ext = os.path.basename(sim_file)
-    if ext.endswith(('.hdf', '.h5', '.hdf5')):
-        try:
-            return InjectionSet(sim_file).table
-        except ValueError:
-            return read_hdf_table(sim_file)
-
-    indoc = ligolw_utils.load_filename(sim_file, False,
-                                       contenthandler=LIGOLWContentHandler)
-    try:
-        return lsctables.SimInspiralTable.get_table(indoc)
-    except ValueError:
-        return lsctables.SnglInspiralTable.get_table(indoc)
 
 
 def describe_waveform_params(wf_params, approximant):
@@ -465,7 +420,7 @@ template_table = temp_bank.table
 logging.info("  %d templates", len(template_table))
 
 logging.info("Reading simulation list")
-signal_table = read_injections(options.sim_file)
+signal_table = read_injection_table(options.sim_file)
 logging.info("  %d signal waveforms", len(signal_table))
 
 logging.info("Matches will be written to %s", options.out_file)

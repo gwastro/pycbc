@@ -53,8 +53,7 @@ Once every injection set has been processed, the workflow:
  #. Assembles an HTML results page.
 
 If no point-injection sets are configured, steps that only apply to them
-are skipped rather than planned with no input (see :ref:`bank_verifier_notes`
-below).
+are skipped rather than planned with no input.
 
 .. note::
 
@@ -81,7 +80,7 @@ distributions (see below); a single file is enough for simple cases.
 
 Below is a complete, working example, defaulting to HDF for both the
 template bank and the injection sets (LIGOLW XML works equally well for
-both; use ``pycbc_splitbank``/``pycbc_split_inspinj`` instead of
+both; use ``pycbc_splitbank``/``pycbc_split_inspinj`` in place of
 ``pycbc_hdf5_splitbank``/``pycbc_hdf_splitinj`` in ``[executables]`` to
 work with XML instead).
 
@@ -127,7 +126,7 @@ The important sections are:
     With ``lalapps_inspinj`` (XML injections only), options are instead
     given directly in ``[injection]``/``[injection-TAG]`` following that
     program's own command-line options (``min-mass1``, ``i-distr``,
-    ``waveform``, etc.)
+    ``waveform``, etc.).
 
  #. ``[executables]``
 
@@ -165,9 +164,9 @@ The important sections are:
     of options, including ``--mchirp-window``/``--tau0-window`` to
     restrict which templates are checked against each injection.
 
-    As of this release, ``--signal-file`` (and ``--template-file``) accept
-    either an HDF or LIGOLW XML file, so ``splittable-exe-tag`` may point
-    at ``pycbc_hdf5_splitbank`` for either the injection or the bank
+    ``--signal-file`` and ``--template-file`` both accept either an HDF or
+    LIGOLW XML file, so ``splittable-exe-tag`` may point at
+    ``pycbc_hdf5_splitbank`` for either the injection or the bank
     splitting step.
 
  #. ``[banksim_plot_eff_fitting_fac-XXX]`` and
@@ -191,7 +190,7 @@ The important sections are:
 
     Sets Condor/Pegasus properties for the workflow. Bank verifier
     workflows running on LDG clusters must include an ``accounting-group``
-    valid for your account; the value must be chosen according to the
+    value valid for your account; the value must be chosen according to the
     `Accounting information web page <https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/>`_.
     This is not required for non-LVK users.
 
@@ -221,27 +220,3 @@ The results page is written to the ``output-path`` given in
 ``[results_page]``, inside the workflow's output directory. It includes
 the summary table and fitting-factor plots for the point-injection sets,
 and the fitting-factor plots for the broad-injection sets.
-
-.. _bank_verifier_notes:
-
-------------------------------
-Notes on recent fixes (#4931)
-------------------------------
-
-A few issues affecting the bank verifier workflow and ``pycbc_banksim``
-have recently been fixed:
-
-* ``pycbc_banksim`` can now read injections from an HDF file via
-  ``--signal-file``, in addition to LIGOLW XML, so injection sets no
-  longer need to be split to XML.
-* If no point-injection sets are configured (``[workflow-pointinjs]`` is
-  empty), the summary table and eff. fitting factor plotting jobs are no
-  longer planned, rather than being planned with no input files and
-  failing when run.
-* When waveform generation fails inside ``pycbc_banksim``, the offending
-  approximant and parameters are now logged before the job exits, to make
-  it easier to identify problematic points in a large bank or injection
-  set without needing to reproduce the failure interactively.
-* ``pycbc_banksim`` previously crashed with ``AttributeError`` whenever it
-  tapered a waveform for an injection that had a ``taper`` value set (a
-  common setting for real production injection sets); this is fixed.

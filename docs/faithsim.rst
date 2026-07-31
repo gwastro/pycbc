@@ -87,7 +87,7 @@ The important sections are:
 
     With ``lalapps_inspinj`` (XML injections only), options are instead
     given directly in ``[injection]`` following that program's own
-    command-line options (``min-mass1``, ``i-distr``, ``waveform``, etc.)
+    command-line options (``min-mass1``, ``i-distr``, ``waveform``, etc.).
 
  #. ``[executables]``
 
@@ -122,8 +122,8 @@ The important sections are:
  #. ``[pegasus_profile]``
 
     Sets Condor/Pegasus properties for the workflow. Faithsim workflows
-    running on LDG clusters must include an ``accounting-group`` valid for
-    the value must be chosen according to the
+    running on LDG clusters must include an ``accounting-group`` value
+    valid for your account; the value must be chosen according to the
     `Accounting information web page <https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/>`_.
 
 ------------------------
