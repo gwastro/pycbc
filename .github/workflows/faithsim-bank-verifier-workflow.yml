@@ -1,0 +1,80 @@
+name: run small faithsim and bank verifier workflows using pegasus + condor
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v5
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - name: install condor
+      run: |
+        wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
+        echo "deb http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
+        echo "deb-src http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
+        sudo apt-get -o Acquire::Retries=3 update
+        sudo apt-get -o Acquire::Retries=3 install minihtcondor
+        sudo systemctl start condor
+        sudo systemctl enable condor
+    - name: install pegasus
+      run: |
+        wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
+        echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu noble main" | sudo tee -a /etc/apt/sources.list
+        sudo apt-get -o Acquire::Retries=3 update
+        sudo apt-get -o Acquire::Retries=3 install pegasus=5.1.1-1+ubuntu24
+    - run: sudo apt-get -o Acquire::Retries=3 install *fftw3* intel-mkl*
+    - name: Install pycbc
+      run: |
+        python -m pip install --upgrade pip setuptools
+        pip install GitPython # This shouldn't really be needed!
+        pip install -r requirements.txt
+        pip install .
+    - name: generating, submitting and running faithsim workflow
+      env:
+          _CONDOR_DAGMAN_USE_STRICT: "0"
+      run: |
+        cp examples/faith/faithsim_workflow_test/*.ini ./
+        cp examples/faith/injection_priors.ini ./
+        bash -e examples/faith/faithsim_workflow_test/gen.sh
+        condor_status
+        cd output
+        ./status
+        python ../examples/search/check_job.py
+        find submitdir/work/ -type f -name '*.tar.gz' -delete
+        cd ..
+        mv output output_faithsim
+    - name: store faithsim log files
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: faithsim-logs
+        path: output_faithsim/submitdir/work
+    - name: generating, submitting and running bank verifier workflow
+      env:
+          _CONDOR_DAGMAN_USE_STRICT: "0"
+      run: |
+        cp examples/banksim/bank_verifier_workflow_test/*.ini ./
+        cp examples/banksim/injection_priors.ini ./
+        cp examples/banksim/bank0.hdf ./
+        bash -e examples/banksim/bank_verifier_workflow_test/gen.sh
+        condor_status
+        cd output
+        ./status
+        python ../examples/search/check_job.py
+        find submitdir/work/ -type f -name '*.tar.gz' -delete
+        cd ..
+        mv output output_bank_verifier
+    - name: store bank verifier log files
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: bank-verifier-logs
+        path: output_bank_verifier/submitdir/work
