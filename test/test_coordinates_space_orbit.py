@@ -356,6 +356,48 @@ class TestNumericOrbits(unittest.TestCase):
                 velocities=self.positions[:, :, :2])
 
 
+class TestLisaOrbit(unittest.TestCase):
+    """Standalone sanity checks for the LISA fixture, mirroring
+    `TestTaijiOrbit`/`TestTianQinOrbit` below. `TestConstellationFrame`
+    above already gives LISA a stronger check (byte-level agreement with
+    the pre-existing hardcoded `pycbc.coordinates.space` formulas), but
+    that is a different kind of test; these are the same direct,
+    self-contained checks the other two missions get, for consistency.
+
+    Unlike Taiji, checking a "trails Earth by 20 degrees"-style angle
+    against a zero-phase circular reference does not give a clean constant
+    (this fixture's `T0` offset is calibrated to match the pre-existing
+    `TIME_OFFSET_20_DEGREES`/real-epoch convention, not a simple angular
+    offset from a toy reference), so that particular check is omitted here.
+    """
+    def setUp(self):
+        self.orbit = AnalyticEqualArmOrbit()
+        self.times = numpy.random.uniform(0.0, 3.15e7, size=50)
+
+    def test_arm_length_matches_design_value(self):
+        for d in _arm_lengths(self.orbit, self.times):
+            self.assertLess(
+                numpy.max(numpy.abs(d - ARMLENGTH)), 1.0,
+                'LISA arm length deviates from the 2.5e6 km design value '
+                'by more than 1 m')
+
+    def test_rotation_orthonormal(self):
+        _, rotation = space_orbit.constellation_frame(self.times, self.orbit)
+        for r in rotation:
+            self.assertLess(
+                numpy.max(numpy.abs(r @ r.T - numpy.eye(3))), 1e-8)
+
+    def test_round_trip_time_delay(self):
+        lam, beta = 1.1, -0.4
+        k_ssb = space.localization_to_propagation_vector(
+            lam, beta, use_astropy=False).flatten()
+        for t_ssb in self.times[:10]:
+            t_det = space_orbit.t_detector_from_ssb(t_ssb, k_ssb, self.orbit)
+            t_ssb_roundtrip = space_orbit.t_ssb_from_t_detector(
+                t_det, k_ssb, self.orbit)
+            self.assertAlmostEqual(t_ssb_roundtrip, t_ssb, places=3)
+
+
 class TestTaijiOrbit(unittest.TestCase):
     def setUp(self):
         self.orbit = AnalyticTaijiOrbit()
@@ -688,6 +730,7 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestConstellationFrame))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestLinkVector))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNumericOrbits))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestLisaOrbit))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTaijiOrbit))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTianQinOrbit))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
