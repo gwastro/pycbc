@@ -3,12 +3,23 @@
 set -e
 
 # Install PyCBC
+#
+# --use-feature venv-isolation is required here: pip's default ("virtual")
+# build isolation isolates sdist builds by replaying site.py's .pth
+# processing in a subprocess via a generated sitecustomize.py. Old-style
+# namespace-package .pth shims (e.g. the one shipped by sphinxcontrib-jsmath,
+# pulled in via Sphinx in requirements.txt) crash that replay with spurious
+# "ModuleNotFoundError: No module named 'traceback'/'importlib'" errors,
+# which then breaks the build of any sdist-only dependency later in the
+# install (amqplib being the one that happens to trip over it first).
+# Using pip's real venv-based isolation avoids replaying the outer
+# environment's .pth files at all.
 cd /scratch
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m pip install -r requirements-igwn.txt
-python -m pip install -r companion.txt
-python -m pip install .
+python -m pip install --use-feature venv-isolation -r requirements.txt
+python -m pip install --use-feature venv-isolation -r requirements-igwn.txt
+python -m pip install --use-feature venv-isolation -r companion.txt
+python -m pip install --use-feature venv-isolation .
 cd /
 
 # Copy PyCBC source repository into the image
