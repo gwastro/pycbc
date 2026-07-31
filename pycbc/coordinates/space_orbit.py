@@ -36,6 +36,18 @@ use `NumericOrbits` below, which reads the same (times, positions[,
 velocities]) input as `lisaorbits.InterpolatedOrbits` and interpolates using
 only `scipy`.
 
+`compute_velocity(t, sc)` and `compute_acceleration(t, sc)` (same calling
+convention, [m/s] and [m/s^2] respectively) are also provided everywhere in
+this module -- `NumericOrbits` and the analytic mission classes below --
+needed by single-link response models that depend on spacecraft velocity
+(e.g. the sinc-type finite-armlength/light-travel-time correction) or
+acceleration. For the analytic classes these are exact closed-form
+derivatives of `compute_position` (the same formula
+`lisaorbits.EqualArmlengthOrbits` differentiates, verified to agree with it
+at essentially machine precision in the test suite), not finite-difference
+approximations; for `NumericOrbits` they are analytic derivatives of the
+interpolating spline, exactly mirroring `lisaorbits.InterpolatedOrbits`.
+
 This module does not change or replace anything in `pycbc.coordinates.space`;
 it is purely additive.
 """
@@ -121,6 +133,15 @@ class NumericOrbits:
                 for row in self._pos_splines
             ]
 
+        # Acceleration is always the analytic derivative of the velocity
+        # spline (whether that spline came from provided velocities or was
+        # itself derived from positions), matching
+        # `lisaorbits.InterpolatedOrbits`' own construction.
+        self._acc_splines = [
+            [spline.derivative() for spline in row]
+            for row in self._vel_splines
+        ]
+
     def _sc_indices(self, sc):
         """Map 1-indexed spacecraft labels (matching the `lisaorbits`
         convention) to 0-indexed array positions. `sc=None` selects all
@@ -170,6 +191,18 @@ class NumericOrbits:
             Spacecraft velocity/ies in the SSB frame [m/s].
         """
         return self._evaluate(self._vel_splines, t, sc)
+
+    def compute_acceleration(self, t, sc=None):
+        """Spacecraft acceleration(s) at time(s) `t`, as the analytic
+        derivative of `compute_velocity`'s spline. Same conventions as
+        `compute_position`.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft acceleration(s) in the SSB frame [m/s^2].
+        """
+        return self._evaluate(self._acc_splines, t, sc)
 
     @classmethod
     def from_file(cls, path, group=None, interp_order=5):
@@ -259,10 +292,10 @@ class ICRSOrbitAdapter:
     components) -- even though frame-independent quantities like arm
     length happen to come out correct either way.
 
-    This class only wraps `compute_position`/`compute_velocity`; both are
-    rotated with the same fixed matrix, since the ICRS -> ecliptic
-    transform (fixed equinox, no origin shift) commutes with time
-    differentiation.
+    This class wraps `compute_position`/`compute_velocity`/
+    `compute_acceleration`; all three are rotated with the same fixed
+    matrix, since the ICRS -> ecliptic transform (fixed equinox, no origin
+    shift) commutes with time differentiation.
 
     Parameters
     ----------
@@ -281,6 +314,9 @@ class ICRSOrbitAdapter:
 
     def compute_velocity(self, t, sc=(1, 2, 3)):
         return self._orbit.compute_velocity(t, sc) @ self._rotation.T
+
+    def compute_acceleration(self, t, sc=(1, 2, 3)):
+        return self._orbit.compute_acceleration(t, sc) @ self._rotation.T
 
 
 def _real_earth_ecliptic_longitude(t=0.0):
@@ -315,6 +351,58 @@ def _equal_arm_orbit_position(alpha, armlength, sc):
             np.sin(alpha) * np.cos(alpha) * np.cos(beta_n)
             - (1 + np.cos(alpha) ** 2) * np.sin(beta_n))
         out[:, k, 2] = -np.sqrt(3) * a * e * np.cos(alpha - beta_n)
+    return out
+
+
+def _equal_arm_orbit_velocity(alpha, omega, armlength, sc):
+    """d/dt of `_equal_arm_orbit_position`, given the (constant) guiding-
+    center angular frequency `omega` = d(alpha)/dt [rad/s]. Exact analytic
+    derivative of the same closed-form position expansion (chain rule
+    through `alpha(t)`), not a finite-difference approximation -- the same
+    precision-in-principle as `lisaorbits.EqualArmlengthOrbits.
+    compute_velocity`, which differentiates the identical formula.
+    """
+    a = ASTRONOMICAL_UNIT.value
+    e = armlength / (2 * a * np.sqrt(3))
+    sin_a, cos_a = np.sin(alpha), np.cos(alpha)
+    out = np.empty((len(alpha), len(sc), 3))
+    for k, n in enumerate(sc):
+        beta_n = (n - 1) * 2 * np.pi / 3.0
+        out[:, k, 0] = omega * (
+            -a * sin_a + a * e * (
+                (cos_a ** 2 - sin_a ** 2) * np.sin(beta_n)
+                - 2 * sin_a * cos_a * np.cos(beta_n)))
+        out[:, k, 1] = omega * (
+            a * cos_a + a * e * (
+                (cos_a ** 2 - sin_a ** 2) * np.cos(beta_n)
+                + 2 * sin_a * cos_a * np.sin(beta_n)))
+        out[:, k, 2] = omega * (
+            np.sqrt(3) * a * e * np.sin(alpha - beta_n))
+    return out
+
+
+def _equal_arm_orbit_acceleration(alpha, omega, armlength, sc):
+    """d^2/dt^2 of `_equal_arm_orbit_position`, i.e. d/dt of
+    `_equal_arm_orbit_velocity`. See `_equal_arm_orbit_velocity` for the
+    precision rationale.
+    """
+    a = ASTRONOMICAL_UNIT.value
+    e = armlength / (2 * a * np.sqrt(3))
+    sin_a, cos_a = np.sin(alpha), np.cos(alpha)
+    omega2 = omega ** 2
+    out = np.empty((len(alpha), len(sc), 3))
+    for k, n in enumerate(sc):
+        beta_n = (n - 1) * 2 * np.pi / 3.0
+        out[:, k, 0] = omega2 * (
+            -a * cos_a - 4 * a * e * (
+                sin_a * cos_a * np.sin(beta_n)
+                + (0.5 - sin_a ** 2) * np.cos(beta_n)))
+        out[:, k, 1] = omega2 * (
+            -a * sin_a - 4 * a * e * (
+                sin_a * cos_a * np.cos(beta_n)
+                + (0.5 - cos_a ** 2) * np.sin(beta_n)))
+        out[:, k, 2] = omega2 * (
+            np.sqrt(3) * a * e * np.cos(alpha - beta_n))
     return out
 
 
@@ -367,6 +455,39 @@ class LisaAnalyticOrbit:
         sc = np.atleast_1d(sc)
         alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
         return _equal_arm_orbit_position(alpha, self.armlength, sc)
+
+    def compute_velocity(self, t, sc=(1, 2, 3)):
+        """Spacecraft velocity/ies at time(s) `t`, as the exact analytic
+        derivative of `compute_position` (not a finite-difference
+        approximation). See `NumericOrbits.compute_position` for the
+        calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft velocity/ies in the SSB frame [m/s].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
+        return _equal_arm_orbit_velocity(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
+
+    def compute_acceleration(self, t, sc=(1, 2, 3)):
+        """Spacecraft acceleration(s) at time(s) `t`, as the exact
+        analytic second derivative of `compute_position`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft acceleration(s) in the SSB frame [m/s^2].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
+        return _equal_arm_orbit_acceleration(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
 
 
 class TaijiAnalyticOrbit:
@@ -424,6 +545,41 @@ class TaijiAnalyticOrbit:
         alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
             + self.lead_angle
         return _equal_arm_orbit_position(alpha, self.armlength, sc)
+
+    def compute_velocity(self, t, sc=(1, 2, 3)):
+        """Spacecraft velocity/ies at time(s) `t`, as the exact analytic
+        derivative of `compute_position` (not a finite-difference
+        approximation). See `NumericOrbits.compute_position` for the
+        calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft velocity/ies in the SSB frame [m/s].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
+            + self.lead_angle
+        return _equal_arm_orbit_velocity(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
+
+    def compute_acceleration(self, t, sc=(1, 2, 3)):
+        """Spacecraft acceleration(s) at time(s) `t`, as the exact
+        analytic second derivative of `compute_position`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft acceleration(s) in the SSB frame [m/s^2].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
+            + self.lead_angle
+        return _equal_arm_orbit_acceleration(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
 
 
 class TianQinAnalyticOrbit:
@@ -512,6 +668,89 @@ class TianQinAnalyticOrbit:
             out[:, k, 0] = earth[:, 0] + xn
             out[:, k, 1] = earth[:, 1] + yn
             out[:, k, 2] = earth[:, 2] + zn
+        return out
+
+    def compute_velocity(self, t, sc=(1, 2, 3)):
+        """Spacecraft velocity/ies at time(s) `t`, as the exact analytic
+        derivative of `compute_position` (not a finite-difference
+        approximation): both the Earth-like guiding center and the fast-
+        rotation triangle term have a constant angular frequency, so each
+        is differentiated by a simple chain rule through its own phase.
+        See `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft velocity/ies in the SSB frame [m/s].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        a = ASTRONOMICAL_UNIT.value
+        omega_e = EARTH_ORBIT_ANGULAR_FREQUENCY
+        alpha_earth = omega_e * t + self.kappa0
+        earth_vel = a * omega_e * np.stack([
+            -np.sin(alpha_earth), np.cos(alpha_earth),
+            np.zeros_like(t)], axis=-1)
+        omega_sc = 2 * np.pi / self.rotation_period
+        out = np.empty((len(t), len(sc), 3))
+        for k, n in enumerate(sc):
+            kappa_n = 2 * np.pi / 3.0 * (n - 1) + self.initial_orbit_phase
+            phase = omega_sc * t + kappa_n
+            vxn = omega_sc * (self.armlength / np.sqrt(3)) * (
+                np.sin(self.beta_s) * np.cos(self.lambda_s)
+                * np.cos(phase)
+                - np.sin(self.lambda_s) * np.sin(phase))
+            vyn = omega_sc * (self.armlength / np.sqrt(3)) * (
+                np.sin(self.beta_s) * np.sin(self.lambda_s)
+                * np.cos(phase)
+                + np.cos(self.lambda_s) * np.sin(phase))
+            vzn = -omega_sc * (self.armlength / np.sqrt(3)) \
+                * np.cos(self.beta_s) * np.cos(phase)
+            out[:, k, 0] = earth_vel[:, 0] + vxn
+            out[:, k, 1] = earth_vel[:, 1] + vyn
+            out[:, k, 2] = earth_vel[:, 2] + vzn
+        return out
+
+    def compute_acceleration(self, t, sc=(1, 2, 3)):
+        """Spacecraft acceleration(s) at time(s) `t`, as the exact
+        analytic second derivative of `compute_position`. Both the
+        guiding center and the fast-rotation triangle term are uniform
+        circular motion at their own constant angular frequency, so each
+        term's acceleration is simply -omega^2 times that same term's
+        (relative) position. See `NumericOrbits.compute_position` for the
+        calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft acceleration(s) in the SSB frame [m/s^2].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        a = ASTRONOMICAL_UNIT.value
+        omega_e = EARTH_ORBIT_ANGULAR_FREQUENCY
+        alpha_earth = omega_e * t + self.kappa0
+        earth_acc = -a * omega_e ** 2 * np.stack([
+            np.cos(alpha_earth), np.sin(alpha_earth),
+            np.zeros_like(t)], axis=-1)
+        omega_sc = 2 * np.pi / self.rotation_period
+        out = np.empty((len(t), len(sc), 3))
+        for k, n in enumerate(sc):
+            kappa_n = 2 * np.pi / 3.0 * (n - 1) + self.initial_orbit_phase
+            phase = omega_sc * t + kappa_n
+            xn = (self.armlength / np.sqrt(3)) * (
+                np.sin(self.beta_s) * np.cos(self.lambda_s)
+                * np.sin(phase)
+                + np.sin(self.lambda_s) * np.cos(phase))
+            yn = (self.armlength / np.sqrt(3)) * (
+                np.sin(self.beta_s) * np.sin(self.lambda_s)
+                * np.sin(phase)
+                - np.cos(self.lambda_s) * np.cos(phase))
+            zn = -(self.armlength / np.sqrt(3)) \
+                * np.cos(self.beta_s) * np.sin(phase)
+            out[:, k, 0] = earth_acc[:, 0] - omega_sc ** 2 * xn
+            out[:, k, 1] = earth_acc[:, 1] - omega_sc ** 2 * yn
+            out[:, k, 2] = earth_acc[:, 2] - omega_sc ** 2 * zn
         return out
 
 

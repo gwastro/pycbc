@@ -370,6 +370,37 @@ class TestNumericOrbits(unittest.TestCase):
                 self.t_grid, self.positions,
                 velocities=self.positions[:, :, :2])
 
+    def test_velocity_interpolation_accuracy(self):
+        """`compute_velocity`, auto-derived from the position spline (no
+        velocities given), must reproduce the analytic orbit's own exact
+        velocity at off-grid query times.
+        """
+        exact_orbit = space_orbit.LisaAnalyticOrbit()
+        positions = exact_orbit.compute_position(self.t_grid)
+        numeric = space_orbit.NumericOrbits(self.t_grid, positions)
+        interpolated = numeric.compute_velocity(self.t_query)
+        exact = exact_orbit.compute_velocity(self.t_query)
+        maxdiff = numpy.max(numpy.abs(interpolated - exact))
+        self.assertLess(maxdiff, 1e-3,
+                        f'NumericOrbits velocity interpolation error too '
+                        f'large: {maxdiff} m/s')
+
+    def test_acceleration_interpolation_accuracy(self):
+        """`compute_acceleration`, derived as the second analytic
+        derivative of the position spline (no velocities or accelerations
+        given), must reproduce the analytic orbit's own exact acceleration
+        at off-grid query times.
+        """
+        exact_orbit = space_orbit.LisaAnalyticOrbit()
+        positions = exact_orbit.compute_position(self.t_grid)
+        numeric = space_orbit.NumericOrbits(self.t_grid, positions)
+        interpolated = numeric.compute_acceleration(self.t_query)
+        exact = exact_orbit.compute_acceleration(self.t_query)
+        maxdiff = numpy.max(numpy.abs(interpolated - exact))
+        self.assertLess(maxdiff, 1e-6,
+                        f'NumericOrbits acceleration interpolation error '
+                        f'too large: {maxdiff} m/s^2')
+
 
 class TestLisaOrbit(unittest.TestCase):
     """Standalone sanity checks for the LISA fixture, mirroring
@@ -723,6 +754,40 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
                 self.assertLess(
                     numpy.max(numpy.abs(d - expected_armlength)), 1.0)
 
+    def test_velocity_matches_finite_difference_of_position(self):
+        """`compute_velocity` is an exact analytic derivative, not a
+        finite-difference approximation -- but a central finite difference
+        of `compute_position`, at a small enough step, must still agree
+        with it to high precision. This is independent of `lisaorbits`.
+        """
+        dt = 1.0  # s
+        for orbit in (space_orbit.LisaAnalyticOrbit(),
+                      space_orbit.TaijiAnalyticOrbit(),
+                      space_orbit.TianQinAnalyticOrbit()):
+            t = numpy.random.uniform(1e5, 3.1e7, size=10)
+            pos_plus = orbit.compute_position(t + dt)
+            pos_minus = orbit.compute_position(t - dt)
+            finite_diff_vel = (pos_plus - pos_minus) / (2 * dt)
+            analytic_vel = orbit.compute_velocity(t)
+            self.assertLess(
+                numpy.max(numpy.abs(analytic_vel - finite_diff_vel)), 1e-3)
+
+    def test_acceleration_matches_finite_difference_of_velocity(self):
+        """Same rationale as `test_velocity_matches_finite_difference_of_
+        position`, one derivative order up.
+        """
+        dt = 1.0  # s
+        for orbit in (space_orbit.LisaAnalyticOrbit(),
+                      space_orbit.TaijiAnalyticOrbit(),
+                      space_orbit.TianQinAnalyticOrbit()):
+            t = numpy.random.uniform(1e5, 3.1e7, size=10)
+            vel_plus = orbit.compute_velocity(t + dt)
+            vel_minus = orbit.compute_velocity(t - dt)
+            finite_diff_acc = (vel_plus - vel_minus) / (2 * dt)
+            analytic_acc = orbit.compute_acceleration(t)
+            self.assertLess(
+                numpy.max(numpy.abs(analytic_acc - finite_diff_acc)), 1e-6)
+
 
 class TestNumericOrbitsGeneralizesBeyondLisa(unittest.TestCase):
     """`NumericOrbits` must interpolate Taiji- and TianQin-shaped orbits
@@ -946,6 +1011,53 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
             self.assertLess(
                 numpy.max(numpy.abs(r @ r.T - numpy.eye(3))), 1e-8)
 
+    def test_position_velocity_acceleration_match_lisaorbits_exactly(self):
+        """`space_orbit`'s analytic position/velocity/acceleration formulas
+        (`_equal_arm_orbit_position/_velocity/_acceleration`, underlying
+        `LisaAnalyticOrbit`/`TaijiAnalyticOrbit`) are, by construction, the
+        exact same closed-form Keplerian expansion (Rubbo, Cornish &
+        Poujade 2004) that `lisaorbits.EqualArmlengthOrbits` implements --
+        this checks that claim directly, at essentially machine precision,
+        rather than merely "close".
+
+        `EqualArmlengthOrbits()`'s defaults give a guiding-center phase
+        `mbar(t) = n * t` (`t_init`, `m_init1`, `lambda1` all 0), where `n`
+        is its own physically-derived angular frequency
+        (`sqrt(GM_SUN/a**3)`) -- not `space_orbit`'s own
+        `EARTH_ORBIT_ANGULAR_FREQUENCY` constant (tuned to Earth's actual
+        sidereal year, which differs slightly from a bare two-body Kepler
+        frequency at 1 AU). Since `_equal_arm_orbit_velocity`/
+        `_acceleration` take the angular frequency as an explicit
+        parameter (not hardcoded), using `EqualArmlengthOrbits`'s own `n`
+        directly here isolates a pure formula-for-formula comparison from
+        that unrelated frequency-convention difference.
+        """
+        try:
+            import lisaorbits
+        except ImportError:
+            self.skipTest('lisaorbits not installed; skipping exact '
+                          'position/velocity/acceleration cross-check')
+        ref = lisaorbits.EqualArmlengthOrbits(L=ARMLENGTH)
+        ref_ecliptic = space_orbit.ICRSOrbitAdapter(ref)
+
+        t = numpy.random.uniform(1e5, 3.1e7, size=20)
+        sc = (1, 2, 3)
+        alpha = ref.n * t  # matches ref's own mbar(t) for these defaults
+
+        pos_mine = space_orbit._equal_arm_orbit_position(alpha, ARMLENGTH, sc)
+        vel_mine = space_orbit._equal_arm_orbit_velocity(
+            alpha, ref.n, ARMLENGTH, sc)
+        acc_mine = space_orbit._equal_arm_orbit_acceleration(
+            alpha, ref.n, ARMLENGTH, sc)
+
+        pos_ref = ref_ecliptic.compute_position(t, sc)
+        vel_ref = ref_ecliptic.compute_velocity(t, sc)
+        acc_ref = ref_ecliptic.compute_acceleration(t, sc)
+
+        self.assertLess(numpy.max(numpy.abs(pos_mine - pos_ref)), 1e-3)
+        self.assertLess(numpy.max(numpy.abs(vel_mine - vel_ref)), 1e-6)
+        self.assertLess(numpy.max(numpy.abs(acc_mine - acc_ref)), 1e-9)
+
 
 class TestICRSOrbitAdapter(unittest.TestCase):
     """`ICRSOrbitAdapter` wraps an ICRS-frame orbit provider (as produced by
@@ -1028,6 +1140,30 @@ class TestICRSOrbitAdapter(unittest.TestCase):
         expected_vel = numeric_ecliptic.compute_velocity(query_t, (1, 2, 3))
         self.assertLess(
             numpy.max(numpy.abs(recovered_vel - expected_vel)), 1e-3)
+
+    def test_compute_acceleration_rotates_consistently(self):
+        t_grid = numpy.linspace(0.0, 3.15e7, 400)
+        pos_ecliptic = self.ecliptic_orbit.compute_position(t_grid)
+        numeric_ecliptic = space_orbit.NumericOrbits(t_grid, pos_ecliptic)
+
+        rotation = self.rotation
+
+        class _FakeICRSOrbit:
+            def compute_position(self, t, sc=(1, 2, 3)):
+                return numeric_ecliptic.compute_position(t, sc) @ rotation
+
+            def compute_velocity(self, t, sc=(1, 2, 3)):
+                return numeric_ecliptic.compute_velocity(t, sc) @ rotation
+
+            def compute_acceleration(self, t, sc=(1, 2, 3)):
+                return numeric_ecliptic.compute_acceleration(t, sc) @ rotation
+
+        adapter = space_orbit.ICRSOrbitAdapter(_FakeICRSOrbit())
+        query_t = numpy.linspace(1e6, 3.1e7, 50)
+        recovered_acc = adapter.compute_acceleration(query_t, (1, 2, 3))
+        expected_acc = numeric_ecliptic.compute_acceleration(query_t, (1, 2, 3))
+        self.assertLess(
+            numpy.max(numpy.abs(recovered_acc - expected_acc)), 1e-6)
 
     def test_usable_directly_with_constellation_frame_and_link_vector(self):
         adapter = space_orbit.ICRSOrbitAdapter(self._fake_icrs_orbit())
