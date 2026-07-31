@@ -23,14 +23,10 @@
 # =============================================================================
 #
 
-import os
 import logging
 from numpy import complex64
 import argparse
 import sys
-
-from igwn_ligolw import utils as ligolw_utils
-from igwn_ligolw import lsctables
 
 import pycbc.strain
 import pycbc.psd
@@ -40,49 +36,8 @@ from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 from pycbc.filter import match, overlap, sigma
 from pycbc.scheme import CPUScheme, CUDAScheme
-from pycbc.io.ligolw import LIGOLWContentHandler
-from pycbc.io import HFile, WaveformArray
-from pycbc.inject import InjectionSet
+from pycbc.inject import read_injection_table
 
-
-def read_hdf_table(hdf_file):
-    """Read a plain HDF table of equal-length columns (one dataset per
-    parameter), as used for HDF template banks.
-    """
-    with HFile(hdf_file, 'r') as f:
-        params = list(f.attrs['parameters']) if 'parameters' in f.attrs \
-            else list(f.keys())
-        params = [p.decode() if hasattr(p, 'decode') else p for p in params]
-        num = f[params[0]].size
-        dtype = [(p, f[p][:].dtype) for p in params]
-        table = WaveformArray(num, dtype=dtype)
-        for p in params:
-            table[p] = f[p][:]
-    return table
-
-
-def read_param_table(param_file):
-    """Read waveform parameters from a Sngl/SimInspiral LIGOLW XML file,
-    or from an HDF file.
-
-    HDF files are normally read as an injection set (as written by
-    `pycbc_create_injections`, which requires a 'tc' column); if that
-    fails, falls back to reading it as a plain HDF table (e.g. an HDF
-    template bank re-used as a parameter file).
-    """
-    ext = os.path.basename(param_file)
-    if ext.endswith(('.hdf', '.h5', '.hdf5')):
-        try:
-            return InjectionSet(param_file).table
-        except ValueError:
-            return read_hdf_table(param_file)
-
-    indoc = ligolw_utils.load_filename(param_file, False,
-                                       contenthandler=LIGOLWContentHandler)
-    try:
-        return lsctables.SnglInspiralTable.get_table(indoc)
-    except ValueError:
-        return lsctables.SimInspiralTable.get_table(indoc)
 
 def update_progress(progress):
     print('Progress: {}/{} members processed'.format(progress, 100))
@@ -199,8 +154,12 @@ if options.cuda:
 else:
     ctx = CPUScheme()
 
-# Load in the waveform parameter file
-waveform_table = read_param_table(options.bank_file)
+# Load in the waveform parameter file. XML files are tried as a template
+# bank (sngl_inspiral) first, then as injections (sim_inspiral), since
+# --param-file is more often a bank in this script.
+waveform_table = read_injection_table(
+    options.bank_file, xml_tables=('sngl_inspiral', 'sim_inspiral')
+)
 
 # open the output file where the max overlaps over the bank are stored 
 fout = open(options.out_file, "w")
