@@ -112,7 +112,7 @@ inspinj_exe.current_retention_level = wf.Executable.FINAL_RESULT
 
 inspinj_job = inspinj_exe(
     workflow.cp, 'injection', ifos=["X1"],
-    out_dir=workflow.out_dir + "injections", tags=["inj"],
+    out_dir=os.path.join(workflow.out_dir, "injections"), tags=["inj"],
 )
 
 if inspinj_exe is LalappsInspinjExecutable:
@@ -130,21 +130,23 @@ workflow += inj_node
 
 split_exe_class = select_splitfilejob_instance(splitter_name)
 split_exe = split_exe_class(
-    workflow.cp, "injsplit", num_banks, out_dir=workflow.out_dir + "bank"
+    workflow.cp, "injsplit", num_banks,
+    out_dir=os.path.join(workflow.out_dir, "bank")
 )
 splitbank_node = split_exe.create_node(inj)
 
 workflow += splitbank_node
 
 faithsim_exe = FaithsimExecutable(
-    workflow.cp, "pycbc_faithsim", ifos=["X1"], out_dir=workflow.out_dir +"match"
+    workflow.cp, "pycbc_faithsim", ifos=["X1"],
+    out_dir=os.path.join(workflow.out_dir, "match")
 )
 
 collect_exe = CollectResultsExecutable(
     workflow.cp,
     "pycbc_faithsim_collect_results",
     ifos=["X1"],
-    out_dir=workflow.out_dir +"collect_results",
+    out_dir=os.path.join(workflow.out_dir, "collect_results"),
 )
 
 faithsim_files = wf.FileList([])
@@ -171,7 +173,7 @@ make_faithsim_plot(
     workflow,
     workflow.analysis_time,
     collect_results,
-    out_dir=workflow.out_dir +"plots",
+    out_dir=os.path.join(workflow.out_dir, "plots"),
     tags=None,
 )
 
