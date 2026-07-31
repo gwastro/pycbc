@@ -947,6 +947,75 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
                 numpy.max(numpy.abs(r @ r.T - numpy.eye(3))), 1e-8)
 
 
+class TestOptionalESAOemOrbitFiles(unittest.TestCase):
+    """If `lisaorbits` (and its optional `oem` dependency) are installed and
+    network access is available, verify that `space_orbit` correctly
+    consumes real ESA LISA orbit files (CCSDS OEM format, published at
+    https://github.com/esa/lisa-orbit-files, fetched here via
+    `lisaorbits.OEMOrbits.from_included`).
+
+    Unlike `lisaorbits`' own analytic orbits (e.g. `EqualArmlengthOrbits`,
+    used in `TestOptionalLisaorbitsDuckTyping` above), OEM files are given in
+    the EME2000 (~ICRS) equatorial frame, not the SSB ecliptic frame that
+    `space_orbit`/`space` assume. This test therefore also exercises the
+    ICRS -> BarycentricMeanEcliptic conversion (the same astropy transform
+    already used by `pycbc.coordinates.space.earth_position_ssb`) that any
+    caller must apply before treating OEM-derived positions as a `space_orbit`
+    `OrbitProvider`.
+
+    Skipped entirely if `lisaorbits`/`oem` are not installed, or if the
+    one-time download of the (~600 kB total) orbit files fails for any
+    reason (no network access, hash mismatch, upstream repository changes,
+    etc.) -- this test never requires a local, machine-specific data path.
+    """
+    def test_esa_oem_orbit_matches_design_arm_length(self):
+        try:
+            import lisaorbits
+            from astropy import units as apy_units
+            from astropy.coordinates import ICRS, BarycentricMeanEcliptic
+        except ImportError:
+            self.skipTest('lisaorbits not installed; skipping ESA OEM '
+                          'orbit-file cross-check')
+        try:
+            oem_orbit = lisaorbits.OEMOrbits.from_included(
+                'esa-trailing', version='2.0.0')
+        except Exception as exc:  # pylint: disable=broad-except
+            self.skipTest('could not fetch official ESA lisa-orbit-files '
+                          f'orbit ({exc!r}); skipping cross-check')
+
+        t_grid = numpy.linspace(
+            oem_orbit.t_start + 5 * 86400.0,
+            oem_orbit.t_end - 5 * 86400.0, 100)
+        positions_icrs = oem_orbit.compute_position(t_grid)
+
+        flat = positions_icrs.reshape(-1, 3)
+        icrs = ICRS(x=flat[:, 0] * apy_units.m, y=flat[:, 1] * apy_units.m,
+                    z=flat[:, 2] * apy_units.m, representation_type='cartesian')
+        ecl = icrs.transform_to(
+            BarycentricMeanEcliptic(equinox='J2000')).cartesian
+        positions_ecliptic = numpy.stack(
+            [ecl.x.to(apy_units.m).value, ecl.y.to(apy_units.m).value,
+             ecl.z.to(apy_units.m).value], axis=-1
+        ).reshape(positions_icrs.shape)
+
+        esa_orbit = space_orbit.NumericOrbits(t_grid, positions_ecliptic)
+        unit_vec, length = space_orbit.link_vector(t_grid, esa_orbit, 1, 2)
+        self.assertTrue(numpy.all(numpy.isfinite(length)))
+        self.assertLess(
+            numpy.max(numpy.abs(numpy.linalg.norm(unit_vec, axis=-1) - 1.0)),
+            1e-8)
+        # LISA's design arm length is 2.5 million km; real orbit files
+        # deviate from this by up to a few percent due to orbital dynamics.
+        self.assertTrue(numpy.all(numpy.abs(length / 1e3 - 2.5e6) < 1e5))
+
+        centroid, rotation = space_orbit.constellation_frame(t_grid, esa_orbit)
+        for r in rotation:
+            self.assertLess(
+                numpy.max(numpy.abs(r @ r.T - numpy.eye(3))), 1e-8)
+        centroid_au = numpy.linalg.norm(centroid, axis=-1) / SEMI_MAJOR_AXIS
+        self.assertTrue(numpy.all(numpy.abs(centroid_au - 1.0) < 0.05))
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestConstellationFrame))
@@ -965,6 +1034,8 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestTransformsAcceptOrbitFile))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestOptionalLisaorbitsDuckTyping))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestOptionalESAOemOrbitFiles))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
