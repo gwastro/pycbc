@@ -288,6 +288,63 @@ def constellation_frame(t, orbit, sc=(1, 2, 3)):
     return centroid, rotation
 
 
+def link_vector(t, orbit, sc_emitter, sc_receiver):
+    """Compute the instantaneous unit vector and arm length for a single
+    laser link between two spacecraft -- the geometric input needed by
+    single-link response formulas, for any constellation orbit (LISA,
+    Taiji, TianQin, analytic or numerical).
+
+    The unit vector points from the emitter spacecraft to the receiver
+    spacecraft, both evaluated at the same time `t` (i.e. this neglects the
+    light travel time between emission and reception). This matches the
+    convention of `lisaorbits.Orbits.compute_unit_vector`, except that
+    function retards the emitter position by the link's actual light travel
+    time; the same-time approximation here is what is needed for the
+    spatial projection factors (e.g. n_hat . k_hat, or (n_hat x n_hat):P)
+    that enter single-link response formulas, and is accurate to the same
+    order those formulas already are. Applications that need the true
+    retarded emission time (e.g. exact TDI time-delay operators) can solve
+    for it explicitly with the same self-consistent approach
+    `t_detector_from_ssb` uses for the constellation centroid.
+
+    Parameters
+    ----------
+    t : (N,) array-like
+        SSB time(s) [s].
+    orbit : OrbitProvider
+        Any object exposing `compute_position(t, sc)`, see
+        `constellation_frame`.
+    sc_emitter : int or (M,) array-like
+        1-indexed spacecraft label(s) of the emitter.
+    sc_receiver : int or (M,) array-like
+        1-indexed spacecraft label(s) of the receiver, same shape as
+        `sc_emitter`. `link_vector(t, orbit, i, j)` and
+        `link_vector(t, orbit, j, i)` give antiparallel unit vectors and
+        the same arm length.
+
+    Returns
+    -------
+    unit_vector : (N, M, 3) ndarray
+        Unit vector(s) pointing from emitter to receiver.
+    arm_length : (N, M) ndarray
+        Instantaneous distance(s) between emitter and receiver [m].
+    """
+    t = np.atleast_1d(np.asarray(t, dtype=float))
+    sc_emitter = np.atleast_1d(np.asarray(sc_emitter))
+    sc_receiver = np.atleast_1d(np.asarray(sc_receiver))
+    if sc_emitter.shape != sc_receiver.shape:
+        raise ValueError(
+            'sc_emitter and sc_receiver must have the same shape, got '
+            f'{sc_emitter.shape} and {sc_receiver.shape}')
+
+    pos_emitter = orbit.compute_position(t, sc_emitter)  # (N, M, 3)
+    pos_receiver = orbit.compute_position(t, sc_receiver)  # (N, M, 3)
+    delta = pos_receiver - pos_emitter
+    arm_length = np.linalg.norm(delta, axis=-1)  # (N, M)
+    unit_vector = delta / arm_length[..., np.newaxis]
+    return unit_vector, arm_length
+
+
 def t_detector_from_ssb(t_ssb, k_ssb, orbit, sc=(1, 2, 3)):
     """Compute the time at which a GW signal arrives at the constellation
     centroid, given the time and propagation direction in the SSB frame.
@@ -349,6 +406,7 @@ def t_ssb_from_t_detector(t_detector, k_ssb, orbit, sc=(1, 2, 3)):
 __all__ = [
     'NumericOrbits',
     'constellation_frame',
+    'link_vector',
     't_detector_from_ssb',
     't_ssb_from_t_detector',
 ]

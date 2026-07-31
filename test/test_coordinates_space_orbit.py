@@ -246,6 +246,72 @@ class TestConstellationFrame(unittest.TestCase):
                     f't_ssb_from_t_lisa at t_lisa={t_lisa}')
 
 
+class TestLinkVector(unittest.TestCase):
+    """`link_vector` is the per-arm building block (unit vector + arm
+    length) that single-link response formulas need, on top of the
+    whole-constellation quantities `constellation_frame` already provides.
+    Checked here against all three constellation fixtures (LISA, Taiji,
+    TianQin), since a per-arm quantity should behave identically regardless
+    of the specific orbit's geometry.
+    """
+    def setUp(self):
+        self.times = numpy.random.uniform(0.0, 3.15e7, size=20)
+
+    def _check_arm_length_and_normalization(self, orbit, expected_armlength):
+        for i, j in [(1, 2), (2, 3), (1, 3)]:
+            unit_vector, arm_length = space_orbit.link_vector(
+                self.times, orbit, i, j)
+            self.assertEqual(unit_vector.shape, (len(self.times), 1, 3))
+            self.assertEqual(arm_length.shape, (len(self.times), 1))
+            self.assertLess(
+                numpy.max(numpy.abs(arm_length - expected_armlength)), 1.0,
+                f'link ({i},{j}) length deviates from the design arm '
+                f'length by more than 1 m')
+            norms = numpy.linalg.norm(unit_vector, axis=-1)
+            self.assertLess(numpy.max(numpy.abs(norms - 1.0)), 1e-10,
+                            'link unit vector is not normalized')
+
+    def test_lisa_arm_length_and_normalization(self):
+        self._check_arm_length_and_normalization(
+            AnalyticEqualArmOrbit(), ARMLENGTH)
+
+    def test_taiji_arm_length_and_normalization(self):
+        self._check_arm_length_and_normalization(
+            AnalyticTaijiOrbit(), TAIJI_ARMLENGTH)
+
+    def test_tianqin_arm_length_and_normalization(self):
+        self._check_arm_length_and_normalization(
+            AnalyticTianQinOrbit(), TIANQIN_ARMLENGTH)
+
+    def test_antiparallel_and_symmetric_length(self):
+        orbit = AnalyticTaijiOrbit()
+        for i, j in [(1, 2), (2, 3), (1, 3)]:
+            uv_ij, len_ij = space_orbit.link_vector(self.times, orbit, i, j)
+            uv_ji, len_ji = space_orbit.link_vector(self.times, orbit, j, i)
+            self.assertLess(
+                numpy.max(numpy.abs(uv_ij + uv_ji)), 1e-10,
+                f'link ({i},{j}) and ({j},{i}) unit vectors are not '
+                f'antiparallel')
+            self.assertLess(numpy.max(numpy.abs(len_ij - len_ji)), 1e-6,
+                            f'link ({i},{j}) and ({j},{i}) lengths differ')
+
+    def test_vectorized_multi_link_call_matches_individual_calls(self):
+        orbit = AnalyticTianQinOrbit()
+        sc_emitter = [1, 2, 3]
+        sc_receiver = [2, 3, 1]
+        uv_batch, len_batch = space_orbit.link_vector(
+            self.times, orbit, sc_emitter, sc_receiver)
+        self.assertEqual(uv_batch.shape, (len(self.times), 3, 3))
+        for k, (i, j) in enumerate(zip(sc_emitter, sc_receiver)):
+            uv_single, len_single = space_orbit.link_vector(
+                self.times, orbit, i, j)
+            self.assertLess(
+                numpy.max(numpy.abs(uv_batch[:, k] - uv_single[:, 0])), 1e-10)
+            self.assertLess(
+                numpy.max(numpy.abs(len_batch[:, k] - len_single[:, 0])),
+                1e-6)
+
+
 class TestNumericOrbits(unittest.TestCase):
     def setUp(self):
         self.orbit = AnalyticEqualArmOrbit()
@@ -620,6 +686,7 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestConstellationFrame))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestLinkVector))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNumericOrbits))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTaijiOrbit))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTianQinOrbit))
