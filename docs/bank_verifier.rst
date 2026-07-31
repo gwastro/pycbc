@@ -56,6 +56,15 @@ If no point-injection sets are configured, steps that only apply to them
 are skipped rather than planned with no input (see :ref:`bank_verifier_notes`
 below).
 
+.. note::
+
+    The structure of this page follows an earlier community-contributed
+    draft written by GitHub user MPillas:
+    `pycbc_make_bank_verifier_workflow.rst
+    <https://github.com/MPillas/banksim-documentation/blob/main/pycbc_make_bank_verifier_workflow.rst>`_.
+    Thank you for that write-up. The content here has been revised to
+    match, and has been verified against, the current implementation.
+
 ==========================
 How to generate a workflow
 ==========================
