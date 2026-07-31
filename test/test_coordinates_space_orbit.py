@@ -586,20 +586,67 @@ class TestTianQinOrbit(unittest.TestCase):
 
 
 class TestProductionAnalyticOrbits(unittest.TestCase):
-    """`space_orbit.TaijiAnalyticOrbit`/`TianQinAnalyticOrbit` are the
-    production (not test-only) analytic reference orbits: unlike the
-    hand-written `AnalyticTaijiOrbit`/`AnalyticTianQinOrbit` fixtures above
-    (used purely to give `constellation_frame` etc. an independent
-    implementation to check against), these are importable, user-facing
-    classes intended for prototyping single-link response/TDI work before
-    an official numeric orbit product exists.
+    """`space_orbit.LisaAnalyticOrbit`/`TaijiAnalyticOrbit`/
+    `TianQinAnalyticOrbit` are the production (not test-only) analytic
+    reference orbits: unlike the hand-written `AnalyticEqualArmOrbit`/
+    `AnalyticTaijiOrbit`/`AnalyticTianQinOrbit` fixtures above (used purely
+    to give `constellation_frame` etc. an independent implementation to
+    check against), these are importable, user-facing classes intended
+    for prototyping single-link response/TDI work before an official
+    numeric orbit product exists.
 
-    The key check here is that this *separately implemented* production
+    The key check here is that each *separately implemented* production
     class agrees with the hand-written test fixture bit for bit when given
     the same reference phase -- i.e. that promoting the fixtures' math to
     a real, documented, parameterized class did not introduce any
-    transcription error.
+    transcription error. `LisaAnalyticOrbit` additionally must reproduce
+    `pycbc.coordinates.space`'s pre-existing hardcoded functions exactly
+    with its default (no-argument) `t0`, since that default is meant to be
+    a drop-in stand-in for the existing `orbit=None` code path -- unlike
+    Taiji/TianQin, it does not default to a real-Earth-anchored epoch.
     """
+    def test_lisa_matches_hardcoded_space_functions(self):
+        orbit = space_orbit.LisaAnalyticOrbit()
+        times = numpy.random.uniform(0.0, 3.15e7, size=20)
+        centroid, rotation = space_orbit.constellation_frame(times, orbit)
+        expected_centroid = numpy.array([
+            space.lisa_position_ssb(t, orbit.t0)[0].flatten().astype(float)
+            for t in times
+        ])
+        self.assertLess(
+            numpy.max(numpy.abs(centroid - expected_centroid)),
+            1e-6 * SEMI_MAJOR_AXIS)
+        for i, t in enumerate(times):
+            alpha = OMEGA_0 * (t + orbit.t0)
+            expected_rotation = space.rotation_matrix_ssb_to_lisa(alpha)
+            self.assertLess(
+                numpy.max(numpy.abs(rotation[i] - expected_rotation)), 1e-6)
+
+    def test_lisa_matches_independent_fixture_implementation(self):
+        production = space_orbit.LisaAnalyticOrbit()
+        fixture = AnalyticEqualArmOrbit()
+        times = numpy.random.uniform(0.0, 3.15e7, size=20)
+        pos_production = production.compute_position(times)
+        pos_fixture = fixture.compute_position(times)
+        self.assertLess(
+            numpy.max(numpy.abs(pos_production - pos_fixture)), 1e-3,
+            'LisaAnalyticOrbit does not match the independent '
+            'AnalyticEqualArmOrbit test fixture')
+
+    def test_lisa_default_t0_matches_time_offset_20_degrees(self):
+        orbit = space_orbit.LisaAnalyticOrbit()
+        self.assertEqual(orbit.t0, space.TIME_OFFSET_20_DEGREES)
+
+    def test_lisa_custom_t0_overrides_default(self):
+        orbit = space_orbit.LisaAnalyticOrbit(t0=0.0)
+        self.assertEqual(orbit.t0, 0.0)
+        default_orbit = space_orbit.LisaAnalyticOrbit()
+        self.assertGreater(
+            numpy.max(numpy.abs(
+                orbit.compute_position([1e7])
+                - default_orbit.compute_position([1e7]))),
+            1e6)
+
     def test_taiji_matches_independent_fixture_implementation(self):
         production = space_orbit.TaijiAnalyticOrbit(kappa0=PHI0_REAL)
         fixture = AnalyticTaijiOrbit()
@@ -650,7 +697,8 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
         real lisaorbits.Orbits instance).
         """
         lam, beta, pol = 1.3, -0.2, 0.8
-        for cls in (space_orbit.TaijiAnalyticOrbit,
+        for cls in (space_orbit.LisaAnalyticOrbit,
+                    space_orbit.TaijiAnalyticOrbit,
                     space_orbit.TianQinAnalyticOrbit):
             orbit = cls()
             t_ssb = 2.0e7
@@ -665,6 +713,7 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
 
     def test_arm_lengths_match_design_values(self):
         cases = [
+            (space_orbit.LisaAnalyticOrbit(), ARMLENGTH),
             (space_orbit.TaijiAnalyticOrbit(), TAIJI_ARMLENGTH),
             (space_orbit.TianQinAnalyticOrbit(), TIANQIN_ARMLENGTH),
         ]

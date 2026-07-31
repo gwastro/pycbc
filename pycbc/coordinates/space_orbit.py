@@ -223,6 +223,79 @@ def _real_earth_ecliptic_longitude(t=0.0):
 EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s], ~1 sidereal year
 
 
+def _equal_arm_orbit_position(alpha, armlength, sc):
+    """Shared first-order-in-eccentricity Keplerian expansion (Rubbo,
+    Cornish & Poujade 2004, Phys. Rev. D 69, 082003) underlying
+    `LisaAnalyticOrbit` and `TaijiAnalyticOrbit`: a rigid, circular
+    triangular constellation at guiding-center phase `alpha` [rad], with
+    the given `armlength` [m].
+    """
+    a = ASTRONOMICAL_UNIT.value
+    e = armlength / (2 * a * np.sqrt(3))
+    out = np.empty((len(alpha), len(sc), 3))
+    for k, n in enumerate(sc):
+        beta_n = (n - 1) * 2 * np.pi / 3.0
+        out[:, k, 0] = a * np.cos(alpha) + a * e * (
+            np.sin(alpha) * np.cos(alpha) * np.sin(beta_n)
+            - (1 + np.sin(alpha) ** 2) * np.cos(beta_n))
+        out[:, k, 1] = a * np.sin(alpha) + a * e * (
+            np.sin(alpha) * np.cos(alpha) * np.cos(beta_n)
+            - (1 + np.cos(alpha) ** 2) * np.sin(beta_n))
+        out[:, k, 2] = -np.sqrt(3) * a * e * np.cos(alpha - beta_n)
+    return out
+
+
+class LisaAnalyticOrbit:
+    """Idealized analytic LISA heliocentric orbit: the same rigid,
+    circular (first order in eccentricity) triangular constellation
+    already used by `pycbc.coordinates.space.lisa_position_ssb`/
+    `rotation_matrix_ssb_to_lisa` (the `orbit=None` default of
+    `ssb_to_lisa`/`lisa_to_ssb`/etc.), exposed here as an explicit
+    `OrbitProvider` object -- e.g. to pass directly to
+    `constellation_frame`/`link_vector`, or as a drop-in comparison
+    baseline against a numeric or other-mission orbit.
+
+    `LisaAnalyticOrbit()` with no arguments reproduces the existing
+    `orbit=None` default behavior exactly (same `t0`, same formula).
+    Unlike `TaijiAnalyticOrbit`/`TianQinAnalyticOrbit`, it does *not*
+    default to a real-Earth-anchored reference epoch: `t0` is already a
+    real, pre-existing constant tuned for compatibility with the BBHx
+    waveform plugin, and changing that default here would silently
+    disagree with `pycbc.coordinates.space`'s own default. Pass a
+    different `t0` for a different reference epoch.
+
+    Parameters
+    ----------
+    armlength : float, optional
+        Constellation arm length [m]. Default 2.5e9 (design value).
+    t0 : float or None, optional
+        Reference time offset [s], with the same meaning as in
+        `pycbc.coordinates.space.lisa_position_ssb`. Default None, which
+        uses `pycbc.coordinates.space.TIME_OFFSET_20_DEGREES`.
+    """
+
+    def __init__(self, armlength=2.5e9, t0=None):
+        self.armlength = float(armlength)
+        if t0 is None:
+            from pycbc.coordinates.space import TIME_OFFSET_20_DEGREES
+            t0 = TIME_OFFSET_20_DEGREES
+        self.t0 = float(t0)
+
+    def compute_position(self, t, sc=(1, 2, 3)):
+        """Spacecraft position(s) at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft position(s) in the SSB frame [m].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
+        return _equal_arm_orbit_position(alpha, self.armlength, sc)
+
+
 class TaijiAnalyticOrbit:
     """Idealized analytic Taiji heliocentric orbit: a rigid, circular
     (first order in eccentricity) triangular constellation, per Rubbo,
@@ -263,8 +336,6 @@ class TaijiAnalyticOrbit:
         if kappa0 is None:
             kappa0 = _real_earth_ecliptic_longitude(0.0)
         self.kappa0 = float(kappa0)
-        self.eccentricity = self.armlength / (
-            2 * ASTRONOMICAL_UNIT.value * np.sqrt(3))
 
     def compute_position(self, t, sc=(1, 2, 3)):
         """Spacecraft position(s) at time(s) `t`. See
@@ -279,19 +350,7 @@ class TaijiAnalyticOrbit:
         sc = np.atleast_1d(sc)
         alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
             + self.lead_angle
-        a = ASTRONOMICAL_UNIT.value
-        e = self.eccentricity
-        out = np.empty((len(t), len(sc), 3))
-        for k, n in enumerate(sc):
-            beta_n = (n - 1) * 2 * np.pi / 3.0
-            out[:, k, 0] = a * np.cos(alpha) + a * e * (
-                np.sin(alpha) * np.cos(alpha) * np.sin(beta_n)
-                - (1 + np.sin(alpha) ** 2) * np.cos(beta_n))
-            out[:, k, 1] = a * np.sin(alpha) + a * e * (
-                np.sin(alpha) * np.cos(alpha) * np.cos(beta_n)
-                - (1 + np.cos(alpha) ** 2) * np.sin(beta_n))
-            out[:, k, 2] = -np.sqrt(3) * a * e * np.cos(alpha - beta_n)
-        return out
+        return _equal_arm_orbit_position(alpha, self.armlength, sc)
 
 
 class TianQinAnalyticOrbit:
@@ -579,6 +638,7 @@ def t_ssb_from_t_detector(t_detector, k_ssb, orbit, sc=(1, 2, 3)):
 
 __all__ = [
     'NumericOrbits',
+    'LisaAnalyticOrbit',
     'TaijiAnalyticOrbit',
     'TianQinAnalyticOrbit',
     'constellation_frame',
