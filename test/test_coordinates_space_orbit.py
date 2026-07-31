@@ -64,6 +64,16 @@ SEMI_MAJOR_AXIS = au.value
 ECCENTRICITY = ARMLENGTH / (2 * SEMI_MAJOR_AXIS * numpy.sqrt(3))
 T0 = space.TIME_OFFSET_20_DEGREES
 
+# Real Earth's ecliptic longitude at GPS t=0, taken directly from pycbc's own
+# (astropy-based) `earth_position_ssb` -- used below as the phase-zero
+# reference for the Taiji/TianQin fixtures' guiding center, so that "leads/
+# coincides with the Earth" checks can be made against the real Earth
+# (`earth_position_ssb` itself) rather than an arbitrarily-phased toy
+# circular reference. No external ephemeris/orbital-element constants are
+# used here; this is the one already-existing real-ephemeris function in
+# pycbc.coordinates.space, evaluated once.
+PHI0_REAL = space.earth_position_ssb(0.0)[1]
+
 
 class AnalyticEqualArmOrbit:
     """Reference implementation of the LDC manual's 'Equal arm analytic
@@ -97,7 +107,10 @@ class AnalyticEqualArmOrbit:
 # first-order-in-eccentricity Keplerian expansion as the LDC manual's
 # Eq. 48-52 above, per Rubbo, Cornish & Poujade 2004, Phys. Rev. D 69,
 # 082003), differing only in arm length/eccentricity and in leading (rather
-# than trailing) the Earth-like guiding center by 20 degrees.
+# than trailing) the Earth-like guiding center by 20 degrees. Its phase is
+# anchored to PHI0_REAL (real Earth's longitude at t=0) so that "leads the
+# Earth by 20 degrees" can be checked against the real Earth position, not
+# just an arbitrarily-phased circular proxy.
 TAIJI_ARMLENGTH = 3.0e9  # matches pycbc.detector.space._space_detectors
 TAIJI_ECCENTRICITY = TAIJI_ARMLENGTH / (2 * SEMI_MAJOR_AXIS * numpy.sqrt(3))
 TAIJI_LEAD_ANGLE = numpy.deg2rad(20.0)
@@ -113,7 +126,7 @@ class AnalyticTaijiOrbit:
     def compute_position(self, t, sc=(1, 2, 3)):
         t = numpy.atleast_1d(numpy.asarray(t, dtype=float))
         sc = numpy.atleast_1d(sc)
-        alpha = OMEGA_0 * t + TAIJI_LEAD_ANGLE
+        alpha = OMEGA_0 * t + PHI0_REAL + TAIJI_LEAD_ANGLE
         out = numpy.empty((len(t), len(sc), 3))
         for k, n in enumerate(sc):
             beta_n = (n - 1) * 2 * numpy.pi / 3.0
@@ -133,11 +146,12 @@ class AnalyticTaijiOrbit:
 # TianQin: a fast-rotating rigid triangle (per Hu et al 2018, Class.
 # Quantum Grav. 35, 095008) whose plane is fixed in inertial space (pointing
 # towards the calibration source RX J0806.3+1527), around a guiding center
-# that coincides with the Earth. The guiding center itself is simplified
-# here to a pure circular heliocentric orbit, matching the zero-eccentricity
-# treatment of the LISA/Taiji guiding center used elsewhere in this file
-# (the Earth's real orbital eccentricity is irrelevant to what this test
-# checks).
+# that coincides with the Earth. The guiding center itself is simplified to
+# a pure circular heliocentric orbit (Earth's real orbital eccentricity is
+# irrelevant to what most tests below check), but its phase is anchored to
+# PHI0_REAL (real Earth's longitude at t=0) so that "coincides with the
+# Earth" can also be checked against the real Earth position, not just an
+# arbitrarily-phased circular proxy.
 TIANQIN_ARMLENGTH = 1.7e8  # matches pycbc.detector.space._space_detectors
 TIANQIN_LAMBDA_S = numpy.deg2rad(120.5)  # direction to RX J0806.3+1527
 TIANQIN_BETA_S = numpy.deg2rad(-4.7)
@@ -153,8 +167,9 @@ class AnalyticTianQinOrbit:
     def compute_position(self, t, sc=(1, 2, 3), initial_orbit_phase=0.0):
         t = numpy.atleast_1d(numpy.asarray(t, dtype=float))
         sc = numpy.atleast_1d(sc)
+        alpha_earth = OMEGA_0 * t + PHI0_REAL
         earth = SEMI_MAJOR_AXIS * numpy.stack([
-            numpy.cos(OMEGA_0 * t), numpy.sin(OMEGA_0 * t),
+            numpy.cos(alpha_earth), numpy.sin(alpha_earth),
             numpy.zeros_like(t)], axis=-1)
         out = numpy.empty((len(t), len(sc), 3))
         for k, n in enumerate(sc):
@@ -436,19 +451,44 @@ class TestTaijiOrbit(unittest.TestCase):
 
     def test_leads_earth_like_guiding_center_by_20_degrees(self):
         """Taiji's guiding center must lead a coincident, zero-eccentricity
-        circular orbit (the same idealized Earth proxy used to define the
-        Taiji fixture's own zeroth-order term) by exactly 20 degrees, at
-        every time (alpha'' = alpha - beta + 20 deg).
+        circular orbit anchored to the same real-Earth phase reference
+        (PHI0_REAL) as the Taiji fixture's own zeroth-order term, by exactly
+        20 degrees, at every time (alpha'' = alpha - beta + 20 deg).
         """
         centroid, _ = space_orbit.constellation_frame(self.times, self.orbit)
+        alpha_earth = OMEGA_0 * self.times + PHI0_REAL
         earth_like = SEMI_MAJOR_AXIS * numpy.stack([
-            numpy.cos(OMEGA_0 * self.times), numpy.sin(OMEGA_0 * self.times),
+            numpy.cos(alpha_earth), numpy.sin(alpha_earth),
             numpy.zeros_like(self.times)], axis=-1)
         cos_angle = numpy.sum(centroid * earth_like, axis=-1) / (
             numpy.linalg.norm(centroid, axis=-1)
             * numpy.linalg.norm(earth_like, axis=-1))
         angle_deg = numpy.rad2deg(numpy.arccos(numpy.clip(cos_angle, -1, 1)))
         self.assertLess(numpy.max(numpy.abs(angle_deg - 20.0)), 1e-6)
+
+    def test_leads_real_earth_by_approximately_20_degrees(self):
+        """Because the guiding center's phase is anchored to real Earth's
+        longitude at t=0 (PHI0_REAL), Taiji must also lead the *real* Earth
+        position (`space.earth_position_ssb`, real ephemeris, not the
+        idealized circular proxy above) by approximately 20 degrees -- not
+        exactly, since this fixture's guiding center is still an idealized
+        circle while the real Earth's orbit is eccentric, but within a few
+        degrees, and stably so over time (checked here over one year;
+        verified separately to hold over multiple decades).
+        """
+        centroid, _ = space_orbit.constellation_frame(self.times, self.orbit)
+        for i, t in enumerate(self.times):
+            earth_pos = space.earth_position_ssb(t)[0].flatten().astype(
+                float)
+            cos_angle = numpy.dot(centroid[i], earth_pos) / (
+                numpy.linalg.norm(centroid[i]) * numpy.linalg.norm(
+                    earth_pos))
+            angle_deg = numpy.rad2deg(numpy.arccos(
+                numpy.clip(cos_angle, -1, 1)))
+            self.assertTrue(
+                15.0 < angle_deg < 25.0,
+                f'Taiji-to-real-Earth angle {angle_deg} deg at t={t} is '
+                f'outside the expected ~20 +/- 5 degree range')
 
     def test_rotation_orthonormal(self):
         _, rotation = space_orbit.constellation_frame(self.times, self.orbit)
@@ -482,14 +522,33 @@ class TestTianQinOrbit(unittest.TestCase):
     def test_centroid_matches_earthlike_guiding_center(self):
         """TianQin's 3 spacecraft are equally spaced in phase around their
         guiding center, so their average must cancel the fast-rotation term
-        exactly, leaving just the (here, circular) Earth-like guiding
-        center.
+        exactly, leaving just the (here, circular, real-Earth-phase-anchored
+        via PHI0_REAL) Earth-like guiding center.
         """
         centroid, _ = space_orbit.constellation_frame(self.times, self.orbit)
+        alpha_earth = OMEGA_0 * self.times + PHI0_REAL
         earth_like = SEMI_MAJOR_AXIS * numpy.stack([
-            numpy.cos(OMEGA_0 * self.times), numpy.sin(OMEGA_0 * self.times),
+            numpy.cos(alpha_earth), numpy.sin(alpha_earth),
             numpy.zeros_like(self.times)], axis=-1)
         self.assertLess(numpy.max(numpy.abs(centroid - earth_like)), 1e-3)
+
+    def test_centroid_close_to_real_earth_position(self):
+        """Because the guiding center's phase is anchored to real Earth's
+        longitude at t=0 (PHI0_REAL), TianQin's centroid must also stay
+        close to the *real* Earth position (`space.earth_position_ssb`),
+        not just the idealized circular proxy above -- within a few percent
+        of 1 AU, the expected residual from treating the guiding center as
+        a perfect circle instead of Earth's real, slightly eccentric orbit.
+        """
+        centroid, _ = space_orbit.constellation_frame(self.times, self.orbit)
+        for i, t in enumerate(self.times):
+            earth_pos = space.earth_position_ssb(t)[0].flatten().astype(
+                float)
+            diff = numpy.linalg.norm(centroid[i] - earth_pos)
+            self.assertLess(
+                diff, 0.06 * SEMI_MAJOR_AXIS,
+                f'TianQin centroid at t={t} is more than 6% of 1 AU away '
+                f'from the real Earth position (diff={diff:.3e} m)')
 
     def test_constellation_plane_normal_is_time_independent(self):
         """Unlike LISA/Taiji (whose constellation plane precesses over a
