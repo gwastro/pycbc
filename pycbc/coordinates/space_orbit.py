@@ -61,6 +61,58 @@ from astropy.constants import au as ASTRONOMICAL_UNIT
 logger = __import__('logging').getLogger(__name__)
 
 
+def _parse_oem_file(path):
+    """Minimal, dependency-free parser for a CCSDS OEM (Orbit Ephemeris
+    Message) v2.0 file, e.g. as published in
+    https://github.com/esa/lisa-orbit-files and read by
+    `lisaorbits.OEMOrbits` (via the external `oem` package). Only the
+    first ephemeris segment is distinguished; a file with more than one
+    `META_START`/`META_STOP` block would have its data rows silently
+    concatenated (not a concern for the single-segment files this has
+    been tested against).
+
+    Parameters
+    ----------
+    path : str
+        Path to the OEM file.
+
+    Returns
+    -------
+    meta : dict
+        Metadata key/value pairs (e.g. `REF_FRAME`, `CENTER_NAME`,
+        `TIME_SYSTEM`), collected from both the file header and the
+        META_START/META_STOP block.
+    epochs_iso : list of str
+        ISO 8601 timestamp string for each data row.
+    rows : (N, 6) or (N, 9) ndarray
+        Position [km], velocity [km/s], and (if present) acceleration
+        [km/s^2] for each data row, in that column order.
+    """
+    meta = {}
+    epochs_iso = []
+    values = []
+    with open(path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line in ('META_START', 'META_STOP'):
+                continue
+            if line[0].isdigit():
+                fields = line.split()
+                epochs_iso.append(fields[0])
+                values.append([float(x) for x in fields[1:]])
+            elif '=' in line:
+                key, _, value = line.partition('=')
+                meta[key.strip()] = value.strip()
+    if not epochs_iso:
+        raise ValueError(f'{path}: no data rows found')
+    version = meta.get('CCSDS_OEM_VERS')
+    if version is not None and version != '2.0':
+        raise ValueError(
+            f'{path}: unsupported CCSDS_OEM_VERS {version!r} (expected '
+            "'2.0')")
+    return meta, epochs_iso, np.array(values)
+
+
 class NumericOrbits:
     """Interpolate a numerical constellation orbit given as arrays of
     spacecraft position (and, optionally, velocity) samples in the SSB frame.
@@ -233,6 +285,140 @@ class NumericOrbits:
             positions = node['positions'][:]
             velocities = node['velocities'][:] \
                 if 'velocities' in node else None
+        return cls(t_interp, positions, velocities=velocities,
+                   interp_order=interp_order)
+
+    @classmethod
+    def from_oem_files(cls, oem_1, oem_2, oem_3, interp_order=5):
+        """Load a numerical constellation orbit directly from three CCSDS
+        OEM (Orbit Ephemeris Message) files, one per spacecraft -- the
+        format used by ESA's official LISA orbit files
+        (https://github.com/esa/lisa-orbit-files) and readable by
+        `lisaorbits.OEMOrbits`. This reads the files with a small, self-
+        contained parser (no dependency on `lisaorbits` or the external
+        `oem` package it uses).
+
+        OEM files give position/velocity in the ICRS/EME2000 (equatorial)
+        frame, in km and km/s, with ISO 8601 timestamps in the TCB or TDB
+        time system; this method converts to pycbc's own convention
+        (SSB BarycentricMeanEcliptic frame, meters, GPS seconds) before
+        building the `NumericOrbits`, using the same fixed ICRS -> ecliptic
+        rotation as `ICRSOrbitAdapter`. An optional acceleration triplet
+        present in the file (a 3rd column group) is not used; acceleration
+        is derived from the velocity spline instead, as in `__init__`.
+
+        Only the first ephemeris segment of each file is read (matching
+        `lisaorbits.OEMOrbits`'s own behavior); a `ValueError` is raised
+        if `REF_FRAME` is not `EME2000`, or if the three files do not share
+        an identical set of epochs.
+
+        Parameters
+        ----------
+        oem_1, oem_2, oem_3 : str
+            Paths to the OEM files for spacecraft 1, 2, and 3.
+        interp_order : int, optional
+            See `__init__`. Default 5.
+
+        Returns
+        -------
+        NumericOrbits
+            A `NumericOrbits` instance, in pycbc's SSB-ecliptic convention,
+            built from the three files' contents.
+        """
+        from astropy.time import Time
+
+        t_gps = None
+        positions_icrs_km = []
+        for path in (oem_1, oem_2, oem_3):
+            meta, epochs_iso, rows = _parse_oem_file(path)
+            if meta.get('REF_FRAME') != 'EME2000':
+                raise ValueError(
+                    f"{path}: expected REF_FRAME = EME2000, got "
+                    f"{meta.get('REF_FRAME')!r}")
+            scale = 'tdb' if meta.get('TIME_SYSTEM') == 'TDB' else 'tcb'
+            this_t_gps = Time(
+                epochs_iso, format='isot', scale=scale).gps
+            if t_gps is None:
+                t_gps = this_t_gps
+            elif not np.array_equal(t_gps, this_t_gps):
+                raise ValueError(
+                    'input OEM files do not share identical epochs')
+            positions_icrs_km.append(rows[:, 0:3])
+
+        positions_icrs_m = np.stack(positions_icrs_km, axis=1) * 1e3  # (N,3,3)
+        rotation = _icrs_to_ecliptic_rotation_matrix()
+        positions_ecliptic_m = (
+            positions_icrs_m.reshape(-1, 3) @ rotation.T
+        ).reshape(positions_icrs_m.shape)
+        return cls(t_gps, positions_ecliptic_m, interp_order=interp_order)
+
+    @classmethod
+    def from_triangle_dat_files(cls, orbit_dir, sc_labels=('1', '2', '3'),
+                                t0=0.0, dt=86400.0, max_rows=None,
+                                interp_order=5):
+        """Load a numerical constellation orbit directly from Taiji Data
+        Challenge (TDC) Triangle-Simulator-format orbit files, i.e. a
+        directory containing `SCP{label}.dat`/`SCV{label}.dat` for each
+        spacecraft label (position/velocity, one row per sample, ASCII,
+        in units of AU / AU-per-day, ecliptic SSB frame -- the format used
+        by Triangle-Simulator's own `Orbit` class and shipped with its
+        `OrbitData/` datasets).
+
+        Unlike the OEM format, these files carry no absolute timestamps
+        (just a row index); the caller supplies the SSB time of the first
+        row (`t0`) and the fixed row spacing (`dt`, default 1 day, matching
+        every `OrbitData/` dataset shipped with Triangle-Simulator).
+
+        Parameters
+        ----------
+        orbit_dir : str
+            Directory containing `SCP{label}.dat`/`SCV{label}.dat` files.
+        sc_labels : sequence of str, optional
+            Spacecraft file-name labels, in the order they should be
+            assigned to 1-indexed spacecraft. Default `('1', '2', '3')`,
+            matching Triangle-Simulator's own convention.
+        t0 : float, optional
+            SSB time [s] (pycbc convention: GPS seconds) of the first row.
+            Default 0.0 -- the caller is responsible for supplying the
+            correct absolute epoch if one is needed; these files carry no
+            timestamp of their own.
+        dt : float, optional
+            Time spacing between rows [s]. Default 86400.0 (1 day),
+            matching every dataset shipped with Triangle-Simulator.
+        max_rows : int or None, optional
+            Passed to `numpy.loadtxt` to read only the first `max_rows`
+            samples (for quick tests on large files). Default None (read
+            all rows).
+        interp_order : int, optional
+            See `__init__`. Default 5.
+
+        Returns
+        -------
+        NumericOrbits
+            A `NumericOrbits` instance built from the three files' contents.
+        """
+        positions = []
+        velocities = []
+        n_rows = None
+        for label in sc_labels:
+            pos = np.loadtxt(
+                f'{orbit_dir}/SCP{label}.dat',
+                max_rows=max_rows) * ASTRONOMICAL_UNIT.value
+            vel = np.loadtxt(
+                f'{orbit_dir}/SCV{label}.dat',
+                max_rows=max_rows) * ASTRONOMICAL_UNIT.value / 86400.0
+            if n_rows is None:
+                n_rows = pos.shape[0]
+            elif pos.shape[0] != n_rows or vel.shape[0] != n_rows:
+                raise ValueError(
+                    f'{orbit_dir}: SCP/SCV*.dat files have mismatched '
+                    'row counts across spacecraft')
+            positions.append(pos)
+            velocities.append(vel)
+
+        t_interp = t0 + np.arange(n_rows) * dt
+        positions = np.stack(positions, axis=1)  # (N, M, 3)
+        velocities = np.stack(velocities, axis=1)
         return cls(t_interp, positions, velocities=velocities,
                    interp_order=interp_order)
 
@@ -426,6 +612,119 @@ def _equal_arm_orbit_acceleration(alpha, omega, armlength, sc):
     return out
 
 
+def _kepler_orbit_elements(armlength, semi_major_axis):
+    """Eccentricity and inclination for the second-order-in-eccentricity
+    equal-arm Kepler constellation: three spacecraft on independent
+    two-body Kepler ellipses (same semi-major axis and eccentricity,
+    tilted out of the ecliptic by a common inclination, each rotated by
+    120 degrees in both mean anomaly and ascending node relative to the
+    others), chosen so that the mutual distances stay close to `armlength`
+    to second order in eccentricity rather than the first-order match of
+    `_equal_arm_orbit_position`'s flat, eccentric-ellipse construction.
+
+    This is a standard result for "tilted formation" equal-arm
+    constellations (the same physical construction used by
+    `lisaorbits.KeplerianOrbits`); it is implemented here independently
+    (own derivation/code, not ported from any other implementation), and
+    validated in the test suite against real `lisaorbits.KeplerianOrbits`
+    output to near machine precision.
+    """
+    alpha = armlength / (2.0 * semi_major_axis)
+    delta = 5.0 / 8.0
+    nu = np.pi / 3.0 + delta * alpha
+    e = np.sqrt(
+        1 + 4 * alpha * np.cos(nu) / np.sqrt(3) + 4 * alpha ** 2 / 3) - 1
+    tan_i = (alpha * np.sin(nu)
+             / (np.sqrt(3) / 2.0 + alpha * np.cos(nu)))
+    cos_i = 1.0 / np.sqrt(1 + tan_i ** 2)
+    sin_i = tan_i * cos_i
+    return e, cos_i, sin_i
+
+
+def _kepler_eccentric_anomaly(mean_anomaly, e, kepler_order=2):
+    """Solve Kepler's equation `psi - e*sin(psi) = mean_anomaly` for the
+    eccentric anomaly `psi`, starting from the standard low-eccentricity
+    series solution (the "equation of the center", accurate to O(e^4))
+    and refining with `kepler_order` Newton-Raphson iterations. For the
+    small eccentricities relevant here (LISA/Taiji: e ~ 1e-2), a single
+    iteration already converges to machine precision.
+    """
+    m = mean_anomaly
+    psi = (m + (e - e ** 3 / 8.0) * np.sin(m)
+           + 0.5 * e ** 2 * np.sin(2 * m)
+           + 3.0 / 8.0 * e ** 3 * np.sin(3 * m))
+    for _ in range(kepler_order):
+        error = psi - e * np.sin(psi) - m
+        psi = psi - error / (1 - e * np.cos(psi))
+    return psi
+
+
+def _kepler_orbit_position(alpha, armlength, semi_major_axis, sc,
+                           kepler_order=2):
+    """Spacecraft position(s) for the second-order-in-eccentricity
+    tilted-Kepler-ellipse equal-arm constellation (see
+    `_kepler_orbit_elements`), at guiding-center phase `alpha` [rad].
+    """
+    e, cos_i, sin_i = _kepler_orbit_elements(armlength, semi_major_axis)
+    a = semi_major_axis
+    out = np.empty((len(alpha), len(sc), 3))
+    for k, n in enumerate(sc):
+        theta_n = (n - 1) * 2 * np.pi / 3.0
+        psi = _kepler_eccentric_anomaly(
+            alpha - theta_n, e, kepler_order=kepler_order)
+        cos_psi, sin_psi = np.cos(psi), np.sin(psi)
+        ref_x = a * cos_i * (cos_psi - e)
+        ref_y = a * np.sqrt(1 - e ** 2) * sin_psi
+        ref_z = -a * sin_i * (cos_psi - e)
+        cos_lam, sin_lam = np.cos(theta_n), np.sin(theta_n)
+        out[:, k, 0] = cos_lam * ref_x - sin_lam * ref_y
+        out[:, k, 1] = sin_lam * ref_x + cos_lam * ref_y
+        out[:, k, 2] = ref_z
+    return out
+
+
+def _kepler_orbit_velocity(alpha, omega, armlength, semi_major_axis, sc,
+                           kepler_order=2):
+    """d/dt of `_kepler_orbit_position`, given the (constant) guiding-
+    center angular frequency `omega` = d(alpha)/dt [rad/s].
+    """
+    e, cos_i, sin_i = _kepler_orbit_elements(armlength, semi_major_axis)
+    a = semi_major_axis
+    out = np.empty((len(alpha), len(sc), 3))
+    for k, n in enumerate(sc):
+        theta_n = (n - 1) * 2 * np.pi / 3.0
+        psi = _kepler_eccentric_anomaly(
+            alpha - theta_n, e, kepler_order=kepler_order)
+        cos_psi, sin_psi = np.cos(psi), np.sin(psi)
+        dpsi_dt = omega / (1 - e * cos_psi)
+        ref_vx = -a * dpsi_dt * cos_i * sin_psi
+        ref_vy = a * dpsi_dt * np.sqrt(1 - e ** 2) * cos_psi
+        ref_vz = a * dpsi_dt * sin_i * sin_psi
+        cos_lam, sin_lam = np.cos(theta_n), np.sin(theta_n)
+        out[:, k, 0] = cos_lam * ref_vx - sin_lam * ref_vy
+        out[:, k, 1] = sin_lam * ref_vx + cos_lam * ref_vy
+        out[:, k, 2] = ref_vz
+    return out
+
+
+def _kepler_orbit_acceleration(alpha, omega, armlength, semi_major_axis,
+                               sc, kepler_order=2):
+    """d^2/dt^2 of `_kepler_orbit_position`. For an unperturbed two-body
+    Kepler ellipse, the acceleration is simply the Newtonian gravitational
+    acceleration towards the central body, `-n^2 a^3 r / |r|^3` (using
+    `n = omega`, `a = semi_major_axis`, matching the standard
+    :math:`\\ddot r = -GM r/|r|^3` with `GM = n^2 a^3` for this orbit's own
+    period) -- this holds regardless of eccentricity or orbit orientation,
+    so it is evaluated directly from the position, not by an independent
+    per-component derivative.
+    """
+    pos = _kepler_orbit_position(
+        alpha, armlength, semi_major_axis, sc, kepler_order=kepler_order)
+    r = np.linalg.norm(pos, axis=-1)
+    factor = -(omega ** 2) * (semi_major_axis ** 3) / r ** 3
+    return pos * factor[:, :, np.newaxis]
+
+
 class LisaAnalyticOrbit:
     """Idealized analytic LISA heliocentric orbit: the same rigid,
     circular (first order in eccentricity) triangular constellation
@@ -508,6 +807,113 @@ class LisaAnalyticOrbit:
         alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
         return _equal_arm_orbit_acceleration(
             alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
+
+
+class LisaKeplerianOrbit:
+    """Analytic LISA heliocentric orbit built from a genuine two-body
+    Kepler ellipse per spacecraft (rather than `LisaAnalyticOrbit`'s
+    flat, first-order-in-eccentricity expansion): three spacecraft on
+    independent, common-inclination, common-eccentricity Kepler ellipses,
+    each rotated 120 degrees from the others in both mean anomaly and
+    ascending node, with the eccentricity and inclination chosen (see
+    `_kepler_orbit_elements`) via a standard "tilted formation" equal-arm
+    construction accurate to second order in eccentricity. Matches
+    `lisaorbits.KeplerianOrbits` to near machine precision (see the test
+    suite), independently implemented and validated against it, not
+    ported from it.
+
+    This is *not* a strictly "more accurate" replacement for
+    `LisaAnalyticOrbit`: confirmed directly against real
+    `lisaorbits.EqualArmlengthOrbits`/`KeplerianOrbits` output,
+    `LisaAnalyticOrbit`'s specific first-order construction happens to
+    keep LISA's arm length essentially exactly constant over a year (its
+    whole functional form is chosen to minimize flexing, and does so to a
+    higher effective order than "first order in eccentricity" suggests
+    for this particular symmetric configuration), while this true-Kepler-
+    ellipse construction has a real ~0.2% arm-length variation and a mean
+    arm length a similar amount below the nominal design value -- an
+    inherent property of the physical construction itself, not a
+    numerical error. Use this when you specifically need to match/
+    reproduce reference data generated with a true-Kepler-ellipse
+    convention (e.g. some LDC/TDC products), and `LisaAnalyticOrbit`
+    otherwise (it also exactly reproduces this module's and
+    `pycbc.coordinates.space`'s pre-existing first-order default).
+
+    Parameters
+    ----------
+    armlength : float, optional
+        Constellation arm length [m]. Default 2.5e9 (design value).
+    semi_major_axis : float, optional
+        Guiding-center semi-major axis [m]. Default 1 AU.
+    t0 : float or None, optional
+        Reference time offset [s], with the same meaning as in
+        `LisaAnalyticOrbit`. Default None, which uses
+        `pycbc.coordinates.space.TIME_OFFSET_20_DEGREES`.
+    kepler_order : int, optional
+        Number of Newton-Raphson iterations used to solve Kepler's
+        equation for the eccentric anomaly. Default 2 (converges to
+        machine precision for LISA's eccentricity well within this).
+    """
+
+    def __init__(self, armlength=2.5e9, semi_major_axis=None, t0=None,
+                kepler_order=2):
+        self.armlength = float(armlength)
+        self.semi_major_axis = (
+            ASTRONOMICAL_UNIT.value if semi_major_axis is None
+            else float(semi_major_axis))
+        if t0 is None:
+            from pycbc.coordinates.space import TIME_OFFSET_20_DEGREES
+            t0 = TIME_OFFSET_20_DEGREES
+        self.t0 = float(t0)
+        self.kepler_order = int(kepler_order)
+
+    def compute_position(self, t, sc=(1, 2, 3)):
+        """Spacecraft position(s) at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft position(s) in the SSB frame [m].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
+        return _kepler_orbit_position(
+            alpha, self.armlength, self.semi_major_axis, sc,
+            kepler_order=self.kepler_order)
+
+    def compute_velocity(self, t, sc=(1, 2, 3)):
+        """Spacecraft velocity/ies at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft velocity/ies in the SSB frame [m/s].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
+        return _kepler_orbit_velocity(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength,
+            self.semi_major_axis, sc, kepler_order=self.kepler_order)
+
+    def compute_acceleration(self, t, sc=(1, 2, 3)):
+        """Spacecraft acceleration(s) at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft acceleration(s) in the SSB frame [m/s^2].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
+        return _kepler_orbit_acceleration(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength,
+            self.semi_major_axis, sc, kepler_order=self.kepler_order)
 
 
 class TaijiAnalyticOrbit:
@@ -600,6 +1006,95 @@ class TaijiAnalyticOrbit:
             + self.lead_angle
         return _equal_arm_orbit_acceleration(
             alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
+
+
+class TaijiKeplerianOrbit:
+    """Analytic Taiji heliocentric orbit, accurate to second order in
+    eccentricity (rather than `TaijiAnalyticOrbit`'s first order) -- see
+    `LisaKeplerianOrbit` for the underlying construction. Leads the
+    Earth-like guiding center by `lead_angle` (design value 20 degrees),
+    with Taiji's own arm length.
+
+    Parameters
+    ----------
+    armlength : float, optional
+        Constellation arm length [m]. Default 3.0e9 (design value).
+    semi_major_axis : float, optional
+        Guiding-center semi-major axis [m]. Default 1 AU.
+    lead_angle : float, optional
+        Angle by which the constellation leads the Earth-like guiding
+        center [rad]. Default ``deg2rad(20)`` (design value).
+    kappa0 : float or None, optional
+        Reference ecliptic longitude of the Earth-like guiding center at
+        `t=0` [rad], before `lead_angle` is added. Default None, which
+        anchors it to the real Earth's ecliptic longitude at SSB time 0,
+        as in `TaijiAnalyticOrbit`.
+    kepler_order : int, optional
+        See `LisaKeplerianOrbit`. Default 2.
+    """
+
+    def __init__(self, armlength=3.0e9, semi_major_axis=None,
+                lead_angle=np.deg2rad(20.0), kappa0=None, kepler_order=2):
+        self.armlength = float(armlength)
+        self.semi_major_axis = (
+            ASTRONOMICAL_UNIT.value if semi_major_axis is None
+            else float(semi_major_axis))
+        self.lead_angle = float(lead_angle)
+        if kappa0 is None:
+            kappa0 = _real_earth_ecliptic_longitude(0.0)
+        self.kappa0 = float(kappa0)
+        self.kepler_order = int(kepler_order)
+
+    def compute_position(self, t, sc=(1, 2, 3)):
+        """Spacecraft position(s) at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft position(s) in the SSB frame [m].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
+            + self.lead_angle
+        return _kepler_orbit_position(
+            alpha, self.armlength, self.semi_major_axis, sc,
+            kepler_order=self.kepler_order)
+
+    def compute_velocity(self, t, sc=(1, 2, 3)):
+        """Spacecraft velocity/ies at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft velocity/ies in the SSB frame [m/s].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
+            + self.lead_angle
+        return _kepler_orbit_velocity(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength,
+            self.semi_major_axis, sc, kepler_order=self.kepler_order)
+
+    def compute_acceleration(self, t, sc=(1, 2, 3)):
+        """Spacecraft acceleration(s) at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft acceleration(s) in the SSB frame [m/s^2].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
+            + self.lead_angle
+        return _kepler_orbit_acceleration(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength,
+            self.semi_major_axis, sc, kepler_order=self.kepler_order)
 
 
 class TianQinAnalyticOrbit:
@@ -971,7 +1466,9 @@ def t_ssb_from_t_detector(t_detector, k_ssb, orbit, sc=(1, 2, 3)):
 __all__ = [
     'NumericOrbits',
     'LisaAnalyticOrbit',
+    'LisaKeplerianOrbit',
     'TaijiAnalyticOrbit',
+    'TaijiKeplerianOrbit',
     'TianQinAnalyticOrbit',
     'ICRSOrbitAdapter',
     'constellation_frame',

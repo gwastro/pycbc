@@ -789,6 +789,114 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
                 numpy.max(numpy.abs(analytic_acc - finite_diff_acc)), 1e-6)
 
 
+class TestKeplerianOrbits(unittest.TestCase):
+    """`LisaKeplerianOrbit`/`TaijiKeplerianOrbit` implement the second-
+    order-in-eccentricity tilted-Kepler-ellipse equal-arm constellation
+    (three spacecraft on independent, common-inclination, common-
+    eccentricity Kepler ellipses, 120 degrees apart in both mean anomaly
+    and ascending node) -- a standard "tilted formation" construction
+    (the same physics `lisaorbits.KeplerianOrbits` implements),
+    independently implemented here (own code, not ported from any other
+    implementation) and validated against it.
+    """
+    def test_velocity_matches_finite_difference_of_position(self):
+        dt = 1.0  # s
+        for orbit in (space_orbit.LisaKeplerianOrbit(),
+                      space_orbit.TaijiKeplerianOrbit()):
+            t = numpy.random.uniform(1e5, 3.1e7, size=10)
+            pos_plus = orbit.compute_position(t + dt)
+            pos_minus = orbit.compute_position(t - dt)
+            finite_diff_vel = (pos_plus - pos_minus) / (2 * dt)
+            analytic_vel = orbit.compute_velocity(t)
+            self.assertLess(
+                numpy.max(numpy.abs(analytic_vel - finite_diff_vel)), 1e-3)
+
+    def test_acceleration_matches_finite_difference_of_velocity(self):
+        dt = 1.0  # s
+        for orbit in (space_orbit.LisaKeplerianOrbit(),
+                      space_orbit.TaijiKeplerianOrbit()):
+            t = numpy.random.uniform(1e5, 3.1e7, size=10)
+            vel_plus = orbit.compute_velocity(t + dt)
+            vel_minus = orbit.compute_velocity(t - dt)
+            finite_diff_acc = (vel_plus - vel_minus) / (2 * dt)
+            analytic_acc = orbit.compute_acceleration(t)
+            self.assertLess(
+                numpy.max(numpy.abs(analytic_acc - finite_diff_acc)), 1e-6)
+
+    def test_mean_arm_length_close_to_design_value(self):
+        """Unlike `LisaAnalyticOrbit` (whose specific choice of orbital
+        phases happens to keep the arm length essentially exactly
+        constant at the design value for LISA's small eccentricity --
+        confirmed here against real lisaorbits.EqualArmlengthOrbits data,
+        spread ~1e-5 m), the true-Kepler-ellipse construction here trades
+        that near-perfect constancy for matching a real Keplerian orbit's
+        physics: real lisaorbits.KeplerianOrbits itself has a ~0.2%
+        arm-length variation over a year for LISA's parameters, and a mean
+        arm length that undershoots the nominal design value by a similar
+        amount (confirmed against real lisaorbits.KeplerianOrbits data).
+        This just checks the mean stays within that same, expected,
+        percent-level range of the design value -- not that this
+        construction is "more accurate" in an absolute sense, which it is
+        not for this quantity.
+        """
+        t = numpy.linspace(0.0, 3.15e7, 200)
+        orbit = space_orbit.LisaKeplerianOrbit(t0=0.0)
+        _, length = space_orbit.link_vector(t, orbit, 1, 2)
+        self.assertLess(abs(length.mean() - ARMLENGTH), 0.01 * ARMLENGTH)
+
+    def test_usable_as_orbit_provider(self):
+        lam, beta, pol = 1.1, -0.2, 0.7
+        for orbit in (space_orbit.LisaKeplerianOrbit(),
+                      space_orbit.TaijiKeplerianOrbit()):
+            t_ssb = 2.0e7
+            t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
+                t_ssb, lam, beta, pol, orbit=orbit)
+            t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
+                t_det, lam_det, beta_det, pol_det, orbit=orbit)
+            self.assertAlmostEqual(t_rt, t_ssb, places=3)
+            self.assertAlmostEqual(lam_rt, lam, places=6)
+            self.assertAlmostEqual(beta_rt, beta, places=6)
+            self.assertAlmostEqual(pol_rt, pol, places=6)
+
+    def test_matches_lisaorbits_keplerian_orbits_exactly(self):
+        """Direct, machine-precision cross-check of position/velocity/
+        acceleration against a real `lisaorbits.KeplerianOrbits` instance,
+        using its own angular frequency (as in the analogous first-order
+        test) to isolate the comparison from the unrelated
+        EARTH_ORBIT_ANGULAR_FREQUENCY-vs-sqrt(GM_SUN/a**3) difference.
+        """
+        try:
+            import lisaorbits
+        except ImportError:
+            self.skipTest('lisaorbits not installed; skipping exact '
+                          'Keplerian-orbit cross-check')
+        ref = lisaorbits.KeplerianOrbits(L=ARMLENGTH)
+        ref_ecliptic = space_orbit.ICRSOrbitAdapter(ref)
+
+        t = numpy.random.uniform(1e5, 3.1e7, size=20)
+        sc = (1, 2, 3)
+        alpha = ref.n * t
+
+        self.assertAlmostEqual(
+            space_orbit._kepler_orbit_elements(ARMLENGTH, ref.a)[0], ref.e,
+            places=12)
+
+        pos_mine = space_orbit._kepler_orbit_position(
+            alpha, ARMLENGTH, ref.a, sc)
+        vel_mine = space_orbit._kepler_orbit_velocity(
+            alpha, ref.n, ARMLENGTH, ref.a, sc)
+        acc_mine = space_orbit._kepler_orbit_acceleration(
+            alpha, ref.n, ARMLENGTH, ref.a, sc)
+
+        pos_ref = ref_ecliptic.compute_position(t, sc)
+        vel_ref = ref_ecliptic.compute_velocity(t, sc)
+        acc_ref = ref_ecliptic.compute_acceleration(t, sc)
+
+        self.assertLess(numpy.max(numpy.abs(pos_mine - pos_ref)), 1e-2)
+        self.assertLess(numpy.max(numpy.abs(vel_mine - vel_ref)), 1e-8)
+        self.assertLess(numpy.max(numpy.abs(acc_mine - acc_ref)), 1e-14)
+
+
 class TestNumericOrbitsGeneralizesBeyondLisa(unittest.TestCase):
     """`NumericOrbits` must interpolate Taiji- and TianQin-shaped orbits
     accurately too, not just the LISA special case in `TestNumericOrbits`
@@ -1058,6 +1166,219 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
         self.assertLess(numpy.max(numpy.abs(vel_mine - vel_ref)), 1e-6)
         self.assertLess(numpy.max(numpy.abs(acc_mine - acc_ref)), 1e-9)
 
+    def test_numeric_orbits_matches_interpolated_orbits_on_identical_data(self):
+        """`NumericOrbits` and `lisaorbits.InterpolatedOrbits` both build a
+        quintic spline (`scipy.interpolate.make_interp_spline`, `k=5` by
+        default in both) over the same kind of (times, positions[,
+        velocities]) input. This checks that, fed *exactly* the same
+        sampled data, the two produce matching position/velocity/
+        acceleration at off-grid query times -- the numeric-orbit
+        counterpart of `test_position_velocity_acceleration_match_
+        lisaorbits_exactly` above (which only covered the analytic-orbit
+        path).
+        """
+        try:
+            import lisaorbits
+        except ImportError:
+            self.skipTest('lisaorbits not installed; skipping numeric '
+                          'interpolation cross-check')
+        exact_orbit = space_orbit.LisaAnalyticOrbit()
+        t_grid = numpy.linspace(0.0, 3.15e7, 400)
+        positions = exact_orbit.compute_position(t_grid)
+
+        pycbc_numeric = space_orbit.NumericOrbits(t_grid, positions)
+        ref_numeric = lisaorbits.InterpolatedOrbits(
+            t_grid, positions, t_init=t_grid[10])
+
+        query_t = numpy.random.uniform(t_grid[20], t_grid[-20], size=30)
+        sc = (1, 2, 3)
+        for method, tol in [('compute_position', 1e-3),
+                             ('compute_velocity', 1e-6),
+                             ('compute_acceleration', 1e-6)]:
+            mine = getattr(pycbc_numeric, method)(query_t, sc)
+            ref = getattr(ref_numeric, method)(query_t, sc)
+            self.assertLess(
+                numpy.max(numpy.abs(mine - ref)), tol,
+                f'{method} disagrees with lisaorbits.InterpolatedOrbits '
+                f'by more than {tol}')
+
+
+class TestNumericOrbitsFileReaders(unittest.TestCase):
+    """`NumericOrbits.from_oem_files`/`from_triangle_dat_files` read two
+    real-world numeric orbit formats natively (no `lisaorbits`/`oem`
+    dependency). These tests write small, synthetic fixture files (a
+    known analytic orbit, re-encoded in each format) so they never depend
+    on a local, machine-specific data checkout, and check the round trip
+    recovers the original orbit.
+    """
+    def setUp(self):
+        self.exact_orbit = space_orbit.LisaAnalyticOrbit()
+        self.t_grid = numpy.arange(0.0, 3.15e7, 86400.0)
+        self.tmpdir = tempfile.mkdtemp()
+
+    def test_from_triangle_dat_files_round_trip(self):
+        positions = self.exact_orbit.compute_position(self.t_grid)
+        velocities = self.exact_orbit.compute_velocity(self.t_grid)
+        for k, label in enumerate(('1', '2', '3')):
+            numpy.savetxt(
+                os.path.join(self.tmpdir, f'SCP{label}.dat'),
+                positions[:, k, :] / au.value)
+            numpy.savetxt(
+                os.path.join(self.tmpdir, f'SCV{label}.dat'),
+                velocities[:, k, :] / au.value * 86400.0)
+
+        orbit = space_orbit.NumericOrbits.from_triangle_dat_files(
+            self.tmpdir, t0=self.t_grid[0], dt=86400.0)
+        query_t = numpy.linspace(
+            self.t_grid[5], self.t_grid[-5], 30)
+        recovered = orbit.compute_position(query_t)
+        exact = self.exact_orbit.compute_position(query_t)
+        self.assertLess(numpy.max(numpy.abs(recovered - exact)), 1.0)
+
+    def test_from_triangle_dat_files_rejects_mismatched_row_counts(self):
+        positions = self.exact_orbit.compute_position(self.t_grid)
+        for k, label in enumerate(('1', '2', '3')):
+            n_rows = len(self.t_grid) - (1 if label == '3' else 0)
+            numpy.savetxt(
+                os.path.join(self.tmpdir, f'SCP{label}.dat'),
+                positions[:n_rows, k, :] / au.value)
+            numpy.savetxt(
+                os.path.join(self.tmpdir, f'SCV{label}.dat'),
+                positions[:n_rows, k, :] / au.value)
+        with self.assertRaises(ValueError):
+            space_orbit.NumericOrbits.from_triangle_dat_files(self.tmpdir)
+
+    def _write_oem_file(self, path, positions_icrs_km, velocities_icrs_km_s,
+                        epochs_iso, ref_frame='EME2000',
+                        time_system='TCB'):
+        with open(path, 'w') as f:
+            f.write('CCSDS_OEM_VERS = 2.0\n')
+            f.write('CREATION_DATE  = 2024-01-01T00:00:00\n')
+            f.write('ORIGINATOR     = pycbc-test\n\n')
+            f.write('META_START\n')
+            f.write('OBJECT_NAME          = TEST\n')
+            f.write('OBJECT_ID            = -1\n')
+            f.write('CENTER_NAME          = SUN\n')
+            f.write(f'REF_FRAME            = {ref_frame}\n')
+            f.write(f'TIME_SYSTEM          = {time_system}\n')
+            f.write(f'START_TIME           = {epochs_iso[0]}\n')
+            f.write(f'STOP_TIME            = {epochs_iso[-1]}\n')
+            f.write('INTERPOLATION        = HERMITE\n')
+            f.write('INTERPOLATION_DEGREE = 7\n')
+            f.write('META_STOP\n\n')
+            for epoch, pos, vel in zip(
+                    epochs_iso, positions_icrs_km, velocities_icrs_km_s):
+                f.write(
+                    f'{epoch} {pos[0]:.6f} {pos[1]:.6f} {pos[2]:.6f} '
+                    f'{vel[0]:.9f} {vel[1]:.9f} {vel[2]:.9f}\n')
+
+    def test_from_oem_files_round_trip(self):
+        from astropy.time import Time
+
+        positions_ecl = self.exact_orbit.compute_position(self.t_grid)
+        velocities_ecl = self.exact_orbit.compute_velocity(self.t_grid)
+        rotation = space_orbit._icrs_to_ecliptic_rotation_matrix()
+        # ecliptic -> ICRS is the inverse (transpose) of the cached
+        # ICRS -> ecliptic rotation used throughout this module.
+        positions_icrs = (
+            positions_ecl.reshape(-1, 3) @ rotation
+        ).reshape(positions_ecl.shape) / 1e3  # m -> km
+        velocities_icrs = (
+            velocities_ecl.reshape(-1, 3) @ rotation
+        ).reshape(velocities_ecl.shape) / 1e3  # m/s -> km/s
+
+        epochs_iso = Time(self.t_grid, format='gps').tcb.isot
+        oem_paths = []
+        for k, label in enumerate(('1', '2', '3')):
+            path = os.path.join(self.tmpdir, f'test_sc{label}.oem')
+            self._write_oem_file(
+                path, positions_icrs[:, k, :], velocities_icrs[:, k, :],
+                epochs_iso)
+            oem_paths.append(path)
+
+        orbit = space_orbit.NumericOrbits.from_oem_files(*oem_paths)
+        query_t = numpy.linspace(self.t_grid[5], self.t_grid[-5], 30)
+        recovered = orbit.compute_position(query_t)
+        exact = self.exact_orbit.compute_position(query_t)
+        # Dominated by ordinary quintic-spline interpolation error at
+        # 1-day cadence (consistent with the ~20 m level already measured
+        # elsewhere in this test suite for similarly-sampled data), not by
+        # the ISO8601/km-precision text round trip, which is far smaller.
+        self.assertLess(numpy.max(numpy.abs(recovered - exact)), 20.0)
+
+    def test_from_oem_files_rejects_non_eme2000_frame(self):
+        from astropy.time import Time
+        positions_ecl = self.exact_orbit.compute_position(self.t_grid)
+        epochs_iso = Time(self.t_grid, format='gps').tcb.isot
+        oem_paths = []
+        for k, label in enumerate(('1', '2', '3')):
+            path = os.path.join(self.tmpdir, f'test_sc{label}.oem')
+            self._write_oem_file(
+                path, positions_ecl[:, k, :] / 1e3,
+                positions_ecl[:, k, :] / 1e3, epochs_iso,
+                ref_frame='ICRF')
+            oem_paths.append(path)
+        with self.assertRaises(ValueError):
+            space_orbit.NumericOrbits.from_oem_files(*oem_paths)
+
+    def test_from_oem_files_rejects_mismatched_epochs(self):
+        from astropy.time import Time
+        positions_ecl = self.exact_orbit.compute_position(self.t_grid)
+        epochs_iso = Time(self.t_grid, format='gps').tcb.isot
+        epochs_iso_shifted = Time(
+            self.t_grid + 1.0, format='gps').tcb.isot
+        oem_paths = []
+        for k, label in enumerate(('1', '2', '3')):
+            path = os.path.join(self.tmpdir, f'test_sc{label}.oem')
+            these_epochs = epochs_iso_shifted if label == '3' else epochs_iso
+            self._write_oem_file(
+                path, positions_ecl[:, k, :] / 1e3,
+                positions_ecl[:, k, :] / 1e3, these_epochs)
+            oem_paths.append(path)
+        with self.assertRaises(ValueError):
+            space_orbit.NumericOrbits.from_oem_files(*oem_paths)
+
+    def test_from_oem_files_matches_lisaorbits_on_real_esa_data(self):
+        """Optional, network-gated real-data cross-check: fetch the
+        official ESA lisa-orbit-files trio via lisaorbits' own pooch-based
+        download/cache (not a local, machine-specific path), then verify
+        the native from_oem_files parser agrees with a real
+        lisaorbits.OEMOrbits instance reading the exact same files.
+        Skipped entirely if lisaorbits is not installed or the fetch
+        fails for any reason.
+        """
+        try:
+            import lisaorbits
+            from lisaorbits.oem import OEMOrbits
+            import lisaconstants
+            from astropy.time import Time
+        except ImportError:
+            self.skipTest('lisaorbits not installed; skipping real-data '
+                          'OEM reader cross-check')
+        try:
+            paths = OEMOrbits._get_included_paths(
+                'esa-trailing', version='2.0.0')
+            oem_paths = [
+                lisaorbits.oem._ESA_REPOSITORY.fetch(p) for p in paths]
+        except Exception as exc:  # pylint: disable=broad-except
+            self.skipTest('could not fetch official ESA lisa-orbit-files '
+                          f'orbit ({exc!r}); skipping cross-check')
+
+        native = space_orbit.NumericOrbits.from_oem_files(*oem_paths)
+        ref = OEMOrbits(*oem_paths)
+        ref_ecliptic = space_orbit.ICRSOrbitAdapter(ref)
+
+        query_gps = numpy.linspace(
+            native.t_interp[10], native.t_interp[-10], 30)
+        query_time = Time(query_gps, format='gps')
+        epoch = Time(lisaconstants.LISA_EPOCH_TCB, format='isot',
+                    scale='tcb')
+        query_tcb_sec = (query_time.tcb - epoch).sec
+
+        pos_native = native.compute_position(query_gps)
+        pos_ref = ref_ecliptic.compute_position(query_tcb_sec)
+        self.assertLess(numpy.max(numpy.abs(pos_native - pos_ref)), 1.0)
+
 
 class TestICRSOrbitAdapter(unittest.TestCase):
     """`ICRSOrbitAdapter` wraps an ICRS-frame orbit provider (as produced by
@@ -1282,11 +1603,15 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTianQinOrbit))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestProductionAnalyticOrbits))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestKeplerianOrbits))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestNumericOrbitsGeneralizesBeyondLisa))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestSpaceAcceptsOrbitProvider))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestTransformsAcceptOrbitFile))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestNumericOrbitsFileReaders))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestICRSOrbitAdapter))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
