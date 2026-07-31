@@ -700,6 +700,88 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
             'TianQinAnalyticOrbit does not match the independent '
             'AnalyticTianQinOrbit test fixture')
 
+    def test_tianqin_default_guiding_center_is_circular(self):
+        orbit = space_orbit.TianQinAnalyticOrbit()
+        self.assertEqual(orbit.guiding_center, 'circular')
+
+    def test_tianqin_rejects_invalid_guiding_center(self):
+        with self.assertRaises(ValueError):
+            space_orbit.TianQinAnalyticOrbit(guiding_center='bogus')
+
+    def test_tianqin_real_earth_guiding_center_matches_earth_position_ssb(
+            self):
+        """With `guiding_center='real_earth'`, the constellation centroid
+        must match `pycbc.coordinates.space.earth_position_ssb`'s real,
+        astropy/JPL-ephemeris-based Earth position directly (not just a
+        circular approximation of it).
+        """
+        orbit = space_orbit.TianQinAnalyticOrbit(guiding_center='real_earth')
+        times = numpy.random.uniform(0.0, 3.15e7, size=10)
+        centroid, _ = space_orbit.constellation_frame(times, orbit)
+        expected = numpy.array([
+            space.earth_position_ssb(t)[0].flatten().astype(float)
+            for t in times
+        ])
+        self.assertLess(
+            numpy.max(numpy.abs(centroid - expected)), 1.0,
+            'real_earth guiding center does not match earth_position_ssb')
+
+    def test_tianqin_real_earth_deviates_from_circular_by_eccentricity_scale(
+            self):
+        """The whole point of `guiding_center='real_earth'` is to capture
+        Earth's real ~1.7% orbital eccentricity (and other real
+        perturbations) that the circular approximation neglects; with a
+        matching reference epoch (kappa0=None on both, i.e. both anchored
+        to the real Earth's actual longitude at t=0), the two should
+        differ by something on the order of that eccentricity times 1 AU,
+        not be identical (bug: real_earth silently falling back to
+        circular) or absurdly different (bug: mismatched time/frame
+        convention).
+        """
+        circular = space_orbit.TianQinAnalyticOrbit()
+        real = space_orbit.TianQinAnalyticOrbit(guiding_center='real_earth')
+        times = numpy.linspace(0.0, 3.15e7, 50)
+        centroid_c, _ = space_orbit.constellation_frame(times, circular)
+        centroid_r, _ = space_orbit.constellation_frame(times, real)
+        diff = numpy.linalg.norm(centroid_c - centroid_r, axis=-1)
+        self.assertGreater(diff.min(), 0.005 * SEMI_MAJOR_AXIS)
+        self.assertLess(diff.max(), 0.05 * SEMI_MAJOR_AXIS)
+
+    def test_tianqin_real_earth_velocity_matches_finite_difference(self):
+        dt = 1.0
+        orbit = space_orbit.TianQinAnalyticOrbit(guiding_center='real_earth')
+        t = numpy.random.uniform(1e6, 3.1e7, size=5)
+        pos_plus = orbit.compute_position(t + dt)
+        pos_minus = orbit.compute_position(t - dt)
+        finite_diff_vel = (pos_plus - pos_minus) / (2 * dt)
+        analytic_vel = orbit.compute_velocity(t)
+        self.assertLess(
+            numpy.max(numpy.abs(analytic_vel - finite_diff_vel)), 1e-2)
+
+    def test_tianqin_real_earth_acceleration_matches_finite_difference(self):
+        dt = 1.0
+        orbit = space_orbit.TianQinAnalyticOrbit(guiding_center='real_earth')
+        t = numpy.random.uniform(1e6, 3.1e7, size=5)
+        vel_plus = orbit.compute_velocity(t + dt)
+        vel_minus = orbit.compute_velocity(t - dt)
+        finite_diff_acc = (vel_plus - vel_minus) / (2 * dt)
+        analytic_acc = orbit.compute_acceleration(t)
+        self.assertLess(
+            numpy.max(numpy.abs(analytic_acc - finite_diff_acc)), 1e-6)
+
+    def test_tianqin_real_earth_usable_as_orbit_provider(self):
+        lam, beta, pol = 1.2, -0.4, 0.9
+        orbit = space_orbit.TianQinAnalyticOrbit(guiding_center='real_earth')
+        t_ssb = 2.0e7
+        t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
+            t_ssb, lam, beta, pol, orbit=orbit)
+        t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
+            t_det, lam_det, beta_det, pol_det, orbit=orbit)
+        self.assertAlmostEqual(t_rt, t_ssb, places=2)
+        self.assertAlmostEqual(lam_rt, lam, places=6)
+        self.assertAlmostEqual(beta_rt, beta, places=6)
+        self.assertAlmostEqual(pol_rt, pol, places=6)
+
     def test_default_kappa0_anchors_to_real_earth(self):
         for cls in (space_orbit.TaijiAnalyticOrbit,
                     space_orbit.TianQinAnalyticOrbit):

@@ -520,6 +520,41 @@ def _real_earth_ecliptic_longitude(t=0.0):
     return earth_position_ssb(t)[1]
 
 
+def _real_earth_position_velocity(t):
+    """Real Earth position and velocity in the SSB ecliptic frame, at SSB
+    time(s) `t` [s] (GPS seconds), from astropy's JPL-based solar-system
+    ephemeris -- unlike a circular (or even eccentric two-body Kepler)
+    approximation, this includes real perturbations (from the Moon, other
+    planets, etc.), so it is strictly more accurate than any closed-form
+    orbit for Earth's guiding-center motion, not just a higher-order one.
+    Uses the same fixed ICRS -> ecliptic rotation as `ICRSOrbitAdapter`
+    (rather than `pycbc.coordinates.space.earth_position_ssb`'s own
+    per-call astropy frame transform) so that querying many times stays
+    fast. Imported lazily to avoid a circular import.
+
+    Returns
+    -------
+    position : (N, 3) ndarray
+        Earth's position in the SSB ecliptic frame [m].
+    velocity : (N, 3) ndarray
+        Earth's velocity in the SSB ecliptic frame [m/s].
+    """
+    from astropy.time import Time
+    from astropy.coordinates import get_body_barycentric_posvel
+    from astropy import units as apy_units
+
+    time = Time(np.atleast_1d(t), format='gps')
+    pos, vel = get_body_barycentric_posvel('earth', time)
+    rotation = _icrs_to_ecliptic_rotation_matrix()
+    pos_icrs = np.stack([pos.x.to(apy_units.m).value,
+                        pos.y.to(apy_units.m).value,
+                        pos.z.to(apy_units.m).value], axis=-1)
+    vel_icrs = np.stack([vel.x.to(apy_units.m / apy_units.s).value,
+                        vel.y.to(apy_units.m / apy_units.s).value,
+                        vel.z.to(apy_units.m / apy_units.s).value], axis=-1)
+    return pos_icrs @ rotation.T, vel_icrs @ rotation.T
+
+
 EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s], ~1 sidereal year
 
 
@@ -1102,15 +1137,34 @@ class TianQinAnalyticOrbit:
     rotating triangular constellation whose plane is fixed in inertial
     space (pointing towards the calibration source RX J0806.3+1527),
     around a guiding center coincident with the Earth, per Hu et al 2018
-    (Class. Quantum Grav. 35, 095008). The guiding center itself is
-    approximated here as a pure circular heliocentric orbit (Earth's real
-    ~1.7% orbital eccentricity is neglected).
+    (Class. Quantum Grav. 35, 095008).
 
-    This is an idealized reference orbit intended for prototyping and
-    methods development ahead of an official numerical orbit product. It
-    is not a substitute for real mission ephemeris in science-quality
-    analysis -- use `NumericOrbits.from_file` with an official orbit file
-    for that once one exists.
+    The guiding center's own motion can be modeled two ways
+    (`guiding_center`):
+
+    * `'circular'` (default, backward-compatible): a pure circular
+      heliocentric orbit, neglecting Earth's real ~1.7% orbital
+      eccentricity.
+    * `'real_earth'`: the real Earth position/velocity from astropy's
+      JPL-based solar-system ephemeris (`_real_earth_position_velocity`),
+      which is strictly more accurate than *any* closed-form
+      approximation for the guiding center (it includes real
+      perturbations from the Moon and other planets, not just Earth's
+      own two-body eccentricity) -- at the cost of needing an ephemeris
+      lookup (and, for `compute_acceleration`, a small finite difference
+      of the ephemeris velocity, since astropy does not expose Earth's
+      acceleration directly) per call instead of a closed-form
+      expression.
+
+    This is still an idealized reference orbit for the fast-rotation
+    triangle itself (a rigid rotation, not an independent Kepler orbit
+    per spacecraft -- unlike LISA/Taiji, TianQin's design keeps the
+    triangle's shape and orientation fixed rather than letting each
+    spacecraft flex on its own ellipse), intended for prototyping ahead
+    of an official numerical orbit product. It is not a substitute for
+    real mission ephemeris in science-quality analysis -- use
+    `NumericOrbits.from_file` with an official orbit file for that once
+    one exists.
 
     Parameters
     ----------
@@ -1129,25 +1183,76 @@ class TianQinAnalyticOrbit:
         for this (it is an arbitrary, mission-dependent choice).
     kappa0 : float or None, optional
         Reference ecliptic longitude of the Earth-like guiding center at
-        `t=0` [rad]. Default None, which anchors it to the real Earth's
-        ecliptic longitude at SSB time 0 (via
-        `pycbc.coordinates.space.earth_position_ssb`), so that
-        `TianQinAnalyticOrbit()` with no arguments is roughly realistic
-        "today". Pass an explicit value for an arbitrary or
+        `t=0` [rad], used only when `guiding_center='circular'`. Default
+        None, which anchors it to the real Earth's ecliptic longitude at
+        SSB time 0 (via `pycbc.coordinates.space.earth_position_ssb`), so
+        that `TianQinAnalyticOrbit()` with no arguments is roughly
+        realistic "today". Pass an explicit value for an arbitrary or
         scenario-specific reference epoch instead.
+    guiding_center : {'circular', 'real_earth'}, optional
+        See above. Default `'circular'` (unchanged default behavior).
     """
 
     def __init__(self, armlength=1.7e8, lambda_s=np.deg2rad(120.5),
                 beta_s=np.deg2rad(-4.7), rotation_period=3.65 * 86400.0,
-                initial_orbit_phase=0.0, kappa0=None):
+                initial_orbit_phase=0.0, kappa0=None,
+                guiding_center='circular'):
         self.armlength = float(armlength)
         self.lambda_s = float(lambda_s)
         self.beta_s = float(beta_s)
         self.rotation_period = float(rotation_period)
         self.initial_orbit_phase = float(initial_orbit_phase)
+        if guiding_center not in ('circular', 'real_earth'):
+            raise ValueError(
+                "guiding_center must be 'circular' or 'real_earth', got "
+                f"{guiding_center!r}")
+        self.guiding_center = guiding_center
         if kappa0 is None:
             kappa0 = _real_earth_ecliptic_longitude(0.0)
         self.kappa0 = float(kappa0)
+
+    def _guiding_center_position(self, t):
+        if self.guiding_center == 'real_earth':
+            pos, _ = _real_earth_position_velocity(t)
+            return pos
+        a = ASTRONOMICAL_UNIT.value
+        alpha_earth = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0
+        return a * np.stack([
+            np.cos(alpha_earth), np.sin(alpha_earth),
+            np.zeros_like(t)], axis=-1)
+
+    def _guiding_center_position_velocity(self, t):
+        if self.guiding_center == 'real_earth':
+            return _real_earth_position_velocity(t)
+        a = ASTRONOMICAL_UNIT.value
+        omega_e = EARTH_ORBIT_ANGULAR_FREQUENCY
+        alpha_earth = omega_e * t + self.kappa0
+        pos = a * np.stack([
+            np.cos(alpha_earth), np.sin(alpha_earth),
+            np.zeros_like(t)], axis=-1)
+        vel = a * omega_e * np.stack([
+            -np.sin(alpha_earth), np.cos(alpha_earth),
+            np.zeros_like(t)], axis=-1)
+        return pos, vel
+
+    def _guiding_center_acceleration(self, t):
+        if self.guiding_center == 'real_earth':
+            # astropy does not expose Earth's acceleration directly;
+            # a small central finite difference of its (real, ephemeris-
+            # based) velocity is far more accurate here than falling back
+            # to an idealized two-body -GM_sun*r/|r|^3 approximation,
+            # which would reintroduce the very approximation this mode
+            # exists to avoid.
+            dt = 1.0
+            _, vel_plus = _real_earth_position_velocity(t + dt)
+            _, vel_minus = _real_earth_position_velocity(t - dt)
+            return (vel_plus - vel_minus) / (2 * dt)
+        a = ASTRONOMICAL_UNIT.value
+        omega_e = EARTH_ORBIT_ANGULAR_FREQUENCY
+        alpha_earth = omega_e * t + self.kappa0
+        return -a * omega_e ** 2 * np.stack([
+            np.cos(alpha_earth), np.sin(alpha_earth),
+            np.zeros_like(t)], axis=-1)
 
     def compute_position(self, t, sc=(1, 2, 3)):
         """Spacecraft position(s) at time(s) `t`. See
@@ -1160,11 +1265,7 @@ class TianQinAnalyticOrbit:
         """
         t = np.atleast_1d(np.asarray(t, dtype=float))
         sc = np.atleast_1d(sc)
-        a = ASTRONOMICAL_UNIT.value
-        alpha_earth = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0
-        earth = a * np.stack([
-            np.cos(alpha_earth), np.sin(alpha_earth),
-            np.zeros_like(t)], axis=-1)
+        earth = self._guiding_center_position(t)
         f_sc = 1.0 / self.rotation_period
         out = np.empty((len(t), len(sc), 3))
         for k, n in enumerate(sc):
@@ -1186,12 +1287,16 @@ class TianQinAnalyticOrbit:
         return out
 
     def compute_velocity(self, t, sc=(1, 2, 3)):
-        """Spacecraft velocity/ies at time(s) `t`, as the exact analytic
+        """Spacecraft velocity/ies at time(s) `t`. With the default
+        `guiding_center='circular'`, this is the exact analytic
         derivative of `compute_position` (not a finite-difference
         approximation): both the Earth-like guiding center and the fast-
         rotation triangle term have a constant angular frequency, so each
         is differentiated by a simple chain rule through its own phase.
-        See `NumericOrbits.compute_position` for the calling convention.
+        With `guiding_center='real_earth'`, the guiding center's velocity
+        comes directly from the ephemeris (exact, not a derivative of the
+        position spline). See `NumericOrbits.compute_position` for the
+        calling convention.
 
         Returns
         -------
@@ -1200,12 +1305,7 @@ class TianQinAnalyticOrbit:
         """
         t = np.atleast_1d(np.asarray(t, dtype=float))
         sc = np.atleast_1d(sc)
-        a = ASTRONOMICAL_UNIT.value
-        omega_e = EARTH_ORBIT_ANGULAR_FREQUENCY
-        alpha_earth = omega_e * t + self.kappa0
-        earth_vel = a * omega_e * np.stack([
-            -np.sin(alpha_earth), np.cos(alpha_earth),
-            np.zeros_like(t)], axis=-1)
+        _, earth_vel = self._guiding_center_position_velocity(t)
         omega_sc = 2 * np.pi / self.rotation_period
         out = np.empty((len(t), len(sc), 3))
         for k, n in enumerate(sc):
@@ -1227,13 +1327,16 @@ class TianQinAnalyticOrbit:
         return out
 
     def compute_acceleration(self, t, sc=(1, 2, 3)):
-        """Spacecraft acceleration(s) at time(s) `t`, as the exact
-        analytic second derivative of `compute_position`. Both the
-        guiding center and the fast-rotation triangle term are uniform
-        circular motion at their own constant angular frequency, so each
-        term's acceleration is simply -omega^2 times that same term's
-        (relative) position. See `NumericOrbits.compute_position` for the
-        calling convention.
+        """Spacecraft acceleration(s) at time(s) `t`. With the default
+        `guiding_center='circular'`, this is the exact analytic second
+        derivative of `compute_position`: both the guiding center and the
+        fast-rotation triangle term are uniform circular motion at their
+        own constant angular frequency, so each term's acceleration is
+        simply -omega^2 times that same term's (relative) position. With
+        `guiding_center='real_earth'`, the guiding center's contribution
+        is a small finite difference of the real ephemeris velocity (see
+        `_guiding_center_acceleration`). See `NumericOrbits.compute_position`
+        for the calling convention.
 
         Returns
         -------
@@ -1242,12 +1345,7 @@ class TianQinAnalyticOrbit:
         """
         t = np.atleast_1d(np.asarray(t, dtype=float))
         sc = np.atleast_1d(sc)
-        a = ASTRONOMICAL_UNIT.value
-        omega_e = EARTH_ORBIT_ANGULAR_FREQUENCY
-        alpha_earth = omega_e * t + self.kappa0
-        earth_acc = -a * omega_e ** 2 * np.stack([
-            np.cos(alpha_earth), np.sin(alpha_earth),
-            np.zeros_like(t)], axis=-1)
+        earth_acc = self._guiding_center_acceleration(t)
         omega_sc = 2 * np.pi / self.rotation_period
         out = np.empty((len(t), len(sc), 3))
         for k, n in enumerate(sc):
