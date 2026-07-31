@@ -6,12 +6,12 @@ pycbc_banksim \
 --template-approximant="SpinTaylorT4" \
 --template-phase-order=7 \
 --template-amplitude-order=0 \
---template-start-frequency=40 \
+--template-start-frequency=15 \
 --signal-approximant="SpinTaylorT4" \
 --signal-phase-order=7 \
 --signal-amplitude-order=0 \
---signal-start-frequency=40 \
---filter-low-frequency-cutoff=40 \
+--signal-start-frequency=15 \
+--filter-low-frequency-cutoff=20 \
 --filter-sample-rate=4096 \
 --filter-signal-length=64
 
