@@ -213,7 +213,39 @@ class TestLGWAAntennaPatternCrossCheck(unittest.TestCase):
                 'skipping antenna-pattern cross-check against '
                 'LunarLikelihood')
 
-    def test_antenna_pattern_matches_lunarlikelihood(self):
+    @staticmethod
+    def _matching_cadence(padded_start, padded_end):
+        """`LunarLikelihood.compute_response_interpolant` builds its
+        response grid with `n_points = int(span / (60*200))` over its
+        own padded `gps_time_range`. `_LGWA_detector._detector_frame`
+        instead derives `n_points` from a `cadence` (seconds) via
+        `max(2, ceil(span/cadence)+1)`. Choosing `cadence =
+        span/(n_points_target-1)` makes `span/cadence` exactly
+        `n_points_target - 1` (an exact integer, so `ceil` is a no-op),
+        so `_detector_frame`'s own formula reproduces
+        `n_points_target` exactly -- letting the two independent grid
+        constructions coincide bit-for-bit rather than merely
+        approximately, so the comparison below can assert true
+        (machine-precision) equality instead of a numerical tolerance.
+        """
+        span = padded_end - padded_start
+        n_points_target = int(span / (60 * 200))
+        return span / (n_points_target - 1)
+
+    def test_antenna_pattern_matches_lunarlikelihood_exactly(self):
+        """With the interpolation grid construction made to coincide
+        exactly (see `_matching_cadence`), `_LGWA_detector`'s
+        reimplemented antenna-pattern combination formula -- run via the
+        actual production method `_detector_frame`, not a parallel
+        reimplementation in this test -- must reproduce
+        `LunarLikelihood.get_detector_frame`/`get_antenna_response`
+        bit-for-bit (`numpy.array_equal`, not just "close"). The earlier,
+        weaker version of this test used mismatched grids and only
+        checked agreement to ~1e-3/1e-5 (pure interpolation-grid
+        discretization noise, not a real formula difference); this
+        confirms that difference really was just discretization, by
+        eliminating it entirely.
+        """
         import warnings
         from lgwa_response.likelihood import LunarLikelihood
         from lgwa_response import lunar_coordinates
@@ -224,34 +256,58 @@ class TestLGWAAntennaPatternCrossCheck(unittest.TestCase):
         _, ra, dec, psi = moon.moon_to_geo(
             t_moon=0.0, longitude_moon=lamb, latitude_moon=beta,
             polarization_moon=polarization, lal_convention=False)
+        ra, dec, psi = float(ra), float(dec), float(psi)
 
         t0 = 1234567890.0
-        times = t0 + numpy.array([0.0, 100.0, 200.0, 5000.0])
+        gps_time_range = (t0 - 1000.0, t0 + 1000.0)
+        padded_start, padded_end = numpy.array(gps_time_range) + \
+            numpy.array([-1e5, 1e5])
+        cadence = self._matching_cadence(padded_start, padded_end)
+        lgwa_position = {
+            'longitude': float(numpy.degrees(longitude_site)),
+            'latitude': float(numpy.degrees(latitude_site))}
 
         det = _LGWA_detector(
             'LGWA', longitude_site=longitude_site,
-            latitude_site=latitude_site, cadence=1800.0)
-        n, x, y = det._detector_frame(t0 - 3600.0, t0 + 6000.0, times)
+            latitude_site=latitude_site, cadence=cadence)
+        query_times = t0 + numpy.linspace(-500.0, 500.0, 50)
+        n, x, y = det._detector_frame(padded_start, padded_end, query_times)
+
+        with tempfile.TemporaryDirectory() as cache_dir:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                like = LunarLikelihood(
+                    gps_time_range=gps_time_range,
+                    lgwa_position=lgwa_position,
+                    log_dir_ephemeris=cache_dir)
+                n_ref, x_ref, y_ref = like.get_detector_frame(query_times)
+                ref = like.get_antenna_response(query_times, ra, dec, psi)
+
+        # the underlying interpolation grids themselves coincide exactly
+        self.assertTrue(numpy.array_equal(n, n_ref))
+        self.assertTrue(numpy.array_equal(x, x_ref))
+        self.assertTrue(numpy.array_equal(y, y_ref))
+
         u, v = lunar_coordinates.wave_frame_basis_cartesian(ra, dec, -psi)
         un, ux, uy = n @ u, x @ u, y @ u
         vn, vx, vy = n @ v, x @ v, y @ v
         mine = numpy.vstack((
             un * ux - vn * vx, un * uy - vn * vy,
             un * vx + vn * ux, un * vy + vn * uy))
+        self.assertTrue(numpy.array_equal(mine, ref))
 
-        with tempfile.TemporaryDirectory() as cache_dir:
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore')
-                like = LunarLikelihood(
-                    gps_time_range=(t0 - 3600.0, t0 + 6000.0),
-                    lgwa_position={
-                        'longitude': float(numpy.degrees(longitude_site)),
-                        'latitude': float(numpy.degrees(latitude_site))},
-                    log_dir_ephemeris=cache_dir)
-                ref = like.get_antenna_response(
-                    times, float(ra), float(dec), float(psi))
-
-        self.assertLess(numpy.max(numpy.abs(mine - ref)), 1e-3)
+        # and the full projected waveform (what _LGWA_detector.
+        # project_wave actually returns to a caller) inherits the same
+        # bit-exact agreement, since multiplying identical antenna-
+        # pattern arrays by identical hp/hc arrays is exact arithmetic.
+        hp_arr = numpy.sin(2 * numpy.pi * 0.01 * numpy.linspace(0, 100, 50))
+        hc_arr = numpy.cos(2 * numpy.pi * 0.01 * numpy.linspace(0, 100, 50))
+        h_x_mine = hp_arr * mine[0] + hc_arr * mine[2]
+        h_y_mine = hp_arr * mine[1] + hc_arr * mine[3]
+        h_x_ref = hp_arr * ref[0] + hc_arr * ref[2]
+        h_y_ref = hp_arr * ref[1] + hc_arr * ref[3]
+        self.assertTrue(numpy.array_equal(h_x_mine, h_x_ref))
+        self.assertTrue(numpy.array_equal(h_y_mine, h_y_ref))
 
 
 suite = unittest.TestSuite()
