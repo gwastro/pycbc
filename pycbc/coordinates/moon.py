@@ -404,7 +404,8 @@ def moon_to_ssb(t_moon, longitude_moon, latitude_moon, polarization_moon,
 
 
 def moon_to_geo(t_moon, longitude_moon, latitude_moon, polarization_moon,
-                longitude_site=None, latitude_site=None, use_astropy=True):
+                longitude_site=None, latitude_site=None, use_astropy=True,
+                lal_convention=True):
     """ Converting the arrive time, the sky localization, and the
     polarization from a lunar frame to the geocentric frame.
 
@@ -418,6 +419,20 @@ def moon_to_geo(t_moon, longitude_moon, latitude_moon, polarization_moon,
     use_astropy : bool, optional
         Using Astropy to calculate the sky localization or not.
         Default is True.
+    lal_convention : bool, optional
+        `space.ssb_to_geo`/`space.geo_to_ssb` unconditionally apply a
+        +/-pi polarization flip to match the LDC-vs-LAL convention used
+        by LAL ground-detector response codes (see their docstrings/
+        source, citing LDC manual Sec 4.1.5). Default True reproduces
+        that (unchanged, already-tested) behavior -- appropriate when
+        this GEO-frame output will feed a LAL-convention ground-detector
+        response (e.g. LGWA+ET coherent multiband PE). Set to False to
+        skip the flip, when the GEO-frame ra/dec/polarization instead
+        feeds a consumer with its own, unrelated polarization convention
+        (e.g. the `lgwa_response` package's antenna-pattern formula).
+        Implemented by applying the flip's own inverse (itself, since
+        +pi mod 2*pi is self-inverse) once more to cancel it, rather than
+        by a separate non-flipping implementation of the rotation.
 
     Returns
     -------
@@ -427,12 +442,16 @@ def moon_to_geo(t_moon, longitude_moon, latitude_moon, polarization_moon,
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = moon_to_ssb(
         t_moon, longitude_moon, latitude_moon, polarization_moon,
         longitude_site, latitude_site)
-    return ssb_to_geo(
+    t_geo, longitude_geo, latitude_geo, polarization_geo = ssb_to_geo(
         t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, use_astropy)
+    if not lal_convention:
+        polarization_geo = np.mod(polarization_geo - np.pi, 2*np.pi)
+    return t_geo, longitude_geo, latitude_geo, polarization_geo
 
 
 def geo_to_moon(t_geo, longitude_geo, latitude_geo, polarization_geo,
-                longitude_site=None, latitude_site=None, use_astropy=True):
+                longitude_site=None, latitude_site=None, use_astropy=True,
+                lal_convention=True):
     """ Converting the arrive time, the sky localization, and the
     polarization from the geocentric frame to a lunar frame.
 
@@ -446,12 +465,21 @@ def geo_to_moon(t_geo, longitude_geo, latitude_geo, polarization_geo,
     use_astropy : bool, optional
         Using Astropy to calculate the sky localization or not.
         Default is True.
+    lal_convention : bool, optional
+        Inverse of `moon_to_geo`'s `lal_convention` flag: set to False if
+        `polarization_geo` was produced without the LDC/LAL +/-pi flip
+        (e.g. it came from a `lgwa_response`-convention polarization
+        angle, not from `space.ssb_to_geo`/`moon_to_geo(lal_convention=
+        True)`). Default True reproduces the original, already-tested
+        behavior unchanged.
 
     Returns
     -------
     (t_moon, longitude_moon, latitude_moon, polarization_moon) : tuple
         See `ssb_to_moon`.
     """
+    if not lal_convention:
+        polarization_geo = np.mod(polarization_geo + np.pi, 2*np.pi)
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = geo_to_ssb(
         t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy)
     return ssb_to_moon(

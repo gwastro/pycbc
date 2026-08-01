@@ -146,6 +146,34 @@ class TestMoonCoordinates(unittest.TestCase):
         self.assertAlmostEqual(lat_m_rt, lat_m, places=6)
         self.assertAlmostEqual(pol_m_rt, pol_m, places=6)
 
+    def test_moon_to_geo_lal_convention_flag(self):
+        """`lal_convention=False` should differ from the default
+        (`lal_convention=True`, unchanged from before this flag existed)
+        by exactly a +/-pi polarization flip, and should still round trip
+        correctly through `geo_to_moon(lal_convention=False)`. This locks
+        down the `lgwa_response`-facing convention (see
+        `pycbc.detector.space._LGWA_detector`) against an accidental
+        future change.
+        """
+        t_ssb, lon, lat, pol = _random_params(num=5)
+        t_moon, lon_m, lat_m, pol_m = moon.ssb_to_moon(t_ssb, lon, lat, pol)
+        t_g1, lon_g1, lat_g1, pol_g1 = moon.moon_to_geo(
+            t_moon, lon_m, lat_m, pol_m, lal_convention=True)
+        t_g2, lon_g2, lat_g2, pol_g2 = moon.moon_to_geo(
+            t_moon, lon_m, lat_m, pol_m, lal_convention=False)
+        self.assertTrue(numpy.array_equal(t_g1, t_g2))
+        self.assertTrue(numpy.array_equal(lon_g1, lon_g2))
+        self.assertTrue(numpy.array_equal(lat_g1, lat_g2))
+        flip = numpy.mod(pol_g1 - pol_g2, 2 * numpy.pi)
+        self.assertLess(numpy.max(numpy.abs(flip - numpy.pi)), 1e-10)
+
+        t_m_rt, lon_m_rt, lat_m_rt, pol_m_rt = moon.geo_to_moon(
+            t_g2, lon_g2, lat_g2, pol_g2, lal_convention=False)
+        self.assertLess(numpy.max(numpy.abs(t_m_rt - t_moon)), 1e-2)
+        self.assertLess(numpy.max(numpy.abs(lon_m_rt - lon_m)), 1e-6)
+        self.assertLess(numpy.max(numpy.abs(lat_m_rt - lat_m)), 1e-6)
+        self.assertLess(numpy.max(numpy.abs(pol_m_rt - pol_m)), 1e-6)
+
     def test_moon_site_position_requires_both_or_neither(self):
         with self.assertRaises(ValueError):
             moon.moon_site_position_ssb(2.0e7, longitude=0.1, latitude=None)
