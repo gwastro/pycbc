@@ -72,6 +72,15 @@ jobs:
       run: |
         pixi run -e unittest pip install lisaorbits
 
+    - name: Install lunarsky (optional lunar-site position tests)
+      # lunarsky has no Python version restriction (unlike lisaorbits), so
+      # this runs on all three legs; test_coordinates_moon.py's
+      # TestOptionalLunarskySite skips gracefully if it's absent, so this
+      # step is purely additive coverage, not a hard requirement.
+      if: matrix.test-type == 'unittest'
+      run: |
+        pixi run -e unittest pip install lunarsky
+
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data

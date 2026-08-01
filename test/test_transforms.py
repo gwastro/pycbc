@@ -129,11 +129,68 @@ class TestSpaceDetectorTransformsSetOutputs(unittest.TestCase):
         self.assertEqual(t.tc_geo_param, 'tc_geo')
         self.assertIn('tc_geo', t.outputs)
 
+    def test_ssb_to_moon_custom_names(self):
+        t = transforms.SSBToMoon(
+            tc_moon_param='tc_moon', longitude_moon_param='lon_moon',
+            latitude_moon_param='lat_moon', polarization_moon_param='pol_moon')
+        self.assertEqual(t.tc_moon_param, 'tc_moon')
+        self.assertEqual(
+            t.outputs, {'tc_moon', 'lon_moon', 'lat_moon', 'pol_moon'})
+        self.assertEqual(
+            t.inputs, {'tc', 'eclipticlongitude', 'eclipticlatitude',
+                      'polarization'})
+
+    def test_geo_to_moon_custom_names(self):
+        t = transforms.GEOToMoon(tc_moon_param='tc_moon')
+        self.assertEqual(t.tc_moon_param, 'tc_moon')
+        self.assertIn('tc_moon', t.outputs)
+
+    def test_lisa_to_moon_custom_names(self):
+        t = transforms.LISAToMoon(tc_moon_param='tc_moon')
+        self.assertEqual(t.tc_moon_param, 'tc_moon')
+        self.assertIn('tc_moon', t.outputs)
+
+
+class TestMoonTransformsRoundTrip(unittest.TestCase):
+    """Functional round-trip checks for the Moon<->SSB/GEO/LISA
+    transforms, mirroring `TestTransforms.test_inverse`'s pattern for the
+    pre-existing space-detector transforms.
+    """
+    def setUp(self):
+        numpy.random.seed(1024)
+        self.in_map = {
+            'tc': numpy.random.uniform(*RANGES['tc']),
+            'eclipticlongitude': numpy.random.uniform(
+                *RANGES['eclipticlongitude']),
+            'eclipticlatitude': numpy.random.uniform(
+                *RANGES['eclipticlatitude']),
+            'polarization': numpy.random.uniform(*RANGES['polarization']),
+        }
+
+    def _check_round_trip(self, forward_cls, inverse_cls):
+        forward = forward_cls()
+        inverse = inverse_cls()
+        intermediate = forward.transform(self.in_map)
+        out_map = inverse.transform(intermediate)
+        for key in self.in_map:
+            self.assertAlmostEqual(
+                out_map[key], self.in_map[key], places=2,
+                msg=f'{forward_cls.name} -> {inverse_cls.name} does not '
+                    f'recover {key}')
+
+    def test_ssb_moon_round_trip(self):
+        self._check_round_trip(transforms.SSBToMoon, transforms.MoonToSSB)
+
+    def test_ssb_moon_round_trip_other_direction(self):
+        self._check_round_trip(transforms.MoonToSSB, transforms.SSBToMoon)
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTransforms))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestSpaceDetectorTransformsSetOutputs))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestMoonTransformsRoundTrip))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)

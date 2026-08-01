@@ -1992,6 +1992,477 @@ class LISAToGEO(BaseTransform):
         )
 
 
+class MoonToSSB(BaseTransform):
+    """Converts arrival time, sky localization, and polarization angle in a
+    lunar frame to the corresponding values in the SSB frame."""
+
+    name = "moon_to_ssb"
+
+    default_params_name = {
+        'default_tc_moon': parameters.tc,
+        'default_longitude_moon': parameters.eclipticlongitude,
+        'default_latitude_moon': parameters.eclipticlatitude,
+        'default_polarization_moon': parameters.polarization,
+        'default_tc_ssb': parameters.tc,
+        'default_longitude_ssb': parameters.eclipticlongitude,
+        'default_latitude_ssb': parameters.eclipticlatitude,
+        'default_polarization_ssb': parameters.polarization
+    }
+
+    def __init__(
+        self, tc_moon_param=None, longitude_moon_param=None,
+        latitude_moon_param=None, polarization_moon_param=None,
+        tc_ssb_param=None, longitude_ssb_param=None,
+        latitude_ssb_param=None, polarization_ssb_param=None,
+        longitude_site=None, latitude_site=None
+    ):
+        params = [tc_moon_param, longitude_moon_param,
+                  latitude_moon_param, polarization_moon_param,
+                  tc_ssb_param, longitude_ssb_param,
+                  latitude_ssb_param, polarization_ssb_param]
+
+        for index in range(len(params)):
+            if params[index] is None:
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
+
+        self.tc_moon_param = params[0]
+        self.longitude_moon_param = params[1]
+        self.latitude_moon_param = params[2]
+        self.polarization_moon_param = params[3]
+        self.tc_ssb_param = params[4]
+        self.longitude_ssb_param = params[5]
+        self.latitude_ssb_param = params[6]
+        self.polarization_ssb_param = params[7]
+        # a lunar surface site's selenodetic longitude/latitude [rad]; None
+        # (default) means the Moon's barycenter (no lunarsky dependency),
+        # see pycbc.coordinates.moon.moon_site_position_ssb.
+        self.longitude_site = longitude_site
+        self.latitude_site = latitude_site
+        self._inputs = [self.tc_moon_param, self.longitude_moon_param,
+                        self.latitude_moon_param, self.polarization_moon_param]
+        self._outputs = [self.tc_ssb_param, self.longitude_ssb_param,
+                         self.latitude_ssb_param, self.polarization_ssb_param]
+
+        super(MoonToSSB, self).__init__()
+
+    def transform(self, maps):
+        """This function transforms arrival time, sky localization,
+        and polarization angle in a lunar frame to the corresponding
+        values in the SSB frame.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        out = {}
+        out[self.tc_ssb_param], out[self.longitude_ssb_param], \
+            out[self.latitude_ssb_param], out[self.polarization_ssb_param] = \
+            coordinates.moon_to_ssb(
+                maps[self.tc_moon_param], maps[self.longitude_moon_param],
+                maps[self.latitude_moon_param],
+                maps[self.polarization_moon_param],
+                longitude_site=self.longitude_site,
+                latitude_site=self.latitude_site
+                )
+        return self.format_output(maps, out)
+
+    def inverse_transform(self, maps):
+        """This function transforms arrival time, sky localization,
+        and polarization angle in the SSB frame to the corresponding
+        values in a lunar frame.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        out = {}
+        out[self.tc_moon_param], out[self.longitude_moon_param], \
+            out[self.latitude_moon_param], \
+            out[self.polarization_moon_param] = \
+            coordinates.ssb_to_moon(
+                maps[self.tc_ssb_param], maps[self.longitude_ssb_param],
+                maps[self.latitude_ssb_param],
+                maps[self.polarization_ssb_param],
+                longitude_site=self.longitude_site,
+                latitude_site=self.latitude_site
+                )
+        return self.format_output(maps, out)
+
+    @classmethod
+    def from_config(cls, cp, section, outputs):
+        tag = outputs
+        skip_opts = []
+        additional_opts = {}
+
+        # get custom variable names
+        variables = {
+            'tc-moon': cls.default_params_name['default_tc_moon'],
+            'longitude-moon': cls.default_params_name[
+                                    'default_longitude_moon'],
+            'latitude-moon': cls.default_params_name[
+                                    'default_latitude_moon'],
+            'polarization-moon': cls.default_params_name[
+                                    'default_polarization_moon'],
+            'tc-ssb': cls.default_params_name['default_tc_ssb'],
+            'longitude-ssb': cls.default_params_name['default_longitude_ssb'],
+            'latitude-ssb': cls.default_params_name['default_latitude_ssb'],
+            'polarization-ssb': cls.default_params_name[
+                                    'default_polarization_ssb']
+        }
+        for param_name in variables.keys():
+            name_underline = param_name.replace('-', '_')
+            if cp.has_option("-".join([section, outputs]), param_name):
+                skip_opts.append(param_name)
+                additional_opts.update(
+                    {name_underline+'_param': cp.get_opt_tag(
+                     section, param_name, tag)})
+            else:
+                additional_opts.update(
+                    {name_underline+'_param': variables[param_name]})
+
+        if cp.has_option("-".join([section, outputs]), 'longitude-site'):
+            skip_opts.append('longitude-site')
+            additional_opts.update(
+                {'longitude_site': float(cp.get_opt_tag(
+                    section, 'longitude-site', tag))})
+        if cp.has_option("-".join([section, outputs]), 'latitude-site'):
+            skip_opts.append('latitude-site')
+            additional_opts.update(
+                {'latitude_site': float(cp.get_opt_tag(
+                    section, 'latitude-site', tag))})
+
+        return super(MoonToSSB, cls).from_config(
+            cp, section, outputs, skip_opts=skip_opts,
+            additional_opts=additional_opts
+        )
+
+
+class MoonToGEO(BaseTransform):
+    """Converts arrival time, sky localization, and polarization angle in a
+    lunar frame to the corresponding values in the geocentric frame."""
+
+    name = "moon_to_geo"
+
+    default_params_name = {
+        'default_tc_moon': parameters.tc,
+        'default_longitude_moon': parameters.eclipticlongitude,
+        'default_latitude_moon': parameters.eclipticlatitude,
+        'default_polarization_moon': parameters.polarization,
+        'default_tc_geo': parameters.tc,
+        'default_longitude_geo': parameters.ra,
+        'default_latitude_geo': parameters.dec,
+        'default_polarization_geo': parameters.polarization
+    }
+
+    def __init__(
+        self, tc_moon_param=None, longitude_moon_param=None,
+        latitude_moon_param=None, polarization_moon_param=None,
+        tc_geo_param=None, longitude_geo_param=None,
+        latitude_geo_param=None, polarization_geo_param=None,
+        longitude_site=None, latitude_site=None
+    ):
+        params = [tc_moon_param, longitude_moon_param,
+                  latitude_moon_param, polarization_moon_param,
+                  tc_geo_param, longitude_geo_param,
+                  latitude_geo_param, polarization_geo_param]
+        for index in range(len(params)):
+            if params[index] is None:
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
+
+        self.tc_moon_param = params[0]
+        self.longitude_moon_param = params[1]
+        self.latitude_moon_param = params[2]
+        self.polarization_moon_param = params[3]
+        self.tc_geo_param = params[4]
+        self.longitude_geo_param = params[5]
+        self.latitude_geo_param = params[6]
+        self.polarization_geo_param = params[7]
+        self.longitude_site = longitude_site
+        self.latitude_site = latitude_site
+        self._inputs = [self.tc_moon_param, self.longitude_moon_param,
+                        self.latitude_moon_param, self.polarization_moon_param]
+        self._outputs = [self.tc_geo_param, self.longitude_geo_param,
+                         self.latitude_geo_param, self.polarization_geo_param]
+        super(MoonToGEO, self).__init__()
+
+    def transform(self, maps):
+        """This function transforms arrival time, sky localization,
+        and polarization angle in a lunar frame to the corresponding
+        values in the geocentric frame.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        out = {}
+        out[self.tc_geo_param], out[self.longitude_geo_param], \
+            out[self.latitude_geo_param], out[self.polarization_geo_param] = \
+            coordinates.moon_to_geo(
+                maps[self.tc_moon_param], maps[self.longitude_moon_param],
+                maps[self.latitude_moon_param],
+                maps[self.polarization_moon_param],
+                longitude_site=self.longitude_site,
+                latitude_site=self.latitude_site
+                )
+        return self.format_output(maps, out)
+
+    def inverse_transform(self, maps):
+        """This function transforms arrival time, sky localization,
+        and polarization angle in the geocentric frame to the corresponding
+        values in a lunar frame.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        out = {}
+        out[self.tc_moon_param], out[self.longitude_moon_param], \
+            out[self.latitude_moon_param], \
+            out[self.polarization_moon_param] = \
+            coordinates.geo_to_moon(
+                maps[self.tc_geo_param], maps[self.longitude_geo_param],
+                maps[self.latitude_geo_param], maps[self.polarization_geo_param],
+                longitude_site=self.longitude_site,
+                latitude_site=self.latitude_site
+                )
+        return self.format_output(maps, out)
+
+    @classmethod
+    def from_config(cls, cp, section, outputs):
+        tag = outputs
+        skip_opts = []
+        additional_opts = {}
+
+        variables = {
+            'tc-moon': cls.default_params_name['default_tc_moon'],
+            'longitude-moon': cls.default_params_name[
+                                    'default_longitude_moon'],
+            'latitude-moon': cls.default_params_name[
+                                    'default_latitude_moon'],
+            'polarization-moon': cls.default_params_name[
+                                    'default_polarization_moon'],
+            'tc-geo': cls.default_params_name['default_tc_geo'],
+            'longitude-geo': cls.default_params_name['default_longitude_geo'],
+            'latitude-geo': cls.default_params_name['default_latitude_geo'],
+            'polarization-geo': cls.default_params_name[
+                                    'default_polarization_geo']
+        }
+        for param_name in variables.keys():
+            name_underline = param_name.replace('-', '_')
+            if cp.has_option("-".join([section, outputs]), param_name):
+                skip_opts.append(param_name)
+                additional_opts.update(
+                    {name_underline+'_param': cp.get_opt_tag(
+                     section, param_name, tag)})
+            else:
+                additional_opts.update(
+                    {name_underline+'_param': variables[param_name]})
+
+        if cp.has_option("-".join([section, outputs]), 'longitude-site'):
+            skip_opts.append('longitude-site')
+            additional_opts.update(
+                {'longitude_site': float(cp.get_opt_tag(
+                    section, 'longitude-site', tag))})
+        if cp.has_option("-".join([section, outputs]), 'latitude-site'):
+            skip_opts.append('latitude-site')
+            additional_opts.update(
+                {'latitude_site': float(cp.get_opt_tag(
+                    section, 'latitude-site', tag))})
+
+        return super(MoonToGEO, cls).from_config(
+            cp, section, outputs, skip_opts=skip_opts,
+            additional_opts=additional_opts
+        )
+
+
+class MoonToLISA(BaseTransform):
+    """Converts arrival time, sky localization, and polarization angle in a
+    lunar frame to the corresponding values in the LISA (or, via
+    `orbit_file`, any constellation) frame."""
+
+    name = "moon_to_lisa"
+
+    default_params_name = {
+        'default_tc_moon': parameters.tc,
+        'default_longitude_moon': parameters.eclipticlongitude,
+        'default_latitude_moon': parameters.eclipticlatitude,
+        'default_polarization_moon': parameters.polarization,
+        'default_tc_lisa': parameters.tc,
+        'default_longitude_lisa': parameters.eclipticlongitude,
+        'default_latitude_lisa': parameters.eclipticlatitude,
+        'default_polarization_lisa': parameters.polarization
+    }
+
+    def __init__(
+        self, tc_moon_param=None, longitude_moon_param=None,
+        latitude_moon_param=None, polarization_moon_param=None,
+        tc_lisa_param=None, longitude_lisa_param=None,
+        latitude_lisa_param=None, polarization_lisa_param=None,
+        longitude_site=None, latitude_site=None, orbit_file=None
+    ):
+        params = [tc_moon_param, longitude_moon_param,
+                  latitude_moon_param, polarization_moon_param,
+                  tc_lisa_param, longitude_lisa_param,
+                  latitude_lisa_param, polarization_lisa_param]
+        for index in range(len(params)):
+            if params[index] is None:
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
+
+        self.tc_moon_param = params[0]
+        self.longitude_moon_param = params[1]
+        self.latitude_moon_param = params[2]
+        self.polarization_moon_param = params[3]
+        self.tc_lisa_param = params[4]
+        self.longitude_lisa_param = params[5]
+        self.latitude_lisa_param = params[6]
+        self.polarization_lisa_param = params[7]
+        self.longitude_site = longitude_site
+        self.latitude_site = latitude_site
+        self.orbit_file = orbit_file
+        self.orbit = _load_constellation_orbit(orbit_file)
+        self._inputs = [self.tc_moon_param, self.longitude_moon_param,
+                        self.latitude_moon_param, self.polarization_moon_param]
+        self._outputs = [self.tc_lisa_param, self.longitude_lisa_param,
+                         self.latitude_lisa_param, self.polarization_lisa_param]
+        super(MoonToLISA, self).__init__()
+
+    def transform(self, maps):
+        """This function transforms arrival time, sky localization,
+        and polarization angle in a lunar frame to the corresponding
+        values in the LISA (or, via `orbit_file`, any constellation) frame.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        out = {}
+        out[self.tc_lisa_param], out[self.longitude_lisa_param], \
+            out[self.latitude_lisa_param], out[self.polarization_lisa_param] = \
+            coordinates.moon_to_lisa(
+                maps[self.tc_moon_param], maps[self.longitude_moon_param],
+                maps[self.latitude_moon_param],
+                maps[self.polarization_moon_param],
+                longitude_site=self.longitude_site,
+                latitude_site=self.latitude_site,
+                orbit=self.orbit
+                )
+        return self.format_output(maps, out)
+
+    def inverse_transform(self, maps):
+        """This function transforms arrival time, sky localization,
+        and polarization angle in the LISA (or, via `orbit_file`, any
+        constellation) frame to the corresponding values in a lunar frame.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        out = {}
+        out[self.tc_moon_param], out[self.longitude_moon_param], \
+            out[self.latitude_moon_param], \
+            out[self.polarization_moon_param] = \
+            coordinates.lisa_to_moon(
+                maps[self.tc_lisa_param], maps[self.longitude_lisa_param],
+                maps[self.latitude_lisa_param], maps[self.polarization_lisa_param],
+                longitude_site=self.longitude_site,
+                latitude_site=self.latitude_site,
+                orbit=self.orbit
+                )
+        return self.format_output(maps, out)
+
+    @classmethod
+    def from_config(cls, cp, section, outputs):
+        tag = outputs
+        skip_opts = []
+        additional_opts = {}
+
+        variables = {
+            'tc-moon': cls.default_params_name['default_tc_moon'],
+            'longitude-moon': cls.default_params_name[
+                                    'default_longitude_moon'],
+            'latitude-moon': cls.default_params_name[
+                                    'default_latitude_moon'],
+            'polarization-moon': cls.default_params_name[
+                                    'default_polarization_moon'],
+            'tc-lisa': cls.default_params_name['default_tc_lisa'],
+            'longitude-lisa': cls.default_params_name[
+                                    'default_longitude_lisa'],
+            'latitude-lisa': cls.default_params_name['default_latitude_lisa'],
+            'polarization-lisa': cls.default_params_name[
+                                    'default_polarization_lisa']
+        }
+        for param_name in variables.keys():
+            name_underline = param_name.replace('-', '_')
+            if cp.has_option("-".join([section, outputs]), param_name):
+                skip_opts.append(param_name)
+                additional_opts.update(
+                    {name_underline+'_param': cp.get_opt_tag(
+                     section, param_name, tag)})
+            else:
+                additional_opts.update(
+                    {name_underline+'_param': variables[param_name]})
+
+        if cp.has_option("-".join([section, outputs]), 'longitude-site'):
+            skip_opts.append('longitude-site')
+            additional_opts.update(
+                {'longitude_site': float(cp.get_opt_tag(
+                    section, 'longitude-site', tag))})
+        if cp.has_option("-".join([section, outputs]), 'latitude-site'):
+            skip_opts.append('latitude-site')
+            additional_opts.update(
+                {'latitude_site': float(cp.get_opt_tag(
+                    section, 'latitude-site', tag))})
+
+        if cp.has_option("-".join([section, outputs]), 'orbit-file'):
+            skip_opts.append('orbit-file')
+            additional_opts.update(
+                {'orbit_file': cp.get_opt_tag(section, 'orbit-file', tag)})
+
+        return super(MoonToLISA, cls).from_config(
+            cp, section, outputs, skip_opts=skip_opts,
+            additional_opts=additional_opts
+        )
+
+
 class Log(BaseTransform):
     """Applies a log transform from an `inputvar` parameter to an `outputvar`
     parameter. This is the inverse of the exponent transform.
@@ -2711,6 +3182,137 @@ class GEOToLISA(LISAToGEO):
         BaseTransform.__init__(self)
 
 
+class SSBToMoon(MoonToSSB):
+    """The inverse of MoonToSSB."""
+
+    name = "ssb_to_moon"
+    inverse = MoonToSSB
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+
+    def __init__(
+        self, tc_moon_param=None, longitude_moon_param=None,
+        latitude_moon_param=None, polarization_moon_param=None,
+        tc_ssb_param=None, longitude_ssb_param=None,
+        latitude_ssb_param=None, polarization_ssb_param=None,
+        longitude_site=None, latitude_site=None
+    ):
+        params = [tc_moon_param, longitude_moon_param,
+                  latitude_moon_param, polarization_moon_param,
+                  tc_ssb_param, longitude_ssb_param,
+                  latitude_ssb_param, polarization_ssb_param]
+        for index in range(len(params)):
+            if params[index] is None:
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
+
+        self.tc_moon_param = params[0]
+        self.longitude_moon_param = params[1]
+        self.latitude_moon_param = params[2]
+        self.polarization_moon_param = params[3]
+        self.tc_ssb_param = params[4]
+        self.longitude_ssb_param = params[5]
+        self.latitude_ssb_param = params[6]
+        self.polarization_ssb_param = params[7]
+        self.longitude_site = longitude_site
+        self.latitude_site = latitude_site
+        self._inputs = [self.tc_ssb_param, self.longitude_ssb_param,
+                        self.latitude_ssb_param, self.polarization_ssb_param]
+        self._outputs = [self.tc_moon_param, self.longitude_moon_param,
+                         self.latitude_moon_param, self.polarization_moon_param]
+        # NOTE: intentionally not super(SSBToMoon, self).__init__() -- see
+        # the equivalent note in SSBToLISA.__init__.
+        BaseTransform.__init__(self)
+
+
+class GEOToMoon(MoonToGEO):
+    """The inverse of MoonToGEO."""
+
+    name = "geo_to_moon"
+    inverse = MoonToGEO
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+
+    def __init__(
+        self, tc_moon_param=None, longitude_moon_param=None,
+        latitude_moon_param=None, polarization_moon_param=None,
+        tc_geo_param=None, longitude_geo_param=None,
+        latitude_geo_param=None, polarization_geo_param=None,
+        longitude_site=None, latitude_site=None
+    ):
+        params = [tc_moon_param, longitude_moon_param,
+                  latitude_moon_param, polarization_moon_param,
+                  tc_geo_param, longitude_geo_param,
+                  latitude_geo_param, polarization_geo_param]
+        for index in range(len(params)):
+            if params[index] is None:
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
+
+        self.tc_moon_param = params[0]
+        self.longitude_moon_param = params[1]
+        self.latitude_moon_param = params[2]
+        self.polarization_moon_param = params[3]
+        self.tc_geo_param = params[4]
+        self.longitude_geo_param = params[5]
+        self.latitude_geo_param = params[6]
+        self.polarization_geo_param = params[7]
+        self.longitude_site = longitude_site
+        self.latitude_site = latitude_site
+        self._inputs = [self.tc_geo_param, self.longitude_geo_param,
+                        self.latitude_geo_param, self.polarization_geo_param]
+        self._outputs = [self.tc_moon_param, self.longitude_moon_param,
+                         self.latitude_moon_param, self.polarization_moon_param]
+        # NOTE: intentionally not super(GEOToMoon, self).__init__() -- see
+        # the equivalent note in SSBToLISA.__init__.
+        BaseTransform.__init__(self)
+
+
+class LISAToMoon(MoonToLISA):
+    """The inverse of MoonToLISA."""
+
+    name = "lisa_to_moon"
+    inverse = MoonToLISA
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+
+    def __init__(
+        self, tc_moon_param=None, longitude_moon_param=None,
+        latitude_moon_param=None, polarization_moon_param=None,
+        tc_lisa_param=None, longitude_lisa_param=None,
+        latitude_lisa_param=None, polarization_lisa_param=None,
+        longitude_site=None, latitude_site=None, orbit_file=None
+    ):
+        params = [tc_moon_param, longitude_moon_param,
+                  latitude_moon_param, polarization_moon_param,
+                  tc_lisa_param, longitude_lisa_param,
+                  latitude_lisa_param, polarization_lisa_param]
+        for index in range(len(params)):
+            if params[index] is None:
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
+
+        self.tc_moon_param = params[0]
+        self.longitude_moon_param = params[1]
+        self.latitude_moon_param = params[2]
+        self.polarization_moon_param = params[3]
+        self.tc_lisa_param = params[4]
+        self.longitude_lisa_param = params[5]
+        self.latitude_lisa_param = params[6]
+        self.polarization_lisa_param = params[7]
+        self.longitude_site = longitude_site
+        self.latitude_site = latitude_site
+        self.orbit_file = orbit_file
+        self.orbit = _load_constellation_orbit(orbit_file)
+        self._inputs = [self.tc_lisa_param, self.longitude_lisa_param,
+                        self.latitude_lisa_param, self.polarization_lisa_param]
+        self._outputs = [self.tc_moon_param, self.longitude_moon_param,
+                         self.latitude_moon_param, self.polarization_moon_param]
+        # NOTE: intentionally not super(LISAToMoon, self).__init__() -- see
+        # the equivalent note in SSBToLISA.__init__.
+        BaseTransform.__init__(self)
+
+
 class Exponent(Log):
     """Applies an exponent transform to an `inputvar` parameter.
 
@@ -2902,6 +3504,12 @@ transforms = {
     SSBToLISA.name: SSBToLISA,
     LISAToGEO.name: LISAToGEO,
     GEOToLISA.name: GEOToLISA,
+    MoonToSSB.name: MoonToSSB,
+    SSBToMoon.name: SSBToMoon,
+    MoonToGEO.name: MoonToGEO,
+    GEOToMoon.name: GEOToMoon,
+    MoonToLISA.name: MoonToLISA,
+    LISAToMoon.name: LISAToMoon,
 }
 
 # standard CBC transforms: these are transforms that do not require input

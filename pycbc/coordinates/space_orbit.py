@@ -520,31 +520,41 @@ def _real_earth_ecliptic_longitude(t=0.0):
     return earth_position_ssb(t)[1]
 
 
-def _real_earth_position_velocity(t):
-    """Real Earth position and velocity in the SSB ecliptic frame, at SSB
-    time(s) `t` [s] (GPS seconds), from astropy's JPL-based solar-system
-    ephemeris -- unlike a circular (or even eccentric two-body Kepler)
-    approximation, this includes real perturbations (from the Moon, other
-    planets, etc.), so it is strictly more accurate than any closed-form
-    orbit for Earth's guiding-center motion, not just a higher-order one.
-    Uses the same fixed ICRS -> ecliptic rotation as `ICRSOrbitAdapter`
-    (rather than `pycbc.coordinates.space.earth_position_ssb`'s own
-    per-call astropy frame transform) so that querying many times stays
-    fast. Imported lazily to avoid a circular import.
+def _real_body_position_velocity(t, body='earth'):
+    """Real position and velocity of any astropy-recognized solar-system
+    body (e.g. 'earth', 'moon') in the SSB ecliptic frame, at SSB time(s)
+    `t` [s] (GPS seconds), from astropy's JPL-based solar-system ephemeris
+    -- unlike a circular (or even eccentric two-body Kepler) approximation,
+    this includes real perturbations, so it is strictly more accurate than
+    any closed-form orbit for a guiding-center's motion, not just a
+    higher-order one. Uses the same fixed ICRS -> ecliptic rotation as
+    `ICRSOrbitAdapter` (rather than `pycbc.coordinates.space.
+    earth_position_ssb`'s own per-call astropy frame transform) so that
+    querying many times stays fast. Imported lazily to avoid a circular
+    import.
+
+    Parameters
+    ----------
+    t : array-like
+        SSB time(s) [s] (GPS seconds).
+    body : str, optional
+        Name of the body, as recognized by
+        `astropy.coordinates.get_body_barycentric_posvel`. Default
+        `'earth'`.
 
     Returns
     -------
     position : (N, 3) ndarray
-        Earth's position in the SSB ecliptic frame [m].
+        The body's position in the SSB ecliptic frame [m].
     velocity : (N, 3) ndarray
-        Earth's velocity in the SSB ecliptic frame [m/s].
+        The body's velocity in the SSB ecliptic frame [m/s].
     """
     from astropy.time import Time
     from astropy.coordinates import get_body_barycentric_posvel
     from astropy import units as apy_units
 
     time = Time(np.atleast_1d(t), format='gps')
-    pos, vel = get_body_barycentric_posvel('earth', time)
+    pos, vel = get_body_barycentric_posvel(body, time)
     rotation = _icrs_to_ecliptic_rotation_matrix()
     pos_icrs = np.stack([pos.x.to(apy_units.m).value,
                         pos.y.to(apy_units.m).value,
@@ -553,6 +563,14 @@ def _real_earth_position_velocity(t):
                         vel.y.to(apy_units.m / apy_units.s).value,
                         vel.z.to(apy_units.m / apy_units.s).value], axis=-1)
     return pos_icrs @ rotation.T, vel_icrs @ rotation.T
+
+
+def _real_earth_position_velocity(t):
+    """Real Earth position/velocity in the SSB ecliptic frame. See
+    `_real_body_position_velocity` (this is a thin wrapper for `'earth'`,
+    kept for the existing call sites in this module).
+    """
+    return _real_body_position_velocity(t, 'earth')
 
 
 EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s], ~1 sidereal year

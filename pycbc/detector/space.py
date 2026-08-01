@@ -199,6 +199,16 @@ _space_detectors = {'LISA': {'armlength': 2.5e9,
                                          'TianQin_T', 'TianQin_X',
                                          'TianQin_Y', 'TianQin_Z'],
                             },
+                    # LGWA (Lunar Gravitational Wave Antenna) is a single
+                    # lunar-surface instrument, not a multi-spacecraft
+                    # constellation like the three above -- 'armlength' is
+                    # not a meaningful concept for it and is left as None.
+                    # Registered here purely for discovery via
+                    # `get_available_space_detectors`; see
+                    # `_Generic_detector` below and
+                    # `pycbc.coordinates.moon` for the coordinate/arrival-
+                    # time machinery this response will eventually build on.
+                    'LGWA': {'armlength': None, 'aliases': []},
                    }
 
 class AbsSpaceDet(ABC):
@@ -957,6 +967,7 @@ _backends = {'LISA': {'LDC': _LDC_detector,
                      },
              'Taiji': {'Generic': _Generic_detector},
              'TianQin': {'Generic': _Generic_detector},
+             'LGWA': {'Generic': _Generic_detector},
             }
 
 class SpaceDetector(AbsSpaceDet):

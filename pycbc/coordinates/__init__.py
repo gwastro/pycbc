@@ -21,6 +21,7 @@ detectors.
 from pycbc.coordinates.base import *
 from pycbc.coordinates.space import *
 from pycbc.coordinates.space_orbit import *
+from pycbc.coordinates.moon import *
 
 
 __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
@@ -40,4 +41,8 @@ __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'TianQinAnalyticOrbit', 'ICRSOrbitAdapter',
            'constellation_frame', 'link_vector',
            't_detector_from_ssb', 't_ssb_from_t_detector',
+           'rotation_matrix_ssb_to_moon', 'moon_site_position_ssb',
+           't_moon_from_ssb', 't_ssb_from_t_moon',
+           'ssb_to_moon', 'moon_to_ssb',
+           'moon_to_geo', 'geo_to_moon', 'moon_to_lisa', 'lisa_to_moon',
            ]
