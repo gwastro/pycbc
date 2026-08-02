@@ -1,0 +1,157 @@
+pycbc.fft package
+=================
+
+Submodules
+----------
+
+pycbc.fft.backend\_cpu module
+-----------------------------
+
+.. automodule:: pycbc.fft.backend_cpu
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.backend\_cuda module
+------------------------------
+
+.. automodule:: pycbc.fft.backend_cuda
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.backend\_cupy module
+------------------------------
+
+.. automodule:: pycbc.fft.backend_cupy
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.backend\_mkl module
+-----------------------------
+
+.. automodule:: pycbc.fft.backend_mkl
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.backend\_support module
+---------------------------------
+
+.. automodule:: pycbc.fft.backend_support
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.class\_api module
+---------------------------
+
+.. automodule:: pycbc.fft.class_api
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.core module
+---------------------
+
+.. automodule:: pycbc.fft.core
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.cuda\_pyfft module
+----------------------------
+
+.. automodule:: pycbc.fft.cuda_pyfft
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.cufft module
+----------------------
+
+.. automodule:: pycbc.fft.cufft
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.cupyfft module
+------------------------
+
+.. automodule:: pycbc.fft.cupyfft
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.fft\_callback module
+------------------------------
+
+.. automodule:: pycbc.fft.fft_callback
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.fftw module
+---------------------
+
+.. automodule:: pycbc.fft.fftw
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.fftw\_pruned module
+-----------------------------
+
+.. automodule:: pycbc.fft.fftw_pruned
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.fftw\_pruned\_cython module
+-------------------------------------
+
+.. automodule:: pycbc.fft.fftw_pruned_cython
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.func\_api module
+--------------------------
+
+.. automodule:: pycbc.fft.func_api
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.mkl module
+--------------------
+
+.. automodule:: pycbc.fft.mkl
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.npfft module
+----------------------
+
+.. automodule:: pycbc.fft.npfft
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.fft.parser\_support module
+--------------------------------
+
+.. automodule:: pycbc.fft.parser_support
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.fft
+   :members:
+   :show-inheritance:
+   :undoc-members:
