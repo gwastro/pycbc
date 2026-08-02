@@ -271,6 +271,14 @@ setup(
         'pycbc.neutron_stars': find_files('pycbc/neutron_stars')
     },
     ext_modules = ext,
+    entry_points = {
+        'pycbc.waveform.fd_det': [
+            'LGWA_response = pycbc.waveform.lgwa:lgwa_fd_response',
+        ],
+        'pycbc.waveform.fd_det_sequence': [
+            'LGWA_response = pycbc.waveform.lgwa:lgwa_fd_response',
+        ],
+    },
     python_requires='>=3.11',
     classifiers=[
         'Programming Language :: Python',

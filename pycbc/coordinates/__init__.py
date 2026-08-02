@@ -22,6 +22,7 @@ from pycbc.coordinates.base import *
 from pycbc.coordinates.space import *
 from pycbc.coordinates.space_orbit import *
 from pycbc.coordinates.moon import *
+from pycbc.coordinates.reference_point import *
 
 
 __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
@@ -45,4 +46,7 @@ __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            't_moon_from_ssb', 't_ssb_from_t_moon',
            'ssb_to_moon', 'moon_to_ssb',
            'moon_to_geo', 'geo_to_moon', 'moon_to_lisa', 'lisa_to_moon',
+           'rotation_matrix_ssb_to_ref', 't_ref_from_ssb', 't_ssb_from_t_ref',
+           'ssb_to_ref', 'ref_to_ssb', 'ref_to_geo', 'geo_to_ref',
+           'ref_to_moon', 'moon_to_ref', 'ref_to_lisa', 'lisa_to_ref',
            ]
