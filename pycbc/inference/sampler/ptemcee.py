@@ -30,8 +30,7 @@ from .base import (BaseSampler, setup_output)
 from .base_mcmc import (BaseMCMC, EnsembleSupport, raw_samples_to_dict,
                         get_optional_arg_from_config)
 from .base_multitemper import (read_betas_from_hdf,
-                               ensemble_compute_acf, ensemble_compute_acl,
-                               default_beta_ladder)
+                               ensemble_compute_acf, ensemble_compute_acl)
 from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from pycbc.inference.io import PTEmceeFile
 from .. import models
@@ -108,7 +107,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         must be specified.
     Tmax : float, optional
         Specify the maximum temperature to use. This may be used with
-        ``ntemps``; see :py:func:`default_beta_ladder` for details. Either
+        ``ntemps``; see :py:func:`ptemcee.make_ladder` for details. Either
         this, ``ntemps``, or ``betas`` must be specified.
     betas : list of float, optional
         Specify the betas to use. Must be provided if ``ntemps`` and ``Tmax``
@@ -152,7 +151,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         if ntemps is None and Tmax is None and betas is None:
             raise ValueError("must provide either ntemps/Tmax or betas")
         if betas is None:
-            betas = default_beta_ladder(ndim, ntemps=ntemps, Tmax=Tmax)
+            betas = ptemcee.make_ladder(ndim, ntemps=ntemps, Tmax=Tmax)
         # construct the keyword arguments to pass; if a kwarg is None, we
         # won't pass it, resulting in ptemcee's defaults being used
         kwargs = {}
