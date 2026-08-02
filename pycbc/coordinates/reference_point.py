@@ -65,18 +65,31 @@ machinery once that vector is known.
 """
 
 import numpy as np
-
 from astropy.constants import c
 
+from pycbc.coordinates.moon import moon_to_ssb, ssb_to_moon
 from pycbc.coordinates.space import (
-    localization_to_propagation_vector, propagation_vector_to_localization,
-    polarization_newframe, ssb_to_geo, geo_to_ssb, ssb_to_lisa, lisa_to_ssb)
-from pycbc.coordinates.moon import ssb_to_moon, moon_to_ssb
+    geo_to_ssb,
+    lisa_to_ssb,
+    localization_to_propagation_vector,
+    polarization_newframe,
+    propagation_vector_to_localization,
+    ssb_to_geo,
+    ssb_to_lisa,
+)
 
 __all__ = [
-    'rotation_matrix_ssb_to_ref', 't_ref_from_ssb', 't_ssb_from_t_ref',
-    'ssb_to_ref', 'ref_to_ssb', 'ref_to_geo', 'geo_to_ref', 'ref_to_moon',
-    'moon_to_ref', 'ref_to_lisa', 'lisa_to_ref',
+    "rotation_matrix_ssb_to_ref",
+    "t_ref_from_ssb",
+    "t_ssb_from_t_ref",
+    "ssb_to_ref",
+    "ref_to_ssb",
+    "ref_to_geo",
+    "geo_to_ref",
+    "ref_to_moon",
+    "moon_to_ref",
+    "ref_to_lisa",
+    "lisa_to_ref",
 ]
 
 
@@ -99,7 +112,7 @@ def rotation_matrix_ssb_to_ref():
 
 
 def t_ref_from_ssb(t_ssb, longitude_ssb, latitude_ssb, ref_position):
-    """ Calculating the time when a GW signal arrives at a fixed
+    """Calculating the time when a GW signal arrives at a fixed
     reference point, by using the time and sky localization in the SSB
     frame.
 
@@ -142,7 +155,8 @@ def t_ref_from_ssb(t_ssb, longitude_ssb, latitude_ssb, ref_position):
     t_ref = np.empty_like(t_ssb, dtype=float)
     for i in range(len(t_ssb)):
         k = localization_to_propagation_vector(
-                longitude_ssb[i], latitude_ssb[i], use_astropy=False)
+            longitude_ssb[i], latitude_ssb[i], use_astropy=False
+        )
         t_ref[i] = t_ssb[i] + np.vdot(k, ref_position) / c.value
 
     if scalar or len(t_ref) == 1:
@@ -151,7 +165,7 @@ def t_ref_from_ssb(t_ssb, longitude_ssb, latitude_ssb, ref_position):
 
 
 def t_ssb_from_t_ref(t_ref, longitude_ssb, latitude_ssb, ref_position):
-    """ Calculating the time when a GW signal arrives at the barycenter
+    """Calculating the time when a GW signal arrives at the barycenter
     of SSB, by using the time at a fixed reference point and sky
     localization in the SSB frame. Inverse of `t_ref_from_ssb`, also
     closed form.
@@ -187,7 +201,8 @@ def t_ssb_from_t_ref(t_ref, longitude_ssb, latitude_ssb, ref_position):
     t_ssb = np.empty_like(t_ref, dtype=float)
     for i in range(len(t_ref)):
         k = localization_to_propagation_vector(
-                longitude_ssb[i], latitude_ssb[i], use_astropy=False)
+            longitude_ssb[i], latitude_ssb[i], use_astropy=False
+        )
         t_ssb[i] = t_ref[i] - np.vdot(k, ref_position) / c.value
 
     if scalar or len(t_ssb) == 1:
@@ -195,9 +210,8 @@ def t_ssb_from_t_ref(t_ref, longitude_ssb, latitude_ssb, ref_position):
     return t_ssb
 
 
-def ssb_to_ref(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
-               ref_position):
-    """ Converting the arrive time, the sky localization, and the
+def ssb_to_ref(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, ref_position):
+    """Converting the arrive time, the sky localization, and the
     polarization from the SSB frame to a fixed reference-point frame.
 
     Because `rotation_matrix_ssb_to_ref` is the identity (see module
@@ -243,31 +257,33 @@ def ssb_to_ref(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
     rotation_matrix = rotation_matrix_ssb_to_ref()
 
     for i in range(num):
-        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2*np.pi:
+        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2 * np.pi:
             raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_ssb[i] < -np.pi/2 or latitude_ssb[i] > np.pi/2:
+        if latitude_ssb[i] < -np.pi / 2 or latitude_ssb[i] > np.pi / 2:
             raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2*np.pi:
+        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2 * np.pi:
             raise ValueError("Polarization angle should within [0, 2*pi).")
         t_ref[i] = t_ref_from_ssb(
-            t_ssb[i], longitude_ssb[i], latitude_ssb[i], ref_position)
+            t_ssb[i], longitude_ssb[i], latitude_ssb[i], ref_position
+        )
         k_ssb = localization_to_propagation_vector(
-                    longitude_ssb[i], latitude_ssb[i], use_astropy=False)
+            longitude_ssb[i], latitude_ssb[i], use_astropy=False
+        )
         k_ref = rotation_matrix.T @ k_ssb
-        longitude_ref[i], latitude_ref[i] = \
-            propagation_vector_to_localization(k_ref, use_astropy=False)
+        longitude_ref[i], latitude_ref[i] = propagation_vector_to_localization(
+            k_ref, use_astropy=False
+        )
         polarization_ref[i] = polarization_newframe(
-            polarization_ssb[i], k_ssb, rotation_matrix, use_astropy=False)
+            polarization_ssb[i], k_ssb, rotation_matrix, use_astropy=False
+        )
 
     if num == 1:
-        return (t_ref[0], longitude_ref[0], latitude_ref[0],
-                polarization_ref[0])
+        return (t_ref[0], longitude_ref[0], latitude_ref[0], polarization_ref[0])
     return (t_ref, longitude_ref, latitude_ref, polarization_ref)
 
 
-def ref_to_ssb(t_ref, longitude_ref, latitude_ref, polarization_ref,
-               ref_position):
-    """ Converting the arrive time, the sky localization, and the
+def ref_to_ssb(t_ref, longitude_ref, latitude_ref, polarization_ref, ref_position):
+    """Converting the arrive time, the sky localization, and the
     polarization from a fixed reference-point frame to the SSB frame.
     Inverse of `ssb_to_ref`.
 
@@ -299,31 +315,35 @@ def ref_to_ssb(t_ref, longitude_ref, latitude_ref, polarization_ref,
     rotation_matrix = rotation_matrix_ssb_to_ref()
 
     for i in range(num):
-        if longitude_ref[i] < 0 or longitude_ref[i] >= 2*np.pi:
+        if longitude_ref[i] < 0 or longitude_ref[i] >= 2 * np.pi:
             raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_ref[i] < -np.pi/2 or latitude_ref[i] > np.pi/2:
+        if latitude_ref[i] < -np.pi / 2 or latitude_ref[i] > np.pi / 2:
             raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_ref[i] < 0 or polarization_ref[i] >= 2*np.pi:
+        if polarization_ref[i] < 0 or polarization_ref[i] >= 2 * np.pi:
             raise ValueError("Polarization angle should within [0, 2*pi).")
         k_ref = localization_to_propagation_vector(
-                    longitude_ref[i], latitude_ref[i], use_astropy=False)
+            longitude_ref[i], latitude_ref[i], use_astropy=False
+        )
         k_ssb = rotation_matrix @ k_ref
-        longitude_ssb[i], latitude_ssb[i] = \
-            propagation_vector_to_localization(k_ssb, use_astropy=False)
+        longitude_ssb[i], latitude_ssb[i] = propagation_vector_to_localization(
+            k_ssb, use_astropy=False
+        )
         polarization_ssb[i] = polarization_newframe(
-            polarization_ref[i], k_ref, rotation_matrix.T, use_astropy=False)
+            polarization_ref[i], k_ref, rotation_matrix.T, use_astropy=False
+        )
         t_ssb[i] = t_ssb_from_t_ref(
-            t_ref[i], longitude_ssb[i], latitude_ssb[i], ref_position)
+            t_ref[i], longitude_ssb[i], latitude_ssb[i], ref_position
+        )
 
     if num == 1:
-        return (t_ssb[0], longitude_ssb[0], latitude_ssb[0],
-                polarization_ssb[0])
+        return (t_ssb[0], longitude_ssb[0], latitude_ssb[0], polarization_ssb[0])
     return (t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)
 
 
-def ref_to_geo(t_ref, longitude_ref, latitude_ref, polarization_ref,
-               ref_position, use_astropy=True):
-    """ Converting the arrive time, the sky localization, and the
+def ref_to_geo(
+    t_ref, longitude_ref, latitude_ref, polarization_ref, ref_position, use_astropy=True
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from a fixed reference-point frame to the geocentric
     frame.
 
@@ -343,14 +363,15 @@ def ref_to_geo(t_ref, longitude_ref, latitude_ref, polarization_ref,
         See `pycbc.coordinates.space.ssb_to_geo`.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = ref_to_ssb(
-        t_ref, longitude_ref, latitude_ref, polarization_ref, ref_position)
-    return ssb_to_geo(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, use_astropy)
+        t_ref, longitude_ref, latitude_ref, polarization_ref, ref_position
+    )
+    return ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, use_astropy)
 
 
-def geo_to_ref(t_geo, longitude_geo, latitude_geo, polarization_geo,
-               ref_position, use_astropy=True):
-    """ Converting the arrive time, the sky localization, and the
+def geo_to_ref(
+    t_geo, longitude_geo, latitude_geo, polarization_geo, ref_position, use_astropy=True
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from the geocentric frame to a fixed reference-point
     frame.
 
@@ -370,14 +391,23 @@ def geo_to_ref(t_geo, longitude_geo, latitude_geo, polarization_geo,
         See `ssb_to_ref`.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = geo_to_ssb(
-        t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy)
+        t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy
+    )
     return ssb_to_ref(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, ref_position)
+        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, ref_position
+    )
 
 
-def ref_to_moon(t_ref, longitude_ref, latitude_ref, polarization_ref,
-                ref_position, longitude_site=None, latitude_site=None):
-    """ Converting the arrive time, the sky localization, and the
+def ref_to_moon(
+    t_ref,
+    longitude_ref,
+    latitude_ref,
+    polarization_ref,
+    ref_position,
+    longitude_site=None,
+    latitude_site=None,
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from a fixed reference-point frame to a lunar frame.
 
     Parameters
@@ -396,15 +426,28 @@ def ref_to_moon(t_ref, longitude_ref, latitude_ref, polarization_ref,
         See `pycbc.coordinates.moon.ssb_to_moon`.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = ref_to_ssb(
-        t_ref, longitude_ref, latitude_ref, polarization_ref, ref_position)
+        t_ref, longitude_ref, latitude_ref, polarization_ref, ref_position
+    )
     return ssb_to_moon(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
-        longitude_site, latitude_site)
+        t_ssb,
+        longitude_ssb,
+        latitude_ssb,
+        polarization_ssb,
+        longitude_site,
+        latitude_site,
+    )
 
 
-def moon_to_ref(t_moon, longitude_moon, latitude_moon, polarization_moon,
-                ref_position, longitude_site=None, latitude_site=None):
-    """ Converting the arrive time, the sky localization, and the
+def moon_to_ref(
+    t_moon,
+    longitude_moon,
+    latitude_moon,
+    polarization_moon,
+    ref_position,
+    longitude_site=None,
+    latitude_site=None,
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from a lunar frame to a fixed reference-point frame.
 
     Parameters
@@ -423,15 +466,29 @@ def moon_to_ref(t_moon, longitude_moon, latitude_moon, polarization_moon,
         See `ssb_to_ref`.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = moon_to_ssb(
-        t_moon, longitude_moon, latitude_moon, polarization_moon,
-        longitude_site, latitude_site)
+        t_moon,
+        longitude_moon,
+        latitude_moon,
+        polarization_moon,
+        longitude_site,
+        latitude_site,
+    )
     return ssb_to_ref(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, ref_position)
+        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, ref_position
+    )
 
 
-def ref_to_lisa(t_ref, longitude_ref, latitude_ref, polarization_ref,
-                ref_position, t0=None, orbit=None, sc=(1, 2, 3)):
-    """ Converting the arrive time, the sky localization, and the
+def ref_to_lisa(
+    t_ref,
+    longitude_ref,
+    latitude_ref,
+    polarization_ref,
+    ref_position,
+    t0=None,
+    orbit=None,
+    sc=(1, 2, 3),
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from a fixed reference-point frame to the LISA (or, via
     `orbit`, any constellation) frame.
 
@@ -458,17 +515,25 @@ def ref_to_lisa(t_ref, longitude_ref, latitude_ref, polarization_ref,
         See `pycbc.coordinates.space.ssb_to_lisa`.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = ref_to_ssb(
-        t_ref, longitude_ref, latitude_ref, polarization_ref, ref_position)
-    kwargs = {'orbit': orbit, 'sc': sc}
+        t_ref, longitude_ref, latitude_ref, polarization_ref, ref_position
+    )
+    kwargs = {"orbit": orbit, "sc": sc}
     if t0 is not None:
-        kwargs['t0'] = t0
-    return ssb_to_lisa(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, **kwargs)
+        kwargs["t0"] = t0
+    return ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, **kwargs)
 
 
-def lisa_to_ref(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
-                ref_position, t0=None, orbit=None, sc=(1, 2, 3)):
-    """ Converting the arrive time, the sky localization, and the
+def lisa_to_ref(
+    t_lisa,
+    longitude_lisa,
+    latitude_lisa,
+    polarization_lisa,
+    ref_position,
+    t0=None,
+    orbit=None,
+    sc=(1, 2, 3),
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from the LISA (or, via `orbit`, any constellation) frame
     to a fixed reference-point frame.
 
@@ -494,10 +559,12 @@ def lisa_to_ref(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
     (t_ref, longitude_ref, latitude_ref, polarization_ref) : tuple
         See `ssb_to_ref`.
     """
-    kwargs = {'orbit': orbit, 'sc': sc}
+    kwargs = {"orbit": orbit, "sc": sc}
     if t0 is not None:
-        kwargs['t0'] = t0
+        kwargs["t0"] = t0
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = lisa_to_ssb(
-        t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, **kwargs)
+        t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, **kwargs
+    )
     return ssb_to_ref(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, ref_position)
+        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, ref_position
+    )

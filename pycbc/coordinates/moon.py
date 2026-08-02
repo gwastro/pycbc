@@ -52,18 +52,30 @@ that is response-function work, not coordinate-layer work.
 """
 
 import numpy as np
-
-from scipy.optimize import fsolve
 from astropy.constants import c
+from scipy.optimize import fsolve
 
 from pycbc.coordinates.space import (
-    localization_to_propagation_vector, propagation_vector_to_localization,
-    polarization_newframe, ssb_to_geo, geo_to_ssb, ssb_to_lisa, lisa_to_ssb)
+    geo_to_ssb,
+    lisa_to_ssb,
+    localization_to_propagation_vector,
+    polarization_newframe,
+    propagation_vector_to_localization,
+    ssb_to_geo,
+    ssb_to_lisa,
+)
 
 __all__ = [
-    'rotation_matrix_ssb_to_moon', 'moon_site_position_ssb',
-    't_moon_from_ssb', 't_ssb_from_t_moon', 'ssb_to_moon', 'moon_to_ssb',
-    'moon_to_geo', 'geo_to_moon', 'moon_to_lisa', 'lisa_to_moon',
+    "rotation_matrix_ssb_to_moon",
+    "moon_site_position_ssb",
+    "t_moon_from_ssb",
+    "t_ssb_from_t_moon",
+    "ssb_to_moon",
+    "moon_to_ssb",
+    "moon_to_geo",
+    "geo_to_moon",
+    "moon_to_lisa",
+    "lisa_to_moon",
 ]
 
 
@@ -86,8 +98,7 @@ def rotation_matrix_ssb_to_moon():
     return np.eye(3)
 
 
-def moon_site_position_ssb(t_moon, longitude=None, latitude=None,
-                           height=0.0):
+def moon_site_position_ssb(t_moon, longitude=None, latitude=None, height=0.0):
     """Calculating the position vector of a point on (or above) the Moon
     in the SSB frame, at a given time.
 
@@ -119,15 +130,16 @@ def moon_site_position_ssb(t_moon, longitude=None, latitude=None,
         of 'm'.
     """
     if longitude is None and latitude is None:
-        from pycbc.coordinates.space_orbit import (
-            _real_body_position_velocity)
-        pos, _ = _real_body_position_velocity(t_moon, 'moon')
+        from pycbc.coordinates.space_orbit import _real_body_position_velocity
+
+        pos, _ = _real_body_position_velocity(t_moon, "moon")
         return pos.reshape(3, 1)
 
     if longitude is None or latitude is None:
         raise ValueError(
             "longitude and latitude must either both be given (a specific "
-            "surface site), or both left as None (the Moon's barycenter).")
+            "surface site), or both left as None (the Moon's barycenter)."
+        )
 
     try:
         from lunarsky import MoonLocation
@@ -136,28 +148,35 @@ def moon_site_position_ssb(t_moon, longitude=None, latitude=None,
             "lunarsky is required for moon_site_position_ssb with an "
             "explicit site location (it models real lunar libration); "
             "pip install lunarsky, or omit longitude/latitude to use the "
-            "Moon's barycenter instead (no lunarsky needed).") from exc
+            "Moon's barycenter instead (no lunarsky needed)."
+        ) from exc
     from astropy import units as apy_units
-    from astropy.time import Time
     from astropy.coordinates import ICRS
-    from pycbc.coordinates.space_orbit import (
-        _icrs_to_ecliptic_rotation_matrix)
+    from astropy.time import Time
+
+    from pycbc.coordinates.space_orbit import _icrs_to_ecliptic_rotation_matrix
 
     site = MoonLocation.from_selenodetic(
-        lon=longitude * apy_units.rad, lat=latitude * apy_units.rad,
-        height=height * apy_units.m)
-    icrs = site.get_mcmf(Time(t_moon, format='gps')).transform_to(ICRS())
-    pos_icrs = np.array([
-        icrs.cartesian.x.to(apy_units.m).value,
-        icrs.cartesian.y.to(apy_units.m).value,
-        icrs.cartesian.z.to(apy_units.m).value])
+        lon=longitude * apy_units.rad,
+        lat=latitude * apy_units.rad,
+        height=height * apy_units.m,
+    )
+    icrs = site.get_mcmf(Time(t_moon, format="gps")).transform_to(ICRS())
+    pos_icrs = np.array(
+        [
+            icrs.cartesian.x.to(apy_units.m).value,
+            icrs.cartesian.y.to(apy_units.m).value,
+            icrs.cartesian.z.to(apy_units.m).value,
+        ]
+    )
     rotation = _icrs_to_ecliptic_rotation_matrix()
     return (rotation @ pos_icrs).reshape(3, 1)
 
 
-def t_moon_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
-                    longitude_site=None, latitude_site=None):
-    """ Calculating the time when a GW signal arrives at a point on the
+def t_moon_from_ssb(
+    t_ssb, longitude_ssb, latitude_ssb, longitude_site=None, latitude_site=None
+):
+    """Calculating the time when a GW signal arrives at a point on the
     Moon, by using the time and sky localization in the SSB frame.
 
     Parameters
@@ -181,7 +200,8 @@ def t_moon_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
         The time when a GW signal arrives at the given point on the Moon.
     """
     k = localization_to_propagation_vector(
-            longitude_ssb, latitude_ssb, use_astropy=False)
+        longitude_ssb, latitude_ssb, use_astropy=False
+    )
 
     def equation(t_moon):
         # the Moon is moving, when GW arrives at the given point,
@@ -192,9 +212,10 @@ def t_moon_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
     return fsolve(equation, t_ssb)[0]
 
 
-def t_ssb_from_t_moon(t_moon, longitude_ssb, latitude_ssb,
-                      longitude_site=None, latitude_site=None):
-    """ Calculating the time when a GW signal arrives at the barycenter
+def t_ssb_from_t_moon(
+    t_moon, longitude_ssb, latitude_ssb, longitude_site=None, latitude_site=None
+):
+    """Calculating the time when a GW signal arrives at the barycenter
     of SSB, by using the time at a point on the Moon and sky localization
     in the SSB frame.
 
@@ -219,7 +240,8 @@ def t_ssb_from_t_moon(t_moon, longitude_ssb, latitude_ssb,
         The time when a GW signal arrives at the origin of SSB frame.
     """
     k = localization_to_propagation_vector(
-            longitude_ssb, latitude_ssb, use_astropy=False)
+        longitude_ssb, latitude_ssb, use_astropy=False
+    )
 
     # the Moon is moving, when GW arrives at the given point,
     # time is t_moon, not t_ssb.
@@ -231,9 +253,15 @@ def t_ssb_from_t_moon(t_moon, longitude_ssb, latitude_ssb,
     return fsolve(equation, t_moon)[0]
 
 
-def ssb_to_moon(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
-                longitude_site=None, latitude_site=None):
-    """ Converting the arrive time, the sky localization, and the
+def ssb_to_moon(
+    t_ssb,
+    longitude_ssb,
+    latitude_ssb,
+    polarization_ssb,
+    longitude_site=None,
+    latitude_site=None,
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from the SSB frame to a lunar frame.
 
     Because `rotation_matrix_ssb_to_moon` is the identity (see module
@@ -291,36 +319,48 @@ def ssb_to_moon(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
     rotation_matrix = rotation_matrix_ssb_to_moon()
 
     for i in range(num):
-        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2*np.pi:
+        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2 * np.pi:
             raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_ssb[i] < -np.pi/2 or latitude_ssb[i] > np.pi/2:
+        if latitude_ssb[i] < -np.pi / 2 or latitude_ssb[i] > np.pi / 2:
             raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2*np.pi:
+        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2 * np.pi:
             raise ValueError("Polarization angle should within [0, 2*pi).")
         t_moon[i] = t_moon_from_ssb(
-            t_ssb[i], longitude_ssb[i], latitude_ssb[i],
-            longitude_site, latitude_site)
+            t_ssb[i], longitude_ssb[i], latitude_ssb[i], longitude_site, latitude_site
+        )
         k_ssb = localization_to_propagation_vector(
-                    longitude_ssb[i], latitude_ssb[i], use_astropy=False)
+            longitude_ssb[i], latitude_ssb[i], use_astropy=False
+        )
         k_moon = rotation_matrix.T @ k_ssb
-        longitude_moon[i], latitude_moon[i] = \
-            propagation_vector_to_localization(k_moon, use_astropy=False)
+        longitude_moon[i], latitude_moon[i] = propagation_vector_to_localization(
+            k_moon, use_astropy=False
+        )
         polarization_moon[i] = polarization_newframe(
-            polarization_ssb[i], k_ssb, rotation_matrix, use_astropy=False)
+            polarization_ssb[i], k_ssb, rotation_matrix, use_astropy=False
+        )
 
     if num == 1:
-        params_moon = (t_moon[0], longitude_moon[0],
-                      latitude_moon[0], polarization_moon[0])
+        params_moon = (
+            t_moon[0],
+            longitude_moon[0],
+            latitude_moon[0],
+            polarization_moon[0],
+        )
     else:
-        params_moon = (t_moon, longitude_moon,
-                      latitude_moon, polarization_moon)
+        params_moon = (t_moon, longitude_moon, latitude_moon, polarization_moon)
 
     return params_moon
 
 
-def moon_to_ssb(t_moon, longitude_moon, latitude_moon, polarization_moon,
-                longitude_site=None, latitude_site=None):
-    """ Converting the arrive time, the sky localization, and the
+def moon_to_ssb(
+    t_moon,
+    longitude_moon,
+    latitude_moon,
+    polarization_moon,
+    longitude_site=None,
+    latitude_site=None,
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from a lunar frame to the SSB frame. Inverse of
     `ssb_to_moon`.
 
@@ -375,38 +415,45 @@ def moon_to_ssb(t_moon, longitude_moon, latitude_moon, polarization_moon,
     rotation_matrix = rotation_matrix_ssb_to_moon()
 
     for i in range(num):
-        if longitude_moon[i] < 0 or longitude_moon[i] >= 2*np.pi:
+        if longitude_moon[i] < 0 or longitude_moon[i] >= 2 * np.pi:
             raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_moon[i] < -np.pi/2 or latitude_moon[i] > np.pi/2:
+        if latitude_moon[i] < -np.pi / 2 or latitude_moon[i] > np.pi / 2:
             raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_moon[i] < 0 or polarization_moon[i] >= 2*np.pi:
+        if polarization_moon[i] < 0 or polarization_moon[i] >= 2 * np.pi:
             raise ValueError("Polarization angle should within [0, 2*pi).")
         k_moon = localization_to_propagation_vector(
-                    longitude_moon[i], latitude_moon[i], use_astropy=False)
+            longitude_moon[i], latitude_moon[i], use_astropy=False
+        )
         k_ssb = rotation_matrix @ k_moon
-        longitude_ssb[i], latitude_ssb[i] = \
-            propagation_vector_to_localization(k_ssb, use_astropy=False)
+        longitude_ssb[i], latitude_ssb[i] = propagation_vector_to_localization(
+            k_ssb, use_astropy=False
+        )
         polarization_ssb[i] = polarization_newframe(
-            polarization_moon[i], k_moon, rotation_matrix.T,
-            use_astropy=False)
+            polarization_moon[i], k_moon, rotation_matrix.T, use_astropy=False
+        )
         t_ssb[i] = t_ssb_from_t_moon(
-            t_moon[i], longitude_ssb[i], latitude_ssb[i],
-            longitude_site, latitude_site)
+            t_moon[i], longitude_ssb[i], latitude_ssb[i], longitude_site, latitude_site
+        )
 
     if num == 1:
-        params_ssb = (t_ssb[0], longitude_ssb[0],
-                     latitude_ssb[0], polarization_ssb[0])
+        params_ssb = (t_ssb[0], longitude_ssb[0], latitude_ssb[0], polarization_ssb[0])
     else:
-        params_ssb = (t_ssb, longitude_ssb,
-                     latitude_ssb, polarization_ssb)
+        params_ssb = (t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)
 
     return params_ssb
 
 
-def moon_to_geo(t_moon, longitude_moon, latitude_moon, polarization_moon,
-                longitude_site=None, latitude_site=None, use_astropy=True,
-                lal_convention=True):
-    """ Converting the arrive time, the sky localization, and the
+def moon_to_geo(
+    t_moon,
+    longitude_moon,
+    latitude_moon,
+    polarization_moon,
+    longitude_site=None,
+    latitude_site=None,
+    use_astropy=True,
+    lal_convention=True,
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from a lunar frame to the geocentric frame.
 
     Parameters
@@ -440,19 +487,32 @@ def moon_to_geo(t_moon, longitude_moon, latitude_moon, polarization_moon,
         See `pycbc.coordinates.space.ssb_to_geo`.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = moon_to_ssb(
-        t_moon, longitude_moon, latitude_moon, polarization_moon,
-        longitude_site, latitude_site)
+        t_moon,
+        longitude_moon,
+        latitude_moon,
+        polarization_moon,
+        longitude_site,
+        latitude_site,
+    )
     t_geo, longitude_geo, latitude_geo, polarization_geo = ssb_to_geo(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, use_astropy)
+        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, use_astropy
+    )
     if not lal_convention:
-        polarization_geo = np.mod(polarization_geo - np.pi, 2*np.pi)
+        polarization_geo = np.mod(polarization_geo - np.pi, 2 * np.pi)
     return t_geo, longitude_geo, latitude_geo, polarization_geo
 
 
-def geo_to_moon(t_geo, longitude_geo, latitude_geo, polarization_geo,
-                longitude_site=None, latitude_site=None, use_astropy=True,
-                lal_convention=True):
-    """ Converting the arrive time, the sky localization, and the
+def geo_to_moon(
+    t_geo,
+    longitude_geo,
+    latitude_geo,
+    polarization_geo,
+    longitude_site=None,
+    latitude_site=None,
+    use_astropy=True,
+    lal_convention=True,
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from the geocentric frame to a lunar frame.
 
     Parameters
@@ -479,18 +539,32 @@ def geo_to_moon(t_geo, longitude_geo, latitude_geo, polarization_geo,
         See `ssb_to_moon`.
     """
     if not lal_convention:
-        polarization_geo = np.mod(polarization_geo + np.pi, 2*np.pi)
+        polarization_geo = np.mod(polarization_geo + np.pi, 2 * np.pi)
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = geo_to_ssb(
-        t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy)
+        t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy
+    )
     return ssb_to_moon(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
-        longitude_site, latitude_site)
+        t_ssb,
+        longitude_ssb,
+        latitude_ssb,
+        polarization_ssb,
+        longitude_site,
+        latitude_site,
+    )
 
 
-def moon_to_lisa(t_moon, longitude_moon, latitude_moon, polarization_moon,
-                 longitude_site=None, latitude_site=None,
-                 t0=None, orbit=None, sc=(1, 2, 3)):
-    """ Converting the arrive time, the sky localization, and the
+def moon_to_lisa(
+    t_moon,
+    longitude_moon,
+    latitude_moon,
+    polarization_moon,
+    longitude_site=None,
+    latitude_site=None,
+    t0=None,
+    orbit=None,
+    sc=(1, 2, 3),
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from a lunar frame to the LISA (or, via `orbit`, any
     constellation) frame.
 
@@ -518,19 +592,31 @@ def moon_to_lisa(t_moon, longitude_moon, latitude_moon, polarization_moon,
         See `pycbc.coordinates.space.ssb_to_lisa`.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = moon_to_ssb(
-        t_moon, longitude_moon, latitude_moon, polarization_moon,
-        longitude_site, latitude_site)
-    kwargs = {'orbit': orbit, 'sc': sc}
+        t_moon,
+        longitude_moon,
+        latitude_moon,
+        polarization_moon,
+        longitude_site,
+        latitude_site,
+    )
+    kwargs = {"orbit": orbit, "sc": sc}
     if t0 is not None:
-        kwargs['t0'] = t0
-    return ssb_to_lisa(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, **kwargs)
+        kwargs["t0"] = t0
+    return ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, **kwargs)
 
 
-def lisa_to_moon(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
-                 longitude_site=None, latitude_site=None,
-                 t0=None, orbit=None, sc=(1, 2, 3)):
-    """ Converting the arrive time, the sky localization, and the
+def lisa_to_moon(
+    t_lisa,
+    longitude_lisa,
+    latitude_lisa,
+    polarization_lisa,
+    longitude_site=None,
+    latitude_site=None,
+    t0=None,
+    orbit=None,
+    sc=(1, 2, 3),
+):
+    """Converting the arrive time, the sky localization, and the
     polarization from the LISA (or, via `orbit`, any constellation) frame
     to a lunar frame.
 
@@ -557,11 +643,17 @@ def lisa_to_moon(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
     (t_moon, longitude_moon, latitude_moon, polarization_moon) : tuple
         See `ssb_to_moon`.
     """
-    kwargs = {'orbit': orbit, 'sc': sc}
+    kwargs = {"orbit": orbit, "sc": sc}
     if t0 is not None:
-        kwargs['t0'] = t0
+        kwargs["t0"] = t0
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = lisa_to_ssb(
-        t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, **kwargs)
+        t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, **kwargs
+    )
     return ssb_to_moon(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
-        longitude_site, latitude_site)
+        t_ssb,
+        longitude_ssb,
+        latitude_ssb,
+        polarization_ssb,
+        longitude_site,
+        latitude_site,
+    )

@@ -64,15 +64,16 @@ waveform models parameterize their harmonic content differently (and not
 always through the same `mode_array` mechanism), so full eccentric-
 harmonic support may need model-specific handling investigated separately.
 """
+
 import numpy as np
 
-from pycbc.types import Array, FrequencySeries
-from pycbc.waveform.waveform import get_fd_waveform_sequence
-from pycbc.detector.space import _LGWA_detector
 from pycbc.coordinates import moon as _moon
 from pycbc.coordinates import reference_point as _refpt
+from pycbc.detector.space import _LGWA_detector
+from pycbc.types import Array, FrequencySeries
+from pycbc.waveform.waveform import get_fd_waveform_sequence
 
-__all__ = ['lgwa_fd_response']
+__all__ = ["lgwa_fd_response"]
 
 # G * M_sun / c**3, in seconds -- used only to pick a safe (adaptive)
 # finite-difference step size for the local stationary-phase time
@@ -95,8 +96,12 @@ def _get_cached_detector(longitude_site, latitude_site, cadence):
     key = (float(longitude_site), float(latitude_site), float(cadence))
     det = _lgwa_detector_cache.get(key)
     if det is None:
-        det = _LGWA_detector('LGWA', longitude_site=longitude_site,
-                             latitude_site=latitude_site, cadence=cadence)
+        det = _LGWA_detector(
+            "LGWA",
+            longitude_site=longitude_site,
+            latitude_site=latitude_site,
+            cadence=cadence,
+        )
         _lgwa_detector_cache[key] = det
     return det
 
@@ -122,28 +127,37 @@ def _time_of_f_local(fm, base_approximant, mode, cbc_params):
     frequency (`f * 2/m`, since the (l, m) harmonic's GW frequency is
     approximately m/2 times the orbital-derived (2,2) frequency).
     """
-    l, m = mode
+    ell, m = mode
     fm = np.asarray(fm, dtype=float)
-    mass1 = float(cbc_params['mass1'])
-    mass2 = float(cbc_params['mass2'])
-    mchirp_sec = (mass1 * mass2)**0.6 / (mass1 + mass2)**0.2 \
-        * _SUN_MASS_SECONDS
+    mass1 = float(cbc_params["mass1"])
+    mass2 = float(cbc_params["mass2"])
+    mchirp_sec = (mass1 * mass2) ** 0.6 / (mass1 + mass2) ** 0.2 * _SUN_MASS_SECONDS
 
     f_22_equiv = np.abs(fm) * 2.0 / max(abs(m), 1)
     f_22_equiv = np.maximum(f_22_equiv, 1e-8)
-    t_est = 5.0 / (256.0 * np.pi**(8.0/3.0)) / mchirp_sec**(5.0/3.0) \
-        / f_22_equiv**(8.0/3.0)
-    eps = np.minimum(0.01 / (2*np.pi*t_est), fm*1e-4)
-    eps = np.maximum(eps, fm*1e-10)
+    t_est = (
+        5.0
+        / (256.0 * np.pi ** (8.0 / 3.0))
+        / mchirp_sec ** (5.0 / 3.0)
+        / f_22_equiv ** (8.0 / 3.0)
+    )
+    eps = np.minimum(0.01 / (2 * np.pi * t_est), fm * 1e-4)
+    eps = np.maximum(eps, fm * 1e-10)
 
     dphase = None
     for _ in range(15):
         hp_minus, _ = get_fd_waveform_sequence(
-            approximant=base_approximant, mode_array=[[l, m]],
-            sample_points=Array(fm - eps), **cbc_params)
+            approximant=base_approximant,
+            mode_array=[[ell, m]],
+            sample_points=Array(fm - eps),
+            **cbc_params,
+        )
         hp_plus, _ = get_fd_waveform_sequence(
-            approximant=base_approximant, mode_array=[[l, m]],
-            sample_points=Array(fm + eps), **cbc_params)
+            approximant=base_approximant,
+            mode_array=[[ell, m]],
+            sample_points=Array(fm + eps),
+            **cbc_params,
+        )
         dphase = np.angle(hp_plus.numpy() * np.conj(hp_minus.numpy()))
         bad = np.abs(dphase) > np.pi / 2
         if not np.any(bad):
@@ -159,9 +173,20 @@ def _time_of_f_local(fm, base_approximant, mode, cbc_params):
     return -dphase / (2 * eps) / (2 * np.pi)
 
 
-def _lgwa_response_core(fm, base_approximant, mode_array, ref_position,
-                        longitude_site, latitude_site, cadence,
-                        tc, lamb, beta, polarization_ref, cbc_params):
+def _lgwa_response_core(
+    fm,
+    base_approximant,
+    mode_array,
+    ref_position,
+    longitude_site,
+    latitude_site,
+    cadence,
+    tc,
+    lamb,
+    beta,
+    polarization_ref,
+    cbc_params,
+):
     """
     Shared core for both the equal-spaced-grid (`fd_det`) and arbitrary-
     sample-points (`fd_det_sequence`) entry points: returns `(h_X, h_Y)`
@@ -181,8 +206,12 @@ def _lgwa_response_core(fm, base_approximant, mode_array, ref_position,
     # rotation), so lamb/beta/polarization_ref (already SSB-frame values)
     # can be passed directly as the "moon-frame" inputs here.
     _, ra, dec, psi = _moon.moon_to_geo(
-        t_moon=0.0, longitude_moon=lamb, latitude_moon=beta,
-        polarization_moon=polarization_ref, lal_convention=False)
+        t_moon=0.0,
+        longitude_moon=lamb,
+        latitude_moon=beta,
+        polarization_moon=polarization_ref,
+        lal_convention=False,
+    )
 
     # SSB -> LGWA site light-travel correction, evaluated once (not per
     # frequency point) and applied as a near-constant shift -- exactly
@@ -190,9 +219,10 @@ def _lgwa_response_core(fm, base_approximant, mode_array, ref_position,
     # _LGWA_detector.project_wave: lunar libration/orbital geometry
     # changes on a timescale of days, far slower than t_lm(f) spreads
     # within a single signal.
-    delta_t_site = _moon.t_moon_from_ssb(
-        t_ssb_merger, lamb, beta, longitude_site, latitude_site
-    ) - t_ssb_merger
+    delta_t_site = (
+        _moon.t_moon_from_ssb(t_ssb_merger, lamb, beta, longitude_site, latitude_site)
+        - t_ssb_merger
+    )
 
     lgwa_det = _get_cached_detector(longitude_site, latitude_site, cadence)
     modes = mode_array if mode_array else [(2, 2)]
@@ -200,19 +230,22 @@ def _lgwa_response_core(fm, base_approximant, mode_array, ref_position,
     h_x_total = np.zeros(len(fm), dtype=complex)
     h_y_total = np.zeros(len(fm), dtype=complex)
 
-    for (l, m) in modes:
+    for ell, m in modes:
         hp_lm, hc_lm = get_fd_waveform_sequence(
-            approximant=base_approximant, mode_array=[[l, m]],
-            sample_points=Array(fm), **cbc_params)
+            approximant=base_approximant,
+            mode_array=[[ell, m]],
+            sample_points=Array(fm),
+            **cbc_params,
+        )
 
-        t_rel = _time_of_f_local(fm, base_approximant, (l, m), cbc_params)
+        t_rel = _time_of_f_local(fm, base_approximant, (ell, m), cbc_params)
         t_site = t_ssb_merger + t_rel + delta_t_site
 
         pad = cadence
         n, x, y = lgwa_det._detector_frame(
-            t_site.min() - pad, t_site.max() + pad, t_site)
-        hpx, hcx, hpy, hcy = lgwa_det._antenna_pattern_factors(
-            n, x, y, ra, dec, psi)
+            t_site.min() - pad, t_site.max() + pad, t_site
+        )
+        hpx, hcx, hpy, hcy = lgwa_det._antenna_pattern_factors(n, x, y, ra, dec, psi)
 
         # get_fd_waveform_sequence's raw output has the coalescence
         # reference at t=0; shift to the actual SSB merger time so the
@@ -230,13 +263,25 @@ def _lgwa_response_core(fm, base_approximant, mode_array, ref_position,
     return h_x_total, h_y_total
 
 
-def lgwa_fd_response(ifos=None, sample_points=None, delta_f=None,
-                     f_final=None, f_lower=None, approximant=None,
-                     base_approximant=None,
-                     mode_array=None, ref_position=(0.0, 0.0, 0.0),
-                     longitude_site=None, latitude_site=None,
-                     cadence=3600.0, tc=0.0, eclipticlongitude=0.0,
-                     eclipticlatitude=0.0, polarization=0.0, **params):
+def lgwa_fd_response(
+    ifos=None,
+    sample_points=None,
+    delta_f=None,
+    f_final=None,
+    f_lower=None,
+    approximant=None,
+    base_approximant=None,
+    mode_array=None,
+    ref_position=(0.0, 0.0, 0.0),
+    longitude_site=None,
+    latitude_site=None,
+    cadence=3600.0,
+    tc=0.0,
+    eclipticlongitude=0.0,
+    eclipticlatitude=0.0,
+    polarization=0.0,
+    **params,
+):
     """
     Registered as both `pycbc.waveform.fd_det` (equal-spaced grid, via
     `delta_f`/`f_final`) and `pycbc.waveform.fd_det_sequence` (arbitrary
@@ -282,33 +327,48 @@ def lgwa_fd_response(ifos=None, sample_points=None, delta_f=None,
     # passed to get_fd_waveform_sequence below.
     del approximant
     if base_approximant is None:
-        raise ValueError('base_approximant is required (any PyCBC/LAL '
-                         'frequency-domain approximant name).')
+        raise ValueError(
+            "base_approximant is required (any PyCBC/LAL "
+            "frequency-domain approximant name)."
+        )
     if longitude_site is None or latitude_site is None:
-        raise ValueError('longitude_site and latitude_site (radians) are '
-                         'required.')
+        raise ValueError("longitude_site and latitude_site (radians) are required.")
 
     is_sequence = sample_points is not None
     if is_sequence:
-        fm = sample_points.numpy() if isinstance(sample_points, Array) \
+        fm = (
+            sample_points.numpy()
+            if isinstance(sample_points, Array)
             else np.asarray(sample_points)
+        )
     else:
         if delta_f is None or f_final is None:
-            raise ValueError('Either sample_points, or both delta_f and '
-                             'f_final, must be given.')
+            raise ValueError(
+                "Either sample_points, or both delta_f and f_final, must be given."
+            )
         n_samples = int(f_final / delta_f) + 1
         fm = np.arange(n_samples) * delta_f
 
     cbc_params = dict(params)
-    cbc_params['f_lower'] = f_lower
-    cbc_params.setdefault('f_ref', f_lower)
+    cbc_params["f_lower"] = f_lower
+    cbc_params.setdefault("f_ref", f_lower)
 
     h_x, h_y = _lgwa_response_core(
-        fm, base_approximant, mode_array, ref_position,
-        longitude_site, latitude_site, cadence,
-        tc, eclipticlongitude, eclipticlatitude, polarization, cbc_params)
+        fm,
+        base_approximant,
+        mode_array,
+        ref_position,
+        longitude_site,
+        latitude_site,
+        cadence,
+        tc,
+        eclipticlongitude,
+        eclipticlatitude,
+        polarization,
+        cbc_params,
+    )
 
-    out = {'LGWA_X': h_x, 'LGWA_Y': h_y}
+    out = {"LGWA_X": h_x, "LGWA_Y": h_y}
 
     if isinstance(ifos, str):
         ifos = [ifos]
@@ -323,7 +383,15 @@ def lgwa_fd_response(ifos=None, sample_points=None, delta_f=None,
 
 
 lgwa_fd_response.required = [
-    'f_lower', 'approximant', 'base_approximant', 'mass1', 'mass2',
-    'tc', 'eclipticlongitude', 'eclipticlatitude', 'polarization',
-    'longitude_site', 'latitude_site',
+    "f_lower",
+    "approximant",
+    "base_approximant",
+    "mass1",
+    "mass2",
+    "tc",
+    "eclipticlongitude",
+    "eclipticlatitude",
+    "polarization",
+    "longitude_site",
+    "latitude_site",
 ]
