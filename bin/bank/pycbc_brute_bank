@@ -352,7 +352,7 @@ def handle_exit_signal(signum, frame):
     logging.warning(f"Signal {signum} received. Triggering emergency save...")
     save_bank()
     # Force exit so the script doesn't try to resume the loops
-    os._exit(0)
+    os._exit(1)
 
 def save_bank(): # Use a local name
     logging.info("Saving current bank to %s", args.output_file)
