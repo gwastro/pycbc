@@ -22,14 +22,14 @@ parser.add_argument('--time-window', required=True,
                          'where start/end time is relative to --center-time; '
                          'both are positive')
 pycbc.strain.insert_strain_option_group(parser)
-opts = parser.parse_args()
+args = parser.parse_args()
 
-pycbc.init_logging(opts.verbose, default_level=1)
+pycbc.init_logging(args.verbose, default_level=1)
 
-if opts.center_time is None:
-    center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
+if args.center_time is None:
+    center_time = (args.gps_start_time + args.gps_end_time) / 2.
 else:
-    center_time = opts.center_time
+    center_time = args.center_time
 # Set up the time window to be audified
 try:
     split = args.time_window.split(',')
@@ -43,7 +43,7 @@ except (RuntimeError, IndexError, ValueError):
     )
 
 logging.info("Loading Strain")
-strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
+strain = pycbc.strain.from_cli(args, pycbc.DYN_RANGE_FAC)
 
 rem_corrupted = True
 if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
