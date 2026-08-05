@@ -172,7 +172,7 @@ class RatioMatchedFilterControl(object):
     def _forward_block_fft(self, segment):
         """FFT one time-domain block (nbatch=1), pre-dividing by fir_fft_len.
 
-        pycbc's class-based IFFT (unlike numpy.fft.ifft/mkl_fft.ifft) does
+        pycbc's class-based IFFT (unlike numpy.fft.ifft) does
         not normalize its output by 1/N. Since this block spectrum only
         ever gets multiplied by a filter spectrum and then inverse
         transformed (in _execute_blocked_kernel), pre-dividing it here by N
