@@ -44,7 +44,7 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
     N_nyquist = len(H_target_pos)
     N_full = 2 * (N_nyquist - 1)
     f_grid_pos = np.arange(N_nyquist) / N_full
-    
+
     # 2. Select Valid
     valid_indices = np.where(valid_mask_pos)[0]
     f_valid = f_grid_pos[valid_indices]
@@ -57,7 +57,7 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
         k_idx = np.arange(-K_taps//2 + 1, K_taps//2 + 1)
 
     A_complex = np.exp(-1j * 2 * np.pi * np.outer(f_valid, k_idx))
-    
+
     # Weights
     if weights_pos is not None:
         w_valid = weights_pos[valid_indices]
@@ -67,7 +67,7 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
     # Real Stack
     A_real = np.vstack([A_complex.real, A_complex.imag])
     b_real = np.concatenate([b_complex.real, b_complex.imag])
-    
+
     if reg_type == 'derivative':
         reg_matrix = np.zeros((K_taps - 1, K_taps))
         for i in range(K_taps - 1):
@@ -75,18 +75,18 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
             reg_matrix[i, i+1] = -1
         reg_matrix *= np.sqrt(reg_val)
         target_reg = np.zeros(K_taps - 1)
-        
+
     elif reg_type == 'composite':
         # 1. Ridge component (Size control)
         reg_ridge = np.eye(K_taps) * np.sqrt(reg_val * 0.5)
-        
+
         # 2. Derivative component (Smoothness control)
         reg_deriv = np.zeros((K_taps - 1, K_taps))
         for i in range(K_taps - 1):
             reg_deriv[i, i] = 1
             reg_deriv[i, i+1] = -1
         reg_deriv *= np.sqrt(reg_val * 0.5)
-        
+
         # Stack both penalties together
         reg_matrix = np.vstack([reg_ridge, reg_deriv])
         target_reg = np.zeros(K_taps + K_taps - 1)
@@ -97,31 +97,31 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
 
     A_final = np.vstack([A_real, reg_matrix])
     b_final = np.concatenate([b_real, target_reg])
-        
+
     try:
         h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver='gelss')
-        #h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)    
+        #h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)
     except:
         logging.info('Exception with numpy least squares, moving to scipy')
         h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver='gelss')
         logging.info('Scipy suceeded')
-    return h_optimal     
-        
+    return h_optimal
+
 # --- 2. Verification (Double Precision) ---
 def verify_filter_match(taps, h_ref, h_fine, psd, f_low):
     N = (len(h_ref) - 1) * 2
     K = len(taps)
     h_fir_time = np.zeros(N, dtype=np.float64)
-    
+
     if K % 2 == 1: k_start = -(K - 1) // 2
     else: k_start = -K // 2 + 1
     indices = (np.arange(k_start, k_start + K) + N) % N
     h_fir_time[indices] = taps
-    
+
     delta_t = 1.0 / (N * h_ref.delta_f)
     ts = TimeSeries(h_fir_time, delta_t=delta_t)
     H_fir = ts.to_frequencyseries(delta_f=h_ref.delta_f)
-    
+
     if len(H_fir) > len(h_ref): H_fir = H_fir[:len(h_ref)]
     elif len(H_fir) < len(h_ref): H_fir.resize(len(h_ref))
 
@@ -144,13 +144,13 @@ def process_template(i):
     for c_idx, h_ref in enumerate(g_coarse_waveforms):
         m, _ = match(h_fine, h_ref, psd=g_psd, low_frequency_cutoff=g_args.f_low)
         matches.append(m)
-    
+
     matches = np.array(matches)
     morder = np.argsort(matches)[::-1]
     msearch = morder[:g_args.search_depth]
 
     current_taps = g_args.n_taps
-    
+
     best = (i, -1, -1, -1.0, [], [])
     qa_match = -1
     while current_taps <= g_args.max_taps:
@@ -164,14 +164,14 @@ def process_template(i):
             freqs = h_fine.sample_frequencies.numpy()
             band_mask = (freqs >= g_args.f_low) & (freqs < g_args.sample_rate / 2.0)
             ratio = h_fine.numpy() / h_ref.numpy()
-            
+
             # PSD based weights
             psd_np = g_psd.numpy()
             weights_snr = np.zeros_like(psd_np, dtype=np.float64)
             ref_mag = np.abs(h_ref.numpy())
             np.divide(ref_mag**2, psd_np, out=weights_snr, where=band_mask)
-    
-            # Clean up potential divide errors and normalize            
+
+            # Clean up potential divide errors and normalize
             ratio = np.nan_to_num(ratio, copy=False)
             weights_snr = np.nan_to_num(weights_snr, copy=False)
             H_target_raw = ratio * g_args.sample_rate
@@ -180,7 +180,7 @@ def process_template(i):
 
             try:
                 taps = design_optimal_real_filter(H_target_raw[::g_args.dec_factor],
-                                                  band_mask[::g_args.dec_factor], 
+                                                  band_mask[::g_args.dec_factor],
                                                   current_taps, weights_pos=weights_snr[::g_args.dec_factor],
                                                   reg_type=g_args.regularization_type,
                                                   reg_val=g_args.regularization_magnitude)
@@ -190,7 +190,7 @@ def process_template(i):
 
             if False:
                 from matplotlib import pyplot
-                
+
                 N = (len(h_ref) - 1) * 2
                 K = len(taps)
                 h_fir_time = np.zeros(N, dtype=np.float64)
@@ -203,7 +203,7 @@ def process_template(i):
                 delta_t = 1.0 / (N * h_ref.delta_f)
                 ts = TimeSeries(h_fir_time, delta_t=delta_t)
                 H_fir = ts.to_frequencyseries(delta_f=h_ref.delta_f)
-                
+
                 pyplot.plot(freqs, ratio, label='target')
                 H_fir.real().plot(label='achieved')
                 pyplot.xscale('log')
@@ -226,13 +226,13 @@ def process_template(i):
 
             logging.debug(f"CoarseTemp:{c_idx} QA-Match:{qa_match} Taps:{current_taps} Max Tap Val: {max_tap_val}")
             round_matches.append(qa_match)
-            
+
             if best[3] < qa_match:
                 best = (i, best_match, c_idx, qa_match, taps, sigmas)
-            
+
             if qa_match >= g_args.min_match: break
         if qa_match >= g_args.min_match: break
-        
+
         round_matches = np.array(round_matches)
         top = round_matches.argsort()[::-1]
         tnum = int(max(1, len(round_matches) * 0.8))
@@ -268,7 +268,7 @@ def main():
     args = parser.parse_args()
 
     pycbc.init_logging(args.verbose)
-    
+
     # Reroute logger to stdout to avoid tqdm conflict
     log = logging.getLogger()
     if args.verbose > 0 and log.handlers:
@@ -281,12 +281,12 @@ def main():
     flen_small = int(f_final / df) + 1
     logging.info(f"Setup: Rate={args.sample_rate}, df={args.delta_f}, flen={flen}")
 
-    psd = pycbc.psd.from_cli(args, length=flen, delta_f=args.delta_f, 
+    psd = pycbc.psd.from_cli(args, length=flen, delta_f=args.delta_f,
                              low_frequency_cutoff=args.f_low)
 
     logging.info("Loading coarse bank references...")
     coarse_bank = FilterBank(args.coarse_bank, flen, args.delta_f,
-                             dtype=np.complex128, 
+                             dtype=np.complex128,
                              enable_compressed_waveforms=False)
     show_progress = (args.verbose == 0)
     coarse_waveforms = [h.copy() for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
@@ -298,19 +298,19 @@ def main():
                            dtype=np.complex128,
                            enable_compressed_waveforms=False)
     n_fine = len(fine_bank)
-    
+
     # --- PHASE 1: Write File Headers via TemplateBank reuse ---
     logging.info("Writing bank parameters to output file...")
-    
+
     # 1. Write Fine Bank to Root
-    f_out = fine_bank.write_to_hdf(args.output_file, force=True, 
+    f_out = fine_bank.write_to_hdf(args.output_file, force=True,
                                    write_compressed_waveforms=True)
 
     # 2. Write Coarse Bank to Subgroup
-    coarse_bank.write_to_hdf(args.output_file, file_handler=f_out, 
+    coarse_bank.write_to_hdf(args.output_file, file_handler=f_out,
                              group_key="fir_data/coarse_bank_params",
                              write_compressed_waveforms=True)
-    
+
     # 3. Add Metadata attributes
     # We use require_group because the previous step created 'fir_data/coarse_bank_params'
     fir_group = f_out.require_group("fir_data")
@@ -323,27 +323,27 @@ def main():
     failed_count = 0
     job_list = range(n_fine)
     all_results = [None] * n_fine
-    
+
     try:
-        with mp.Pool(processes=args.n_processes, initializer=init_worker, 
+        with mp.Pool(processes=args.n_processes, initializer=init_worker,
                      initargs=(coarse_waveforms, fine_bank, psd, args)) as pool:
-            
+
             results_iter = pool.imap_unordered(process_template, job_list)
             if not args.verbose:
-                 results_iter = tqdm(results_iter, total=n_fine, desc="Designing Filters", 
+                 results_iter = tqdm(results_iter, total=n_fine, desc="Designing Filters",
                                      postfix={"failed": 0}, file=sys.stderr)
 
             for result in results_iter:
                 i, coarse_match, c_idx, qa_match, final_taps_data, sigmas = result
                 all_results[i] = (coarse_match, c_idx, qa_match, final_taps_data, sigmas)
-                
+
                 is_fail = (c_idx == -1) or (qa_match < args.min_match)
                 if is_fail:
                     failed_count += 1
 
                 if not args.verbose:
                     results_iter.set_postfix(failed=failed_count)
-                
+
                 if args.verbose >= 1:
                     mismatch = 1.0 - qa_match
                     logging.info(f"T{i} (Ref {c_idx}): Coarse={coarse_match:.4f}, Taps={len(final_taps_data)}, Final={qa_match:.5f}, Mism={mismatch:.5e}")
@@ -351,21 +351,21 @@ def main():
 
         # --- PHASE 3: Write Results ---
         logging.info("All templates processed. Writing grouped results to HDF5...")
-        
+
         results_by_coarse_idx = defaultdict(list)
         for i, res in enumerate(all_results):
-            if res is None: continue 
+            if res is None: continue
             c_idx = res[1]
             if c_idx != -1:
                 results_by_coarse_idx[c_idx].append(res + (i,))
-        
+
         tap_counts = []
         for c_idx, results_list in results_by_coarse_idx.items():
             c_group = fir_group.create_group(str(c_idx))
             n_group = len(results_list)
-            
+
             k_max_group = max([len(r[3]) for r in results_list] + [1])
-            
+
             # Use gzip compression for the large tap arrays
             dset_taps = c_group.create_dataset('taps', (n_group, k_max_group), dtype='float32',
                                               chunks=(1, k_max_group), compression="gzip", compression_opts=4)
@@ -380,13 +380,13 @@ def main():
             dset_c_sigma = c_group.create_dataset('sigmas', (n_group, 3), dtype='float32',
                                                   chunks=True, compression="gzip", compression_opts=4)
 
-          
+
             for j, result in enumerate(results_list):
                 coarse_match, _, qa_match, final_taps_data, sigma, i = result
-                
+
                 taps_padded = np.zeros(k_max_group, dtype=np.float32)
                 taps_padded[:len(final_taps_data)] = final_taps_data.astype(np.float32)
-                
+
                 dset_taps[j, :] = taps_padded
                 dset_actual[j] = len(final_taps_data)
                 dset_fine_idx[j] = i
@@ -394,16 +394,16 @@ def main():
                 dset_c_match[j] = coarse_match
                 dset_c_sigma[j] = sigma
             tap_counts.append(dset_actual[:])
-                
+
         logging.info(f"Done. Saved to {args.output_file}")
-        
+
     finally:
         f_out.close()
 
     tap_ave = np.mean(np.concatenate(tap_counts))
     summary_msg = f"Summary: {failed_count}/{n_fine} templates failed QA (<{args.min_match}).\n"
     summary_msg += f"Average taps: {tap_ave}\n"
-    
+
     if failed_count > 0: logging.warning(summary_msg)
     else: logging.info(summary_msg)
 
