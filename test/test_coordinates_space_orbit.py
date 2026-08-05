@@ -1461,6 +1461,133 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
         pos_ref = ref_ecliptic.compute_position(query_tcb_sec)
         self.assertLess(numpy.max(numpy.abs(pos_native - pos_ref)), 1.0)
 
+    def test_to_file_round_trip_without_velocities(self):
+        """`to_file` (paired with `from_file`) is the missing link that
+        lets any orbit built via `from_oem_files`/`from_triangle_dat_files`/
+        `from_lisaorbits_file` (none of which write pycbc's own HDF5
+        schema) be saved once and then referenced by a real PE config's
+        `orbit-file` option. With no explicit velocities at construction,
+        the `velocities` dataset must be omitted (not written as zeros or
+        anything else), so a reloaded instance re-derives velocities from
+        the position spline exactly as the original did.
+        """
+        orbit = space_orbit.NumericOrbits(
+            self.t_grid, self.exact_orbit.compute_position(self.t_grid))
+        path = os.path.join(self.tmpdir, 'roundtrip_no_vel.hdf5')
+        orbit.to_file(path)
+
+        with h5py.File(path, 'r') as f:
+            self.assertIn('t', f)
+            self.assertIn('positions', f)
+            self.assertNotIn('velocities', f)
+
+        reloaded = space_orbit.NumericOrbits.from_file(path)
+        query_t = numpy.linspace(self.t_grid[5], self.t_grid[-5], 30)
+        self.assertLess(numpy.max(numpy.abs(
+            reloaded.compute_position(query_t)
+            - orbit.compute_position(query_t))), 1e-6)
+        self.assertLess(numpy.max(numpy.abs(
+            reloaded.compute_velocity(query_t)
+            - orbit.compute_velocity(query_t))), 1e-6)
+        self.assertLess(numpy.max(numpy.abs(
+            reloaded.compute_acceleration(query_t)
+            - orbit.compute_acceleration(query_t))), 1e-6)
+
+    def test_to_file_round_trip_with_explicit_velocities(self):
+        positions = self.exact_orbit.compute_position(self.t_grid)
+        velocities = self.exact_orbit.compute_velocity(self.t_grid)
+        orbit = space_orbit.NumericOrbits(
+            self.t_grid, positions, velocities=velocities)
+        path = os.path.join(self.tmpdir, 'roundtrip_with_vel.hdf5')
+        orbit.to_file(path)
+
+        with h5py.File(path, 'r') as f:
+            self.assertIn('velocities', f)
+
+        reloaded = space_orbit.NumericOrbits.from_file(path)
+        query_t = numpy.linspace(self.t_grid[5], self.t_grid[-5], 30)
+        self.assertLess(numpy.max(numpy.abs(
+            reloaded.compute_velocity(query_t)
+            - orbit.compute_velocity(query_t))), 1e-6)
+
+    def test_to_file_group_option_round_trip(self):
+        orbit = space_orbit.NumericOrbits(
+            self.t_grid, self.exact_orbit.compute_position(self.t_grid))
+        path = os.path.join(self.tmpdir, 'grouped.hdf5')
+        orbit.to_file(path, group='lisa')
+        orbit.to_file(path, group='taiji', mode='a')
+
+        for group in ('lisa', 'taiji'):
+            reloaded = space_orbit.NumericOrbits.from_file(path, group=group)
+            query_t = numpy.linspace(self.t_grid[5], self.t_grid[-5], 30)
+            self.assertLess(numpy.max(numpy.abs(
+                reloaded.compute_position(query_t)
+                - orbit.compute_position(query_t))), 1e-6)
+
+    def test_orbit_file_ini_option_accepts_to_file_output(self):
+        """The end-to-end path this is really for: a `to_file`-converted
+        orbit must be usable via `pycbc.transforms`' `orbit-file` ini
+        option, exactly like any hand-authored orbit file.
+        """
+        orbit = space_orbit.NumericOrbits(
+            self.t_grid, self.exact_orbit.compute_position(self.t_grid))
+        path = os.path.join(self.tmpdir, 'for_ini.hdf5')
+        orbit.to_file(path)
+
+        t = transforms.SSBToLISA(orbit_file=path)
+        out = t.transform({
+            'tc': 1.5e7, 'eclipticlongitude': 1.0,
+            'eclipticlatitude': 0.2, 'polarization': 0.5})
+        expected = space.ssb_to_lisa(
+            1.5e7, 1.0, 0.2, 0.5,
+            orbit=space_orbit.NumericOrbits.from_file(path))
+        self.assertLess(abs(out['tc'] - expected[0]), 1e-3)
+
+    def test_from_lisaorbits_file_matches_native_data(self):
+        """`from_lisaorbits_file` reads the file format produced by
+        `lisaorbits.Orbits.write` (positions under `tcb/x`, ICRS frame,
+        uniform TCB sampling from `t0`/`dt`/`size` attributes) without
+        requiring `lisaorbits` to parse it back. Skipped if `lisaorbits`
+        is not installed, since building a real fixture file needs it.
+        """
+        try:
+            import lisaorbits
+        except ImportError:
+            self.skipTest(
+                'lisaorbits not installed; skipping from_lisaorbits_file '
+                'fixture test')
+
+        native_orbit = lisaorbits.EqualArmlengthOrbits()
+        path = os.path.join(self.tmpdir, 'lisaorbits_native.h5')
+        native_orbit.write(path, dt=3600.0, size=200)
+
+        loaded = space_orbit.NumericOrbits.from_lisaorbits_file(path)
+
+        with h5py.File(path, 'r') as f:
+            t0, dt, size = (
+                float(f.attrs['t0']), float(f.attrs['dt']),
+                int(f.attrs['size']))
+            positions_icrs = f['tcb/x'][:]
+        t_tcb = t0 + numpy.arange(size) * dt
+        rotation = space_orbit._icrs_to_ecliptic_rotation_matrix()
+        positions_ecliptic = (
+            positions_icrs.reshape(-1, 3) @ rotation.T
+        ).reshape(positions_icrs.shape)
+
+        from astropy.time import Time, TimeDelta
+        epoch = Time('2035-01-01T00:00:00.000', format='isot', scale='tcb')
+        t_gps = (epoch + TimeDelta(t_tcb, format='sec')).gps
+
+        query_idx = numpy.array([20, 100, 180])
+        recovered = loaded.compute_position(t_gps[query_idx])
+        self.assertLess(numpy.max(numpy.abs(
+            recovered - positions_ecliptic[query_idx])), 1e-3)
+
+        # Design arm length sanity check (LISA: 2.5e6 km).
+        arm_12 = numpy.linalg.norm(
+            recovered[:, 0] - recovered[:, 1], axis=-1)
+        self.assertLess(numpy.max(numpy.abs(arm_12 - 2.5e9)), 1.0)
+
 
 class TestICRSOrbitAdapter(unittest.TestCase):
     """`ICRSOrbitAdapter` wraps an ICRS-frame orbit provider (as produced by
