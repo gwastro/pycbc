@@ -19,7 +19,7 @@ import pycbc.scheme
 import pycbc.fft
 import pycbc.inject
 import pycbc.vetoes
-from pycbc.types import complex64, float32, zeros, FrequencySeries
+from pycbc.types import Array, complex64, float32, zeros, FrequencySeries
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 
 # --- Imports for Ratio Logic ---
@@ -129,9 +129,10 @@ def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
                 psd2 = FrequencySeries(np.ones(len(ratio), dtype=np.float32), delta_f=dfr)
 
                 # Reconstruct fd correlation vector
-                import mkl_fft
                 ref = engine.ref_snr[tstart:tstart+args.fir_length]
-                corr2 = FrequencySeries(ratio *  mkl_fft.fft(ref), delta_f=df) / rescale / args.fir_length
+                ref_f = zeros(len(ref), dtype=complex64)
+                pycbc.fft.FFT(Array(ref, dtype=complex64), ref_f).execute()
+                corr2 = FrequencySeries(ratio * ref_f.numpy(), delta_f=df) / rescale / args.fir_length
                 corr2 = corr2.to_timeseries().to_frequencyseries(delta_f=dfr) / refine
 
                 tids2 = tids - tstart
@@ -248,6 +249,8 @@ def main():
     pycbc.strain.StrainSegments.verify_segment_options(args, parser)
     pycbc.psd.verify_psd_options(args, parser)
     pycbc.fft.verify_fft_options(args, parser)
+
+    pycbc.fft.from_cli(args)
 
     with pycbc.scheme.from_cli(args):
 
