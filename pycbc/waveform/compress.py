@@ -254,7 +254,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     s2 = filter.sigma(htilde, psd=psd, low_frequency_cutoff=fmin)
 
     if psd is not None:
-        htilde2 = htilde / psd / s2
+        htilde2 = htilde / psd[:len(htilde)] / s2
     else:
         htilde2 = htilde / s2
 
