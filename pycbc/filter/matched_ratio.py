@@ -31,9 +31,9 @@ class RatioMatchedFilterControl(object):
         self.fir_fft_len = fir_fft_length
         self.batch_size = batch_size
 
-        # The bank's taps are generated at tap_sample_rate but filtered
-        # against data at engine_sample_rate; the ratio must be an exact
-        # integer so the high-resolution FFT below preserves delta_f.
+        # Taps are generated at tap_sample_rate but filtered against data at
+        # engine_sample_rate; the ratio must be an exact integer so the
+        # high-resolution FFT below preserves delta_f.
         exact_ratio = self.tap_sr / self.engine_sr
         self.decimation_factor = int(np.round(exact_ratio))
         if abs(exact_ratio - self.decimation_factor) > 1e-5 or self.decimation_factor < 1:
@@ -41,19 +41,18 @@ class RatioMatchedFilterControl(object):
                 f"Multi-rate Error: The bank sample rate ({self.tap_sr} Hz) must be "
                 f"an exact integer multiple of the engine sample "
                 f"rate ({self.engine_sr} Hz).\n"
-                f"Calculated ratio was {exact_ratio:.4f}. Please use standard power-of-2 "
-                f"downsampling scales (e.g., 2048/512)."
+                f"Calculated ratio was {exact_ratio:.4f}. Please use an engine "
+                f"sample rate that evenly divides the bank sample rate."
             )
-        # 512/4096 = 0.125   2048/(4*4096) = 0.125 preserving delta_f
-        # 4096/4096 = 1      2048/(1/2*4096) = 1 for 4096 engine 2048 bank
+        # Scaling by decimation_factor keeps delta_f matched between a
+        # high_res_fft_len buffer at the tap rate and a fir_fft_len buffer at
+        # the engine rate, so keeping only the first fir_fft_len bins below
+        # is a decimation rather than a change in frequency resolution.
         self.high_res_fft_len = self.fir_fft_len * self.decimation_factor
 
-        # FFT/IFFT plans are built lazily, keyed by the (nbatch, size) they
-        # were requested with, and reused for the life of this engine: the
-        # dominant batch size is self.batch_size, but the last filter-batch
-        # of any coarse-template group is usually smaller (n_filters is not
-        # generally a multiple of batch_size), so a handful of extra plan
-        # sizes get cached too.
+        # Plans are keyed by (nbatch, size) and cached for the engine's
+        # lifetime: n_filters is not generally a multiple of batch_size, so a
+        # few smaller plans get cached alongside the dominant batch size.
         self._fft_plans = {}
         self._ifft_plans = {}
 
@@ -87,7 +86,6 @@ class RatioMatchedFilterControl(object):
              raise ValueError("FIR Taps (%d) exceed FFT block length (%d)" %
                               (n_taps, self.fir_fft_len))
 
-        # Calculate max tap count for validity logic
         n_taps_max = int(np.max(tap_counts))
 
         filters_f = self._fft_all_filters(fir_taps, tap_counts)
@@ -101,10 +99,8 @@ class RatioMatchedFilterControl(object):
         if valid_slice is None:
             valid_slice = getattr(stilde, 'analyze', None)
 
-        # 1. Calculate Reference Normalization
         h_norm = ref_template.sigmasq(psd)
 
-        # 2. Calculate Reference SNR
         snr, _, norm = matched_filter_core(
             ref_template, stilde, psd=psd,
             low_frequency_cutoff=ref_template.f_lower,
@@ -115,12 +111,10 @@ class RatioMatchedFilterControl(object):
         decimate = int(np.round(self.tap_sr / self.engine_sr))
         self.ref_snr = snr.numpy() * (norm * stilde.delta_t)  / decimate
 
-        # 3. Execute Blocked Kernel
         local_idxs, t_idxs, snr_vals, tstarts = self._execute_blocked_kernel(
             self.ref_snr, filters_f, n_taps, valid_slice
         )
 
-        # 4. Map indices
         if len(local_idxs) > 0:
             global_ids = indices[local_idxs]
             return global_ids, t_idxs, snr_vals, tstarts, h_norm
@@ -140,13 +134,15 @@ class RatioMatchedFilterControl(object):
 
             plan, in_view, out_view = self._get_fft_plan(batch_len, high_res_fft_len)
 
-            # Zero out processing buffer, then copy raw 2048 Hz taps into
-            # the start of the buffer.
             in_view[:] = 0.0
             tmp_taps = taps[start:end]
             in_view[:, :n_taps_alloc] = tmp_taps
 
-            # Handle Variable Time-Domain Roll Logic at the native 2048 Hz rate
+            # Roll each row so its center tap sits at index 0, with earlier
+            # taps wrapping to the end -- the circular layout an FFT-based
+            # FIR filter needs. get_fd_fir in waveform/bank.py undoes this
+            # same roll when reconstructing a single template's time-domain
+            # filter, so the two must stay in sync.
             current_counts = counts[start:end]
             roll_offsets = -(current_counts // 2)
 
@@ -157,14 +153,16 @@ class RatioMatchedFilterControl(object):
             current_data = in_view.copy()
             in_view[:] = current_data[rows, shifted_cols_high]
 
-            # Transform to Frequency Domain at native resolution
             plan.execute()
 
-            # Brick-Wall Frequency Slicing (Anti-Aliasing & Decimation Match)
-            # Because the data engine goes up to 256Hz (the 512Hz Nyquist limit), only need the first 4096 bins of that spectrum
+            # high_res_fft_len spans the bank's full tap sample rate; only
+            # the first fir_fft_len bins fall within the engine's decimated
+            # frequency range, so slicing to them is the decimation step.
             fft_sliced = out_view[:, :self.fir_fft_len]
 
-            # Conjugate & Store back into the 512 Hz buffer block
+            # Conjugate so multiplying against the data spectrum and
+            # inverse-transforming (_execute_blocked_kernel) yields a
+            # correlation rather than a convolution.
             filters_f[start:end] = np.conj(fft_sliced)
 
         return filters_f
@@ -210,7 +208,6 @@ class RatioMatchedFilterControl(object):
             v_stop = n_samples
 
         block_f_cache = {}
-        # --- OUTER LOOP: Time Blocks ---
         for f_start in range(0, n_filters, self.batch_size):
 
             f_end = min(f_start + self.batch_size, n_filters)
@@ -220,7 +217,7 @@ class RatioMatchedFilterControl(object):
                 actual_batch_size, N_FFT
             )
 
-            # Valid output samples per block (Overlap-Save)
+            # Overlap-save: valid output samples per block.
             n_taps_max = n_taps[f_start:f_end].max()
             i = np.searchsorted(nsizes, n_taps_max)
             n_taps_max = nsizes[i]
@@ -229,7 +226,6 @@ class RatioMatchedFilterControl(object):
             STEP = N_VALID
             bad_start = n_taps_max // 2
 
-            # Determine Loop Bounds
             first_block_idx = (v_start - bad_start) // STEP
             loop_start = first_block_idx * STEP
 
