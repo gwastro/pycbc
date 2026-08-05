@@ -41,11 +41,14 @@ class RatioMatchedFilterControl(object):
                 f"Multi-rate Error: The bank sample rate ({self.tap_sr} Hz) must be "
                 f"an exact integer multiple of the engine sample "
                 f"rate ({self.engine_sr} Hz).\n"
-                f"Calculated ratio was {exact_ratio:.4f}. Please use standard power-of-2 "
-                f"downsampling scales (e.g., 2048/512)."
+                f"Calculated ratio was {exact_ratio:.4f}. Please use an engine "
+                f"sample rate that evenly divides the bank sample rate."
             )
-        # 512/4096 = 0.125   2048/(4*4096) = 0.125 preserving delta_f
-        # 4096/4096 = 1      2048/(1/2*4096) = 1 for 4096 engine 2048 bank
+        # A delta_f = tap_sr / high_res_fft_len buffer at the tap rate must
+        # have the same delta_f as an fir_fft_len buffer at the engine rate
+        # (engine_sr / fir_fft_len), so that keeping just the first
+        # fir_fft_len bins of the high-resolution spectrum below is a valid
+        # decimation rather than a change in frequency resolution.
         self.high_res_fft_len = self.fir_fft_len * self.decimation_factor
 
         # FFT/IFFT plans are built lazily, keyed by the (nbatch, size) they
@@ -140,13 +143,18 @@ class RatioMatchedFilterControl(object):
 
             plan, in_view, out_view = self._get_fft_plan(batch_len, high_res_fft_len)
 
-            # Zero out processing buffer, then copy raw 2048 Hz taps into
-            # the start of the buffer.
+            # Zero out the processing buffer, then copy the taps (generated
+            # at the bank's tap sample rate, self.tap_sr) into the start of
+            # each row.
             in_view[:] = 0.0
             tmp_taps = taps[start:end]
             in_view[:, :n_taps_alloc] = tmp_taps
 
-            # Handle Variable Time-Domain Roll Logic at the native 2048 Hz rate
+            # Roll each row so its center tap sits at index 0, with earlier
+            # taps wrapping around to the end of the buffer -- the circular
+            # layout an FFT-based FIR filter needs (get_fd_fir in
+            # waveform/bank.py undoes this same roll when reconstructing a
+            # single template's time-domain filter).
             current_counts = counts[start:end]
             roll_offsets = -(current_counts // 2)
 
@@ -157,14 +165,21 @@ class RatioMatchedFilterControl(object):
             current_data = in_view.copy()
             in_view[:] = current_data[rows, shifted_cols_high]
 
-            # Transform to Frequency Domain at native resolution
+            # Transform at the bank's native tap sample rate/resolution.
             plan.execute()
 
-            # Brick-Wall Frequency Slicing (Anti-Aliasing & Decimation Match)
-            # Because the data engine goes up to 256Hz (the 512Hz Nyquist limit), only need the first 4096 bins of that spectrum
+            # Brick-wall frequency slicing: high_res_fft_len spans the
+            # bank's full tap sample rate, but the engine filters data at a
+            # decimated rate (self.decimation_factor times lower), so only
+            # the first fir_fft_len bins -- the engine's own frequency
+            # range -- are kept; the rest are the higher frequencies
+            # decimation already requires discarding.
             fft_sliced = out_view[:, :self.fir_fft_len]
 
-            # Conjugate & Store back into the 512 Hz buffer block
+            # Conjugate so that, when this is later multiplied against the
+            # data spectrum and inverse transformed (_execute_blocked_kernel),
+            # the result is a correlation (matched filter) rather than a
+            # convolution. Store at the engine's (decimated) sample rate.
             filters_f[start:end] = np.conj(fft_sliced)
 
         return filters_f
