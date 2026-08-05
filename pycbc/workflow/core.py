@@ -180,11 +180,6 @@ class Executable(pegasus_workflow.Executable):
 
         self.update_current_retention_level(self.current_retention_level)
 
-        self.stage_out = None
-        if cp.has_option_tags('pegasus_profile-%s' % name, 'pycbc|stage-out', tags):
-            self.stage_out = cp.get_opt_tags('pegasus_profile-%s' % name, 
-                                             'pycbc|stage-out', tags)
-
         # Should I reuse this executable?
         if reuse_executable:
             self.pegasus_name = self.name
@@ -1007,8 +1002,7 @@ class Node(pegasus_workflow.Node):
         fil = File(self.executable.ifo_list, self.executable.name,
                    valid_seg, extension=extension, store_file=store_file,
                    directory=self.executable.out_dir, tags=all_tags,
-                   use_tmp_subdirs=use_tmp_subdirs,
-                   stage_out=self.executable.stage_out)
+                   use_tmp_subdirs=use_tmp_subdirs)
         self.add_output_opt(option_name, fil)
         return fil
 
@@ -1068,8 +1062,7 @@ class Node(pegasus_workflow.Node):
             curr_file = File(ifo, self.executable.name, analysis_time,
                              extension=extension, store_file=store_file,
                              directory=self.executable.out_dir, tags=all_tags,
-                             use_tmp_subdirs=use_tmp_subdirs,
-                             stage_out=self.executable.stage_out)
+                             use_tmp_subdirs=use_tmp_subdirs)
             output_files.append(curr_file)
         self.add_multiifo_output_list_opt(opt, output_files)
 
@@ -1120,7 +1113,7 @@ class File(pegasus_workflow.File):
     '''
     def __init__(self, ifos, exe_name, segs, file_url=None,
                  extension=None, directory=None, tags=None,
-                 store_file=True, use_tmp_subdirs=False, stage_out=None):
+                 store_file=True, use_tmp_subdirs=False):
         """
         Create a File instance
 
@@ -1159,8 +1152,6 @@ class File(pegasus_workflow.File):
             This is a list of descriptors describing what this file is. For
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
             These are used in file naming.
-        stage_out: str
-            Path to stage output file to if stored, otherwise assumed local.
         """
         self.metadata = {}
 
@@ -1220,17 +1211,11 @@ class File(pegasus_workflow.File):
 
             filename = self._filename(self.ifo_string, self.tagged_description,
                                       extension, self.segment_list.extent())
-            
-            if stage_out:
-                if not stage_out.endswith('/'):
-                    stage_out += '/'
-                file_url = urllib.parse.urljoin(stage_out, filename)
-            else:
-                path = os.path.join(directory, filename)
-                if not os.path.isabs(path):
-                    path = os.path.join(os.getcwd(), path)
-                file_url = urllib.parse.urlunparse(['file', 'localhost', path,
-                                                    None, None, None])
+            path = os.path.join(directory, filename)
+            if not os.path.isabs(path):
+                path = os.path.join(os.getcwd(), path)
+            file_url = urllib.parse.urlunparse(['file', 'localhost', path,
+                                                None, None, None])
 
         if use_tmp_subdirs and len(self.segment_list):
             pegasus_lfn = str(int(self.segment_list.extent()[0]))[:-4]
@@ -1240,10 +1225,7 @@ class File(pegasus_workflow.File):
         super(File, self).__init__(pegasus_lfn)
 
         if store_file:
-            if stage_out:
-                self.storage_path = file_url
-            else:
-                self.storage_path = urllib.parse.urlsplit(file_url).path
+            self.storage_path = urllib.parse.urlsplit(file_url).path
         else:
             self.storage_path = None
 
