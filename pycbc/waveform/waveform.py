@@ -27,7 +27,7 @@ waveforms.
 """
 
 import os
-import lal, numpy, copy
+import lal, numpy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import real_same_precision_as, complex_same_precision_as
 import pycbc.scheme as _scheme
@@ -414,7 +414,14 @@ def parse_mode_array(input_params):
                 ma = str(int(ma))
             # if ma is a str convert to (int, int) (e.g., '22' -> (2, 2))
             if isinstance(ma, str):
-                l, m = ma
+                if len(ma) == 2: # format is "22", presumed m is positive
+                    l, m = ma
+                elif len(ma) == 3: # format is "2+2", "2-2", signed m
+                    l = ma[0]
+                    m = ma[1:]
+                else:
+                    raise ValueError(f"Unknown lm mode string format: {ma}")
+
                 ma = (int(l), int(m))
             mode_array[ii] = ma
         input_params['mode_array'] = mode_array
@@ -685,8 +692,8 @@ def get_fd_waveform_from_td(**params):
             full_duration = get_waveform_filter_length_in_time(**nparams)
             nparams['f_lower'] -= 1
 
-    if 'f_fref' not in nparams:
-        nparams['f_ref'] = params['f_lower']
+    if 'f_ref' not in nparams and 'f_lower' in nparams:
+        nparams['f_ref'] = nparams['f_lower']
 
     # We'll try to do the right thing and figure out what the frequency
     # end is. Otherwise, we'll just assume 2048 Hz.
@@ -714,13 +721,17 @@ def get_fd_waveform_from_td(**params):
 
     if not 'taper_method' in params:
         # apply the tapering, we will use a safety factor here to allow for
-        # somewhat innacurate duration difference estimation.
+        # somewhat inaccurate duration difference estimation.
         window = (full_duration - duration) * 0.8
         hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
         hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
     else:
-        hp = hp.taper_timeseries(location=params['taper'], tapermethod=params['taper_method'], taper_window=params['taper_window'])
-        hc = hc.taper_timeseries(location=params['taper'], tapermethod=params['taper_method'], taper_window=params['taper_window'])
+        hp = hp.taper_timeseries(location=params['taper'],
+                                 tapermethod=params['taper_method'],
+                                 taper_window=params['taper_window'])
+        hc = hc.taper_timeseries(location=params['taper'],
+                                 tapermethod=params['taper_method'],
+                                 taper_window=params['taper_window'])
 
     # avoid wraparound
     hp = hp.to_frequencyseries().cyclic_time_shift(hp.start_time)
