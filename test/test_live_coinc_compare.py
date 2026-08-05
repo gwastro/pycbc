@@ -79,6 +79,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
             store_background=True,
             coinc_window_pad=0.002,
             statistic_refresh_rate=None,
+            ifar_remove_threshold=None,
         )
 
         # number of templates in the bank
