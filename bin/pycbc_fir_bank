@@ -1,18 +1,19 @@
 #!/usr/bin/env python
 import argparse
-import sys
-import numpy as np
-import h5py
 import logging
 import multiprocessing as mp
-from tqdm import tqdm
+import sys
 from collections import defaultdict
+
+import numpy as np
+import scipy.linalg
+from tqdm import tqdm
+
 import pycbc
 import pycbc.psd
-import scipy.linalg
-from pycbc.filter import match, overlap, sigma
+from pycbc.filter import match, sigma
+from pycbc.types import TimeSeries
 from pycbc.waveform.bank import FilterBank
-from pycbc.types import TimeSeries, FrequencySeries
 
 # --- GLOBAL WORKER DATA (set by initializer) ---
 g_coarse_waveforms = None
@@ -160,6 +161,20 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
 
 # --- 2. Verification (Double Precision) ---
 def verify_filter_match(taps, h_ref, h_fine, psd, f_low):
+    """Check how well a designed FIR filter reconstructs the fine template.
+
+    Applies `taps` to the coarse reference `h_ref` the way the search engine
+    will (same circular tap layout) and compares the result to `h_fine`.
+
+    Returns
+    -------
+    m : float
+        Match between the reconstructed template and h_fine.
+    sigmas : (float, float, float)
+        sigma of h_ref, of the reconstruction, and of h_fine -- for sanity
+        checking that reconstruction hasn't drastically changed the
+        template's overall amplitude.
+    """
     N = (len(h_ref) - 1) * 2
     K = len(taps)
     h_fir_time = np.zeros(N, dtype=np.float64)
@@ -188,11 +203,25 @@ def verify_filter_match(taps, h_ref, h_fine, psd, f_low):
 def process_template(i):
     """
     Worker function that runs the full design loop for a single template index 'i'.
+
+    Peak suppression (see design_optimal_real_filter) can only ever hold a
+    fit's achieved match the same or make it worse -- it adds constraints to
+    the same least-squares system, never relaxes any. So checking it on a
+    (coarse reference, tap count) attempt that hasn't reached --min-match
+    without suppression is wasted work: that attempt is going to escalate to
+    more taps regardless of what suppression does to it. Suppression is
+    therefore only evaluated at the two points where its result actually
+    changes what gets accepted: (1) a candidate that clears --min-match
+    *before* suppression, to confirm it still clears it after (if not, this
+    isn't actually good enough yet -- keep escalating instead of accepting
+    it); (2) the single best (by unsuppressed match) candidate seen across
+    the whole search, as the final safety pass on whatever gets delivered if
+    nothing ever cleared --min-match at all.
     """
     h_fine = g_fine_bank[i].copy()
 
     matches = []
-    for c_idx, h_ref in enumerate(g_coarse_waveforms):
+    for h_ref in g_coarse_waveforms:
         m, _ = match(h_fine, h_ref, psd=g_psd, low_frequency_cutoff=g_args.f_low)
         matches.append(m)
 
@@ -200,111 +229,148 @@ def process_template(i):
     morder = np.argsort(matches)[::-1]
     msearch = morder[:g_args.search_depth]
 
+    def build_problem(c_idx):
+        """Build the least-squares fit target for coarse template c_idx.
+
+        Returns h_ref, the target frequency-domain ratio (H_target_raw),
+        the in-band mask, and the PSD-based fit weights -- the inputs
+        design_optimal_real_filter needs.
+        """
+        h_ref = g_coarse_waveforms[c_idx]
+        freqs = h_fine.sample_frequencies.numpy()
+        band_mask = (freqs >= g_args.f_low) & (freqs < g_args.sample_rate / 2.0)
+        ratio = h_fine.numpy() / h_ref.numpy()
+
+        # PSD based weights
+        psd_np = g_psd.numpy()
+        weights_snr = np.zeros_like(psd_np, dtype=np.float64)
+        ref_mag = np.abs(h_ref.numpy())
+        np.divide(ref_mag**2, psd_np, out=weights_snr, where=band_mask)
+
+        # Clean up potential divide errors and normalize
+        ratio = np.nan_to_num(ratio, copy=False)
+        weights_snr = np.nan_to_num(weights_snr, copy=False)
+        H_target_raw = ratio * g_args.sample_rate
+        band_mask[abs(ratio) > g_args.ratio_cap] = False
+        weights_snr /= weights_snr[band_mask].max()
+        return h_ref, H_target_raw, band_mask, weights_snr
+
+    def fit_and_verify(c_idx, h_ref, H_target_raw, band_mask, weights_snr, n_taps, peak_cap_factor):
+        """Design a filter for c_idx at n_taps and check its match.
+
+        Returns (qa, taps, sigmas, n_peak_passes, n_bins_capped, max_tap_val).
+        qa is -1 (and sigmas None) if the fit is rejected outright for
+        having an unsafely large tap value, without ever computing match.
+        """
+        taps, n_peak_passes, n_bins_capped = design_optimal_real_filter(
+            H_target_raw[::g_args.dec_factor],
+            band_mask[::g_args.dec_factor],
+            n_taps, weights_pos=weights_snr[::g_args.dec_factor],
+            reg_type=g_args.regularization_type,
+            reg_val=g_args.regularization_magnitude,
+            peak_cap_factor=peak_cap_factor,
+            peak_bad_weight_fraction=g_args.peak_bad_weight_fraction,
+            peak_max_passes=g_args.peak_max_passes)
+
+        # Check if the taps are sane or if they contains a crazy number of
+        # extreme / large values
+        max_tap_val = np.max(np.abs(taps))
+        if max_tap_val > g_args.max_tap_value:
+            logging.warning(f"Template {i} (Ref {c_idx}, {n_taps} taps) rejected: Max tap value {max_tap_val:.2e} exceeded safety threshold.")
+            return -1, taps, None, n_peak_passes, n_bins_capped, max_tap_val
+        qa, sigmas = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
+        return qa, taps, sigmas, n_peak_passes, n_bins_capped, max_tap_val
+
     current_taps = g_args.n_taps
 
     best = (i, -1, -1, -1.0, [], [], 0, 0)
-    qa_match = -1
+    best_unsuppressed = None  # (qa0, c_idx, best_match, n_taps), cheap to re-derive later
+    accepted = False
     n_attempts_total = 0
     n_attempts_suppressed = 0
-    while current_taps <= g_args.max_taps:
+
+    while current_taps <= g_args.max_taps and not accepted:
         round_matches = []
         for c_idx in msearch:
             best_match = matches[c_idx]
-
-            h_ref = g_coarse_waveforms[c_idx]
-            h_ref_np = h_ref.numpy()
-
-            freqs = h_fine.sample_frequencies.numpy()
-            band_mask = (freqs >= g_args.f_low) & (freqs < g_args.sample_rate / 2.0)
-            ratio = h_fine.numpy() / h_ref.numpy()
-
-            # PSD based weights
-            psd_np = g_psd.numpy()
-            weights_snr = np.zeros_like(psd_np, dtype=np.float64)
-            ref_mag = np.abs(h_ref.numpy())
-            np.divide(ref_mag**2, psd_np, out=weights_snr, where=band_mask)
-
-            # Clean up potential divide errors and normalize
-            ratio = np.nan_to_num(ratio, copy=False)
-            weights_snr = np.nan_to_num(weights_snr, copy=False)
-            H_target_raw = ratio * g_args.sample_rate
-            band_mask[abs(ratio) > g_args.ratio_cap] = False
-            weights_snr /= weights_snr[band_mask].max()
+            h_ref, H_target_raw, band_mask, weights_snr = build_problem(c_idx)
 
             try:
-                taps, n_peak_passes, n_bins_capped = design_optimal_real_filter(
-                    H_target_raw[::g_args.dec_factor],
-                    band_mask[::g_args.dec_factor],
-                    current_taps, weights_pos=weights_snr[::g_args.dec_factor],
-                    reg_type=g_args.regularization_type,
-                    reg_val=g_args.regularization_magnitude,
-                    peak_cap_factor=g_args.peak_cap_factor,
-                    peak_bad_weight_fraction=g_args.peak_bad_weight_fraction,
-                    peak_max_passes=g_args.peak_max_passes)
+                qa0, taps0, sigmas0, _, _, max_tap0 = fit_and_verify(
+                    c_idx, h_ref, H_target_raw, band_mask, weights_snr, current_taps, peak_cap_factor=0)
             except Exception as e:
                 logging.info(e)
                 continue
+            round_matches.append(qa0)
 
+            if best_unsuppressed is None or qa0 > best_unsuppressed[0]:
+                best_unsuppressed = (qa0, c_idx, best_match, current_taps)
+
+            logging.debug(f"CoarseTemp:{c_idx} QA-Match(unsuppressed):{qa0} Taps:{current_taps} Max Tap Val: {max_tap0}")
+
+            if qa0 < g_args.min_match:
+                # This attempt is escalating regardless of what suppression would
+                # do to it (suppression can only hold or lower the match) -- skip
+                # the extra fit passes.
+                continue
+
+            # A candidate for acceptance: confirm it still clears --min-match
+            # once made numerically safe before actually committing to it.
+            try:
+                qa1, taps1, sigmas1, n_pp1, n_bc1, max_tap1 = fit_and_verify(
+                    c_idx, h_ref, H_target_raw, band_mask, weights_snr, current_taps,
+                    peak_cap_factor=g_args.peak_cap_factor)
+            except Exception as e:
+                logging.info(e)
+                continue
             n_attempts_total += 1
-            if n_peak_passes > 0:
+            if n_pp1 > 0:
                 n_attempts_suppressed += 1
 
-            if False:
-                from matplotlib import pyplot
+            logging.debug(f"CoarseTemp:{c_idx} QA-Match(suppressed):{qa1} Taps:{current_taps} Max Tap Val: {max_tap1} "
+                          f"PeakSuppression: passes={n_pp1} remaining_capped_bins={n_bc1}")
 
-                N = (len(h_ref) - 1) * 2
-                K = len(taps)
-                h_fir_time = np.zeros(N, dtype=np.float64)
+            if best[3] < qa1:
+                best = (i, best_match, c_idx, qa1, taps1, sigmas1, n_pp1, n_bc1)
 
-                if K % 2 == 1: k_start = -(K - 1) // 2
-                else: k_start = -K // 2 + 1
-                indices = (np.arange(k_start, k_start + K) + N) % N
-                h_fir_time[indices] = taps
+            if qa1 >= g_args.min_match:
+                accepted = True
+                break
 
-                delta_t = 1.0 / (N * h_ref.delta_f)
-                ts = TimeSeries(h_fir_time, delta_t=delta_t)
-                H_fir = ts.to_frequencyseries(delta_f=h_ref.delta_f)
-
-                pyplot.plot(freqs, ratio, label='target')
-                H_fir.real().plot(label='achieved')
-                pyplot.xscale('log')
-                pyplot.xlim(25, 1000) # This is the band we monitor
-                pyplot.ylim(-2, 2)
-                pyplot.grid()
-                pyplot.legend()
-                pyplot.xlabel('Frequency [Hz]')
-                pyplot.ylabel('Ratio')
-                pyplot.show()
-
-            # Check if the taps are sane or if they contains a crazy number of
-            # extreme / large values
-            max_tap_val = np.max(np.abs(taps))
-            if max_tap_val > g_args.max_tap_value:
-                logging.warning(f"Template {i} (Ref {c_idx}, {current_taps} taps) rejected: Max tap value {max_tap_val:.2e} exceeded safety threshold.")
-                qa_match = -1
-            else:
-                qa_match, sigmas = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
-
-            logging.debug(f"CoarseTemp:{c_idx} QA-Match:{qa_match} Taps:{current_taps} Max Tap Val: {max_tap_val} "
-                          f"PeakSuppression: passes={n_peak_passes} remaining_capped_bins={n_bins_capped}")
-            round_matches.append(qa_match)
-
-            if best[3] < qa_match:
-                best = (i, best_match, c_idx, qa_match, taps, sigmas, n_peak_passes, n_bins_capped)
-
-            if qa_match >= g_args.min_match: break
-        if qa_match >= g_args.min_match: break
+        if accepted:
+            break
 
         round_matches = np.array(round_matches)
         top = round_matches.argsort()[::-1]
         tnum = int(max(1, len(round_matches) * 0.8))
         msearch = msearch[top[:tnum]]
         current_taps += g_args.tap_step
+
+    if not accepted and best_unsuppressed is not None:
+        # Nothing ever cleared --min-match even before suppression. Apply the
+        # mandatory safety pass once, to the single best (unsuppressed)
+        # candidate found across the whole search, so whatever gets delivered
+        # as this template's best effort is still numerically safe.
+        qa0, c_idx, best_match, n_taps_at = best_unsuppressed
+        h_ref, H_target_raw, band_mask, weights_snr = build_problem(c_idx)
+        try:
+            qa1, taps1, sigmas1, n_pp1, n_bc1, max_tap1 = fit_and_verify(
+                c_idx, h_ref, H_target_raw, band_mask, weights_snr, n_taps_at,
+                peak_cap_factor=g_args.peak_cap_factor)
+            n_attempts_total += 1
+            if n_pp1 > 0:
+                n_attempts_suppressed += 1
+            if best[3] < qa1:
+                best = (i, best_match, c_idx, qa1, taps1, sigmas1, n_pp1, n_bc1)
+        except Exception as e:
+            logging.info(e)
+
     return best + (n_attempts_total, n_attempts_suppressed)
 
 # --- 4. MAIN PROCESS ---
 def main():
     parser = argparse.ArgumentParser(description="Generate Optimized FIR Filter Bank (MP)")
+    pycbc.add_common_pycbc_options(parser)
     parser.add_argument('--coarse-bank', required=True)
     parser.add_argument('--fine-bank', required=True)
     parser.add_argument('--output-file', required=True)
@@ -316,7 +382,6 @@ def main():
     parser.add_argument('--tap-step', type=int, default=100)
     parser.add_argument('--min-match', type=float, default=0.99)
     parser.add_argument('--n-processes', '-n', type=int, default=1)
-    parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--regularization-type', default='ridge', type=str)
     parser.add_argument('--regularization-magnitude', default=1e-1, type=float)
     parser.add_argument('--decimation-factor', default=1, type=int, dest='dec_factor')
@@ -349,9 +414,7 @@ def main():
             log.handlers[0].stream = sys.stdout
 
     f_final = args.sample_rate / 2.0
-    df = args.delta_f * args.dec_factor
     flen = int(f_final / args.delta_f) + 1
-    flen_small = int(f_final / df) + 1
     logging.info(f"Setup: Rate={args.sample_rate}, df={args.delta_f}, flen={flen}")
 
     psd = pycbc.psd.from_cli(args, length=flen, delta_f=args.delta_f,
@@ -493,9 +556,12 @@ def main():
                      f"templates (achieved out-of-band gain exceeded {args.peak_cap_factor}x the filter's own "
                      f"median); {peak_still_capped_count}/{n_fine} still had bins above that cap after "
                      f"{args.peak_max_passes} refinement passes.\n")
-    summary_msg += (f"Across all {total_attempts} design attempts (all coarse candidates and tap-count escalation "
-                     f"steps tried, not just the accepted filter), peak suppression triggered on "
-                     f"{total_attempts_suppressed} ({100.0 * total_attempts_suppressed / total_attempts:.1f}%).\n")
+    if total_attempts > 0:
+        summary_msg += (f"Across the {total_attempts} attempts where peak suppression was actually evaluated (a "
+                         f"candidate accepted before suppression, or the final best-effort fallback -- cheap "
+                         f"escalation steps that were going to be superseded regardless skip the check), it "
+                         f"triggered on {total_attempts_suppressed} "
+                         f"({100.0 * total_attempts_suppressed / total_attempts:.1f}%).\n")
 
     if failed_count > 0 or peak_still_capped_count > 0: logging.warning(summary_msg)
     else: logging.info(summary_msg)
