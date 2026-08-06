@@ -152,7 +152,8 @@ class AnalyticTaijiOrbit:
 # PHI0_REAL (real Earth's longitude at t=0) so that "coincides with the
 # Earth" can also be checked against the real Earth position, not just an
 # arbitrarily-phased circular proxy.
-TIANQIN_ARMLENGTH = 1.7e8  # matches pycbc.detector.space._space_detectors
+TIANQIN_ARMLENGTH = numpy.sqrt(3) * 1e8  # matches
+# pycbc.detector.space._space_detectors and space_orbit.TianQinAnalyticOrbit
 TIANQIN_LAMBDA_S = numpy.deg2rad(120.5)  # direction to RX J0806.3+1527
 TIANQIN_BETA_S = numpy.deg2rad(-4.7)
 TIANQIN_F_SC = 1.0 / (3.65 * 86400.0)  # ~3.65 day rotation period

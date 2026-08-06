@@ -672,6 +672,10 @@ EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s], ~1 sidereal year
 _TAIJI_LEAD_ANGLE = np.deg2rad(20.0)
 _TIANQIN_LAMBDA_S = np.deg2rad(120.5)
 _TIANQIN_BETA_S = np.deg2rad(-4.7)
+# The theoretical value (not the 1.7e5 km engineering rounding also seen in
+# the literature), for consistency with pycbc.psd.analytical_space's own
+# TianQin PSD functions, which all default to this same value.
+_TIANQIN_ARMLENGTH = np.sqrt(3) * 1e8
 
 
 def _equal_arm_orbit_position(alpha, armlength, sc):
@@ -1285,7 +1289,9 @@ class TianQinAnalyticOrbit:
     Parameters
     ----------
     armlength : float, optional
-        Constellation arm length [m]. Default 1.7e8 (design value).
+        Constellation arm length [m]. Default `sqrt(3) * 1e8` (the
+        theoretical design value; matches `pycbc.psd.analytical_space`'s
+        TianQin PSD functions).
     lambda_s, beta_s : float, optional
         Ecliptic longitude/latitude of the calibration source RX
         J0806.3+1527 [rad], which fixes the constellation plane's
@@ -1309,7 +1315,7 @@ class TianQinAnalyticOrbit:
         See above. Default `'circular'` (unchanged default behavior).
     """
 
-    def __init__(self, armlength=1.7e8, lambda_s=_TIANQIN_LAMBDA_S,
+    def __init__(self, armlength=_TIANQIN_ARMLENGTH, lambda_s=_TIANQIN_LAMBDA_S,
                 beta_s=_TIANQIN_BETA_S, rotation_period=3.65 * 86400.0,
                 initial_orbit_phase=0.0, kappa0=None,
                 guiding_center='circular'):
