@@ -66,7 +66,7 @@ response has a wide dynamic range (which depends on how different the
 coarse and fine templates are) loses some accuracy in that single-precision
 arithmetic beyond what the bank's own double-precision construction-time
 verification predicts. ``compare_triggers.py`` allows a configurable
-margin (``--allowed-margin-factor``, default 5x) above the mismatch
+margin (``--allowed-margin-factor``, default 4x) above the mismatch
 prediction for this reason.
 
 =================================================
