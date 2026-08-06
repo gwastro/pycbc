@@ -34,11 +34,28 @@ def init_worker(coarse_waveforms, fine_bank, psd, args_namespace):
     logging.getLogger('pycbc').setLevel(logging.CRITICAL + 1)
 
 # --- 1. Filter Designer (Double Precision) ---
-def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos=None, reg_type='ridge', reg_val=1e-4):
+def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos=None, reg_type='ridge', reg_val=1e-4,
+                                peak_cap_factor=10.0, peak_bad_weight_fraction=1.0, peak_max_passes=3):
     """
     Designs a filter using regularized least squares.
     reg_type='ridge'      -> Minimizes energy (Standard)
     reg_type='derivative' -> Minimizes roughness (Smooth coefficients)
+
+    Peak suppression (peak_cap_factor > 0): the fit above is only
+    constrained inside valid_mask_pos (the analysis passband). Outside it,
+    for templates poorly matched to their coarse reference, the achieved
+    frequency response can develop an enormous, essentially unconstrained
+    gain at a handful of bins -- harmless in exact arithmetic (that region
+    gets multiplied by ~zero data content), but applying such a filter in
+    single precision causes floating-point cancellation error large enough
+    to produce wildly incorrect reconstructed SNR values. After the initial
+    fit, any bin (evaluated across the FULL band, not just valid_mask_pos)
+    whose magnitude exceeds peak_cap_factor times the filter's own median
+    magnitude is nudged toward zero by adding extra rows to the same
+    least-squares system -- weighted like a typical in-band fit row, not
+    the (much larger) bin value itself, since matching that scale bleeds
+    energy back into the passband -- and refitting, up to peak_max_passes
+    times. Set peak_cap_factor to 0 or None to disable.
     """
     # 1. Setup Grid
     N_nyquist = len(H_target_pos)
@@ -63,6 +80,8 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
         w_valid = weights_pos[valid_indices]
         A_complex *= w_valid[:, None]
         b_complex *= w_valid
+    else:
+        w_valid = np.ones(len(valid_indices))
 
     # Real Stack
     A_real = np.vstack([A_complex.real, A_complex.imag])
@@ -105,7 +124,39 @@ def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos
         logging.info('Exception with numpy least squares, moving to scipy')
         h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver='gelss')
         logging.info('Scipy suceeded')
-    return h_optimal
+
+    n_peak_passes = 0
+    n_bins_capped = 0
+    if peak_cap_factor:
+        A_full = np.exp(-1j * 2 * np.pi * np.outer(f_grid_pos, k_idx))
+        positive_w = w_valid[w_valid > 0]
+        typical_w = np.median(positive_w) if len(positive_w) else 1.0
+        constrained_bins = set()
+        cap = None
+        for _pass in range(peak_max_passes):
+            achieved = A_full @ h_optimal
+            mag = np.abs(achieved)
+            if cap is None:
+                cap = peak_cap_factor * np.median(mag)
+            bad = np.where(mag > cap)[0]
+            n_bins_capped = len(bad)
+            if n_bins_capped == 0:
+                break
+            n_peak_passes += 1
+            constrained_bins.update(bad.tolist())
+
+            idxs = np.array(sorted(constrained_bins))
+            f_bad = f_grid_pos[idxs]
+            w_bad = peak_bad_weight_fraction * typical_w
+            row = np.exp(-1j * 2 * np.pi * np.outer(f_bad, k_idx)) * w_bad
+            extra_A = np.vstack([row.real, row.imag])
+            extra_b = np.zeros(2 * len(idxs))
+
+            A_aug = np.vstack([A_real, reg_matrix, extra_A])
+            b_aug = np.concatenate([b_real, target_reg, extra_b])
+            h_optimal, _, _, _ = scipy.linalg.lstsq(A_aug, b_aug, lapack_driver='gelss')
+
+    return h_optimal, n_peak_passes, n_bins_capped
 
 # --- 2. Verification (Double Precision) ---
 def verify_filter_match(taps, h_ref, h_fine, psd, f_low):
@@ -151,7 +202,7 @@ def process_template(i):
 
     current_taps = g_args.n_taps
 
-    best = (i, -1, -1, -1.0, [], [])
+    best = (i, -1, -1, -1.0, [], [], 0, 0)
     qa_match = -1
     while current_taps <= g_args.max_taps:
         round_matches = []
@@ -179,11 +230,15 @@ def process_template(i):
             weights_snr /= weights_snr[band_mask].max()
 
             try:
-                taps = design_optimal_real_filter(H_target_raw[::g_args.dec_factor],
-                                                  band_mask[::g_args.dec_factor],
-                                                  current_taps, weights_pos=weights_snr[::g_args.dec_factor],
-                                                  reg_type=g_args.regularization_type,
-                                                  reg_val=g_args.regularization_magnitude)
+                taps, n_peak_passes, n_bins_capped = design_optimal_real_filter(
+                    H_target_raw[::g_args.dec_factor],
+                    band_mask[::g_args.dec_factor],
+                    current_taps, weights_pos=weights_snr[::g_args.dec_factor],
+                    reg_type=g_args.regularization_type,
+                    reg_val=g_args.regularization_magnitude,
+                    peak_cap_factor=g_args.peak_cap_factor,
+                    peak_bad_weight_fraction=g_args.peak_bad_weight_fraction,
+                    peak_max_passes=g_args.peak_max_passes)
             except Exception as e:
                 logging.info(e)
                 continue
@@ -224,11 +279,12 @@ def process_template(i):
             else:
                 qa_match, sigmas = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
 
-            logging.debug(f"CoarseTemp:{c_idx} QA-Match:{qa_match} Taps:{current_taps} Max Tap Val: {max_tap_val}")
+            logging.debug(f"CoarseTemp:{c_idx} QA-Match:{qa_match} Taps:{current_taps} Max Tap Val: {max_tap_val} "
+                          f"PeakSuppression: passes={n_peak_passes} remaining_capped_bins={n_bins_capped}")
             round_matches.append(qa_match)
 
             if best[3] < qa_match:
-                best = (i, best_match, c_idx, qa_match, taps, sigmas)
+                best = (i, best_match, c_idx, qa_match, taps, sigmas, n_peak_passes, n_bins_capped)
 
             if qa_match >= g_args.min_match: break
         if qa_match >= g_args.min_match: break
@@ -264,6 +320,17 @@ def main():
                         help="Don't fit ratio values above this number to avoid numerical instability of the fitting procedure")
     parser.add_argument('--max-tap-value', default=1e5, type=float,
                         help="If the calculated taps are larger in magnitude than this value, consider the constructionf failed")
+    parser.add_argument('--peak-cap-factor', default=10.0, type=float,
+                        help="After fitting, any frequency bin (checked across the full band, not just the "
+                             "fitted region) whose achieved magnitude exceeds this many times the filter's own "
+                             "median magnitude is nudged toward zero and the filter is refit. Guards against "
+                             "single-precision numerical instability from a handful of unconstrained, "
+                             "out-of-band bins with enormous gain. Set to 0 to disable.")
+    parser.add_argument('--peak-bad-weight-fraction', default=1.0, type=float,
+                        help="Weight given to the zero-target rows added for bins exceeding --peak-cap-factor, "
+                             "relative to a typical in-band fit row.")
+    parser.add_argument('--peak-max-passes', default=3, type=int,
+                        help="Maximum number of fit/detect/constrain refinement passes for peak suppression.")
     pycbc.psd.insert_psd_option_group(parser)
     args = parser.parse_args()
 
@@ -321,6 +388,8 @@ def main():
     # --- PHASE 2: Calculation Loop ---
     logging.info(f"Starting pool with {args.n_processes} processes...")
     failed_count = 0
+    peak_suppressed_count = 0
+    peak_still_capped_count = 0
     job_list = range(n_fine)
     all_results = [None] * n_fine
 
@@ -334,19 +403,25 @@ def main():
                                      postfix={"failed": 0}, file=sys.stderr)
 
             for result in results_iter:
-                i, coarse_match, c_idx, qa_match, final_taps_data, sigmas = result
+                i, coarse_match, c_idx, qa_match, final_taps_data, sigmas, n_peak_passes, n_bins_capped = result
                 all_results[i] = (coarse_match, c_idx, qa_match, final_taps_data, sigmas)
 
                 is_fail = (c_idx == -1) or (qa_match < args.min_match)
                 if is_fail:
                     failed_count += 1
+                if n_peak_passes > 0:
+                    peak_suppressed_count += 1
+                if n_bins_capped > 0:
+                    peak_still_capped_count += 1
 
                 if not args.verbose:
-                    results_iter.set_postfix(failed=failed_count)
+                    results_iter.set_postfix(failed=failed_count, peak_supp=peak_suppressed_count)
 
                 if args.verbose >= 1:
                     mismatch = 1.0 - qa_match
-                    logging.info(f"T{i} (Ref {c_idx}): Coarse={coarse_match:.4f}, Taps={len(final_taps_data)}, Final={qa_match:.5f}, Mism={mismatch:.5e}")
+                    logging.info(f"T{i} (Ref {c_idx}): Coarse={coarse_match:.4f}, Taps={len(final_taps_data)}, "
+                                 f"Final={qa_match:.5f}, Mism={mismatch:.5e}, "
+                                 f"PeakSuppression: passes={n_peak_passes} remaining_capped_bins={n_bins_capped}")
                     log.handlers[0].flush() # Flush stdout
 
         # --- PHASE 3: Write Results ---
@@ -403,8 +478,12 @@ def main():
     tap_ave = np.mean(np.concatenate(tap_counts))
     summary_msg = f"Summary: {failed_count}/{n_fine} templates failed QA (<{args.min_match}).\n"
     summary_msg += f"Average taps: {tap_ave}\n"
+    summary_msg += (f"Peak suppression triggered for {peak_suppressed_count}/{n_fine} templates "
+                     f"(achieved out-of-band gain exceeded {args.peak_cap_factor}x the filter's own median); "
+                     f"{peak_still_capped_count}/{n_fine} still had bins above that cap after "
+                     f"{args.peak_max_passes} refinement passes.\n")
 
-    if failed_count > 0: logging.warning(summary_msg)
+    if failed_count > 0 or peak_still_capped_count > 0: logging.warning(summary_msg)
     else: logging.info(summary_msg)
 
 if __name__ == '__main__':
