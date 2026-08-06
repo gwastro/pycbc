@@ -197,7 +197,11 @@ _space_detectors = {'LISA': {'armlength': 2.5e9,
                              'aliases': ['Taiji_A', 'Taiji_E', 'Taiji_T',
                                          'Taiji_X', 'Taiji_Y', 'Taiji_Z'],
                             },
-                    'TianQin': {'armlength': 1.7e8,
+                    # TianQin's theoretical design armlength (not the
+                    # 1.7e5 km engineering rounding also seen in the
+                    # literature), matching space_orbit.TianQinAnalyticOrbit
+                    # and pycbc.psd.analytical_space's TianQin PSD functions.
+                    'TianQin': {'armlength': numpy.sqrt(3) * 1e8,
                              'aliases': ['TianQin_A', 'TianQin_E',
                                          'TianQin_T', 'TianQin_X',
                                          'TianQin_Y', 'TianQin_Z'],
