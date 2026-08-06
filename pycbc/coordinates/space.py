@@ -39,20 +39,26 @@ any constellation via `orbit`: when `orbit` is given, "lisa" in a name
 """
 
 import logging
-import numpy as np
 
-from scipy.spatial.transform import Rotation
-from scipy.optimize import fsolve
+import numpy as np
 from astropy import units
-from astropy.constants import c, au
-from astropy.time import Time
-from astropy.coordinates import BarycentricMeanEcliptic, PrecessedGeocentric
-from astropy.coordinates import get_body_barycentric
-from astropy.coordinates import SkyCoord
+from astropy.constants import au, c
+from astropy.coordinates import (
+    BarycentricMeanEcliptic,
+    PrecessedGeocentric,
+    SkyCoord,
+    get_body_barycentric,
+)
 from astropy.coordinates.builtin_frames import ecliptic_transforms
+from astropy.time import Time
+from scipy.optimize import fsolve
+from scipy.spatial.transform import Rotation
 
 from pycbc.coordinates.space_orbit import (
-    constellation_frame, t_detector_from_ssb, t_ssb_from_t_detector)
+    constellation_frame,
+    t_detector_from_ssb,
+    t_ssb_from_t_detector,
+)
 
 logger = logging.getLogger('pycbc.coordinates.space')
 
@@ -60,6 +66,14 @@ logger = logging.getLogger('pycbc.coordinates.space')
 # Making this a stand-alone constant will also make it callable by
 # the waveform plugin and PE config file. In the unit of 's'.
 TIME_OFFSET_20_DEGREES = 7365189.431698299
+
+# Earth's mean obliquity of the ecliptic, the default for
+# rotation_matrix_ssb_to_geo below. Named here instead of calling
+# np.deg2rad() directly in that function's signature (ruff B008): harmless
+# since the result is an immutable scalar, but a function call in a default
+# is evaluated once at module-load time either way, so a named constant is
+# clearer about that.
+_OBLIQUITY_OF_ECLIPTIC = np.deg2rad(23.439281)
 
 # "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" remain specific to
 # LISA's analytic circular orbit; they are the default (`orbit=None`) code
@@ -556,7 +570,7 @@ def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
     return params_ssb
 
 
-def rotation_matrix_ssb_to_geo(epsilon=np.deg2rad(23.439281)):
+def rotation_matrix_ssb_to_geo(epsilon=_OBLIQUITY_OF_ECLIPTIC):
     """ The rotation matrix (of frame basis) from SSB frame to
     geocentric frame.
 

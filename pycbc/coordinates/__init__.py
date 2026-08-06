@@ -17,12 +17,17 @@ This modules provides functions for base coordinate transformations, and
 more advanced transformations between ground-based detectors and space-borne
 detectors.
 """
+# ruff: noqa: F403, F405 -- this module deliberately re-exports every name
+# from its submodules via `import *`, with the combined public API listed
+# explicitly in `__all__` below; ruff cannot resolve star-imported names
+# statically, so F403 ("unable to detect undefined names") and F405 ("may
+# be undefined, or defined from star imports") are expected here, not a
+# sign of a real undefined-name bug.
 
 from pycbc.coordinates.base import *
+from pycbc.coordinates.moon import *
 from pycbc.coordinates.space import *
 from pycbc.coordinates.space_orbit import *
-from pycbc.coordinates.moon import *
-
 
 __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'cartesian_to_spherical_polar', 'cartesian_to_spherical',

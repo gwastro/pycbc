@@ -52,13 +52,18 @@ that is response-function work, not coordinate-layer work.
 """
 
 import numpy as np
-
-from scipy.optimize import fsolve
 from astropy.constants import c
+from scipy.optimize import fsolve
 
 from pycbc.coordinates.space import (
-    localization_to_propagation_vector, propagation_vector_to_localization,
-    polarization_newframe, ssb_to_geo, geo_to_ssb, ssb_to_lisa, lisa_to_ssb)
+    geo_to_ssb,
+    lisa_to_ssb,
+    localization_to_propagation_vector,
+    polarization_newframe,
+    propagation_vector_to_localization,
+    ssb_to_geo,
+    ssb_to_lisa,
+)
 
 __all__ = [
     'rotation_matrix_ssb_to_moon', 'moon_site_position_ssb',
@@ -119,8 +124,7 @@ def moon_site_position_ssb(t_moon, longitude=None, latitude=None,
         of 'm'.
     """
     if longitude is None and latitude is None:
-        from pycbc.coordinates.space_orbit import (
-            _real_body_position_velocity)
+        from pycbc.coordinates.space_orbit import _real_body_position_velocity
         pos, _ = _real_body_position_velocity(t_moon, 'moon')
         return pos.reshape(3, 1)
 
@@ -138,10 +142,10 @@ def moon_site_position_ssb(t_moon, longitude=None, latitude=None,
             "pip install lunarsky, or omit longitude/latitude to use the "
             "Moon's barycenter instead (no lunarsky needed).") from exc
     from astropy import units as apy_units
-    from astropy.time import Time
     from astropy.coordinates import ICRS
-    from pycbc.coordinates.space_orbit import (
-        _icrs_to_ecliptic_rotation_matrix)
+    from astropy.time import Time
+
+    from pycbc.coordinates.space_orbit import _icrs_to_ecliptic_rotation_matrix
 
     site = MoonLocation.from_selenodetic(
         lon=longitude * apy_units.rad, lat=latitude * apy_units.rad,

@@ -53,10 +53,10 @@ it is purely additive.
 """
 import h5py
 import numpy as np
+from astropy.constants import au as ASTRONOMICAL_UNIT
+from astropy.constants import c as SPEED_OF_LIGHT
 from scipy.interpolate import make_interp_spline
 from scipy.optimize import fsolve
-from astropy.constants import c as SPEED_OF_LIGHT
-from astropy.constants import au as ASTRONOMICAL_UNIT
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -638,9 +638,9 @@ def _real_body_position_velocity(t, body='earth'):
     velocity : (N, 3) ndarray
         The body's velocity in the SSB ecliptic frame [m/s].
     """
-    from astropy.time import Time
-    from astropy.coordinates import get_body_barycentric_posvel
     from astropy import units as apy_units
+    from astropy.coordinates import get_body_barycentric_posvel
+    from astropy.time import Time
 
     time = Time(np.atleast_1d(t), format='gps')
     pos, vel = get_body_barycentric_posvel(body, time)
@@ -663,6 +663,15 @@ def _real_earth_position_velocity(t):
 
 
 EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s], ~1 sidereal year
+
+# Default constructor arguments below are read from these module-level
+# constants rather than calling np.deg2rad() directly in the signature
+# (ruff B008): harmless here since the result is an immutable scalar, but
+# a function call in a default is evaluated once at class-definition time
+# either way, so a named constant is clearer about that.
+_TAIJI_LEAD_ANGLE = np.deg2rad(20.0)
+_TIANQIN_LAMBDA_S = np.deg2rad(120.5)
+_TIANQIN_BETA_S = np.deg2rad(-4.7)
 
 
 def _equal_arm_orbit_position(alpha, armlength, sc):
@@ -1091,7 +1100,7 @@ class TaijiAnalyticOrbit:
         scenario-specific reference epoch instead.
     """
 
-    def __init__(self, armlength=3.0e9, lead_angle=np.deg2rad(20.0),
+    def __init__(self, armlength=3.0e9, lead_angle=_TAIJI_LEAD_ANGLE,
                 kappa0=None):
         self.armlength = float(armlength)
         self.lead_angle = float(lead_angle)
@@ -1176,7 +1185,7 @@ class TaijiKeplerianOrbit:
     """
 
     def __init__(self, armlength=3.0e9, semi_major_axis=None,
-                lead_angle=np.deg2rad(20.0), kappa0=None, kepler_order=2):
+                lead_angle=_TAIJI_LEAD_ANGLE, kappa0=None, kepler_order=2):
         self.armlength = float(armlength)
         self.semi_major_axis = (
             ASTRONOMICAL_UNIT.value if semi_major_axis is None
@@ -1300,8 +1309,8 @@ class TianQinAnalyticOrbit:
         See above. Default `'circular'` (unchanged default behavior).
     """
 
-    def __init__(self, armlength=1.7e8, lambda_s=np.deg2rad(120.5),
-                beta_s=np.deg2rad(-4.7), rotation_period=3.65 * 86400.0,
+    def __init__(self, armlength=1.7e8, lambda_s=_TIANQIN_LAMBDA_S,
+                beta_s=_TIANQIN_BETA_S, rotation_period=3.65 * 86400.0,
                 initial_orbit_phase=0.0, kappa0=None,
                 guiding_center='circular'):
         self.armlength = float(armlength)
