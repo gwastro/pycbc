@@ -10,13 +10,16 @@
 This module provides utilities for simulating the GW response of space-based
 observatories.
 """
+import logging
 from abc import ABC, abstractmethod
+
+import numpy
+from astropy import constants
+from numpy import cos, sin
+
 from pycbc.coordinates.space import TIME_OFFSET_20_DEGREES
 from pycbc.types import TimeSeries
-import numpy
-from numpy import cos, sin
-from astropy import constants
-import logging
+
 
 def get_available_space_detectors():
     """List the available space detectors"""

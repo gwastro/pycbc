@@ -16,18 +16,16 @@
 This modules provides classes and functions for transforming parameters.
 """
 
-import os
 import logging
+import os
+
 import numpy
 
-from pycbc import conversions
-from pycbc import coordinates
-from pycbc import cosmology
-from pycbc.io import record
-from pycbc.waveform import parameters
+from pycbc import VARARGS_DELIM, conversions, coordinates, cosmology
 from pycbc.boundaries import Bounds
-from pycbc import VARARGS_DELIM
+from pycbc.io import record
 from pycbc.pnutils import jframe_to_l0frame
+from pycbc.waveform import parameters
 
 logger = logging.getLogger('pycbc.transforms')
 
