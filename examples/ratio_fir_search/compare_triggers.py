@@ -57,7 +57,7 @@ def main():
     parser.add_argument("--reference-file", default="reference.hdf")
     parser.add_argument("--fir-file", default="fir.hdf")
     parser.add_argument("--fir-bank-file", default="fir_full_bank.hdf")
-    parser.add_argument("--allowed-margin-factor", type=float, default=5.0,
+    parser.add_argument("--allowed-margin-factor", type=float, default=4.0,
                         help="How many multiples of the mismatch-predicted "
                              "std to allow before flagging a problem.")
     args = parser.parse_args()
