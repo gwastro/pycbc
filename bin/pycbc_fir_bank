@@ -204,6 +204,8 @@ def process_template(i):
 
     best = (i, -1, -1, -1.0, [], [], 0, 0)
     qa_match = -1
+    n_attempts_total = 0
+    n_attempts_suppressed = 0
     while current_taps <= g_args.max_taps:
         round_matches = []
         for c_idx in msearch:
@@ -242,6 +244,10 @@ def process_template(i):
             except Exception as e:
                 logging.info(e)
                 continue
+
+            n_attempts_total += 1
+            if n_peak_passes > 0:
+                n_attempts_suppressed += 1
 
             if False:
                 from matplotlib import pyplot
@@ -294,7 +300,7 @@ def process_template(i):
         tnum = int(max(1, len(round_matches) * 0.8))
         msearch = msearch[top[:tnum]]
         current_taps += g_args.tap_step
-    return best
+    return best + (n_attempts_total, n_attempts_suppressed)
 
 # --- 4. MAIN PROCESS ---
 def main():
@@ -390,6 +396,8 @@ def main():
     failed_count = 0
     peak_suppressed_count = 0
     peak_still_capped_count = 0
+    total_attempts = 0
+    total_attempts_suppressed = 0
     job_list = range(n_fine)
     all_results = [None] * n_fine
 
@@ -403,7 +411,8 @@ def main():
                                      postfix={"failed": 0}, file=sys.stderr)
 
             for result in results_iter:
-                i, coarse_match, c_idx, qa_match, final_taps_data, sigmas, n_peak_passes, n_bins_capped = result
+                (i, coarse_match, c_idx, qa_match, final_taps_data, sigmas, n_peak_passes, n_bins_capped,
+                 n_attempts_total, n_attempts_suppressed) = result
                 all_results[i] = (coarse_match, c_idx, qa_match, final_taps_data, sigmas)
 
                 is_fail = (c_idx == -1) or (qa_match < args.min_match)
@@ -413,6 +422,8 @@ def main():
                     peak_suppressed_count += 1
                 if n_bins_capped > 0:
                     peak_still_capped_count += 1
+                total_attempts += n_attempts_total
+                total_attempts_suppressed += n_attempts_suppressed
 
                 if not args.verbose:
                     results_iter.set_postfix(failed=failed_count, peak_supp=peak_suppressed_count)
@@ -478,10 +489,13 @@ def main():
     tap_ave = np.mean(np.concatenate(tap_counts))
     summary_msg = f"Summary: {failed_count}/{n_fine} templates failed QA (<{args.min_match}).\n"
     summary_msg += f"Average taps: {tap_ave}\n"
-    summary_msg += (f"Peak suppression triggered for {peak_suppressed_count}/{n_fine} templates "
-                     f"(achieved out-of-band gain exceeded {args.peak_cap_factor}x the filter's own median); "
-                     f"{peak_still_capped_count}/{n_fine} still had bins above that cap after "
+    summary_msg += (f"Peak suppression triggered for the FINAL accepted filter of {peak_suppressed_count}/{n_fine} "
+                     f"templates (achieved out-of-band gain exceeded {args.peak_cap_factor}x the filter's own "
+                     f"median); {peak_still_capped_count}/{n_fine} still had bins above that cap after "
                      f"{args.peak_max_passes} refinement passes.\n")
+    summary_msg += (f"Across all {total_attempts} design attempts (all coarse candidates and tap-count escalation "
+                     f"steps tried, not just the accepted filter), peak suppression triggered on "
+                     f"{total_attempts_suppressed} ({100.0 * total_attempts_suppressed / total_attempts:.1f}%).\n")
 
     if failed_count > 0 or peak_still_capped_count > 0: logging.warning(summary_msg)
     else: logging.info(summary_msg)
