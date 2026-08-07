@@ -377,7 +377,7 @@ class PrintFileParams(argparse.Action):
         # information about the pycbc functions
         pfuncs = sorted(FieldArray.functionlib.fget(FieldArray).keys())
         print(textwrap.fill("Available pycbc functions (see "
-                            "http://pycbc.org/pycbc/latest/html for "
+                            "https://pycbc.org/pycbc/latest/html for "
                             "more details):"), end="\n\n")
         print(textwrap.fill(', '.join(pfuncs)), end="\n\n")
         # numpy funcs
