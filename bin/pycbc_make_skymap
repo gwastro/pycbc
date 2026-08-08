@@ -92,7 +92,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          ligolw_event_output=None, snr_series_duration=0.1465,
          frame_types=None, channel_names=None,
          segment_source=None, segment_server=None,
-         gracedb_server=None, test_event=True,
+         gracedb_server=None, bootstrap_servers=None, test_event=True,
          custom_frame_files=None, approximant=None, detector_state=None,
          veto_definer=None, injection_file=None, fake_strain=None, fake_strain_from_file=None,
          fake_strain_seed=None, rescale_loglikelihood=None):
@@ -429,9 +429,10 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         comments = ['Manual followup from PyCBC']
         gid = doc.upload(ligolw_file_path,
                          gracedb_server=gracedb_server,
+                         bootstrap_servers=bootstrap_servers,
                          testing=test_event,
                          extra_strings=comments)
-        gracedb = GraceDb(gracedb_server)
+        gracedb = GraceDb(gracedb_server, api_version='v2')
     else:
         doc.save(ligolw_file_path)
 
@@ -565,6 +566,8 @@ if __name__ == '__main__':
                              'production analyses!')
     parser.add_argument('--gracedb-server', metavar='URL',
                         help='URL of GraceDB server API for uploading events.')
+    parser.add_argument('--bootstrap-servers', default='kafka-dev.ligo.org:9092',
+                        help="The bootstrap server passed into the GraceDB Kafka producer class")
     parser.add_argument('--custom-frame-file', type=str, nargs='+',
                         action=MultiDetOptionAppendAction,
                         help='Lists of local frame files, e.g., '
@@ -597,7 +600,7 @@ if __name__ == '__main__':
          opt.ifar, opt.ifos, opt.thresh_SNR, opt.ligolw_skymap_output,
          opt.ligolw_event_output,
          frame_types=frame_type_dict, channel_names=chan_name_dict,
-         gracedb_server=opt.gracedb_server,
+         gracedb_server=opt.gracedb_server, bootstrap_servers=opt.bootstrap_servers,
          test_event=not opt.enable_production_gracedb_upload,
          custom_frame_files=opt.custom_frame_file,
          approximant=opt.approximant, detector_state=opt.detector_state,

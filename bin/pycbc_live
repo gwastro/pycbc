@@ -106,6 +106,7 @@ class LiveEventManager(object):
         self.pvalue_lookback_time = args.pvalue_lookback_time
         self.pvalue_livetime = args.pvalue_combination_livetime
         self.gracedb_server = args.gracedb_server
+        self.bootstrap_servers = args.bootstrap_servers
         self.gracedb_search = args.gracedb_search
         self.gracedb_labels = args.gracedb_labels
         self.gracedb_testing = not args.enable_production_gracedb_upload
@@ -386,6 +387,7 @@ class LiveEventManager(object):
         cmd += f'--params-file {curr_fname} '
         cmd += f'--approximant {apr} '
         cmd += f'--gracedb-server {self.gracedb_server} '
+        cmd += f'--bootstrap-servers {self.bootstrap_servers} '
         cmd += f'--gracedb-search {self.gracedb_search} '
 
         labels = self.snr_opt_label
@@ -466,10 +468,21 @@ class LiveEventManager(object):
         # https://ligo-gracedb.readthedocs.io/en/latest/api.html#ligo.gracedb.rest.GraceDb
         # Because we do not change any of the request session values when running the
         # code, it should remain thread safe.
-        gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+        gdbargs = {'reload_certificate': True, 'reload_buffer': 300, 'api_version': 'v2'}
         if self.gracedb_server:
             gdbargs['service_url'] = self.gracedb_server
         self.gracedb = GraceDb(**gdbargs)
+
+        logging.info('Creating Kafka producer')
+        from ligo.gracedb.kafka import GraceDbKafkaProducer
+
+        ca_bundle = certifi.where()
+        self.producer = GraceDbKafkaProducer(
+             bootstrap_servers=self.bootstrap_servers,
+             service_url=gracedb._service_url,
+             ca_cert_path=ca_bundle,
+             )
+
 
     def upload_in_thread(self, event, fname, comment, cmd, out_dir_path,
                          upload_checks, optimize_snr_checks):
@@ -478,6 +491,7 @@ class LiveEventManager(object):
             gid = event.upload(
                 fname,
                 gracedb_server=self.gracedb_server,
+                bootstrap_servers=self.bootstrap_servers,
                 testing=self.gracedb_testing,
                 extra_strings=[comment],
                 search=self.gracedb_search,
@@ -527,6 +541,7 @@ class LiveEventManager(object):
             ifos,
             coinc_results,
             gracedb=self.gracedb,
+            producer=self.producer,
             padata=self.padata,
             bank=self.bank,
             psds=psds,
@@ -632,6 +647,7 @@ class LiveEventManager(object):
                 active,
                 single,
                 gracedb=self.gracedb,
+                producer=self.producer
                 padata=self.padata,
                 bank=self.bank,
                 psds=psds,
@@ -993,6 +1009,8 @@ parser.add_argument('--enable-single-detector-upload', action='store_true', defa
 parser.add_argument('--gracedb-server', metavar='URL',
                     help='URL of GraceDB server API for uploading events. '
                          'If not provided, the default URL is used.')
+parser.add_argument('--bootstrap-servers', default='kafka-dev.ligo.org:9092',
+                    help="The bootstrap server passed into the GraceDB Kafka producer class")
 parser.add_argument('--gracedb-search', type=str, default='AllSky',
                     help='String going into the "search" field of the GraceDB '
                          'events')

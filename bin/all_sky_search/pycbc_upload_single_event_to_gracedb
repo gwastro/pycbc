@@ -24,7 +24,9 @@ import os
 import sys
 import argparse
 import logging
+import certifi
 from ligo.gracedb.rest import GraceDb
+from ligo.gracedb.kafka import GraceDbKafkaProducer
 
 import pycbc
 from pycbc.io.gracedb import gracedb_tag_with_version
@@ -40,6 +42,8 @@ parser.add_argument('--testing', action="store_true", default=False,
 parser.add_argument('--production-server', action="store_true", default=False,
                     help="Upload event to production graceDB. If not given "
                          "events will be uploaded to playground server.")
+parser.add_argument('--bootstrap-servers', default='kafka-dev.ligo.org:9092', 
+        help="The bootstrap server passed into the GraceDB Kafka producer class")
 parser.add_argument('--search-tag', default='AllSky',
                     help="Specify the search tag. Default: AllSky")
 parser.add_argument('--snr-timeseries-plot',
@@ -68,9 +72,9 @@ pycbc.init_logging(args.verbose, default_level=1)
 logging.getLogger('scitokens').setLevel(logging.root.level + 10)
 
 if args.production_server:
-    gracedb = GraceDb()
+    gracedb = GraceDb(api_version='v2')
 else:
-    gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
+    gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/', api_version='v2')
 
 labels = [l.upper() for l in (args.labels or [])]
 allowed_labels = gracedb.allowed_labels
@@ -82,6 +86,16 @@ if set(labels) - set(allowed_labels):
     raise RuntimeError(err_msg)
 
 group_tag = 'Test' if args.testing else 'CBC'
+
+
+logging.info("Creating Kafka producer...")
+ca_bundle = certifi.where()
+producer = GraceDbKafkaProducer(
+    bootstrap_servers=args.bootstrap_servers,
+    service_url=gracedb._service_url,
+    ca_cert_path=ca_bundle,
+)
+
 r = gracedb.create_event(
     group_tag,
     'pycbc',
@@ -89,7 +103,9 @@ r = gracedb.create_event(
     filecontents=open(args.xml_file_for_upload, "rb").read(),
     search=args.search_tag,
     offline=True,
-    labels=labels
+    labels=labels,
+    kafka=producer,
+    http_fallback=True,
 ).json()
 
 logging.info("Uploaded event %s.", r["graceid"])
