@@ -98,7 +98,7 @@ class HierarchicalModel(BaseModel):
             derived_params = map_params(hpiter(derived_params,
                                                list(self.submodels.keys())))
             for lbl, pset in derived_params.items():
-                self.param_map[lbl].update(pset)
+                self.param_map.setdefault(lbl, set()).update(pset)
         # make sure the static parameters of all submodels are set correctly
         self.static_param_map = map_params(self.hstatic_params.keys())
         # also create a map of model label -> extra stats created by each model
@@ -108,7 +108,8 @@ class HierarchicalModel(BaseModel):
         self.__extra_stats = []
         for lbl, model in self.submodels.items():
             model.static_params = {p.subname: self.static_params[p.fullname]
-                                   for p in self.static_param_map[lbl]}
+                                   for p in
+                                   self.static_param_map.get(lbl, [])}
             self.extra_stats_map.update(map_params([
                 HierarchicalParam.from_subname(lbl, p)
                 for p in model._extra_stats+['loglikelihood']]))
@@ -343,7 +344,7 @@ class HierarchicalModel(BaseModel):
                     subcp.set(sec.subname, opt, val)
             # set the static params
             subcp.add_section('static_params')
-            for param in sparam_map[lbl]:
+            for param in sparam_map.get(lbl, []):
                 subcp.set('static_params', param.subname,
                           cp.get('static_params', param.fullname))
             # set the variable params: for now we'll just set all the
@@ -353,10 +354,10 @@ class HierarchicalModel(BaseModel):
             # params after the model is initialized
 
             subcp.add_section('variable_params')
-            for param in vparam_map[lbl]:
+            for param in vparam_map.get(lbl, []):
                 subcp.set('static_params', param.subname, 'REPLACE')
             # add the outputs from the waveform transforms
-            for param in wfparam_map[lbl]:
+            for param in wfparam_map.get(lbl, []):
                 subcp.set('static_params', param.subname, 'REPLACE')
 
             # extra any kwargs to pass
@@ -888,7 +889,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     subcp.set(sec.subname, opt, val)
             # set the static params
             subcp.add_section('static_params')
-            for param in sparam_map[lbl]:
+            for param in sparam_map.get(lbl, []):
                 subcp.set('static_params', param.subname,
                           cp.get('static_params', param.fullname))
 
@@ -900,7 +901,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # variable_params and prior section before initializing it.
 
             subcp.add_section('variable_params')
-            for param in vparam_map[lbl]:
+            for param in vparam_map.get(lbl, []):
                 if lbl in kwargs['primary_lbl']:
                     # set variable_params for the primary model
                     subcp.set('variable_params', param.subname,
@@ -920,7 +921,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # add the outputs from the waveform transforms if sub-model
             # doesn't need marginalization
             if lbl not in kwargs['primary_lbl']:
-                for param in wfparam_map[lbl]:
+                for param in wfparam_map.get(lbl, []):
                     subcp.set('static_params', param.subname, 'REPLACE')
 
             # save the vitual config file to disk for later check
