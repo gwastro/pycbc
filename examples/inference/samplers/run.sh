@@ -1,6 +1,6 @@
 #!/bin/sh
-SAMPLERS="emcee_stub.ini ptemcee_stub.ini dynesty_stub.ini ultranest_stub.ini epsie_stub.ini nessai_stub.ini snowline_stub.ini"
-PLOT_INPUTS="emcee_stub.ini.hdf:emcee ptemcee_stub.ini.hdf:ptemcee dynesty_stub.ini.hdf:dynesty ultranest_stub.ini.hdf:ultranest epsie_stub.ini.hdf:epsie nessai_stub.ini.hdf:nessai snowline_stub.ini.hdf:snowline"
+SAMPLERS="emcee_stub.ini ptemcee_stub.ini dynesty_stub.ini ultranest_stub.ini epsie_stub.ini nessai_stub.ini inessai_stub.ini snowline_stub.ini"
+PLOT_INPUTS="emcee_stub.ini.hdf:emcee ptemcee_stub.ini.hdf:ptemcee dynesty_stub.ini.hdf:dynesty ultranest_stub.ini.hdf:ultranest epsie_stub.ini.hdf:epsie nessai_stub.ini.hdf:nessai inessai_stub.ini.hdf:i-nessai snowline_stub.ini.hdf:snowline"
 
 if [ "$(uname)" != "Darwin" ]; then
     SAMPLERS="cpnest_stub.ini $SAMPLERS"
