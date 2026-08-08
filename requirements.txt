@@ -40,7 +40,7 @@ igwn-ligolw>=2.1.0
 
 # Needed for Parameter Estimation Tasks
 emcee>=3.0.0
-dynesty<3.0
+dynesty
 
 # For building documentation
 Sphinx>=4.2.0

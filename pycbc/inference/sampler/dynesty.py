@@ -26,16 +26,58 @@ This modules provides classes and functions for using the dynesty sampler
 packages for parameter estimation.
 """
 
+import inspect
 import logging
 import time
 import numpy
-import dynesty, dynesty.dynesty, dynesty.nestedsamplers
+import dynesty
 from pycbc.pool import choose_pool
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files,
                                 loadfile)
 from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 from .base_cube import setup_calls
+
+try:
+    # dynesty >= 3 dispatches sampling through InternalSampler classes
+    # instead of the _SAMPLING dict of functions used by older versions,
+    # and dropped the sampler-level ``kwargs`` dict those functions read.
+    from dynesty.internal_samplers import RWalkSampler, SamplerReturn
+    NEW_SAMPLER_API = True
+except ImportError:
+    import dynesty.dynesty, dynesty.nestedsamplers
+    NEW_SAMPLER_API = False
+
+    # dynesty < 3 crashes whenever periodic and reflective params are both
+    # used: it tests ``np.intersect1d(periodic, reflective) != 0``, which is
+    # ambiguous for the empty (non-overlapping) array. Fixed in dynesty 3.
+    _get_nonbounded = dynesty.dynesty.get_nonbounded
+
+    def _fixed_get_nonbounded(ndim, periodic, reflective):
+        if periodic is not None and reflective is not None:
+            if numpy.intersect1d(periodic, reflective).size:
+                raise ValueError("You have specified a parameter as both "
+                                 "periodic and reflective.")
+            return (_get_nonbounded(ndim, periodic, None)
+                    & _get_nonbounded(ndim, None, reflective))
+        return _get_nonbounded(ndim, periodic, reflective)
+
+    dynesty.dynesty.get_nonbounded = _fixed_get_nonbounded
+
+
+def filter_run_kwds(sampler, kwds):
+    """Drop ``run_nested`` options the installed dynesty doesn't accept.
+
+    Which options ``run_nested`` takes varies both by dynesty version
+    (``n_effective`` was removed from the static sampler in dynesty 3) and
+    between the static and dynamic samplers, so ask rather than hard-code.
+    """
+    supported = inspect.signature(sampler.run_nested).parameters
+    for karg in set(kwds) - set(supported):
+        logging.warning("dynesty's run_nested does not accept '%s'; "
+                        "ignoring it", karg)
+        del kwds[karg]
+    return kwds
 
 
 #
@@ -126,8 +168,14 @@ class DynestySampler(BaseSampler):
         if len(reflective) == 0:
             reflective = None
 
-        if 'sample' in extra_kwds:
-            if 'rwalk2' in extra_kwds['sample']:
+        if extra_kwds.get('sample') == 'rwalk2':
+            if NEW_SAMPLER_API:
+                # dynesty >= 3 takes a sampler instance, and maxmcmc/nact
+                # travel with it rather than via the sampler kwargs dict
+                extra_kwds['sample'] = RWalkModSampler(
+                    walks=extra_kwds.get('walks') or self.ndim + 20,
+                    **self.internal_kwds)
+            else:
                 dynesty.dynesty._SAMPLING["rwalk"] = sample_rwalk_mod
                 dynesty.nestedsamplers._SAMPLING["rwalk"] = sample_rwalk_mod
                 extra_kwds['sample'] = 'rwalk'
@@ -145,6 +193,12 @@ class DynestySampler(BaseSampler):
             self.run_with_checkpoint = False
             logging.info("Checkpointing not currently supported with"
                          "DYNAMIC nested sampler")
+            # the dynamic sampler names its initial-stage stopping criteria
+            # differently from the static one
+            for karg, dyn_karg in [('dlogz', 'dlogz_init'),
+                                   ('logl_max', 'logl_max_init')]:
+                if karg in self.run_kwds:
+                    self.run_kwds[dyn_karg] = self.run_kwds.pop(karg)
         else:
             self._sampler = dynesty.NestedSampler(log_likelihood_call,
                                                   prior_call, self.ndim,
@@ -152,7 +206,9 @@ class DynestySampler(BaseSampler):
                                                   reflective=reflective,
                                                   periodic=periodic,
                                                   pool=self.pool, **extra_kwds)
-        self._sampler.kwargs.update(internal_kwds)
+        if not NEW_SAMPLER_API:
+            self._sampler.kwargs.update(internal_kwds)
+        filter_run_kwds(self._sampler, self.run_kwds)
 
         # properties of the internal sampler which should not be pickled
         self.no_pickle = ['loglikelihood',
@@ -163,7 +219,8 @@ class DynestySampler(BaseSampler):
                           'evolve_point', 'use_pool', 'queue_size',
                           'use_pool_ptform', 'use_pool_logl',
                           'use_pool_evolve', 'use_pool_update',
-                          'pool', 'M']
+                          # dynesty >= 3 calls the pool's map 'mapper'
+                          'pool', 'M', 'mapper']
 
     def run(self):
         diff_niter = 1
@@ -215,13 +272,28 @@ class DynestySampler(BaseSampler):
         * ``logl_max = FLOAT``:
             The maximum logl stopping condition.
         * ``n_effective = INT``:
-            Target effective number of samples stopping condition
+            Target effective number of samples stopping condition. dynesty
+            removed this from the static sampler in 3.0; still available
+            for the dynamic sampler (``nlive < 0``).
+        * ``save_bounds = BOOL``:
+            Whether to keep past bounding distributions. False can greatly
+            reduce memory use on long runs.
+        * ``maxbatch = INT``, ``nlive_batch = INT``, ``use_stop = BOOL``:
+            Dynamic sampler only (``nlive < 0``): the maximum number of
+            batches after the baseline run, the number of live points per
+            batch, and whether to apply the stopping function each batch.
         * ``sample = STR``:
-            The method to sample the space. Should be one of 'uniform',
-            'rwalk', 'rwalk2' (a modified version of rwalk), or 'slice'.
+            The method to sample the space. Should be one of 'unif',
+            'rwalk', 'rwalk2' (a modified version of rwalk), 'slice' or
+            'rslice' ('hslice' for dynesty < 3).
         * ``walk = INT``:
             Used for some of the walk methods. Sets the minimum number of
             steps to take when evolving a point.
+        * ``slices = INT``:
+            Used for the slice methods. Number of slice updates before
+            proposing a new point.
+        * ``facc = FLOAT``:
+            Target acceptance fraction for the walk methods.
         * ``maxmcmc = INT``:
             Used for some of the walk methods. Sets the maximum number of steps
             to take when evolving a point.
@@ -252,6 +324,9 @@ class DynestySampler(BaseSampler):
             The attribute of the model to use for the loglikelihood. If
             not provided, will default to ``loglikelihood``.
 
+        Options the installed dynesty does not support are dropped with a
+        warning instead of failing, so one config works across versions.
+
         Parameters
         ----------
         cp : WorkflowConfigParser instance
@@ -281,11 +356,17 @@ class DynestySampler(BaseSampler):
 
         no_save_state = cp.has_option(section, 'no-save-state')
 
-        # optional run_nested arguments for dynesty
+        # optional run_nested arguments for dynesty; any not supported by
+        # the installed dynesty are dropped by filter_run_kwds
         rargs = {'maxiter': int,
                  'dlogz': float,
                  'logl_max': float,
                  'n_effective': int,
+                 'save_bounds': bool,
+                 # dynamic sampler only
+                 'maxbatch': int,
+                 'nlive_batch': int,
+                 'use_stop': bool,
                  }
 
         # optional arguments for dynesty
@@ -297,6 +378,8 @@ class DynestySampler(BaseSampler):
                  'first_update_min_ncall': int,
                  'first_update_min_eff': float,
                  'walks': int,
+                 'slices': int,
+                 'facc': float,
                  }
 
         # optional arguments that must be set internally
@@ -314,7 +397,9 @@ class DynestySampler(BaseSampler):
                           ]:
             for karg in argt:
                 if cp.has_option(section, karg):
-                    args[karg] = argt[karg](cp.get(section, karg))
+                    args[karg] = (cp.getboolean(section, karg)
+                                  if argt[karg] is bool
+                                  else argt[karg](cp.get(section, karg)))
 
         #This arg needs to be a dict
         first_update = {}
@@ -607,7 +692,29 @@ def sample_rwalk_mod(args):
     kwargs["old_act"] = act
 
     ncall = accept + reject
+    if NEW_SAMPLER_API:
+        # dynesty >= 3 expects a SamplerReturn rather than a plain tuple
+        return SamplerReturn(u=u, v=v, logl=logl, ncalls=ncall,
+                             evaluation_history=[], tuning_info=blob,
+                             proposal_stats=None)
     return u, v, logl, ncall, blob
+
+
+if NEW_SAMPLER_API:
+    class RWalkModSampler(RWalkSampler):
+        """Exposes ``sample_rwalk_mod`` as a dynesty >= 3 internal sampler.
+
+        Subclasses dynesty's own random walk sampler so its proposal-scale
+        tuning and bound-update cadence still apply. ``maxmcmc``/``nact`` go
+        in ``sampler_kwargs`` since that is what dynesty forwards to each
+        ``sample`` call.
+        """
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.sampler_kwargs.update(
+                {k: kwargs[k] for k in ('maxmcmc', 'nact') if k in kwargs})
+
+        sample = staticmethod(sample_rwalk_mod)
 
 
 def estimate_nmcmc(accept_ratio, old_act, maxmcmc, safety=5, tau=None):
