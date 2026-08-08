@@ -31,6 +31,7 @@ import logging
 import time
 import numpy
 import dynesty
+from dynesty.utils import unitcheck, apply_reflect, get_random_generator
 from pycbc.pool import choose_pool
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files,
                                 loadfile)
@@ -48,22 +49,6 @@ except ImportError:
     import dynesty.dynesty, dynesty.nestedsamplers
     NEW_SAMPLER_API = False
 
-    # dynesty < 3 crashes whenever periodic and reflective params are both
-    # used: it tests ``np.intersect1d(periodic, reflective) != 0``, which is
-    # ambiguous for the empty (non-overlapping) array. Fixed in dynesty 3.
-    _get_nonbounded = dynesty.dynesty.get_nonbounded
-
-    def _fixed_get_nonbounded(ndim, periodic, reflective):
-        if periodic is not None and reflective is not None:
-            if numpy.intersect1d(periodic, reflective).size:
-                raise ValueError("You have specified a parameter as both "
-                                 "periodic and reflective.")
-            return (_get_nonbounded(ndim, periodic, None)
-                    & _get_nonbounded(ndim, None, reflective))
-        return _get_nonbounded(ndim, periodic, reflective)
-
-    dynesty.dynesty.get_nonbounded = _fixed_get_nonbounded
-
 
 def filter_run_kwds(sampler, kwds):
     """Drop ``run_nested`` options the installed dynesty doesn't accept.
@@ -73,6 +58,8 @@ def filter_run_kwds(sampler, kwds):
     between the static and dynamic samplers, so ask rather than hard-code.
     """
     supported = inspect.signature(sampler.run_nested).parameters
+    if any(p.kind == p.VAR_KEYWORD for p in supported.values()):
+        return kwds
     for karg in set(kwds) - set(supported):
         logging.warning("dynesty's run_nested does not accept '%s'; "
                         "ignoring it", karg)
@@ -568,22 +555,13 @@ def sample_rwalk_mod(args):
 
         Adapted from version used in bilby/dynesty
     """
-    try:
-        # dynesty <= 1.1
-        from dynesty.utils import unitcheck, reflect
+    # Unzipping.
+    (u, loglstar, axes, scale,
+     prior_transform, loglikelihood, rseed, kwargs) = args
 
-        # Unzipping.
-        (u, loglstar, axes, scale,
-        prior_transform, loglikelihood, kwargs) = args
-
-    except ImportError:
-        # dynest >= 1.2
-        from dynesty.utils import unitcheck, apply_reflect as reflect
-
-        (u, loglstar, axes, scale,
-        prior_transform, loglikelihood, _, kwargs) = args
-
-    rstate = numpy.random
+    # dynesty seeds every evolution separately; using the global numpy
+    # state instead makes forked pool workers walk in lockstep
+    rstate = get_random_generator(rseed)
 
     # Bounds
     nonbounded = kwargs.get('nonbounded', None)
@@ -611,11 +589,11 @@ def sample_rwalk_mod(args):
         ii += 1
 
         # Propose a direction on the unit n-sphere.
-        drhat = rstate.randn(n)
+        drhat = rstate.standard_normal(n)
         drhat /= numpy.linalg.norm(drhat)
 
         # Scale based on dimensionality.
-        dr = drhat * rstate.rand() ** (1.0 / n)
+        dr = drhat * rstate.random() ** (1.0 / n)
 
         # Transform to proposal distribution.
         du = numpy.dot(axes, dr)
@@ -626,7 +604,7 @@ def sample_rwalk_mod(args):
             u_prop[periodic] = numpy.mod(u_prop[periodic], 1)
         # Reflect
         if reflective is not None:
-            u_prop[reflective] = reflect(u_prop[reflective])
+            u_prop[reflective] = apply_reflect(u_prop[reflective])
 
         # Check unit cube constraints.
         if u.max() < 0:
@@ -677,14 +655,15 @@ def sample_rwalk_mod(args):
 
     # If the act is finite, pick randomly from within the chain
     if numpy.isfinite(act) and int(.5 * nact * act) < len(u_list):
-        idx = numpy.random.randint(int(.5 * nact * act), len(u_list))
+        low = int(.5 * nact * act)
+        idx = low + int(rstate.random() * (len(u_list) - low))
         u = u_list[idx]
         v = v_list[idx]
         logl = logl_list[idx]
     else:
         logging.debug("Unable to find a new point using walk: "
                       "returning a random point")
-        u = numpy.random.uniform(size=n)
+        u = rstate.uniform(size=n)
         v = prior_transform(u)
         logl = loglikelihood(v)
 
