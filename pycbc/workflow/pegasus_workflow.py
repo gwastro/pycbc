@@ -596,7 +596,7 @@ class Workflow(object):
 
     def save(self, filename=None, submit_now=False, plan_now=False,
              output_map_path=None, root=True):
-        """ Write this workflow to DAX file
+        """ Write this workflow to DAX file and plan/submit it if necessary
         """
         if filename is None:
             filename = self.filename
@@ -643,28 +643,6 @@ class Workflow(object):
         if not self.in_workflow:
             if submit_now or plan_now:
                 self.plan_and_submit(submit_now=submit_now)
-            else:
-                with open('additional_planner_args.dat', 'w') as f:
-                    stage_site_str = self.staging_site_str
-                    exec_sites = self.exec_sites_str
-                    # We should add an option to add additional
-                    # pegasus properties (through the config files?) here.
-                    prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
-                                            'pegasus-properties.conf')
-                    f.write('--conf {} '.format(prop_file))
-                    if self.cache_file is not None:
-                        f.write('--cache {} '.format(self.cache_file))
-
-                    f.write('--output-sites local ')
-                    f.write('--sites {} '.format(exec_sites))
-                    f.write('--staging-site {} '.format(stage_site_str))
-                    f.write('--cluster label,horizontal ')
-                    f.write('--cleanup inplace ')
-                    f.write('--relative-dir work ')
-                    # --dir is not being set here because it might be easier to
-                    # set this in submit_dax still?
-                    f.write('-q ')
-                    f.write('--dax {}'.format(filename))
         os.chdir(olddir)
 
     def plan_and_submit(self, submit_now=True):

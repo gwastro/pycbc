@@ -82,6 +82,11 @@ class TestParams(unittest.TestCase):
                                     self.spin1y, self.spin2y)
         self.secondary_spinz = conversions.secondary_spin(self.m1, self.m2,
                                     self.spin1z, self.spin2z)
+        
+        # set up some sky locations and times
+        self.ra = numpy.random.uniform(0, 2*numpy.pi, size=self.numtests)
+        self.dec = numpy.random.uniform(-numpy.pi/2, numpy.pi/2, size=self.numtests)
+        self.tc = numpy.random.uniform(1e9, 2e9, size=self.numtests)
 
 
     def test_physical_consistency(self):
@@ -181,6 +186,24 @@ class TestParams(unittest.TestCase):
             self.spin2x[maxidx],self.spin2y[maxidx]
             )
         self.assertTrue(passed, msg.format("conversions.chi_p", "chi_p", maxdiff, failinputs))
+        
+    def test_det_tc(self):
+        """Check that times remain unchanged when converting from one frame to
+        another and back."""
+        vals = list(zip(self.ra, self.dec, self.tc))
+        ref_frames = ['geocentric', 'H1', 'L1', 'V1']
+        target_frames = ['geocentric', 'H1', 'L1', 'V1']
+        for ra1, dec1, time1 in vals:
+            for ref in ref_frames:
+                for target in target_frames:
+                    # convert from ref to target
+                    conv = conversions.det_tc(target, ra1, dec1, time1,
+                                              ref_frame=ref)
+                    # convert back
+                    back = conversions.det_tc(ref, ra1, dec1, conv,
+                                              ref_frame=target)
+                    # check that this equals the original time
+                    self.assertAlmostEqual(back, time1, places=6)
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestParams))

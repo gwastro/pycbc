@@ -11,10 +11,11 @@ from pycbc.inference.sampler import samplers
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument('--input-file')
-parser.add_argument('--output-file')
-parser.add_argument('--sampler', default='emcee_pt',
-    help="The output sampler type, if none, we assume emcee_pt")
+parser.add_argument('--input-file', required=True,)
+parser.add_argument('--output-file', required=True,)
+parser.add_argument('--sampler', required=True,
+    help="The output sampler type. Must be the name of a parallel-tempered "
+         "sampler.")
 parser.add_argument('--ntemps', type=int)
 parser.add_argument('--nwalkers', type=int)
 args = parser.parse_args()

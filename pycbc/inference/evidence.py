@@ -19,6 +19,12 @@ likelihood or evidence of a model.
 import numpy
 from scipy import integrate
 
+# numpy renamed trapz to trapezoid in 2.0 and removed trapz in 2.x
+try:
+    from numpy import trapezoid
+except ImportError:  # numpy < 2.0
+    from numpy import trapz as trapezoid
+
 
 def arithmetic_mean_estimator(log_likelihood):
     """Returns the log evidence via the prior arithmetic mean estimator (AME).
@@ -95,15 +101,16 @@ def thermodynamic_integration(log_likelihood, betas,
 
     Parameters
     ----------
-    log_likelihood : 3d array of shape (betas, walker, iteration)
+    log_likelihood : numpy.ndarray
+        3d array of shape (ntemps, nwalkers, niterations)
         The log likelihood for each temperature separated by
         temperature, walker, and iteration.
 
-    betas : 1d array
+    betas : numpy.ndarray
         The inverse temperatures used in the MCMC.
 
-    method : {"trapzoid", "trapezoid_corrected", "simpsons"},
-             optional.
+    method : string
+        Optional. Can be one of {"trapezoid", "trapezoid_corrected", "simpsons"}
         The numerical integration method to use for the
         thermodynamic integration. Choices include: "trapezoid",
         "trapezoid_corrected", "simpsons", for the trapezoid rule,
@@ -140,7 +147,7 @@ def thermodynamic_integration(log_likelihood, betas,
     average_logl = numpy.average(log_likelihood, axis=1)
 
     if method in ("trapezoid", "trapezoid_corrected"):
-        log_evidence = numpy.trapz(average_logl, betas)
+        log_evidence = trapezoid(average_logl, betas)
 
     if method == "trapezoid_corrected":
         # var_correction holds the derivative correction terms
@@ -178,7 +185,7 @@ def thermodynamic_integration(log_likelihood, betas,
 
     if method in ("trapezoid", "trapezoid_corrected"):
         for i, _ in enumerate(log_likelihood[0]):
-            ti_vec[i] = numpy.trapz(logl_per_samp[i], betas)
+            ti_vec[i] = trapezoid(logl_per_samp[i], betas)
 
     elif method == "simpsons":
         for i, _ in enumerate(log_likelihood[0]):
@@ -197,12 +204,13 @@ def stepping_stone_algorithm(log_likelihood, betas):
 
     Parameters
     ----------
-    log_likelihood : 3d array of shape (betas, walker, iteration)
+    log_likelihood : numpy.ndarray
+        3d array of shape (ntemps, nwalkers, niterations)
         The log likelihood for each temperature separated by
         temperature, walker, and iteration.
 
-    betas          : 1d array
-                     The inverse temperatures used in the MCMC.
+    betas          : numpy.ndarray
+        The inverse temperatures used in the MCMC.
 
     Returns
     -------

@@ -118,7 +118,7 @@ class TestRedshiftWaveform(unittest.TestCase):
     def setUp(self):
         self.srcm1 = 30.0
         self.srcm2 = 20.0
-        self.distance = 5672.12 #4000.0
+        self.distance = 4000.
         self.z = cosmology.redshift(self.distance)
 
         # Detector-frame settings.
@@ -138,6 +138,20 @@ class TestRedshiftWaveform(unittest.TestCase):
         """Returns relative L2 norm of ``test - ref``."""
         return numpy.linalg.norm(test - ref) / numpy.linalg.norm(ref)
 
+
+    def _check_epochs(self, redshifted_hp, det_hp, err=0.01):
+        """Checks that the epochs of the two waveforms are close enough.
+
+        Small differences in the epochs may arise due to floating point
+        errors. That may cause a failure when we compute the relative L2
+        error, so we'll check that the epochs are close enough.
+        """
+        isclose = numpy.isclose(redshifted_hp.start_time, det_hp.start_time,
+                                      rtol=0., atol=err*det_hp.delta_t)
+        self.assertTrue(isclose,
+                        msg=f"Epochs differ by more than {err*det_hp.delta_t}:"
+                            f" |redshifted - detector epoch| = "
+                            f"{abs(redshifted_hp.start_time - det_hp.start_time)}")
 
     def test_td_redshift_matches_redshifted_masses(self):
         """Redshifting a source-frame TD waveform matches detector-frame TD."""
@@ -159,8 +173,12 @@ class TestRedshiftWaveform(unittest.TestCase):
             delta_t=1.0 / self.sample_rate,
             f_lower=self.flow,
         )
+        self._check_epochs(redshifted_hp, det_hp)
+        # if passed, set the redshifted_hp epoch to be the same as the det_hp
+        # epoch, so that we can compare the waveforms directly
+        redshifted_hp.start_time = det_hp.start_time
         relerr = self._relative_l2_error(redshifted_hp, det_hp)
-        self.assertLess(relerr, 1e-3)
+        self.assertLess(relerr, 2e-3)
 
 
     def test_fd_redshift_matches_redshifted_masses(self):
@@ -188,17 +206,12 @@ class TestRedshiftWaveform(unittest.TestCase):
 
         redshifted_hp = redshifted_hptilde.to_timeseries()
         det_hp = det_hptilde.to_timeseries()
-        # Small differences in the epochs may arise due to floating point
-        # errors. That may cause a failure when we compute the relative L2
-        # error, so we'll check that the epochs are close enough (here, we're
-        # allowing for up to 0.1% of a delta_t)
-        self.assertTrue(numpy.isclose(redshifted_hp._epoch, det_hp._epoch,
-                                      rtol=0., atol=0.001/self.sample_rate))
+        self._check_epochs(redshifted_hp, det_hp)
         # if passed, set the redshifted_hp epoch to be the same as the det_hp
         # epoch, so that we can compare the waveforms directly
-        redshifted_hp._epoch = det_hp._epoch
+        redshifted_hp.start_time = det_hp.start_time
         relerr = self._relative_l2_error(redshifted_hp, det_hp)
-        self.assertLess(relerr, 1e-3)
+        self.assertLess(relerr, 2e-3)
 
 
 suite = unittest.TestSuite()

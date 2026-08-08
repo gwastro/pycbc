@@ -68,7 +68,7 @@ class RefineSampler(DummySampler):
         The target entropy between iterative kdes
     dlogz: float
         The target evidence difference between iterative kde updates
-    kde: kde
+    kde: scipy.stats.gaussian_kde
         The inital kde to use.
     """
 

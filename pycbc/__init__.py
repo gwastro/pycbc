@@ -141,6 +141,11 @@ def init_logging(verbose=False, default_level=0, to_file=None,
     # See https://docs.python.org/3/library/logging.html#levels
     # for log level definitions
     logger = logging.getLogger()
+
+    # This resets duplicate loggers in preference of ours.
+    # Otherwise, you may see duplicate messages
+    logger.handlers.clear()
+
     verbose_int = default_level if verbose is None \
         else int(verbose) + default_level
     logger.setLevel(logging.WARNING - verbose_int * 10)  # Initial setting
@@ -181,6 +186,11 @@ VARARGS_DELIM = '+'
 # Check for optional CUDA support of the PyCBC Package
 try:
     #check if pycuda is installed
+    import pycuda
+    # If running documentation the import doesn't fail, but it's only a mock
+    # import, so detect that
+    if type(pycuda).__name__ in ('MagicMock', '_MockModule'):
+        raise ImportError
     import pycuda.driver as _pycudadrv
     #check how many CUDA device is installed
     try:

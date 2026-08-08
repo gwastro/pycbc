@@ -1,17 +1,15 @@
 from pycbc.frame import read_frame
 from pycbc.filter import highpass_fir, lowpass_fir
+from pycbc.io import get_file
 from pycbc.psd import welch, interpolate
 from pycbc.types import TimeSeries
-try:
-    from urllib.request import urlretrieve
-except ImportError:  # python < 3
-    from urllib import urlretrieve
 
 # Read data and remove low frequency content
 fname = 'H-H1_LOSC_4_V2-1126259446-32.gwf'
 url = "https://www.gwosc.org/GW150914data/" + fname
-urlretrieve(url, filename=fname)
-h1 = highpass_fir(read_frame(fname, 'H1:LOSC-STRAIN'), 15.0, 8)
+local_fname = get_file(url, cache=True)
+h1 = read_frame(local_fname, 'H1:LOSC-STRAIN')
+h1 = highpass_fir(h1, 15, 8)
 
 # Calculate the noise spectrum and whiten
 psd = interpolate(welch(h1), 1.0 / 32)

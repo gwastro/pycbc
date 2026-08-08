@@ -15,7 +15,7 @@
 
 
 """
-This modules provides classes and functions for using the emcee_pt sampler
+This module provides classes and functions for using the ptemcee sampler
 packages for parameter estimation.
 """
 
@@ -34,6 +34,63 @@ from .base_multitemper import (read_betas_from_hdf,
 from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from pycbc.inference.io import PTEmceeFile
 from .. import models
+
+
+# numpy.trapz was renamed to numpy.trapezoid in numpy 2.0 (and removed as
+# numpy.trapz in later 2.x releases). Pick whichever is available so that the
+# thermodynamic integration below works across numpy versions.
+try:
+    from numpy import trapezoid as _trapezoid
+except ImportError:  # numpy < 2.0
+    from numpy import trapz as _trapezoid
+
+
+def _thermodynamic_integration_log_evidence(betas, logls):
+    """Thermodynamic integration estimate of the evidence.
+
+    This reproduces ``ptemcee.util.thermodynamic_integration_log_evidence``,
+    but uses a numpy-version-safe trapezoidal integration (``ptemcee`` still
+    calls the ``numpy.trapz`` alias, which was removed in numpy 2.x).
+
+    Parameters
+    ----------
+    betas : array
+        The inverse temperatures to use for the quadrature.
+    logls : array
+        The mean log-likelihoods corresponding to ``betas``.
+
+    Returns
+    -------
+    logZ : float
+        Estimate of the log-evidence.
+    dlogZ : float
+        The error associated with the finite number of temperatures at which
+        the posterior has been sampled.
+    """
+    if len(betas) != len(logls):
+        raise ValueError("Need the same number of log(L) values as "
+                         "temperatures.")
+
+    order = numpy.argsort(betas)[::-1]
+    betas = betas[order]
+    logls = logls[order]
+
+    betas0 = numpy.copy(betas)
+    if betas[-1] != 0:
+        betas = numpy.concatenate((betas0, [0]))
+        betas2 = numpy.concatenate((betas0[::2], [0]))
+
+        # Duplicate mean log-likelihood of hottest chain as a best guess for
+        # beta = 0.
+        logls2 = numpy.concatenate((logls[::2], [logls[-1]]))
+        logls = numpy.concatenate((logls, [logls[-1]]))
+    else:
+        betas2 = numpy.concatenate((betas0[:-1:2], [0]))
+        logls2 = numpy.concatenate((logls[:-1:2], [logls[-1]]))
+
+    logZ = -_trapezoid(logls, betas)
+    logZ2 = -_trapezoid(logls2, betas2)
+    return logZ, numpy.abs(logZ - logZ2)
 
 
 class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
@@ -345,7 +402,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
                     getiters = numpy.where(ii == unique_idx)[0]
                     mean_logls.append(loglsti[:, getiters].mean())
                     unique_betas.append(ubti[ii])
-        return ptemcee.util.thermodynamic_integration_log_evidence(
+        return _thermodynamic_integration_log_evidence(
             numpy.array(unique_betas), numpy.array(mean_logls))
 
     @staticmethod
@@ -479,7 +536,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
         Returns
         -------
-        EmceePTSampler :
+        PTEmceeSampler :
             The sampler instance.
         """
         section = "sampler"

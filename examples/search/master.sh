@@ -8,4 +8,5 @@ bash -e gen.sh
 
 cp *.gwf output
 cd output
+./start
 python ../check_job.py
