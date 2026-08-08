@@ -48,6 +48,13 @@ configurations which can analyze this simple problem.
 .. literalinclude:: ../../../examples/inference/samplers/nautilus_stub.ini
    :language: ini
    
+==================================================================
+`i-nessai <https://nessai.readthedocs.io/>`_ (importance nested)
+==================================================================
+   
+.. literalinclude:: ../../../examples/inference/samplers/inessai_stub.ini
+   :language: ini
+   
 ============================================================
 `Ultranest <https://johannesbuchner.github.io/UltraNest/>`_
 ============================================================
