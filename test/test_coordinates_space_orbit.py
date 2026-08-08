@@ -245,7 +245,7 @@ class TestConstellationFrame(unittest.TestCase):
             expected = space.t_lisa_from_ssb(t_ssb, lam, beta, T0)
             derived = space_orbit.t_detector_from_ssb(
                 t_ssb, k_ssb, self.orbit)
-            self.assertAlmostEqual(derived, expected, places=3,
+            self.assertLess(abs(derived - expected), 1e-10,
                 msg=f't_detector_from_ssb does not match t_lisa_from_ssb '
                     f'at t_ssb={t_ssb}')
 
@@ -257,7 +257,7 @@ class TestConstellationFrame(unittest.TestCase):
             expected = space.t_ssb_from_t_lisa(t_lisa, lam, beta, T0)
             derived = space_orbit.t_ssb_from_t_detector(
                 t_lisa, k_ssb, self.orbit)
-            self.assertAlmostEqual(derived, expected, places=3,
+            self.assertLess(abs(derived - expected), 1e-10,
                 msg=f't_ssb_from_t_detector does not match '
                     f't_ssb_from_t_lisa at t_lisa={t_lisa}')
 
@@ -466,7 +466,7 @@ class TestLisaOrbit(unittest.TestCase):
             t_det = space_orbit.t_detector_from_ssb(t_ssb, k_ssb, self.orbit)
             t_ssb_roundtrip = space_orbit.t_ssb_from_t_detector(
                 t_det, k_ssb, self.orbit)
-            self.assertAlmostEqual(t_ssb_roundtrip, t_ssb, places=3)
+            self.assertLess(abs(t_ssb_roundtrip - t_ssb), 1e-10)
 
 
 class TestTaijiOrbit(unittest.TestCase):
@@ -536,7 +536,7 @@ class TestTaijiOrbit(unittest.TestCase):
             t_det = space_orbit.t_detector_from_ssb(t_ssb, k_ssb, self.orbit)
             t_ssb_roundtrip = space_orbit.t_ssb_from_t_detector(
                 t_det, k_ssb, self.orbit)
-            self.assertAlmostEqual(t_ssb_roundtrip, t_ssb, places=3)
+            self.assertLess(abs(t_ssb_roundtrip - t_ssb), 1e-10)
 
 
 class TestTianQinOrbit(unittest.TestCase):
@@ -614,7 +614,7 @@ class TestTianQinOrbit(unittest.TestCase):
             t_det = space_orbit.t_detector_from_ssb(t_ssb, k_ssb, self.orbit)
             t_ssb_roundtrip = space_orbit.t_ssb_from_t_detector(
                 t_det, k_ssb, self.orbit)
-            self.assertAlmostEqual(t_ssb_roundtrip, t_ssb, places=3)
+            self.assertLess(abs(t_ssb_roundtrip - t_ssb), 1e-10)
 
 
 class TestProductionAnalyticOrbits(unittest.TestCase):
@@ -820,7 +820,7 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
                 t_ssb, lam, beta, pol, orbit=orbit)
             t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
                 t_det, lam_det, beta_det, pol_det, orbit=orbit)
-            self.assertAlmostEqual(t_rt, t_ssb, places=3)
+            self.assertLess(abs(t_rt - t_ssb), 1e-10)
             self.assertAlmostEqual(lam_rt, lam, places=6)
             self.assertAlmostEqual(beta_rt, beta, places=6)
             self.assertAlmostEqual(pol_rt, pol, places=6)
@@ -936,7 +936,7 @@ class TestKeplerianOrbits(unittest.TestCase):
                 t_ssb, lam, beta, pol, orbit=orbit)
             t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
                 t_det, lam_det, beta_det, pol_det, orbit=orbit)
-            self.assertAlmostEqual(t_rt, t_ssb, places=3)
+            self.assertLess(abs(t_rt - t_ssb), 1e-10)
             self.assertAlmostEqual(lam_rt, lam, places=6)
             self.assertAlmostEqual(beta_rt, beta, places=6)
             self.assertAlmostEqual(pol_rt, pol, places=6)
@@ -1048,7 +1048,8 @@ class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
             default = space.ssb_to_lisa(t_ssb, lam, beta, pol, t0=T0)
             via_orbit = space.ssb_to_lisa(
                 t_ssb, lam, beta, pol, t0=T0, orbit=self.lisa_orbit)
-            for d, o in zip(default, via_orbit):
+            self.assertLess(abs(default[0] - via_orbit[0]), 1e-10)
+            for d, o in zip(default[1:], via_orbit[1:]):
                 self.assertAlmostEqual(d, o, places=3)
 
     def test_ssb_to_lisa_round_trip_with_taiji_and_tianqin(self):
@@ -1063,7 +1064,7 @@ class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
                     t_ssb, lam, beta, pol, orbit=orbit)
                 t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
                     t_det, lam_det, beta_det, pol_det, orbit=orbit)
-                self.assertAlmostEqual(t_rt, t_ssb, places=3)
+                self.assertLess(abs(t_rt - t_ssb), 1e-10)
                 self.assertAlmostEqual(lam_rt, lam, places=6)
                 self.assertAlmostEqual(beta_rt, beta, places=6)
                 self.assertAlmostEqual(pol_rt, pol, places=6)
@@ -1084,7 +1085,8 @@ class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
                 lisa_rt = space.geo_to_lisa(
                     t_geo, lam_geo, beta_geo, pol_geo, orbit=orbit,
                     use_astropy=False)
-                for a, b in zip(lisa_params, lisa_rt):
+                self.assertLess(abs(lisa_params[0] - lisa_rt[0]), 1e-10)
+                for a, b in zip(lisa_params[1:], lisa_rt[1:]):
                     self.assertAlmostEqual(a, b, places=3)
 
 
@@ -1119,7 +1121,7 @@ class TestTransformsAcceptOrbitFile(unittest.TestCase):
             'eclipticlatitude': 0.2, 'polarization': 0.5})
         expected = space.ssb_to_lisa(
             1.5e7, 1.0, 0.2, 0.5, orbit=self.numeric_orbit)
-        self.assertAlmostEqual(out['tc'], expected[0], places=3)
+        self.assertLess(abs(out['tc'] - expected[0]), 1e-10)
         self.assertAlmostEqual(
             out['eclipticlongitude'], expected[1], places=6)
 
@@ -1131,7 +1133,7 @@ class TestTransformsAcceptOrbitFile(unittest.TestCase):
         expected = space.lisa_to_geo(
             1.5e7, 1.0, 0.2, 0.5, orbit=self.numeric_orbit,
             use_astropy=True)
-        self.assertAlmostEqual(out['tc'], expected[0], places=3)
+        self.assertLess(abs(out['tc'] - expected[0]), 1e-10)
 
     def test_default_orbit_file_none_matches_hardcoded_lisa(self):
         """With no orbit-file, behavior must be unchanged from before this
@@ -1173,7 +1175,7 @@ orbit-file = {self.orbit_file}
             'eclipticlatitude': 0.2, 'polarization': 0.5})
         expected = space.ssb_to_lisa(
             1.5e7, 1.0, 0.2, 0.5, orbit=self.numeric_orbit)
-        self.assertAlmostEqual(out['tc_lisa'], expected[0], places=3)
+        self.assertLess(abs(out['tc_lisa'] - expected[0]), 1e-10)
 
 
 class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
@@ -1542,7 +1544,7 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
         expected = space.ssb_to_lisa(
             1.5e7, 1.0, 0.2, 0.5,
             orbit=space_orbit.NumericOrbits.from_file(path))
-        self.assertLess(abs(out['tc'] - expected[0]), 1e-3)
+        self.assertLess(abs(out['tc'] - expected[0]), 1e-10)
 
     def test_from_lisaorbits_file_matches_native_data(self):
         """`from_lisaorbits_file` reads the file format produced by
@@ -1796,7 +1798,7 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
         self.assertTrue(numpy.isfinite(t_det))
         t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
             t_det, lam_det, beta_det, pol_det, orbit=esa_orbit)
-        self.assertAlmostEqual(t_rt, t_ssb, places=3)
+        self.assertLess(abs(t_rt - t_ssb), 1e-10)
         self.assertAlmostEqual(lam_rt, lam, places=6)
         self.assertAlmostEqual(beta_rt, beta, places=6)
         self.assertAlmostEqual(pol_rt, pol, places=6)
