@@ -10,13 +10,16 @@
 This module provides utilities for simulating the GW response of space-based
 observatories.
 """
+import logging
 from abc import ABC, abstractmethod
+
+import numpy
+from astropy import constants
+from numpy import cos, sin
+
 from pycbc.coordinates.space import TIME_OFFSET_20_DEGREES
 from pycbc.types import TimeSeries
-import numpy
-from numpy import cos, sin
-from astropy import constants
-import logging
+
 
 def get_available_space_detectors():
     """List the available space detectors"""
@@ -185,6 +188,34 @@ _space_detectors = {'LISA': {'armlength': 2.5e9,
                              'aliases': ['LISA_A', 'LISA_E', 'LISA_T',
                                          'LISA_X', 'LISA_Y', 'LISA_Z'],
                             },
+                    # Taiji and TianQin are registered so they are
+                    # discoverable via `get_available_space_detectors`, but
+                    # do not yet have a working response/TDI backend -- see
+                    # `_Generic_detector` below. Armlengths are nominal
+                    # mission design values; see project docs for details.
+                    'Taiji': {'armlength': 3.0e9,
+                             'aliases': ['Taiji_A', 'Taiji_E', 'Taiji_T',
+                                         'Taiji_X', 'Taiji_Y', 'Taiji_Z'],
+                            },
+                    # TianQin's theoretical design armlength (not the
+                    # 1.7e5 km engineering rounding also seen in the
+                    # literature), matching space_orbit.TianQinAnalyticOrbit
+                    # and pycbc.psd.analytical_space's TianQin PSD functions.
+                    'TianQin': {'armlength': numpy.sqrt(3) * 1e8,
+                             'aliases': ['TianQin_A', 'TianQin_E',
+                                         'TianQin_T', 'TianQin_X',
+                                         'TianQin_Y', 'TianQin_Z'],
+                            },
+                    # LGWA (Lunar Gravitational Wave Antenna) is a single
+                    # lunar-surface instrument, not a multi-spacecraft
+                    # constellation like the three above -- 'armlength' is
+                    # not a meaningful concept for it and is left as None.
+                    # Registered here purely for discovery via
+                    # `get_available_space_detectors`; see
+                    # `_Generic_detector` below and
+                    # `pycbc.coordinates.moon` for the coordinate/arrival-
+                    # time machinery this response will eventually build on.
+                    'LGWA': {'armlength': None, 'aliases': []},
                    }
 
 class AbsSpaceDet(ABC):
@@ -901,9 +932,49 @@ class _FLR_detector(AbsSpaceDet):
         return tdi_dict
 
 
+class _Generic_detector(AbsSpaceDet):
+    """
+    Placeholder backend for space-borne detectors that do not yet have a
+    native single-link response / TDI implementation in PyCBC (currently
+    Taiji and TianQin). This exists so that the detector can be named and
+    constructed (e.g. to exercise the orbit/coordinate machinery in
+    `pycbc.coordinates.space_orbit`), while making it explicit that
+    `project_wave` is not yet implemented, rather than silently reusing the
+    LISA-specific LDC/FLR backends.
+
+    Parameters
+    ----------
+    detector_name : str
+        The name of the detector. Accepts any output from
+        `get_available_space_detectors`.
+
+    reference_time : float (optional)
+        The reference time in seconds of the signal in the SSB frame. This is
+        defined such that the detector mission start time corresponds to 0.
+        Default None.
+    """
+    def __init__(self, detector_name, reference_time=None, **kwargs):
+        super().__init__(detector_name, reference_time, **kwargs)
+
+    @property
+    def sky_coords(self):
+        return 'eclipticlongitude', 'eclipticlatitude'
+
+    def project_wave(self, hp, hc, lamb, beta, *args, **kwargs):
+        raise NotImplementedError(
+            f'Native single-link response and TDI generation for '
+            f'{self.det} are not yet implemented in PyCBC. This backend '
+            'currently only provides discovery/registration of the '
+            'detector; see `pycbc.coordinates.space_orbit` for the '
+            'orbit/coordinate machinery this response will build on.')
+
+
 _backends = {'LISA': {'LDC': _LDC_detector,
                       'FLR': _FLR_detector,
                      },
+             'Taiji': {'Generic': _Generic_detector},
+             'TianQin': {'Generic': _Generic_detector},
+             'LGWA': {'Generic': _Generic_detector},
             }
 
 class SpaceDetector(AbsSpaceDet):
