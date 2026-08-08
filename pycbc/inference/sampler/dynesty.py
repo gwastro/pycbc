@@ -40,9 +40,8 @@ from .base_mcmc import get_optional_arg_from_config
 from .base_cube import setup_calls
 
 try:
-    # dynesty >= 3 dispatches sampling through InternalSampler classes
-    # instead of the _SAMPLING dict of functions used by older versions,
-    # and dropped the sampler-level ``kwargs`` dict those functions read.
+    # dynesty >= 3 replaced the _SAMPLING dict of sampling functions with
+    # InternalSampler classes, and dropped the sampler's ``kwargs`` dict
     from dynesty.internal_samplers import RWalkSampler, SamplerReturn
     NEW_SAMPLER_API = True
 except ImportError:
@@ -51,20 +50,18 @@ except ImportError:
 
 
 def filter_run_kwds(sampler, kwds):
-    """Drop ``run_nested`` options the installed dynesty doesn't accept.
+    """Drop, in place, ``run_nested`` options this dynesty doesn't accept.
 
-    Which options ``run_nested`` takes varies both by dynesty version
-    (``n_effective`` was removed from the static sampler in dynesty 3) and
-    between the static and dynamic samplers, so ask rather than hard-code.
+    These differ by dynesty version (``n_effective`` went away in 3.0) and
+    between the static and dynamic samplers, so ask instead of hard-coding.
     """
     supported = inspect.signature(sampler.run_nested).parameters
     if any(p.kind == p.VAR_KEYWORD for p in supported.values()):
-        return kwds
+        return
     for karg in set(kwds) - set(supported):
         logging.warning("dynesty's run_nested does not accept '%s'; "
                         "ignoring it", karg)
         del kwds[karg]
-    return kwds
 
 
 #
@@ -180,12 +177,10 @@ class DynestySampler(BaseSampler):
             self.run_with_checkpoint = False
             logging.info("Checkpointing not currently supported with"
                          "DYNAMIC nested sampler")
-            # the dynamic sampler names its initial-stage stopping criteria
-            # differently from the static one
-            for karg, dyn_karg in [('dlogz', 'dlogz_init'),
-                                   ('logl_max', 'logl_max_init')]:
+            # the dynamic sampler suffixes its baseline-run stopping criteria
+            for karg in ('dlogz', 'logl_max'):
                 if karg in self.run_kwds:
-                    self.run_kwds[dyn_karg] = self.run_kwds.pop(karg)
+                    self.run_kwds[karg + '_init'] = self.run_kwds.pop(karg)
         else:
             self._sampler = dynesty.NestedSampler(log_likelihood_call,
                                                   prior_call, self.ndim,
@@ -206,8 +201,7 @@ class DynestySampler(BaseSampler):
                           'evolve_point', 'use_pool', 'queue_size',
                           'use_pool_ptform', 'use_pool_logl',
                           'use_pool_evolve', 'use_pool_update',
-                          # dynesty >= 3 calls the pool's map 'mapper'
-                          'pool', 'M', 'mapper']
+                          'pool', 'M', 'mapper']  # mapper: dynesty >= 3
 
     def run(self):
         diff_niter = 1
@@ -260,15 +254,14 @@ class DynestySampler(BaseSampler):
             The maximum logl stopping condition.
         * ``n_effective = INT``:
             Target effective number of samples stopping condition. dynesty
-            removed this from the static sampler in 3.0; still available
-            for the dynamic sampler (``nlive < 0``).
+            dropped this from the static sampler in 3.0.
         * ``save_bounds = BOOL``:
-            Whether to keep past bounding distributions. False can greatly
-            reduce memory use on long runs.
+            Whether to keep past bounding distributions; False uses less
+            memory on long runs.
         * ``maxbatch = INT``, ``nlive_batch = INT``, ``use_stop = BOOL``:
-            Dynamic sampler only (``nlive < 0``): the maximum number of
-            batches after the baseline run, the number of live points per
-            batch, and whether to apply the stopping function each batch.
+            Dynamic sampler only (``nlive < 0``): number of batches after
+            the baseline run, live points per batch, and whether to apply
+            the stopping function each batch.
         * ``sample = STR``:
             The method to sample the space. Should be one of 'unif',
             'rwalk', 'rwalk2' (a modified version of rwalk), 'slice' or
@@ -277,10 +270,9 @@ class DynestySampler(BaseSampler):
             Used for some of the walk methods. Sets the minimum number of
             steps to take when evolving a point.
         * ``slices = INT``:
-            Used for the slice methods. Number of slice updates before
-            proposing a new point.
+            Slice methods only. Slice updates per proposed point.
         * ``facc = FLOAT``:
-            Target acceptance fraction for the walk methods.
+            Walk methods only. Target acceptance fraction.
         * ``maxmcmc = INT``:
             Used for some of the walk methods. Sets the maximum number of steps
             to take when evolving a point.
@@ -343,8 +335,7 @@ class DynestySampler(BaseSampler):
 
         no_save_state = cp.has_option(section, 'no-save-state')
 
-        # optional run_nested arguments for dynesty; any not supported by
-        # the installed dynesty are dropped by filter_run_kwds
+        # optional run_nested arguments for dynesty
         rargs = {'maxiter': int,
                  'dlogz': float,
                  'logl_max': float,
@@ -559,8 +550,7 @@ def sample_rwalk_mod(args):
     (u, loglstar, axes, scale,
      prior_transform, loglikelihood, rseed, kwargs) = args
 
-    # dynesty seeds every evolution separately; using the global numpy
-    # state instead makes forked pool workers walk in lockstep
+    # per-call seed; the global numpy state is shared by forked workers
     rstate = get_random_generator(rseed)
 
     # Bounds
@@ -655,8 +645,7 @@ def sample_rwalk_mod(args):
 
     # If the act is finite, pick randomly from within the chain
     if numpy.isfinite(act) and int(.5 * nact * act) < len(u_list):
-        low = int(.5 * nact * act)
-        idx = low + int(rstate.random() * (len(u_list) - low))
+        idx = rstate.integers(int(.5 * nact * act), len(u_list))
         u = u_list[idx]
         v = v_list[idx]
         logl = logl_list[idx]
@@ -683,10 +672,9 @@ if NEW_SAMPLER_API:
     class RWalkModSampler(RWalkSampler):
         """Exposes ``sample_rwalk_mod`` as a dynesty >= 3 internal sampler.
 
-        Subclasses dynesty's own random walk sampler so its proposal-scale
-        tuning and bound-update cadence still apply. ``maxmcmc``/``nact`` go
-        in ``sampler_kwargs`` since that is what dynesty forwards to each
-        ``sample`` call.
+        Subclassed from dynesty's own random walk sampler to keep its scale
+        tuning; ``maxmcmc``/``nact`` ride in ``sampler_kwargs``, which is
+        what dynesty forwards to each ``sample`` call.
         """
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
