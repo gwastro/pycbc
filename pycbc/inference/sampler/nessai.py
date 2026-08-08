@@ -69,7 +69,9 @@ class NessaiSampler(BaseSampler):
     @property
     def samples(self):
         """The raw nested samples including the corresponding weights"""
-        if self._sampler.ns.nested_samples:
+        # the importance nested sampler returns an array rather than a list,
+        # so this cannot be a plain truth test
+        if len(self._sampler.ns.nested_samples) > 0:
             ns = numpy.array(self._sampler.ns.nested_samples)
             samples = nessai.livepoint.live_points_to_dict(
                 ns,
@@ -364,12 +366,25 @@ class NessaiModel(nessai.model.Model):
         return getattr(self.model, self.loglikelihood_function)
 
     def from_unit_hypercube(self, x):
-        """Map from the unit-hypercube to the prior."""
-        # Needs to be implemented for importance nested sampler
-        # This method is already available in pycbc but the inverse is not
-        raise NotImplementedError
+        """Map from the unit-hypercube to the prior.
+
+        This is the only direction the importance nested sampler needs.
+        """
+        out = x.copy()
+        inv = self.model.prior_distribution.cdfinv(
+            **{p: x[p] for p in self.names})
+        for p in self.names:
+            out[p] = inv[p]
+        return out
 
     def to_unit_hypercube(self, x):
-        """Map to the unit-hypercube to the prior."""
-        # Needs to be implemented for importance nested sampler
-        raise NotImplementedError
+        """Map to the unit-hypercube from the prior.
+
+        Not supported: pycbc distributions provide the inverse CDF but not
+        the forward CDF needed here. Only nessai options that map the flow
+        to the unit hypercube require this, not the importance nested
+        sampler.
+        """
+        raise NotImplementedError(
+            "pycbc does not provide the forward CDF needed to map to the "
+            "unit hypercube")
