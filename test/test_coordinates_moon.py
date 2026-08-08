@@ -60,7 +60,7 @@ class TestMoonCoordinates(unittest.TestCase):
         t_moon, lon_m, lat_m, pol_m = moon.ssb_to_moon(t_ssb, lon, lat, pol)
         t_ssb_rt, lon_rt, lat_rt, pol_rt = moon.moon_to_ssb(
             t_moon, lon_m, lat_m, pol_m)
-        self.assertLess(numpy.max(numpy.abs(t_ssb_rt - t_ssb)), 1e-2)
+        self.assertLess(numpy.max(numpy.abs(t_ssb_rt - t_ssb)), 1e-10)
         self.assertLess(numpy.max(numpy.abs(lon_rt - lon)), 1e-8)
         self.assertLess(numpy.max(numpy.abs(lat_rt - lat)), 1e-8)
         self.assertLess(numpy.max(numpy.abs(pol_rt - pol)), 1e-8)
@@ -110,7 +110,7 @@ class TestMoonCoordinates(unittest.TestCase):
             t_moon, lon_m, lat_m, pol_m)
         t_moon_rt, lon_m_rt, lat_m_rt, pol_m_rt = moon.geo_to_moon(
             t_geo, lon_g, lat_g, pol_g)
-        self.assertLess(numpy.max(numpy.abs(t_moon_rt - t_moon)), 1e-2)
+        self.assertLess(numpy.max(numpy.abs(t_moon_rt - t_moon)), 1e-10)
         self.assertLess(numpy.max(numpy.abs(lon_m_rt - lon_m)), 1e-6)
         self.assertLess(numpy.max(numpy.abs(lat_m_rt - lat_m)), 1e-6)
         self.assertLess(numpy.max(numpy.abs(pol_m_rt - pol_m)), 1e-6)
@@ -122,7 +122,7 @@ class TestMoonCoordinates(unittest.TestCase):
             t_moon, lon_m, lat_m, pol_m)
         t_moon_rt, lon_m_rt, lat_m_rt, pol_m_rt = moon.lisa_to_moon(
             t_lisa, lon_l, lat_l, pol_l)
-        self.assertLess(numpy.max(numpy.abs(t_moon_rt - t_moon)), 1e-2)
+        self.assertLess(numpy.max(numpy.abs(t_moon_rt - t_moon)), 1e-10)
         self.assertLess(numpy.max(numpy.abs(lon_m_rt - lon_m)), 1e-6)
         self.assertLess(numpy.max(numpy.abs(lat_m_rt - lat_m)), 1e-6)
         self.assertLess(numpy.max(numpy.abs(pol_m_rt - pol_m)), 1e-6)
@@ -141,7 +141,7 @@ class TestMoonCoordinates(unittest.TestCase):
             t_moon, lon_m, lat_m, pol_m, orbit=orbit)
         t_moon_rt, lon_m_rt, lat_m_rt, pol_m_rt = moon.lisa_to_moon(
             t_taiji, lon_t, lat_t, pol_t, orbit=orbit)
-        self.assertAlmostEqual(t_moon_rt, t_moon, places=2)
+        self.assertLess(abs(t_moon_rt - t_moon), 1e-10)
         self.assertAlmostEqual(lon_m_rt, lon_m, places=6)
         self.assertAlmostEqual(lat_m_rt, lat_m, places=6)
         self.assertAlmostEqual(pol_m_rt, pol_m, places=6)
@@ -169,7 +169,7 @@ class TestMoonCoordinates(unittest.TestCase):
 
         t_m_rt, lon_m_rt, lat_m_rt, pol_m_rt = moon.geo_to_moon(
             t_g2, lon_g2, lat_g2, pol_g2, lal_convention=False)
-        self.assertLess(numpy.max(numpy.abs(t_m_rt - t_moon)), 1e-2)
+        self.assertLess(numpy.max(numpy.abs(t_m_rt - t_moon)), 1e-10)
         self.assertLess(numpy.max(numpy.abs(lon_m_rt - lon_m)), 1e-6)
         self.assertLess(numpy.max(numpy.abs(lat_m_rt - lat_m)), 1e-6)
         self.assertLess(numpy.max(numpy.abs(pol_m_rt - pol_m)), 1e-6)
@@ -238,7 +238,7 @@ class TestOptionalLunarskySite(unittest.TestCase):
         t_ssb_rt, lon_rt, lat_rt, pol_rt = moon.moon_to_ssb(
             t_moon, lon_m, lat_m, pol_m,
             longitude_site=lon_site, latitude_site=lat_site)
-        self.assertLess(numpy.max(numpy.abs(t_ssb_rt - t_ssb)), 1e-2)
+        self.assertLess(numpy.max(numpy.abs(t_ssb_rt - t_ssb)), 1e-10)
         self.assertLess(numpy.max(numpy.abs(lon_rt - lon)), 1e-6)
         self.assertLess(numpy.max(numpy.abs(lat_rt - lat)), 1e-6)
 
