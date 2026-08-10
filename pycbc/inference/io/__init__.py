@@ -39,6 +39,7 @@ from .dynesty import DynestyFile
 from .ultranest import UltranestFile
 from .snowline import SnowlineFile
 from .nessai import NessaiFile
+from .nautilus import NautilusFile
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
 
@@ -52,6 +53,7 @@ filetypes = {
     PosteriorFile.name: PosteriorFile,
     UltranestFile.name: UltranestFile,
     NessaiFile.name: NessaiFile,
+    NautilusFile.name: NautilusFile,
     SnowlineFile.name: SnowlineFile,
 }
 

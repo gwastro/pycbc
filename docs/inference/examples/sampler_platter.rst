@@ -41,6 +41,13 @@ configurations which can analyze this simple problem.
 .. literalinclude:: ../../../examples/inference/samplers/dynesty_stub.ini
    :language: ini
    
+==============================================================
+`Nautilus <https://nautilus-sampler.readthedocs.io/>`_
+==============================================================
+   
+.. literalinclude:: ../../../examples/inference/samplers/nautilus_stub.ini
+   :language: ini
+   
 ============================================================
 `Ultranest <https://johannesbuchner.github.io/UltraNest/>`_
 ============================================================
