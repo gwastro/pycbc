@@ -269,10 +269,13 @@ class TemplateBank(object):
     extra_args : {None, dict}
         Any extra keyword arguments that were provided on initialization.
     """
-    def __init__(self, filename, approximant=None, parameters=None,
+    def __init__(self, filename=None, approximant=None, parameters=None,
                  group_key=None, file_handler=None, **kwds):
+        if filename is None and file_handler is None:
+            raise ValueError("Must provide either filename or file_handler")
+
         self.has_compressed_waveforms = False
-        ext = os.path.basename(filename)
+        ext = os.path.basename(filename) if filename is not None else ''
 
         # --- XML Handling ---
         if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
@@ -293,7 +296,8 @@ class TemplateBank(object):
             self.table.dtype.names = names
 
         # --- HDF5 Handling ---
-        elif ext.endswith(('hdf', '.h5', '.hdf5')):
+        # file_handler is already an h5py object, so no extension to check
+        elif file_handler is not None or ext.endswith(('hdf', '.h5', '.hdf5')):
             self.indoc = None
 
             # 1. Resolve Root File Object
