@@ -45,4 +45,4 @@ This document provides essential context for AI agents assisting with developmen
 ## 4. Steering & Boundary Constraints (Hard Rules)
 
 -   **DO NOT MODIFY**: Avoid modifying low-level C extensions, CUDA kernels, or files under `pycbc/lib` unless explicitly instructed by the user. These are performance-critical and require domain expertise.
--   **VERIFY LOCALLY**: You MUST run and pass all relevant unit tests for the code you have changed *before* creating a Pull Request. Do not submit code that breaks existing tests.
+-   **VERIFY LOCALLY**: You MUST run and pass all relevant unit tests for the code you have changed *before* creating a Pull Request. Do not submit code that breaks existing tests. If a unit test is broken, confirm whether the test was broken before the code change. You may continue to create the Pull Request if the test breakage is nothing to do with the code changes you have made, but you should indicate so in the pull request.
