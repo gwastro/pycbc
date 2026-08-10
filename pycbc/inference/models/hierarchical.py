@@ -88,7 +88,8 @@ class HierarchicalModel(BaseModel):
         # initialize standard attributes
         super().__init__(variable_params, **kwargs)
         # store a map of model labels -> parameters for quick look up later
-        self.param_map = map_params(self.hvariable_params)
+        self.param_map = map_params(self.hvariable_params,
+                                    labels=self.submodels.keys())
         # add any parameters created by waveform transforms
         if self.waveform_transforms is not None:
             derived_params = set()
@@ -298,7 +299,7 @@ class HierarchicalModel(BaseModel):
         submodel_lbls = shlex.split(cp.get('model', 'submodels'))
         # sort parameters by model
         vparam_map = map_params(hpiter(cp.options('variable_params'),
-                                       submodel_lbls))
+                                       submodel_lbls), labels=submodel_lbls)
         sparam_map = map_params(hpiter(cp.options('static_params'),
                                        submodel_lbls))
 
@@ -309,7 +310,7 @@ class HierarchicalModel(BaseModel):
                 cp, 'waveform_transforms')
             wfoutputs = set.union(*[t.outputs
                                     for t in waveform_transforms])
-            wfparam_map = map_params(hpiter(wfoutputs, submodel_lbls))
+            wfparam_map = map_params(hpiter(wfoutputs, submodel_lbls), labels=submodel_lbls)
         else:
             wfparam_map = {lbl: [] for lbl in submodel_lbls}
         # initialize the models
@@ -503,20 +504,26 @@ def hpiter(params, possible_models):
     return map(lambda x: HierarchicalParam(x, possible_models), params)
 
 
-def map_params(params):
+def map_params(params, labels=None):
     """Creates a map of models -> parameters.
 
     Parameters
     ----------
     params : list of HierarchicalParam instances
         The list of hierarchical parameter names to parse.
+    labels : iterable, optional
+        Model labels to guarantee a (possibly empty) entry for, even if no
+        parameter in `params` belongs to them. Without this, a label with
+        no owned parameters simply has no key, and callers that later index
+        the map directly with that label (rather than using `.get`) will
+        get a `KeyError`.
 
     Returns
     -------
     dict :
         Dictionary of model labels -> associated parameters.
     """
-    param_map = {}
+    param_map = {lbl: set() for lbl in labels} if labels is not None else {}
     for p in params:
         for lbl in p.models:
             try:
@@ -835,7 +842,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         submodel_lbls = kwargs['primary_lbl'] + kwargs['others_lbls']
         # sort parameters by model
         vparam_map = map_params(hpiter(cp.options('variable_params'),
-                                       submodel_lbls))
+                                       submodel_lbls), labels=submodel_lbls)
         sparam_map = map_params(hpiter(cp.options('static_params'),
                                        submodel_lbls))
 
@@ -854,7 +861,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 cp, 'waveform_transforms')
             wfoutputs = set.union(*[t.outputs
                                     for t in waveform_transforms])
-            wfparam_map = map_params(hpiter(wfoutputs, submodel_lbls))
+            wfparam_map = map_params(hpiter(wfoutputs, submodel_lbls), labels=submodel_lbls)
         else:
             wfparam_map = {lbl: [] for lbl in submodel_lbls}
         # initialize the models
