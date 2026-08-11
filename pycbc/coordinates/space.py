@@ -67,14 +67,6 @@ logger = logging.getLogger('pycbc.coordinates.space')
 # the waveform plugin and PE config file. In the unit of 's'.
 TIME_OFFSET_20_DEGREES = 7365189.431698299
 
-# Earth's mean obliquity of the ecliptic, the default for
-# rotation_matrix_ssb_to_geo below. Named here instead of calling
-# np.deg2rad() directly in that function's signature (ruff B008): harmless
-# since the result is an immutable scalar, but a function call in a default
-# is evaluated once at module-load time either way, so a named constant is
-# clearer about that.
-_OBLIQUITY_OF_ECLIPTIC = np.deg2rad(23.439281)
-
 # "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" remain specific to
 # LISA's analytic circular orbit; they are the default (`orbit=None`) code
 # path used by the functions below. For any other constellation orbit, pass
@@ -134,7 +126,7 @@ def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):
         The angular displacement of LISA in the SSB frame.
         In the unit of 'radian'.
     """
-    OMEGA_0 = 1.99098659277e-7
+    OMEGA_0 = 1.99098659277e-7  # 2*pi / sidereal year [rad/s]
     R_ORBIT = au.value
     alpha = np.mod(OMEGA_0 * (t_lisa + t0), 2*np.pi)
     p = np.array([[R_ORBIT * np.cos(alpha)],
@@ -570,20 +562,33 @@ def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
     return params_ssb
 
 
-def rotation_matrix_ssb_to_geo(epsilon=_OBLIQUITY_OF_ECLIPTIC):
+def rotation_matrix_ssb_to_geo(epsilon=None):
     """ The rotation matrix (of frame basis) from SSB frame to
     geocentric frame.
 
     Parameters
     ----------
-    epsilon : float
+    epsilon : float or None, optional
         The Earth's axial tilt (obliquity), in the unit of 'radian'.
+        Default None, which computes the obliquity directly from astropy
+        (via the same cached ICRS <-> ecliptic rotation
+        `pycbc.coordinates.space_orbit._icrs_to_ecliptic_rotation_matrix`
+        uses) instead of a hard-coded constant; numerically equivalent to
+        the IAU obliquity value used there to ~1e-7 rad. Pass an explicit
+        value to use a simple analytic rotation by that angle instead
+        (e.g. for a non-standard or historical obliquity).
 
     Returns
     -------
     r : numpy.array
         A 3x3 rotation matrix from SSB frame to geocentric frame.
     """
+    if epsilon is None:
+        # Imported lazily to avoid a circular import (space_orbit imports
+        # from this module too).
+        from pycbc.coordinates.space_orbit import _icrs_to_ecliptic_rotation_matrix
+        return _icrs_to_ecliptic_rotation_matrix()
+
     r = Rotation.from_rotvec([
         [-epsilon, 0, 0]
     ]).as_matrix()
