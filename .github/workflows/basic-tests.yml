@@ -41,38 +41,12 @@ jobs:
       run: |
         pixi add python="${{ matrix.python-version }}.*"
 
-    - name: Cache LAL auxiliary data files
-      id: cache-lal-aux-data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: lal-aux-data
-        path: ~/lal_aux_data
+    - name: Populate caches (LAL aux + example GW data)
+      id: populate
+      uses: ./.github/actions/populate-caches
 
-    - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
-      name: Download LAL auxiliary data files
-      run: |
-        mkdir ~/lal_aux_data
-        pushd ~/lal_aux_data
-        curl --show-error --silent \
-          --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
-          --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
-        popd
-
-    - name: Cache example GW data
-      id: cache-example-gw-data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: example-gw-data
-        path: |
-          docs/_include/*.gwf
-          examples/inference/lisa_smbhb_ldc/*_psd.txt
-          examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
-          examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
-          examples/inference/margtime/*.gwf
-          examples/inference/multisignal/*.gwf
-          examples/inference/relative/*.gwf
-          examples/inference/relmarg/*.gwf
-          examples/inference/single/*.gwf
+    - name: Expose LAL_DATA_PATH to subsequent steps
+      run: echo "LAL_DATA_PATH=${{ steps.populate.outputs.lal_data_path }}" >> $GITHUB_ENV
 
     - name: Cache downloaded test data
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
