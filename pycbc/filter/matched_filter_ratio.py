@@ -2,10 +2,14 @@ import numpy as np
 
 from pycbc.fft import FFT, IFFT
 from pycbc.filter.matchedfilter import matched_filter_core
-from pycbc.filter.matchedfilter_cpu import fast_multiply_analytic_cython, find_peaks_in_block_cython
-from pycbc.types import zeros, complex64
+from pycbc.filter.matchedfilter_cpu import (
+    fast_multiply_analytic_cython,
+    find_peaks_in_block_cython,
+)
+from pycbc.types import complex64, zeros
 
-class RatioMatchedFilterControl(object):
+
+class MatchedFilterRatioControl(object):
     """
     High-performance engine for hierarchical "Ratio/FIR" matched filtering.
     Uses pycbc's class-based FFT interface (pycbc.fft.FFT/IFFT) for all FFT
