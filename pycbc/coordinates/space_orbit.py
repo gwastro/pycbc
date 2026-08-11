@@ -662,7 +662,10 @@ def _real_earth_position_velocity(t):
     return _real_body_position_velocity(t, 'earth')
 
 
-EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s], ~1 sidereal year
+EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s]
+# = 2*pi / (sidereal year in seconds, 31558149.7635456); pinned as a
+# literal (not derived via `import lal`) per project convention of
+# avoiding a lal dependency in new code.
 
 # Default constructor arguments below are read from these module-level
 # constants rather than calling np.deg2rad() directly in the signature
@@ -1093,7 +1096,10 @@ class TaijiAnalyticOrbit:
         Constellation arm length [m]. Default 3.0e9 (design value).
     lead_angle : float, optional
         Angle by which the constellation leads the Earth-like guiding
-        center [rad]. Default ``deg2rad(20)`` (design value).
+        center [rad] -- added directly to orbital phase, so positive means
+        ahead of the guiding center (unlike LISA's `t0`, which is added to
+        *time* to produce a trailing offset; the two are not directly
+        comparable term-for-term). Default ``deg2rad(20)`` (design value).
     kappa0 : float or None, optional
         Reference ecliptic longitude of the Earth-like guiding center at
         `t=0` [rad], before `lead_angle` is added. Default None, which
@@ -1178,7 +1184,10 @@ class TaijiKeplerianOrbit:
         Guiding-center semi-major axis [m]. Default 1 AU.
     lead_angle : float, optional
         Angle by which the constellation leads the Earth-like guiding
-        center [rad]. Default ``deg2rad(20)`` (design value).
+        center [rad] -- added directly to orbital phase, so positive means
+        ahead of the guiding center (unlike LISA's `t0`, which is added to
+        *time* to produce a trailing offset; the two are not directly
+        comparable term-for-term). Default ``deg2rad(20)`` (design value).
     kappa0 : float or None, optional
         Reference ecliptic longitude of the Earth-like guiding center at
         `t=0` [rad], before `lead_angle` is added. Default None, which
