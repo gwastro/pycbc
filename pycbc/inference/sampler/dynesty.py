@@ -29,15 +29,17 @@ packages for parameter estimation.
 import inspect
 import logging
 import time
-import numpy
+
 import dynesty
-from dynesty.utils import unitcheck, apply_reflect, get_random_generator
+import numpy
+from dynesty.utils import apply_reflect, get_random_generator, unitcheck
+
+from pycbc.inference.io import DynestyFile, loadfile, validate_checkpoint_files
 from pycbc.pool import choose_pool
-from pycbc.inference.io import (DynestyFile, validate_checkpoint_files,
-                                loadfile)
-from .base import (BaseSampler, setup_output)
-from .base_mcmc import get_optional_arg_from_config
+
+from .base import BaseSampler, setup_output
 from .base_cube import setup_calls
+from .base_mcmc import get_optional_arg_from_config
 
 try:
     # dynesty >= 3 replaced the _SAMPLING dict of sampling functions with
