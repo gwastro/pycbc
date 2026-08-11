@@ -13,7 +13,7 @@ jobs:
       max-parallel: 4
       matrix:
         os: [macos-latest]
-        python-version:
+        python_version:
           - '3.11'
           - '3.12'
           - '3.13'
@@ -28,7 +28,7 @@ jobs:
 
     - name: Inject Python Version
       run: |
-        pixi add python="${{ matrix.python-version }}.*"
+        pixi add python="${{ matrix.python_version }}.*"
 
     - name: Run basic pycbc test suite
       run: |
