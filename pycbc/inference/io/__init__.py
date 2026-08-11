@@ -61,6 +61,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from .eryn import ErynFile
+    filetypes[ErynFile.name] = ErynFile
+except ImportError:
+    pass
+
 
 def get_file_type(filename):
     """ Returns I/O object to use for file.
