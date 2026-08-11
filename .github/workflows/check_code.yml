@@ -1,7 +1,13 @@
-name: Flake8 check
-on: [pull_request]
+name: Code Checks
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+
 jobs:
     flake8_unused_imports:
+        name: Flake8 Unused Imports
         runs-on: ubuntu-latest
         steps:
             - name: Check out repository
@@ -22,6 +28,7 @@ jobs:
                 flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
 
     qlty_check:
+        name: Qlty Check
         runs-on: ubuntu-latest
         permissions:
             contents: read
@@ -65,3 +72,36 @@ jobs:
               with:
                   sarif_file: qlty-results.sarif
 
+    coverage:
+        name: Coverage
+        runs-on: ubuntu-latest
+        # Run on push to master OR on pull_request when the PR has the 'coverage' label
+        if: >
+            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+            (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'coverage'))
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v3
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                python-version: 3.11
+            - name: Install test deps
+              run: |
+                  python -m pip install --upgrade pip setuptools
+                  pip install -r requirements.txt
+                  pip install -r companion.txt
+                  pip install .
+                  pip install coverage pytest
+            - name: Run tests with coverage
+              run: |
+                  python -m coverage run -m pytest test
+            - name: Generate HTML report
+              run: python -m coverage html -d htmlcov
+            - name: Print coverage report
+              run: python -m coverage report -m
+            - name: Upload HTML coverage report
+              uses: actions/upload-artifact@v4
+              with:
+                  name: htmlcov
+                  path: htmlcov
