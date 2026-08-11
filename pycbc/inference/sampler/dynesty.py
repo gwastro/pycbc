@@ -45,7 +45,8 @@ try:
     from dynesty.internal_samplers import RWalkSampler, SamplerReturn
     NEW_SAMPLER_API = True
 except ImportError:
-    import dynesty.dynesty, dynesty.nestedsamplers
+    import dynesty.dynesty
+    import dynesty.nestedsamplers
     NEW_SAMPLER_API = False
 
 
