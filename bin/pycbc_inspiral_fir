@@ -20,7 +20,7 @@ import pycbc.strain
 import pycbc.vetoes
 
 # --- Imports for Ratio Logic ---
-from pycbc.filter.matched_ratio import RatioMatchedFilterControl
+from pycbc.filter.matched_filter_ratio import MatchedFilterRatioControl
 from pycbc.types import Array, FrequencySeries, complex64, float32, zeros
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.bank import RatioFilterBank
@@ -320,7 +320,7 @@ def main():
         bank.template_thinning(inj_filter_rejector)
 
         logging.info("Initializing Ratio Filter Engine...")
-        engine = RatioMatchedFilterControl(
+        engine = MatchedFilterRatioControl(
             snr_threshold=args.snr_threshold,
             delta_f=delta_f,
             high_frequency_cutoff=args.high_frequency_cutoff,
