@@ -58,7 +58,7 @@ from utils import simple_exit
 seed = 8202
 numpy.random.seed(seed)
 
-OMEGA_0 = 1.99098659277e-7  # LISA/Taiji-like orbital angular frequency [rad/s]
+OMEGA_0 = space_orbit.EARTH_ORBIT_ANGULAR_FREQUENCY  # LISA/Taiji-like [rad/s]
 ARMLENGTH = 2.5e9  # matches pycbc.detector.space._space_detectors['LISA']
 SEMI_MAJOR_AXIS = au.value
 ECCENTRICITY = ARMLENGTH / (2 * SEMI_MAJOR_AXIS * numpy.sqrt(3))
@@ -1057,7 +1057,9 @@ class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
         original parameters, for constellations genuinely different from
         the LISA special case checked above.
         """
-        lam, beta, pol = 2.5, 0.1, 1.0
+        lam = numpy.random.uniform(0.0, 2 * numpy.pi)
+        beta = numpy.random.uniform(-numpy.pi / 2, numpy.pi / 2)
+        pol = numpy.random.uniform(0.0, 2 * numpy.pi)
         for orbit in (self.taiji_orbit, self.tianqin_orbit):
             for t_ssb in self.times[:5]:
                 t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(

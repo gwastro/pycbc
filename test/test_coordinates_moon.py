@@ -95,8 +95,8 @@ class TestMoonCoordinates(unittest.TestCase):
         this is a strong, real-data consistency check, not just a sanity
         bound.
         """
-        times = numpy.random.uniform(1.0e8, 6.0e8, size=10)
-        for t in times:
+        t_ssb, _, _, _ = _random_params(num=10)
+        for t in t_ssb:
             p_moon = moon.moon_site_position_ssb(t).flatten()
             p_earth = space.earth_position_ssb(t)[0].flatten()
             dist = numpy.linalg.norm(p_moon - p_earth)
