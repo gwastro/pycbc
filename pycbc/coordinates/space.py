@@ -381,33 +381,27 @@ def t_ssb_from_t_lisa(t_lisa, longitude_ssb, latitude_ssb,
 
 def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
                 t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
-    """ Converting the arrive time, the sky localization, and the polarization
-    from the SSB frame to the LISA frame.
+    """ Converts arrival time, sky localization, and polarization from the
+    SSB frame to the LISA frame.
 
     Parameters
     ----------
     t_ssb : float or numpy.array
-        The time when a GW signal arrives at the origin of SSB frame.
-        In the unit of 's'.
+        Arrival time at the SSB frame origin [s].
     longitude_ssb : float or numpy.array
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic longitude in the SSB frame [rad].
     latitude_ssb : float or numpy.array
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic latitude in the SSB frame [rad].
     polarization_ssb : float or numpy.array
-        The polarization angle of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees. Ignored if `orbit` is given.
+        Polarization angle in the SSB frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
     orbit : OrbitProvider, optional
         An object exposing `compute_position(t, sc)` (see
-        `pycbc.coordinates.space_orbit`), e.g. a `NumericOrbits` instance or
-        a real `lisaorbits.Orbits` instance, giving the true constellation
+        `pycbc.coordinates.space_orbit`), giving the true constellation
         orbit (LISA, Taiji, TianQin, numerical, ...) to use instead of the
-        analytic circular LISA orbit. Default None, which reproduces the
+        analytic circular LISA orbit. Default None reproduces the
         behavior of previous versions of this function exactly.
     sc : tuple, optional
         1-indexed spacecraft labels defining the constellation. Only used
@@ -416,16 +410,8 @@ def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
     Returns
     -------
     (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa) : tuple
-    t_lisa : float or numpy.array
-        The time when a GW signal arrives at the origin of LISA frame.
-        In the unit of 's'.
-    longitude_lisa : float or numpy.array
-        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
-    latitude_lisa : float or numpy.array
-        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
-    polarization_lisa : float or numpy.array
-        The polarization angle of a GW signal in LISA frame.
-        In the unit of 'radian'.
+        Arrival time [s], ecliptic longitude [rad], ecliptic latitude
+        [rad], and polarization angle [rad] in the LISA frame.
     """
     if not isinstance(t_ssb, np.ndarray):
         t_ssb = np.array([t_ssb])
@@ -474,32 +460,25 @@ def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
 
 def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
                 t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
-    """ Converting the arrive time, the sky localization, and the polarization
-    from the LISA frame to the SSB frame.
+    """ Converts arrival time, sky localization, and polarization from the
+    LISA frame to the SSB frame.
 
     Parameters
     ----------
     t_lisa : float or numpy.array
-        The time when a GW signal arrives at the origin of LISA frame.
-        In the unit of 's'.
+        Arrival time at the LISA frame origin [s].
     longitude_lisa : float or numpy.array
-        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
+        Longitude in the LISA frame [rad].
     latitude_lisa : float or numpy.array
-        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
+        Latitude in the LISA frame [rad].
     polarization_lisa : float or numpy.array
-        The polarization angle of a GW signal in LISA frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees. Ignored if `orbit` is given.
+        Polarization angle in the LISA frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
     orbit : OrbitProvider, optional
-        An object exposing `compute_position(t, sc)` (see
-        `pycbc.coordinates.space_orbit`), e.g. a `NumericOrbits` instance or
-        a real `lisaorbits.Orbits` instance, giving the true constellation
-        orbit (LISA, Taiji, TianQin, numerical, ...) to use instead of the
-        analytic circular LISA orbit. Default None, which reproduces the
-        behavior of previous versions of this function exactly.
+        See `ssb_to_lisa`. Default None reproduces the behavior of
+        previous versions of this function exactly.
     sc : tuple, optional
         1-indexed spacecraft labels defining the constellation. Only used
         if `orbit` is given. Default (1, 2, 3).
@@ -507,18 +486,8 @@ def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
     Returns
     -------
     (t_ssb, longitude_ssb, latitude_ssb, polarization_ssb) : tuple
-    t_ssb : float or numpy.array
-        The time when a GW signal arrives at the origin of SSB frame.
-        In the unit of 's'.
-    longitude_ssb : float or numpy.array
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    latitude_ssb : float or numpy.array
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    polarization_ssb : float or numpy.array
-        The polarization angle of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Arrival time [s], ecliptic longitude [rad], ecliptic latitude
+        [rad], and polarization angle [rad] in the SSB frame.
     """
     if not isinstance(t_lisa, np.ndarray):
         t_lisa = np.array([t_lisa])
@@ -937,33 +906,29 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
 def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
                 t0=TIME_OFFSET_20_DEGREES, use_astropy=True, orbit=None,
                 sc=(1, 2, 3)):
-    """ Converting the arrive time, the sky localization, and the polarization
-    from the LISA frame to the geocentric frame.
+    """ Converts arrival time, sky localization, and polarization from the
+    LISA frame to the geocentric frame.
 
     Parameters
     ----------
     t_lisa : float or numpy.array
-        The time when a GW signal arrives at the origin of LISA frame.
-        In the unit of 's'.
+        Arrival time at the LISA frame origin [s].
     longitude_lisa : float or numpy.array
-        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
+        Longitude in the LISA frame [rad].
     latitude_lisa : float or numpy.array
-        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
+        Latitude in the LISA frame [rad].
     polarization_lisa : float or numpy.array
-        The polarization angle of a GW signal in LISA frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees. Ignored if `orbit` is given.
-    use_astropy : bool
-        Using Astropy to calculate the sky localization or not.
-        Default is True.
+        Polarization angle in the LISA frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
+    use_astropy : bool, optional
+        Whether to use astropy for the sky-localization step. Default True.
     orbit : OrbitProvider, optional
-        See `ssb_to_lisa`. Default None, which reproduces the behavior of
-        previous versions of this function exactly. Only the LISA-side
-        (`lisa_to_ssb`) leg of this transform depends on the constellation
-        orbit; the geocentric frame itself is unaffected.
+        See `ssb_to_lisa`. Default None reproduces the behavior of
+        previous versions of this function exactly. Only the LISA<->SSB
+        leg of this transform depends on the constellation orbit; the
+        geocentric frame itself is unaffected.
     sc : tuple, optional
         1-indexed spacecraft labels defining the constellation. Only used
         if `orbit` is given. Default (1, 2, 3).
@@ -971,18 +936,8 @@ def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
     Returns
     -------
     (t_geo, longitude_geo, latitude_geo, polarization_geo) : tuple
-    t_geo : float or numpy.array
-        The time when a GW signal arrives at the origin of geocentric frame.
-        In the unit of 's'.
-    longitude_geo : float or numpy.array
-        The ecliptic longitude of a GW signal in geocentric frame.
-        In the unit of 'radian'.
-    latitude_geo : float or numpy.array
-        The ecliptic latitude of a GW signal in geocentric frame.
-        In the unit of 'radian'.
-    polarization_geo : float or numpy.array
-        The polarization angle of a GW signal in geocentric frame.
-        In the unit of 'radian'.
+        Arrival time [s], ecliptic longitude [rad], ecliptic latitude
+        [rad], and polarization angle [rad] in the geocentric frame.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = lisa_to_ssb(
         t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, t0,
@@ -996,35 +951,29 @@ def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
 def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
                 t0=TIME_OFFSET_20_DEGREES, use_astropy=True, orbit=None,
                 sc=(1, 2, 3)):
-    """ Converting the arrive time, the sky localization, and the polarization
-    from the geocentric frame to the LISA frame.
+    """ Converts arrival time, sky localization, and polarization from the
+    geocentric frame to the LISA frame.
 
     Parameters
     ----------
     t_geo : float or numpy.array
-        The time when a GW signal arrives at the origin of geocentric frame.
-        In the unit of 's'.
+        Arrival time at the geocentric frame origin [s].
     longitude_geo : float or numpy.array
-        The longitude of a GW signal in geocentric frame.
-        In the unit of 'radian'.
+        Longitude in the geocentric frame [rad].
     latitude_geo : float or numpy.array
-        The latitude of a GW signal in geocentric frame.
-        In the unit of 'radian'.
+        Latitude in the geocentric frame [rad].
     polarization_geo : float or numpy.array
-        The polarization angle of a GW signal in geocentric frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees. Ignored if `orbit` is given.
-    use_astropy : bool
-        Using Astropy to calculate the sky localization or not.
-        Default is True.
+        Polarization angle in the geocentric frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
+    use_astropy : bool, optional
+        Whether to use astropy for the sky-localization step. Default True.
     orbit : OrbitProvider, optional
-        See `ssb_to_lisa`. Default None, which reproduces the behavior of
-        previous versions of this function exactly. Only the LISA-side
-        (`ssb_to_lisa`) leg of this transform depends on the constellation
-        orbit; the geocentric frame itself is unaffected.
+        See `ssb_to_lisa`. Default None reproduces the behavior of
+        previous versions of this function exactly. Only the LISA<->SSB
+        leg of this transform depends on the constellation orbit; the
+        geocentric frame itself is unaffected.
     sc : tuple, optional
         1-indexed spacecraft labels defining the constellation. Only used
         if `orbit` is given. Default (1, 2, 3).
@@ -1032,16 +981,8 @@ def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
     Returns
     -------
     (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa) : tuple
-    t_lisa : float or numpy.array
-        The time when a GW signal arrives at the origin of LISA frame.
-        In the unit of 's'.
-    longitude_lisa : float or numpy.array
-        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
-    latitude_lisa : float or numpy.array
-        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
-    polarization_geo : float or numpy.array
-        The polarization angle of a GW signal in LISA frame.
-        In the unit of 'radian'.
+        Arrival time [s], longitude [rad], latitude [rad], and
+        polarization angle [rad] in the LISA frame.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = geo_to_ssb(
         t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy)
