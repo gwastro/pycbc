@@ -520,10 +520,12 @@ class ResultsArgumentParser(argparse.ArgumentParser):
             # add the rest of the parameters not used
             all_params = get_common_parameters(opts.input_file,
                                                collection=self.defaultparams)
-            # extract the used parameters from the parameters option
-            used_params = FieldArray.parse_parameters(opts.parameters,
-                                                      all_params)
-            add_params = set(all_params) - set(used_params)
+            # only exclude parameters that were explicitly requested as their
+            # own output column (i.e. given as a bare field name). Fields that
+            # merely appear as arguments to a function, e.g. 'mass1' and 'q' in
+            # 'mchirp_from_mass1_q(mass1, q)', are still added by '*'.
+            requested_params = set(opts.parameters) & set(all_params)
+            add_params = set(all_params) - requested_params
             # repopulate the name space with the additional parameters
             if add_params:
                 opts.parameters += list(add_params)
@@ -616,10 +618,11 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                  "if the input-file(s) contains 'srcmass1', "
                  "'srcmass2', and 'distance', and  "
                  "\"'primary_mass(srcmass1, srcmass2):mass1' '*'\", is given "
-                 "then 'mass1' and 'distance' will be loaded. Otherwise, "
-                 "without the '*', only 'mass1' would be loaded. "
-                 "Note that any parameter that is used in a function "
-                 "will not automatically be added. Tip: enclose "
+                 "then 'mass1', 'srcmass1', 'srcmass2', and 'distance' will "
+                 "be loaded. Otherwise, without the '*', only 'mass1' would "
+                 "be loaded. Only parameters given explicitly by name are "
+                 "excluded from the greedy load, so fields used as arguments "
+                 "to a function are still added by '*'. Tip: enclose "
                  "arguments in single quotes, or else special characters will "
                  "be interpreted as shell commands. For example, the "
                  "wildcard should be given as either '*' or \\*, otherwise "
