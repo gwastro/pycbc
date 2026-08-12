@@ -55,7 +55,6 @@ class TestMargAgainstBruteForce(unittest.TestCase):
     def setUpClass(cls):
         cls.seed = get_seed(cls.__name__)
         cls.data, cls.psds, cls.inj = make_data(cls.seed)
-        print("\n%s: PYCBC_VALIDATION_SEED=%d" % (cls.__name__, cls.seed))
         cls.flow = dict.fromkeys(cls.data, FLOW)
         cls.base = dict(
             mass1=cls.inj["mass1"],
