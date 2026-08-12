@@ -154,6 +154,32 @@ class TestDetector(unittest.TestCase):
                     self.assertAlmostEqual(converted_times[i], target_times[i], 
                                            places=6)
 
+    def test_array_matches_scalar(self):
+        """The vectorized antenna pattern and time delay must agree with
+        the scalar call element for element.
+
+        antenna_pattern and time_delay_from_earth_center now broadcast
+        their vector components into a float array rather than an object
+        array; this guards that against a per-element regression, by
+        checking an array query against the scalar call at each point,
+        including the frequency-dependent response used with an array of
+        times.
+        """
+        t = 1187008882.0
+        for d in self.d:
+            fp, fc = d.antenna_pattern(self.ra, self.dec, self.pol, t)
+            dt = d.time_delay_from_earth_center(self.ra, self.dec, t)
+            for i in (0, 137, len(self.ra) - 1):
+                fps, fcs = d.antenna_pattern(
+                    float(self.ra[i]), float(self.dec[i]),
+                    float(self.pol[i]), t)
+                self.assertEqual(fp[i], fps)
+                self.assertEqual(fc[i], fcs)
+                self.assertEqual(
+                    dt[i], d.time_delay_from_earth_center(
+                        float(self.ra[i]), float(self.dec[i]), t))
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDetector))
 
