@@ -48,15 +48,20 @@ TARGET_SNR = 25.0
 def get_seed(name):
     """The seed for this run, taken from the environment or made up.
 
-    Set PYCBC_VALIDATION_SEED to repeat a run. The value is meant to be
-    reported by whatever uses it, so that a failure can be repeated
-    without it having been set in the first place.
+    Prints the base seed and returns a per-fixture seed derived from it.
+    Set PYCBC_VALIDATION_SEED to the printed base to repeat a run: the
+    value printed is exactly the value to feed back, and different
+    fixtures still get different draws from the same base. The derived
+    seed used to be what was printed while the base was what the
+    environment expected, so feeding a printed seed back reproduced a
+    different run; that is why past failures looked unreproducible.
     """
     given = os.environ.get('PYCBC_VALIDATION_SEED')
-    if given:
-        # keep different fixtures from sharing one realization
-        return (int(given) + sum(map(ord, name))) % 2 ** 31
-    return random.SystemRandom().randrange(2 ** 31)
+    base = (int(given) if given is not None
+            else random.SystemRandom().randrange(2 ** 31))
+    print("\n%s: PYCBC_VALIDATION_SEED=%d" % (name, base))
+    # keep different fixtures from sharing one realization, reproducibly
+    return (base + sum(map(ord, name))) % 2 ** 31
 
 
 def draw_injection(seed):
