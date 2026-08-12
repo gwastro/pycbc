@@ -29,15 +29,12 @@ the square root of the number of points.
 A signal is injected into simulated noise so the integrand has a real
 peak; against pure noise the time and sky integrals are meaningless.
 
-One thing measured here is deliberately not asserted. The precision of
-the sky marginalization is not a property of the number of points alone:
-over randomly drawn signals the spread at a fixed count ranges from a few
-hundredths to tens in the log likelihood, raising the count from 256 to
-2048 has been seen to make it worse rather than better, and the two
-counts have been seen to disagree by three times their own scatter. So
-unlike the polarization marginalization, its accuracy cannot yet be
-chosen, and there is no true statement to make about it here beyond that
-it needs the times drawn with it.
+The sky marginalization is left to its own tests. Its accuracy is set by
+the number of points in the same way as the rest, but the quality of the
+points is set separately by the sample rate, which fixes how finely the
+sky is divided by arrival time, and by the number of points the sky map
+is built from. Measuring it against the number of points alone, with
+those two left coarse, says nothing.
 """
 
 import copy
