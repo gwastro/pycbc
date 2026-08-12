@@ -35,7 +35,7 @@ For each configured injection set, the workflow:
  #. Generates the injection set with ``lalapps_inspinj`` or
     ``pycbc_create_injections``.
  #. Splits the injection set into pieces with ``pycbc_split_inspinj`` or
-    ``pycbc_hdf5_splitbank``.
+    ``pycbc_hdf_splitinj``.
  #. Computes the fitting factor of every injection against every bank
     piece with ``pycbc_banksim``.
  #. Combines the per-bank-piece results for each injection with
