@@ -93,35 +93,31 @@ def rotation_matrix_ssb_to_moon():
 
 def moon_site_position_ssb(t_moon, longitude=None, latitude=None,
                            height=0.0):
-    """Calculating the position vector of a point on (or above) the Moon
-    in the SSB frame, at a given time.
+    """Position vector of a point on (or above) the Moon in the SSB frame,
+    at a given time.
 
-    With `longitude`/`latitude` left at their default of None, this gives
-    the Moon's barycenter position, using astropy's real solar-system
-    ephemeris (`pycbc.coordinates.space_orbit._real_body_position_velocity`)
-    -- no extra dependency beyond astropy. Passing an explicit selenodetic
-    `longitude`/`latitude` instead gives the precise position of that
-    specific surface site, including real lunar libration, via the
-    `lunarsky` package (not a pycbc dependency; only imported if a site is
-    requested).
+    Default `longitude`/`latitude` (None) gives the Moon's barycenter, via
+    astropy's real solar-system ephemeris -- no extra dependency. An
+    explicit selenodetic `longitude`/`latitude` instead gives the precise
+    position of that surface site, including real lunar libration, via
+    the optional `lunarsky` package (only imported if a site is given).
 
     Parameters
     ----------
     t_moon : float
-        The time at this position, in the unit of 's' (GPS time).
+        GPS time [s].
     longitude, latitude : float or None, optional
-        Selenodetic longitude/latitude of a surface site, in the unit of
-        'radian'. Default None (both must be None, or both given), which
-        gives the Moon's barycenter.
+        Selenodetic longitude/latitude of a surface site [rad]. Default
+        None (both must be None, or both given), which gives the Moon's
+        barycenter.
     height : float, optional
-        Height above the reference selenoid, in the unit of 'm'. Only
-        used if `longitude`/`latitude` are given. Default 0.0.
+        Height above the reference selenoid [m]. Only used if
+        `longitude`/`latitude` are given. Default 0.0.
 
     Returns
     -------
     p : numpy.array
-        The position vector in the SSB frame, shape (3, 1), in the unit
-        of 'm'.
+        Position vector in the SSB frame, shape (3, 1), in meters.
     """
     if longitude is None and latitude is None:
         from pycbc.coordinates.space_orbit import _real_body_position_velocity
@@ -161,20 +157,17 @@ def moon_site_position_ssb(t_moon, longitude=None, latitude=None,
 
 def t_moon_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
                     longitude_site=None, latitude_site=None):
-    """ Calculating the time when a GW signal arrives at a point on the
-    Moon, by using the time and sky localization in the SSB frame.
+    """ Arrival time at a point on the Moon, from arrival time and sky
+    localization in the SSB frame.
 
     Parameters
     ----------
     t_ssb : float
-        The time when a GW signal arrives at the origin of SSB frame.
-        In the unit of 's'.
+        Arrival time at the SSB frame origin [s].
     longitude_ssb : float
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic longitude in the SSB frame [rad].
     latitude_ssb : float
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic latitude in the SSB frame [rad].
     longitude_site, latitude_site : float or None, optional
         See `moon_site_position_ssb`. Default None (the Moon's
         barycenter).
@@ -182,7 +175,7 @@ def t_moon_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
     Returns
     -------
     t_moon : float
-        The time when a GW signal arrives at the given point on the Moon.
+        Arrival time at the given point on the Moon [s].
     """
     k = localization_to_propagation_vector(
             longitude_ssb, latitude_ssb, use_astropy=False)
@@ -198,21 +191,17 @@ def t_moon_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
 
 def t_ssb_from_t_moon(t_moon, longitude_ssb, latitude_ssb,
                       longitude_site=None, latitude_site=None):
-    """ Calculating the time when a GW signal arrives at the barycenter
-    of SSB, by using the time at a point on the Moon and sky localization
-    in the SSB frame.
+    """ Arrival time at the SSB frame origin, from arrival time at a point
+    on the Moon and sky localization in the SSB frame.
 
     Parameters
     ----------
     t_moon : float
-        The time when a GW signal arrives at the given point on the Moon.
-        In the unit of 's'.
+        Arrival time at the given point on the Moon [s].
     longitude_ssb : float
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic longitude in the SSB frame [rad].
     latitude_ssb : float
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic latitude in the SSB frame [rad].
     longitude_site, latitude_site : float or None, optional
         See `moon_site_position_ssb`. Default None (the Moon's
         barycenter).
@@ -220,7 +209,7 @@ def t_ssb_from_t_moon(t_moon, longitude_ssb, latitude_ssb,
     Returns
     -------
     t_ssb : float
-        The time when a GW signal arrives at the origin of SSB frame.
+        Arrival time at the SSB frame origin [s].
     """
     k = localization_to_propagation_vector(
             longitude_ssb, latitude_ssb, use_astropy=False)
@@ -237,8 +226,8 @@ def t_ssb_from_t_moon(t_moon, longitude_ssb, latitude_ssb,
 
 def ssb_to_moon(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
                 longitude_site=None, latitude_site=None):
-    """ Converting the arrive time, the sky localization, and the
-    polarization from the SSB frame to a lunar frame.
+    """ Converts arrival time, sky localization, and polarization from the
+    SSB frame to a lunar frame.
 
     Because `rotation_matrix_ssb_to_moon` is the identity (see module
     docstring), `longitude`/`latitude`/`polarization` come out numerically
@@ -247,17 +236,13 @@ def ssb_to_moon(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
     Parameters
     ----------
     t_ssb : float or numpy.array
-        The time when a GW signal arrives at the origin of SSB frame.
-        In the unit of 's'.
+        Arrival time at the SSB frame origin [s].
     longitude_ssb : float or numpy.array
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic longitude in the SSB frame [rad].
     latitude_ssb : float or numpy.array
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic latitude in the SSB frame [rad].
     polarization_ssb : float or numpy.array
-        The polarization angle of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Polarization angle in the SSB frame [rad].
     longitude_site, latitude_site : float or None, optional
         See `moon_site_position_ssb`. Default None (the Moon's
         barycenter).
@@ -265,18 +250,8 @@ def ssb_to_moon(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
     Returns
     -------
     (t_moon, longitude_moon, latitude_moon, polarization_moon) : tuple
-    t_moon : float or numpy.array
-        The time when a GW signal arrives at the given point on the Moon.
-        In the unit of 's'.
-    longitude_moon : float or numpy.array
-        The longitude of a GW signal in the lunar frame, in the unit of
-        'radian'.
-    latitude_moon : float or numpy.array
-        The latitude of a GW signal in the lunar frame, in the unit of
-        'radian'.
-    polarization_moon : float or numpy.array
-        The polarization angle of a GW signal in the lunar frame.
-        In the unit of 'radian'.
+        Arrival time [s], longitude [rad], latitude [rad], and
+        polarization angle [rad] in the lunar frame.
     """
     if not isinstance(t_ssb, np.ndarray):
         t_ssb = np.array([t_ssb])
@@ -324,24 +299,19 @@ def ssb_to_moon(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
 
 def moon_to_ssb(t_moon, longitude_moon, latitude_moon, polarization_moon,
                 longitude_site=None, latitude_site=None):
-    """ Converting the arrive time, the sky localization, and the
-    polarization from a lunar frame to the SSB frame. Inverse of
-    `ssb_to_moon`.
+    """ Converts arrival time, sky localization, and polarization from a
+    lunar frame to the SSB frame. Inverse of `ssb_to_moon`.
 
     Parameters
     ----------
     t_moon : float or numpy.array
-        The time when a GW signal arrives at the given point on the Moon.
-        In the unit of 's'.
+        Arrival time at the given point on the Moon [s].
     longitude_moon : float or numpy.array
-        The longitude of a GW signal in the lunar frame, in the unit of
-        'radian'.
+        Longitude in the lunar frame [rad].
     latitude_moon : float or numpy.array
-        The latitude of a GW signal in the lunar frame, in the unit of
-        'radian'.
+        Latitude in the lunar frame [rad].
     polarization_moon : float or numpy.array
-        The polarization angle of a GW signal in the lunar frame.
-        In the unit of 'radian'.
+        Polarization angle in the lunar frame [rad].
     longitude_site, latitude_site : float or None, optional
         See `moon_site_position_ssb`. Default None (the Moon's
         barycenter).
@@ -349,18 +319,8 @@ def moon_to_ssb(t_moon, longitude_moon, latitude_moon, polarization_moon,
     Returns
     -------
     (t_ssb, longitude_ssb, latitude_ssb, polarization_ssb) : tuple
-    t_ssb : float or numpy.array
-        The time when a GW signal arrives at the origin of SSB frame.
-        In the unit of 's'.
-    longitude_ssb : float or numpy.array
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    latitude_ssb : float or numpy.array
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    polarization_ssb : float or numpy.array
-        The polarization angle of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Arrival time [s], ecliptic longitude [rad], ecliptic latitude
+        [rad], and polarization angle [rad] in the SSB frame.
     """
     if not isinstance(t_moon, np.ndarray):
         t_moon = np.array([t_moon])
