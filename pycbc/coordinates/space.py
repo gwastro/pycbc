@@ -102,29 +102,23 @@ def rotation_matrix_ssb_to_lisa(alpha):
 
 
 def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):
-    """ Calculating the position vector and angular displacement of LISA
-    in the SSB frame, at a given time. This function assumes LISA's barycenter
-    is orbiting around a circular orbit within the ecliptic behind the Earth.
-    The period of it is one year.
+    """ LISA's position vector and angular displacement in the SSB frame at
+    a given time, assuming a circular orbit in the ecliptic, one year
+    period, trailing the Earth.
 
     Parameters
     ----------
     t_lisa : float
-        The time when a GW signal arrives at the origin of LISA frame,
-        or any other time you want.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees.
+        Any time [s]; not necessarily an actual GW arrival time.
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth).
 
     Returns
     -------
     (p, alpha) : tuple
-    p : numpy.array
-        The position vector of LISA in the SSB frame. In the unit of 'm'.
-    alpha : float
-        The angular displacement of LISA in the SSB frame.
-        In the unit of 'radian'.
+        LISA's position vector [m] and angular displacement [rad] in the
+        SSB frame.
     """
     OMEGA_0 = 1.99098659277e-7  # 2*pi / sidereal year [rad/s]
     R_ORBIT = au.value
@@ -282,30 +276,25 @@ def _rotation_matrix_at_detector_time(t_detector, t0, orbit, sc=(1, 2, 3)):
 
 def t_lisa_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
                     t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
-    """ Calculating the time when a GW signal arrives at the barycenter
-    of LISA, by using the time and sky localization in SSB frame.
+    """ Arrival time at LISA's barycenter, from arrival time and sky
+    localization in the SSB frame.
 
     Parameters
     ----------
     t_ssb : float
-        The time when a GW signal arrives at the origin of SSB frame.
-        In the unit of 's'.
+        Arrival time at the SSB frame origin [s].
     longitude_ssb : float
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic longitude in the SSB frame [rad].
     latitude_ssb : float
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees. Ignored if `orbit` is given.
+        Ecliptic latitude in the SSB frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
     orbit : OrbitProvider, optional
         An object exposing `compute_position(t, sc)` (see
-        `pycbc.coordinates.space_orbit`), e.g. a `NumericOrbits` instance or
-        a real `lisaorbits.Orbits` instance, giving the true constellation
+        `pycbc.coordinates.space_orbit`), giving the true constellation
         orbit (LISA, Taiji, TianQin, numerical, ...) to use instead of the
-        analytic circular LISA orbit. Default None, which reproduces the
+        analytic circular LISA orbit. Default None reproduces the
         behavior of previous versions of this function exactly.
     sc : tuple, optional
         1-indexed spacecraft labels defining the constellation. Only used
@@ -314,7 +303,7 @@ def t_lisa_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
     Returns
     -------
     t_lisa : float
-        The time when a GW signal arrives at the origin of LISA frame.
+        Arrival time at the LISA frame origin [s].
     """
     k = localization_to_propagation_vector(
             longitude_ssb, latitude_ssb, use_astropy=False)
@@ -333,27 +322,23 @@ def t_lisa_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
 
 def t_ssb_from_t_lisa(t_lisa, longitude_ssb, latitude_ssb,
                       t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
-    """ Calculating the time when a GW signal arrives at the barycenter
-    of SSB, by using the time in LISA frame and sky localization in SSB frame.
+    """ Arrival time at the SSB frame origin, from arrival time in the LISA
+    frame and sky localization in the SSB frame.
 
     Parameters
     ----------
     t_lisa : float
-        The time when a GW signal arrives at the origin of LISA frame.
-        In the unit of 's'.
+        Arrival time at the LISA frame origin [s].
     longitude_ssb : float
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic longitude in the SSB frame [rad].
     latitude_ssb : float
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees. Ignored if `orbit` is given.
+        Ecliptic latitude in the SSB frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
     orbit : OrbitProvider, optional
-        See `t_lisa_from_ssb`. Default None, which reproduces the behavior
-        of previous versions of this function exactly.
+        See `t_lisa_from_ssb`. Default None reproduces the behavior of
+        previous versions of this function exactly.
     sc : tuple, optional
         1-indexed spacecraft labels defining the constellation. Only used
         if `orbit` is given. Default (1, 2, 3).
@@ -361,7 +346,7 @@ def t_ssb_from_t_lisa(t_lisa, longitude_ssb, latitude_ssb,
     Returns
     -------
     t_ssb : float
-        The time when a GW signal arrives at the origin of SSB frame.
+        Arrival time at the SSB frame origin [s].
     """
     k = localization_to_propagation_vector(
             longitude_ssb, latitude_ssb, use_astropy=False)
