@@ -113,7 +113,8 @@ class TestRelbinResolution(unittest.TestCase):
             seen.append((model.check_bin_resolution(), abs(model.loglr - reference)))
 
         # the diagnostic is only useful if the two fall together
-        for (ecoarse, lcoarse), (efine, lfine) in zip(seen, seen[1:], strict=False):
+        pairs = zip(seen, seen[1:], strict=False)
+        for (ecoarse, lcoarse), (efine, lfine) in pairs:
             self.assertGreater(ecoarse, efine, "diagnostic: %s" % seen)
             self.assertGreater(lcoarse, lfine, "likelihood: %s" % seen)
 
