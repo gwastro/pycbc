@@ -68,8 +68,8 @@ def _parse_oem_file(path):
     `lisaorbits.OEMOrbits` (via the external `oem` package). Only the
     first ephemeris segment is distinguished; a file with more than one
     `META_START`/`META_STOP` block would have its data rows silently
-    concatenated (not a concern for the single-segment files this has
-    been tested against).
+    concatenated (not a concern for the single-segment files tested
+    against here).
 
     Parameters
     ----------
@@ -117,9 +117,9 @@ class NumericOrbits:
     """Interpolate a numerical constellation orbit given as arrays of
     spacecraft position (and, optionally, velocity) samples in the SSB frame.
 
-    This mirrors the input contract of `lisaorbits.InterpolatedOrbits`, using
-    only `scipy` for the spline interpolation, so that it can be used as a
-    drop-in `OrbitProvider` without requiring `lisaorbits` to be installed.
+    Mirrors the input contract of `lisaorbits.InterpolatedOrbits`, using
+    only `scipy` for the spline interpolation, so it works as a drop-in
+    `OrbitProvider` without requiring `lisaorbits` to be installed.
 
     Parameters
     ----------
@@ -262,11 +262,11 @@ class NumericOrbits:
         (shape (N,), SSB time [s]) and `positions` (shape (N, M, 3), SSB-
         frame spacecraft positions [m]). An optional `velocities` dataset
         (same shape as `positions`) is used if present; otherwise
-        velocities are computed as the analytic derivative of the position
-        spline, as in `__init__`. This is the file format any of LISA,
-        Taiji, TianQin (or a numerically-propagated orbit for any of them)
-        can be supplied in, e.g. from a PE config's `orbit-file` option
-        (see `pycbc.transforms`).
+        velocities are the analytic derivative of the position spline, as
+        in `__init__`. This is the file format LISA, Taiji, or TianQin (or
+        a numerically-propagated orbit for any of them) can be supplied
+        in, e.g. from a PE config's `orbit-file` option (see
+        `pycbc.transforms`).
 
         Parameters
         ----------
@@ -300,11 +300,11 @@ class NumericOrbits:
         Writes datasets `t` (SSB time [s]) and `positions` (SSB-frame
         spacecraft positions [m]). If this instance was constructed with
         explicit `velocities`, those are written too; otherwise the
-        `velocities` dataset is omitted, so that a round trip through
+        `velocities` dataset is omitted, so a round trip through
         `from_file` re-derives velocities from the position spline exactly
         as this instance does, rather than through an extra layer of
         spline interpolation of re-sampled velocities. Acceleration is
-        never stored -- as in `__init__`, it is always the analytic
+        never stored -- as in `__init__`, it's always the analytic
         derivative of the velocity spline.
 
         Parameters
@@ -338,12 +338,12 @@ class NumericOrbits:
 
         OEM files give position/velocity in the ICRS/EME2000 (equatorial)
         frame, in km and km/s, with ISO 8601 timestamps in the TCB or TDB
-        time system; this method converts to pycbc's own convention
-        (SSB BarycentricMeanEcliptic frame, meters, GPS seconds) before
+        time system; this converts to pycbc's own convention (SSB
+        BarycentricMeanEcliptic frame, meters, GPS seconds) before
         building the `NumericOrbits`, using the same fixed ICRS -> ecliptic
         rotation as `ICRSOrbitAdapter`. An optional acceleration triplet
-        present in the file (a 3rd column group) is not used; acceleration
-        is derived from the velocity spline instead, as in `__init__`.
+        in the file (a 3rd column group) is not used -- acceleration is
+        derived from the velocity spline instead, as in `__init__`.
 
         Only the first ephemeris segment of each file is read (matching
         `lisaorbits.OEMOrbits`'s own behavior); a `ValueError` is raised
@@ -402,13 +402,11 @@ class NumericOrbits:
         in the ICRS (equatorial) frame, sampled uniformly in TCB time as
         `t0 + arange(size)*dt` (from the file's `t0`/`dt`/`size`
         attributes, TCB seconds since `lisaconstants.LISA_EPOCH_TCB` =
-        2035-01-01T00:00:00 TCB); this method converts to pycbc's own
-        convention (SSB BarycentricMeanEcliptic frame, meters, GPS
-        seconds) using the same fixed ICRS -> ecliptic rotation as
-        `ICRSOrbitAdapter`/`from_oem_files`. As in `from_oem_files`, only
-        position data is used -- the file's own `tcb/v`/`tcb/a` datasets
-        are not read; velocity and acceleration are instead derived from
-        the position spline, as in `__init__`.
+        2035-01-01T00:00:00 TCB); converted to pycbc's own convention
+        (SSB BarycentricMeanEcliptic frame, meters, GPS seconds) the same
+        way as `from_oem_files`. As there, only position data is used --
+        the file's own `tcb/v`/`tcb/a` datasets are not read; velocity and
+        acceleration are derived from the position spline instead.
 
         Parameters
         ----------
@@ -980,22 +978,19 @@ class LisaKeplerianOrbit:
     suite), independently implemented and validated against it, not
     ported from it.
 
-    This is *not* a strictly "more accurate" replacement for
-    `LisaAnalyticOrbit`: confirmed directly against real
-    `lisaorbits.EqualArmlengthOrbits`/`KeplerianOrbits` output,
-    `LisaAnalyticOrbit`'s specific first-order construction happens to
-    keep LISA's arm length essentially exactly constant over a year (its
-    whole functional form is chosen to minimize flexing, and does so to a
+    Not a strictly "more accurate" replacement for `LisaAnalyticOrbit`:
+    confirmed against real `lisaorbits.EqualArmlengthOrbits`/
+    `KeplerianOrbits` output, `LisaAnalyticOrbit`'s first-order
+    construction happens to keep LISA's arm length essentially exactly
+    constant over a year (its functional form minimizes flexing, to a
     higher effective order than "first order in eccentricity" suggests
-    for this particular symmetric configuration), while this true-Kepler-
-    ellipse construction has a real ~0.2% arm-length variation and a mean
-    arm length a similar amount below the nominal design value -- an
-    inherent property of the physical construction itself, not a
-    numerical error. Use this when you specifically need to match/
-    reproduce reference data generated with a true-Kepler-ellipse
-    convention (e.g. some LDC/TDC products), and `LisaAnalyticOrbit`
-    otherwise (it also exactly reproduces this module's and
-    `pycbc.coordinates.space`'s pre-existing first-order default).
+    for this symmetric configuration), while this true-Kepler-ellipse
+    construction has a real ~0.2% arm-length variation and a mean arm
+    length a similar amount below the nominal design value -- an
+    inherent property of the construction, not a numerical error. Use
+    this to match reference data generated with a true-Kepler-ellipse
+    convention (e.g. some LDC/TDC products), `LisaAnalyticOrbit`
+    otherwise (it also reproduces this module's pre-existing default).
 
     Parameters
     ----------
@@ -1083,12 +1078,10 @@ class TaijiAnalyticOrbit:
     -- leading the Earth-like guiding center by `lead_angle` (design value
     20 degrees) instead of trailing it, with Taiji's own arm length.
 
-    This is an idealized reference orbit intended for prototyping and
-    methods development (e.g. single-link response and TDI work) ahead of
-    an official numerical orbit product. It is not a substitute for real
-    mission ephemeris in science-quality analysis -- use
-    `NumericOrbits.from_file` with an official orbit file for that once
-    one exists.
+    Idealized reference orbit for prototyping (e.g. single-link response
+    and TDI work) ahead of an official numerical orbit product -- not a
+    substitute for real mission ephemeris; use `NumericOrbits.from_file`
+    with an official orbit file for that once one exists.
 
     Parameters
     ----------
@@ -1285,15 +1278,12 @@ class TianQinAnalyticOrbit:
       acceleration directly) per call instead of a closed-form
       expression.
 
-    This is still an idealized reference orbit for the fast-rotation
-    triangle itself (a rigid rotation, not an independent Kepler orbit
-    per spacecraft -- unlike LISA/Taiji, TianQin's design keeps the
+    Still an idealized reference orbit for the fast-rotation triangle
+    itself (a rigid rotation, not an independent Kepler orbit per
+    spacecraft -- unlike LISA/Taiji, TianQin's design keeps the
     triangle's shape and orientation fixed rather than letting each
-    spacecraft flex on its own ellipse), intended for prototyping ahead
-    of an official numerical orbit product. It is not a substitute for
-    real mission ephemeris in science-quality analysis -- use
-    `NumericOrbits.from_file` with an official orbit file for that once
-    one exists.
+    spacecraft flex on its own ellipse); not a substitute for real
+    mission ephemeris, same caveat as `TaijiAnalyticOrbit`.
 
     Parameters
     ----------
