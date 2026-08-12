@@ -1562,13 +1562,11 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
 # ---------------------------------------------------------------------------
 # Sky-frame (arrival time / sky localization / polarization) transforms.
 #
-# There are 6 supported frame pairs: geo<->ssb, lisa<->ssb, lisa<->geo,
-# moon<->ssb, moon<->geo, moon<->lisa ("lisa" here means any constellation
-# reachable via `pycbc.coordinates.NumericOrbits`, selected with
-# `orbit_file`; "moon" additionally takes `longitude_site`/`latitude_site`
-# for a specific lunar surface site instead of the Moon's barycenter). Each
+# There are 3 supported frame pairs: geo<->ssb, lisa<->ssb, lisa<->geo
+# ("lisa" here means any constellation reachable via
+# `pycbc.coordinates.NumericOrbits`, selected with `orbit_file`). Each
 # pair gets two classes -- e.g. `GEOToSSB`/`SSBToGEO` -- that only differ in
-# which direction is `transform` vs `inverse_transform`. All 12 classes
+# which direction is `transform` vs `inverse_transform`. All 6 classes
 # below are thin subclasses of `SkyFrameTransform`, which implements
 # `__init__`/`transform`/`inverse_transform`/`from_config` once, generically,
 # driven by the `_frame_a`/`_frame_b`/`_forward` class attributes each
@@ -1597,7 +1595,6 @@ _SKY_FRAME_LOCALIZATION_DEFAULTS = {
     'geo': (parameters.ra, parameters.dec),
     'ssb': (parameters.eclipticlongitude, parameters.eclipticlatitude),
     'lisa': (parameters.eclipticlongitude, parameters.eclipticlatitude),
-    'moon': (parameters.eclipticlongitude, parameters.eclipticlatitude),
 }
 
 # extra constructor keyword arguments contributed by a frame, beyond the
@@ -1606,7 +1603,6 @@ _FRAME_EXTRA_CTOR_KWARGS = {
     'geo': [],
     'ssb': [],
     'lisa': ['orbit_file'],
-    'moon': ['longitude_site', 'latitude_site'],
 }
 
 
@@ -1617,17 +1613,11 @@ def _lisa_call_kwargs(inst):
     return {'orbit': inst.orbit}
 
 
-def _moon_call_kwargs(inst):
-    """`longitude_site`/`latitude_site` pass straight through."""
-    return {'longitude_site': inst.longitude_site,
-            'latitude_site': inst.latitude_site}
-
-
 # maps a frame name to the function above that turns its extra constructor
 # kwargs (stored on the instance) into the keyword argument(s) the
 # `coordinates.<a>_to_<b>` function actually expects; frames not listed here
 # (geo, ssb) don't need anything extra.
-_FRAME_CALL_KWARGS_FUNCS = {'lisa': _lisa_call_kwargs, 'moon': _moon_call_kwargs}
+_FRAME_CALL_KWARGS_FUNCS = {'lisa': _lisa_call_kwargs}
 
 
 def _sky_frame_default_params_name(frame_a, frame_b):
@@ -1646,9 +1636,9 @@ def _sky_frame_default_params_name(frame_a, frame_b):
 
 
 class SkyFrameTransform(BaseTransform):
-    """Base class for the 12 concrete arrival-time/sky-localization/
-    polarization transforms between pairs of SSB, GEO, LISA-family (any
-    constellation via `orbit_file`), and Moon frames. See the module-level
+    """Base class for the 6 concrete arrival-time/sky-localization/
+    polarization transforms between pairs of SSB, GEO, and LISA-family
+    (any constellation via `orbit_file`) frames. See the module-level
     comment above this class for the overall design.
 
     Each concrete subclass sets:
@@ -1813,34 +1803,6 @@ class LISAToGEO(SkyFrameTransform):
     name = "lisa_to_geo"
     _frame_a, _frame_b = 'lisa', 'geo'
     default_params_name = _sky_frame_default_params_name('lisa', 'geo')
-
-
-class MoonToSSB(SkyFrameTransform):
-    """Converts arrival time, sky localization, and polarization angle in a
-    lunar frame to the corresponding values in the SSB frame."""
-
-    name = "moon_to_ssb"
-    _frame_a, _frame_b = 'moon', 'ssb'
-    default_params_name = _sky_frame_default_params_name('moon', 'ssb')
-
-
-class MoonToGEO(SkyFrameTransform):
-    """Converts arrival time, sky localization, and polarization angle in a
-    lunar frame to the corresponding values in the geocentric frame."""
-
-    name = "moon_to_geo"
-    _frame_a, _frame_b = 'moon', 'geo'
-    default_params_name = _sky_frame_default_params_name('moon', 'geo')
-
-
-class MoonToLISA(SkyFrameTransform):
-    """Converts arrival time, sky localization, and polarization angle in a
-    lunar frame to the corresponding values in the LISA (or, via
-    `orbit_file`, any constellation) frame."""
-
-    name = "moon_to_lisa"
-    _frame_a, _frame_b = 'moon', 'lisa'
-    default_params_name = _sky_frame_default_params_name('moon', 'lisa')
 
 
 class Log(BaseTransform):
@@ -2460,33 +2422,6 @@ class GEOToLISA(SkyFrameTransform):
     default_params_name = LISAToGEO.default_params_name
 
 
-class SSBToMoon(SkyFrameTransform):
-    """The inverse of MoonToSSB."""
-
-    name = "ssb_to_moon"
-    _frame_a, _frame_b = 'moon', 'ssb'
-    _forward = False
-    default_params_name = MoonToSSB.default_params_name
-
-
-class GEOToMoon(SkyFrameTransform):
-    """The inverse of MoonToGEO."""
-
-    name = "geo_to_moon"
-    _frame_a, _frame_b = 'moon', 'geo'
-    _forward = False
-    default_params_name = MoonToGEO.default_params_name
-
-
-class LISAToMoon(SkyFrameTransform):
-    """The inverse of MoonToLISA."""
-
-    name = "lisa_to_moon"
-    _frame_a, _frame_b = 'moon', 'lisa'
-    _forward = False
-    default_params_name = MoonToLISA.default_params_name
-
-
 class Exponent(Log):
     """Applies an exponent transform to an `inputvar` parameter.
 
@@ -2635,12 +2570,6 @@ LISAToSSB.inverse = SSBToLISA
 SSBToLISA.inverse = LISAToSSB
 LISAToGEO.inverse = GEOToLISA
 GEOToLISA.inverse = LISAToGEO
-MoonToSSB.inverse = SSBToMoon
-SSBToMoon.inverse = MoonToSSB
-MoonToGEO.inverse = GEOToMoon
-GEOToMoon.inverse = MoonToGEO
-MoonToLISA.inverse = LISAToMoon
-LISAToMoon.inverse = MoonToLISA
 
 
 #
@@ -2687,12 +2616,6 @@ transforms = {
     SSBToLISA.name: SSBToLISA,
     LISAToGEO.name: LISAToGEO,
     GEOToLISA.name: GEOToLISA,
-    MoonToSSB.name: MoonToSSB,
-    SSBToMoon.name: SSBToMoon,
-    MoonToGEO.name: MoonToGEO,
-    GEOToMoon.name: GEOToMoon,
-    MoonToLISA.name: MoonToLISA,
-    LISAToMoon.name: LISAToMoon,
 }
 
 # standard CBC transforms: these are transforms that do not require input
