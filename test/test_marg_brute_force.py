@@ -37,7 +37,7 @@ import unittest
 import numpy
 from scipy.special import logsumexp
 from utils import simple_exit
-from validation import FLOW, TC, get_seed, make_data
+from marg_test_data import FLOW, TC, get_seed, make_data
 
 from pycbc.distributions import (
     JointDistribution,
