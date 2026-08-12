@@ -2,6 +2,6 @@
 ligo-proxy-utils
 ciecplib[kerberos] >= 0.7.0
 dqsegdb2 >= 1.1.4
-amqplib
+amqp>=5.0.0
 htchirp >= 2.0
 ligo-gracedb[kafka] >= 2.15.7
