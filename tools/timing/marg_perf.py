@@ -22,12 +22,12 @@ reports the time per call.
 
 Run it to print a table:
 
-    python benchmark_marginalization.py
+    python marg_perf.py
 
 Save what a branch does, then compare another branch against it:
 
-    python benchmark_marginalization.py --save before.json
-    python benchmark_marginalization.py --compare before.json
+    python marg_perf.py --save before.json
+    python marg_perf.py --compare before.json
 
 Configurations whose options a branch does not have are reported as
 unsupported rather than failing, so the same benchmark runs either side
@@ -54,8 +54,8 @@ import sys
 import time
 
 import numpy
-from validation import FLOW, TC, make_data
 
+from pycbc.detector import Detector
 from pycbc.distributions import (
     CosAngle,
     JointDistribution,
@@ -63,10 +63,82 @@ from pycbc.distributions import (
     Uniform,
     UniformAngle,
 )
+from pycbc.filter import sigmasq
 from pycbc.inference import models
+from pycbc.noise import noise_from_psd
+from pycbc.psd import aLIGOZeroDetHighPower
+from pycbc.types import TimeSeries
+from pycbc.waveform import get_td_waveform
 
 SEED = 20260812
 REPEATS = [200]
+
+# The signal every configuration is timed against: a binary neutron star in
+# simulated noise, built from a fixed seed so the benchmark does the same
+# work each run. Kept self-contained here rather than shared with the
+# accuracy tests (which deliberately draw a fresh signal every run); this is
+# a copy of just the fixed-signal builder, with the distance set to a known
+# network signal to noise ratio.
+TC = 1187008882.42840
+FLOW, SEGLEN, SRATE = 25., 32, 2048
+IFOS = ['H1', 'L1', 'V1']
+TARGET_SNR = 25.0
+
+
+def draw_injection(seed):
+    """A binary neutron star signal, at a fixed distance before scaling."""
+    rng = numpy.random.RandomState(seed)
+    return dict(
+        mass1=rng.uniform(1.2, 1.6),
+        mass2=rng.uniform(1.2, 1.6),
+        inclination=numpy.arccos(rng.uniform(-1, 1)),
+        ra=rng.uniform(0, 2 * numpy.pi),
+        dec=numpy.arcsin(rng.uniform(-1, 1)),
+        polarization=rng.uniform(0, 2 * numpy.pi),
+        coa_phase=rng.uniform(0, 2 * numpy.pi),
+        distance=100.,
+    )
+
+
+def make_data(seed, ifos=None, target_snr=TARGET_SNR):
+    """Simulated noise with a signal in it, distance set to a known SNR."""
+    ifos = list(ifos or IFOS)
+    injection = draw_injection(seed)
+
+    flen = int(SRATE * SEGLEN / 2) + 1
+    psd = aLIGOZeroDetHighPower(flen, 1. / SEGLEN, FLOW)
+
+    def project(params):
+        hp, hc = get_td_waveform(
+            approximant='TaylorF2', f_lower=FLOW, delta_t=1. / SRATE,
+            **{k: params[k] for k in ('mass1', 'mass2', 'distance',
+                                      'inclination', 'coa_phase')})
+        # the generator puts coalescence at t=0, so this puts it at tc
+        hp.start_time += TC
+        hc.start_time += TC
+        return {ifo: Detector(ifo).project_wave(
+                    hp, hc, params['ra'], params['dec'],
+                    params['polarization']) for ifo in ifos}
+
+    def embed(signal):
+        blank = TimeSeries(numpy.zeros(int(SEGLEN * SRATE)),
+                           delta_t=1. / SRATE, epoch=TC - SEGLEN / 2)
+        return blank.add_into(signal).to_frequencyseries()
+
+    signals = project(injection)
+    snr = sum(float(sigmasq(embed(s), psd=psd, low_frequency_cutoff=FLOW))
+              for s in signals.values()) ** 0.5
+    injection['distance'] *= snr / target_snr
+    signals = project(injection)
+
+    data, psds = {}, {}
+    for i, ifo in enumerate(ifos):
+        noise = noise_from_psd(int(SEGLEN * SRATE), 1. / SRATE, psd,
+                               seed=(seed + 977 * (i + 1)) % 2 ** 31)
+        noise._epoch = TC - SEGLEN / 2
+        data[ifo] = noise.add_into(signals[ifo]).to_frequencyseries()
+        psds[ifo] = psd
+    return data, psds, injection
 
 
 def setup():
