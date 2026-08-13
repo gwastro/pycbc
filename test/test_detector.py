@@ -154,21 +154,13 @@ class TestDetector(unittest.TestCase):
                     self.assertAlmostEqual(converted_times[i], target_times[i], 
                                            places=6)
 
-    def test_array_matches_scalar(self):
-        """The vectorized antenna pattern and time delay must agree with
-        the scalar call element for element.
+    def test_one_at_a_time_matches_vector(self):
+        """Calling one at a time must match calling with a vector.
 
-        The response is applied to a whole set of positions at once, so an
-        error in how the components line up shows as a wrong answer at some
-        of them and not others. test_antenna_pattern checks the tensor
-        response that way against lal; the vector and scalar polarizations
-        and time_delay_from_earth_center given an array are not covered
-        there, and are checked here against this same code asked one
-        position at a time.
-
-        Everything here is at the default frequency. The response at a
-        finite frequency takes one value at a time for every argument, so
-        there is no array call of it to compare.
+        The response is applied to the whole set at once, so a mistake in
+        lining the components up would show at some positions and not
+        others. Covers the vector and scalar polarizations, and
+        time_delay_from_earth_center given an array.
         """
         t = 1187008882.0
         cases = [{}, {'polarization_type': 'vector'},
