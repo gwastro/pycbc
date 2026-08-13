@@ -136,8 +136,7 @@ class TestRelbinResolution(unittest.TestCase):
         marginalized parameter is held as the vector of samples drawn for
         it, and some samplers hand a batch of points in together. The
         diagnostic generates a waveform of its own, and the generators take
-        one point at a time, so it has to reduce them first. It used to
-        pass the vector straight through and raise a TypeError instead.
+        one point at a time, so it has to reduce them first.
         """
         model = self.model(0.5)
         model.update(**self.q)
