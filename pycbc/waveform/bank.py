@@ -240,6 +240,12 @@ class TemplateBank(object):
         the file. Note that derived parameters can only be used if the
         needed parameters are in the file; e.g., you cannot use `chi_eff` if
         `spin1z`, `spin2z`, `mass1`, and `mass2` are in the input file.
+    group_key : {None, string}
+        If loading from an HDF file, specify the group path (e.g., 'fir_data/coarse')
+        where the template parameters are stored. If None, defaults to the file root.
+    file_handler : {None, pycbc.io.HFile or h5py.Group}
+        An optional, already-open HDF file or group object. If provided, the class will
+        read from this object instead of opening the filename from disk.
     \**kwds :
         Any additional keyword arguments are stored to the `extra_args`
         attribute.
@@ -255,18 +261,26 @@ class TemplateBank(object):
     indoc : {None, xmldoc}
         If an xml file was provided, an in-memory representation of the xml.
         Otherwise, None.
-    filehandler : {None, pycbc.io.HFile}
-        If an hdf file was provided, the file handler pointing to the hdf file
-        (left open after initialization). Otherwise, None.
+    filehandler : {None, pycbc.io.HFile or h5py.Group}
+        If an hdf file was provided, the handler pointing to the specific group
+        containing the bank parameters. Otherwise, None.
+    file : {None, pycbc.io.HFile}
+        The root file object.
     extra_args : {None, dict}
         Any extra keyword arguments that were provided on initialization.
     """
-    def __init__(self, filename, approximant=None, parameters=None,
-                 **kwds):
+    def __init__(self, filename=None, approximant=None, parameters=None,
+                 group_key=None, file_handler=None, **kwds):
+        if filename is None and file_handler is None:
+            raise ValueError("Must provide either filename or file_handler")
+
         self.has_compressed_waveforms = False
-        ext = os.path.basename(filename)
+        ext = os.path.basename(filename) if filename is not None else ''
+
+        # --- XML Handling ---
         if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
             self.filehandler = None
+            self.file = None
             self.indoc = ligolw_utils.load_filename(
                 filename, False, contenthandler=LIGOLWContentHandler)
             self.table = lsctables.SnglInspiralTable.get_table(self.indoc)
@@ -281,18 +295,48 @@ class TemplateBank(object):
             names = tuple([n if n!= 'alpha6' else 'f_lower' for n in names])
             self.table.dtype.names = names
 
-        elif ext.endswith(('hdf', '.h5', '.hdf5')):
+        # --- HDF5 Handling ---
+        # file_handler is already an h5py object, so no extension to check
+        elif file_handler is not None or ext.endswith(('hdf', '.h5', '.hdf5')):
             self.indoc = None
-            f = pycbc.io.HFile(filename, 'r')
-            self.filehandler = f
+
+            # 1. Resolve Root File Object
+            if file_handler is not None:
+                # If passed a Group, get its file. If passed a File, use it.
+                if isinstance(file_handler, h5py.Group):
+                    self.file = file_handler.file
+                else:
+                    self.file = file_handler
+            else:
+                self.file = pycbc.io.HFile(filename, 'r')
+
+            # 2. Resolve Scoped Read Handler (Group vs File)
+            if group_key:
+                # If file_handler was a group, look relative to it.
+                # If file_handler was a file, look from root.
+                if file_handler is not None and isinstance(file_handler, h5py.Group):
+                     self.filehandler = file_handler[group_key]
+                else:
+                     self.filehandler = self.file[group_key]
+            else:
+                # No new key provided; use what we were given (File or Group)
+                self.filehandler = file_handler if file_handler is not None else self.file
+
+            # 3. Load Parameters from the Scoped Handler
+            root = self.filehandler
+
             try:
-                fileparams = list(f.attrs['parameters'])
+                fileparams = list(root.attrs['parameters'])
             except KeyError:
-                # just assume all of the top-level groups are the parameters
-                fileparams = list(f.keys())
+                # Auto-detection: Ignore subgroups (like 'fir_data'), only read Datasets
+                fileparams = []
+                for k in root.keys():
+                    if isinstance(root.get(k), h5py.Dataset):
+                        fileparams.append(k)
                 logging.info("WARNING: no parameters attribute found. "
                     "Assuming that %s " %(', '.join(fileparams)) +
                     "are the parameters.")
+
             tmp_params = []
             # At this point fileparams might be bytes. Fix if it is
             for param in fileparams:
@@ -315,14 +359,28 @@ class TemplateBank(object):
             dtype = []
             data = {}
             for key in common_fields+add_fields:
-                data[key] = f[key][:]
+                data[key] = root[key][:]
                 dtype.append((key, data[key].dtype))
-            num = f[fileparams[0]].size
-            self.table = pycbc.io.WaveformArray(num, dtype=dtype)
-            for key in data:
-                self.table[key] = data[key]
-            # add the compressed waveforms, if they exist
-            self.has_compressed_waveforms = 'compressed_waveforms' in f
+
+            if not fileparams and len(data) == 0:
+                 # It's possible fileparams is empty if the group is empty,
+                 # but we should catch it if we expected data.
+                 # If we are just initializing an empty bank writer, this might occur,
+                 # but usually we read existing data here.
+                 if len(root.keys()) > 0:
+                     raise ValueError(f"No valid parameters found in {filename}")
+
+            if len(data) > 0:
+                num = root[fileparams[0]].size
+                self.table = pycbc.io.WaveformArray(num, dtype=dtype)
+                for key in data:
+                    self.table[key] = data[key]
+            else:
+                # Fallback for empty banks or structure-only reads
+                self.table = pycbc.io.WaveformArray(0, dtype=[])
+
+            # add the compressed waveforms, if they exist IN THIS GROUP
+            self.has_compressed_waveforms = 'compressed_waveforms' in root
         else:
             raise ValueError("Unsupported template bank file extension %s" %(
                 ext))
@@ -373,7 +431,8 @@ class TemplateBank(object):
 
     def write_to_hdf(self, filename, start_index=None, stop_index=None,
                      force=False, skip_fields=None,
-                     write_compressed_waveforms=True):
+                     write_compressed_waveforms=True,
+                     group_key=None, file_handler=None):
         """Writes self to the given hdf file.
 
         Parameters
@@ -398,33 +457,67 @@ class TemplateBank(object):
             True, which is the default setting. If False, do not write the
             compressed waveforms group, but only the template parameters to
             the output file.
+        group_key : {None, str}
+            If provided, write the bank parameters into this HDF5 group
+            path (e.g. 'fir_data/coarse_bank_params'). The group will be
+            created if it doesn't exist.
+        file_handler : {None, h5py.File or pycbc.io.HFile or h5py.Group}
+            If provided, write to this open file/group object instead of opening
+            'filename'.
 
         Returns
         -------
         pycbc.io.HFile
             The file handler to the output hdf file (left open).
         """
-        if not filename.endswith(('.hdf', '.h5', '.hdf5')):
-            raise ValueError("Unrecoginized file extension")
-        if os.path.exists(filename) and not force:
-            raise IOError("File %s already exists" %(filename))
-        f = pycbc.io.HFile(filename, 'w')
+        # 1. Resolve Output Destination
+        if file_handler is not None:
+            f = file_handler # Can be Group or File
+        else:
+            if not filename.endswith(('.hdf', '.h5', '.hdf5')):
+                raise ValueError("Unrecoginized file extension")
+
+            if os.path.exists(filename) and not force:
+                if group_key is None:
+                    raise IOError("File %s already exists" % filename)
+                mode = 'a'
+            else:
+                mode = 'w'
+            f = pycbc.io.HFile(filename, mode)
+
+        # 2. Resolve Write Root (Group vs File)
+        if group_key:
+            # If f is a Group, require_group creates a subgroup.
+            # If f is a File, it creates a root group.
+            root = f.require_group(group_key)
+        else:
+            root = f
+
+        # 3. Write Parameters
         parameters = self.parameters
         if skip_fields is not None:
             if not isinstance(skip_fields, list):
                 skip_fields = [skip_fields]
             parameters = [p for p in parameters if p not in skip_fields]
+
         # save the parameters
-        f.attrs['parameters'] = parameters
+        root.attrs['parameters'] = parameters
         write_tbl = self.table[start_index:stop_index]
         for p in parameters:
-            f[p] = write_tbl[p]
+            # Check for existence (important when appending to existing groups)
+            if p in root:
+                del root[p]
+            root[p] = write_tbl[p]
+
+        # 4. Copy Compressed Waveforms (Relative to Relative)
         if write_compressed_waveforms and self.has_compressed_waveforms:
             for tmplt_hash in write_tbl.template_hash:
+                # We read from self.filehandler (which is scoped to the source group)
                 compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
                                         self.filehandler, tmplt_hash,
                                         load_now=True)
-                compressed_waveform.write_to_hdf(f, tmplt_hash)
+                # We write to root (which is scoped to the destination group)
+                compressed_waveform.write_to_hdf(root, tmplt_hash)
         return f
 
     def end_frequency(self, index):

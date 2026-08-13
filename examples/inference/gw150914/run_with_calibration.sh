@@ -3,7 +3,7 @@
 # configuration files
 PRIOR_CONFIG=gw150914_like.ini
 DATA_CONFIG=data.ini
-SAMPLER_CONFIG=emcee_pt-gw150914_like.ini
+SAMPLER_CONFIG=ptemcee-gw150914_like.ini
 CALIBRATION_CONFIG=calibration-GW150914.ini
 
 OUTPUT_PATH=inference.hdf

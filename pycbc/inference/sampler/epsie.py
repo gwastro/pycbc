@@ -22,16 +22,13 @@ import numpy
 import epsie
 from epsie.samplers import ParallelTemperedSampler
 
-# we'll use emcee_pt's default beta ladder for temperature levels
-from emcee.ptsampler import default_beta_ladder
-
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
 from .base_mcmc import (BaseMCMC, get_optional_arg_from_config,
                         nsamples_in_chain)
 from .base_multitemper import (MultiTemperedSupport, compute_acf, compute_acl,
-                               acl_from_raw_acls)
+                               acl_from_raw_acls, default_beta_ladder)
 from ..burn_in import MultiTemperedMCMCBurnInTests
 from ..jump import epsie_proposals_from_config
 from ..io import EpsieFile

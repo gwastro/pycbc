@@ -80,20 +80,22 @@ def raw_samples_to_dict(sampler, raw_samples):
 
 
 def blob_data_to_dict(stat_names, blobs):
-    """Converts list of "blobs" to a dictionary of model stats.
+    """Converts an array of "blobs" to a dictionary of model stats.
 
-    Samplers like ``emcee`` store the extra tuple returned by ``CallModel`` to
-    a list called blobs. This is a list of lists of tuples with shape
-    niterations x nwalkers x nstats, where nstats is the number of stats
-    returned by the model's ``default_stats``. This converts that list to a
-    dictionary of arrays keyed by the stat names.
+    Samplers like ``emcee`` store the extra tuple returned by ``CallModel`` as
+    blobs. As of ``emcee`` version 3, ``get_blobs()`` returns these as a numpy
+    array with shape niterations x nwalkers x nstats, where nstats is the
+    number of stats returned by the model's ``default_stats``. (If the model
+    only returns a single stat, ``emcee`` squeezes out the last axis; this is
+    handled below.) This converts that array to a dictionary of arrays keyed by
+    the stat names.
 
     Parameters
     ----------
     stat_names : list of str
         The list of the stat names.
-    blobs : list of list of tuples
-        The data to convert.
+    blobs : array
+        The blobs to convert, as returned by ``emcee``'s ``get_blobs()``.
 
     Returns
     -------
@@ -101,18 +103,17 @@ def blob_data_to_dict(stat_names, blobs):
         A dictionary mapping the model's ``default_stats`` to arrays of values.
         Each array will have shape ``nwalkers x niterations``.
     """
-    # get the dtypes of each of the stats; we'll just take this from the
-    # first iteration and walker
-    dtypes = [type(val) for val in blobs[0][0]]
-    assert len(stat_names) == len(dtypes), (
-        "number of stat names must match length of tuples in the blobs")
-    # convert to an array; to ensure that we get the dtypes correct, we'll
-    # cast to a structured array
-    raw_stats = numpy.array(blobs, dtype=list(zip(stat_names, dtypes)))
-    # transpose so that it has shape nwalkers x niterations
-    raw_stats = raw_stats.transpose()
-    # now return as a dictionary
-    return {stat: raw_stats[stat] for stat in stat_names}
+    blobs = numpy.asarray(blobs)
+    # if the model only returns a single stat, emcee squeezes out the trailing
+    # axis; restore it so that stats can be indexed on the last axis
+    if blobs.ndim == 2:
+        blobs = blobs[:, :, numpy.newaxis]
+    assert blobs.shape[-1] == len(stat_names), (
+        "number of stat names must match the size of the last axis of blobs")
+    # each stat is stored along the last axis; the remaining axes are
+    # niterations x nwalkers, so we transpose to get nwalkers x niterations
+    return {stat: blobs[:, :, ii].transpose()
+            for ii, stat in enumerate(stat_names)}
 
 
 def get_optional_arg_from_config(cp, section, arg, dtype=str):

@@ -49,10 +49,6 @@ from .. import models
 # =============================================================================
 #
 
-if emcee.__version__ >= '3.0.0':
-    raise ImportError
-
-
 class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
     """This class is used to construct an MCMC sampler from the emcee
     package's EnsembleSampler.
@@ -114,9 +110,10 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
         The arrays have shape ``nwalkers x niterations``.
         """
-        # emcee stores samples to it's chain attribute as a
-        # nwalker x niterations x ndim array
-        raw_samples = self._sampler.chain
+        # emcee (>=3) returns the chain from get_chain() with shape
+        # niterations x nwalkers x ndim; swap the first two axes to get the
+        # nwalkers x niterations x ndim array expected by raw_samples_to_dict
+        raw_samples = numpy.swapaxes(self._sampler.get_chain(), 0, 1)
         return raw_samples_to_dict(self, raw_samples)
 
     @property
@@ -126,7 +123,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         The returned array has shape ``nwalkers x niterations``.
         """
         stats = self.model.default_stats
-        return blob_data_to_dict(stats, self._sampler.blobs)
+        return blob_data_to_dict(stats, self._sampler.get_blobs())
 
     def clear_samples(self):
         """Clears the samples and stats from memory.
@@ -134,9 +131,8 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         # store the iteration that the clear is occuring on
         self._lastclear = self.niterations
         self._itercounter = 0
-        # now clear the chain
+        # now clear the chain; in emcee (>=3) reset() also clears the blobs
         self._sampler.reset()
-        self._sampler.clear_blobs()
 
     def set_state_from_file(self, filename):
         """Sets the state of the sampler back to the instance saved in a file.
@@ -159,10 +155,11 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         pos = self._pos
         if pos is None:
             pos = self._p0
+        # emcee (>=3) returns a State object; the walker positions are stored
+        # in its coords attribute
         res = self._sampler.run_mcmc(pos, niterations)
-        p, _, _ = res[0], res[1], res[2]
         # update the positions
-        self._pos = p
+        self._pos = res.coords
 
     def write_results(self, filename):
         """Writes samples, model stats, acceptance fraction, and random state
