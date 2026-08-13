@@ -637,6 +637,24 @@ class Relative(DistMarg, BaseGaussianNoise):
         for p, v in self.fid_params.items():
             attrs["{}_ref".format(p)] = v
 
+    def scalar_current_params(self):
+        """The current parameters, with one value each.
+
+        A marginalized parameter is held as the whole vector of samples
+        drawn for it, and a sampler may hand a batch of points in at once,
+        so a parameter here need not be a single number. The waveform
+        generators take one point at a time, and were raising a TypeError
+        on the vector rather than saying so.
+
+        Taking the first of each is enough for what this is used for: the
+        interpolation error is measured relative to the size of the ratio
+        it is an error in, so a parameter that only scales the waveform,
+        distance above all, divides back out, and the sky and time
+        parameters do not reach the generator at all.
+        """
+        return {p: (v[0] if numpy.ndim(v) > 0 else v)
+                for p, v in self.current_params.items()}
+
     def interpolation_error_from_reference(self):
         """ Return the largest error made by interpolating the waveform
         ratio across a bin, relative to the size of the ratio.
@@ -658,7 +676,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             fmid = self.f[ifo][mid]
             hp, _ = get_fd_waveform_sequence(sample_points=Array(fmid),
-                                             **self.current_params)
+                                             **self.scalar_current_params())
             ratio = hp.numpy() / self.h00[ifo][mid]
 
             edge = self.wf_ret[ifo][0] / self.h00_sparse[ifo]
