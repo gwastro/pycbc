@@ -123,6 +123,10 @@ class DistMarg():
         self.marginalized_vector_priors = {}
         self.vsamples = int(marginalize_vector_samples)
 
+        # seeded from the global stream so numpy.random.seed still works
+        self._choice_rng = numpy.random.default_rng(
+            numpy.random.randint(0, 2 ** 63))
+
         self.marginalize_sky_initial_samples = \
             int(float(marginalize_sky_initial_samples))
 
@@ -294,8 +298,8 @@ class DistMarg():
         if self.vsamples == len(logw):
             choice = slice(None, None)
         else:
-            choice = numpy.random.choice(len(logw), size=self.vsamples,
-                                         replace=False)
+            choice = self._choice_rng.choice(len(logw), size=self.vsamples,
+                                             replace=False)
 
         for k in self.snr_params:
             self.marginalize_vector_params[k] = self.premarg[k][choice]
