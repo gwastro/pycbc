@@ -206,46 +206,41 @@ if 'PYCBC_DETECTOR_CONFIG' in os.environ:
     load_detector_config(os.environ['PYCBC_DETECTOR_CONFIG'].split(':'))
 
 
-def _apply_response(resp, v0, v1, v2):
-    """Return the vector (v0, v1, v2) and the response matrix applied to it.
-
-    The three components need not have the same shape: a set of sky
-    positions may share one time, or one position be asked about at many
-    times. They used to be collected into an array of dtype object, which
-    tolerates that but then does every multiplication one python float at
-    a time. Broadcasting them against each other first keeps the stack
-    rectangular, so it stays a float array, and the matrix product is
-    written out as three multiply-adds, which is the order the object
-    version summed in and so gives the same answer to the last bit. For a
-    thousand sky positions it is about ten times faster.
-
-    Parameters
-    ----------
-    resp: numpy.ndarray
-        The 3x3 detector response matrix.
-    v0, v1, v2: float or numpy.ndarray
-        The components of the vector.
-
-    Returns
-    -------
-    v: numpy.ndarray
-        The components stacked along the first axis.
-    dv: numpy.ndarray
-        The response matrix applied to it, with the same shape.
-    """
-    v = np.array(np.broadcast_arrays(v0, v1, v2))
-    # line the matrix columns up with the leading axis of the stack,
-    # whatever the components' own shape is
-    col = (3,) + (1,) * (v.ndim - 1)
-    dv = (resp[:, 0].reshape(col) * v[0]
-          + resp[:, 1].reshape(col) * v[1]
-          + resp[:, 2].reshape(col) * v[2])
-    return v, dv
-
-
 class Detector(object):
     """A gravitational wave detector
     """
+    @staticmethod
+    def _apply_response(resp, v0, v1, v2):
+        """Return the vector (v0, v1, v2) and the response applied to it.
+
+        The components need not share a shape: many sky positions may share one
+        time, or one position be asked about at many times. Broadcasting them
+        together gives a float array whatever shapes they arrive in, so the
+        product runs over the whole set at once.
+
+        Parameters
+        ----------
+        resp: numpy.ndarray
+            The 3x3 detector response matrix.
+        v0, v1, v2: float or numpy.ndarray
+            The components of the vector.
+
+        Returns
+        -------
+        v: numpy.ndarray
+            The components stacked along the first axis.
+        dv: numpy.ndarray
+            The response matrix applied to it, with the same shape.
+        """
+        v = np.array(np.broadcast_arrays(v0, v1, v2))
+        # line the matrix columns up with the leading axis of the stack,
+        # whatever the components' own shape is
+        col = (3,) + (1,) * (v.ndim - 1)
+        dv = (resp[:, 0].reshape(col) * v[0]
+              + resp[:, 1].reshape(col) * v[1]
+              + resp[:, 2].reshape(col) * v[2])
+        return v, dv
+
     def __init__(self, detector_name, reference_time=1126259462.0):
         """ Create class representing a gravitational-wave detector
         Parameters
@@ -392,19 +387,19 @@ class Detector(object):
         x1 = -cospsi * cosgha + sinpsi * singha * sindec
         x2 =  sinpsi * cosdec
 
-        x, dx = _apply_response(resp, x0, x1, x2)
+        x, dx = self._apply_response(resp, x0, x1, x2)
 
         y0 =  sinpsi * singha - cospsi * cosgha * sindec
         y1 =  sinpsi * cosgha + cospsi * singha * sindec
         y2 =  cospsi * cosdec
 
-        y, dy = _apply_response(resp, y0, y1, y2)
+        y, dy = self._apply_response(resp, y0, y1, y2)
 
         if polarization_type != 'tensor':
             z0 = -cosdec * cosgha
             z1 = cosdec * singha
             z2 = -sindec
-            z, dz = _apply_response(resp, z0, z1, z2)
+            z, dz = self._apply_response(resp, z0, z1, z2)
 
         if polarization_type == 'tensor':
             if hasattr(dx, 'shape'):
@@ -473,9 +468,9 @@ class Detector(object):
         e1 = cosd * -sin(ra_angle)
         e2 = sin(declination)
 
-        # written out rather than stacked into a vector and dotted: the
-        # components may have different shapes, which used to mean an
-        # array of dtype object and a multiplication per python float
+        # written out componentwise: the three may have different shapes,
+        # and stacking them to dot would need an array of dtype object,
+        # which multiplies one python float at a time
         dx = other_location - self.location
         proj = dx[0] * e0 + dx[1] * e1 + dx[2] * e2
         return proj / constants.c.value

@@ -158,12 +158,12 @@ class TestDetector(unittest.TestCase):
         """The vectorized antenna pattern and time delay must agree with
         the scalar call element for element.
 
-        antenna_pattern and time_delay_from_earth_center now broadcast
-        their vector components into a float array rather than an object
-        array; this guards that against a per-element regression, by
-        checking an array query against the scalar call at each point,
-        including the frequency-dependent response used with an array of
-        times.
+        antenna_pattern and time_delay_from_earth_center broadcast their
+        vector components into one float array and work on the whole set at
+        once, so an error in how the components line up would show as a
+        wrong answer at some positions and not others. This checks an array
+        query against the scalar call at each of several points, including
+        the frequency-dependent response asked for at an array of times.
         """
         t = 1187008882.0
         for d in self.d:
