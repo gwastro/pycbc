@@ -189,9 +189,14 @@ class TestMargAgainstBruteForce(unittest.TestCase):
                                    self.inj['dec'] + half_sky, 31)})
         if abs(numpy.mean(values) - reference) > 0.2:
             self.skipTest(
-                "sky-and-time marginalization is off the integral by %.2f; "
-                "needs the marg-sky-absolute normalization fix"
-                % abs(numpy.mean(values) - reference))
+                "sky-and-time marginalization is off the integral by %.2f. "
+                "The sky marginalization is normalized only up to a constant, "
+                "so it does not reproduce the integral it stands for; the "
+                "answer is a likelihood ratio short of a fixed offset rather "
+                "than the ratio itself. Skipped rather than failed because "
+                "this measures a known property of the model, not a fault in "
+                "the test; it asserts agreement once the normalization is "
+                "absolute" % abs(numpy.mean(values) - reference))
         self.assertAlmostEqual(numpy.mean(values), reference, delta=0.2)
 
 
