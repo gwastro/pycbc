@@ -117,13 +117,17 @@ class TestMargAccuracy(unittest.TestCase):
                                 marginalize_vector_samples=npoint)
             seen[npoint] = sd
 
-        # only worth asking about where the answer is usable in the first
-        # place; too few points and the estimator has collapsed onto a
-        # handful of them, where no rate of convergence applies
-        if seen[256] > 0.5:
-            self.skipTest("this signal needs more than 256 points before "
-                          "the error is small enough for its rate of "
-                          "convergence to be the question: %s" % seen)
+        # The rate of convergence is only a question where the answer is
+        # usable at all: with the estimator collapsed onto a handful of
+        # points no rate applies. That is a premise of what follows rather
+        # than the thing being tested, so it is asserted and not skipped
+        # over. A signal that cannot meet it at 256 points is telling us
+        # the fixture has drawn something the suite does not cover, which
+        # is worth a failure and a reported seed, not a quiet pass.
+        self.assertLess(seen[256], 0.5,
+                        "256 points do not get this signal near enough to "
+                        "the answer for a rate of convergence to mean "
+                        "anything: %s" % seen)
 
         # the error must fall substantially over the range, but not by an
         # asserted factor: the spread is estimated from a finite number of
@@ -190,15 +194,16 @@ class TestMargAccuracy(unittest.TestCase):
             marginalize_vector_params='ra,dec,polarization',
             marginalize_vector_samples=2048)
 
-        # for some signals the estimator has not converged even with tc
-        # drawn in, and its spread stays large however many points are
-        # used; comparing two unconverged numbers says nothing, so the
-        # claim is only tested where the good case is actually good. A
-        # converged sky-and-time spread is order one.
-        if together > 5.0:
-            self.skipTest("sky marginalization has not converged for this "
-                          "signal even with tc, spread %.1f; nothing to "
-                          "compare against" % together)
+        # Comparing two unconverged numbers says nothing, so the good case
+        # being good is a premise of the comparison. Assert it rather than
+        # skip on it: a signal whose spread stays large even with tc drawn
+        # in is one the suite does not cover, and that should be a failure
+        # naming the seed rather than a test that silently stops running.
+        # A converged sky-and-time spread is order one.
+        self.assertLess(together, 5.0,
+                        "sky marginalization has not converged for this "
+                        "signal even with tc, spread %.1f, so there is "
+                        "nothing to compare against" % together)
 
         # how much worse depends on the signal, from a factor of a few to
         # tens, so only the direction is asserted, with a margin for the
