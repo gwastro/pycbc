@@ -158,26 +158,36 @@ class TestDetector(unittest.TestCase):
         """The vectorized antenna pattern and time delay must agree with
         the scalar call element for element.
 
-        antenna_pattern and time_delay_from_earth_center broadcast their
-        vector components into one float array and work on the whole set at
-        once, so an error in how the components line up would show as a
-        wrong answer at some positions and not others. This checks an array
-        query against the scalar call at each of several points, including
-        the frequency-dependent response asked for at an array of times.
+        The response is applied to a whole set of positions at once, so an
+        error in how the components line up shows as a wrong answer at some
+        of them and not others. test_antenna_pattern checks the tensor
+        response that way against lal; the vector and scalar polarizations
+        and time_delay_from_earth_center given an array are not covered
+        there, and are checked here against this same code asked one
+        position at a time.
+
+        Everything here is at the default frequency. The response at a
+        finite frequency takes one value at a time for every argument, so
+        there is no array call of it to compare.
         """
         t = 1187008882.0
+        cases = [{}, {'polarization_type': 'vector'},
+                 {'polarization_type': 'scalar'}]
         for d in self.d:
-            fp, fc = d.antenna_pattern(self.ra, self.dec, self.pol, t)
             dt = d.time_delay_from_earth_center(self.ra, self.dec, t)
+            got = [d.antenna_pattern(self.ra, self.dec, self.pol, t, **kw)
+                   for kw in cases]
+
             for i in (0, 137, len(self.ra) - 1):
-                fps, fcs = d.antenna_pattern(
-                    float(self.ra[i]), float(self.dec[i]),
-                    float(self.pol[i]), t)
-                self.assertEqual(fp[i], fps)
-                self.assertEqual(fc[i], fcs)
+                ra, dec = float(self.ra[i]), float(self.dec[i])
+                pol = float(self.pol[i])
                 self.assertEqual(
-                    dt[i], d.time_delay_from_earth_center(
-                        float(self.ra[i]), float(self.dec[i]), t))
+                    dt[i], d.time_delay_from_earth_center(ra, dec, t))
+                for kw, vec in zip(cases, got):
+                    one = d.antenna_pattern(ra, dec, pol, t, **kw)
+                    for whole, single in zip(vec, one):
+                        self.assertEqual(whole[i], single,
+                                         "%s at %s" % (kw, i))
 
 
 suite = unittest.TestSuite()
