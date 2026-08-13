@@ -719,8 +719,12 @@ class Relative(DistMarg, BaseGaussianNoise):
         float
             The largest error found, or 0 if it could not be checked.
         """
-        if self.prior_distribution is None or self.still_needs_det_response:
-            # nothing to draw from, or the ratio is not formed here
+        if (self.prior_distribution is None
+                or not hasattr(self.prior_distribution, 'rvs')
+                or self.still_needs_det_response):
+            # a model built without a prior gets a stand-in rather than
+            # None, so ask whether it can be drawn from, not whether it is
+            # there; or the ratio is not formed here
             return 0.
         state = numpy.random.get_state()
         numpy.random.seed(seed)

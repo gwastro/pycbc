@@ -159,6 +159,18 @@ class TestRelbinResolution(unittest.TestCase):
         self.assertAlmostEqual(value, expected, places=10)
 
 
+    def test_a_model_without_a_prior_can_be_built(self):
+        """The check runs at construction and must not need a prior."""
+        model = models.Relative(
+            list(self.variable), {k: v.copy() for k, v in self.data.items()},
+            low_frequency_cutoff=self.flow, psds=self.psds,
+            static_params=self.static, fiducial_params={'mass1': 1.3756},
+            epsilon=0.5)
+        model.update(**self.q)
+        self.assertTrue(numpy.isfinite(model.loglr))
+        self.assertEqual(model.check_bin_resolution(), 0.)
+
+
 suite = unittest.TestSuite()
 suite.addTest(
     unittest.TestLoader().loadTestsFromTestCase(TestRelbinResolution))
