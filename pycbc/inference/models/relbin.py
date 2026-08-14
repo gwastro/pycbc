@@ -181,6 +181,12 @@ class Relative(DistMarg, BaseGaussianNoise):
         Default is False. If True, then vary the fp/fc polarization values
         as a function of frequency bin, using a predetermined PN approximation
         for the time offsets.
+    check_interpolation_error : boolean, optional
+        Default is False. If True, measure the interpolation error at every
+        likelihood call and keep the largest seen in
+        ``max_interpolation_error``, which is written to the output file.
+        This is a debugging aid for choosing ``epsilon``, and it makes each
+        call more expensive.
     \**kwargs :
         All other keyword arguments are passed to
         :py:class:`BaseGaussianNoise`.
@@ -200,6 +206,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         earth_rotation=False,
         earth_rotation_mode=2,
         marginalize_phase=True,
+        check_interpolation_error=False,
         **kwargs,
     ):
 
@@ -208,6 +215,9 @@ class Relative(DistMarg, BaseGaussianNoise):
         )
 
         super().__init__(variable_params, data, low_frequency_cutoff, **kwargs)
+
+        self.check_interpolation_error = check_interpolation_error
+        self.max_interpolation_error = 0.0
 
         # If the waveform needs us to apply the detector response,
         # set flag to true (most cases for ground-based observatories).
@@ -448,24 +458,27 @@ class Relative(DistMarg, BaseGaussianNoise):
     def get_waveforms(self, params):
         """Get the waveform polarizations for each ifo"""
         if self.still_needs_det_response:
-            wfs = {}
+            wf_ret = {}
             for ifo in self.data:
-                wfs.update(
+                wf_ret.update(
                     get_fd_det_waveform_sequence(
                         ifos=ifo, sample_points=self.fedges[ifo], **params
                     )
                 )
-            return wfs
-
-        wfs = []
-        for edge in self.edge_unique:
-            hp, hc = get_fd_waveform_sequence(sample_points=edge, **params)
-            hp = hp.numpy()
-            hc = hc.numpy()
-            wfs.append((hp, hc))
-        wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
+        else:
+            wfs = []
+            for edge in self.edge_unique:
+                hp, hc = get_fd_waveform_sequence(sample_points=edge, **params)
+                hp = hp.numpy()
+                hc = hc.numpy()
+                wfs.append((hp, hc))
+            wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
 
         self.wf_ret = wf_ret
+        if self.check_interpolation_error:
+            self.max_interpolation_error = max(
+                self.max_interpolation_error, self.interpolation_error_from_reference()
+            )
         return wf_ret
 
     @property
@@ -705,6 +718,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             attrs = fp[group].attrs
         for p, v in self.fid_params.items():
             attrs[f"{p}_ref"] = v
+        if self.check_interpolation_error:
+            attrs["max_interpolation_error"] = self.max_interpolation_error
 
     def interpolation_error_from_reference(self):
         """
@@ -725,7 +740,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         for ifo in self.data:
             wfs = self.wf_ret[ifo]
             edge = wfs if self.still_needs_det_response else wfs[0]
-            edge = edge / self.h00_sparse[ifo]
+            edge = numpy.asarray(edge) / self.h00_sparse[ifo]
             if len(edge) < 3:
                 continue
 
