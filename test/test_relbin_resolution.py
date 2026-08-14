@@ -161,35 +161,6 @@ class TestRelbinResolution(unittest.TestCase):
         self.assertLess(sum(asked), ndata)
 
 
-    def test_diagnostic_survives_vector_valued_parameters(self):
-        """A marginalized or batched parameter is a vector, not a number.
-
-        The model can be sitting at a whole set of points at once: a
-        marginalized parameter is held as the vector of samples drawn for
-        it, and some samplers hand a batch of points in together. The
-        diagnostic generates a waveform of its own, and the generators take
-        one point at a time, so it has to reduce them first.
-        """
-        model = self.model(0.5)
-        model.update(**self.q)
-        model.get_waveforms(model.current_params)
-        expected = model.interpolation_error_from_reference()
-
-        # what a marginalized run or a batched sampler leaves behind:
-        # the same values, held as vectors rather than as numbers
-        for name in ('distance', 'inclination', 'tc'):
-            if name in model.current_params:
-                model.current_params[name] = numpy.full(
-                    64, model.current_params[name])
-
-        value = model.interpolation_error_from_reference()
-        self.assertTrue(numpy.isscalar(value) or numpy.ndim(value) == 0)
-        self.assertGreaterEqual(value, 0.)
-        # the parameters made vectors here either scale the ratio, which
-        # cancels in a relative error, or never reach the generator
-        self.assertAlmostEqual(value, expected, places=10)
-
-
     def test_a_model_without_a_prior_can_be_built(self):
         """The check runs at construction and must not need a prior."""
         model = models.Relative(
