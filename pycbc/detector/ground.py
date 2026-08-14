@@ -209,6 +209,32 @@ if 'PYCBC_DETECTOR_CONFIG' in os.environ:
 class Detector(object):
     """A gravitational wave detector
     """
+    @staticmethod
+    def _apply_response(resp, v0, v1, v2):
+        """Return the vector (v0, v1, v2) and the response applied to it.
+
+        The components need not share a shape: many sky positions may share one
+        time, or one position be asked about at many times. Broadcasting them
+        together gives a float array whatever shapes they arrive in, so the
+        product runs over the whole set at once.
+
+        Parameters
+        ----------
+        resp: numpy.ndarray
+            The 3x3 detector response matrix.
+        v0, v1, v2: float or numpy.ndarray
+            The components of the vector.
+
+        Returns
+        -------
+        v: numpy.ndarray
+            The components stacked along the first axis.
+        dv: numpy.ndarray
+            The response matrix applied to it, with the same shape.
+        """
+        v = np.array(np.broadcast_arrays(v0, v1, v2))
+        return v, resp.dot(v)
+
     def __init__(self, detector_name, reference_time=1126259462.0):
         """ Create class representing a gravitational-wave detector
         Parameters
@@ -355,22 +381,19 @@ class Detector(object):
         x1 = -cospsi * cosgha + sinpsi * singha * sindec
         x2 =  sinpsi * cosdec
 
-        x = np.array([x0, x1, x2], dtype=object)
-        dx = resp.dot(x)
+        x, dx = self._apply_response(resp, x0, x1, x2)
 
         y0 =  sinpsi * singha - cospsi * cosgha * sindec
         y1 =  sinpsi * cosgha + cospsi * singha * sindec
         y2 =  cospsi * cosdec
 
-        y = np.array([y0, y1, y2], dtype=object)
-        dy = resp.dot(y)
+        y, dy = self._apply_response(resp, y0, y1, y2)
 
         if polarization_type != 'tensor':
             z0 = -cosdec * cosgha
             z1 = cosdec * singha
             z2 = -sindec
-            z = np.array([z0, z1, z2], dtype=object)
-            dz = resp.dot(z)
+            z, dz = self._apply_response(resp, z0, z1, z2)
 
         if polarization_type == 'tensor':
             if hasattr(dx, 'shape'):
@@ -439,9 +462,12 @@ class Detector(object):
         e1 = cosd * -sin(ra_angle)
         e2 = sin(declination)
 
-        ehat = np.array([e0, e1, e2], dtype=object)
+        # written out componentwise rather than stacked and dotted: the
+        # stack costs more to build than the reduction saves, measured at
+        # every size, and the components may have different shapes anyway
         dx = other_location - self.location
-        return dx.dot(ehat).astype(np.float64) / constants.c.value
+        proj = dx[0] * e0 + dx[1] * e1 + dx[2] * e2
+        return proj / constants.c.value
 
     def time_delay_from_detector(self, other_detector, right_ascension,
                                  declination, t_gps):
