@@ -102,8 +102,20 @@ def add_common_pycbc_options(parser):
     )
 
 
+# Loggers from other packages that talk far more than they are worth when
+# PyCBC is run verbosely. init_logging holds them one step behind the level
+# it sets for everything else. Only the one whose noise has actually been
+# measured is listed; others can be added as they are found.
+NOISY_LOGGERS = [
+    "matplotlib.font_manager",
+    "scitokens",
+    "Pegasus"
+]
+
+
 def init_logging(verbose=False, default_level=0, to_file=None,
-                 format='%(asctime)s %(levelname)s : %(message)s'):
+                 format='%(asctime)s %(levelname)s : %(message)s',
+                 reduce_log_level=NOISY_LOGGERS):
     """Common utility for setting up logging in PyCBC.
 
     Installs a signal handler such that verbosity can be activated at
@@ -124,6 +136,10 @@ def init_logging(verbose=False, default_level=0, to_file=None,
         overwritten if it already exists.
     format : str, optional
         The format to use for logging messages.
+    reduce_log_level : list of str, optional
+        Loggers to keep one step less verbose than everything else, so that
+        their output does not bury PyCBC's own. Asking for more verbosity
+        still reaches them.
     """
     def sig_handler(signum, frame):
         logger = logging.getLogger()
@@ -149,6 +165,13 @@ def init_logging(verbose=False, default_level=0, to_file=None,
     verbose_int = default_level if verbose is None \
         else int(verbose) + default_level
     logger.setLevel(logging.WARNING - verbose_int * 10)  # Initial setting
+
+    # These talk far more than they are worth: font_manager alone emits tens
+    # of thousands of DEBUG records per figure. Held one step behind the
+    # root rather than pinned, so a high enough verbosity still shows them.
+    for name in reduce_log_level:
+        logging.getLogger(name).setLevel(logger.level + 10)
+
     if to_file is not None:
         handler = logging.FileHandler(to_file, mode='w')
     else:
