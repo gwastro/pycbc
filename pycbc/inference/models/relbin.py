@@ -641,32 +641,35 @@ class Relative(DistMarg, BaseGaussianNoise):
         ratio across a bin, relative to the size of the ratio.
 
         Relative binning assumes the ratio to the fiducial waveform is
-        linear within a bin. This evaluates the ratio at the bin midpoints
-        and compares it to that linear model, so it measures the
-        approximation directly rather than estimating it from the spacing
-        of the edges.
+        linear between bin edges. Each interior edge is predicted from its
+        two neighbours and compared with what it actually is, which uses
+        only the ratio the likelihood has already evaluated.
+
+        Reaching across two bins rather than one, it reports the error of a
+        binning twice as coarse: about four times the error within a bin,
+        the width entering squared. It is therefore conservative, and it
+        follows the same scaling.
         """
         worst = 0.
         for ifo in self.data:
-            idx = numpy.asarray(self.edges[ifo])
-            mid = (idx[:-1] + idx[1:]) // 2
-            # bins only one sample wide are exact, and have no midpoint
-            keep = (mid > idx[:-1]) & (self.h00[ifo][mid] != 0)
+            wfs = self.wf_ret[ifo]
+            edge = (wfs if self.still_needs_det_response else wfs[0])
+            edge = edge / self.h00_sparse[ifo]
+            if len(edge) < 3:
+                continue
+
+            f = numpy.asarray(self.fedges[ifo])
+            keep = edge[1:-1] != 0
             if not keep.any():
                 continue
 
-            fmid = self.f[ifo][mid]
-            hp, _ = get_fd_waveform_sequence(sample_points=Array(fmid),
-                                             **self.current_params)
-            ratio = hp.numpy() / self.h00[ifo][mid]
-
-            edge = self.wf_ret[ifo][0] / self.h00_sparse[ifo]
-            linear = numpy.interp(fmid, self.fedges[ifo], edge)
-
-            err = abs(ratio - linear)[keep] / abs(ratio)[keep]
+            w = (f[1:-1] - f[:-2]) / (f[2:] - f[:-2])
+            predicted = edge[:-2] * (1 - w) + edge[2:] * w
+            err = abs(predicted - edge[1:-1])[keep] / abs(edge[1:-1])[keep]
             worst = max(worst, err.max())
         return worst
 
+    @staticmethod
     def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
         """Adds reading fiducial waveform parameters from config file."""
         # add fiducial params to skip list
