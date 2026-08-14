@@ -207,6 +207,96 @@ class TestModels(unittest.TestCase):
         model.update(**self.q1)
         self.assertAlmostEqual(self.a2, model.loglr, delta=0.002)
 
+    def relbin(self, epsilon, static=None, variable=None, prior=None,
+               **kwargs):
+        """A relative binning model over the reference GW170817 data."""
+        return models.Relative(
+            list(variable or self.variable), copy.deepcopy(self.data),
+            low_frequency_cutoff=self.flow, psds=self.psds,
+            static_params=static or self.static, prior=prior or self.prior,
+            fiducial_params={'mass1': 1.3756}, epsilon=epsilon, **kwargs)
+
+    def heterodyne_error(self, model):
+        model.update(**self.q1)
+        model.get_waveforms(model.current_params)
+        return model.heterodyne_bin_error()
+
+    def test_heterodyne_error_falls_with_resolution(self):
+        """Adding bins must resolve the heterodyne better, at second order.
+
+        The bin width scales with epsilon and the error of a linear
+        interpolation goes as the width squared, so halving epsilon should
+        cut the error by roughly four.
+        """
+        values = [self.heterodyne_error(self.relbin(eps))
+                  for eps in (1.0, 0.5, 0.25)]
+        self.assertTrue(values[0] > values[1] > values[2],
+                        "error should fall as bins are added: %s" % values)
+        for coarse, fine in zip(values, values[1:]):
+            self.assertGreater(coarse / fine, 2.,
+                               "expected close to second order: %s" % values)
+
+    def test_heterodyne_error_tracks_the_likelihood_error(self):
+        """The reported error must predict the error it stands in for.
+
+        Both are measured against a much finer binning of the same model,
+        so this needs no external reference.
+        """
+        exact = self.relbin(0.005)
+        exact.update(**self.q1)
+        reference = exact.loglr
+
+        seen = []
+        for epsilon in (1.0, 0.25, 0.05):
+            model = self.relbin(epsilon)
+            error = self.heterodyne_error(model)
+            seen.append((error, abs(model.loglr - reference)))
+
+        for (ecoarse, lcoarse), (efine, lfine) in zip(seen, seen[1:]):
+            self.assertGreater(ecoarse, efine, "diagnostic: %s" % seen)
+            self.assertGreater(lcoarse, lfine, "likelihood: %s" % seen)
+
+    def test_heterodyne_error_sees_a_poorly_placed_fiducial(self):
+        """Bins that suit the fiducial need not suit the signal."""
+        offset = dict(self.static)
+        offset['mass1'], offset['mass2'] = 1.39, 1.36
+        self.assertGreater(
+            self.heterodyne_error(self.relbin(0.5, static=offset)),
+            self.heterodyne_error(self.relbin(0.5)) * 10)
+
+    def test_heterodyne_check_logs_every_call(self):
+        """Enabled, it must log the error of each call, and only then.
+
+        The value is logged rather than kept because the model is copied
+        into each worker, so nothing accumulated in it stands for the run.
+        """
+        static = {k: v for k, v in self.static.items() if k != 'mass1'}
+        variable = ['mass1'] + list(self.variable)
+        prior = JointDistribution(variable, SinAngle(inclination=None),
+                                  Uniform(distance=(10, 100)),
+                                  Uniform(mass1=(1.2, 1.6)))
+        draws = [dict(self.q1, mass1=m) for m in (1.3757, 1.55, 1.40)]
+
+        common = dict(static=static, variable=variable, prior=prior)
+        off = self.relbin(1.0, **common)
+        watched = self.relbin(1.0, check_heterodyne_bins=True, **common)
+        expected = []
+        with self.assertLogs(level='INFO') as captured:
+            for point in draws:
+                for model in (off, watched):
+                    model.update(**point)
+                    model.loglr
+                expected.append(watched.heterodyne_bin_error())
+
+        logged = [float(r.getMessage().rsplit(' ', 1)[1])
+                  for r in captured.records
+                  if r.getMessage().startswith('heterodyne bin error')]
+        # one line per call of the watched model, none for the other
+        self.assertEqual(logged, expected,
+                         "each call must log its own error")
+        self.assertGreater(max(expected), min(expected),
+                           "test is void unless the calls differ")
+
 
 class TestWaveformErrors(unittest.TestCase):
     """Tests that models handle no waveform errors correctly."""
