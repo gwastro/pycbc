@@ -306,7 +306,6 @@ class Relative(DistMarg, BaseGaussianNoise):
                                         int(earth_rotation_mode),
                                         self.fedges[ifo])
         self.combine_layout()
-        self.check_bin_resolution()
 
     def init_from_frequencies(self, data, h00, fbin_ind, ifo):
         bins = numpy.array(
@@ -668,84 +667,6 @@ class Relative(DistMarg, BaseGaussianNoise):
             worst = max(worst, err.max())
         return worst
 
-    def check_bin_resolution(self, ndraw=10, threshold=1e-3, seed=0):
-        """Check that the frequency bins resolve the waveform ratio.
-
-        Relative binning assumes the ratio of the waveform to the fiducial
-        one is linear across a bin. This draws a few points from the prior
-        and asks how far the ratio at the bin midpoints departs from that
-        assumption; where it departs a lot, a bin was needed in between.
-
-        Each draw costs one waveform per distinct set of bin edges, from
-        the likelihood's own call, plus one per detector at the midpoints:
-        three for two detectors sharing their edges. They are generated at
-        the resolution of the bins rather than of the data, so ten draws
-        cost about the time of 25 likelihood evaluations, against the
-        millions an analysis uses.
-
-        Parameters
-        ----------
-        ndraw : int, optional
-            How many points to draw from the prior.
-        threshold : float, optional
-            Warn if the interpolation error exceeds this. On GW170817,
-            errors of 9.6e-3, 2.3e-3, 5.9e-4 and 2.3e-5 came with errors in
-            the log likelihood ratio of 0.31, 0.056, 0.015 and 0.0013:
-            factors of 32, 24, 25 and 57 times the error reported here.
-            The factor is not a constant, and grows with the signal to
-            noise ratio, so this indicates trouble rather than bounding
-            the error.
-        seed : int, optional
-            Seed for the draws, so the check is reproducible.
-
-        Returns
-        -------
-        float
-            The largest error found, or 0 if it could not be checked.
-        """
-        if (self.prior_distribution is None
-                or not hasattr(self.prior_distribution, 'rvs')
-                or self.still_needs_det_response):
-            # a model built without a prior gets a stand-in rather than
-            # None, so ask whether it can be drawn from, not whether it is
-            # there; or the ratio is not formed here
-            return 0.
-        state = numpy.random.get_state()
-        numpy.random.seed(seed)
-        try:
-            draws = self.prior_distribution.rvs(size=int(ndraw))
-        finally:
-            numpy.random.set_state(state)
-
-        # a diagnostic should not move the model out from under the caller
-        saved = (self._current_params, self._current_stats)
-        worst = 0.
-        try:
-            for draw in draws:
-                params = {p: draw[p] for p in self.variable_params}
-                try:
-                    self.update(**params)
-                    self.get_waveforms(self.current_params)
-                    worst = max(worst,
-                                self.interpolation_error_from_reference())
-                except Exception:  # a bad draw should not stop the analysis
-                    continue
-        finally:
-            self._current_params, self._current_stats = saved
-
-        if worst > threshold:
-            logging.warning(
-                "The frequency bins may be too coarse: interpolating the "
-                "waveform ratio across a bin is off by %.3g, against a "
-                "threshold of %.3g. Consider a smaller epsilon, or a "
-                "fiducial waveform closer to where the posterior is.",
-                worst, threshold)
-        else:
-            logging.info("Bin resolution check: interpolation error %.3g "
-                         "(threshold %.3g)", worst, threshold)
-        return worst
-
-    @staticmethod
     def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
         """Adds reading fiducial waveform parameters from config file."""
         # add fiducial params to skip list

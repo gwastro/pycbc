@@ -12,22 +12,20 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-"""Tests that the relative binning resolution check tracks the actual error.
+"""Tests the diagnostic that measures the relative binning error.
 
-These build models directly with parameters chosen to stress the
-approximation, rather than running a sampler, and on simulated noise
-rather than downloaded data, so the whole file runs in a few seconds.
+Relative binning assumes the ratio of the waveform to the fiducial one is
+linear across a bin. This measures how far it departs from that, which is
+what says whether the bins are fine enough for the fiducial they were laid
+out around.
 """
 
 import unittest
-from itertools import pairwise
 
-import numpy
 from utils import simple_exit
 
 from pycbc.distributions import JointDistribution, SinAngle, Uniform
 from pycbc.inference import models
-from pycbc.inference.models import relbin
 from pycbc.noise import noise_from_psd
 from pycbc.psd import aLIGOZeroDetHighPower
 
@@ -72,13 +70,18 @@ class TestRelbinResolution(unittest.TestCase):
 
         The bin width scales with epsilon and the error of a linear
         interpolation goes as the width squared, so halving epsilon should
-        cut the reported error by roughly four.
+        cut the error by roughly four.
         """
-        values = [self.model(eps).check_bin_resolution()
-                  for eps in (1.0, 0.5, 0.25)]
+        values = []
+        for eps in (1.0, 0.5, 0.25):
+            model = self.model(eps)
+            model.update(**self.q)
+            model.get_waveforms(model.current_params)
+            values.append(model.interpolation_error_from_reference())
         self.assertTrue(values[0] > values[1] > values[2],
                         "error should fall as bins are added: %s" % values)
-        for coarse, fine in pairwise(values):
+        pairs = zip(values, values[1:], strict=False)
+        for coarse, fine in pairs:
             self.assertGreater(coarse / fine, 2.,
                                "expected close to second order: %s" % values)
 
@@ -96,81 +99,26 @@ class TestRelbinResolution(unittest.TestCase):
         for epsilon in (1.0, 0.25, 0.05):
             model = self.model(epsilon)
             model.update(**self.q)
-            seen.append((model.check_bin_resolution(),
+            model.get_waveforms(model.current_params)
+            seen.append((model.interpolation_error_from_reference(),
                          abs(model.loglr - reference)))
 
-        # the diagnostic is only useful if the two fall together
-        for (ecoarse, lcoarse), (efine, lfine) in pairwise(seen):
+        pairs = zip(seen, seen[1:], strict=False)
+        for (ecoarse, lcoarse), (efine, lfine) in pairs:
             self.assertGreater(ecoarse, efine, "diagnostic: %s" % seen)
             self.assertGreater(lcoarse, lfine, "likelihood: %s" % seen)
 
-    def test_flags_a_poorly_placed_fiducial(self):
+    def test_a_poorly_placed_fiducial_shows_up(self):
         """Bins that suit the fiducial need not suit the signal."""
+        def error(static=None):
+            model = self.model(0.5, static=static)
+            model.update(**self.q)
+            model.get_waveforms(model.current_params)
+            return model.interpolation_error_from_reference()
+
         offset = dict(self.static)
         offset['mass1'], offset['mass2'] = 1.39, 1.36
-        good = self.model(0.5).check_bin_resolution()
-        bad = self.model(0.5, static=offset).check_bin_resolution()
-        self.assertGreater(bad, good * 10)
-        self.assertGreater(bad, 1e-3)
-
-    def test_check_leaves_the_model_alone(self):
-        """A diagnostic must not move the point the model is sitting at."""
-        model = self.model(0.5)
-        model.update(**self.q)
-        before = model.loglr
-        model.check_bin_resolution()
-        self.assertEqual(model.current_params['distance'], self.q['distance'])
-        self.assertEqual(before, model.loglr)
-
-    def test_check_is_cheap(self):
-        """It must cost a handful of waveforms, not a full analysis.
-
-        The point of measuring the error at the bin midpoints rather than
-        on a fine grid is that everything is generated at the resolution
-        of the bins. Counting the generator calls and the samples asked of
-        them is what says so; a check that quietly reached for the data's
-        own frequencies would still return a sensible number.
-        """
-        model = self.model(0.5)
-        asked = []
-        original = relbin.get_fd_waveform_sequence
-
-        def record(sample_points=None, **kwargs):
-            asked.append(len(sample_points))
-            return original(sample_points=sample_points, **kwargs)
-
-        relbin.get_fd_waveform_sequence = record
-        try:
-            value = model.check_bin_resolution(ndraw=3)
-        finally:
-            relbin.get_fd_waveform_sequence = original
-
-        self.assertTrue(numpy.isfinite(value))
-        self.assertGreaterEqual(value, 0.)
-
-        # one waveform at the edges per distinct edge set, from the
-        # likelihood's own call, plus one at the midpoints per detector
-        per_draw = len(model.edge_unique) + len(model.data)
-        self.assertEqual(len(asked), 3 * per_draw)
-
-        # and every one of them at the resolution of the bins, which is
-        # far short of the data the analysis works at
-        nbins = max(len(model.fedges[ifo]) for ifo in model.data)
-        ndata = min(len(model.f[ifo]) for ifo in model.data)
-        self.assertLessEqual(max(asked), nbins)
-        self.assertLess(sum(asked), ndata)
-
-
-    def test_a_model_without_a_prior_can_be_built(self):
-        """The check runs at construction and must not need a prior."""
-        model = models.Relative(
-            list(self.variable), {k: v.copy() for k, v in self.data.items()},
-            low_frequency_cutoff=self.flow, psds=self.psds,
-            static_params=self.static, fiducial_params={'mass1': 1.3756},
-            epsilon=0.5)
-        model.update(**self.q)
-        self.assertTrue(numpy.isfinite(model.loglr))
-        self.assertEqual(model.check_bin_resolution(), 0.)
+        self.assertGreater(error(offset), error() * 10)
 
 
 suite = unittest.TestSuite()
