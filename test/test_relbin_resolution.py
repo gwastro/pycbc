@@ -58,12 +58,48 @@ class TestRelbinResolution(unittest.TestCase):
                                       Uniform(distance=(10, 100)))
         cls.q = {'distance': 42.0, 'inclination': 2.5}
 
-    def model(self, epsilon, static=None):
+    def model(self, epsilon, static=None, variable=None, prior=None,
+              **kwargs):
         return models.Relative(
-            list(self.variable), {k: v.copy() for k, v in self.data.items()},
+            list(variable or self.variable),
+            {k: v.copy() for k, v in self.data.items()},
             low_frequency_cutoff=self.flow, psds=self.psds,
-            static_params=static or self.static, prior=self.prior,
-            fiducial_params={'mass1': 1.3756}, epsilon=epsilon)
+            static_params=static or self.static, prior=prior or self.prior,
+            fiducial_params={'mass1': 1.3756}, epsilon=epsilon, **kwargs)
+
+    def test_the_inline_option_records_the_worst_call(self):
+        """Enabled, it must keep the largest error over a run of calls.
+
+        Collecting it inline is only worth the cost because the error
+        depends on where in the parameter space the call lands, so the
+        worst call is deliberately not the last one here.
+        """
+        static = {k: v for k, v in self.static.items() if k != 'mass1'}
+        variable = ['mass1', 'distance', 'inclination']
+        prior = JointDistribution(variable, SinAngle(inclination=None),
+                                  Uniform(distance=(10, 100)),
+                                  Uniform(mass1=(1.2, 1.6)))
+        draws = [dict(mass1=m, distance=42., inclination=2.5)
+                 for m in (1.3757, 1.55, 1.40)]
+
+        off = self.model(1.0, static=static, variable=variable, prior=prior)
+        watched = self.model(1.0, static=static, variable=variable,
+                             prior=prior, check_interpolation_error=True)
+        seen = []
+        for point in draws:
+            for model in (off, watched):
+                model.update(**point)
+                model.loglr
+            seen.append(watched.interpolation_error_from_reference())
+
+        self.assertEqual(off.max_interpolation_error, 0.,
+                         "must record nothing when off")
+        self.assertGreater(watched.max_interpolation_error, 0.,
+                           "enabled, it must record something")
+        self.assertGreater(max(seen), seen[-1],
+                           "test is void unless the worst call is not last")
+        self.assertEqual(watched.max_interpolation_error, max(seen),
+                         "must keep the worst call, not the last: %s" % seen)
 
     def test_error_falls_with_resolution(self):
         """Adding bins must resolve the ratio better, and at second order.
