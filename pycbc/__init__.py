@@ -106,7 +106,11 @@ def add_common_pycbc_options(parser):
 # PyCBC is run verbosely. init_logging holds them one step behind the level
 # it sets for everything else. Only the one whose noise has actually been
 # measured is listed; others can be added as they are found.
-NOISY_LOGGERS = ["matplotlib.font_manager"]
+NOISY_LOGGERS = [
+    "matplotlib.font_manager",
+    "scitokens",
+    "Pegasus"
+]
 
 
 def init_logging(verbose=False, default_level=0, to_file=None,
