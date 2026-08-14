@@ -680,9 +680,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             ratio = hp.numpy() / self.h00[ifo][mid]
 
             edge = self.wf_ret[ifo][0] / self.h00_sparse[ifo]
-            fedges = self.fedges[ifo]
-            w = (fmid - fedges[:-1]) / numpy.diff(fedges)
-            linear = edge[:-1] * (1 - w) + edge[1:] * w
+            linear = numpy.interp(fmid, self.fedges[ifo], edge)
 
             err = abs(ratio - linear)[keep] / abs(ratio)[keep]
             worst = max(worst, err.max())
@@ -696,9 +694,12 @@ class Relative(DistMarg, BaseGaussianNoise):
         and asks how far the ratio at the bin midpoints departs from that
         assumption; where it departs a lot, a bin was needed in between.
 
-        It costs two waveforms per draw at the resolution of the bins
-        rather than of the data, so it is cheap compared with the analysis
-        it precedes.
+        Each draw costs one waveform per distinct set of bin edges, from
+        the likelihood's own call, plus one per detector at the midpoints:
+        three for two detectors sharing their edges. They are generated at
+        the resolution of the bins rather than of the data, so ten draws
+        cost about the time of 25 likelihood evaluations, against the
+        millions an analysis uses.
 
         Parameters
         ----------
@@ -707,10 +708,11 @@ class Relative(DistMarg, BaseGaussianNoise):
         threshold : float, optional
             Warn if the interpolation error exceeds this. On GW170817,
             errors of 9.6e-3, 2.3e-3, 5.9e-4 and 2.3e-5 came with errors in
-            the log likelihood ratio of 0.31, 0.056, 0.015 and 0.0013, so
-            the cost is roughly 25 times the error reported here. That
-            factor grows with the signal to noise ratio, so this indicates
-            trouble rather than bounding the error.
+            the log likelihood ratio of 0.31, 0.056, 0.015 and 0.0013:
+            factors of 32, 24, 25 and 57 times the error reported here.
+            The factor is not a constant, and grows with the signal to
+            noise ratio, so this indicates trouble rather than bounding
+            the error.
         seed : int, optional
             Seed for the draws, so the check is reproducible.
 
