@@ -78,13 +78,12 @@ class TestRelbinResolution(unittest.TestCase):
             **kwargs,
         )
 
-    def test_the_inline_option_records_the_worst_call(self):
+    def test_the_inline_option_logs_every_call(self):
         """
-        Enabled, it must keep the largest error over a run of calls.
+        Enabled, it must log the error of each call, and only then.
 
-        Collecting it inline is only worth the cost because the error
-        depends on where in the parameter space the call lands, so the
-        worst call is deliberately not the last one here.
+        The value is logged rather than kept because the model is copied
+        into each worker, so nothing accumulated in it stands for the run.
         """
         static = {k: v for k, v in self.static.items() if k != "mass1"}
         variable = ["mass1", "distance", "inclination"]
@@ -106,24 +105,23 @@ class TestRelbinResolution(unittest.TestCase):
             prior=prior,
             check_heterodyne_bins=True,
         )
-        seen = []
-        for point in draws:
-            for model in (off, watched):
-                model.update(**point)
-                model.loglr
-            seen.append(watched.heterodyne_bin_error())
+        expected = []
+        with self.assertLogs(level="INFO") as captured:
+            for point in draws:
+                for model in (off, watched):
+                    model.update(**point)
+                    model.loglr
+                expected.append(watched.heterodyne_bin_error())
 
-        self.assertEqual(off.max_heterodyne_error, 0.0, "must record nothing when off")
+        logged = [
+            float(r.getMessage().rsplit(" ", 1)[1])
+            for r in captured.records
+            if r.getMessage().startswith("heterodyne bin error")
+        ]
+        # one line per call of the watched model, none for the other
+        self.assertEqual(logged, expected, "each call must log its own error")
         self.assertGreater(
-            watched.max_heterodyne_error, 0.0, "enabled, it must record something"
-        )
-        self.assertGreater(
-            max(seen), seen[-1], "test is void unless the worst call is not last"
-        )
-        self.assertEqual(
-            watched.max_heterodyne_error,
-            max(seen),
-            "must keep the worst call, not the last: %s" % seen,
+            max(expected), min(expected), "test is void unless the calls differ"
         )
 
     def test_error_falls_with_resolution(self):

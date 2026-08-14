@@ -183,10 +183,9 @@ class Relative(DistMarg, BaseGaussianNoise):
         for the time offsets.
     check_heterodyne_bins : boolean, optional
         Default is False. If True, measure how much error the bins make in
-        the heterodyne at every likelihood call, and keep the largest seen
-        in ``max_heterodyne_error``, which is written to the output file.
-        This is a debugging aid for choosing ``epsilon``, and it makes each
-        call more expensive.
+        the heterodyne at every likelihood call and log it. This is a
+        debugging aid for choosing ``epsilon``, and it makes each call more
+        expensive.
     \**kwargs :
         All other keyword arguments are passed to
         :py:class:`BaseGaussianNoise`.
@@ -217,7 +216,6 @@ class Relative(DistMarg, BaseGaussianNoise):
         super().__init__(variable_params, data, low_frequency_cutoff, **kwargs)
 
         self.check_heterodyne_bins = check_heterodyne_bins
-        self.max_heterodyne_error = 0.0
 
         # If the waveform needs us to apply the detector response,
         # set flag to true (most cases for ground-based observatories).
@@ -476,9 +474,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
         self.wf_ret = wf_ret
         if self.check_heterodyne_bins:
-            self.max_heterodyne_error = max(
-                self.max_heterodyne_error, self.heterodyne_bin_error()
-            )
+            logging.info("heterodyne bin error: %s", self.heterodyne_bin_error())
         return wf_ret
 
     @property
@@ -718,8 +714,6 @@ class Relative(DistMarg, BaseGaussianNoise):
             attrs = fp[group].attrs
         for p, v in self.fid_params.items():
             attrs[f"{p}_ref"] = v
-        if self.check_heterodyne_bins:
-            attrs["max_heterodyne_error"] = self.max_heterodyne_error
 
     def heterodyne_bin_error(self):
         """
