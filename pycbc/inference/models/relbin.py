@@ -165,10 +165,10 @@ class Relative(DistMarg, BaseGaussianNoise):
         Default is False. If True, then vary the fp/fc polarization values
         as a function of frequency bin, using a predetermined PN approximation
         for the time offsets.
-    check_interpolation_error : boolean, optional
-        Default is False. If True, measure the interpolation error at every
-        likelihood call and keep the largest seen in
-        ``max_interpolation_error``, which is written to the output file.
+    check_heterodyne_bins : boolean, optional
+        Default is False. If True, measure how much error the bins make in
+        the heterodyne at every likelihood call, and keep the largest seen
+        in ``max_heterodyne_error``, which is written to the output file.
         This is a debugging aid for choosing ``epsilon``, and it makes each
         call more expensive.
     \**kwargs :
@@ -188,7 +188,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         earth_rotation=False,
         earth_rotation_mode=2,
         marginalize_phase=True,
-        check_interpolation_error=False,
+        check_heterodyne_bins=False,
         **kwargs
     ):
 
@@ -201,8 +201,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             variable_params, data, low_frequency_cutoff, **kwargs
         )
 
-        self.check_interpolation_error = check_interpolation_error
-        self.max_interpolation_error = 0.
+        self.check_heterodyne_bins = check_heterodyne_bins
+        self.max_heterodyne_error = 0.
 
         # If the waveform needs us to apply the detector response,
         # set flag to true (most cases for ground-based observatories).
@@ -451,10 +451,10 @@ class Relative(DistMarg, BaseGaussianNoise):
             wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
 
         self.wf_ret = wf_ret
-        if self.check_interpolation_error:
-            self.max_interpolation_error = max(
-                self.max_interpolation_error,
-                self.interpolation_error_from_reference())
+        if self.check_heterodyne_bins:
+            self.max_heterodyne_error = max(
+                self.max_heterodyne_error,
+                self.heterodyne_bin_error())
         return wf_ret
 
     @property
@@ -648,17 +648,18 @@ class Relative(DistMarg, BaseGaussianNoise):
             attrs = fp[group].attrs
         for p, v in self.fid_params.items():
             attrs["{}_ref".format(p)] = v
-        if self.check_interpolation_error:
-            attrs["max_interpolation_error"] = self.max_interpolation_error
+        if self.check_heterodyne_bins:
+            attrs["max_heterodyne_error"] = self.max_heterodyne_error
 
-    def interpolation_error_from_reference(self):
-        """ Return the largest error made by interpolating the waveform
-        ratio across a bin, relative to the size of the ratio.
+    def heterodyne_bin_error(self):
+        """ Return the largest error the bins make in the heterodyne,
+        relative to its size.
 
-        Relative binning assumes the ratio to the fiducial waveform is
-        linear between bin edges. Each interior edge is predicted from its
-        two neighbours and compared with what it actually is, which uses
-        only the ratio the likelihood has already evaluated.
+        The heterodyne, the ratio of the waveform to the fiducial one, is
+        assumed to be linear between bin edges. Each interior edge is
+        predicted from its two neighbours and compared with what it
+        actually is, which uses only the values the likelihood has already
+        evaluated.
 
         Reaching across two bins rather than one, it reports the error of a
         binning twice as coarse: about four times the error within a bin,
