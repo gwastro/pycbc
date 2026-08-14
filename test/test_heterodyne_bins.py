@@ -13,12 +13,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
-Tests the diagnostic that measures the relative binning error.
+Tests the diagnostic that measures the error the bins make.
 
-Relative binning assumes the ratio of the waveform to the fiducial one is
-linear across a bin. This measures how far it departs from that, which is
-what says whether the bins are fine enough for the fiducial they were laid
-out around.
+The heterodyne, the ratio of the waveform to the fiducial one, is assumed
+to be linear across a bin. This measures how far it departs from that,
+which is what says whether the bins are fine enough for the fiducial they
+were laid out around.
 """
 
 import unittest
@@ -104,33 +104,31 @@ class TestRelbinResolution(unittest.TestCase):
             static=static,
             variable=variable,
             prior=prior,
-            check_interpolation_error=True,
+            check_heterodyne_bins=True,
         )
         seen = []
         for point in draws:
             for model in (off, watched):
                 model.update(**point)
                 model.loglr
-            seen.append(watched.interpolation_error_from_reference())
+            seen.append(watched.heterodyne_bin_error())
 
-        self.assertEqual(
-            off.max_interpolation_error, 0.0, "must record nothing when off"
-        )
+        self.assertEqual(off.max_heterodyne_error, 0.0, "must record nothing when off")
         self.assertGreater(
-            watched.max_interpolation_error, 0.0, "enabled, it must record something"
+            watched.max_heterodyne_error, 0.0, "enabled, it must record something"
         )
         self.assertGreater(
             max(seen), seen[-1], "test is void unless the worst call is not last"
         )
         self.assertEqual(
-            watched.max_interpolation_error,
+            watched.max_heterodyne_error,
             max(seen),
             "must keep the worst call, not the last: %s" % seen,
         )
 
     def test_error_falls_with_resolution(self):
         """
-        Adding bins must resolve the ratio better, and at second order.
+        Adding bins must resolve the heterodyne better, at second order.
 
         The bin width scales with epsilon and the error of a linear
         interpolation goes as the width squared, so halving epsilon should
@@ -141,7 +139,7 @@ class TestRelbinResolution(unittest.TestCase):
             model = self.model(eps)
             model.update(**self.q)
             model.get_waveforms(model.current_params)
-            values.append(model.interpolation_error_from_reference())
+            values.append(model.heterodyne_bin_error())
         self.assertTrue(
             values[0] > values[1] > values[2],
             "error should fall as bins are added: %s" % values,
@@ -168,12 +166,7 @@ class TestRelbinResolution(unittest.TestCase):
             model = self.model(epsilon)
             model.update(**self.q)
             model.get_waveforms(model.current_params)
-            seen.append(
-                (
-                    model.interpolation_error_from_reference(),
-                    abs(model.loglr - reference),
-                )
-            )
+            seen.append((model.heterodyne_bin_error(), abs(model.loglr - reference)))
 
         pairs = zip(seen, seen[1:], strict=False)
         for (ecoarse, lcoarse), (efine, lfine) in pairs:
@@ -187,7 +180,7 @@ class TestRelbinResolution(unittest.TestCase):
             model = self.model(0.5, static=static)
             model.update(**self.q)
             model.get_waveforms(model.current_params)
-            return model.interpolation_error_from_reference()
+            return model.heterodyne_bin_error()
 
         offset = dict(self.static)
         offset["mass1"], offset["mass2"] = 1.39, 1.36
