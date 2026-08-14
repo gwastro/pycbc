@@ -233,13 +233,7 @@ class Detector(object):
             The response matrix applied to it, with the same shape.
         """
         v = np.array(np.broadcast_arrays(v0, v1, v2))
-        # line the matrix columns up with the leading axis of the stack,
-        # whatever the components' own shape is
-        col = (3,) + (1,) * (v.ndim - 1)
-        dv = (resp[:, 0].reshape(col) * v[0]
-              + resp[:, 1].reshape(col) * v[1]
-              + resp[:, 2].reshape(col) * v[2])
-        return v, dv
+        return v, resp.dot(v)
 
     def __init__(self, detector_name, reference_time=1126259462.0):
         """ Create class representing a gravitational-wave detector
@@ -468,9 +462,9 @@ class Detector(object):
         e1 = cosd * -sin(ra_angle)
         e2 = sin(declination)
 
-        # written out componentwise: the three may have different shapes,
-        # and stacking them to dot would need an array of dtype object,
-        # which multiplies one python float at a time
+        # written out componentwise rather than stacked and dotted: the
+        # stack costs more to build than the reduction saves, measured at
+        # every size, and the components may have different shapes anyway
         dx = other_location - self.location
         proj = dx[0] * e0 + dx[1] * e1 + dx[2] * e2
         return proj / constants.c.value

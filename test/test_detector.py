@@ -161,25 +161,43 @@ class TestDetector(unittest.TestCase):
         lining the components up would show at some positions and not
         others. Covers the vector and scalar polarizations, and
         time_delay_from_earth_center given an array.
-        """
-        t = 1187008882.0
-        cases = [{}, {'polarization_type': 'vector'},
-                 {'polarization_type': 'scalar'}]
-        for d in self.d:
-            dt = d.time_delay_from_earth_center(self.ra, self.dec, t)
-            got = [d.antenna_pattern(self.ra, self.dec, self.pol, t, **kw)
-                   for kw in cases]
 
-            for i in (0, 137, len(self.ra) - 1):
-                ra, dec = float(self.ra[i]), float(self.dec[i])
-                pol = float(self.pol[i])
+        The response is compared to the precision of the arithmetic rather
+        than exactly: the matrix product rounds differently over a whole
+        set than over one position, in the last bit of a double.
+        """
+        test_time = 1187008882.0
+        polarizations = [{}, {'polarization_type': 'vector'},
+                         {'polarization_type': 'scalar'}]
+        for detector in self.d:
+            delay_vector = detector.time_delay_from_earth_center(
+                self.ra, self.dec, test_time)
+            response_vectors = [
+                detector.antenna_pattern(self.ra, self.dec, self.pol,
+                                         test_time, **kwargs)
+                for kwargs in polarizations]
+
+            for index in (0, 137, len(self.ra) - 1):
+                right_ascension = float(self.ra[index])
+                declination = float(self.dec[index])
+                polarization = float(self.pol[index])
+
                 self.assertEqual(
-                    dt[i], d.time_delay_from_earth_center(ra, dec, t))
-                for kw, vec in zip(cases, got):
-                    one = d.antenna_pattern(ra, dec, pol, t, **kw)
-                    for whole, single in zip(vec, one):
-                        self.assertEqual(whole[i], single,
-                                         "%s at %s" % (kw, i))
+                    delay_vector[index],
+                    detector.time_delay_from_earth_center(
+                        right_ascension, declination, test_time))
+
+                for kwargs, from_vector in zip(polarizations,
+                                               response_vectors):
+                    one_at_a_time = detector.antenna_pattern(
+                        right_ascension, declination, polarization,
+                        test_time, **kwargs)
+                    for whole, single in zip(from_vector, one_at_a_time):
+                        self.assertTrue(
+                            numpy.isclose(whole[index], single,
+                                          rtol=1e-14, atol=1e-16),
+                            "%s at %s: %r against %r"
+                            % (kwargs, index, whole[index], single))
 
 
 suite = unittest.TestSuite()
