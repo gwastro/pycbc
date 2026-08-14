@@ -15,17 +15,19 @@
 """Tests that the relative binning resolution check tracks the actual error.
 
 These build models directly with parameters chosen to stress the
-approximation, rather than running a sampler, so the whole file runs in
-well under a minute on cached data.
+approximation, rather than running a sampler, and on simulated noise
+rather than downloaded data, so the whole file runs in a few seconds.
 """
 
 import unittest
+from itertools import pairwise
 
 import numpy
 from utils import simple_exit
 
 from pycbc.distributions import JointDistribution, SinAngle, Uniform
 from pycbc.inference import models
+from pycbc.inference.models import relbin
 from pycbc.noise import noise_from_psd
 from pycbc.psd import aLIGOZeroDetHighPower
 
@@ -76,7 +78,7 @@ class TestRelbinResolution(unittest.TestCase):
                   for eps in (1.0, 0.5, 0.25)]
         self.assertTrue(values[0] > values[1] > values[2],
                         "error should fall as bins are added: %s" % values)
-        for coarse, fine in zip(values, values[1:], strict=False):
+        for coarse, fine in pairwise(values):
             self.assertGreater(coarse / fine, 2.,
                                "expected close to second order: %s" % values)
 
@@ -98,8 +100,7 @@ class TestRelbinResolution(unittest.TestCase):
                          abs(model.loglr - reference)))
 
         # the diagnostic is only useful if the two fall together
-        pairs = zip(seen, seen[1:], strict=False)
-        for (ecoarse, lcoarse), (efine, lfine) in pairs:
+        for (ecoarse, lcoarse), (efine, lfine) in pairwise(seen):
             self.assertGreater(ecoarse, efine, "diagnostic: %s" % seen)
             self.assertGreater(lcoarse, lfine, "likelihood: %s" % seen)
 
@@ -122,11 +123,42 @@ class TestRelbinResolution(unittest.TestCase):
         self.assertEqual(before, model.loglr)
 
     def test_check_is_cheap(self):
-        """It must cost a handful of waveforms, not a full analysis."""
+        """It must cost a handful of waveforms, not a full analysis.
+
+        The point of measuring the error at the bin midpoints rather than
+        on a fine grid is that everything is generated at the resolution
+        of the bins. Counting the generator calls and the samples asked of
+        them is what says so; a check that quietly reached for the data's
+        own frequencies would still return a sensible number.
+        """
         model = self.model(0.5)
-        value = model.check_bin_resolution(ndraw=3)
+        asked = []
+        original = relbin.get_fd_waveform_sequence
+
+        def record(sample_points=None, **kwargs):
+            asked.append(len(sample_points))
+            return original(sample_points=sample_points, **kwargs)
+
+        relbin.get_fd_waveform_sequence = record
+        try:
+            value = model.check_bin_resolution(ndraw=3)
+        finally:
+            relbin.get_fd_waveform_sequence = original
+
         self.assertTrue(numpy.isfinite(value))
         self.assertGreaterEqual(value, 0.)
+
+        # one waveform at the edges per distinct edge set, from the
+        # likelihood's own call, plus one at the midpoints per detector
+        per_draw = len(model.edge_unique) + len(model.data)
+        self.assertEqual(len(asked), 3 * per_draw)
+
+        # and every one of them at the resolution of the bins, which is
+        # far short of the data the analysis works at
+        nbins = max(len(model.fedges[ifo]) for ifo in model.data)
+        ndata = min(len(model.f[ifo]) for ifo in model.data)
+        self.assertLessEqual(max(asked), nbins)
+        self.assertLess(sum(asked), ndata)
 
 
     def test_diagnostic_survives_vector_valued_parameters(self):
