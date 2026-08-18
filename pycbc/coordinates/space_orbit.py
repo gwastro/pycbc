@@ -340,10 +340,11 @@ class NumericOrbits:
         frame, in km and km/s, with ISO 8601 timestamps in the TCB or TDB
         time system; this converts to pycbc's own convention (SSB
         BarycentricMeanEcliptic frame, meters, GPS seconds) before
-        building the `NumericOrbits`, using the same fixed ICRS -> ecliptic
-        rotation as `ICRSOrbitAdapter`. An optional acceleration triplet
-        in the file (a 3rd column group) is not used -- acceleration is
-        derived from the velocity spline instead, as in `__init__`.
+        building the `NumericOrbits`, using
+        `_icrs_to_ecliptic_rotation_matrix`. An optional acceleration
+        triplet in the file (a 3rd column group) is not used --
+        acceleration is derived from the velocity spline instead, as in
+        `__init__`.
 
         Only the first ephemeris segment of each file is read (matching
         `lisaorbits.OEMOrbits`'s own behavior); a `ValueError` is raised
@@ -543,60 +544,6 @@ def _icrs_to_ecliptic_rotation_matrix():
     return _ICRS_TO_ECLIPTIC_ROTATION
 
 
-class ICRSOrbitAdapter:
-    """Wrap an `OrbitProvider` given in the ICRS (equatorial) frame so it
-    can be used as a drop-in `OrbitProvider` in pycbc's own
-    BarycentricMeanEcliptic convention.
-
-    Real spacecraft ephemerides are most often published in an equatorial
-    frame (e.g. CCSDS OEM files use EME2000, which `lisaorbits.OEMOrbits`
-    reads without further rotation, so any `lisaorbits.Orbits` instance
-    built from such files reports positions in ICRS). This module and
-    `pycbc.coordinates.space` assume the SSB ecliptic frame throughout, so
-    such an orbit cannot be passed to `constellation_frame`/`link_vector`/
-    etc. directly without producing silently-wrong frame-dependent
-    quantities (e.g. `constellation_frame`'s rotation matrix and centroid
-    components) -- even though frame-independent quantities like arm
-    length happen to come out correct either way.
-
-    This class wraps `compute_position`/`compute_velocity`/
-    `compute_acceleration`; all three are rotated with the same fixed
-    matrix, since the ICRS -> ecliptic transform (fixed equinox, no origin
-    shift) commutes with time differentiation.
-
-    Parameters
-    ----------
-    orbit : OrbitProvider
-        Any object exposing `compute_position(t, sc)` (and, optionally,
-        `compute_velocity(t, sc)`) with positions/velocities in the ICRS
-        frame -- for example a real `lisaorbits.OEMOrbits` instance built
-        from official ESA lisa-orbit-files data.
-    """
-    def __init__(self, orbit):
-        self._orbit = orbit
-        self._rotation_T = _icrs_to_ecliptic_rotation_matrix().T
-
-    def _rotate(self, arr):
-        """Apply the fixed ICRS -> ecliptic rotation to an (N, M, 3)
-        array. Reshaping to (N*M, 3) first and rotating with a single 2D
-        matmul is dramatically faster than broadcasting the 3x3 rotation
-        directly over the leading (N, M) axes of the 3D array (measured
-        ~35x at N*M ~ 3e5): numpy/BLAS vectorizes one large 2D matmul far
-        better than many small batched ones.
-        """
-        shape = arr.shape
-        return (arr.reshape(-1, 3) @ self._rotation_T).reshape(shape)
-
-    def compute_position(self, t, sc=(1, 2, 3)):
-        return self._rotate(self._orbit.compute_position(t, sc))
-
-    def compute_velocity(self, t, sc=(1, 2, 3)):
-        return self._rotate(self._orbit.compute_velocity(t, sc))
-
-    def compute_acceleration(self, t, sc=(1, 2, 3)):
-        return self._rotate(self._orbit.compute_acceleration(t, sc))
-
-
 def _real_earth_ecliptic_longitude(t=0.0):
     """Real Earth's ecliptic longitude at SSB time `t` [s], from
     `pycbc.coordinates.space.earth_position_ssb` (astropy-based real
@@ -614,11 +561,10 @@ def _real_body_position_velocity(t, body='earth'):
     -- unlike a circular (or even eccentric two-body Kepler) approximation,
     this includes real perturbations, so it is strictly more accurate than
     any closed-form orbit for a guiding-center's motion, not just a
-    higher-order one. Uses the same fixed ICRS -> ecliptic rotation as
-    `ICRSOrbitAdapter` (rather than `pycbc.coordinates.space.
-    earth_position_ssb`'s own per-call astropy frame transform) so that
-    querying many times stays fast. Imported lazily to avoid a circular
-    import.
+    higher-order one. Uses the same fixed `_icrs_to_ecliptic_rotation_matrix`
+    (rather than `pycbc.coordinates.space.earth_position_ssb`'s own
+    per-call astropy frame transform) so that querying many times stays
+    fast. Imported lazily to avoid a circular import.
 
     Parameters
     ----------
@@ -1689,7 +1635,6 @@ __all__ = [
     'TaijiAnalyticOrbit',
     'TaijiKeplerianOrbit',
     'TianQinAnalyticOrbit',
-    'ICRSOrbitAdapter',
     'constellation_frame',
     'link_vector',
     't_detector_from_ssb',

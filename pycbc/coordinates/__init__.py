@@ -42,7 +42,7 @@ __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'lisa_to_geo', 'geo_to_lisa',
            'NumericOrbits', 'LisaAnalyticOrbit', 'LisaKeplerianOrbit',
            'TaijiAnalyticOrbit', 'TaijiKeplerianOrbit',
-           'TianQinAnalyticOrbit', 'ICRSOrbitAdapter',
+           'TianQinAnalyticOrbit',
            'constellation_frame', 'link_vector',
            't_detector_from_ssb', 't_ssb_from_t_detector',
            ]

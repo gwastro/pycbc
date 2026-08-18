@@ -954,7 +954,7 @@ class TestKeplerianOrbits(unittest.TestCase):
             self.skipTest('lisaorbits not installed; skipping exact '
                           'Keplerian-orbit cross-check')
         ref = lisaorbits.KeplerianOrbits(L=ARMLENGTH)
-        ref_ecliptic = space_orbit.ICRSOrbitAdapter(ref)
+        ref_ecliptic = ICRSOrbitAdapter(ref)
 
         t = numpy.random.uniform(1e5, 3.1e7, size=20)
         sc = (1, 2, 3)
@@ -1233,7 +1233,7 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
             self.skipTest('lisaorbits not installed; skipping exact '
                           'position/velocity/acceleration cross-check')
         ref = lisaorbits.EqualArmlengthOrbits(L=ARMLENGTH)
-        ref_ecliptic = space_orbit.ICRSOrbitAdapter(ref)
+        ref_ecliptic = ICRSOrbitAdapter(ref)
 
         t = numpy.random.uniform(1e5, 3.1e7, size=20)
         sc = (1, 2, 3)
@@ -1453,7 +1453,7 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
 
         native = space_orbit.NumericOrbits.from_oem_files(*oem_paths)
         ref = OEMOrbits(*oem_paths)
-        ref_ecliptic = space_orbit.ICRSOrbitAdapter(ref)
+        ref_ecliptic = ICRSOrbitAdapter(ref)
 
         query_gps = numpy.linspace(
             native.t_interp[10], native.t_interp[-10], 30)
@@ -1594,6 +1594,68 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
         self.assertLess(numpy.max(numpy.abs(arm_12 - 2.5e9)), 1.0)
 
 
+class ICRSOrbitAdapter:
+    """Wrap an `OrbitProvider` given in the ICRS (equatorial) frame so it
+    can be used as a drop-in `OrbitProvider` in pycbc's own
+    BarycentricMeanEcliptic convention.
+
+    Test-only helper: it has no caller in `pycbc` itself, only here, where
+    it lets these tests compare pycbc's own orbit math directly against a
+    real, independently-generated `lisaorbits` object (analytic or
+    real-ESA-file-backed) without a round trip through a file just to pick
+    up the frame conversion -- see `TestICRSOrbitAdapter`,
+    `TestKeplerianOrbits.test_matches_lisaorbits_keplerian_orbits_exactly`,
+    and `TestOptionalESAOemOrbitFiles` below.
+
+    Real spacecraft ephemerides are most often published in an equatorial
+    frame (e.g. CCSDS OEM files use EME2000, which `lisaorbits.OEMOrbits`
+    reads without further rotation, so any `lisaorbits.Orbits` instance
+    built from such files reports positions in ICRS). `space_orbit` and
+    `pycbc.coordinates.space` assume the SSB ecliptic frame throughout, so
+    such an orbit cannot be passed to `constellation_frame`/`link_vector`/
+    etc. directly without producing silently-wrong frame-dependent
+    quantities (e.g. `constellation_frame`'s rotation matrix and centroid
+    components) -- even though frame-independent quantities like arm
+    length happen to come out correct either way.
+
+    This class wraps `compute_position`/`compute_velocity`/
+    `compute_acceleration`; all three are rotated with the same fixed
+    matrix, since the ICRS -> ecliptic transform (fixed equinox, no origin
+    shift) commutes with time differentiation.
+
+    Parameters
+    ----------
+    orbit : OrbitProvider
+        Any object exposing `compute_position(t, sc)` (and, optionally,
+        `compute_velocity(t, sc)`) with positions/velocities in the ICRS
+        frame -- for example a real `lisaorbits.OEMOrbits` instance built
+        from official ESA lisa-orbit-files data.
+    """
+    def __init__(self, orbit):
+        self._orbit = orbit
+        self._rotation_T = space_orbit._icrs_to_ecliptic_rotation_matrix().T
+
+    def _rotate(self, arr):
+        """Apply the fixed ICRS -> ecliptic rotation to an (N, M, 3)
+        array. Reshaping to (N*M, 3) first and rotating with a single 2D
+        matmul is dramatically faster than broadcasting the 3x3 rotation
+        directly over the leading (N, M) axes of the 3D array (measured
+        ~35x at N*M ~ 3e5): numpy/BLAS vectorizes one large 2D matmul far
+        better than many small batched ones.
+        """
+        shape = arr.shape
+        return (arr.reshape(-1, 3) @ self._rotation_T).reshape(shape)
+
+    def compute_position(self, t, sc=(1, 2, 3)):
+        return self._rotate(self._orbit.compute_position(t, sc))
+
+    def compute_velocity(self, t, sc=(1, 2, 3)):
+        return self._rotate(self._orbit.compute_velocity(t, sc))
+
+    def compute_acceleration(self, t, sc=(1, 2, 3)):
+        return self._rotate(self._orbit.compute_acceleration(t, sc))
+
+
 class TestICRSOrbitAdapter(unittest.TestCase):
     """`ICRSOrbitAdapter` wraps an ICRS-frame orbit provider (as produced by
     real spacecraft ephemerides, e.g. CCSDS OEM files) so it can be used as
@@ -1621,7 +1683,7 @@ class TestICRSOrbitAdapter(unittest.TestCase):
         return _FakeICRSOrbit()
 
     def test_round_trip_recovers_ecliptic_positions(self):
-        adapter = space_orbit.ICRSOrbitAdapter(self._fake_icrs_orbit())
+        adapter = ICRSOrbitAdapter(self._fake_icrs_orbit())
         recovered = adapter.compute_position(self.times, (1, 2, 3))
         expected = self.ecliptic_orbit.compute_position(self.times, (1, 2, 3))
         self.assertLess(numpy.max(numpy.abs(recovered - expected)), 1e-3)
@@ -1669,7 +1731,7 @@ class TestICRSOrbitAdapter(unittest.TestCase):
             def compute_velocity(self, t, sc=(1, 2, 3)):
                 return numeric_ecliptic.compute_velocity(t, sc) @ rotation
 
-        adapter = space_orbit.ICRSOrbitAdapter(_FakeICRSOrbit())
+        adapter = ICRSOrbitAdapter(_FakeICRSOrbit())
         query_t = numpy.linspace(1e6, 3.1e7, 50)
         recovered_vel = adapter.compute_velocity(query_t, (1, 2, 3))
         expected_vel = numeric_ecliptic.compute_velocity(query_t, (1, 2, 3))
@@ -1693,7 +1755,7 @@ class TestICRSOrbitAdapter(unittest.TestCase):
             def compute_acceleration(self, t, sc=(1, 2, 3)):
                 return numeric_ecliptic.compute_acceleration(t, sc) @ rotation
 
-        adapter = space_orbit.ICRSOrbitAdapter(_FakeICRSOrbit())
+        adapter = ICRSOrbitAdapter(_FakeICRSOrbit())
         query_t = numpy.linspace(1e6, 3.1e7, 50)
         recovered_acc = adapter.compute_acceleration(query_t, (1, 2, 3))
         expected_acc = numeric_ecliptic.compute_acceleration(query_t, (1, 2, 3))
@@ -1701,7 +1763,7 @@ class TestICRSOrbitAdapter(unittest.TestCase):
             numpy.max(numpy.abs(recovered_acc - expected_acc)), 1e-6)
 
     def test_usable_directly_with_constellation_frame_and_link_vector(self):
-        adapter = space_orbit.ICRSOrbitAdapter(self._fake_icrs_orbit())
+        adapter = ICRSOrbitAdapter(self._fake_icrs_orbit())
         centroid, rotation = space_orbit.constellation_frame(
             self.times, adapter)
         expected_centroid, expected_rotation = space_orbit.constellation_frame(
@@ -1752,7 +1814,7 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
         t_grid = numpy.linspace(
             oem_orbit.t_start + 5 * 86400.0,
             oem_orbit.t_end - 5 * 86400.0, 100)
-        esa_orbit = space_orbit.ICRSOrbitAdapter(oem_orbit)
+        esa_orbit = ICRSOrbitAdapter(oem_orbit)
         unit_vec, length = space_orbit.link_vector(t_grid, esa_orbit, 1, 2)
         self.assertTrue(numpy.all(numpy.isfinite(length)))
         self.assertLess(
@@ -1790,7 +1852,7 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
             self.skipTest('could not fetch official ESA lisa-orbit-files '
                           f'orbit ({exc!r}); skipping cross-check')
 
-        esa_orbit = space_orbit.ICRSOrbitAdapter(oem_orbit)
+        esa_orbit = ICRSOrbitAdapter(oem_orbit)
         # Well inside the valid range, away from the interpolation edges.
         t_ssb = (oem_orbit.t_start + oem_orbit.t_end) / 2.0
         lam, beta, pol = 0.9, -0.3, 2.4
