@@ -25,11 +25,16 @@
 These are the unittests for noise generation
 """
 import unittest
+
+import numpy
 import pycbc.psd
 from utils import simple_exit
+from pycbc.noise.gaussian import noise_from_psd as gaussian_noise_from_psd
+from pycbc.noise.gaussian import noise_from_string as gaussian_noise_from_string
 from pycbc.noise.reproduceable import noise_from_string
 from pycbc.fft.fftw import set_measure_level
 from pycbc.noise.reproduceable import normal
+from pycbc.types import FrequencySeries
 set_measure_level(0)
 
 class TestNoise(unittest.TestCase):
@@ -65,8 +70,37 @@ class TestNoise(unittest.TestCase):
         ts2 = normal(25, 35, sample_rate=16384, seed=87693)
         self.assertEqual(ts1.time_slice(25, 30), ts2.time_slice(25, 30))
 
+
+class TestGaussianNoise(unittest.TestCase):
+    def test_noise_from_psd_rounding(self):
+        length = 186
+        delta_t = 1.0 / 4096
+        delta_f = 1.0 / (length * delta_t)
+        psd = FrequencySeries(
+            numpy.ones(length // 2 + 1),
+            delta_f=delta_f,
+        )
+
+        noise = gaussian_noise_from_psd(length, delta_t, psd, seed=1234)
+
+        self.assertEqual(len(noise), length)
+
+    def test_noise_from_string_rounding(self):
+        length = 186
+        delta_t = 4.0 / 93
+
+        noise = gaussian_noise_from_string(
+            'aLIGOZeroDetHighPower',
+            length,
+            delta_t,
+            seed=1234,
+        )
+
+        self.assertEqual(len(noise), length)
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNoise))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestGaussianNoise))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)

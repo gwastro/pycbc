@@ -40,9 +40,7 @@ samplers = {cls.name: cls for cls in (
 
 try:
     from .emcee import EmceeEnsembleSampler
-    from .emcee_pt import EmceePTSampler
     samplers[EmceeEnsembleSampler.name] = EmceeEnsembleSampler
-    samplers[EmceePTSampler.name] = EmceePTSampler
 except ImportError:
     pass
 

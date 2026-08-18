@@ -29,7 +29,14 @@ from .base_multitemper import (CommonMultiTemperedMetadataIO,
 
 class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
                   BaseSamplerFile):
-    """Class to handle file IO for the ``emcee`` sampler."""
+    """Class to handle file IO for the ``emcee_pt`` sampler.
+
+    .. note::
+       The ``emcee_pt`` sampler is no longer supported by PyCBC. This class
+       is retained only so that inference files created with older versions
+       of PyCBC and that used ``emcee_pt`` can still be read; new
+       ``emcee_pt`` files cannot be created.
+    """
 
     name = 'emcee_pt_file'
 

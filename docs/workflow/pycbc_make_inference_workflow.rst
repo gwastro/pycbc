@@ -42,11 +42,11 @@ of how to setup the workflow to analyze two binary black hole events at once
 
 
 ================================================
-Example: GW150914 and GW170814 with ``emcee_pt``
+Example: GW150914 and GW170814 with ``ptemcee``
 ================================================
 
 In this example we setup a workflow to analyze GW150914 and GW170814 using
-``emcee_pt``. We will use a prior that is uniform in comoving volume and
+``ptemcee``. We will use a prior that is uniform in comoving volume and
 uniform in source masses. As we will be using the ``IMRPhenomPv2`` waveform
 approximant, we will use the ``marginalized_phase`` Gaussian noise model.
 
@@ -81,10 +81,10 @@ prior, model, sampler, and data to use for each event.
 
 **The sampler:**
 
-.. literalinclude:: ../../examples/inference/samplers/emcee_pt-srcmasses_comoving_volume.ini 
+.. literalinclude:: ../../examples/inference/samplers/ptemcee-srcmasses_comoving_volume.ini 
    :language: ini
 
-:download:`Download <../../examples/inference/samplers/emcee_pt-srcmasses_comoving_volume.ini>`
+:download:`Download <../../examples/inference/samplers/ptemcee-srcmasses_comoving_volume.ini>`
 
 **The data:** We also need configuration files for the data. Since GW150914
 occured during O1 while GW170814 occurred during O2, we need both the standard
@@ -117,17 +117,17 @@ automatically combine them into a single file.
 
 The events:
 
-.. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-emcee_pt/events.ini 
+.. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-ptemcee/events.ini 
    :language: ini
 
-:download:`Download <../../examples/workflow/inference/gw150914_gw170814-emcee_pt/events.ini>`
+:download:`Download <../../examples/workflow/inference/gw150914_gw170814-ptemcee/events.ini>`
 
 The rest of the configuration file:
 
-.. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-emcee_pt/workflow_config.ini 
+.. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-ptemcee/workflow_config.ini 
    :language: ini
 
-:download:`Download <../../examples/workflow/inference/gw150914_gw170814-emcee_pt/workflow_config.ini>`
+:download:`Download <../../examples/workflow/inference/gw150914_gw170814-ptemcee/workflow_config.ini>`
 
 **Notes**:
 
@@ -173,10 +173,10 @@ Generate the workflow
 Assuming that you have downloaded all of the configuration files to the
 same directory, you can generate the workflow by running the following script:
 
-.. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-emcee_pt/create_workflow.sh 
+.. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-ptemcee/create_workflow.sh 
    :language: bash
 
-:download:`Download <../../examples/workflow/inference/gw150914_gw170814-emcee_pt/create_workflow.sh>`
+:download:`Download <../../examples/workflow/inference/gw150914_gw170814-ptemcee/create_workflow.sh>`
 
 If you are on the ATLAS cluster (at AEI Hannover) or on an LDG cluster, you
 need to define an accounting group tag (talk to your cluster admins if you do
@@ -269,7 +269,7 @@ diagnostics do not work for ``dynesty``, a nested sampler. As above, **set the
 nprocesses argument in the** ``[inference]`` **section to the number of cores that
 works for your cluster.***
 
-Note that we could have run both the ``emcee_pt`` analysis, above, and the
+Note that we could have run both the ``ptemcee`` analysis, above, and the
 ``dynesty`` analysis together in a single workflow. However, to do so, we would
 need to remove any diagnostic plots that are unique to each sampler.
 
