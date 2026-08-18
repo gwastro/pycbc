@@ -64,6 +64,29 @@ SEMI_MAJOR_AXIS = au.value
 ECCENTRICITY = ARMLENGTH / (2 * SEMI_MAJOR_AXIS * numpy.sqrt(3))
 T0 = space.TIME_OFFSET_20_DEGREES
 
+# Official ESA lisa-orbit-files v2.0 ('esa-trailing'), fetched by fixed URL
+# + SHA256 instead of through `OEMOrbits.from_included` (its `version=`
+# kwarg and default dataset aren't consistent across lisaorbits releases).
+# Pinning guarantees every run checks the same real orbit data. Shared by
+# TestNumericOrbitsFileReaders and TestOptionalESAOemOrbitFiles below.
+_ESA_V2_TRAILING_OEM_URLS_AND_HASHES = [
+    ('https://github.com/esa/lisa-orbit-files/raw/v2.0/crema_2p0/'
+     'tcb_time_scale/mida-20deg/trajectory_out_mida-20deg_cw_sg-2nmss_'
+     'may_launch_lisa1.oem',
+     'sha256:59a662a2a57fffdac10f339417b3d437d1f1c46a2af7cab75dffd699'
+     'a28096cb'),
+    ('https://github.com/esa/lisa-orbit-files/raw/v2.0/crema_2p0/'
+     'tcb_time_scale/mida-20deg/trajectory_out_mida-20deg_cw_sg-2nmss_'
+     'may_launch_lisa2.oem',
+     'sha256:3e3ddabe5b27e233095136846bd50ea9fcd5939855dc52ad6464654f'
+     'a5bb21f0'),
+    ('https://github.com/esa/lisa-orbit-files/raw/v2.0/crema_2p0/'
+     'tcb_time_scale/mida-20deg/trajectory_out_mida-20deg_cw_sg-2nmss_'
+     'may_launch_lisa3.oem',
+     'sha256:4be88fdd1ae5c00b22d1955a03a8b126ccb94979884a0c2bd09f72c0'
+     '0dbb4633'),
+]
+
 # Real Earth's ecliptic longitude at GPS t=0, taken directly from pycbc's own
 # (astropy-based) `earth_position_ssb` -- used below as the phase-zero
 # reference for the Taiji/TianQin fixtures' guiding center, so that "leads/
@@ -1181,19 +1204,18 @@ orbit-file = {self.orbit_file}
 
 
 class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
-    """If `lisaorbits` happens to be installed in the test environment,
-    verify that a real `lisaorbits.Orbits` instance can be passed directly
-    to `constellation_frame` with no adapter code (duck typing), and that
-    the result is physically sane (finite, non-degenerate). This test is
-    skipped entirely if `lisaorbits` is not installed; `space_orbit` itself
-    never imports it.
+    """Verify that a real `lisaorbits.Orbits` instance works directly with
+    `constellation_frame` (duck typing, no adapter code) and matches
+    pycbc's own formulas. Requires `lisaorbits` to be installed -- it's an
+    optional dependency (`space_orbit` itself never imports it), but these
+    tests fail rather than skip if it's missing, so a broken/absent
+    install shows up as red CI, not a silently-skipped check.
     """
     def test_lisaorbits_instance_accepted_directly(self):
         try:
             import lisaorbits
-        except ImportError:
-            self.skipTest('lisaorbits not installed; skipping duck-typing '
-                          'cross-check')
+        except ImportError as exc:
+            self.fail(f'lisaorbits is not installed: {exc!r}')
         orbit = lisaorbits.EqualArmlengthOrbits()
         times = numpy.array([1e6, 1e7])
         centroid, rotation = space_orbit.constellation_frame(times, orbit)
@@ -1226,12 +1248,23 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
         parameter (not hardcoded), using `EqualArmlengthOrbits`'s own `n`
         directly here isolates a pure formula-for-formula comparison from
         that unrelated frequency-convention difference.
+
+        Requires lisaorbits >= 3.0, same reason as
+        TestNumericOrbitsFileReaders.test_from_oem_files_matches_lisaorbits_on_real_esa_data's
+        docstring explains for OEMOrbits: earlier releases also convert
+        `EqualArmlengthOrbits` positions internally with the same
+        obstime-less, wrong-epoch astropy call, so they don't agree with
+        pycbc's own formulas either (confirmed: off by ~6e10 m on
+        lisaorbits 2.4.2, versus the 1e-3 m tolerance here).
         """
         try:
             import lisaorbits
-        except ImportError:
-            self.skipTest('lisaorbits not installed; skipping exact '
-                          'position/velocity/acceleration cross-check')
+        except ImportError as exc:
+            self.fail(f'lisaorbits is not installed: {exc!r}')
+        version = tuple(int(p) for p in lisaorbits.__version__.split('.')[:2])
+        if version < (3, 0):
+            self.fail(f'lisaorbits {lisaorbits.__version__} is too old '
+                      '(see this test\'s docstring); upgrade to >= 3.0')
         ref = lisaorbits.EqualArmlengthOrbits(L=ARMLENGTH)
         ref_ecliptic = ICRSOrbitAdapter(ref)
 
@@ -1266,9 +1299,8 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
         """
         try:
             import lisaorbits
-        except ImportError:
-            self.skipTest('lisaorbits not installed; skipping numeric '
-                          'interpolation cross-check')
+        except ImportError as exc:
+            self.fail(f'lisaorbits is not installed: {exc!r}')
         exact_orbit = space_orbit.LisaAnalyticOrbit()
         t_grid = numpy.linspace(0.0, 3.15e7, 400)
         positions = exact_orbit.compute_position(t_grid)
@@ -1426,41 +1458,59 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
             space_orbit.NumericOrbits.from_oem_files(*oem_paths)
 
     def test_from_oem_files_matches_lisaorbits_on_real_esa_data(self):
-        """Optional, network-gated real-data cross-check: fetch the
-        official ESA lisa-orbit-files trio via lisaorbits' own pooch-based
-        download/cache (not a local, machine-specific path), then verify
-        the native from_oem_files parser agrees with a real
-        lisaorbits.OEMOrbits instance reading the exact same files.
-        Skipped entirely if lisaorbits is not installed or the fetch
-        fails for any reason.
+        """Fetch the official ESA lisa-orbit-files v2.0 trio and check
+        that pycbc's own from_oem_files parser agrees with a real
+        lisaorbits.OEMOrbits reading the same files.
+
+        Requires lisaorbits >= 3.0. Earlier releases have a real bug in
+        their internal OEM-to-ecliptic conversion: they call astropy's
+        `heliocentricmeanecliptic` without `obstime`, which silently
+        defaults to J2000.0 instead of these files' actual ~2036 epoch,
+        and shifts positions that are already heliocentric (per the
+        files' own metadata) as if they were barycentric. Verified in
+        isolation, with no lisaorbits code involved: feeding the same raw
+        ICRS position through pycbc's fixed rotation matrix vs. through
+        that obstime-less astropy call reproduces the same ~1e9 m error.
+        There's no meaningful way to compare against a reference value
+        that's computed wrong, so this test fails outright -- not skips
+        -- if lisaorbits isn't installed, is too old, or the fetch fails
+        for any reason. It was exactly this kind of failure quietly
+        turning into a skip that let the underlying lisaorbits bug go
+        unnoticed for a while.
         """
         try:
             import lisaorbits
-            from lisaorbits.oem import OEMOrbits
+            from lisaorbits import OEMOrbits
             import lisaconstants
+            import pooch
             from astropy.time import Time
-        except ImportError:
-            self.skipTest('lisaorbits not installed; skipping real-data '
-                          'OEM reader cross-check')
+        except ImportError as exc:
+            self.fail(f'lisaorbits (or a dependency) is not installed: '
+                      f'{exc!r}')
+
+        version = tuple(int(p) for p in lisaorbits.__version__.split('.')[:2])
+        if version < (3, 0):
+            self.fail(
+                f'lisaorbits {lisaorbits.__version__} is too old (see this '
+                'test\'s docstring); upgrade to >= 3.0 to run this check')
+
         try:
-            paths = OEMOrbits._get_included_paths(
-                'esa-trailing', version='2.0.0')
             oem_paths = [
-                lisaorbits.oem._ESA_REPOSITORY.fetch(p) for p in paths]
+                pooch.retrieve(url, known_hash=known_hash, progressbar=False)
+                for url, known_hash
+                in _ESA_V2_TRAILING_OEM_URLS_AND_HASHES]
         except Exception as exc:  # pylint: disable=broad-except
-            self.skipTest('could not fetch official ESA lisa-orbit-files '
-                          f'orbit ({exc!r}); skipping cross-check')
+            self.fail('could not fetch official ESA lisa-orbit-files: '
+                      f'{exc!r}')
 
         native = space_orbit.NumericOrbits.from_oem_files(*oem_paths)
-        ref = OEMOrbits(*oem_paths)
-        ref_ecliptic = ICRSOrbitAdapter(ref)
+        ref_ecliptic = ICRSOrbitAdapter(OEMOrbits(*oem_paths))
 
         query_gps = numpy.linspace(
             native.t_interp[10], native.t_interp[-10], 30)
-        query_time = Time(query_gps, format='gps')
         epoch = Time(lisaconstants.LISA_EPOCH_TCB, format='isot',
                     scale='tcb')
-        query_tcb_sec = (query_time.tcb - epoch).sec
+        query_tcb_sec = (Time(query_gps, format='gps').tcb - epoch).sec
 
         pos_native = native.compute_position(query_gps)
         pos_ref = ref_ecliptic.compute_position(query_tcb_sec)
@@ -1780,11 +1830,8 @@ class TestICRSOrbitAdapter(unittest.TestCase):
 
 
 class TestOptionalESAOemOrbitFiles(unittest.TestCase):
-    """If `lisaorbits` (and its optional `oem` dependency) are installed and
-    network access is available, verify that `space_orbit` correctly
-    consumes real ESA LISA orbit files (CCSDS OEM format, published at
-    https://github.com/esa/lisa-orbit-files, fetched here via
-    `lisaorbits.OEMOrbits.from_included`).
+    """Verify that `space_orbit` correctly consumes real ESA LISA orbit
+    files (CCSDS OEM format, `_ESA_V2_TRAILING_OEM_URLS_AND_HASHES` above).
 
     Unlike `lisaorbits`' own analytic orbits (e.g. `EqualArmlengthOrbits`,
     used in `TestOptionalLisaorbitsDuckTyping` above), OEM files are given in
@@ -1793,23 +1840,25 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
     `ICRSOrbitAdapter`, which any caller must use (or replicate) before
     treating OEM-derived positions as a `space_orbit` `OrbitProvider`.
 
-    Skipped entirely if `lisaorbits`/`oem` are not installed, or if the
-    one-time download of the (~600 kB total) orbit files fails for any
-    reason (no network access, hash mismatch, upstream repository changes,
-    etc.) -- this test never requires a local, machine-specific data path.
+    Requires `lisaorbits` and network access to fetch the (~600 kB total)
+    orbit files; fails rather than skips if either isn't available, so a
+    broken environment shows up as red CI, not a silently-skipped check.
     """
     def test_esa_oem_orbit_matches_design_arm_length(self):
         try:
-            import lisaorbits
-        except ImportError:
-            self.skipTest('lisaorbits not installed; skipping ESA OEM '
-                          'orbit-file cross-check')
+            from lisaorbits import OEMOrbits
+            import pooch
+        except ImportError as exc:
+            self.fail(f'lisaorbits is not installed: {exc!r}')
         try:
-            oem_orbit = lisaorbits.OEMOrbits.from_included(
-                'esa-trailing', version='2.0.0')
+            oem_paths = [
+                pooch.retrieve(url, known_hash=known_hash, progressbar=False)
+                for url, known_hash
+                in _ESA_V2_TRAILING_OEM_URLS_AND_HASHES]
         except Exception as exc:  # pylint: disable=broad-except
-            self.skipTest('could not fetch official ESA lisa-orbit-files '
-                          f'orbit ({exc!r}); skipping cross-check')
+            self.fail('could not fetch official ESA lisa-orbit-files: '
+                      f'{exc!r}')
+        oem_orbit = OEMOrbits(*oem_paths)
 
         t_grid = numpy.linspace(
             oem_orbit.t_start + 5 * 86400.0,
@@ -1841,16 +1890,19 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
         `TestSpaceAcceptsOrbitProvider`.
         """
         try:
-            import lisaorbits
-        except ImportError:
-            self.skipTest('lisaorbits not installed; skipping ESA OEM '
-                          'orbit-file cross-check')
+            from lisaorbits import OEMOrbits
+            import pooch
+        except ImportError as exc:
+            self.fail(f'lisaorbits is not installed: {exc!r}')
         try:
-            oem_orbit = lisaorbits.OEMOrbits.from_included(
-                'esa-trailing', version='2.0.0')
+            oem_paths = [
+                pooch.retrieve(url, known_hash=known_hash, progressbar=False)
+                for url, known_hash
+                in _ESA_V2_TRAILING_OEM_URLS_AND_HASHES]
         except Exception as exc:  # pylint: disable=broad-except
-            self.skipTest('could not fetch official ESA lisa-orbit-files '
-                          f'orbit ({exc!r}); skipping cross-check')
+            self.fail('could not fetch official ESA lisa-orbit-files: '
+                      f'{exc!r}')
+        oem_orbit = OEMOrbits(*oem_paths)
 
         esa_orbit = ICRSOrbitAdapter(oem_orbit)
         # Well inside the valid range, away from the interpolation edges.
