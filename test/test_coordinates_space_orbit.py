@@ -88,6 +88,31 @@ _ESA_V2_TRAILING_OEM_URLS_AND_HASHES = [
      '0dbb4633'),
 ]
 
+
+def _require_lisaorbits():
+    """Import and return `lisaorbits`, for the tests below that need a
+    real install of it.
+
+    Raises `unittest.SkipTest` -- not caught by a caller's own
+    `except ImportError`, so `try: lisaorbits = _require_lisaorbits() ...
+    except ImportError:` blocks keep working unchanged -- in the LVK
+    reference virtualenv (`build_venv.yml`/`docker_build_dist.sh`), which
+    deliberately never installs `lisaorbits`: that environment exists to
+    stay representative of a real LVK production install, where an
+    ESA/LISA-specific package like this has no reason to be present.
+    Everywhere else, behaves like a plain `import lisaorbits`: raises
+    `ImportError` if it's genuinely missing, so a broken dev/CI
+    environment still shows up as a real failure, not a silent skip.
+    """
+    if os.environ.get('PYCBC_LVK_REFERENCE_ENV'):
+        raise unittest.SkipTest(
+            'lisaorbits is deliberately not installed in the LVK '
+            'reference virtualenv (build_venv.yml), to keep it '
+            'representative of a real LVK production install')
+    import lisaorbits
+    return lisaorbits
+
+
 # Real Earth's ecliptic longitude at GPS t=0, taken directly from pycbc's own
 # (astropy-based) `earth_position_ssb` -- used below as the phase-zero
 # reference for the Taiji/TianQin fixtures' guiding center, so that "leads/
@@ -986,7 +1011,7 @@ class TestKeplerianOrbits(unittest.TestCase):
                 f'>= 3.12; this environment is on Python '
                 f'{sys.version_info.major}.{sys.version_info.minor}')
         try:
-            import lisaorbits
+            lisaorbits = _require_lisaorbits()
         except ImportError as exc:
             self.fail(f'lisaorbits is not installed: {exc!r}')
         version = tuple(int(p) for p in lisaorbits.__version__.split('.')[:2])
@@ -1230,7 +1255,7 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
     """
     def test_lisaorbits_instance_accepted_directly(self):
         try:
-            import lisaorbits
+            lisaorbits = _require_lisaorbits()
         except ImportError as exc:
             self.fail(f'lisaorbits is not installed: {exc!r}')
         orbit = lisaorbits.EqualArmlengthOrbits()
@@ -1285,7 +1310,7 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
                 f'>= 3.12; this environment is on Python '
                 f'{sys.version_info.major}.{sys.version_info.minor}')
         try:
-            import lisaorbits
+            lisaorbits = _require_lisaorbits()
         except ImportError as exc:
             self.fail(f'lisaorbits is not installed: {exc!r}')
         version = tuple(int(p) for p in lisaorbits.__version__.split('.')[:2])
@@ -1325,7 +1350,7 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
         path).
         """
         try:
-            import lisaorbits
+            lisaorbits = _require_lisaorbits()
         except ImportError as exc:
             self.fail(f'lisaorbits is not installed: {exc!r}')
         exact_orbit = space_orbit.LisaAnalyticOrbit()
@@ -1516,7 +1541,7 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
                 f'>= 3.12; this environment is on Python '
                 f'{sys.version_info.major}.{sys.version_info.minor}')
         try:
-            import lisaorbits
+            lisaorbits = _require_lisaorbits()
             from lisaorbits import OEMOrbits
             import lisaconstants
             import pooch
@@ -1649,7 +1674,7 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
         fixture file.
         """
         try:
-            import lisaorbits
+            lisaorbits = _require_lisaorbits()
         except ImportError as exc:
             self.fail(f'lisaorbits is not installed: {exc!r}')
 
@@ -1887,6 +1912,7 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
     """
     def test_esa_oem_orbit_matches_design_arm_length(self):
         try:
+            _require_lisaorbits()
             from lisaorbits import OEMOrbits
             import pooch
         except ImportError as exc:
@@ -1931,6 +1957,7 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
         `TestSpaceAcceptsOrbitProvider`.
         """
         try:
+            _require_lisaorbits()
             from lisaorbits import OEMOrbits
             import pooch
         except ImportError as exc:
