@@ -25,7 +25,7 @@ pycbc = { path = ".", editable = true, extras = ["test"] }
 
 [tool.pixi.environments]
 default = { features = ["bbhx"], solve-group = "default" }
-unittest = { features = ["bbhx"], solve-group = "default" }
+unittest = { features = ["bbhx", "lisaorbits"], solve-group = "default" }
 help = { features = ["help", "bbhx"], solve-group = "default" }
 search = { features = ["search", "bbhx"], solve-group = "default" }
 inference = { features = ["inference", "bbhx"], solve-group = "default" }
@@ -45,6 +45,15 @@ openblas = "*"
 [tool.pixi.feature.bbhx.target.linux-64.pypi-dependencies]
 BBHx = { git = "https://github.com/titodalcanton/BBHx.git", rev = "py39-and-cleanup" }
 pycbc-bbhx-plugin = { git = "https://github.com/gwastro/BBHX-waveform-model.git" }
+
+[tool.pixi.feature.lisaorbits.pypi-dependencies]
+# No version pin: lisaorbits >= 3.0 requires Python >= 3.12, so on the
+# Python 3.11 leg pixi resolves this down to the latest 3.8-compatible
+# release (2.4.2) instead of failing to solve the environment at all.
+# test_coordinates_space_orbit.py's lisaorbits>=3.0-gated checks handle
+# that themselves (skip with a clear reason on Python < 3.12, since no
+# lisaorbits release there satisfies both constraints).
+lisaorbits = "*"
 
 [tool.pixi.feature.help.dependencies]
 mpi4py = "*"

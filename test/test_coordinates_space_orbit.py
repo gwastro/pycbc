@@ -43,6 +43,7 @@ the LISA/Taiji guiding center above is also treated as the zero-eccentricity
 limit of the same family of orbits).
 """
 import os
+import sys
 import tempfile
 import h5py
 import numpy
@@ -1256,7 +1257,17 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
         obstime-less, wrong-epoch astropy call, so they don't agree with
         pycbc's own formulas either (confirmed: off by ~6e10 m on
         lisaorbits 2.4.2, versus the 1e-3 m tolerance here).
+
+        lisaorbits >= 3.0 itself requires Python >= 3.12, so on an older
+        Python there's no release that is both new enough to be correct
+        and installable -- that's skipped, not failed, since it's not an
+        environment problem, just a version floor this test can't clear.
         """
+        if sys.version_info < (3, 12):
+            self.skipTest(
+                'lisaorbits >= 3.0 (required, see docstring) needs Python '
+                f'>= 3.12; this environment is on Python '
+                f'{sys.version_info.major}.{sys.version_info.minor}')
         try:
             import lisaorbits
         except ImportError as exc:
@@ -1477,7 +1488,17 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
         for any reason. It was exactly this kind of failure quietly
         turning into a skip that let the underlying lisaorbits bug go
         unnoticed for a while.
+
+        The one exception: lisaorbits >= 3.0 itself requires Python >=
+        3.12, so on an older Python no release is both new enough to be
+        correct and installable. That's skipped, since it's a version
+        floor this test can't clear, not an environment problem.
         """
+        if sys.version_info < (3, 12):
+            self.skipTest(
+                'lisaorbits >= 3.0 (required, see docstring) needs Python '
+                f'>= 3.12; this environment is on Python '
+                f'{sys.version_info.major}.{sys.version_info.minor}')
         try:
             import lisaorbits
             from lisaorbits import OEMOrbits

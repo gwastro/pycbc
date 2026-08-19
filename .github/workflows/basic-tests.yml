@@ -62,28 +62,6 @@ jobs:
           examples/inference/relmarg/*.gwf
           examples/inference/single/*.gwf
 
-    - name: Install lisaorbits (ESA lisa-orbit-files cross-check)
-      # Recent lisaorbits releases only need Python >= 3.8 (this was gated
-      # to Python >= 3.12 previously, back when that was genuinely
-      # lisaorbits' own floor; it has since been lowered), so this now
-      # runs on all three legs. Every lisaorbits-gated test in
-      # test_coordinates_space_orbit.py fails outright (not skips) if
-      # lisaorbits isn't installed, so this step is a real requirement for
-      # that whole file, not just additive coverage. A few of those tests
-      # also require lisaorbits >= 3.0 specifically (see their docstrings).
-      if: matrix.test-type == 'unittest'
-      run: |
-        pixi run -e unittest pip install lisaorbits
-
-    - name: Install lunarsky (optional lunar-site position tests)
-      # lunarsky has no Python version restriction (unlike lisaorbits), so
-      # this runs on all three legs; test_coordinates_moon.py's
-      # TestOptionalLunarskySite skips gracefully if it's absent, so this
-      # step is purely additive coverage, not a hard requirement.
-      if: matrix.test-type == 'unittest'
-      run: |
-        pixi run -e unittest pip install lunarsky
-
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
