@@ -323,6 +323,52 @@ def _rotation_matrix_at_detector_time(t_detector, t0, orbit, sc=(1, 2, 3)):
     return rotation_matrix_ssb_to_space(alpha)
 
 
+def _sky_ssb_space_transform(t_src, longitude_src, latitude_src,
+                              polarization_src, t0, orbit, sc, forward):
+    """ Shared body of `ssb_to_space` and `space_to_ssb`: rotate the GW
+    propagation vector between the SSB frame and the constellation frame
+    at the appropriate detector-frame time, and convert the arrival time
+    to match. `forward=True` runs the SSB->space direction (`ssb_to_space`);
+    `forward=False` runs space->SSB (`space_to_ssb`).
+    """
+    t_src, longitude_src, latitude_src, polarization_src, num = \
+        _ensure_sky_params_arrays(
+            t_src, longitude_src, latitude_src, polarization_src)
+    _validate_sky_params(longitude_src, latitude_src, polarization_src)
+    t_dst = np.zeros(num)
+    longitude_dst, latitude_dst = np.zeros(num), np.zeros(num)
+    polarization_dst = np.zeros(num)
+
+    for i in range(num):
+        k_src = localization_to_propagation_vector(
+            longitude_src[i], latitude_src[i], use_astropy=False)
+        if forward:
+            t_dst[i] = t_space_from_ssb(
+                t_src[i], longitude_src[i], latitude_src[i], t0,
+                orbit=orbit, sc=sc)
+            # Although t_dst was calculated above using the corrected LISA
+            # position vector by adding t0, it corresponds to the true
+            # t_ssb, not t_ssb+t0, we need to include t0 again to correct
+            # LISA position.
+            rot = _rotation_matrix_at_detector_time(t_dst[i], t0, orbit, sc)
+            k_dst = rot.T @ k_src
+        else:
+            rot = _rotation_matrix_at_detector_time(t_src[i], t0, orbit, sc)
+            k_dst = rot @ k_src
+        longitude_dst[i], latitude_dst[i] = \
+            propagation_vector_to_localization(k_dst, use_astropy=False)
+        if not forward:
+            t_dst[i] = t_ssb_from_t_space(
+                t_src[i], longitude_dst[i], latitude_dst[i], t0,
+                orbit=orbit, sc=sc)
+        polarization_dst[i] = polarization_newframe(
+            polarization_src[i], k_src, rot if forward else rot.T,
+            use_astropy=False)
+
+    return _pack_sky_params_output(
+        num, t_dst, longitude_dst, latitude_dst, polarization_dst)
+
+
 def t_space_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
                      t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
     """ Arrival time at LISA's barycenter, from arrival time and sky
@@ -455,34 +501,9 @@ def ssb_to_space(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
         Arrival time [s], ecliptic longitude [rad], ecliptic latitude
         [rad], and polarization angle [rad] in the LISA frame.
     """
-    t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, num = \
-        _ensure_sky_params_arrays(
-            t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)
-    _validate_sky_params(longitude_ssb, latitude_ssb, polarization_ssb)
-    t_space, longitude_space = np.zeros(num), np.zeros(num)
-    latitude_space, polarization_space = np.zeros(num), np.zeros(num)
-
-    for i in range(num):
-        t_space[i] = t_space_from_ssb(t_ssb[i], longitude_ssb[i],
-                                      latitude_ssb[i], t0, orbit=orbit,
-                                      sc=sc)
-        k_ssb = localization_to_propagation_vector(
-                    longitude_ssb[i], latitude_ssb[i], use_astropy=False)
-        # Although t_space calculated above using the corrected LISA
-        # position vector by adding t0, it corresponds to the true t_ssb,
-        # not t_ssb+t0, we need to include t0 again to correct LISA
-        # position.
-        rotation_matrix_space = _rotation_matrix_at_detector_time(
-            t_space[i], t0, orbit, sc=sc)
-        k_space = rotation_matrix_space.T @ k_ssb
-        longitude_space[i], latitude_space[i] = \
-            propagation_vector_to_localization(k_space, use_astropy=False)
-        polarization_space[i] = polarization_newframe(
-            polarization_ssb[i], k_ssb, rotation_matrix_space,
-            use_astropy=False)
-
-    return _pack_sky_params_output(
-        num, t_space, longitude_space, latitude_space, polarization_space)
+    return _sky_ssb_space_transform(
+        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
+        t0, orbit, sc, forward=True)
 
 
 def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
@@ -524,30 +545,9 @@ def space_to_ssb(t_space, longitude_space, latitude_space,
         Arrival time [s], ecliptic longitude [rad], ecliptic latitude
         [rad], and polarization angle [rad] in the SSB frame.
     """
-    t_space, longitude_space, latitude_space, polarization_space, num = \
-        _ensure_sky_params_arrays(
-            t_space, longitude_space, latitude_space, polarization_space)
-    _validate_sky_params(longitude_space, latitude_space, polarization_space)
-    t_ssb, longitude_ssb = np.zeros(num), np.zeros(num)
-    latitude_ssb, polarization_ssb = np.zeros(num), np.zeros(num)
-
-    for i in range(num):
-        k_space = localization_to_propagation_vector(
-                    longitude_space[i], latitude_space[i], use_astropy=False)
-        rotation_matrix_space = _rotation_matrix_at_detector_time(
-            t_space[i], t0, orbit, sc=sc)
-        k_ssb = rotation_matrix_space @ k_space
-        longitude_ssb[i], latitude_ssb[i] = \
-            propagation_vector_to_localization(k_ssb, use_astropy=False)
-        t_ssb[i] = t_ssb_from_t_space(t_space[i], longitude_ssb[i],
-                                      latitude_ssb[i], t0, orbit=orbit,
-                                      sc=sc)
-        polarization_ssb[i] = polarization_newframe(
-            polarization_space[i], k_space, rotation_matrix_space.T,
-            use_astropy=False)
-
-    return _pack_sky_params_output(
-        num, t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)
+    return _sky_ssb_space_transform(
+        t_space, longitude_space, latitude_space, polarization_space,
+        t0, orbit, sc, forward=False)
 
 
 def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
