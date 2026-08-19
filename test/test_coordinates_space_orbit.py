@@ -971,12 +971,28 @@ class TestKeplerianOrbits(unittest.TestCase):
         using its own angular frequency (as in the analogous first-order
         test) to isolate the comparison from the unrelated
         EARTH_ORBIT_ANGULAR_FREQUENCY-vs-sqrt(GM_SUN/a**3) difference.
+
+        Requires lisaorbits >= 3.0, same reason as
+        TestOptionalLisaorbitsDuckTyping.test_position_velocity_acceleration_match_lisaorbits_exactly:
+        `KeplerianOrbits` goes through the same obstime-less, wrong-epoch
+        astropy conversion in earlier releases (confirmed: off by ~6e10 m
+        on lisaorbits 2.4.2, versus the 1e-2 m tolerance here). Skipped
+        (not failed) on Python < 3.12, since lisaorbits >= 3.0 itself
+        needs Python >= 3.12 and no release there can satisfy both.
         """
+        if sys.version_info < (3, 12):
+            self.skipTest(
+                'lisaorbits >= 3.0 (required, see docstring) needs Python '
+                f'>= 3.12; this environment is on Python '
+                f'{sys.version_info.major}.{sys.version_info.minor}')
         try:
             import lisaorbits
-        except ImportError:
-            self.skipTest('lisaorbits not installed; skipping exact '
-                          'Keplerian-orbit cross-check')
+        except ImportError as exc:
+            self.fail(f'lisaorbits is not installed: {exc!r}')
+        version = tuple(int(p) for p in lisaorbits.__version__.split('.')[:2])
+        if version < (3, 0):
+            self.fail(f'lisaorbits {lisaorbits.__version__} is too old '
+                      '(see this test\'s docstring); upgrade to >= 3.0')
         ref = lisaorbits.KeplerianOrbits(L=ARMLENGTH)
         ref_ecliptic = ICRSOrbitAdapter(ref)
 
@@ -1623,15 +1639,19 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
         """`from_lisaorbits_file` reads the file format produced by
         `lisaorbits.Orbits.write` (positions under `tcb/x`, ICRS frame,
         uniform TCB sampling from `t0`/`dt`/`size` attributes) without
-        requiring `lisaorbits` to parse it back. Skipped if `lisaorbits`
-        is not installed, since building a real fixture file needs it.
+        requiring `lisaorbits` to parse it back. `.write` dumps the orbit's
+        raw ICRS positions directly, not through the buggy obstime-less
+        ecliptic conversion other lisaorbits-gated tests here need to
+        guard against (see `TestOptionalLisaorbitsDuckTyping`'s docstring),
+        and the reference values here are computed independently with
+        pycbc's own rotation matrix, so no lisaorbits version requirement
+        applies -- only needs `lisaorbits` to be installed, to build the
+        fixture file.
         """
         try:
             import lisaorbits
-        except ImportError:
-            self.skipTest(
-                'lisaorbits not installed; skipping from_lisaorbits_file '
-                'fixture test')
+        except ImportError as exc:
+            self.fail(f'lisaorbits is not installed: {exc!r}')
 
         native_orbit = lisaorbits.EqualArmlengthOrbits()
         path = os.path.join(self.tmpdir, 'lisaorbits_native.h5')
