@@ -65,6 +65,20 @@ SEMI_MAJOR_AXIS = au.value
 ECCENTRICITY = ARMLENGTH / (2 * SEMI_MAJOR_AXIS * numpy.sqrt(3))
 T0 = space.TIME_OFFSET_20_DEGREES
 
+
+def _random_sky_position(with_polarization=False):
+    """Shared random (lam, beta[, pol]) sky position/polarization, drawn
+    fresh each call from this module's seeded RNG. Used throughout this
+    file instead of hard-coded literals, so a passing test isn't
+    accidentally relying on some property of that one specific value.
+    """
+    lam = numpy.random.uniform(0.0, 2 * numpy.pi)
+    beta = numpy.random.uniform(-numpy.pi / 2, numpy.pi / 2)
+    if with_polarization:
+        pol = numpy.random.uniform(0.0, 2 * numpy.pi)
+        return lam, beta, pol
+    return lam, beta
+
 # Official ESA lisa-orbit-files v2.0 ('esa-trailing'), fetched by fixed URL
 # + SHA256 instead of through `OEMOrbits.from_included` (its `version=`
 # kwarg and default dataset aren't consistent across lisaorbits releases).
@@ -124,72 +138,95 @@ def _require_lisaorbits():
 PHI0_REAL = space.earth_position_ssb(0.0)[1]
 
 
-class AnalyticEqualArmOrbit:
-    """Reference implementation of the LDC manual's 'Equal arm analytic
-    orbit' (LISA-LCST-SGS-MAN-001, Sec. 8.1.1, Eq. 48-52). Used only to
-    validate `space_orbit.constellation_frame` and related functions against
-    the existing analytic functions in `pycbc.coordinates.space`, which
-    assume this same orbit but only track the (eccentricity-independent)
-    guiding center.
-    """
-    def compute_position(self, t, sc=(1, 2, 3)):
-        t = numpy.atleast_1d(numpy.asarray(t, dtype=float))
-        sc = numpy.atleast_1d(sc)
-        alpha = OMEGA_0 * (t + T0)
-        out = numpy.empty((len(t), len(sc), 3))
-        for k, n in enumerate(sc):
-            beta_n = (n - 1) * 2 * numpy.pi / 3.0
-            out[:, k, 0] = SEMI_MAJOR_AXIS * numpy.cos(alpha) \
-                + SEMI_MAJOR_AXIS * ECCENTRICITY * (
-                    numpy.sin(alpha) * numpy.cos(alpha) * numpy.sin(beta_n)
-                    - (1 + numpy.sin(alpha) ** 2) * numpy.cos(beta_n))
-            out[:, k, 1] = SEMI_MAJOR_AXIS * numpy.sin(alpha) \
-                + SEMI_MAJOR_AXIS * ECCENTRICITY * (
-                    numpy.sin(alpha) * numpy.cos(alpha) * numpy.cos(beta_n)
-                    - (1 + numpy.cos(alpha) ** 2) * numpy.sin(beta_n))
-            out[:, k, 2] = -numpy.sqrt(3) * SEMI_MAJOR_AXIS * ECCENTRICITY \
-                * numpy.cos(alpha - beta_n)
-        return out
-
-
-# Taiji shares the LISA fixture's functional form (the same
-# first-order-in-eccentricity Keplerian expansion as the LDC manual's
-# Eq. 48-52 above, per Rubbo, Cornish & Poujade 2004, Phys. Rev. D 69,
-# 082003), differing only in arm length/eccentricity and in leading (rather
-# than trailing) the Earth-like guiding center by 20 degrees. Its phase is
-# anchored to PHI0_REAL (real Earth's longitude at t=0) so that "leads the
-# Earth by 20 degrees" can be checked against the real Earth position, not
-# just an arbitrarily-phased circular proxy.
 TAIJI_ARMLENGTH = 3.0e9  # matches pycbc.detector.space._space_detectors
 TAIJI_ECCENTRICITY = TAIJI_ARMLENGTH / (2 * SEMI_MAJOR_AXIS * numpy.sqrt(3))
 TAIJI_LEAD_ANGLE = numpy.deg2rad(20.0)
 
 
-class AnalyticTaijiOrbit:
-    """Reference implementation of the Taiji heliocentric orbit (first order
-    in eccentricity, per Rubbo, Cornish & Poujade 2004, Phys. Rev. D 69,
-    082003). Used only to check that `constellation_frame`/`NumericOrbits`
-    handle a constellation genuinely different from the LISA fixture above
-    (different arm length, eccentricity, and heliocentric lead angle).
+class _LisaGuidingCenterFixture:
+    """Mixin providing `_phase(t)` for the LISA fixture's guiding-center
+    convention (`OMEGA_0 * (t + T0)`) -- mirrors the shape of
+    `space_orbit._LisaGuidingCenter`, but independently written (not
+    imported from production), so a bug in the production formula
+    wouldn't be invisible here. Combine with
+    `_EqualArmConstellationFixture`.
+    """
+    def _phase(self, t):
+        return OMEGA_0 * (t + T0)
+
+
+class _TaijiGuidingCenterFixture:
+    """Mixin providing `_phase(t)` for the Taiji fixture's guiding-center
+    convention (`OMEGA_0 * t + PHI0_REAL + TAIJI_LEAD_ANGLE`, anchored to
+    real Earth's longitude at t=0 so "leads the Earth by 20 degrees" can
+    be checked against the real Earth position, not an arbitrarily-phased
+    circular proxy) -- mirrors `space_orbit._TaijiGuidingCenter`,
+    independently written. Combine with `_EqualArmConstellationFixture`.
+    """
+    def _phase(self, t):
+        return OMEGA_0 * t + PHI0_REAL + TAIJI_LEAD_ANGLE
+
+
+class _EqualArmConstellationFixture:
+    """Mixin implementing `compute_position` for the LDC manual's 'Equal
+    arm analytic orbit' (LISA-LCST-SGS-MAN-001, Sec. 8.1.1, Eq. 48-52) --
+    mirrors `space_orbit._EqualArmConstellation`, independently written.
+    Shared by `AnalyticEqualArmOrbit`/`AnalyticTaijiOrbit` below (same
+    functional form, per Rubbo, Cornish & Poujade 2004, Phys. Rev. D 69,
+    082003); the concrete class's own `__init__` must set
+    `self.eccentricity`.
     """
     def compute_position(self, t, sc=(1, 2, 3)):
         t = numpy.atleast_1d(numpy.asarray(t, dtype=float))
         sc = numpy.atleast_1d(sc)
-        alpha = OMEGA_0 * t + PHI0_REAL + TAIJI_LEAD_ANGLE
+        alpha = self._phase(t)
         out = numpy.empty((len(t), len(sc), 3))
         for k, n in enumerate(sc):
             beta_n = (n - 1) * 2 * numpy.pi / 3.0
             out[:, k, 0] = SEMI_MAJOR_AXIS * numpy.cos(alpha) \
-                + SEMI_MAJOR_AXIS * TAIJI_ECCENTRICITY * (
+                + SEMI_MAJOR_AXIS * self.eccentricity * (
                     numpy.sin(alpha) * numpy.cos(alpha) * numpy.sin(beta_n)
                     - (1 + numpy.sin(alpha) ** 2) * numpy.cos(beta_n))
             out[:, k, 1] = SEMI_MAJOR_AXIS * numpy.sin(alpha) \
-                + SEMI_MAJOR_AXIS * TAIJI_ECCENTRICITY * (
+                + SEMI_MAJOR_AXIS * self.eccentricity * (
                     numpy.sin(alpha) * numpy.cos(alpha) * numpy.cos(beta_n)
                     - (1 + numpy.cos(alpha) ** 2) * numpy.sin(beta_n))
             out[:, k, 2] = -numpy.sqrt(3) * SEMI_MAJOR_AXIS \
-                * TAIJI_ECCENTRICITY * numpy.cos(alpha - beta_n)
+                * self.eccentricity * numpy.cos(alpha - beta_n)
         return out
+
+
+class AnalyticEqualArmOrbit(_LisaGuidingCenterFixture,
+                             _EqualArmConstellationFixture):
+    """Reference implementation of the LDC manual's 'Equal arm analytic
+    orbit', LISA flavor. Used only to validate `space_orbit.
+    constellation_frame` and related functions against the existing
+    analytic functions in `pycbc.coordinates.space`, which assume this
+    same orbit but only track the (eccentricity-independent) guiding
+    center.
+
+    Parameters
+    ----------
+    eccentricity : float, optional
+        Constellation eccentricity. Default `ECCENTRICITY` (LISA's own
+        arm length).
+    """
+    def __init__(self, eccentricity=None):
+        self.eccentricity = (
+            ECCENTRICITY if eccentricity is None else eccentricity)
+
+
+class AnalyticTaijiOrbit(_TaijiGuidingCenterFixture,
+                          _EqualArmConstellationFixture):
+    """Reference implementation of the Taiji heliocentric orbit --
+    `AnalyticEqualArmOrbit`'s formula with Taiji's own guiding-center
+    convention and eccentricity. Used only to check that
+    `constellation_frame`/`NumericOrbits` handle a constellation genuinely
+    different from the LISA fixture above (different arm length,
+    eccentricity, and heliocentric lead angle).
+    """
+    def __init__(self):
+        self.eccentricity = TAIJI_ECCENTRICITY
 
 
 # TianQin: a fast-rotating rigid triangle (per Hu et al 2018, Class.
@@ -287,7 +324,7 @@ class TestConstellationFrame(unittest.TestCase):
                             f'{maxdiff}')
 
     def test_t_detector_from_ssb_matches_t_lisa_from_ssb(self):
-        lam, beta = 1.234, 0.456
+        lam, beta = _random_sky_position()
         k_ssb = space.localization_to_propagation_vector(
             lam, beta, use_astropy=False).flatten()
         for t_ssb in self.times[:10]:
@@ -299,7 +336,7 @@ class TestConstellationFrame(unittest.TestCase):
                     f'at t_ssb={t_ssb}')
 
     def test_t_ssb_from_t_detector_matches_t_ssb_from_t_lisa(self):
-        lam, beta = 1.234, 0.456
+        lam, beta = _random_sky_position()
         k_ssb = space.localization_to_propagation_vector(
             lam, beta, use_astropy=False).flatten()
         for t_lisa in self.times[:10]:
@@ -425,7 +462,7 @@ class TestNumericOrbits(unittest.TestCase):
         velocities given), must reproduce the analytic orbit's own exact
         velocity at off-grid query times.
         """
-        exact_orbit = space_orbit.LisaAnalyticOrbit()
+        exact_orbit = space_orbit.LisaEqualArmOrbit()
         positions = exact_orbit.compute_position(self.t_grid)
         numeric = space_orbit.NumericOrbits(self.t_grid, positions)
         interpolated = numeric.compute_velocity(self.t_query)
@@ -441,7 +478,7 @@ class TestNumericOrbits(unittest.TestCase):
         given), must reproduce the analytic orbit's own exact acceleration
         at off-grid query times.
         """
-        exact_orbit = space_orbit.LisaAnalyticOrbit()
+        exact_orbit = space_orbit.LisaEqualArmOrbit()
         positions = exact_orbit.compute_position(self.t_grid)
         numeric = space_orbit.NumericOrbits(self.t_grid, positions)
         interpolated = numeric.compute_acceleration(self.t_query)
@@ -508,7 +545,7 @@ class TestLisaOrbit(unittest.TestCase):
                 numpy.max(numpy.abs(r @ r.T - numpy.eye(3))), 1e-8)
 
     def test_round_trip_time_delay(self):
-        lam, beta = 1.1, -0.4
+        lam, beta = _random_sky_position()
         k_ssb = space.localization_to_propagation_vector(
             lam, beta, use_astropy=False).flatten()
         for t_ssb in self.times[:10]:
@@ -545,7 +582,10 @@ class TestTaijiOrbit(unittest.TestCase):
             numpy.linalg.norm(centroid, axis=-1)
             * numpy.linalg.norm(earth_like, axis=-1))
         angle_deg = numpy.rad2deg(numpy.arccos(numpy.clip(cos_angle, -1, 1)))
-        self.assertLess(numpy.max(numpy.abs(angle_deg - 20.0)), 1e-6)
+        maxdiff = numpy.max(numpy.abs(angle_deg - 20.0))
+        self.assertLess(maxdiff, 1e-6,
+                        f'Taiji-to-idealized-guiding-center angle is off '
+                        f'by {maxdiff} deg from the expected 20 deg lead')
 
     def test_leads_real_earth_by_approximately_20_degrees(self):
         """Because the guiding center's phase is anchored to real Earth's
@@ -578,7 +618,7 @@ class TestTaijiOrbit(unittest.TestCase):
                 numpy.max(numpy.abs(r @ r.T - numpy.eye(3))), 1e-8)
 
     def test_round_trip_time_delay(self):
-        lam, beta = 0.7, -0.3
+        lam, beta = _random_sky_position()
         k_ssb = space.localization_to_propagation_vector(
             lam, beta, use_astropy=False).flatten()
         for t_ssb in self.times[:10]:
@@ -656,7 +696,7 @@ class TestTianQinOrbit(unittest.TestCase):
                 numpy.max(numpy.abs(r @ r.T - numpy.eye(3))), 1e-8)
 
     def test_round_trip_time_delay(self):
-        lam, beta = 2.1, 0.5
+        lam, beta = _random_sky_position()
         k_ssb = space.localization_to_propagation_vector(
             lam, beta, use_astropy=False).flatten()
         for t_ssb in self.times[:10]:
@@ -667,7 +707,7 @@ class TestTianQinOrbit(unittest.TestCase):
 
 
 class TestProductionAnalyticOrbits(unittest.TestCase):
-    """`space_orbit.LisaAnalyticOrbit`/`TaijiAnalyticOrbit`/
+    """`space_orbit.LisaEqualArmOrbit`/`TaijiEqualArmOrbit`/
     `TianQinAnalyticOrbit` are the production (not test-only) analytic
     reference orbits: unlike the hand-written `AnalyticEqualArmOrbit`/
     `AnalyticTaijiOrbit`/`AnalyticTianQinOrbit` fixtures above (used purely
@@ -680,14 +720,14 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
     class agrees with the hand-written test fixture bit for bit when given
     the same reference phase -- i.e. that promoting the fixtures' math to
     a real, documented, parameterized class did not introduce any
-    transcription error. `LisaAnalyticOrbit` additionally must reproduce
+    transcription error. `LisaEqualArmOrbit` additionally must reproduce
     `pycbc.coordinates.space`'s pre-existing hardcoded functions exactly
     with its default (no-argument) `t0`, since that default is meant to be
     a drop-in stand-in for the existing `orbit=None` code path -- unlike
     Taiji/TianQin, it does not default to a real-Earth-anchored epoch.
     """
     def test_lisa_matches_hardcoded_space_functions(self):
-        orbit = space_orbit.LisaAnalyticOrbit()
+        orbit = space_orbit.LisaEqualArmOrbit()
         times = numpy.random.uniform(0.0, 3.15e7, size=20)
         centroid, rotation = space_orbit.constellation_frame(times, orbit)
         expected_centroid = numpy.array([
@@ -704,24 +744,24 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
                 numpy.max(numpy.abs(rotation[i] - expected_rotation)), 1e-6)
 
     def test_lisa_matches_independent_fixture_implementation(self):
-        production = space_orbit.LisaAnalyticOrbit()
+        production = space_orbit.LisaEqualArmOrbit()
         fixture = AnalyticEqualArmOrbit()
         times = numpy.random.uniform(0.0, 3.15e7, size=20)
         pos_production = production.compute_position(times)
         pos_fixture = fixture.compute_position(times)
         self.assertLess(
             numpy.max(numpy.abs(pos_production - pos_fixture)), 1e-3,
-            'LisaAnalyticOrbit does not match the independent '
+            'LisaEqualArmOrbit does not match the independent '
             'AnalyticEqualArmOrbit test fixture')
 
     def test_lisa_default_t0_matches_time_offset_20_degrees(self):
-        orbit = space_orbit.LisaAnalyticOrbit()
+        orbit = space_orbit.LisaEqualArmOrbit()
         self.assertEqual(orbit.t0, space.TIME_OFFSET_20_DEGREES)
 
     def test_lisa_custom_t0_overrides_default(self):
-        orbit = space_orbit.LisaAnalyticOrbit(t0=0.0)
+        orbit = space_orbit.LisaEqualArmOrbit(t0=0.0)
         self.assertEqual(orbit.t0, 0.0)
-        default_orbit = space_orbit.LisaAnalyticOrbit()
+        default_orbit = space_orbit.LisaEqualArmOrbit()
         self.assertGreater(
             numpy.max(numpy.abs(
                 orbit.compute_position([1e7])
@@ -729,14 +769,14 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
             1e6)
 
     def test_taiji_matches_independent_fixture_implementation(self):
-        production = space_orbit.TaijiAnalyticOrbit(kappa0=PHI0_REAL)
+        production = space_orbit.TaijiEqualArmOrbit(kappa0=PHI0_REAL)
         fixture = AnalyticTaijiOrbit()
         times = numpy.random.uniform(0.0, 3.15e7, size=20)
         pos_production = production.compute_position(times)
         pos_fixture = fixture.compute_position(times)
         self.assertLess(
             numpy.max(numpy.abs(pos_production - pos_fixture)), 1e-3,
-            'TaijiAnalyticOrbit does not match the independent '
+            'TaijiEqualArmOrbit does not match the independent '
             'AnalyticTaijiOrbit test fixture')
 
     def test_tianqin_matches_independent_fixture_implementation(self):
@@ -820,7 +860,7 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
             numpy.max(numpy.abs(analytic_acc - finite_diff_acc)), 1e-6)
 
     def test_tianqin_real_earth_usable_as_orbit_provider(self):
-        lam, beta, pol = 1.2, -0.4, 0.9
+        lam, beta, pol = _random_sky_position(with_polarization=True)
         orbit = space_orbit.TianQinAnalyticOrbit(guiding_center='real_earth')
         t_ssb = 2.0e7
         t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
@@ -833,13 +873,13 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
         self.assertAlmostEqual(pol_rt, pol, places=6)
 
     def test_default_kappa0_anchors_to_real_earth(self):
-        for cls in (space_orbit.TaijiAnalyticOrbit,
+        for cls in (space_orbit.TaijiEqualArmOrbit,
                     space_orbit.TianQinAnalyticOrbit):
             orbit = cls()
             self.assertAlmostEqual(orbit.kappa0, PHI0_REAL, places=9)
 
     def test_custom_kappa0_overrides_default(self):
-        for cls in (space_orbit.TaijiAnalyticOrbit,
+        for cls in (space_orbit.TaijiEqualArmOrbit,
                     space_orbit.TianQinAnalyticOrbit):
             orbit = cls(kappa0=0.0)
             self.assertEqual(orbit.kappa0, 0.0)
@@ -859,9 +899,9 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
         like any other orbit provider (NumericOrbits, a test fixture, or a
         real lisaorbits.Orbits instance).
         """
-        lam, beta, pol = 1.3, -0.2, 0.8
-        for cls in (space_orbit.LisaAnalyticOrbit,
-                    space_orbit.TaijiAnalyticOrbit,
+        lam, beta, pol = _random_sky_position(with_polarization=True)
+        for cls in (space_orbit.LisaEqualArmOrbit,
+                    space_orbit.TaijiEqualArmOrbit,
                     space_orbit.TianQinAnalyticOrbit):
             orbit = cls()
             t_ssb = 2.0e7
@@ -876,8 +916,8 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
 
     def test_arm_lengths_match_design_values(self):
         cases = [
-            (space_orbit.LisaAnalyticOrbit(), ARMLENGTH),
-            (space_orbit.TaijiAnalyticOrbit(), TAIJI_ARMLENGTH),
+            (space_orbit.LisaEqualArmOrbit(), ARMLENGTH),
+            (space_orbit.TaijiEqualArmOrbit(), TAIJI_ARMLENGTH),
             (space_orbit.TianQinAnalyticOrbit(), TIANQIN_ARMLENGTH),
         ]
         times = numpy.random.uniform(0.0, 3.15e7, size=20)
@@ -893,8 +933,8 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
         with it to high precision. This is independent of `lisaorbits`.
         """
         dt = 1.0  # s
-        for orbit in (space_orbit.LisaAnalyticOrbit(),
-                      space_orbit.TaijiAnalyticOrbit(),
+        for orbit in (space_orbit.LisaEqualArmOrbit(),
+                      space_orbit.TaijiEqualArmOrbit(),
                       space_orbit.TianQinAnalyticOrbit()):
             t = numpy.random.uniform(1e5, 3.1e7, size=10)
             pos_plus = orbit.compute_position(t + dt)
@@ -909,8 +949,8 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
         position`, one derivative order up.
         """
         dt = 1.0  # s
-        for orbit in (space_orbit.LisaAnalyticOrbit(),
-                      space_orbit.TaijiAnalyticOrbit(),
+        for orbit in (space_orbit.LisaEqualArmOrbit(),
+                      space_orbit.TaijiEqualArmOrbit(),
                       space_orbit.TianQinAnalyticOrbit()):
             t = numpy.random.uniform(1e5, 3.1e7, size=10)
             vel_plus = orbit.compute_velocity(t + dt)
@@ -956,7 +996,7 @@ class TestKeplerianOrbits(unittest.TestCase):
                 numpy.max(numpy.abs(analytic_acc - finite_diff_acc)), 1e-6)
 
     def test_mean_arm_length_close_to_design_value(self):
-        """Unlike `LisaAnalyticOrbit` (whose specific choice of orbital
+        """Unlike `LisaEqualArmOrbit` (whose specific choice of orbital
         phases happens to keep the arm length essentially exactly
         constant at the design value for LISA's small eccentricity --
         confirmed here against real lisaorbits.EqualArmlengthOrbits data,
@@ -977,7 +1017,7 @@ class TestKeplerianOrbits(unittest.TestCase):
         self.assertLess(abs(length.mean() - ARMLENGTH), 0.01 * ARMLENGTH)
 
     def test_usable_as_orbit_provider(self):
-        lam, beta, pol = 1.1, -0.2, 0.7
+        lam, beta, pol = _random_sky_position(with_polarization=True)
         for orbit in (space_orbit.LisaKeplerianOrbit(),
                       space_orbit.TaijiKeplerianOrbit()):
             t_ssb = 2.0e7
@@ -1091,7 +1131,7 @@ class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
         self.times = numpy.random.uniform(1e5, 3.1e7, size=10)
 
     def test_t_lisa_from_ssb_delegates_to_space_orbit(self):
-        lam, beta = 1.1, -0.2
+        lam, beta = _random_sky_position()
         k_ssb = space.localization_to_propagation_vector(
             lam, beta, use_astropy=False).flatten()
         for orbit in (self.lisa_orbit, self.taiji_orbit, self.tianqin_orbit):
@@ -1108,7 +1148,7 @@ class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
         assumes must reproduce that default (`orbit=None`) path's output,
         not just be self-consistent with itself.
         """
-        lam, beta, pol = 0.9, -0.3, 2.4
+        lam, beta, pol = _random_sky_position(with_polarization=True)
         for t_ssb in self.times[:5]:
             default = space.ssb_to_lisa(t_ssb, lam, beta, pol, t0=T0)
             via_orbit = space.ssb_to_lisa(
@@ -1122,9 +1162,7 @@ class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
         original parameters, for constellations genuinely different from
         the LISA special case checked above.
         """
-        lam = numpy.random.uniform(0.0, 2 * numpy.pi)
-        beta = numpy.random.uniform(-numpy.pi / 2, numpy.pi / 2)
-        pol = numpy.random.uniform(0.0, 2 * numpy.pi)
+        lam, beta, pol = _random_sky_position(with_polarization=True)
         for orbit in (self.taiji_orbit, self.tianqin_orbit):
             for t_ssb in self.times[:5]:
                 t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
@@ -1142,7 +1180,7 @@ class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
         reach the LISA-side leg of that composition, not be silently
         dropped in favor of the hard-coded circular orbit.
         """
-        lam, beta, pol = 1.0, 0.2, 0.5
+        lam, beta, pol = _random_sky_position(with_polarization=True)
         for orbit in (self.taiji_orbit, self.tianqin_orbit):
             for t_ssb in self.times[:5]:
                 lisa_params = space.ssb_to_lisa(
@@ -1273,7 +1311,7 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
     def test_position_velocity_acceleration_match_lisaorbits_exactly(self):
         """`space_orbit`'s analytic position/velocity/acceleration formulas
         (`_equal_arm_orbit_position/_velocity/_acceleration`, underlying
-        `LisaAnalyticOrbit`/`TaijiAnalyticOrbit`) are, by construction, the
+        `LisaEqualArmOrbit`/`TaijiEqualArmOrbit`) are, by construction, the
         exact same closed-form Keplerian expansion (Rubbo, Cornish &
         Poujade 2004) that `lisaorbits.EqualArmlengthOrbits` implements --
         this checks that claim directly, at essentially machine precision,
@@ -1353,7 +1391,7 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
             lisaorbits = _require_lisaorbits()
         except ImportError as exc:
             self.fail(f'lisaorbits is not installed: {exc!r}')
-        exact_orbit = space_orbit.LisaAnalyticOrbit()
+        exact_orbit = space_orbit.LisaEqualArmOrbit()
         t_grid = numpy.linspace(0.0, 3.15e7, 400)
         positions = exact_orbit.compute_position(t_grid)
 
@@ -1383,7 +1421,7 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
     recovers the original orbit.
     """
     def setUp(self):
-        self.exact_orbit = space_orbit.LisaAnalyticOrbit()
+        self.exact_orbit = space_orbit.LisaEqualArmOrbit()
         self.t_grid = numpy.arange(0.0, 3.15e7, 86400.0)
         self.tmpdir = tempfile.mkdtemp()
 
@@ -1783,7 +1821,7 @@ class TestICRSOrbitAdapter(unittest.TestCase):
     does not depend on `lisaorbits` or any external orbit file.
     """
     def setUp(self):
-        self.ecliptic_orbit = space_orbit.LisaAnalyticOrbit()
+        self.ecliptic_orbit = space_orbit.LisaEqualArmOrbit()
         self.rotation = space_orbit._icrs_to_ecliptic_rotation_matrix()
         self.times = numpy.linspace(1e6, 3.15e7, 50)
 
@@ -1975,7 +2013,7 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
         esa_orbit = ICRSOrbitAdapter(oem_orbit)
         # Well inside the valid range, away from the interpolation edges.
         t_ssb = (oem_orbit.t_start + oem_orbit.t_end) / 2.0
-        lam, beta, pol = 0.9, -0.3, 2.4
+        lam, beta, pol = _random_sky_position(with_polarization=True)
 
         t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
             t_ssb, lam, beta, pol, orbit=esa_orbit)

@@ -53,8 +53,15 @@ it is purely additive.
 """
 import h5py
 import numpy as np
+from astropy import units
 from astropy.constants import au as ASTRONOMICAL_UNIT
 from astropy.constants import c as SPEED_OF_LIGHT
+from astropy.coordinates import (
+    ICRS,
+    BarycentricMeanEcliptic,
+    get_body_barycentric_posvel,
+)
+from astropy.time import Time, TimeDelta
 from scipy.interpolate import make_interp_spline
 from scipy.optimize import fsolve
 
@@ -126,8 +133,9 @@ class NumericOrbits:
     t_interp : (N,) array-like
         Interpolating SSB times [s] (must be strictly increasing).
     positions : (N, M, 3) array-like
-        Spacecraft positions in the SSB frame [m], with dimensions
-        (time, spacecraft, xyz).
+        Spacecraft positions in the SSB frame [m]: N time samples, M
+        spacecraft (any number, not just 3 -- see `num_sc` below), 3
+        Cartesian (x, y, z) coordinates each.
     velocities : (N, M, 3) array-like or None, optional
         Spacecraft velocities in the SSB frame [m/s], same shape as
         `positions`. If None (the default), velocities are computed as the
@@ -364,8 +372,6 @@ class NumericOrbits:
             A `NumericOrbits` instance, in pycbc's SSB-ecliptic convention,
             built from the three files' contents.
         """
-        from astropy.time import Time
-
         t_gps = None
         positions_icrs_km = []
         for path in (oem_1, oem_2, oem_3):
@@ -422,8 +428,6 @@ class NumericOrbits:
             A `NumericOrbits` instance, in pycbc's SSB-ecliptic convention,
             built from the file's contents.
         """
-        from astropy.time import Time, TimeDelta
-
         with h5py.File(path, 'r') as f:
             t0 = float(f.attrs['t0'])
             dt = float(f.attrs['dt'])
@@ -525,8 +529,6 @@ def _icrs_to_ecliptic_rotation_matrix():
     """
     global _ICRS_TO_ECLIPTIC_ROTATION
     if _ICRS_TO_ECLIPTIC_ROTATION is None:
-        from astropy import units
-        from astropy.coordinates import ICRS, BarycentricMeanEcliptic
         basis = np.eye(3)
         icrs = ICRS(x=basis[0] * units.m, y=basis[1] * units.m,
                     z=basis[2] * units.m, representation_type='cartesian')
@@ -582,19 +584,15 @@ def _real_body_position_velocity(t, body='earth'):
     velocity : (N, 3) ndarray
         The body's velocity in the SSB ecliptic frame [m/s].
     """
-    from astropy import units as apy_units
-    from astropy.coordinates import get_body_barycentric_posvel
-    from astropy.time import Time
-
     time = Time(np.atleast_1d(t), format='gps')
     pos, vel = get_body_barycentric_posvel(body, time)
     rotation = _icrs_to_ecliptic_rotation_matrix()
-    pos_icrs = np.stack([pos.x.to(apy_units.m).value,
-                        pos.y.to(apy_units.m).value,
-                        pos.z.to(apy_units.m).value], axis=-1)
-    vel_icrs = np.stack([vel.x.to(apy_units.m / apy_units.s).value,
-                        vel.y.to(apy_units.m / apy_units.s).value,
-                        vel.z.to(apy_units.m / apy_units.s).value], axis=-1)
+    pos_icrs = np.stack([pos.x.to(units.m).value,
+                        pos.y.to(units.m).value,
+                        pos.z.to(units.m).value], axis=-1)
+    vel_icrs = np.stack([vel.x.to(units.m / units.s).value,
+                        vel.y.to(units.m / units.s).value,
+                        vel.z.to(units.m / units.s).value], axis=-1)
     return pos_icrs @ rotation.T, vel_icrs @ rotation.T
 
 
@@ -628,7 +626,7 @@ _TIANQIN_ARMLENGTH = np.sqrt(3) * 1e8
 def _equal_arm_orbit_position(alpha, armlength, sc):
     """Shared first-order-in-eccentricity Keplerian expansion (Rubbo,
     Cornish & Poujade 2004, Phys. Rev. D 69, 082003) underlying
-    `LisaAnalyticOrbit` and `TaijiAnalyticOrbit`: a rigid, circular
+    `LisaEqualArmOrbit` and `TaijiEqualArmOrbit`: a rigid, circular
     triangular constellation at guiding-center phase `alpha` [rad], with
     the given `armlength` [m].
 
@@ -827,19 +825,163 @@ def _kepler_orbit_acceleration(alpha, omega, armlength, semi_major_axis,
     return pos * factor[:, :, np.newaxis]
 
 
-class LisaAnalyticOrbit:
-    """Idealized analytic LISA heliocentric orbit: the same rigid,
-    circular (first order in eccentricity) triangular constellation
-    already used by `pycbc.coordinates.space.lisa_position_ssb`/
+class _LisaGuidingCenter:
+    """Mixin providing `_phase(t)` for LISA's guiding-center convention:
+    `t0` is added to *time* (`omega*(t+t0)`), a legacy convention kept for
+    BBHx compatibility. Combine with `_EqualArmConstellation`/
+    `_KeplerConstellation`; the concrete class's own `__init__` must set
+    `self.t0`.
+    """
+
+    def _phase(self, t):
+        return EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
+
+
+class _TaijiGuidingCenter:
+    """Mixin providing `_phase(t)` for Taiji's guiding-center convention:
+    `lead_angle` is added directly to *phase* (`omega*t + kappa0 +
+    lead_angle`) -- unlike LISA's time-offset convention above, the two
+    are not directly comparable term-for-term. Combine with
+    `_EqualArmConstellation`/`_KeplerConstellation`; the concrete class's
+    own `__init__` must set `self.kappa0`/`self.lead_angle`.
+    """
+
+    def _phase(self, t):
+        return EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
+            + self.lead_angle
+
+
+class _EqualArmConstellation:
+    """Mixin implementing `compute_position`/`compute_velocity`/
+    `compute_acceleration` for the rigid, circular, first-order-in-
+    eccentricity equal-arm constellation (Rubbo, Cornish & Poujade 2004,
+    Phys. Rev. D 69, 082003) -- shared by `LisaEqualArmOrbit` and
+    `TaijiEqualArmOrbit`, which differ only in their guiding-center phase
+    convention (see `_LisaGuidingCenter`/`_TaijiGuidingCenter`, combined
+    in via multiple inheritance) and their `armlength` default. The
+    concrete class's own `__init__` must set `self.armlength`.
+    """
+
+    def compute_position(self, t, sc=(1, 2, 3)):
+        """Spacecraft position(s) at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft position(s) in the SSB frame [m].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = self._phase(t)
+        return _equal_arm_orbit_position(alpha, self.armlength, sc)
+
+    def compute_velocity(self, t, sc=(1, 2, 3)):
+        """Spacecraft velocity/ies at time(s) `t`, as the exact analytic
+        derivative of `compute_position` (not a finite-difference
+        approximation). See `NumericOrbits.compute_position` for the
+        calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft velocity/ies in the SSB frame [m/s].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = self._phase(t)
+        return _equal_arm_orbit_velocity(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
+
+    def compute_acceleration(self, t, sc=(1, 2, 3)):
+        """Spacecraft acceleration(s) at time(s) `t`, as the exact
+        analytic second derivative of `compute_position`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft acceleration(s) in the SSB frame [m/s^2].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = self._phase(t)
+        return _equal_arm_orbit_acceleration(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
+
+
+class _KeplerConstellation:
+    """Mixin implementing `compute_position`/`compute_velocity`/
+    `compute_acceleration` for the second-order-in-eccentricity tilted-
+    Kepler-ellipse equal-arm constellation (see `_kepler_orbit_elements`)
+    -- shared by `LisaKeplerianOrbit` and `TaijiKeplerianOrbit`, same
+    combination pattern as `_EqualArmConstellation`. The concrete class's
+    own `__init__` must set `self.armlength`/`self.semi_major_axis`/
+    `self.kepler_order`.
+    """
+
+    def compute_position(self, t, sc=(1, 2, 3)):
+        """Spacecraft position(s) at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft position(s) in the SSB frame [m].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = self._phase(t)
+        return _kepler_orbit_position(
+            alpha, self.armlength, self.semi_major_axis, sc,
+            kepler_order=self.kepler_order)
+
+    def compute_velocity(self, t, sc=(1, 2, 3)):
+        """Spacecraft velocity/ies at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft velocity/ies in the SSB frame [m/s].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = self._phase(t)
+        return _kepler_orbit_velocity(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength,
+            self.semi_major_axis, sc, kepler_order=self.kepler_order)
+
+    def compute_acceleration(self, t, sc=(1, 2, 3)):
+        """Spacecraft acceleration(s) at time(s) `t`. See
+        `NumericOrbits.compute_position` for the calling convention.
+
+        Returns
+        -------
+        (N, M, 3) ndarray
+            Spacecraft acceleration(s) in the SSB frame [m/s^2].
+        """
+        t = np.atleast_1d(np.asarray(t, dtype=float))
+        sc = np.atleast_1d(sc)
+        alpha = self._phase(t)
+        return _kepler_orbit_acceleration(
+            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength,
+            self.semi_major_axis, sc, kepler_order=self.kepler_order)
+
+
+class LisaEqualArmOrbit(_LisaGuidingCenter, _EqualArmConstellation):
+    """Idealized LISA heliocentric orbit: the same rigid, circular (first
+    order in eccentricity) equal-arm triangular constellation already
+    used by `pycbc.coordinates.space.lisa_position_ssb`/
     `rotation_matrix_ssb_to_lisa` (the `orbit=None` default of
     `ssb_to_lisa`/`lisa_to_ssb`/etc.), exposed here as an explicit
     `OrbitProvider` object -- e.g. to pass directly to
     `constellation_frame`/`link_vector`, or as a drop-in comparison
     baseline against a numeric or other-mission orbit.
 
-    `LisaAnalyticOrbit()` with no arguments reproduces the existing
+    `LisaEqualArmOrbit()` with no arguments reproduces the existing
     `orbit=None` default behavior exactly (same `t0`, same formula).
-    Unlike `TaijiAnalyticOrbit`/`TianQinAnalyticOrbit`, it does *not*
+    Unlike `TaijiEqualArmOrbit`/`TianQinAnalyticOrbit`, it does *not*
     default to a real-Earth-anchored reference epoch: `t0` is already a
     real, pre-existing constant tuned for compatibility with the BBHx
     waveform plugin, and changing that default here would silently
@@ -863,58 +1005,11 @@ class LisaAnalyticOrbit:
             t0 = TIME_OFFSET_20_DEGREES
         self.t0 = float(t0)
 
-    def compute_position(self, t, sc=(1, 2, 3)):
-        """Spacecraft position(s) at time(s) `t`. See
-        `NumericOrbits.compute_position` for the calling convention.
 
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft position(s) in the SSB frame [m].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
-        return _equal_arm_orbit_position(alpha, self.armlength, sc)
-
-    def compute_velocity(self, t, sc=(1, 2, 3)):
-        """Spacecraft velocity/ies at time(s) `t`, as the exact analytic
-        derivative of `compute_position` (not a finite-difference
-        approximation). See `NumericOrbits.compute_position` for the
-        calling convention.
-
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft velocity/ies in the SSB frame [m/s].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
-        return _equal_arm_orbit_velocity(
-            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
-
-    def compute_acceleration(self, t, sc=(1, 2, 3)):
-        """Spacecraft acceleration(s) at time(s) `t`, as the exact
-        analytic second derivative of `compute_position`. See
-        `NumericOrbits.compute_position` for the calling convention.
-
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft acceleration(s) in the SSB frame [m/s^2].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
-        return _equal_arm_orbit_acceleration(
-            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
-
-
-class LisaKeplerianOrbit:
-    """Analytic LISA heliocentric orbit built from a genuine two-body
-    Kepler ellipse per spacecraft (rather than `LisaAnalyticOrbit`'s
-    flat, first-order-in-eccentricity expansion): three spacecraft on
+class LisaKeplerianOrbit(_LisaGuidingCenter, _KeplerConstellation):
+    """LISA heliocentric orbit built from a genuine two-body Kepler
+    ellipse per spacecraft (rather than `LisaEqualArmOrbit`'s flat,
+    first-order-in-eccentricity expansion): three spacecraft on
     independent, common-inclination, common-eccentricity Kepler ellipses,
     each rotated 120 degrees from the others in both mean anomaly and
     ascending node, with the eccentricity and inclination chosen (see
@@ -924,9 +1019,9 @@ class LisaKeplerianOrbit:
     suite), independently implemented and validated against it, not
     ported from it.
 
-    Not a strictly "more accurate" replacement for `LisaAnalyticOrbit`:
+    Not a strictly "more accurate" replacement for `LisaEqualArmOrbit`:
     confirmed against real `lisaorbits.EqualArmlengthOrbits`/
-    `KeplerianOrbits` output, `LisaAnalyticOrbit`'s first-order
+    `KeplerianOrbits` output, `LisaEqualArmOrbit`'s first-order
     construction happens to keep LISA's arm length essentially exactly
     constant over a year (its functional form minimizes flexing, to a
     higher effective order than "first order in eccentricity" suggests
@@ -935,7 +1030,7 @@ class LisaKeplerianOrbit:
     length a similar amount below the nominal design value -- an
     inherent property of the construction, not a numerical error. Use
     this to match reference data generated with a true-Kepler-ellipse
-    convention (e.g. some LDC/TDC products), `LisaAnalyticOrbit`
+    convention (e.g. some LDC/TDC products), `LisaEqualArmOrbit`
     otherwise (it also reproduces this module's pre-existing default).
 
     Parameters
@@ -946,7 +1041,7 @@ class LisaKeplerianOrbit:
         Guiding-center semi-major axis [m]. Default 1 AU.
     t0 : float or None, optional
         Reference time offset [s], with the same meaning as in
-        `LisaAnalyticOrbit`. Default None, which uses
+        `LisaEqualArmOrbit`. Default None, which uses
         `pycbc.coordinates.space.TIME_OFFSET_20_DEGREES`.
     kepler_order : int, optional
         Number of Newton-Raphson iterations used to solve Kepler's
@@ -966,58 +1061,10 @@ class LisaKeplerianOrbit:
         self.t0 = float(t0)
         self.kepler_order = int(kepler_order)
 
-    def compute_position(self, t, sc=(1, 2, 3)):
-        """Spacecraft position(s) at time(s) `t`. See
-        `NumericOrbits.compute_position` for the calling convention.
 
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft position(s) in the SSB frame [m].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
-        return _kepler_orbit_position(
-            alpha, self.armlength, self.semi_major_axis, sc,
-            kepler_order=self.kepler_order)
-
-    def compute_velocity(self, t, sc=(1, 2, 3)):
-        """Spacecraft velocity/ies at time(s) `t`. See
-        `NumericOrbits.compute_position` for the calling convention.
-
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft velocity/ies in the SSB frame [m/s].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
-        return _kepler_orbit_velocity(
-            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength,
-            self.semi_major_axis, sc, kepler_order=self.kepler_order)
-
-    def compute_acceleration(self, t, sc=(1, 2, 3)):
-        """Spacecraft acceleration(s) at time(s) `t`. See
-        `NumericOrbits.compute_position` for the calling convention.
-
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft acceleration(s) in the SSB frame [m/s^2].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * (t + self.t0)
-        return _kepler_orbit_acceleration(
-            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength,
-            self.semi_major_axis, sc, kepler_order=self.kepler_order)
-
-
-class TaijiAnalyticOrbit:
-    """Idealized analytic Taiji heliocentric orbit: a rigid, circular
-    (first order in eccentricity) triangular constellation, per Rubbo,
+class TaijiEqualArmOrbit(_TaijiGuidingCenter, _EqualArmConstellation):
+    """Idealized Taiji heliocentric orbit: a rigid, circular (first order
+    in eccentricity) equal-arm triangular constellation, per Rubbo,
     Cornish & Poujade 2004 (Phys. Rev. D 69, 082003) -- the same
     functional form underlying the LISA orbit in
     `pycbc.coordinates.space.lisa_position_ssb`/`rotation_matrix_ssb_to_lisa`
@@ -1044,7 +1091,7 @@ class TaijiAnalyticOrbit:
         `t=0` [rad], before `lead_angle` is added. Default None, which
         anchors it to the real Earth's ecliptic longitude at SSB time 0
         (via `pycbc.coordinates.space.earth_position_ssb`), so that
-        `TaijiAnalyticOrbit()` with no arguments is roughly realistic
+        `TaijiEqualArmOrbit()` with no arguments is roughly realistic
         "today". Pass an explicit value for an arbitrary or
         scenario-specific reference epoch instead.
     """
@@ -1057,60 +1104,10 @@ class TaijiAnalyticOrbit:
             kappa0 = _real_earth_ecliptic_longitude(0.0)
         self.kappa0 = float(kappa0)
 
-    def compute_position(self, t, sc=(1, 2, 3)):
-        """Spacecraft position(s) at time(s) `t`. See
-        `NumericOrbits.compute_position` for the calling convention.
 
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft position(s) in the SSB frame [m].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
-            + self.lead_angle
-        return _equal_arm_orbit_position(alpha, self.armlength, sc)
-
-    def compute_velocity(self, t, sc=(1, 2, 3)):
-        """Spacecraft velocity/ies at time(s) `t`, as the exact analytic
-        derivative of `compute_position` (not a finite-difference
-        approximation). See `NumericOrbits.compute_position` for the
-        calling convention.
-
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft velocity/ies in the SSB frame [m/s].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
-            + self.lead_angle
-        return _equal_arm_orbit_velocity(
-            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
-
-    def compute_acceleration(self, t, sc=(1, 2, 3)):
-        """Spacecraft acceleration(s) at time(s) `t`, as the exact
-        analytic second derivative of `compute_position`. See
-        `NumericOrbits.compute_position` for the calling convention.
-
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft acceleration(s) in the SSB frame [m/s^2].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
-            + self.lead_angle
-        return _equal_arm_orbit_acceleration(
-            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength, sc)
-
-
-class TaijiKeplerianOrbit:
-    """Analytic Taiji heliocentric orbit, accurate to second order in
-    eccentricity (rather than `TaijiAnalyticOrbit`'s first order) -- see
+class TaijiKeplerianOrbit(_TaijiGuidingCenter, _KeplerConstellation):
+    """Taiji heliocentric orbit, accurate to second order in eccentricity
+    (rather than `TaijiEqualArmOrbit`'s first order) -- see
     `LisaKeplerianOrbit` for the underlying construction. Leads the
     Earth-like guiding center by `lead_angle` (design value 20 degrees),
     with Taiji's own arm length.
@@ -1131,7 +1128,7 @@ class TaijiKeplerianOrbit:
         Reference ecliptic longitude of the Earth-like guiding center at
         `t=0` [rad], before `lead_angle` is added. Default None, which
         anchors it to the real Earth's ecliptic longitude at SSB time 0,
-        as in `TaijiAnalyticOrbit`.
+        as in `TaijiEqualArmOrbit`.
     kepler_order : int, optional
         See `LisaKeplerianOrbit`. Default 2.
     """
@@ -1147,57 +1144,6 @@ class TaijiKeplerianOrbit:
             kappa0 = _real_earth_ecliptic_longitude(0.0)
         self.kappa0 = float(kappa0)
         self.kepler_order = int(kepler_order)
-
-    def compute_position(self, t, sc=(1, 2, 3)):
-        """Spacecraft position(s) at time(s) `t`. See
-        `NumericOrbits.compute_position` for the calling convention.
-
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft position(s) in the SSB frame [m].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
-            + self.lead_angle
-        return _kepler_orbit_position(
-            alpha, self.armlength, self.semi_major_axis, sc,
-            kepler_order=self.kepler_order)
-
-    def compute_velocity(self, t, sc=(1, 2, 3)):
-        """Spacecraft velocity/ies at time(s) `t`. See
-        `NumericOrbits.compute_position` for the calling convention.
-
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft velocity/ies in the SSB frame [m/s].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
-            + self.lead_angle
-        return _kepler_orbit_velocity(
-            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength,
-            self.semi_major_axis, sc, kepler_order=self.kepler_order)
-
-    def compute_acceleration(self, t, sc=(1, 2, 3)):
-        """Spacecraft acceleration(s) at time(s) `t`. See
-        `NumericOrbits.compute_position` for the calling convention.
-
-        Returns
-        -------
-        (N, M, 3) ndarray
-            Spacecraft acceleration(s) in the SSB frame [m/s^2].
-        """
-        t = np.atleast_1d(np.asarray(t, dtype=float))
-        sc = np.atleast_1d(sc)
-        alpha = EARTH_ORBIT_ANGULAR_FREQUENCY * t + self.kappa0 \
-            + self.lead_angle
-        return _kepler_orbit_acceleration(
-            alpha, EARTH_ORBIT_ANGULAR_FREQUENCY, self.armlength,
-            self.semi_major_axis, sc, kepler_order=self.kepler_order)
 
 
 class TianQinAnalyticOrbit:
@@ -1229,7 +1175,7 @@ class TianQinAnalyticOrbit:
     spacecraft -- unlike LISA/Taiji, TianQin's design keeps the
     triangle's shape and orientation fixed rather than letting each
     spacecraft flex on its own ellipse); not a substitute for real
-    mission ephemeris, same caveat as `TaijiAnalyticOrbit`.
+    mission ephemeris, same caveat as `TaijiEqualArmOrbit`.
 
     Parameters
     ----------
@@ -1630,9 +1576,9 @@ def t_ssb_from_t_detector(t_detector, k_ssb, orbit, sc=(1, 2, 3)):
 
 __all__ = [
     'NumericOrbits',
-    'LisaAnalyticOrbit',
+    'LisaEqualArmOrbit',
     'LisaKeplerianOrbit',
-    'TaijiAnalyticOrbit',
+    'TaijiEqualArmOrbit',
     'TaijiKeplerianOrbit',
     'TianQinAnalyticOrbit',
     'constellation_frame',
