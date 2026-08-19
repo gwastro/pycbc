@@ -1516,6 +1516,49 @@ def link_vector(t, orbit, sc_emitter, sc_receiver):
     return unit_vector, arm_length
 
 
+def _solve_frame_arrival_time(t_known, k_ssb, position_fn, forward):
+    """Shared `fsolve` pattern behind `t_lisa_from_ssb`/`t_ssb_from_t_lisa`,
+    `t_geo_from_ssb`/`t_ssb_from_t_geo` (in `pycbc.coordinates.space`), and
+    `t_detector_from_ssb`/`t_ssb_from_t_detector` below: solve
+    `t - t_other - dot(k, position(t)) / c = 0` for whichever side is
+    unknown, given a light-travel-time relationship between the SSB origin
+    and a moving frame's origin.
+
+    Parameters
+    ----------
+    t_known : float
+        The time at the known side of the relationship [s].
+    k_ssb : array-like
+        The unit propagation vector of the GW signal in the SSB frame.
+    position_fn : callable
+        `position_fn(t)` returns the moving frame's origin position [m] in
+        the SSB frame at SSB time `t`.
+    forward : bool
+        True solves for the frame's own time given `t_known = t_ssb` (the
+        frame's position depends on the unknown itself, so `position_fn`
+        is re-evaluated inside the root-solve). False solves for `t_ssb`
+        given `t_known` = the frame's own time (the frame's position is
+        evaluated once, at the known time, since it doesn't depend on the
+        unknown `t_ssb`).
+
+    Returns
+    -------
+    float
+        The time at the unknown side of the relationship [s].
+    """
+    k_ssb = np.ravel(np.asarray(k_ssb, dtype=float))
+    if forward:
+        def equation(t):
+            p = np.ravel(np.asarray(position_fn(t[0]), dtype=float))
+            return t[0] - t_known - np.dot(k_ssb, p) / SPEED_OF_LIGHT.value
+    else:
+        p = np.ravel(np.asarray(position_fn(t_known), dtype=float))
+
+        def equation(t):
+            return t_known - t[0] - np.dot(k_ssb, p) / SPEED_OF_LIGHT.value
+    return fsolve(equation, t_known)[0]
+
+
 def t_detector_from_ssb(t_ssb, k_ssb, orbit, sc=(1, 2, 3)):
     """Compute the time at which a GW signal arrives at the constellation
     centroid, given the time and propagation direction in the SSB frame.
@@ -1546,14 +1589,9 @@ def t_detector_from_ssb(t_ssb, k_ssb, orbit, sc=(1, 2, 3)):
         The time at which the GW signal arrives at the constellation
         centroid [s].
     """
-    k_ssb = np.asarray(k_ssb, dtype=float)
-
-    def equation(t_detector):
-        centroid, _ = constellation_frame([t_detector[0]], orbit, sc=sc)
-        return t_detector[0] - t_ssb - np.dot(k_ssb, centroid[0]) \
-            / SPEED_OF_LIGHT.value
-
-    return fsolve(equation, t_ssb)[0]
+    def position_fn(t):
+        return constellation_frame([t], orbit, sc=sc)[0][0]
+    return _solve_frame_arrival_time(t_ssb, k_ssb, position_fn, forward=True)
 
 
 def t_ssb_from_t_detector(t_detector, k_ssb, orbit, sc=(1, 2, 3)):
@@ -1564,14 +1602,10 @@ def t_ssb_from_t_detector(t_detector, k_ssb, orbit, sc=(1, 2, 3)):
     Inverse of `t_detector_from_ssb`; see that function for parameter and
     return conventions.
     """
-    k_ssb = np.asarray(k_ssb, dtype=float)
-    centroid, _ = constellation_frame([t_detector], orbit, sc=sc)
-
-    def equation(t_ssb):
-        return t_detector - t_ssb[0] - np.dot(k_ssb, centroid[0]) \
-            / SPEED_OF_LIGHT.value
-
-    return fsolve(equation, t_detector)[0]
+    def position_fn(t):
+        return constellation_frame([t], orbit, sc=sc)[0][0]
+    return _solve_frame_arrival_time(
+        t_detector, k_ssb, position_fn, forward=False)
 
 
 __all__ = [

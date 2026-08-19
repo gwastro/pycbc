@@ -1654,6 +1654,11 @@ class SkyFrameTransform(BaseTransform):
         reverse. The two classes for a given pair (e.g. `GEOToSSB` and
         `SSBToGEO`) share the same `_frame_a`/`_frame_b` and differ only in
         this flag.
+
+    A config section for one of these transforms may also set a
+    ``frame-label`` option to relabel the constellation side's override
+    option names (``tc-lisa`` -> ``tc-<label>``, etc.) without changing the
+    underlying physics; see ``from_config`` below.
     """
 
     _frame_a = None
@@ -1743,34 +1748,74 @@ class SkyFrameTransform(BaseTransform):
         additional_opts = {}
         frame_a, frame_b = cls._frame_a, cls._frame_b
 
-        variables = {}
+        # `frame_a` (the constellation side, always the fixed string "lisa"
+        # internally -- see SpaceToSSB's docstring) is what drives the ini
+        # override-option names below (`tc-lisa`, `longitude-lisa`, ...).
+        # That reads fine for an actual LISA leg, but is misleading in a
+        # joint multi-constellation analysis where this same transform
+        # class is instantiated once per constellation (e.g. a
+        # `taiji__waveform_transforms-...` section) -- `tc-lisa` there
+        # looks LISA-specific even though it isn't. `frame-label` lets a
+        # config override just the option-key text (not the underlying
+        # physics or the internal attribute names, which stay keyed to
+        # `frame_a`/`frame_b` and are unaffected by this), e.g.
+        # `frame-label = taiji` makes the override options `tc-taiji`,
+        # `longitude-taiji`, etc. Omitting it keeps the existing
+        # `-lisa`-suffixed option names, so single-constellation configs
+        # are unaffected.
+        label_a = frame_a
+        if cp.has_option(section_tag, 'frame-label'):
+            skip_opts.append('frame-label')
+            label_a = cp.get_opt_tag(section, 'frame-label', tag)
+        frame_labels = {frame_a: label_a, frame_b: frame_b}
+
         for frame in (frame_a, frame_b):
-            variables['tc-' + frame] = cls.default_params_name[
-                'default_tc_' + frame]
-            variables['longitude-' + frame] = cls.default_params_name[
-                'default_longitude_' + frame]
-            variables['latitude-' + frame] = cls.default_params_name[
-                'default_latitude_' + frame]
-            variables['polarization-' + frame] = cls.default_params_name[
-                'default_polarization_' + frame]
-        for param_name, default in variables.items():
-            name_underline = param_name.replace('-', '_')
-            if cp.has_option(section_tag, param_name):
-                skip_opts.append(param_name)
-                additional_opts[name_underline + '_param'] = cp.get_opt_tag(
-                    section, param_name, tag)
-            else:
-                additional_opts[name_underline + '_param'] = default
+            label = frame_labels[frame]
+            for field in ('tc', 'longitude', 'latitude', 'polarization'):
+                opt_name = field + '-' + label
+                attr_name = field + '_' + frame + '_param'
+                default = cls.default_params_name[
+                    'default_' + field + '_' + frame]
+                if cp.has_option(section_tag, opt_name):
+                    skip_opts.append(opt_name)
+                    additional_opts[attr_name] = cp.get_opt_tag(
+                        section, opt_name, tag)
+                else:
+                    additional_opts[attr_name] = default
 
         for extra_name in (_FRAME_EXTRA_CTOR_KWARGS[frame_a]
                            + _FRAME_EXTRA_CTOR_KWARGS[frame_b]):
             opt = extra_name.replace('_', '-')
+            labeled_opt = opt + '-' + label_a
             if cp.has_option(section_tag, opt):
+                # sets this specific transform's value, overriding whatever
+                # (if anything) [static_params] has for the same option.
                 skip_opts.append(opt)
                 value = cp.get_opt_tag(section, opt, tag)
-                if extra_name != 'orbit_file':
-                    value = float(value)
-                additional_opts[extra_name] = value
+            elif cp.has_option('static_params', labeled_opt):
+                # not set on this transform -- fall back to a value shared
+                # across the whole config, keyed by `frame-label` (e.g.
+                # `orbit-file-taiji`). The label is what disambiguates this
+                # when a single submodel chains two transforms through SSB
+                # that each need a DIFFERENT constellation's orbit file
+                # (e.g. tianqin__ needing both `orbit-file-taiji` for its
+                # own space_to_ssb step and `orbit-file-tianqin` for its
+                # ssb_to_space step) -- an unlabeled shared value couldn't
+                # tell those apart.
+                value = cp.get('static_params', labeled_opt)
+            elif cp.has_option('static_params', opt):
+                # unlabeled fallback, for the common case of a submodel
+                # with only one transform needing this option: a top-level
+                # `<label>__orbit-file` in a joint/hierarchical analysis
+                # already arrives here correctly scoped to this submodel
+                # (see MultiSignalModel.from_config's `subcp`/`sparam_map`
+                # handling in pycbc/inference/models/hierarchical.py).
+                value = cp.get('static_params', opt)
+            else:
+                continue
+            if extra_name != 'orbit_file':
+                value = float(value)
+            additional_opts[extra_name] = value
 
         return super(SkyFrameTransform, cls).from_config(
             cp, section, outputs, skip_opts=skip_opts,
@@ -1787,22 +1832,37 @@ class GEOToSSB(SkyFrameTransform):
     default_params_name = _sky_frame_default_params_name('geo', 'ssb')
 
 
-class LISAToSSB(SkyFrameTransform):
-    """Converts arrival time, sky localization, and polarization angle in the
-    LISA frame to the corresponding values in the SSB frame."""
+class SpaceToSSB(SkyFrameTransform):
+    """Converts arrival time, sky localization, and polarization angle in a
+    space-borne constellation frame (LISA, or any other via `orbit_file` --
+    `_frame_a`/`default_params_name` stay keyed on the literal string
+    "lisa" internally for the same reason `pycbc.coordinates.space`'s
+    `*_lisa_*`-named functions this class calls still exist: backward
+    compatibility with existing parameter names/config options, not a
+    literal LISA-only restriction) to the corresponding values in the SSB
+    frame."""
 
-    name = "lisa_to_ssb"
+    name = "space_to_ssb"
     _frame_a, _frame_b = 'lisa', 'ssb'
     default_params_name = _sky_frame_default_params_name('lisa', 'ssb')
 
 
-class LISAToGEO(SkyFrameTransform):
-    """Converts arrival time, sky localization, and polarization angle in the
-    LISA frame to the corresponding values in the geocentric frame."""
+LISAToSSB = SpaceToSSB
+"""Deprecated alias for `SpaceToSSB` (see `SpaceToSSB`'s docstring)."""
 
-    name = "lisa_to_geo"
+
+class SpaceToGEO(SkyFrameTransform):
+    """Converts arrival time, sky localization, and polarization angle in a
+    space-borne constellation frame (see `SpaceToSSB`) to the corresponding
+    values in the geocentric frame."""
+
+    name = "space_to_geo"
     _frame_a, _frame_b = 'lisa', 'geo'
     default_params_name = _sky_frame_default_params_name('lisa', 'geo')
+
+
+LISAToGEO = SpaceToGEO
+"""Deprecated alias for `SpaceToGEO` (see `SpaceToGEO`'s docstring)."""
 
 
 class Log(BaseTransform):
@@ -2404,22 +2464,30 @@ class SSBToGEO(SkyFrameTransform):
     default_params_name = GEOToSSB.default_params_name
 
 
-class SSBToLISA(SkyFrameTransform):
-    """The inverse of LISAToSSB."""
+class SSBToSpace(SkyFrameTransform):
+    """The inverse of SpaceToSSB."""
 
-    name = "ssb_to_lisa"
+    name = "ssb_to_space"
     _frame_a, _frame_b = 'lisa', 'ssb'
     _forward = False
-    default_params_name = LISAToSSB.default_params_name
+    default_params_name = SpaceToSSB.default_params_name
 
 
-class GEOToLISA(SkyFrameTransform):
-    """The inverse of LISAToGEO."""
+SSBToLISA = SSBToSpace
+"""Deprecated alias for `SSBToSpace` (see `SpaceToSSB`'s docstring)."""
 
-    name = "geo_to_lisa"
+
+class GEOToSpace(SkyFrameTransform):
+    """The inverse of SpaceToGEO."""
+
+    name = "geo_to_space"
     _frame_a, _frame_b = 'lisa', 'geo'
     _forward = False
-    default_params_name = LISAToGEO.default_params_name
+    default_params_name = SpaceToGEO.default_params_name
+
+
+GEOToLISA = GEOToSpace
+"""Deprecated alias for `GEOToSpace` (see `SpaceToSSB`'s docstring)."""
 
 
 class Exponent(Log):
@@ -2566,10 +2634,10 @@ Log.inverse = Exponent
 Logit.inverse = Logistic
 GEOToSSB.inverse = SSBToGEO
 SSBToGEO.inverse = GEOToSSB
-LISAToSSB.inverse = SSBToLISA
-SSBToLISA.inverse = LISAToSSB
-LISAToGEO.inverse = GEOToLISA
-GEOToLISA.inverse = LISAToGEO
+SpaceToSSB.inverse = SSBToSpace
+SSBToSpace.inverse = SpaceToSSB
+SpaceToGEO.inverse = GEOToSpace
+GEOToSpace.inverse = SpaceToGEO
 
 
 #
@@ -2612,10 +2680,17 @@ transforms = {
     AlignTotalSpin.name: AlignTotalSpin,
     GEOToSSB.name: GEOToSSB,
     SSBToGEO.name: SSBToGEO,
-    LISAToSSB.name: LISAToSSB,
-    SSBToLISA.name: SSBToLISA,
-    LISAToGEO.name: LISAToGEO,
-    GEOToLISA.name: GEOToLISA,
+    SpaceToSSB.name: SpaceToSSB,
+    SSBToSpace.name: SSBToSpace,
+    SpaceToGEO.name: SpaceToGEO,
+    GEOToSpace.name: GEOToSpace,
+    # Deprecated aliases, kept so existing config files using the old
+    # *lisa*-named `name = ...` values keep resolving to the same classes
+    # (see SpaceToSSB's docstring).
+    'lisa_to_ssb': SpaceToSSB,
+    'ssb_to_lisa': SSBToSpace,
+    'lisa_to_geo': SpaceToGEO,
+    'geo_to_lisa': GEOToSpace,
 }
 
 # standard CBC transforms: these are transforms that do not require input
@@ -2645,8 +2720,8 @@ common_cbc_forward_transforms = [
     ChiPToCartesianSpin(),
     ChirpDistanceToDistance(),
     GEOToSSB(),
-    LISAToSSB(),
-    LISAToGEO(),
+    SpaceToSSB(),
+    SpaceToGEO(),
 ]
 common_cbc_inverse_transforms = [
     _t.inverse()
