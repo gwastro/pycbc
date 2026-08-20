@@ -27,12 +27,31 @@ package for parameter estimation.
 """
 
 import logging
+import os
+
+import h5py
 
 from pycbc.inference.io.nautilus import NautilusFile
 from pycbc.pool import choose_pool
 from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 from .base_cube import setup_calls
+
+
+def sync_state(src, dst):
+    """Mirrors the hdf group ``src`` into the group ``dst``, replacing what
+    is already there.
+    """
+    for name in set(dst) - set(src):
+        del dst[name]
+    for name, item in src.items():
+        if isinstance(item, h5py.Group):
+            sync_state(item, dst.require_group(name))
+        else:
+            if name in dst:
+                del dst[name]
+            src.copy(name, dst, name=name)
+    dst.attrs.update(src.attrs)
 
 
 #
@@ -55,12 +74,16 @@ class NautilusSampler(BaseSampler):
         Number of live points to use in the sampler.
     nprocesses : int, optional
         Number of parallel processes to use. Default is 1.
+    checkpoint_time_interval : float, optional
+        Seconds to sample for between checkpoints. Default (None) is to run
+        to convergence and checkpoint once at the end.
     """
     name = "nautilus"
     _io = NautilusFile
 
     def __init__(self, model, nlive, nprocesses=1, use_mpi=False,
-                 loglikelihood_function=None, run_kwds=None, extra_kwds=None):
+                 loglikelihood_function=None, run_kwds=None, extra_kwds=None,
+                 checkpoint_time_interval=None):
         import nautilus
         super().__init__(model)
         self.nautilus = nautilus
@@ -72,6 +95,7 @@ class NautilusSampler(BaseSampler):
         self.ndim = len(model.sampling_params)
         self.run_kwds = run_kwds or {}
         self.extra_kwds = extra_kwds or {}
+        self.checkpoint_time_interval = checkpoint_time_interval
         self._sampler = None
 
         # nautilus wraps cyclic parameters around the edge of the unit cube
@@ -81,16 +105,44 @@ class NautilusSampler(BaseSampler):
         for i in self.periodic:
             logging.info('Param: %s will be cyclic', self.variable_params[i])
 
-    def run(self):
-        # nautilus does its own checkpointing and needs the file name up
-        # front, which is only known once setup_output has run
+    def setup_sampler(self, filepath=None):
+        """Constructs the underlying sampler, resuming from the nautilus
+        state in ``filepath`` if one is given.
+
+        ``filepath`` is None during a run, which stops nautilus writing a
+        file of its own; ``checkpoint`` writes its state instead.
+        """
         self._sampler = self.nautilus.Sampler(
             self.prior_call, self.loglikelihood_call,
             n_dim=self.ndim, n_live=self.nlive,
             periodic=self.periodic or None, pool=self.pool,
-            filepath=self.checkpoint_file + '.h5',
-            resume=not self.new_checkpoint, **self.extra_kwds)
-        self._sampler.run(**self.run_kwds)
+            filepath=filepath, resume=filepath is not None,
+            **self.extra_kwds)
+
+    def run(self):
+        if self._sampler is None:
+            self.setup_sampler()
+        if not self.checkpoint_time_interval:
+            self._sampler.run(**self.run_kwds)
+            return
+        # Sample in chunks so that pycbc decides when to checkpoint. run
+        # picks up where it left off, and reports whether it stopped because
+        # it converged or because it ran into one of its limits.
+        run_kwds = self.run_kwds.copy()
+        remaining = run_kwds.pop('timeout', float('inf'))
+        while remaining > 0:
+            n_like = self._sampler.n_like
+            interval = min(self.checkpoint_time_interval, remaining)
+            done = self._sampler.run(timeout=interval, **run_kwds)
+            remaining -= interval
+            if done:
+                break
+            if self._sampler.n_like == n_like:
+                logging.info("nautilus is not making progress, stopping")
+                break
+            logging.info("Checkpointing after %s likelihood calls",
+                         self._sampler.n_like)
+            self.checkpoint()
 
     @property
     def io(self):
@@ -139,6 +191,9 @@ class NautilusSampler(BaseSampler):
             publishing evidence estimates.
         * ``timeout = FLOAT``:
             Timeout in seconds for the sampling phase.
+        * ``checkpoint_time_interval = FLOAT``:
+            Seconds to sample for between checkpoints. Default is to run to
+            convergence and checkpoint once at the end.
         * ``loglikelihood-function``:
             The model attribute to use for the loglikelihood. Default is
             ``loglikelihood``.
@@ -177,22 +232,58 @@ class NautilusSampler(BaseSampler):
                     for opt, dtype in types.items()
                     if cp.has_option(section, opt)}
 
+        checkpoint_time_interval = None
+        if cp.has_option(section, 'checkpoint_time_interval'):
+            checkpoint_time_interval = float(
+                cp.get(section, 'checkpoint_time_interval'))
+
         obj = cls(model, nlive=nlive, nprocesses=nprocesses, use_mpi=use_mpi,
                   loglikelihood_function=loglikelihood_function,
-                  run_kwds=given(rargs), extra_kwds=given(cargs))
+                  run_kwds=given(rargs), extra_kwds=given(cargs),
+                  checkpoint_time_interval=checkpoint_time_interval)
         setup_output(obj, output_file, check_nsamples=False)
+        if not obj.new_checkpoint:
+            obj.resume_from_checkpoint()
         return obj
 
     def checkpoint(self):
-        """Nautilus checkpoints itself as it runs, see ``run``."""
+        """Writes nautilus' state to the checkpoint and backup files.
+
+        Nautilus can only serialize itself to a file of its own, so its state
+        is written to a scratch file and copied into the sampler group of our
+        files, keeping the layout nautilus wrote so that it reads it back
+        itself on resume.
+        """
+        scratch = self.checkpoint_file + '.nautilus.h5'
+        self._sampler.write(scratch, overwrite=True)
+        try:
+            with h5py.File(scratch, 'r') as state:
+                for fn in [self.checkpoint_file, self.backup_file]:
+                    with self.io(fn, 'a') as fp:
+                        sync_state(state, fp.require_group(self.io.state_path))
+        finally:
+            os.remove(scratch)
+        for fn in [self.checkpoint_file, self.backup_file]:
+            self.write_results(fn)
 
     def resume_from_checkpoint(self):
-        """Nautilus resumes itself from its own file, see ``run``."""
+        """Rebuilds nautilus from the state in the checkpoint file."""
+        scratch = self.checkpoint_file + '.nautilus.h5'
+        with self.io(self.checkpoint_file, 'r') as fp:
+            with h5py.File(scratch, 'w') as state:
+                sync_state(fp[self.io.state_path], state)
+        try:
+            self.setup_sampler(filepath=scratch)
+        finally:
+            os.remove(scratch)
+        # the scratch file is gone; checkpoint writes the state from here on
+        self._sampler.filepath = None
+        logging.info("Resumed nautilus after %s likelihood calls",
+                     self._sampler.n_like)
 
     def finalize(self):
         logging.info("log Z, dlog Z: %s, %s", self.logz, self.logz_err)
-        for fn in [self.checkpoint_file, self.backup_file]:
-            self.write_results(fn)
+        self.checkpoint()
 
     @property
     def model_stats(self):

@@ -24,3 +24,11 @@ class NautilusFile(DynestyFile):
     """
 
     name = 'nautilus_file'
+    # nautilus' own state is kept verbatim under this path
+    state_path = 'sampler_info/nautilus'
+
+    def validate(self):
+        """A nautilus checkpoint is only resumable if nautilus' own state is
+        in it, since that is what nautilus reads to pick a run back up.
+        """
+        return self.state_path in self
