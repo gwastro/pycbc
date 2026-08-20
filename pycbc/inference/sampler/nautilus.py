@@ -28,6 +28,7 @@ package for parameter estimation.
 
 import logging
 import os
+import time
 
 import h5py
 
@@ -36,22 +37,6 @@ from pycbc.pool import choose_pool
 from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 from .base_cube import setup_calls
-
-
-def sync_state(src, dst):
-    """Mirrors the hdf group ``src`` into the group ``dst``, replacing what
-    is already there.
-    """
-    for name in set(dst) - set(src):
-        del dst[name]
-    for name, item in src.items():
-        if isinstance(item, h5py.Group):
-            sync_state(item, dst.require_group(name))
-        else:
-            if name in dst:
-                del dst[name]
-            src.copy(name, dst, name=name)
-    dst.attrs.update(src.attrs)
 
 
 #
@@ -120,29 +105,31 @@ class NautilusSampler(BaseSampler):
             **self.extra_kwds)
 
     def run(self):
+        # Sample in chunks so that pycbc decides when to checkpoint. run
+        # picks up where it left off and reports whether it stopped because
+        # it converged or because it reached one of its limits. Nautilus
+        # applies its timeout per call, so here it bounds the whole run.
         if self._sampler is None:
             self.setup_sampler()
-        if not self.checkpoint_time_interval:
-            self._sampler.run(**self.run_kwds)
-            return
-        # Sample in chunks so that pycbc decides when to checkpoint. run
-        # picks up where it left off, and reports whether it stopped because
-        # it converged or because it ran into one of its limits.
         run_kwds = self.run_kwds.copy()
-        remaining = run_kwds.pop('timeout', float('inf'))
-        while remaining > 0:
+        deadline = time.time() + run_kwds.pop('timeout', float('inf'))
+        while True:
+            left = deadline - time.time()
+            interval = min(self.checkpoint_time_interval or left, left)
+            if interval <= 0:
+                break
             n_like = self._sampler.n_like
-            interval = min(self.checkpoint_time_interval, remaining)
-            done = self._sampler.run(timeout=interval, **run_kwds)
-            remaining -= interval
-            if done:
+            if self._sampler.run(timeout=interval, **run_kwds):
                 break
             if self._sampler.n_like == n_like:
-                logging.info("nautilus is not making progress, stopping")
+                # nothing was gained, so only a limit already reached can be
+                # stopping it, and calling again would spin
+                logging.info("nautilus stopped making progress")
                 break
-            logging.info("Checkpointing after %s likelihood calls",
-                         self._sampler.n_like)
-            self.checkpoint()
+            if self.checkpoint_time_interval:
+                self.checkpoint()
+                logging.info("Checkpointed after %s likelihood calls",
+                             self._sampler.n_like)
 
     @property
     def io(self):
@@ -251,8 +238,8 @@ class NautilusSampler(BaseSampler):
 
         Nautilus can only serialize itself to a file of its own, so its state
         is written to a scratch file and copied into the sampler group of our
-        files, keeping the layout nautilus wrote so that it reads it back
-        itself on resume.
+        files. The layout it wrote is kept as it is, so that nautilus reads
+        its own state back on resume.
         """
         scratch = self.checkpoint_file + '.nautilus.h5'
         self._sampler.write(scratch, overwrite=True)
@@ -260,18 +247,22 @@ class NautilusSampler(BaseSampler):
             with h5py.File(scratch, 'r') as state:
                 for fn in [self.checkpoint_file, self.backup_file]:
                     with self.io(fn, 'a') as fp:
-                        sync_state(state, fp.require_group(self.io.state_path))
+                        if self.io.state_path in fp:
+                            del fp[self.io.state_path]
+                        state.copy('/', fp, name=self.io.state_path)
+                    self.write_results(fn)
         finally:
             os.remove(scratch)
-        for fn in [self.checkpoint_file, self.backup_file]:
-            self.write_results(fn)
 
     def resume_from_checkpoint(self):
         """Rebuilds nautilus from the state in the checkpoint file."""
         scratch = self.checkpoint_file + '.nautilus.h5'
         with self.io(self.checkpoint_file, 'r') as fp:
-            with h5py.File(scratch, 'w') as state:
-                sync_state(fp[self.io.state_path], state)
+            state = fp[self.io.state_path]
+            with h5py.File(scratch, 'w') as out:
+                for name in state:
+                    state.copy(name, out, name=name)
+                out.attrs.update(state.attrs)
         try:
             self.setup_sampler(filepath=scratch)
         finally:
