@@ -1562,26 +1562,16 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
 # ---------------------------------------------------------------------------
 # Sky-frame (arrival time / sky localization / polarization) transforms.
 #
-# There are 3 supported frame pairs: geo<->ssb, lisa<->ssb, lisa<->geo
-# ("lisa" here means any constellation reachable via
-# `pycbc.coordinates.NumericOrbits`, selected with `orbit_file`). Each
-# pair gets two classes -- e.g. `GEOToSSB`/`SSBToGEO` -- that only differ in
-# which direction is `transform` vs `inverse_transform`. All 6 classes
-# below are thin subclasses of `SkyFrameTransform`, which implements
-# `__init__`/`transform`/`inverse_transform`/`from_config` once, generically,
-# driven by the `_frame_a`/`_frame_b`/`_forward` class attributes each
-# subclass sets and the `coordinates.<a>_to_<b>`/`<b>_to_<a>` function pair
-# that name implies.
+# 3 frame pairs (geo<->ssb, lisa<->ssb, lisa<->geo -- "lisa" means any
+# constellation, selected via `orbit_file`), 2 classes each for the two
+# transform directions. All 6 are thin subclasses of `SkyFrameTransform`,
+# which implements `__init__`/`transform`/`inverse_transform`/`from_config`
+# once, driven by each subclass's `_frame_a`/`_frame_b`/`_forward`.
 # ---------------------------------------------------------------------------
 
 def _load_constellation_orbit(orbit_file):
-    """Load a `NumericOrbits` from an HDF5 orbit file (see
-    `pycbc.coordinates.space_orbit.NumericOrbits.from_file`), or return None
-    if `orbit_file` is None. Shared by the LISA/Taiji/TianQin-capable
-    transforms below: with no `orbit_file`, they keep using the hard-coded
-    circular LISA orbit (unchanged behavior); with one, they use the
-    constellation orbit it contains instead -- e.g. a numerically-propagated
-    Taiji or TianQin orbit.
+    """Load a `NumericOrbits` from an HDF5 file, or return None if
+    `orbit_file` is None (keeping the hard-coded circular LISA orbit).
     """
     if orbit_file is None:
         return None
@@ -1613,10 +1603,8 @@ def _lisa_call_kwargs(inst):
     return {'orbit': inst.orbit}
 
 
-# maps a frame name to the function above that turns its extra constructor
-# kwargs (stored on the instance) into the keyword argument(s) the
-# `coordinates.<a>_to_<b>` function actually expects; frames not listed here
-# (geo, ssb) don't need anything extra.
+# frame name -> function turning its extra ctor kwargs into what the
+# coordinate function expects; geo/ssb need nothing extra.
 _FRAME_CALL_KWARGS_FUNCS = {'lisa': _lisa_call_kwargs}
 
 
@@ -1748,21 +1736,12 @@ class SkyFrameTransform(BaseTransform):
         additional_opts = {}
         frame_a, frame_b = cls._frame_a, cls._frame_b
 
-        # `frame_a` (the constellation side, always the fixed string "lisa"
-        # internally -- see SpaceToSSB's docstring) is what drives the ini
-        # override-option names below (`tc-lisa`, `longitude-lisa`, ...).
-        # That reads fine for an actual LISA leg, but is misleading in a
-        # joint multi-constellation analysis where this same transform
-        # class is instantiated once per constellation (e.g. a
-        # `taiji__waveform_transforms-...` section) -- `tc-lisa` there
-        # looks LISA-specific even though it isn't. `frame-label` lets a
-        # config override just the option-key text (not the underlying
-        # physics or the internal attribute names, which stay keyed to
-        # `frame_a`/`frame_b` and are unaffected by this), e.g.
-        # `frame-label = taiji` makes the override options `tc-taiji`,
-        # `longitude-taiji`, etc. Omitting it keeps the existing
-        # `-lisa`-suffixed option names, so single-constellation configs
-        # are unaffected.
+        # `frame_a` is always "lisa" internally (see SpaceToSSB), which
+        # drives option names like `tc-lisa` below -- misleading in a
+        # joint analysis where this class runs once per constellation.
+        # `frame-label` overrides just that option-key text (e.g.
+        # `frame-label = taiji` -> `tc-taiji`); physics and internal
+        # attribute names are untouched. Omitting it keeps `-lisa`.
         label_a = frame_a
         if cp.has_option(section_tag, 'frame-label'):
             skip_opts.append('frame-label')
@@ -1793,23 +1772,18 @@ class SkyFrameTransform(BaseTransform):
                 skip_opts.append(opt)
                 value = cp.get_opt_tag(section, opt, tag)
             elif cp.has_option('static_params', labeled_opt):
-                # not set on this transform -- fall back to a value shared
-                # across the whole config, keyed by `frame-label` (e.g.
-                # `orbit-file-taiji`). The label is what disambiguates this
-                # when a single submodel chains two transforms through SSB
-                # that each need a DIFFERENT constellation's orbit file
-                # (e.g. tianqin__ needing both `orbit-file-taiji` for its
-                # own space_to_ssb step and `orbit-file-tianqin` for its
-                # ssb_to_space step) -- an unlabeled shared value couldn't
-                # tell those apart.
+                # Falls back to a config-wide value keyed by frame-label
+                # (e.g. `orbit-file-taiji`) -- needed when one submodel
+                # chains two transforms through SSB that each need a
+                # different constellation's orbit file (tianqin__ needing
+                # both `orbit-file-taiji` and `orbit-file-tianqin`).
                 value = cp.get('static_params', labeled_opt)
             elif cp.has_option('static_params', opt):
-                # unlabeled fallback, for the common case of a submodel
-                # with only one transform needing this option: a top-level
-                # `<label>__orbit-file` in a joint/hierarchical analysis
-                # already arrives here correctly scoped to this submodel
-                # (see MultiSignalModel.from_config's `subcp`/`sparam_map`
-                # handling in pycbc/inference/models/hierarchical.py).
+                # Unlabeled fallback for the common one-transform case: a
+                # top-level `<label>__orbit-file` in a joint/hierarchical
+                # analysis already arrives here scoped to this submodel
+                # (see MultiSignalModel.from_config in
+                # pycbc/inference/models/hierarchical.py).
                 value = cp.get('static_params', opt)
             else:
                 continue
@@ -1834,13 +1808,14 @@ class GEOToSSB(SkyFrameTransform):
 
 class SpaceToSSB(SkyFrameTransform):
     """Converts arrival time, sky localization, and polarization angle in a
-    space-borne constellation frame (LISA, or any other via `orbit_file` --
+    space-borne constellation frame (LISA, or any other via `orbit_file`)
+    to the corresponding values in the SSB frame.
+
     `_frame_a`/`default_params_name` stay keyed on the literal string
-    "lisa" internally for the same reason `pycbc.coordinates.space`'s
-    `*_lisa_*`-named functions this class calls still exist: backward
-    compatibility with existing parameter names/config options, not a
-    literal LISA-only restriction) to the corresponding values in the SSB
-    frame."""
+    "lisa" for backward compatibility with existing parameter names and
+    config options, same as `pycbc.coordinates.space`'s `*_lisa_*`-named
+    functions this class calls -- not a literal LISA-only restriction.
+    """
 
     name = "space_to_ssb"
     _frame_a, _frame_b = 'lisa', 'ssb'

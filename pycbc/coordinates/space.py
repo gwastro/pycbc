@@ -346,10 +346,8 @@ def _sky_ssb_space_transform(t_src, longitude_src, latitude_src,
             t_dst[i] = t_space_from_ssb(
                 t_src[i], longitude_src[i], latitude_src[i], t0,
                 orbit=orbit, sc=sc)
-            # Although t_dst was calculated above using the corrected LISA
-            # position vector by adding t0, it corresponds to the true
-            # t_ssb, not t_ssb+t0, we need to include t0 again to correct
-            # LISA position.
+            # t0 must be reapplied here: t_dst already used it once, but
+            # is LISA's arrival time for the true t_ssb, not t_ssb + t0.
             rot = _rotation_matrix_at_detector_time(t_dst[i], t0, orbit, sc)
             k_dst = rot.T @ k_src
         else:
