@@ -29,7 +29,6 @@ package for parameter estimation.
 import logging
 import os
 import time
-
 import h5py
 
 from pycbc.inference.io.nautilus import NautilusFile
