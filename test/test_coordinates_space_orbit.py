@@ -127,6 +127,23 @@ def _require_lisaorbits():
     return lisaorbits
 
 
+# Several tests below cross-check space_orbit's formulas against real
+# `lisaorbits` output, and all need lisaorbits >= 3.0: earlier releases
+# have a bug in their ICRS->ecliptic conversion (call astropy's
+# heliocentricmeanecliptic without `obstime`, so it silently defaults to
+# J2000.0 instead of the orbit's actual epoch), confirmed to disagree
+# with pycbc's own formulas by ~1e9-6e10 m depending on the test.
+# lisaorbits >= 3.0 itself requires Python >= 3.12, so an older Python
+# has no release that's both correct and installable -- skipped there,
+# not failed, since it's a version floor these tests can't clear. The
+# one exception is test_from_oem_files_matches_lisaorbits_on_real_esa_data,
+# which fails outright instead of skipping on any lisaorbits problem
+# (missing, too old, or a fetch failure), since there's no reference to
+# compare against if it's computed with the same bug -- it was exactly
+# this kind of failure quietly becoming a skip that let the bug go
+# unnoticed for a while.
+
+
 # Real Earth's ecliptic longitude at GPS t=0, taken directly from pycbc's own
 # (astropy-based) `earth_position_ssb` -- used below as the phase-zero
 # reference for the Taiji/TianQin fixtures' guiding center, so that "leads/
@@ -1037,13 +1054,8 @@ class TestKeplerianOrbits(unittest.TestCase):
         test) to isolate the comparison from the unrelated
         EARTH_ORBIT_ANGULAR_FREQUENCY-vs-sqrt(GM_SUN/a**3) difference.
 
-        Requires lisaorbits >= 3.0, same reason as
-        TestOptionalLisaorbitsDuckTyping.test_position_velocity_acceleration_match_lisaorbits_exactly:
-        `KeplerianOrbits` goes through the same obstime-less, wrong-epoch
-        astropy conversion in earlier releases (confirmed: off by ~6e10 m
-        on lisaorbits 2.4.2, versus the 1e-2 m tolerance here). Skipped
-        (not failed) on Python < 3.12, since lisaorbits >= 3.0 itself
-        needs Python >= 3.12 and no release there can satisfy both.
+        Requires lisaorbits >= 3.0, Python >= 3.12 -- see the module-level
+        note above `_require_lisaorbits` for why.
         """
         if sys.version_info < (3, 12):
             self.skipTest(
@@ -1329,18 +1341,8 @@ class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
         directly here isolates a pure formula-for-formula comparison from
         that unrelated frequency-convention difference.
 
-        Requires lisaorbits >= 3.0, same reason as
-        TestNumericOrbitsFileReaders.test_from_oem_files_matches_lisaorbits_on_real_esa_data's
-        docstring explains for OEMOrbits: earlier releases also convert
-        `EqualArmlengthOrbits` positions internally with the same
-        obstime-less, wrong-epoch astropy call, so they don't agree with
-        pycbc's own formulas either (confirmed: off by ~6e10 m on
-        lisaorbits 2.4.2, versus the 1e-3 m tolerance here).
-
-        lisaorbits >= 3.0 itself requires Python >= 3.12, so on an older
-        Python there's no release that is both new enough to be correct
-        and installable -- that's skipped, not failed, since it's not an
-        environment problem, just a version floor this test can't clear.
+        Requires lisaorbits >= 3.0, Python >= 3.12 -- see the module-level
+        note above `_require_lisaorbits` for why.
         """
         if sys.version_info < (3, 12):
             self.skipTest(
@@ -1552,26 +1554,12 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
         that pycbc's own from_oem_files parser agrees with a real
         lisaorbits.OEMOrbits reading the same files.
 
-        Requires lisaorbits >= 3.0. Earlier releases have a real bug in
-        their internal OEM-to-ecliptic conversion: they call astropy's
-        `heliocentricmeanecliptic` without `obstime`, which silently
-        defaults to J2000.0 instead of these files' actual ~2036 epoch,
-        and shifts positions that are already heliocentric (per the
-        files' own metadata) as if they were barycentric. Verified in
-        isolation, with no lisaorbits code involved: feeding the same raw
-        ICRS position through pycbc's fixed rotation matrix vs. through
-        that obstime-less astropy call reproduces the same ~1e9 m error.
-        There's no meaningful way to compare against a reference value
-        that's computed wrong, so this test fails outright -- not skips
-        -- if lisaorbits isn't installed, is too old, or the fetch fails
-        for any reason. It was exactly this kind of failure quietly
-        turning into a skip that let the underlying lisaorbits bug go
-        unnoticed for a while.
-
-        The one exception: lisaorbits >= 3.0 itself requires Python >=
-        3.12, so on an older Python no release is both new enough to be
-        correct and installable. That's skipped, since it's a version
-        floor this test can't clear, not an environment problem.
+        Requires lisaorbits >= 3.0, Python >= 3.12 -- see the module-level
+        note above `_require_lisaorbits` for why. This is the test that
+        note's "fails outright, not skip" exception refers to: any
+        lisaorbits problem here fails the test rather than skipping it,
+        since there's no reference value to compare against once
+        lisaorbits itself is computing wrong.
         """
         if sys.version_info < (3, 12):
             self.skipTest(
