@@ -24,23 +24,45 @@
 """
 This module provides coordinate transformations related to space-borne
 detectors, such as coordinate transformations between space-borne detectors
-and ground-based detectors. Note that current LISA orbit used in this module
-is a circular orbit, need to be replaced by a more realistic and general orbit
-model in the near future.
+and ground-based detectors. The default orbit assumed throughout is LISA's
+analytic circular orbit; `t_space_from_ssb`, `t_ssb_from_t_space`,
+`ssb_to_space`, `space_to_ssb`, `space_to_geo` and `geo_to_space` also accept
+an optional `orbit` argument (see `pycbc.coordinates.space_orbit`) to use an
+arbitrary numerical or analytic constellation orbit (LISA, Taiji, TianQin,
+...) instead, with no change in behavior when `orbit` is left at its default
+of None.
+
+The `*_lisa_*`/`*_to_lisa`/`lisa_to_*`-named versions of these functions
+(`t_lisa_from_ssb`, `ssb_to_lisa`, ...) are deprecated aliases kept only for
+backward compatibility (e.g. the BBHx waveform plugin imports and calls
+several of these by name, with these exact keyword arguments) -- new code
+should use the `*_space_*`/`*_to_space`/`space_to_*` names instead, which
+mean exactly the same thing: "the constellation frame described by `orbit`",
+not literally LISA. Both spellings always behave identically; the old names
+are not scheduled for removal.
 """
 
 import logging
-import numpy as np
 
-from scipy.spatial.transform import Rotation
-from scipy.optimize import fsolve
+import numpy as np
 from astropy import units
-from astropy.constants import c, au
-from astropy.time import Time
-from astropy.coordinates import BarycentricMeanEcliptic, PrecessedGeocentric
-from astropy.coordinates import get_body_barycentric
-from astropy.coordinates import SkyCoord
+from astropy.constants import au
+from astropy.coordinates import (
+    BarycentricMeanEcliptic,
+    PrecessedGeocentric,
+    SkyCoord,
+    get_body_barycentric,
+)
 from astropy.coordinates.builtin_frames import ecliptic_transforms
+from astropy.time import Time
+from scipy.spatial.transform import Rotation
+
+from pycbc.coordinates.space_orbit import (
+    _solve_frame_arrival_time,
+    constellation_frame,
+    t_detector_from_ssb,
+    t_ssb_from_t_detector,
+)
 
 logger = logging.getLogger('pycbc.coordinates.space')
 
@@ -49,11 +71,14 @@ logger = logging.getLogger('pycbc.coordinates.space')
 # the waveform plugin and PE config file. In the unit of 's'.
 TIME_OFFSET_20_DEGREES = 7365189.431698299
 
-# "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" should be
-# more general for other detectors in the near future.
+# "rotation_matrix_ssb_to_space" and "space_position_ssb" remain specific to
+# LISA's analytic circular orbit; they are the default (`orbit=None`) code
+# path used by the functions below. For any other constellation orbit, pass
+# an `orbit` argument to those functions instead (see
+# `pycbc.coordinates.space_orbit`).
 
 
-def rotation_matrix_ssb_to_lisa(alpha):
+def rotation_matrix_ssb_to_space(alpha):
     """ The rotation matrix (of frame basis) from SSB frame to LISA frame.
     This function assumes the angle between LISA plane and the ecliptic
     is 60 degrees, and the period of LISA's self-rotation and orbital
@@ -80,38 +105,43 @@ def rotation_matrix_ssb_to_lisa(alpha):
     return r_total
 
 
-def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):
-    """ Calculating the position vector and angular displacement of LISA
-    in the SSB frame, at a given time. This function assumes LISA's barycenter
-    is orbiting around a circular orbit within the ecliptic behind the Earth.
-    The period of it is one year.
+def rotation_matrix_ssb_to_lisa(alpha):
+    """Deprecated alias for `rotation_matrix_ssb_to_space` (see module
+    docstring)."""
+    return rotation_matrix_ssb_to_space(alpha)
+
+
+def space_position_ssb(t_space, t0=TIME_OFFSET_20_DEGREES):
+    """ LISA's position vector and angular displacement in the SSB frame at
+    a given time, assuming a circular orbit in the ecliptic, one year
+    period, trailing the Earth.
 
     Parameters
     ----------
-    t_lisa : float
-        The time when a GW signal arrives at the origin of LISA frame,
-        or any other time you want.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees.
+    t_space : float
+        Any time [s]; not necessarily an actual GW arrival time.
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth).
 
     Returns
     -------
     (p, alpha) : tuple
-    p : numpy.array
-        The position vector of LISA in the SSB frame. In the unit of 'm'.
-    alpha : float
-        The angular displacement of LISA in the SSB frame.
-        In the unit of 'radian'.
+        LISA's position vector [m] and angular displacement [rad] in the
+        SSB frame.
     """
-    OMEGA_0 = 1.99098659277e-7
+    OMEGA_0 = 1.99098659277e-7  # 2*pi / sidereal year [rad/s]
     R_ORBIT = au.value
-    alpha = np.mod(OMEGA_0 * (t_lisa + t0), 2*np.pi)
+    alpha = np.mod(OMEGA_0 * (t_space + t0), 2*np.pi)
     p = np.array([[R_ORBIT * np.cos(alpha)],
                   [R_ORBIT * np.sin(alpha)],
                   [0]], dtype=object)
     return (p, alpha)
+
+
+def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):
+    """Deprecated alias for `space_position_ssb` (see module docstring)."""
+    return space_position_ssb(t_lisa, t0)
 
 
 def localization_to_propagation_vector(longitude, latitude,
@@ -245,259 +275,315 @@ def polarization_newframe(polarization, k, rotation_matrix, use_astropy=True,
     return polarization_new_frame
 
 
-def t_lisa_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
-                    t0=TIME_OFFSET_20_DEGREES):
-    """ Calculating the time when a GW signal arrives at the barycenter
-    of LISA, by using the time and sky localization in SSB frame.
+def _ensure_sky_params_arrays(*arrays):
+    """ Shared by the 4 X_to_ssb/ssb_to_X frame-transform functions below:
+    coerce each of `arrays` (scalar or array-like) to a 1-D numpy array,
+    and return them alongside `num`, the common length (from the first
+    array).
+    """
+    coerced = tuple(
+        a if isinstance(a, np.ndarray) else np.array([a]) for a in arrays)
+    return coerced + (len(coerced[0]),)
+
+
+def _validate_sky_params(longitude, latitude, polarization):
+    """ Shared by the 4 X_to_ssb/ssb_to_X frame-transform functions below:
+    range-checks the whole array at once (equivalent to the same check
+    repeated per element inside their loops), raising the same
+    ValueError text.
+    """
+    if np.any((longitude < 0) | (longitude >= 2*np.pi)):
+        raise ValueError("Longitude should within [0, 2*pi).")
+    if np.any((latitude < -np.pi/2) | (latitude > np.pi/2)):
+        raise ValueError("Latitude should within [-pi/2, pi/2].")
+    if np.any((polarization < 0) | (polarization >= 2*np.pi)):
+        raise ValueError("Polarization angle should within [0, 2*pi).")
+
+
+def _pack_sky_params_output(num, t, longitude, latitude, polarization):
+    """ Shared by the 4 X_to_ssb/ssb_to_X frame-transform functions below:
+    unwrap to scalars for a single input, otherwise keep the arrays.
+    """
+    if num == 1:
+        return (t[0], longitude[0], latitude[0], polarization[0])
+    return (t, longitude, latitude, polarization)
+
+
+def _rotation_matrix_at_detector_time(t_detector, t0, orbit, sc=(1, 2, 3)):
+    """ Internal helper shared by `ssb_to_space` and `space_to_ssb`: the
+    rotation matrix (of frame basis) from the SSB frame to the detector
+    frame at a given detector-frame time, from either the analytic circular
+    LISA orbit (`orbit=None`) or a general orbit provider (see
+    `pycbc.coordinates.space_orbit`).
+    """
+    if orbit is not None:
+        _, rotation = constellation_frame([t_detector], orbit, sc=sc)
+        return rotation[0]
+    alpha = space_position_ssb(t_detector, t0)[1]
+    return rotation_matrix_ssb_to_space(alpha)
+
+
+def _sky_ssb_space_transform(t_src, longitude_src, latitude_src,
+                              polarization_src, t0, orbit, sc, forward):
+    """ Shared body of `ssb_to_space` and `space_to_ssb`: rotate the GW
+    propagation vector between the SSB frame and the constellation frame
+    at the appropriate detector-frame time, and convert the arrival time
+    to match. `forward=True` runs the SSB->space direction (`ssb_to_space`);
+    `forward=False` runs space->SSB (`space_to_ssb`).
+    """
+    t_src, longitude_src, latitude_src, polarization_src, num = \
+        _ensure_sky_params_arrays(
+            t_src, longitude_src, latitude_src, polarization_src)
+    _validate_sky_params(longitude_src, latitude_src, polarization_src)
+    t_dst = np.zeros(num)
+    longitude_dst, latitude_dst = np.zeros(num), np.zeros(num)
+    polarization_dst = np.zeros(num)
+
+    for i in range(num):
+        k_src = localization_to_propagation_vector(
+            longitude_src[i], latitude_src[i], use_astropy=False)
+        if forward:
+            t_dst[i] = t_space_from_ssb(
+                t_src[i], longitude_src[i], latitude_src[i], t0,
+                orbit=orbit, sc=sc)
+            # t0 must be reapplied here: t_dst already used it once, but
+            # is LISA's arrival time for the true t_ssb, not t_ssb + t0.
+            rot = _rotation_matrix_at_detector_time(t_dst[i], t0, orbit, sc)
+            k_dst = rot.T @ k_src
+        else:
+            rot = _rotation_matrix_at_detector_time(t_src[i], t0, orbit, sc)
+            k_dst = rot @ k_src
+        longitude_dst[i], latitude_dst[i] = \
+            propagation_vector_to_localization(k_dst, use_astropy=False)
+        if not forward:
+            t_dst[i] = t_ssb_from_t_space(
+                t_src[i], longitude_dst[i], latitude_dst[i], t0,
+                orbit=orbit, sc=sc)
+        polarization_dst[i] = polarization_newframe(
+            polarization_src[i], k_src, rot if forward else rot.T,
+            use_astropy=False)
+
+    return _pack_sky_params_output(
+        num, t_dst, longitude_dst, latitude_dst, polarization_dst)
+
+
+def t_space_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
+                     t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
+    """ Arrival time at LISA's barycenter, from arrival time and sky
+    localization in the SSB frame.
 
     Parameters
     ----------
     t_ssb : float
-        The time when a GW signal arrives at the origin of SSB frame.
-        In the unit of 's'.
+        Arrival time at the SSB frame origin [s].
     longitude_ssb : float
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic longitude in the SSB frame [rad].
     latitude_ssb : float
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees.
+        Ecliptic latitude in the SSB frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
+    orbit : OrbitProvider, optional
+        An object exposing `compute_position(t, sc)` (see
+        `pycbc.coordinates.space_orbit`), giving the true constellation
+        orbit (LISA, Taiji, TianQin, numerical, ...) to use instead of the
+        analytic circular LISA orbit. Default None reproduces the
+        behavior of previous versions of this function exactly.
+    sc : tuple, optional
+        1-indexed spacecraft labels defining the constellation. Only used
+        if `orbit` is given. Default (1, 2, 3).
 
     Returns
     -------
-    t_lisa : float
-        The time when a GW signal arrives at the origin of LISA frame.
+    t_space : float
+        Arrival time at the LISA frame origin [s].
     """
     k = localization_to_propagation_vector(
             longitude_ssb, latitude_ssb, use_astropy=False)
 
-    def equation(t_lisa):
-        # LISA is moving, when GW arrives at LISA center,
-        # time is t_lisa, not t_ssb.
-        p = lisa_position_ssb(t_lisa, t0)[0]
-        return t_lisa - t_ssb - np.vdot(k, p) / c.value
+    if orbit is not None:
+        return t_detector_from_ssb(t_ssb, k.flatten(), orbit, sc=sc)
 
-    return fsolve(equation, t_ssb)[0]
+    # LISA is moving, when GW arrives at LISA center,
+    # time is t_space, not t_ssb.
+    def position_fn(t):
+        return space_position_ssb(t, t0)[0]
+    return _solve_frame_arrival_time(t_ssb, k, position_fn, forward=True)
+
+
+def t_lisa_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
+                    t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
+    """Deprecated alias for `t_space_from_ssb` (see module docstring)."""
+    return t_space_from_ssb(t_ssb, longitude_ssb, latitude_ssb, t0, orbit, sc)
+
+
+def t_ssb_from_t_space(t_space, longitude_ssb, latitude_ssb,
+                       t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
+    """ Arrival time at the SSB frame origin, from arrival time in the LISA
+    frame and sky localization in the SSB frame.
+
+    Parameters
+    ----------
+    t_space : float
+        Arrival time at the LISA frame origin [s].
+    longitude_ssb : float
+        Ecliptic longitude in the SSB frame [rad].
+    latitude_ssb : float
+        Ecliptic latitude in the SSB frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
+    orbit : OrbitProvider, optional
+        See `t_space_from_ssb`. Default None reproduces the behavior of
+        previous versions of this function exactly.
+    sc : tuple, optional
+        1-indexed spacecraft labels defining the constellation. Only used
+        if `orbit` is given. Default (1, 2, 3).
+
+    Returns
+    -------
+    t_ssb : float
+        Arrival time at the SSB frame origin [s].
+    """
+    k = localization_to_propagation_vector(
+            longitude_ssb, latitude_ssb, use_astropy=False)
+
+    if orbit is not None:
+        return t_ssb_from_t_detector(t_space, k.flatten(), orbit, sc=sc)
+
+    # LISA is moving, when GW arrives at LISA center,
+    # time is t_space, not t_ssb.
+    def position_fn(t):
+        return space_position_ssb(t, t0)[0]
+    return _solve_frame_arrival_time(t_space, k, position_fn, forward=False)
 
 
 def t_ssb_from_t_lisa(t_lisa, longitude_ssb, latitude_ssb,
-                      t0=TIME_OFFSET_20_DEGREES):
-    """ Calculating the time when a GW signal arrives at the barycenter
-    of SSB, by using the time in LISA frame and sky localization in SSB frame.
-
-    Parameters
-    ----------
-    t_lisa : float
-        The time when a GW signal arrives at the origin of LISA frame.
-        In the unit of 's'.
-    longitude_ssb : float
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    latitude_ssb : float
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees.
-
-    Returns
-    -------
-    t_ssb : float
-        The time when a GW signal arrives at the origin of SSB frame.
-    """
-    k = localization_to_propagation_vector(
-            longitude_ssb, latitude_ssb, use_astropy=False)
-    # LISA is moving, when GW arrives at LISA center,
-    # time is t_lisa, not t_ssb.
-    p = lisa_position_ssb(t_lisa, t0)[0]
-
-    def equation(t_ssb):
-        return t_lisa - t_ssb - np.vdot(k, p) / c.value
-
-    return fsolve(equation, t_lisa)[0]
+                      t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
+    """Deprecated alias for `t_ssb_from_t_space` (see module docstring)."""
+    return t_ssb_from_t_space(t_lisa, longitude_ssb, latitude_ssb, t0, orbit,
+                              sc)
 
 
-def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
-                t0=TIME_OFFSET_20_DEGREES):
-    """ Converting the arrive time, the sky localization, and the polarization
-    from the SSB frame to the LISA frame.
+def ssb_to_space(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
+                 t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
+    """ Converts arrival time, sky localization, and polarization from the
+    SSB frame to the LISA frame.
 
     Parameters
     ----------
     t_ssb : float or numpy.array
-        The time when a GW signal arrives at the origin of SSB frame.
-        In the unit of 's'.
+        Arrival time at the SSB frame origin [s].
     longitude_ssb : float or numpy.array
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic longitude in the SSB frame [rad].
     latitude_ssb : float or numpy.array
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Ecliptic latitude in the SSB frame [rad].
     polarization_ssb : float or numpy.array
-        The polarization angle of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees.
+        Polarization angle in the SSB frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
+    orbit : OrbitProvider, optional
+        An object exposing `compute_position(t, sc)` (see
+        `pycbc.coordinates.space_orbit`), giving the true constellation
+        orbit (LISA, Taiji, TianQin, numerical, ...) to use instead of the
+        analytic circular LISA orbit. Default None reproduces the
+        behavior of previous versions of this function exactly.
+    sc : tuple, optional
+        1-indexed spacecraft labels defining the constellation. Only used
+        if `orbit` is given. Default (1, 2, 3).
 
     Returns
     -------
-    (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa) : tuple
-    t_lisa : float or numpy.array
-        The time when a GW signal arrives at the origin of LISA frame.
-        In the unit of 's'.
-    longitude_lisa : float or numpy.array
-        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
-    latitude_lisa : float or numpy.array
-        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
-    polarization_lisa : float or numpy.array
-        The polarization angle of a GW signal in LISA frame.
-        In the unit of 'radian'.
+    (t_space, longitude_space, latitude_space, polarization_space) : tuple
+        Arrival time [s], ecliptic longitude [rad], ecliptic latitude
+        [rad], and polarization angle [rad] in the LISA frame.
     """
-    if not isinstance(t_ssb, np.ndarray):
-        t_ssb = np.array([t_ssb])
-    if not isinstance(longitude_ssb, np.ndarray):
-        longitude_ssb = np.array([longitude_ssb])
-    if not isinstance(latitude_ssb, np.ndarray):
-        latitude_ssb = np.array([latitude_ssb])
-    if not isinstance(polarization_ssb, np.ndarray):
-        polarization_ssb = np.array([polarization_ssb])
-    num = len(t_ssb)
-    t_lisa, longitude_lisa = np.zeros(num), np.zeros(num)
-    latitude_lisa, polarization_lisa = np.zeros(num), np.zeros(num)
-
-    for i in range(num):
-        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2*np.pi:
-            raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_ssb[i] < -np.pi/2 or latitude_ssb[i] > np.pi/2:
-            raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2*np.pi:
-            raise ValueError("Polarization angle should within [0, 2*pi).")
-        t_lisa[i] = t_lisa_from_ssb(t_ssb[i], longitude_ssb[i],
-                                    latitude_ssb[i], t0)
-        k_ssb = localization_to_propagation_vector(
-                    longitude_ssb[i], latitude_ssb[i], use_astropy=False)
-        # Although t_lisa calculated above using the corrected LISA position
-        # vector by adding t0, it corresponds to the true t_ssb, not t_ssb+t0,
-        # we need to include t0 again to correct LISA position.
-        alpha = lisa_position_ssb(t_lisa[i], t0)[1]
-        rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
-        k_lisa = rotation_matrix_lisa.T @ k_ssb
-        longitude_lisa[i], latitude_lisa[i] = \
-            propagation_vector_to_localization(k_lisa, use_astropy=False)
-        polarization_lisa[i] = polarization_newframe(
-            polarization_ssb[i], k_ssb, rotation_matrix_lisa,
-            use_astropy=False)
-
-    if num == 1:
-        params_lisa = (t_lisa[0], longitude_lisa[0],
-                       latitude_lisa[0], polarization_lisa[0])
-    else:
-        params_lisa = (t_lisa, longitude_lisa,
-                       latitude_lisa, polarization_lisa)
-
-    return params_lisa
+    return _sky_ssb_space_transform(
+        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
+        t0, orbit, sc, forward=True)
 
 
-def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
-                t0=TIME_OFFSET_20_DEGREES):
-    """ Converting the arrive time, the sky localization, and the polarization
-    from the LISA frame to the SSB frame.
+def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
+                t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
+    """Deprecated alias for `ssb_to_space` (see module docstring)."""
+    return ssb_to_space(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
+                        t0, orbit, sc)
+
+
+def space_to_ssb(t_space, longitude_space, latitude_space,
+                 polarization_space, t0=TIME_OFFSET_20_DEGREES, orbit=None,
+                 sc=(1, 2, 3)):
+    """ Converts arrival time, sky localization, and polarization from the
+    LISA frame to the SSB frame.
 
     Parameters
     ----------
-    t_lisa : float or numpy.array
-        The time when a GW signal arrives at the origin of LISA frame.
-        In the unit of 's'.
-    longitude_lisa : float or numpy.array
-        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
-    latitude_lisa : float or numpy.array
-        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
-    polarization_lisa : float or numpy.array
-        The polarization angle of a GW signal in LISA frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees.
+    t_space : float or numpy.array
+        Arrival time at the LISA frame origin [s].
+    longitude_space : float or numpy.array
+        Longitude in the LISA frame [rad].
+    latitude_space : float or numpy.array
+        Latitude in the LISA frame [rad].
+    polarization_space : float or numpy.array
+        Polarization angle in the LISA frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
+    orbit : OrbitProvider, optional
+        See `ssb_to_space`. Default None reproduces the behavior of
+        previous versions of this function exactly.
+    sc : tuple, optional
+        1-indexed spacecraft labels defining the constellation. Only used
+        if `orbit` is given. Default (1, 2, 3).
 
     Returns
     -------
     (t_ssb, longitude_ssb, latitude_ssb, polarization_ssb) : tuple
-    t_ssb : float or numpy.array
-        The time when a GW signal arrives at the origin of SSB frame.
-        In the unit of 's'.
-    longitude_ssb : float or numpy.array
-        The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    latitude_ssb : float or numpy.array
-        The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'radian'.
-    polarization_ssb : float or numpy.array
-        The polarization angle of a GW signal in SSB frame.
-        In the unit of 'radian'.
+        Arrival time [s], ecliptic longitude [rad], ecliptic latitude
+        [rad], and polarization angle [rad] in the SSB frame.
     """
-    if not isinstance(t_lisa, np.ndarray):
-        t_lisa = np.array([t_lisa])
-    if not isinstance(longitude_lisa, np.ndarray):
-        longitude_lisa = np.array([longitude_lisa])
-    if not isinstance(latitude_lisa, np.ndarray):
-        latitude_lisa = np.array([latitude_lisa])
-    if not isinstance(polarization_lisa, np.ndarray):
-        polarization_lisa = np.array([polarization_lisa])
-    num = len(t_lisa)
-    t_ssb, longitude_ssb = np.zeros(num), np.zeros(num)
-    latitude_ssb, polarization_ssb = np.zeros(num), np.zeros(num)
-
-    for i in range(num):
-        if longitude_lisa[i] < 0 or longitude_lisa[i] >= 2*np.pi:
-            raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_lisa[i] < -np.pi/2 or latitude_lisa[i] > np.pi/2:
-            raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_lisa[i] < 0 or polarization_lisa[i] >= 2*np.pi:
-            raise ValueError("Polarization angle should within [0, 2*pi).")
-        k_lisa = localization_to_propagation_vector(
-                    longitude_lisa[i], latitude_lisa[i], use_astropy=False)
-        alpha = lisa_position_ssb(t_lisa[i], t0)[1]
-        rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
-        k_ssb = rotation_matrix_lisa @ k_lisa
-        longitude_ssb[i], latitude_ssb[i] = \
-            propagation_vector_to_localization(k_ssb, use_astropy=False)
-        t_ssb[i] = t_ssb_from_t_lisa(t_lisa[i], longitude_ssb[i],
-                                     latitude_ssb[i], t0)
-        polarization_ssb[i] = polarization_newframe(
-            polarization_lisa[i], k_lisa, rotation_matrix_lisa.T,
-            use_astropy=False)
-
-    if num == 1:
-        params_ssb = (t_ssb[0], longitude_ssb[0],
-                      latitude_ssb[0], polarization_ssb[0])
-    else:
-        params_ssb = (t_ssb, longitude_ssb,
-                      latitude_ssb, polarization_ssb)
-
-    return params_ssb
+    return _sky_ssb_space_transform(
+        t_space, longitude_space, latitude_space, polarization_space,
+        t0, orbit, sc, forward=False)
 
 
-def rotation_matrix_ssb_to_geo(epsilon=np.deg2rad(23.439281)):
+def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
+                t0=TIME_OFFSET_20_DEGREES, orbit=None, sc=(1, 2, 3)):
+    """Deprecated alias for `space_to_ssb` (see module docstring) -- kept
+    because the BBHx waveform plugin imports and calls this by name with
+    these exact keyword arguments."""
+    return space_to_ssb(t_lisa, longitude_lisa, latitude_lisa,
+                        polarization_lisa, t0, orbit, sc)
+
+
+def rotation_matrix_ssb_to_geo(epsilon=None):
     """ The rotation matrix (of frame basis) from SSB frame to
     geocentric frame.
 
     Parameters
     ----------
-    epsilon : float
+    epsilon : float or None, optional
         The Earth's axial tilt (obliquity), in the unit of 'radian'.
+        Default None, which computes the obliquity directly from astropy
+        (via the same cached ICRS <-> ecliptic rotation
+        `pycbc.coordinates.space_orbit._icrs_to_ecliptic_rotation_matrix`
+        uses) instead of a hard-coded constant; numerically equivalent to
+        the IAU obliquity value used there to ~1e-7 rad. Pass an explicit
+        value to use a simple analytic rotation by that angle instead
+        (e.g. for a non-standard or historical obliquity).
 
     Returns
     -------
     r : numpy.array
         A 3x3 rotation matrix from SSB frame to geocentric frame.
     """
+    if epsilon is None:
+        # Imported lazily to avoid a circular import (space_orbit imports
+        # from this module too).
+        from pycbc.coordinates.space_orbit import _icrs_to_ecliptic_rotation_matrix
+        return _icrs_to_ecliptic_rotation_matrix()
+
     r = Rotation.from_rotvec([
         [-epsilon, 0, 0]
     ]).as_matrix()
@@ -565,13 +651,11 @@ def t_geo_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
     k = localization_to_propagation_vector(
             longitude_ssb, latitude_ssb, use_astropy, frame)
 
-    def equation(t_geo):
-        # Earth is moving, when GW arrives at Earth center,
-        # time is t_geo, not t_ssb.
-        p = earth_position_ssb(t_geo)[0]
-        return t_geo - t_ssb - np.vdot(k, p) / c.value
-
-    return fsolve(equation, t_ssb)[0]
+    # Earth is moving, when GW arrives at Earth center,
+    # time is t_geo, not t_ssb.
+    def position_fn(t):
+        return earth_position_ssb(t)[0]
+    return _solve_frame_arrival_time(t_ssb, k, position_fn, forward=True)
 
 
 def t_ssb_from_t_geo(t_geo, longitude_ssb, latitude_ssb,
@@ -599,14 +683,12 @@ def t_ssb_from_t_geo(t_geo, longitude_ssb, latitude_ssb,
     """
     k = localization_to_propagation_vector(
             longitude_ssb, latitude_ssb, use_astropy, frame)
+
     # Earth is moving, when GW arrives at Earth center,
     # time is t_geo, not t_ssb.
-    p = earth_position_ssb(t_geo)[0]
-
-    def equation(t_ssb):
-        return t_geo - t_ssb - np.vdot(k, p) / c.value
-
-    return fsolve(equation, t_geo)[0]
+    def position_fn(t):
+        return earth_position_ssb(t)[0]
+    return _solve_frame_arrival_time(t_geo, k, position_fn, forward=False)
 
 
 def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
@@ -648,28 +730,16 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     """
-    if not isinstance(t_ssb, np.ndarray):
-        t_ssb = np.array([t_ssb])
-    if not isinstance(longitude_ssb, np.ndarray):
-        longitude_ssb = np.array([longitude_ssb])
-    if not isinstance(latitude_ssb, np.ndarray):
-        latitude_ssb = np.array([latitude_ssb])
-    if not isinstance(polarization_ssb, np.ndarray):
-        polarization_ssb = np.array([polarization_ssb])
-    num = len(t_ssb)
+    t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, num = \
+        _ensure_sky_params_arrays(
+            t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)
+    _validate_sky_params(longitude_ssb, latitude_ssb, polarization_ssb)
     t_geo = np.full(num, np.nan)
     longitude_geo = np.full(num, np.nan)
     latitude_geo = np.full(num, np.nan)
     polarization_geo = np.full(num, np.nan)
 
     for i in range(num):
-        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2*np.pi:
-            raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_ssb[i] < -np.pi/2 or latitude_ssb[i] > np.pi/2:
-            raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2*np.pi:
-            raise ValueError("Polarization angle should within [0, 2*pi).")
-
         if use_astropy:
             # BarycentricMeanEcliptic doesn't have obstime attribute,
             # it's a good inertial frame, but PrecessedGeocentric is not.
@@ -715,14 +785,8 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
         # LDC and LAL conventions, see Sec 4.1.5 in <LISA-LCST-SGS-MAN-001>.
         polarization_geo[i] = np.mod(polarization_geo[i]+np.pi, 2*np.pi)
 
-    if num == 1:
-        params_geo = (t_geo[0], longitude_geo[0],
-                      latitude_geo[0], polarization_geo[0])
-    else:
-        params_geo = (t_geo, longitude_geo,
-                      latitude_geo, polarization_geo)
-
-    return params_geo
+    return _pack_sky_params_output(
+        num, t_geo, longitude_geo, latitude_geo, polarization_geo)
 
 
 def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
@@ -764,28 +828,16 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     """
-    if not isinstance(t_geo, np.ndarray):
-        t_geo = np.array([t_geo])
-    if not isinstance(longitude_geo, np.ndarray):
-        longitude_geo = np.array([longitude_geo])
-    if not isinstance(latitude_geo, np.ndarray):
-        latitude_geo = np.array([latitude_geo])
-    if not isinstance(polarization_geo, np.ndarray):
-        polarization_geo = np.array([polarization_geo])
-    num = len(t_geo)
+    t_geo, longitude_geo, latitude_geo, polarization_geo, num = \
+        _ensure_sky_params_arrays(
+            t_geo, longitude_geo, latitude_geo, polarization_geo)
+    _validate_sky_params(longitude_geo, latitude_geo, polarization_geo)
     t_ssb = np.full(num, np.nan)
     longitude_ssb = np.full(num, np.nan)
     latitude_ssb = np.full(num, np.nan)
     polarization_ssb = np.full(num, np.nan)
 
     for i in range(num):
-        if longitude_geo[i] < 0 or longitude_geo[i] >= 2*np.pi:
-            raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_geo[i] < -np.pi/2 or latitude_geo[i] > np.pi/2:
-            raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_geo[i] < 0 or polarization_geo[i] >= 2*np.pi:
-            raise ValueError("Polarization angle should within [0, 2*pi).")
-
         if use_astropy:
             # BarycentricMeanEcliptic doesn't have obstime attribute,
             # it's a good inertial frame, but PrecessedGeocentric is not.
@@ -833,121 +885,127 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
         # LDC and LAL conventions, see Sec 4.1.5 in <LISA-LCST-SGS-MAN-001>.
         polarization_ssb[i] = np.mod(polarization_ssb[i]-np.pi, 2*np.pi)
 
-    if num == 1:
-        params_ssb = (t_ssb[0], longitude_ssb[0],
-                      latitude_ssb[0], polarization_ssb[0])
-    else:
-        params_ssb = (t_ssb, longitude_ssb,
-                      latitude_ssb, polarization_ssb)
-
-    return params_ssb
+    return _pack_sky_params_output(
+        num, t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)
 
 
-def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
-                t0=TIME_OFFSET_20_DEGREES, use_astropy=True):
-    """ Converting the arrive time, the sky localization, and the polarization
-    from the LISA frame to the geocentric frame.
+def space_to_geo(t_space, longitude_space, latitude_space,
+                 polarization_space, t0=TIME_OFFSET_20_DEGREES,
+                 use_astropy=True, orbit=None, sc=(1, 2, 3)):
+    """ Converts arrival time, sky localization, and polarization from the
+    LISA frame to the geocentric frame.
 
     Parameters
     ----------
-    t_lisa : float or numpy.array
-        The time when a GW signal arrives at the origin of LISA frame.
-        In the unit of 's'.
-    longitude_lisa : float or numpy.array
-        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
-    latitude_lisa : float or numpy.array
-        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
-    polarization_lisa : float or numpy.array
-        The polarization angle of a GW signal in LISA frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees.
-    use_astropy : bool
-        Using Astropy to calculate the sky localization or not.
-        Default is True.
+    t_space : float or numpy.array
+        Arrival time at the LISA frame origin [s].
+    longitude_space : float or numpy.array
+        Longitude in the LISA frame [rad].
+    latitude_space : float or numpy.array
+        Latitude in the LISA frame [rad].
+    polarization_space : float or numpy.array
+        Polarization angle in the LISA frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
+    use_astropy : bool, optional
+        Whether to use astropy for the sky-localization step. Default True.
+    orbit : OrbitProvider, optional
+        See `ssb_to_space`. Default None reproduces the behavior of
+        previous versions of this function exactly. Only the LISA<->SSB
+        leg of this transform depends on the constellation orbit; the
+        geocentric frame itself is unaffected.
+    sc : tuple, optional
+        1-indexed spacecraft labels defining the constellation. Only used
+        if `orbit` is given. Default (1, 2, 3).
 
     Returns
     -------
     (t_geo, longitude_geo, latitude_geo, polarization_geo) : tuple
-    t_geo : float or numpy.array
-        The time when a GW signal arrives at the origin of geocentric frame.
-        In the unit of 's'.
-    longitude_geo : float or numpy.array
-        The ecliptic longitude of a GW signal in geocentric frame.
-        In the unit of 'radian'.
-    latitude_geo : float or numpy.array
-        The ecliptic latitude of a GW signal in geocentric frame.
-        In the unit of 'radian'.
-    polarization_geo : float or numpy.array
-        The polarization angle of a GW signal in geocentric frame.
-        In the unit of 'radian'.
+        Arrival time [s], ecliptic longitude [rad], ecliptic latitude
+        [rad], and polarization angle [rad] in the geocentric frame.
     """
-    t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = lisa_to_ssb(
-        t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, t0)
+    t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = space_to_ssb(
+        t_space, longitude_space, latitude_space, polarization_space, t0,
+        orbit=orbit, sc=sc)
     t_geo, longitude_geo, latitude_geo, polarization_geo = ssb_to_geo(
         t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, use_astropy)
 
     return (t_geo, longitude_geo, latitude_geo, polarization_geo)
 
 
-def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
-                t0=TIME_OFFSET_20_DEGREES, use_astropy=True):
-    """ Converting the arrive time, the sky localization, and the polarization
-    from the geocentric frame to the LISA frame.
+def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
+                t0=TIME_OFFSET_20_DEGREES, use_astropy=True, orbit=None,
+                sc=(1, 2, 3)):
+    """Deprecated alias for `space_to_geo` (see module docstring)."""
+    return space_to_geo(t_lisa, longitude_lisa, latitude_lisa,
+                        polarization_lisa, t0, use_astropy, orbit, sc)
+
+
+def geo_to_space(t_geo, longitude_geo, latitude_geo, polarization_geo,
+                 t0=TIME_OFFSET_20_DEGREES, use_astropy=True, orbit=None,
+                 sc=(1, 2, 3)):
+    """ Converts arrival time, sky localization, and polarization from the
+    geocentric frame to the LISA frame.
 
     Parameters
     ----------
     t_geo : float or numpy.array
-        The time when a GW signal arrives at the origin of geocentric frame.
-        In the unit of 's'.
+        Arrival time at the geocentric frame origin [s].
     longitude_geo : float or numpy.array
-        The longitude of a GW signal in geocentric frame.
-        In the unit of 'radian'.
+        Longitude in the geocentric frame [rad].
     latitude_geo : float or numpy.array
-        The latitude of a GW signal in geocentric frame.
-        In the unit of 'radian'.
+        Latitude in the geocentric frame [rad].
     polarization_geo : float or numpy.array
-        The polarization angle of a GW signal in geocentric frame.
-        In the unit of 'radian'.
-    t0 : float
-        The initial time offset of LISA, in the unit of 's',
-        default is 7365189.431698299. This makes sure LISA is behind
-        the Earth by 19-23 degrees.
-    use_astropy : bool
-        Using Astropy to calculate the sky localization or not.
-        Default is True.
+        Polarization angle in the geocentric frame [rad].
+    t0 : float, optional
+        LISA's initial time offset [s], default 7365189.431698299 (keeps
+        LISA 19-23 degrees behind Earth). Ignored if `orbit` is given.
+    use_astropy : bool, optional
+        Whether to use astropy for the sky-localization step. Default True.
+    orbit : OrbitProvider, optional
+        See `ssb_to_space`. Default None reproduces the behavior of
+        previous versions of this function exactly. Only the LISA<->SSB
+        leg of this transform depends on the constellation orbit; the
+        geocentric frame itself is unaffected.
+    sc : tuple, optional
+        1-indexed spacecraft labels defining the constellation. Only used
+        if `orbit` is given. Default (1, 2, 3).
 
     Returns
     -------
-    (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa) : tuple
-    t_lisa : float or numpy.array
-        The time when a GW signal arrives at the origin of LISA frame.
-        In the unit of 's'.
-    longitude_lisa : float or numpy.array
-        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
-    latitude_lisa : float or numpy.array
-        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
-    polarization_geo : float or numpy.array
-        The polarization angle of a GW signal in LISA frame.
-        In the unit of 'radian'.
+    (t_space, longitude_space, latitude_space, polarization_space) : tuple
+        Arrival time [s], longitude [rad], latitude [rad], and
+        polarization angle [rad] in the LISA frame.
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = geo_to_ssb(
         t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy)
-    t_lisa, longitude_lisa, latitude_lisa, polarization_lisa = ssb_to_lisa(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, t0)
+    t_space, longitude_space, latitude_space, polarization_space = \
+        ssb_to_space(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
+                    t0, orbit=orbit, sc=sc)
 
-    return (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa)
+    return (t_space, longitude_space, latitude_space, polarization_space)
+
+
+def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
+                t0=TIME_OFFSET_20_DEGREES, use_astropy=True, orbit=None,
+                sc=(1, 2, 3)):
+    """Deprecated alias for `geo_to_space` (see module docstring)."""
+    return geo_to_space(t_geo, longitude_geo, latitude_geo,
+                        polarization_geo, t0, use_astropy, orbit, sc)
 
 
 __all__ = ['TIME_OFFSET_20_DEGREES',
            'localization_to_propagation_vector',
            'propagation_vector_to_localization', 'polarization_newframe',
+           't_space_from_ssb', 't_ssb_from_t_space',
            't_lisa_from_ssb', 't_ssb_from_t_lisa',
+           'ssb_to_space', 'space_to_ssb',
            'ssb_to_lisa', 'lisa_to_ssb',
-           'rotation_matrix_ssb_to_lisa', 'rotation_matrix_ssb_to_geo',
-           'lisa_position_ssb', 'earth_position_ssb',
+           'rotation_matrix_ssb_to_space', 'rotation_matrix_ssb_to_lisa',
+           'rotation_matrix_ssb_to_geo',
+           'space_position_ssb', 'lisa_position_ssb', 'earth_position_ssb',
            't_geo_from_ssb', 't_ssb_from_t_geo', 'ssb_to_geo', 'geo_to_ssb',
+           'space_to_geo', 'geo_to_space',
            'lisa_to_geo', 'geo_to_lisa',
            ]

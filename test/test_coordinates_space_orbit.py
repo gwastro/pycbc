@@ -50,6 +50,7 @@ import numpy
 import unittest
 from astropy.constants import au
 
+from pycbc import transforms
 from pycbc.coordinates import space
 from pycbc.coordinates import space_orbit
 from utils import simple_exit
@@ -809,6 +810,19 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
         self.assertLess(
             numpy.max(numpy.abs(analytic_acc - finite_diff_acc)), 1e-6)
 
+    def test_tianqin_real_earth_usable_as_orbit_provider(self):
+        lam, beta, pol = _random_sky_position(with_polarization=True)
+        orbit = space_orbit.TianQinAnalyticOrbit(guiding_center='real_earth')
+        t_ssb = 2.0e7
+        t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
+            t_ssb, lam, beta, pol, orbit=orbit)
+        t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
+            t_det, lam_det, beta_det, pol_det, orbit=orbit)
+        self.assertAlmostEqual(t_rt, t_ssb, places=2)
+        self.assertAlmostEqual(lam_rt, lam, places=6)
+        self.assertAlmostEqual(beta_rt, beta, places=6)
+        self.assertAlmostEqual(pol_rt, pol, places=6)
+
     def test_default_kappa0_anchors_to_real_earth(self):
         for cls in (space_orbit.TaijiEqualArmOrbit,
                     space_orbit.TianQinAnalyticOrbit):
@@ -829,6 +843,27 @@ class TestProductionAnalyticOrbits(unittest.TestCase):
                     orbit.compute_position([1e7])
                     - default_orbit.compute_position([1e7]))),
                 1e6)
+
+    def test_usable_as_orbit_provider(self):
+        """Both classes must work as a drop-in `orbit=` argument to the
+        already-generalized `pycbc.coordinates.space` functions, exactly
+        like any other orbit provider (NumericOrbits, a test fixture, or a
+        real lisaorbits.Orbits instance).
+        """
+        lam, beta, pol = _random_sky_position(with_polarization=True)
+        for cls in (space_orbit.LisaEqualArmOrbit,
+                    space_orbit.TaijiEqualArmOrbit,
+                    space_orbit.TianQinAnalyticOrbit):
+            orbit = cls()
+            t_ssb = 2.0e7
+            t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
+                t_ssb, lam, beta, pol, orbit=orbit)
+            t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
+                t_det, lam_det, beta_det, pol_det, orbit=orbit)
+            self.assertLess(abs(t_rt - t_ssb), 1e-10)
+            self.assertAlmostEqual(lam_rt, lam, places=6)
+            self.assertAlmostEqual(beta_rt, beta, places=6)
+            self.assertAlmostEqual(pol_rt, pol, places=6)
 
     def test_arm_lengths_match_design_values(self):
         cases = [
@@ -933,6 +968,20 @@ class TestKeplerianOrbits(unittest.TestCase):
         length = numpy.linalg.norm(pos[:, 0] - pos[:, 1], axis=-1)
         self.assertLess(abs(length.mean() - ARMLENGTH), 0.01 * ARMLENGTH)
 
+    def test_usable_as_orbit_provider(self):
+        lam, beta, pol = _random_sky_position(with_polarization=True)
+        for orbit in (space_orbit.LisaKeplerianOrbit(),
+                      space_orbit.TaijiKeplerianOrbit()):
+            t_ssb = 2.0e7
+            t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
+                t_ssb, lam, beta, pol, orbit=orbit)
+            t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
+                t_det, lam_det, beta_det, pol_det, orbit=orbit)
+            self.assertLess(abs(t_rt - t_ssb), 1e-10)
+            self.assertAlmostEqual(lam_rt, lam, places=6)
+            self.assertAlmostEqual(beta_rt, beta, places=6)
+            self.assertAlmostEqual(pol_rt, pol, places=6)
+
     def test_matches_lisaorbits_keplerian_orbits_exactly(self):
         """Direct, machine-precision cross-check of position/velocity/
         acceleration against a real `lisaorbits.KeplerianOrbits` instance,
@@ -1011,6 +1060,174 @@ class TestNumericOrbitsGeneralizesBeyondLisa(unittest.TestCase):
         exact = orbit.compute_position(t_query)
         self.assertLess(numpy.max(numpy.abs(interpolated - exact)),
                         1e-6 * TIANQIN_ARMLENGTH)
+
+
+class TestSpaceAcceptsOrbitProvider(unittest.TestCase):
+    """`pycbc.coordinates.space`'s public, PE-facing functions
+    (`t_lisa_from_ssb`, `t_ssb_from_t_lisa`, `ssb_to_lisa`, `lisa_to_ssb`)
+    accept an optional `orbit` argument that swaps out the hard-coded
+    circular LISA orbit for any orbit provider from `space_orbit`. This
+    checks that wiring end to end, both against `space_orbit`'s own
+    functions directly and (for the LISA-equivalent fixture) against the
+    default, `orbit=None` code path these functions already had.
+    """
+    def setUp(self):
+        self.lisa_orbit = AnalyticEqualArmOrbit()
+        self.taiji_orbit = AnalyticTaijiOrbit()
+        self.tianqin_orbit = AnalyticTianQinOrbit()
+        self.times = numpy.random.uniform(1e5, 3.1e7, size=10)
+
+    def test_t_lisa_from_ssb_delegates_to_space_orbit(self):
+        lam, beta = _random_sky_position()
+        k_ssb = space.localization_to_propagation_vector(
+            lam, beta, use_astropy=False).flatten()
+        for orbit in (self.lisa_orbit, self.taiji_orbit, self.tianqin_orbit):
+            for t_ssb in self.times[:5]:
+                via_space = space.t_lisa_from_ssb(
+                    t_ssb, lam, beta, orbit=orbit)
+                via_space_orbit = space_orbit.t_detector_from_ssb(
+                    t_ssb, k_ssb, orbit)
+                self.assertAlmostEqual(via_space, via_space_orbit, places=6)
+
+    def test_orbit_path_matches_default_for_lisa_equivalent_fixture(self):
+        """Feeding `ssb_to_lisa`/`lisa_to_ssb` the analytic orbit that
+        `pycbc.coordinates.space`'s hard-coded circular LISA path already
+        assumes must reproduce that default (`orbit=None`) path's output,
+        not just be self-consistent with itself.
+        """
+        lam, beta, pol = _random_sky_position(with_polarization=True)
+        for t_ssb in self.times[:5]:
+            default = space.ssb_to_lisa(t_ssb, lam, beta, pol, t0=T0)
+            via_orbit = space.ssb_to_lisa(
+                t_ssb, lam, beta, pol, t0=T0, orbit=self.lisa_orbit)
+            self.assertLess(abs(default[0] - via_orbit[0]), 1e-10)
+            for d, o in zip(default[1:], via_orbit[1:]):
+                self.assertAlmostEqual(d, o, places=3)
+
+    def test_ssb_to_lisa_round_trip_with_taiji_and_tianqin(self):
+        """The full ssb -> detector -> ssb round trip must recover the
+        original parameters, for constellations genuinely different from
+        the LISA special case checked above.
+        """
+        lam, beta, pol = _random_sky_position(with_polarization=True)
+        for orbit in (self.taiji_orbit, self.tianqin_orbit):
+            for t_ssb in self.times[:5]:
+                t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
+                    t_ssb, lam, beta, pol, orbit=orbit)
+                t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
+                    t_det, lam_det, beta_det, pol_det, orbit=orbit)
+                self.assertLess(abs(t_rt - t_ssb), 1e-10)
+                self.assertAlmostEqual(lam_rt, lam, places=6)
+                self.assertAlmostEqual(beta_rt, beta, places=6)
+                self.assertAlmostEqual(pol_rt, pol, places=6)
+
+    def test_lisa_to_geo_and_back_passes_orbit_through(self):
+        """`lisa_to_geo`/`geo_to_lisa` compose `lisa_to_ssb`/`ssb_to_lisa`
+        with `ssb_to_geo`/`geo_to_ssb`; the `orbit`/`sc` arguments must
+        reach the LISA-side leg of that composition, not be silently
+        dropped in favor of the hard-coded circular orbit.
+        """
+        lam, beta, pol = _random_sky_position(with_polarization=True)
+        for orbit in (self.taiji_orbit, self.tianqin_orbit):
+            for t_ssb in self.times[:5]:
+                lisa_params = space.ssb_to_lisa(
+                    t_ssb, lam, beta, pol, orbit=orbit)
+                t_geo, lam_geo, beta_geo, pol_geo = space.lisa_to_geo(
+                    *lisa_params, orbit=orbit, use_astropy=False)
+                lisa_rt = space.geo_to_lisa(
+                    t_geo, lam_geo, beta_geo, pol_geo, orbit=orbit,
+                    use_astropy=False)
+                self.assertLess(abs(lisa_params[0] - lisa_rt[0]), 1e-10)
+                for a, b in zip(lisa_params[1:], lisa_rt[1:]):
+                    self.assertAlmostEqual(a, b, places=3)
+
+
+class TestTransformsAcceptOrbitFile(unittest.TestCase):
+    """`pycbc.transforms`' SSB<->LISA<->GEO transform plugins
+    (`ssb_to_lisa`/`lisa_to_ssb`/`lisa_to_geo`/`geo_to_lisa`) accept an
+    optional `orbit-file` config option (an HDF5 file readable by
+    `space_orbit.NumericOrbits.from_file`) so a PE config can select any
+    constellation orbit (LISA, Taiji, TianQin, numerical, ...), not just the
+    default hard-coded circular LISA orbit. This checks that option reaches
+    `pycbc.coordinates.space`'s already-generalized functions correctly,
+    both when constructing the transform class directly and via
+    `from_config`.
+    """
+    @classmethod
+    def setUpClass(cls):
+        orbit = AnalyticTianQinOrbit()
+        t_grid = numpy.linspace(0.0, 3.15e7, 20000)
+        positions = orbit.compute_position(t_grid)
+        cls.tmpdir = tempfile.mkdtemp()
+        cls.orbit_file = os.path.join(cls.tmpdir, 'tianqin_orbit.hdf5')
+        with h5py.File(cls.orbit_file, 'w') as f:
+            f.create_dataset('t', data=t_grid)
+            f.create_dataset('positions', data=positions)
+        cls.numeric_orbit = space_orbit.NumericOrbits.from_file(
+            cls.orbit_file)
+
+    def test_ssb_to_lisa_orbit_file_matches_direct_orbit(self):
+        t = transforms.SSBToLISA(orbit_file=self.orbit_file)
+        out = t.transform({
+            'tc': 1.5e7, 'eclipticlongitude': 1.0,
+            'eclipticlatitude': 0.2, 'polarization': 0.5})
+        expected = space.ssb_to_lisa(
+            1.5e7, 1.0, 0.2, 0.5, orbit=self.numeric_orbit)
+        self.assertLess(abs(out['tc'] - expected[0]), 1e-10)
+        self.assertAlmostEqual(
+            out['eclipticlongitude'], expected[1], places=6)
+
+    def test_lisa_to_geo_orbit_file_matches_direct_orbit(self):
+        t = transforms.LISAToGEO(orbit_file=self.orbit_file)
+        out = t.transform({
+            'tc': 1.5e7, 'eclipticlongitude': 1.0,
+            'eclipticlatitude': 0.2, 'polarization': 0.5})
+        expected = space.lisa_to_geo(
+            1.5e7, 1.0, 0.2, 0.5, orbit=self.numeric_orbit,
+            use_astropy=True)
+        self.assertLess(abs(out['tc'] - expected[0]), 1e-10)
+
+    def test_default_orbit_file_none_matches_hardcoded_lisa(self):
+        """With no orbit-file, behavior must be unchanged from before this
+        option existed.
+        """
+        t = transforms.SSBToLISA()
+        out = t.transform({
+            'tc': 1.5e7, 'eclipticlongitude': 1.0,
+            'eclipticlatitude': 0.2, 'polarization': 0.5})
+        expected = space.ssb_to_lisa(1.5e7, 1.0, 0.2, 0.5)
+        self.assertAlmostEqual(out['tc'], expected[0], places=6)
+
+    def test_from_config_parses_orbit_file(self):
+        from pycbc.workflow.configuration import WorkflowConfigParser
+        ini_text = f"""
+[waveform_transforms-tc_lisa+eclipticlongitude_lisa+eclipticlatitude_lisa+polarization_lisa]
+name = ssb_to_lisa
+tc-ssb = tc
+longitude-ssb = eclipticlongitude
+latitude-ssb = eclipticlatitude
+polarization-ssb = polarization
+tc-lisa = tc_lisa
+longitude-lisa = eclipticlongitude_lisa
+latitude-lisa = eclipticlatitude_lisa
+polarization-lisa = polarization_lisa
+orbit-file = {self.orbit_file}
+"""
+        ini_path = os.path.join(self.tmpdir, 'from_config_test.ini')
+        with open(ini_path, 'w') as f:
+            f.write(ini_text)
+        cp = WorkflowConfigParser([ini_path])
+        t = transforms.SSBToLISA.from_config(
+            cp, 'waveform_transforms',
+            'tc_lisa+eclipticlongitude_lisa+eclipticlatitude_lisa+'
+            'polarization_lisa')
+        self.assertEqual(t.orbit_file, self.orbit_file)
+        out = t.transform({
+            'tc': 1.5e7, 'eclipticlongitude': 1.0,
+            'eclipticlatitude': 0.2, 'polarization': 0.5})
+        expected = space.ssb_to_lisa(
+            1.5e7, 1.0, 0.2, 0.5, orbit=self.numeric_orbit)
+        self.assertLess(abs(out['tc_lisa'] - expected[0]), 1e-10)
 
 
 class TestOptionalLisaorbitsDuckTyping(unittest.TestCase):
@@ -1385,6 +1602,25 @@ class TestNumericOrbitsFileReaders(unittest.TestCase):
                 reloaded.compute_position(query_t)
                 - orbit.compute_position(query_t))), 1e-6)
 
+    def test_orbit_file_ini_option_accepts_to_file_output(self):
+        """The end-to-end path this is really for: a `to_file`-converted
+        orbit must be usable via `pycbc.transforms`' `orbit-file` ini
+        option, exactly like any hand-authored orbit file.
+        """
+        orbit = space_orbit.NumericOrbits(
+            self.t_grid, self.exact_orbit.compute_position(self.t_grid))
+        path = os.path.join(self.tmpdir, 'for_ini.hdf5')
+        orbit.to_file(path)
+
+        t = transforms.SSBToLISA(orbit_file=path)
+        out = t.transform({
+            'tc': 1.5e7, 'eclipticlongitude': 1.0,
+            'eclipticlatitude': 0.2, 'polarization': 0.5})
+        expected = space.ssb_to_lisa(
+            1.5e7, 1.0, 0.2, 0.5,
+            orbit=space_orbit.NumericOrbits.from_file(path))
+        self.assertLess(abs(out['tc'] - expected[0]), 1e-10)
+
     def test_from_lisaorbits_file_matches_native_data(self):
         """`from_lisaorbits_file` reads the file format produced by
         `lisaorbits.Orbits.write` (positions under `tcb/x`, ICRS frame,
@@ -1665,6 +1901,46 @@ class TestOptionalESAOemOrbitFiles(unittest.TestCase):
         centroid_au = numpy.linalg.norm(centroid, axis=-1) / SEMI_MAJOR_AXIS
         self.assertTrue(numpy.all(numpy.abs(centroid_au - 1.0) < 0.05))
 
+    def test_ssb_to_lisa_round_trip_with_real_esa_orbit(self):
+        """The lower-level geometric checks above (arm length,
+        constellation_frame orthonormality) do not exercise
+        `pycbc.coordinates.space`'s actual PE-facing transforms
+        (`ssb_to_lisa`/`lisa_to_ssb`, sky-localization + polarization
+        angle). This checks those directly against a real numeric orbit,
+        not just the analytic toy fixtures used in
+        `TestSpaceAcceptsOrbitProvider`.
+        """
+        try:
+            _require_lisaorbits()
+            from lisaorbits import OEMOrbits
+            import pooch
+        except ImportError as exc:
+            self.fail(f'lisaorbits is not installed: {exc!r}')
+        try:
+            oem_paths = [
+                pooch.retrieve(url, known_hash=known_hash, progressbar=False)
+                for url, known_hash
+                in _ESA_V2_TRAILING_OEM_URLS_AND_HASHES]
+        except Exception as exc:  # pylint: disable=broad-except
+            self.fail('could not fetch official ESA lisa-orbit-files: '
+                      f'{exc!r}')
+        oem_orbit = OEMOrbits(*oem_paths)
+
+        esa_orbit = ICRSOrbitAdapter(oem_orbit)
+        # Well inside the valid range, away from the interpolation edges.
+        t_ssb = (oem_orbit.t_start + oem_orbit.t_end) / 2.0
+        lam, beta, pol = _random_sky_position(with_polarization=True)
+
+        t_det, lam_det, beta_det, pol_det = space.ssb_to_lisa(
+            t_ssb, lam, beta, pol, orbit=esa_orbit)
+        self.assertTrue(numpy.isfinite(t_det))
+        t_rt, lam_rt, beta_rt, pol_rt = space.lisa_to_ssb(
+            t_det, lam_det, beta_det, pol_det, orbit=esa_orbit)
+        self.assertLess(abs(t_rt - t_ssb), 1e-10)
+        self.assertAlmostEqual(lam_rt, lam, places=6)
+        self.assertAlmostEqual(beta_rt, beta, places=6)
+        self.assertAlmostEqual(pol_rt, pol, places=6)
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
@@ -1679,6 +1955,10 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestKeplerianOrbits))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestNumericOrbitsGeneralizesBeyondLisa))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestSpaceAcceptsOrbitProvider))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestTransformsAcceptOrbitFile))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestNumericOrbitsFileReaders))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
