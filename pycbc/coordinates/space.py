@@ -50,9 +50,12 @@ logger = logging.getLogger('pycbc.coordinates.space')
 TIME_OFFSET_20_DEGREES = 7365189.431698299
 
 # Earth's mean orbital angular frequency, 2*pi / sidereal year (365.256363
-# days). Note this is the sidereal year, not astropy's `units.yr`, which is
-# the Julian year (365.25 days) and would shift the constellation phase by
-# ~1e-4 rad over a year.
+# days), matching lisaconstants.ASTRONOMICAL_YEAR. The guiding centre is
+# propagated in a frame pinned to the J2000 equinox, which does not precess,
+# so the period relative to the fixed stars is the right one: the tropical
+# year would only apply if the frame precessed with the equinox, and
+# astropy's units.yr is the Julian year, a defined time unit rather than an
+# orbital period.
 EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s]
 
 # "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" should be
