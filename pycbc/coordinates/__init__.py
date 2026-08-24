@@ -18,9 +18,11 @@ more advanced transformations between ground-based detectors and space-borne
 detectors.
 """
 
+# ruff: noqa: F403, F405 -- deliberate `import *` re-export, see __all__
+
 from pycbc.coordinates.base import *
 from pycbc.coordinates.space import *
-
+from pycbc.coordinates.space_orbit import *
 
 __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'cartesian_to_spherical_polar', 'cartesian_to_spherical',
@@ -34,4 +36,6 @@ __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'lisa_position_ssb', 'earth_position_ssb',
            't_geo_from_ssb', 't_ssb_from_t_geo', 'ssb_to_geo', 'geo_to_ssb',
            'lisa_to_geo', 'geo_to_lisa',
+           'constellation_frame',
+           't_detector_from_ssb', 't_ssb_from_t_detector',
            ]
