@@ -21,8 +21,7 @@ spacecraft positions, optionally velocities) with a scipy B-spline, and
 reads/writes pycbc's own HDF5 orbit format. The reference orbit used here is
 the "Equal arm analytic orbit" of the LISA Data Challenge manual
 (LISA-LCST-SGS-MAN-001, Sec. 8.1.1, Eq. 48-52), reimplemented directly in
-this file rather than imported, so these tests compare two independent
-implementations rather than comparing the code to itself.
+this file, so these tests compare two independent implementations.
 """
 import os
 import tempfile
@@ -182,7 +181,7 @@ class TestNumericOrbitsFileIO(unittest.TestCase):
         """With no explicit velocities at construction, the `velocities`
         dataset must be omitted (not written as zeros or anything else), so
         a reloaded instance re-derives velocities from the position spline
-        exactly as the original did.
+        the same way the original did.
         """
         orbit = space_orbit.NumericOrbits(
             self.t_grid, self.exact_orbit.compute_position(self.t_grid))

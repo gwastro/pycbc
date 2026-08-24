@@ -37,10 +37,7 @@ only `scipy`.
 
 `compute_velocity(t, sc)` and `compute_acceleration(t, sc)` (same calling
 convention, [m/s] and [m/s^2]) are analytic derivatives of the interpolating
-spline, exactly mirroring `lisaorbits.InterpolatedOrbits`.
-
-This module does not change or replace anything in `pycbc.coordinates.space`;
-it is purely additive.
+spline, mirroring `lisaorbits.InterpolatedOrbits`.
 """
 import h5py
 import numpy as np
@@ -232,9 +229,8 @@ class NumericOrbits:
         spacecraft positions [m]). If this instance was constructed with
         explicit `velocities`, those are written too; otherwise the
         `velocities` dataset is omitted, so a round trip through
-        `from_file` re-derives velocities from the position spline exactly
-        as this instance does, rather than through an extra layer of
-        spline interpolation of re-sampled velocities. Acceleration is
+        `from_file` re-derives velocities from the position spline the
+        same way this instance does.
         never stored -- as in `__init__`, it's always the analytic
         derivative of the velocity spline.
 
