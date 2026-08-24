@@ -40,10 +40,10 @@ seed = 8202
 numpy.random.seed(seed)
 
 # Reference constants for the LDC "Equal arm analytic orbit" (LISA flavor).
-# Deliberately re-derived here rather than imported from `space_orbit`, so
-# these tests compare two independent implementations rather than comparing
-# the code to itself.
-OMEGA_0 = 1.99098659277e-7  # 2*pi / sidereal year [rad/s]
+# The orbit *formula* below is deliberately re-derived rather than imported,
+# so these tests compare two independent implementations; the physical
+# constants it is evaluated with are shared, not re-typed.
+OMEGA_0 = space.EARTH_ORBIT_ANGULAR_FREQUENCY
 ARMLENGTH = 2.5e9  # matches pycbc.detector.space._space_detectors['LISA']
 SEMI_MAJOR_AXIS = au.value
 ECCENTRICITY = ARMLENGTH / (2 * SEMI_MAJOR_AXIS * numpy.sqrt(3))
@@ -64,27 +64,29 @@ def _random_sky_position(with_polarization=False):
     return lam, beta
 
 
-class _LisaGuidingCenterFixture:
-    """Mixin providing `_phase(t)` for the LISA fixture's guiding-center
-    convention (`OMEGA_0 * (t + T0)`) -- mirrors the shape of
-    `space_orbit._LisaGuidingCenter`, but independently written (not
-    imported from production), so a bug in the production formula
-    wouldn't be invisible here. Combine with
-    `_EqualArmConstellationFixture`.
+class AnalyticEqualArmOrbit:
+    """Reference implementation of the LDC manual's "Equal arm analytic
+    orbit" (LISA-LCST-SGS-MAN-001, Sec. 8.1.1, Eq. 48-52; Rubbo, Cornish &
+    Poujade 2004, Phys. Rev. D 69, 082003), LISA flavour.
+
+    Written out here rather than imported from `pycbc`, so these tests
+    check `space_orbit.constellation_frame` and the arrival-time functions
+    against an independent implementation of the orbit they are supposed to
+    reproduce, instead of against the code under test.
+
+    Parameters
+    ----------
+    eccentricity : float, optional
+        Constellation eccentricity. Default `ECCENTRICITY`, from LISA's own
+        arm length.
     """
+    def __init__(self, eccentricity=None):
+        self.eccentricity = (
+            ECCENTRICITY if eccentricity is None else eccentricity)
+
     def _phase(self, t):
         return OMEGA_0 * (t + T0)
 
-
-class _EqualArmConstellationFixture:
-    """Mixin implementing `compute_position` for the LDC manual's 'Equal
-    arm analytic orbit' (LISA-LCST-SGS-MAN-001, Sec. 8.1.1, Eq. 48-52) --
-    mirrors `space_orbit._EqualArmConstellation`, independently written.
-    Shared by `AnalyticEqualArmOrbit`/`AnalyticTaijiOrbit` below (same
-    functional form, per Rubbo, Cornish & Poujade 2004, Phys. Rev. D 69,
-    082003); the concrete class's own `__init__` must set
-    `self.eccentricity`.
-    """
     def compute_position(self, t, sc=(1, 2, 3)):
         t = numpy.atleast_1d(numpy.asarray(t, dtype=float))
         sc = numpy.atleast_1d(sc)
@@ -105,26 +107,6 @@ class _EqualArmConstellationFixture:
         return out
 
 
-class AnalyticEqualArmOrbit(_LisaGuidingCenterFixture,
-                             _EqualArmConstellationFixture):
-    """Reference implementation of the LDC manual's 'Equal arm analytic
-    orbit', LISA flavor. Used only to validate `space_orbit.
-    constellation_frame` and related functions against the existing
-    analytic functions in `pycbc.coordinates.space`, which assume this
-    same orbit but only track the (eccentricity-independent) guiding
-    center.
-
-    Parameters
-    ----------
-    eccentricity : float, optional
-        Constellation eccentricity. Default `ECCENTRICITY` (LISA's own
-        arm length).
-    """
-    def __init__(self, eccentricity=None):
-        self.eccentricity = (
-            ECCENTRICITY if eccentricity is None else eccentricity)
-
-
 def _arm_lengths(orbit, t):
     pos = orbit.compute_position(t)
     r1, r2, r3 = pos[:, 0], pos[:, 1], pos[:, 2]
@@ -134,6 +116,17 @@ def _arm_lengths(orbit, t):
 
 
 class TestConstellationFrame(unittest.TestCase):
+    """`constellation_frame` and the arrival-time functions, driven by an
+    independent implementation of the same analytic LISA orbit that
+    `pycbc.coordinates.space` hard-codes.
+
+    The first four tests pin the generalised machinery against the existing
+    `lisa_position_ssb`, `rotation_matrix_ssb_to_lisa`, `t_lisa_from_ssb`
+    and `t_ssb_from_t_lisa`, i.e. they show it reduces to the current
+    behaviour in the circular-orbit case. The rest are self-contained
+    property checks (design arm length, orthonormality, round trip, and the
+    documented Earth-trailing angle) that need no external reference.
+    """
     def setUp(self):
         self.orbit = AnalyticEqualArmOrbit()
         self.precision = 1e-6  # relative to ~1 AU length scale / O(1) rotation
@@ -194,29 +187,6 @@ class TestConstellationFrame(unittest.TestCase):
                 msg=f't_ssb_from_t_detector does not match '
                     f't_ssb_from_t_lisa at t_lisa={t_lisa}')
 
-
-class TestLisaOrbit(unittest.TestCase):
-    """Standalone sanity checks for the LISA fixture, mirroring
-    `TestTaijiOrbit`/`TestTianQinOrbit` below. `TestConstellationFrame`
-    above already gives LISA a stronger check (byte-level agreement with
-    the pre-existing hardcoded `pycbc.coordinates.space` formulas), but
-    that is a different kind of test; these are the same direct,
-    self-contained checks the other two missions get, for consistency.
-
-    Unlike Taiji's fixture (whose 20 degree lead is a bare angular offset
-    added directly to its own phase, checked against an equally-invented
-    zero-phase circular proxy for the Earth), this fixture's `T0` is a time
-    shift, not an angle, and it does not correspond to a clean angle offset
-    from an arbitrary zero-phase circular reference -- comparing against
-    one gives a constant but physically meaningless ~84 degrees. Comparing
-    instead against the real Earth position (`space.earth_position_ssb`,
-    real ephemeris) does give the intended ~20 degree lag, matching the
-    documented 19-23 degree range for `TIME_OFFSET_20_DEGREES`.
-    """
-    def setUp(self):
-        self.orbit = AnalyticEqualArmOrbit()
-        self.times = numpy.random.uniform(0.0, 3.15e7, size=50)
-
     def test_arm_length_matches_design_value(self):
         for d in _arm_lengths(self.orbit, self.times):
             self.assertLess(
@@ -264,7 +234,6 @@ class TestLisaOrbit(unittest.TestCase):
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
     TestConstellationFrame))
-suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestLisaOrbit))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
