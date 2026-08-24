@@ -125,6 +125,7 @@ class NumericOrbits:
         # Acceleration is always the derivative of the velocity spline
         # (provided or derived), matching lisaorbits.InterpolatedOrbits.
         self._acc_spline = self._vel_spline.derivative()
+
     def _sc_indices(self, sc):
         """Map 1-indexed spacecraft labels (matching the `lisaorbits`
         convention) to 0-indexed array positions. `sc=None` selects all
@@ -137,11 +138,13 @@ class NumericOrbits:
             raise ValueError(
                 f'spacecraft labels must be in [1, {self.num_sc}], got {sc}')
         return sc - 1
+
     def _evaluate(self, spline, t, sc):
         t = np.atleast_1d(np.asarray(t, dtype=float))
         idx = self._sc_indices(sc)
         values = spline(t).reshape(len(t), self.num_sc, 3)
         return values[:, idx, :]
+
     def compute_position(self, t, sc=None):
         """Spacecraft position(s) at time(s) `t`.
 
@@ -158,6 +161,7 @@ class NumericOrbits:
             Spacecraft position(s) in the SSB frame [m].
         """
         return self._evaluate(self._pos_spline, t, sc)
+
     def compute_velocity(self, t, sc=None):
         """Spacecraft velocity/ies at time(s) `t`. Same conventions as
         `compute_position`.
@@ -168,6 +172,7 @@ class NumericOrbits:
             Spacecraft velocity/ies in the SSB frame [m/s].
         """
         return self._evaluate(self._vel_spline, t, sc)
+
     def compute_acceleration(self, t, sc=None):
         """Spacecraft acceleration(s) at time(s) `t`, as the analytic
         derivative of `compute_velocity`'s spline. Same conventions as
@@ -179,6 +184,7 @@ class NumericOrbits:
             Spacecraft acceleration(s) in the SSB frame [m/s^2].
         """
         return self._evaluate(self._acc_spline, t, sc)
+
     @classmethod
     def from_file(cls, path, group=None, interp_order=5):
         """Load a numerical constellation orbit from an HDF5 file.
@@ -216,6 +222,7 @@ class NumericOrbits:
                 if 'velocities' in node else None
         return cls(t_interp, positions, velocities=velocities,
                    interp_order=interp_order)
+
     def to_file(self, path, group=None, mode='w'):
         """Write this orbit to an HDF5 file in the format read by
         `from_file`, e.g. for use with a PE config's `orbit-file` option
