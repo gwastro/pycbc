@@ -31,9 +31,6 @@ and return shape as `lisaorbits.Orbits` (https://pypi.org/project/lisaorbits)
 can be used as an orbit provider here, including a real `lisaorbits.Orbits`
 instance passed in directly -- this module does not import or depend on
 `lisaorbits` itself.
-
-This module does not change or replace anything in `pycbc.coordinates.space`;
-it is purely additive.
 """
 import numpy as np
 from astropy.constants import c as SPEED_OF_LIGHT
@@ -91,7 +88,7 @@ def constellation_frame(t, orbit, sc=(1, 2, 3)):
     normal = normal / np.linalg.norm(normal, axis=-1, keepdims=True)
 
     x_raw = r1 - centroid
-    # remove any out-of-plane component so the x-axis is exactly in-plane
+    # project out any out-of-plane component
     x_axis = x_raw - np.sum(x_raw * normal, axis=-1, keepdims=True) * normal
     x_axis = x_axis / np.linalg.norm(x_axis, axis=-1, keepdims=True)
 
@@ -105,9 +102,9 @@ def constellation_frame(t, orbit, sc=(1, 2, 3)):
     # The constellation geometry alone only pins the frame down to a
     # rotation about its own normal and the sign of the in-plane axes; fix
     # that by matching rotation_matrix_ssb_to_lisa's convention (a 180
-    # degree rotation about the normal). Pure axis-labeling, no physics
-    # effect -- verified to reproduce rotation_matrix_ssb_to_lisa exactly
-    # in the circular-orbit limit, see test_coordinates_space_orbit.py.
+    # degree rotation about the normal). Axis labelling only, no physics
+    # effect; the circular-orbit limit is checked against
+    # rotation_matrix_ssb_to_lisa in test_coordinates_space_orbit.py.
     axis_convention = np.diag([-1.0, -1.0, 1.0])
     rotation = rotation @ axis_convention
 

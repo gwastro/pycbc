@@ -19,9 +19,9 @@ Regression tests for `pycbc.coordinates.space_orbit`.
 Fed the circular LISA orbit that `pycbc.coordinates.space` assumes, the
 generic orbit-provider machinery must reproduce those hard-coded functions.
 The reference orbit is the LISA Data Challenge manual's "Equal arm analytic
-orbit" (LISA-LCST-SGS-MAN-001, Sec. 8.1.1, Eq. 48-52), written out below
-rather than imported from `lisaorbits`, so these tests have no optional
-dependency and are not comparing the code against itself.
+orbit" (LISA-LCST-SGS-MAN-001, Sec. 8.1.1, Eq. 48-52), written out below so
+these tests have no optional dependency and do not check the code against
+itself.
 """
 import numpy
 import unittest
@@ -35,10 +35,8 @@ from utils import simple_exit
 seed = 8202
 numpy.random.seed(seed)
 
-# Reference constants for the LDC "Equal arm analytic orbit" (LISA flavor).
-# The orbit *formula* below is deliberately re-derived rather than imported,
-# so these tests compare two independent implementations; the physical
-# constants it is evaluated with are shared, not re-typed.
+# Constants for the LDC "Equal arm analytic orbit" (LISA flavour). The
+# formula below is re-derived; the physical constants it uses are shared.
 OMEGA_0 = space.EARTH_ORBIT_ANGULAR_FREQUENCY
 ARMLENGTH = 2.5e9  # matches pycbc.detector.space._space_detectors['LISA']
 SEMI_MAJOR_AXIS = au.value
@@ -49,8 +47,7 @@ T0 = space.TIME_OFFSET_20_DEGREES
 def _random_sky_position(with_polarization=False):
     """Shared random (lam, beta[, pol]) sky position/polarization, drawn
     fresh each call from this module's seeded RNG. Used throughout this
-    file instead of hard-coded literals, so a passing test isn't
-    accidentally relying on some property of that one specific value.
+    file, so a passing test isn't relying on one specific value.
     """
     lam = numpy.random.uniform(0.0, 2 * numpy.pi)
     beta = numpy.random.uniform(-numpy.pi / 2, numpy.pi / 2)
@@ -200,8 +197,8 @@ class TestConstellationFrame(unittest.TestCase):
     def test_trails_real_earth_by_documented_lag(self):
         """The guiding center must trail the real Earth (not a zero-phase
         circular proxy) by the 19-23 degree range documented for
-        `TIME_OFFSET_20_DEGREES`, at any time -- not just near the
-        particular epoch that constant happens to have been tuned at.
+        `TIME_OFFSET_20_DEGREES`, at any time, not only near the epoch
+        that constant was tuned at.
         """
         centroid, _ = space_orbit.constellation_frame(self.times, self.orbit)
         for i, t in enumerate(self.times):
