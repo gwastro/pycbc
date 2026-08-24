@@ -37,11 +37,7 @@ orbit provider is expected. Velocity and acceleration are exact analytic
 derivatives of `compute_position`, not finite differences.
 
 These are idealised reference orbits for prototyping ahead of an official
-numeric orbit product; they are not a substitute for real mission
-ephemerides.
-
-This module does not change or replace anything in `pycbc.coordinates.space`;
-it is purely additive.
+numeric orbit product.
 """
 import numpy as np
 from astropy.constants import au as ASTRONOMICAL_UNIT
@@ -54,8 +50,8 @@ EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s]
 # literal (not derived via `import lal`) per project convention of
 # avoiding a lal dependency in new code.
 
-# Named constant instead of an np.deg2rad() call directly in the default
-# constructor argument below, to avoid a ruff B008 warning.
+# Named constant: ruff B008 disallows the np.deg2rad() call in the default
+# argument below.
 _TAIJI_LEAD_ANGLE = np.deg2rad(20.0)
 
 
@@ -80,8 +76,7 @@ def _equal_arm_orbit_position(alpha, armlength, sc):
     needed -- everything else reduces to `beta_n`-dependent scalars via
     the angle-subtraction identity for `cos(alpha - beta_n)`) are
     evaluated once and reused across spacecraft, not recomputed inside the
-    loop: for large `alpha` arrays this is the dominant cost, so this
-    matters for performance parity with `lisaorbits`, not just style.
+    loop, which for large `alpha` arrays is the dominant cost.
     """
     a = ASTRONOMICAL_UNIT.value
     e = armlength / (2 * a * np.sqrt(3))
@@ -251,8 +246,8 @@ class LisaEqualArmOrbit(_LisaGuidingCenter, _EqualArmConstellation):
     `ssb_to_lisa`/`lisa_to_ssb`/etc.), exposed as an explicit
     `OrbitProvider` -- e.g. to pass to `constellation_frame`, or as a
     baseline against a numeric or other-mission orbit.
-    `LisaEqualArmOrbit()` with no arguments reproduces the
-    existing `orbit=None` behavior exactly.
+    `LisaEqualArmOrbit()` with no arguments reproduces the existing
+    `orbit=None` behaviour.
 
     Unlike `TaijiEqualArmOrbit`/`TianQinAnalyticOrbit`, `t0` does *not*
     default to a real-Earth-anchored epoch -- it's the pre-existing
@@ -287,9 +282,8 @@ class TaijiEqualArmOrbit(_TaijiGuidingCenter, _EqualArmConstellation):
     center by `lead_angle` (design value 20 degrees) instead of trailing
     it, with Taiji's own arm length.
 
-    For prototyping (e.g. single-link response and TDI work) ahead of an
-    official numerical orbit product -- not a substitute for real
-    mission ephemeris; use `NumericOrbits.from_file` once one exists.
+    For prototyping ahead of an official numerical orbit product; use
+    `NumericOrbits.from_file` once one exists.
 
     Parameters
     ----------

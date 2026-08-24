@@ -22,10 +22,10 @@ hand-written reimplementation of the same closed-form orbit (the LISA Data
 Challenge manual's "Equal arm analytic orbit", LISA-LCST-SGS-MAN-001 Sec.
 8.1.1 Eq. 48-52; Rubbo, Cornish & Poujade 2004, Phys. Rev. D 69, 082003),
 written independently in this file so the tests compare two implementations
-rather than comparing the code to itself. `LisaEqualArmOrbit` is
+so these are two independent implementations. `LisaEqualArmOrbit` is
 additionally required to reproduce `pycbc.coordinates.space`'s pre-existing
 hard-coded LISA orbit with its default `t0`, since that default is meant to
-stand in for the existing code path exactly.
+stand in for the existing code path.
 """
 import numpy
 import unittest
@@ -132,7 +132,7 @@ class AnalyticTaijiOrbit(_TaijiGuidingCenterFixture,
     """Reference implementation of the Taiji heliocentric orbit --
     `AnalyticEqualArmOrbit`'s formula with Taiji's own guiding-center
     convention and eccentricity. Used only to check that
-    `constellation_frame`/`NumericOrbits` handle a constellation genuinely
+    `constellation_frame`/`NumericOrbits` handle a constellation
     different from the LISA fixture above (different arm length,
     eccentricity, and heliocentric lead angle).
     """
