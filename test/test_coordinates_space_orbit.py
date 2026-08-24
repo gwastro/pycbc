@@ -16,16 +16,12 @@
 """
 Regression tests for `pycbc.coordinates.space_orbit`.
 
-The core claim being tested is backward compatibility: the generic,
-orbit-provider-based machinery in `space_orbit` must reproduce the existing,
-hard-coded circular-orbit LISA functions in `pycbc.coordinates.space` exactly
-(to floating point precision) when fed the same analytic circular orbit that
-those functions assume. The reference orbit used here is the "Equal arm
-analytic orbit" defined in the LISA Data Challenge manual
-(LISA-LCST-SGS-MAN-001, Sec. 8.1.1, Eq. 48-52); this is the same closed-form
-per-spacecraft trajectory implemented by `lisaorbits.EqualArmlengthOrbits`,
-reimplemented here directly (not imported from `lisaorbits`) so this test has
-no optional dependency.
+Fed the circular LISA orbit that `pycbc.coordinates.space` assumes, the
+generic orbit-provider machinery must reproduce those hard-coded functions.
+The reference orbit is the LISA Data Challenge manual's "Equal arm analytic
+orbit" (LISA-LCST-SGS-MAN-001, Sec. 8.1.1, Eq. 48-52), written out below
+rather than imported from `lisaorbits`, so these tests have no optional
+dependency and are not comparing the code against itself.
 """
 import numpy
 import unittest
@@ -65,14 +61,9 @@ def _random_sky_position(with_polarization=False):
 
 
 class AnalyticEqualArmOrbit:
-    """Reference implementation of the LDC manual's "Equal arm analytic
-    orbit" (LISA-LCST-SGS-MAN-001, Sec. 8.1.1, Eq. 48-52; Rubbo, Cornish &
-    Poujade 2004, Phys. Rev. D 69, 082003), LISA flavour.
-
-    Written out here rather than imported from `pycbc`, so these tests
-    check `space_orbit.constellation_frame` and the arrival-time functions
-    against an independent implementation of the orbit they are supposed to
-    reproduce, instead of against the code under test.
+    """The LDC manual's "Equal arm analytic orbit" (LISA-LCST-SGS-MAN-001,
+    Sec. 8.1.1, Eq. 48-52; Rubbo, Cornish & Poujade 2004, Phys. Rev. D 69,
+    082003), LISA flavour, written out independently of `pycbc`.
 
     Parameters
     ----------
@@ -116,16 +107,11 @@ def _arm_lengths(orbit, t):
 
 
 class TestConstellationFrame(unittest.TestCase):
-    """`constellation_frame` and the arrival-time functions, driven by an
-    independent implementation of the same analytic LISA orbit that
-    `pycbc.coordinates.space` hard-codes.
-
-    The first four tests pin the generalised machinery against the existing
+    """Some tests here pin the new machinery against the existing
     `lisa_position_ssb`, `rotation_matrix_ssb_to_lisa`, `t_lisa_from_ssb`
-    and `t_ssb_from_t_lisa`, i.e. they show it reduces to the current
-    behaviour in the circular-orbit case. The rest are self-contained
-    property checks (design arm length, orthonormality, round trip, and the
-    documented Earth-trailing angle) that need no external reference.
+    and `t_ssb_from_t_lisa`, showing it reduces to current behaviour for a
+    circular orbit. The rest are self-contained property checks (arm
+    length, orthonormality, round trip, Earth-trailing angle).
     """
     def setUp(self):
         self.orbit = AnalyticEqualArmOrbit()
@@ -162,6 +148,23 @@ class TestConstellationFrame(unittest.TestCase):
                             f'rotation matrix at t={t} does not match '
                             f'rotation_matrix_ssb_to_lisa; max abs diff '
                             f'{maxdiff}')
+
+    def test_reference_arrival_time_functions_round_trip(self):
+        """The two tests below pin the new functions against
+        `t_lisa_from_ssb`/`t_ssb_from_t_lisa`, so that pair has to be
+        self-consistent for the comparison to mean anything. On master it
+        has no round-trip test of its own -- only the indirect one through
+        `test_round_robin` in test_coordinates_space.py, which goes through
+        the four-parameter transforms -- so check it directly here first.
+        """
+        lam, beta = _random_sky_position()
+        for t_ssb in self.times[:10]:
+            t_lisa = space.t_lisa_from_ssb(t_ssb, lam, beta, T0)
+            recovered = space.t_ssb_from_t_lisa(t_lisa, lam, beta, T0)
+            self.assertLess(
+                abs(recovered - t_ssb), 1e-10,
+                f't_lisa_from_ssb/t_ssb_from_t_lisa do not round trip at '
+                f't_ssb={t_ssb}')
 
     def test_t_detector_from_ssb_matches_t_lisa_from_ssb(self):
         lam, beta = _random_sky_position()

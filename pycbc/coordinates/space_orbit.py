@@ -48,12 +48,10 @@ def constellation_frame(t, orbit, sc=(1, 2, 3)):
     directly from the spacecraft positions supplied by `orbit`.
 
     Generalizes `rotation_matrix_ssb_to_lisa`/`lisa_position_ssb` in
-    `pycbc.coordinates.space` (fixed circular LISA orbit) to any
-    3-spacecraft triangular constellation given analytic or numerical
-    positions -- e.g. LISA, Taiji, or TianQin.
+    `pycbc.coordinates.space`, which assume a fixed circular LISA orbit, to
+    any 3-spacecraft triangular constellation.
 
-    For each time sample, the instantaneous frame is built from the three
-    spacecraft positions as:
+    The frame is built at each time sample from the three positions as:
 
     * the centroid of the three spacecraft;
     * the plane normal (right-handed with respect to spacecraft ordering
@@ -117,12 +115,9 @@ def constellation_frame(t, orbit, sc=(1, 2, 3)):
 
 
 def _solve_frame_arrival_time(t_known, k_ssb, position_fn, forward):
-    """Shared `fsolve` pattern behind `t_lisa_from_ssb`/`t_ssb_from_t_lisa`,
-    `t_geo_from_ssb`/`t_ssb_from_t_geo` (in `pycbc.coordinates.space`), and
-    `t_detector_from_ssb`/`t_ssb_from_t_detector` below: solve
-    `t - t_other - dot(k, position(t)) / c = 0` for whichever side is
-    unknown, given a light-travel-time relationship between the SSB origin
-    and a moving frame's origin.
+    """Solve `t - t_other - dot(k, position(t)) / c = 0` for whichever side
+    is unknown, i.e. the light-travel-time relationship between the SSB
+    origin and a moving frame's origin.
 
     Parameters
     ----------
@@ -134,12 +129,10 @@ def _solve_frame_arrival_time(t_known, k_ssb, position_fn, forward):
         `position_fn(t)` returns the moving frame's origin position [m] in
         the SSB frame at SSB time `t`.
     forward : bool
-        True solves for the frame's own time given `t_known = t_ssb` (the
-        frame's position depends on the unknown itself, so `position_fn`
-        is re-evaluated inside the root-solve). False solves for `t_ssb`
-        given `t_known` = the frame's own time (the frame's position is
-        evaluated once, at the known time, since it doesn't depend on the
-        unknown `t_ssb`).
+        True solves for the frame's own time given `t_known = t_ssb`; the
+        frame position then depends on the unknown, so `position_fn` is
+        re-evaluated inside the root solve. False solves for `t_ssb`, where
+        the frame position is known up front and evaluated once.
 
     Returns
     -------
@@ -163,17 +156,14 @@ def t_detector_from_ssb(t_ssb, k_ssb, orbit, sc=(1, 2, 3)):
     """Compute the time at which a GW signal arrives at the constellation
     centroid, given the time and propagation direction in the SSB frame.
 
-    This generalizes `pycbc.coordinates.space.t_lisa_from_ssb` to accept an
-    arbitrary orbit provider instead of the fixed circular LISA orbit. The
-    constellation is moving, so the arrival time is found by solving the
-    implicit light-travel-time equation self-consistently, exactly as in the
-    original function.
+    Generalizes `pycbc.coordinates.space.t_lisa_from_ssb` to any orbit
+    provider. The constellation moves, so the arrival time solves the
+    implicit light-travel-time equation, as in the original.
 
     Parameters
     ----------
     t_ssb : float
-        The time at which the GW signal arrives at the origin of the SSB
-        frame [s].
+        Arrival time at the SSB frame origin [s].
     k_ssb : (3,) array-like
         The unit propagation vector of the GW signal in the SSB frame.
     orbit : OrbitProvider
@@ -186,8 +176,7 @@ def t_detector_from_ssb(t_ssb, k_ssb, orbit, sc=(1, 2, 3)):
     Returns
     -------
     float
-        The time at which the GW signal arrives at the constellation
-        centroid [s].
+        Arrival time at the constellation centroid [s].
     """
     def position_fn(t):
         return constellation_frame([t], orbit, sc=sc)[0][0]
