@@ -11,6 +11,7 @@ import tqdm
 
 from scipy.special import logsumexp, i0e
 from scipy.interpolate import RectBivariateSpline, interp1d
+from scipy import ndimage
 from pycbc.distributions import JointDistribution
 
 from pycbc.detector import Detector
@@ -845,6 +846,38 @@ def setup_distance_marg_interpolant(dist_marg,
                                                  phase=phase)
     interp = RectBivariateSpline(shr, hhr, lvals)
 
+    # The grid above is geomspace, so it is evenly spaced in the log of
+    # each coordinate and the cell a point falls in can be calculated
+    # rather than searched for. ndimage interpolates from that index
+    # directly, where FITPACK binary-searches the knots for every point;
+    # on a 320x320 grid the same bicubic interpolation costs 36 ns a point
+    # instead of 240. It is the same grid and the same values, so the
+    # accuracy is the interpolation error either way, but it is not the
+    # same spline and the two do not agree to the last bit.
+    log_shr, log_hhr = numpy.log(shr), numpy.log(hhr)
+    dlog_shr = (log_shr[-1] - log_shr[0]) / (len(log_shr) - 1)
+    dlog_hhr = (log_hhr[-1] - log_hhr[0]) / (len(log_hhr) - 1)
+    coeffs = ndimage.spline_filter(lvals, order=3, mode='nearest')
+
+    def interp_many(x, y):
+        """The same interpolation, reached by arithmetic on the index.
+
+        Points are held inside the grid before the log, so that a query
+        the caller is about to discard as out of range cannot ask for the
+        log of a negative number; sh is not positive when the phase is
+        not marginalized over.
+        """
+        index = numpy.empty((2, numpy.size(x)))
+        index[0] = (numpy.log(numpy.clip(x, shr_min, shr_max))
+                    - log_shr[0]) / dlog_shr
+        index[1] = (numpy.log(numpy.clip(y, hhr_min, hhr_max))
+                    - log_hhr[0]) / dlog_hhr
+        # the clip above leaves every index inside the grid, so the
+        # boundary mode is never reached; it is named to keep it from
+        # being the default, which treats outside as zero
+        return ndimage.map_coordinates(coeffs, index, order=3,
+                                       mode='nearest', prefilter=False)
+
     # said once, the first time it happens
     warned = [False]
 
@@ -858,8 +891,9 @@ def setup_distance_marg_interpolant(dist_marg,
 
     def interp_wrapper(x, y, bounds_check=True):
         k = None
+        scalar = isinstance(x, float)
         if bounds_check:
-            if isinstance(x, float):
+            if scalar:
                 if x > shr_max or x < shr_min or y > hhr_max or y < hhr_min:
                     if not warned[0]:
                         warn_out_of_range()
@@ -871,7 +905,17 @@ def setup_distance_marg_interpolant(dist_marg,
                 if not warned[0] and k.any():
                     warn_out_of_range()
 
-        v = interp(x, y, grid=False)
+        # ndimage costs about 11 us a call whatever the length, which a
+        # short query does not earn back. Where it starts to depends on
+        # the grid, since FITPACK searches a larger one more slowly: the
+        # crossover is near 120 points at 80x80, 60 at 320x320 and 40 at
+        # 640x640. One number cannot be right for all three; 100 keeps
+        # the loss under a third of a call in the range it is wrong for,
+        # and the queries that matter are either one point or thousands.
+        if scalar or len(x) < 100:
+            v = interp(x, y, grid=False)
+        else:
+            v = interp_many(x, y)
         if k is not None:
             v[k] = -numpy.inf
         return v
