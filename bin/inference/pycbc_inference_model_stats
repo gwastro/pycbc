@@ -54,6 +54,13 @@ parser.add_argument("--config-file", nargs="+", type=str, default=None,
                           "with the given file(s).")
 parser.add_argument('--reconstruct-parameters', action="store_true",
                     help="Reconstruct marginalized parameters")
+parser.add_argument("--seed", type=int, default=None,
+                    help="Seed to use for the random number generator that "
+                         "initializes the model and draws the reconstructed "
+                         "(demarginalized) parameters. Runs that use the same "
+                         "seed and the same input give identical output. If "
+                         "not given, the generator is left unseeded and the "
+                         "output is not reproducible.")
 
 
 # parse command line
@@ -84,6 +91,10 @@ if opts.config_file is None:
 else:
     cp = WorkflowConfigParser(opts.config_file)
 
+if opts.seed is not None:
+    numpy.random.seed(opts.seed)
+    logging.info("Using seed %i", opts.seed)
+
 # now load the model
 logging.info("Loading model")
 model = models.read_from_config(cp)
@@ -94,6 +105,10 @@ model.sampling_transforms = None
 # create function for calling the model to get the stats
 def callmodel(arg):
     iteration, paramvals = arg
+    
+    seed = iteration if opts.seed is None else opts.seed + iteration
+    if opts.seed is not None:
+        numpy.random.seed(seed)
     # calculate the logposterior to get all stats populated
     model.update(**{p: paramvals[p] for p in model.variable_params})
     _ = model.logposterior
@@ -102,8 +117,10 @@ def callmodel(arg):
     rec = {}
     if opts.reconstruct_parameters:
         model.update(**{p: paramvals[p] for p in model.variable_params})
-        # Ensure unique random seed for each reconstruction
-        rec = model.reconstruct(seed=iteration)
+        # Ensure a unique random seed for each reconstruction; when a global
+        # seed is given it is derived from that, so that it is independent of
+        # the order in which the pool hands out the samples
+        rec = model.reconstruct(seed=seed)
     return stats, rec
 
 # these help for parallelization for MPI
