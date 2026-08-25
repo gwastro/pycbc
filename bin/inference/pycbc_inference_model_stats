@@ -54,13 +54,11 @@ parser.add_argument("--config-file", nargs="+", type=str, default=None,
                           "with the given file(s).")
 parser.add_argument('--reconstruct-parameters', action="store_true",
                     help="Reconstruct marginalized parameters")
-parser.add_argument("--seed", type=int, default=None,
+parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for the random number generator that "
                          "initializes the model and draws the reconstructed "
                          "(demarginalized) parameters. Runs that use the same "
-                         "seed and the same input give identical output. If "
-                         "not given, the generator is left unseeded and the "
-                         "output is not reproducible.")
+                         "seed and the same input give identical output.")
 
 
 # parse command line
@@ -91,9 +89,10 @@ if opts.config_file is None:
 else:
     cp = WorkflowConfigParser(opts.config_file)
 
-if opts.seed is not None:
-    numpy.random.seed(opts.seed)
-    logging.info("Using seed %i", opts.seed)
+# the seed has to be set before the model is created; marginalized models
+# draw their marginalization points at construction
+numpy.random.seed(opts.seed)
+logging.info("Using seed %i", opts.seed)
 
 # now load the model
 logging.info("Loading model")
@@ -106,9 +105,10 @@ model.sampling_transforms = None
 def callmodel(arg):
     iteration, paramvals = arg
     
-    seed = iteration if opts.seed is None else opts.seed + iteration
-    if opts.seed is not None:
-        numpy.random.seed(seed)
+    # derive a unique seed for each sample from the global one, so that the
+    # result does not depend on which process picks up which sample
+    seed = opts.seed + iteration
+    numpy.random.seed(seed)
     # calculate the logposterior to get all stats populated
     model.update(**{p: paramvals[p] for p in model.variable_params})
     _ = model.logposterior
