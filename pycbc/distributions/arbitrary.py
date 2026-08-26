@@ -113,7 +113,7 @@ class Arbitrary(bounded.BoundedDist):
         this_pdf = jacobian * self._kde.evaluate([kwargs[p]
                                                  for p in self._params])
         if len(this_pdf) == 1:
-            return float(this_pdf)
+            return this_pdf.item()
         return this_pdf
 
     def _logpdf(self, **kwargs):
