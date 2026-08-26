@@ -111,20 +111,14 @@ class Uniform(bounded.BoundedDist):
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
-        if kwargs in self:
-            return self._norm
-        else:
-            return 0.
+        return self._norm
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
-        if kwargs in self:
-            return self._lognorm
-        else:
-            return -numpy.inf
+        return self._lognorm
 
     @classmethod
     def from_config(cls, cp, section, variable_args):

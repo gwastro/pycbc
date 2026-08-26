@@ -166,13 +166,9 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             if p not in kwargs.keys():
                 raise ValueError(
                     'Missing parameter {} to construct pdf.'.format(p))
-        if kwargs in self:
-            pdf = self._norm * \
-                numpy.prod([(1.+kwargs[p])**(2./5)/kwargs[p]**(6./5)
-                            for p in self._params])
-            return float(pdf)
-        else:
-            return 0.0
+        return self._norm * \
+            numpy.prod([(1.+kwargs[p])**(2./5)/kwargs[p]**(6./5)
+                        for p in self._params], axis=0)
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
@@ -183,10 +179,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             if p not in kwargs.keys():
                 raise ValueError(
                     'Missing parameter {} to construct logpdf.'.format(p))
-        if kwargs in self:
-            return numpy.log(self._pdf(**kwargs))
-        else:
-            return -numpy.inf
+        return numpy.log(self._pdf(**kwargs))
 
     def _cdf_param(self, param, value):
         r""">>> from sympy import *

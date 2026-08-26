@@ -238,13 +238,36 @@ class BoundedDist(object):
         """dict: A dictionary of the parameter names and their bounds."""
         return self._bounds
 
-    def __contains__(self, params):
+    def contains(self, params):
+        """Whether each of the given points is within the bounds.
+
+        Use this rather than ``params in self`` when the values are arrays;
+        ``in`` can only answer for one point at a time, because Python
+        coerces ``__contains__`` to a single bool.
+
+        Parameters
+        ----------
+        params : dict
+            Maps each parameter in self to a value or an array of values.
+            Arrays and scalars may be mixed; they are broadcast against each
+            other. Unrecognized keys are ignored.
+
+        Returns
+        -------
+        bool or array
+            Whether each point is within the bounds of every parameter.
+        """
+        isin = True
         try:
-            return all(self._bounds[p].contains_conditioned(params[p])
-                       for p in self._params)
+            for param in self._params:
+                isin = isin & self._bounds[param].contains_conditioned(
+                    params[param])
         except KeyError:
             raise ValueError("must provide all parameters [%s]" %(
                 ', '.join(self._params)))
+        return isin
+
+    __contains__ = contains
 
     def apply_boundary_conditions(self, **kwargs):
         r"""Applies any boundary conditions to the given values (e.g., applying
@@ -269,18 +292,50 @@ class BoundedDist(object):
         return dict([[p, self._bounds[p].apply_conditions(val)]
                      for p,val in kwargs.items() if p in self._bounds])
 
+    def _in_bounds(self, func, outside, **kwargs):
+        """Evaluates ``func`` at the points that are within the bounds, and
+        returns ``outside`` at the rest.
+
+        The values handed to ``func`` are always within the bounds, so an
+        implementation does not have to guard against its own support: no log
+        of a negative number, and no need to test containment itself. Scalar
+        input is passed straight through and returns a scalar, so the cost of
+        a single-point call is one containment test.
+        """
+        isin = self.contains(kwargs)
+        if not getattr(isin, 'ndim', 0):
+            return func(**kwargs) if isin else outside
+        out = numpy.full(isin.shape, outside, dtype=float)
+        if isin.any():
+            inside = dict(kwargs)
+            for param in self._params:
+                val = numpy.asarray(kwargs[param])
+                if val.ndim:
+                    inside[param] = val[isin]
+            out[isin] = func(**inside)
+        return out
+
     def pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
         ignored. Any boundary conditions are applied to the values before the
         pdf is evaluated.
+
+        The values may be arrays, in which case an array of the same shape is
+        returned.
         """
-        return self._pdf(**self.apply_boundary_conditions(**kwargs))
+        return self._in_bounds(self._pdf, 0.,
+                               **self.apply_boundary_conditions(**kwargs))
 
     def _pdf(self, **kwargs):
         """The underlying pdf function called by `self.pdf`. This must be set
         by any class that inherits from this class. Otherwise, a
         `NotImplementedError` is raised.
+
+        Only values within the bounds are passed in; `self.pdf` fills in zero
+        elsewhere. Implementations should reduce over parameters rather than
+        over everything they are given, so that an array of values returns an
+        array of the same length.
         """
         raise NotImplementedError("pdf function not set")
 
@@ -289,13 +344,20 @@ class BoundedDist(object):
         arguments must contain all of parameters in self's params.
         Unrecognized arguments are ignored. Any boundary conditions are
         applied to the values before the pdf is evaluated.
+
+        The values may be arrays, in which case an array of the same shape is
+        returned.
         """
-        return self._logpdf(**self.apply_boundary_conditions(**kwargs))
+        return self._in_bounds(self._logpdf, -numpy.inf,
+                               **self.apply_boundary_conditions(**kwargs))
 
     def _logpdf(self, **kwargs):
         """The underlying log pdf function called by `self.logpdf`. This must
         be set by any class that inherits from this class. Otherwise, a
         `NotImplementedError` is raised.
+
+        Only values within the bounds are passed in; `self.logpdf` fills in
+        ``-inf`` elsewhere. See `_pdf` on reducing over parameters only.
         """
         raise NotImplementedError("pdf function not set")
 

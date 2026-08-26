@@ -349,8 +349,28 @@ class Bounds(object):
     def __abs__(self):
         return abs(self._max - self._min)
 
-    def __contains__(self, value):
+    def contains(self, value):
+        """Whether each of the given values is within the bounds.
+
+        Use this rather than ``value in self`` when ``value`` is an array.
+        Python coerces the result of ``__contains__`` to a single bool, so the
+        ``in`` operator cannot report on more than one value at a time even
+        though the comparison underneath is elementwise.
+
+        Parameters
+        ----------
+        value : float or array
+            The value(s) to test.
+
+        Returns
+        -------
+        bool or array
+            Whether each value is within the bounds.
+        """
         return self._min.smaller(value) & self._max.larger(value)
+
+    def __contains__(self, value):
+        return self.contains(value)
 
     def _reflect_well(self, value):
         """Thin wrapper around `reflect_well` that passes self as the `bounds`.
@@ -416,13 +436,13 @@ class Bounds(object):
 
         Parameters
         ----------
-        value : float
-            The value to test.
+        value : float or array
+            The value(s) to test.
 
         Returns
         -------
-        bool
-            Whether or not the value is within the bounds after the boundary
+        bool or array
+            Whether or not each value is within the bounds after the boundary
             conditions are applied.
         """
-        return self.apply_conditions(value) in self
+        return self.contains(self.apply_conditions(value))
