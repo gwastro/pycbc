@@ -207,12 +207,18 @@ class TestDistributions(unittest.TestCase):
         """
         npts = 9
         dist = distributions.UniformF0Tau(f0=(10., 100.), tau=(1e-3, 1e-1))
-        points = {"f0": numpy.linspace(5., 120., npts),
-                  "tau": numpy.linspace(1e-4, 0.2, npts)}
+        # strictly inside both bounds, so only the constraint can reject any
+        # of these; if it is not applied they all come back accepted
+        points = {"f0": numpy.linspace(12., 98., npts),
+                  "tau": numpy.linspace(2e-3, 9e-2, npts)}
+        for param in dist.params:
+            for value in points[param]:
+                self.assertTrue(value in dist.bounds[param])
         isin = dist.contains(points)
         self.assertEqual(isin.shape, (npts,))
-        # the fixture is only worth its cost if it exercises both verdicts
-        self.assertTrue(isin.any() and not isin.all())
+        self.assertTrue(isin.any(), "the constraint rejected every point")
+        self.assertFalse(isin.all(),
+                         "the final mass and spin constraint was not applied")
         for name in ("pdf", "logpdf"):
             func = getattr(dist, name)
             array = numpy.asarray(func(**points))
