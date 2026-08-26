@@ -54,21 +54,15 @@ class UniformLog10(uniform.Uniform):
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
-        if kwargs in self:
-            vals = numpy.array([numpy.log(10) * self._norm * kwargs[param]
-                                for param in kwargs.keys()])
-            return 1.0 / numpy.prod(vals)
-        else:
-            return 0.
+        vals = numpy.array([numpy.log(10) * self._norm * kwargs[param]
+                            for param in self._params])
+        return 1.0 / numpy.prod(vals, axis=0)
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
-        if kwargs in self:
-            return numpy.log(self._pdf(**kwargs))
-        else:
-            return -numpy.inf
+        return numpy.log(self._pdf(**kwargs))
 
 __all__ = ["UniformLog10"]

@@ -142,11 +142,13 @@ class UniformF0Tau(uniform.Uniform):
         self._lognorm += numpy.log(num_in) - numpy.log(nsamples)
         self._norm = numpy.exp(self._lognorm)
 
-    def __contains__(self, params):
-        isin = super(UniformF0Tau, self).__contains__(params)
-        if isin:
-            isin &= self._constraints(params)
-        return isin
+    def contains(self, params):
+        isin = super(UniformF0Tau, self).contains(params)
+        if not getattr(isin, 'ndim', 0):
+            # the constraint costs a final mass and spin conversion, so a
+            # single point outside the bounds is not worth converting
+            return isin and self._constraints(params)
+        return isin & self._constraints(params)
 
     def _constraints(self, params):
         f0 = params[self.rdfreq]
@@ -162,8 +164,8 @@ class UniformF0Tau(uniform.Uniform):
         with numpy.errstate(invalid="ignore"):
             mf = conversions.final_mass_from_f0_tau(f0, tau, l=l, m=m)
             sf = conversions.final_spin_from_f0_tau(f0, tau, l=l, m=m)
-            isin = (self.final_mass_bounds.__contains__(mf)) & (
-                    self.final_spin_bounds.__contains__(sf))
+            isin = (self.final_mass_bounds.contains(mf)
+                    & self.final_spin_bounds.contains(sf))
         return isin
 
     def rvs(self, size=1):
