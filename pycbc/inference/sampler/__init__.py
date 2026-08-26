@@ -59,6 +59,12 @@ except ImportError:
     pass
 
 try:
+    from .eryn import ErynSampler
+    samplers[ErynSampler.name] = ErynSampler
+except ImportError:
+    pass
+
+try:
     from .cpnest import CPNestSampler
     samplers[CPNestSampler.name] = CPNestSampler
 except ImportError:
