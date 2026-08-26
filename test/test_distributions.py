@@ -166,13 +166,11 @@ class TestDistributions(unittest.TestCase):
 
     def test_pdf_arrays(self):
         """ Checks that handing arrays to the PDF and its logarithm gives the
-        same answer, element by element, as asking for one point at a time.
+        same answer, element by element, as asking one point at a time.
 
-        The points straddle each parameter's bounds, so both sides of the
-        support are covered. Outside is the part a vectorized implementation
-        is most likely to get wrong: the containment test reduces to a single
-        answer unless it is kept elementwise, which silently applies one
-        point's verdict to the whole array.
+        The points straddle each parameter's bounds. Outside is what a
+        vectorized containment test gets wrong when it reduces to a single
+        answer, applying one point's verdict to the whole array.
         """
         npts = 9
         tested = 0
@@ -200,15 +198,13 @@ class TestDistributions(unittest.TestCase):
         self.assertGreater(tested, 5)
 
     def test_pdf_arrays_with_constraints(self):
-        """ Same check for a distribution that constrains more than its
-        bounds. ``UniformF0Tau`` also requires the implied final mass and
-        spin to be in range, so its containment test is the interesting one:
-        the bounds alone would admit points it has to reject.
+        """ Same check where the bounds are not the whole story:
+        ``UniformF0Tau`` also requires the implied final mass and spin to be
+        in range, so the bounds alone would admit points it must reject.
         """
         npts = 9
         dist = distributions.UniformF0Tau(f0=(10., 100.), tau=(1e-3, 1e-1))
         # strictly inside both bounds, so only the constraint can reject any
-        # of these; if it is not applied they all come back accepted
         points = {"f0": numpy.linspace(12., 98., npts),
                   "tau": numpy.linspace(2e-3, 9e-2, npts)}
         for param in dist.params:

@@ -174,8 +174,7 @@ class IndependentChiPChiEff(Arbitrary):
         isin = True
         for dist in self.distributions.values():
             isin = isin & dist.contains(params)
-        # the individual distributions do not know about the constraints; a
-        # single point already outside the bounds is not worth converting
+        # the individual distributions do not know about the constraints
         if not getattr(isin, 'ndim', 0):
             return isin and self._constraints(params)
         return isin & self._constraints(params)

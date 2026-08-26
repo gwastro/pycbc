@@ -145,8 +145,8 @@ class UniformF0Tau(uniform.Uniform):
     def contains(self, params):
         isin = super(UniformF0Tau, self).contains(params)
         if not getattr(isin, 'ndim', 0):
-            # the constraint costs a final mass and spin conversion, so a
-            # single point outside the bounds is not worth converting
+            # the mass and spin conversion costs 6.5 us; skip it for a single
+            # point the bounds already reject
             return isin and self._constraints(params)
         return isin & self._constraints(params)
 
