@@ -320,7 +320,15 @@ class DistMarg:
             skip_vector = True
             return_complex = True
 
-        return marginalize_likelihood(
+        # while reconstruct is driving, it wants the vectors themselves
+        inline = (
+            self.reconstruct_inline
+            and not skip_vector
+            and not return_peak
+            and not return_complex
+        )
+
+        out = marginalize_likelihood(
             sh_total,
             hh_total,
             logw=self.marginalize_vector_weights,
@@ -330,8 +338,13 @@ class DistMarg:
             skip_vector=skip_vector,
             return_complex=return_complex,
             return_peak=return_peak,
+            return_vector=inline,
             monitor_ess=self.monitor_vector_ess,
         )
+        if inline:
+            out, vector = out
+            self.draw_inline(sh_total, hh_total, vector)
+        return out
 
     def premarg_draw(self):
         """Choose random samples from prechosen set"""
@@ -952,6 +965,56 @@ class DistMarg:
         super().update(**params)
         self.marginalize_vector_weights = -numpy.log(self.vsamples)
 
+    def draw_inline(self, sh_total, hh_total, vector):
+        """
+        Draw the marginalized parameters from the vectors the
+        marginalization has just built, rather than by evaluating the
+        likelihood again.
+
+        The levels are done in the order `reconstruct` does them, each
+        conditioned on the point the level above drew. Conditioning is
+        indexing here: the drawn vector point selects one entry of the inner
+        products, and the drawn distance rescales them.
+
+        Parameters
+        ----------
+        sh_total: float or ndarray
+            The data-template inner product, as handed to the marginalization.
+        hh_total: float or ndarray
+            The template-template inner product.
+        vector: ndarray
+            The unmarginalized loglr at each vector point.
+
+        """
+        rec = {}
+        sh, hh = sh_total, hh_total
+
+        levels = self.reconstruct_inline
+        if "vector" in levels and self.marginalize_vector_params:
+            drawn, _, xl = self.draw_vector(vector)
+            rec.update(drawn)
+            if not numpy.isscalar(sh):
+                sh, hh = sh[xl], hh[xl]
+
+        if "distance" in levels and self.distance_marginalization:
+            dist_rescale, _ = self.distance_marginalization
+            dloglr = marginalize_likelihood(
+                sh,
+                hh,
+                phase=self.marginalize_phase,
+                distance=self.distance_marginalization,
+                skip_vector=True,
+            )
+            drawn, _, xl = self.draw_distance(dloglr)
+            rec.update(drawn)
+            sh, hh = sh * dist_rescale[xl], hh * dist_rescale[xl] ** 2.0
+
+        if "phase" in levels and self.marginalize_phase:
+            drawn, _, _ = self.draw_phase(sh, -0.5 * hh)
+            rec.update(drawn)
+
+        self.current_rec = rec
+
     def draw_vector(self, loglr):
         """
         Draw one of the vector marginalization points.
@@ -1197,6 +1260,7 @@ def marginalize_likelihood(
     return_peak=False,
     return_complex=False,
     monitor_ess=False,
+    return_vector=False,
 ):
     """
     Return the marginalized likelihood.
@@ -1233,6 +1297,11 @@ def marginalize_likelihood(
         Return the sh / hh data products before applying phase marginalization.
         This option is intended to aid in reconstucting phase marginalization
         and is unlikely to be useful for other purposes.
+    return_vector: bool, False
+        Also return the unmarginalized loglr at each point, which is the
+        distribution the vector marginalization sums over. Reconstructing a
+        parameter draws from it, so returning it here avoids evaluating the
+        likelihood a second time to get it back.
 
     Returns
     -------
@@ -1287,6 +1356,8 @@ def marginalize_likelihood(
         maxv = vloglr.argmax()
         maxl = vloglr[maxv]
 
+    vector = vloglr
+
     # Do brute-force marginalization if loglr is a vector
     if isinstance(vloglr, float):
         vloglr = float(vloglr)
@@ -1305,4 +1376,6 @@ def marginalize_likelihood(
 
     if return_peak:
         return vloglr, maxv, maxl
+    if return_vector:
+        return vloglr, vector
     return vloglr
