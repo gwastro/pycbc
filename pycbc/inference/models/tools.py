@@ -746,7 +746,7 @@ class DistMarg():
         """ Reconstruct the distance or vectored marginalized parameter
         of this class.
         """
-        if seed:
+        if seed is not None:
             numpy.random.seed(seed)
 
         if rec is None:
