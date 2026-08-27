@@ -63,6 +63,7 @@ class DistMarg():
                               marginalize_vector_params=None,
                               marginalize_vector_samples=1e3,
                               marginalize_sky_initial_samples=1e6,
+                              monitor_vector_ess=False,
                               **kwargs):
         """ Setup the model for use with distance marginalization
 
@@ -141,6 +142,8 @@ class DistMarg():
             kwargs.pop('polarization_samples')
 
         self.reset_vector_params()
+
+        self.monitor_vector_ess = str_to_bool(monitor_vector_ess)
 
         self.marginalize_phase = str_to_bool(marginalize_phase)
 
@@ -284,7 +287,8 @@ class DistMarg():
                                       distance=distance,
                                       skip_vector=skip_vector,
                                       return_complex=return_complex,
-                                      return_peak=return_peak)
+                                      return_peak=return_peak,
+                                      monitor_ess=self.monitor_vector_ess)
 
     def premarg_draw(self):
         """ Choose random samples from prechosen set"""
@@ -886,6 +890,7 @@ def marginalize_likelihood(sh, hh,
                            interpolator=None,
                            return_peak=False,
                            return_complex=False,
+                           monitor_ess=False,
                            ):
     """ Return the marginalized likelihood.
 
@@ -977,6 +982,13 @@ def marginalize_likelihood(sh, hh,
     if isinstance(vloglr, float):
         vloglr = float(vloglr)
     elif not skip_vector:
+        if monitor_ess:
+            # how many of the drawn points carry the answer: low against
+            # the number drawn means it rests on a handful of them
+            lw = vloglr + logw
+            w = numpy.exp(lw - lw.max())
+            logging.info("vector marginalization: %.0f effective of %d",
+                         w.sum() ** 2.0 / numpy.vdot(w, w), len(w))
         vloglr = float(logsumexp(vloglr, b=numpy.exp(logw)))
 
     if return_peak:
