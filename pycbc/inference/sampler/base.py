@@ -157,9 +157,33 @@ class BaseSampler(object):
                 out[i] = cached
                 found += 1
         if not found:
-            return None
+            # Nothing was remembered where this process can reach it. That
+            # happens under MPI, whose pool cannot be asked to hand back what
+            # its workers hold, and the stats are lost rather than wrong.
+            logging.warning("No model stats were recovered for %s points; "
+                            "they will be written as nan", out.shape[0])
         return {name: out[:, j].reshape(shape)
                 for j, name in enumerate(names)}
+
+    def write_cached_stats(self):
+        """Fill in any stats the sampler did not write for itself.
+
+        The MCMC samplers store them as they checkpoint; the rest drop them,
+        and the model remembers what it worked out either way. Anything it
+        did not remember is left alone rather than overwritten.
+        """
+        with self.io(self.checkpoint_file, 'r') as fp:
+            group = fp[fp.samples_group]
+            missing = [s for s in self.model.default_stats if s not in group]
+            if not missing:
+                return
+            samples = {p: group[p][()] for p in self.model.variable_params}
+        stats = self.model_stats_from_cache(samples)
+        for fn in [self.checkpoint_file, self.backup_file]:
+            with self.io(fn, 'a') as fp:
+                for name in missing:
+                    fp.write_data(name, stats[name], path=fp.samples_group,
+                                  append=False)
 
     @abstractmethod
     def checkpoint(self):
