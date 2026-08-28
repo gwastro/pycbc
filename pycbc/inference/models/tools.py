@@ -37,9 +37,8 @@ def str_to_bool(sval):
 def draw_sample(loglr, size=None, rng=None):
     """ Draw a random index from a 1-d vector with loglr weights
 
-    A generator may be given so that drawing does not consume the global
-    random state; the marginalization draws once per likelihood call, which
-    would otherwise move every sampler's trajectory.
+    A generator may be given so drawing does not consume the global random
+    state, which would move every sampler's trajectory.
     """
     rng = numpy.random if rng is None else rng
     if size:
@@ -99,11 +98,9 @@ class DistMarg():
             The dimensions of the interpolation grid over (sh, hh).
         marginalize_reconstruct: str, None
             Draw the marginalized parameters while the likelihood is being
-            marginalized, rather than by re-evaluating it afterwards, and
-            record them with the sample. The value names the level to
-            demarginalize to: 'vector', 'distance' or 'phase'. Each level
-            includes the ones before it, because each is conditional on the
-            one above. Default is None, which reconstructs nothing inline.
+            marginalized instead of re-evaluating it afterwards. Names the
+            level to demarginalize to: 'vector', 'distance' or 'phase', each
+            including the ones above it. Default None draws nothing inline.
 
         Returns
         -------
@@ -131,22 +128,15 @@ class DistMarg():
         self.reconstruct_vector = False
         self.precalc_antenna_factors = False
 
-        # Levels of inline reconstruction, in the order they must happen:
-        # each is conditional on the point drawn by the one before it.
-        self.reconstruct_inline = []
-        self.marginalize_rng = None
-        if marginalize_reconstruct is not None:
-            levels = ['vector', 'distance', 'phase']
-            if marginalize_reconstruct not in levels:
-                raise ValueError("marginalize_reconstruct must be one of %s"
-                                 % ', '.join(levels))
-            self.reconstruct_inline = \
-                levels[:levels.index(marginalize_reconstruct) + 1]
-            # drawing happens on every likelihood call, so it gets its own
-            # generator rather than moving the sampler's random state
-            self.marginalize_rng = numpy.random.default_rng()
-            logging.info('Reconstructing %s inline',
-                         ', '.join(self.reconstruct_inline))
+        # each level is conditional on the point the one before it drew, so
+        # asking for a level asks for the ones above it too
+        levels = ['vector', 'distance', 'phase']
+        self.reconstruct_inline = levels[:levels.index(
+            marginalize_reconstruct) + 1] if marginalize_reconstruct else []
+        # drawing happens every likelihood call, so it gets its own generator
+        # rather than moving the sampler's random state
+        self.marginalize_rng = (numpy.random.default_rng()
+                                if self.reconstruct_inline else None)
 
         # Handle any requested parameter vector / brute force marginalizations
         self.marginalize_vector_params = {}
@@ -308,8 +298,8 @@ class DistMarg():
             return_complex = True
 
         # while reconstruct is driving, it wants the vectors themselves
-        inline = (self.reconstruct_inline and not skip_vector
-                  and not return_peak and not return_complex)
+        inline = bool(self.reconstruct_inline) and not (
+            skip_vector or return_peak or return_complex)
 
         out = marginalize_likelihood(sh_total, hh_total,
                                      logw=self.marginalize_vector_weights,
@@ -786,28 +776,21 @@ class DistMarg():
         marginalization has just built, rather than by evaluating the
         likelihood again.
 
-        The levels are done in the order `reconstruct` does them, each
-        conditioned on the point the level above drew. Conditioning is
-        indexing here: the drawn vector point selects one entry of the inner
-        products, and the drawn distance rescales them.
-
-        Parameters
-        ----------
-        sh_total: float or ndarray
-            The data-template inner product, as handed to the marginalization.
-        hh_total: float or ndarray
-            The template-template inner product.
-        vector: ndarray
-            The unmarginalized loglr at each vector point.
+        The levels run in the order `reconstruct` does them, each conditioned
+        on the point the level above drew. Conditioning is indexing here: the
+        drawn vector point selects one entry of the inner products, and the
+        drawn distance rescales them. `vector` is the unmarginalized loglr at
+        each vector point.
         """
         rec = {}
         sh, hh = sh_total, hh_total
+        loglr = None
 
         levels = self.reconstruct_inline
         if 'vector' in levels and self.marginalize_vector_params:
-            drawn, _, xl = self.draw_vector(vector)
+            drawn, loglr, xl = self.draw_vector(vector)
             rec.update(drawn)
-            if not numpy.isscalar(sh):
+            if numpy.ndim(sh):
                 sh, hh = sh[xl], hh[xl]
 
         if 'distance' in levels and self.distance_marginalization:
@@ -815,32 +798,23 @@ class DistMarg():
             dloglr = marginalize_likelihood(
                 sh, hh, phase=self.marginalize_phase,
                 distance=self.distance_marginalization, skip_vector=True)
-            drawn, _, xl = self.draw_distance(dloglr)
+            drawn, loglr, xl = self.draw_distance(dloglr)
             rec.update(drawn)
             sh, hh = sh * dist_rescale[xl], hh * dist_rescale[xl] ** 2.0
 
         if 'phase' in levels and self.marginalize_phase:
-            drawn, _, _ = self.draw_phase(sh, -0.5 * hh)
+            drawn, loglr, _ = self.draw_phase(sh, -0.5 * hh)
             rec.update(drawn)
 
+        if loglr is not None:
+            rec['loglr'] = loglr
+            rec['loglikelihood'] = self.lognl + loglr
         self.current_rec = rec
 
     def draw_vector(self, loglr):
-        """ Draw one of the vector marginalization points.
-
-        Parameters
-        ----------
-        loglr: ndarray
-            The loglr at each of the vector points, unmarginalized.
-
-        Returns
-        -------
-        rec: dict
-            The vector parameters at the drawn point.
-        loglr: float
-            The loglr at the drawn point.
-        xl: int
-            The index drawn, which the next level conditions on.
+        """ Draw one of the vector marginalization points, given the
+        unmarginalized loglr at each. Returns the parameters there, the loglr
+        there, and the index, which the next level conditions on.
         """
         xl = draw_sample(loglr + self.marginalize_vector_weights,
                          rng=self.marginalize_rng)
@@ -848,44 +822,17 @@ class DistMarg():
         return rec, loglr[xl], xl
 
     def draw_distance(self, loglr):
-        """ Draw a distance from the distance-marginalized likelihood.
-
-        Parameters
-        ----------
-        loglr: ndarray
-            The loglr at each point of the distance grid.
-
-        Returns
-        -------
-        rec: dict
-            The drawn distance.
-        loglr: float
-            The loglr at the drawn distance.
-        xl: int
-            The index drawn.
+        """ Draw a distance, given the loglr at each point of the distance
+        grid. Returns as `draw_vector` does.
         """
         _, weights = self.distance_marginalization
         xl = draw_sample(loglr + numpy.log(weights), rng=self.marginalize_rng)
         return {'distance': self.dist_locs[xl]}, loglr[xl], xl
 
     def draw_phase(self, sh, hh):
-        """ Draw a phase from the phase-marginalized likelihood.
-
-        Parameters
-        ----------
-        sh: complex
-            The data-template inner product, before phase marginalization.
-        hh: float
-            Minus one half of the template-template inner product.
-
-        Returns
-        -------
-        rec: dict
-            The drawn coalescence phase.
-        loglr: float
-            The loglr at the drawn phase.
-        xl: int
-            The index drawn.
+        """ Draw a coalescence phase, given the inner products before phase
+        marginalization (`hh` being minus one half of it). Returns as
+        `draw_vector` does.
         """
         phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
         # This assumes that the template was conjugated in inner products
@@ -1068,10 +1015,9 @@ def marginalize_likelihood(sh, hh,
         This option is intended to aid in reconstucting phase marginalization
         and is unlikely to be useful for other purposes.
     return_vector: bool, False
-        Also return the unmarginalized loglr at each point, which is the
-        distribution the vector marginalization sums over. Reconstructing a
-        parameter draws from it, so returning it here avoids evaluating the
-        likelihood a second time to get it back.
+        Also return the unmarginalized loglr at each point. That is the
+        distribution reconstruction draws from, so returning it saves
+        evaluating the likelihood again to get it back.
 
     Returns
     -------
