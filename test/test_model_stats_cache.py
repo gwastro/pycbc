@@ -115,6 +115,27 @@ class TestStatsCache(unittest.TestCase):
         _ = model.logposterior
         self.assertIsNotNone(model.cached_stats(point))
 
+    def test_revisit_keeps_stats(self):
+        """Going back to a point does not throw away what it worked out."""
+        model = self.model()
+        points = self.points(3)
+        self.evaluate(model, points)
+        before = model.cached_stats(points[0])
+        # revisit without evaluating, then move on, which stores whatever
+        # the revisit left behind
+        model.update(**points[0])
+        model.update(**points[1])
+        self.assertEqual(model.cached_stats(points[0]), before)
+
+    def test_key_ignores_parameter_order(self):
+        """The same point is the same point whatever order it is given in."""
+        model = self.model()
+        point = self.points(1)[0]
+        self.evaluate(model, [point])
+        reversed_point = dict(reversed(list(point.items())))
+        self.assertEqual(model.cached_stats(reversed_point),
+                         model.cached_stats(point))
+
 
 class TestStatsCacheInAPool(unittest.TestCase):
     """What a worker worked out has to reach the process that asks."""
