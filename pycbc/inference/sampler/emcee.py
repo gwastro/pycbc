@@ -82,6 +82,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         models._global_instance = model_call
         model_call = models._call_global_model
         pool = choose_pool(mpi=use_mpi, processes=nprocesses)
+        self.pool = pool
 
         # set up emcee
         self.nwalkers = nwalkers
