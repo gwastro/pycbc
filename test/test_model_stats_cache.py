@@ -77,8 +77,10 @@ class TestStatsCache(unittest.TestCase):
         model = self.model()
         points = self.points(50)
         self.evaluate(model, points)
-        self.assertEqual(len(model._stats_cache), len(points))
+        # asking moves the evaluation still being held into the store
         self.assertIsNotNone(model.cached_stats(points[0]))
+        self.assertEqual(len(model._stats_cache), len(points))
+        self.assertIsNotNone(model.cached_stats(points[-1]))
 
     def test_a_size_of_zero_keeps_nothing(self):
         """ Zero is a bound like any other, and it bounds to nothing. """
