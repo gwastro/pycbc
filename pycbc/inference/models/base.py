@@ -286,13 +286,21 @@ def read_sampling_params_from_config(cp, section_group=None,
 #
 
 
+# what each process has already handed over, so that repeated collection
+# only moves what is new
+_handed_over = set()
+
+
 def _worker_stats_cache(_):
-    """Hand back the stats this process remembered, for pooled collection."""
+    """Hand back the stats this process remembered and has not sent yet."""
     from pycbc.inference import models
     model = getattr(models._global_instance, 'model', models._global_instance)
     # the evaluation this process is holding has not been moved in yet
     model._store_stats()
-    return model._stats_cache
+    fresh = {k: v for k, v in model._stats_cache.items()
+             if k not in _handed_over}
+    _handed_over.update(fresh)
+    return fresh
 
 
 def _stats_key(params):
@@ -475,9 +483,17 @@ class BaseModel(metaclass=ABCMeta):
         has to gather before anything can be asked for. Pools with no
         broadcast, such as MPI, gather nothing and go on missing.
         """
-        if not hasattr(pool, 'broadcast'):
+        if hasattr(pool, 'broadcast'):
+            handed = pool.broadcast(_worker_stats_cache, None)
+        elif hasattr(pool, 'map') and getattr(pool, 'size', 0):
+            # No broadcast, as with MPI. Handing the work out often enough
+            # reaches every worker, and a worker only sends what it has not
+            # sent before, so the repeats cost nothing.
+            handed = pool.map(_worker_stats_cache,
+                              [None] * (4 * pool.size + 4))
+        else:
             return
-        for remembered in pool.broadcast(_worker_stats_cache, None) or []:
+        for remembered in handed or []:
             if remembered:
                 self._stats_cache.update(remembered)
         self._trim_stats_cache()
