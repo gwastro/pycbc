@@ -304,11 +304,19 @@ def _worker_stats_cache(_):
 
 
 def _stats_key(params):
-    """A hashable key for a set of parameter values.
+    """A hashable key for a set of parameter values, or None for a set that
+    cannot be one.
 
     Values may be strings as well as numbers, so nothing is converted.
+    Reconstruction updates with whole arrays of trial values, which are not a
+    point and are not remembered.
     """
-    return tuple(sorted(params.items()))
+    key = tuple(sorted(params.items()))
+    try:
+        hash(key)
+    except TypeError:
+        return None
+    return key
 
 
 class BaseModel(metaclass=ABCMeta):
@@ -454,8 +462,8 @@ class BaseModel(metaclass=ABCMeta):
         values.update(params)
         self._current_params = self._transform_params(**values)
         self._current_key = _stats_key(params)
-        self._current_stats = self._stats_cache.get(self._current_key,
-                                                    ModelStats())
+        self._current_stats = ModelStats() if self._current_key is None \
+            else self._stats_cache.get(self._current_key, ModelStats())
 
     def _store_stats(self):
         """Remembers the stats of the current parameters, dropping the oldest
@@ -498,7 +506,8 @@ class BaseModel(metaclass=ABCMeta):
             Which stats to return. Default is `default_stats`.
         """
         self._store_stats()
-        stats = self._stats_cache.get(_stats_key(params))
+        key = _stats_key(params)
+        stats = None if key is None else self._stats_cache.get(key)
         if stats is None:
             return None
         return stats.getstats(names if names else self.default_stats)
