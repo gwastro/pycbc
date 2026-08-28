@@ -35,7 +35,7 @@ from .base import (BaseSampler, setup_output)
 from .base_mcmc import (BaseMCMC, EnsembleSupport,
                         ensemble_compute_acf, ensemble_compute_acl,
                         raw_samples_to_dict,
-                        blob_data_to_dict, get_optional_arg_from_config)
+                        stats_from_cache, get_optional_arg_from_config)
 from ..burn_in import EnsembleMCMCBurnInTests
 from pycbc.inference.io import EmceeFile
 from .. import models
@@ -76,7 +76,10 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         # create a wrapper for calling the model
         if logpost_function is None:
             logpost_function = 'logposterior'
-        model_call = models.CallModel(model, logpost_function)
+        # the stats come from the model's own cache now, so they do not
+        # need to be returned and pickled back from every worker
+        model_call = models.CallModel(model, logpost_function,
+                                      return_all_stats=False)
 
         # these are used to help paralleize over multiple cores / MPI
         models._global_instance = model_call
@@ -123,12 +126,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
         The returned array has shape ``nwalkers x niterations``.
         """
-        from .base_mcmc import stats_from_cache
-        cached = stats_from_cache(self)
-        if cached is not None:
-            return cached
-        stats = self.model.default_stats
-        return blob_data_to_dict(stats, self._sampler.get_blobs())
+        return stats_from_cache(self)
 
     def clear_samples(self):
         """Clears the samples and stats from memory.
@@ -136,7 +134,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         # store the iteration that the clear is occuring on
         self._lastclear = self.niterations
         self._itercounter = 0
-        # now clear the chain; in emcee (>=3) reset() also clears the blobs
+        # now clear the chain
         self._sampler.reset()
 
     def set_state_from_file(self, filename):
