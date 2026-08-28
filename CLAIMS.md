@@ -1,0 +1,1 @@
+| 2026-08-27 | wt-reccache | venv-relbin | marg-reconstruct-cache: branch created off master `e1904358e`, NOT yet implemented — first attempt was scrapped for being marginalization-aware; correct design is a generic stats cache in the base model (see BRANCHES.md) | this chat |
