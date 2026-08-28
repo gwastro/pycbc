@@ -30,7 +30,7 @@ parse_args_cpu_only("model stats cache")
 class TestStatsCache(unittest.TestCase):
     """The stats an evaluation worked out can be asked for afterwards."""
 
-    def model(self, size):
+    def model(self, size=None):
         params = ['x', 'y']
         prior = JointDistribution(params, Uniform(x=(-5., 5.)),
                                   Uniform(y=(-5., 5.)))
@@ -70,8 +70,18 @@ class TestStatsCache(unittest.TestCase):
         self.evaluate(model, self.points(5))
         self.assertIsNone(model.cached_stats({'x': 99., 'y': 99.}))
 
-    def test_off_unless_asked_for(self):
-        """ Without a size nothing is kept and nothing can be asked for. """
+    def test_keeps_everything_by_default(self):
+        """ The default is to keep all of them, which is what the samplers
+        that carried their own stats already did. A bound is opt in.
+        """
+        model = self.model()
+        points = self.points(50)
+        self.evaluate(model, points)
+        self.assertEqual(len(model._stats_cache), len(points))
+        self.assertIsNotNone(model.cached_stats(points[0]))
+
+    def test_a_size_of_zero_keeps_nothing(self):
+        """ Zero is a bound like any other, and it bounds to nothing. """
         model = self.model(0)
         points = self.points(5)
         self.evaluate(model, points)
