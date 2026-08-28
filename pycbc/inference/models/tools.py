@@ -771,6 +771,24 @@ class DistMarg():
         self.marginalize_vector_weights = - numpy.log(self.vsamples)
         return params
 
+    @property
+    def reconstruct_stats(self):
+        """The parameters being drawn inline, in the order the levels run."""
+        levels = getattr(self, 'reconstruct_inline', [])
+        names = []
+        if 'vector' in levels:
+            names += list(self.marginalize_vector_params)
+        if 'distance' in levels and self.distance_marginalization:
+            names.append('distance')
+        if 'phase' in levels and self.marginalize_phase:
+            names.append('coa_phase')
+        return names
+
+    @property
+    def _extra_stats(self):
+        """Adds whatever is being drawn inline to the model's own stats."""
+        return super()._extra_stats + self.reconstruct_stats
+
     def draw_inline(self, sh_total, hh_total, vector):
         """ Draw the marginalized parameters from the vectors the
         marginalization has just built, rather than by evaluating the
@@ -784,11 +802,10 @@ class DistMarg():
         """
         rec = {}
         sh, hh = sh_total, hh_total
-        loglr = None
 
         levels = self.reconstruct_inline
         if 'vector' in levels and self.marginalize_vector_params:
-            drawn, loglr, xl = self.draw_vector(vector)
+            drawn, _, xl = self.draw_vector(vector)
             rec.update(drawn)
             if numpy.ndim(sh):
                 sh, hh = sh[xl], hh[xl]
@@ -798,18 +815,19 @@ class DistMarg():
             dloglr = marginalize_likelihood(
                 sh, hh, phase=self.marginalize_phase,
                 distance=self.distance_marginalization, skip_vector=True)
-            drawn, loglr, xl = self.draw_distance(dloglr)
+            drawn, _, xl = self.draw_distance(dloglr)
             rec.update(drawn)
             sh, hh = sh * dist_rescale[xl], hh * dist_rescale[xl] ** 2.0
 
         if 'phase' in levels and self.marginalize_phase:
-            drawn, loglr, _ = self.draw_phase(sh, -0.5 * hh)
+            drawn, _, _ = self.draw_phase(sh, -0.5 * hh)
             rec.update(drawn)
 
-        if loglr is not None:
-            rec['loglr'] = loglr
-            rec['loglikelihood'] = self.lognl + loglr
-        self.current_rec = rec
+        # recorded like any other stat, so whatever the sampler keeps for a
+        # point carries its drawn parameters with it. The marginalized
+        # loglikelihood is left alone; it is what the sampler is sampling.
+        for name in self.reconstruct_stats:
+            setattr(self._current_stats, name, rec[name])
 
     def draw_vector(self, loglr):
         """ Draw one of the vector marginalization points, given the
