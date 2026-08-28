@@ -489,9 +489,11 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
         Adds ``loglr``, ``maxl_polarization``, and the ``optimal_snrsq`` in
         each detector.
         """
-        return ["loglr", "maxl_polarization", "maxl_loglr"] + [
-            f"{det}_optimal_snrsq" for det in self._data
-        ]
+        return (
+            ["loglr", "maxl_polarization", "maxl_loglr"]
+            + [f"{det}_optimal_snrsq" for det in self._data]
+            + self.reconstruct_stats
+        )
 
     def _nowaveform_handler(self):
         """Convenience function to set loglr values if no waveform generated."""
