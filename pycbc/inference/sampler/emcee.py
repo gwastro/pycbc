@@ -35,7 +35,7 @@ from .base import (BaseSampler, setup_output)
 from .base_mcmc import (BaseMCMC, EnsembleSupport,
                         ensemble_compute_acf, ensemble_compute_acl,
                         raw_samples_to_dict,
-                        stats_from_cache, get_optional_arg_from_config)
+                        get_optional_arg_from_config)
 from ..burn_in import EnsembleMCMCBurnInTests
 from pycbc.inference.io import EmceeFile
 from .. import models
@@ -126,7 +126,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
         The returned array has shape ``nwalkers x niterations``.
         """
-        return stats_from_cache(self)
+        return self.model_stats_from_cache()
 
     def clear_samples(self):
         """Clears the samples and stats from memory.

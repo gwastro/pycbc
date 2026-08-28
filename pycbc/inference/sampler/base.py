@@ -29,6 +29,7 @@ Defines the base sampler class to be inherited by all samplers.
 from abc import ABCMeta, abstractmethod, abstractproperty
 import shutil
 import logging
+import numpy
 
 from six import add_metaclass
 
@@ -126,6 +127,39 @@ class BaseSampler(object):
         can initialize it when needed.
         """
         pass
+
+    def model_stats_from_cache(self, samples=None):
+        """The stats the model remembered, as arrays over the given samples.
+
+        Returns a dict mapping the model's ``default_stats`` to arrays shaped
+        like the samples, or None if the model remembered nothing. Points it
+        did not remember come back as ``nan``.
+
+        Parameters
+        ----------
+        samples : dict, optional
+            The points to look up. Defaults to the sampler's own, which an
+            MCMC sampler clears as it checkpoints, so a caller running after
+            the fact should read them back from the file instead.
+        """
+        model = self.model
+        model.gather_stats_cache(getattr(self, 'pool', None))
+        params = list(model.variable_params)
+        samples = self.samples if samples is None else samples
+        shape = numpy.asarray(samples[params[0]]).shape
+        flat = {p: numpy.asarray(samples[p]).flatten() for p in params}
+        names = model.default_stats
+        out = numpy.full((flat[params[0]].size, len(names)), numpy.nan)
+        found = 0
+        for i in range(out.shape[0]):
+            cached = model.cached_stats({p: flat[p][i] for p in params}, names)
+            if cached is not None:
+                out[i] = cached
+                found += 1
+        if not found:
+            return None
+        return {name: out[:, j].reshape(shape)
+                for j, name in enumerate(names)}
 
     @abstractmethod
     def checkpoint(self):

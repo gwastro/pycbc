@@ -150,33 +150,21 @@ with ctx:
     # Finalize the output
     sampler.finalize()
 
-    # Write out the stats the model worked out while sampling. Samplers do
-    # not carry these back, so without this they are lost and have to be
-    # recomputed from the posterior afterwards.
-    # not every sampler keeps a pool; there is nothing to gather from
-    # one that does not
-    model.gather_stats_cache(getattr(sampler, 'pool', None))
+    # Fill in any stats the sampler did not write for itself. The MCMC ones
+    # store them as they checkpoint; the rest drop them, and the model
+    # remembers what it worked out either way.
     with sampler.io(sampler.checkpoint_file, 'r') as fp:
-        # MCMC samplers store a walker by iteration array, nested samplers a
-        # flat one; write back whatever shape is already there
-        shape = fp[fp.samples_group][model.variable_params[0]].shape
-        samples = {p: fp[fp.samples_group][p][()].flatten()
+        written = {p: fp[fp.samples_group][p][()]
                    for p in model.variable_params}
-    names = [s for s in model.default_stats if s != 'loglikelihood']
-    nsamp = len(samples[model.variable_params[0]])
-    stats = [model.cached_stats({p: samples[p][i]
-                                 for p in model.variable_params}, names)
-             for i in range(nsamp)]
-    found = sum(s is not None for s in stats)
-    logging.info("Recovered model stats for %s of %s samples", found, nsamp)
-    if found:
-        blank = [numpy.nan] * len(names)
-        vals = numpy.array([s if s is not None else blank for s in stats])
+        missing = [s for s in model.default_stats
+                   if s not in fp[fp.samples_group]]
+    stats = sampler.model_stats_from_cache(written) if missing else None
+    if stats:
         for fn in [sampler.checkpoint_file, sampler.backup_file]:
             with sampler.io(fn, 'a') as fp:
-                for i, name in enumerate(names):
-                    fp.write_data(name, vals[:, i].reshape(shape),
-                                  path=fp.samples_group, append=False)
+                for name in missing:
+                    fp.write_data(name, stats[name], path=fp.samples_group,
+                                  append=False)
 
 if condor_ckpt:
    # unlink the empty output file
