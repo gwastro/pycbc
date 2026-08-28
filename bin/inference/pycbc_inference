@@ -150,6 +150,29 @@ with ctx:
     # Finalize the output
     sampler.finalize()
 
+    # Write out the stats the model worked out while sampling. Samplers do
+    # not carry these back, so without this they are lost and have to be
+    # recomputed from the posterior afterwards.
+    model.gather_stats_cache(getattr(sampler, "pool", pool))
+    with sampler.io(sampler.checkpoint_file, 'r') as fp:
+        samples = {p: fp[fp.samples_group][p][()].flatten()
+                   for p in model.variable_params}
+    names = [s for s in model.default_stats if s != 'loglikelihood']
+    nsamp = len(samples[model.variable_params[0]])
+    stats = [model.cached_stats({p: samples[p][i]
+                                 for p in model.variable_params}, names)
+             for i in range(nsamp)]
+    found = sum(s is not None for s in stats)
+    logging.info("Recovered model stats for %s of %s samples", found, nsamp)
+    if found:
+        blank = [numpy.nan] * len(names)
+        vals = numpy.array([s if s is not None else blank for s in stats])
+        for fn in [sampler.checkpoint_file, sampler.backup_file]:
+            with sampler.io(fn, 'a') as fp:
+                for i, name in enumerate(names):
+                    fp.write_data(name, vals[:, i], path=fp.samples_group,
+                                  append=False)
+
 if condor_ckpt:
    # unlink the empty output file
    try:
