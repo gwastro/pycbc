@@ -116,8 +116,37 @@ class TestStatsCache(unittest.TestCase):
         self.assertIsNotNone(model.cached_stats(point))
 
 
+class TestStatsCacheInAPool(unittest.TestCase):
+    """What a worker worked out has to reach the process that asks."""
+
+    def test_gathers_what_the_workers_hold(self):
+        """ Including the evaluation each worker is still holding: that one
+        has not been moved into its store yet, and it is what a sampler's
+        most recent points are.
+        """
+        from pycbc.inference import models
+        from pycbc.pool import BroadcastPool
+        params = ['x', 'y']
+        prior = JointDistribution(params, Uniform(x=(-5., 5.)),
+                                  Uniform(y=(-5., 5.)))
+        model = TestNormal(params, prior=prior)
+        models._global_instance = models.CallModel(model, 'logposterior',
+                                                   return_all_stats=False)
+        pool = BroadcastPool(2)
+        points = [[float(a), float(b)]
+                  for a, b in numpy.random.RandomState(8).uniform(
+                      -3., 3., size=(24, 2))]
+        pool.map(models._call_global_model, points)
+        model.gather_stats_cache(pool)
+        pool.close_pool()
+        found = [model.cached_stats({"x": p[0], "y": p[1]})
+                 for p in points]
+        self.assertEqual(sum(f is not None for f in found), len(points))
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestStatsCache))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestStatsCacheInAPool))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
