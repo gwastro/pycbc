@@ -79,6 +79,38 @@ def raw_samples_to_dict(sampler, raw_samples):
     return samples
 
 
+def stats_from_cache(sampler):
+    """A dict mapping a model's ``default_stats`` to arrays over the chain.
+
+    The values come from what the model remembered as it evaluated, so the
+    sampler does not have to carry them. Returns None if it remembered
+    nothing, in which case the caller has to get them some other way.
+
+    Parameters
+    ----------
+    sampler : sampler instance
+        Must provide ``samples`` over the chain and the model that produced
+        them.
+    """
+    model = sampler.model
+    model.gather_stats_cache(getattr(sampler, 'pool', None))
+    samples = sampler.samples
+    params = list(model.variable_params)
+    shape = samples[params[0]].shape
+    flat = {p: numpy.asarray(samples[p]).flatten() for p in params}
+    names = model.default_stats
+    out = numpy.full((flat[params[0]].size, len(names)), numpy.nan)
+    found = 0
+    for i in range(out.shape[0]):
+        cached = model.cached_stats({p: flat[p][i] for p in params}, names)
+        if cached is not None:
+            out[i] = cached
+            found += 1
+    if not found:
+        return None
+    return {name: out[:, j].reshape(shape) for j, name in enumerate(names)}
+
+
 def blob_data_to_dict(stat_names, blobs):
     """Converts an array of "blobs" to a dictionary of model stats.
 

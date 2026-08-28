@@ -290,6 +290,8 @@ def _worker_stats_cache(_):
     """Hand back the stats this process remembered, for pooled collection."""
     from pycbc.inference import models
     model = getattr(models._global_instance, 'model', models._global_instance)
+    # the evaluation this process is holding has not been moved in yet
+    model._store_stats()
     return model._stats_cache
 
 
