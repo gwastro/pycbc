@@ -127,6 +127,17 @@ class TestStatsCache(unittest.TestCase):
         model.update(**points[1])
         self.assertEqual(model.cached_stats(points[0]), before)
 
+    def test_array_valued_params_are_not_cached(self):
+        """Reconstruction updates with arrays of trial values, not a point."""
+        model = self.model()
+        point = self.points(1)[0]
+        self.evaluate(model, [point])
+        trial = {'x': numpy.linspace(-1., 1., 8), 'y': numpy.zeros(8)}
+        model.update(**trial)          # must not raise on an unhashable key
+        self.assertIsNone(model.cached_stats(trial))
+        # and the point it did remember is still there afterwards
+        self.assertIsNotNone(model.cached_stats(point))
+
     def test_key_ignores_parameter_order(self):
         """The same point is the same point whatever order it is given in."""
         model = self.model()
