@@ -42,7 +42,6 @@ from .base_mcmc import (
     ensemble_compute_acl,
     get_optional_arg_from_config,
     raw_samples_to_dict,
-    stats_from_cache,
 )
 
 #
@@ -141,7 +140,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
         The returned array has shape ``nwalkers x niterations``.
         """
-        return stats_from_cache(self)
+        return self.model_stats_from_cache()
 
     def clear_samples(self):
         """Clears the samples and stats from memory."""
