@@ -129,11 +129,11 @@ class BaseSampler(object):
         pass
 
     def model_stats_from_cache(self, samples=None):
-        """The stats the model remembered, as arrays over the given samples.
+        """The model's ``default_stats`` as arrays over the given samples.
 
-        Returns a dict mapping the model's ``default_stats`` to arrays shaped
-        like the samples, or None if the model remembered nothing. Points it
-        did not remember come back as ``nan``.
+        Taken from what the model remembered as it evaluated. A point it did
+        not remember is worked out, so the answer is complete either way and
+        the cache only decides what it costs.
 
         Parameters
         ----------
@@ -172,9 +172,8 @@ class BaseSampler(object):
     def write_cached_stats(self):
         """Fill in any stats the sampler did not write for itself.
 
-        The MCMC samplers store them as they checkpoint; the rest drop them,
-        and the model remembers what it worked out either way. Anything it
-        did not remember is left alone rather than overwritten.
+        The MCMC samplers store them as they checkpoint; the rest drop them.
+        Stats already in the file are left alone.
         """
         with self.io(self.checkpoint_file, 'r') as fp:
             group = fp[fp.samples_group]
