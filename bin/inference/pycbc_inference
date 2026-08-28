@@ -150,21 +150,7 @@ with ctx:
     # Finalize the output
     sampler.finalize()
 
-    # Fill in any stats the sampler did not write for itself. The MCMC ones
-    # store them as they checkpoint; the rest drop them, and the model
-    # remembers what it worked out either way.
-    with sampler.io(sampler.checkpoint_file, 'r') as fp:
-        written = {p: fp[fp.samples_group][p][()]
-                   for p in model.variable_params}
-        missing = [s for s in model.default_stats
-                   if s not in fp[fp.samples_group]]
-    stats = sampler.model_stats_from_cache(written) if missing else None
-    if stats:
-        for fn in [sampler.checkpoint_file, sampler.backup_file]:
-            with sampler.io(fn, 'a') as fp:
-                for name in missing:
-                    fp.write_data(name, stats[name], path=fp.samples_group,
-                                  append=False)
+    sampler.write_cached_stats()
 
 if condor_ckpt:
    # unlink the empty output file
