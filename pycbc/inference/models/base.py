@@ -397,9 +397,6 @@ class BaseModel(metaclass=ABCMeta):
         self._current_key = None
         # initialize a model stats
         self._current_stats = ModelStats()
-        # Remembering what an evaluation worked out lets a later caller ask
-        # for it instead of evaluating again. A miss just costs the
-        # evaluation it would have cost anyway, so nothing depends on a hit.
         self._stats_cache_size = (None if stats_cache is None
                                   else int(stats_cache))
         self._stats_cache = collections.OrderedDict()
@@ -480,20 +477,12 @@ class BaseModel(metaclass=ABCMeta):
         """Collect what a pool's workers remembered into this process.
 
         An evaluation made in a worker is remembered there, so a parallel run
-        has to gather before anything can be asked for. Pools with no
-        broadcast, such as MPI, gather nothing and go on missing.
+        has to gather before anything can be asked for. A pool with no
+        broadcast gathers nothing; those points are worked out again instead.
         """
-        if hasattr(pool, 'broadcast'):
-            handed = pool.broadcast(_worker_stats_cache, None)
-        elif hasattr(pool, 'map') and getattr(pool, 'size', 0):
-            # No broadcast, as with MPI. Handing the work out often enough
-            # reaches every worker, and a worker only sends what it has not
-            # sent before, so the repeats cost nothing.
-            handed = pool.map(_worker_stats_cache,
-                              [None] * (4 * pool.size + 4))
-        else:
+        if not hasattr(pool, 'broadcast'):
             return
-        for remembered in handed or []:
+        for remembered in pool.broadcast(_worker_stats_cache, None) or []:
             if remembered:
                 self._stats_cache.update(remembered)
         self._trim_stats_cache()
