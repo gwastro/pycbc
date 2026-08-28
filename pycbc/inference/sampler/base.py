@@ -150,18 +150,22 @@ class BaseSampler(object):
         flat = {p: numpy.asarray(samples[p]).flatten() for p in params}
         names = model.default_stats
         out = numpy.full((flat[params[0]].size, len(names)), numpy.nan)
-        found = 0
+        missed = 0
         for i in range(out.shape[0]):
-            cached = model.cached_stats({p: flat[p][i] for p in params}, names)
-            if cached is not None:
-                out[i] = cached
-                found += 1
-        if not found:
-            # Nothing was remembered where this process can reach it. That
-            # happens under MPI, whose pool cannot be asked to hand back what
-            # its workers hold, and the stats are lost rather than wrong.
-            logging.warning("No model stats were recovered for %s points; "
-                            "they will be written as nan", out.shape[0])
+            point = {p: flat[p][i] for p in params}
+            cached = model.cached_stats(point, names)
+            if cached is None:
+                # Not remembered here: a sampler that evaluates somewhere we
+                # cannot reach, or a bound that dropped it. Work it out, which
+                # is what getting these afterwards has always cost.
+                model.update(**point)
+                model.logposterior  # pylint:disable=pointless-statement
+                cached = model.get_current_stats(names)
+                missed += 1
+            out[i] = cached
+        if missed:
+            logging.info("Recalculated model stats for %s of %s points",
+                         missed, out.shape[0])
         return {name: out[:, j].reshape(shape)
                 for j, name in enumerate(names)}
 
