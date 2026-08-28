@@ -360,15 +360,16 @@ class BaseModel(metaclass=ABCMeta):
         for converting parameters, and not for rescaling the parameter space,
         a Jacobian is not required for these transforms.
     stats_cache : int, optional
-        Remember the stats of this many recent evaluations, so that they can
-        be asked for later with ``cached_stats`` rather than evaluated again.
-        Default is 0, which remembers nothing.
+        Bound how many evaluations' stats are remembered for ``cached_stats``
+        to give back later. The default keeps all of them, which is what the
+        samplers that carried their own stats were already doing. Set a number
+        to cap the memory, at the cost of losing the oldest.
     """
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,
                  sampling_transforms=None, waveform_transforms=None,
-                 stats_cache=0, **kwargs):
+                 stats_cache=None, **kwargs):
         # store variable and static args
         self.variable_params = variable_params
         self.static_params = static_params
@@ -391,9 +392,9 @@ class BaseModel(metaclass=ABCMeta):
         # Remembering what an evaluation worked out lets a later caller ask
         # for it instead of evaluating again. A miss just costs the
         # evaluation it would have cost anyway, so nothing depends on a hit.
-        self._stats_cache_size = int(stats_cache)
-        self._stats_cache = (collections.OrderedDict()
-                             if self._stats_cache_size else None)
+        self._stats_cache_size = (None if stats_cache is None
+                                  else int(stats_cache))
+        self._stats_cache = collections.OrderedDict()
 
     @property
     def variable_params(self):
@@ -442,18 +443,14 @@ class BaseModel(metaclass=ABCMeta):
         replaced are put in it, and the stats of an evaluation already made at
         these parameters are restored instead of being reset.
         """
-        if self._stats_cache is not None:
-            self._store_stats()
+        self._store_stats()
         # add the static params
         values = self.static_params.copy()
         values.update(params)
         self._current_params = self._transform_params(**values)
-        self._current_stats = ModelStats()
-        if self._stats_cache is not None:
-            self._current_key = _stats_key(params)
-            cached = self._stats_cache.get(self._current_key)
-            if cached is not None:
-                self._current_stats = cached
+        self._current_key = _stats_key(params)
+        self._current_stats = self._stats_cache.get(self._current_key,
+                                                    ModelStats())
 
     def _store_stats(self):
         """Remembers the stats of the current parameters, dropping the oldest
@@ -462,6 +459,12 @@ class BaseModel(metaclass=ABCMeta):
         if self._current_key is None:
             return
         self._stats_cache[self._current_key] = self._current_stats
+        self._trim_stats_cache()
+
+    def _trim_stats_cache(self):
+        """Drops the oldest entries if a bound was asked for."""
+        if self._stats_cache_size is None:
+            return
         while len(self._stats_cache) > self._stats_cache_size:
             self._stats_cache.popitem(last=False)
 
@@ -472,13 +475,12 @@ class BaseModel(metaclass=ABCMeta):
         has to gather before anything can be asked for. Pools with no
         broadcast, such as MPI, gather nothing and go on missing.
         """
-        if self._stats_cache is None or not hasattr(pool, 'broadcast'):
+        if not hasattr(pool, 'broadcast'):
             return
         for remembered in pool.broadcast(_worker_stats_cache, None) or []:
             if remembered:
                 self._stats_cache.update(remembered)
-        while len(self._stats_cache) > self._stats_cache_size:
-            self._stats_cache.popitem(last=False)
+        self._trim_stats_cache()
 
     def cached_stats(self, params, names=None):
         """The stats remembered for the given parameters, or None.
@@ -491,7 +493,7 @@ class BaseModel(metaclass=ABCMeta):
             Which stats to return. Default is `default_stats`.
         """
         self._store_stats()
-        stats = (self._stats_cache or {}).get(_stats_key(params))
+        stats = self._stats_cache.get(_stats_key(params))
         if stats is None:
             return None
         return stats.getstats(names if names else self.default_stats)
