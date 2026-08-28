@@ -96,6 +96,42 @@ class TestDetector(unittest.TestCase):
 
             self.assertLess(diff.max(), tolerance)
 
+    def test_antenna_pattern_from_direction(self):
+        """The vector form must answer what the ra/dec form answers.
+
+        antenna_pattern_from_direction and time_delay_from_direction take
+        the source direction as a vector in the earth-fixed frame instead
+        of a right ascension, a declination and a time. They are the same
+        quantities, so the two forms are checked against each other over
+        the same sky positions the rest of this file uses.
+        """
+        for ifo in self.d:
+            gmst = numpy.array([ifo.gmst_estimate(t) for t in self.time])
+            gha = gmst - self.ra
+            direction = numpy.array(
+                [numpy.cos(self.dec) * numpy.cos(gha),
+                 -numpy.cos(self.dec) * numpy.sin(gha),
+                 numpy.sin(self.dec)])
+
+            fp, fc = ifo.antenna_pattern_from_direction(direction)
+            fp0, fc0 = ifo.antenna_pattern(self.ra, self.dec,
+                                           numpy.zeros_like(self.ra),
+                                           self.time)
+            self.assertLess(abs(fp - fp0).max(), 1e-12)
+            self.assertLess(abs(fc - fc0).max(), 1e-12)
+
+            delay = ifo.time_delay_from_direction(direction)
+            delay0 = numpy.array(
+                [ifo.time_delay_from_earth_center(r, d, t)
+                 for r, d, t in zip(self.ra, self.dec, self.time)])
+            self.assertLess(abs(delay - delay0).max(), 1e-12)
+
+            # one direction at a time is the same as all of them at once
+            one_fp, one_fc = ifo.antenna_pattern_from_direction(
+                direction[:, 0])
+            self.assertAlmostEqual(float(one_fp), float(fp[0]), places=12)
+            self.assertAlmostEqual(float(one_fc), float(fc[0]), places=12)
+
     def test_delay_from_detector(self):
         ra, dec, time = self.ra[0:10], self.dec[0:10], self.time[0:10]
         for d1 in self.d:
