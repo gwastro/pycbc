@@ -286,6 +286,13 @@ def read_sampling_params_from_config(cp, section_group=None,
 #
 
 
+def _worker_stats_cache(_):
+    """Hand back the stats this process remembered, for pooled collection."""
+    from pycbc.inference import models
+    model = getattr(models._global_instance, 'model', models._global_instance)
+    return model._stats_cache
+
+
 def _stats_key(params):
     """A hashable key for a set of parameter values.
 
@@ -453,6 +460,21 @@ class BaseModel(metaclass=ABCMeta):
         if self._current_key is None:
             return
         self._stats_cache[self._current_key] = self._current_stats
+        while len(self._stats_cache) > self._stats_cache_size:
+            self._stats_cache.popitem(last=False)
+
+    def gather_stats_cache(self, pool):
+        """Collect what a pool's workers remembered into this process.
+
+        An evaluation made in a worker is remembered there, so a parallel run
+        has to gather before anything can be asked for. Pools with no
+        broadcast, such as MPI, gather nothing and go on missing.
+        """
+        if self._stats_cache is None or not hasattr(pool, 'broadcast'):
+            return
+        for remembered in pool.broadcast(_worker_stats_cache, None) or []:
+            if remembered:
+                self._stats_cache.update(remembered)
         while len(self._stats_cache) > self._stats_cache_size:
             self._stats_cache.popitem(last=False)
 
