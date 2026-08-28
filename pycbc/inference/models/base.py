@@ -24,6 +24,7 @@
 
 """Base class for models."""
 
+import collections
 import logging
 from abc import ABCMeta, abstractmethod
 from configparser import NoSectionError
@@ -310,6 +311,15 @@ def read_sampling_params_from_config(cp, section_group=None, section="sampling_p
 #
 
 
+def _stats_key(params):
+    """
+    A hashable key for a set of parameter values.
+
+    Values may be strings as well as numbers, so nothing is converted.
+    """
+    return tuple(sorted(params.items()))
+
+
 class BaseModel(metaclass=ABCMeta):
     r"""
     Base class for all models.
@@ -367,6 +377,10 @@ class BaseModel(metaclass=ABCMeta):
         the likelihood is most easily defined in. Since these are used solely
         for converting parameters, and not for rescaling the parameter space,
         a Jacobian is not required for these transforms.
+    stats_cache : int, optional
+        Remember the stats of this many recent evaluations, so that they can
+        be asked for later with ``cached_stats`` rather than evaluated again.
+        Default is 0, which remembers nothing.
 
     """
 
@@ -379,6 +393,7 @@ class BaseModel(metaclass=ABCMeta):
         prior=None,
         sampling_transforms=None,
         waveform_transforms=None,
+        stats_cache=0,
         **kwargs,
     ):
         # store variable and static args
@@ -396,8 +411,16 @@ class BaseModel(metaclass=ABCMeta):
         self.waveform_transforms = waveform_transforms
         # initialize current params to None
         self._current_params = None
+        self._current_key = None
         # initialize a model stats
         self._current_stats = ModelStats()
+        # Remembering what an evaluation worked out lets a later caller ask
+        # for it instead of evaluating again. A miss just costs the
+        # evaluation it would have cost anyway, so nothing depends on a hit.
+        self._stats_cache_size = int(stats_cache)
+        self._stats_cache = (
+            collections.OrderedDict() if self._stats_cache_size else None
+        )
 
     @property
     def variable_params(self):
@@ -443,12 +466,52 @@ class BaseModel(metaclass=ABCMeta):
 
         If any sampling transforms are specified, they are applied to the
         params before being stored.
+
+        If a stats cache is being kept, the stats of the evaluation being
+        replaced are put in it, and the stats of an evaluation already made at
+        these parameters are restored instead of being reset.
         """
+        if self._stats_cache is not None:
+            self._store_stats()
         # add the static params
         values = self.static_params.copy()
         values.update(params)
         self._current_params = self._transform_params(**values)
         self._current_stats = ModelStats()
+        if self._stats_cache is not None:
+            self._current_key = _stats_key(params)
+            cached = self._stats_cache.get(self._current_key)
+            if cached is not None:
+                self._current_stats = cached
+
+    def _store_stats(self):
+        """
+        Remembers the stats of the current parameters, dropping the oldest
+        entry once the cache is full.
+        """
+        if self._current_key is None:
+            return
+        self._stats_cache[self._current_key] = self._current_stats
+        while len(self._stats_cache) > self._stats_cache_size:
+            self._stats_cache.popitem(last=False)
+
+    def cached_stats(self, params, names=None):
+        """
+        The stats remembered for the given parameters, or None.
+
+        Parameters
+        ----------
+        params : dict
+            The parameters as they were passed to `update`.
+        names : list of str, optional
+            Which stats to return. Default is `default_stats`.
+
+        """
+        self._store_stats()
+        stats = (self._stats_cache or {}).get(_stats_key(params))
+        if stats is None:
+            return None
+        return stats.getstats(names or self.default_stats)
 
     @property
     def current_params(self):
