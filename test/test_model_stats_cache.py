@@ -146,7 +146,8 @@ class TestStatsCacheInAPool(unittest.TestCase):
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestStatsCache))
-suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestStatsCacheInAPool))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestStatsCacheInAPool))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
