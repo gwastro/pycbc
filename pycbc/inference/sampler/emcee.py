@@ -139,6 +139,11 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
         The returned array has shape ``nwalkers x niterations``.
         """
+        from .base_mcmc import stats_from_cache
+
+        cached = stats_from_cache(self)
+        if cached is not None:
+            return cached
         stats = self.model.default_stats
         return blob_data_to_dict(stats, self._sampler.get_blobs())
 
