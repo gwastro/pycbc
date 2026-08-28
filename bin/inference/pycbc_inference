@@ -153,7 +153,7 @@ with ctx:
     # Write out the stats the model worked out while sampling. Samplers do
     # not carry these back, so without this they are lost and have to be
     # recomputed from the posterior afterwards.
-    model.gather_stats_cache(getattr(sampler, "pool", pool))
+    model.gather_stats_cache(sampler.pool)
     with sampler.io(sampler.checkpoint_file, 'r') as fp:
         # MCMC samplers store a walker by iteration array, nested samplers a
         # flat one; write back whatever shape is already there
