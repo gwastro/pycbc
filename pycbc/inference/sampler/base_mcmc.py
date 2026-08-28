@@ -79,43 +79,6 @@ def raw_samples_to_dict(sampler, raw_samples):
     return samples
 
 
-def blob_data_to_dict(stat_names, blobs):
-    """Converts an array of "blobs" to a dictionary of model stats.
-
-    Samplers like ``emcee`` store the extra tuple returned by ``CallModel`` as
-    blobs. As of ``emcee`` version 3, ``get_blobs()`` returns these as a numpy
-    array with shape niterations x nwalkers x nstats, where nstats is the
-    number of stats returned by the model's ``default_stats``. (If the model
-    only returns a single stat, ``emcee`` squeezes out the last axis; this is
-    handled below.) This converts that array to a dictionary of arrays keyed by
-    the stat names.
-
-    Parameters
-    ----------
-    stat_names : list of str
-        The list of the stat names.
-    blobs : array
-        The blobs to convert, as returned by ``emcee``'s ``get_blobs()``.
-
-    Returns
-    -------
-    dict :
-        A dictionary mapping the model's ``default_stats`` to arrays of values.
-        Each array will have shape ``nwalkers x niterations``.
-    """
-    blobs = numpy.asarray(blobs)
-    # if the model only returns a single stat, emcee squeezes out the trailing
-    # axis; restore it so that stats can be indexed on the last axis
-    if blobs.ndim == 2:
-        blobs = blobs[:, :, numpy.newaxis]
-    assert blobs.shape[-1] == len(stat_names), (
-        "number of stat names must match the size of the last axis of blobs")
-    # each stat is stored along the last axis; the remaining axes are
-    # niterations x nwalkers, so we transpose to get nwalkers x niterations
-    return {stat: blobs[:, :, ii].transpose()
-            for ii, stat in enumerate(stat_names)}
-
-
 def get_optional_arg_from_config(cp, section, arg, dtype=str):
     """Convenience function to retrieve an optional argument from a config
     file.
