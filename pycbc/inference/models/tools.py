@@ -653,6 +653,7 @@ class DistMarg():
         self.tstart = {ifo: tstart for ifo in self.data}
         self.num_samples = {ifo: num_samples for ifo in self.data}
         self.peak_lock_peak = {}
+        self.peak_lock_peak_snr = {}
 
         if snrs is None:
             if not hasattr(self, 'ref_snr'):
@@ -677,6 +678,7 @@ class DistMarg():
                 logging.info('%s: Max Ref SNR Peak of %s at %s',
                              ifo, peak_snr, peak_time)
                 self.peak_lock_peak[ifo] = float(peak_time)
+                self.peak_lock_peak_snr[ifo] = float(peak_snr)
 
                 if peak_snr > peak_lock_snr:
                     target = peak_snr ** 2.0 / 2.0 - numpy.log(peak_lock_ratio)
@@ -751,9 +753,12 @@ class DistMarg():
 
         # keep_ifos is not set until draw_ifos, which runs after the
         # reference series is built
-        ifo = (getattr(self, 'keep_ifos', None) or list(wfs))[0]
-        if ifo not in self.peak_lock_peak:
+        seen = [i for i in (getattr(self, 'keep_ifos', None) or list(wfs))
+                if i in self.peak_lock_peak]
+        if not seen:
             return
+        # the loudest, whose peak is the least uncertain in time
+        ifo = max(seen, key=self.peak_lock_peak_snr.get)
 
         rate = self.peak_lock_sample_rate
         locked = self.peak_lock_peak[ifo]
