@@ -891,7 +891,9 @@ def setup_distance_marg_interpolant(dist_marg,
 
     def interp_wrapper(x, y, bounds_check=True):
         k = None
-        scalar = isinstance(x, float)
+        # ndim rather than isinstance: the spline is also handed a
+        # zero-dimensional array, which is a single point but has no length
+        scalar = numpy.ndim(x) == 0
         if bounds_check:
             if scalar:
                 if x > shr_max or x < shr_min or y > hhr_max or y < hhr_min:
@@ -918,6 +920,13 @@ def setup_distance_marg_interpolant(dist_marg,
             v = interp_many(x, y)
         if k is not None:
             v[k] = -numpy.inf
+        # a scalar query is a single point with nothing to marginalize over,
+        # but both interpolators hand it back as a zero-dimensional array,
+        # which marginalize_likelihood does not recognize as a scalar and so
+        # folds through the vector-marginalization weight. Return a float so
+        # it does not.
+        if scalar:
+            return float(v)
         return v
     return interp_wrapper
 
