@@ -844,8 +844,7 @@ def setup_distance_marg_interpolant(dist_marg,
             lvals[i, j] = marginalize_likelihood(sh, hh,
                                                  distance=dist_marg,
                                                  phase=phase)
-    # geomspace, so the grid is evenly spaced in the log of each coordinate
-    # and the cell a point falls in is arithmetic rather than a search
+    # geomspace: uniform in log, so the cell index is arithmetic
     log_shr, log_hhr = numpy.log(shr), numpy.log(hhr)
     dlog_shr = (log_shr[-1] - log_shr[0]) / (len(log_shr) - 1)
     dlog_hhr = (log_hhr[-1] - log_hhr[0]) / (len(log_hhr) - 1)
@@ -879,11 +878,10 @@ def setup_distance_marg_interpolant(dist_marg,
                 if not warned[0] and k.any():
                     warn_out_of_range()
 
-        # clipped before the log, not after: sh keeps its sign when the
-        # phase is not marginalized over, and a negative one is a nan the
-        # mask above never gets to overwrite. The clip also leaves every
-        # index inside the grid, so mode only has to be something other
-        # than the default, which reads outside the grid as zero.
+        # clipped before the log: sh can be negative without phase
+        # marginalization, and the mask does not overwrite a nan. Nothing
+        # then reaches the boundary, but mode must not be the default,
+        # which reads outside the grid as zero.
         index = numpy.empty((2, numpy.size(x)))
         index[0] = (numpy.log(numpy.clip(x, shr_min, shr_max))
                     - log_shr[0]) / dlog_shr
@@ -893,9 +891,8 @@ def setup_distance_marg_interpolant(dist_marg,
                                     prefilter=False)
         if k is not None:
             v[k] = -numpy.inf
-        # marginalize_likelihood tells a single point from a vector of drawn
-        # points by asking whether it is a float; a length-one array is
-        # folded through the vector-marginalization weight instead
+        # marginalize_likelihood tells a point from a vector by asking for
+        # a float; a length-one array goes through the weight instead
         if scalar:
             return float(v[0])
         return v
