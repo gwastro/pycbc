@@ -260,6 +260,36 @@ class TestPeakLockSearch(unittest.TestCase):
                                "%s region is %s samples"
                                % (ifo, two.num_samples[ifo]))
 
+    def test_the_offset_comes_from_the_loudest_detector(self):
+        """One detector supplies the offset, so it should be the best one.
+
+        The peak of a louder detector is the less uncertain in time, and
+        it is the one the likelihood is most sensitive to.
+        """
+        rate = 4096.0
+        span = 0.1
+        snrs, asked = {}, []
+        for ifo, at, amp in (('H1', 0.04, 12.0), ('L1', 0.05, 30.0)):
+            t = numpy.arange(int(span * rate)) / rate
+            z = amp * numpy.exp(-0.5 * ((t - at) / 2e-4) ** 2.0)
+            snrs[ifo] = TimeSeries(z + 0j, delta_t=1.0 / rate, epoch=TC)
+
+        class Two(DistMarg):
+            data = {'H1': None, 'L1': None}
+            marginalized_vector_priors = {'tc': Uniform(tc=(TC, TC + span))}
+
+            def coarse_series(self, ifo, wfs, tstart, delta_t, num_samples):
+                asked.append(ifo)
+                return numpy.zeros(num_samples)
+
+        two = Two()
+        two.setup_peak_lock(sample_rate=rate, snrs=snrs, peak_lock_snr=5.0,
+                            peak_lock_ratio=1e4, **SEARCH)
+        two.follow_peak({'H1': None, 'L1': None})
+        self.assertEqual(asked, ['L1'],
+                         "the offset was taken from %s, not the loudest"
+                         % asked)
+
     def test_a_model_that_cannot_search_says_so(self):
         """Silently ignoring the option would be worse than not having it.
 
