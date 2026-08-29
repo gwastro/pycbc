@@ -12,22 +12,21 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-"""Tests the two routes through the distance marginalization interpolant.
+"""Tests of the distance marginalization interpolant.
 
 The grid is evenly spaced in the log of each coordinate, so the cell a
-point falls in can be calculated instead of searched for, which is what
-the vector route does. It is a different spline from the one FITPACK
-fits, so what has to hold is that it interpolates the same grid to the
-same accuracy, and that a query long enough to take it gets the answer a
-short one would.
+point falls in is calculated instead of searched for. That has to leave
+the answer as close to the integral it stands in for as before; outside
+the interpolated range the value is dropped to zero, which biases the
+result, so the run has to say so; and what comes back for a single point
+has to be recognizable to the caller as a single point, or the answer is
+marginalized a second time over nothing.
 """
 
+import logging
 import unittest
-import warnings
 
 import numpy
-from scipy import ndimage
-
 from utils import simple_exit
 
 from pycbc.inference.models.tools import (setup_distance_marg_interpolant,
@@ -42,6 +41,7 @@ DIST_MARG = (RESCALE, numpy.ones(SAMPLES) / SAMPLES)
 # evaluation rather than the density
 SNR_RANGE = (5, 15)
 DENSITY = (100, 100)
+VSAMPLES = 1000
 
 
 class TestMargDistanceInterp(unittest.TestCase):
@@ -64,87 +64,95 @@ class TestMargDistanceInterp(unittest.TestCase):
         cls.truth = numpy.array(
             [marginalize_likelihood(a, b, distance=DIST_MARG, phase=True)
              for a, b in zip(cls.sh, cls.hh)])
+        # without phase marginalization the inner product keeps its sign
+        # rather than its magnitude, so the queries are not the same set
+        cls.nophase = staticmethod(setup_distance_marg_interpolant(
+            DIST_MARG, phase=False, snr_range=SNR_RANGE, density=DENSITY))
+        cls.nophase_truth = numpy.array(
+            [marginalize_likelihood(a, b, distance=DIST_MARG, phase=False)
+             for a, b in zip(cls.sh, cls.hh)])
 
-    def scalar_route(self):
-        """One point at a time, which is what stays on the spline"""
-        return numpy.array([self.interp(float(a), float(b))
-                            for a, b in zip(self.sh, self.hh)])
+    def test_it_still_stands_in_for_the_integral(self):
+        """The interpolant has to answer what it interpolates.
 
-    def test_every_array_query_takes_the_calculated_index(self):
-        """The route being claimed has to be the one an array query runs.
-
-        Without this the tests below would pass on a wrapper that quietly
-        sent everything to the spline. A single point is the one case that
-        stays on it, because map_coordinates costs more than FITPACK
-        answers a scalar in altogether; every array goes the other way,
-        however short, so the length is not a hidden switch.
+        A tenth of a nat is far inside what a 100x100 grid resolves, and
+        far outside what a change of evaluation route could move it by, so
+        this fails on a wrong index and passes on a coarse grid.
         """
-        calls = []
-        real = ndimage.map_coordinates
+        for name, interp, truth in (
+                ('phase', self.interp, self.truth),
+                ('no phase', self.nophase, self.nophase_truth)):
+            worst = numpy.abs(interp(self.sh, self.hh) - truth).max()
+            self.assertLess(worst, 0.1, "%s: off the marginalized likelihood "
+                            "by %s nats" % (name, worst))
 
-        def counted(*args, **kwargs):
-            calls.append(len(args[1][0]))
-            return real(*args, **kwargs)
+    def test_a_single_point_is_not_marginalized_a_second_time(self):
+        """A single point has nothing to marginalize over.
 
-        ndimage.map_coordinates = counted
+        marginalize_likelihood decides whether its input is a vector of
+        drawn points by asking whether it is a float, and the interpolant
+        hands back a length-one array. Handed that, it folds the value
+        through the vector-marginalization weight and the likelihood comes
+        out low by exactly log(marginalize_vector_samples).
+        """
+        one = self.interp(float(self.sh[0]), float(self.hh[0]))
+        self.assertIsInstance(one, float)
+        self.assertEqual(
+            marginalize_likelihood(float(self.sh[0]), float(self.hh[0]),
+                                   logw=-numpy.log(VSAMPLES),
+                                   interpolator=self.interp, distance=True,
+                                   phase=True),
+            one)
+        # and an array query still comes back as one value per point
+        many = self.interp(self.sh[:3], self.hh[:3])
+        self.assertEqual(numpy.shape(many), (3,))
+
+    def test_a_zero_dimensional_query_is_also_a_single_point(self):
+        """numpy.asarray(5.0) is one point, but it is not a float."""
+        one = self.interp(numpy.asarray(self.sh[0]),
+                          numpy.asarray(self.hh[0]))
+        self.assertIsInstance(one, float)
+        self.assertEqual(one, self.interp(float(self.sh[0]),
+                                          float(self.hh[0])))
+
+    def test_out_of_range_is_minus_inf_and_said_once(self):
+        """The warning must not change the value: still -inf out of range.
+
+        On its own interpolant, since the warning is said once per
+        interpolant and any other test that leaves the grid spends it.
+        """
+        interp = setup_distance_marg_interpolant(
+            DIST_MARG, phase=True, snr_range=SNR_RANGE, density=(20, 20))
+        with self.assertNoLogs(level='WARNING'):
+            interp(float(self.sh[0]), float(self.hh[0]))
+
+        with self.assertLogs(level='WARNING') as caught:
+            self.assertEqual(interp(1e9, 1e12), -numpy.inf)
+            v = interp(numpy.array([self.sh[0], 1e9]),
+                       numpy.array([self.hh[0], 1e12]))
+        # exactly one warning despite two excursions
+        self.assertEqual(len(caught.records), 1)
+        self.assertIn('snr_range', caught.records[0].getMessage())
+        self.assertTrue(numpy.isfinite(v[0]))
+        self.assertEqual(v[1], -numpy.inf)
+
+    def test_a_negative_inner_product_is_not_a_nan(self):
+        """sh keeps its sign when the phase is not marginalized over.
+
+        The index is the log of the inner product, so a negative one has
+        to be held inside the grid before the log rather than after, or it
+        is a nan that the bounds mask never gets to overwrite.
+        """
+        logging.disable(logging.CRITICAL)
         try:
-            self.interp(float(self.sh[0]), float(self.hh[0]))
-            self.assertEqual(calls, [], "a single point left the spline")
-            self.interp(self.sh[:2], self.hh[:2])
-            self.interp(self.sh, self.hh)
-            self.assertEqual(calls, [2, len(self.sh)],
-                             "an array query did not use the calculated index")
+            # raise rather than warn, so taking the log of a negative fails
+            # here even though the bounds mask would overwrite the nan
+            with numpy.errstate(invalid='raise'):
+                v = self.nophase(numpy.full(5, -50.0), numpy.full(5, 100.0))
         finally:
-            ndimage.map_coordinates = real
-
-    def test_the_two_routes_agree(self):
-        """Both interpolate the same grid, so they answer the same.
-
-        They are not the same spline and do not agree to the last bit;
-        they have to agree to well inside the error either makes against
-        the function being interpolated, which is asserted below.
-        """
-        gap = numpy.abs(self.interp(self.sh, self.hh) - self.scalar_route())
-        worst = numpy.abs(self.scalar_route() - self.truth).max()
-        self.assertLess(
-            gap.max(), worst,
-            "the routes differ by %s, more than the %s either is from the "
-            "function it interpolates" % (gap.max(), worst))
-
-    def test_neither_route_is_further_from_the_integral(self):
-        """The change is meant to cost nothing in accuracy.
-
-        Both are measured against the integral they approximate, computed
-        without any interpolation, and the calculated-index route may not
-        be the worse of the two.
-        """
-        vector = numpy.abs(self.interp(self.sh, self.hh) - self.truth)
-        scalar = numpy.abs(self.scalar_route() - self.truth)
-        self.assertLess(
-            vector.max(), 1e-2,
-            "interpolation error %s is too large for this grid to say "
-            "anything" % vector.max())
-        self.assertLessEqual(
-            vector.max(), 2.0 * scalar.max(),
-            "calculated index gave %s against the spline's %s"
-            % (vector.max(), scalar.max()))
-
-    def test_a_query_below_the_grid_is_rejected_quietly(self):
-        """sh is not positive when the phase is not marginalized over.
-
-        Such a point is out of range and the caller replaces it with
-        -inf, but the index is calculated from a logarithm, which would
-        warn and produce a nan on the way there. The route has to hold
-        the point inside the grid first.
-        """
-        sh = numpy.concatenate([self.sh, [-3.0, -1e-8]])
-        hh = numpy.concatenate([self.hh, [self.hh[0], self.hh[1]]])
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            v = self.interp(sh, hh)
-        self.assertTrue(numpy.isneginf(v[-2:]).all(),
-                        "a negative inner product gave %s" % v[-2:])
-        self.assertFalse(numpy.isnan(v).any(), "the route produced a nan")
+            logging.disable(logging.NOTSET)
+        self.assertFalse(numpy.isnan(v).any())
+        self.assertTrue(numpy.all(v == -numpy.inf))
 
 
 suite = unittest.TestSuite()
