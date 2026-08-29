@@ -42,8 +42,6 @@ DIST_MARG = (RESCALE, numpy.ones(SAMPLES) / SAMPLES)
 # evaluation rather than the density
 SNR_RANGE = (5, 15)
 DENSITY = (100, 100)
-# the wrapper sends anything shorter than this to the spline
-MANY = 100
 
 
 class TestMargDistanceInterp(unittest.TestCase):
@@ -68,15 +66,18 @@ class TestMargDistanceInterp(unittest.TestCase):
              for a, b in zip(cls.sh, cls.hh)])
 
     def scalar_route(self):
-        """One point at a time, which is under the length that switches"""
+        """One point at a time, which is what stays on the spline"""
         return numpy.array([self.interp(float(a), float(b))
                             for a, b in zip(self.sh, self.hh)])
 
-    def test_a_long_query_takes_the_calculated_index(self):
-        """The route being claimed has to be the one a long query runs.
+    def test_every_array_query_takes_the_calculated_index(self):
+        """The route being claimed has to be the one an array query runs.
 
         Without this the tests below would pass on a wrapper that quietly
-        sent everything to the spline.
+        sent everything to the spline. A single point is the one case that
+        stays on it, because map_coordinates costs more than FITPACK
+        answers a scalar in altogether; every array goes the other way,
+        however short, so the length is not a hidden switch.
         """
         calls = []
         real = ndimage.map_coordinates
@@ -87,11 +88,12 @@ class TestMargDistanceInterp(unittest.TestCase):
 
         ndimage.map_coordinates = counted
         try:
-            self.interp(self.sh[:MANY - 1], self.hh[:MANY - 1])
-            self.assertEqual(calls, [], "a short query left the spline")
+            self.interp(float(self.sh[0]), float(self.hh[0]))
+            self.assertEqual(calls, [], "a single point left the spline")
+            self.interp(self.sh[:2], self.hh[:2])
             self.interp(self.sh, self.hh)
-            self.assertEqual(calls, [len(self.sh)],
-                             "a long query did not use the calculated index")
+            self.assertEqual(calls, [2, len(self.sh)],
+                             "an array query did not use the calculated index")
         finally:
             ndimage.map_coordinates = real
 
