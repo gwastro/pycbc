@@ -13,15 +13,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
-Tests of the distance marginalization interpolant.
+Tests of the distance marginalization and its interpolant.
 
-The grid is evenly spaced in the log of each coordinate, so the cell a
-point falls in is calculated instead of searched for. That has to leave
-the answer as close to the integral it stands in for as before; outside
-the interpolated range the value is dropped to zero, which biases the
-result, so the run has to say so; and what comes back for a single point
-has to be recognizable to the caller as a single point, or the answer is
-marginalized a second time over nothing.
+The interpolant has to answer what it interpolates; outside the range it
+covers the value is dropped to zero, which biases the result, so the run
+has to say so; and a single point has to come back recognizable as one,
+or the caller marginalizes it a second time over nothing.
 """
 
 import logging
@@ -53,13 +50,12 @@ PLAIN = [(30.0, 100.0), (40.0, 200.0), (25.0, 60.0), (60.0, 400.0), (35.0, 90.0)
 
 def integrate_over_distance(sh, hh, phase):
     """
-    The marginalization written out, in plain arithmetic.
+    The marginalization written out, borrowing nothing from the module.
 
-    Nothing here comes from the code under test: the amplitude goes as the
-    inverse distance, so at a rescaling r the inner products are r*sh and
-    r**2*hh, and marginalizing is the weighted mean of the likelihood ratio
-    over the grid. Marginalizing the overall phase as well replaces
-    exp(r*sh) with the modified Bessel function of the first kind.
+    Amplitude goes as inverse distance, so at rescaling r the inner
+    products are r*sh and r**2*hh, and marginalizing is the weighted mean
+    of the likelihood ratio over the grid. Marginalizing the phase too
+    replaces exp(r*sh) with the modified Bessel function.
     """
     r = RESCALE
     if phase:
@@ -108,10 +104,9 @@ class TestMargDistanceInterp(unittest.TestCase):
         """
         Anchor both routes to an independently written integral.
 
-        The interpolant is checked against marginalize_likelihood
-        everywhere else, which is the same module: if the brute force path
-        were wrong they would agree and both be wrong. This is the only
-        assertion here that does not use it as its reference.
+        Every other test here uses marginalize_likelihood as its
+        reference, which is the same module: were the brute force path
+        wrong, they would agree and both be wrong.
         """
         for sh, hh in PLAIN:
             for phase in (True, False):
@@ -137,11 +132,8 @@ class TestMargDistanceInterp(unittest.TestCase):
 
     def test_it_still_stands_in_for_the_integral(self):
         """
-        The interpolant has to answer what it interpolates.
-
-        A tenth of a nat is far inside what a 100x100 grid resolves, and
-        far outside what a change of evaluation route could move it by, so
-        this fails on a wrong index and passes on a coarse grid.
+        A tenth of a nat is far inside what a 100x100 grid resolves and
+        far outside what a wrong index would move it by.
         """
         worst = numpy.abs(self.interp(self.sh, self.hh) - self.truth).max()
         self.assertLess(
@@ -152,11 +144,10 @@ class TestMargDistanceInterp(unittest.TestCase):
         """
         A single point has nothing to marginalize over.
 
-        marginalize_likelihood decides whether its input is a vector of
-        drawn points by asking whether it is a float, and the interpolant
-        hands back a length-one array. Handed that, it folds the value
-        through the vector-marginalization weight and the likelihood comes
-        out low by exactly log(marginalize_vector_samples).
+        marginalize_likelihood asks whether its input is a float to tell a
+        point from a vector of drawn ones; given a length-one array it
+        folds the value through the weight and the likelihood comes out
+        low by exactly log(marginalize_vector_samples).
         """
         one = self.interp(float(self.sh[0]), float(self.hh[0]))
         self.assertIsInstance(one, float)
@@ -188,8 +179,8 @@ class TestMargDistanceInterp(unittest.TestCase):
         """
         The warning must not change the value: still -inf out of range.
 
-        On its own interpolant, since the warning is said once per
-        interpolant and any other test that leaves the grid spends it.
+        On its own interpolant, since it is said once and any other test
+        that leaves the grid spends it.
         """
         interp = setup_distance_marg_interpolant(
             DIST_MARG, phase=True, snr_range=SNR_RANGE, density=(20, 20)
@@ -211,8 +202,8 @@ class TestMargDistanceInterp(unittest.TestCase):
         Sh keeps its sign when the phase is not marginalized over.
 
         The index is the log of the inner product, so a negative one has
-        to be held inside the grid before the log rather than after, or it
-        is a nan that the bounds mask never gets to overwrite.
+        to be clipped before the log, not after, or it is a nan the bounds
+        mask never overwrites.
         """
         logging.disable(logging.CRITICAL)
         try:
