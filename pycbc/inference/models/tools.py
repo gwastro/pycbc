@@ -10,7 +10,7 @@ import numpy.random
 import tqdm
 
 from scipy.special import logsumexp, i0e
-from scipy.interpolate import RectBivariateSpline, interp1d
+from scipy.interpolate import interp1d
 from scipy import ndimage
 from pycbc.distributions import JointDistribution
 
@@ -844,39 +844,15 @@ def setup_distance_marg_interpolant(dist_marg,
             lvals[i, j] = marginalize_likelihood(sh, hh,
                                                  distance=dist_marg,
                                                  phase=phase)
-    interp = RectBivariateSpline(shr, hhr, lvals)
-
-    # The grid above is geomspace, so it is evenly spaced in the log of
-    # each coordinate and the cell a point falls in can be calculated
-    # rather than searched for. ndimage interpolates from that index
-    # directly, where FITPACK binary-searches the knots for every point;
-    # on a 320x320 grid the same bicubic interpolation costs 36 ns a point
-    # instead of 240. It is the same grid and the same values, so the
-    # accuracy is the interpolation error either way, but it is not the
-    # same spline and the two do not agree to the last bit.
+    # The grid is geomspace, so it is evenly spaced in the log of each
+    # coordinate and the cell a point falls in can be calculated rather than
+    # searched for. ndimage interpolates from that index directly, where
+    # FITPACK binary-searches the knots for every point: on the default
+    # 1000x1000 grid a thousand points cost 47 us instead of 518.
     log_shr, log_hhr = numpy.log(shr), numpy.log(hhr)
     dlog_shr = (log_shr[-1] - log_shr[0]) / (len(log_shr) - 1)
     dlog_hhr = (log_hhr[-1] - log_hhr[0]) / (len(log_hhr) - 1)
     coeffs = ndimage.spline_filter(lvals, order=3, mode='nearest')
-
-    def interp_many(x, y):
-        """The same interpolation, reached by arithmetic on the index.
-
-        Points are held inside the grid before the log, so that a query
-        the caller is about to discard as out of range cannot ask for the
-        log of a negative number; sh is not positive when the phase is
-        not marginalized over.
-        """
-        index = numpy.empty((2, numpy.size(x)))
-        index[0] = (numpy.log(numpy.clip(x, shr_min, shr_max))
-                    - log_shr[0]) / dlog_shr
-        index[1] = (numpy.log(numpy.clip(y, hhr_min, hhr_max))
-                    - log_hhr[0]) / dlog_hhr
-        # the clip above leaves every index inside the grid, so the
-        # boundary mode is never reached; it is named to keep it from
-        # being the default, which treats outside as zero
-        return ndimage.map_coordinates(coeffs, index, order=3,
-                                       mode='nearest', prefilter=False)
 
     # said once, the first time it happens
     warned = [False]
@@ -891,8 +867,8 @@ def setup_distance_marg_interpolant(dist_marg,
 
     def interp_wrapper(x, y, bounds_check=True):
         k = None
-        # ndim rather than isinstance: the spline is also handed a
-        # zero-dimensional array, which is a single point but has no length
+        # ndim rather than isinstance: a zero-dimensional array is a single
+        # point but is not a float
         scalar = numpy.ndim(x) == 0
         if bounds_check:
             if scalar:
@@ -907,24 +883,26 @@ def setup_distance_marg_interpolant(dist_marg,
                 if not warned[0] and k.any():
                     warn_out_of_range()
 
-        # map_coordinates costs 2.2 us for a single point before any index
-        # is built, where FITPACK answers one in 1.7 us all in; the index
-        # arithmetic only pays from about a dozen points up. The scalar
-        # case is separated out below regardless, so keeping FITPACK for it
-        # costs no branch that is not already here.
-        if scalar:
-            v = interp(x, y, grid=False)
-        else:
-            v = interp_many(x, y)
+        # Points are held inside the grid before the log, so that a query the
+        # caller is about to discard as out of range cannot ask for the log of
+        # a negative number; sh is not positive when the phase is not
+        # marginalized over. That leaves every index inside the grid, so the
+        # boundary mode is never reached; it is named to keep it from being
+        # the default, which treats outside as zero.
+        index = numpy.empty((2, numpy.size(x)))
+        index[0] = (numpy.log(numpy.clip(x, shr_min, shr_max))
+                    - log_shr[0]) / dlog_shr
+        index[1] = (numpy.log(numpy.clip(y, hhr_min, hhr_max))
+                    - log_hhr[0]) / dlog_hhr
+        v = ndimage.map_coordinates(coeffs, index, order=3, mode='nearest',
+                                    prefilter=False)
         if k is not None:
             v[k] = -numpy.inf
-        # a scalar query is a single point with nothing to marginalize over,
-        # but both interpolators hand it back as a zero-dimensional array,
-        # which marginalize_likelihood does not recognize as a scalar and so
-        # folds through the vector-marginalization weight. Return a float so
-        # it does not.
+        # a single point has nothing to marginalize over, but the result is a
+        # length-one array, which marginalize_likelihood does not recognize as
+        # a scalar and so folds through the vector-marginalization weight.
         if scalar:
-            return float(v)
+            return float(v[0])
         return v
     return interp_wrapper
 
