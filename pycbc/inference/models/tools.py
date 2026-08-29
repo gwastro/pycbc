@@ -907,14 +907,12 @@ def setup_distance_marg_interpolant(dist_marg,
                 if not warned[0] and k.any():
                     warn_out_of_range()
 
-        # ndimage costs about 11 us a call whatever the length, which a
-        # short query does not earn back. Where it starts to depends on
-        # the grid, since FITPACK searches a larger one more slowly: the
-        # crossover is near 120 points at 80x80, 60 at 320x320 and 40 at
-        # 640x640. One number cannot be right for all three; 100 keeps
-        # the loss under a third of a call in the range it is wrong for,
-        # and the queries that matter are either one point or thousands.
-        if scalar or len(x) < 100:
+        # map_coordinates costs 2.2 us for a single point before any index
+        # is built, where FITPACK answers one in 1.7 us all in; the index
+        # arithmetic only pays from about a dozen points up. The scalar
+        # case is separated out below regardless, so keeping FITPACK for it
+        # costs no branch that is not already here.
+        if scalar:
             v = interp(x, y, grid=False)
         else:
             v = interp_many(x, y)
