@@ -14,19 +14,13 @@ import validation_code.old_coinc as old_coinc
 
 OriginalCoincer = old_coinc.LiveCoincTimeslideBackgroundEstimator
 
-# The triggers are random and were drawn unseeded from gps_now(), so the
-# test failed about one run in six with nothing to reproduce. Both are
-# pinned.
-#
-# The two implementations no longer agree exactly, and neither is wrong.
+# The two implementations no longer agree exactly. 
 # The reference bins the phase and sensitivity differences in float32
 # numpy; the current code does the same arithmetic in double inside
 # Cython. Where a difference falls within a part in 1e7 of a histogram
 # bin edge the two land in different bins, the signal rate lookup returns
-# a neighbouring weight, and the coincident statistic moves. Over twelve
-# seeds that happens twice, to one coincidence out of some 290000, moving
-# it by 0.034. The seed below is one of the ten where it does not;
-# PYCBC_LIVE_COINC_SEED=3 or 11 shows it.
+# a neighbouring weight. The following set to a specific default seed
+# where this should not occur. 
 SEED = int(os.environ.get('PYCBC_LIVE_COINC_SEED', 0))
 START_TIME = 1187008882
 
