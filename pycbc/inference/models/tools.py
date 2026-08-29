@@ -692,6 +692,7 @@ class DistMarg():
             for ifo in snrs:
                 ts = self.tstart[ifo]
                 te = ts + self.num_samples[ifo] / sample_rate
+                locked = ts, te
 
                 for ifo2 in snrs:
                     if ifo == ifo2:
@@ -703,6 +704,16 @@ class DistMarg():
 
                     ts = max(ts, ts2 - dt)
                     te = min(te, te2 + dt)
+
+                # an empty intersection is a negative number of samples,
+                # which the kernel reports as an unexplained ValueError
+                if te <= ts:
+                    ts, te = locked
+                    logging.warning(
+                        '%s: the locked regions have no time in common; '
+                        'keeping %s-%s. Widen them with peak_lock_ratio or '
+                        'peak_lock_region, or check the reference '
+                        'parameters', ifo, ts, te)
 
                 self.tstart[ifo] = ts
                 self.num_samples[ifo] = int((te - ts) * sample_rate) + 1

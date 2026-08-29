@@ -28,6 +28,7 @@ import numpy
 from utils import simple_exit
 
 from pycbc.detector import Detector
+from pycbc.types import TimeSeries
 from pycbc.distributions import JointDistribution, SinAngle, Uniform
 from pycbc.inference import models
 from pycbc.inference.models.tools import DistMarg
@@ -224,6 +225,40 @@ class TestPeakLockSearch(unittest.TestCase):
         self.assertEqual(model.tstart, locked,
                          "the region moved out from under precalculated "
                          "points")
+
+    def test_regions_with_no_time_in_common_do_not_go_negative(self):
+        """Locking narrowly can leave the detectors nothing to agree on.
+
+        The regions are intersected pairwise, widened by the light travel
+        time, so that a time in one has a sky position consistent with the
+        others. Peaks further apart than that leave the intersection empty,
+        and an empty region is a negative sample count that reaches the
+        kernel as ValueError: negative dimensions are not allowed.
+        """
+        rate = 4096.0
+        span = 0.1
+        peaks = {'H1': 0.02, 'L1': 0.08}          # 60 ms apart, H1-L1 is 10
+        snrs = {}
+        for ifo, at in peaks.items():
+            t = numpy.arange(int(span * rate)) / rate
+            z = 30.0 * numpy.exp(-0.5 * ((t - at) / 2e-4) ** 2.0)
+            snrs[ifo] = TimeSeries(z + 0j, delta_t=1.0 / rate, epoch=TC)
+
+        class Two(DistMarg):
+            data = {'H1': None, 'L1': None}
+            marginalized_vector_priors = {
+                'tc': Uniform(tc=(TC, TC + span))}
+
+        two = Two()
+        with self.assertLogs(level='WARNING') as caught:
+            two.setup_peak_lock(sample_rate=rate, snrs=snrs,
+                                peak_lock_snr=5.0, peak_lock_ratio=20,
+                                peak_lock_region=2)
+        self.assertIn('no time in common', caught.records[0].getMessage())
+        for ifo in peaks:
+            self.assertGreater(two.num_samples[ifo], 0,
+                               "%s region is %s samples"
+                               % (ifo, two.num_samples[ifo]))
 
     def test_a_model_that_cannot_search_says_so(self):
         """Silently ignoring the option would be worse than not having it.
