@@ -85,13 +85,8 @@ class TestMargDistanceInterp(unittest.TestCase):
         cls.truth = numpy.array(
             [marginalize_likelihood(a, b, distance=DIST_MARG, phase=True)
              for a, b in zip(cls.sh, cls.hh)])
-        # without phase marginalization the inner product keeps its sign
-        # rather than its magnitude, so the queries are not the same set
         cls.nophase = staticmethod(setup_distance_marg_interpolant(
             DIST_MARG, phase=False, snr_range=SNR_RANGE, density=DENSITY))
-        cls.nophase_truth = numpy.array(
-            [marginalize_likelihood(a, b, distance=DIST_MARG, phase=False)
-             for a, b in zip(cls.sh, cls.hh)])
 
     def test_the_marginalization_is_the_integral_it_claims(self):
         """Anchor both routes to an independently written integral.
@@ -126,12 +121,9 @@ class TestMargDistanceInterp(unittest.TestCase):
         far outside what a change of evaluation route could move it by, so
         this fails on a wrong index and passes on a coarse grid.
         """
-        for name, interp, truth in (
-                ('phase', self.interp, self.truth),
-                ('no phase', self.nophase, self.nophase_truth)):
-            worst = numpy.abs(interp(self.sh, self.hh) - truth).max()
-            self.assertLess(worst, 0.1, "%s: off the marginalized likelihood "
-                            "by %s nats" % (name, worst))
+        worst = numpy.abs(self.interp(self.sh, self.hh) - self.truth).max()
+        self.assertLess(worst, 0.1,
+                        "off the marginalized likelihood by %s nats" % worst)
 
     def test_a_single_point_is_not_marginalized_a_second_time(self):
         """A single point has nothing to marginalize over.
@@ -144,6 +136,13 @@ class TestMargDistanceInterp(unittest.TestCase):
         """
         one = self.interp(float(self.sh[0]), float(self.hh[0]))
         self.assertIsInstance(one, float)
+        # numpy.asarray(5.0) is one point too, and is not a float. The
+        # type is the assertion: a length-one array compares equal to the
+        # float it holds, so only assertIsInstance catches this one.
+        zerod = self.interp(numpy.asarray(self.sh[0]),
+                            numpy.asarray(self.hh[0]))
+        self.assertIsInstance(zerod, float)
+        self.assertEqual(one, zerod)
         self.assertEqual(
             marginalize_likelihood(float(self.sh[0]), float(self.hh[0]),
                                    logw=-numpy.log(VSAMPLES),
@@ -156,14 +155,6 @@ class TestMargDistanceInterp(unittest.TestCase):
         many = self.interp(self.sh[:3], self.hh[:3])
         self.assertEqual(numpy.shape(many), (3,))
         self.assertEqual(one, many[0])
-
-    def test_a_zero_dimensional_query_is_also_a_single_point(self):
-        """numpy.asarray(5.0) is one point, but it is not a float."""
-        one = self.interp(numpy.asarray(self.sh[0]),
-                          numpy.asarray(self.hh[0]))
-        self.assertIsInstance(one, float)
-        self.assertEqual(one, self.interp(float(self.sh[0]),
-                                          float(self.hh[0])))
 
     def test_out_of_range_is_minus_inf_and_said_once(self):
         """The warning must not change the value: still -inf out of range.

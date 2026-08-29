@@ -844,11 +844,8 @@ def setup_distance_marg_interpolant(dist_marg,
             lvals[i, j] = marginalize_likelihood(sh, hh,
                                                  distance=dist_marg,
                                                  phase=phase)
-    # The grid is geomspace, so it is evenly spaced in the log of each
-    # coordinate and the cell a point falls in can be calculated rather than
-    # searched for. ndimage interpolates from that index directly, where
-    # FITPACK binary-searches the knots for every point: on the default
-    # 1000x1000 grid a thousand points cost 47 us instead of 518.
+    # geomspace, so the grid is evenly spaced in the log of each coordinate
+    # and the cell a point falls in is arithmetic rather than a search
     log_shr, log_hhr = numpy.log(shr), numpy.log(hhr)
     dlog_shr = (log_shr[-1] - log_shr[0]) / (len(log_shr) - 1)
     dlog_hhr = (log_hhr[-1] - log_hhr[0]) / (len(log_hhr) - 1)
@@ -867,8 +864,7 @@ def setup_distance_marg_interpolant(dist_marg,
 
     def interp_wrapper(x, y, bounds_check=True):
         k = None
-        # ndim rather than isinstance: a zero-dimensional array is a single
-        # point but is not a float
+        # a zero-dimensional array is a single point but is not a float
         scalar = numpy.ndim(x) == 0
         if bounds_check:
             if scalar:
@@ -883,12 +879,11 @@ def setup_distance_marg_interpolant(dist_marg,
                 if not warned[0] and k.any():
                     warn_out_of_range()
 
-        # Points are held inside the grid before the log, so that a query the
-        # caller is about to discard as out of range cannot ask for the log of
-        # a negative number; sh is not positive when the phase is not
-        # marginalized over. That leaves every index inside the grid, so the
-        # boundary mode is never reached; it is named to keep it from being
-        # the default, which treats outside as zero.
+        # clipped before the log, not after: sh keeps its sign when the
+        # phase is not marginalized over, and a negative one is a nan the
+        # mask above never gets to overwrite. The clip also leaves every
+        # index inside the grid, so mode only has to be something other
+        # than the default, which reads outside the grid as zero.
         index = numpy.empty((2, numpy.size(x)))
         index[0] = (numpy.log(numpy.clip(x, shr_min, shr_max))
                     - log_shr[0]) / dlog_shr
@@ -898,9 +893,9 @@ def setup_distance_marg_interpolant(dist_marg,
                                     prefilter=False)
         if k is not None:
             v[k] = -numpy.inf
-        # a single point has nothing to marginalize over, but the result is a
-        # length-one array, which marginalize_likelihood does not recognize as
-        # a scalar and so folds through the vector-marginalization weight.
+        # marginalize_likelihood tells a single point from a vector of drawn
+        # points by asking whether it is a float; a length-one array is
+        # folded through the vector-marginalization weight instead
         if scalar:
             return float(v[0])
         return v
