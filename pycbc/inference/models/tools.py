@@ -599,6 +599,8 @@ class DistMarg():
                         peak_lock_snr=None,
                         peak_lock_ratio=1e4,
                         peak_lock_region=4,
+                        peak_lock_search_samples=None,
+                        peak_lock_search_decimate=8,
                         **kwargs):
         """ Determine where to constrain marginalization based on
         the observed reference SNR peaks.
@@ -618,7 +620,28 @@ class DistMarg():
         peak_lock_region: int
             Number of samples to inclue beyond the strict region
             determined by the relative likelihood
+        peak_lock_search_samples: int
+            How far to search for the peak before each likelihood, in
+            samples, centered on the region locked here. The region is then
+            moved to wherever the peak turned out to be. Off if not given.
+        peak_lock_search_decimate: int
+            Stride of that search, in samples. It only has to place the
+            peak inside the region, so it must be no wider than one.
         """
+        self.peak_lock_search_samples = (
+            None if peak_lock_search_samples is None
+            else int(peak_lock_search_samples))
+        self.peak_lock_search_decimate = int(peak_lock_search_decimate)
+        self.peak_lock_sample_rate = float(sample_rate)
+
+        # a model whose reference series is fixed has no peak to follow and
+        # provides no coarse_series to look for one with
+        if self.peak_lock_search_samples and not hasattr(self,
+                                                         'coarse_series'):
+            logging.warning("%s cannot search for the peak, so "
+                            "peak_lock_search_samples is ignored",
+                            type(self).__name__)
+            self.peak_lock_search_samples = None
 
         if 'tc' not in self.marginalized_vector_priors:
             return
@@ -629,6 +652,7 @@ class DistMarg():
         num_samples = int(tmax * sample_rate)
         self.tstart = {ifo: tstart for ifo in self.data}
         self.num_samples = {ifo: num_samples for ifo in self.data}
+        self.peak_lock_peak = {}
 
         if snrs is None:
             if not hasattr(self, 'ref_snr'):
@@ -652,6 +676,7 @@ class DistMarg():
 
                 logging.info('%s: Max Ref SNR Peak of %s at %s',
                              ifo, peak_snr, peak_time)
+                self.peak_lock_peak[ifo] = float(peak_time)
 
                 if peak_snr > peak_lock_snr:
                     target = peak_snr ** 2.0 / 2.0 - numpy.log(peak_lock_ratio)
@@ -687,6 +712,64 @@ class DistMarg():
         self.tend = self.tstart.copy()
         for ifo in snrs:
             self.tend[ifo] += self.num_samples[ifo] / sample_rate
+        self.peak_lock_start = self.tstart.copy()
+
+    def follow_peak(self, wfs):
+        """ Move the locked region to wherever the peak is now
+
+        The region is locked once, around a reference waveform, and the peak
+        it was locked on moves with the parameters. A coarse pass over a
+        wider range says where it went.
+
+        The offset is measured from the region as locked, not from wherever
+        the last call left it, so the region is a function of the current
+        parameters alone. It is found in one detector and applied to all of
+        them, which keeps the delays between them as they were locked.
+
+        Does nothing when the marginalization points were precalculated,
+        since those were drawn over the locked region.
+        """
+        if not getattr(self, 'peak_lock_search_samples', None):
+            return
+        # the points were drawn over the region as locked; moving away from
+        # them would lose them silently
+        if hasattr(self, 'premarg'):
+            return
+        if not hasattr(self, 'peak_lock_start'):
+            return
+
+        # keep_ifos is not set until draw_ifos, which runs after the
+        # reference series is built
+        ifo = (getattr(self, 'keep_ifos', None) or list(wfs))[0]
+        if ifo not in self.peak_lock_peak:
+            return
+
+        rate = self.peak_lock_sample_rate
+        locked = self.peak_lock_peak[ifo]
+        delta_t = self.peak_lock_search_decimate / rate
+        num = int(self.peak_lock_search_samples
+                  / self.peak_lock_search_decimate)
+        start = locked - self.peak_lock_search_samples / rate / 2.0
+        series = abs(numpy.array(
+            self.coarse_series(ifo, wfs, start, delta_t, num)))
+
+        # the peak rarely sits on a coarse sample, and its neighbours say
+        # where between them it does
+        i = int(numpy.argmax(series))
+        if 0 < i < len(series) - 1:
+            a, b, c = series[i - 1], series[i], series[i + 1]
+            curve = a - 2.0 * b + c
+            if curve < 0:
+                i += numpy.clip(0.5 * (a - c) / curve, -0.5, 0.5)
+
+        # rounded to a whole sample of the region's own grid: a fractional
+        # offset samples the series at shifted phases, which costs more than
+        # placing the region more precisely gains
+        shift = round((start + i * delta_t - locked) * rate) / rate
+
+        for name in self.peak_lock_start:
+            self.tstart[name] = self.peak_lock_start[name] + shift
+            self.tend[name] = self.tstart[name] + self.num_samples[name] / rate
 
     def draw_ifos(self, snrs, peak_snr_threshold=4.0, log=True,
                   precalculate_marginalization_points=False,

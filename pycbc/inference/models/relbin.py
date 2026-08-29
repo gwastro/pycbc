@@ -711,24 +711,25 @@ class RelativeTime(Relative):
             self._ref_snr = self.get_snr(wfs)
         return self._ref_snr
 
+    def coarse_series(self, ifo, wfs, tstart, delta_t, num_samples):
+        """ The predictor on any grid, used to look for the peak """
+        sdat = self.sdat[ifo]
+        dtc = tstart - self.end_time[ifo] - self.ta[ifo]
+        return snr_predictor(self.fedges[ifo], dtc, delta_t, num_samples,
+                             wfs[ifo][0], wfs[ifo][1], self.h00_sparse[ifo],
+                             sdat['a0'], sdat['a1'], sdat['b0'], sdat['b1'])
+
     def get_snr(self, wfs):
         """ Return hp/hc maximized SNR time series
         """
         delta_t = 1.0 / self.sample_rate
+        self.follow_peak(wfs)
         snrs = {}
         for ifo in wfs:
-            sdat = self.sdat[ifo]
-            dtc = self.tstart[ifo] - self.end_time[ifo] - self.ta[ifo]
-
-            snr = snr_predictor(self.fedges[ifo],
-                                dtc - delta_t * 2.0, delta_t,
-                                self.num_samples[ifo] + 4,
-                                wfs[ifo][0], wfs[ifo][1],
-                                self.h00_sparse[ifo],
-                                sdat['a0'], sdat['a1'],
-                                sdat['b0'], sdat['b1'])
-            snrs[ifo] = TimeSeries(snr, delta_t=delta_t,
-                                   epoch=self.tstart[ifo] - delta_t * 2.0)
+            start = self.tstart[ifo] - delta_t * 2.0
+            snr = self.coarse_series(ifo, wfs, start, delta_t,
+                                     self.num_samples[ifo] + 4)
+            snrs[ifo] = TimeSeries(snr, delta_t=delta_t, epoch=start)
         return snrs
 
     @catch_waveform_error
@@ -812,28 +813,34 @@ class RelativeTimeDom(RelativeTime):
     """
     name = "relative_time_dom"
 
+    def sh_series(self, ifo, wfs, tstart, delta_t, num_samples):
+        """ The predictor on any grid, as the sh and hh it returns """
+        sdat = self.sdat[ifo]
+        dtc = tstart - self.end_time[ifo] - self.ta[ifo]
+        return snr_predictor_dom(self.fedges[ifo], dtc, delta_t, num_samples,
+                                 wfs[ifo][0], self.h00_sparse[ifo],
+                                 sdat['a0'], sdat['a1'],
+                                 sdat['b0'], sdat['b1'])
+
+    def coarse_series(self, ifo, wfs, tstart, delta_t, num_samples):
+        """ The predictor on any grid, used to look for the peak """
+        return self.sh_series(ifo, wfs, tstart, delta_t, num_samples)[0]
+
     def get_snr(self, wfs):
         """ Return hp/hc maximized SNR time series
         """
         delta_t = 1.0 / self.sample_rate
+        self.follow_peak(wfs)
         snrs = {}
         self.sh = {}
         self.hh = {}
         for ifo in wfs:
-            sdat = self.sdat[ifo]
-            dtc = self.tstart[ifo] - self.end_time[ifo] - self.ta[ifo]
-
-            sh, hh = snr_predictor_dom(self.fedges[ifo],
-                                       dtc - delta_t * 2.0, delta_t,
-                                       self.num_samples[ifo] + 4,
-                                       wfs[ifo][0],
-                                       self.h00_sparse[ifo],
-                                       sdat['a0'], sdat['a1'],
-                                       sdat['b0'], sdat['b1'])
+            start = self.tstart[ifo] - delta_t * 2.0
+            sh, hh = self.sh_series(ifo, wfs, start, delta_t,
+                                    self.num_samples[ifo] + 4)
             snr = TimeSeries(abs(sh[2:-2]) / hh ** 0.5, delta_t=delta_t,
                              epoch=self.tstart[ifo])
-            self.sh[ifo] = TimeSeries(sh, delta_t=delta_t,
-                                      epoch=self.tstart[ifo] - delta_t * 2.0)
+            self.sh[ifo] = TimeSeries(sh, delta_t=delta_t, epoch=start)
             self.hh[ifo] = hh
             snrs[ifo] = snr
 
