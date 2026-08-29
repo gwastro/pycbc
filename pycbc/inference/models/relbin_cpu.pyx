@@ -7,24 +7,18 @@ cdef extern from "complex.h":
     double real(double complex)
     double imag(double complex)
 
-# The phase pass below wants the real sine and cosine on their own, rather
-# than the complex exponential declared above, so that it can write them
-# straight into a pair of real buffers.
+# the phase passes want the sine and cosine separately, in real buffers
 cdef extern from "math.h":
     double cos(double)
     double sin(double)
+    double M_PI
 
 import numpy
 cimport cython, numpy
 
-# The pi here is deliberately the truncated 3.141592653 rather than M_PI.
-# It appears only in the 2*pi of a time shift, so its whole effect is an
-# exact rescaling dtc -> dtc*(1 - 1.877e-10): <h|h> is untouched, and on a
-# real event the peak moves by 1.7e-12 s against a posterior width of
-# 6.8e-5.  Replacing it would move published numbers for no correctness
-# gain, so it stays, named once instead of spelled out twenty-one times.
-cdef double MINUS_TWO_PI = -2.0 * 3.141592653
-cdef double complex MINUS_TWO_PI_J = -2.0j * 3.141592653
+# the complex form is the one a time shift wants, exp(-2 pi i dtc f)
+cdef double MINUS_TWO_PI = -2.0 * M_PI
+cdef double complex MINUS_TWO_PI_J = -2.0j * M_PI
 
 # Used for calculating the cross terms of
 # two signals when analyzing multiple signals
@@ -394,17 +388,11 @@ cpdef likelihood_parts_v_pol_time(double [::1] freqs,
         hdv[j] = conj(hd)
         hhv[j] = cp * cp * app + sp * sp * acc + cp * sp * apc
     return hdv, hhv
-# The <h|h> of a whole bank of samples, without a sample loop.
-#
-# Every sample scales the two polarizations by a real pair (fp, fc) and then
-# applies a time shift, and the time shift has unit modulus, so it drops out
-# of |fp * hp + fc * hc|^2 entirely.  What is left is a quadratic form in
-# (fp, fc), and summing its three coefficient series once with the relative
-# binning weights gives constants from which any sample's <h|h> follows as
-# fp * fp * app + fc * fc * acc + fp * fc * apc.  Both the factor of two in
-# the cross term and its being the real part are needed; neither is optional.
-# This is the same reasoning snr_predictor already uses to lift its own
-# <h|h> out of the sample loop.
+# <h|h> for a whole bank of samples, without a sample loop.  A time shift
+# has unit modulus so it drops out of |fp * hp + fc * hc|^2, leaving a
+# quadratic form in (fp, fc): any sample's value is then
+# fp * fp * app + fc * fc * acc + fp * fc * apc.  The factor of two in the
+# cross term is folded into apc, and it is the real part, not the modulus.
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.cdivision(True)     # Disable checking for dividing by zero
@@ -441,13 +429,9 @@ cdef void hh_coefficients(double complex[::1] hpr,
 
 # Standard likelihood but simultaneously handling multiple sky or time points
 #
-# Three things are kept out of the inner loop that do not belong there.  The
-# division by h00 depends on the frequency bin alone, so it is done once for
-# the bank instead of once per (bin, sample).  <h|h> is not accumulated here
-# at all, it comes from the constants above.  And the phase is evaluated in
-# a pass of its own, into scratch buffers; nothing in that pass depends on
-# the previous element, so the compiler is free to vectorize the sine and
-# cosine, which it cannot do while the serial r0 carry shares the loop.
+# The phase gets a pass of its own: nothing in it depends on the previous
+# element, so the sine and cosine vectorize, which they cannot do while the
+# serial r0 carry shares the loop.
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.cdivision(True)     # Disable checking for dividing by zero
@@ -504,11 +488,8 @@ cpdef likelihood_parts_vector(double [::1] freqs,
 
 # Standard likelihood but simultaneously handling multiple time points
 #
-# Here fp and fc are scalars, so every sample sees the same waveform ratio
-# and differs only by a time shift.  A time shift cannot change <h|h>, so
-# there is one value of it for the whole bank and it is computed once, with
-# the ratio, before the sample loop is entered.  The phase again gets a pass
-# of its own so that the sine and cosine can vectorize.
+# fp and fc are scalars here, so the samples differ only by a time shift and
+# <h|h> is one value for the whole bank.
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.cdivision(True)     # Disable checking for dividing by zero
@@ -565,11 +546,9 @@ cpdef likelihood_parts_vectort(double [::1] freqs,
 
 # Like above, but if only polarization is marginalized
 #
-# Here dtc is a scalar, so the time shift is the same for every sample and
-# there is no transcendental left to evaluate inside the sample loop at all:
-# the phase is folded into the per bin waveform ratios once.  Folding it in
-# does not disturb the <h|h> constants, since a unit modulus factor common
-# to both polarizations cancels out of every term of the quadratic form.
+# dtc is a scalar here, so the phase folds into the per bin ratios once and
+# nothing transcendental is left in the sample loop.  A unit modulus factor
+# common to both polarizations cancels out of the quadratic form.
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.cdivision(True)     # Disable checking for dividing by zero

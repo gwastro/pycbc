@@ -60,7 +60,7 @@ TOL = 1e-12
 # math.h, so the reference sum below has to use the same one or it would be
 # comparing two slightly different time shifts and disagreeing at 1e-8 for a
 # reason that has nothing to do with what is being tested here
-KERNEL_PI = 3.141592653
+KERNEL_PI = numpy.pi
 
 
 def get_seed():
