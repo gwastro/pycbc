@@ -20,7 +20,9 @@ the marginalization integrates over times the signal is not at. These drive
 the reference away from the signal and check the likelihood survives it.
 """
 
+import contextlib
 import copy
+import logging
 import unittest
 
 import numpy
@@ -92,6 +94,21 @@ class TestPeakLockSearch(unittest.TestCase):
         model = self.model(**kwargs)
         model.update(**POINT)
         return model.loglr
+
+    @contextlib.contextmanager
+    def logging_enabled(self):
+        """assertLogs cannot see anything through a global logging.disable.
+
+        test_fft_unthreaded silences WARNING when it is imported and never
+        puts it back, so in a whole-suite run every module after it sees no
+        records at all. Restore whatever was set rather than assuming.
+        """
+        previous = logging.root.manager.disable
+        logging.disable(logging.NOTSET)
+        try:
+            yield
+        finally:
+            logging.disable(previous)
 
     def test_off_by_default(self):
         """A model that did not ask for it must not move its region."""
@@ -250,7 +267,8 @@ class TestPeakLockSearch(unittest.TestCase):
                 'tc': Uniform(tc=(TC, TC + span))}
 
         two = Two()
-        with self.assertLogs(level='WARNING') as caught:
+        with self.logging_enabled(), \
+                self.assertLogs(level='WARNING') as caught:
             two.setup_peak_lock(sample_rate=rate, snrs=snrs,
                                 peak_lock_snr=5.0, peak_lock_ratio=20,
                                 peak_lock_region=2)
@@ -305,7 +323,8 @@ class TestPeakLockSearch(unittest.TestCase):
             marginalized_vector_priors = {}
 
         bare = Bare()
-        with self.assertLogs(level='WARNING') as caught:
+        with self.logging_enabled(), \
+                self.assertLogs(level='WARNING') as caught:
             bare.setup_peak_lock(sample_rate=SAMPLE_RATE, **SEARCH)
         self.assertIsNone(bare.peak_lock_search_samples)
         self.assertIn('peak_lock_search_samples',
@@ -323,8 +342,11 @@ class TestPeakLockSearchRelativeTime(TestPeakLockSearch):
 
 
 suite = unittest.TestSuite()
-for case in (TestPeakLockSearch, TestPeakLockSearchRelativeTime):
-    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(case))
+# not a loop variable: anything left bound at module scope here is a
+# TestCase subclass, which pytest collects and runs a second time
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPeakLockSearch))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestPeakLockSearchRelativeTime))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
