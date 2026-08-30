@@ -28,6 +28,7 @@ import unittest
 import numpy
 
 from pycbc.inference.models.relbin import setup_bins
+from pycbc.waveform import get_fd_waveform_sequence
 from pycbc.inference.models.relbin_cpu import (likelihood_parts,
                                                likelihood_parts_v_pol,
                                                likelihood_parts_v_pol_time,
@@ -36,8 +37,11 @@ from pycbc.inference.models.relbin_cpu import (likelihood_parts,
                                                likelihood_parts_vectorp,
                                                likelihood_parts_vectort)
 
-# a 32 second segment from 20 Hz, as used for a neutron star binary
+# a 32 second segment from 20 Hz
 FLOW, FHIGH, DF = 20.0, 1024.0, 1. / 32.
+# asymmetric masses and a higher mode approximant, so that hp and hc are
+# not a pure phase apart and the cross term is exercised
+APPROXIMANT, MASS1, MASS2, INCLINATION = 'IMRPhenomXHM', 8.0, 2.0, 1.0
 NSAMPLE = 64
 
 # relative tolerance against direct()
@@ -51,13 +55,6 @@ def get_seed():
     if seed is None:
         seed = numpy.random.randint(0, 2 ** 31)
     return int(seed)
-
-
-def inspiral(freqs, mchirp):
-    """ Stationary phase inspiral with an f^(-7/6) amplitude
-    """
-    return ((freqs / FLOW) ** (-7. / 6.) * numpy.exp(
-        1.0j * 3. / 128. / (numpy.pi * mchirp * 4.9e-6 * freqs) ** (5. / 3.)))
 
 
 def summary(h1, h2, freqs, psd, bins):
@@ -84,24 +81,27 @@ def make_case(seed):
     edges = fine[index]
     bins = list(zip(index[:-1], index[1:]))
 
-    # fiducial waveform, and data holding a signal slightly off it
-    h00f = 1e-23 * inspiral(fine, 1.2)
+    def waveform(points, mass1, distance=100.):
+        return get_fd_waveform_sequence(approximant=APPROXIMANT, mass1=mass1,
+                                        mass2=MASS2, inclination=INCLINATION,
+                                        distance=distance, f_lower=FLOW,
+                                        sample_points=points)
+
+    # the fiducial waveform, and data holding a signal slightly off it
+    h00f = numpy.array(waveform(fine, MASS1)[0])
     noise = ((rng.normal(size=fine.size) + 1.0j * rng.normal(size=fine.size))
              * numpy.sqrt(psd))
-    data = 1.05 * 1e-23 * inspiral(fine, 1.2005) + noise
+    data = 1.05 * numpy.array(waveform(fine, MASS1 * 1.001)[0]) + noise
 
     a0, a1 = summary(h00f, data, fine, psd, bins)
     b0, b1 = summary(h00f, h00f, fine, psd, bins)
 
-    # a small second component keeps the polarizations from being a
-    # pure phase apart
-    cosi = 0.6
-    dom = 1e-23 * inspiral(edges, 1.2005)
-    sub = 1e-24 * inspiral(edges, 1.35)
-    hp = 0.5 * (1.0 + cosi ** 2) * dom + 0.30 * sub
-    hc = 1.0j * cosi * dom + 0.22 * numpy.exp(0.7j) * sub
+    # a higher mode approximant, so hp and hc are not a pure phase apart
+    # and the cross term of the quadratic form is reached
+    hp, hc = waveform(edges, MASS1 * 1.001)
+    h00 = numpy.array(waveform(edges, MASS1)[0])
 
-    return dict(freqs=edges, hp=hp, hc=hc, h00=1e-23 * inspiral(edges, 1.2),
+    return dict(freqs=edges, hp=numpy.array(hp), hc=numpy.array(hc), h00=h00,
                 a0=a0, a1=a1, b0=numpy.abs(b0), b1=numpy.abs(b1),
                 fp=rng.uniform(-1, 1, NSAMPLE),
                 fc=rng.uniform(-1, 1, NSAMPLE),
