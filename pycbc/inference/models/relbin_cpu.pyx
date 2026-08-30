@@ -7,7 +7,7 @@ cdef extern from "complex.h":
     double real(double complex)
     double imag(double complex)
 
-# the phase passes want the sine and cosine separately, in real buffers
+# the phase passes need sine and cosine separately, in real buffers
 cdef extern from "math.h":
     double cos(double)
     double sin(double)
@@ -16,7 +16,7 @@ cdef extern from "math.h":
 import numpy
 cimport cython, numpy
 
-# the complex form is the one a time shift wants, exp(-2 pi i dtc f)
+# the complex form is used by the time shift, exp(-2 pi i dtc f)
 cdef double MINUS_TWO_PI = -2.0 * M_PI
 cdef double complex MINUS_TWO_PI_J = -2.0j * M_PI
 
@@ -388,11 +388,11 @@ cpdef likelihood_parts_v_pol_time(double [::1] freqs,
         hdv[j] = conj(hd)
         hhv[j] = cp * cp * app + sp * sp * acc + cp * sp * apc
     return hdv, hhv
-# <h|h> for a whole bank of samples, without a sample loop.  A time shift
-# has unit modulus so it drops out of |fp * hp + fc * hc|^2, leaving a
-# quadratic form in (fp, fc): any sample's value is then
-# fp * fp * app + fc * fc * acc + fp * fc * apc.  The factor of two in the
-# cross term is folded into apc, and it is the real part, not the modulus.
+# Calculate <h|h> for a bank of samples without a sample loop. A time
+# shift has unit modulus, so it drops out of |fp * hp + fc * hc|^2 and
+# leaves a quadratic form in (fp, fc). Each sample is then
+# fp * fp * app + fc * fc * acc + fp * fc * apc. The factor of two in the
+# cross term is folded into apc, which is a real part, not a modulus.
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.cdivision(True)     # Disable checking for dividing by zero
@@ -429,8 +429,8 @@ cdef void hh_coefficients(double complex[::1] hpr,
 
 # Standard likelihood but simultaneously handling multiple sky or time points
 #
-# The phase gets a pass of its own: nothing in it depends on the previous
-# element, so the sine and cosine vectorize, which they cannot do while the
+# The phase is calculated in a separate pass. Nothing in it depends on the
+# previous element, so the sine and cosine vectorize; they cannot while the
 # serial r0 carry shares the loop.
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
@@ -488,8 +488,8 @@ cpdef likelihood_parts_vector(double [::1] freqs,
 
 # Standard likelihood but simultaneously handling multiple time points
 #
-# fp and fc are scalars here, so the samples differ only by a time shift and
-# <h|h> is one value for the whole bank.
+# fp and fc are scalars here, so samples differ only by a time shift and
+# <h|h> is one value for the bank.
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.cdivision(True)     # Disable checking for dividing by zero
@@ -546,9 +546,9 @@ cpdef likelihood_parts_vectort(double [::1] freqs,
 
 # Like above, but if only polarization is marginalized
 #
-# dtc is a scalar here, so the phase folds into the per bin ratios once and
-# nothing transcendental is left in the sample loop.  A unit modulus factor
-# common to both polarizations cancels out of the quadratic form.
+# dtc is a scalar here, so the phase is folded into the per bin ratios once
+# and no transcendental is left in the sample loop. A unit modulus factor
+# common to both polarizations cancels from the quadratic form.
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.cdivision(True)     # Disable checking for dividing by zero
