@@ -12,15 +12,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-"""Checks the relative binning kernels against the definition.
+"""
+These are the unittests for the relative binning likelihood kernels
+in pycbc.inference.models.relbin_cpu.
 
-Each kernel evaluates <d|h> and <h|h> for a bank of marginalization
-samples. They are written for speed rather than for reading, so what is
-asserted is the property that defines them: sample by sample they are the
-sum written out in direct() below.
-
-The rearrangement reassociates floating point sums, so the agreement is
-close but not to the last bit.
+Each kernel computes <d|h> and <h|h> for a bank of marginalization
+samples. Each test checks a kernel against direct(), which computes the
+same sums from their definition. The kernels sum the same terms in a
+different order, so agreement is to about 1e-13 rather than exact.
 """
 
 import os
@@ -37,16 +36,17 @@ from pycbc.inference.models.relbin_cpu import (likelihood_parts,
                                                likelihood_parts_vectorp,
                                                likelihood_parts_vectort)
 
-# a 32 second segment analysed from 20 Hz, as a neutron star binary is
+# a 32 second segment from 20 Hz, as used for a neutron star binary
 FLOW, FHIGH, DF = 20.0, 1024.0, 1. / 32.
 NSAMPLE = 64
 
-# how closely each kernel must track the definition, relative
+# relative tolerance against direct()
 TOL = 1e-12
 
 
 def get_seed():
-    """Draw a fresh seed each run, or take the one being reproduced."""
+    """ Use PYCBC_VALIDATION_SEED if set, otherwise a random seed
+    """
     seed = os.environ.get('PYCBC_VALIDATION_SEED')
     if seed is None:
         seed = numpy.random.randint(0, 2 ** 31)
@@ -54,16 +54,15 @@ def get_seed():
 
 
 def inspiral(freqs, mchirp):
-    """A stationary phase inspiral: an f^(-7/6) amplitude under a phase
-    that sweeps thousands of radians across the band, which is what makes
-    the time shift in the kernel a hard thing to get right."""
+    """ Stationary phase inspiral with an f^(-7/6) amplitude
+    """
     return ((freqs / FLOW) ** (-7. / 6.) * numpy.exp(
         1.0j * 3. / 128. / (numpy.pi * mchirp * 4.9e-6 * freqs) ** (5. / 3.)))
 
 
 def summary(h1, h2, freqs, psd, bins):
-    """The constant and linear summary weights of <h1|h2> over each bin,
-    formed exactly as the relative binning model forms them."""
+    """ Calculate the summary values for the inner product <h1|h2>
+    """
     h12 = numpy.conjugate(h1) * h2 / psd
     a0 = numpy.array([4.0 * DF * h12[lo:hi].sum() for lo, hi in bins])
     a1 = numpy.array([4.0 / (hi - lo)
@@ -73,19 +72,19 @@ def summary(h1, h2, freqs, psd, bins):
 
 
 def make_case(seed):
-    """Build one realistic argument set for the kernels."""
+    """ Build one set of kernel arguments
+    """
     rng = numpy.random.default_rng(seed)
 
     fine = numpy.arange(FLOW, FHIGH + DF, DF)
     psd = 1e-46 * ((fine / 100.) ** -4.14 + 1.0 + (fine / 300.) ** 2)
 
-    # the bins the model would lay down for this band, so the edges are
-    # crowded where the phase turns over quickly and sparse where it does not
+    # bins as the model lays them down for this band
     index = setup_bins(fine, FLOW, FHIGH)
     edges = fine[index]
     bins = list(zip(index[:-1], index[1:]))
 
-    # the fiducial waveform, and data holding a signal a little off it
+    # fiducial waveform, and data holding a signal slightly off it
     h00f = 1e-23 * inspiral(fine, 1.2)
     noise = ((rng.normal(size=fine.size) + 1.0j * rng.normal(size=fine.size))
              * numpy.sqrt(psd))
@@ -94,8 +93,8 @@ def make_case(seed):
     a0, a1 = summary(h00f, data, fine, psd, bins)
     b0, b1 = summary(h00f, h00f, fine, psd, bins)
 
-    # a dominant quadrupole plus a small second piece, which is what stops
-    # the two polarizations from being a pure phase apart
+    # a small second component keeps the polarizations from being a
+    # pure phase apart
     cosi = 0.6
     dom = 1e-23 * inspiral(edges, 1.2005)
     sub = 1e-24 * inspiral(edges, 1.35)
@@ -110,8 +109,8 @@ def make_case(seed):
 
 
 def direct(freqs, fp, fc, dtc, *, hp, hc, h00, a0, a1, b0, b1):
-    """<d|h> and <h|h> written straight from the definition, with no
-    reference to how the kernels are organised internally."""
+    """ Calculate <d|h> and <h|h> directly from their definition
+    """
     r = numpy.exp(-2.0j * numpy.pi * dtc * freqs) * (fp * hp + fc * hc) / h00
     x = numpy.abs(r) ** 2
     return (numpy.conjugate((a0 * r[:-1] + a1 * numpy.diff(r)).sum()),
@@ -125,9 +124,7 @@ class TestRelbinKernel(unittest.TestCase):
         cls.seed = get_seed()
         print('using PYCBC_VALIDATION_SEED=%s' % cls.seed)
         cls.case = make_case(cls.seed)
-        # earth rotation makes the response and the arrival vary across the
-        # band, so those become per bin and only the polarization and the
-        # offset stay per sample
+        # with earth rotation fp, fc and the arrival are per bin
         rng = numpy.random.RandomState(cls.seed + 1)
         n = len(cls.case['freqs'])
         cls.band = dict(fp=rng.uniform(-1, 1, n), fc=rng.uniform(-1, 1, n),
@@ -137,8 +134,11 @@ class TestRelbinKernel(unittest.TestCase):
                                                          NSAMPLE)))
 
     def check(self, out, effective, label):
-        """effective(j) gives the fp, fc and arrival the definition should
-        be evaluated at for sample j, as scalars or as per bin arrays."""
+        """ Compare kernel output to direct()
+
+        effective(j) returns the fp, fc and arrival for sample j, either
+        as scalars or as per bin arrays.
+        """
         c = self.case
         hdv, hhv = out
         err = numpy.empty((NSAMPLE, 2))
@@ -147,21 +147,22 @@ class TestRelbinKernel(unittest.TestCase):
                             h00=c['h00'], a0=c['a0'], a1=c['a1'],
                             b0=c['b0'], b1=c['b1'])
             err[j] = (abs(hdv[j] - hd) / abs(hd), abs(hhv[j] - hh) / abs(hh))
-        # numpy.max, not the builtin, so that a nan cannot pass unnoticed
+        # numpy.max, not the builtin, so a nan does not pass
         worst = err.max()
         print('%s: worst relative difference from the definition %.2e'
               % (label, worst))
         self.assertTrue(worst < TOL)
 
     def rotated(self, j):
-        """(fp, fc) turned by the polarization of sample j."""
+        """ Rotate (fp, fc) by the polarization of sample j
+        """
         b = self.band
         cp, sp = b['pol'][j].real, b['pol'][j].imag
         return b['fp'] * cp - b['fc'] * sp, b['fp'] * sp + b['fc'] * cp
 
     def test_the_scalar_kernel_is_the_definition(self):
-        """The one kernel this branch does not touch, as a control on the
-        reference the others are measured against."""
+        """ Check direct() against the unmodified scalar kernel
+        """
         c = self.case
         self.check((numpy.array([likelihood_parts(
                         c['freqs'], c['fp'][j], c['fc'][j], c['dtc'][j],
@@ -172,7 +173,8 @@ class TestRelbinKernel(unittest.TestCase):
                    'likelihood_parts')
 
     def test_vector(self):
-        """Sky or time points: own response and own shift per sample."""
+        """ Sky or time points, response and shift vary per sample
+        """
         c = self.case
         self.check(likelihood_parts_vector(
                        c['freqs'], c['fp'], c['fc'], c['dtc'], c['hp'],
@@ -181,8 +183,8 @@ class TestRelbinKernel(unittest.TestCase):
                    'likelihood_parts_vector')
 
     def test_vectort(self):
-        """Time points only: the response is scalar, so <h|h> is one number
-        for the whole bank and must still be the right one."""
+        """ Time points only, so <h|h> is one value for the bank
+        """
         c = self.case
         fp, fc = float(c['fp'][0]), float(c['fc'][0])
         out = likelihood_parts_vectort(
@@ -194,8 +196,8 @@ class TestRelbinKernel(unittest.TestCase):
                    'likelihood_parts_vectort')
 
     def test_vectorp(self):
-        """Polarization points only: the shift is scalar and folds into the
-        ratios ahead of the sample loop."""
+        """ Polarization points only, the shift is scalar
+        """
         c = self.case
         dtc = float(c['dtc'][0])
         self.check(likelihood_parts_vectorp(
@@ -205,8 +207,8 @@ class TestRelbinKernel(unittest.TestCase):
                    'likelihood_parts_vectorp')
 
     def test_v_pol(self):
-        """Earth rotation, polarization points: the arrival varies across
-        the band but not between samples."""
+        """ Earth rotation, polarization points
+        """
         c, b = self.case, self.band
         self.check(likelihood_parts_v_pol(
                        c['freqs'], b['fp'], b['fc'], b['dtc'], b['pol'],
@@ -216,8 +218,8 @@ class TestRelbinKernel(unittest.TestCase):
                    'likelihood_parts_v_pol')
 
     def test_v_time(self):
-        """Earth rotation, time points: the response is per bin and does
-        not move with the sample."""
+        """ Earth rotation, time points
+        """
         c, b = self.case, self.band
         self.check(likelihood_parts_v_time(
                        c['freqs'], b['fp'], b['fc'], b['times'], c['dtc'],
@@ -227,7 +229,8 @@ class TestRelbinKernel(unittest.TestCase):
                    'likelihood_parts_v_time')
 
     def test_v_pol_time(self):
-        """Earth rotation, both."""
+        """ Earth rotation, polarization and time points
+        """
         c, b = self.case, self.band
         self.check(likelihood_parts_v_pol_time(
                        c['freqs'], b['fp'], b['fc'], b['times'], c['dtc'],
