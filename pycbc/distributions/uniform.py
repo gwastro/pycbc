@@ -19,6 +19,7 @@ import logging
 import numpy
 
 from pycbc.distributions import bounded
+from pycbc import boundaries
 
 logger = logging.getLogger('pycbc.distributions.uniform')
 
@@ -153,4 +154,138 @@ class Uniform(bounded.BoundedDist):
                      bounds_required=True)
 
 
-__all__ = ['Uniform']
+class Trapezoid(bounded.BoundedDist):
+    """A trapezoidal distribution.
+    """
+    name = 'trapezoid'
+    def __init__(self, **params):
+        self._semimins = {}
+        self._semimaxs = {}
+        self._bounds = {}
+        for param in params:
+            # read in semimins
+            if 'semimin-' in param:
+                p = param[8:]
+                self._semimins[p] = params[param]
+            # read in semimaxs
+            elif 'semimax-' in param:
+                p = param[8:]
+                self._semimaxs[p] = params[param]
+            else:
+                bnds = params[param]
+                if bnds is None:
+                    self._bounds[param] = boundaries.Bounds()
+                elif not isinstance(bnds, boundaries.Bounds):
+                    self._bounds[param] = boundaries.Bounds(bnds[0], bnds[1])
+                else:
+                    self._bounds[param] = bnds
+            self._params = sorted(list(self._bounds.keys()))
+
+    def _pdf(self, **kwargs):
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
+        """
+        for p in self._params:
+            if p not in kwargs.keys():
+                raise ValueError(f'Missing parameter {p} to construct pdf.')
+        if kwargs in self:
+            pdf = numpy.ones(numpy.asarray(next(iter(kwargs.values()))).shape)
+            for p in self._params:
+                a = self._bounds[p][0]
+                d = self._bounds[p][1]
+                
+                # set semimin to a, semimax to d if not provided
+                b = self._semimins.get(p, a)
+                c = self._semimaxs.get(p, d)
+                
+                # multiply based on position in dist
+                value = kwargs[p]
+                value = numpy.asarray(value)
+                condlist = [(value >= a) & (value < b), 
+                            (value >= b) & (value < c), 
+                            (value >= c) & (value < d)]
+                outlist = [(value - a)/(b - a),
+                           1.,
+                           (d - value)/(d - c)]
+                pdf *= numpy.select(condlist, outlist, 0.)
+                # get the overall normalization and prefactor
+                pdf *= 2 * (d + c - a - b)
+            #pdf *= self._norm
+            return pdf.astype(numpy.float64)
+        else:
+            return 0.0
+
+    def _logpdf(self, **kwargs):
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params. Unrecognized
+        arguments are ignored.
+        """
+        return numpy.log(self._pdf(**kwargs))
+
+    def cdf(self, param, value):
+        """Return the cdf at given values."""
+        a, d = self._bounds[param]
+        b = self._semimins.get(param, a)
+        c = self._semimaxs.get(param, d)
+        pref = (d + c - a - b)
+
+        # conditions based on position
+        value = numpy.asarray(value)
+        condlist = [(value >= a) & (value < b), 
+                    (value >= b) & (value < c), 
+                    (value >= c) & (value < d)]
+        outlist = [(value - a)**2 / (b - a) / pref,
+                   (2*value - a - b) / pref,
+                   1 - (d - value)**2 / (d-c) / pref]
+
+        return numpy.select(condlist, outlist)
+    
+    def _cdfinv_param(self, param, value):
+        """Return the inverse cdf to map the unit interval to parameter bounds.
+        """
+        a, d = self._bounds[param]
+        b = self._semimins.get(param, a)
+        c = self._semimaxs.get(param, d)
+        pref = (d + c - a - b)
+
+        # get cdf values at turning points and provided values
+        b_cdf = self.cdf(param, b)
+        c_cdf = self.cdf(param, c)
+        
+        # conditions based on position
+        value = numpy.asarray(value)
+        condlist = [(value < b_cdf), 
+                    (value >= b_cdf) & (value < c_cdf), 
+                    (value >= c_cdf)]
+        outlist = [a + numpy.sqrt(value * pref * (b-a)),
+                    (value * pref + b + a) / 2,
+                    d-numpy.sqrt((value - 1) * pref * (c-d))]
+
+        return numpy.select(condlist, outlist)
+        
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        """Returns a distribution based on a configuration file. The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        param : str
+            The name of the parameter for this distribution.
+
+        Returns
+        -------
+        Trapezoid
+            A distribution instance from the pycbc.inference.prior module.
+        """
+        # load this class instance
+        return super(Trapezoid, cls).from_config(cp, section, variable_args, bounds_required=True)
+
+__all__ = ['Uniform', 'Trapezoid']
