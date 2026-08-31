@@ -46,8 +46,6 @@ from pycbc.distributions.sky_location import (
 from pycbc.distributions.spins import IndependentChiPChiEff
 from pycbc.distributions.uniform import Uniform
 from pycbc.distributions.uniform_log import UniformLog10
-
-# Promote some classes/functions to the distributions name space
 from pycbc.distributions.utils import draw_samples_from_config
 
 # a dict of all available distributions
