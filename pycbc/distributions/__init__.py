@@ -30,7 +30,7 @@ from pycbc.distributions.arbitrary import Arbitrary, FromFile
 from pycbc.distributions.gaussian import Gaussian
 from pycbc.distributions.power_law import UniformPowerLaw, UniformRadius
 from pycbc.distributions.sky_location import UniformSky, UniformDiskSky, FisherSky, HealpixSky
-from pycbc.distributions.uniform import Uniform
+from pycbc.distributions.uniform import Uniform, Trapezoid
 from pycbc.distributions.uniform_log import UniformLog10
 from pycbc.distributions.spins import IndependentChiPChiEff
 from pycbc.distributions.qnm import UniformF0Tau
