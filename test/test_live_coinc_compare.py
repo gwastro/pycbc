@@ -14,13 +14,8 @@ import validation_code.old_coinc as old_coinc
 
 OriginalCoincer = old_coinc.LiveCoincTimeslideBackgroundEstimator
 
-# The two implementations no longer agree exactly. 
-# The reference bins the phase and sensitivity differences in float32
-# numpy; the current code does the same arithmetic in double inside
-# Cython. Where a difference falls within a part in 1e7 of a histogram
-# bin edge the two land in different bins, the signal rate lookup returns
-# a neighbouring weight. The following set to a specific default seed
-# where this should not occur. 
+# This seed is chosen because the impelentations agree here.
+# They should only differ due to different numerical precission
 SEED = int(os.environ.get('PYCBC_LIVE_COINC_SEED', 0))
 START_TIME = 1187008882
 
