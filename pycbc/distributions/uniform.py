@@ -200,20 +200,20 @@ class Trapezoid(bounded.BoundedDist):
                 c = self._semimaxs.get(p, d)
                 
                 # multiply based on position in dist
-                value = kwargs[p]
-                value = numpy.asarray(value)
+                with numpy.errstate(divide='ignore', invalid='ignore'):
+                    value = kwargs[p]
+                    value = numpy.asarray(value)
 
-                condlist = [(value >= a) & (value < b), 
-                            (value >= b) & (value < c), 
-                            (value >= c) & (value < d)]
-                outlist = [(value - a)/(b - a),
-                           1.,
-                           (d - value)/(d - c)]
-                pdf *= numpy.select(condlist, outlist, 0.)
+                    condlist = [(value >= a) & (value < b), 
+                                (value >= b) & (value < c), 
+                                (value >= c) & (value < d)]
+                    outlist = [(value - a)/(b - a),
+                               1.,
+                               (d - value)/(d - c)]
+                    pdf *= numpy.select(condlist, outlist, 0.)
                 
-                # get the overall normalization and prefactor
-                pdf *= 2 / (d + c - a - b)
-            #FIXME: this might not be normalized if multidim
+                    # get the overall normalization and prefactor
+                    pdf *= 2 / (d + c - a - b)
             return pdf.astype(numpy.float64)
         else:
             return 0.0
@@ -233,15 +233,17 @@ class Trapezoid(bounded.BoundedDist):
         pref = (d + c - a - b)
 
         # conditions based on position
-        value = numpy.asarray(value)
-        condlist = [(value >= a) & (value < b), 
-                    (value >= b) & (value < c), 
-                    (value >= c) & (value < d)]
-        outlist = [(value - a)**2 / (b - a) / pref,
-                   (2*value - a - b) / pref,
-                   1 - (d - value)**2 / (d-c) / pref]
+        # suppress divide by zero errors if a = b or c = d
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            value = numpy.asarray(value)
+            condlist = [(value >= a) & (value < b), 
+                        (value >= b) & (value < c), 
+                        (value >= c) & (value < d)]
+            outlist = [(value - a)**2 / (b - a) / pref,
+                       (2*value - a - b) / pref,
+                       1 - (d - value)**2 / (d - c) / pref]
 
-        return numpy.select(condlist, outlist)
+            return numpy.select(condlist, outlist)
     
     def _cdfinv_param(self, param, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
