@@ -194,24 +194,24 @@ class Trapezoid(bounded.BoundedDist):
             for p in self._params:
                 a = self._bounds[p][0]
                 d = self._bounds[p][1]
-                
+
                 # set semimin to a, semimax to d if not provided
                 b = self._semimins.get(p, a)
                 c = self._semimaxs.get(p, d)
-                
+
                 # multiply based on position in dist
                 with numpy.errstate(divide='ignore', invalid='ignore'):
                     value = kwargs[p]
                     value = numpy.asarray(value)
 
-                    condlist = [(value >= a) & (value < b), 
-                                (value >= b) & (value < c), 
+                    condlist = [(value >= a) & (value < b),
+                                (value >= b) & (value < c),
                                 (value >= c) & (value < d)]
                     outlist = [(value - a)/(b - a),
                                1.,
                                (d - value)/(d - c)]
                     pdf *= numpy.select(condlist, outlist, 0.)
-                
+
                     # get the overall normalization and prefactor
                     pdf *= 2 / (d + c - a - b)
             return pdf.astype(numpy.float64)
@@ -236,15 +236,15 @@ class Trapezoid(bounded.BoundedDist):
         # suppress divide by zero errors if a = b or c = d
         with numpy.errstate(divide='ignore', invalid='ignore'):
             value = numpy.asarray(value)
-            condlist = [(value >= a) & (value < b), 
-                        (value >= b) & (value < c), 
+            condlist = [(value >= a) & (value < b),
+                        (value >= b) & (value < c),
                         (value >= c) & (value < d)]
             outlist = [(value - a)**2 / (b - a) / pref,
                        (2*value - a - b) / pref,
                        1 - (d - value)**2 / (d - c) / pref]
 
             return numpy.select(condlist, outlist)
-    
+
     def _cdfinv_param(self, param, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
         """
@@ -256,18 +256,18 @@ class Trapezoid(bounded.BoundedDist):
         # get cdf values at turning points and provided values
         b_cdf = self.cdf(param, b)
         c_cdf = self.cdf(param, c)
-        
+
         # conditions based on position
         value = numpy.asarray(value)
-        condlist = [(value < b_cdf), 
-                    (value >= b_cdf) & (value < c_cdf), 
+        condlist = [(value < b_cdf),
+                    (value >= b_cdf) & (value < c_cdf),
                     (value >= c_cdf)]
         outlist = [a + numpy.sqrt(value * pref * (b-a)),
                    (value * pref + b + a) / 2,
                    d-numpy.sqrt((value - 1) * pref * (c-d))]
 
         return numpy.select(condlist, outlist)
-        
+
     @classmethod
     def from_config(cls, cp, section, variable_args):
         """Returns a distribution based on a configuration file. The parameters
