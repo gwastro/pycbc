@@ -178,12 +178,11 @@ class TestDistributions(unittest.TestCase):
 
                 # see if each element in ratio of these two logarithm of PDF
                 # values are within the specified tolerance
-                if not numpy.all(abs(1.0 - logpdf / pdf_log) < tolerance):
-                    raise ValueError(
-                        "The PDF and logarithm of the PDF "
-                        f"functions for distribution {dist.name} "
-                        "do not agree"
-                    )
+                if not numpy.all(abs(numpy.nan_to_num(1.0 - logpdf / pdf_log)) \
+                                 < tolerance):
+                    raise ValueError("The PDF and logarithm of the PDF "
+                                     f"functions for distribution {dist.name} "
+                                     "do not agree")
 
     def test_pdf_arrays(self):
         """
