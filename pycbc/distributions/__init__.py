@@ -50,6 +50,7 @@ distribs = {
     UniformRadius.name : UniformRadius,
     Uniform.name : Uniform,
     UniformAngle.name : UniformAngle,
+    Trapezoid.name : Trapezoid,
     CosAngle.name : CosAngle,
     SinAngle.name : SinAngle,
     UniformSolidAngle.name : UniformSolidAngle,
