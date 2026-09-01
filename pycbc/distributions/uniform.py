@@ -202,6 +202,7 @@ class Trapezoid(bounded.BoundedDist):
                 # multiply based on position in dist
                 value = kwargs[p]
                 value = numpy.asarray(value)
+
                 condlist = [(value >= a) & (value < b), 
                             (value >= b) & (value < c), 
                             (value >= c) & (value < d)]
@@ -209,9 +210,10 @@ class Trapezoid(bounded.BoundedDist):
                            1.,
                            (d - value)/(d - c)]
                 pdf *= numpy.select(condlist, outlist, 0.)
+                
                 # get the overall normalization and prefactor
-                pdf *= 2 * (d + c - a - b)
-            #pdf *= self._norm
+                pdf *= 2 / (d + c - a - b)
+            #FIXME: this might not be normalized if multidim
             return pdf.astype(numpy.float64)
         else:
             return 0.0
@@ -259,8 +261,8 @@ class Trapezoid(bounded.BoundedDist):
                     (value >= b_cdf) & (value < c_cdf), 
                     (value >= c_cdf)]
         outlist = [a + numpy.sqrt(value * pref * (b-a)),
-                    (value * pref + b + a) / 2,
-                    d-numpy.sqrt((value - 1) * pref * (c-d))]
+                   (value * pref + b + a) / 2,
+                   d-numpy.sqrt((value - 1) * pref * (c-d))]
 
         return numpy.select(condlist, outlist)
         
@@ -286,6 +288,7 @@ class Trapezoid(bounded.BoundedDist):
             A distribution instance from the pycbc.inference.prior module.
         """
         # load this class instance
-        return super(Trapezoid, cls).from_config(cp, section, variable_args, bounds_required=True)
+        return super(Trapezoid, cls).from_config(cp, section, variable_args,
+                                                 bounds_required=True)
 
 __all__ = ['Uniform', 'Trapezoid']
