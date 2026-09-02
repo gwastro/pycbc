@@ -78,15 +78,8 @@ def get_psd(input_tuple):
     delta_f = strain_segments.delta_f
 
     logging.info('%d: calculating psd', i)
-    # Estimate the PSD for each analysis segment from the same data pycbc_inspiral
-    # would use for it (a stretch centred on the segment), so downstream products
-    # (sensitivity plots, injection optimal SNR, ...) match the search.
-    analysis_segments = [
-        (seg.start, seg.stop, seg.start + ana.start, seg.start + ana.stop)
-        for seg, ana in zip(strain_segments.segment_slices,
-                            strain_segments.analyze_slices)]
     psds_and_times = pycbc.psd.generate_segment_psds(args, gwstrain,
-                      analysis_segments, flen, delta_f, flow,
+                      strain_segments.psd_segments(), flen, delta_f, flow,
                       dyn_range_factor=pycbc.DYN_RANGE_FAC)
 
     lpsd = []

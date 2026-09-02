@@ -1191,13 +1191,27 @@ class StrainSegments(object):
         self.segment_slices = segment_slices_red
         self.analyze_slices = analyze_slices_red
 
+    def psd_segments(self):
+        """ Sample-index bounds used to associate an estimated PSD with each
+        retained analysis segment: a list of
+        ``(segment_start, segment_stop, analyse_start, analyse_stop)`` tuples,
+        one per segment and in the same order as ``segment_slices``. All four
+        values index into ``self.strain`` (``analyse_start``/``analyse_stop``
+        are offset by the segment start, unlike ``analyze_slices``).
+        """
+        return [
+            (seg.start, seg.stop, seg.start + ana.start, seg.start + ana.stop)
+            for seg, ana in zip(self.segment_slices, self.analyze_slices)
+        ]
+
     def fourier_segments(self):
         """ Return a list of the FFT'd segments.
         Return the list of FrequencySeries. Additional properties are
         added that describe the strain segment. The property 'analyze'
         is a slice corresponding to the portion of the time domain equivalent
         of the segment to analyze for triggers. The value 'cumulative_index'
-        indexes from the beginning of the original strain series.
+        indexes from the beginning of the original strain series. The property
+        'psd_seg_bounds' carries the matching entry from psd_segments().
         """
         if not self._fourier_segments:
             self._fourier_segments = []
@@ -1218,6 +1232,10 @@ class StrainSegments(object):
                 freq_seg.cumulative_index = seg_slice.start + ana.start
                 freq_seg.seg_slice = seg_slice
                 self._fourier_segments.append(freq_seg)
+
+            for freq_seg, psd_seg in zip(self._fourier_segments,
+                                         self.psd_segments()):
+                freq_seg.psd_seg_bounds = psd_seg
 
         return self._fourier_segments
 
