@@ -324,44 +324,22 @@ class Detector(object):
         d = self.location - det.location
         return float(d.dot(d)**0.5 / constants.c.value)
 
-    def antenna_pattern(self, right_ascension, declination, polarization, t_gps,
-                        frequency=0,
-                        polarization_type='tensor'):
-        """Return the detector response.
+    def _antenna_pattern(self, cosgha, singha, sindec, cosdec, polarization,
+                         frequency, polarization_type):
+        """Return the detector response, given the source direction as the
+        sidereal-hour-angle and declination trigonometry.
 
-        Parameters
-        ----------
-        right_ascension: float or numpy.ndarray
-            The right ascension of the source
-        declination: float or numpy.ndarray
-            The declination of the source
-        polarization: float or numpy.ndarray
-            The polarization angle of the source
-        polarization_type: string flag: Tensor, Vector or Scalar
-            The gravitational wave polarizations. Default: 'Tensor'
-
-        Returns
-        -------
-        fplus(default) or fx or fb : float or numpy.ndarray
-            The plus or vector-x or breathing polarization factor for this sky location / orientation
-        fcross(default) or fy or fl : float or numpy.ndarray
-            The cross or vector-y or longitudnal polarization factor for this sky location / orientation
+        `antenna_pattern` and `antenna_pattern_from_direction` differ only
+        in how they arrive at these four quantities, so the response itself
+        is worked out once, here.
         """
-        if isinstance(t_gps, lal.LIGOTimeGPS):
-            t_gps = float(t_gps)
-        gha = self.gmst_estimate(t_gps) - right_ascension
-
-        cosgha = cos(gha)
-        singha = sin(gha)
-        cosdec = cos(declination)
-        sindec = sin(declination)
         cospsi = cos(polarization)
         sinpsi = sin(polarization)
 
         if frequency:
             e0 = cosdec * cosgha
             e1 = cosdec * -singha
-            e2 = sin(declination)
+            e2 = sindec
             nhat = np.array([e0, e1, e2], dtype=object)
 
             nx = nhat.dot(self.info['xvec'])
@@ -422,6 +400,97 @@ class Detector(object):
                 fb = (x * dx + y * dy).sum()
                 fl = (z * dz).sum()
             return fb, fl
+
+    def antenna_pattern(self, right_ascension, declination, polarization, t_gps,
+                        frequency=0,
+                        polarization_type='tensor'):
+        """Return the detector response.
+
+        Parameters
+        ----------
+        right_ascension: float or numpy.ndarray
+            The right ascension of the source
+        declination: float or numpy.ndarray
+            The declination of the source
+        polarization: float or numpy.ndarray
+            The polarization angle of the source
+        polarization_type: string flag: Tensor, Vector or Scalar
+            The gravitational wave polarizations. Default: \'Tensor\'
+
+        Returns
+        -------
+        fplus(default) or fx or fb : float or numpy.ndarray
+            The plus or vector-x or breathing polarization factor for this sky location / orientation
+        fcross(default) or fy or fl : float or numpy.ndarray
+            The cross or vector-y or longitudnal polarization factor for this sky location / orientation
+        """
+        if isinstance(t_gps, lal.LIGOTimeGPS):
+            t_gps = float(t_gps)
+        gha = self.gmst_estimate(t_gps) - right_ascension
+        return self._antenna_pattern(cos(gha), sin(gha), sin(declination),
+                                     cos(declination), polarization,
+                                     frequency, polarization_type)
+
+    def antenna_pattern_from_direction(self, direction, polarization=0,
+                                       frequency=0,
+                                       polarization_type='tensor'):
+        """Return the detector response for a source direction given as a
+        unit vector in the earth-fixed frame.
+
+        The same as `antenna_pattern`, for a caller that already holds the
+        direction as a vector and would otherwise convert it to a right
+        ascension and declination for that to convert straight back. The
+        sidereal time is not needed, since it only enters through the
+        vector.
+
+        Parameters
+        ----------
+        direction: numpy.ndarray or sequence
+            Unit vector from the earth centre towards the source, in the
+            same frame as `location`. Shape (3,) for one direction or
+            (3, n) for many; a sequence of three components also works.
+        polarization: float or numpy.ndarray
+            The polarization angle of the source
+        frequency: float
+            The frequency to evaluate the arm response at. Default: 0
+        polarization_type: string flag: Tensor, Vector or Scalar
+            The gravitational wave polarizations. Default: \'Tensor\'
+
+        Returns
+        -------
+        fplus(default) or fx or fb : float or numpy.ndarray
+            The plus or vector-x or breathing polarization factor.
+        fcross(default) or fy or fl : float or numpy.ndarray
+            The cross or vector-y or longitudnal polarization factor.
+        """
+        e0, e1, e2 = direction[0], direction[1], direction[2]
+        # e0 is cos(dec)cos(gha) and e1 is -cos(dec)sin(gha). The floor only
+        # keeps the poles finite, where the hour angle is degenerate anyway.
+        cosdec = np.sqrt(np.maximum(e0 * e0 + e1 * e1, 1e-300))
+        return self._antenna_pattern(e0 / cosdec, -e1 / cosdec, e2, cosdec,
+                                     polarization, frequency,
+                                     polarization_type)
+
+    def time_delay_from_direction(self, direction):
+        """Return the time delay from the earth center for a source
+        direction given as a unit vector in the earth-fixed frame.
+
+        The same quantity as `time_delay_from_earth_center`; see
+        `antenna_pattern_from_direction`.
+
+        Parameters
+        ----------
+        direction: numpy.ndarray
+            Unit vector from the earth centre towards the source, in the
+            same frame as `location`. Shape (3,) for one direction or
+            (3, n) for many.
+
+        Returns
+        -------
+        delay: float or numpy.ndarray
+            The time delay in seconds.
+        """
+        return -self.location.dot(direction) / constants.c.value
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         """Return the time delay from the earth center
