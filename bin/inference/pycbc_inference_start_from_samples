@@ -20,7 +20,7 @@ parser.add_argument('--ntemps', type=int)
 parser.add_argument('--nwalkers', type=int)
 args = parser.parse_args()
 
-init_logging(opts.verbose)
+init_logging(args.verbose)
 
 # populate an emcee start file with
 # values chosen from a dynesty file
@@ -30,7 +30,7 @@ init_logging(opts.verbose)
 ntemps = args.ntemps
 nwalkers = args.nwalkers
 
-f = loadfile(args.input_file)
+f = loadfile(args.input_file, 'r')
 params = list(f.variable_params) + ['loglikelihood']
 samples = f.read_samples(params)
 nsample = len(samples)
