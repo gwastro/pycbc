@@ -1201,7 +1201,8 @@ class StrainSegments(object):
         """
         return [
             (seg.start, seg.stop, seg.start + ana.start, seg.start + ana.stop)
-            for seg, ana in zip(self.segment_slices, self.analyze_slices)
+            for seg, ana in zip(self.segment_slices, self.analyze_slices,
+                                strict=True)
         ]
 
     def fourier_segments(self):
@@ -1234,7 +1235,7 @@ class StrainSegments(object):
                 self._fourier_segments.append(freq_seg)
 
             for freq_seg, psd_seg in zip(self._fourier_segments,
-                                         self.psd_segments()):
+                                         self.psd_segments(), strict=True):
                 freq_seg.psd_seg_bounds = psd_seg
 
         return self._fourier_segments

@@ -508,7 +508,7 @@ def generate_segment_psds(opt, gwstrain, analysis_segments, flen, delta_f, flow,
     gwstrain : TimeSeries
         The timeseries of data on which to estimate PSDs.
     analysis_segments : list of (seg_start, seg_stop, ana_start, ana_stop)
-        Sample indices into ``gwstrain`` (see ``StrainSegments.psd_segments``):
+        Sample indices into ``gwstrain`` (see ``StrainSegments.psd_segments``)
         ``seg_start``/``seg_stop`` bound the whole segment the matched filter
         uses; ``ana_start``/``ana_stop`` bound the portion analysed for
         triggers. Both are used to place each segment's PSD estimation stretch.
@@ -643,7 +643,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
     psds_and_times = generate_segment_psds(
         opt, gwstrain, analysis_segments, flen, delta_f, flow,
         dyn_range_factor=dyn_range_factor, precision=precision)
-    for fd_segment, (_, _, psd) in zip(fd_segments, psds_and_times):
+    for fd_segment, (_, _, psd) in zip(fd_segments, psds_and_times, strict=True):
         fd_segment.psd = psd
 
 def associate_psds_to_single_ifo_segments(opt, fd_segments, gwstrain, flen,
