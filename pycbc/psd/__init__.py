@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import copy
-import igwn_segments as segments
+import logging
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
 from pycbc.psd.analytical_space import *
@@ -473,20 +473,46 @@ def verify_psd_options_multi_ifo(opt, parser, ifos):
                       ['--psd-segment-stride', '--psd-segment-length'],
                           required_by = "--psd-estimation")
 
-def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
-                              dyn_range_factor=1., precision=None):
-    """Generate a set of overlapping PSDs to cover a stretch of data. This
-    allows one to analyse a long stretch of data with PSD measurements that
-    change with time.
+def psd_estimation_data_length(opt, sample_rate, input_data_len):
+    """Number of samples of data used for one ``--psd-estimation`` PSD estimate,
+    i.e. ``(psd_num_segments - 1) * psd_segment_stride + psd_segment_length``
+    (matching the convention used by ``from_cli`` / ``welch``)."""
+    seg_stride = int(opt.psd_segment_stride * sample_rate)
+    seg_len = int(opt.psd_segment_length * sample_rate)
+    if opt.psd_num_segments is None:
+        num_segments = int(input_data_len // seg_stride) - 1
+    else:
+        num_segments = int(opt.psd_num_segments)
+    return (num_segments - 1) * seg_stride + seg_len
+
+
+def generate_segment_psds(opt, gwstrain, analysis_segments, flen, delta_f, flow,
+                          dyn_range_factor=1., precision=None):
+    """Estimate a PSD for each analysis segment.
+
+    For ``--psd-estimation`` the PSD for a segment is measured from a stretch of
+    ``gwstrain`` centred on that segment and slid wholly inside the available
+    data, so that the data being analysed is always part of the data used to
+    estimate its own PSD. This avoids a spurious, position-dependent inflation
+    of the matched-filter SNR on the part of a segment that a PSD estimate did
+    not see (see https://github.com/gwastro/pycbc/issues/5280). Segments that
+    resolve to the same data window share a PSD object, and a warning is logged
+    for any segment whose analysed span the available data cannot fully cover.
+
+    For a static PSD (``--psd-model`` / ``--psd-file`` / ``--asd-file``) the one
+    PSD is returned for every segment.
 
     Parameters
     -----------
     opt : object
-        Result of parsing the CLI with OptionParser, or any object with the
-        required attributes (psd_model, psd_file, asd_file, psd_estimation,
-        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).
-    gwstrain : Strain object
-        The timeseries of raw data on which to estimate PSDs.
+        Result of parsing the CLI, or any object with the attributes needed by
+        ``from_cli`` (single-ifo).
+    gwstrain : TimeSeries
+        The timeseries of data on which to estimate PSDs.
+    analysis_segments : list of (seg_start, seg_stop, ana_start, ana_stop)
+        Sample indices into ``gwstrain``: ``seg_start``/``seg_stop`` bound the
+        analysis segment; ``ana_start``/``ana_stop`` bound the portion analysed
+        for triggers and are used only to decide whether to warn about coverage.
     flen : int
         The length in samples of the output PSDs.
     delta_f : float
@@ -494,77 +520,84 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
     flow: float
         The low frequency cutoff to use when calculating the PSD, in hertz.
     dyn_range_factor : {1, float}
-        For PSDs taken from models or text files, if `dyn_range_factor` is
-        not None, then the PSD is multiplied by `dyn_range_factor` ** 2.
+        For PSDs taken from models or text files, the PSD is multiplied by
+        ``dyn_range_factor ** 2``.
     precision : str, choices (None,'single','double')
-        If not specified, or specified as None, the precision of the returned
-        PSD will match the precision of the data, if measuring a PSD, or will
-        match the default precision of the model if using an analytical PSD.
-        If 'single' the PSD will be converted to float32, if not already in
-        that precision. If 'double' the PSD will be converted to float64, if
-        not already in that precision.
+        Precision of the returned PSDs (see ``from_cli``).
 
     Returns
     --------
-    psd_and_times : list of (start, end, PSD) tuples
-        This is a list of tuples containing one entry for each PSD. The first
-        and second entries (start, end) in each tuple represent the index
-        range of the gwstrain data that was used to estimate that PSD. The
-        third entry (psd) contains the PSD estimate between that interval.
+    psds_and_times : list of (start, end, PSD) tuples
+        One entry per input segment, in the same order. ``start`` and ``end``
+        are the ``gwstrain`` sample range used to estimate that segment's PSD;
+        ``PSD`` objects are shared between segments with the same window.
     """
     if not opt.psd_estimation:
         psd = from_cli(opt, flen, delta_f, flow, strain=gwstrain,
                        dyn_range_factor=dyn_range_factor, precision=precision)
-        psds_and_times = [ (0, len(gwstrain), psd) ]
-        return psds_and_times
+        return [(0, len(gwstrain), psd) for _ in analysis_segments]
 
-    # Figure out the data length used for PSD generation
-    seg_stride = int(opt.psd_segment_stride * gwstrain.sample_rate)
-    seg_len = int(opt.psd_segment_length * gwstrain.sample_rate)
+    sample_rate = gwstrain.sample_rate
     input_data_len = len(gwstrain)
+    psd_data_len = psd_estimation_data_length(opt, sample_rate, input_data_len)
 
-    if opt.psd_num_segments is None:
-        # FIXME: Should we make --psd-num-segments mandatory?
-        #        err_msg = "You must supply --num-segments."
-        #        raise ValueError(err_msg)
-        num_segments = int(input_data_len // seg_stride) - 1
-    else:
-        num_segments = int(opt.psd_num_segments)
-
-    psd_data_len = (num_segments - 1) * seg_stride + seg_len
-
-    # How many unique PSD measurements is this?
-    psds_and_times = []
     if input_data_len < psd_data_len:
-        err_msg = "Input data length must be longer than data length needed "
-        err_msg += "to estimate a PSD. You specified that a PSD should be "
-        err_msg += "estimated with %d seconds. " %(psd_data_len)
-        err_msg += "Input data length is %d seconds. " %(input_data_len)
-        raise ValueError(err_msg)
-    elif input_data_len == psd_data_len:
-        num_psd_measurements = 1
-        psd_stride = 0
-    else:
-        num_psd_measurements = int(2 * (input_data_len-1) / psd_data_len)
-        psd_stride = int((input_data_len - psd_data_len) / num_psd_measurements)
+        raise ValueError(
+            "Input data (%.0fs) is shorter than the data needed to estimate a "
+            "PSD ((psd-num-segments - 1) * psd-segment-stride + "
+            "psd-segment-length = %.0fs)."
+            % (input_data_len / sample_rate, psd_data_len / sample_rate))
 
-    for idx in range(num_psd_measurements):
-        if idx == (num_psd_measurements - 1):
-            start_idx = input_data_len - psd_data_len
-            end_idx = input_data_len
-        else:
-            start_idx = psd_stride * idx
-            end_idx = psd_data_len + psd_stride * idx
-        strain_part = gwstrain[start_idx:end_idx]
-        psd = from_cli(opt, flen, delta_f, flow, strain=strain_part,
-                       dyn_range_factor=dyn_range_factor, precision=precision)
-        psds_and_times.append( (start_idx, end_idx, psd) )
+    cache = {}
+    psds_and_times = []
+    uncovered = []
+    for seg_start, seg_stop, ana_start, ana_stop in analysis_segments:
+        # Centre the PSD-estimation stretch on the analysis segment, then slide
+        # it wholly inside the available data.
+        centre = (seg_start + seg_stop) // 2
+        psd_start = min(max(centre - psd_data_len // 2, 0),
+                        input_data_len - psd_data_len)
+        psd_stop = psd_start + psd_data_len
+
+        if psd_start > ana_start or psd_stop < ana_stop:
+            uncovered.append((ana_start, ana_stop, psd_start, psd_stop))
+
+        if (psd_start, psd_stop) not in cache:
+            cache[(psd_start, psd_stop)] = from_cli(
+                opt, flen, delta_f, flow, strain=gwstrain[psd_start:psd_stop],
+                dyn_range_factor=dyn_range_factor, precision=precision)
+        psds_and_times.append((psd_start, psd_stop, cache[(psd_start, psd_stop)]))
+
+    if uncovered:
+        epoch = float(gwstrain.start_time)
+        a0, a1, p0, p1 = uncovered[0]
+        logging.warning(
+            "%d of %d analysis segment(s) are not fully covered by the data "
+            "used to estimate their PSD, so the matched-filter SNR near the "
+            "uncovered edge(s) will be slightly over-estimated. Increase "
+            "--psd-num-segments (or analyse more data) so that "
+            "(psd-num-segments - 1) * psd-segment-stride + psd-segment-length "
+            ">= the analysis segment length. First affected segment: analysed "
+            "[%.1f, %.1f] but PSD estimated from [%.1f, %.1f].",
+            len(uncovered), len(analysis_segments),
+            epoch + a0 / sample_rate, epoch + a1 / sample_rate,
+            epoch + p0 / sample_rate, epoch + p1 / sample_rate)
+
     return psds_and_times
 
 def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
                                dyn_range_factor=1., precision=None):
-    """Generate a set of overlapping PSDs covering the data in GWstrain.
-    Then associate these PSDs with the appropriate segment in strain_segments.
+    """Measure a PSD for every analysis segment and store it on the segment.
+
+    With ``--psd-model``, ``--psd-file`` or ``--asd-file`` a single PSD is used
+    for every segment. With ``--psd-estimation`` the PSD for each analysis
+    segment is measured from a stretch of ``gwstrain`` centred on that segment
+    (and slid wholly inside the available data), so that the data being
+    analysed is always part of the data used to estimate its own PSD. This
+    avoids a spurious, position-dependent inflation of the matched-filter SNR
+    on the part of a segment that a "best overlap" PSD estimate did not see
+    (see https://github.com/gwastro/pycbc/issues/5280). A warning is emitted
+    for any segment the available data cannot fully cover.
 
     Parameters
     -----------
@@ -594,25 +627,16 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
         that precision. If 'double' the PSD will be converted to float64, if
         not already in that precision.
     """
-    psds_and_times = generate_overlapping_psds(opt, gwstrain, flen, delta_f,
-                                       flow, dyn_range_factor=dyn_range_factor,
-                                       precision=precision)
-
-    for fd_segment in fd_segments:
-        best_psd = None
-        psd_overlap = 0
-        inp_seg = segments.segment(fd_segment.seg_slice.start,
-                                   fd_segment.seg_slice.stop)
-        for start_idx, end_idx, psd in psds_and_times:
-            psd_seg = segments.segment(start_idx, end_idx)
-            if psd_seg.intersects(inp_seg):
-                curr_overlap = abs(inp_seg & psd_seg)
-                if curr_overlap > psd_overlap:
-                    psd_overlap = curr_overlap
-                    best_psd = psd
-        if best_psd is None:
-            raise ValueError("No PSDs found intersecting segment!")
-        fd_segment.psd = best_psd
+    analysis_segments = [
+        (fd_segment.seg_slice.start, fd_segment.seg_slice.stop,
+         fd_segment.seg_slice.start + fd_segment.analyze.start,
+         fd_segment.seg_slice.start + fd_segment.analyze.stop)
+        for fd_segment in fd_segments]
+    psds_and_times = generate_segment_psds(
+        opt, gwstrain, analysis_segments, flen, delta_f, flow,
+        dyn_range_factor=dyn_range_factor, precision=precision)
+    for fd_segment, (_, _, psd) in zip(fd_segments, psds_and_times):
+        fd_segment.psd = psd
 
 def associate_psds_to_single_ifo_segments(opt, fd_segments, gwstrain, flen,
                                           delta_f, flow, ifo,
