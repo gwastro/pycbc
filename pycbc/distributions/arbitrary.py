@@ -120,8 +120,10 @@ class Arbitrary(bounded.BoundedDist):
             # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
             this_pdf = jacobian * self._kde.evaluate([kwargs[p]
                                                       for p in self._params])
-            if len(this_pdf) == 1:
+            if numpy.isscalar(this_pdf):
                 return float(this_pdf)
+            elif len(this_pdf) == 1:
+                return float(this_pdf.item())
             else:
                 return this_pdf
         else:
