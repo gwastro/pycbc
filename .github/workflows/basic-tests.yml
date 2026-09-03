@@ -6,6 +6,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  # Point curl and wget at the shared retry/hardening config in tools/.
+  # (Running the example scripts directly, without these set, is fine -
+  # they just fall back to curl/wget defaults.)
+  CURL_HOME: ${{ github.workspace }}/tools
+  WGETRC: ${{ github.workspace }}/tools/.wgetrc
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -39,7 +46,7 @@ jobs:
       run: |
         mkdir ~/lal_aux_data
         pushd ~/lal_aux_data
-        curl --show-error --silent --retry 5 --retry-delay 5 --retry-all-errors --fail \
+        curl --show-error --silent \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
         popd

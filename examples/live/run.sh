@@ -21,10 +21,6 @@ then
         --remote-name \
         --silent \
         --show-error \
-        --retry 5 \
-        --retry-delay 2 \
-        --retry-all-errors \
-        --fail \
         https://raw.githubusercontent.com/gwastro/pycbc-config/710dbfd3590bd93d7679d7822da59fcb6b6fac0f/O2/bank/H1L1-HYPERBANK_SEOBNRv4v2_VARFLOW_THORNE-1163174417-604800.xml.gz
 
     pycbc_coinc_bank2hdf \
