@@ -5,7 +5,7 @@ set -e
 CONFIG_URL=https://github.com/gwastro/pycbc-config/raw/master/test/multi_inspiral
 BANK_FILE=gw170817_single_template.hdf
 echo -e "\\n\\n>> [`date`] Getting template bank"
-wget -nv -nc --tries=5 --retry-connrefused --waitretry=5 --timeout=30 --retry-on-http-error=429,500,502,503,504 ${CONFIG_URL}/${BANK_FILE}
+wget -nv -nc ${CONFIG_URL}/${BANK_FILE}
 
 EVENT=1187008882
 PAD=8
