@@ -28,6 +28,7 @@ These are the unittests for the pycbc PSD module.
 import os
 import tempfile
 from types import SimpleNamespace
+from unittest import mock
 import pycbc
 import pycbc.psd
 from pycbc.psd import (psd_estimation_window, psd_estimation_data_length,
@@ -203,16 +204,19 @@ class TestPSDSegmentPlacement(unittest.TestCase):
     def test_data_length_clamped_and_warns(self):
         # --psd-num-segments omitted, data too short for the stride -> the
         # segment count is clamped to 1 so the length is never < one Welch
-        # segment, and a warning is emitted
+        # segment, and a warning is emitted.
         opt = SimpleNamespace(psd_segment_length=4, psd_segment_stride=2,
                               psd_num_segments=None)
-        with self.assertLogs(level='WARNING'):
-            length = psd_estimation_data_length(opt, 1, 3)
-        self.assertEqual(length, 4)
-        # explicit small/zero values are also clamped to at least one segment
+        with mock.patch.object(pycbc.psd.logging, 'warning') as warn:
+            self.assertEqual(psd_estimation_data_length(opt, 1, 3), 4)
+        self.assertTrue(warn.called)
+        # explicit small/zero values are also clamped to at least one segment,
+        # without a warning
         opt = SimpleNamespace(psd_segment_length=4, psd_segment_stride=2,
                               psd_num_segments=0)
-        self.assertEqual(psd_estimation_data_length(opt, 1, 1000), 4)
+        with mock.patch.object(pycbc.psd.logging, 'warning') as warn:
+            self.assertEqual(psd_estimation_data_length(opt, 1, 1000), 4)
+        self.assertFalse(warn.called)
 
     def test_segment_bounds(self):
         from pycbc.psd import _segment_bounds
