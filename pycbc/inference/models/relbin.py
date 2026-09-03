@@ -431,6 +431,9 @@ class Relative(DistMarg, BaseGaussianNoise):
             for ifo in self.data:
                 wfs.update(get_fd_det_waveform_sequence(
                         ifos=ifo, sample_points=self.fedges[ifo], **params))
+                if self.recalibration:
+                    wfs[ifo] = self.recalibration[ifo].map_to_adjust(
+                        wfs[ifo], frequencies=self.fedges[ifo], **params)
             return wfs
 
         wfs = []
@@ -440,6 +443,14 @@ class Relative(DistMarg, BaseGaussianNoise):
             hc = hc.numpy()
             wfs.append((hp, hc))
         wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
+
+        if self.recalibration:
+            # the correction differs by detector, so it cannot be shared
+            # between detectors the way the waveform itself is; both
+            # polarizations go through together, on one correction
+            wf_ret = {ifo: self.recalibration[ifo].map_to_adjust(
+                          pols, frequencies=self.fedges[ifo], **params)
+                      for ifo, pols in wf_ret.items()}
 
         self.wf_ret = wf_ret
         return wf_ret
