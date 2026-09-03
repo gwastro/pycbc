@@ -290,7 +290,7 @@ class TestChisq(unittest.TestCase):
         url = ('https://github.com/gwastro/pycbc-config/raw/master/'
                'test_data_files/{}')
         fname = f'skymaxtest_stilde_{idx}.hdf'
-        apy_fname = get_file(url.format(fname), cache=False)
+        apy_fname = get_file(url.format(fname), cache=True)
         # Astropy will not download with the .hdf extension, which we need,
         # so symlink
         os.symlink(apy_fname, fname)
@@ -311,7 +311,7 @@ class TestChisq(unittest.TestCase):
         #except:
         #    pass
         fname = f'skymaxtest_hplus_{jdx}.hdf'
-        apy_fname = get_file(url.format(fname), cache=False)
+        apy_fname = get_file(url.format(fname), cache=True)
         # Astropy will not download with the .hdf extension, which we need,
         # so symlink
         os.symlink(apy_fname, fname)
@@ -319,7 +319,7 @@ class TestChisq(unittest.TestCase):
         os.unlink(fname)
 
         fname = f'skymaxtest_hcross_{jdx}.hdf'
-        apy_fname = get_file(url.format(fname), cache=False)
+        apy_fname = get_file(url.format(fname), cache=True)
         # Astropy will not download with the .hdf extension, which we need,
         # so symlink
         os.symlink(apy_fname, fname)
