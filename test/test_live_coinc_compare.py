@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import numpy as np
 import h5py
 import logging
-from astropy.utils.data import download_file
+from pycbc.io import get_file
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from utils import simple_exit
 import validation_code.old_coinc as old_coinc
@@ -72,7 +72,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         url = 'https://github.com/gwastro/pycbc-config/raw/master/'
         url += 'test_data_files/{}-PTA_HISTOGRAM.hdf'
         stat_file_paths = [
-            download_file(url.format("H1L1"), cache=True),
+            get_file(url.format("H1L1"), cache=True),
         ]
         args = SimpleNamespace(
             sngl_ranking="snr",

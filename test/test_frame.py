@@ -28,7 +28,7 @@ These are the unittests for the pycbc frame/cache reading functions
 
 import unittest
 import numpy
-from astropy.utils.data import download_file
+from pycbc.io import get_file
 
 import pycbc
 import pycbc.frame
@@ -65,7 +65,7 @@ class FrameTestBase(unittest.TestCase):
         # This is a file in the temp directory that will be deleted when it is garbage collected
         url = 'https://github.com/gwastro/pycbc-config/raw/master/'
         url += 'test_data_files/frametest{}.gwf'
-        filename = download_file(url.format(self.data1.dtype), cache=True)
+        filename = get_file(url.format(self.data1.dtype), cache=True)
 
         # Make sure we can run from one directory higher as well
         import os.path

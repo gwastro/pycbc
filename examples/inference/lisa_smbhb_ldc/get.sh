@@ -5,7 +5,8 @@ download_if_absent() {
     local FILENAME=$(basename "$URL")
     if [ ! -f "$FILENAME" ]; then
         echo "Downloading $FILENAME"
-        curl -O -L --show-error --silent "$URL"
+        curl -O -L --show-error --silent --retry 5 --retry-delay 2 \
+            --retry-all-errors --fail "$URL"
     else
         echo "File $FILENAME already exists, download skipped"
     fi
