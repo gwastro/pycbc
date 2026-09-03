@@ -475,30 +475,78 @@ def verify_psd_options_multi_ifo(opt, parser, ifos):
 
 
 def psd_estimation_data_length(opt, sample_rate, input_data_len):
-    """Number of samples of data used for one Welch PSD estimation"""
+    """Number of samples of data used for one Welch PSD estimation."""
     seg_stride = int(opt.psd_segment_stride * sample_rate)
     seg_len = int(opt.psd_segment_length * sample_rate)
     if opt.psd_num_segments is None:
-        num_segments = int(input_data_len // seg_stride) - 1
+        num_segments = max(int(input_data_len // seg_stride) - 1, 1)
+        if num_segments < 10:
+            logging.warning(
+                "Only %d Welch segment(s) fit in the %.0fs of data available "
+                "for PSD estimation; the PSD estimate will be noisy. Provide "
+                "more data or set --psd-num-segments explicitly.",
+                num_segments, input_data_len / sample_rate)
     else:
-        num_segments = int(opt.psd_num_segments)
+        num_segments = max(int(opt.psd_num_segments), 1)
     return (num_segments - 1) * seg_stride + seg_len
+
+
+def psd_estimation_window(psd_data_len, seg_start, seg_stop, ana_start,
+                          ana_stop, input_data_len):
+    """(start, stop) sample range of the strain to estimate one segment's PSD
+    from, given a ``psd_data_len``-sample estimation stretch.
+
+    The stretch is slid wholly inside ``[0, input_data_len]`` and placed to
+    overlap as much as possible of the data the matched filter uses for the
+    segment:
+
+      - shorter than the analysed span: centred in the analysed span;
+      - between the analysed span and the whole segment's data: covering the
+        analysed span plus as much surrounding segment data as fits, preferring
+        data before the analysed span over data after it;
+      - at least the whole segment's data: centred on the segment.
+
+    ``seg_start``/``seg_stop`` may lie outside ``[0, input_data_len]`` for
+    zero-padded edge segments; only the in-bounds part is treated as real data.
+    """
+    data_start = max(seg_start, 0)
+    data_stop = min(seg_stop, input_data_len)
+    ana_len = ana_stop - ana_start
+    data_len = data_stop - data_start
+    if psd_data_len <= ana_len:
+        psd_start = (ana_start + ana_stop - psd_data_len) // 2
+    elif psd_data_len < data_len:
+        slack = psd_data_len - ana_len
+        psd_start = ana_start - min(slack, ana_start - data_start)
+    else:
+        psd_start = (data_start + data_stop - psd_data_len) // 2
+    psd_start = min(max(psd_start, 0), input_data_len - psd_data_len)
+    return psd_start, psd_start + psd_data_len
+
+
+def _segment_bounds(fd_segment):
+    """(seg_start, seg_stop, ana_start, ana_stop) sample indices for a Fourier
+    segment, from the ``psd_seg_bounds`` set by
+    ``StrainSegments.fourier_segments`` or, for segments built elsewhere, from
+    its ``seg_slice``/``analyze`` slices.
+    """
+    try:
+        return fd_segment.psd_seg_bounds
+    except AttributeError:
+        seg, ana = fd_segment.seg_slice, fd_segment.analyze
+        return (seg.start, seg.stop,
+                seg.start + ana.start, seg.start + ana.stop)
 
 
 def generate_segment_psds(opt, gwstrain, analysis_segments, flen, delta_f, flow,
                           dyn_range_factor=1., precision=None):
     """Estimate a PSD for each analysis segment.
 
-    For ``--psd-estimation`` the PSD for a segment is measured from a stretch of
-    strain data placed, and slid wholly inside the available data, so that it
-    overlaps as much as possible of the data the matched filter uses for that
-    segment: centred on the analysed span when shorter than it, centred on the
-    whole segment when at least as long as it, and in between covering the
-    analysed span plus as much of the surrounding segment data as fits,
-    preferring data before the analysed span over data after it.
-
-    For a static PSD (``--psd-model`` / ``--psd-file`` / ``--asd-file``) the
-    one PSD is returned for every segment.
+    For ``--psd-estimation`` each segment's PSD is measured from a stretch of
+    strain data chosen by ``psd_estimation_window`` to overlap as much as
+    possible of the data the matched filter uses for that segment. For a static
+    PSD (``--psd-model`` / ``--psd-file`` / ``--asd-file``) the one PSD is
+    returned for every segment.
 
     Parameters
     -----------
@@ -551,29 +599,14 @@ def generate_segment_psds(opt, gwstrain, analysis_segments, flen, delta_f, flow,
     psds_and_times = []
     uncovered = []
     for seg_start, seg_stop, ana_start, ana_stop in analysis_segments:
-        # Data the matched filter actually uses for this segment, excluding any
-        # zero-padding that falls outside the available strain.
+        psd_start, psd_stop = psd_estimation_window(
+            psd_data_len, seg_start, seg_stop, ana_start, ana_stop,
+            input_data_len)
+
+        # Data the matched filter uses for this segment, excluding zero-padding
+        # outside the available strain; warn if the PSD stretch cannot span it.
         data_start = max(seg_start, 0)
         data_stop = min(seg_stop, input_data_len)
-        ana_len = ana_stop - ana_start
-        data_len = data_stop - data_start
-
-        # Position the psd_data_len-sample estimation stretch:
-        #  - shorter than the analysed span: centre it in the analysed span;
-        #  - between the analysed span and the whole segment: cover the
-        #    analysed span and spend the extra on segment data the filter uses,
-        #    preferring data before the analysed span over data after it;
-        #  - at least the whole segment: centre it on the segment.
-        if psd_data_len <= ana_len:
-            psd_start = (ana_start + ana_stop - psd_data_len) // 2
-        elif psd_data_len < data_len:
-            slack = psd_data_len - ana_len
-            psd_start = ana_start - min(slack, ana_start - data_start)
-        else:
-            psd_start = (data_start + data_stop - psd_data_len) // 2
-        psd_start = min(max(psd_start, 0), input_data_len - psd_data_len)
-        psd_stop = psd_start + psd_data_len
-
         if psd_start > data_start or psd_stop < data_stop:
             uncovered.append((data_start, data_stop, psd_start, psd_stop))
 
@@ -639,7 +672,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
         that precision. If 'double' the PSD will be converted to float64, if
         not already in that precision.
     """
-    analysis_segments = [fd_segment.psd_seg_bounds for fd_segment in fd_segments]
+    analysis_segments = [_segment_bounds(s) for s in fd_segments]
     psds_and_times = generate_segment_psds(
         opt, gwstrain, analysis_segments, flen, delta_f, flow,
         dyn_range_factor=dyn_range_factor, precision=precision)
