@@ -37,6 +37,22 @@ jobs:
         pip install GitPython # This shouldn't really be needed!
         pip install -r requirements.txt
         pip install .
+    - name: Start the download cache
+      # These workflows reach GWOSC for data-quality segments through
+      # pycbc.dq, and pull frames and banks over http.  The cache is what
+      # makes that survive an unreachable origin, now that pycbc.io no longer
+      # carries its own mirror list.
+      uses: ahnitz/github-ci-cache@v1
+      with:
+        # TEMPORARY, while this branch is being tested: record so that the
+        # pull request can populate the cache itself.  Change to "auto" before
+        # merging.
+        mode: record
+        hosts: >-
+          gwosc.org,gw-openscience.org,losc.ligo.org,dcc.ligo.org,zenodo.org,
+          raw.githubusercontent.com,media.githubusercontent.com,
+          github.com/gwastro/pycbc_data/releases/download/,
+          github.com/gwastro/pycbc-config/raw/
     - name: installing sbank
       run: |
         pip install sbank
@@ -49,6 +65,9 @@ jobs:
         cd output
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
+    - name: Report the download cache
+      if: always()
+      uses: ahnitz/github-ci-cache/report@v1
     - name: store log files
       if: always()
       uses: actions/upload-artifact@v7
