@@ -250,7 +250,7 @@ setup(
     long_description_content_type='text/markdown',
     author = 'The PyCBC team',
     author_email = 'alex.nitz@gmail.org',
-    url = 'http://pycbc.org/',
+    url = 'https://pycbc.org/',
     download_url = f'https://github.com/gwastro/pycbc/tarball/v{VERSION}',
     keywords = [
         'ligo',
