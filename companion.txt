@@ -7,10 +7,12 @@ ligo.skymap>=2.1.1
 
 # auxiliary samplers
 epsie>=1.0
+nautilus-sampler
 cpnest
 pymultinest
 ultranest
 ptemcee @ https://github.com/willvousden/ptemcee/archive/master.tar.gz
+eryn>=1.2.6
 # Force the cpu-only version of PyTorch
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch

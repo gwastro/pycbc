@@ -123,6 +123,10 @@ class DistMarg():
         self.marginalized_vector_priors = {}
         self.vsamples = int(marginalize_vector_samples)
 
+        # seeded from the global stream so numpy.random.seed still works
+        self._choice_rng = numpy.random.default_rng(
+            numpy.random.randint(0, 2 ** 63))
+
         self.marginalize_sky_initial_samples = \
             int(float(marginalize_sky_initial_samples))
 
@@ -294,8 +298,8 @@ class DistMarg():
         if self.vsamples == len(logw):
             choice = slice(None, None)
         else:
-            choice = numpy.random.choice(len(logw), size=self.vsamples,
-                                         replace=False)
+            choice = self._choice_rng.choice(len(logw), size=self.vsamples,
+                                             replace=False)
 
         for k in self.snr_params:
             self.marginalize_vector_params[k] = self.premarg[k][choice]
@@ -845,15 +849,31 @@ def setup_distance_marg_interpolant(dist_marg,
                                                  phase=phase)
     interp = RectBivariateSpline(shr, hhr, lvals)
 
+    # said once, the first time it happens
+    warned = [False]
+
+    def warn_out_of_range():
+        warned[0] = True
+        logging.warning(
+            "A likelihood evaluation asked for a signal to noise ratio "
+            "outside marginalize_distance_snr_range %s; beyond it the "
+            "distance marginalized likelihood is set to zero, which biases "
+            "the result. Widen the range.", snr_range)
+
     def interp_wrapper(x, y, bounds_check=True):
         k = None
         if bounds_check:
             if isinstance(x, float):
                 if x > shr_max or x < shr_min or y > hhr_max or y < hhr_min:
+                    if not warned[0]:
+                        warn_out_of_range()
                     return -numpy.inf
             else:
                 k = (x > shr_max) | (x < shr_min)
                 k = k | (y > hhr_max) | (y < hhr_min)
+                # short circuits, so this costs nothing once said
+                if not warned[0] and k.any():
+                    warn_out_of_range()
 
         v = interp(x, y, grid=False)
         if k is not None:

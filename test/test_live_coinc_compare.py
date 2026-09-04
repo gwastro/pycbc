@@ -8,12 +8,16 @@ import numpy as np
 import h5py
 import logging
 from astropy.utils.data import download_file
-from pycbc import gps_now
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from utils import simple_exit
 import validation_code.old_coinc as old_coinc
 
 OriginalCoincer = old_coinc.LiveCoincTimeslideBackgroundEstimator
+
+# This seed is chosen because the impelentations agree here.
+# They should only differ due to different numerical precission
+SEED = int(os.environ.get('PYCBC_LIVE_COINC_SEED', 0))
+START_TIME = 1187008882
 
 class SingleDetTrigSimulator:
     """An object that simulates single-detector triggers in the same format
@@ -23,7 +27,7 @@ class SingleDetTrigSimulator:
         self.num_templates = num_templates
         self.detectors = detectors
         self.analysis_chunk = analysis_chunk
-        self.start_time = gps_now()
+        self.start_time = START_TIME
         self.num_trigs = num_trigs_per_block
 
     def get_trigs(self):
@@ -57,6 +61,8 @@ class SingleDetTrigSimulator:
 
 class TestPyCBCLiveCoinc(unittest.TestCase):
     def setUp(self, *args):
+        np.random.seed(SEED)
+
         # Uncomment for more verbosity
         # logging.basicConfig(format="%(asctime)s %(message)s",
         #                     level=logging.INFO)
