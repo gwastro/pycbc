@@ -27,28 +27,6 @@ jobs:
       run: |
         pixi add python="${{ matrix.python-version }}.*"
 
-    - name: Cache example GW data
-      # Restored after I removed it.  This is not a cache of *downloads* --
-      # it carries .gwf files that live in the working tree and that some
-      # examples expect to already be there, with nothing in the suite
-      # fetching them.  A proxy that caches HTTP responses cannot replace a
-      # cache of files, and I deleted this claiming redundancy without
-      # checking that.  It goes back until that claim is actually tested.
-      id: cache-example-gw-data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: example-gw-data
-        path: |
-          docs/_include/*.gwf
-          examples/inference/lisa_smbhb_ldc/*_psd.txt
-          examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
-          examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
-          examples/inference/margtime/*.gwf
-          examples/inference/multisignal/*.gwf
-          examples/inference/relative/*.gwf
-          examples/inference/relmarg/*.gwf
-          examples/inference/single/*.gwf
-
     - name: Start the download cache
       # Routes this job's data downloads through a caching proxy, so a file
       # that has been fetched before is served from disk and never touches the
