@@ -6,6 +6,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  # Point curl and wget at the shared retry/hardening config in tools/.
+  # (Running the example scripts directly, without these set, is fine -
+  # they just fall back to curl/wget defaults.)
+  CURL_HOME: ${{ github.workspace }}/tools
+  WGETRC: ${{ github.workspace }}/tools/.wgetrc
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
