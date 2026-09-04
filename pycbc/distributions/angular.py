@@ -220,10 +220,9 @@ class SinAngle(UniformAngle):
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
-        if kwargs not in self:
-            return 0.
         return self._norm * \
-            self._dfunc(numpy.array([kwargs[p] for p in self._params])).prod()
+            self._dfunc(numpy.array([kwargs[p]
+                                     for p in self._params])).prod(axis=0)
 
 
     def _logpdf(self, **kwargs):
@@ -231,11 +230,10 @@ class SinAngle(UniformAngle):
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
-        if kwargs not in self:
-            return -numpy.inf
         return self._lognorm + \
             numpy.log(self._dfunc(
-                numpy.array([kwargs[p] for p in self._params]))).sum()
+                numpy.array([kwargs[p]
+                             for p in self._params]))).sum(axis=0)
 
 
 class CosAngle(SinAngle):

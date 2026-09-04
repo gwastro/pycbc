@@ -2201,10 +2201,7 @@ class Logit(BaseTransform):
         """
         x = maps[self._inputvar]
         # check that x is in bounds
-        isin = self._bounds.__contains__(x)
-        if isinstance(isin, numpy.ndarray):
-            isin = isin.all()
-        if not isin:
+        if not numpy.all(self._bounds.contains(x)):
             raise ValueError("one or more values are not in bounds")
         out = {self._outputvar: self.logit(x, self._a, self._b)}
         return self.format_output(maps, out)
@@ -2254,11 +2251,8 @@ class Logit(BaseTransform):
         """
         x = maps[self._inputvar]
         # check that x is in bounds
-        isin = self._bounds.__contains__(x)
-        if isinstance(isin, numpy.ndarray) and not isin.all():
+        if not numpy.all(self._bounds.contains(x)):
             raise ValueError("one or more values are not in bounds")
-        elif not isin:
-            raise ValueError("{} is not in bounds".format(x))
         return (self._b - self._a) / ((x - self._a) * (self._b - x))
 
     def inverse_jacobian(self, maps):

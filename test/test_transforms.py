@@ -96,6 +96,30 @@ class TestTransforms(unittest.TestCase):
                 raise ValueError(
                 "Transform {} does not map back to itself.".format(trans.name))
 
+    def test_logit_arrays(self):
+        """ Checks that the Logit transform and its jacobian take arrays.
+
+        ``jacobian`` used to raise on an array with everything in bounds: its
+        array branch only caught the out-of-bounds case, and the scalar branch
+        it fell through to could not evaluate an array of booleans.
+        """
+        trans = transforms.Logit("x", "logitx", domain=(0., 1.))
+        values = numpy.linspace(0.01, 0.99, 5)
+        for name in ("transform", "jacobian"):
+            func = getattr(trans, name)
+            array = numpy.atleast_1d(numpy.asarray(
+                func({"x": values})["logitx"] if name == "transform"
+                else func({"x": values})))
+            self.assertEqual(array.shape, values.shape)
+            for i, value in enumerate(values):
+                one = (func({"x": value})["logitx"] if name == "transform"
+                       else func({"x": value}))
+                self.assertEqual(array[i], one)
+        for bad in ({"x": numpy.array([0.5, 1.5])}, {"x": 1.5}):
+            self.assertRaises(ValueError, trans.transform, bad)
+            self.assertRaises(ValueError, trans.jacobian, bad)
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTransforms))
 

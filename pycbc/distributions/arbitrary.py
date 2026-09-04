@@ -68,7 +68,7 @@ class Arbitrary(bounded.BoundedDist):
                 self._transforms[tparam] = t
                 self._tparams[param] = tparam
                 # remove any sample points that fall out side of the bounds
-                outside = bnds.__contains__(samples)
+                outside = bnds.contains(samples)
                 if outside.any():
                     samples = samples[outside]
                 # transform the sample points
@@ -97,45 +97,31 @@ class Arbitrary(bounded.BoundedDist):
             if p not in kwargs.keys():
                 raise ValueError('Missing parameter {} to construct pdf.'
                                  .format(p))
-        if kwargs in self:
-            # transform into the kde space
-            jacobian = 1.
-            for param, tparam in self._tparams.items():
-                t = self._transforms[tparam]
-                try:
-                    samples = t.transform({param: kwargs[param]})
-                except ValueError as e:
-                    # can get a value error if the value is exactly == to
-                    # the bounds, in which case, just return 0.
-                    if kwargs[param] in self.bounds[param]:
-                        return 0.
-                    else:
-                        raise ValueError(e)
-                kwargs[param] = samples[tparam]
-                # update the jacobian for the transform; if p is the pdf
-                # in the params frame (the one we want) and p' is the pdf
-                # in the transformed frame (the one that's calculated) then:
-                # p = J * p', where J is the Jacobian of going from p to p'
-                jacobian *= t.jacobian(samples)
-            # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
-            this_pdf = jacobian * self._kde.evaluate([kwargs[p]
-                                                      for p in self._params])
-            if len(this_pdf) == 1:
-                return float(this_pdf)
-            else:
-                return this_pdf
-        else:
-            return 0.
+        # transform into the kde space
+        jacobian = 1.
+        kwargs = dict(kwargs)
+        for param, tparam in self._tparams.items():
+            t = self._transforms[tparam]
+            samples = t.transform({param: kwargs[param]})
+            kwargs[param] = samples[tparam]
+            # update the jacobian for the transform; if p is the pdf
+            # in the params frame (the one we want) and p' is the pdf
+            # in the transformed frame (the one that's calculated) then:
+            # p = J * p', where J is the Jacobian of going from p to p'
+            jacobian *= t.jacobian(samples)
+        # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
+        this_pdf = jacobian * self._kde.evaluate([kwargs[p]
+                                                 for p in self._params])
+        if len(this_pdf) == 1:
+            return this_pdf.item()
+        return this_pdf
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params.
         Unrecognized arguments are ignored.
         """
-        if kwargs not in self:
-            return -numpy.inf
-        else:
-            return numpy.log(self._pdf(**kwargs))
+        return numpy.log(self._pdf(**kwargs))
 
     def set_bandwidth(self, set_bw="scott"):
         self._kde.set_bandwidth(set_bw)

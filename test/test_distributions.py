@@ -164,6 +164,68 @@ class TestDistributions(unittest.TestCase):
                                      "functions for distribution {} "
                                      "do not agree".format(dist.name))
 
+    def test_pdf_arrays(self):
+        """ Checks that handing arrays to the PDF and its logarithm gives the
+        same answer, element by element, as asking one point at a time.
+
+        The points straddle each parameter's bounds. Outside is what a
+        vectorized containment test gets wrong when it reduces to a single
+        answer, applying one point's verdict to the whole array.
+        """
+        npts = 9
+        tested = 0
+        for dist in self.dists:
+            points = {}
+            for param in dist.params:
+                low, high = dist.bounds[param][0], dist.bounds[param][1]
+                pad = 0.1 * (high - low)
+                points[param] = numpy.linspace(low - pad, high + pad, npts)
+            for name in ("pdf", "logpdf"):
+                func = getattr(dist, name)
+                array = numpy.asarray(func(**points))
+                one_at_a_time = numpy.array(
+                    [func(**{p: points[p][i] for p in dist.params})
+                     for i in range(npts)])
+                self.assertEqual(
+                    array.shape, (npts,),
+                    "{}.{} returned shape {} for {} points".format(
+                        dist.name, name, array.shape, npts))
+                numpy.testing.assert_allclose(
+                    array, one_at_a_time, rtol=0., atol=0.,
+                    err_msg="{}.{} disagrees with the one-point call".format(
+                        dist.name, name))
+            tested += 1
+        self.assertGreater(tested, 5)
+
+    def test_pdf_arrays_with_constraints(self):
+        """ Same check where the bounds are not the whole story:
+        ``UniformF0Tau`` also requires the implied final mass and spin to be
+        in range, so the bounds alone would admit points it must reject.
+        """
+        npts = 9
+        dist = distributions.UniformF0Tau(f0=(10., 100.), tau=(1e-3, 1e-1))
+        # strictly inside both bounds, so only the constraint can reject any
+        points = {"f0": numpy.linspace(12., 98., npts),
+                  "tau": numpy.linspace(2e-3, 9e-2, npts)}
+        for param in dist.params:
+            for value in points[param]:
+                self.assertTrue(value in dist.bounds[param])
+        isin = dist.contains(points)
+        self.assertEqual(isin.shape, (npts,))
+        self.assertTrue(isin.any(), "the constraint rejected every point")
+        self.assertFalse(isin.all(),
+                         "the final mass and spin constraint was not applied")
+        for name in ("pdf", "logpdf"):
+            func = getattr(dist, name)
+            array = numpy.asarray(func(**points))
+            one_at_a_time = numpy.array(
+                [func(f0=points["f0"][i], tau=points["tau"][i])
+                 for i in range(npts)])
+            numpy.testing.assert_allclose(
+                array, one_at_a_time, rtol=0., atol=0.,
+                err_msg="UniformF0Tau.{} disagrees with the one-point "
+                        "call".format(name))
+
     def test_solid_angle(self):
         """ The uniform solid angle and uniform sky position distributions
         are two independent one-dimensional distributions. This tests checks
