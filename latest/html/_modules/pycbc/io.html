@@ -1,0 +1,262 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.io &mdash; PyCBC 0.0a1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=fe1e55ce"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.io</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.io</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.error</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTTPError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.record</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.gracedb</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'pycbc.io'</span><span class="p">)</span>
+
+<span class="c1"># Backup locations for the GWOSC data files used by the test suite / examples,</span>
+<span class="c1"># in gwastro/pycbc_data.  Binary frame/ROM files are stored as release assets</span>
+<span class="c1"># (not Git LFS, so downloads are not rate-limited), with the old Git-LFS media</span>
+<span class="c1"># location as a second fallback; the small pre-computed GWOSC JSON responses</span>
+<span class="c1"># are plain files in the repo, keyed by an md5 of the request URL.</span>
+<span class="n">base_backup_url</span> <span class="o">=</span> <span class="s2">"https://raw.githubusercontent.com/gwastro/pycbc_data/master/</span><span class="si">{}</span><span class="s2">"</span>
+<span class="n">base_lfs_backup_url</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"https://github.com/gwastro/pycbc_data/releases/download/ci-data/</span><span class="si">{}</span><span class="s2">"</span>
+<span class="p">)</span>
+<span class="n">base_lfs_media_url</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"https://media.githubusercontent.com/media/gwastro/pycbc_data/master/</span><span class="si">{}</span><span class="s2">"</span>
+<span class="p">)</span>
+
+<span class="c1"># HTTP status codes for which retrying the same URL is pointless; move straight</span>
+<span class="c1"># on to the next candidate location instead of waiting and trying again.</span>
+<span class="n">_NO_RETRY_HTTP_CODES</span> <span class="o">=</span> <span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">401</span><span class="p">,</span> <span class="mi">403</span><span class="p">,</span> <span class="mi">404</span><span class="p">,</span> <span class="mi">410</span><span class="p">)</span>
+
+<span class="c1"># Hosts whose frame/ROM files are mirrored in gwastro/pycbc_data.  GWOSC has</span>
+<span class="c1"># used several names over the years (gwosc.org, gw-openscience.org,</span>
+<span class="c1"># losc.ligo.org) and the "cleaned" O2 strain lives on the DCC; all of them are</span>
+<span class="c1"># regularly unreachable or slow from GitHub Actions.</span>
+<span class="n">_MIRRORED_HOSTS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"gwosc.org/"</span><span class="p">,</span>
+    <span class="s2">"gw-openscience.org/"</span><span class="p">,</span>
+    <span class="s2">"losc.ligo.org/"</span><span class="p">,</span>
+    <span class="s2">"dcc.ligo.org/"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># ...of those, the ones that also serve the small GWOSC JSON API responses</span>
+<span class="c1"># cached (by md5 of the request URL) in gwastro/pycbc_data.</span>
+<span class="n">_JSON_API_HOSTS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"gwosc.org/"</span><span class="p">,</span> <span class="s2">"gw-openscience.org/"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_candidate_urls</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Ordered list of URLs to try for ``url``.</span>
+
+<span class="sd">    Accessing GWOSC / the DCC directly from GitHub Actions frequently fails,</span>
+<span class="sd">    and the files the test suite / examples / tutorials ask for there are</span>
+<span class="sd">    exactly the ones mirrored in gwastro/pycbc_data.  So *only* inside GitHub</span>
+<span class="sd">    Actions, and *only* for those hosts, the mirrored copies are tried first</span>
+<span class="sd">    (both the release asset and the Git-LFS media copy for frame/ROM files)</span>
+<span class="sd">    with the original URL last.  Everywhere else ``url`` is used as given -- a</span>
+<span class="sd">    direct request outside Actions is very likely for a file that is not in</span>
+<span class="sd">    the mirror.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"GITHUB_ACTIONS"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"true"</span>
+            <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">host</span> <span class="ow">in</span> <span class="n">url</span> <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">_MIRRORED_HOSTS</span><span class="p">)):</span>
+        <span class="n">basename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">basename</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">'gwf'</span><span class="p">,</span> <span class="s1">'hdf5'</span><span class="p">)):</span>
+            <span class="n">candidates</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">base_lfs_backup_url</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">basename</span><span class="p">),</span>
+                <span class="n">base_lfs_media_url</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">basename</span><span class="p">),</span>
+                <span class="n">url</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">host</span> <span class="ow">in</span> <span class="n">url</span> <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">_JSON_API_HOSTS</span><span class="p">):</span>
+            <span class="n">hh</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">url</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+            <span class="n">candidates</span> <span class="o">=</span> <span class="p">[</span><span class="n">base_backup_url</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hh</span> <span class="o">+</span> <span class="s1">'.json'</span><span class="p">),</span> <span class="n">url</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">candidates</span> <span class="o">=</span> <span class="p">[</span><span class="n">url</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">candidates</span> <span class="o">=</span> <span class="p">[</span><span class="n">url</span><span class="p">]</span>
+
+    <span class="c1"># de-duplicate while preserving order</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">candidates</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">c</span> <span class="ow">in</span> <span class="n">seen</span> <span class="ow">or</span> <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">c</span><span class="p">))]</span>
+
+
+<div class="viewcode-block" id="get_file">
+<a class="viewcode-back" href="../../pycbc.io.html#pycbc.io.get_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_file</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">retry</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">backoff_cap</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Retrieve a file, retrying with back-off and falling back to backups.</span>
+
+<span class="sd">    Wraps :func:`astropy.utils.data.download_file`, adding bounded</span>
+<span class="sd">    exponential back-off between attempts and, for GWOSC / DCC URLs fetched</span>
+<span class="sd">    from GitHub Actions, automatic fall-back to the mirrored copies in</span>
+<span class="sd">    gwastro/pycbc_data.  A definitive HTTP error (e.g. a 404) moves straight</span>
+<span class="sd">    on to the next location instead of retrying, so genuine "not found"</span>
+<span class="sd">    failures are reported quickly.  See astropy for the full set of keyword</span>
+<span class="sd">    options.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    url : str</span>
+<span class="sd">        The URL of the file to retrieve.</span>
+<span class="sd">    retry : int</span>
+<span class="sd">        Maximum number of attempts per candidate location.</span>
+<span class="sd">    backoff_cap : int</span>
+<span class="sd">        Upper bound, in seconds, on the wait between attempts.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">retry</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"retry must be a positive integer, got </span><span class="si">{</span><span class="n">retry</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="n">_candidate_urls</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">last_exc</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">cand</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cand</span> <span class="o">!=</span> <span class="n">url</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Redirecting </span><span class="si">%s</span><span class="s2"> to backup location </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">cand</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">retry</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">download_file</span><span class="p">(</span><span class="n">cand</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">HTTPError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">last_exc</span> <span class="o">=</span> <span class="n">exc</span>
+                <span class="k">if</span> <span class="n">exc</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span> <span class="n">_NO_RETRY_HTTP_CODES</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">"</span><span class="si">%s</span><span class="s2"> returned HTTP </span><span class="si">%d</span><span class="s2">; not retrying this location"</span><span class="p">,</span>
+                        <span class="n">cand</span><span class="p">,</span> <span class="n">exc</span><span class="o">.</span><span class="n">code</span>
+                    <span class="p">)</span>
+                    <span class="k">break</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">"Failed on attempt </span><span class="si">%d</span><span class="s2"> to download </span><span class="si">%s</span><span class="s2"> (HTTP </span><span class="si">%d</span><span class="s2">)"</span><span class="p">,</span>
+                    <span class="n">i</span><span class="p">,</span> <span class="n">cand</span><span class="p">,</span> <span class="n">exc</span><span class="o">.</span><span class="n">code</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="c1"># Any other failure (URLError, ContentTooShortError, socket</span>
+                <span class="c1"># timeout, ...) is treated as transient and retried.</span>
+                <span class="n">last_exc</span> <span class="o">=</span> <span class="n">exc</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">"Failed on attempt </span><span class="si">%d</span><span class="s2"> to download </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)"</span><span class="p">,</span>
+                    <span class="n">i</span><span class="p">,</span> <span class="n">cand</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">retry</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">backoff_cap</span><span class="p">,</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">i</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Giving up on </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">last_exc</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Sep 04, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

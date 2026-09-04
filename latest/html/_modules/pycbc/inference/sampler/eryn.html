@@ -1,0 +1,718 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.eryn &mdash; PyCBC 0.0a1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=fe1e55ce"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.eryn</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.eryn</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2026 Alexander Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="sd">"""This module provides classes for using the ``eryn`` sampler for parameter</span>
+<span class="sd">estimation.</span>
+
+<span class="sd">This is a fixed-dimension integration: ``eryn`` is driven as a parallel-</span>
+<span class="sd">tempered affine-invariant ensemble sampler (a single branch with a single</span>
+<span class="sd">leaf, no reversible jump), which makes it a close analog of the ``ptemcee``</span>
+<span class="sd">sampler. The reversible-jump / trans-dimensional capabilities of ``eryn`` are</span>
+<span class="sd">not exposed here.</span>
+<span class="sd">"""</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shlex</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="c1"># eryn 1.2.6 uses numpy aliases removed in numpy 2.0; restore them.</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s2">"in1d"</span><span class="p">):</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">in1d</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isin</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s2">"trapz"</span><span class="p">):</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">trapz</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">trapezoid</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">eryn.moves</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">eryn_moves</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">eryn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleSampler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">eryn.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">State</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">ErynFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.evidence</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ladder_thermodynamic_integration</span><span class="p">,</span> <span class="n">mean_logl_by_temperature</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">choose_pool</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..burn_in</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleMultiTemperedMCMCBurnInTests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSampler</span><span class="p">,</span> <span class="n">setup_output</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseMCMC</span><span class="p">,</span>
+    <span class="n">EnsembleSupport</span><span class="p">,</span>
+    <span class="n">get_optional_arg_from_config</span><span class="p">,</span>
+    <span class="n">raw_samples_to_dict</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_multitemper</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ensemble_compute_acf</span><span class="p">,</span>
+    <span class="n">ensemble_compute_acl</span><span class="p">,</span>
+    <span class="n">read_betas_from_hdf</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># fixed-dimension model: a single branch with a single leaf</span>
+<span class="n">BRANCH</span> <span class="o">=</span> <span class="s2">"model_0"</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_ErynPrior</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Wraps a pycbc model's prior as an ``eryn`` prior container.</span>
+
+<span class="sd">    ``eryn`` evaluates the prior in the main process by calling ``logpdf`` on</span>
+<span class="sd">    an array of shape ``(N, ndim)`` (the flattened ``ntemps x nwalkers``</span>
+<span class="sd">    positions) and expects an ``(N,)`` array of log-prior values back. Each row</span>
+<span class="sd">    is forwarded to the pycbc model's ``logprior`` via the global model-call</span>
+<span class="sd">    instance -- the same wiring used by the ptemcee sampler -- so that the</span>
+<span class="sd">    prior (including any constraints) is exactly the model's prior.</span>
+
+<span class="sd">    Because ``eryn`` evaluates the prior serially in the main process (only the</span>
+<span class="sd">    likelihood is dispatched to the pool), this object does not need to be</span>
+<span class="sd">    picklable.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">)</span>
+        <span class="c1"># required by eryn's prior setter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key_order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">logpdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Returns the log prior for each of the ``N`` rows of ``x``."""</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">models</span><span class="o">.</span><span class="n">_call_global_model_logprior</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">x</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Draws samples from the model prior in the sampling frame.</span>
+
+<span class="sd">        This is only used if ``eryn`` needs to generate points itself; for the</span>
+<span class="sd">        fixed-dimension runs here the initial positions are always provided, so</span>
+<span class="sd">        this is a safety fallback.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">size</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">),)</span>
+        <span class="n">nsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">draws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior_rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">nsamples</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">draws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_transforms</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">draws</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nsamples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">):</span>
+            <span class="n">out</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">draws</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">,))</span>
+
+
+<div class="viewcode-block" id="ErynSampler">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.eryn.ErynSampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ErynSampler</span><span class="p">(</span><span class="n">EnsembleSupport</span><span class="p">,</span> <span class="n">BaseMCMC</span><span class="p">,</span> <span class="n">BaseSampler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""This class is used to construct the parallel-tempered eryn sampler.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : model</span>
+<span class="sd">        A model from ``pycbc.inference.models``.</span>
+<span class="sd">    nwalkers : int</span>
+<span class="sd">        Number of walkers to use in the sampler.</span>
+<span class="sd">    ntemps : int, optional</span>
+<span class="sd">        The number of temperatures to use. Either this, ``Tmax``, or ``betas``</span>
+<span class="sd">        must be specified.</span>
+<span class="sd">    Tmax : float, optional</span>
+<span class="sd">        The maximum temperature to use. May be used with ``ntemps``.</span>
+<span class="sd">    betas : array of float, optional</span>
+<span class="sd">        The (initial) inverse temperatures to use. Overrides ``ntemps`` and</span>
+<span class="sd">        ``Tmax`` if provided.</span>
+<span class="sd">    adaptive : bool, optional</span>
+<span class="sd">        Whether to use adaptive temperature levels. Default is False. Note that</span>
+<span class="sd">        the temperature ladder must be frozen for the evidence estimate to be</span>
+<span class="sd">        valid; ``finalize`` computes the evidence from the betas stored on disk</span>
+<span class="sd">        regardless.</span>
+<span class="sd">    moves : list, optional</span>
+<span class="sd">        A list of ``(eryn.moves.Move, weight)`` tuples giving the proposal</span>
+<span class="sd">        schedule. If not provided, eryn's default (a single ``StretchMove``)</span>
+<span class="sd">        is used.</span>
+<span class="sd">    moves_labels : str, optional</span>
+<span class="sd">        A human-readable label for the moves used, stored in the output file.</span>
+<span class="sd">    loglikelihood_function : str, optional</span>
+<span class="sd">        The attribute of the model to use for the loglikelihood. Default is</span>
+<span class="sd">        ``loglikelihood``.</span>
+<span class="sd">    nprocesses : int, optional</span>
+<span class="sd">        The number of parallel processes to use. Default is 1.</span>
+<span class="sd">    use_mpi : bool, optional</span>
+<span class="sd">        Use MPI for parallelization. Default is False.</span>
+<span class="sd">    """</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"eryn"</span>
+    <span class="n">_io</span> <span class="o">=</span> <span class="n">ErynFile</span>
+    <span class="n">burn_in_class</span> <span class="o">=</span> <span class="n">EnsembleMultiTemperedMCMCBurnInTests</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">ntemps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">adaptive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">moves</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">moves_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">loglikelihood_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">checkpoint_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkpoint_signal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ndim</span> <span class="o">=</span> <span class="n">ndim</span>
+        <span class="c1"># build the tempering configuration</span>
+        <span class="k">if</span> <span class="n">ntemps</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">Tmax</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">betas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"must provide either ntemps/Tmax or betas"</span><span class="p">)</span>
+        <span class="n">tempering_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'adaptive'</span><span class="p">:</span> <span class="n">adaptive</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">betas</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tempering_kwargs</span><span class="p">[</span><span class="s1">'betas'</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">betas</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ntemps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tempering_kwargs</span><span class="p">[</span><span class="s1">'ntemps'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ntemps</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">Tmax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tempering_kwargs</span><span class="p">[</span><span class="s1">'Tmax'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Tmax</span><span class="p">)</span>
+        <span class="c1"># likelihood is dispatched to the pool via the picklable global</span>
+        <span class="c1"># instance (as in ptemcee); the prior is evaluated in the main process</span>
+        <span class="k">if</span> <span class="n">loglikelihood_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loglikelihood_function</span> <span class="o">=</span> <span class="s1">'loglikelihood'</span>
+        <span class="n">model_call</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CallModel</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">loglikelihood_function</span><span class="p">,</span>
+                                      <span class="n">return_all_stats</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">_global_instance</span> <span class="o">=</span> <span class="n">model_call</span>
+        <span class="n">loglike_call</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">_call_global_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">choose_pool</span><span class="p">(</span><span class="n">mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span> <span class="n">processes</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">)</span>
+        <span class="n">priors</span> <span class="o">=</span> <span class="p">{</span><span class="n">BRANCH</span><span class="p">:</span> <span class="n">_ErynPrior</span><span class="p">(</span><span class="n">model</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+            <span class="n">nwalkers</span><span class="p">,</span> <span class="n">ndim</span><span class="p">,</span> <span class="n">loglike_call</span><span class="p">,</span> <span class="n">priors</span><span class="p">,</span>
+            <span class="n">tempering_kwargs</span><span class="o">=</span><span class="n">tempering_kwargs</span><span class="p">,</span>
+            <span class="n">branch_names</span><span class="o">=</span><span class="p">[</span><span class="n">BRANCH</span><span class="p">],</span>
+            <span class="n">nleaves_max</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">nleaves_min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">moves</span><span class="o">=</span><span class="n">moves</span><span class="p">,</span>
+            <span class="n">pool</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">,</span>
+            <span class="n">vectorize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nwalkers</span> <span class="o">=</span> <span class="n">nwalkers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ntemps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">ntemps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_starting_betas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">temperature_control</span><span class="o">.</span><span class="n">betas</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_moves_labels</span> <span class="o">=</span> <span class="n">moves_labels</span> <span class="k">if</span> <span class="n">moves_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+            <span class="k">else</span> <span class="s1">'StretchMove'</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_checkpoint_interval</span> <span class="o">=</span> <span class="n">checkpoint_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_checkpoint_signal</span> <span class="o">=</span> <span class="n">checkpoint_signal</span>
+        <span class="c1"># eryn state, carried across checkpoints; seeded on first run_mcmc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">io</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_io</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ntemps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The number of temperatures that are set."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ntemps</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">base_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ntemps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nwalkers</span><span class="p">,)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">starting_betas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The betas that were used at startup."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_starting_betas</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adaptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Whether or not the betas are adapted."""</span>
+        <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">temperature_control</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="s1">'adaptive'</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">moves_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""A label describing the proposal schedule that was used."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_moves_labels</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">betas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Returns the beta history currently in memory.</span>
+
+<span class="sd">        The returned array has shape ``ntemps x niterations``.</span>
+<span class="sd">        """</span>
+        <span class="n">betas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">get_betas</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">betas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># no history stored (single temperature); use a constant ladder</span>
+            <span class="n">betas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ntemps</span><span class="p">))</span>
+        <span class="c1"># eryn stores betas as niterations x ntemps</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">betas</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initial_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Builds an eryn ``State`` from the current ``_p0`` positions."""</span>
+        <span class="c1"># _p0 is ntemps x nwalkers x ndim; eryn wants an extra leaf axis</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_p0</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">if</span> <span class="n">betas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">betas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">temperature_control</span><span class="o">.</span><span class="n">betas</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">State</span><span class="p">({</span><span class="n">BRANCH</span><span class="p">:</span> <span class="n">coords</span><span class="p">},</span> <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ErynSampler.run_mcmc">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.eryn.ErynSampler.run_mcmc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_mcmc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">niterations</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Advance the ensemble by ``niterations`` iterations."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_state</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="p">,</span> <span class="n">niterations</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ErynSampler.clear_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.eryn.ErynSampler.clear_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Clears the chain from memory."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lastclear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_itercounter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># reset eryn's in-memory backend; positions live on self._state and the</span>
+        <span class="c1"># (possibly adapting) ladder on the sampler, so both survive the reset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span>
+            <span class="n">ntemps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">branch_names</span><span class="o">=</span><span class="p">[</span><span class="n">BRANCH</span><span class="p">],</span> <span class="n">nleaves_max</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">rj</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">moves</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">move_keys</span><span class="p">,</span>
+            <span class="n">key_order</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">key_order</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""A dict mapping ``variable_params`` to arrays of samples currently</span>
+<span class="sd">        in memory. The arrays have shape ``ntemps x nwalkers x niterations``.</span>
+<span class="sd">        """</span>
+        <span class="c1"># get_chain: niter x ntemps x nwalkers x nleaves(=1) x ndim; drop the</span>
+        <span class="c1"># leaf axis and transpose to ntemps x nwalkers x niter x ndim</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="n">BRANCH</span><span class="p">][:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">raw_samples</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">raw_samples_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_samples</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Returns the loglikelihood and logprior as a dict of arrays.</span>
+
+<span class="sd">        The returned arrays have shape ``ntemps x nwalkers x niterations``.</span>
+
+<span class="sd">        Like the ptemcee sampler, eryn does not carry pycbc's blob stats, so</span>
+<span class="sd">        only the loglikelihood and logprior are returned, with the logjacobian</span>
+<span class="sd">        set to zero (it is corrected on disk in ``finalize`` if sampling</span>
+<span class="sd">        transforms were used).</span>
+<span class="sd">        """</span>
+        <span class="c1"># niterations x ntemps x nwalkers -&gt; ntemps x nwalkers x niterations</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">logp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">get_log_prior</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">logjacobian</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">logp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">'loglikelihood'</span><span class="p">:</span> <span class="n">logl</span><span class="p">,</span> <span class="s1">'logprior'</span><span class="p">:</span> <span class="n">logp</span><span class="p">,</span>
+                <span class="s1">'logjacobian'</span><span class="p">:</span> <span class="n">logjacobian</span><span class="p">}</span>
+
+<div class="viewcode-block" id="ErynSampler.set_state_from_file">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.eryn.ErynSampler.set_state_from_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_state_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Sets the state of the sampler back to the instance in a file."""</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">rstate</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_random_state</span><span class="p">()</span>
+            <span class="n">betas</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_betas</span><span class="p">(</span><span class="n">iteration</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="n">rstate</span><span class="p">)</span>
+        <span class="c1"># restore the ladder and re-seed the state from _p0 (set by set_p0)</span>
+        <span class="n">betas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">betas</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">temperature_control</span><span class="o">.</span><span class="n">betas</span> <span class="o">=</span> <span class="n">betas</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_state</span><span class="p">(</span><span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="ErynSampler.compute_acf">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.eryn.ErynSampler.compute_acf">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Computes the autocorrelation function.</span>
+
+<span class="sd">        Calls :py:func:`base_multitemper.ensemble_compute_acf`; see that</span>
+<span class="sd">        function for details.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">ensemble_compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ErynSampler.compute_acl">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.eryn.ErynSampler.compute_acl">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_acl</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Computes the autocorrelation length.</span>
+
+<span class="sd">        Calls :py:func:`base_multitemper.ensemble_compute_acl`; see that</span>
+<span class="sd">        function for details.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">ensemble_compute_acl</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parse_moves</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Parses the (optional) eryn move schedule from the config file.</span>
+
+<span class="sd">        The ``moves`` option in the ``[sampler]`` section is a space-separated</span>
+<span class="sd">        list of ``MoveClass[:weight]`` entries, where ``MoveClass`` is the name</span>
+<span class="sd">        of a class in :py:mod:`eryn.moves`. Keyword arguments for a move can be</span>
+<span class="sd">        given in a dedicated ``[eryn_move-MoveClass]`` section; values are</span>
+<span class="sd">        parsed as Python literals (e.g. ``a = 2.0``). For example::</span>
+
+<span class="sd">            [sampler]</span>
+<span class="sd">            name = eryn</span>
+<span class="sd">            moves = StretchMove:0.8 GaussianMove:0.2</span>
+
+<span class="sd">            [eryn_move-StretchMove]</span>
+<span class="sd">            a = 2.0</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        moves : list of (Move, weight) tuples or None</span>
+<span class="sd">            The move schedule to pass to eryn, or ``None`` to use eryn's</span>
+<span class="sd">            default (a single ``StretchMove``).</span>
+<span class="sd">        label : str</span>
+<span class="sd">            A human-readable label describing the schedule.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">'moves'</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'StretchMove'</span>
+        <span class="n">moves</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">'moves'</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="s1">':'</span> <span class="ow">in</span> <span class="n">token</span><span class="p">:</span>
+                <span class="n">clsname</span><span class="p">,</span> <span class="n">weight</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">':'</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">clsname</span><span class="p">,</span> <span class="n">weight</span> <span class="o">=</span> <span class="n">token</span><span class="p">,</span> <span class="mf">1.0</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">cls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">eryn_moves</span><span class="p">,</span> <span class="n">clsname</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"unrecognized eryn move '</span><span class="si">{}</span><span class="s2">'; must be a class in "</span>
+                    <span class="s2">"eryn.moves"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">clsname</span><span class="p">))</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+            <span class="c1"># read any kwargs for this move from its dedicated section</span>
+            <span class="n">move_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">move_section</span> <span class="o">=</span> <span class="s1">'eryn_move-</span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">clsname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">move_section</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">move_section</span><span class="p">):</span>
+                    <span class="n">move_kwargs</span><span class="p">[</span><span class="n">opt</span><span class="p">]</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span>
+                        <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">move_section</span><span class="p">,</span> <span class="n">opt</span><span class="p">))</span>
+            <span class="n">moves</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">move_kwargs</span><span class="p">),</span> <span class="n">weight</span><span class="p">))</span>
+            <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">moves</span><span class="p">,</span> <span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ErynSampler.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.eryn.ErynSampler.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Loads the sampler from the given config file.</span>
+
+<span class="sd">        The following options are retrieved in the ``[sampler]`` section:</span>
+
+<span class="sd">        * ``name = STR`` :</span>
+<span class="sd">            Required. This must match the sampler's name (``eryn``).</span>
+<span class="sd">        * ``nwalkers = INT`` :</span>
+<span class="sd">            Required. The number of walkers to use.</span>
+<span class="sd">        * ``ntemps = INT`` :</span>
+<span class="sd">            The number of temperatures to use. May be combined with ``tmax``.</span>
+<span class="sd">            Either this, ``tmax``, ``betas``, or ``betas-file`` must be given.</span>
+<span class="sd">        * ``tmax = FLOAT`` :</span>
+<span class="sd">            The maximum temperature to use.</span>
+<span class="sd">        * ``betas = FLOAT1 FLOAT2 [...]`` :</span>
+<span class="sd">            Space-separated list of (initial) inverse temperatures. Mutually</span>
+<span class="sd">            exclusive with ``ntemps``/``tmax``.</span>
+<span class="sd">        * ``betas-file = STR`` :</span>
+<span class="sd">            Path to an hdf file containing the inverse temperatures, retrieved</span>
+<span class="sd">            from the file's ``.attrs['betas']``. Mutually exclusive with</span>
+<span class="sd">            ``betas``.</span>
+<span class="sd">        * ``adaptive =`` :</span>
+<span class="sd">            If present, temperature adaptation is turned on.</span>
+<span class="sd">        * ``moves = STR`` :</span>
+<span class="sd">            Optional. A space-separated list of ``MoveClass[:weight]`` entries</span>
+<span class="sd">            naming proposals from :py:mod:`eryn.moves`. See</span>
+<span class="sd">            :py:meth:`_parse_moves`. If not given, eryn's default is used.</span>
+<span class="sd">        * ``niterations`` / ``effective-nsamples`` :</span>
+<span class="sd">            The stopping condition (exactly one required).</span>
+<span class="sd">        * ``thin-interval`` / ``max-samples-per-chain`` :</span>
+<span class="sd">            Optional pre-thinning (mutually exclusive).</span>
+<span class="sd">        * ``checkpoint-interval`` / ``checkpoint-signal`` :</span>
+<span class="sd">            Checkpointing controls. ``checkpoint-interval`` is required when</span>
+<span class="sd">            using ``effective-nsamples``.</span>
+<span class="sd">        * ``logl-function = STR`` :</span>
+<span class="sd">            The model attribute to use for the loglikelihood. Default is</span>
+<span class="sd">            ``loglikelihood``.</span>
+
+<span class="sd">        Settings for burn-in tests are read from ``[sampler-burn_in]``.</span>
+<span class="sd">        """</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="s2">"sampler"</span>
+        <span class="c1"># check name</span>
+        <span class="k">assert</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">"name in section [sampler] must match mine"</span><span class="p">)</span>
+        <span class="c1"># get the number of walkers to use</span>
+        <span class="n">nwalkers</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">"nwalkers"</span><span class="p">))</span>
+        <span class="c1"># checkpointing</span>
+        <span class="n">checkpoint_interval</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">checkpoint_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="n">checkpoint_signal</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ckpt_signal_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="n">optargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># temperature settings</span>
+        <span class="n">ntemps</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">'ntemps'</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ntemps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">optargs</span><span class="p">[</span><span class="s1">'ntemps'</span><span class="p">]</span> <span class="o">=</span> <span class="n">ntemps</span>
+        <span class="n">tmax</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">'tmax'</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tmax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">optargs</span><span class="p">[</span><span class="s1">'Tmax'</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmax</span>
+        <span class="n">betas</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">'betas'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">betas</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">betas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">betas</span><span class="p">))))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">optargs</span><span class="p">[</span><span class="s1">'betas'</span><span class="p">]</span> <span class="o">=</span> <span class="n">betas</span>
+        <span class="n">betas_file</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">'betas-file'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">betas_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">optargs</span><span class="p">[</span><span class="s1">'betas'</span><span class="p">]</span> <span class="o">=</span> <span class="n">read_betas_from_hdf</span><span class="p">(</span><span class="n">betas_file</span><span class="p">)</span>
+        <span class="c1"># consistency checks</span>
+        <span class="k">if</span> <span class="n">betas</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">betas_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"provide either betas or betas-file, not both"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">'betas'</span> <span class="ow">in</span> <span class="n">optargs</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ntemps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">tmax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"provide either ntemps/tmax or betas/betas-file, "</span>
+                             <span class="s2">"not both"</span><span class="p">)</span>
+        <span class="c1"># adaptation</span>
+        <span class="n">adaptive</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">'adaptive'</span><span class="p">)</span>
+        <span class="n">optargs</span><span class="p">[</span><span class="s1">'adaptive'</span><span class="p">]</span> <span class="o">=</span> <span class="n">adaptive</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="c1"># proposal (moves) schedule</span>
+        <span class="n">moves</span><span class="p">,</span> <span class="n">moves_labels</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_parse_moves</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="c1"># loglikelihood function</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">'logl-function'</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span>
+                  <span class="n">moves</span><span class="o">=</span><span class="n">moves</span><span class="p">,</span> <span class="n">moves_labels</span><span class="o">=</span><span class="n">moves_labels</span><span class="p">,</span>
+                  <span class="n">checkpoint_interval</span><span class="o">=</span><span class="n">checkpoint_interval</span><span class="p">,</span>
+                  <span class="n">checkpoint_signal</span><span class="o">=</span><span class="n">checkpoint_signal</span><span class="p">,</span>
+                  <span class="n">loglikelihood_function</span><span class="o">=</span><span class="n">logl</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">,</span>
+                  <span class="n">use_mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span> <span class="o">**</span><span class="n">optargs</span><span class="p">)</span>
+        <span class="c1"># set target</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">set_target_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="c1"># burn-in</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">set_burn_in_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+        <span class="c1"># pre-thinning</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">set_thin_interval_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="c1"># output file</span>
+        <span class="n">setup_output</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span><span class="o">.</span><span class="n">new_checkpoint</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">resume_from_checkpoint</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">set_start_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">obj</span></div>
+
+
+<div class="viewcode-block" id="ErynSampler.write_results">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.eryn.ErynSampler.write_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Writes samples, model stats, betas, and random state to a file."""</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'a'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span>
+                             <span class="n">parameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span>
+                             <span class="n">last_iteration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_stats</span><span class="p">,</span> <span class="n">last_iteration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_random_state</span><span class="p">()</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_betas</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">betas</span><span class="p">,</span> <span class="n">last_iteration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ErynSampler.calculate_logevidence">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.eryn.ErynSampler.calculate_logevidence">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_logevidence</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="n">thin_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Calculates the log evidence from the given file.</span>
+
+<span class="sd">        This uses thermodynamic integration over the stored inverse</span>
+<span class="sd">        temperatures, in the same way as the ptemcee sampler.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Name of the file to read the samples from (an ``ErynFile``).</span>
+<span class="sd">        thin_start : int, optional</span>
+<span class="sd">            Index of the sample to begin reading stats.</span>
+<span class="sd">        thin_interval : int, optional</span>
+<span class="sd">            Interval to accept every i-th sample.</span>
+<span class="sd">        thin_end : int, optional</span>
+<span class="sd">            Index of the last sample to read.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        lnZ : float</span>
+<span class="sd">            The estimate of the log evidence.</span>
+<span class="sd">        dlnZ : float</span>
+<span class="sd">            The error on the estimate.</span>
+<span class="sd">        """</span>
+        <span class="k">with</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">logls</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">([</span><span class="s1">'loglikelihood'</span><span class="p">],</span>
+                                        <span class="n">thin_start</span><span class="o">=</span><span class="n">thin_start</span><span class="p">,</span>
+                                        <span class="n">thin_interval</span><span class="o">=</span><span class="n">thin_interval</span><span class="p">,</span>
+                                        <span class="n">thin_end</span><span class="o">=</span><span class="n">thin_end</span><span class="p">,</span>
+                                        <span class="n">temps</span><span class="o">=</span><span class="s1">'all'</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">logls</span> <span class="o">=</span> <span class="n">logls</span><span class="p">[</span><span class="s1">'loglikelihood'</span><span class="p">]</span>
+            <span class="n">betas</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_betas</span><span class="p">(</span><span class="n">thin_start</span><span class="o">=</span><span class="n">thin_start</span><span class="p">,</span>
+                                  <span class="n">thin_interval</span><span class="o">=</span><span class="n">thin_interval</span><span class="p">,</span>
+                                  <span class="n">thin_end</span><span class="o">=</span><span class="n">thin_end</span><span class="p">)</span>
+        <span class="c1"># average the loglikelihoods within each unique temperature</span>
+        <span class="k">return</span> <span class="n">ladder_thermodynamic_integration</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">mean_logl_by_temperature</span><span class="p">(</span><span class="n">logls</span><span class="p">,</span> <span class="n">betas</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ErynSampler.finalize">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.eryn.ErynSampler.finalize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Calculates the log evidence and writes it to the output files.</span>
+
+<span class="sd">        If sampling transforms were used, this also corrects the logjacobian</span>
+<span class="sd">        stored on disk.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Correcting logjacobian values on disk"</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span>
+                                              <span class="n">thin_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                              <span class="n">thin_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">thin_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                              <span class="n">temps</span><span class="o">=</span><span class="s1">'all'</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">logjacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_correctjacobian</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">]:</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                    <span class="n">fp</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">][</span><span class="s1">'logjacobian'</span><span class="p">][()]</span> <span class="o">=</span> <span class="n">logjacobian</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Calculating log evidence"</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">thin_start</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thin_start</span>
+            <span class="n">thin_interval</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thin_interval</span>
+            <span class="n">thin_end</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thin_end</span>
+        <span class="n">logz</span><span class="p">,</span> <span class="n">dlogz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_logevidence</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="n">thin_start</span><span class="p">,</span> <span class="n">thin_end</span><span class="o">=</span><span class="n">thin_end</span><span class="p">,</span>
+            <span class="n">thin_interval</span><span class="o">=</span><span class="n">thin_interval</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"log Z, dlog Z: </span><span class="si">{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logz</span><span class="p">,</span> <span class="n">dlogz</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">]:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">write_logevidence</span><span class="p">(</span><span class="n">logz</span><span class="p">,</span> <span class="n">dlogz</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Sep 04, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

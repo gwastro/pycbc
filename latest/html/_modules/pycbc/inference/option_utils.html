@@ -1,0 +1,511 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.option_utils &mdash; PyCBC 0.0a1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=fe1e55ce"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.option_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.option_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016 Collin Capano, Duncan Brown</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Generals</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">"""This module contains standard options used for inference-related programs.</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">waveform</span>
+
+<span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#                Utilities for plotting results</span>
+<span class="c1">#</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="ParseLabelArg">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.option_utils.ParseLabelArg">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParseLabelArg</span><span class="p">(</span><span class="n">argparse</span><span class="o">.</span><span class="n">Action</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Argparse action that will parse arguments that can accept labels.</span>
+
+<span class="sd">    This assumes that the values set on the command line for its assigned</span>
+<span class="sd">    argument are strings formatted like ``PARAM[:LABEL]``. When the arguments</span>
+<span class="sd">    are parsed, the ``LABEL`` bit is stripped off and added to a dictionary</span>
+<span class="sd">    mapping ``PARAM -&gt; LABEL``. This dictionary is stored to the parsed</span>
+<span class="sd">    namespace called ``{dest}_labels``, where ``{dest}`` is the argument's</span>
+<span class="sd">    ``dest`` setting (by default, this is the same as the option string).</span>
+<span class="sd">    Likewise, the argument's ``dest`` in the parsed namespace is updated so</span>
+<span class="sd">    that it is just ``PARAM``.</span>
+
+<span class="sd">    If no ``LABEL`` is provided, then ``PARAM`` will be used for ``LABEL``.</span>
+
+<span class="sd">    This action can work on arguments that have ``nargs != 0`` and ``type`` set</span>
+<span class="sd">    to ``str``.</span>
+<span class="sd">    """</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint: disable=redefined-builtin</span>
+        <span class="c1"># check that type is string</span>
+        <span class="k">if</span> <span class="nb">type</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"the type for this action must be a string"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nargs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"nargs must not be 0 for this action"</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ParseLabelArg</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="n">nargs</span><span class="p">,</span>
+                                            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">singlearg</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">singlearg</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">values</span><span class="p">]</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">psplit</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">':'</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">psplit</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">param</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">psplit</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="n">param</span>
+            <span class="n">labels</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">label</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="c1"># update the namespace</span>
+        <span class="k">if</span> <span class="n">singlearg</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="s1">'</span><span class="si">{}</span><span class="s1">_labels'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">),</span> <span class="n">labels</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ParseParametersArg">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.option_utils.ParseParametersArg">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParseParametersArg</span><span class="p">(</span><span class="n">ParseLabelArg</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Argparse action that will parse parameters and labels from an opton.</span>
+
+<span class="sd">    Does the same as ``ParseLabelArg``, with the additional functionality that</span>
+<span class="sd">    if ``LABEL`` is a known parameter in ``pycbc.waveform.parameters``, then</span>
+<span class="sd">    the label attribute there will be used in the labels dictionary.</span>
+<span class="sd">    Otherwise, ``LABEL`` will be used.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Create a parser and add two arguments that use this action (note that the</span>
+<span class="sd">    first argument accepts multiple inputs while the second only accepts a</span>
+<span class="sd">    single input):</span>
+
+<span class="sd">    &gt;&gt;&gt; import argparse</span>
+<span class="sd">    &gt;&gt;&gt; parser = argparse.ArgumentParser()</span>
+<span class="sd">    &gt;&gt;&gt; parser.add_argument('--parameters', type=str, nargs="+",</span>
+<span class="sd">                            action=ParseParametersArg)</span>
+<span class="sd">    &gt;&gt;&gt; parser.add_argument('--z-arg', type=str, action=ParseParametersArg)</span>
+
+<span class="sd">    Parse a command line that uses these options:</span>
+
+<span class="sd">    &gt;&gt;&gt; import shlex</span>
+<span class="sd">    &gt;&gt;&gt; cli = "--parameters 'mass1+mass2:mtotal' ra ni --z-arg foo:bar"</span>
+<span class="sd">    &gt;&gt;&gt; opts = parser.parse_args(shlex.split(cli))</span>
+<span class="sd">    &gt;&gt;&gt; opts.parameters</span>
+<span class="sd">    ['mass1+mass2', 'ra', 'ni']</span>
+<span class="sd">    &gt;&gt;&gt; opts.parameters_labels</span>
+<span class="sd">    {'mass1+mass2': '$M~(\\mathrm{M}_\\odot)$', 'ni': 'ni', 'ra': '$\\alpha$'}</span>
+<span class="sd">    &gt;&gt;&gt; opts.z_arg</span>
+<span class="sd">    'foo'</span>
+<span class="sd">    &gt;&gt;&gt; opts.z_arg_labels</span>
+<span class="sd">    {'foo': 'bar'}</span>
+
+<span class="sd">    In the above, the first argument to ``--parameters`` was ``mtotal``. Since</span>
+<span class="sd">    this is a recognized parameter in ``pycbc.waveform.parameters``, the label</span>
+<span class="sd">    dictionary contains the latex string associated with the ``mtotal``</span>
+<span class="sd">    parameter. A label was not provided for the second argument, and so ``ra``</span>
+<span class="sd">    was used. Since ``ra`` is also a recognized parameter, its associated latex</span>
+<span class="sd">    string was used in the labels dictionary. Since ``ni`` and ``bar`` (the</span>
+<span class="sd">    label for ``z-arg``) are not recognized parameters, they were just used</span>
+<span class="sd">    as-is in the labels dictionaries.</span>
+<span class="sd">    """</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ParseParametersArg</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span>
+                                                 <span class="n">option_string</span><span class="o">=</span><span class="n">option_string</span><span class="p">)</span>
+        <span class="c1"># try to replace the labels with a label from waveform.parameters</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="s1">'</span><span class="si">{}</span><span class="s1">_labels'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">waveform</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span><span class="o">.</span><span class="n">label</span>
+                <span class="n">labels</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">label</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="add_injsamples_map_opt">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.option_utils.add_injsamples_map_opt">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_injsamples_map_opt</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Adds option to parser to specify a mapping between injection parameters</span>
+<span class="sd">    an sample parameters.</span>
+<span class="sd">    """</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--injection-samples-map'</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">'+'</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">'INJECTION_PARAM:SAMPLES_PARAM'</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">'Rename/apply functions to the injection '</span>
+                             <span class="s1">'parameters and name them the same as one of the '</span>
+                             <span class="s1">'parameters in samples. This can be used if the '</span>
+                             <span class="s1">'injection parameters are not the same as the '</span>
+                             <span class="s1">'samples parameters. INJECTION_PARAM may be a '</span>
+                             <span class="s1">'function of the injection parameters; '</span>
+                             <span class="s1">'SAMPLES_PARAM must a name of one of the '</span>
+                             <span class="s1">'parameters in the samples group.'</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_plot_posterior_option_group">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.option_utils.add_plot_posterior_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_plot_posterior_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Adds the options needed to configure plots of posterior results.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        ArgumentParser instance.</span>
+<span class="sd">    """</span>
+    <span class="n">pgroup</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">"Options for what plots to create and "</span>
+                                       <span class="s2">"their formats."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--plot-marginal'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Plot 1D marginalized distributions on the "</span>
+                             <span class="s2">"diagonal axes."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--marginal-percentiles'</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">'+'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Percentiles to draw lines at on the 1D "</span>
+                             <span class="s2">"histograms."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--no-marginal-lines'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Do not add vertical lines in the 1D marginal "</span>
+                             <span class="s2">"plots showing the marginal percentiles."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--no-marginal-titles'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Do not add titles giving the 1D credible range "</span>
+                             <span class="s2">"over the 1D marginal plots."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--plot-scatter"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Plot each sample point as a scatter plot."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--plot-density"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Plot the posterior density as a color map."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--plot-contours"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Draw contours showing the 50th and 90th "</span>
+                             <span class="s2">"percentile confidence regions."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--contour-percentiles'</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">'+'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Percentiles to draw contours if different "</span>
+                             <span class="s2">"than 50th and 90th."</span><span class="p">)</span>
+    <span class="c1"># add mins, maxs options</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--mins'</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">'+'</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">'PARAM:VAL'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Specify minimum parameter values to plot. This "</span>
+                             <span class="s2">"should be done by specifying the parameter name "</span>
+                             <span class="s2">"followed by the value. Parameter names must be "</span>
+                             <span class="s2">"the same as the PARAM argument in --parameters "</span>
+                             <span class="s2">"(or, if no parameters are provided, the same as "</span>
+                             <span class="s2">"the parameter name specified in the variable "</span>
+                             <span class="s2">"args in the input file. If none provided, "</span>
+                             <span class="s2">"the smallest parameter value in the posterior "</span>
+                             <span class="s2">"will be used."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--maxs'</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">'+'</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">'PARAM:VAL'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Same as mins, but for the maximum values to "</span>
+                             <span class="s2">"plot."</span><span class="p">)</span>
+    <span class="c1"># add expected parameters options</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--expected-parameters'</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">'+'</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">'PARAM:VAL'</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Specify expected parameter values to plot. If "</span>
+                             <span class="s2">"provided, a cross will be plotted in each axis "</span>
+                             <span class="s2">"that an expected parameter is provided. "</span>
+                             <span class="s2">"Parameter names must be "</span>
+                             <span class="s2">"the same as the PARAM argument in --parameters "</span>
+                             <span class="s2">"(or, if no parameters are provided, the same as "</span>
+                             <span class="s2">"the parameter name specified in the variable "</span>
+                             <span class="s2">"args in the input file."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--expected-parameters-color'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"What to color the expected-parameters cross. "</span>
+                             <span class="s2">"Default is red."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--plot-injection-parameters'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Get the expected parameters from the injection "</span>
+                             <span class="s2">"in the input file. There must be only a single "</span>
+                             <span class="s2">"injection in the file to work. Any values "</span>
+                             <span class="s2">"specified by expected-parameters will override "</span>
+                             <span class="s2">"the values obtained for the injection."</span><span class="p">)</span>
+    <span class="n">pgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--pick-injection-by-time'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"In the case of multiple injections, pick one"</span>
+                             <span class="s2">" for plotting based on its proximity in time."</span><span class="p">)</span>
+    <span class="n">add_injsamples_map_opt</span><span class="p">(</span><span class="n">pgroup</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pgroup</span></div>
+
+
+
+<div class="viewcode-block" id="plot_ranges_from_cli">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.option_utils.plot_ranges_from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_ranges_from_cli</span><span class="p">(</span><span class="n">opts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Parses the mins and maxs arguments from the `plot_posterior` option</span>
+<span class="sd">    group.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : ArgumentParser</span>
+<span class="sd">        The parsed arguments from the command line.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mins : dict</span>
+<span class="sd">        Dictionary of parameter name -&gt; specified mins. Only parameters that</span>
+<span class="sd">        were specified in the --mins option will be included; if no parameters</span>
+<span class="sd">        were provided, will return an empty dictionary.</span>
+<span class="sd">    maxs : dict</span>
+<span class="sd">        Dictionary of parameter name -&gt; specified maxs. Only parameters that</span>
+<span class="sd">        were specified in the --mins option will be included; if no parameters</span>
+<span class="sd">        were provided, will return an empty dictionary.</span>
+<span class="sd">    """</span>
+    <span class="n">mins</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">mins</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">':'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"option --mins not specified correctly; see help"</span><span class="p">)</span>
+        <span class="n">mins</span><span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">maxs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">maxs</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">':'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"option --maxs not specified correctly; see help"</span><span class="p">)</span>
+        <span class="n">maxs</span><span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">mins</span><span class="p">,</span> <span class="n">maxs</span></div>
+
+
+
+<div class="viewcode-block" id="expected_parameters_from_cli">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.option_utils.expected_parameters_from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">expected_parameters_from_cli</span><span class="p">(</span><span class="n">opts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Parses the --expected-parameters arguments from the `plot_posterior`</span>
+<span class="sd">    option group.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : ArgumentParser</span>
+<span class="sd">        The parsed arguments from the command line.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary of parameter name -&gt; expected value. Only parameters that</span>
+<span class="sd">        were specified in the --expected-parameters option will be included; if</span>
+<span class="sd">        no parameters were provided, will return an empty dictionary.</span>
+<span class="sd">    """</span>
+    <span class="n">expected</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">expected_parameters</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">':'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"option --expected-paramters not specified "</span>
+                             <span class="s2">"correctly; see help"</span><span class="p">)</span>
+        <span class="n">expected</span><span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">expected</span></div>
+
+
+
+<div class="viewcode-block" id="add_scatter_option_group">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.option_utils.add_scatter_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_scatter_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Adds the options needed to configure scatter plots.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        ArgumentParser instance.</span>
+<span class="sd">    """</span>
+    <span class="n">scatter_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">"Options for configuring the "</span>
+                                              <span class="s2">"scatter plot."</span><span class="p">)</span>
+
+    <span class="n">scatter_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">'--z-arg'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ParseParametersArg</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'What to color the scatter points by. Syntax is the same as the '</span>
+             <span class="s1">'parameters option.'</span><span class="p">)</span>
+    <span class="n">scatter_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--vmin"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Minimum value for the colorbar."</span><span class="p">)</span>
+    <span class="n">scatter_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--vmax"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Maximum value for the colorbar."</span><span class="p">)</span>
+    <span class="n">scatter_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--scatter-cmap"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">'plasma'</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Specify the colormap to use for points. Default is plasma."</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">scatter_group</span></div>
+
+
+
+<div class="viewcode-block" id="add_density_option_group">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.option_utils.add_density_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_density_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Adds the options needed to configure contours and density colour map.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        ArgumentParser instance.</span>
+<span class="sd">    """</span>
+    <span class="n">density_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">"Options for configuring the "</span>
+                                              <span class="s2">"contours and density color map"</span><span class="p">)</span>
+
+    <span class="n">density_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--density-cmap"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">'viridis'</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Specify the colormap to use for the density. "</span>
+             <span class="s2">"Default is viridis."</span><span class="p">)</span>
+    <span class="n">density_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--contour-color"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Specify the color to use for the contour lines. Default is "</span>
+             <span class="s2">"white for density plots and black for scatter plots."</span><span class="p">)</span>
+    <span class="n">density_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--contour-linestyles"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Specify the linestyles to use for the contour lines. Defaut "</span>
+             <span class="s2">"is solid for all."</span><span class="p">)</span>
+    <span class="n">density_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--no-contour-labels"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Don't put labels on the contours."</span><span class="p">)</span>
+    <span class="n">density_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">'--use-kombine-kde'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Use kombine's clustered KDE for determining 2D marginal "</span>
+             <span class="s2">"contours and density instead of scipy's gaussian_kde (the "</span>
+             <span class="s2">"default). This is better at distinguishing bimodal "</span>
+             <span class="s2">"distributions, but is much slower than the default. For speed, "</span>
+             <span class="s2">"suggest setting --kde-args 'max_samples:20000' or smaller if "</span>
+             <span class="s2">"using this. Requires kombine to be installed."</span><span class="p">)</span>
+    <span class="n">density_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">'--max-kde-samples'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Limit the number of samples used for KDE construction to the "</span>
+             <span class="s2">"given value. This can substantially speed up plot generation "</span>
+             <span class="s2">"(particularly when plotting multiple parameters). Suggested "</span>
+             <span class="s2">"values: 5000 to 10000."</span><span class="p">)</span>
+    <span class="n">density_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">'--kde-args'</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">"ARG:VALUE"</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">'+'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Pass the given argrument, value pairs to the KDE function "</span>
+             <span class="s2">"(either scipy's or kombine's) when setting it up."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">density_group</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Sep 04, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
