@@ -8,10 +8,8 @@ computing the match between them and creating a .dat file with the results.
 import argparse
 import numpy as np
 
-from igwn_ligolw import utils, lsctables
-
 from pycbc import add_common_pycbc_options, init_logging
-from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.inject import read_injection_table, get_table_column
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
@@ -30,7 +28,7 @@ parser.add_argument(
 parser.add_argument("--output", required=True, help="name of the output .dat file")
 args = parser.parse_args()
 
-init_logging(options.verbose)
+init_logging(args.verbose)
 
 mfields = ("match", "overlap", "time_offset", "sigma1", "sigma2")
 bfields = (
@@ -82,16 +80,15 @@ dtypeo = {
 }
 
 btables = {}
-match_files = args.inputs_match[:]
-bank_files = args.inputs_bank[:]
+match_files = args.match_inputs[:]
+bank_files = args.bank_inputs[:]
 data = np.zeros(0, dtype=dtypeo)
 
 for i in range(len(match_files)):
     match = match_files[i]
     bname = bank_files[i]
     if bname not in btables:
-        indoc = utils.load_filename(bname, False, contenthandler=LIGOLWContentHandler)
-        btables[bname] = lsctables.SimInspiralTable.get_table(indoc)
+        btables[bname] = read_injection_table(bname)
     bt = btables[bname]
     try:
         md = np.loadtxt(match, dtype=dtypem)
@@ -106,7 +103,7 @@ for i in range(len(match_files)):
 
     for field in bfields:
         if field not in mfields:
-            pdata[field] = bt.getColumnByName(field).asarray()
+            pdata[field] = get_table_column(bt, field)
 
     data = np.append(data, pdata)
 
