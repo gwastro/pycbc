@@ -47,11 +47,15 @@ jobs:
 
     - name: Download LAL auxiliary data files
       # Unconditional now: the bytes come from the download cache, so there is
-      # no separate cache of the unpacked files to hit or miss.
+      # no separate cache of the unpacked files to hit or miss.  The --retry
+      # flags stay because the cache is allowed to be absent -- in record mode
+      # a proxy that cannot start warns and lets the job download directly,
+      # and this is then the only thing standing between a momentary zenodo
+      # blip and a failed job.
       run: |
         mkdir -p ~/lal_aux_data
         pushd ~/lal_aux_data
-        curl --show-error --silent --fail \
+        curl --show-error --silent --retry 5 --retry-delay 5 --retry-all-errors --fail \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
         popd
