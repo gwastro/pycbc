@@ -27,24 +27,7 @@ jobs:
       run: |
         pixi add python="${{ matrix.python-version }}.*"
 
-    - name: Start the download cache
-      # Routes this job's data downloads through a caching proxy, so a file
-      # that has been fetched before is served from disk and never touches the
-      # network.  Replaces the per-directory caches, the prefetch manifest and
-      # the mirror fall-backs that used to live in six places.
-      uses: ahnitz/github-ci-cache@v1
-      with:
-        # TEMPORARY, while this branch is being tested: record so that the
-        # pull request can populate the cache itself.  Change to "auto"
-        # (record on master and schedules, strict on pull requests) before
-        # merging.
-        mode: record
-        hosts: >-
-          gwosc.org,gw-openscience.org,losc.ligo.org,dcc.ligo.org,zenodo.org,
-          raw.githubusercontent.com,media.githubusercontent.com,
-          github.com/gwastro/pycbc_data/releases/download/,
-          github.com/gwastro/pycbc-config/raw/
-
+    - uses: ahnitz/github-ci-cache@v1
     - name: Download LAL auxiliary data files
       # Unconditional now: the bytes come from the download cache, so there is
       # no separate cache of the unpacked files to hit or miss.
@@ -86,12 +69,8 @@ jobs:
         export LAL_DATA_PATH=$HOME/lal_aux_data
         pixi run -e inference test-inference
 
-    - name: Report the download cache
-      # if: always() so the counts are reported when the job failed, which is
-      # when they are most worth reading.
+    - uses: ahnitz/github-ci-cache/report@v1
       if: always()
-      uses: ahnitz/github-ci-cache/report@v1
-
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

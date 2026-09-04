@@ -2,21 +2,15 @@ name: refresh CI caches
 
 # GitHub removes any Actions cache that has not been read for 7 days.  The
 # download cache is written by the test jobs, so on a quiet week it would
-# expire and the next run would fall back to fetching everything from the
-# origin servers -- exactly the flaky path it exists to avoid.
+# expire and the next run would fetch everything from the origin servers --
+# exactly the flaky path it exists to avoid.
 #
-# Reading a cache counts as an access and resets its timer, so this job runs
-# daily and does nothing but start the cache and stop it again: starting it
-# restores the cache, which is the access that matters.
+# Reading a cache counts as an access and resets its timer, so this job starts
+# the cache and stops it again, and does nothing else.  Starting it restores
+# the cache, which is the access that matters.
 #
-# It deliberately calls the action rather than restoring the cache by hand.  A
-# cache action hashes the path list into the cache's identity, so a path
-# spelled even slightly differently here -- "~/.cache/..." against the
-# "/home/runner/.cache/..." the action expands to -- would silently refresh a
-# different, empty cache and this job would pass while doing nothing.
-#
-# There is also no list of files to prefetch.  If the cache has already been
-# evicted, the next run on the default branch repopulates it by recording,
+# There is deliberately no list of files to prefetch.  If the cache has been
+# evicted anyway, the next run on the default branch fills it by recording,
 # which is the same path that filled it in the first place.
 
 on:
@@ -32,27 +26,6 @@ jobs:
   refresh:
     runs-on: ubuntu-24.04
     steps:
-      - name: Touch the download cache
-        id: cache
-        uses: ahnitz/github-ci-cache@v1
-        with:
-          # Nothing is downloaded here, so the allow list is irrelevant; the
-          # action requires one, and this says plainly that it is unused.
-          hosts: refresh-only.invalid
-          mode: record
-
-      - name: Say what was found
-        run: |
-          if [ "${{ steps.cache.outputs.cache-hit }}" = "true" ]; then
-            cache="${{ steps.cache.outputs.state-dir }}/cache"
-            echo "::notice::refreshed the download cache -- \
-              $(find "$cache" -mindepth 1 -maxdepth 1 -type d | wc -l) entries, \
-              $(du -sh "$cache" | cut -f1)"
-          else
-            echo "::notice::no download cache to refresh; the next run on the \
-              default branch will record one"
-          fi
-
-      - name: Report the download cache
+      - uses: ahnitz/github-ci-cache@v1
+      - uses: ahnitz/github-ci-cache/report@v1
         if: always()
-        uses: ahnitz/github-ci-cache/report@v1
