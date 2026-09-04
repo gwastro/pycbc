@@ -17,10 +17,11 @@ This modules provides functions for base coordinate transformations, and
 more advanced transformations between ground-based detectors and space-borne
 detectors.
 """
+# ruff: noqa: F403, F405 -- deliberate `import *` re-export, see __all__
 
 from pycbc.coordinates.base import *
 from pycbc.coordinates.space import *
-
+from pycbc.coordinates.space_orbit import *
 
 __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'cartesian_to_spherical_polar', 'cartesian_to_spherical',
@@ -28,10 +29,19 @@ __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'TIME_OFFSET_20_DEGREES',
            'localization_to_propagation_vector',
            'propagation_vector_to_localization', 'polarization_newframe',
+           't_space_from_ssb', 't_ssb_from_t_space',
            't_lisa_from_ssb', 't_ssb_from_t_lisa',
+           'ssb_to_space', 'space_to_ssb',
            'ssb_to_lisa', 'lisa_to_ssb',
-           'rotation_matrix_ssb_to_lisa', 'rotation_matrix_ssb_to_geo',
-           'lisa_position_ssb', 'earth_position_ssb',
+           'rotation_matrix_ssb_to_space', 'rotation_matrix_ssb_to_lisa',
+           'rotation_matrix_ssb_to_geo',
+           'space_position_ssb', 'lisa_position_ssb', 'earth_position_ssb',
            't_geo_from_ssb', 't_ssb_from_t_geo', 'ssb_to_geo', 'geo_to_ssb',
+           'space_to_geo', 'geo_to_space',
            'lisa_to_geo', 'geo_to_lisa',
+           'NumericOrbits', 'LisaEqualArmOrbit', 'LisaKeplerianOrbit',
+           'TaijiEqualArmOrbit', 'TaijiKeplerianOrbit',
+           'TianQinAnalyticOrbit',
+           'constellation_frame',
+           't_detector_from_ssb', 't_ssb_from_t_detector',
            ]
