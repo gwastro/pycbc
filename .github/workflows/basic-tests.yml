@@ -29,22 +29,6 @@ jobs:
 
     - uses: ahnitz/github-ci-cache@v1
     - name: Download LAL auxiliary data files
-      # Unconditional now: the bytes come from the download cache, so there is
-      # no separate cache of the unpacked files to hit or miss.
-      #
-      # SEOBNRv4ROM_v2.0.hdf5 used to be fetched here too and has been dropped:
-      # it 404s, and it is not among the 85 files on that zenodo record under
-      # any name -- lalsuite publishes v3.0 now.  Nobody noticed because on
-      # master this step only runs when the lal-aux-data cache misses, and that
-      # cache has been warm for months, so it still holds a copy of a file that
-      # can no longer be downloaded.  Making the fetch unconditional is what
-      # surfaced it.
-      #
-      # The --retry
-      # flags stay because the cache is allowed to be absent -- in record mode
-      # a proxy that cannot start warns and lets the job download directly,
-      # and this is then the only thing standing between a momentary zenodo
-      # blip and a failed job.
       run: |
         mkdir -p ~/lal_aux_data
         pushd ~/lal_aux_data

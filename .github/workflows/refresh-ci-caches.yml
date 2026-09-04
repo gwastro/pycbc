@@ -1,17 +1,7 @@
 name: refresh CI caches
 
-# GitHub removes any Actions cache that has not been read for 7 days.  The
-# download cache is written by the test jobs, so on a quiet week it would
-# expire and the next run would fetch everything from the origin servers --
-# exactly the flaky path it exists to avoid.
-#
-# Reading a cache counts as an access and resets its timer, so this job starts
-# the cache and stops it again, and does nothing else.  Starting it restores
-# the cache, which is the access that matters.
-#
-# There is deliberately no list of files to prefetch.  If the cache has been
-# evicted anyway, the next run on the default branch fills it by recording,
-# which is the same path that filled it in the first place.
+# Restores the download cache and stops, so it is read at least weekly.
+# GitHub evicts an Actions cache that has gone 7 days without an access.
 
 on:
   schedule:
