@@ -17,8 +17,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """Recalculates log likelihood and prior for points in a given inference or
-posterior file and writes them to a new file. Also records auxillary model
-stats that may have been ignored by the sampler.
+posterior file and writes them to a new file, overwrites all lognl in the
+samples group attrs. Also records auxillary model stats that may have been
+ignored by the sampler.
 """
 
 import os
@@ -91,20 +92,34 @@ model = models.read_from_config(cp)
 # from the variable parameter space
 model.sampling_transforms = None
 
-# create function for calling the model to get the stats
+# create function for calling the model to get the stats, lognl, and rec
 def callmodel(arg):
     iteration, paramvals = arg
     # calculate the logposterior to get all stats populated
     model.update(**{p: paramvals[p] for p in model.variable_params})
     _ = model.logposterior
     stats = model.get_current_stats()
+    if hasattr(model, 'submodels'):
+        lognls = {}
+        lognls['lognl'] = 0
+        for lbl, submodel in model.submodels.items():
+            submodel_lognl = 0
+            for det in submodel.detectors:
+                lognls['{}__{}_lognl'.format(lbl, det)] =\
+                    submodel.det_lognl(det)
+                submodel_lognl += submodel.det_lognl(det)
+            lognls['{}__lognl'.format(lbl)] = submodel_lognl
+            lognls['lognl'] += submodel_lognl
+    else:
+        lognls = {det: model.det_lognl(det) for det in model.detectors}
+        lognls['lognl'] = sum(lognls.values())
 
     rec = {}
     if opts.reconstruct_parameters:
         model.update(**{p: paramvals[p] for p in model.variable_params})
         # Ensure unique random seed for each reconstruction
         rec = model.reconstruct(seed=iteration)
-    return stats, rec
+    return stats, lognls, rec
 
 # these help for parallelization for MPI
 models._global_instance = callmodel
@@ -131,18 +146,29 @@ logging.info("Calculating stats")
 data = list(tqdm.tqdm(pool.imap(model_call, enumerate(samples)),
             total=len(samples)))
 stats = [x[0] for x in data]
-rec = [x[1] for x in data]
+lognls = [x[1] for x in data][0]
+rec = [x[2] for x in data]
 
 # write to the output file
 logging.info("Copying input to output")
 shutil.copy(opts.input_file, opts.output_file)
 
-logging.info("Writing stats to output")
+logging.info("Writing stats, lognls, and rec to output")
 out = loadfile(opts.output_file, 'a')
 idx = range(len(stats))
 for pi, p in enumerate(model.default_stats):
     vals = numpy.array([stats[ii][pi] for ii in idx]).reshape(shape)
     out.write_data(p, vals, path=fp.samples_group, append=False)
+
+# overwrite all lognl in the samples attrs, there is a precision issue
+# in lognl calculation, during reconstruct process, model will get slightly
+# different lognl and loglr values (so loglikelihood). This becomes a problem
+# when loglr is very small compared to lognl, which numerical precision is
+# domainted by lognl. If still use the original lognl before the reconstruct
+# process, pycbc_inference_plot_posterior will get wrong loglr/snr for plotting
+for key in out['samples'].attrs:
+    if key in lognls:
+        out['samples'].attrs[key] = lognls[key]
 
 if opts.reconstruct_parameters:
     logging.info("Writing reconstructed parameters")
