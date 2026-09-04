@@ -27,51 +27,34 @@ jobs:
       run: |
         pixi add python="${{ matrix.python-version }}.*"
 
-    - name: Cache LAL auxiliary data files
-      id: cache-lal-aux-data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+    - name: Start the download cache
+      # Routes this job's data downloads through a caching proxy, so a file
+      # that has been fetched before is served from disk and never touches the
+      # network.  Replaces the per-directory caches, the prefetch manifest and
+      # the mirror fall-backs that used to live in six places.
+      uses: ahnitz/github-ci-cache@v1
       with:
-        key: lal-aux-data
-        path: ~/lal_aux_data
+        # TEMPORARY, while this branch is being tested: record so that the
+        # pull request can populate the cache itself.  Change to "auto"
+        # (record on master and schedules, strict on pull requests) before
+        # merging.
+        mode: record
+        hosts: >-
+          gwosc.org,gw-openscience.org,losc.ligo.org,dcc.ligo.org,zenodo.org,
+          raw.githubusercontent.com,media.githubusercontent.com,
+          github.com/gwastro/pycbc_data/releases/download/,
+          github.com/gwastro/pycbc-config/raw/
 
-    - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
-      name: Download LAL auxiliary data files
+    - name: Download LAL auxiliary data files
+      # Unconditional now: the bytes come from the download cache, so there is
+      # no separate cache of the unpacked files to hit or miss.
       run: |
-        mkdir ~/lal_aux_data
+        mkdir -p ~/lal_aux_data
         pushd ~/lal_aux_data
-        curl --show-error --silent --retry 5 --retry-delay 5 --retry-all-errors --fail \
+        curl --show-error --silent --fail \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
         popd
-
-    - name: Cache example GW data
-      id: cache-example-gw-data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: example-gw-data
-        path: |
-          docs/_include/*.gwf
-          examples/inference/lisa_smbhb_ldc/*_psd.txt
-          examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
-          examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
-          examples/inference/margtime/*.gwf
-          examples/inference/multisignal/*.gwf
-          examples/inference/relative/*.gwf
-          examples/inference/relmarg/*.gwf
-          examples/inference/single/*.gwf
-
-    - name: Cache downloaded test data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: test-data-cache-${{ hashFiles('tools/ci_prefetch_test_data.py') }}
-        restore-keys: |
-          test-data-cache-
-        path: ~/.astropy/cache/download
-
-    - name: Pre-fetch remote test data
-      continue-on-error: true
-      run: |
-        python3 tools/ci_prefetch_test_data.py
 
     - name: run pycbc test suite
       run: |
@@ -89,6 +72,12 @@ jobs:
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
         pixi run -e inference test-inference
+
+    - name: Report the download cache
+      # if: always() so the counts are reported when the job failed, which is
+      # when they are most worth reading.
+      if: always()
+      uses: ahnitz/github-ci-cache/report@v1
 
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'

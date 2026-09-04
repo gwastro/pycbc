@@ -26,17 +26,23 @@ jobs:
         sudo apt-get -o Acquire::Retries=3 install *fftw3* mpi intel-mkl*
         pip install tox pip setuptools notebook --upgrade
         pip install .
-    - name: Cache downloaded test data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+    - name: Start the download cache
+      # Routes this job's data downloads through a caching proxy, so a file
+      # that has been fetched before is served from disk and never touches the
+      # network.  Replaces the per-directory caches, the prefetch manifest and
+      # the mirror fall-backs that used to live in six places.
+      uses: ahnitz/github-ci-cache@v1
       with:
-        key: test-data-cache-${{ hashFiles('tools/ci_prefetch_test_data.py') }}
-        restore-keys: |
-          test-data-cache-
-        path: ~/.astropy/cache/download
-    - name: Pre-fetch remote test data
-      continue-on-error: true
-      run: |
-        python3 tools/ci_prefetch_test_data.py
+        # TEMPORARY, while this branch is being tested: record so that the
+        # pull request can populate the cache itself.  Change to "auto"
+        # (record on master and schedules, strict on pull requests) before
+        # merging.
+        mode: record
+        hosts: >-
+          gwosc.org,gw-openscience.org,losc.ligo.org,dcc.ligo.org,zenodo.org,
+          raw.githubusercontent.com,media.githubusercontent.com,
+          github.com/gwastro/pycbc_data/releases/download/,
+          github.com/gwastro/pycbc-config/raw/
     - name: retrieving pycbc tutorials
       run: |
         git clone https://github.com/gwastro/PyCBC-Tutorials
@@ -44,3 +50,9 @@ jobs:
       run: |
         cd PyCBC-Tutorials
         ./test_notebooks
+
+    - name: Report the download cache
+      # if: always() so the counts are reported when the job failed, which is
+      # when they are most worth reading.
+      if: always()
+      uses: ahnitz/github-ci-cache/report@v1
