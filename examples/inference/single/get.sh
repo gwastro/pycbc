@@ -12,6 +12,6 @@ do
 
 #    curl -O -L --show-error --silent https://dcc.ligo.org/public/0146/P1700349/001/${file}
 
-    curl -O -L --show-error --silent \
-         https://media.githubusercontent.com/media/gwastro/pycbc_data/master/${file}
+    curl -O -L --show-error --silent --retry 5 --retry-delay 2 --retry-all-errors --fail \
+         https://github.com/gwastro/pycbc_data/releases/download/ci-data/${file}
 done

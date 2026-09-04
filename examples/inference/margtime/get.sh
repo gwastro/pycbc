@@ -12,6 +12,6 @@ do
 
     #curl -O -L --show-error --silent \
     #    https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW150914/v3/${file}
-    curl -O -L --show-error --silent \
-	 https://media.githubusercontent.com/media/gwastro/pycbc_data/master/${file}
+    curl -O -L --show-error --silent --retry 5 --retry-delay 2 --retry-all-errors --fail \
+         https://github.com/gwastro/pycbc_data/releases/download/ci-data/${file}
 done

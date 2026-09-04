@@ -917,13 +917,13 @@ def averaged_lisa_fplus_sq_numerical(f, len_arm=2.5e9):
     -----
         Please see Eq.(36) in <LISA-LCST-SGS-TN-001> for more details.
     """
-    from astropy.utils.data import download_file
+    from pycbc.io import get_file
 
     if len_arm != 2.5e9:
         raise ValueError("Currently only support 'len_arm=2.5e9'.")
     # Download the numerical LISA averaged response.
     url = "https://zenodo.org/record/7497853/files/AvFXp2_Raw.npy"
-    file_path = download_file(url, cache=True)
+    file_path = get_file(url, cache=True)
     freqs, fp_sq = np.load(file_path)
     # Padding the end.
     freqs = np.append(freqs, 2)
