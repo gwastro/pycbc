@@ -30,6 +30,19 @@ jobs:
       run: |
         pixi add python="${{ matrix.python-version }}.*"
 
+    - name: Cache downloaded test data
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        key: test-data-cache-${{ hashFiles('tools/ci_prefetch_test_data.py') }}
+        restore-keys: |
+          test-data-cache-
+        path: ~/.astropy/cache/download
+
+    - name: Pre-fetch remote test data
+      continue-on-error: true
+      run: |
+        python3 tools/ci_prefetch_test_data.py
+
     - name: Run basic pycbc test suite
       run: |
         pixi run -e unittest test-unittest

@@ -35,7 +35,7 @@ from pycbc.psd import interpolate, inverse_spectrum_truncation, aLIGOZeroDetHigh
 from pycbc.noise import noise_from_psd
 from pycbc.frame import read_frame
 from pycbc.filter import highpass, resample_to_delta_t
-from astropy.utils.data import download_file
+from pycbc.io import get_file
 from pycbc.inference import models
 from pycbc.distributions import Uniform, JointDistribution, SinAngle, UniformAngle
 from pycbc.waveform.waveform import FailedWaveformError
@@ -57,9 +57,9 @@ class TestModels(unittest.TestCase):
             # Not using dcc.ligo.org because it sometimes hangs in the test
             # suite. But original URL is commented below
             # url = "https://dcc.ligo.org/public/0146/P1700349/001/"
-            url = "https://media.githubusercontent.com/media/gwastro/pycbc_data/master/"
+            url = "https://github.com/gwastro/pycbc_data/releases/download/ci-data/"
             url += "{}-{}1_LOSC_CLN_4_V1-1187007040-2048.gwf"
-            fname = download_file(url.format(ifo[0], ifo[0]), cache=True)
+            fname = get_file(url.format(ifo[0], ifo[0]), cache=True)
             ts = read_frame(fname, "{}:LOSC-STRAIN".format(ifo),
                             start_time=int(m.time - 260),
                             end_time=int(m.time + 40))
