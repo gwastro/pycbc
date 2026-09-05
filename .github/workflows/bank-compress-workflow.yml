@@ -37,6 +37,7 @@ jobs:
         pip install GitPython # This shouldn't really be needed!
         pip install -r requirements.txt
         pip install .
+    - uses: ahnitz/github-ci-cache@v1
     - name: installing sbank
       run: |
         pip install sbank
@@ -49,6 +50,8 @@ jobs:
         cd output
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
+    - uses: ahnitz/github-ci-cache/report@v1
+      if: always()
     - name: store log files
       if: always()
       uses: actions/upload-artifact@v7
