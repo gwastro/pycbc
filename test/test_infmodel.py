@@ -264,6 +264,20 @@ class TestModels(unittest.TestCase):
             self.heterodyne_error(self.relbin(0.5, static=offset)),
             self.heterodyne_error(self.relbin(0.5)) * 10)
 
+    def test_the_check_is_off_when_the_option_says_false(self):
+        """A config file hands this over as a string, and every non-empty
+        string is true. ``False`` there has to mean off."""
+        model = self.relbin(1.0, check_heterodyne_bins='False')
+        self.assertIs(model.check_heterodyne_bins, False)
+        model.update(**self.q1)
+        with self.assertNoLogs(level='INFO'):
+            model.loglr
+
+    def test_the_check_is_on_when_the_option_says_true(self):
+        """And the string the other way round still turns it on."""
+        model = self.relbin(1.0, check_heterodyne_bins='True')
+        self.assertIs(model.check_heterodyne_bins, True)
+
     def test_heterodyne_check_logs_every_call(self):
         """Enabled, it must log the error of each call, and only then.
 

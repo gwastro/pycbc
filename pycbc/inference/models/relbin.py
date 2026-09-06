@@ -48,7 +48,7 @@ from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_vectorp, snr_predictor,
                          likelihood_parts_vectort,
                          snr_predictor_dom)
-from .tools import DistMarg
+from .tools import DistMarg, str_to_bool
 
 
 def setup_bins(f_full, f_lo, f_hi, chi=1.0,
@@ -166,7 +166,9 @@ class Relative(DistMarg, BaseGaussianNoise):
         as a function of frequency bin, using a predetermined PN approximation
         for the time offsets.
     check_heterodyne_bins : boolean, optional
-        Default is False. If True, measure how much error the bins make in
+        Default is False. A config file gives this as a string, so it is
+        converted; ``False`` there means off, not a non-empty string. If
+        True, measure how much error the bins make in
         the heterodyne at every likelihood call and log it. This is a
         debugging aid for choosing ``epsilon``, and it makes each call more
         expensive.
@@ -200,7 +202,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             variable_params, data, low_frequency_cutoff, **kwargs
         )
 
-        self.check_heterodyne_bins = check_heterodyne_bins
+        self.check_heterodyne_bins = str_to_bool(check_heterodyne_bins)
 
         # If the waveform needs us to apply the detector response,
         # set flag to true (most cases for ground-based observatories).
