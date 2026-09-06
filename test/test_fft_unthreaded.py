@@ -26,8 +26,8 @@ These are the unit-tests for the pycbc.fft subpackage, testing only unthreaded
 backends for the various schemes.
 """
 
-import logging
 import unittest
+import warnings
 
 from fft_base import _BaseTestFFTClass
 from utils import parse_args_all_schemes, simple_exit
@@ -44,7 +44,10 @@ _scheme, _context = parse_args_all_schemes("FFT")
 backends = pycbc.fft.get_backend_names()
 
 # Numpy will warn not to use its class interface, silence it.
-logging.disable(logging.WARNING)
+# Numpy warns via the warnings module, not logging, so filter it there:
+# a global logging.disable() would outlive this file and silence every
+# later test in the same process (it broke assertLogs in test_infmodel).
+warnings.filterwarnings("ignore", message=".*class interface.*")
 
 FFTTestClasses = []
 for backend in backends:
