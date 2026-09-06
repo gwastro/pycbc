@@ -27,7 +27,12 @@ jobs:
       run: |
         pixi add python="${{ matrix.python-version }}.*"
 
+    # TEMPORARY, revert before merge: a key of its own so this workflow
+    # starts from an empty cache, which is the only state that exercises
+    # folding the other jobs' uploads in before uploading.
     - uses: ahnitz/github-ci-cache@v1
+      with:
+        cache-key: http-cache-coldtest
     - name: Download LAL auxiliary data files
       run: |
         mkdir -p ~/lal_aux_data
