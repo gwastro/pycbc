@@ -220,7 +220,23 @@ class Relative(DistMarg, BaseGaussianNoise):
             if self.fid_params[k] == 'REPLACE':
                self.fid_params.pop(k)
 
-        for ifo in data:
+        # the data with the fiducial waveform's timing taken out, and the
+        # frequency range it covers. Both are what the bins are laid out
+        # from, and are kept so that can be done again.
+        self.shifted, self.flimits = {}, {}
+
+        self.setup_fiducial()
+        self.setup_bin_layout(epsilon, gammas, earth_rotation,
+                              int(earth_rotation_mode))
+
+    def setup_fiducial(self):
+        """Generate the fiducial waveform and the data to compare against it.
+
+        Redone when the fiducial parameters change. The bins are laid out
+        from what this leaves behind, so they have to be laid out again
+        after it.
+        """
+        for ifo in self.data:
             # store data and frequencies
             d0 = self.data[ifo]
             self.f[ifo] = d0.sample_frequencies.numpy()
@@ -289,7 +305,20 @@ class Relative(DistMarg, BaseGaussianNoise):
             # This makes it easier to compare target signal to reference later
             tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
             self.h00[ifo] = numpy.array(curr_wav) # * tshift
-            data_shifted = self.data[ifo] * numpy.conjugate(tshift)
+            self.shifted[ifo] = self.data[ifo] * numpy.conjugate(tshift)
+            self.flimits[ifo] = (f_lo, f_hi)
+
+    def setup_bin_layout(self, epsilon, gammas, earth_rotation,
+                         earth_rotation_mode):
+        """Place the frequency bins and compute the summary data for them.
+
+        Everything this needs is left behind by
+        :py:meth:`setup_fiducial`, so it can be redone on its own to
+        change the resolution without generating the fiducial waveform
+        again.
+        """
+        for ifo in self.data:
+            f_lo, f_hi = self.flimits[ifo]
 
             logging.info("Computing frequency bins")
             fbin_ind = setup_bins(
@@ -300,10 +329,11 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             self.fedges[ifo] = self.f[ifo][fbin_ind]
             self.edges[ifo] = fbin_ind
-            self.init_from_frequencies(data_shifted, self.h00, fbin_ind, ifo)
+            self.init_from_frequencies(self.shifted[ifo], self.h00,
+                                       fbin_ind, ifo)
             self.antenna_time[ifo] = self.setup_antenna(
                                         earth_rotation,
-                                        int(earth_rotation_mode),
+                                        earth_rotation_mode,
                                         self.fedges[ifo])
         self.combine_layout()
 
