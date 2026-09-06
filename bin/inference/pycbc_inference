@@ -43,6 +43,10 @@ parser.add_argument("--output-file", type=str, required=True,
 parser.add_argument("--force", action="store_true", default=False,
                     help="If the output-file already exists, overwrite it. "
                          "Otherwise, an OSError is raised.")
+parser.add_argument("--no-model-stats", action="store_true", default=False,
+                    help="Do not put the model's stats in the output. Any "
+                         "the sampler did not keep would have to be worked "
+                         "out again, which this avoids paying for.")
 parser.add_argument("--save-backup", action="store_true",
                     default=False,
                     help="Don't delete the backup file after the run has "
@@ -149,6 +153,9 @@ with ctx:
 
     # Finalize the output
     sampler.finalize()
+
+    if not opts.no_model_stats:
+        sampler.write_cached_stats()
 
 if condor_ckpt:
    # unlink the empty output file

@@ -25,6 +25,7 @@
 """Base class for models.
 """
 
+import collections
 import numpy
 import logging
 from abc import (ABCMeta, abstractmethod)
@@ -285,6 +286,39 @@ def read_sampling_params_from_config(cp, section_group=None,
 #
 
 
+# what each process has already handed over, so that repeated collection
+# only moves what is new
+_handed_over = set()
+
+
+def _worker_stats_cache(_):
+    """Hand back the stats this process remembered and has not sent yet."""
+    from pycbc.inference import models
+    model = getattr(models._global_instance, 'model', models._global_instance)
+    # the evaluation this process is holding has not been moved in yet
+    model._store_stats()
+    fresh = {k: v for k, v in model._stats_cache.items()
+             if k not in _handed_over}
+    _handed_over.update(fresh)
+    return fresh
+
+
+def _stats_key(params):
+    """A hashable key for a set of parameter values, or None for a set that
+    cannot be one.
+
+    Values may be strings as well as numbers, so nothing is converted.
+    Reconstruction updates with whole arrays of trial values, which are not a
+    point and are not remembered.
+    """
+    key = tuple(sorted(params.items()))
+    try:
+        hash(key)
+    except TypeError:
+        return None
+    return key
+
+
 class BaseModel(metaclass=ABCMeta):
     r"""Base class for all models.
 
@@ -341,11 +375,17 @@ class BaseModel(metaclass=ABCMeta):
         the likelihood is most easily defined in. Since these are used solely
         for converting parameters, and not for rescaling the parameter space,
         a Jacobian is not required for these transforms.
+    stats_cache : int, optional
+        Bound how many evaluations' stats are remembered for ``cached_stats``
+        to give back later. The default keeps all of them, which is what the
+        samplers that carried their own stats were already doing. Set a number
+        to cap the memory, at the cost of losing the oldest.
     """
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,
-                 sampling_transforms=None, waveform_transforms=None, **kwargs):
+                 sampling_transforms=None, waveform_transforms=None,
+                 stats_cache=None, **kwargs):
         # store variable and static args
         self.variable_params = variable_params
         self.static_params = static_params
@@ -362,8 +402,12 @@ class BaseModel(metaclass=ABCMeta):
         self.waveform_transforms = waveform_transforms
         # initialize current params to None
         self._current_params = None
+        self._current_key = None
         # initialize a model stats
         self._current_stats = ModelStats()
+        self._stats_cache_size = (None if stats_cache is None
+                                  else int(stats_cache))
+        self._stats_cache = collections.OrderedDict()
 
     @property
     def variable_params(self):
@@ -407,12 +451,66 @@ class BaseModel(metaclass=ABCMeta):
 
         If any sampling transforms are specified, they are applied to the
         params before being stored.
+
+        If a stats cache is being kept, the stats of the evaluation being
+        replaced are put in it, and the stats of an evaluation already made at
+        these parameters are restored instead of being reset.
         """
+        self._store_stats()
         # add the static params
         values = self.static_params.copy()
         values.update(params)
         self._current_params = self._transform_params(**values)
-        self._current_stats = ModelStats()
+        self._current_key = _stats_key(params)
+        self._current_stats = ModelStats() if self._current_key is None \
+            else self._stats_cache.get(self._current_key, ModelStats())
+
+    def _store_stats(self):
+        """Remembers the stats of the current parameters, dropping the oldest
+        entry once the cache is full.
+        """
+        if self._current_key is None:
+            return
+        self._stats_cache[self._current_key] = self._current_stats
+        self._trim_stats_cache()
+
+    def _trim_stats_cache(self):
+        """Drops the oldest entries if a bound was asked for."""
+        if self._stats_cache_size is None:
+            return
+        while len(self._stats_cache) > self._stats_cache_size:
+            self._stats_cache.popitem(last=False)
+
+    def gather_stats_cache(self, pool):
+        """Collect what a pool's workers remembered into this process.
+
+        An evaluation made in a worker is remembered there, so a parallel run
+        has to gather before anything can be asked for. A pool with no
+        broadcast gathers nothing; those points are worked out again instead.
+        """
+        if not hasattr(pool, 'broadcast'):
+            return
+        for remembered in pool.broadcast(_worker_stats_cache, None) or []:
+            if remembered:
+                self._stats_cache.update(remembered)
+        self._trim_stats_cache()
+
+    def cached_stats(self, params, names=None):
+        """The stats remembered for the given parameters, or None.
+
+        Parameters
+        ----------
+        params : dict
+            The parameters as they were passed to `update`.
+        names : list of str, optional
+            Which stats to return. Default is `default_stats`.
+        """
+        self._store_stats()
+        key = _stats_key(params)
+        stats = None if key is None else self._stats_cache.get(key)
+        if stats is None:
+            return None
+        return stats.getstats(names if names else self.default_stats)
 
     @property
     def current_params(self):
