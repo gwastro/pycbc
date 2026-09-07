@@ -51,7 +51,7 @@ def findchirp_chirptime(m1, m2, fLower, porder=-1, s1z=0., s2z=0.):
         Lower frequency cutoff in Hz.
     porder : int, optional
         Twice the post-Newtonian order of the phasing (e.g. 7 for 3.5PN).
-        The default (-1) uses the highest implemented order.
+        The default (-1) lets LAL use the highest implemented order.
     s1z, s2z : float, optional
         Dimensionless spin components aligned with the orbital angular
         momentum. Default to zero (non-spinning).
@@ -61,11 +61,12 @@ def findchirp_chirptime(m1, m2, fLower, porder=-1, s1z=0., s2z=0.):
     m_sec = (m1 + m2) * MTSUN_SI
     eta = m1 * m2 / (m1 + m2) ** 2
 
-    if porder == -1:
-        porder = 7
-
     lal_pars = lal.CreateDict()
-    lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(lal_pars, porder)
+    if porder != -1:
+        # otherwise LAL defaults to its highest implemented order, matching
+        # the behaviour of spa_tmplt with phase_order=-1
+        lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(
+            lal_pars, porder)
     phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
         m1, m2, float(s1z), float(s2z), lal_pars)
 
