@@ -1,0 +1,29 @@
+pycbc.inject package
+====================
+
+Submodules
+----------
+
+pycbc.inject.inject module
+--------------------------
+
+.. automodule:: pycbc.inject.inject
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.inject.injfilterrejector module
+-------------------------------------
+
+.. automodule:: pycbc.inject.injfilterrejector
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.inject
+   :members:
+   :show-inheritance:
+   :undoc-members:
