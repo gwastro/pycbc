@@ -29,62 +29,67 @@ import pycbc.pnutils
 from pycbc.scheme import schemed
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
 from pycbc.waveform.utils import ceilpow2
-from pycbc.constants import PI, GAMMA, MTSUN_SI, PC_SI, MRSUN_SI
+from pycbc.constants import PI, MTSUN_SI, PC_SI, MRSUN_SI
 from pycbc.libutils import import_optional
 
 lal = import_optional('lal')
 lalsimulation = import_optional('lalsimulation')
 
-def findchirp_chirptime(m1, m2, fLower, porder):
-    # variables used to compute chirp time
+def findchirp_chirptime(m1, m2, fLower, porder=-1, s1z=0., s2z=0.):
+    """Estimate the chirp time, i.e. the time from ``fLower`` to coalescence,
+    of a TaylorF2 / stationary-phase-approximation waveform.
+
+    The post-Newtonian coefficients are taken directly from LAL's
+    ``SimInspiralTaylorF2AlignedPhasing`` rather than being hardcoded, so
+    aligned-spin contributions to the phasing are included.
+
+    Parameters
+    ----------
+    m1, m2 : float
+        Component masses in solar masses.
+    fLower : float or numpy.ndarray
+        Lower frequency cutoff in Hz.
+    porder : int, optional
+        Twice the post-Newtonian order of the phasing (e.g. 7 for 3.5PN).
+        The default (-1) lets LAL use the highest implemented order.
+    s1z, s2z : float, optional
+        Dimensionless spin components aligned with the orbital angular
+        momentum. Default to zero (non-spinning).
+    """
     m1 = float(m1)
     m2 = float(m2)
-    m = m1 + m2
-    eta = m1 * m2 / m / m
-    c0T = c2T = c3T = c4T = c5T = c6T = c6LogT = c7T = 0.
+    m_sec = (m1 + m2) * MTSUN_SI
+    eta = m1 * m2 / (m1 + m2) ** 2
 
-    # All implemented option
-    if porder == -1:
-        porder = 7
+    lal_pars = lal.CreateDict()
+    if porder != -1:
+        # otherwise LAL defaults to its highest implemented order, matching
+        # the behaviour of spa_tmplt with phase_order=-1
+        lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(
+            lal_pars, porder)
+    phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
+        m1, m2, float(s1z), float(s2z), lal_pars)
 
-    if porder >= 7:
-        c7T = PI * (14809.0 * eta * eta / 378.0 - 75703.0 * eta / 756.0 - 15419335.0 / 127008.0)
+    # PN expansion parameter v evaluated at the lower frequency cutoff
+    v = (PI * m_sec * fLower) ** (1.0 / 3.0)
+    lnv = numpy.log(v)
 
-    if porder >= 6:
-        c6T = GAMMA * 6848.0 / 105.0 - 10052469856691.0 / 23471078400.0 +\
-            PI * PI * 128.0 / 3.0 + \
-            eta * (3147553127.0 / 3048192.0 - PI * PI * 451.0 / 12.0) -\
-            eta * eta * 15211.0 / 1728.0 + eta * eta * eta * 25565.0 / 1296.0 +\
-            eta * eta * eta * 25565.0 / 1296.0 + numpy.log(4.0) * 6848.0 / 105.0
-        c6LogT = 6848.0 / 105.0
+    pfaN = phasing.v[0]
 
-    if porder >= 5:
-        c5T = 13.0 * PI * eta / 3.0 - 7729.0 * PI / 252.0
+    # In the stationary phase approximation the time-frequency relation is
+    # t(f) = (1 / 2 pi) dPsi/df, so a phasing term (phi_k + phi_kl ln v) v^k
+    # contributes to the chirp time tC = t_coalescence - t(fLower) with a
+    # factor (5 - k) / 5 relative to the Newtonian term, plus an extra
+    # -phi_kl / 5 v^k piece from differentiating the logarithm.
+    series = 1.0
+    for k in range(2, 8):
+        phi_k = phasing.v[k] / pfaN
+        phi_kl = phasing.vlogv[k] / pfaN
+        series = series + v ** k * (
+            (5.0 - k) / 5.0 * (phi_k + phi_kl * lnv) - phi_kl / 5.0)
 
-    if porder >= 4:
-        c4T = 3058673.0 / 508032.0 + eta * (5429.0 / 504.0 + eta * 617.0 / 72.0)
-        c3T = -32.0 * PI / 5.0
-        c2T = 743.0 / 252.0 + eta * 11.0 / 3.0
-        c0T = 5.0 * m * MTSUN_SI / (256.0 * eta)
-
-    # This is the PN parameter v evaluated at the lower freq. cutoff
-    xT = pow (PI * m * MTSUN_SI * fLower, 1.0 / 3.0)
-    x2T = xT * xT
-    x3T = xT * x2T
-    x4T = x2T * x2T
-    x5T = x2T * x3T
-    x6T = x3T * x3T
-    x7T = x3T * x4T
-    x8T = x4T * x4T
-
-    # Computes the chirp time as tC = t(v_low);
-    # tC = t(v_low) - t(v_upper) would be more
-    # correct, but the difference is negligible.
-
-    # This formula works for any PN order, because
-    # higher order coeffs will be set to zero.
-    return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T +
-                  (c6T + c6LogT * numpy.log(xT)) * x6T + c7T * x7T) / x8T
+    tN = 5.0 * m_sec / (256.0 * eta * v ** 8)
+    return tN * series
 
 
 def spa_length_in_time(**kwds):
@@ -97,11 +102,10 @@ def spa_length_in_time(**kwds):
     m2 = kwds['mass2']
     flow = kwds['f_lower']
     porder = int(kwds['phase_order'])
+    s1z = kwds.get('spin1z') or 0.
+    s2z = kwds.get('spin2z') or 0.
 
-    # For now, we call the swig-wrapped function below in
-    # lalinspiral.  Eventually would be nice to replace this
-    # with a function using PN coeffs from lalsimulation.
-    return findchirp_chirptime(m1, m2, flow, porder)
+    return findchirp_chirptime(m1, m2, flow, porder, s1z=s1z, s2z=s2z)
 
 
 def spa_amplitude_factor(**kwds):
