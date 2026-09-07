@@ -39,6 +39,7 @@ jobs:
         pip install GitPython # This shouldn't really be needed!
         pip install -r requirements.txt
         pip install .
+    - uses: ahnitz/github-ci-cache@v1
     - name: retrieving frame data
       run: bash -e examples/search/get.sh
     - name: generating template bank
@@ -54,6 +55,8 @@ jobs:
         ./start
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
+    - uses: ahnitz/github-ci-cache/report@v1
+      if: always()
     - name: store log files
       if: always()
       uses: actions/upload-artifact@v7
