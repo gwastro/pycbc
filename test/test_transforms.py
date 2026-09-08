@@ -96,8 +96,40 @@ class TestTransforms(unittest.TestCase):
                 raise ValueError(
                 "Transform {} does not map back to itself.".format(trans.name))
 
+class TestSpaceDetectorTransformsSetOutputs(unittest.TestCase):
+    """`SSBToLISA`, `GEOToLISA`, and `SSBToGEO` are the "inverse-direction"
+    (`_forward = False`) sibling of `LISAToSSB`, `LISAToGEO`, and `GEOToSSB`
+    respectively -- same `SkyFrameTransform` base, same frame pair, opposite
+    direction. This checks that custom parameter names survive
+    construction, and that `.inputs`/`.outputs` (needed by `from_config`)
+    get set correctly for the inverse direction too.
+    """
+    def test_ssb_to_lisa_custom_names(self):
+        t = transforms.SSBToLISA(
+            tc_lisa_param='tc_lisa', longitude_lisa_param='lon_lisa',
+            latitude_lisa_param='lat_lisa', polarization_lisa_param='pol_lisa')
+        self.assertEqual(t.tc_lisa_param, 'tc_lisa')
+        self.assertEqual(
+            t.outputs, {'tc_lisa', 'lon_lisa', 'lat_lisa', 'pol_lisa'})
+        self.assertEqual(
+            t.inputs, {'tc', 'eclipticlongitude', 'eclipticlatitude',
+                      'polarization'})
+
+    def test_geo_to_lisa_custom_names(self):
+        t = transforms.GEOToLISA(tc_lisa_param='tc_lisa')
+        self.assertEqual(t.tc_lisa_param, 'tc_lisa')
+        self.assertIn('tc_lisa', t.outputs)
+
+    def test_ssb_to_geo_custom_names(self):
+        t = transforms.SSBToGEO(tc_geo_param='tc_geo')
+        self.assertEqual(t.tc_geo_param, 'tc_geo')
+        self.assertIn('tc_geo', t.outputs)
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTransforms))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestSpaceDetectorTransformsSetOutputs))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
