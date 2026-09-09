@@ -534,7 +534,6 @@ class CandidateForGraceDB(object):
                          if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
             from pycbc.results import source_color
-            from matplotlib import pyplot as plt
             colors = [source_color(label) for label in labels]
             fig, ax = plt.subplots()
             ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
