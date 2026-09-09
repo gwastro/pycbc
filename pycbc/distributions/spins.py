@@ -167,15 +167,17 @@ class IndependentChiPChiEff(Arbitrary):
                ((s2x**2. + s2y**2. + s2z**2.) < 1.)
         return test
 
-    def __contains__(self, params):
+    def contains(self, params):
         """Determines whether the given values are in each parameter's bounds
         and satisfy the constraints.
         """
-        isin = all([params in dist for dist in self.distributions.values()])
-        if not isin:
-            return False
-        # in the individual distributions, apply constrains
-        return self._constraints(params)
+        isin = True
+        for dist in self.distributions.values():
+            isin = isin & dist.contains(params)
+        # the individual distributions do not know about the constraints
+        if not getattr(isin, 'ndim', 0):
+            return isin and self._constraints(params)
+        return isin & self._constraints(params)
 
     def _draw(self, size=1, **kwargs):
         """Draws random samples without applying physical constrains.
