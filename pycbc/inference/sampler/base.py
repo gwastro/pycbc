@@ -29,6 +29,7 @@ Defines the base sampler class to be inherited by all samplers.
 from abc import ABCMeta, abstractmethod, abstractproperty
 import shutil
 import logging
+import numpy
 
 from six import add_metaclass
 
@@ -126,6 +127,66 @@ class BaseSampler(object):
         can initialize it when needed.
         """
         pass
+
+    def model_stats_from_cache(self, samples=None):
+        """The model's ``default_stats`` as arrays over the given samples.
+
+        Taken from what the model remembered as it evaluated. A point it did
+        not remember is worked out, so the answer is complete either way and
+        the cache only decides what it costs.
+
+        Parameters
+        ----------
+        samples : dict, optional
+            The points to look up. Defaults to the sampler's own, which an
+            MCMC sampler clears as it checkpoints, so a caller running after
+            the fact should read them back from the file instead.
+        """
+        model = self.model
+        model.gather_stats_cache(getattr(self, 'pool', None))
+        params = list(model.variable_params)
+        samples = self.samples if samples is None else samples
+        shape = numpy.asarray(samples[params[0]]).shape
+        flat = {p: numpy.asarray(samples[p]).flatten() for p in params}
+        names = model.default_stats
+        out = numpy.full((flat[params[0]].size, len(names)), numpy.nan)
+        missed = 0
+        for i in range(out.shape[0]):
+            point = {p: flat[p][i] for p in params}
+            cached = model.cached_stats(point, names)
+            if cached is None:
+                # Not remembered here: a sampler that evaluates somewhere we
+                # cannot reach, or a bound that dropped it. Work it out, which
+                # is what getting these afterwards has always cost.
+                model.update(**point)
+                model.logposterior  # pylint:disable=pointless-statement
+                cached = model.get_current_stats(names)
+                missed += 1
+            out[i] = cached
+        if missed:
+            logging.info("Recalculated model stats for %s of %s points",
+                         missed, out.shape[0])
+        return {name: out[:, j].reshape(shape)
+                for j, name in enumerate(names)}
+
+    def write_cached_stats(self):
+        """Fill in any stats the sampler did not write for itself.
+
+        The MCMC samplers store them as they checkpoint; the rest drop them.
+        Stats already in the file are left alone.
+        """
+        with self.io(self.checkpoint_file, 'r') as fp:
+            group = fp[fp.samples_group]
+            missing = [s for s in self.model.default_stats if s not in group]
+            if not missing:
+                return
+            samples = {p: group[p][()] for p in self.model.variable_params}
+        stats = self.model_stats_from_cache(samples)
+        for fn in [self.checkpoint_file, self.backup_file]:
+            with self.io(fn, 'a') as fp:
+                for name in missing:
+                    fp.write_data(name, stats[name], path=fp.samples_group,
+                                  append=False)
 
     @abstractmethod
     def checkpoint(self):
