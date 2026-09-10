@@ -23,8 +23,6 @@ from pycbc.io.ligolw import (
     make_psd_xmldoc,
     snr_series_to_xml
 )
-from pycbc.results import generate_asd_plot, generate_snr_plot
-from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
 
 logger = logging.getLogger('pycbc.io.gracedb')
@@ -484,6 +482,7 @@ class CandidateForGraceDB(object):
                 for ifo in self.et_ifos
                 }
             ref_time = int(self.merger_time)
+            from pycbc.results import generate_asd_plot, generate_snr_plot
             generate_snr_plot(self.snr_series, snr_series_plot_fname,
                               triggers, ref_time)
 
@@ -534,6 +533,7 @@ class CandidateForGraceDB(object):
             prob_plot = {k: v for (k, v) in self.probabilities.items()
                          if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
+            from pycbc.results import source_color
             colors = [source_color(label) for label in labels]
             fig, ax = plt.subplots()
             ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',

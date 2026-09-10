@@ -20,7 +20,6 @@ import logging
 import numpy
 
 from pycbc.types import TimeSeries
-from pycbc.io.hdf import HFile
 
 logger = logging.getLogger('pycbc.frame.store')
 
@@ -45,6 +44,7 @@ def read_store(fname, channel, start_time, end_time):
         Time series containing the requested data
 
     """
+    from pycbc.io.hdf import HFile
     fhandle = HFile(fname, 'r')
     if channel not in fhandle:
         raise ValueError('Could not find channel name {}'.format(channel))
