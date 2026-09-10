@@ -7,6 +7,7 @@ import os
 import numpy
 import json
 import copy
+import certifi
 from multiprocessing.dummy import threading
 
 import lal
@@ -34,6 +35,13 @@ def _single_value(value):
     """Return a Python scalar from scalar or single-element array input."""
     return numpy.asarray(value).item()
 
+
+def insert_gracedb_option_group(parser):
+    """Adds the options to choose config options for uploading to a gracedb server"""
+    gracedb_group = parser.add_argument_group("Options determining the upload of events to gracedb")
+
+    gracedb_group.add_argument('--bootstrap-servers',
+                               help="The bootstrap server passed into the GraceDB Kafka producer class")
 
 class CandidateForGraceDB(object):
     """This class provides an interface for uploading candidates to GraceDB.
@@ -82,6 +90,8 @@ class CandidateForGraceDB(object):
         self.basename = None
         if kwargs.get('gracedb'):
             self.gracedb = kwargs['gracedb']
+        if kwargs.get('producer'):
+            self.producer = kwargs['producer']
 
         # Determine if the candidate should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results
@@ -349,7 +359,7 @@ class CandidateForGraceDB(object):
                           pastrof)
             logger.info('P_astro file saved as %s', self.pastro_file)
 
-    def upload(self, fname, gracedb_server=None, testing=True,
+    def upload(self, fname, gracedb_server=None, bootstrap_servers=None, testing=True,
                extra_strings=None, search='AllSky', labels=None,
                **kwargs):
         """Upload this candidate to GraceDB, and annotate it with a few useful
@@ -362,6 +372,8 @@ class CandidateForGraceDB(object):
         gracedb_server: string, optional
             URL to the GraceDB web API service for uploading the event.
             If omitted, the default will be used.
+        bootstrap_servers: string, optional
+            The bootstap server used to create the GraceDB Kafka producer instance.
         testing: bool
             Switch to determine if the upload should be sent to gracedb as a
             test trigger (True) or a production trigger (False).
@@ -394,7 +406,7 @@ class CandidateForGraceDB(object):
         # connect to GraceDB if we are not reusing a connection
         if not hasattr(self, 'gracedb'):
             logger.info('Connecting to GraceDB')
-            gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+            gdbargs = {'reload_certificate': True, 'reload_buffer': 300, 'api_version': 'v2'}
             if kwargs is not None:
                 gdbargs.update(kwargs)
             if gracedb_server:
@@ -402,9 +414,20 @@ class CandidateForGraceDB(object):
             try:
                 from ligo.gracedb.rest import GraceDb
                 self.gracedb = GraceDb(**gdbargs)
+                
             except Exception as exc:
                 logger.error('Failed to create GraceDB client')
                 logger.error(exc)
+
+        if not hasattr(self, 'producer'):
+            logger.info('Creating Kafka producer...')
+            from ligo.gracedb.kafka import GraceDbKafkaProducer
+            ca_bundle = certifi.where()
+            self.producer = GraceDbKafkaProducer(
+                bootstrap_servers=bootstrap_servers,
+                service_url=self.gracedb._service_url,
+                ca_cert_path=ca_bundle,
+            )
 
         # create GraceDB event
         logger.info('Uploading %s to GraceDB', fname)
@@ -416,7 +439,9 @@ class CandidateForGraceDB(object):
                 "pycbc",
                 fname,
                 search=search,
-                labels=labels
+                labels=labels,
+                kafka=self.producer,
+                http_fallback=True,
             )
             gid = response.json()["graceid"]
             logger.info("Uploaded event %s", gid)
