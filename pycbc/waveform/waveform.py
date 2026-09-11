@@ -809,7 +809,7 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
            full_duration >= nparams['t_obs_start']:
             break
 
-    if 'f_ref' not in nparams:
+    if not nparams.get('f_ref'):
         nparams['f_ref'] = params['f_lower']
 
     # factor to ensure the vectors are all large enough. We don't need to
