@@ -271,11 +271,18 @@ class CandidateForGraceDB(object):
         self.probabilities = None
         self.hasmassgap = None
         if 'mc_area_args' in kwargs:
-            eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
+            # Detectors used only for sky localization have no SNR in
+            # coinc_results, so their sngl rows carry no effective distance.
+            # Only the detectors that actually contributed an SNR can inform
+            # the distance estimate. At least one such detector always exists,
+            # otherwise there would be no candidate to report.
+            eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table
+                             if sngl.eff_distance is not None]
+            min_eff_distance = min(eff_distances)
             self.probabilities = calc_probabilities(
                 coinc_inspiral_row.mchirp,
                 coinc_inspiral_row.snr,
-                min(eff_distances),
+                min_eff_distance,
                 kwargs['mc_area_args']
             )
             if 'embright_mg_max' in kwargs['mc_area_args']:
@@ -286,7 +293,7 @@ class CandidateForGraceDB(object):
                 self.hasmassgap = calc_probabilities(
                     coinc_inspiral_row.mchirp,
                     coinc_inspiral_row.snr,
-                    min(eff_distances),
+                    min_eff_distance,
                     hasmg_args
                 )['Mass Gap']
 
