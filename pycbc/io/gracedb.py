@@ -274,33 +274,28 @@ class CandidateForGraceDB(object):
             # Detectors used only for sky localization have no SNR in
             # coinc_results, so their sngl rows carry no effective distance.
             # Only the detectors that actually contributed an SNR can inform
-            # the distance estimate.
+            # the distance estimate. At least one such detector always exists,
+            # otherwise there would be no candidate to report.
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table
                              if sngl.eff_distance is not None]
-            if not eff_distances:
-                logger.warning(
-                    'No detector with an SNR measurement for this candidate, '
-                    'skipping source probability estimation'
-                )
-            else:
-                min_eff_distance = min(eff_distances)
-                self.probabilities = calc_probabilities(
+            min_eff_distance = min(eff_distances)
+            self.probabilities = calc_probabilities(
+                coinc_inspiral_row.mchirp,
+                coinc_inspiral_row.snr,
+                min_eff_distance,
+                kwargs['mc_area_args']
+            )
+            if 'embright_mg_max' in kwargs['mc_area_args']:
+                hasmg_args = copy.deepcopy(kwargs['mc_area_args'])
+                hasmg_args['mass_gap'] = True
+                hasmg_args['mass_bdary']['gap_max'] = \
+                    kwargs['mc_area_args']['embright_mg_max']
+                self.hasmassgap = calc_probabilities(
                     coinc_inspiral_row.mchirp,
                     coinc_inspiral_row.snr,
                     min_eff_distance,
-                    kwargs['mc_area_args']
-                )
-                if 'embright_mg_max' in kwargs['mc_area_args']:
-                    hasmg_args = copy.deepcopy(kwargs['mc_area_args'])
-                    hasmg_args['mass_gap'] = True
-                    hasmg_args['mass_bdary']['gap_max'] = \
-                        kwargs['mc_area_args']['embright_mg_max']
-                    self.hasmassgap = calc_probabilities(
-                        coinc_inspiral_row.mchirp,
-                        coinc_inspiral_row.snr,
-                        min_eff_distance,
-                        hasmg_args
-                    )['Mass Gap']
+                    hasmg_args
+                )['Mass Gap']
 
         # Combine p astro and source probs
         if self.p_astro is not None and self.probabilities is not None:
