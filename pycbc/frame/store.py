@@ -16,16 +16,17 @@
 """
 This modules contains functions for reading in data from hdf stores
 """
+
 import logging
 import numpy
 
 from pycbc.types import TimeSeries
 
-logger = logging.getLogger('pycbc.frame.store')
+logger = logging.getLogger("pycbc.frame.store")
 
 
 def read_store(fname, channel, start_time, end_time):
-    """ Read time series data from hdf store
+    """Read time series data from hdf store
 
     Parameters
     ----------
@@ -45,13 +46,14 @@ def read_store(fname, channel, start_time, end_time):
 
     """
     from pycbc.io.hdf import HFile
-    fhandle = HFile(fname, 'r')
+
+    fhandle = HFile(fname, "r")
     if channel not in fhandle:
-        raise ValueError('Could not find channel name {}'.format(channel))
+        raise ValueError("Could not find channel name {}".format(channel))
 
     # Determine which segment data lies in (can only read contiguous data now)
-    starts = fhandle[channel]['segments']['start'][:]
-    ends = fhandle[channel]['segments']['end'][:]
+    starts = fhandle[channel]["segments"]["start"][:]
+    ends = fhandle[channel]["segments"]["end"][:]
 
     diff = start_time - starts
     loc = numpy.where(diff >= 0)[0]
@@ -71,5 +73,4 @@ def read_store(fname, channel, start_time, end_time):
 
     start = int((start_time - stime) * sample_rate)
     end = int((end_time - stime) * sample_rate)
-    return TimeSeries(data[start:end], delta_t=1.0/sample_rate,
-                      epoch=start_time)
+    return TimeSeries(data[start:end], delta_t=1.0 / sample_rate, epoch=start_time)
