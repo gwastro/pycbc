@@ -21,7 +21,7 @@ pytest = "*"
 graphviz = "*"
 
 [tool.pixi.pypi-dependencies]
-pycbc = { path = ".", editable = true, extras = ["test"] }
+pycbc = { path = ".", editable = true, extras = ["test", "docs"] }
 
 [tool.pixi.environments]
 default = { features = ["bbhx"], solve-group = "default" }
