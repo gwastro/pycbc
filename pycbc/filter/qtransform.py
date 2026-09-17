@@ -203,16 +203,11 @@ def qseries(fseries, Q, f0, return_complex=False):
     # normalize and generate bi-square window
     qprime = Q / 11**(1/2.)
     norm = numpy.sqrt(315. * qprime / (128. * f0))
-    window_size = 2 * int(f0 / qprime * fseries.duration) + 1
-    start = int((f0 - (f0 / qprime)) * fseries.duration)
-    end = int(start + window_size)
     nfreq = len(fseries)
-    if start < 0:
-        start = 0
-    if end > nfreq:
-        end = nfreq
-    window_size = end - start
-    xfrequencies = numpy.linspace(-1., 1., window_size)
+    halfwidth = f0 / qprime
+    start = max(0, int((f0 - halfwidth) * fseries.duration))
+    end = min(nfreq, int((f0 - halfwidth) * fseries.duration) + 2 * int(halfwidth * fseries.duration) + 1)
+    xfrequencies = numpy.linspace(-1., 1., end - start)
     center = (start + end) // 2
 
     windowed = fseries[start:end] * (1 - xfrequencies ** 2) ** 2 * norm
