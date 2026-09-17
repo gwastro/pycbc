@@ -37,8 +37,6 @@ class BaseRedshiftEvolution(ABC):
     - Differential spacetime volume (4-volume)
     - Redshift probability distributions
 
-    Cosmology is fixed to Planck15.
-
     Notes
     -----
     - Redshift `z` is dimensionless.
@@ -65,7 +63,8 @@ class BaseRedshiftEvolution(ABC):
 
         # Redshift grid (dimensionless)
         if z_grid is None:
-            self._z_grid = np.linspace(1e-3, self.zmax, num_zbins)
+            #self._z_grid = np.linspace(1e-3, self.zmax, num_zbins)
+            self._z_grid = np.linspace(0.0, self.zmax, num_zbins)
         else:
             self._z_grid = np.asarray(z_grid)
 
@@ -162,7 +161,7 @@ class BaseRedshiftEvolution(ABC):
 
     @abstractmethod
     def psi_z(self, redshift, **parameters):
-        pass
+        NotImplementedError
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -204,7 +203,7 @@ class BaseRedshiftEvolution(ABC):
             valid = (tau >= self.td_min) & (tau <= self.td_max)
             p_t[valid] = norm_const * tau[valid]**(-0.999)
         else:
-            raise ValueError(f"'td_model' must choose from "
+            raise ValueError(f"Currently, 'td_model' must choose from: "
                              f"['log_normal', 'gaussian', 'power_law', 'inverse'].")
         return p_t
 
