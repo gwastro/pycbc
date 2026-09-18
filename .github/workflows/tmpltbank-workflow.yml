@@ -37,6 +37,7 @@ jobs:
         pip install -r requirements.txt
         pip install sbank
         pip install .
+    - uses: ahnitz/github-ci-cache@v1
     - name: generating, submitting and running workflow
       env:
           _CONDOR_DAGMAN_USE_STRICT: "0"
@@ -48,6 +49,8 @@ jobs:
         ./status
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
+    - uses: ahnitz/github-ci-cache/report@v1
+      if: always()
     - name: store log files
       if: always()
       uses: actions/upload-artifact@v7
