@@ -1,0 +1,53 @@
+pycbc.io package
+================
+
+Submodules
+----------
+
+pycbc.io.gracedb module
+-----------------------
+
+.. automodule:: pycbc.io.gracedb
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.io.hdf module
+-------------------
+
+.. automodule:: pycbc.io.hdf
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.io.ligolw module
+----------------------
+
+.. automodule:: pycbc.io.ligolw
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.io.live module
+--------------------
+
+.. automodule:: pycbc.io.live
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.io.record module
+----------------------
+
+.. automodule:: pycbc.io.record
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.io
+   :members:
+   :show-inheritance:
+   :undoc-members:
