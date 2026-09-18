@@ -314,7 +314,26 @@ ctypedef fused numeric_type:
 
 @boundscheck(False)
 @wraparound(False)
-@cdivision(False) # Ensure the behaviour of the Python % operator is emulated
+cdef inline Py_ssize_t _lower_bound(
+    numeric_type [::1] arr,
+    Py_ssize_t n,
+    numeric_type value,
+) noexcept nogil:
+    # first index i with arr[i] >= value; arr assumed ascending
+    cdef Py_ssize_t lo = 0
+    cdef Py_ssize_t hi = n
+    cdef Py_ssize_t mid
+    while lo < hi:
+        mid = lo + ((hi - lo) >> 1)   # signed-safe midpoint
+        if arr[mid] < value:
+            lo = mid + 1
+        else:
+            hi = mid
+    return lo
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)          # no division survives in the hot loop
 def get_coinc_indexes_cython_twodet_twocoinc(
     numeric_type [::1] idxarr1,
     numeric_type [::1] idxarr2,
@@ -324,23 +343,61 @@ def get_coinc_indexes_cython_twodet_twocoinc(
     numeric_type wraparound2,
     numeric_type [::1] outputs
 ):
-    cdef Py_ssize_t arr1pos = 0
-    cdef Py_ssize_t arr2pos = 0
+    cdef Py_ssize_t n1 = idxarr1.shape[0]
+    cdef Py_ssize_t n2 = idxarr2.shape[0]
     cdef Py_ssize_t outpos = 0
-    cdef Py_ssize_t arr1_size = idxarr1.size
-    cdef Py_ssize_t arr2_size = idxarr2.size
-    cdef numeric_type cpos1
-    cdef numeric_type cpos2
+    cdef Py_ssize_t k1 = 0
+    cdef Py_ssize_t k2 = 0
+    cdef Py_ssize_t i1, i2, p1, p2
+    cdef numeric_type cpos1, cpos2
+    cdef numeric_type off1, off2, comp1, comp2
 
-    while arr1pos < arr1_size:
-        cpos1 = (idxarr1[arr1pos] - offset1) % wraparound1
-        while arr2pos < arr2_size:
-            cpos2 = (idxarr2[arr2pos] - offset2) % wraparound2
+    if n1 == 0 or n2 == 0:
+        return 0
+
+    # One-time offset reduction into [0, wraparound): keeps the single-pivot
+    # guarantee even for slides larger than a block or negative time delays.
+    off1 = offset1 % wraparound1
+    if off1 < 0:
+        off1 += wraparound1
+    off2 = offset2 % wraparound2
+    if off2 < 0:
+        off2 += wraparound2
+
+    # Wrap complement, so the hot loop never underflows (unsigned-safe).
+    comp1 = wraparound1 - off1     # in (0, wraparound1]
+    comp2 = wraparound2 - off2
+
+    with nogil:
+        p1 = _lower_bound(idxarr1, n1, off1)
+        p2 = _lower_bound(idxarr2, n2, off2)
+
+        while k1 < n1 and k2 < n2:
+            i1 = p1 + k1
+            if i1 >= n1:
+                i1 -= n1
+            i2 = p2 + k2
+            if i2 >= n2:
+                i2 -= n2
+
+            if idxarr1[i1] >= off1:
+                cpos1 = idxarr1[i1] - off1
+            else:
+                cpos1 = idxarr1[i1] + comp1
+            if idxarr2[i2] >= off2:
+                cpos2 = idxarr2[i2] - off2
+            else:
+                cpos2 = idxarr2[i2] + comp2
+
             if cpos1 == cpos2:
                 outputs[outpos] = cpos1
                 outpos += 1
-            arr2pos += 1
-        arr2pos = 0
-        arr1pos += 1
+                k1 += 1
+                k2 += 1
+            elif cpos1 < cpos2:
+                k1 += 1
+            else:
+                k2 += 1
+
     return outpos
 
