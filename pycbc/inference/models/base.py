@@ -286,8 +286,8 @@ def read_sampling_params_from_config(cp, section_group=None,
 #
 
 
-# what each process has already handed over, so that repeated collection
-# only moves what is new
+# what each process has already handed over, so collecting again only
+# moves what is new
 _handed_over = set()
 
 
@@ -304,11 +304,10 @@ def _worker_stats_cache(_):
 
 
 def _stats_key(params):
-    """A hashable key for a set of parameter values, or None for a set that
-    cannot be one.
+    """A hashable key for a set of parameter values, or None if there is none.
 
     Values may be strings as well as numbers, so nothing is converted.
-    Reconstruction updates with whole arrays of trial values, which are not a
+    Reconstruction updates with whole arrays of trial values; those are not a
     point and are not remembered.
     """
     key = tuple(sorted(params.items()))
@@ -376,10 +375,9 @@ class BaseModel(metaclass=ABCMeta):
         for converting parameters, and not for rescaling the parameter space,
         a Jacobian is not required for these transforms.
     stats_cache : int, optional
-        Bound how many evaluations' stats are remembered for ``cached_stats``
-        to give back later. The default keeps all of them, which is what the
-        samplers that carried their own stats were already doing. Set a number
-        to cap the memory, at the cost of losing the oldest.
+        How many evaluations' stats to remember for ``cached_stats`` to give
+        back later. The default keeps all of them; a number caps the memory
+        and loses the oldest.
     """
     name = None
 
@@ -452,9 +450,9 @@ class BaseModel(metaclass=ABCMeta):
         If any sampling transforms are specified, they are applied to the
         params before being stored.
 
-        If a stats cache is being kept, the stats of the evaluation being
-        replaced are put in it, and the stats of an evaluation already made at
-        these parameters are restored instead of being reset.
+        The stats of the evaluation being replaced go into the cache, and
+        an earlier evaluation at these same parameters has its stats restored
+        rather than reset.
         """
         self._store_stats()
         # add the static params

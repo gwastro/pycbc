@@ -44,9 +44,10 @@ parser.add_argument("--force", action="store_true", default=False,
                     help="If the output-file already exists, overwrite it. "
                          "Otherwise, an OSError is raised.")
 parser.add_argument("--no-model-stats", action="store_true", default=False,
-                    help="Do not put the model's stats in the output. Any "
-                         "the sampler did not keep would have to be worked "
-                         "out again, which this avoids paying for.")
+                    help="Leave the model's stats out of the output. "
+                         "They are otherwise filled in at the end, which "
+                         "costs one likelihood evaluation for every point "
+                         "the sampler did not keep stats for.")
 parser.add_argument("--save-backup", action="store_true",
                     default=False,
                     help="Don't delete the backup file after the run has "

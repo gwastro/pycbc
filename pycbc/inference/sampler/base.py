@@ -131,16 +131,16 @@ class BaseSampler(object):
     def model_stats_from_cache(self, samples=None):
         """The model's ``default_stats`` as arrays over the given samples.
 
-        Taken from what the model remembered as it evaluated. A point it did
-        not remember is worked out, so the answer is complete either way and
-        the cache only decides what it costs.
+        Taken from what the model remembered as it evaluated; a point it did
+        not remember is worked out. The cache decides the cost, not the
+        answer.
 
         Parameters
         ----------
         samples : dict, optional
             The points to look up. Defaults to the sampler's own, which an
-            MCMC sampler clears as it checkpoints, so a caller running after
-            the fact should read them back from the file instead.
+            MCMC sampler clears as it checkpoints -- read them back from the
+            file instead when running after the fact.
         """
         model = self.model
         model.gather_stats_cache(getattr(self, 'pool', None))
@@ -155,11 +155,10 @@ class BaseSampler(object):
             point = {p: flat[p][i] for p in params}
             cached = model.cached_stats(point, names)
             if cached is None:
-                # Not remembered here: a sampler that evaluates somewhere we
-                # cannot reach, or a bound that dropped it. Work it out, which
-                # is what getting these afterwards has always cost.
+                # not remembered: a worker we cannot reach, or a bound
+                # that dropped it. Evaluating fills the stats in.
                 model.update(**point)
-                model.logposterior  # pylint:disable=pointless-statement
+                _ = model.logposterior
                 cached = model.get_current_stats(names)
                 missed += 1
             out[i] = cached
