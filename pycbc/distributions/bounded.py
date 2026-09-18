@@ -238,13 +238,21 @@ class BoundedDist(object):
         """dict: A dictionary of the parameter names and their bounds."""
         return self._bounds
 
-    def __contains__(self, params):
+    def contains(self, params):
+        """Whether each of the given points is within the bounds of every
+        parameter. ``params`` maps each parameter to a value or an array of
+        values. Use this instead of ``params in self`` for arrays.
+        """
+        isin = True
         try:
-            return all(self._bounds[p].contains_conditioned(params[p])
-                       for p in self._params)
+            for p in self._params:
+                isin = isin & self._bounds[p].contains_conditioned(params[p])
         except KeyError:
             raise ValueError("must provide all parameters [%s]" %(
                 ', '.join(self._params)))
+        return isin
+
+    __contains__ = contains
 
     def apply_boundary_conditions(self, **kwargs):
         r"""Applies any boundary conditions to the given values (e.g., applying
@@ -269,18 +277,40 @@ class BoundedDist(object):
         return dict([[p, self._bounds[p].apply_conditions(val)]
                      for p,val in kwargs.items() if p in self._bounds])
 
+    def _in_bounds(self, func, outside, **kwargs):
+        """Evaluates ``func`` where the values are within the bounds, and
+        returns ``outside`` at the rest. ``func`` is only ever handed values
+        within them. A scalar is passed straight through, so a single-point
+        call costs one containment test.
+        """
+        isin = self.contains(kwargs)
+        if not getattr(isin, 'ndim', 0):
+            return func(**kwargs) if isin else outside
+        out = numpy.full(isin.shape, outside, dtype=float)
+        if isin.any():
+            inside = dict(kwargs)
+            inside.update({p: numpy.asarray(kwargs[p])[isin]
+                           for p in self._params if numpy.ndim(kwargs[p])})
+            out[isin] = func(**inside)
+        return out
+
     def pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
         ignored. Any boundary conditions are applied to the values before the
-        pdf is evaluated.
+        pdf is evaluated. The values may be arrays.
         """
-        return self._pdf(**self.apply_boundary_conditions(**kwargs))
+        return self._in_bounds(self._pdf, 0.,
+                               **self.apply_boundary_conditions(**kwargs))
 
     def _pdf(self, **kwargs):
         """The underlying pdf function called by `self.pdf`. This must be set
         by any class that inherits from this class. Otherwise, a
         `NotImplementedError` is raised.
+
+        Only values within the bounds are passed in; `self.pdf` fills in zero
+        elsewhere. Reduce over the parameters, not over everything given, so
+        that an array of values returns an array.
         """
         raise NotImplementedError("pdf function not set")
 
@@ -288,14 +318,19 @@ class BoundedDist(object):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params.
         Unrecognized arguments are ignored. Any boundary conditions are
-        applied to the values before the pdf is evaluated.
+        applied to the values before the pdf is evaluated. The values may be
+        arrays.
         """
-        return self._logpdf(**self.apply_boundary_conditions(**kwargs))
+        return self._in_bounds(self._logpdf, -numpy.inf,
+                               **self.apply_boundary_conditions(**kwargs))
 
     def _logpdf(self, **kwargs):
         """The underlying log pdf function called by `self.logpdf`. This must
         be set by any class that inherits from this class. Otherwise, a
         `NotImplementedError` is raised.
+
+        Only values within the bounds are passed in; `self.logpdf` fills in
+        ``-inf`` elsewhere. See `_pdf`.
         """
         raise NotImplementedError("pdf function not set")
 

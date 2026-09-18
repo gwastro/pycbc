@@ -190,12 +190,9 @@ class Gaussian(bounded.BoundedDist):
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
-        if kwargs in self:
-            return sum([self._lognorm[p] +
-                        self._expnorm[p]*(kwargs[p]-self._mean[p])**2.
-                        for p in self._params])
-        else:
-            return -numpy.inf
+        return sum([self._lognorm[p] +
+                    self._expnorm[p]*(kwargs[p]-self._mean[p])**2.
+                    for p in self._params])
 
     @classmethod
     def from_config(cls, cp, section, variable_args):

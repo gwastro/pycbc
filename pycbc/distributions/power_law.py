@@ -154,13 +154,9 @@ class UniformPowerLaw(bounded.BoundedDist):
             if p not in kwargs.keys():
                 raise ValueError(
                             'Missing parameter {} to construct pdf.'.format(p))
-        if kwargs in self:
-            pdf = self._norm * \
-                  numpy.prod([(kwargs[p])**(self.dim - 1)
-                              for p in self._params])
-            return float(pdf)
-        else:
-            return 0.0
+        return self._norm * \
+            numpy.prod([(kwargs[p])**(self.dim - 1)
+                        for p in self._params], axis=0)
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
@@ -171,13 +167,9 @@ class UniformPowerLaw(bounded.BoundedDist):
             if p not in kwargs.keys():
                 raise ValueError(
                             'Missing parameter {} to construct pdf.'.format(p))
-        if kwargs in self:
-            log_pdf = self._lognorm + \
-                      (self.dim - 1) * \
-                      numpy.log([kwargs[p] for p in self._params]).sum()
-            return log_pdf
-        else:
-            return -numpy.inf
+        return self._lognorm + \
+            (self.dim - 1) * \
+            numpy.log([kwargs[p] for p in self._params]).sum(axis=0)
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
