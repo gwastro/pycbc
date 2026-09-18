@@ -219,7 +219,10 @@ def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
         inj_file = node.output_file
     elif inspinj_exe is PycbcCreateInjectionsExecutable:
         # Ensure pycbc_create_injections dedicated configuration files
-        # are copied over to the results directory
+        # are copied over to the results directory. The --config-files
+        # option itself is already passed to the executable automatically:
+        # it is in Executable.file_input_options, so is resolved to a
+        # tracked input File and added to the command line for us.
         shutil.copy2(inspinj_job.get_opt('config-files'), conf_dir)
         node, inj_file = inspinj_job.create_node()
         node.add_opt("--gps-start-time", int_gps_time_to_str(t_seg[0]))
@@ -240,18 +243,27 @@ def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
 
     split_injs = setup_splittable_dax_generated(workflow, [inj_file],
                                                 'splitinjfiles', curr_tags)
+    # curr_tags[0] is 'shortinjs' or 'broadinjs': point- and broad-injection
+    # sets may share the same file_tag (e.g. both named "bns"), so it must
+    # be included here too, or the point and broad output files for that
+    # tag collide (same name used for two different jobs' outputs).
+    set_tag = curr_tags[0]
+
     # Banksim job
     banksim_job = BanksimExecutable(workflow.cp, 'banksim',
-                                    out_dir=file_tag+'match',
-                                    ifos=workflow.ifos, tags=[file_tag])
+                                    out_dir=set_tag+file_tag+'match',
+                                    ifos=workflow.ifos,
+                                    tags=[set_tag, file_tag])
     bscombine_job = \
         BanksimBankCombineExecutable(workflow.cp, 'banksim_bank_combine',
-                                     out_dir=file_tag+'match',
-                                     ifos=workflow.ifos, tags=[file_tag])
+                                     out_dir=set_tag+file_tag+'match',
+                                     ifos=workflow.ifos,
+                                     tags=[set_tag, file_tag])
     mcombine_job = \
         BanksimMatchCombineExecutable(workflow.cp, 'banksim_match_combine',
-                                      out_dir=file_tag+'match',
-                                      ifos=workflow.ifos, tags=[file_tag])
+                                      out_dir=set_tag+file_tag+'match',
+                                      ifos=workflow.ifos,
+                                      tags=[set_tag, file_tag])
     banksim_files = wf.FileList([])
 
     for inj_idx, split_inj in enumerate(split_injs):
@@ -318,32 +330,36 @@ point_inj_summ_files = []
 # Nothing in this yet, so not sure how to set this.
 broad_inj_summ_files = []
 
-# Set the point injection names
-for f in sorted(output_pointinjs):
-    rdir['point_injection_sets/{}'.format(f)]
+# Only plan the point-injection summary jobs if there are actually any
+# point-injection sets configured. Otherwise these jobs have no input
+# files and fail immediately when run. See gwastro/pycbc#4931.
+if output_pointinjs:
+    # Set the point injection names
+    for f in sorted(output_pointinjs):
+        rdir['point_injection_sets/{}'.format(f)]
 
-curr_node = point_injs_table_exe.create_node\
-    (workflow.analysis_time,
-     [output_pointinjs[f] for f in sorted(output_pointinjs)],
-     ['../' + rdir.name['point_injection_sets/{}'.format(f)]
-      for f in sorted(output_pointinjs)])
-workflow += curr_node
-plotting_nodes.append(curr_node)
-point_inj_summ_files.append((curr_node.output_file,))
-
-secs = workflow.cp.get_subsections('banksim_plot_eff_fitting_fac')
-for tag in secs:
-    eff_fitting_facs_exe.update_current_tags([tag])
-    curr_node = eff_fitting_facs_exe.create_node\
+    curr_node = point_injs_table_exe.create_node\
         (workflow.analysis_time,
-         [output_pointinjs[f] for f in output_pointinjs])
+         [output_pointinjs[f] for f in sorted(output_pointinjs)],
+         ['../' + rdir.name['point_injection_sets/{}'.format(f)]
+          for f in sorted(output_pointinjs)])
     workflow += curr_node
     plotting_nodes.append(curr_node)
-    summary_page_files.append(curr_node.output_file)
+    point_inj_summ_files.append((curr_node.output_file,))
 
-# Set up layouts
-layout.group_layout(rdir.base, summary_page_files)
-layout.two_column_layout(rdir['point_injection_sets'], point_inj_summ_files)
+    secs = workflow.cp.get_subsections('banksim_plot_eff_fitting_fac')
+    for tag in secs:
+        eff_fitting_facs_exe.update_current_tags([tag])
+        curr_node = eff_fitting_facs_exe.create_node\
+            (workflow.analysis_time,
+             [output_pointinjs[f] for f in output_pointinjs])
+        workflow += curr_node
+        plotting_nodes.append(curr_node)
+        summary_page_files.append(curr_node.output_file)
+
+    # Set up layouts
+    layout.group_layout(rdir.base, summary_page_files)
+    layout.two_column_layout(rdir['point_injection_sets'], point_inj_summ_files)
 # Also add broad_injs when ready
 
 secs = workflow.cp.get_subsections('banksim_plot_fitting_factors')
@@ -355,7 +371,10 @@ for tag in sorted(output_broadinjs):
     plot_fitting_facs_exe.update_output_directory\
         (rdir['broad_injection_sets/{}'.format(tag)])
     for tag2 in secs:
-        plot_fitting_facs_exe.update_current_tags([tag,tag2])
+        # 'broadinjs' distinguishes this from the point-injection loop
+        # below: point and broad sets may share the same tag (e.g. both
+        # named "bns"), and without this their output files collide.
+        plot_fitting_facs_exe.update_current_tags(['broadinjs', tag, tag2])
         curr_node = plot_fitting_facs_exe.create_node\
             (workflow.analysis_time, curr_file)
         workflow += curr_node
@@ -371,7 +390,8 @@ for tag in sorted(output_pointinjs):
     plot_fitting_facs_exe.update_output_directory\
         (rdir['point_injection_sets/{}'.format(tag)])
     for tag2 in secs:
-        plot_fitting_facs_exe.update_current_tags([tag,tag2])
+        # See 'broadinjs' comment above.
+        plot_fitting_facs_exe.update_current_tags(['shortinjs', tag, tag2])
         curr_node = plot_fitting_facs_exe.create_node\
             (workflow.analysis_time, curr_file)
         workflow += curr_node
