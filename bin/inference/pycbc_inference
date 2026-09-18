@@ -33,6 +33,12 @@ from pycbc.inference import models
 from pycbc.inference.io import loadfile
 from pycbc.workflow import configuration
 
+from pycbc.pool import use_fork_start_method
+
+# cpnest builds its own pool rather than taking ours, and its children
+# read what this process already has, so the start method is set here
+use_fork_start_method()
+
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)

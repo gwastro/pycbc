@@ -1,6 +1,7 @@
 """ Tools for creating pools of worker processes
 """
 import multiprocessing.pool
+import sys
 import functools
 from multiprocessing import TimeoutError, cpu_count, get_context
 import types
@@ -9,6 +10,19 @@ import atexit
 import logging
 
 logger = logging.getLogger('pycbc.pool')
+
+
+def use_fork_start_method():
+    """ Set fork as the multiprocessing start method, for pools we do not make
+
+    Does nothing if a start method has already been chosen, or where fork was
+    not the default to begin with.
+    """
+    if (sys.platform.startswith('linux')
+            and 'fork' in multiprocessing.get_all_start_methods()
+            and multiprocessing.get_start_method(allow_none=True) is None):
+        multiprocessing.set_start_method('fork')
+
 
 def is_main_process():
     """ Check if this is the main control process and may handle one time tasks
