@@ -2,7 +2,7 @@
 healpy
 
 # Needed for GraceDB uploads and skymap generation
-ligo-gracedb>=2.10.0
+ligo-gracedb[kafka]>=2.10.0
 ligo.skymap>=2.1.1
 
 # auxiliary samplers

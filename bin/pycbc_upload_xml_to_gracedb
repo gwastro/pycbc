@@ -23,11 +23,13 @@ Take a coinc xml file containing multiple events and upload to gracedb.
 import os
 import argparse
 import logging
+import certifi
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
 
 from ligo.gracedb.rest import GraceDb
+from ligo.gracedb.kafka import GraceDbKafkaProducer
 import lal
 import lal.series
 from igwn_ligolw import lsctables
@@ -35,7 +37,7 @@ from igwn_ligolw import utils as ligolw_utils
 from igwn_segments import segment, segmentlist
 
 import pycbc
-from pycbc.io.gracedb import gracedb_tag_with_version
+from pycbc.io.gracedb import gracedb_tag_with_version, insert_gracedb_option_group
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.io.hdf import HFile
 from pycbc.psd import interpolate
@@ -69,6 +71,7 @@ def check_gracedb_for_event(gdb_handle, query, far):
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
+insert_gracedb_option_group(parser)
 parser.add_argument("--psd-files", nargs='+', required=True,
                     help='HDF file(s) containing the PSDs to upload')
 parser.add_argument('--input-file', required=True, type=str,
@@ -113,9 +116,18 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose, default_level=1)
 
 if args.production_server:
-    gracedb = GraceDb()
+    gracedb = GraceDb(api_version='v2')
 else:
-    gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
+    gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/', api_version='v2')
+
+logging.info("Creating Kafka producer...")
+ca_bundle = certifi.where()
+producer = GraceDbKafkaProducer(
+    bootstrap_servers=args.bootstrap_servers,
+    service_url=gracedb._service_url,
+    ca_cert_path=ca_bundle,
+)
+
 
 xmldoc = ligolw_utils.load_filename(args.input_file,
                              contenthandler=LIGOLWContentHandler)
@@ -235,7 +247,9 @@ for event in coinc_table:
             filename_xml,
             filecontents=open(fullpath_xml, "rb").read(),
             search=id_str,
-            offline=True
+            offline=True,
+            kafka=producer,
+            http_fallback=True,
         ).json()
 
         logging.info("Uploaded event %s.", r["graceid"])

@@ -18,7 +18,7 @@ from pycbc import (
 )
 from pycbc.types import MultiDetOptionAction, load_frequencyseries
 import pycbc.conversions as cv
-from pycbc.io.gracedb import CandidateForGraceDB
+from pycbc.io.gracedb import CandidateForGraceDB, insert_gracedb_option_group
 from pycbc.io.hdf import load_hdf5_to_dict, HFile
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
@@ -69,6 +69,7 @@ parser.add_argument('--cores', type=int,
 snr_optimizer.insert_snr_optimizer_options(parser)
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
+insert_gracedb_option_group(parser)
 
 args = parser.parse_args()
 
@@ -354,7 +355,7 @@ if args.enable_gracedb_upload:
                'parameters.')
     comment = comment.format(original_gid)
 
-    gid = doc.upload(xml_path, gracedb_server=args.gracedb_server,
+    gid = doc.upload(xml_path, gracedb_server=args.gracedb_server, bootstrap_servers=args.bootstrap_servers,
                      testing=(not args.production), extra_strings=[comment],
                      search=args.gracedb_search, labels=args.gracedb_labels)
     if gid is not None:
@@ -363,8 +364,8 @@ if args.enable_gracedb_upload:
         # add a note to the original G event pointing to the optimized one
         from ligo.gracedb.rest import GraceDb
 
-        gracedb = GraceDb(args.gracedb_server) \
-                if args.gracedb_server is not None else GraceDb()
+        gracedb = GraceDb(args.gracedb_server, api_version='v2') \
+                if args.gracedb_server is not None else GraceDb(api_version='v2')
         comment = ('Result of SNR maximization uploaded as '
                    '<a href="/events/{0}/view">{0}</a>').format(gid)
         gracedb.write_log(
