@@ -110,7 +110,7 @@ class BaseRedshiftEvolution(ABC):
     # Cosmology utilities
     # ------------------------------------------------------------------
 
-    def dV3cdz(self, redshift):
+    def dVc_dz(self, redshift):
         """
         Differential comoving 3-volume per unit redshift.
 
@@ -231,12 +231,12 @@ class BaseRedshiftEvolution(ABC):
     # 4-volume and normalization
     # ------------------------------------------------------------------
 
-    def dV4cdz(self, redshift, **parameters):
+    def dVT_dz(self, redshift, **parameters):
         """
         Differential spacetime (4-volume) element.
 
         Defined as:
-            dV4/dz = psi(z) / (1 + z) * dVc/dz
+            dVT/dz = psi(z) / (1 + z) * dVc/dz
 
         Parameters
         ----------
@@ -353,7 +353,7 @@ class BaseRedshiftEvolution(ABC):
         # Only valid redshifts contribute
         valid = z <= self.zmax
         norm = self.normalize(**parameters)
-        pdf[valid] = (self.dV4cdz(z[valid], **parameters) / norm).decompose().value
+        pdf[valid] = (self.dVT_dz(z[valid], **parameters) / norm).decompose().value
         return pdf[0] if is_scalar else pdf
 
 
@@ -393,7 +393,7 @@ class PowerLawRedshift(BaseRedshiftEvolution):
 power_law_redshift = PowerLawRedshift()
 
 
-class GRB2008Redshift(BaseRedshiftEvolution):
+class GRB2008SFR(BaseRedshiftEvolution):
     """
     The star formation rate (SFR) calibrated by high-z GRBs data.
     """
@@ -410,10 +410,10 @@ class GRB2008Redshift(BaseRedshiftEvolution):
         return rho_local*((1+redshift)**(3.4*eta) + ((1+redshift)/5000)**(-0.3*eta) +
                        ((1+redshift)/9)**(-3.5*eta))**(1./eta)
 
-sfr_grb_2008_redshift = GRB2008Redshift()
+sfr_grb_2008_redshift = GRB2008SFR()
 
 
-class MadauDickinson2014Redshift(BaseRedshiftEvolution):
+class MadauDickinson2014SFR(BaseRedshiftEvolution):
     """
     The madau-dickinson 2014 star formation rate (SFR).
     """
@@ -427,10 +427,10 @@ class MadauDickinson2014Redshift(BaseRedshiftEvolution):
         redshift = np.asarray(redshift)
         return 0.015 * (1+redshift)**gamma / (1 + ((1+redshift)/(1+z_peak))**kappa)
 
-sfr_madau_dickinson_2014_redshift = MadauDickinson2014Redshift()
+sfr_madau_dickinson_2014_redshift = MadauDickinson2014SFR()
 
 
-class MadauFragos2017Redshift(BaseRedshiftEvolution):
+class MadauFragos2017SFR(BaseRedshiftEvolution):
     """
     The madau-fragos 2017 star formation rate (SFR).
     """
@@ -454,7 +454,7 @@ class MadauFragos2017Redshift(BaseRedshiftEvolution):
             raise ValueError("'mode' must choose from 'high' or 'low'.")
         return k_imf * 0.015 * (1+redshift)**factor_a / (1 + ((1+redshift)/factor_b)**factor_c)
 
-sfr_madau_fragos_2017_redshift = MadauFragos2017Redshift()
+sfr_madau_fragos_2017_redshift = MadauFragos2017SFR()
 
 
 class SFRTimeDelayRedshift(BaseRedshiftEvolution):
@@ -581,8 +581,8 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         return self.prob_redshift(redshift, **parameters)
 
 
-__all__ = ['PowerLawRedshift', 'power_low_redshift', 'GRB2008Redshift',
-'sfr_grb_2008_redshift', 'MadauDickinson2014Redshift', 'sfr_madau_dickinson_2014_redshift',
-'MadauFragos2017Redshift', 'sfr_madau_fragos_2017_redshift', 'SFRTimeDelayRedshift'
+__all__ = ['PowerLawRedshift', 'power_law_redshift', 'GRB2008SFR',
+'sfr_grb_2008_redshift', 'MadauDickinson2014SFR', 'sfr_madau_dickinson_2014_redshift',
+'MadauFragos2017SFR', 'sfr_madau_fragos_2017_redshift', 'SFRTimeDelayRedshift'
 ]
 
