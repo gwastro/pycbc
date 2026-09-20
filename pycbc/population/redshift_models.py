@@ -47,8 +47,8 @@ class BaseRedshiftEvolution(ABC):
     Notes
     -----
     - Redshift `z` is dimensionless.
-    - Comoving volumes are returned in units of Gpc³.
-    - Spacetime volumes are returned in Gpc³ (with implicit time integration).
+    - Comoving volumes are returned in units of Gpc^3.
+    - Spacetime volumes are returned in Gpc^3 (with implicit time integration).
     - The class uses numerical integration over a redshift grid for performance.
 
     Parameters
@@ -65,7 +65,7 @@ class BaseRedshiftEvolution(ABC):
 
     Attributes
     ----------
-    zmax : float
+    z_max : float
         Maximum redshift used for integration.
     num_zbins : int
         Number of redshift bins.
@@ -107,7 +107,7 @@ class BaseRedshiftEvolution(ABC):
             Custom redshift grid (must be strictly increasing, start at 0, end at z_max).
             If None, a uniform grid from 0 to z_max is used.
         """
-        self.zmax = float(zmax)
+        self.z_max = float(z_max)
         self.num_zbins = int(num_zbins)
 
         # Validate z_max, num_bin, and cosmology
