@@ -93,7 +93,7 @@ The sections below control how the PSD is estimated in each segment. The program
 devoted to this is ``pycbc_calculate_psd``, see its ``--help`` for details. In
 this example, two instances of ``pycbc_calculate_psd`` are launched (one per
 detector) and each instance uses 4 CPU cores. For details on PSD estimation,
-see for instance the `FindChirp paper <http://arxiv.org/abs/gr-qc/0509116>`_.::
+see for instance the `FindChirp paper <https://arxiv.org/abs/gr-qc/0509116>`_.::
 
     [calculate_psd]
     cores = 4
