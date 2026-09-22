@@ -27,51 +27,14 @@ jobs:
       run: |
         pixi add python="${{ matrix.python-version }}.*"
 
-    - name: Cache LAL auxiliary data files
-      id: cache-lal-aux-data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: lal-aux-data
-        path: ~/lal_aux_data
-
-    - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
-      name: Download LAL auxiliary data files
+    - uses: ahnitz/github-ci-cache@v1
+    - name: Download LAL auxiliary data files
       run: |
-        mkdir ~/lal_aux_data
+        mkdir -p ~/lal_aux_data
         pushd ~/lal_aux_data
         curl --show-error --silent --retry 5 --retry-delay 5 --retry-all-errors --fail \
-          --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
         popd
-
-    - name: Cache example GW data
-      id: cache-example-gw-data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: example-gw-data
-        path: |
-          docs/_include/*.gwf
-          examples/inference/lisa_smbhb_ldc/*_psd.txt
-          examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
-          examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
-          examples/inference/margtime/*.gwf
-          examples/inference/multisignal/*.gwf
-          examples/inference/relative/*.gwf
-          examples/inference/relmarg/*.gwf
-          examples/inference/single/*.gwf
-
-    - name: Cache downloaded test data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: test-data-cache-${{ hashFiles('tools/ci_prefetch_test_data.py') }}
-        restore-keys: |
-          test-data-cache-
-        path: ~/.astropy/cache/download
-
-    - name: Pre-fetch remote test data
-      continue-on-error: true
-      run: |
-        python3 tools/ci_prefetch_test_data.py
 
     - name: run pycbc test suite
       run: |
@@ -90,6 +53,8 @@ jobs:
         export LAL_DATA_PATH=$HOME/lal_aux_data
         pixi run -e inference test-inference
 
+    - uses: ahnitz/github-ci-cache/report@v1
+      if: always()
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
