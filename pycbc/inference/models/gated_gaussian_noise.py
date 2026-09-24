@@ -1473,8 +1473,6 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     @property
     def _extra_stats(self):
         """Adds the maxL phase and corresponding likelihood."""
-        ### FIXME: this only saves the modes explicitly listed to sample over
-        ### relative modes and other modes sampled in amp space are excluded
         return ['maxl_phase', 'maxl_logl'] + \
             [f'scale_factor_{mode}' for mode in self.sampled_mode_names]
 
