@@ -131,12 +131,14 @@ class GWOSCFrameTest(unittest.TestCase):
     ):
         find_datasets.return_value = ['O2']
         expected = ValueError('run does not cover the requested interval')
-        get_urls.side_effect = [expected, expected]
+        fallback_error = ValueError('no event data cover the interval')
+        get_urls.side_effect = [expected, fallback_error]
 
         with self.assertRaises(ValueError) as context:
             gwosc.gwosc_frame_urls('H1', 1234, 1240)
 
         self.assertIs(context.exception, expected)
+        self.assertIs(context.exception.__cause__, fallback_error)
 
     @mock.patch('pycbc.frame.gwosc.gwosc_frame_json')
     @mock.patch('pycbc.frame.gwosc.get_urls')

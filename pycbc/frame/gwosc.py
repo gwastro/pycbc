@@ -201,9 +201,9 @@ def gwosc_frame_urls(ifo, start_time, end_time, sample_rate=None):
             sample_rate=sample_rate,
             format='gwf',
         )
-    except ValueError:
+    except ValueError as exc:
         if error is not None:
-            raise error
+            raise error from exc
         raise
 
     # Event releases may include both short and long files covering the same
