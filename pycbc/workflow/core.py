@@ -47,7 +47,6 @@ import igwn_segments as segments
 import lal
 import lal.utils
 import numpy
-import Pegasus.api  # Try and move this into pegasus_workflow
 from igwn_ligolw import ligolw, lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import segments as ligolw_segments
@@ -174,8 +173,6 @@ class Executable(pegasus_workflow.Executable):
             self.ifo_string = None
         self.cp = cp
         self.name = name
-        self.container_cls = None
-        self.container_type = None
 
         try:
             self.installed = cp.getboolean(
@@ -271,72 +268,8 @@ class Executable(pegasus_workflow.Executable):
             "Using %s executable at %s on site %s", name, exe_url.path, exe_site
         )
 
-        # Determine if this executables should be run in a container.
-        # A container is a property of *where* the job runs, not of the
-        # job itself, so the default lives on the execution site's own
-        # profile section (e.g. [pegasus_profile-condorpool_container]) --
-        # the same section sites already use for other site-specific
-        # settings such as pycbc|site-scratch. An executable only needs
-        # its own [pegasus_profile-<name>] container entry if it genuinely
-        # needs to override the site default.
-        exe_sec = 'pegasus_profile-%s' % name
-        site_sec = 'pegasus_profile-%s' % exe_site
-        if cp.has_option(exe_sec, 'container|type'):
-            container_sec = exe_sec
-        elif cp.has_option(site_sec, 'container|type'):
-            container_sec = site_sec
-        else:
-            container_sec = None
-
-        if container_sec is not None:
-            self.container_type = cp.get(container_sec, 'container|type')
-
-            container_types = {
-                'docker': Pegasus.api.Container.DOCKER,
-                'singularity': Pegasus.api.Container.SINGULARITY,
-                'shifter': Pegasus.api.Container.SHIFTER,
-            }
-            try:
-                container_type_enum = container_types[self.container_type]
-            except KeyError:
-                err_msg = "container|type must be one of {}, got '{}'".format(
-                    list(container_types.keys()), self.container_type)
-                raise ValueError(err_msg)
-
-            self.container_img = cp.get(container_sec, 'container|image')
-            try:
-                self.container_site = cp.get(container_sec,
-                                             'container|image_site')
-            except:
-                self.container_site = "local"
-
-            try:
-                self.container_mount = cp.get(container_sec,
-                                             'container|mount').split(',')
-            except:
-                self.container_mount = None
-
-            try:
-                self.container_bypass_staging = cp.getboolean(
-                    container_sec, 'container|bypass_staging')
-            except:
-                self.container_bypass_staging = False
-
-            self.container_cls = Pegasus.api.Container(
-                "{}-container".format(name),
-                container_type_enum,
-                self.container_img,
-                image_site=self.container_site,
-                mounts=self.container_mount,
-                bypass_staging=self.container_bypass_staging,
-            )
-
-            super(Executable, self).__init__(self.pegasus_name,
-                                             installed=self.installed,
-                                             container=self.container_cls)
-
-        else:
-            super().__init__(self.pegasus_name, installed=self.installed)
+        super(Executable, self).__init__(self.pegasus_name,
+                                         installed=self.installed)
 
         if hasattr(self, "group_jobs"):
             self.add_profile("pegasus", "clusters.size", self.group_jobs)
