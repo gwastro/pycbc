@@ -1315,7 +1315,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     r"""Gated Gaussian noise model that analytically marginalizes over the
     phase of a signal.
 
-    The phase to be marginalized over is specified by the user using the 
+    The phase to be marginalized over is specified by the user using the
     `ref_phase` argument. If a model consists of multiple modes each with their
     own phase, only the reference phase is marginalized over. All phases must
     be specified with the `phase_names` argument. This can be passed as a list
@@ -1330,7 +1330,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     where h_c and h_s are the waveform with phi set to zero and pi/2
     respectively. The number of integration points can be controlled via the
     `phase_samples` argument.
-    
+
     This class also allows functionality to sample over the optimal SNR of each
     mode in the signal. User must specify the names of the amplitude parameters
     for the modes the user wants to sample in SNR space. These specified
@@ -1366,9 +1366,9 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             logging.warning('No phase_names provided. Assuming single mode '
                             f'specified by ref_phase {ref_phase}')
             self.phase_names = [ref_phase]
-        elif type(phase_names) == list:
+        elif isinstance(phase_names, list):
             self.phase_names = phase_names
-        elif type(phase_names) == str:
+        elif isinstance(phase_names, str):
             self.phase_names = phase_names.split(' ')
         else:
             raise TypeError('Unrecognized format for phase_names arg. Accepts '
@@ -1385,9 +1385,9 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             if amp_names is None:
                 raise ValueError('Must provide names of amplitude parameters '
                                  'if specifying sample_snrs')
-            elif type(amp_names) == list:
+            elif isinstance(amp_names, list):
                 self.amp_names = amp_names
-            elif type(amp_names) == str:
+            elif isinstance(amp_names, str):
                 self.amp_names = amp_names.split(' ')
             else:
                 raise TypeError('Unrecognized format for amp_names. '
@@ -1416,7 +1416,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             for amp in self.amp_names:
                 params[amp] = self.fiducial_amp_value
             # generate the cosine and sine terms
-            wfs = self.waveform_generator.generate(phases=self.phase_names, 
+            wfs = self.waveform_generator.generate(phases=self.phase_names,
                                                    ref_phase=self.ref_phase,
                                                    **params)
             for det in wfs:
@@ -1477,7 +1477,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             [f'scale_factor_{mode}' for mode in self.sampled_mode_names]
 
     def _snr_scale_factor(self, wfs, gated_wfs, mode, snr=None):
-        """Compute scale factor to get the desired network SNR given a set of 
+        """Compute scale factor to get the desired network SNR given a set of
         waveforms."""
         thismode = {det: wfs[det][mode] for det in self.det_names}
         thisgatedmode = {det: gated_wfs[det][mode] for det in self.det_names}
