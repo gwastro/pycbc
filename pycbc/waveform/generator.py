@@ -1312,7 +1312,7 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
         string.
         """
         return select_waveform_modes_generator(approximant, domain)
-    
+
 
 class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
     r"""Generates frequency-domain waveform modes in a specific frame.
@@ -1456,9 +1456,9 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
                     thishlmc = fp*ulm_cos + fc*vlm_cos
                     thishlms = fp*ulm_sin + fc*vlm_sin
                     # apply time shift
-                    dethlm_cos = apply_fd_time_shift(thishlmc, tc+tshift, 
+                    dethlm_cos = apply_fd_time_shift(thishlmc, tc+tshift,
                                                      copy=True)
-                    dethlm_sin = apply_fd_time_shift(thishlms, tc+tshift, 
+                    dethlm_sin = apply_fd_time_shift(thishlms, tc+tshift,
                                                      copy=True)
                     if self.recalib:
                         # recalibrate with given calibration model
@@ -1492,7 +1492,7 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
                 for det in hlm:
                     hlm[det][mode] = (hclm[det], hslm[det])
         return hlm
-    
+
     @staticmethod
     def select_rframe_generator(approximant, domain):
         """Returns a radiation frame generator class based on the approximant
@@ -1601,7 +1601,7 @@ def get_td_generator(approximant, modes=False):
         if modes:
             return TDomainCBCModesGenerator
         return TDomainCBCGenerator
-    
+
     if approximant in waveform_modes._mode_waveform_td:
         return TDomainCBCModesGenerator
 
@@ -1622,7 +1622,7 @@ def get_fd_generator(approximant, modes=False):
         if modes:
             return FDomainCBCModesGenerator
         return FDomainCBCGenerator
-    
+
     if approximant in waveform_modes._mode_waveform_fd:
         return FDomainCBCModesGenerator
 
