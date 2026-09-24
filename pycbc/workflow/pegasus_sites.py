@@ -51,6 +51,7 @@ KNOWN_SITES = [
     "local",
     "condorpool_symlink",
     "condorpool_copy",
+    "condorpool_container",
     "condorpool_shared",
     "osg",
 ]
@@ -144,6 +145,46 @@ def add_condorpool_copy_site(sitecat, cp):
     site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites", value='"nogrid"')
     site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN", value='"False"')
     site.add_profiles(Namespace.CONDOR, key="My.flock_local", value="True")
+    site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
+    sitecat.add_sites(site)
+
+
+def add_condorpool_container_site(sitecat, cp):
+    """Add condorpool_container site to site catalog
+
+    Like condorpool_copy (no shared filesystem, data moved via Condor I/O),
+    but the executable is delivered by running it inside a container via
+    HTCondor's container universe, rather than needing to be visible on the
+    execution site directly. Requirements classads to restrict this to
+    execute nodes advertising container support are not yet set here and
+    should be added once known for the target pool.
+    """
+    site = Site("condorpool_container", arch=Arch.X86_64, os_type=OS.LINUX)
+    add_site_pegasus_profile(site, cp)
+
+    site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
+    site.add_profiles(Namespace.PEGASUS, key="data.configuration",
+                      value="condorio")
+    site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
+                      value="true")
+    # This explicitly disables symlinking
+    site.add_profiles(Namespace.PEGASUS, key='nosymlink',
+                      value=True)
+    site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
+                      value="true")
+    site.add_profiles(Namespace.CONDOR, key="universe", value="container")
+    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid",
+                      value="False")
+    site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
+                      value="Yes")
+    site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
+                      value="ON_EXIT_OR_EVICT")
+    site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites",
+                      value='"nogrid"')
+    site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN",
+                      value='"False"')
+    site.add_profiles(Namespace.CONDOR, key="My.flock_local",
+                      value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     sitecat.add_sites(site)
 
@@ -281,6 +322,8 @@ def add_site(sitecat, sitename, cp, out_dir=None):
         add_condorpool_symlink_site(sitecat, cp)
     elif sitename == "condorpool_copy":
         add_condorpool_copy_site(sitecat, cp)
+    elif sitename == "condorpool_container":
+        add_condorpool_container_site(sitecat, cp)
     elif sitename == "condorpool_shared":
         add_condorpool_shared_site(sitecat, cp, out_dir, local_url)
     elif sitename == "osg":

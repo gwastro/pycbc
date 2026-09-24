@@ -271,45 +271,69 @@ class Executable(pegasus_workflow.Executable):
             "Using %s executable at %s on site %s", name, exe_url.path, exe_site
         )
 
-        # FIXME: This hasn't yet been ported to pegasus5 and won't work.
-        #        Pegasus describes two ways to work with containers, and I need
-        #        to figure out which is most appropriate and use that.
-        # Determine if this executables should be run in a container
-        try:
-            self.container_type = cp.get("pegasus_profile-%s" % name, "container|type")
-        except:
-            pass
+        # Determine if this executables should be run in a container.
+        # A container is a property of *where* the job runs, not of the
+        # job itself, so the default lives on the execution site's own
+        # profile section (e.g. [pegasus_profile-condorpool_container]) --
+        # the same section sites already use for other site-specific
+        # settings such as pycbc|site-scratch. An executable only needs
+        # its own [pegasus_profile-<name>] container entry if it genuinely
+        # needs to override the site default.
+        exe_sec = 'pegasus_profile-%s' % name
+        site_sec = 'pegasus_profile-%s' % exe_site
+        if cp.has_option(exe_sec, 'container|type'):
+            container_sec = exe_sec
+        elif cp.has_option(site_sec, 'container|type'):
+            container_sec = site_sec
+        else:
+            container_sec = None
 
-        if self.container_type is not None:
-            # FIXME: Move the actual container setup into pegasus_workflow
-            self.container_img = cp.get("pegasus_profile-%s" % name, "container|image")
+        if container_sec is not None:
+            self.container_type = cp.get(container_sec, 'container|type')
+
+            container_types = {
+                'docker': Pegasus.api.Container.DOCKER,
+                'singularity': Pegasus.api.Container.SINGULARITY,
+                'shifter': Pegasus.api.Container.SHIFTER,
+            }
             try:
-                self.container_site = cp.get(
-                    "pegasus_profile-%s" % name, "container|image_site"
-                )
+                container_type_enum = container_types[self.container_type]
+            except KeyError:
+                err_msg = "container|type must be one of {}, got '{}'".format(
+                    list(container_types.keys()), self.container_type)
+                raise ValueError(err_msg)
+
+            self.container_img = cp.get(container_sec, 'container|image')
+            try:
+                self.container_site = cp.get(container_sec,
+                                             'container|image_site')
             except:
                 self.container_site = "local"
 
             try:
-                self.container_mount = cp.get(
-                    "pegasus_profile-%s" % name, "container|mount"
-                ).split(",")
+                self.container_mount = cp.get(container_sec,
+                                             'container|mount').split(',')
             except:
                 self.container_mount = None
 
+            try:
+                self.container_bypass_staging = cp.getboolean(
+                    container_sec, 'container|bypass_staging')
+            except:
+                self.container_bypass_staging = False
+
             self.container_cls = Pegasus.api.Container(
-                f"{name}-container",
-                self.container_type,
+                "{}-container".format(name),
+                container_type_enum,
                 self.container_img,
-                imagesite=self.container_site,
-                mount=self.container_mount,
+                image_site=self.container_site,
+                mounts=self.container_mount,
+                bypass_staging=self.container_bypass_staging,
             )
 
-            super().__init__(
-                self.pegasus_name,
-                installed=self.installed,
-                container=self.container_cls,
-            )
+            super(Executable, self).__init__(self.pegasus_name,
+                                             installed=self.installed,
+                                             container=self.container_cls)
 
         else:
             super().__init__(self.pegasus_name, installed=self.installed)
