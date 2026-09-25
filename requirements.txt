@@ -42,11 +42,5 @@ igwn-ligolw>=2.1.0
 emcee>=3.0.0
 dynesty>=1.2
 
-# For building documentation
-Sphinx>=4.2.0
-sphinx-rtd-theme>=1.0.0
-sphinxcontrib-programoutput>=0.11
-sphinx_design
-
 # Needed for ringdown and time-domain injection (fix wrap-around issue for SMBHB)
 pykerr

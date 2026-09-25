@@ -180,6 +180,12 @@ extras_require = {
     'igwn': [
         'ciecplib>=0.7.0',
     ],
+    'docs': [
+        'Sphinx>=4.2.0',
+        'sphinx-rtd-theme>=1.0.0',
+        'sphinxcontrib-programoutput>=0.11',
+        'sphinx_design',
+    ],
 }
 
 def get_reqs_from_file(filename):
