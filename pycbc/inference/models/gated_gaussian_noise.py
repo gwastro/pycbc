@@ -1356,7 +1356,8 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         self.dets = {}
         # phase marginalization parameters
         self.phase_samples = int(phase_samples)
-        self.phases = numpy.linspace(0, 2*numpy.pi, self.phase_samples)
+        self.phases = numpy.linspace(0, 2*numpy.pi, self.phase_samples,
+                                     endpoint=False)
         if ref_phase is None:
             raise KeyError('ref_phase is set to None. Please specify the '
                            'name of the phase parameter to marginalize '
@@ -1395,6 +1396,10 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             self.snr_names = [i + '_snr' for i in self.amp_names]
             ### FIXME: should be a more agnostic way to get the mode names
             self.sampled_mode_names = [i[3:] for i in self.amp_names]
+        else:
+            self.amp_names = []
+            self.sampled_mode_names = []
+            self.snr_names = []
         self.ref_amp = ref_amp
         if self.ref_amp is not None and self.ref_amp not in self.amp_names:
             raise ValueError(f'ref_amp {ref_amp} not in amp_names {amp_names}')
@@ -1588,6 +1593,15 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         marglogl = special.logsumexp(loglr) + lognl + norm - numpy.log(self.phase_samples)
         return marglogl
 
+    def _nowaveform_handler(self):
+        """Sets the extra stats to nan if no waveform was generated."""
+        for stat in ['maxl_phase', 'maxl_polarization']:
+            setattr(self._current_stats, stat, numpy.nan)
+        for mode in self.sampled_mode_names:
+            setattr(self._current_stats, f'scale_factor_{mode}', numpy.nan)
+        setattr(self._current_stats, 'maxl_logl', -numpy.inf)
+        return -numpy.inf
+
     @property
     def multi_signal_support(self):
         """ The list of classes that this model supports in a multi-signal
@@ -1600,6 +1614,9 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         """ Calculate a multi-model (signal) likelihood
         """
         # Generate the waveforms for each submodel
+        if any(m.sample_snrs for m in models + [self]):
+            raise NotImplementedError("multi-signal likelihoods are not "
+                                      "supported when sampling SNRs")
         wfs = []
         for m in models + [self]:
             wf = m.get_waveforms()
