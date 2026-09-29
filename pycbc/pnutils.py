@@ -659,11 +659,12 @@ def get_inspiral_tf(
     if approximant in ["TaylorF2", "SPAtmplt"]:
         from pycbc.waveform.spa_tmplt import findchirp_chirptime
 
-        # FIXME spins are not taken into account
         f_high = f_SchwarzISCO(mass1 + mass2)
 
         def tof_func(f):
-            return findchirp_chirptime(float(mass1), float(mass2), float(f), pn_2order)
+            return findchirp_chirptime(
+                float(mass1), float(mass2), float(f), pn_2order,
+                s1z=float(spin1), s2z=float(spin2))
     elif approximant.startswith("SEOBNRv"):
         approximant_prefix = approximant[: len("SEOBNRv*")]
         f_high = get_final_freq(approximant_prefix, mass1, mass2, spin1, spin2)

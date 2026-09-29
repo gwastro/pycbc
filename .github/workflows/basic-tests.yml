@@ -39,7 +39,7 @@ jobs:
       run: |
         mkdir ~/lal_aux_data
         pushd ~/lal_aux_data
-        curl --show-error --silent \
+        curl --show-error --silent --retry 5 --retry-delay 5 --retry-all-errors --fail \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
         popd
@@ -50,9 +50,7 @@ jobs:
       with:
         key: example-gw-data
         path: |
-          docs/_include/*_TDI_v2.gwf
-          docs/_include/*_GWOSC_4KHZ_R1-1126257415-4096.gwf
-          docs/_include/*_LOSC_CLN_4_V1-1187007040-2048.gwf
+          docs/_include/*.gwf
           examples/inference/lisa_smbhb_ldc/*_psd.txt
           examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
           examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
@@ -61,6 +59,19 @@ jobs:
           examples/inference/relative/*.gwf
           examples/inference/relmarg/*.gwf
           examples/inference/single/*.gwf
+
+    - name: Cache downloaded test data
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        key: test-data-cache-${{ hashFiles('tools/ci_prefetch_test_data.py') }}
+        restore-keys: |
+          test-data-cache-
+        path: ~/.astropy/cache/download
+
+    - name: Pre-fetch remote test data
+      continue-on-error: true
+      run: |
+        python3 tools/ci_prefetch_test_data.py
 
     - name: run pycbc test suite
       run: |

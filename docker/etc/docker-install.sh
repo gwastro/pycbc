@@ -4,13 +4,14 @@ set -e
 
 # Install PyCBC
 #
-# pip 26.2 excluded, see https://github.com/gwastro/pycbc/pull/5391
+# --use-feature venv-isolation is required here:
+# See https://github.com/pypa/pip/issues/14278
 cd /scratch
-python -m pip install --upgrade 'pip!=26.2'
-python -m pip install -r requirements.txt
-python -m pip install -r requirements-igwn.txt
-python -m pip install -r companion.txt
-python -m pip install .
+python -m pip install --upgrade pip
+python -m pip install --use-feature venv-isolation -r requirements.txt
+python -m pip install --use-feature venv-isolation -r requirements-igwn.txt
+python -m pip install --use-feature venv-isolation -r companion.txt
+python -m pip install --use-feature venv-isolation .
 cd /
 
 # Copy PyCBC source repository into the image

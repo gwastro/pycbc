@@ -207,7 +207,7 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
     def reconstruct(self, seed=None):
         """ Reconstruct a point from unwrapping the 8-fold sky symmetry
         """
-        if seed:
+        if seed is not None:
             numpy.random.seed(seed)
         rec = {}
 

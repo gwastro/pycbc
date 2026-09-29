@@ -772,3 +772,45 @@ class _BaseTestFFTClass(unittest.TestCase):
             output_args = {"delta_t": self.delta, "epoch": self.epoch}
             _test_raise_excep_ifft(self,inarr,outexp,output_args)
 
+    def test_batched_c2c(self):
+        nbatch, size = 4, 16
+        dt = complex64
+        tol = self.tdict[dt]
+
+        with self.context:
+            set_backend(self.backends)
+            rows = [ar(randn(size) + 1j * randn(size), dtype=dt)
+                    for _ in range(nbatch)]
+
+            # Each row of a batched FFT should match that row's own
+            # unbatched FFT.
+            batch_in = ar(zeros(nbatch * size, dtype=dt))
+            batch_out = ar(zeros(nbatch * size, dtype=dt))
+            for i, row in enumerate(rows):
+                batch_in[i * size:(i + 1) * size] = row
+            pycbc.fft.FFT(batch_in, batch_out, nbatch=nbatch, size=size).execute()
+
+            for i, row in enumerate(rows):
+                row_out = ar(zeros(size, dtype=dt))
+                pycbc.fft.FFT(ar(row), row_out).execute()
+                got = batch_out[i * size:(i + 1) * size]
+                self.assertTrue(
+                    row_out.almost_equal_norm(got, tol=tol),
+                    msg="batched (nbatch={0}) FFT row {1} did not match "
+                        "the same row's unbatched FFT".format(nbatch, i))
+
+            # Same check for IFFT.
+            batch_in2 = ar(zeros(nbatch * size, dtype=dt))
+            batch_out2 = ar(zeros(nbatch * size, dtype=dt))
+            for i, row in enumerate(rows):
+                batch_in2[i * size:(i + 1) * size] = row
+            pycbc.fft.IFFT(batch_in2, batch_out2, nbatch=nbatch, size=size).execute()
+
+            for i, row in enumerate(rows):
+                row_out = ar(zeros(size, dtype=dt))
+                pycbc.fft.IFFT(ar(row), row_out).execute()
+                got = batch_out2[i * size:(i + 1) * size]
+                self.assertTrue(
+                    row_out.almost_equal_norm(got, tol=tol),
+                    msg="batched (nbatch={0}) IFFT row {1} did not match "
+                        "the same row's unbatched IFFT".format(nbatch, i))

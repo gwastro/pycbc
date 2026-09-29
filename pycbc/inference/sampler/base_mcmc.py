@@ -772,6 +772,29 @@ class BaseMCMC(object, metaclass=ABCMeta):
         given file."""
         pass
 
+    def _correctjacobian(self, samples):
+        """Corrects the log jacobian values stored on disk.
+
+        Parameters
+        ----------
+        samples : dict
+            Dictionary of the samples.
+        """
+        # flatten samples for evaluating
+        orig_shape = list(samples.values())[0].shape
+        flattened_samples = {p: arr.ravel()
+                             for p, arr in list(samples.items())}
+        # convert to a list of tuples so we can use map function
+        params = list(flattened_samples.keys())
+        size = flattened_samples[params[0]].size
+        logj = numpy.zeros(size)
+        for ii in range(size):
+            these_samples = {p: flattened_samples[p][ii] for p in params}
+            these_samples = self.model.sampling_transforms.apply(these_samples)
+            self.model.update(**these_samples)
+            logj[ii] = self.model.logjacobian
+        return logj.reshape(orig_shape)
+
 
 class EnsembleSupport(object):
     """Adds support for ensemble MCMC samplers."""

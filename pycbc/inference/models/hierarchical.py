@@ -987,7 +987,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         """ Reconstruct marginalized parameters by using the primary
         model's reconstruct method, total_loglr, and others_lognl.
         """
-        if seed:
+        if seed is not None:
             numpy.random.seed(seed)
 
         if rec is None:

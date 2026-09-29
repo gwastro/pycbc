@@ -24,6 +24,8 @@ import shlex
 import numpy
 import ptemcee
 import logging
+from pycbc.inference.evidence import (
+    ladder_thermodynamic_integration, mean_logl_by_temperature)
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
@@ -34,63 +36,6 @@ from .base_multitemper import (read_betas_from_hdf,
 from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from pycbc.inference.io import PTEmceeFile
 from .. import models
-
-
-# numpy.trapz was renamed to numpy.trapezoid in numpy 2.0 (and removed as
-# numpy.trapz in later 2.x releases). Pick whichever is available so that the
-# thermodynamic integration below works across numpy versions.
-try:
-    from numpy import trapezoid as _trapezoid
-except ImportError:  # numpy < 2.0
-    from numpy import trapz as _trapezoid
-
-
-def _thermodynamic_integration_log_evidence(betas, logls):
-    """Thermodynamic integration estimate of the evidence.
-
-    This reproduces ``ptemcee.util.thermodynamic_integration_log_evidence``,
-    but uses a numpy-version-safe trapezoidal integration (``ptemcee`` still
-    calls the ``numpy.trapz`` alias, which was removed in numpy 2.x).
-
-    Parameters
-    ----------
-    betas : array
-        The inverse temperatures to use for the quadrature.
-    logls : array
-        The mean log-likelihoods corresponding to ``betas``.
-
-    Returns
-    -------
-    logZ : float
-        Estimate of the log-evidence.
-    dlogZ : float
-        The error associated with the finite number of temperatures at which
-        the posterior has been sampled.
-    """
-    if len(betas) != len(logls):
-        raise ValueError("Need the same number of log(L) values as "
-                         "temperatures.")
-
-    order = numpy.argsort(betas)[::-1]
-    betas = betas[order]
-    logls = logls[order]
-
-    betas0 = numpy.copy(betas)
-    if betas[-1] != 0:
-        betas = numpy.concatenate((betas0, [0]))
-        betas2 = numpy.concatenate((betas0[::2], [0]))
-
-        # Duplicate mean log-likelihood of hottest chain as a best guess for
-        # beta = 0.
-        logls2 = numpy.concatenate((logls[::2], [logls[-1]]))
-        logls = numpy.concatenate((logls, [logls[-1]]))
-    else:
-        betas2 = numpy.concatenate((betas0[:-1:2], [0]))
-        logls2 = numpy.concatenate((logls[:-1:2], [logls[-1]]))
-
-    logZ = -_trapezoid(logls, betas)
-    logZ2 = -_trapezoid(logls2, betas2)
-    return logZ, numpy.abs(logZ - logZ2)
 
 
 class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
@@ -389,21 +334,8 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
                                   thin_end=thin_end)
             # we'll separate betas out by their unique temperatures
             # there's probably a faster way to do this...
-            mean_logls = []
-            unique_betas = []
-            ntemps = betas.shape[0]
-            for ti in range(ntemps):
-                ubti, idx = numpy.unique(betas[ti, :], return_inverse=True)
-                unique_idx = numpy.unique(idx)
-                loglsti = logls[ti, :, :]
-                for ii in unique_idx:
-                    # average over the walkers and iterations with the same
-                    # betas
-                    getiters = numpy.where(ii == unique_idx)[0]
-                    mean_logls.append(loglsti[:, getiters].mean())
-                    unique_betas.append(ubti[ii])
-        return _thermodynamic_integration_log_evidence(
-            numpy.array(unique_betas), numpy.array(mean_logls))
+        return ladder_thermodynamic_integration(
+            *mean_logl_by_temperature(logls, betas))
 
     @staticmethod
     def compute_acf(filename, **kwargs):
@@ -634,29 +566,6 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             fp.write_random_state()
             # write attributes of the ensemble
             fp.write_ensemble_attrs(self.ensemble)
-
-    def _correctjacobian(self, samples):
-        """Corrects the log jacobian values stored on disk.
-
-        Parameters
-        ----------
-        samples : dict
-            Dictionary of the samples.
-        """
-        # flatten samples for evaluating
-        orig_shape = list(samples.values())[0].shape
-        flattened_samples = {p: arr.ravel()
-                             for p, arr in list(samples.items())}
-        # convert to a list of tuples so we can use map function
-        params = list(flattened_samples.keys())
-        size = flattened_samples[params[0]].size
-        logj = numpy.zeros(size)
-        for ii in range(size):
-            these_samples = {p: flattened_samples[p][ii] for p in params}
-            these_samples = self.model.sampling_transforms.apply(these_samples)
-            self.model.update(**these_samples)
-            logj[ii] = self.model.logjacobian
-        return logj.reshape(orig_shape)
 
     def finalize(self):
         """Calculates the log evidence and writes to the checkpoint file.

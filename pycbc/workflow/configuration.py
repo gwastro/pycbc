@@ -135,11 +135,6 @@ def resolve_url_http(url, u, filename):
                 'PRIVATE-TOKEN': pat_fh.read().decode('ascii').strip()
             }
 
-    # Make the scitokens logger a little quieter
-    # (it is called through ciecpclib)
-    curr_level = logging.getLogger().level
-    logging.getLogger('scitokens').setLevel(curr_level + 10)
-
     with ciecplib.Session() as s:
         r = s.get(url, allow_redirects=True, headers=headers)
         r.raise_for_status()
