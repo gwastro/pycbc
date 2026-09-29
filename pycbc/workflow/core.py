@@ -207,7 +207,18 @@ class Executable(pegasus_workflow.Executable):
 
         exe_site = exe_site.strip()
 
-        if exe_url.scheme in ['', 'file']:
+        site_sec = 'pegasus_profile-%s' % exe_site
+        if (exe_url.scheme == '' and '/' not in exe_path
+                and cp.has_option(site_sec, 'pycbc|container-bin-dir')):
+            # We know this will run in a container, and we know the
+            # container's bin dir, so we can construct the path to the
+            # executable accordingly.
+            bin_dir = cp.get(site_sec, 'pycbc|container-bin-dir').strip()
+            exe_path = '%s/%s' % (bin_dir.rstrip('/'), exe_path)
+            # We don't check existence of this file, similar to the
+            # singularity case below, because we don't know if the container
+            # is available for it on the submit host.
+        elif exe_url.scheme in ['', 'file']:
             # NOTE: There could be a case where the exe is available at a
             #       remote site, but not on the submit host. Currently allowed
             #       for the OSG site, versioning will not work as planned if
