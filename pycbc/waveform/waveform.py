@@ -129,6 +129,12 @@ def _check_lal_pars(p):
     if p['side_bands']:
         lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
     if p['mode_array'] is not None:
+        # LAL mode arrays are (l, m) only, no harmonic index n
+        bad = [entry for entry in p['mode_array'] if len(entry) != 2]
+        if bad:
+            raise ValueError("mode_array entries {} are not (l, m); this "
+                             "approximant takes no harmonic index n"
+                             .format(bad))
         ma = lalsimulation.SimInspiralCreateModeArray()
         for l,m in p['mode_array']:
             lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
@@ -400,6 +406,12 @@ def parse_mode_array(input_params):
     ints (e.g., ``[(2, 2), (3, 3), (4, 4)]``), a space-separated string giving
     the modes (e.g., ``22 33 44``), or an array of ints or floats (e.g.,
     ``[22., 33., 44.]``.
+
+    Entries may also be 3-tuples ``(l, m, n)``, for plugin waveforms that
+    split a multipole by a harmonic index n (eccentric waveforms, where an
+    (l, m) multipole contributes at several harmonics of the orbital
+    frequency). Those are passed through as they are; the string and array
+    shorthands above stay restricted to (l, m).
     """
     if 'mode_array' in input_params and input_params['mode_array'] is not None:
         mode_array = input_params['mode_array']
@@ -1081,7 +1093,8 @@ def seobnrv4hm_length_in_time(**kwargs):
 def get_hm_length_in_time(lor_approx, maxm_default, **kwargs):
     kwargs = parse_mode_array(kwargs)
     if 'mode_array' in kwargs and kwargs['mode_array'] is not None:
-        maxm = max(m for _, m in kwargs['mode_array'])
+        # entries are (l, m) or (l, m, n), see parse_mode_array
+        maxm = max(entry[1] for entry in kwargs['mode_array'])
     else:
         maxm = maxm_default
     try:

@@ -325,6 +325,12 @@ def get_imrphenomxh_modes(**params):
     mode_array = params.pop('mode_array', None)
     if mode_array is None:
         mode_array = default_modes(approx)
+    else:
+        # (l, m) only here, see parse_mode_array
+        bad = [entry for entry in mode_array if len(entry) != 2]
+        if bad:
+            raise ValueError("mode_array entries {} are not (l, m); {} takes "
+                             "no harmonic index n".format(bad, approx))
     if 'f_final' not in params:
         # setting to 0 will default to ringdown frequency
         params['f_final'] = 0.
@@ -405,12 +411,10 @@ def get_fd_waveform_modes(template=None, **kwargs):
 
     Returns
     -------
-    ulm : dict
-        Dictionary of mode tuples -> fourier transform of the real part of the
-        hlm time series, as a :py:class:`pycbc.types.FrequencySeries`.
-    vlm : dict
-        Dictionary of mode tuples -> fourier transform of the imaginary part of
-        the hlm time series, as a :py:class:`pycbc.types.FrequencySeries`.
+    dict
+        Dictionary of mode tuples -> ``(ulm, vlm)``, the fourier transforms of
+        the real and imaginary parts of the hlm time series, as
+        :py:class:`pycbc.types.FrequencySeries`.
     """
     params = props(template, **kwargs)
     required = parameters.fd_required
@@ -450,12 +454,9 @@ def get_td_waveform_modes(template=None, **kwargs):
 
     Returns
     -------
-    ulm : dict
-        Dictionary of mode tuples -> real part of the hlm, as a
-        :py:class:`pycbc.types.TimeSeries`.
-    vlm : dict
-        Dictionary of mode tuples -> imaginary part of the hlm, as a
-        :py:class:`pycbc.types.TimeSeries`.
+    dict
+        Dictionary of mode tuples -> ``(ulm, vlm)``, the real and imaginary
+        parts of the hlm, as :py:class:`pycbc.types.TimeSeries`.
     """
     params = props(template, **kwargs)
     required = parameters.td_required
