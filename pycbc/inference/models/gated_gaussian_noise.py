@@ -106,10 +106,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
                                                         'strain-high-pass'))
         if not cp.has_option(data_section, 'invpsd-trunc-low-freq-fill-value'):
             cp.set(data_section, 'invpsd-trunc-low-freq-fill-value', 'fmin')
-        if cp.has_option('model', 'paint-ridge') and 'paint_ridge' not in kwargs:
-            kwargs['paint_ridge'] = float(cp.get('model', 'paint-ridge'))
-        elif cp.has_option('model', 'paint_ridge') and 'paint_ridge' not in kwargs:
-            kwargs['paint_ridge'] = float(cp.get('model', 'paint_ridge'))
         return super().from_config(cp, data_section=data_section,
                                    data=data, psds=psds,
                                    **kwargs)
