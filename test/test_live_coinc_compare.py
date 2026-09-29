@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import copy
 import tempfile
 from types import SimpleNamespace
 import numpy as np
@@ -59,6 +60,44 @@ class SingleDetTrigSimulator:
         return trigs
 
 
+def add_loud_trigger_pair(trigs, template_id, end_time, snr=50.0):
+    """Append one obviously loud, exactly-coincident trigger to each
+    detector's trigger dict (in place), guaranteeing a genuine (zerolag)
+    H1-L1 coincidence with a very high ranking statistic value.
+
+    Parameters
+    ----------
+    trigs: dict of dict
+        Per-ifo trigger dicts, as produced by SingleDetTrigSimulator.get_trigs.
+    template_id: int
+        Template index shared by both detectors' extra trigger, so that
+        they are eligible to form a coincidence.
+    end_time: float
+        GPS end time shared by both detectors' extra trigger (zero time
+        difference guarantees it lands within the coincidence window).
+    snr: float
+        SNR to give the extra trigger in both detectors. Kept well above
+        the normal simulated range (4.5-10) so the resulting coinc is
+        unambiguously the loudest thing around.
+    """
+    extra = {
+        'snr': snr,
+        'end_time': end_time,
+        'chisq': 0.5,
+        'chisq_dof': 10,
+        'coa_phase': 0.0,
+        'sigmasq': 1.0,
+        'template_id': template_id,
+        'mass1': 30.0,
+        'mass2': 30.0,
+    }
+    for det in trigs:
+        for key, value in trigs[det].items():
+            trigs[det][key] = np.append(
+                value, np.array([extra[key]], dtype=value.dtype)
+            )
+
+
 class TestPyCBCLiveCoinc(unittest.TestCase):
     def setUp(self, *args):
         np.random.seed(SEED)
@@ -74,7 +113,9 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         stat_file_paths = [
             get_file(url.format("H1L1"), cache=True),
         ]
-        args = SimpleNamespace(
+        # kept on self so other tests can build coincers with variations
+        # (e.g. a different ifar_remove_threshold)
+        self.args = args = SimpleNamespace(
             sngl_ranking="snr",
             ranking_statistic="phasetd",
             statistic_files=[stat_file_paths],
@@ -85,6 +126,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
             store_background=True,
             coinc_window_pad=0.002,
             statistic_refresh_rate=None,
+            ifar_remove_threshold=None,
         )
 
         # number of templates in the bank
@@ -92,9 +134,11 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
 
         # duration of analysis segment
         analysis_chunk = 2000
+        self.analysis_chunk = analysis_chunk
 
         # combination of two detectors to analyze
         detectors = ["H1", "L1"]
+        self.detectors = detectors
 
         # number of single-detector triggers per detector per chunk
         num_single_trigs = 400
@@ -201,6 +245,95 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                 # Check that all singles, for all templates, are identical
                 lgc = lgc & (new_coincer.singles[ifo].data(temp) == old_coincer.singles[ifo].data(temp)).all()
             self.assertTrue(lgc)
+
+    def test_ifar_remove_threshold(self):
+        """With a nonzero ifar_remove_threshold, a loud zerolag coincidence
+        should mark its analysis chunk as loud: the chunk is then excluded
+        from the background time and future background coincidences, while
+        the zerolag candidate itself is still found and reported exactly
+        as it would be without the threshold set.
+
+        The `old_coinc` validation code does not implement this feature at
+        all, so this test compares two instances of the *new* coincer
+        (with and without the threshold) against each other, rather than
+        against `old_coinc` as in test_coincer_runs.
+        """
+        threshold = 1.0  # years
+
+        args_thresh = copy.copy(self.args)
+        args_thresh.ifar_remove_threshold = threshold
+        args_nothresh = copy.copy(self.args)
+        args_nothresh.ifar_remove_threshold = None
+
+        coincer_thresh = Coincer.from_cli(
+            args_thresh, self.num_templates, self.analysis_chunk,
+            self.detectors
+        )
+        coincer_nothresh = Coincer.from_cli(
+            args_nothresh, self.num_templates, self.analysis_chunk,
+            self.detectors
+        )
+
+        # A few chunks of ordinary noise triggers to establish a
+        # background, fed identically to both coincers.
+        num_warmup = 4
+        for i in range(num_warmup):
+            trigs = self.new_trigs[i]
+            coincer_thresh.add_singles(copy.deepcopy(trigs))
+            coincer_nothresh.add_singles(copy.deepcopy(trigs))
+
+        # Engineer an unambiguous, very loud zerolag coincidence: identical,
+        # very high SNR triggers for H1 and L1 in the same template at
+        # exactly the same time.
+        loud_trigs = copy.deepcopy(self.new_trigs[num_warmup])
+        loud_time = loud_trigs['H1']['end_time'][0]
+        add_loud_trigger_pair(loud_trigs, template_id=0, end_time=loud_time)
+
+        res_thresh = coincer_thresh.add_singles(copy.deepcopy(loud_trigs))
+        res_nothresh = coincer_nothresh.add_singles(copy.deepcopy(loud_trigs))
+
+        # The candidate itself is found and reported the same way whether
+        # or not removal is enabled.
+        self.assertIn('foreground/ifar', res_thresh)
+        self.assertIn('foreground/ifar', res_nothresh)
+        self.assertGreater(res_thresh['foreground/ifar'], threshold)
+
+        # Only the thresholded coincer marks its chunk loud.
+        expected_chunk = int(loud_time // self.analysis_chunk)
+        self.assertEqual(len(coincer_nothresh.loud_chunks), 0)
+        self.assertIn(expected_chunk, coincer_thresh.loud_chunks)
+
+        # A loud chunk is excluded from both ifos' contribution to the
+        # background time, so it must be strictly smaller than in the
+        # unfiltered run, even though both saw identical triggers.
+        self.assertLess(coincer_thresh.background_time,
+                        coincer_nothresh.background_time)
+
+        # On the very update that creates the loud chunk, the background
+        # coincs formed from it are stripped out of the surviving
+        # (post-clustering) winners before either coincer's buffer is
+        # updated, so the thresholded coincer must not have gained more
+        # background coincs than the unfiltered one on this update.
+        # (This direct comparison only holds right at the point the chunk
+        # is first marked loud: on later updates, excluding loud-chunk
+        # coincs *before* clustering can shift which coincs win each
+        # cluster, so background counts are no longer simply ordered.)
+        self.assertLessEqual(
+            len(coincer_thresh.coincs.data), len(coincer_nothresh.coincs.data)
+        )
+
+        # Continue for a few more chunks, comfortably inside the lookback
+        # window so the loud chunk isn't pruned yet: the exclusion should
+        # keep reducing the thresholded coincer's background time.
+        last = min(num_warmup + 4, self.num_iterations)
+        for i in range(num_warmup + 1, last):
+            trigs = self.new_trigs[i]
+            coincer_thresh.add_singles(copy.deepcopy(trigs))
+            coincer_nothresh.add_singles(copy.deepcopy(trigs))
+
+        self.assertIn(expected_chunk, coincer_thresh.loud_chunks)
+        self.assertLess(coincer_thresh.background_time,
+                        coincer_nothresh.background_time)
 
     def test_foreground_stat_hdf_contract(self):
         self.assert_foreground_stat_hdf_readable(np.array([12.5]))
