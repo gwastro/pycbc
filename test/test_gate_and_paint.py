@@ -19,10 +19,11 @@
 import unittest
 
 import numpy as np
+from scipy import linalg
 
 from pycbc.psd import interpolate, inverse_spectrum_truncation, welch
 from pycbc.strain.gate import gate_and_paint, gate_and_paint_matmul, invert_covariance
-from pycbc.types import TimeSeries
+from pycbc.types import FrequencySeries, TimeSeries
 
 
 class TestGateAndPaint(unittest.TestCase):
@@ -147,6 +148,31 @@ class TestGateAndPaint(unittest.TestCase):
         )
         self.assertIsNotNone(g_paint)
         self.assertTrue(np.all(np.isfinite(g_paint.numpy())))
+
+    def test_ridge_zero_failure_caught(self):
+        """
+        Test that turning off the ridge on bandlimited PSD raises LinAlgError,
+        while setting ridge > 0 succeeds.
+        """
+        # Create an inverse PSD with low/high frequency cutoffs
+        invpsd_data = np.zeros(self.N // 2 + 1)
+        invpsd_data[int(30 / self.delta_f) : int(300 / self.delta_f)] = 1.0
+        invpsd = FrequencySeries(invpsd_data, delta_f=self.delta_f)
+
+        lindex = int(3.9 * self.sample_rate)
+        rindex = int(4.1 * self.sample_rate)
+
+        # Without ridge: unregularized matrix is not positive-definite -> LinAlgError
+        with self.assertRaises(linalg.LinAlgError):
+            gate_and_paint(
+                self.ts, lindex, rindex, invpsd, method="cholesky", ridge=0.0
+            )
+
+        # With ridge: regularized Cholesky succeeds
+        cleaned = gate_and_paint(
+            self.ts, lindex, rindex, invpsd, method="cholesky", ridge=1e-10
+        )
+        self.assertTrue(np.all(np.isfinite(cleaned.numpy())))
 
 
 if __name__ == "__main__":
