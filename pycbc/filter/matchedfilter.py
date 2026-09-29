@@ -1925,9 +1925,11 @@ def followup_event_significance(ifo, data_reader, bank,
             - data_reader.reduced_pad * data_reader.strain.delta_t
             - buffer_duration
         )
-        if not data_reader.state.is_extent_valid(
+        data_usable = data_reader.state.is_extent_valid(
             state_start_time, buffer_duration
-        ):
+        )
+        data_usable &= data_reader.psd is not None
+        if not data_usable:
             logging.info(
                 '%s strain buffer contains invalid data during lookback, '
                 'will not use for followup',
