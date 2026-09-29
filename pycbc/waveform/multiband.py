@@ -1,12 +1,38 @@
+# Copyright (C) 2020  Alex Nitz
+#               2023  Shichao Wu
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
 """ Tools and functions to calculate interpolate waveforms using multi-banding
 """
 import numpy
-
 from pycbc.types import TimeSeries, zeros
 
 
-def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
-    """ Generate a fourier domain waveform using multibanding
+def multiband_td_waveform(bands=None, lengths=None, overlap=0, **p):
+    """ Generate a time-domain waveform using multibanding, transformed from
+    a fouerier domain waveform. Depending on whether the 'base_approximant'
+    has the detector response or not, return the two polarizations or detector
+    strain.
 
     Speed up generation of a fouerier domain waveform using multibanding. This
     allows for multi-rate sampling of the frequeny space. Each band is
@@ -32,12 +58,10 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
 
     Returns
     -------
-    hp: pycbc.types.FrequencySeries
-        Plus polarization
-    hc: pycbc.type.FrequencySeries
-        Cross polarization
+    waveform: dict or tuple contains pycbc.types.TimeSeries
     """
-    from pycbc.waveform import get_fd_waveform
+    from pycbc.waveform import (get_fd_waveform,
+                                fd_det, get_fd_det_waveform)
 
     if isinstance(bands, str):
         bands = [float(s) for s in bands.split(' ')]
@@ -56,10 +80,14 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
     dt = 1.0 / (2.0 * fmax)
     tlen = int(1.0 / dt / df)
     flen = tlen / 2 + 1
-    wf_plus = TimeSeries(zeros(tlen, dtype=numpy.float32),
-                         copy=False, delta_t=dt, epoch=-1.0/df)
-    wf_cross = TimeSeries(zeros(tlen, dtype=numpy.float32),
-                          copy=False, delta_t=dt, epoch=-1.0/df)
+    if p['approximant'] in fd_det:
+        wf_det = len(p['ifos'])*[TimeSeries(zeros(tlen, dtype=numpy.float32),
+                                 copy=False, delta_t=dt, epoch=-1.0/df)]
+    else:
+        wf_plus = TimeSeries(zeros(tlen, dtype=numpy.float32),
+                             copy=False, delta_t=dt, epoch=-1.0/df)
+        wf_cross = TimeSeries(zeros(tlen, dtype=numpy.float32),
+                              copy=False, delta_t=dt, epoch=-1.0/df)
 
     # Iterate over the sub-bands
     for i in range(len(lengths)+1):
@@ -84,16 +112,21 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
             p2['f_final'] += overlap / 2.0
 
         tlen = int(1.0 / dt / dfs[i])
-        flen = tlen / 2 + 1
+        flen = tlen // 2 + 1
 
-        hp, hc = get_fd_waveform(**p2)
+        if p['approximant'] in fd_det:
+            strain = get_fd_det_waveform(**p2)
+            zip_list = zip(wf_det, strain.values())
+        else:
+            hp, hc = get_fd_waveform(**p2)
+            zip_list = zip([wf_plus, wf_cross], [hp, hc])
 
         # apply window function to smooth over transition regions
         kmin = int(p2['f_lower'] / dfs[i])
         kmax = int(p2['f_final'] / dfs[i])
         taper = numpy.hanning(int(overlap * 2 / dfs[i]))
 
-        for wf, h in zip([wf_plus, wf_cross], [hp, hc]):
+        for wf, h in zip_list:
             h = h.astype(numpy.complex64)
 
             if taper_start:
@@ -105,8 +138,60 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
 
             # add frequency band to total and use fft to interpolate
             h.resize(flen)
-            h = h.to_timeseries()
-            wf[len(wf)-len(h):] += h
+            h = h.to_timeseries(dt)
+            wf = wf.add_into(h)
 
-    return (wf_plus.to_frequencyseries().astype(hp.dtype),
-            wf_cross.to_frequencyseries().astype(hp.dtype))
+    if p['approximant'] in fd_det:
+        waveform = {}
+        for ifo in p['ifos']:
+            waveform[ifo] = wf_det[numpy.where(p['ifos']==ifo)[0]]
+    else:
+        waveform = (wf_plus, wf_cross)
+
+    return waveform
+
+
+def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
+    """ Generate a fourier domain waveform using multibanding. Depending on
+    whether the 'base_approximant' has the detector response or not, return
+    the two polarizations or detector strain.
+
+    Speed up generation of a fouerier domain waveform using multibanding. This
+    allows for multi-rate sampling of the frequeny space. Each band is
+    smoothed and stitched together to produce the final waveform. The base
+    approximant must support 'f_ref' and 'f_final'. The other parameters
+    must be chosen carefully by the user.
+
+    Parameters
+    ----------
+    bands: list or str
+        The frequencies to split the waveform by. These should be chosen
+        so that the corresponding length include all the waveform's frequencies
+        within this band.
+    lengths: list or str
+        The corresponding length for each frequency band. This sets the
+        resolution of the subband and should be chosen carefully so that it is
+        sufficiently long to include all of the bands frequency content.
+    overlap: float
+        The frequency width to apply tapering between bands.
+    params: dict
+        The remaining keyworkd arguments passed to the base approximant
+        waveform generation.
+
+    Returns
+    -------
+    waveform: dict or tuple contains pycbc.types.FrequencySeries
+    """
+    waveform_td = multiband_td_waveform(bands, lengths, overlap, **p)
+    if isinstance(waveform_td, tuple):
+        waveform = []
+        for h in waveform_td:
+            waveform.append(h.to_frequencyseries(p['delta_f']))
+        waveform = tuple(waveform)
+    else:
+        waveform = {}
+        for ifo in p['ifos']:
+            waveform[ifo] = waveform_td[numpy.where(
+                        p['ifos']==ifo)[0]].to_frequencyseries(p['delta_f'])
+
+    return waveform
