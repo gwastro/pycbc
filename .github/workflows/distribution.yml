@@ -24,7 +24,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: cp311-* cp312-* cp313-*
+          CIBW_BUILD: cp311-* cp312-* cp313-* cp314-*
           CIBW_SKIP: "*musllinux*"
           CIBW_ARCHS_MACOS: x86_64 arm64
       - name: Upload wheels
