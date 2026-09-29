@@ -1316,6 +1316,11 @@ class RatioFilterBank(FilterBank):
         ts[-start:] = taps[:start]
         ts = TimeSeries(ts, delta_t=1.0/self.sample_rate)
         fs = ts.to_frequencyseries().astype(self.dtype)
+        if flen is not None:
+            if len(fs) > flen:
+                fs = fs[:flen]
+            elif len(fs) < flen:
+                fs.resize(flen)
         fs.params = self.table[fine_index]
         return fs
 
