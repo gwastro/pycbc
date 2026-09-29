@@ -80,6 +80,19 @@ class TestGateAndPaint(unittest.TestCase):
         diff = np.max(np.abs(cleaned_mm.numpy() - cleaned_cho.numpy()))
         self.assertLess(diff, 1e-4)
 
+    def test_compare_cholesky_to_toeplitz(self):
+        """Test that Cholesky and Toeplitz solvers agree on well-behaved gate."""
+        lindex = int(3.98 * self.sample_rate)
+        rindex = int(4.02 * self.sample_rate)
+
+        cleaned_cho = gate_and_paint(self.ts_glitch, lindex, rindex, self.invpsd,
+                                     copy=True, method='cholesky', ridge=1e-10)
+        cleaned_toep = gate_and_paint(self.ts_glitch, lindex, rindex, self.invpsd,
+                                      copy=True, method='toeplitz')
+
+        diff = np.max(np.abs(cleaned_cho.numpy() - cleaned_toep.numpy()))
+        self.assertLess(diff, 1e-4)
+
     def test_numerical_stability_large_gate(self):
         """Test large gate where unregularized Levinson suffers precision loss."""
         lindex = int(3.8 * self.sample_rate)
