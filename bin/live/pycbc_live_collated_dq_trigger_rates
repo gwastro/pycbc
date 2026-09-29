@@ -33,13 +33,13 @@ from pycbc.io import HFile
 from pycbc.frame.frame import read_frame, query_and_read_frame
 
 
-def find_frames(ifo, frame_dir, frame_type, start, end):
+def find_frames(ifo, frame_dir, frame_type, frame_pattern, start, end):
     """
     Find the frame files for a given time range.
     """
     ifo_frame_type = frame_type.format(ifo=ifo)
-    ifo_pattern = f'{ifo[0]}-{ifo_frame_type}_llhoft-'
-    folder_pattern = ifo_pattern + '{supertime}'
+    ifo_pattern = f'{ifo[0]}-{ifo}_{frame_pattern}'
+    folder_pattern = ifo_pattern + '-{supertime}'
     path_pattern = os.path.join(
         frame_dir,
         ifo_frame_type,
@@ -69,6 +69,8 @@ parser.add_argument("--frame-directory",
                     help='Directory containing frame files. Required if '
                          'not using gwdatafind.')
 parser.add_argument("--frame-type", required=True)
+parser.add_argument("--frame-pattern", help='The name pattern of the frame files. Required if not using gwdatafind.' 
+                         'For instance H-H1_arrakis_O4LLPIC-*.gwf has a frame-pattern of arrakis_O4LLPIC')
 parser.add_argument("--analysis-flag-name")
 parser.add_argument("--dq-channel", required=True)
 parser.add_argument("--dq-ok-channel", required=True)
@@ -81,8 +83,11 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-if not args.use_gwdatafind and args.frame_directory is None:
-    raise ValueError('Must provide frame-directory if not using gwdatafind.')
+if not args.use_gwdatafind:
+    if args.frame_directory is None:
+        parser.error('Must provide frame-directory if not using gwdatafind.')
+    if args.frame_pattern is None:
+        parser.error('Must provide frame-pattern if not using gwdatafind.')
 
 if args.analysis_flag_name is not None:
     # Get observing segs
@@ -120,6 +125,7 @@ for seg in observing_flag:
             args.ifo,
             args.frame_directory,
             args.frame_type,
+            args.frame_pattern,
             seg[0],
             seg[1],
         )
