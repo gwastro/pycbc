@@ -56,6 +56,26 @@ def add_custom_waveform(approximant, function, domain,
         raise ValueError("Invalid domain ({}), should be "
                          "'time' or 'frequency'".format(domain))
 
+def add_custom_waveform_modes(approximant, function, domain,
+                              force=False,):
+    """ Make custom waveform modes available to pycbc """
+    ## Import dictionaries of the available td/fd modes 
+    ## NOTE: Are these the correct dictionaries to be using?
+    from pycbc.waveform.waveform_modes import (_mode_waveform_td,
+                                               _mode_waveform_fd)
+    used = RuntimeError("Can't load plugin waveform {}, the name is"
+                        " already in use.".format(approximant))
+    if domain == 'time':
+        if not force and (approximant in _mode_waveform_td):
+            raise used
+        _mode_waveform_td[approximant] = function
+    elif domain == 'frequency':
+        if not force and (approximant in _mode_waveform_fd):
+            raise used
+        _mode_waveform_fd[approximant] = function
+    else:
+        raise ValueError("Invalid domain ({}), should be "
+                         "'time' or 'frequency'".format(domain))
 
 def add_length_estimator(approximant, function):
     """ Add length estimator for an approximant
@@ -130,3 +150,17 @@ def retrieve_waveform_plugins():
     # Check for waveform end frequency estimates
     for plugin in entry_points(group='pycbc.waveform.end_freq'):
         add_end_frequency_estimator(plugin.name, plugin.load())
+
+## Another retrieve function for waveform modes
+## Can this be made part of retrieve_waveform_plugins()?
+
+def retrieve_waveform_modes_plugins():
+    """ Look for external waveform modes plugins
+    """
+    ## For time-domain modes
+    for plugin in entry_points(group='pycbc.waveform.td_modes'):
+        add_custom_waveform_modes(plugin.name, plugin.load(), 'time')
+    
+    ## For frequency-domain modes
+    for plugin in entry_points(group='pycbc.waveform.fd_modes'):
+        add_custom_waveform_modes(plugin.name, plugin.load(), 'frequency')

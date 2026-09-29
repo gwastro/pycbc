@@ -7,5 +7,7 @@ from pycbc.waveform.waveform_modes import (get_td_waveform_modes,
                                            get_fd_waveform_modes)
 from pycbc.waveform.plugin import (retrieve_waveform_plugins,
                                    add_custom_waveform,
-                                   add_length_estimator)
+                                   add_length_estimator,
+                                   retrieve_waveform_modes_plugins)
 retrieve_waveform_plugins()
+retrieve_waveform_modes_plugins()
