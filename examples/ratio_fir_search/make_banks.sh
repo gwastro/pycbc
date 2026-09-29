@@ -12,6 +12,8 @@ set -e
 export OMP_NUM_THREADS=1
 LDIR=$(dirname -- "${BASH_SOURCE[0]}")
 
+# Coarse bank: loose minimal match (0.3) allows a coarser placement tolerance
+# (0.01) without leaving gaps, speeding up bank generation.
 pycbc_brute_bank --verbose \
     --input-config $LDIR/bank.ini \
     --output-file bank_coarse.hdf \

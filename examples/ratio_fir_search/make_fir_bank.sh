@@ -12,6 +12,11 @@ set -e
 # check between the fine template and the ratio-filter reconstruction),
 # not a general property of the method -- it's high here mainly to make
 # comparing against a plain pycbc_inspiral run easier to interpret.
+#
+# Bank storage note: pycbc_fir_bank automatically writes the fine and coarse
+# template bank waveforms with compressed representations enabled, and stores
+# the FIR filter datasets (taps, actual_tap_count, sigmas) with HDF5 gzip
+# compression (level 4).
 
 export OMP_NUM_THREADS=1
 

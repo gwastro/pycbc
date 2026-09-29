@@ -27,6 +27,34 @@ strain data) and runs in about a minute. The example directory is::
 
   examples/ratio_fir_search
 
+For the algorithmic background and methodology of ratio-filter dechirping,
+see Nitz, Kacanja, & Soni, *Beyond FINDCHIRP: Breaking the memory wall and
+optimal FFTs for Gravitational-Wave Matched-Filter Searches with
+Ratio-Filter Dechirping* (`arXiv:2601.18835 <https://arxiv.org/abs/2601.18835>`_).
+
+=================================================
+Coarse and fine bank design
+=================================================
+
+The ratio filtering method relies on two template banks:
+
+- **Coarse bank**: Placed with a loose minimal match (typically 0.3--0.5).
+  The goal is broad parameter-space coverage rather than dense sampling.
+  Because the match threshold is low, a coarser placement tolerance (e.g.
+  ``--tolerance 0.01``) is used to speed up bank generation without leaving
+  coverage gaps.
+- **Fine bank**: Placed with standard search density (typically minimal match
+  >= 0.97) and a tighter placement tolerance (e.g. ``--tolerance 0.001``).
+
+In production searches, achieving a ratio of fine-to-coarse templates > 100
+yields significant speedups, since only the coarse bank is matched-filtered
+against the strain data via FFTs, while the fine bank triggers are
+reconstructed via short FIR filters.
+
+Both coarse and fine template parameters are stored in the resulting FIR bank
+HDF5 file with compressed waveform representations enabled, and the filter
+tap datasets are compressed using HDF5 gzip (level 4).
+
 =================================================
 Running the example
 =================================================
@@ -47,7 +75,8 @@ which runs, in order:
    and bank, with ``pycbc_inspiral_fir`` (``fir.hdf``).
 #. ``compare_triggers.py`` -- matches triggers between the two outputs by
    time and template, and reports the standard deviation of their SNR
-   difference.
+   difference. An optional diagnostic plot can be saved using
+   ``--output-plot <filename.png>``.
 
 =================================================
 Interpreting the comparison
