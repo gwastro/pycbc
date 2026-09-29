@@ -415,8 +415,8 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
         gate_params = numpy.loadtxt(opt.gating_file)
         if len(gate_params.shape) == 1:
             gate_params = [gate_params]
-        paint_m = getattr(opt, "inpaint_method", "cholesky")
-        paint_r = getattr(opt, "inpaint_ridge", 1e-10)
+        paint_m = getattr(opt, "paint_method", "cholesky")
+        paint_r = getattr(opt, "paint_ridge", 1e-10)
         for gate_time, gate_window, gate_taper in gate_params:
             strain = strain.gate(
                 gate_time,
@@ -435,8 +435,8 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
         ]
 
     if opt.autogating_threshold is not None:
-        paint_m = getattr(opt, "inpaint_method", "cholesky")
-        paint_r = getattr(opt, "inpaint_ridge", 1e-10)
+        paint_m = getattr(opt, "paint_method", "cholesky")
+        paint_r = getattr(opt, "paint_ridge", 1e-10)
         gating_info["auto"] = []
         for _ in range(opt.autogating_max_iterations):
             glitch_times = detect_loud_glitches(
@@ -828,14 +828,14 @@ def insert_strain_option_group(parser, gps_times=True):
         choices=["hard", "taper", "paint"],
     )
     data_reading_group.add_argument(
-        "--inpaint-method",
+        "--paint-method",
         type=str,
         default="cholesky",
         choices=["cholesky", "toeplitz", "matmul"],
         help="Solver method for inpainting. Default: `cholesky`",
     )
     data_reading_group.add_argument(
-        "--inpaint-ridge",
+        "--paint-ridge",
         type=float,
         default=1e-10,
         help="Diagonal regularization ridge parameter for inpainting. Default: 1e-10",
@@ -1268,7 +1268,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
         choices=["hard", "taper", "paint"],
     )
     data_reading_group_multi.add_argument(
-        "--inpaint-method",
+        "--paint-method",
         type=str,
         nargs="+",
         action=MultiDetOptionAction,
@@ -1277,7 +1277,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
         help="Solver method for inpainting. Default: `cholesky`",
     )
     data_reading_group_multi.add_argument(
-        "--inpaint-ridge",
+        "--paint-ridge",
         type=float,
         nargs="+",
         action=MultiDetOptionAction,
