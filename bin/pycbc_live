@@ -15,6 +15,7 @@ import os.path
 import itertools
 import platform
 import subprocess
+import certifi
 from multiprocessing.dummy import threading
 from matplotlib import use
 use('agg')
