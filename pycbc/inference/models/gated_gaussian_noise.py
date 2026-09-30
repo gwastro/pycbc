@@ -1395,18 +1395,18 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             if snr_map is None or amp_map is None:
                 raise ValueError('Must provide names of amplitudes and SNRs '
                                  'if specifying SNR sampling')
-            # dicts must have the same keys
-            elif isinstance(snr_map, dict) and isinstance(amp_map, dict):
-                if list(set(snr_map.keys()) & set(amp_map.keys())) != \
-                    list(set(amp_map.keys())):
-                    raise KeyError(f'Mode names in amp_map {amp_map.keys()} '
-                                   f'do not match mode names in snr_map '
-                                   f'{snr_map.keys()}')
+            try:
                 self.snr_names = dict(snr_map)
                 self.amp_names = dict(amp_map)
-                self.mode_names = list(self.snr_names.keys())
-            else:
-                raise ValueError('Incorrect type for snr_map and/or amp_map')
+            except:
+                raise TypeError('Incorrect type for snr_map and/or amp_map')
+            # dicts must have the same keys
+            if list(set(snr_map.keys()) & set(amp_map.keys())) != \
+                list(set(amp_map.keys())):
+                raise KeyError(f'Mode names in amp_map {amp_map.keys()} '
+                               f'do not match mode names in snr_map '
+                               f'{snr_map.keys()}')
+            self.mode_names = list(self.snr_names.keys())
         else:
             self.amp_names = {}
             self.snr_names = {}
@@ -1634,8 +1634,8 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         lognl = -dd
         # get the maxL phase
         maxlidx = loglr.argmax()
-        self._current_stats['maxl_phase'] = self.phases[maxlidx]
-        self._current_stats['maxl_logl'] = loglr[maxlidx] + lognl + norm
+        self._current_stats.maxl_phase = self.phases[maxlidx]
+        self._current_stats.maxl_logl = loglr[maxlidx] + lognl + norm
         # get the marginalized log likelihood ratio
         marglogl = special.logsumexp(loglr) + lognl + norm - \
                     numpy.log(self.phase_samples)
@@ -1644,10 +1644,10 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     def _nowaveform_handler(self):
         """Sets the extra stats to nan if no waveform was generated."""
         for stat in ['maxl_phase', 'maxl_polarization']:
-            self._current_stats[stat] = numpy.nan
+            setattr(self._current_stats, stat, numpy.nan)
         for mode in self.mode_names:
-            self._current_stats[f'scale_factor_{mode}'] = numpy.nan
-        self._current_stats['maxl_logl'] = -numpy.inf
+            setattr(self._current_stats, f'scale_factor_{mode}', numpy.nan)
+        self._current_stats.maxl_logl = -numpy.inf
         return -numpy.inf
 
     @property
