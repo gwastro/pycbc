@@ -54,7 +54,7 @@ class TestMargModels(unittest.TestCase):
         # load one of the models from given configs
         filename = os.path.join(DATADIR, f'{model_name}.ini')
         cp = WorkflowConfigParser(configFiles=[filename])
-        cp.set('data', 'injection-file', filename)
+        cp.set('data', 'injection-file', 'injection.hdf')
         model = models.read_from_config(cp)
         
         # load in nominal params
@@ -63,7 +63,7 @@ class TestMargModels(unittest.TestCase):
         return model, maxl
     
     @classmethod
-    def test_marginalization(cls, model, marglogl):
+    def _test_marginalization(cls, model, marglogl):
         # generic marginalization tests
         maxl = model.current_stats['maxl_logl']
         maxl_phase = model.current_stats['maxl_phase']
@@ -80,7 +80,7 @@ class TestMargModels(unittest.TestCase):
     def test_margphase(self):
         # Test the marginalized phase model
         model, marglogl = self.load_model("gated_gaussian_margphase")
-        self.test_marginalization(model, marglogl)
+        self._test_marginalization(model, marglogl)
         
         # save likelihood value for comparisons
         self.margphase_margl = marglogl
@@ -88,7 +88,7 @@ class TestMargModels(unittest.TestCase):
     def test_multimargphase_amps(self):
         # Test the multimargphase model, sampling in amplitude
         model, marglogl = self.load_model('gated_gaussian_multimargphase_amps')
-        self.test_marginalization(model, marglogl)
+        self._test_marginalization(model, marglogl)
         
         # test that the likelihood is close to the marginalized phase model
         self.assertAlmostEqual(marglogl, self.margphase_margl,
@@ -97,7 +97,7 @@ class TestMargModels(unittest.TestCase):
     def test_multimargphase(self):
         # Test the multimargphase model, sampling in SNR
         model, marglogl = self.load_model('gated_gaussian_multimargphase')
-        self.test_marginalization(model, marglogl)
+        self._test_marginalization(model, marglogl)
         
         # test that the likelihood is close to the marginalized phase model
         self.assertAlmostEqual(marglogl, self.margphase_margl,
