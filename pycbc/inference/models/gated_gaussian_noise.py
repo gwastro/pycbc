@@ -1359,7 +1359,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                  static_params=None,
                  phase_samples=500000, phase_names=None,
                  ref_phase=None, sample_snrs=False,
-                 snr_map={}, amp_map={}, fiducial_amp_value=1.,
+                 snr_map=None, amp_map=None, fiducial_amp_value=1.,
                  ref_mode = False, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
@@ -1392,7 +1392,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         # if sampling in snr, set names of snrs, amps, and modes
         self.sample_snrs = sample_snrs
         if self.sample_snrs:
-            if not snr_map or not amp_map:
+            if snr_map is None or amp_map is None:
                 raise ValueError('Must provide names of amplitudes and SNRs '
                                  'if specifying SNR sampling')
             # dicts must have the same keys
