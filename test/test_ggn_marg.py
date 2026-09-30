@@ -144,7 +144,7 @@ class TestMargModels(unittest.TestCase):
 
     def test_multimargphase(self):
         '''Test the multimargphase model under change of fiducial amplitude.'''
-        log_fid_amps = numpy.arange(-25, -14).astype(numpy.float64)
+        log_fid_amps = numpy.arange(-25, 1).astype(numpy.float64)
         fid_amps = 10.**log_fid_amps
         for fa in fid_amps:
             self._test_multimargphase(fid_amp=fa)
