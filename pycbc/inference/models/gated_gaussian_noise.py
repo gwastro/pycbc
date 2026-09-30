@@ -27,6 +27,7 @@ import warnings
 from copy import deepcopy
 
 from pycbc.types import FrequencySeries
+from pycbc.types.optparse import MultiDetOptionAction
 from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
 from pycbc import types
@@ -1337,6 +1338,19 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     parameters are set to a fiducial value for the purposes of waveform
     generation. A helper function then scales the amplitude of each mode to
     match the sampled SNR.
+    
+    If sampling over SNR, the user must specify the names of the modes and
+    their respective amplitudes keyed by the name of the corresponding
+    SNR parameter name. If, for example, one wants to sample the SNR of a mode
+    `foo` with amplitude `amp_foo` and another mode `bar` with amplitude `A_bar`,
+    the user must input:
+        
+        amp_map = {'foo': 'amp_foo',
+                   'bar': 'A_bar'}
+        snr_map = {'foo': 'snr_foo',
+                   'bar': 'snr_bar'}
+    
+    The keys must match the corresponding output from the waveform generator.
     """
     name = 'gated_gaussian_multimargphase'
 
@@ -1345,8 +1359,8 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                  static_params=None,
                  phase_samples=500000, phase_names=None,
                  ref_phase=None, sample_snrs=False,
-                 amp_names=None, fiducial_amp_value=1., ref_amp=None,
-                 **kwargs):
+                 snr_map={}, amp_map={}, fiducial_amp_value=1.,
+                 ref_mode = False, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
@@ -1374,36 +1388,37 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         else:
             raise TypeError('Unrecognized format for phase_names arg. Accepts '
                             'string, list, or None')
-        # flag whether to sample each mode in SNR space or amplitude space
-        ### FIXME: should be able to call `sample_snrs =` to set as True...
-        ### empty string is the only string that returns False
-        if sample_snrs == '':
-            sample_snrs = True
-        self.sample_snrs = bool(sample_snrs)
         self.fiducial_amp_value = float(fiducial_amp_value)
-        # if sampling in snr, set names of snr and amp params
+        # if sampling in snr, set names of snrs, amps, and modes
+        self.sample_snrs = sample_snrs
         if self.sample_snrs:
-            if amp_names is None:
-                raise ValueError('Must provide names of amplitude parameters '
-                                 'if specifying sample_snrs')
-            elif isinstance(amp_names, list):
-                self.amp_names = amp_names
-            elif isinstance(amp_names, str):
-                self.amp_names = amp_names.split(' ')
+            if not snr_map or not amp_map:
+                raise ValueError('Must provide names of amplitudes and SNRs '
+                                 'if specifying SNR sampling')
+            # dicts must have the same keys
+            elif isinstance(snr_map, dict) and isinstance(amp_map, dict):
+                if list(set(snr_map.keys()) & set(amp_map.keys())) != \
+                    list(set(amp_map.keys())):
+                    raise KeyError(f'Mode names in amp_map {amp_map.keys()} '
+                                   f'do not match mode names in snr_map '
+                                   f'{snr_map.keys()}')
+                self.snr_names = dict(snr_map)
+                self.amp_names = dict(amp_map)
+                self.mode_names = list(self.snr_names.keys())
             else:
-                raise TypeError('Unrecognized format for amp_names. '
-                                'Accepts string or list')
-            self.snr_names = [i + '_snr' for i in self.amp_names]
-            ### FIXME: should be a more agnostic way to get the mode names
-            self.sampled_mode_names = [i[3:] for i in self.amp_names]
+                raise ValueError('Incorrect type for snr_map and/or amp_map')
         else:
-            self.amp_names = []
-            self.sampled_mode_names = []
-            self.snr_names = []
-        self.ref_amp = ref_amp
-        if self.ref_amp is not None and self.ref_amp not in self.amp_names:
-            raise ValueError(f'ref_amp {ref_amp} not in amp_names {amp_names}')
-        self.ref_mode_name = None
+            self.amp_names = {}
+            self.snr_names = {}
+            self.mode_names = []
+        # specify whether one of the modes is a reference to all other modes;
+        # it is assumed that only one mode is given to be the reference
+        self.ref_mode = ref_mode
+        if self.ref_mode:
+            if len(self.amp_names) > 1:
+                raise ValueError('More than one mode is specified for SNR '
+                                 'sampling. This model only supports one mode '
+                                 'sampled in SNR if ref_amp is turned on.')
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
             self.variable_params, self.data,
@@ -1412,13 +1427,42 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             generator_class=generator.FDomainDetFrameTwoPhaseModesGenerator,
             **self.static_params)
 
+    @classmethod
+    def from_config(cls, cp, data_section='data', data=None, psds=None,
+                    **kwargs):
+        """Adds additional keyword arguments based on config file.
+
+        Additional keyword arguments are:
+
+           * ``sample_snrs`` : Flag whether to sample in SNRs.
+           
+           * ``ref_mode`` : Flag whether the given mode to be sampled in SNR is
+                            the reference, i.e. other mode amplitudes are
+                            relative to the given mode.
+        """
+        if cp.has_option('model', 'sample_snrs'):
+            kwargs['sample_snrs'] = True
+        if cp.has_option('model', 'ref_mode'):
+            kwargs['ref_mode'] = True
+        if cp.has_option('model', 'snr-map'):
+            kwargs['snr_map'] = cp.get_cli_option('model', 'snr_map',
+                                               nargs='+', type=str,
+                                               action=MultiDetOptionAction)
+        if cp.has_option('model', 'amp-map'):
+            kwargs['amp_map'] = cp.get_cli_option('model', 'amp_map',
+                                               nargs='+', type=str,
+                                               action=MultiDetOptionAction)
+        return super().from_config(cp, data_section=data_section,
+                                   data=data, psds=psds,
+                                   **kwargs)
+
     def get_waveforms(self):
         r"""Generate the waveforms.
         """
         if self._current_wfs is None:
             params = self.current_params.copy()
             # set specified amplitudes to fiducial value
-            for amp in self.amp_names:
+            for amp in self.amp_names.values():
                 params[amp] = self.fiducial_amp_value
             # generate the cosine and sine terms
             wfs = self.waveform_generator.generate(phases=self.phase_names,
@@ -1440,9 +1484,6 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                             frequency=self.highpass_waveforms).to_frequencyseries()
                     wfs[det][mode] = (hc, hs)
             self._current_wfs = wfs
-            if self.ref_amp is not None:
-                mode_bools = [i in self.ref_amp for i in self.sampled_mode_names]
-                self.ref_mode_name = self.sampled_mode_names[mode_bools.index(True)]
         return self._current_wfs
 
     def get_gated_waveforms(self):
@@ -1479,11 +1520,13 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     def _extra_stats(self):
         """Adds the maxL phase and corresponding likelihood."""
         return ['maxl_phase', 'maxl_logl'] + \
-            [f'scale_factor_{mode}' for mode in self.sampled_mode_names]
+            [f'scale_factor_{mode}' for mode in self.mode_names]
 
     def _snr_scale_factor(self, wfs, gated_wfs, mode, snr=None):
         """Compute scale factor to get the desired network SNR given a set of
         waveforms."""
+        if snr is None:
+            return 1.
         thismode = {det: wfs[det][mode] for det in self.det_names}
         thisgatedmode = {det: gated_wfs[det][mode] for det in self.det_names}
         # get the fiducial network SNR
@@ -1496,8 +1539,6 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             gated_hc *= 4 * invpsd.delta_f * invpsd
             fid_snr += hc[slc].inner(gated_hc[slc]).real
         # get the scale between fiducal and specified SNR
-        if snr is None:
-            return 1.
         return snr / fid_snr**0.5
 
     @catch_waveform_error
@@ -1524,12 +1565,18 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         # cache scale factors
         scale_factors = {}
         for mode in wfs[self.det_names[0]]:
-            sampled_snr = self.current_params.get(f'amp{mode}_snr')
-            scale_factors[mode] = self._snr_scale_factor(wfs, gated_wfs, mode, sampled_snr)
-            # scale all other modes by reference mode's scale factor
-            if self.ref_mode_name is not None and mode not in self.sampled_mode_names:
-                scale_factors[mode] *= scale_factors[self.ref_mode_name]
-            setattr(self._current_stats, f'scale_factor_{mode}', scale_factors[mode])
+            if mode in self.snr_names:
+                sampled_snr = self.current_params.get(self.snr_names[mode])
+            else:
+                sampled_snr = None
+            scale_factors[mode] = self._snr_scale_factor(wfs, gated_wfs, 
+                                                         mode, sampled_snr)
+            # scale all other modes by reference mode's scale factor if spec'd
+            if self.ref_mode and mode not in self.mode_names:
+                rf = self.mode_names[0]
+                scale_factors[mode] *= scale_factors[rf]
+            setattr(self._current_stats, f'scale_factor_{mode}', 
+                    scale_factors[mode])
         for det in self.det_names:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
@@ -1587,19 +1634,20 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         lognl = -dd
         # get the maxL phase
         maxlidx = loglr.argmax()
-        setattr(self._current_stats, 'maxl_phase', self.phases[maxlidx])
-        setattr(self._current_stats, 'maxl_logl', loglr[maxlidx] + lognl + norm)
+        self._current_stats['maxl_phase'] = self.phases[maxlidx]
+        self._current_stats['maxl_logl'] = loglr[maxlidx] + lognl + norm
         # get the marginalized log likelihood ratio
-        marglogl = special.logsumexp(loglr) + lognl + norm - numpy.log(self.phase_samples)
+        marglogl = special.logsumexp(loglr) + lognl + norm - \
+                    numpy.log(self.phase_samples)
         return marglogl
 
     def _nowaveform_handler(self):
         """Sets the extra stats to nan if no waveform was generated."""
         for stat in ['maxl_phase', 'maxl_polarization']:
-            setattr(self._current_stats, stat, numpy.nan)
-        for mode in self.sampled_mode_names:
-            setattr(self._current_stats, f'scale_factor_{mode}', numpy.nan)
-        setattr(self._current_stats, 'maxl_logl', -numpy.inf)
+            self._current_stats[stat] = numpy.nan
+        for mode in self.mode_names:
+            self._current_stats[f'scale_factor_{mode}'] = numpy.nan
+        self._current_stats['maxl_logl'] = -numpy.inf
         return -numpy.inf
 
     @property
