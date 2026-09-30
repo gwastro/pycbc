@@ -586,6 +586,63 @@ class TestTimeSeriesBase(array_base, unittest.TestCase):
             self.assertEqual(numpy.abs(b[:,1] - a_numpy).max(), 0)
             os.remove(temp_path_txt)
 
+class TestTaperTimeseriesConstant(unittest.TestCase):
+    """Tests tapering the start and/or end of a time series with the
+    constant window method of TimeSeries.taper_timeseries."""
+
+    def setUp(self):
+        self.delta_t = 1. / 256
+        self.window = 0.5
+        self.nwin = int(self.window / self.delta_t)
+        # a series that is non-zero between stretches of zeros
+        self.data = numpy.concatenate([numpy.zeros(64), numpy.ones(1024),
+                                       numpy.zeros(64)])
+        self.first = 64
+        self.last = 64 + 1023
+        self.mid = len(self.data) // 2
+
+    def taper(self, location):
+        ts = TimeSeries(self.data.copy(), delta_t=self.delta_t, epoch=1000.)
+        return ts.taper_timeseries(location=location, tapermethod='constant',
+                                   taper_window=self.window).numpy()
+
+    def check_start(self, tapered, tapered_start):
+        # the edges of the window may be a sample off, since the window is
+        # placed by truncating times to samples
+        start = self.first
+        end = self.first + self.nwin + 2
+        if tapered_start:
+            self.assertTrue(tapered[start] < 1e-2)
+            self.assertTrue((numpy.diff(tapered[start:end]) >= 0).all())
+        else:
+            numpy.testing.assert_array_equal(tapered[start:end], 1.)
+        numpy.testing.assert_array_equal(tapered[end:self.mid], 1.)
+        numpy.testing.assert_array_equal(tapered[:start], 0.)
+
+    def check_end(self, tapered, tapered_end):
+        start = self.last - self.nwin - 2
+        end = self.last + 1
+        if tapered_end:
+            self.assertTrue(tapered[self.last] < 1e-2)
+            self.assertTrue((numpy.diff(tapered[start:end-1]) <= 0).all())
+        else:
+            numpy.testing.assert_array_equal(tapered[start:end], 1.)
+        numpy.testing.assert_array_equal(tapered[self.mid:start], 1.)
+        numpy.testing.assert_array_equal(tapered[end:], 0.)
+
+    def test_locations(self):
+        for location, tstart, tend in [('start', True, False),
+                                       ('TAPER_START', True, False),
+                                       ('end', False, True),
+                                       ('TAPER_END', False, True),
+                                       ('startend', True, True),
+                                       ('TAPER_STARTEND', True, True)]:
+            with self.subTest(location=location):
+                tapered = self.taper(location)
+                self.check_start(tapered, tstart)
+                self.check_end(tapered, tend)
+
+
 def ts_test_maker(dtype, odtype, epoch):
     class TestTimeSeries(TestTimeSeriesBase):
         __test__ = True
@@ -613,6 +670,10 @@ for t,otypes in types:
             vars()[na] = ts_test_maker(t, ot, epoch)
             suite.addTest(unittest.TestLoader().loadTestsFromTestCase(vars()[na]))
             i += 1
+
+if _scheme == 'cpu':
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+        TestTaperTimeseriesConstant))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
