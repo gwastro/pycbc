@@ -1338,18 +1338,18 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     parameters are set to a fiducial value for the purposes of waveform
     generation. A helper function then scales the amplitude of each mode to
     match the sampled SNR.
-    
+
     If sampling over SNR, the user must specify the names of the modes and
     their respective amplitudes keyed by the name of the corresponding
     SNR parameter name. If, for example, one wants to sample the SNR of a mode
     `foo` with amplitude `amp_foo` and another mode `bar` with amplitude `A_bar`,
     the user must input:
-        
+
         amp_map = {'foo': 'amp_foo',
                    'bar': 'A_bar'}
         snr_map = {'foo': 'snr_foo',
                    'bar': 'snr_bar'}
-    
+
     The keys must match the corresponding output from the waveform generator.
     """
     name = 'gated_gaussian_multimargphase'
@@ -1435,7 +1435,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         Additional keyword arguments are:
 
            * ``sample_snrs`` : Flag whether to sample in SNRs.
-           
+
            * ``ref_mode`` : Flag whether the given mode to be sampled in SNR is
                             the reference, i.e. other mode amplitudes are
                             relative to the given mode.
@@ -1569,13 +1569,13 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                 sampled_snr = self.current_params.get(self.snr_names[mode])
             else:
                 sampled_snr = None
-            scale_factors[mode] = self._snr_scale_factor(wfs, gated_wfs, 
+            scale_factors[mode] = self._snr_scale_factor(wfs, gated_wfs,
                                                          mode, sampled_snr)
             # scale all other modes by reference mode's scale factor if spec'd
             if self.ref_mode and mode not in self.mode_names:
                 rf = self.mode_names[0]
                 scale_factors[mode] *= scale_factors[rf]
-            setattr(self._current_stats, f'scale_factor_{mode}', 
+            setattr(self._current_stats, f'scale_factor_{mode}',
                     scale_factors[mode])
         for det in self.det_names:
             if det not in self.dets:
