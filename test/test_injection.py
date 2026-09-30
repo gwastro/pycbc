@@ -23,6 +23,8 @@ import lal
 from pycbc.types import TimeSeries
 from pycbc.detector import Detector, get_available_detectors
 from pycbc.inject import InjectionSet
+from pycbc.inject.inject import projector
+from pycbc.io import FieldArray
 import unittest
 import numpy
 import itertools
@@ -161,6 +163,66 @@ class TestInjection(unittest.TestCase):
                 injections.apply(ts, det.name)
                 max_amp, max_loc = ts.abs_max_loc()
                 self.assertEqual(max_amp, 0)
+
+    def test_projector_taper(self):
+        """Verify that the polarizations are tapered as given by the taper
+        fields of the injection, for both ligolw rows and numpy records"""
+        det = self.detectors[0]
+        delta_t = 1. / self.sample_rate
+        times = numpy.arange(int(2 * self.sample_rate)) * delta_t
+        hp = TimeSeries(numpy.sin(2 * numpy.pi * 50 * times),
+                        delta_t=delta_t, epoch=-2.)
+        hc = TimeSeries(numpy.cos(2 * numpy.pi * 50 * times),
+                        delta_t=delta_t, epoch=-2.)
+        injection = self.injections[0]
+        ra = injection.longitude
+        dec = injection.latitude
+        pol = injection.polarization
+
+        def expected(tc, taper=None, tapermethod='lal', taper_window=None):
+            ehp = hp.copy()
+            ehc = hc.copy()
+            ehp.start_time += tc
+            ehc.start_time += tc
+            if taper is not None:
+                ehp = ehp.taper_timeseries(location=taper,
+                                           tapermethod=tapermethod,
+                                           taper_window=taper_window)
+                ehc = ehc.taper_timeseries(location=taper,
+                                           tapermethod=tapermethod,
+                                           taper_window=taper_window)
+            return det.project_wave(ehp, ehc, ra, dec, pol, method='lal',
+                                    reference_time=tc).numpy()
+
+        def check(inj, tc, **taper_kwargs):
+            signal = projector(det.name, inj, hp.copy(), hc.copy()).numpy()
+            numpy.testing.assert_allclose(
+                signal, expected(tc, **taper_kwargs), rtol=0,
+                atol=1e-12 * abs(signal).max())
+            untapered = expected(tc)
+            if taper_kwargs:
+                self.assertFalse(numpy.allclose(signal, untapered))
+            else:
+                numpy.testing.assert_array_equal(signal, untapered)
+
+        # ligolw rows
+        row = lsctables.SimInspiralTable.RowType()
+        injection.fill_sim_inspiral_row(row)
+        tc = row.time_geocent
+        for taper in ['TAPER_START', 'TAPER_END', 'TAPER_STARTEND']:
+            row.taper = taper
+            check(row, tc, taper=taper)
+        # numpy records, as used for hdf injection files
+        tc = injection.end_time
+        fields = {'tc': [tc], 'ra': [ra], 'dec': [dec],
+                  'polarization': [pol]}
+        check(FieldArray.from_kwargs(**fields)[0], tc)
+        check(FieldArray.from_kwargs(taper=['start'], **fields)[0], tc,
+              taper='start')
+        check(FieldArray.from_kwargs(taper=['start'],
+                                     taper_method=['constant'],
+                                     taper_window=[0.5], **fields)[0],
+              tc, taper='start', tapermethod='constant', taper_window=0.5)
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestInjection))
