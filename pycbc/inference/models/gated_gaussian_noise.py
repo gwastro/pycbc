@@ -1398,8 +1398,9 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             try:
                 self.snr_names = dict(snr_map)
                 self.amp_names = dict(amp_map)
-            except:
-                raise TypeError('Incorrect type for snr_map and/or amp_map')
+            except TypeError:
+                raise TypeError('Incorrect type for snr_map and/or amp_map') \
+                    from None
             # dicts must have the same keys
             if list(set(snr_map.keys()) & set(amp_map.keys())) != \
                 list(set(amp_map.keys())):
