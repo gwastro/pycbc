@@ -3,7 +3,7 @@
 
 
 def add_custom_waveform(approximant, function, domain,
-                        sequence=False, has_det_response=False, modes=False,
+                        sequence=False, has_det_response=False,
                         force=False,):
     """ Make custom waveform available to pycbc
 
@@ -24,7 +24,6 @@ def add_custom_waveform(approximant, function, domain,
     from pycbc.waveform.waveform import (cpu_fd, cpu_td, fd_sequence,
                                          fd_det, fd_det_sequence,
                                          td_fd_waveform_transform)
-    from pycbc.waveform.waveform_modes import _mode_waveform_td
 
     used = RuntimeError("Can't load plugin waveform {}, the name is"
                         " already in use.".format(approximant))
@@ -32,11 +31,8 @@ def add_custom_waveform(approximant, function, domain,
     if domain == 'time':
         if not force and (approximant in cpu_td):
             raise used
-        if modes:
-            _mode_waveform_td[approximant] = function
-        else:
-            cpu_td[approximant] = function
-            td_fd_waveform_transform(approximant)
+        cpu_td[approximant] = function
+        td_fd_waveform_transform(approximant)
     elif domain == 'frequency':
         if sequence:
             if not has_det_response:
@@ -177,11 +173,6 @@ def retrieve_waveform_plugins():
     # Check for td waveforms
     for plugin in entry_points(group='pycbc.waveform.td'):
         add_custom_waveform(plugin.name, plugin.load(), 'time')
-
-    # Check for td modal waveforms
-    for plugin in entry_points(group='pycbc.waveform.td_modes'):
-        add_custom_waveform(plugin.name, plugin.load(), 'time',
-                            modes=True)
 
     # Check for mode-by-mode fd waveforms (feed get_fd_waveform_modes)
     for plugin in entry_points(group='pycbc.waveform.fd_modes'):
