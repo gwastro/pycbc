@@ -188,50 +188,39 @@ class Trapezoid(bounded.BoundedDist):
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
+        pdf = numpy.ones(numpy.asarray(next(iter(kwargs.values()))).shape)
         for p in self._params:
-            if p not in kwargs.keys():
-                raise ValueError(f"Missing parameter {p} to construct pdf.")
-        if kwargs in self:
-            print(kwargs)
-            print(kwargs in self)
-            pdf = numpy.ones(numpy.asarray(next(iter(kwargs.values()))).shape)
-            for p in self._params:
-                a = self._bounds[p][0]
-                d = self._bounds[p][1]
+            a = self._bounds[p][0]
+            d = self._bounds[p][1]
 
-                # set semimin to a, semimax to d if not provided
-                b = self._semimins.get(p, a)
-                c = self._semimaxs.get(p, d)
+            # set semimin to a, semimax to d if not provided
+            b = self._semimins.get(p, a)
+            c = self._semimaxs.get(p, d)
 
-                # multiply based on position in dist
-                with numpy.errstate(divide='ignore', invalid='ignore'):
-                    value = kwargs[p]
-                    value = numpy.asarray(value)
+            # multiply based on position in dist
+            with numpy.errstate(divide='ignore', invalid='ignore'):
+                value = kwargs[p]
+                value = numpy.asarray(value)
 
-                    condlist = [(value < b),
-                                (value >= b) & (value < c),
-                                (value >= c)]
-                    outlist = [(value - a)/(b - a),
-                               1.,
-                               (d - value)/(d - c)]
-                    pdf *= numpy.select(condlist, outlist)
+                condlist = [(value < b),
+                            (value >= b) & (value < c),
+                            (value >= c)]
+                outlist = [(value - a)/(b - a),
+                           1.,
+                           (d - value)/(d - c)]
+                pdf *= numpy.select(condlist, outlist)
 
-                    # get the overall normalization and prefactor
-                    pdf *= 2 / (d + c - a - b)
-            return pdf.astype(numpy.float64)
-        else:
-            return 0.0
+                # get the overall normalization and prefactor
+                pdf *= 2 / (d + c - a - b)
+        return pdf.astype(numpy.float64)
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
-        if kwargs in self:
-            with numpy.errstate(divide='ignore', invalid='ignore'):
-                return numpy.log(self._pdf(**kwargs))
-        else:
-            return -numpy.inf
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            return numpy.log(self._pdf(**kwargs))
 
     def cdf(self, param, value):
         """Return the cdf at given values."""
@@ -241,18 +230,6 @@ class Trapezoid(bounded.BoundedDist):
         pref = (d + c - a - b)
 
         # conditions based on position
-<<<<<<< HEAD
-        value = numpy.asarray(value)
-        condlist = [(value >= a) & (value < b),
-                    (value >= b) & (value < c),
-                    (value >= c) & (value < d)]
-        outlist = [(value - a)**2 / (b - a) / pref,
-                   (2*value - a - b) / pref,
-                   1 - (d - value)**2 / (d-c) / pref]
-
-        return numpy.select(condlist, outlist)
-
-=======
         # suppress divide by zero errors if a = b or c = d
         with numpy.errstate(divide='ignore', invalid='ignore'):
             value = numpy.asarray(value)
@@ -265,7 +242,6 @@ class Trapezoid(bounded.BoundedDist):
 
             return numpy.select(condlist, outlist)
 
->>>>>>> 2c3cc9918 (remove whitespaces)
     def _cdfinv_param(self, param, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
         """
