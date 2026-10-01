@@ -77,6 +77,9 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   echo -e "\\n>> [`date`] Running basic tests"
   pytest
 
+  echo -e "\\n>> [`date`] Running pip list"
+  pip list
+
   cat << EOF >> $VIRTUAL_ENV/bin/activate
 
 
