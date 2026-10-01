@@ -180,50 +180,39 @@ class Trapezoid(bounded.BoundedDist):
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
+        pdf = numpy.ones(numpy.asarray(next(iter(kwargs.values()))).shape)
         for p in self._params:
-            if p not in kwargs.keys():
-                raise ValueError(f'Missing parameter {p} to construct pdf.')
-        if kwargs in self:
-            print(kwargs)
-            print(kwargs in self)
-            pdf = numpy.ones(numpy.asarray(next(iter(kwargs.values()))).shape)
-            for p in self._params:
-                a = self._bounds[p][0]
-                d = self._bounds[p][1]
+            a = self._bounds[p][0]
+            d = self._bounds[p][1]
 
-                # set semimin to a, semimax to d if not provided
-                b = self._semimins.get(p, a)
-                c = self._semimaxs.get(p, d)
+            # set semimin to a, semimax to d if not provided
+            b = self._semimins.get(p, a)
+            c = self._semimaxs.get(p, d)
 
-                # multiply based on position in dist
-                with numpy.errstate(divide='ignore', invalid='ignore'):
-                    value = kwargs[p]
-                    value = numpy.asarray(value)
+            # multiply based on position in dist
+            with numpy.errstate(divide='ignore', invalid='ignore'):
+                value = kwargs[p]
+                value = numpy.asarray(value)
 
-                    condlist = [(value < b),
-                                (value >= b) & (value < c),
-                                (value >= c)]
-                    outlist = [(value - a)/(b - a),
-                               1.,
-                               (d - value)/(d - c)]
-                    pdf *= numpy.select(condlist, outlist)
+                condlist = [(value < b),
+                            (value >= b) & (value < c),
+                            (value >= c)]
+                outlist = [(value - a)/(b - a),
+                           1.,
+                           (d - value)/(d - c)]
+                pdf *= numpy.select(condlist, outlist)
 
-                    # get the overall normalization and prefactor
-                    pdf *= 2 / (d + c - a - b)
-            return pdf.astype(numpy.float64)
-        else:
-            return 0.0
+                # get the overall normalization and prefactor
+                pdf *= 2 / (d + c - a - b)
+        return pdf.astype(numpy.float64)
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
-        if kwargs in self:
-            with numpy.errstate(divide='ignore', invalid='ignore'):
-                return numpy.log(self._pdf(**kwargs))
-        else:
-            return -numpy.inf
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            return numpy.log(self._pdf(**kwargs))
 
     def cdf(self, param, value):
         """Return the cdf at given values."""
