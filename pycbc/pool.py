@@ -128,7 +128,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         atexit.unregister(_shutdown_pool)
 
 def _dummy_broadcast(self, f, args):
-    self.map(f, [args] * self.size)
+    return self.map(f, [args] * self.size)
 
 class SinglePool(object):
 
