@@ -27,7 +27,6 @@ import warnings
 from copy import deepcopy
 
 from pycbc.types import FrequencySeries
-from pycbc.types.optparse import MultiDetOptionAction
 from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
 from pycbc import types
@@ -1347,7 +1346,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
 
         snr_mode_map = 'snr_foo:foo:amp_foo' 'snr_bar:bar:A_bar'
 
-    The keys must match the corresponding output from the waveform generator.
+    The mode keys must match the corresponding output in the waveform generator.
     """
     name = 'gated_gaussian_multimargphase'
 
