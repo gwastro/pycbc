@@ -21,7 +21,6 @@ import logging
 import numpy
 
 from pycbc.distributions import bounded
-from pycbc import boundaries
 
 logger = logging.getLogger("pycbc.distributions.uniform")
 
@@ -205,7 +204,7 @@ class Trapezoid(bounded.BoundedDist):
         """Set lists determining where param values are in distribution.
         """
         condlists = {}
-        for p, bnds in self._bounds.items():
+        for p in self._params:
             b = self._semimins[p]
             c = self._semimaxs[p]
             condlists[p] = [(kwargs[p] < b),
