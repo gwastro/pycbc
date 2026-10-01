@@ -1385,9 +1385,9 @@ class SGBurstInjectionSet(object):
             # compute the detector response, taper it if requested
             # and add it to the strain
             tapermethod, taper_window = _taper_options(inj)
-            strain = strain.taper_timeseries(location=inj.taper,
-                                             tapermethod=tapermethod,
-                                             taper_window=taper_window)
+            hp = hp.taper_timeseries(location=inj.taper,
+                                     tapermethod=tapermethod,
+                                     taper_window=taper_window)
             signal_lal = hp.astype(strain.dtype).lal()
             add_injection(lalstrain, signal_lal, None)
 
