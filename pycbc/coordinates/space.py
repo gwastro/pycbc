@@ -321,6 +321,85 @@ def t_ssb_from_t_lisa(t_lisa, longitude_ssb, latitude_ssb,
     return fsolve(equation, t_lisa)[0]
 
 
+def _ensure_sky_params_arrays(*arrays):
+    """ Shared by the 4 X_to_ssb/ssb_to_X frame-transform functions below:
+    coerce each of `arrays` (scalar or array-like) to a 1-D numpy array,
+    and return them alongside `num`, the common length (from the first
+    array).
+    """
+    coerced = tuple(
+        a if isinstance(a, np.ndarray) else np.array([a]) for a in arrays)
+    return coerced + (len(coerced[0]),)
+
+
+def _validate_sky_params(longitude, latitude, polarization):
+    """ Shared by the 4 X_to_ssb/ssb_to_X frame-transform functions below:
+    range-checks the whole array at once (equivalent to the same check
+    repeated per element inside their loops), raising the same
+    ValueError text.
+    """
+    if np.any((longitude < 0) | (longitude >= 2*np.pi)):
+        raise ValueError("Longitude should within [0, 2*pi).")
+    if np.any((latitude < -np.pi/2) | (latitude > np.pi/2)):
+        raise ValueError("Latitude should within [-pi/2, pi/2].")
+    if np.any((polarization < 0) | (polarization >= 2*np.pi)):
+        raise ValueError("Polarization angle should within [0, 2*pi).")
+
+
+def _pack_sky_params_output(num, t, longitude, latitude, polarization):
+    """ Shared by the 4 X_to_ssb/ssb_to_X frame-transform functions below:
+    unwrap to scalars for a single input, otherwise keep the arrays.
+    """
+    if num == 1:
+        return (t[0], longitude[0], latitude[0], polarization[0])
+    return (t, longitude, latitude, polarization)
+
+
+def _sky_ssb_space_transform(t_src, longitude_src, latitude_src,
+                             polarization_src, t0, forward):
+    """ Shared body of `ssb_to_lisa` and `lisa_to_ssb`: rotate the GW
+    propagation vector between the SSB frame and the LISA frame at the
+    appropriate LISA-frame time, and convert the arrival time to match.
+    `forward=True` runs the SSB->LISA direction (`ssb_to_lisa`);
+    `forward=False` runs LISA->SSB (`lisa_to_ssb`).
+    """
+    t_src, longitude_src, latitude_src, polarization_src, num = \
+        _ensure_sky_params_arrays(
+            t_src, longitude_src, latitude_src, polarization_src)
+    _validate_sky_params(longitude_src, latitude_src, polarization_src)
+    t_dst = np.zeros(num)
+    longitude_dst, latitude_dst = np.zeros(num), np.zeros(num)
+    polarization_dst = np.zeros(num)
+
+    for i in range(num):
+        k_src = localization_to_propagation_vector(
+            longitude_src[i], latitude_src[i], use_astropy=False)
+        if forward:
+            t_dst[i] = t_lisa_from_ssb(
+                t_src[i], longitude_src[i], latitude_src[i], t0)
+            # t_dst was computed with the t0-corrected LISA position but
+            # corresponds to the true t_ssb, not t_ssb + t0, so t0 has to
+            # be applied again here to place LISA correctly.
+            rot = rotation_matrix_ssb_to_lisa(
+                lisa_position_ssb(t_dst[i], t0)[1])
+            k_dst = rot.T @ k_src
+        else:
+            rot = rotation_matrix_ssb_to_lisa(
+                lisa_position_ssb(t_src[i], t0)[1])
+            k_dst = rot @ k_src
+        longitude_dst[i], latitude_dst[i] = \
+            propagation_vector_to_localization(k_dst, use_astropy=False)
+        if not forward:
+            t_dst[i] = t_ssb_from_t_lisa(
+                t_src[i], longitude_dst[i], latitude_dst[i], t0)
+        polarization_dst[i] = polarization_newframe(
+            polarization_src[i], k_src, rot if forward else rot.T,
+            use_astropy=False)
+
+    return _pack_sky_params_output(
+        num, t_dst, longitude_dst, latitude_dst, polarization_dst)
+
+
 def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
                 t0=TIME_OFFSET_20_DEGREES):
     """ Converting the arrive time, the sky localization, and the polarization
@@ -359,49 +438,9 @@ def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
     """
-    if not isinstance(t_ssb, np.ndarray):
-        t_ssb = np.array([t_ssb])
-    if not isinstance(longitude_ssb, np.ndarray):
-        longitude_ssb = np.array([longitude_ssb])
-    if not isinstance(latitude_ssb, np.ndarray):
-        latitude_ssb = np.array([latitude_ssb])
-    if not isinstance(polarization_ssb, np.ndarray):
-        polarization_ssb = np.array([polarization_ssb])
-    num = len(t_ssb)
-    t_lisa, longitude_lisa = np.zeros(num), np.zeros(num)
-    latitude_lisa, polarization_lisa = np.zeros(num), np.zeros(num)
-
-    for i in range(num):
-        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2*np.pi:
-            raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_ssb[i] < -np.pi/2 or latitude_ssb[i] > np.pi/2:
-            raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2*np.pi:
-            raise ValueError("Polarization angle should within [0, 2*pi).")
-        t_lisa[i] = t_lisa_from_ssb(t_ssb[i], longitude_ssb[i],
-                                    latitude_ssb[i], t0)
-        k_ssb = localization_to_propagation_vector(
-                    longitude_ssb[i], latitude_ssb[i], use_astropy=False)
-        # Although t_lisa calculated above using the corrected LISA position
-        # vector by adding t0, it corresponds to the true t_ssb, not t_ssb+t0,
-        # we need to include t0 again to correct LISA position.
-        alpha = lisa_position_ssb(t_lisa[i], t0)[1]
-        rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
-        k_lisa = rotation_matrix_lisa.T @ k_ssb
-        longitude_lisa[i], latitude_lisa[i] = \
-            propagation_vector_to_localization(k_lisa, use_astropy=False)
-        polarization_lisa[i] = polarization_newframe(
-            polarization_ssb[i], k_ssb, rotation_matrix_lisa,
-            use_astropy=False)
-
-    if num == 1:
-        params_lisa = (t_lisa[0], longitude_lisa[0],
-                       latitude_lisa[0], polarization_lisa[0])
-    else:
-        params_lisa = (t_lisa, longitude_lisa,
-                       latitude_lisa, polarization_lisa)
-
-    return params_lisa
+    return _sky_ssb_space_transform(
+        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, t0,
+        forward=True)
 
 
 def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
@@ -442,46 +481,11 @@ def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     """
-    if not isinstance(t_lisa, np.ndarray):
-        t_lisa = np.array([t_lisa])
-    if not isinstance(longitude_lisa, np.ndarray):
-        longitude_lisa = np.array([longitude_lisa])
-    if not isinstance(latitude_lisa, np.ndarray):
-        latitude_lisa = np.array([latitude_lisa])
-    if not isinstance(polarization_lisa, np.ndarray):
-        polarization_lisa = np.array([polarization_lisa])
-    num = len(t_lisa)
-    t_ssb, longitude_ssb = np.zeros(num), np.zeros(num)
-    latitude_ssb, polarization_ssb = np.zeros(num), np.zeros(num)
+    return _sky_ssb_space_transform(
+        t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, t0,
+        forward=False)
 
-    for i in range(num):
-        if longitude_lisa[i] < 0 or longitude_lisa[i] >= 2*np.pi:
-            raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_lisa[i] < -np.pi/2 or latitude_lisa[i] > np.pi/2:
-            raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_lisa[i] < 0 or polarization_lisa[i] >= 2*np.pi:
-            raise ValueError("Polarization angle should within [0, 2*pi).")
-        k_lisa = localization_to_propagation_vector(
-                    longitude_lisa[i], latitude_lisa[i], use_astropy=False)
-        alpha = lisa_position_ssb(t_lisa[i], t0)[1]
-        rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
-        k_ssb = rotation_matrix_lisa @ k_lisa
-        longitude_ssb[i], latitude_ssb[i] = \
-            propagation_vector_to_localization(k_ssb, use_astropy=False)
-        t_ssb[i] = t_ssb_from_t_lisa(t_lisa[i], longitude_ssb[i],
-                                     latitude_ssb[i], t0)
-        polarization_ssb[i] = polarization_newframe(
-            polarization_lisa[i], k_lisa, rotation_matrix_lisa.T,
-            use_astropy=False)
 
-    if num == 1:
-        params_ssb = (t_ssb[0], longitude_ssb[0],
-                      latitude_ssb[0], polarization_ssb[0])
-    else:
-        params_ssb = (t_ssb, longitude_ssb,
-                      latitude_ssb, polarization_ssb)
-
-    return params_ssb
 
 
 def rotation_matrix_ssb_to_geo(epsilon=np.deg2rad(23.439281)):
@@ -648,28 +652,16 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     """
-    if not isinstance(t_ssb, np.ndarray):
-        t_ssb = np.array([t_ssb])
-    if not isinstance(longitude_ssb, np.ndarray):
-        longitude_ssb = np.array([longitude_ssb])
-    if not isinstance(latitude_ssb, np.ndarray):
-        latitude_ssb = np.array([latitude_ssb])
-    if not isinstance(polarization_ssb, np.ndarray):
-        polarization_ssb = np.array([polarization_ssb])
-    num = len(t_ssb)
+    t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, num = \
+        _ensure_sky_params_arrays(
+            t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)
+    _validate_sky_params(longitude_ssb, latitude_ssb, polarization_ssb)
     t_geo = np.full(num, np.nan)
     longitude_geo = np.full(num, np.nan)
     latitude_geo = np.full(num, np.nan)
     polarization_geo = np.full(num, np.nan)
 
     for i in range(num):
-        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2*np.pi:
-            raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_ssb[i] < -np.pi/2 or latitude_ssb[i] > np.pi/2:
-            raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2*np.pi:
-            raise ValueError("Polarization angle should within [0, 2*pi).")
-
         if use_astropy:
             # BarycentricMeanEcliptic doesn't have obstime attribute,
             # it's a good inertial frame, but PrecessedGeocentric is not.
@@ -715,14 +707,8 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
         # LDC and LAL conventions, see Sec 4.1.5 in <LISA-LCST-SGS-MAN-001>.
         polarization_geo[i] = np.mod(polarization_geo[i]+np.pi, 2*np.pi)
 
-    if num == 1:
-        params_geo = (t_geo[0], longitude_geo[0],
-                      latitude_geo[0], polarization_geo[0])
-    else:
-        params_geo = (t_geo, longitude_geo,
-                      latitude_geo, polarization_geo)
-
-    return params_geo
+    return _pack_sky_params_output(
+        num, t_geo, longitude_geo, latitude_geo, polarization_geo)
 
 
 def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
@@ -764,28 +750,16 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     """
-    if not isinstance(t_geo, np.ndarray):
-        t_geo = np.array([t_geo])
-    if not isinstance(longitude_geo, np.ndarray):
-        longitude_geo = np.array([longitude_geo])
-    if not isinstance(latitude_geo, np.ndarray):
-        latitude_geo = np.array([latitude_geo])
-    if not isinstance(polarization_geo, np.ndarray):
-        polarization_geo = np.array([polarization_geo])
-    num = len(t_geo)
+    t_geo, longitude_geo, latitude_geo, polarization_geo, num = \
+        _ensure_sky_params_arrays(
+            t_geo, longitude_geo, latitude_geo, polarization_geo)
+    _validate_sky_params(longitude_geo, latitude_geo, polarization_geo)
     t_ssb = np.full(num, np.nan)
     longitude_ssb = np.full(num, np.nan)
     latitude_ssb = np.full(num, np.nan)
     polarization_ssb = np.full(num, np.nan)
 
     for i in range(num):
-        if longitude_geo[i] < 0 or longitude_geo[i] >= 2*np.pi:
-            raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_geo[i] < -np.pi/2 or latitude_geo[i] > np.pi/2:
-            raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_geo[i] < 0 or polarization_geo[i] >= 2*np.pi:
-            raise ValueError("Polarization angle should within [0, 2*pi).")
-
         if use_astropy:
             # BarycentricMeanEcliptic doesn't have obstime attribute,
             # it's a good inertial frame, but PrecessedGeocentric is not.
@@ -833,14 +807,9 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
         # LDC and LAL conventions, see Sec 4.1.5 in <LISA-LCST-SGS-MAN-001>.
         polarization_ssb[i] = np.mod(polarization_ssb[i]-np.pi, 2*np.pi)
 
-    if num == 1:
-        params_ssb = (t_ssb[0], longitude_ssb[0],
-                      latitude_ssb[0], polarization_ssb[0])
-    else:
-        params_ssb = (t_ssb, longitude_ssb,
-                      latitude_ssb, polarization_ssb)
+    return _pack_sky_params_output(
+        num, t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)
 
-    return params_ssb
 
 
 def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
