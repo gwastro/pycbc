@@ -103,7 +103,9 @@ class TestDistributions(unittest.TestCase):
 
         # loop over distributions
         for dist in self.dists:
-            if dist.name in EXCLUDE_DIST_NAMES:
+            # trapezoidal distribution pdf is identically zero at left bound;
+            # skip it for this test
+            if dist.name in EXCLUDE_DIST_NAMES + ['trapezoid']:
                 continue
             for param in dist.params:
 

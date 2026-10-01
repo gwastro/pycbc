@@ -155,7 +155,6 @@ class Trapezoid(bounded.BoundedDist):
     def __init__(self, **params):
         self._semimins = {}
         self._semimaxs = {}
-        self._condlists = {}
         self._bounds = {}
         self._norm = {}
         self._lognorm = {}
@@ -172,7 +171,6 @@ class Trapezoid(bounded.BoundedDist):
         # compute norms
         for p, bnds in self._bounds.items():
             a, d = bnds
-            
             # set semimin/semimax to min/max if not specified
             if p not in self._semimins:
                 self._semimins[p] = a
@@ -180,16 +178,22 @@ class Trapezoid(bounded.BoundedDist):
                 self._semimaxs[p] = d
             b = self._semimins[p]
             c = self._semimaxs[p]
-            print(a, b, c, d)
-            print(type(a), type(b), type(c), type(d))
-            
+
+            # normalizations
             self._norm[p] = 2 / (d + c - b - a)
             self._lognorm[p] = numpy.log(self._norm[p])
-            
-            # save conditions
-            self._condlists[p] = [(params[p] < b),
-                                  (params[p] >= b) & (params[p] < c),
-                                  (params[p] >= c)]
+
+    def _condlists(self, **kwargs):
+        """Set lists determining where param values are in distribution.
+        """
+        condlists = {}
+        for p, bnds in self._bounds.items():
+            b = self._semimins[p]
+            c = self._semimaxs[p]
+            condlists[p] = [(kwargs[p] < b),
+                            (kwargs[p] >= b) & (kwargs[p] < c),
+                            (kwargs[p] >= c)]
+        return condlists
 
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
@@ -199,14 +203,26 @@ class Trapezoid(bounded.BoundedDist):
         outlists = {}
         for p, bnds in self._bounds.items():
             values = kwargs[p]
-            a, d = bnds
+            a, d = (numpy.float64(bnds[0]), numpy.float64(bnds[1]))
             b = self._semimins[p]
             c = self._semimaxs[p]
-            outlists[p] = [(values - a)/(b - a),
+            condlists = self._condlists(**kwargs)
+            
+            # set output values
+            # if semibounds equal bounds, set to uniform limits
+            if b == a:
+                lowout = 1.
+            else:
+                lowout = (values - a)/(b - a)
+            if c == d:
+                highout = 1.
+            else:
+                highout = (d - values)/(d - c)
+            outlists[p] = [lowout,
                            1.,
-                           (d - values)/(d - c)]  
-        return numpy.prod([numpy.select(self._condlists[p], outlists[p]) * \
-                               self._norm[p] for p in self._params])
+                           highout]
+        return numpy.prod([numpy.select(condlists[p], outlists[p]) * \
+                               self._norm[p] for p in self._params], axis=0)
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
@@ -218,24 +234,37 @@ class Trapezoid(bounded.BoundedDist):
 
     def cdf(self, param, value):
         """Return the cdf at given values."""
-        a, d = self._bounds[param]
+        bnds = self._bounds[param]
+        a, d = (numpy.float64(bnds[0]), numpy.float64(bnds[1]))
         b = self._semimins[param]
         c = self._semimaxs[param]
         pref = (d + c - a - b)
 
         # conditions based on position
-        # suppress divide by zero errors if a = b or c = d
-        with numpy.errstate(divide='ignore', invalid='ignore'):
-            outlist = [(value - a)**2 / (b - a) / pref,
-                       (2*value - a - b) / pref,
-                       1 - (d - value)**2 / (d - c) / pref]
+        kwargs = {param: value}
+        condlists = self._condlists(**kwargs)
 
-            return numpy.select(self._condlists[param], outlist)
+        # set output values
+        # if semibounds equal bounds, set to uniform limits
+        if b == a:
+            lowout = 2 / pref * (value - a)
+        else:
+            lowout = (value - a)**2 / (b - a) / pref
+        if c == d:
+            highout = 1 - 2 / pref * (c - value)
+        else:
+            highout = 1 - (d - value)**2 / (d - c) / pref
+        outlist = [lowout,
+                   (2*value - a - b) / pref,
+                   highout]
+
+        return numpy.select(condlists[param], outlist)
 
     def _cdfinv_param(self, param, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
         """
-        a, d = self._bounds[param]
+        bnds = self._bounds[param]
+        a, d = (numpy.float64(bnds[0]), numpy.float64(bnds[1]))
         b = self._semimins[param]
         c = self._semimaxs[param]
         pref = (d + c - a - b)
@@ -245,12 +274,14 @@ class Trapezoid(bounded.BoundedDist):
         c_cdf = self.cdf(param, c)
 
         # conditions based on position
-        cdf_condlist = [(value < b_cdf),
-                        (value >= b_cdf) & (value < c_cdf),
-                        (value >= c_cdf)]
-        outlist = [a + numpy.sqrt(value * pref * (b-a)),
-                   (value * pref + b + a) / 2,
-                   d-numpy.sqrt((value - 1) * pref * (c-d))]
+        # numpy complains when b = a or c = d
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            cdf_condlist = [(value < b_cdf),
+                            (value >= b_cdf) & (value < c_cdf),
+                            (value >= c_cdf)]
+            outlist = [a + numpy.sqrt(value * pref * (b-a)),
+                       (value * pref + b + a) / 2,
+                       d-numpy.sqrt((value - 1) * pref * (c-d))]
 
         return numpy.select(cdf_condlist, outlist)
 
