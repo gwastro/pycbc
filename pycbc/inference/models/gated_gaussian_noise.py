@@ -1345,10 +1345,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     `foo` with amplitude `amp_foo` and another mode `bar` with amplitude `A_bar`,
     the user must input:
 
-        amp_map = {'foo': 'amp_foo',
-                   'bar': 'A_bar'}
-        snr_map = {'foo': 'snr_foo',
-                   'bar': 'snr_bar'}
+        snr_mode_map = 'snr_foo:foo:amp_foo' 'snr_bar:bar:A_bar'
 
     The keys must match the corresponding output from the waveform generator.
     """
@@ -1359,8 +1356,9 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                  static_params=None,
                  phase_samples=500000, phase_names=None,
                  ref_phase=None, sample_snrs=False,
-                 snr_map=None, amp_map=None, fiducial_amp_value=1.,
-                 ref_mode = False, **kwargs):
+                 snr_mode_map=None, fiducial_amp_value=1.,
+                 ref_mode=False, **kwargs):
+
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
@@ -1368,6 +1366,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             static_params=static_params, **kwargs)
         self.det_names = list(self.data.keys())
         self.dets = {}
+
         # phase marginalization parameters
         self.phase_samples = int(phase_samples)
         self.phases = numpy.linspace(0, 2*numpy.pi, self.phase_samples,
@@ -1389,29 +1388,24 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             raise TypeError('Unrecognized format for phase_names arg. Accepts '
                             'string, list, or None')
         self.fiducial_amp_value = float(fiducial_amp_value)
+
         # if sampling in snr, set names of snrs, amps, and modes
         self.sample_snrs = sample_snrs
+        self.amp_names = {}
+        self.snr_names = {}
+        self.mode_names = []
         if self.sample_snrs:
-            if snr_map is None or amp_map is None:
-                raise ValueError('Must provide names of amplitudes and SNRs '
-                                 'if specifying SNR sampling')
-            try:
-                self.snr_names = dict(snr_map)
-                self.amp_names = dict(amp_map)
-            except TypeError:
-                raise TypeError('Incorrect type for snr_map and/or amp_map') \
-                    from None
-            # dicts must have the same keys
-            if list(set(snr_map.keys()) & set(amp_map.keys())) != \
-                list(set(amp_map.keys())):
-                raise KeyError(f'Mode names in amp_map {amp_map.keys()} '
-                               f'do not match mode names in snr_map '
-                               f'{snr_map.keys()}')
-            self.mode_names = list(self.snr_names.keys())
-        else:
-            self.amp_names = {}
-            self.snr_names = {}
-            self.mode_names = []
+            if snr_mode_map is None:
+                raise ValueError('Must provide SNR/amp map if sampling in SNR')
+
+            # parse input as "snr:mode:amp"
+            snr_mode_entries = snr_mode_map.split(' ')
+            for entry in snr_mode_entries:
+                snr, mode, amp = entry.split(':')
+                self.mode_names.append(mode)
+                self.snr_names[mode] = snr
+                self.amp_names[mode] = amp
+
         # specify whether one of the modes is a reference to all other modes;
         # it is assumed that only one mode is given to be the reference
         self.ref_mode = ref_mode
@@ -1420,6 +1414,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                 raise ValueError('More than one mode is specified for SNR '
                                  'sampling. This model only supports one mode '
                                  'sampled in SNR if ref_amp is turned on.')
+
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
             self.variable_params, self.data,
@@ -1441,18 +1436,12 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                             the reference, i.e. other mode amplitudes are
                             relative to the given mode.
         """
-        if cp.has_option('model', 'sample_snrs'):
+        if cp.has_option('model', 'sample_snrs') or \
+            cp.has_option('model', 'sample-snrs'):
             kwargs['sample_snrs'] = True
-        if cp.has_option('model', 'ref_mode'):
+        if cp.has_option('model', 'ref_mode') or \
+            cp.has_option('model', 'ref-mode'):
             kwargs['ref_mode'] = True
-        if cp.has_option('model', 'snr-map'):
-            kwargs['snr_map'] = cp.get_cli_option('model', 'snr_map',
-                                               nargs='+', type=str,
-                                               action=MultiDetOptionAction)
-        if cp.has_option('model', 'amp-map'):
-            kwargs['amp_map'] = cp.get_cli_option('model', 'amp_map',
-                                               nargs='+', type=str,
-                                               action=MultiDetOptionAction)
         return super().from_config(cp, data_section=data_section,
                                    data=data, psds=psds,
                                    **kwargs)
