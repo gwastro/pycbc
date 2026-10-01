@@ -155,56 +155,58 @@ class Trapezoid(bounded.BoundedDist):
     def __init__(self, **params):
         self._semimins = {}
         self._semimaxs = {}
+        self._condlists = {}
         self._bounds = {}
-        for param in params:
-            # read in semimins
-            if 'semimin-' in param:
-                p = param[8:]
-                self._semimins[p] = params[param]
-            # read in semimaxs
-            elif 'semimax-' in param:
-                p = param[8:]
-                self._semimaxs[p] = params[param]
-            else:
-                bnds = params[param]
-                if bnds is None:
-                    self._bounds[param] = boundaries.Bounds()
-                elif not isinstance(bnds, boundaries.Bounds):
-                    self._bounds[param] = boundaries.Bounds(bnds[0], bnds[1])
-                else:
-                    self._bounds[param] = bnds
-            self._params = sorted(list(self._bounds.keys()))
+        self._norm = {}
+        self._lognorm = {}
+        
+        # read in intermediate points
+        semimin_args = [p for p in params if p.startswith('semimin-')]
+        semimax_args = [p for p in params if p.startswith('semimax-')]
+        self._semimins = dict([[p[8:], params.pop(p)] for p in semimin_args])
+        self._semimaxs = dict([[p[8:], params.pop(p)] for p in semimax_args])
+        
+        # initialize bounds objects
+        super(Trapezoid, self).__init__(**params)
+        
+        # compute norms
+        for p, bnds in self._bounds.items():
+            a, d = bnds
+            
+            # set semimin/semimax to min/max if not specified
+            if p not in self._semimins:
+                self._semimins[p] = a
+            if p not in self._semimaxs:
+                self._semimaxs[p] = d
+            b = self._semimins[p]
+            c = self._semimaxs[p]
+            print(a, b, c, d)
+            print(type(a), type(b), type(c), type(d))
+            
+            self._norm[p] = 2 / (d + c - b - a)
+            self._lognorm[p] = numpy.log(self._norm[p])
+            
+            # save conditions
+            self._condlists[p] = [(params[p] < b),
+                                  (params[p] >= b) & (params[p] < c),
+                                  (params[p] >= c)]
 
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
-        pdf = numpy.ones(numpy.asarray(next(iter(kwargs.values()))).shape)
-        for p in self._params:
-            a = self._bounds[p][0]
-            d = self._bounds[p][1]
-
-            # set semimin to a, semimax to d if not provided
-            b = self._semimins.get(p, a)
-            c = self._semimaxs.get(p, d)
-
-            # multiply based on position in dist
-            with numpy.errstate(divide='ignore', invalid='ignore'):
-                value = kwargs[p]
-                value = numpy.asarray(value)
-
-                condlist = [(value < b),
-                            (value >= b) & (value < c),
-                            (value >= c)]
-                outlist = [(value - a)/(b - a),
+        outlists = {}
+        for p, bnds in self._bounds.items():
+            values = kwargs[p]
+            a, d = bnds
+            b = self._semimins[p]
+            c = self._semimaxs[p]
+            outlists[p] = [(values - a)/(b - a),
                            1.,
-                           (d - value)/(d - c)]
-                pdf *= numpy.select(condlist, outlist)
-
-                # get the overall normalization and prefactor
-                pdf *= 2 / (d + c - a - b)
-        return pdf.astype(numpy.float64)
+                           (d - values)/(d - c)]  
+        return numpy.prod([numpy.select(self._condlists[p], outlists[p]) * \
+                               self._norm[p] for p in self._params])
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
@@ -217,29 +219,25 @@ class Trapezoid(bounded.BoundedDist):
     def cdf(self, param, value):
         """Return the cdf at given values."""
         a, d = self._bounds[param]
-        b = self._semimins.get(param, a)
-        c = self._semimaxs.get(param, d)
+        b = self._semimins[param]
+        c = self._semimaxs[param]
         pref = (d + c - a - b)
 
         # conditions based on position
         # suppress divide by zero errors if a = b or c = d
         with numpy.errstate(divide='ignore', invalid='ignore'):
-            value = numpy.asarray(value)
-            condlist = [(value < b),
-                        (value >= b) & (value < c),
-                        (value >= c)]
             outlist = [(value - a)**2 / (b - a) / pref,
                        (2*value - a - b) / pref,
                        1 - (d - value)**2 / (d - c) / pref]
 
-            return numpy.select(condlist, outlist)
+            return numpy.select(self._condlists[param], outlist)
 
     def _cdfinv_param(self, param, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
         """
         a, d = self._bounds[param]
-        b = self._semimins.get(param, a)
-        c = self._semimaxs.get(param, d)
+        b = self._semimins[param]
+        c = self._semimaxs[param]
         pref = (d + c - a - b)
 
         # get cdf values at turning points and provided values
@@ -247,15 +245,14 @@ class Trapezoid(bounded.BoundedDist):
         c_cdf = self.cdf(param, c)
 
         # conditions based on position
-        value = numpy.asarray(value)
-        condlist = [(value < b_cdf),
-                    (value >= b_cdf) & (value < c_cdf),
-                    (value >= c_cdf)]
+        cdf_condlist = [(value < b_cdf),
+                        (value >= b_cdf) & (value < c_cdf),
+                        (value >= c_cdf)]
         outlist = [a + numpy.sqrt(value * pref * (b-a)),
                    (value * pref + b + a) / 2,
                    d-numpy.sqrt((value - 1) * pref * (c-d))]
 
-        return numpy.select(condlist, outlist)
+        return numpy.select(cdf_condlist, outlist)
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
