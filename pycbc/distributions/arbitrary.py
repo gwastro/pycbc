@@ -109,7 +109,6 @@ class Arbitrary(bounded.BoundedDist):
             # in the transformed frame (the one that's calculated) then:
             # p = J * p', where J is the Jacobian of going from p to p'
             jacobian *= t.jacobian(samples)
-        # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
         this_pdf = jacobian * self._kde.evaluate([kwargs[p]
                                                  for p in self._params])
         if len(this_pdf) == 1:

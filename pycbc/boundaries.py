@@ -352,8 +352,7 @@ class Bounds(object):
     def contains(self, value):
         """Whether each of the given values is within the bounds.
 
-        Use this instead of ``value in self`` for an array: Python coerces the
-        result of ``__contains__`` to a single bool.
+        ``value in self`` gives a single bool, so use this for an array.
         """
         return self._min.smaller(value) & self._max.larger(value)
 

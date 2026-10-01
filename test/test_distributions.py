@@ -197,6 +197,43 @@ class TestDistributions(unittest.TestCase):
             tested += 1
         self.assertGreater(tested, 5)
 
+    def test_outside_the_bounds_is_zero(self):
+        """ A point outside the bounds has zero density, scalar or array.
+
+        `test_pdf_arrays` straddles the bounds but only checks the array
+        against the one-point call, and both go through the same containment
+        test -- so it passes even if the bounds are ignored altogether. This
+        asserts the value itself.
+        """
+        tested = 0
+        for dist in self.dists:
+            low = {}
+            high = {}
+            for param in dist.params:
+                lo, hi = dist.bounds[param][0], dist.bounds[param][1]
+                pad = 0.5 * (hi - lo)
+                low[param] = lo - pad
+                high[param] = hi + pad
+            if any(v in dist.bounds[p] for p, v in low.items()):
+                continue            # cyclic bounds wrap, nothing is outside
+            for outside in (low, high):
+                self.assertEqual(
+                    dist.pdf(**outside), 0.,
+                    "{}.pdf is not zero outside the bounds".format(dist.name))
+                self.assertEqual(
+                    dist.logpdf(**outside), -numpy.inf,
+                    "{}.logpdf is not -inf outside the bounds".format(
+                        dist.name))
+                # and the same point inside an array
+                arr = {p: numpy.array([v, v]) for p, v in outside.items()}
+                numpy.testing.assert_array_equal(
+                    numpy.asarray(dist.pdf(**arr)), numpy.zeros(2),
+                    "{}.pdf is not zero outside the bounds for an "
+                    "array".format(dist.name))
+            tested += 1
+        self.assertGreater(tested, 5,
+                           "too few distributions had an outside to test")
+
     def test_pdf_arrays_with_constraints(self):
         """ Same check where the bounds are not the whole story:
         ``UniformF0Tau`` also requires the implied final mass and spin to be
