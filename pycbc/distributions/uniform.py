@@ -19,7 +19,6 @@ import logging
 import numpy
 
 from pycbc.distributions import bounded
-from pycbc import boundaries
 
 logger = logging.getLogger('pycbc.distributions.uniform')
 
@@ -158,16 +157,16 @@ class Trapezoid(bounded.BoundedDist):
         self._bounds = {}
         self._norm = {}
         self._lognorm = {}
-        
+
         # read in intermediate points
         semimin_args = [p for p in params if p.startswith('semimin-')]
         semimax_args = [p for p in params if p.startswith('semimax-')]
         self._semimins = dict([[p[8:], params.pop(p)] for p in semimin_args])
         self._semimaxs = dict([[p[8:], params.pop(p)] for p in semimax_args])
-        
+
         # initialize bounds objects
         super(Trapezoid, self).__init__(**params)
-        
+
         # compute norms
         for p, bnds in self._bounds.items():
             a, d = bnds
@@ -187,7 +186,7 @@ class Trapezoid(bounded.BoundedDist):
         """Set lists determining where param values are in distribution.
         """
         condlists = {}
-        for p, bnds in self._bounds.items():
+        for p in self._params:
             b = self._semimins[p]
             c = self._semimaxs[p]
             condlists[p] = [(kwargs[p] < b),
@@ -207,7 +206,7 @@ class Trapezoid(bounded.BoundedDist):
             b = self._semimins[p]
             c = self._semimaxs[p]
             condlists = self._condlists(**kwargs)
-            
+
             # set output values
             # if semibounds equal bounds, set to uniform limits
             if b == a:
