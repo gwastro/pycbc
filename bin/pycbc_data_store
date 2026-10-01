@@ -7,11 +7,11 @@ import argparse
 import pycbc
 import pycbc.strain
 import pycbc.dq
-from pycbc.fft.fftw import set_measure_level
+from pycbc.fft import ensure_fftw_planning_off
 from pycbc.events.veto import segments_to_start_end
 from pycbc.io.hdf import HFile
 
-set_measure_level(0)
+ensure_fftw_planning_off()
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
