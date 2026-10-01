@@ -22,7 +22,6 @@ import sys
 
 import numpy
 
-import pycbc.fft.fftw
 import pycbc.opt
 from pycbc import DYN_RANGE_FAC, events, fft, psd, scheme, strain, vetoes, waveform
 from pycbc.filter import MatchedFilterSkyMaxControl, MatchedFilterSkyMaxControlNoPhase
@@ -522,11 +521,5 @@ logging.info("Found %s triggers" % str(len(event_mgr.events)))
 
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
-
-if opt.fftw_output_float_wisdom_file:
-    fft.fftw.export_single_wisdom_to_filename(opt.fftw_output_float_wisdom_file)
-
-if opt.fftw_output_double_wisdom_file:
-    fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
 
 logging.info("Finished")
