@@ -111,7 +111,7 @@ else:
         )
     params += ['dec_chirp_dist', 'eff_dist_h', 'eff_dist_l', 'eff_dist_v']
     dec_dist = max(eff_dist['H1'], eff_dist['L1'])
-    dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
+    dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, derived['mchirp'])
 
 params += ['mass1', 'mass2', 'mchirp', 'eta', 'ra', 'dec',
             'inclination', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',

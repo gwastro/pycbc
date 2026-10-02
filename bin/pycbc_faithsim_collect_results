@@ -30,7 +30,7 @@ parser.add_argument(
 parser.add_argument("--output", required=True, help="name of the output .dat file")
 args = parser.parse_args()
 
-init_logging(options.verbose)
+init_logging(args.verbose)
 
 mfields = ("match", "overlap", "time_offset", "sigma1", "sigma2")
 bfields = (

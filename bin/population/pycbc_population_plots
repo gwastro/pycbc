@@ -98,7 +98,7 @@ for fpost, model, lbl in mods:
     xs = np.linspace(min(log_R), max(log_R), 200)
     plt.plot(np.exp(xs), ss.skewnorm.pdf(xs, prior_alpha, prior_mu,
             prior_sigma), '--', label=lbl + ' Prior', color=c)
-    plt.plot(np.exp(xs), ss.skewnorm.pdf(xs, post_alpha, post_m,
+    plt.plot(np.exp(xs), ss.skewnorm.pdf(xs, post_alpha, post_mu,
                post_sigma), label=lbl + ' Posterior', color=c)
 
     Lfpo, Lbpo = fpo[model + '/Lf'][:], fpo[model + '/Lb'][:]

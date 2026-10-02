@@ -21,9 +21,12 @@ jobs:
                   find test -type f -name '*.py' ! -name 'test_schemes.py'
                 } | sort > /tmp/pycbc_py_files.txt
                 echo "file_count=$(wc -l < /tmp/pycbc_py_files.txt)" >> "$GITHUB_OUTPUT"
-            - name: Check for unused/missing imports (F401, F821)
+            - name: Check for unused imports (F401)
               run: |
-                  flake8 --select=F401,F821 $(cat /tmp/pycbc_py_files.txt)
+                  flake8 --select=F401 $(cat /tmp/pycbc_py_files.txt)
+            - name: Check for undefined variables / missing imports (F821)
+              run: |
+                  flake8 --select=F821 $(cat /tmp/pycbc_py_files.txt)
 
     qlty_check:
         runs-on: ubuntu-latest

@@ -283,7 +283,7 @@ for event in coinc_table:
                 tag_name=["psd"],
                 displayName=['ASDs']
             )
-            logging.info("Uploaded file %s to event %s.", psd_png_filename,
+            logging.info("Uploaded file %s to event %s.", asd_png_filename,
                          r["graceid"])
 
     xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)

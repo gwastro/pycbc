@@ -80,7 +80,7 @@ if opts.write_compress:
 
 for i, inj in enumerate(injections.table):
     snrs = numpy.array([getattr(inj, column) for column in opts.snr_columns.values()])
-    if sum(snrs < opts.snr_thresh):
+    if sum(snrs < opts.snr_thresh) == len(snrs):
         out_sim_inspiral_missed.append(inj)
     else:
         out_sim_inspiral_inject.append(inj)
