@@ -154,6 +154,9 @@ parser.add_argument('--distance-type',
                     choices=legal_distance_types,
                     help="How to sort missed injections from most to least "
                          "likely to be detected")
+parser.add_argument('--html-layout-file', default=None,
+                    help="Path to write the summary ('well') page to. If "
+                         "not given, it is written into --output-dir.")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
@@ -163,8 +166,6 @@ args = parser.parse_args()
 init_logging(args.verbose, default_level=1)
 
 workflow = wf.Workflow(args)
-
-wf.makedir(args.output_dir)
 
 # create a FileList that will contain all output files
 layouts = []
@@ -447,4 +448,4 @@ for num_event in range(num_events):
     layouts += list(layout.grouper(files, 2))
 
 workflow.save()
-layout.two_column_layout(args.output_dir, layouts)
+layout.two_column_layout(args.output_dir, layouts, filename=args.html_layout_file)
