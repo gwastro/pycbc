@@ -878,7 +878,7 @@ class FilterBank(TemplateBank):
                     t_num,
                     f_lower=low_frequency_cutoff,
                     approximant=approximant,
-                    df=None
+                    df=delta_f
                 )
                 full_calculate_waveform = False
             except KeyError:

@@ -92,7 +92,7 @@ def inner(self, other):
     if cdtype.kind == 'c':
         return cp.sum(self.data.conj() * other, dtype=complex128)
     else:
-        return cp.sum(self.data * other)
+        return cp.sum(self.data * other, dtype=float64)
 
 def vdot(self, other):
     """ Return the inner product of the array with complex conjugation.
