@@ -59,8 +59,9 @@ parser.add_argument('--sort-order', default='descending',
                     choices=['ascending','descending'],
                     help='Which direction to use when sorting on '
                          '--sort-variable. Default=descending')
-parser.add_argument('--output-file', required=True,
-                    help="Path to write the summary ('well') page to.")
+parser.add_argument('--html-layout-file', default=None,
+                    help="Path to write the summary ('well') page to. If "
+                         "not given, it is written into --output-dir.")
 
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
@@ -257,4 +258,4 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
     layouts += list(layout.grouper(files, 2))
 
 workflow.save()
-layout.two_column_layout(args.output_dir, layouts, filename=args.output_file)
+layout.two_column_layout(args.output_dir, layouts, filename=args.html_layout_file)

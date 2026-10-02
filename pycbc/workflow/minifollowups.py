@@ -36,53 +36,22 @@ from pycbc.workflow.pegasus_workflow import SubWorkflow
 logger = logging.getLogger('pycbc.workflow.minifollowups')
 
 
-def _well_filename(executable, tags, valid_seg):
-    """Construct a filename for a minifollowup-DAX-generator's own summary
-    ('well') page that pycbc_make_html_page will still recognize.
-
-    pycbc_make_html_page finds well pages by filename prefix, not by
-    workflow metadata (see pycbc/results/templates/{red,orange}.html:
-    `wellname.filename().find('well') == 0`). The standard File naming
-    convention (File._filename) always puts the ifo first and uppercases
-    everything, so it can never start with 'well' -- this builds the name
-    directly instead.
-    """
-    start = int(valid_seg[0])
-    duration = int(math.ceil(valid_seg[1])) - start
-    ifo_string = ''.join(executable.ifo_list).upper() if \
-        executable.ifo_list else 'ALL'
-    bits = [ifo_string, executable.name.upper()]
-    bits += [tag.upper() for tag in tags]
-    return 'well_%s_%s_%s.html' % ('_'.join(bits), start, duration)
-
-
 def add_wellfile_opt(node, workflow, option_name, out_dir, extra_tags=None):
     """Declare a node's minifollowup summary page ('well.html') as a
     properly-tracked Pegasus output file.
-
-    Without this, the executable would write its summary page by joining
-    a *directory* path (given via e.g. --output-dir) with a hardcoded
-    'well.html', which only works if that directory already exists and
-    is writable wherever the job actually executes -- true when running
-    on a shared filesystem, not true inside a container on an execute
-    node with no shared /home. Declaring it here means Pegasus delivers
-    it via its normal transfer mechanism, the same as any other output,
-    and the executable only ever needs to write to a plain local
-    filename handed to it on the command line.
-
-    out_dir is the *results* directory this minifollowup's plots are
-    being written to (not the executable's own, much smaller, out_dir
-    used for its .dax/.dax.map -- the well page needs to land alongside
-    the plots it summarizes, both so relative links resolve and so
-    pycbc_make_html_page's directory scan for well-prefixed files finds
-    it there).
     """
     exe = node.executable
     tags = list(exe.tags)
     for tag in (extra_tags or []):
         if tag not in tags:
             tags.append(tag)
-    filename = _well_filename(exe, tags, workflow.analysis_time)
+
+    valid_seg = workflow.analysis_time
+    start = int(valid_seg[0])
+    duration = int(math.ceil(valid_seg[1])) - start
+    ifo_string = ''.join(exe.ifo_list).upper() if exe.ifo_list else 'ALL'
+    bits = [ifo_string, exe.name.upper()] + [tag.upper() for tag in tags]
+    filename = 'well_%s_%s_%s.html' % ('_'.join(bits), start, duration)
     path = os.path.join(out_dir, filename)
     file_url = urllib.parse.urlunparse(
         ['file', 'localhost', path, None, None, None])
@@ -168,7 +137,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
         node.add_list_opt('--tags', tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
-    add_wellfile_opt(node, workflow, '--output-file', out_dir)
+    add_wellfile_opt(node, workflow, '--html-layout-file', out_dir)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -279,7 +248,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map',
                              '--output-map')
-    add_wellfile_opt(node, workflow, '--output-file', out_dir)
+    add_wellfile_opt(node, workflow, '--html-layout-file', out_dir)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -373,7 +342,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
         node.add_list_opt('--tags', tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
-    add_wellfile_opt(node, workflow, '--output-file', out_dir, extra_tags=tags)
+    add_wellfile_opt(node, workflow, '--html-layout-file', out_dir, extra_tags=tags)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]

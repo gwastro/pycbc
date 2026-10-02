@@ -34,11 +34,8 @@ def two_column_layout(path, cols, unique='', filename=None, **kwargs):
         side of a row in the well.html page.
     filename: str, optional
         If given, write directly to this path instead of constructing
-        '<path>/well<unique>.html'. Needed by callers (e.g. minifollowup
-        executables) that must write to an exact, Pegasus-declared output
-        path rather than a plain directory. The given name should still
-        start with 'well' for pycbc_make_html_page to render it inline
-        (see pycbc/results/templates/{red,orange}.html).
+        '<path>/well<unique>.html'. The given name should still start
+        with 'well' for pycbc_make_html_page to render it inline.
     """
     if filename is None:
         filename = os.path.join(os.getcwd(), path, 'well{}.html'.format(unique))

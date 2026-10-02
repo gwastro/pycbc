@@ -89,8 +89,9 @@ parser.add_argument('--maximum-duration', default=None, type=float,
 parser.add_argument('--cluster-window', type=float, default=10,
                     help="Window (seconds) over which to cluster triggers "
                          "when finding the loudest-ranked. Default=10")
-parser.add_argument('--output-file', required=True,
-                    help="Path to write the summary ('well') page to.")
+parser.add_argument('--html-layout-file', default=None,
+                    help="Path to write the summary ('well') page to. If "
+                         "not given, it is written into --output-dir.")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 stat.insert_statistic_option_group(parser,
@@ -326,4 +327,4 @@ for rank, num_event in enumerate(order):
     layouts += list(layout.grouper(files, 2))
 
 workflow.save()
-layout.two_column_layout(args.output_dir, layouts, filename=args.output_file)
+layout.two_column_layout(args.output_dir, layouts, filename=args.html_layout_file)
