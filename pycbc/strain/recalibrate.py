@@ -518,7 +518,8 @@ class PhysicalModel(object):
 
 
 def read_calibration_envelop_file(calibration_file, correction_type,
-                                  minimum_frequency, maximum_frequency, n_nodes):
+                                  minimum_frequency, maximum_frequency, n_nodes,
+                                  gps_time=None):
     """
     This function reads the calibration envelop file and provide arrays
     needed to construct cubic splines

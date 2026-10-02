@@ -874,11 +874,11 @@ class FilterBank(TemplateBank):
         if (self.has_compressed_waveforms and self.enable_compressed_waveforms):
             try:
                 htilde = self.get_decompressed_waveform(
-                    tempout,
-                    index,
+                    cached_mem,
+                    t_num,
                     f_lower=low_frequency_cutoff,
                     approximant=approximant,
-                    df=None
+                    df=delta_f
                 )
                 full_calculate_waveform = False
             except KeyError:

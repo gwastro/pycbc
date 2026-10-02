@@ -385,7 +385,7 @@ with ctx:
             tnum_start, event_mgr = events.EventManager.restore_state(checkpoint_file)
             checkpoint_exists = True
         except Exception as e:
-            if args.require_valid_checkpoint:
+            if opt.require_valid_checkpoint:
                 logging.info("Failed to load checkpoint file")
                 raise(e)
 

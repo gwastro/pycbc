@@ -53,7 +53,7 @@ if opts.z_arg is not None:
     logging.info("Getting samples for colorbar")
     zlbl = opts.z_arg_labels[opts.z_arg]
     zvals = []
-    for fp in fps:
+    for i, fp in enumerate(fps):
         zsamples = fp.samples_from_cli(opts, parameters=opts.z_arg)
         vals = zsamples[opts.z_arg]
         zvals.append(numpy.median(vals))
@@ -100,7 +100,7 @@ for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
 if opts.z_arg:
     cax, _ = cbar.make_axes(ax)
     cb2 = cbar.ColorbarBase(cax, cmap=cmap, norm=norm)
-    cb2.set_label(r"Recovered Median " + zlabel)
+    cb2.set_label(r"Recovered Median " + zlbl)
 
 # set labels
 ax.set_ylabel(r"Recovered " + label + r"- Injected " + label)

@@ -129,7 +129,7 @@ for counter, filename in enumerate(files):
     try:
         HFile(filename, 'r')
     except IOError:
-        logging.warning('IOError with file %s', f)
+        logging.warning('IOError with file %s', filename)
         continue
 
     # Triggers for this file
