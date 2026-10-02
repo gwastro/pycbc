@@ -27,7 +27,7 @@ This document provides essential context for AI agents assisting with developmen
 -   **Addressing**: You MUST put "This PR was created by AI Gareth" somewhere in the pull request
 -   **Code of Conduct & Human Verification**:
     -   **DO NOT** check the Code of Conduct box yourself (`[ ]`). As an AI, you cannot legally or ethically agree to terms on behalf of a human.
-    -   **MUST TAG OPERATOR**: In the PR body under the Code of Conduct section, add a explicit callout tagging the user who initiated the prompt (e.g., `@<username>`).
+    -   **MUST TAG OPERATOR**: In the PR body under the Code of Conduct section, add a explicit callout tagging the user who initiated the prompt (e.g., `@<username>`) to remind them that they need to fully understand and confirm the code changes being proposed.
     -   **REQUIRED TEXT**: Include this note verbatim above or next to the checkbox:
         > *AI Agent Note: Unchecked by default. @<username>, please review this PR and check the Code of Conduct box above to confirm your agreement before requesting review.*
 
