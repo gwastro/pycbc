@@ -20,7 +20,7 @@ import logging
 
 from igwn_segments import segmentlist
 
-from pycbc.workflow.core import Executable, FileList, SegFile, make_analysis_dir
+from pycbc.workflow.core import Executable, FileList, SegFile
 
 logger = logging.getLogger("pycbc.workflow.psd")
 
@@ -42,7 +42,6 @@ def chunks(l, n):
 
 
 def merge_psds(workflow, files, ifo, out_dir, tags=None):
-    make_analysis_dir(out_dir)
     tags = [] if not tags else tags
     node = MergePSDFiles(
         workflow.cp, "merge_psds", ifos=ifo, out_dir=out_dir, tags=tags
@@ -56,7 +55,6 @@ def merge_psds(workflow, files, ifo, out_dir, tags=None):
 def setup_psd_calculate(
     workflow, frame_files, ifo, segments, segment_name, out_dir, tags=None
 ):
-    make_analysis_dir(out_dir)
     tags = [] if not tags else tags
     if workflow.cp.has_option_tags("workflow-psd", "parallelization-factor", tags=tags):
         num_parts = int(
@@ -101,7 +99,6 @@ def setup_psd_calculate(
 def make_psd_file(
     workflow, frame_files, segment_file, segment_name, out_dir, tags=None
 ):
-    make_analysis_dir(out_dir)
     tags = [] if not tags else tags
     exe = CalcPSDExecutable(
         workflow.cp, "calculate_psd", ifos=segment_file.ifo, out_dir=out_dir, tags=tags
@@ -123,7 +120,6 @@ class AvgPSDExecutable(Executable):
 
 
 def make_average_psd(workflow, psd_files, out_dir, tags=None, output_fmt=".txt"):
-    make_analysis_dir(out_dir)
     tags = [] if tags is None else tags
     node = AvgPSDExecutable(
         workflow.cp, "average_psd", ifos=workflow.ifos, out_dir=out_dir, tags=tags
