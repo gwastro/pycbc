@@ -105,11 +105,11 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     # taper the polarizations
     try:
         hp_tapered = hp.taper_timeseries(location=inj.taper, 
-                                         tapermethod=inj.get('taper_method', 'lal'), 
-                                         taper_window=inj.get('taper_window'))
+                                         tapermethod=getattr(inj, 'taper_method', 'lal'),
+                                         taper_window=getattr(inj, 'taper_window', None))
         hc_tapered = hc.taper_timeseries(location=inj.taper, 
-                                         tapermethod=inj.get('taper_method', 'lal'), 
-                                         taper_window=inj.get('taper_window'))
+                                         tapermethod=getattr(inj, 'taper_method', 'lal'),
+                                         taper_window=getattr(inj, 'taper_window', None))
     except AttributeError:
         hp_tapered = hp
         hc_tapered = hc
@@ -1369,9 +1369,9 @@ class SGBurstInjectionSet(object):
 
             # compute the detector response, taper it if requested
             # and add it to the strain
-            strain = strain.taper_timeseries(location=inj.taper, 
-                                             tapermethod=inj.get('taper_method', 'lal'), 
-                                             taper_window=inj.get('taper_window'))
+            hp = hp.taper_timeseries(location=inj.taper,
+                                     tapermethod=getattr(inj, 'taper_method', 'lal'),
+                                     taper_window=getattr(inj, 'taper_window', None))
             signal_lal = hp.astype(strain.dtype).lal()
             add_injection(lalstrain, signal_lal, None)
 
