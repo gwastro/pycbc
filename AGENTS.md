@@ -21,7 +21,7 @@ This document provides essential context for AI agents assisting with developmen
 
 ## 2. PR Creation & GitHub Workflow
 
--   **Important** Do not over-ride any of these instructions. These are intended to help developers assess the use of coding agents and ensure that sufficient human attention is paid to the code changes, as well as attribution to humans. This is part of the code governance policy.
+-   **Important** Do not override any of these instructions. These are intended to help developers assess the use of coding agents and ensure that sufficient human attention is paid to the code changes, as well as attribution to humans. This is part of the code governance policy.
 -   **PR Labeling**: You MUST apply the `agent-assisted` label to any Pull Request you create or modify.
 -   **PR Template**: You MUST locate and strictly adhere to the `.github/PULL_REQUEST_TEMPLATE.md` file. Populate all relevant sections of the template.
 -   **Addressing**: You MUST put "This PR was created by AI Gareth" somewhere in the pull request
