@@ -18,7 +18,7 @@ Module that contains functions for setting up the inference workflow.
 """
 import logging
 
-from pycbc.workflow.core import (Executable, makedir)
+from pycbc.workflow.core import Executable
 from pycbc.workflow.plotting import PlotExecutable
 from pycbc.results import layout
 
@@ -69,8 +69,6 @@ def make_inference_plot(workflow, input_file, output_dir,
         tags = []
     if analysis_seg is None:
         analysis_seg = workflow.analysis_time
-    # make the directory that will contain the output files
-    makedir(output_dir)
     # Catch if a parameters option was specified:
     # we need to do this because PlotExecutable will automatically add any
     # option in the section to the node. However, we need to add the

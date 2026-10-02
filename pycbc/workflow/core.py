@@ -612,9 +612,12 @@ class Executable(pegasus_workflow.Executable):
         if not os.path.isabs(self.out_dir):
             self.out_dir = os.path.join(os.getcwd(), self.out_dir)
 
-        # Make output directory if not there
-        if not os.path.isdir(self.out_dir):
-            make_analysis_dir(self.out_dir)
+        # self.out_dir is only ever used as the directory component of a
+        # File's PFN (see File.__init__): it is where Pegasus will
+        # eventually deliver this executable's declared output files, via
+        # its own transfer mechanism, not a directory this process needs
+        # to create itself. Pre-creating it here was only ever needed
+        # because, historically, everything ran on one shared filesystem.
 
     def _set_pegasus_profile_options(self):
         """Set the pegasus-profile settings for this Executable.
