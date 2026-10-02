@@ -22,6 +22,7 @@ from abc import abstractmethod
 import logging
 import numpy
 import scipy
+import shlex
 from scipy import special
 import warnings
 from copy import deepcopy
@@ -1396,11 +1397,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         if self.sample_snrs:
             if snr_mode_map is None:
                 raise ValueError('Must provide SNR/amp map if sampling in SNR')
-
-            # parse input as "snr:mode:amp"
-            snr_mode_entries = snr_mode_map.split(' ')
-            for entry in snr_mode_entries:
-                snr, mode, amp = entry.split(':')
+            for mode, (snr, amp) in snr_mode_map.items():
                 self.mode_names.append(mode)
                 self.snr_names[mode] = snr
                 self.amp_names[mode] = amp
@@ -1434,6 +1431,9 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
            * ``ref_mode`` : Flag whether the given mode to be sampled in SNR is
                             the reference, i.e. other mode amplitudes are
                             relative to the given mode.
+
+           * ``snr-mode-map`` : Map of SNR parameter names to amplitude names
+                                and mode names output by the waveform generator
         """
         if cp.has_option('model', 'sample_snrs') or \
             cp.has_option('model', 'sample-snrs'):
@@ -1441,6 +1441,13 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         if cp.has_option('model', 'ref_mode') or \
             cp.has_option('model', 'ref-mode'):
             kwargs['ref_mode'] = True
+        if cp.has_option('model', 'snr-mode-map'):
+            snr_mode_map = {}
+            parsed_map = cp.get('model', 'snr-mode-map')
+            for entry in shlex.split(parsed_map):
+                mode, snr, amp = entry.split(':')
+                snr_mode_map[mode] = (snr, amp)
+            kwargs['snr_mode_map'] = snr_mode_map
         return super().from_config(cp, data_section=data_section,
                                    data=data, psds=psds,
                                    **kwargs)
