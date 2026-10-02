@@ -45,6 +45,7 @@ install_requires = setup_requires + [
     'tqdm',
     'setuptools',
     'gwdatafind',
+    'gwosc>=0.8.2',
     'pegasus-wms.api >= 5.1.1',
     'igwn-ligolw >= 2.1.0',
     'igwn-segments',
