@@ -81,6 +81,18 @@ def set_sim_data(inj, field, data):
         setattr(inj, sim_field, data)
 
 
+def _taper_options(inj):
+    """Returns the taper method and window of the given injection.
+
+    These are given by the optional ``taper_method`` (default ``'lal'``) and
+    ``taper_window`` (default None) fields of the injection. The injection is
+    a row of an injection table (e.g., a ``numpy.record`` or a ligolw row),
+    so the fields are attributes.
+    """
+    return (getattr(inj, 'taper_method', 'lal'),
+            getattr(inj, 'taper_window', None))
+
+
 def projector(detector_name, inj, hp, hc, distance_scale=1):
     """ Use the injection row to project the polarizations into the
     detector frame
@@ -102,17 +114,20 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     hp.start_time += tc
     hc.start_time += tc
 
-    # taper the polarizations
+    # taper the polarizations, if the injection has a taper
     try:
-        hp_tapered = hp.taper_timeseries(location=inj.taper, 
-                                         tapermethod=inj.get('taper_method', 'lal'), 
-                                         taper_window=inj.get('taper_window'))
-        hc_tapered = hc.taper_timeseries(location=inj.taper, 
-                                         tapermethod=inj.get('taper_method', 'lal'), 
-                                         taper_window=inj.get('taper_window'))
+        taper = inj.taper
     except AttributeError:
         hp_tapered = hp
         hc_tapered = hc
+    else:
+        tapermethod, taper_window = _taper_options(inj)
+        hp_tapered = hp.taper_timeseries(location=taper,
+                                         tapermethod=tapermethod,
+                                         taper_window=taper_window)
+        hc_tapered = hc.taper_timeseries(location=taper,
+                                         tapermethod=tapermethod,
+                                         taper_window=taper_window)
 
     projection_method = 'lal'
     if hasattr(inj, 'detector_projection_method'):
@@ -1369,9 +1384,10 @@ class SGBurstInjectionSet(object):
 
             # compute the detector response, taper it if requested
             # and add it to the strain
-            strain = strain.taper_timeseries(location=inj.taper, 
-                                             tapermethod=inj.get('taper_method', 'lal'), 
-                                             taper_window=inj.get('taper_window'))
+            tapermethod, taper_window = _taper_options(inj)
+            hp = hp.taper_timeseries(location=inj.taper,
+                                     tapermethod=tapermethod,
+                                     taper_window=taper_window)
             signal_lal = hp.astype(strain.dtype).lal()
             add_injection(lalstrain, signal_lal, None)
 
