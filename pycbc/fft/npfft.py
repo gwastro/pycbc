@@ -67,9 +67,18 @@ def ifft(invec, outvec, _, itype, otype):
 
 
 WARN_MSG = ("You are using the class-based PyCBC FFT API, with the numpy "
-            "backed. This is provided for convenience only. If performance is "
-            "important use the class-based API with one of the other backends "
-            "(for e.g. MKL or FFTW)")
+            "backend. This is provided for convenience only. If "
+            "performance is important use the class-based API with one of "
+            "the other backends (for e.g. MKL or FFTW)")
+
+_warned = False
+
+
+def _warn_numpy_backend():
+    global _warned
+    if not _warned:
+        logger.warning(WARN_MSG)
+        _warned = True
 
 
 def _batched_view(vec, nbatch, dist):
@@ -86,7 +95,7 @@ class FFT(_BaseFFT):
     """
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(FFT, self).__init__(invec, outvec, nbatch, size)
-        logger.warning(WARN_MSG)
+        _warn_numpy_backend()
         self.prec, self.itype, self.otype = _check_fft_args(invec, outvec)
 
     def execute(self):
@@ -104,7 +113,9 @@ class FFT(_BaseFFT):
         elif self.itype == 'real' and self.otype == 'complex':
             out[:] = numpy.fft.rfft(inp[:, :self.size], axis=-1)
         else:
-            raise ValueError(_INV_FFT_MSG.format("FFT", self.itype, self.otype))
+            raise ValueError(
+                _INV_FFT_MSG.format("FFT", self.itype, self.otype)
+            )
 
 
 class IFFT(_BaseIFFT):
@@ -113,7 +124,7 @@ class IFFT(_BaseIFFT):
     """
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(IFFT, self).__init__(invec, outvec, nbatch, size)
-        logger.warning(WARN_MSG)
+        _warn_numpy_backend()
         self.prec, self.itype, self.otype = _check_fft_args(invec, outvec)
 
     def execute(self):
@@ -131,7 +142,9 @@ class IFFT(_BaseIFFT):
             out[:, :self.size] = numpy.fft.irfft(inp[:, :self.idist],
                                                  n=self.size, axis=-1)
         else:
-            raise ValueError(_INV_FFT_MSG.format("IFFT", self.itype, self.otype))
+            raise ValueError(
+                _INV_FFT_MSG.format("IFFT", self.itype, self.otype)
+            )
         # pycbc's class-based IFFT is unnormalized (matching MKL/FFTW), while
         # numpy.fft.ifft divides by n.
         out[:, :self.size] *= self.size
