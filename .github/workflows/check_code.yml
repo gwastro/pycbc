@@ -12,14 +12,18 @@ jobs:
                   python-version: 3.11
             - name: Install flake8
               run: pip install flake8
-            - name: Checking executables for unused/missing imports
-              run: flake8 --select=F401,F821 $(find bin -type f -name pycbc_*)
-            - name: Checking modules for unused/missing imports
+            - name: Build file list
+              id: filelist
               run: |
-                flake8 --select=F401,F821 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py')
-            - name: Checking tests for unused/missing imports
+                {
+                  find bin -type f -name 'pycbc_*'
+                  find pycbc -type f -name '*.py' ! -name '__init__.py' ! -name 'version.py'
+                  find test -type f -name '*.py' ! -name 'test_schemes.py'
+                } | sort > /tmp/pycbc_py_files.txt
+                echo "file_count=$(wc -l < /tmp/pycbc_py_files.txt)" >> "$GITHUB_OUTPUT"
+            - name: Check for unused/missing imports (F401, F821)
               run: |
-                flake8 --select=F401,F821 $(find test | grep '\.py$' | grep -v test_schemes)
+                  flake8 --select=F401,F821 $(cat /tmp/pycbc_py_files.txt)
 
     qlty_check:
         runs-on: ubuntu-latest
