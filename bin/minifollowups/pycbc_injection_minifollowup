@@ -176,7 +176,10 @@ parser.add_argument(
     help="How to sort missed injections from most to least likely to be detected",
 )
 parser.add_argument(
-    "--output-file", required=True, help="Path to write the summary ('well') page to."
+    "--html-layout-file",
+    default=None,
+    help="Path to write the summary ('well') page to. If not given, it is "
+    "written into --output-dir.",
 )
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
@@ -515,4 +518,4 @@ for num_event in range(num_events):
     layouts += list(layout.grouper(files, 2))
 
 workflow.save()
-layout.two_column_layout(args.output_dir, layouts, filename=args.output_file)
+layout.two_column_layout(args.output_dir, layouts, filename=args.html_layout_file)
