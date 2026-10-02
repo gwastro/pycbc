@@ -83,7 +83,7 @@ def abs_arg_max(self):
     if self.dtype == cp.float32 or self.dtype == cp.float64:
         return cp.argmax(abs(self.data))
     else:
-        return abs_arg_max_complex(self._data)
+        return cp.argmax(cp.abs(self._data))
 
 def inner(self, other):
     """ Return the inner product of the array with complex conjugation.
@@ -92,7 +92,7 @@ def inner(self, other):
     if cdtype.kind == 'c':
         return cp.sum(self.data.conj() * other, dtype=complex128)
     else:
-        return inner_real(self.data, other)
+        return cp.sum(self.data * other)
 
 def vdot(self, other):
     """ Return the inner product of the array with complex conjugation.
