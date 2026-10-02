@@ -1,0 +1,141 @@
+pycbc.results package
+=====================
+
+Submodules
+----------
+
+pycbc.results.color module
+--------------------------
+
+.. automodule:: pycbc.results.color
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.dq module
+-----------------------
+
+.. automodule:: pycbc.results.dq
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.followup module
+-----------------------------
+
+.. automodule:: pycbc.results.followup
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.layout module
+---------------------------
+
+.. automodule:: pycbc.results.layout
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.metadata module
+-----------------------------
+
+.. automodule:: pycbc.results.metadata
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.mpld3\_utils module
+---------------------------------
+
+.. automodule:: pycbc.results.mpld3_utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.plot module
+-------------------------
+
+.. automodule:: pycbc.results.plot
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.psd module
+------------------------
+
+.. automodule:: pycbc.results.psd
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.pygrb\_plotting\_utils module
+-------------------------------------------
+
+.. automodule:: pycbc.results.pygrb_plotting_utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.pygrb\_postprocessing\_utils module
+-------------------------------------------------
+
+.. automodule:: pycbc.results.pygrb_postprocessing_utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.render module
+---------------------------
+
+.. automodule:: pycbc.results.render
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.scatter\_histograms module
+----------------------------------------
+
+.. automodule:: pycbc.results.scatter_histograms
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.snr module
+------------------------
+
+.. automodule:: pycbc.results.snr
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.str\_utils module
+-------------------------------
+
+.. automodule:: pycbc.results.str_utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.table\_utils module
+---------------------------------
+
+.. automodule:: pycbc.results.table_utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.results.versioning module
+-------------------------------
+
+.. automodule:: pycbc.results.versioning
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.results
+   :members:
+   :show-inheritance:
+   :undoc-members:

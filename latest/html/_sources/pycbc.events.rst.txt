@@ -1,0 +1,149 @@
+pycbc.events package
+====================
+
+Submodules
+----------
+
+pycbc.events.coherent module
+----------------------------
+
+.. automodule:: pycbc.events.coherent
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.coinc module
+-------------------------
+
+.. automodule:: pycbc.events.coinc
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.coinc\_rate module
+-------------------------------
+
+.. automodule:: pycbc.events.coinc_rate
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.cuts module
+------------------------
+
+.. automodule:: pycbc.events.cuts
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.eventmgr module
+----------------------------
+
+.. automodule:: pycbc.events.eventmgr
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.eventmgr\_cython module
+------------------------------------
+
+.. automodule:: pycbc.events.eventmgr_cython
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.ranking module
+---------------------------
+
+.. automodule:: pycbc.events.ranking
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.significance module
+--------------------------------
+
+.. automodule:: pycbc.events.significance
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.simd\_threshold\_cython module
+-------------------------------------------
+
+.. automodule:: pycbc.events.simd_threshold_cython
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.single module
+--------------------------
+
+.. automodule:: pycbc.events.single
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.stat module
+------------------------
+
+.. automodule:: pycbc.events.stat
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.threshold\_cpu module
+----------------------------------
+
+.. automodule:: pycbc.events.threshold_cpu
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.threshold\_cuda module
+-----------------------------------
+
+.. automodule:: pycbc.events.threshold_cuda
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.threshold\_cupy module
+-----------------------------------
+
+.. automodule:: pycbc.events.threshold_cupy
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.trigger\_fits module
+---------------------------------
+
+.. automodule:: pycbc.events.trigger_fits
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.triggers module
+----------------------------
+
+.. automodule:: pycbc.events.triggers
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.events.veto module
+------------------------
+
+.. automodule:: pycbc.events.veto
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.events
+   :members:
+   :show-inheritance:
+   :undoc-members:
