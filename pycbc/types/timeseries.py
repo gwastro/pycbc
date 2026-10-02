@@ -632,14 +632,14 @@ class TimeSeries(Array):
                 raise ValueError("If taper_method is 'constant', taper_window must be set")
             
             gate_params = []
-            if location in ('TAPER_START', 'start', 'TAPER_STARTEND'):
+            if location in ('TAPER_START', 'start', 'TAPER_STARTEND', 'startend'):
                 first_nonzero = _numpy.nonzero(tsdata)[0][0]
                 nonzero_starttime = tsdata.start_time + first_nonzero * tsdata.delta_t
                 gate_params.append((nonzero_starttime, 0, taper_window))
-            if location in ('TAPER_END', 'end', 'TAPER_STARTEND'):
+            if location in ('TAPER_END', 'end', 'TAPER_STARTEND', 'startend'):
                 last_nonzero = _numpy.nonzero(tsdata)[0][-1]
-                nonzero_endtime = tsdata.end_time - last_nonzero * tsdata.delta_t
-                gate_params.append((nonzero_endtime - taper_window, 0, taper_window))
+                nonzero_endtime = tsdata.start_time + last_nonzero * tsdata.delta_t
+                gate_params.append((nonzero_endtime, 0, taper_window))
             from pycbc.strain import gate_data
             return gate_data(tsdata, gate_params)
         else:

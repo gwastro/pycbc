@@ -586,6 +586,29 @@ class TestTimeSeriesBase(array_base, unittest.TestCase):
             self.assertEqual(numpy.abs(b[:,1] - a_numpy).max(), 0)
             os.remove(temp_path_txt)
 
+    def test_taper_constant(self):
+        if self.scheme != 'cpu' or self.dtype not in (float32, float64):
+            self.skipTest('constant tapering needs real data on the CPU')
+        # 2 s of ones, with 1 s of zeros on either side
+        data = numpy.zeros(4096)
+        data[1024:3072] = 1.
+        for location, start, end in [('start', True, False),
+                                     ('TAPER_START', True, False),
+                                     ('end', False, True),
+                                     ('TAPER_END', False, True),
+                                     ('startend', True, True),
+                                     ('TAPER_STARTEND', True, True)]:
+            ts = TimeSeries(data, delta_t=1./1024, epoch=self.epoch,
+                            dtype=self.dtype)
+            tapered = ts.taper_timeseries(location=location,
+                                          tapermethod='constant',
+                                          taper_window=0.25).numpy()
+            # the first and last non-zero samples are tapered to ~zero only
+            # at the requested ends, and the middle is unchanged
+            self.assertEqual(tapered[1024] < 1e-2, start, location)
+            self.assertEqual(tapered[3071] < 1e-2, end, location)
+            numpy.testing.assert_array_equal(tapered[1536:2560], 1.)
+
 def ts_test_maker(dtype, odtype, epoch):
     class TestTimeSeries(TestTimeSeriesBase):
         __test__ = True
