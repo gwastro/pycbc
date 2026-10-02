@@ -12,14 +12,14 @@ jobs:
                   python-version: 3.11
             - name: Install flake8
               run: pip install flake8
-            - name: Checking executables for unused imports
-              run: flake8 --select=F401 $(find bin -type f -name pycbc_*)
-            - name: Checking modules for unused imports
+            - name: Checking executables for unused/missing imports
+              run: flake8 --select=F401,F821 $(find bin -type f -name pycbc_*)
+            - name: Checking modules for unused/missing imports
               run: |
-                flake8 --select=F401 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py')
-            - name: Checking tests for unused imports
+                flake8 --select=F401,F821 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py')
+            - name: Checking tests for unused/missing imports
               run: |
-                flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
+                flake8 --select=F401,F821 $(find test | grep '\.py$' | grep -v test_schemes)
 
     qlty_check:
         runs-on: ubuntu-latest
