@@ -80,9 +80,11 @@ if opts.write_compress:
 
 for i, inj in enumerate(injections.table):
     snrs = numpy.array([getattr(inj, column) for column in opts.snr_columns.values()])
-    if sum(snrs < opts.snr_thresh) == len(snrs):
+    if sum(snrs > opts.snr_thresh) == 0:
+        # All SNRs are below threshold
         out_sim_inspiral_missed.append(inj)
     else:
+        # (At least) one of the SNRs is above threshold
         out_sim_inspiral_inject.append(inj)
             
 logging.info(
