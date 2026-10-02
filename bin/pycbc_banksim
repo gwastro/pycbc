@@ -134,10 +134,10 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
                                  amplitude_order=amplitude_order)
         if hasattr(wf_params, 'taper'):
             hp = hp.taper_timeseries(location=wf_params.taper, 
-                                     tapermethod=getattr(wf_params, 'taper_method', 'lal'), 
+                                     tapermethod=getattr(wf_params, 'taper_method', 'lal'),
                                      taper_window=getattr(wf_params, 'taper_window', None))
             hc = hc.taper_timeseries(location=wf_params.taper, 
-                                     tapermethod=getattr(wf_params, 'taper_method', 'lal'), 
+                                     tapermethod=getattr(wf_params, 'taper_method', 'lal'),
                                      taper_window=getattr(wf_params, 'taper_window', None))
         hvec = generate_detector_strain(wf_params, hp, hc)
 

@@ -105,10 +105,10 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     # taper the polarizations
     try:
         hp_tapered = hp.taper_timeseries(location=inj.taper, 
-                                         tapermethod=getattr(inj, 'taper_method', 'lal'), 
+                                         tapermethod=getattr(inj, 'taper_method', 'lal'),
                                          taper_window=getattr(inj, 'taper_window', None))
         hc_tapered = hc.taper_timeseries(location=inj.taper, 
-                                         tapermethod=getattr(inj, 'taper_method', 'lal'), 
+                                         tapermethod=getattr(inj, 'taper_method', 'lal'),
                                          taper_window=getattr(inj, 'taper_window', None))
     except AttributeError:
         hp_tapered = hp
