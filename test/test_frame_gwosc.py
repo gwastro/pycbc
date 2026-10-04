@@ -14,276 +14,168 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+"""Network-free regression tests for GWOSC frame rate selection."""
+
+import json
 import unittest
 from unittest import mock
 
-from pycbc.frame import gwosc
+from pycbc.frame import gwosc, query_and_read_frame
 
 
 class GWOSCFrameTest(unittest.TestCase):
-    @mock.patch('pycbc.frame.gwosc.fetch_run_json')
-    def test_frame_json_uses_gwosc_client(self, fetch_run_json):
-        expected = {'strain': []}
-        fetch_run_json.return_value = expected
+    def test_run_name_preserves_defaults_and_selects_4khz(self):
+        cases = [
+            (815726592, 'H1', None, 'S5'),
+            (930960000, 'H1', None, 'S6'),
+            (1126259462, 'H1', None, 'O1'),
+            (1126259462, 'H1', 16384, 'O1_16KHZ'),
+            (1170000000, 'H1', None, 'O2_16KHZ_R1'),
+            (1170000000, 'H1', 4096, 'O2_4KHZ_R1'),
+            (1238166018, 'L1', 4096, 'O3a_4KHZ_R1'),
+            (1368195220, 'H1', 4096, 'O4a_4KHZ_R1'),
+            (1180922494, 'H1', None, 'BKGW170608_16KHZ_R1'),
+            (1180922494, 'L1', None, 'O2_16KHZ_R1'),
+        ]
+        for time, ifo, rate, expected in cases:
+            with self.subTest(time=time, ifo=ifo, rate=rate):
+                self.assertEqual(gwosc.get_run(time, ifo, rate), expected)
 
-        self.assertIs(
-            gwosc.gwosc_frame_json('H1', 1180922494, 1180922495),
-            expected,
+    def test_unpublished_and_invalid_rates(self):
+        for time, ifo, rate in [
+            (815726592, 'H1', 16384),
+            (930960000, 'H1', 16384),
+            (1180922494, 'H1', 4096),
+        ]:
+            with self.subTest(time=time, ifo=ifo, rate=rate):
+                with self.assertRaisesRegex(ValueError, 'not published'):
+                    gwosc.get_run(time, ifo, rate)
+        with self.assertRaisesRegex(ValueError, 'Unsupported GWOSC sample'):
+            gwosc.get_run(1170000000, 'H1', 8192)
+        with self.assertRaisesRegex(ValueError, 'not available'):
+            gwosc.get_run(1000000000, 'H1')
+
+    @mock.patch('pycbc.frame.gwosc.get_file', return_value='metadata.json')
+    def test_json_uses_pycbc_mirrored_downloader(self, get_file):
+        expected = {'strain': [{'format': 'gwf', 'sampling_rate': 4096,
+                                'url': 'https://gwosc.org/strain.gwf'}]}
+        with mock.patch('builtins.open', mock.mock_open(
+            read_data=json.dumps(expected)
+        )) as open_file:
+            actual = gwosc.gwosc_frame_json(
+                'H1', 1170000000, 1170000004, sample_rate=4096
+            )
+
+        self.assertEqual(actual, expected)
+        get_file.assert_called_once_with(
+            'https://www.gwosc.org/archive/links/'
+            'O2_4KHZ_R1/H1/1170000000/1170000004/json/', cache=False
         )
-        fetch_run_json.assert_called_once_with(
-            'BKGW170608_16KHZ_R1',
-            'H1',
-            gpsstart=1180922494,
-            gpsend=1180922495,
-        )
+        open_file.assert_called_once_with('metadata.json', 'r')
 
-    def test_frame_json_rejects_multiple_runs(self):
-        with self.assertRaisesRegex(ValueError, 'Spanning multiple runs'):
-            gwosc.gwosc_frame_json('L1', 1187733618, 1238166018)
+    def test_json_rejects_multiple_runs_before_network(self):
+        with mock.patch('pycbc.frame.gwosc.get_file') as get_file:
+            with self.assertRaisesRegex(ValueError, 'Spanning multiple runs'):
+                gwosc.gwosc_frame_json('L1', 1187733618, 1238166018)
+        get_file.assert_not_called()
 
-    @mock.patch('pycbc.frame.gwosc.fetch_run_json')
-    def test_frame_json_wraps_client_error(self, fetch_run_json):
-        fetch_run_json.side_effect = RuntimeError('request failed')
-
-        with self.assertRaisesRegex(ValueError, 'Failed to find gwf files'):
+    @mock.patch('pycbc.frame.gwosc.get_file', side_effect=OSError('offline'))
+    def test_json_preserves_download_error(self, get_file):
+        with self.assertRaisesRegex(ValueError, 'Failed to find gwf files') as ctx:
             gwosc.gwosc_frame_json('L1', 1238166018, 1238166020)
-
-    @mock.patch('pycbc.frame.gwosc.get_urls')
-    @mock.patch('pycbc.frame.gwosc.find_datasets')
-    def test_frame_urls_sample_rate(self, find_datasets, get_urls):
-        expected = ['https://gwosc.org/data.gwf']
-        find_datasets.return_value = ['O3a']
-        get_urls.return_value = expected
-
-        self.assertEqual(
-            gwosc.gwosc_frame_urls('H1', 1234.5, 1240.5, sample_rate=4096),
-            expected,
-        )
-        find_datasets.assert_called_once_with(
-            detector='H1', type='run', segment=(1234, 1240)
-        )
-        get_urls.assert_called_once_with(
-            'H1',
-            1234,
-            1240,
-            dataset='O3a',
-            sample_rate=4096,
-            format='gwf',
-        )
-
-    @mock.patch('pycbc.frame.gwosc.get_urls')
-    @mock.patch('pycbc.frame.gwosc.find_datasets')
-    def test_frame_urls_default_sample_rate(self, find_datasets, get_urls):
-        find_datasets.return_value = []
-        get_urls.return_value = []
-
-        gwosc.gwosc_frame_urls('L1', 1238166018, 1238166020)
-
-        get_urls.assert_called_once_with(
-            'L1',
-            1238166018,
-            1238166020,
-            sample_rate=16384,
-            format='gwf',
-        )
-
-    @mock.patch('pycbc.frame.gwosc.get_urls')
-    @mock.patch('pycbc.frame.gwosc.find_datasets')
-    def test_frame_urls_legacy_default_is_4khz(
-        self, find_datasets, get_urls
-    ):
-        find_datasets.return_value = ['O1']
-        get_urls.return_value = []
-
-        gwosc.gwosc_frame_urls('H1', 1126259462, 1126259466)
-
-        get_urls.assert_called_once_with(
-            'H1',
-            1126259462,
-            1126259466,
-            dataset='O1',
-            sample_rate=4096,
-            format='gwf',
-        )
-
-    @mock.patch('pycbc.frame.gwosc.get_urls')
-    @mock.patch('pycbc.frame.gwosc.find_datasets')
-    def test_frame_urls_require_full_run_coverage(
-        self, find_datasets, get_urls
-    ):
-        find_datasets.return_value = ['O2', 'O3a']
-        first_error = ValueError('O2 does not cover the requested interval')
-        expected = ['https://gwosc.org/data.gwf']
-        get_urls.side_effect = [first_error, expected]
-
-        self.assertEqual(
-            gwosc.gwosc_frame_urls('H1', 1234, 1240),
-            expected,
-        )
-        self.assertEqual(get_urls.call_count, 2)
-        self.assertEqual(get_urls.call_args_list[0].kwargs['dataset'], 'O2')
-        self.assertEqual(get_urls.call_args_list[1].kwargs['dataset'], 'O3a')
-
-    @mock.patch('pycbc.frame.gwosc.get_urls')
-    @mock.patch('pycbc.frame.gwosc.find_datasets')
-    def test_frame_urls_report_missing_run_coverage(
-        self, find_datasets, get_urls
-    ):
-        find_datasets.return_value = ['O2']
-        expected = ValueError('run does not cover the requested interval')
-        fallback_error = ValueError('no event data cover the interval')
-        get_urls.side_effect = [expected, fallback_error]
-
-        with self.assertRaises(ValueError) as context:
-            gwosc.gwosc_frame_urls('H1', 1234, 1240)
-
-        self.assertIs(context.exception, expected)
-        self.assertIs(context.exception.__cause__, fallback_error)
+        self.assertIsInstance(ctx.exception.__cause__, OSError)
+        get_file.assert_called_once()
 
     @mock.patch('pycbc.frame.gwosc.gwosc_frame_json')
-    @mock.patch('pycbc.frame.gwosc.get_urls')
-    @mock.patch('pycbc.frame.gwosc.find_datasets')
-    def test_gw170608_keeps_background_release(
-        self, find_datasets, get_urls, frame_json
-    ):
-        find_datasets.return_value = ['O2']
-        get_urls.side_effect = ValueError('O2 has no H1 data here')
-        url = 'https://gwosc.org/archive/data/BKGW170608.gwf'
-        frame_json.return_value = {
-            'strain': [{'format': 'gwf', 'url': url}],
-        }
-
+    def test_urls_filter_exact_rate_and_format(self, frame_json):
+        frame_json.return_value = {'strain': [
+            {'format': 'hdf5', 'sampling_rate': 4096, 'url': 'data.hdf5'},
+            {'format': 'gwf', 'sampling_rate': 16384, 'url': '16k.gwf'},
+            {'format': 'gwf', 'sampling_rate': 4096, 'url': '4k.gwf'},
+        ]}
         self.assertEqual(
-            gwosc.gwosc_frame_urls('H1', 1180922494, 1180922498),
-            [url],
+            gwosc.gwosc_frame_urls('H1', 1170000000, 1170000004, 4096),
+            ['4k.gwf'],
         )
-        frame_json.assert_called_once_with('H1', 1180922494, 1180922498)
-
-    @mock.patch('pycbc.frame.gwosc.get_urls')
-    @mock.patch('pycbc.frame.gwosc.find_datasets')
-    def test_gw170608_4khz_selects_short_event_file(
-        self, find_datasets, get_urls
-    ):
-        find_datasets.return_value = ['O2']
-        base = 'https://gwosc.org/eventapi/json/GW170608/'
-        long_url = base + 'H-H1_GWOSC_4KHZ_R1-1180920447-4096.gwf'
-        short_url = base + 'H-H1_GWOSC_4KHZ_R1-1180922479-32.gwf'
-        get_urls.side_effect = [
-            ValueError('O2 has no H1 data here'),
-            [long_url, short_url],
-        ]
-
-        self.assertEqual(
-            gwosc.gwosc_frame_urls(
-                'H1', 1180922494, 1180922498, sample_rate=4096
-            ),
-            [short_url],
-        )
+        frame_json.assert_called_once_with('H1', 1170000000, 1170000004,
+                                           4096)
 
     @mock.patch('pycbc.frame.gwosc.read_frame')
-    @mock.patch('pycbc.frame.gwosc.get_file')
-    @mock.patch('pycbc.frame.gwosc.gwosc_frame_urls')
+    @mock.patch('pycbc.frame.gwosc.get_file', return_value='data.gwf')
+    @mock.patch('pycbc.frame.gwosc.gwosc_frame_urls',
+                return_value=['https://gwosc.org/data.gwf'])
     def test_read_frame_uses_pycbc_downloader(
         self, frame_urls, get_file, read_frame
     ):
-        frame_urls.return_value = [
-            'https://gwosc.org/first.gwf',
-            'https://gwosc.org/second.gwf',
-        ]
-        get_file.side_effect = ['first.gwf', 'second.gwf']
-        read_frame.return_value = object()
-
         result = gwosc.read_frame_gwosc(
-            'H1:GWOSC-4KHZ_R1_STRAIN', 1234, 1240, sample_rate=4096
+            'H1:GWOSC-4KHZ_R1_STRAIN', 1170000000, 1170000004, 4096
         )
-
         self.assertIs(result, read_frame.return_value)
-        frame_urls.assert_called_once_with(
-            'H1', 1234, 1240, sample_rate=4096
-        )
-        get_file.assert_has_calls([
-            mock.call('https://gwosc.org/first.gwf', cache=True),
-            mock.call('https://gwosc.org/second.gwf', cache=True),
-        ])
+        frame_urls.assert_called_once_with('H1', 1170000000, 1170000004,
+                                           4096)
+        get_file.assert_called_once_with('https://gwosc.org/data.gwf',
+                                         cache=True)
         read_frame.assert_called_once_with(
-            ['first.gwf', 'second.gwf'],
-            'H1:GWOSC-4KHZ_R1_STRAIN',
-            start_time=1234,
-            end_time=1240,
+            ['data.gwf'], 'H1:GWOSC-4KHZ_R1_STRAIN',
+            start_time=1170000000, end_time=1170000004
         )
 
     @mock.patch('pycbc.frame.gwosc.gwosc_frame_urls', return_value=[])
     def test_read_frame_reports_missing_data(self, frame_urls):
         with self.assertRaisesRegex(ValueError, 'No data found for H1'):
-            gwosc.read_frame_gwosc(
-                'H1:GWOSC-4KHZ_R1_STRAIN',
-                1238166018,
-                1238166020,
-                sample_rate=4096,
-            )
+            gwosc.read_frame_gwosc('H1:GWOSC-4KHZ_R1_STRAIN',
+                                   1170000000, 1170000004, 4096)
 
     @mock.patch('pycbc.frame.gwosc.read_frame')
-    @mock.patch('pycbc.frame.gwosc.get_file')
-    @mock.patch('pycbc.frame.gwosc.gwosc_frame_urls')
-    def test_read_frame_multiple_channels(
-        self, frame_urls, get_file, read_frame
-    ):
-        frame_urls.side_effect = lambda ifo, *args, **kwargs: [f'{ifo}.gwf']
-        get_file.side_effect = lambda url, **kwargs: url
+    @mock.patch('pycbc.frame.gwosc.get_file', side_effect=lambda url, **_: url)
+    @mock.patch('pycbc.frame.gwosc.gwosc_frame_urls',
+                side_effect=lambda ifo, *_: [f'{ifo}.gwf'])
+    def test_read_frame_multiple_channels(self, frame_urls, get_file,
+                                          read_frame):
+        channels = ['H1:GWOSC-4KHZ_R1_STRAIN',
+                    'L1:GWOSC-4KHZ_R1_STRAIN']
         read_frame.side_effect = ['H1 strain', 'L1 strain']
-        channels = [
-            'H1:GWOSC-4KHZ_R1_STRAIN',
-            'L1:GWOSC-4KHZ_R1_STRAIN',
-        ]
-
-        result = gwosc.read_frame_gwosc(
-            channels, 1238166018, 1238166020, sample_rate=4096
+        self.assertEqual(
+            gwosc.read_frame_gwosc(channels, 1170000000, 1170000004, 4096),
+            ['H1 strain', 'L1 strain'],
         )
-
-        self.assertEqual(result, ['H1 strain', 'L1 strain'])
         self.assertEqual(frame_urls.call_count, 2)
 
     @mock.patch('pycbc.frame.gwosc.read_frame_gwosc')
-    def test_read_strain_selects_4khz_channel(self, read_frame_gwosc):
-        gwosc.read_strain_gwosc(
-            'H1', 1238166018, 1238166020, sample_rate=4096
-        )
+    def test_read_strain_channel_and_default(self, read_frame_gwosc):
+        cases = [
+            (1170000000, None, 'GWOSC-16KHZ_R1_STRAIN'),
+            (1170000000, 4096, 'GWOSC-4KHZ_R1_STRAIN'),
+            (1126259462, None, 'LOSC-STRAIN'),
+            (1126259462, 16384, 'GWOSC-16KHZ_R1_STRAIN'),
+        ]
+        for time, rate, channel in cases:
+            with self.subTest(time=time, rate=rate):
+                gwosc.read_strain_gwosc('H1', time, time + 4, rate)
+                read_frame_gwosc.assert_called_with(
+                    f'H1:{channel}', time, time + 4, rate
+                )
+        self.assertEqual(read_frame_gwosc.call_count, len(cases))
 
-        read_frame_gwosc.assert_called_once_with(
-            'H1:GWOSC-4KHZ_R1_STRAIN',
-            1238166018,
-            1238166020,
-            sample_rate=4096,
+    def test_read_strain_rejects_invalid_rate(self):
+        with self.assertRaisesRegex(ValueError, 'Unsupported GWOSC sample'):
+            gwosc.read_strain_gwosc('H1', 1170000000, 1170000004, 8192)
+
+    @mock.patch('pycbc.frame.gwosc.read_strain_gwosc')
+    def test_query_forwards_rate_to_strain_reader(self, read_strain_gwosc):
+        query_and_read_frame('GWOSC_STRAIN', 'H1:GWOSC-4KHZ_R1_STRAIN',
+                             1170000000, 1170000004, sample_rate=4096)
+        read_strain_gwosc.assert_called_once_with(
+            'H1', 1170000000, 1170000004, 4096
         )
 
     @mock.patch('pycbc.frame.gwosc.read_frame_gwosc')
-    def test_read_strain_default_is_16khz(self, read_frame_gwosc):
-        gwosc.read_strain_gwosc('L1', 1238166018, 1238166020)
-
+    def test_query_forwards_rate_to_frame_reader(self, read_frame_gwosc):
+        query_and_read_frame('GWOSC', 'H1:GWOSC-4KHZ_R1_STRAIN',
+                             1170000000, 1170000004, sample_rate=4096)
         read_frame_gwosc.assert_called_once_with(
-            'L1:GWOSC-16KHZ_R1_STRAIN',
-            1238166018,
-            1238166020,
-            sample_rate=16384,
+            'H1:GWOSC-4KHZ_R1_STRAIN', 1170000000, 1170000004, 4096
         )
-
-    @mock.patch('pycbc.frame.gwosc.read_frame_gwosc')
-    def test_read_strain_legacy_default_is_4khz(self, read_frame_gwosc):
-        gwosc.read_strain_gwosc('H1', 1126259462, 1126259466)
-
-        read_frame_gwosc.assert_called_once_with(
-            'H1:LOSC-STRAIN',
-            1126259462,
-            1126259466,
-            sample_rate=4096,
-        )
-
-    def test_invalid_sample_rate(self):
-        message = 'Unsupported GWOSC sample rate'
-        with self.assertRaisesRegex(ValueError, message):
-            gwosc.read_strain_gwosc(
-                'H1', 1238166018, 1238166020, sample_rate=8192
-            )
 
 
 if __name__ == '__main__':
