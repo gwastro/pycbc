@@ -134,6 +134,19 @@ class FrameTestBase(unittest.TestCase):
                           'channel1', start_time=self.epoch+1,
                           end_time=self.epoch)
 
+
+class DataBufferErrorTest(unittest.TestCase):
+    def test_read_error_preserves_cause(self):
+        buffer = pycbc.frame.DataBuffer.__new__(pycbc.frame.DataBuffer)
+        buffer.channel_name = 'H1:TEST'
+        buffer.channel_type = object()
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'Cannot read H1:TEST frame data') as ctx:
+            buffer._read_frame(1)
+        self.assertIsInstance(ctx.exception.__cause__, KeyError)
+
+
 # We take a factory approach so we can test all possible dtypes we support
 TestClasses = []
 types = [numpy.float32, numpy.float64, numpy.complex64, numpy.complex128]
@@ -149,5 +162,6 @@ if __name__ == '__main__':
     suite = unittest.TestSuite()
     for klass in TestClasses:
         suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(DataBufferErrorTest))
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

@@ -623,7 +623,8 @@ class DataBuffer(object):
         Raises
         ------
         RuntimeError:
-            If data cannot be read for any reason
+            If data cannot be read for any reason. The original error is
+            retained as the cause.
         """
         try:
             read_func = _fr_type_map[self.channel_type][0]
@@ -634,8 +635,10 @@ class DataBuffer(object):
             return TimeSeries(
                 data.data.data, delta_t=data.deltaT, epoch=self.read_pos, dtype=dtype
             )
-        except Exception:
-            raise RuntimeError("Cannot read {0} frame data".format(self.channel_name))
+        except Exception as exc:
+            raise RuntimeError(
+                "Cannot read {0} frame data".format(self.channel_name)
+            ) from exc
 
     def null_advance(self, blocksize):
         """Advance and insert zeros
