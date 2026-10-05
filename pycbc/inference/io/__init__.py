@@ -25,7 +25,8 @@ import textwrap
 import numpy
 import logging
 import h5py as _h5py
-from pycbc.io.record import (FieldArray, _numpy_function_lib)
+from pycbc.io.record import (FieldArray, _numpy_function_lib,
+                             get_vars_from_arg)
 from pycbc import waveform as _waveform
 from pycbc.io.hdf import (dump_state, load_state)
 
@@ -284,6 +285,34 @@ def validate_checkpoint_files(checkpoint_file, backup_file,
 #
 # =============================================================================
 #
+def get_sampled_parameters(fp):
+    """Gets the parameters in a file's samples group that are, or are derived
+    from, the variable params.
+
+    Any parameter in the samples group that is in the file's
+    ``variable_params`` is included. If the file has a ``remapped_params``
+    attribute, any parameter in the samples group that was created from a
+    function of the ``variable_params`` is also included. Everything else in
+    the samples group (e.g., likelihood stats) is excluded.
+
+    Parameters
+    ----------
+    fp : io.PosteriorFile
+        A posterior loaded from 
+
+    Returns
+    -------
+    list :
+        List of the parameter names.
+    """
+    samples = set(fp[fp.samples_group].keys())
+    variable_params = set(fp.variable_params)
+    parameters = variable_params & samples
+    for func, param in fp.attrs.get('remapped_params', []):
+        if param in samples and get_vars_from_arg(func) & variable_params:
+            parameters.add(param)
+    return parameters
+
 def get_common_parameters(input_files, collection=None):
     """Gets a list of variable params that are common across all input files.
 
@@ -297,7 +326,9 @@ def get_common_parameters(input_files, collection=None):
         What group of parameters to load. Can be the name of a list of
         parameters stored in the files' attrs (e.g., "variable_params"), or
         "all". If "all", will load all of the parameters in the files'
-        samples group. Default is to load all.
+        samples group. If "sampled", will load all the parameters in the files'
+        samples group that are, or are derived from, the variable params (see
+        ``get_sampled_parameters``). Default is to load all.
 
     Returns
     -------
@@ -311,6 +342,8 @@ def get_common_parameters(input_files, collection=None):
         fp = loadfile(fn, 'r')
         if collection == 'all':
             ps = fp[fp.samples_group].keys()
+        elif collection == 'sampled':
+            ps = get_sampled_parameters(fp)
         else:
             ps = fp.attrs[collection]
         parameters.append(set(ps))
@@ -454,13 +487,13 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         to not be included. May also specify sampler-specific arguments. Note
         that ``input-file``, ``file-help``, and ``parameters`` are always
         added.
-    defaultparams : {'variable_params', 'samples', 'all'}, optional
+    defaultparams : {'variable_params', 'sampled', 'all'}, optional
         If no ``--parameters`` provided, which collection of parameters to
-        load. If 'samples' will load all parameters in the file's
-        ``samples_group``, excluding likelihood stats (i.e. loglikelihood,
-        logwt). If 'all' will load all parameters in the file's
-        ``samples_group`` including likelihood stats. If 'variable_params' or 
-        None (the default) will load the variable parameters.
+        load. If 'sampled' will load all parameters in the file's
+        ``samples_group`` that are, or are derived from, the variable params.
+        If 'all' will load all parameters in the file's ``samples_group``
+        If 'variable_params' or None (the default), will load the variable
+        parameters.
     autoparamlabels : bool, optional
         Passed to ``add_results_option_group``; see that function for details.
     \**kwargs :
@@ -472,15 +505,11 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         # add attribute to communicate to arguments what to do when there is
         # no input files
         self.no_input_file_err = False
-        self.skip_params = []
         if skip_args is None:
             skip_args = []
         self.skip_args = skip_args
         if defaultparams is None:
             defaultparams = 'variable_params'
-        if defaultparams == 'samples':
-            defaultparams = 'all'
-            self.skip_params = ['loglikelihood', 'logwt']
         self.defaultparams = defaultparams
         # add the results option grup
         self.add_results_option_group(autoparamlabels=autoparamlabels)
@@ -524,7 +553,6 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         if opts.parameters is None or opts.parameters == ['*']:
             parameters = get_common_parameters(opts.input_file,
                                                collection=self.defaultparams)
-            parameters = [i for i in parameters if i not in self.skip_params]
             # now call parse parameters action to re-populate the namespace
             self.actions['parameters'](self, opts, parameters)
         # check if we're being greedy or not
@@ -543,8 +571,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
             add_params = set(all_params) - requested_params
             # repopulate the name space with the additional parameters
             if add_params:
-                add_params = [i for i in add_params if i not in self.skip_params]
-                opts.parameters += add_params
+                opts.parameters += list(add_params)
                 # update the labels
                 opts.parameters_labels.update({p: p for p in add_params})
         # parse the sampler-specific options and check for any unknowns
