@@ -298,11 +298,11 @@ def get_sampled_parameters(fp):
     Parameters
     ----------
     fp : io.PosteriorFile
-        A posterior loaded from 
+        A loaded posterior instance.
 
     Returns
     -------
-    list :
+    set :
         List of the parameter names.
     """
     samples = set(fp[fp.samples_group].keys())
@@ -312,6 +312,7 @@ def get_sampled_parameters(fp):
         if param in samples and get_vars_from_arg(func) & variable_params:
             parameters.add(param)
     return parameters
+
 
 def get_common_parameters(input_files, collection=None):
     """Gets a list of variable params that are common across all input files.
@@ -491,7 +492,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         If no ``--parameters`` provided, which collection of parameters to
         load. If 'sampled' will load all parameters in the file's
         ``samples_group`` that are, or are derived from, the variable params.
-        If 'all' will load all parameters in the file's ``samples_group``
+        If 'all', will load all parameters in the file's ``samples_group``.
         If 'variable_params' or None (the default), will load the variable
         parameters.
     autoparamlabels : bool, optional
