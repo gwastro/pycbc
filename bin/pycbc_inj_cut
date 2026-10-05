@@ -74,9 +74,6 @@ out_sim_inspiral_inject = lsctables.SimInspiralTable.new(
 out_sim_inspiral_missed = lsctables.SimInspiralTable.new(
     columns=injections.table.columnnames
 )
-if opts.write_compress:
-    if not output_missed.endswith('gz'):
-        output_missed = output_missed+'.gz'
 
 for i, inj in enumerate(injections.table):
     snrs = numpy.array([getattr(inj, column) for column in opts.snr_columns.values()])

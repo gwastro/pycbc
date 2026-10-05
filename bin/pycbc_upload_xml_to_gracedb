@@ -279,7 +279,7 @@ for event in coinc_table:
             gracedb.write_log(
                 r["graceid"],
                 "PyCBC ASD estimate from the time of event",
-                filename=fullpath_psd,
+                filename=fullpath_asd,
                 tag_name=["psd"],
                 displayName=['ASDs']
             )
