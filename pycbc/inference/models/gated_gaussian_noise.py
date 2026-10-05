@@ -1426,14 +1426,19 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
 
         Additional keyword arguments are:
 
-           * ``sample_snrs`` : Flag whether to sample in SNRs.
+           * ``sample-snrs`` : Flag whether to sample in SNRs.
 
-           * ``ref_mode`` : Flag whether the given mode to be sampled in SNR is
+           * ``ref-mode`` : Flag whether the given mode to be sampled in SNR is
                             the reference, i.e. other mode amplitudes are
                             relative to the given mode.
 
            * ``snr-mode-map`` : Map of SNR parameter names to amplitude names
-                                and mode names output by the waveform generator
+                                and mode names output by the waveform
+                                generator.
+
+                                Syntax: MODE:SNR_NAME:AMP_NAME 
+                                        [MODE:SNR_NAME:AMP_NAME ...]. 
+                                Example: 220:snr220:amp220 1:snr1:amp_1
         """
         if cp.has_option('model', 'sample_snrs') or \
             cp.has_option('model', 'sample-snrs'):
