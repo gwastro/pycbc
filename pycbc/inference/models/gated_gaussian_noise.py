@@ -1432,9 +1432,9 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                             the reference, i.e. other mode amplitudes are
                             relative to the given mode.
 
-           * ``snr-mode-map`` : Map of SNR parameter names to amplitude names
-                                and mode names output by the waveform
-                                generator.
+           * ``snr-mode-map`` : Map of mode name output from the waveform
+                                generator to SNR and amplitude parameter names
+                                in that order.
 
                                 Syntax: MODE:SNR_NAME:AMP_NAME 
                                         [MODE:SNR_NAME:AMP_NAME ...]. 
