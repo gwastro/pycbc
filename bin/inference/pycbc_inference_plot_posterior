@@ -46,7 +46,7 @@ from pycbc.workflow import WorkflowConfigParser
 use("agg")
 
 # add options to command line
-parser = io.ResultsArgumentParser(defaultparams='samples')
+parser = io.ResultsArgumentParser(defaultparams='sampled')
 pycbc.add_common_pycbc_options(parser)
 # program-specific
 parser.add_argument("--output-file", type=str, required=True, help="Output plot path.")
@@ -146,7 +146,6 @@ if opts.plot_maxl:
         opts.parameters.append("loglikelihood")
 else:
     add_logl = False
-
 
 # parse legend bbox
 def parse_tuple(value):
