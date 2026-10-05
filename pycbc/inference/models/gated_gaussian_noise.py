@@ -1345,7 +1345,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     `foo` with amplitude `amp_foo` and another mode `bar` with amplitude `A_bar`,
     the user must input:
 
-        snr_mode_map = 'snr_foo:foo:amp_foo' 'snr_bar:bar:A_bar'
+        snr_mode_map={'foo': ('snr_foo', 'amp_foo')}
 
     The mode keys must match the corresponding output in the waveform generator.
     """
