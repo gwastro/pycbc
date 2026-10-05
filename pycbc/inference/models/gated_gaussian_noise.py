@@ -1436,8 +1436,8 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                                 generator to SNR and amplitude parameter names
                                 in that order.
 
-                                Syntax: MODE:SNR_NAME:AMP_NAME 
-                                        [MODE:SNR_NAME:AMP_NAME ...]. 
+                                Syntax: MODE:SNR_NAME:AMP_NAME
+                                        [MODE:SNR_NAME:AMP_NAME ...].
                                 Example: 220:snr220:amp220 1:snr1:amp_1
         """
         if cp.has_option('model', 'sample_snrs') or \
