@@ -260,7 +260,6 @@ if not cat_params:
             (re.sub(r'(?<![\w.])[A-Za-z_]\w*', to_input_func, func), param)
             for func, param in remapped_params]
     out.attrs['remapped_params'] = remapped_params
-    out.attrs['remapped_params'] = list(labels.items())
 
 # write combined evidence and dlog evidence if combining via sampling
 if opts.combine_via_sampling:
