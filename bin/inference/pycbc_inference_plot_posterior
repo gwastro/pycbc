@@ -28,6 +28,7 @@
 import itertools
 import logging
 import sys
+import argparse
 
 import matplotlib
 import numpy
@@ -46,7 +47,7 @@ from pycbc.workflow import WorkflowConfigParser
 use("agg")
 
 # add options to command line
-parser = io.ResultsArgumentParser(defaultparams='sampled')
+parser = io.ResultsArgumentParser('sampled')
 pycbc.add_common_pycbc_options(parser)
 # program-specific
 parser.add_argument("--output-file", type=str, required=True, help="Output plot path.")
@@ -89,6 +90,7 @@ option_utils.add_plot_posterior_option_group(parser)
 option_utils.add_scatter_option_group(parser)
 # density configuration
 option_utils.add_density_option_group(parser)
+
 parser.add_argument(
     "--plot-maxl",
     action="store_true",
@@ -115,6 +117,7 @@ parser.add_argument(
 parser.add_argument(
     "--dpi", type=int, default=200, help="Set the DPI of the plot. Default is 200."
 )
+
 # style option
 add_style_opt_to_parser(parser)
 
@@ -153,7 +156,6 @@ def parse_tuple(value):
         return tuple(map(float, value.strip("()").split(",")))
     except Exception as e:
         raise argparse.ArgumentTypeError(f"Invalid tuple format: {value}") from e
-
 
 opts.legend_bbox_to_anchor = parse_tuple(opts.legend_bbox_to_anchor)
 
