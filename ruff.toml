@@ -1,0 +1,18 @@
+# Ruff config for the qlty_check CI job (.github/workflows/check_code.yml).
+#
+# Qlty's ruff plugin only auto-recognizes a file named `ruff.toml` for
+# configuration (not `pyproject.toml`), so rule selection lives here rather
+# than in pyproject.toml.
+
+[lint]
+# E4/E7/E9/F is ruff's own out-of-the-box default. Added on top of that:
+#   W - pycodestyle warnings (trailing whitespace, blank-line whitespace, etc.)
+#   B - flake8-bugbear (common bug-prone patterns, e.g. mutable default args)
+#   I - isort (import ordering/formatting)
+select = ["E4", "E7", "E9", "F", "W", "B", "I"]
+
+# To do a one-off deep dive into the codebase's full lint surface, swap the
+# line above for the one below. This enables ruff's entire rule catalog and
+# will likely surface a large volume of findings -- not recommended to leave
+# on as the standing PR gate.
+#select = ["ALL"]

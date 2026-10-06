@@ -151,12 +151,12 @@ Consequently, our data will have a frequency resolution of :math:`\Delta f =
 since the waveform is contained entirely in the -6/+2s we set with the analysis
 start/end time.
 
-Finally, we will use the ``emcee_pt`` sampler with the following settings:
+Finally, we will use the ``ptemcee`` sampler with the following settings:
 
-.. literalinclude:: ../../../examples/inference/samplers/emcee_pt-gw150914_like.ini
+.. literalinclude:: ../../../examples/inference/samplers/ptemcee-gw150914_like.ini
    :language: ini
 
-:download:`Download <../../../examples/inference/samplers/emcee_pt-gw150914_like.ini>`
+:download:`Download <../../../examples/inference/samplers/ptemcee-gw150914_like.ini>`
 
 Here, we will use 200 walkers and 20 temperatures. We will checkpoint (i.e.,
 dump results to file) every 2000 iterations. Since we have provided an
@@ -197,7 +197,7 @@ two. The run should complete in a few hours. If you would like to acquire more
 samples, increase ``effective-nsamples``.
 
 .. note::
-   We have found that the ``emcee_pt`` sampler struggles to accumulate more
+   We have found that the ``ptemcee`` sampler struggles to accumulate more
    than ~2000 independent samples with 200 walkers and 20 temps. The basic
    issue is that the ACT starts to grow at the same rate as new iterations,
    so that the number of independent samples remains the same. Increasing

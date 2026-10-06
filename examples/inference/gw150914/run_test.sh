@@ -3,7 +3,7 @@
 # configuration files
 PRIOR_CONFIG=../priors/gw150914_like.ini
 DATA_CONFIG=data.ini
-SAMPLER_CONFIG=../samplers/emcee_pt-gw150914_like.ini
+SAMPLER_CONFIG=../samplers/ptemcee-gw150914_like.ini
 
 OUTPUT_PATH=inference.hdf
 

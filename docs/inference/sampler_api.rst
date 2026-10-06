@@ -22,8 +22,8 @@ Sampler API
 .. |EmceeEnsembleSampler.run_mcmc| replace:: :py:meth:`run_mcmc <pycbc.inference.sampler.emcee.EmceeEnsembleSampler.run_mcmc>`
 .. MultiTemperedAutocorrSupport
 .. |MultiTemperedAutocorrSupport| replace:: :py:class:`MultiTemperedAutocorrSupport <pycbc.sampler.base_multitemper.MultiTemperedAutocorrSuppport>`
-.. EmceePTSampler
-.. |EmceePTSampler| replace:: :py:class:`EmceePTSampler <pycbc.sampler.emcee_pt.EmceePTSampler>`
+.. PTEmceeSampler
+.. |PTEmceeSampler| replace:: :py:class:`PTEmceeSampler <pycbc.inference.sampler.ptemcee.PTEmceeSampler>`
 
 The :py:mod:`pycbc.inference.sampler` module is the interface between
 ``pycbc_inference`` and the sampling engines, such as ``emcee``. Below, we
@@ -138,8 +138,8 @@ because not all MCMC samplers estimate ACF/Ls in the same way. For example,
 multi-tempered samplers need to compute ACF/Ls separately for each temperature
 chain. Consequently, there is an equivalent class
 |MultiTemperedAutocorrSupport| that offers the same functions for
-multi-tempered MCMCs. This class is used by, e.g., |EmceePTSampler| (see its
-:ref:`inheritance diagram <inheritance-emcee_pt>`, below). By making the
+multi-tempered MCMCs. This class is used by, e.g., |PTEmceeSampler| (see its
+:ref:`inheritance diagram <inheritance-ptemcee>`, below). By making the
 compute ACF/L functions abstract base methods in |BaseMCMC|, both single and
 multi-tempered MCMC samplers can inherit from |BaseMCMC|.
 

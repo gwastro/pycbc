@@ -16,11 +16,10 @@ GW170817.
 Downloading calibration uncertainty files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, we need to download the data from the `Gravitational Wave Open Science
-Center <https://www.gwosc.org>`_. Run:
-
 Calibration uncertainty files are provided by the LIGO–Virgo KAGRA Collaboration
-and are available from the `LIGO DCC<https://dcc.ligo.org/T2100313/public>`.
+and are available from the `LIGO DCC<https://dcc.ligo.org/T2100313/public>` (O1, 
+O2, and O3 observing runs) and `LIGO DCC<https://dcc.ligo.org/LIGO-T2500288/public>`
+(O4a observaing run).
 
 First, create a directory to store the calibration files:
 
@@ -31,7 +30,7 @@ First, create a directory to store the calibration files:
    cd ${OUT_DIR}
 
 Download the LIGO calibration uncertainty files. You need to do it once and then
-use them for generation of any calibration configuration file in O1, O2, or O3
+use them for generation of any calibration configuration file in O1, O2, O3, or O4a
 observation run of LIGO and Virgo detector network:
 
 .. code-block:: bash
@@ -39,6 +38,7 @@ observation run of LIGO and Virgo detector network:
    wget https://dcc.ligo.org/public/0177/T2100313/003/LIGO_O1_cal_uncertainty.tgz
    wget https://dcc.ligo.org/public/0177/T2100313/003/LIGO_O2_cal_uncertainty.tgz
    wget https://dcc.ligo.org/public/0177/T2100313/003/LIGO_O3_cal_uncertainty.tgz
+   wget https://dcc.ligo.org/public/0202/T2500288/001/LIGO_O4a_cal_uncertainty.tgz
 
 Download the Virgo calibration uncertainty files:
 
@@ -54,6 +54,7 @@ Extract all downloaded archives:
    tar -xzvf LIGO_O1_cal_uncertainty.tgz
    tar -xzvf LIGO_O2_cal_uncertainty.tgz
    tar -xzvf LIGO_O3_cal_uncertainty.tgz
+   tar -xzvf LIGO_O4a_cal_uncertainty.tgz
 
    tar -xzvf Virgo_O2_cal_uncertainty.tgz
    tar -xzvf Virgo_O3_cal_uncertainty.tgz
@@ -121,5 +122,19 @@ can be generated as follows:
    are applied to the waveform model or template rather than directly to the
    data stream. The Hanford (H1) and Livingston (L1) detectors continue to use
    ``data`` calibration type.
+
+Example:231123_135430 (H1-L1) 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+   pycbc_inference_create_calibration_config \
+       --calibration-files-path ${CALIB_ENV_FILE_PATH} \
+       --ifos H1 L1 \
+       --minimum-frequency H1:20 L1:20 \
+       --maximum-frequency H1:512 L1:512 \
+       --gps-time 1384782888.7 \
+       --correction-type H1:data L1:data \
+       --tag GW231123_135430
 
 

@@ -63,6 +63,10 @@ def ra_to_ra_mollweide(ra):
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("--sky-grid", required=True,
                     help="The location of the sky grid file")
+parser.add_argument("--num-density-bins", default=1200, type=int,
+                    help="Bins for the input distribution plotting")
+parser.add_argument("--num-density-samples", default=2000000, type=int,
+                    help="Samples for plotting the input distribution")
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s:%(levelname)s : %(message)s")
@@ -71,7 +75,6 @@ sky_grid = os.path.abspath(opts.sky_grid)
 outfile = opts.output_file
 if opts.plot_title is None:
     opts.plot_title = 'PyGRB sky grid'
-plot_caption = 'Search sky grid points.'
 
 logging.info("Imported and ready to go.")
 
@@ -86,16 +89,16 @@ with h5py.File(sky_grid, "r") as f:
     ra, dec = f['ra'][:], f['dec'][:]
     dist = f.attrs['input_distribution']
     input_dist = eval("pycbc.distributions."+dist)
-    samples = input_dist.rvs(1000000)
+    samples = input_dist.rvs(opts.num_density_samples)
     input_ra, input_dec = samples['ra'], samples['dec'] 
     ifos = f.attrs["detectors"]
     detectors = [Detector(d) for d in ifos]
     gps_time = f.attrs['ref_gps_time']
 
-xlabel = "RA (deg)"
-ylabel = "DEC (deg)"
+xlabel = "Right ascension [deg]"
+ylabel = "Declination [deg]"
 
-uni_points = pycbc.distributions.UniformSky().rvs(size=100000)
+uni_points = pycbc.distributions.UniformSky().rvs(1000000)
 
 #Convert ra from [0,2*pi] to [-pi,pi] for the mollweide plot 
 uni_ra = ra_to_ra_mollweide(uni_points["ra"])
@@ -105,26 +108,31 @@ in_ra = ra_to_ra_mollweide(input_ra)
 
 grb_ra = ra_to_ra_mollweide(ra)
 
+num_points = len(grb_ra)
+
 #Generation of the input density for the mollweide plot 
 input_density, ra_edge, dec_edge = numpy.histogram2d(
-    in_ra,input_dec, bins=600, 
+    in_ra,input_dec, bins=opts.num_density_bins, 
     range=[[-numpy.pi, numpy.pi], [-numpy.pi/2, numpy.pi/2]]
 )
 
 cols , rows = define_rows_cols_subplot(len(detectors)+2)
 fig, ax = plt.subplots(nrows=rows, ncols=cols,subplot_kw=dict(projection="mollweide"), figsize=(20,20))
 
+cmap = 'Oranges'
+skygrid_color = 'black'
+
 #Sky grid over input distribution plot
 levels = MaxNLocator(nbins=100).tick_values(0, input_density.max())
-ax[0,0].contourf(ra_edge[:-1],dec_edge[:-1],input_density.T, levels=levels,cmap="Greens")
-ax[0,0].plot(grb_ra, dec, 'x', c='red')
+ax[0,0].contourf(ra_edge[:-1],dec_edge[:-1],input_density.T, levels=levels,cmap=cmap)
+ax[0,0].plot(grb_ra, dec, 'x', c=skygrid_color)
 cb = fig.colorbar(
-    plt.cm.ScalarMappable(colors.Normalize(vmin=0, vmax=input_density.max()), cmap="Greens"), 
-    location="bottom", ax=ax[0,0], label="Counts"
+    plt.cm.ScalarMappable(colors.Normalize(vmin=0, vmax=input_density.max()), cmap=cmap), 
+    location="bottom", ax=ax[0,0], label="Probability density [a.u.]"
 )
 ax[0,0].set_xlabel(xlabel)
 ax[0,0].set_ylabel(ylabel)
-ax[0,0].set_title("Sky Grid over input distribution")
+ax[0,0].set_title(f"Sky grid ({num_points} points) over input distribution")
 ax[0,0].grid(True)
 
 #Hide the second "plot"
@@ -134,10 +142,11 @@ ax[0,1].axis("Off")
 ax[0,1] = plt.subplot(rows,cols,2, projection="rectilinear")
 ax[0,1].set_xlim(numpy.degrees(grb_ra.min())-5, numpy.degrees(grb_ra.max())+5)
 ax[0,1].set_ylim(numpy.degrees(dec.min())-5, numpy.degrees(dec.max())+5)
-ax[0,1].contourf(numpy.degrees(ra_edge[:-1]),numpy.degrees(dec_edge[:-1]),input_density.T, levels=levels, cmap="Greens")
-ax[0,1].plot(numpy.degrees(grb_ra), numpy.degrees(dec), 'x', c='red')
+ax[0,1].contourf(numpy.degrees(ra_edge[:-1]),numpy.degrees(dec_edge[:-1]),input_density.T, levels=levels, cmap=cmap)
+ax[0,1].plot(numpy.degrees(grb_ra), numpy.degrees(dec), 'x', c=skygrid_color)
 ax[0,1].set_xlabel(xlabel)
 ax[0,1].set_ylabel(ylabel)
+ax[0,1].set_title(f"Sky grid ({num_points} points) over input distribution (zoom)")
 ax[0,1].grid(True)
 
 if len(detectors) <= 2:
@@ -153,9 +162,11 @@ for det in detectors:
     ant_pat = det.antenna_pattern(uni_points["ra"], uni_points["dec"], 0, t_gps=gps_time)
     quad_ant = numpy.sqrt(ant_pat[0]**2 + ant_pat[1]**2)
     logging.info('Plotting %s', os.path.basename(outfile))
-    sc = ax[idx_row,idx_col].scatter(uni_ra, uni_dec, c=quad_ant, marker='.', cmap="viridis")
-    ax[idx_row,idx_col].scatter((grb_ra), (dec),c='red', marker='x')
+    sc = ax[idx_row,idx_col].scatter(uni_ra, uni_dec, c=quad_ant, marker='.', cmap=cmap)
+    ax[idx_row,idx_col].scatter((grb_ra), (dec),c=skygrid_color, marker='x')
     ax[idx_row,idx_col].set_title(f"Sky grid over {det.name} antenna pattern")
+    ax[idx_row,idx_col].set_xlabel(xlabel)
+    ax[idx_row,idx_col].set_ylabel(ylabel)
     plt.colorbar(sc, ax=ax[idx_row,idx_col], label=r"$\sqrt{F_+^2 + F_\times^2}$", location="bottom")
     ax[idx_row,idx_col].grid(True)
     idx_col += 1
@@ -167,6 +178,8 @@ if len(detectors)+2 < rows*cols:
         ax[-1,-2].axis("Off")
 
 # Wrap up
+plot_caption = f'First panel: search sky grid points (in black) associated to the input external trigger skymap (color scale). Second panel: zoom on the external trigger sky region. Other panels: sky grid points over the corresponding antenna pattern of the interferometers used for the search. Number of sky grid points: {num_points}'
+
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=plot_caption)
 plt.close()

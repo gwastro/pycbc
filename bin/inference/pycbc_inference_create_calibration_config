@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 import logging
 
 from pycbc.types import MultiDetOptionAction
-from pycbc.strain.recalibrate import get_calibration_files_O1_O2_O3, read_calibration_envelop_file
+from pycbc.strain.recalibrate import get_calibration_files, read_calibration_envelop_file
 
 
 parser = argparse.ArgumentParser()
@@ -108,6 +108,7 @@ correction_type_list = opts.correction_type
 gps_time = opts.gps_time
 output_dir = opts.output_dir
 n_nodes = opts.n_nodes
+
 if opts.tag is None:
     tag = int(opts.gps_time)
 else:
@@ -122,7 +123,7 @@ if opts.calibration_files:
     for ifo in opts.ifos:
         calibration_files_dict[ifo] = opts.calibration_files[ifo]
 else:
-    calibration_files_dict = get_calibration_files_O1_O2_O3(opts.ifos, gps_time, calibration_files_path)
+    calibration_files_dict = get_calibration_files(opts.ifos, gps_time, calibration_files_path)
 
 logging.debug("Calibration files dictionary: %s", calibration_files_dict)
 

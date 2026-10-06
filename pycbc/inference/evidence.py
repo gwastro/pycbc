@@ -19,6 +19,12 @@ likelihood or evidence of a model.
 import numpy
 from scipy import integrate
 
+# numpy renamed trapz to trapezoid in 2.0 and removed trapz in 2.x
+try:
+    from numpy import trapezoid
+except ImportError:  # numpy < 2.0
+    from numpy import trapz as trapezoid
+
 
 def arithmetic_mean_estimator(log_likelihood):
     """Returns the log evidence via the prior arithmetic mean estimator (AME).
@@ -85,6 +91,86 @@ def harmonic_mean_estimator(log_likelihood):
     return log_evidence
 
 
+# numpy.trapz was renamed to numpy.trapezoid in numpy 2.0.
+try:
+    from numpy import trapezoid as _trapezoid
+except ImportError:  # numpy < 2.0
+    from numpy import trapz as _trapezoid
+
+
+def mean_logl_by_temperature(logls, betas):
+    """The mean log likelihood at each distinct inverse temperature.
+
+    Parameters
+    ----------
+    logls : numpy.ndarray
+        Log likelihoods of shape (ntemps, nwalkers, niterations).
+    betas : numpy.ndarray
+        The inverse temperatures, of shape (ntemps, niterations); a ladder
+        that adapts visits more than one temperature per chain.
+
+    Returns
+    -------
+    betas : numpy.ndarray
+        Each distinct inverse temperature.
+    mean_logls : numpy.ndarray
+        The mean log likelihood at each of them.
+    """
+    mean_logls = []
+    unique_betas = []
+    for ti in range(betas.shape[0]):
+        ubti, idx = numpy.unique(betas[ti, :], return_inverse=True)
+        unique_idx = numpy.unique(idx)
+        loglsti = logls[ti, :, :]
+        for ii in unique_idx:
+            # average over the walkers and iterations at this temperature
+            getiters = numpy.where(ii == unique_idx)[0]
+            mean_logls.append(loglsti[:, getiters].mean())
+            unique_betas.append(ubti[ii])
+    return numpy.array(unique_betas), numpy.array(mean_logls)
+
+
+def ladder_thermodynamic_integration(betas, logls):
+    """Thermodynamic integration estimate of the evidence.
+
+    This is the same estimator used by the ``ptemcee`` sampler; see
+    :py:func:`pycbc.inference.sampler.ptemcee` for details.
+
+    Parameters
+    ----------
+    betas : array
+        The inverse temperatures to use for the quadrature.
+    logls : array
+        The mean log-likelihoods corresponding to ``betas``.
+
+    Returns
+    -------
+    logZ : float
+        Estimate of the log-evidence.
+    dlogZ : float
+        The error associated with the finite number of temperatures at which
+        the posterior has been sampled.
+    """
+    if len(betas) != len(logls):
+        raise ValueError("Need the same number of log(L) values as "
+                         "temperatures.")
+    order = numpy.argsort(betas)[::-1]
+    betas = betas[order]
+    logls = logls[order]
+    betas0 = numpy.copy(betas)
+    if betas[-1] != 0:
+        betas = numpy.concatenate((betas0, [0]))
+        betas2 = numpy.concatenate((betas0[::2], [0]))
+        logls2 = numpy.concatenate((logls[::2], [logls[-1]]))
+        logls = numpy.concatenate((logls, [logls[-1]]))
+    else:
+        betas2 = numpy.concatenate((betas0[:-1:2], [0]))
+        logls2 = numpy.concatenate((logls[:-1:2], [logls[-1]]))
+    logZ = -_trapezoid(logls, betas)
+    logZ2 = -_trapezoid(logls2, betas2)
+    return logZ, numpy.abs(logZ - logZ2)
+
+
 def thermodynamic_integration(log_likelihood, betas,
                               method="simpsons"):
     """Returns the log evidence of the model via thermodynamic integration.
@@ -95,15 +181,16 @@ def thermodynamic_integration(log_likelihood, betas,
 
     Parameters
     ----------
-    log_likelihood : 3d array of shape (betas, walker, iteration)
+    log_likelihood : numpy.ndarray
+        3d array of shape (ntemps, nwalkers, niterations)
         The log likelihood for each temperature separated by
         temperature, walker, and iteration.
 
-    betas : 1d array
+    betas : numpy.ndarray
         The inverse temperatures used in the MCMC.
 
-    method : {"trapzoid", "trapezoid_corrected", "simpsons"},
-             optional.
+    method : string
+        Optional. Can be one of {"trapezoid", "trapezoid_corrected", "simpsons"}
         The numerical integration method to use for the
         thermodynamic integration. Choices include: "trapezoid",
         "trapezoid_corrected", "simpsons", for the trapezoid rule,
@@ -140,7 +227,7 @@ def thermodynamic_integration(log_likelihood, betas,
     average_logl = numpy.average(log_likelihood, axis=1)
 
     if method in ("trapezoid", "trapezoid_corrected"):
-        log_evidence = numpy.trapz(average_logl, betas)
+        log_evidence = trapezoid(average_logl, betas)
 
     if method == "trapezoid_corrected":
         # var_correction holds the derivative correction terms
@@ -178,7 +265,7 @@ def thermodynamic_integration(log_likelihood, betas,
 
     if method in ("trapezoid", "trapezoid_corrected"):
         for i, _ in enumerate(log_likelihood[0]):
-            ti_vec[i] = numpy.trapz(logl_per_samp[i], betas)
+            ti_vec[i] = trapezoid(logl_per_samp[i], betas)
 
     elif method == "simpsons":
         for i, _ in enumerate(log_likelihood[0]):
@@ -197,12 +284,13 @@ def stepping_stone_algorithm(log_likelihood, betas):
 
     Parameters
     ----------
-    log_likelihood : 3d array of shape (betas, walker, iteration)
+    log_likelihood : numpy.ndarray
+        3d array of shape (ntemps, nwalkers, niterations)
         The log likelihood for each temperature separated by
         temperature, walker, and iteration.
 
-    betas          : 1d array
-                     The inverse temperatures used in the MCMC.
+    betas          : numpy.ndarray
+        The inverse temperatures used in the MCMC.
 
     Returns
     -------

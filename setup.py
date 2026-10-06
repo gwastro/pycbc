@@ -32,7 +32,7 @@ requires = []
 setup_requires = ['numpy>=1.16.0']
 install_requires = setup_requires + [
     'cython>=0.29',
-    'numpy>=1.16.0,!=1.19.0,!=2.2.2,<2.4',
+    'numpy>=1.16.0,!=1.19.0,!=2.2.2',
     'scipy>=0.16.0,<1.17.0',
     'astropy>=2.0.3,!=4.2.1,!=4.0.5',
     'matplotlib>=1.5.1',
@@ -46,7 +46,7 @@ install_requires = setup_requires + [
     'setuptools',
     'gwdatafind',
     'pegasus-wms.api >= 5.1.1',
-    'igwn-ligolw',
+    'igwn-ligolw >= 2.1.0',
     'igwn-segments',
     'lalsuite!=7.2',
     'lscsoft-glue>=1.59.3',
@@ -95,7 +95,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.10.dev1'
+        vinfo.version = '2.12.dev1'
         vinfo.release = False
 
     version_script = f"""# coding: utf-8
@@ -181,6 +181,18 @@ extras_require = {
         'ciecplib>=0.7.0',
     ],
 }
+
+def get_reqs_from_file(filename):
+    reqs = []
+    if os.path.exists(filename):
+        with open(filename, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and not line.startswith('--'):
+                    reqs.append(line)
+    return reqs
+
+extras_require['test'] = get_reqs_from_file('requirements.txt') + get_reqs_from_file('companion.txt')
 
 # do the actual work of building the package
 VERSION = get_version_info()

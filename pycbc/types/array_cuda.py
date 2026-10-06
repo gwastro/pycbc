@@ -23,6 +23,7 @@
 #
 """Pycuda based 
 """
+import pycuda
 import pycuda.driver
 from pycuda.elementwise import ElementwiseKernel
 from pycuda.reduction import ReductionKernel
@@ -250,37 +251,41 @@ maxloc_preamble_double = """
 maxloc_dtype_double = np.dtype([("max", np.float64), ("loc", np.int64)])
 maxloc_dtype_single = np.dtype([("max", np.float32), ("loc", np.int32)])
 
-maxloc_dtype_single = get_or_register_dtype("maxlocs", dtype=maxloc_dtype_single)
-maxloc_dtype_double = get_or_register_dtype("maxlocd", dtype=maxloc_dtype_double)
+if type(pycuda).__name__ not in ('MagicMock', '_MockModule'):
+    maxloc_dtype_single = get_or_register_dtype("maxlocs", dtype=maxloc_dtype_single)
+    maxloc_dtype_double = get_or_register_dtype("maxlocd", dtype=maxloc_dtype_double)
 
-mls = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
-        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(x[i], i)",
-        arguments="float *x", preamble=maxloc_preamble_single)
+    mls = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
+            reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(x[i], i)",
+            arguments="float *x", preamble=maxloc_preamble_single)
 
-mld = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
-        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(x[i], i)",
-        arguments="double *x", preamble=maxloc_preamble_double)
-        
-max_loc_map = {'single':mls,'double':mld}
+    mld = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
+            reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(x[i], i)",
+            arguments="double *x", preamble=maxloc_preamble_double)
+
+    max_loc_map = {'single':mls,'double':mld}
 
 
-amls = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
-        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
-        arguments="float *x", preamble=maxloc_preamble_single)
+    amls = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
+            reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+            arguments="float *x", preamble=maxloc_preamble_single)
 
-amld = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
-        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
-        arguments="double *x", preamble=maxloc_preamble_double)
+    amld = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
+            reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+            arguments="double *x", preamble=maxloc_preamble_double)
 
-amlsc = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
-        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
-        arguments="pycuda::complex<float> *x", preamble=maxloc_preamble_single)
+    amlsc = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
+            reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+            arguments="pycuda::complex<float> *x", preamble=maxloc_preamble_single)
 
-amldc = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
-        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
-        arguments="pycuda::complex<double> *x", preamble=maxloc_preamble_double)
+    amldc = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
+            reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+            arguments="pycuda::complex<double> *x", preamble=maxloc_preamble_double)
 
-abs_max_loc_map = {'single':{ 'real':amls, 'complex':amlsc }, 'double':{ 'real':amld, 'complex':amldc }}
+    abs_max_loc_map = {'single':{ 'real':amls, 'complex':amlsc }, 'double':{ 'real':amld, 'complex':amldc }}
+else:
+    max_loc_map = {}
+    abs_max_loc_map = {}
 
 def zeros(length, dtype=np.float64):
     result = GPUArray(length, dtype=dtype)

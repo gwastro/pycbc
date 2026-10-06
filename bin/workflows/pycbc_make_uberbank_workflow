@@ -55,44 +55,15 @@ class GeomBankExecutable(wf.Executable):
     # This outputs a dax file.
     current_retention_level = wf.Executable.FINAL_RESULT
 
-    def create_node(self, analysis_time, geom_out_file, config_file,
-                    out_storage_path, pegasus_base_dir,
-                    workflow_name='geom_bank'):
-        node = wf.Executable.create_node(self)
-
-        # Output file: This one is done weirdly because this job doesn't
-        # actually produce this file, the resulting dax will do that.
-        node.add_opt('--output-file', geom_out_file.storage_path)
-
-        node.add_input_opt('--supplement-config-file', config_file)
-
-        node.add_opt('--workflow-name', workflow_name)
-        node.add_opt('--storage-path-base', out_storage_path)
-
-        # Intermediate outputs and dax files
-        node.new_output_file_opt(analysis_time, '.hdf',
-                                 '--intermediate-data-file',
-                                 tags=self.tags + ['INTERMEDIATE'])
-        node.new_output_file_opt(analysis_time, '.xml',
-                                 '--metadata-file',
-                                 tags=self.tags + ['METADATA'])
-        node.new_output_file_opt(analysis_time, '.dax',
-                                 '--dax-file',
-                                 tags=self.tags + ['DAX'])
-        node.new_output_file_opt(analysis_time, '.map',
-                                 '--output-map',
-                                 tags=self.tags + ['MAP'])
-        return node
-
-class SbankDaxGenerator(wf.Executable):
-    """ Class for running pycbc_make_sbank_workflow.
-    """
-    # This outputs a dax file.
-    current_retention_level = wf.Executable.FINAL_RESULT
-
-    def create_node(self, analysis_time, config_file, out_storage_path,
-                    output_file, pegasus_base_dir, seed_files=None,
-                    workflow_name='sbank_workflow', sub_wf_tags=None):
+    def create_node(
+        self,
+        analysis_time,
+        config_file,
+        out_storage_path,
+        output_file,
+        workflow_name='geom_bank',
+        sub_wf_tags=None
+    ):
         """ Create a sbank dax generator node.
         """
         node = wf.Executable.create_node(self)
@@ -108,6 +79,53 @@ class SbankDaxGenerator(wf.Executable):
 
         if sub_wf_tags is not None:
             node.add_opt('--tags', ' '.join(sub_wf_tags))
+        else:
+            sub_wf_tags = []
+
+        node.add_input_opt('--config-files', config_file)
+
+        node.new_output_file_opt(analysis_time, '.dax',
+                                 '--dax-file',
+                                 tags=self.tags + sub_wf_tags + ['DAX'])
+        node.new_output_file_opt(analysis_time, '.map',
+                                 '--output-map',
+                                 tags=self.tags + sub_wf_tags + ['MAP'])
+        return node
+
+
+class SbankDaxGenerator(wf.Executable):
+    """ Class for running pycbc_make_sbank_workflow.
+    """
+    # This outputs a dax file.
+    current_retention_level = wf.Executable.FINAL_RESULT
+
+    def create_node(
+        self,
+        analysis_time,
+        config_file,
+        out_storage_path,
+        output_file,
+        seed_files=None,
+        workflow_name='sbank_workflow',
+        sub_wf_tags=None
+    ):
+        """ Create a sbank dax generator node.
+        """
+        node = wf.Executable.create_node(self)
+
+        # Output file: This one is done weirdly because this job doesn't
+        # actually produce this file, the resulting dax will do that.
+        node.add_opt('--output-file', output_file.storage_path)
+
+
+        node.add_opt('--workflow-name', workflow_name)
+        node.add_opt('--output-dir', out_storage_path)
+        node.add_opt('--dax-file-directory', '.')
+
+        if sub_wf_tags is not None:
+            node.add_opt('--tags', ' '.join(sub_wf_tags))
+        else:
+            sub_wf_tags = []
 
         node.add_input_opt('--config-files', config_file)
 
@@ -164,30 +182,37 @@ config_path = os.path.abspath('daxes' + '/' + 'geom_workflow.ini')
 workflow.cp.write(open(config_path, 'w'))
 config_file = wf.resolve_url_to_file(config_path)
 
-geom_exe = GeomBankExecutable(workflow.cp, 'geom_aligned_bank',
-                              ifos=workflow.ifos, out_dir='daxes')
+geom_exe = GeomBankExecutable(
+    workflow.cp,
+    'geom_aligned_bank_wflow',
+    ifos=workflow.ifos,
+    out_dir='daxes'
+)
 # This one's a bit weird as the dag generator names the final output file,
 # but that job doesn't *generate* it, so we create this file first.
 geom_out_dir = os.path.abspath('initial_geom_bank')
-geom_out_file = wf.File(geom_exe.ifo_list, geom_exe.name,
-                        workflow.analysis_time, extension='.h5',
-                        store_file=True, directory=geom_out_dir,
-                        tags=[], use_tmp_subdirs=False)
-geom_node = geom_exe.create_node(workflow.analysis_time, geom_out_file,
-                                 config_file,
-                                 geom_out_dir, workflow.out_dir,
-                                 workflow_name='initial_geom_bank')
+geom_out_file = wf.File(
+    geom_exe.ifo_list,
+    geom_exe.name,
+    workflow.analysis_time,
+    extension='.h5',
+    store_file=True,
+    directory=geom_out_dir,
+    tags=[],
+    use_tmp_subdirs=False
+)
+geom_node = geom_exe.create_node(
+    workflow.analysis_time,
+    config_file,
+    geom_out_dir,
+    geom_out_file,
+    workflow_name='initial_geom_bank'
+)
 workflow += geom_node
 
 # Verify files are the correct ones, they have unique extensions
-intermediate_file = geom_node.output_files[0]
-assert(intermediate_file.name.endswith('hdf'))
-metadata_file = geom_node.output_files[1]
-assert(metadata_file.name.endswith('xml'))
-dax_file = geom_node.output_files[2]
-assert(dax_file.name.endswith('.dax'))
-map_file = geom_node.output_files[3]
-assert(map_file.name.endswith('.map'))
+dax_file = [x for x in geom_node.output_files if x.name.endswith('.dax')][0]
+map_file = [x for x in geom_node.output_files if x.name.endswith('.map')][0]
 
 # NOTE: One can use workflow += dax_job, but this seems to miss a bunch of
 #       the stuff done below, and does not consider file management
@@ -195,9 +220,6 @@ dax_job = SubWorkflow(dax_file, is_planned=False, _id='geom')
 dax_job.set_subworkflow_properties(map_file,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
-
-# Tell the dax job that it needs some input files
-dax_job.add_inputs(metadata_file, intermediate_file)
 
 # And this output is used again so declare it.
 dax_job.add_outputs(geom_out_file, stage_out=True)
@@ -230,14 +252,14 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
                                        os.path.abspath('sbank_bbh'),
                                        sbank_out_file_bbh,
-                                       workflow.out_dir,
                                        workflow_name='sbank_bbh',
                                        sub_wf_tags=['bbh'])
 
     workflow += sbank_node
 
-    dax_file = sbank_node.output_files[0]
-    map_file = sbank_node.output_files[1]
+    ofiles = sbank_node.output_files
+    dax_file = [x for x in ofiles if x.name.endswith('.dax')][0]
+    map_file = [x for x in ofiles if x.name.endswith('.map')][0]
     dax_job = SubWorkflow(dax_file, is_planned=False, _id='sbank_bbh')
     dax_job.set_subworkflow_properties(map_file,
                                        staging_site=workflow.staging_site,
@@ -269,15 +291,15 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
                                    os.path.abspath('sbank_final'),
                                    sbank_out_file_final,
-                                   workflow.out_dir,
                                    seed_files=seed_files,
                                    workflow_name='sbank_final',
                                    sub_wf_tags=['final'])
 
 workflow += sbank_node
 
-dax_file = sbank_node.output_files[0]
-map_file = sbank_node.output_files[1]
+ofiles = sbank_node.output_files
+dax_file = [x for x in ofiles if x.name.endswith('.dax')][0]
+map_file = [x for x in ofiles if x.name.endswith('.map')][0]
 dax_job = SubWorkflow(dax_file, is_planned=False, _id='sbank_final')
 dax_job.set_subworkflow_properties(map_file,
                                    staging_site=workflow.staging_site,

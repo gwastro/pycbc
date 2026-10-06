@@ -73,6 +73,11 @@ parser.add_argument("--u-val", type=float, default=0,
                         "h(t) = h_+ * u_val + h_x. Only needed in the case of "
                         "waveforms where h_+ and h_x are not related by a "
                         "simple phase shift.")
+# Optional arguments for eccentricity
+parser.add_argument("--eccentricity", type=float, default=0,
+                  help="Eccentricity of the orbit. ")
+parser.add_argument("--rel-anomaly", type=float, default=0,
+                    help="Relativistic anomaly. ")
 # Other optional arguments
 parser.add_argument("--taper-template", choices=["start","end","startend"],
                     help="For time-domain approximants, taper the start and/or"
@@ -102,7 +107,9 @@ tmp_params = io.WaveformArray.from_kwargs(
                     spin2y=opt.spin2y,
                     spin2z=opt.spin2z,
                     inclination=opt.inclination,
-                    coa_phase=opt.coa_phase)
+                    coa_phase=opt.coa_phase,
+                    eccentricity=opt.eccentricity,
+                    rel_anomaly=opt.rel_anomaly)
 
 # Deal with parameter-dependent approximant string
 approximant = waveform.bank.parse_approximant_arg(opt.approximant,

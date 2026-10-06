@@ -274,7 +274,9 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
             numpy.arange(len(series.data.data)) * delta,
             series.data.data
         ))
-    a = ligolw.Array.build(series.name, data, dim_names=dim_names)
+    a = ligolw.Array.build(
+        series.name, data, dim_names=dim_names, encoding='base64'
+    )
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit

@@ -155,7 +155,7 @@ on what tests are available, see the :py:mod:`pycbc.inference.burn_in` module.
 
 .. dropdown:: Thinning samples (MCMC only)
 
-    The default behavior for the MCMC samplers (``emcee``, ``emcee_pt``) is to save
+    The default behavior for the MCMC samplers (``emcee``, ``ptemcee``) is to save
     every iteration of the Markov chains to the output file. This can quickly lead
     to very large files. For example, a BBH analysis (~15 parameters) with 200
     walkers, 20 temperatures may take ~50 000 iterations to acquire ~5000

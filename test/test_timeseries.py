@@ -26,14 +26,16 @@ These are the unittests for the pycbc timeseries type
 '''
 
 import unittest
+import numpy
+import os
+import tempfile
+
 from pycbc.types import float32, float64, complex64, complex128
 from pycbc.types import Array, TimeSeries
 from pycbc.scheme import DefaultScheme
-import numpy
-import lal
+
 from utils import array_base, parse_args_all_schemes, simple_exit
-import os
-import tempfile
+
 
 _scheme, _context = parse_args_all_schemes("TimeSeries")
 
@@ -104,9 +106,19 @@ class TestTimeSeriesBase(array_base, unittest.TestCase):
         # These are timeseries that have problems specific to timeseries
         self.bad3 = TimeSeries([1,1,1], 0.2, epoch=self.epoch, dtype = self.dtype)
         if self.epoch == 0:
-            self.bad4 = TimeSeries([1,1,1], self.delta_t, epoch = lal.LIGOTimeGPS(1000, 1000), dtype = self.dtype)
+            self.bad4 = TimeSeries(
+                [1,1,1],
+                self.delta_t,
+                epoch = 1000 + 1e-6,
+                dtype = self.dtype
+            )
         else:
-            self.bad4 = TimeSeries([1,1,1], self.delta_t, epoch=None, dtype = self.dtype)
+            self.bad4 = TimeSeries(
+                [1,1,1],
+                self.delta_t,
+                epoch=None,
+                dtype = self.dtype
+            )
 
     def test_numpy_init(self):
         with self.context:
@@ -483,7 +495,10 @@ class TestTimeSeriesBase(array_base, unittest.TestCase):
         self.assertAlmostEqual(a.at_time(0.6, nearest_sample=True), 1.0)
         self.assertAlmostEqual(a.at_time(0.5, interpolate='linear'), 0.5)
         self.assertAlmostEqual(a.at_time([2.5], interpolate='quadratic'), 2.5)
-        self.assertAlmostEqual(a.at_time(lal.LIGOTimeGPS(2.1)), 2.0)
+        self.assertAlmostEqual(
+            a.at_time(2.1),
+            2.0
+        )
 
         i = numpy.array([-0.2, 0.5, 1.5, 7.0])
 
@@ -505,7 +520,10 @@ class TestTimeSeriesBase(array_base, unittest.TestCase):
 
         # Check that the output corresponds to input being scalar/array.
         self.assertEqual(numpy.ndim(a.at_time(0.5)), 0)
-        self.assertEqual(numpy.ndim(a.at_time(lal.LIGOTimeGPS(2.1))), 0)
+        self.assertEqual(
+            numpy.ndim(a.at_time(2.1)),
+            0
+        )
         self.assertEqual(numpy.ndim(a.at_time(i)), 1)
 
     def test_inject(self):
@@ -574,7 +592,7 @@ def ts_test_maker(dtype, odtype, epoch):
         def __init__(self, *args):
             self.dtype = dtype
             self.odtype = odtype
-            self.epoch = epoch if epoch is not None else lal.LIGOTimeGPS(0, 0)
+            self.epoch = epoch if epoch is not None else 0
             unittest.TestCase.__init__(self, *args)
     TestTimeSeries.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
     return TestTimeSeries
@@ -585,7 +603,7 @@ types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
 suite = unittest.TestSuite()
 
 # Unlike the regular array tests, we will need to test with an epoch, and with none
-epochs = [lal.LIGOTimeGPS(1000, 1000), None]
+epochs = [1000 + 1e-6, None]
 
 i = 0
 for t,otypes in types:

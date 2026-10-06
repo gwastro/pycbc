@@ -1,0 +1,74 @@
+name: refresh CI caches
+
+# GitHub removes any Actions cache that has not been read for 7 days.  The data
+# caches used by basic-tests / macos basic tests are only written by the test
+# jobs themselves, so on a quiet week they expire and the next run falls back to
+# downloading everything from the origin servers (raw.githubusercontent.com,
+# zenodo.org, the pycbc_data release assets) -- exactly the flaky path we are
+# trying to avoid.
+#
+# This job runs every day: reading a cache here counts as an access and resets
+# its 7-day timer, and the caches it can build cheaply are (re)populated on a
+# miss.  It only ever touches caches on the default branch, which is where PRs
+# pick their cache fallbacks up from.
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-ci-caches
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      # Populated as a side effect of the search test suite, so here we only
+      # read it to keep it from expiring.
+      - name: Touch example GW data cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          key: example-gw-data
+          path: |
+            docs/_include/*.gwf
+            examples/inference/lisa_smbhb_ldc/*_psd.txt
+            examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
+            examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
+            examples/inference/margtime/*.gwf
+            examples/inference/multisignal/*.gwf
+            examples/inference/relative/*.gwf
+            examples/inference/relmarg/*.gwf
+            examples/inference/single/*.gwf
+
+      - name: Cache LAL auxiliary data files
+        id: cache-lal-aux-data
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          key: lal-aux-data
+          path: ~/lal_aux_data
+
+      - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
+        name: Download LAL auxiliary data files
+        run: |
+          mkdir ~/lal_aux_data
+          pushd ~/lal_aux_data
+          curl --show-error --silent --retry 5 --retry-delay 5 --retry-all-errors --fail \
+            --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
+            --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
+          popd
+
+      - name: Cache downloaded test data
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          key: test-data-cache-${{ hashFiles('tools/ci_prefetch_test_data.py') }}
+          restore-keys: |
+            test-data-cache-
+          path: ~/.astropy/cache/download
+
+      - name: Pre-fetch remote test data
+        run: |
+          python3 tools/ci_prefetch_test_data.py

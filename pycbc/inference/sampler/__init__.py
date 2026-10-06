@@ -26,6 +26,7 @@ from .ultranest import UltranestSampler
 from .dummy import DummySampler
 from .refine import RefineSampler
 from .snowline import SnowlineSampler
+from .nautilus import NautilusSampler
 from .games import GameSampler
 
 # list of available samplers
@@ -35,14 +36,13 @@ samplers = {cls.name: cls for cls in (
     DummySampler,
     RefineSampler,
     SnowlineSampler,
+    NautilusSampler,
     GameSampler,
 )}
 
 try:
     from .emcee import EmceeEnsembleSampler
-    from .emcee_pt import EmceePTSampler
     samplers[EmceeEnsembleSampler.name] = EmceeEnsembleSampler
-    samplers[EmceePTSampler.name] = EmceePTSampler
 except ImportError:
     pass
 
@@ -55,6 +55,12 @@ except ImportError:
 try:
     from .ptemcee import PTEmceeSampler
     samplers[PTEmceeSampler.name] = PTEmceeSampler
+except ImportError:
+    pass
+
+try:
+    from .eryn import ErynSampler
+    samplers[ErynSampler.name] = ErynSampler
 except ImportError:
     pass
 

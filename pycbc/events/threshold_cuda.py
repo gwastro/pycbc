@@ -56,14 +56,6 @@ threshold_kernel = ElementwiseKernel(
             "getstuff")
 
 import pycuda.driver as drv
-n = drv.pagelocked_empty((1), numpy.uint32, mem_flags=drv.host_alloc_flags.DEVICEMAP)
-nptr = numpy.intp(n.base.get_device_pointer())
-
-val = drv.pagelocked_empty((4096*256), numpy.complex64, mem_flags=drv.host_alloc_flags.DEVICEMAP)
-vptr = numpy.intp(val.base.get_device_pointer())
-
-loc = drv.pagelocked_empty((4096*256), numpy.int32, mem_flags=drv.host_alloc_flags.DEVICEMAP)
-lptr = numpy.intp(loc.base.get_device_pointer())
 
 class T():
     pass
@@ -71,10 +63,23 @@ class T():
 tn = T()
 tv = T()
 tl = T()
-tn.gpudata = nptr
-tv.gpudata = vptr
-tl.gpudata = lptr
-tn.flags = tv.flags = tl.flags = n.flags
+
+# This avoids this code running if in the documentation build process,
+# and we don't have pycuda installed
+if type(drv).__name__ not in ('MagicMock', '_MockModule'):
+    n = drv.pagelocked_empty((1), numpy.uint32, mem_flags=drv.host_alloc_flags.DEVICEMAP)
+    nptr = numpy.intp(n.base.get_device_pointer())
+
+    val = drv.pagelocked_empty((4096*256), numpy.complex64, mem_flags=drv.host_alloc_flags.DEVICEMAP)
+    vptr = numpy.intp(val.base.get_device_pointer())
+
+    loc = drv.pagelocked_empty((4096*256), numpy.int32, mem_flags=drv.host_alloc_flags.DEVICEMAP)
+    lptr = numpy.intp(loc.base.get_device_pointer())
+
+    tn.gpudata = nptr
+    tv.gpudata = vptr
+    tl.gpudata = lptr
+    tn.flags = tv.flags = tl.flags = n.flags
 
 tkernel1 = mako.template.Template("""
 #include <stdio.h>

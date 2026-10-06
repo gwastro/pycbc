@@ -154,6 +154,52 @@ class TestDetector(unittest.TestCase):
                     self.assertAlmostEqual(converted_times[i], target_times[i], 
                                            places=6)
 
+    def test_one_at_a_time_matches_vector(self):
+        """Calling one at a time must match calling with a vector.
+
+        The response is applied to the whole set at once, so a mistake in
+        lining the components up would show at some positions and not
+        others. Covers the vector and scalar polarizations, and
+        time_delay_from_earth_center given an array.
+
+        The response is compared to the precision of the arithmetic rather
+        than exactly: the matrix product rounds differently over a whole
+        set than over one position, in the last bit of a double.
+        """
+        test_time = 1187008882.0
+        polarizations = [{}, {'polarization_type': 'vector'},
+                         {'polarization_type': 'scalar'}]
+        for detector in self.d:
+            delay_vector = detector.time_delay_from_earth_center(
+                self.ra, self.dec, test_time)
+            response_vectors = [
+                detector.antenna_pattern(self.ra, self.dec, self.pol,
+                                         test_time, **kwargs)
+                for kwargs in polarizations]
+
+            for index in (0, 137, len(self.ra) - 1):
+                right_ascension = float(self.ra[index])
+                declination = float(self.dec[index])
+                polarization = float(self.pol[index])
+
+                self.assertEqual(
+                    delay_vector[index],
+                    detector.time_delay_from_earth_center(
+                        right_ascension, declination, test_time))
+
+                for kwargs, from_vector in zip(polarizations,
+                                               response_vectors):
+                    one_at_a_time = detector.antenna_pattern(
+                        right_ascension, declination, polarization,
+                        test_time, **kwargs)
+                    for whole, single in zip(from_vector, one_at_a_time):
+                        self.assertTrue(
+                            numpy.isclose(whole[index], single,
+                                          rtol=1e-14, atol=1e-16),
+                            "%s at %s: %r against %r"
+                            % (kwargs, index, whole[index], single))
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDetector))
 

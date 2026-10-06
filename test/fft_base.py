@@ -59,17 +59,21 @@ in particular that whichever backend is the default will be tested twice, once a
 'Default' and once under its own name.
 """
 
-import pycbc
-import pycbc.scheme
-import pycbc.types
-from pycbc.types import Array as ar, TimeSeries as ts, FrequencySeries as fs
+import unittest
 import numpy
 from numpy import dtype, float32, float64, complex64, complex128, zeros, real
 from numpy.random import randn
+
 import pycbc.fft
 from pycbc.fft.backend_support import set_backend
-import unittest
-from lal import LIGOTimeGPS as LTG
+import pycbc
+import pycbc.scheme
+from pycbc.types import (
+    Array as ar,
+    TimeSeries as ts,
+    FrequencySeries as fs,
+    zeros
+)
 
 # Because we run many similar tests where we only vary dtypes, precisions,
 # or Array/TimeSeries/FrequencySeries, it is helpful to define the following
@@ -238,7 +242,7 @@ def _test_random(test_case, inarr, outarr, tol):
                     inarr *= outarr._delta_t
                 elif isinstance(outarr, fs):
                     inarr *= outarr._delta_f
-            if type(inarr) == pycbc.types.Array:
+            if type(inarr) == ar:
                 # An Array FFTed and then IFFTEd will be scaled by its length
                 # Frequency and TimeSeries have no scaling
                 inarr /= len(inarr) 
@@ -290,7 +294,7 @@ def _test_random(test_case, inarr, outarr, tol):
                     outarr *= inarr._delta_t
                 elif isinstance(inarr, fs):
                     outarr *= inarr._delta_f
-            if type(inarr) == pycbc.types.Array:
+            if type(inarr) == ar:
                 # An Array FFTed and then IFFTEd will be scaled by its length
                 # Frequency and TimeSeries have no scaling
                 outarr /= len(inarr)
@@ -328,9 +332,9 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
             fft_class.execute()
 
         outty = type(outarr)
-        outzer = pycbc.types.zeros(len(outarr))
+        outzer = zeros(len(outarr))
         # If we give an output array that is wrong only in length, raise ValueError:
-        out_badlen = outty(pycbc.types.zeros(len(outarr)+1),
+        out_badlen = outty(zeros(len(outarr)+1),
                            dtype=outarr.dtype, **other_args)
         args = [inarr, out_badlen]
         tc.assertRaises(ValueError, pycbc.fft.fft, *args)
@@ -381,10 +385,10 @@ def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
             ifft_class.execute()
 
         outty = type(outarr)
-        outzer = pycbc.types.zeros(len(outarr))
+        outzer = zeros(len(outarr))
         # If we give an output array that is wrong only in length,
         # raise ValueError:
-        out_badlen = outty(pycbc.types.zeros(len(outarr)+1), 
+        out_badlen = outty(zeros(len(outarr)+1), 
                            dtype=outarr.dtype, **other_args)
         args = [inarr, out_badlen]
         tc.assertRaises(ValueError, pycbc.fft.ifft, *args)
@@ -409,7 +413,7 @@ def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
             except KeyError:
                 delta = new_args.pop('delta_f')
                 new_args.update({'delta_t' : delta})
-        in_badkind = type(inarr)(pycbc.types.zeros(len(inarr)),
+        in_badkind = type(inarr)(zeros(len(inarr)),
                                  dtype=_bad_dtype[dtype(outarr).type],
                                  **new_args)
         args = [in_badkind, outarr]
@@ -467,7 +471,7 @@ class _BaseTestFFTClass(unittest.TestCase):
         self.in_c2c_rev = [3.0-1.0j,-1.0+3.0j]
         self.out_c2c_rev = [2.0+2.0j,4.0-4.0j]
         # For Time/FrequencySeries, we want to test with a non-trivial epoch
-        self.epoch = LTG(3,4)
+        self.epoch = 3 + 4 * 1e-9
         # When we need a delta_t or delta_f for input, use this.
         # Output-appropriate variable is computed.
         self.delta = 1.0/4096.0
@@ -768,3 +772,45 @@ class _BaseTestFFTClass(unittest.TestCase):
             output_args = {"delta_t": self.delta, "epoch": self.epoch}
             _test_raise_excep_ifft(self,inarr,outexp,output_args)
 
+    def test_batched_c2c(self):
+        nbatch, size = 4, 16
+        dt = complex64
+        tol = self.tdict[dt]
+
+        with self.context:
+            set_backend(self.backends)
+            rows = [ar(randn(size) + 1j * randn(size), dtype=dt)
+                    for _ in range(nbatch)]
+
+            # Each row of a batched FFT should match that row's own
+            # unbatched FFT.
+            batch_in = ar(zeros(nbatch * size, dtype=dt))
+            batch_out = ar(zeros(nbatch * size, dtype=dt))
+            for i, row in enumerate(rows):
+                batch_in[i * size:(i + 1) * size] = row
+            pycbc.fft.FFT(batch_in, batch_out, nbatch=nbatch, size=size).execute()
+
+            for i, row in enumerate(rows):
+                row_out = ar(zeros(size, dtype=dt))
+                pycbc.fft.FFT(ar(row), row_out).execute()
+                got = batch_out[i * size:(i + 1) * size]
+                self.assertTrue(
+                    row_out.almost_equal_norm(got, tol=tol),
+                    msg="batched (nbatch={0}) FFT row {1} did not match "
+                        "the same row's unbatched FFT".format(nbatch, i))
+
+            # Same check for IFFT.
+            batch_in2 = ar(zeros(nbatch * size, dtype=dt))
+            batch_out2 = ar(zeros(nbatch * size, dtype=dt))
+            for i, row in enumerate(rows):
+                batch_in2[i * size:(i + 1) * size] = row
+            pycbc.fft.IFFT(batch_in2, batch_out2, nbatch=nbatch, size=size).execute()
+
+            for i, row in enumerate(rows):
+                row_out = ar(zeros(size, dtype=dt))
+                pycbc.fft.IFFT(ar(row), row_out).execute()
+                got = batch_out2[i * size:(i + 1) * size]
+                self.assertTrue(
+                    row_out.almost_equal_norm(got, tol=tol),
+                    msg="batched (nbatch={0}) IFFT row {1} did not match "
+                        "the same row's unbatched IFFT".format(nbatch, i))

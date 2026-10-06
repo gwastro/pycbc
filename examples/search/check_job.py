@@ -8,10 +8,20 @@ while 1:
     out = subprocess.check_output(["pegasus-status", "submitdir/work/"])
     out = str(out)
     lines = out.split('\\n')
+
+    for linei in lines:
+        if linei.startswith('Summary') and '(Failure' in linei:
+            print('Job submission has failed')
+            exit(1)
+
     for i in range(len(lines)):
         if 'UNREADY' in lines[i]:
             status_line = i + 1
             break
+    else:
+        raise RuntimeError(
+            'No UNREADY line found in pegasus-status output, check logs'
+        )
 
     stats = lines[status_line].split(' ')
     stats = [s for s in stats if s != '']
@@ -23,9 +33,10 @@ while 1:
     post = int(stats[4])
     done = int(stats[5])
     failed = int(stats[6])
+    pc_done = stats[7]
 
     finished = (unready == 0 and ready == 0 and queued == 0 and post == 0)
-    passed = finished and failed == 0
+    passed = (finished and failed == 0) and pc_done == '100.0'
 
     if passed:
         print("workflow has completed successfully")
