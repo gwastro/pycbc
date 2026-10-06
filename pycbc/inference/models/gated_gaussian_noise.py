@@ -518,7 +518,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                         ra, dec, gatestart)
                     rfend -= refdet.time_delay_from_earth_center(
                         ra, dec, gateend)
-                gatetimes[det] = (gatestart, gateend - gatestart)
+                gatetimes[det] = (rfstart, rfend - rfstart)
         return gatetimes
 
     def get_gate_times_hmeco(self):
@@ -1597,7 +1597,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             setattr(self._current_stats, f'scale_factor_{mode}',
                     scale_factors[mode])
         for det in self.det_names:
-            if det not in self.dets:
+            if det not in self.dets and det != 'RF':
                 self.dets[det] = Detector(det)
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
