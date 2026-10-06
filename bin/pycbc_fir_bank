@@ -15,7 +15,6 @@ from pycbc.filter import match, sigma
 from pycbc.types import TimeSeries
 from pycbc.waveform.bank import FilterBank
 
-mp.set_start_method('fork', force=True) 
 
 # --- GLOBAL WORKER DATA (set by initializer) ---
 g_coarse_waveforms = None
@@ -467,8 +466,12 @@ def main():
     all_results = [None] * n_fine
 
     try:
-        with mp.Pool(processes=args.n_processes, initializer=init_worker,
-                     initargs=(coarse_waveforms, fine_bank, psd, args)) as pool:
+        # The workers read the globals init_worker sets, which only a fork
+        # carries over; macOS would otherwise spawn and try to pickle them.
+        # Asked for here rather than set process-wide.
+        ctx = mp.get_context('fork')
+        with ctx.Pool(processes=args.n_processes, initializer=init_worker,
+                      initargs=(coarse_waveforms, fine_bank, psd, args)) as pool:
 
             results_iter = pool.imap_unordered(process_template, job_list)
             if not args.verbose:
