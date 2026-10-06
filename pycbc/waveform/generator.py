@@ -1487,35 +1487,35 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
                 pol = self.current_params['polarization']
                 refframe = self.current_params.get('tc_ref_frame',
                                                    'geocentric')
-                for detname, det in self.detectors.items():
-                    if det is None:
-                        # no detector response, just use + pol and shift time
-                        if 'tc' in self.current_params:
-                            rftc = self.rf_tc() + tshift
-                            hlm[detname][mode] = (
-                                apply_fd_time_shift(ulm_cos, rftc, copy=True),
-                                apply_fd_time_shift(ulm_sin, rftc, copy=True))
-                        else:
-                            hlm[detname][mode] = (ulm_cos.copy(), 
+            for detname, det in self.detectors.items():
+                if det is None:
+                    # no detector response, just use + pol and shift time
+                    if 'tc' in self.current_params:
+                        rftc = self.rf_tc() + tshift
+                        hlm[detname][mode] = (
+                            apply_fd_time_shift(ulm_cos, rftc, copy=True),
+                            apply_fd_time_shift(ulm_sin, rftc, copy=True))
+                    else:
+                        hlm[detname][mode] = (ulm_cos.copy(), 
                                                   ulm_sin.copy())
-                        continue
-                    tc = det.arrival_time(ref_tc, ra, dec, refframe)
-                    # apply response function
-                    fp, fc = det.antenna_pattern(ra, dec, pol, tc)
-                    thishlmc = fp*ulm_cos + fc*vlm_cos
-                    thishlms = fp*ulm_sin + fc*vlm_sin
-                    # apply time shift
-                    dethlm_cos = apply_fd_time_shift(thishlmc, tc+tshift,
+                    continue
+                tc = det.arrival_time(ref_tc, ra, dec, refframe)
+                # apply response function
+                fp, fc = det.antenna_pattern(ra, dec, pol, tc)
+                thishlmc = fp*ulm_cos + fc*vlm_cos
+                thishlms = fp*ulm_sin + fc*vlm_sin
+                # apply time shift
+                dethlm_cos = apply_fd_time_shift(thishlmc, tc+tshift,
                                                  copy=True)
-                    dethlm_sin = apply_fd_time_shift(thishlms, tc+tshift,
+                dethlm_sin = apply_fd_time_shift(thishlms, tc+tshift,
                                                  copy=True)
-                    if self.recalib:
-                        # recalibrate with given calibration model
-                        dethlm_cos = self.recalib[detname].map_to_adjust(
-                            dethlm_cos, **self.current_params)
-                        dethlm_sin = self.recalib[detname].map_to_adjust(
-                            dethlm_sin, **self.current_params)
-                    hlm[detname][mode] = (dethlm_cos, dethlm_sin)
+                if self.recalib:
+                    # recalibrate with given calibration model
+                    dethlm_cos = self.recalib[detname].map_to_adjust(
+                        dethlm_cos, **self.current_params)
+                    dethlm_sin = self.recalib[detname].map_to_adjust(
+                        dethlm_sin, **self.current_params)
+                hlm[detname][mode] = (dethlm_cos, dethlm_sin)
             if self.gates is not None:
                 # resize all to nearest power of 2
                 hclms = {}
