@@ -348,7 +348,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 if det not in self.dets:
                     self.dets[det] = Detector(det)
                 tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
-            
+
                 if self.precalc_antenna_factors:
                     fp, fc, dt = self.get_precalc_antenna_factors(det)
                     pol_phase = numpy.exp(-2.0j * params['polarization'])

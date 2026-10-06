@@ -84,7 +84,7 @@ def set_sim_data(inj, field, data):
 def projector(detector_name, inj, hp, hc, distance_scale=1):
     """ Use the injection row to project the polarizations into the
     detector frame.
-    
+
     If ``detector_name`` is 'RF' (radiation frame), no detector response is
     applied. The plus polarization shifted to the input ``tc`` is treated as
     the output. In this case, ``ra``, ``dec``, and ``polarization`` are not
@@ -92,7 +92,7 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     """
     hp /= distance_scale
     hc /= distance_scale
-    
+
     if detector_name != 'RF':
         detector = Detector(detector_name)
         try:
@@ -104,7 +104,7 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
 
     try:
         tc = inj.tc
-    except:
+    except AttributeError:
         tc = inj.time_geocent
     hp.start_time += tc
     hc.start_time += tc

@@ -570,18 +570,18 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
                     "variable args.")
         self.detector_names = sorted(self.detectors.keys())
         self.gates = gates
-    
+
     @property
     def has_response(self):
         """Flag whether any of the detectors require a detector response (i.e.
         anything other than the radiation frame (RF)).
         """
         return any(det is not None for det in self.detectors.values())
-    
+
     def rf_tc(self):
         """Evaluate the geocentric coalescence time if sampling in a frame
         other than geocentric.
-        
+
         If generating in the radiation frame (RF), the given tc value is
         assumed to be in the geocentric frame (i.e., no transformations are
         applied). If the given tc is sampled in a detector reference frame
@@ -1417,7 +1417,6 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
     variable_args : tuple
         The list of names of arguments that are passed to the generate
         function.
-
     """
     location_args = set(['tc', 'ra', 'dec'])
     """ set(['tc', 'ra', 'dec']):
@@ -1496,7 +1495,7 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
                             apply_fd_time_shift(ulm_cos, rftc, copy=True),
                             apply_fd_time_shift(ulm_sin, rftc, copy=True))
                     else:
-                        hlm[detname][mode] = (ulm_cos.copy(), 
+                        hlm[detname][mode] = (ulm_cos.copy(),
                                                   ulm_sin.copy())
                     continue
                 tc = det.arrival_time(ref_tc, ra, dec, refframe)
