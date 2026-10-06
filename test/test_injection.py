@@ -20,10 +20,11 @@ Unit test for PyCBC's injection module.
 
 import tempfile
 import lal
-from pycbc.types import TimeSeries, FieldArray
+from pycbc.types import TimeSeries
 from pycbc.detector import Detector, get_available_detectors
 from pycbc.inject import InjectionSet
 from pycbc.waveform import get_td_waveform
+from pycbc.io import FieldArray
 import unittest
 import numpy
 import itertools
