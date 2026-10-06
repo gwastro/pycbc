@@ -33,15 +33,12 @@ def compute_batch_chisq(ids_local, t_idxs, snrs,
                         args):
     """Assign a power chisq value to a batch of same-segment triggers.
 
-    The FIR/ratio engine only produces SNR, so chisq has to be computed
-    separately here by reconstructing the fine template's filter, decimated,
-    from the ratio filter and the coarse template's cached SNR. That
-    reconstruction is the expensive step, so rather than doing it for every
-    trigger, this walks
-    triggers from highest SNR down, computes chisq once per trigger it
-    visits, and broadcasts that value to every other unassigned trigger in
-    the batch within chisq_window seconds of it -- capped at
-    chisq_iterations distinct regenerations.
+    The engine only produces SNR, so chisq is computed here by
+    reconstructing the fine template's filter, decimated, from the ratio
+    filter and the coarse template's cached SNR. That is the expensive
+    step, so this walks triggers from highest SNR down, computes chisq once
+    per trigger it visits, and gives that value to every other unassigned
+    trigger within chisq_window seconds -- at most chisq_iterations times.
 
     Parameters
     ----------
@@ -125,11 +122,8 @@ def compute_batch_chisq(ids_local, t_idxs, snrs,
             dfr = df / refine
             ratio = filters_f[local_id]
 
-            # _ref_weight depends only on the coarse reference template
-            # and psd, both fixed for the whole batch, so it is computed
-            # once and reused across triggers. Interpolating instead of
-            # exactly decimating avoids handling delta_f mismatches
-            # between the ratio filter's resolution and the data's.
+            # fixed for the whole batch, so computed once. Interpolating
+            # rather than decimating avoids a delta_f mismatch.
             if _ref_weight is None:
                 dec = int(dfr / stilde.delta_f)
                 w = ref_template[::dec] / stilde.psd[::dec] ** 0.5
@@ -369,7 +363,7 @@ def main():
         for i, coarse_idx in enumerate(bank.coarse_indices):
             ref_template = bank.get_coarse_template(coarse_idx)
             taps, counts, fine_indices = bank.get_firs(coarse_idx)
-            filters_f, n_taps_max = engine.prepare_filters(taps, counts)
+            filters_f, n_taps = engine.prepare_filters(taps, counts)
             logging.info(f"  Ratio Batch {i+1}/{n_coarse}, {len(taps)} FIR templates")
 
             for s_num, stilde in enumerate(segments):
@@ -377,7 +371,7 @@ def main():
                 t1 = time.time()
 
                 ids_local, t_idxs, snrs, tstarts, h_norm = engine.process_segment(
-                    stilde, stilde.psd, ref_template, filters_f, counts,
+                    stilde, stilde.psd, ref_template, filters_f, n_taps,
                     np.arange(len(fine_indices)),
                     valid_slice=stilde.analyze,
                 )

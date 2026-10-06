@@ -35,24 +35,18 @@ class MatchedFilterRatioControl(object):
         self.fir_fft_len = fir_fft_length
         self.batch_size = batch_size
 
-        # Taps are generated at tap_sample_rate but filtered against data at
-        # engine_sample_rate; the ratio must be an exact integer so the
-        # high-resolution FFT below preserves delta_f.
-        exact_ratio = self.tap_sr / self.engine_sr
-        self.decimation_factor = int(np.round(exact_ratio))
-        if abs(exact_ratio - self.decimation_factor) > 1e-5 or self.decimation_factor < 1:
+        # Both buffers span the same delta_f, so the tap buffer's length
+        # scales with the rate ratio.
+        exact_len = self.fir_fft_len * self.tap_sr / self.engine_sr
+        self.tap_fft_len = int(np.round(exact_len))
+        if abs(exact_len - self.tap_fft_len) > 1e-5 or self.tap_fft_len < 1:
             raise ValueError(
-                f"Multi-rate Error: The bank sample rate ({self.tap_sr} Hz) must be "
-                f"an exact integer multiple of the engine sample "
-                f"rate ({self.engine_sr} Hz).\n"
-                f"Calculated ratio was {exact_ratio:.4f}. Please use an engine "
-                f"sample rate that evenly divides the bank sample rate."
+                f"Multi-rate Error: the bank sample rate ({self.tap_sr} Hz) "
+                f"and the engine sample rate ({self.engine_sr} Hz) must be in "
+                f"a ratio that divides the FIR FFT length "
+                f"({self.fir_fft_len}); this one asks for a tap buffer of "
+                f"{exact_len:.4f} samples."
             )
-        # Scaling by decimation_factor keeps delta_f matched between a
-        # high_res_fft_len buffer at the tap rate and a fir_fft_len buffer at
-        # the engine rate, so keeping only the first fir_fft_len bins below
-        # is a decimation rather than a change in frequency resolution.
-        self.high_res_fft_len = self.fir_fft_len * self.decimation_factor
 
         # Plans are keyed by (nbatch, size) and cached for the engine's
         # lifetime: n_filters is not generally a multiple of batch_size, so a
@@ -86,14 +80,16 @@ class MatchedFilterRatioControl(object):
         Prepare frequency-domain filters for a batch of taps.
         """
         n_filters, n_taps = fir_taps.shape
-        if n_taps >= self.fir_fft_len:
-             raise ValueError("FIR Taps (%d) exceed FFT block length (%d)" %
-                              (n_taps, self.fir_fft_len))
+        if n_taps >= self.tap_fft_len:
+             raise ValueError("FIR Taps (%d) exceed the tap FFT length (%d)" %
+                              (n_taps, self.tap_fft_len))
 
-        n_taps_max = int(np.max(tap_counts))
+        # the overlap-save guard works in engine samples, not bank ones
+        n_taps = np.ceil(np.asarray(tap_counts)
+                         * self.fir_fft_len / self.tap_fft_len).astype(int)
 
         filters_f = self._fft_all_filters(fir_taps, tap_counts)
-        return filters_f, n_taps_max
+        return filters_f, n_taps
 
     def process_segment(self, stilde, psd, ref_template, filters_f, n_taps, indices,
                         valid_slice=None):
@@ -112,8 +108,7 @@ class MatchedFilterRatioControl(object):
             h_norm=h_norm
         )
 
-        decimate = int(np.round(self.tap_sr / self.engine_sr))
-        self.ref_snr = snr.numpy() * (norm * stilde.delta_t)  / decimate
+        self.ref_snr = snr.numpy() * (norm * stilde.delta_t)
 
         local_idxs, t_idxs, snr_vals, tstarts = self._execute_blocked_kernel(
             self.ref_snr, filters_f, n_taps, valid_slice
@@ -130,13 +125,14 @@ class MatchedFilterRatioControl(object):
         n_filters, n_taps_alloc = taps.shape
         filters_f = np.zeros((n_filters, self.fir_fft_len), dtype=np.complex64)
 
-        high_res_fft_len = self.high_res_fft_len
+        tap_fft_len = self.tap_fft_len
+        rate_ratio = self.fir_fft_len / tap_fft_len
 
         for start in range(0, n_filters, self.batch_size):
             end = min(start + self.batch_size, n_filters)
             batch_len = end - start
 
-            plan, in_view, out_view = self._get_fft_plan(batch_len, high_res_fft_len)
+            plan, in_view, out_view = self._get_fft_plan(batch_len, tap_fft_len)
 
             in_view[:] = 0.0
             tmp_taps = taps[start:end]
@@ -148,24 +144,28 @@ class MatchedFilterRatioControl(object):
             current_counts = counts[start:end]
             roll_offsets = -(current_counts // 2)
 
-            cols_high = np.arange(high_res_fft_len)
+            cols_high = np.arange(tap_fft_len)
             rows = np.arange(batch_len)[:, None]
-            shifted_cols_high = (cols_high[None, :] - roll_offsets[:, None]) % high_res_fft_len
+            shifted_cols_high = (cols_high[None, :] - roll_offsets[:, None]) % tap_fft_len
 
             current_data = in_view.copy()
             in_view[:] = current_data[rows, shifted_cols_high]
 
             plan.execute()
 
-            # high_res_fft_len spans the bank's full tap sample rate; only
-            # the first fir_fft_len bins fall within the engine's decimated
-            # frequency range, so slicing to them is the decimation step.
-            fft_sliced = out_view[:, :self.fir_fft_len]
+            # drop the band the search cannot reach, or pad the band the
+            # taps have no content in
+            if tap_fft_len >= self.fir_fft_len:
+                fft_out = out_view[:, :self.fir_fft_len]
+            else:
+                fft_out = np.zeros((batch_len, self.fir_fft_len),
+                                   dtype=out_view.dtype)
+                fft_out[:, :tap_fft_len] = out_view
 
             # Conjugate so multiplying against the data spectrum and
             # inverse-transforming (_execute_blocked_kernel) yields a
             # correlation rather than a convolution.
-            filters_f[start:end] = np.conj(fft_sliced)
+            filters_f[start:end] = np.conj(fft_out) * rate_ratio
 
         return filters_f
 
