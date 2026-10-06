@@ -98,7 +98,7 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
         try:
             ra = inj.ra
             dec = inj.dec
-        except:
+        except AttributeError:
             ra = inj.longitude
             dec = inj.latitude
 
