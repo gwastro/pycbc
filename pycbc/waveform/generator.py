@@ -1581,13 +1581,25 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
                 tshift = 0.0
             ulm_cos._epoch = vlm_cos._epoch = self._epoch
             ulm_sin._epoch = vlm_sin._epoch = self._epoch
-            if self.detector_names != ["RF"]:
+            if self.has_response:
                 ra = self.current_params["ra"]
                 dec = self.current_params["dec"]
                 ref_tc = self.current_params["tc"]
                 pol = self.current_params["polarization"]
-                refframe = self.current_params.get("tc_ref_frame", "geocentric")
+                refframe = self.current_params.get("tc_ref_frame",
+                                                   "geocentric")
                 for detname, det in self.detectors.items():
+                    if det is None:
+                        # no detector response, just use + pol and shift time
+                        if "tc" in self.current_params:
+                            rftc = self.rf_tc() + tshift
+                            hlm[detname][mode] = (
+                                apply_fd_time_shift(ulm_cos, rftc, copy=True),
+                                apply_fd_time_shift(ulm_sin, rftc, copy=True))
+                        else:
+                            hlm[detname][mode] = (ulm_cos.copy(),
+                                                  ulm_sin.copy())
+                        continue
                     tc = det.arrival_time(ref_tc, ra, dec, refframe)
                     # apply response function
                     fp, fc = det.antenna_pattern(ra, dec, pol, tc)
@@ -1605,16 +1617,6 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
                             dethlm_sin, **self.current_params
                         )
                     hlm[detname][mode] = (dethlm_cos, dethlm_sin)
-            else:
-                # no detector response, just us + pol and apply time shift
-                if "tc" in self.current_params:
-                    ulm_cos = apply_fd_time_shift(
-                        ulm_cos, self.current_params["tc"] + tshift, copy=False
-                    )
-                    ulm_sin = apply_fd_time_shift(
-                        ulm_sin, self.current_params["tc"] + tshift, copy=False
-                    )
-                hlm["RF"][mode] = (ulm_cos, ulm_sin)
             if self.gates is not None:
                 # resize all to nearest power of 2
                 hclms = {}
