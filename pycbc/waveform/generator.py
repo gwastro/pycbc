@@ -658,7 +658,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
             raise KeyError('Sampling tc in a detector reference frame, but '
                            'sky location parameters are not supplied')
         return tc - Detector(refframe).time_delay_from_earth_center(
-            self.current_params['ra'], self.current_params['dec'])
+            self.current_params['ra'], self.current_params['dec'], tc)
 
     def set_epoch(self, epoch):
         """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
@@ -814,6 +814,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
                         hp, self.rf_tc()+tshift, copy=True)
                 else:
                     h[detname] = hp.copy()
+                continue
             tc = det.arrival_time(ref_tc, ra, dec, refframe)
             # apply response function
             fp, fc = det.antenna_pattern(ra, dec, pol, tc)
@@ -825,13 +826,6 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
                 h[detname] = \
                     self.recalib[detname].map_to_adjust(h[detname],
                         **self.current_params)
-        else:
-            # no detector response, just use the + polarization
-            if "tc" in self.current_params:
-                hp = apply_fd_time_shift(
-                    hp, self.current_params["tc"] + tshift, copy=False
-                )
-            h["RF"] = hp
         if self.gates is not None:
             # resize all to nearest power of 2
             for d in h.values():
@@ -954,51 +948,20 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
             tshift = 0.0
         hp._epoch = hc._epoch = self._epoch
         h = {}
-<<<<<<< HEAD
-        if self.detector_names != ["RF"]:
-            for detname, det in self.detectors.items():
-                refframe = self.current_params.get("tc_ref_frame", "geocentric")
-                ra = self.current_params["ra"]
-                dec = self.current_params["dec"]
-                ref_tc = self.current_params["tc"]
-                tc = det.arrival_time(ref_tc, ra, dec, refframe)
-                # apply time shift
-                dethp = apply_fd_time_shift(hp, tc + tshift, copy=True)
-                dethc = apply_fd_time_shift(hc, tc + tshift, copy=True)
-                if self.recalib:
-                    # recalibrate with given calibration model
-                    dethp = self.recalib[detname].map_to_adjust(
-                        dethp, **self.current_params
-                    )
-                    dethc = self.recalib[detname].map_to_adjust(
-                        dethc, **self.current_params
-                    )
-                h[detname] = (dethp, dethc)
-        else:
-            # no detector response, just use the + polarization
-            if "tc" in self.current_params:
-                hp = apply_fd_time_shift(
-                    hp, self.current_params["tc"] + tshift, copy=False
-                )
-                hc = apply_fd_time_shift(
-                    hc, self.current_params["tc"] + tshift, copy=False
-                )
-            h["RF"] = (hp, hc)
-=======
         for detname, det in self.detectors.items():
             if det is None:
                 # handle for radiation frame
-                if 'tc' in self.current_params:
-                    rftc = self.tf_tc() + tshift
+                if "tc" in self.current_params:
+                    rftc = self.rf_tc() + tshift
                     h[detname] = (apply_fd_time_shift(hp, rftc, copy=True),
                                   apply_fd_time_shift(hc, rftc, copy=True))
                 else:
                     h[detname] = (hp.copy(), hc.copy())
                 continue
-            refframe = self.current_params.get('tc_ref_frame', 'geocentric')
-            ra = self.current_params['ra']
-            dec = self.current_params['dec']
-            ref_tc = self.current_params['tc']
+            refframe = self.current_params.get("tc_ref_frame", "geocentric")
+            ra = self.current_params["ra"]
+            dec = self.current_params["dec"]
+            ref_tc = self.current_params["tc"]
             tc = det.arrival_time(ref_tc, ra, dec, refframe)
             # apply time shift
             dethp = apply_fd_time_shift(hp, tc+tshift, copy=True)
@@ -1266,48 +1229,16 @@ class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
             tshift = 0.0
         hpc._epoch = hcc._epoch = hps._epoch = hcs._epoch = self._epoch
         h = {}
-<<<<<<< HEAD
-        if self.detector_names != ["RF"]:
+        if self.has_response:
             ra = self.current_params["ra"]
             dec = self.current_params["dec"]
             ref_tc = self.current_params["tc"]
             pol = self.current_params["polarization"]
             refframe = self.current_params.get("tc_ref_frame", "geocentric")
-            for detname, det in self.detectors.items():
-                tc = det.arrival_time(ref_tc, ra, dec, refframe)
-                # apply response function
-                fp, fc = det.antenna_pattern(ra, dec, pol, tc)
-                thishc = fp * hpc + fc * hcc
-                thishs = fp * hps + fc * hcs
-                # apply time shift
-                hc = apply_fd_time_shift(thishc, tc + tshift, copy=False)
-                hs = apply_fd_time_shift(thishs, tc + tshift, copy=False)
-                if self.recalib:
-                    # recalibrate with given calibration model
-                    hc = self.recalib[detname].map_to_adjust(hc, **self.current_params)
-                    hs = self.recalib[detname].map_to_adjust(hs, **self.current_params)
-                h[detname] = (hc, hs)
-        else:
-            # no detector response, just use the + polarization
-            if "tc" in self.current_params:
-                hpc = apply_fd_time_shift(
-                    hpc, self.current_params["tc"] + tshift, copy=False
-                )
-                hps = apply_fd_time_shift(
-                    hps, self.current_params["tc"] + tshift, copy=False
-                )
-            h["RF"] = (hpc, hps)
-=======
-        if self.has_response:
-            ra = self.current_params['ra']
-            dec = self.current_params['dec']
-            ref_tc = self.current_params['tc']
-            pol = self.current_params['polarization']
-            refframe = self.current_params.get('tc_ref_frame', 'geocentric')
         for detname, det in self.detectors.items():
             if det is None:
                 # handle for radiation frame
-                if 'tc' in self.current_params:
+                if "tc" in self.current_params:
                     rftc = self.rf_tc() + tshift
                     h[detname] = (apply_fd_time_shift(hpc, rftc, copy=True),
                                   apply_fd_time_shift(hps, rftc, copy=True))
@@ -1329,7 +1260,6 @@ class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
                 hs = self.recalib[detname].map_to_adjust(hs,
                         **self.current_params)
             h[detname] = (hc, hs)
->>>>>>> f065f807c (rework functionality to allow for mixed cases (i.e., specifying RF and known detectors))
         if self.gates is not None:
             # resize all to nearest power of 2
             for ifo, (hc, hs) in h.items():
@@ -1463,41 +1393,10 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
             else:
                 tshift = 0.0
             ulm._epoch = vlm._epoch = self._epoch
-<<<<<<< HEAD
-            if self.detector_names != ["RF"]:
-                for detname, det in self.detectors.items():
-                    refframe = self.current_params.get("tc_ref_frame", "geocentric")
-                    ra = self.current_params["ra"]
-                    dec = self.current_params["dec"]
-                    ref_tc = self.current_params["tc"]
-                    tc = det.arrival_time(ref_tc, ra, dec, refframe)
-                    # apply time shift
-                    detulm = apply_fd_time_shift(ulm, tc + tshift, copy=True)
-                    detvlm = apply_fd_time_shift(vlm, tc + tshift, copy=True)
-                    if self.recalib:
-                        # recalibrate with given calibration model
-                        detulm = self.recalib[detname].map_to_adjust(
-                            detulm, **self.current_params
-                        )
-                        detvlm = self.recalib[detname].map_to_adjust(
-                            detvlm, **self.current_params
-                        )
-                    h[detname][mode] = (detulm, detvlm)
-            else:
-                # no detector response, just apply time shift
-                if "tc" in self.current_params:
-                    ulm = apply_fd_time_shift(
-                        ulm, self.current_params["tc"] + tshift, copy=False
-                    )
-                    vlm = apply_fd_time_shift(
-                        vlm, self.current_params["tc"] + tshift, copy=False
-                    )
-                h["RF"][mode] = (ulm, vlm)
-=======
             for detname, det in self.detectors.items():
                 if det is None:
                     #  handle for radiation frame
-                    if 'tc' in self.current_params:
+                    if "tc" in self.current_params:
                         rftc = self.rf_tc() + tshift
                         h[detname][mode] = (
                             apply_fd_time_shift(ulm, rftc, copy=True),
@@ -1505,10 +1404,10 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
                     else:
                         h[detname][mode] = (ulm.copy(), vlm.copy())
                     continue
-                refframe = self.current_params.get('tc_ref_frame', 'geocentric')
-                ra = self.current_params['ra']
-                dec = self.current_params['dec']
-                ref_tc = self.current_params['tc']
+                refframe = self.current_params.get("tc_ref_frame", "geocentric")
+                ra = self.current_params["ra"]
+                dec = self.current_params["dec"]
+                ref_tc = self.current_params["tc"]
                 tc = det.arrival_time(ref_tc, ra, dec, refframe)
                 # apply time shift
                 detulm = apply_fd_time_shift(ulm, tc+tshift, copy=True)
@@ -1520,7 +1419,6 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
                     detvlm = self.recalib[detname].map_to_adjust(
                         detvlm, **self.current_params)
                 h[detname][mode] = (detulm, detvlm)
->>>>>>> f065f807c (rework functionality to allow for mixed cases (i.e., specifying RF and known detectors))
             if self.gates is not None:
                 # resize all to nearest power of 2
                 ulms = {}
