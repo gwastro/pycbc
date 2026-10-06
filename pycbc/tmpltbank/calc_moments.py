@@ -326,7 +326,7 @@ def interpolate_psd(psd_f, psd_amp, deltaF):
 
 def calculate_moment(psd_f, psd_amp, fmin, fmax, f0, funct,
                      norm=None, vary_fmax=False, vary_density=None):
-    """
+    r"""
     Function for calculating one of the integrals used to construct a template
     bank placement metric. The integral calculated will be
 

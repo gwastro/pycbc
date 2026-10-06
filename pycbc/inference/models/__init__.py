@@ -35,7 +35,8 @@ from .marginalized_gaussian_noise import MarginalizedTime
 from .brute_marg import BruteParallelGaussianMarginalize
 from .brute_marg import BruteLISASkyModesMarginalize
 from .gated_gaussian_noise import (GatedGaussianNoise, GatedGaussianMargPol,
-                                   GatedGaussianMargPhase)
+                                   GatedGaussianMargPhase,
+                                   GatedGaussianMultimodeMargPhase)
 from .single_template import SingleTemplate
 from .relbin import Relative, RelativeTime, RelativeTimeDom
 from .hierarchical import (HierarchicalModel, MultiSignalModel,
@@ -54,7 +55,7 @@ def _call_global_model_logprior(*args, **kwds):
     """Private function for a calling global's logprior.
 
     This is needed for samplers that use a separate function for the logprior,
-    like ``emcee_pt``.
+    like ``ptemcee``.
     """
     # pylint:disable=not-callable
     return _global_instance(*args, callstat='logprior', **kwds)
@@ -204,6 +205,7 @@ _models = {_cls.name: _cls for _cls in (
     GatedGaussianNoise,
     GatedGaussianMargPol,
     GatedGaussianMargPhase,
+    GatedGaussianMultimodeMargPhase,
     SingleTemplate,
     Relative,
     RelativeTime,

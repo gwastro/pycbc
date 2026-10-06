@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+# Copyright (C) 2026 Syazwan Yusuf
+"""
+Convert single-detector gravitational-wave strain data to an audio file
+"""
+
+import argparse
+import logging
+
+import pycbc.strain
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument("--output-file", required=True, help="Output plot")
+parser.add_argument(
+    "--center-time",
+    type=float,
+    help="Center plot on the given GPS time. If omitted, use "
+    "center of interval set via --gps-start-time and "
+    "--gps-end-time",
+)
+parser.add_argument(
+    "--time-window",
+    required=True,
+    metavar="START,END",
+    help="Use these set of times for time window. Should "
+    "be provided as start,end "
+    "where start/end time is relative to --center-time; "
+    "both are positive",
+)
+pycbc.strain.insert_strain_option_group(parser)
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose, default_level=1)
+
+if args.center_time is None:
+    center_time = (args.gps_start_time + args.gps_end_time) / 2.0
+else:
+    center_time = args.center_time
+# Set up the time window to be audified
+try:
+    split = args.time_window.split(",")
+    win_start = float(args.time_window.split(",")[0])
+    win_end = float(args.time_window.split(",")[1])
+    if win_start <= 0 or win_end <= 0:
+        raise RuntimeError
+except (RuntimeError, IndexError, ValueError):
+    parser.error(f"--time-window input error. Got {args.time_window}. See help.")
+
+logging.info("Loading Strain")
+strain = pycbc.strain.from_cli(args, pycbc.DYN_RANGE_FAC)
+
+rem_corrupted = True
+if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
+    rem_corrupted = False
+
+logging.info("Whitening")
+strain = strain.whiten(4, 4, remove_corrupted=rem_corrupted)
+
+logging.info("Slicing to specified region")
+strain_zoom = strain.time_slice(
+    args.center_time - win_start, args.center_time + win_end
+)
+logging.info("Saving audio to %s", args.output_file)
+strain_zoom.save_to_wav(args.output_file)

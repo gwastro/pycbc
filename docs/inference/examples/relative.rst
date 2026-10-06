@@ -13,7 +13,7 @@ To use this model you provide the near-peak parameters as fixed arguments as in
 the configuration file below.
 
 This example demonstrates using the ``relative`` model with the
-``emcee_pt`` sampler. First, we create the following configuration file:
+``ptemcee`` sampler. First, we create the following configuration file:
 
 .. literalinclude:: ../../../examples/inference/relative/relative.ini
    :language: ini
@@ -35,7 +35,7 @@ Now run:
 
 :download:`Download <../../../examples/inference/relative/run.sh>`
 
-This will run the ``emcee_pt`` sampler. When it is done, you will have a file called
+This will run the ``ptemcee`` sampler. When it is done, you will have a file called
 ``relative.hdf`` which contains the results. It should take about a minute or two to
 run.
 

@@ -5,7 +5,7 @@ import os
 import numpy
 from numpy import complex128, real, sqrt, sin, cos, angle, ceil, log
 from numpy import zeros, argmax, array
-from astropy.utils.data import download_file
+from pycbc.io import get_file
 from pycbc import DYN_RANGE_FAC
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc.pnutils import nearest_larger_binary_number
@@ -290,7 +290,7 @@ class TestChisq(unittest.TestCase):
         url = ('https://github.com/gwastro/pycbc-config/raw/master/'
                'test_data_files/{}')
         fname = f'skymaxtest_stilde_{idx}.hdf'
-        apy_fname = download_file(url.format(fname), cache=False)
+        apy_fname = get_file(url.format(fname), cache=True)
         # Astropy will not download with the .hdf extension, which we need,
         # so symlink
         os.symlink(apy_fname, fname)
@@ -311,7 +311,7 @@ class TestChisq(unittest.TestCase):
         #except:
         #    pass
         fname = f'skymaxtest_hplus_{jdx}.hdf'
-        apy_fname = download_file(url.format(fname), cache=False)
+        apy_fname = get_file(url.format(fname), cache=True)
         # Astropy will not download with the .hdf extension, which we need,
         # so symlink
         os.symlink(apy_fname, fname)
@@ -319,7 +319,7 @@ class TestChisq(unittest.TestCase):
         os.unlink(fname)
 
         fname = f'skymaxtest_hcross_{jdx}.hdf'
-        apy_fname = download_file(url.format(fname), cache=False)
+        apy_fname = get_file(url.format(fname), cache=True)
         # Astropy will not download with the .hdf extension, which we need,
         # so symlink
         os.symlink(apy_fname, fname)

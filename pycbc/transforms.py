@@ -2074,7 +2074,7 @@ class Log(BaseTransform):
 
 
 class Logit(BaseTransform):
-    """Applies a logit transform from an `inputvar` parameter to an `outputvar`
+    r"""Applies a logit transform from an `inputvar` parameter to an `outputvar`
     parameter. This is the inverse of the logistic transform.
 
     Typically, the input of the logit function is assumed to have domain
@@ -2201,10 +2201,7 @@ class Logit(BaseTransform):
         """
         x = maps[self._inputvar]
         # check that x is in bounds
-        isin = self._bounds.__contains__(x)
-        if isinstance(isin, numpy.ndarray):
-            isin = isin.all()
-        if not isin:
+        if not numpy.all(self._bounds.contains(x)):
             raise ValueError("one or more values are not in bounds")
         out = {self._outputvar: self.logit(x, self._a, self._b)}
         return self.format_output(maps, out)
@@ -2254,11 +2251,8 @@ class Logit(BaseTransform):
         """
         x = maps[self._inputvar]
         # check that x is in bounds
-        isin = self._bounds.__contains__(x)
-        if isinstance(isin, numpy.ndarray) and not isin.all():
+        if not numpy.all(self._bounds.contains(x)):
             raise ValueError("one or more values are not in bounds")
-        elif not isin:
-            raise ValueError("{} is not in bounds".format(x))
         return (self._b - self._a) / ((x - self._a) * (self._b - x))
 
     def inverse_jacobian(self, maps):
@@ -2683,7 +2677,7 @@ class Exponent(Log):
 
 
 class Logistic(Logit):
-    """Applies a logistic transform from an `input` parameter to an `output`
+    r"""Applies a logistic transform from an `input` parameter to an `output`
     parameter. This is the inverse of the logit transform.
 
     Typically, the output of the logistic function has range :math:`\in [0,1)`.

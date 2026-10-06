@@ -105,6 +105,10 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
     if cp.has_option("workflow-segments", "segments-veto-definer-url"):
         veto_definer = save_veto_definer(workflow.cp, out_dir)
 
+    cache = cp.has_option_tags("workflow-segments", 'enable-query-caching', tags)
+    if cache:
+        logger.info('Caching queries enabled')
+
     # Check for provided server
     server = "https://segments.ligo.org"
     if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
@@ -128,7 +132,7 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
     for ifo in workflow.ifos:
         flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
         key = ifo + ':' + name
-        
+
         if flag_str.upper() == "OFF":
             segs[key] = segments.segmentlist([])
         elif flag_str.upper() == "ON":
@@ -137,7 +141,7 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
         else:
             segs[key] = query_str(ifo, flag_str, start, end,
                                   source=source, server=server,
-                                  veto_definer=veto_definer)
+                                  veto_definer=veto_definer, cache=cache)
         logger.info("%s: got %s flags", ifo, option_name)
 
     return SegFile.from_segment_list_dict(name, segs,
@@ -161,8 +165,9 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     Returns
     --------
-    onsource : igwn_segments.segmentlistdict
-        A dictionary containing the on source segments for network IFOs
+    onsource : igwn_segments.segmentlistdict or None
+        A dictionary containing the on source segments for network IFOs,
+        or None if no segments are available that meet the requirements.
 
     offsource : igwn_segments.segmentlistdict
         A dictionary containing the off source segments for network IFOs
@@ -207,7 +212,10 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
                                  triggertime + minduration / 2. + padding])
         logger.warning("Available network segment shorter than minimum "
                        "allowed duration.")
-        return None, fail
+        offsource = segments.segmentlistdict()
+        for iifo in sciencesegs:
+            offsource[iifo] = segments.segmentlist([fail])
+        return None, offsource
 
     # Will segment duration be the maximum desired length or not?
     if abs(offsrc) >= maxduration + 2 * padding:
@@ -239,7 +247,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
                                     0.5 * maxduration))
 
     # Construct off-source
-    if (idealsegment in offsrc):
+    if idealsegment in offsrc:
         offsrc = idealsegment
 
     elif idealsegment[1] not in offsrc:
@@ -281,9 +289,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
     # Put segments into segmentlistdicts
     onsource = segments.segmentlistdict()
     offsource = segments.segmentlistdict()
-    ifos = ''
     for iifo in sciencesegs.keys():
-        ifos += str(iifo)
         onsource[iifo] = onsrc
         offsource[iifo] = offsrc
 
@@ -319,7 +325,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     min_seg = segments.segment(triggertime - onbefore - minbefore - padding,
                                triggertime + onafter + minafter + padding)
     scisegs = segments.segmentlistdict({ifo: sciencesegs[ifo]
-            for ifo in sciencesegs.keys() if min_seg in sciencesegs[ifo]
+            for ifo in sciencesegs if min_seg in sciencesegs[ifo]
             and abs(sciencesegs[ifo]) >= minduration})
     # Find highest number of IFOs that give an acceptable coherent segment
     num_ifos = len(scisegs)
@@ -333,35 +339,34 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
             logger.info("Calculating optimal segment for %s.", ifos)
             segs = segments.segmentlistdict({ifo: scisegs[ifo]
                                              for ifo in ifo_combo})
-            onsource[ifos], offsource[ifos] = get_triggered_coherent_segment(\
+            onsource[ifos], offsource[ifos] = get_triggered_coherent_segment(
                     workflow, segs)
 
         # Which combination gives the longest coherent segment?
-        valid_combs = [iifos for iifos in onsource.keys()
+        valid_combs = [iifos for iifos in onsource
                        if onsource[iifos] is not None]
 
         if len(valid_combs) == 0:
             # If none, offsource dict will contain segments showing criteria
             # that have not been met, for use in plotting
-            if len(offsource.keys()) > 1:
-                seg_lens = {ifos: abs(next(offsource[ifos].values())[0])
-                            for ifos in offsource.keys()}
-                best_comb = max(seg_lens.iterkeys(),
-                                key=(lambda key: seg_lens[key]))
-            else:
-                best_comb = tuple(offsource.keys())[0]
+            seg_lens = {
+                ifos: abs(next(iter(offsource[ifos].values()))[0])
+                for ifos in offsource
+            }
+            best_comb = max(seg_lens, key=seg_lens.get)
             logger.info("No combination of %d IFOs with suitable science "
                         "segment.", num_ifos)
         else:
             # Identify best analysis segment
-            if len(valid_combs) > 1:
-                seg_lens = {ifos: abs(next(offsource[ifos].values())[0])
-                            for ifos in valid_combs}
-                best_comb = max(seg_lens.iterkeys(),
-                                key=(lambda key: seg_lens[key]))
-            else:
-                best_comb = valid_combs[0]
-            logger.info("Calculated science segments.")
+            seg_lens = {
+                ifos: abs(next(iter(offsource[ifos].values()))[0])
+                for ifos in valid_combs
+            }
+            best_comb = max(seg_lens, key=seg_lens.get)
+            logger.info(
+                "Calculated science segments, best combination is %s",
+                best_comb
+            )
 
             offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
             segmentsUtils.tosegwizard(open(offsourceSegfile, "w"),
@@ -376,7 +381,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
             bufferright = int(cp.get('workflow-exttrig_segments',
                                      'num-buffer-after'))
             onlen = onbefore + onafter
-            bufferSegment = segments.segment(\
+            bufferSegment = segments.segment(
                     triggertime - onbefore - bufferleft * onlen,
                     triggertime + onafter + bufferright * onlen)
             bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
@@ -391,6 +396,11 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     try:
         return None, offsource[best_comb], None
     except UnboundLocalError:
+        # Catches the case where the while loop above is never taken.
+        min_seg = segments.segmentlistdict({
+            ifo: segments.segmentlist([min_seg])
+            for ifo in sciencesegs
+        })
         return None, min_seg, None
 
 def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
@@ -432,6 +442,10 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
     if cp.has_option("workflow-segments", "segments-veto-definer-url"):
         veto_definer = save_veto_definer(workflow.cp, out_dir)
 
+    cache = cp.has_option_tags("workflow-segments", 'enable-query-caching', tags)
+    if cache:
+        logger.info('Caching query')
+
     # Check for provided server
     server = "https://segments.ligo.org"
     if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
@@ -461,7 +475,7 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
                 key = ifo + ':' + flag_name
                 segs[key] = query_str(ifo, flag, start, end,
                                       source=source, server=server,
-                                      veto_definer=veto_definer)
+                                      veto_definer=veto_definer, cache=cache)
                 logger.info("%s: got %s segments", ifo, flag_name)
         else:
             logger.info("%s: no segments requested", ifo)

@@ -19,7 +19,6 @@ Open Science Center (GWOSC).
 """
 import logging
 import json
-from urllib.request import urlopen
 
 from pycbc.io import get_file
 from pycbc.frame import read_frame
@@ -49,6 +48,7 @@ def get_run(time, ifo=None):
             1180911618 <= time <= 1180982427 and ifo == 'H1',
             'BKGW170608_16KHZ_R1'
         ),
+        (1396417050 <= time <= 1422118818, 'O4b_16KHZ_R1'),
         (1368195220 <= time <= 1389456018, 'O4a_16KHZ_R1'),
         (1253977219 <= time <= 1320363336, 'O3b_16KHZ_R1'),
         (1238166018 <= time <= 1253977218, 'O3a_16KHZ_R1'),
@@ -98,7 +98,7 @@ def gwosc_frame_json(ifo, start_time, end_time):
     url = _GWOSC_URL % (run, ifo, int(start_time), int(end_time))
 
     try:
-        return json.loads(urlopen(url).read().decode())
+        return json.load(open(get_file(url, cache=False), 'r'))
     except Exception as exc:
         msg = ('Failed to find gwf files for '
                f'ifo={ifo}, run={run}, between {start_time}-{end_time}')

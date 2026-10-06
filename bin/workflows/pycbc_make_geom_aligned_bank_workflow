@@ -1,0 +1,214 @@
+#!/usr/bin/env python
+
+import os
+import argparse
+import logging
+import pycbc
+import pycbc.workflow as wf
+
+
+class GeomAlignedBankSetupExecutable(wf.Executable):
+    current_retention_level = wf.Executable.ALL_TRIGGERS
+    file_input_options = wf.Executable.file_input_options + [
+        "--asd-file",
+        "--psd-file",
+    ]
+
+    def create_node(self, analysis_time, num_split_jobs, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+        intermediate_file = node.new_output_file_opt(
+            analysis_time,
+            ".hdf",
+            "--output-file",
+            tags=self.tags + extra_tags + ["INTERMEDIATE"],
+        )
+        metadata_file = node.new_output_file_opt(
+            analysis_time,
+            ".xml",
+            "--metadata-file",
+            tags=self.tags + extra_tags + ["METADATA"],
+        )
+        node.add_opt("--num-split-jobs", num_split_jobs)
+        return node, intermediate_file, metadata_file
+
+
+class GeomAligned2DStackExecutable(wf.Executable):
+    current_retention_level = wf.Executable.MERGED_TRIGGERS
+    file_input_options = ["--asd-file", "--psd-file"]
+
+    def create_node(
+        self, input_file, split_bank_num, analysis_time, extra_tags=None
+    ):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+        node.add_input_opt("--input-file", input_file)
+        node.add_opt("--split-bank-num", str(split_bank_num))
+        node.new_output_file_opt(
+            analysis_time,
+            ".hdf",
+            "--output-file",
+            tags=self.tags + extra_tags + ["bank"],
+        )
+        return node
+
+
+class AlignedBankCatExecutable(wf.Executable):
+    current_retention_level = wf.Executable.FINAL_RESULT
+    file_input_options = ["--asd-file", "--psd-file"]
+
+    def create_node(
+        self,
+        input_file_list,
+        metadata_file,
+        analysis_time,
+        output_file_path=None,
+    ):
+        node = wf.Executable.create_node(self)
+        node.add_input_list_opt("--input-files", input_file_list)
+        node.add_input_opt("--metadata-file", metadata_file)
+        if output_file_path is None:
+            node.new_output_file_opt(
+                analysis_time, ".h5", "--output-file", tags=self.tags
+            )
+        else:
+            out_file = wf.File.from_path(output_file_path)
+            if self.retain_files:
+                if not os.path.isabs(output_file_path):
+                    out_file.storage_path = os.path.join(
+                        self.out_dir, output_file_path
+                    )
+                else:
+                    out_file.storage_path = output_file_path
+            node.add_output_opt("--output-file", out_file)
+        return node
+
+
+class TmpltbankToChiParams(wf.Executable):
+    current_retention_level = wf.Executable.ALL_TRIGGERS
+    file_input_options = ["--asd-file", "--psd-file"]
+
+    def create_node(self, input_bank, analysis_time):
+        node = wf.Executable.create_node(self)
+        node.add_input_opt("--input-bank", input_bank)
+        node.new_output_file_opt(
+            analysis_time, ".dat", "--output-file", tags=self.tags
+        )
+        return node
+
+
+class BankVerification(wf.Executable):
+    current_retention_level = wf.Executable.FINAL_RESULT
+    file_input_options = ["--asd-file", "--psd-file"]
+
+    def create_node(self, input_bank, analysis_time):
+        node = wf.Executable.create_node(self)
+        node.add_input_opt("--input-bank", input_bank)
+        node.new_output_file_opt(
+            analysis_time, ".png", "--histogram-output-file", tags=self.tags
+        )
+        return node
+
+
+_desc = "Workflow generator for geometric aligned spin bank."
+parser = argparse.ArgumentParser(description=_desc)
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument(
+    "--output-file",
+    type=str,
+    default="bank_output.h5",
+    help="Specify the output file name.",
+)
+
+wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+workflow = wf.Workflow(args)
+wf.makedir(args.output_dir)
+
+num_split_jobs = int(
+    workflow.cp.get_opt_tags("workflow", "num-split-jobs", args.tags)
+)
+
+setup_output_dir = os.path.join(args.output_dir, "geom_aligned_bank_setup")
+setup_exe = GeomAlignedBankSetupExecutable(
+    workflow.cp,
+    "geom_aligned_bank_setup",
+    ifos=workflow.ifos,
+    out_dir=setup_output_dir,
+    tags=args.tags
+)
+
+setup_node, intermediate_file, metadata_file = setup_exe.create_node(
+    workflow.analysis_time,
+    num_split_jobs
+)
+workflow += setup_node
+
+stack_dir = os.path.join(args.output_dir, "stack2d")
+stack_exe = GeomAligned2DStackExecutable(
+    workflow.cp,
+    "aligned2dstack",
+    ifos=workflow.ifos,
+    out_dir=stack_dir,
+    tags=args.tags,
+)
+all_outs = wf.FileList([])
+
+for idx in range(num_split_jobs):
+    stackid = "job%05d" % (idx)
+    stack_node = stack_exe.create_node(
+        intermediate_file,
+        idx,
+        workflow.analysis_time,
+        extra_tags=[stackid]
+    )
+    workflow += stack_node
+    assert len(stack_node.output_files) == 1
+    all_outs.append(stack_node.output_files[0])
+
+combine_dir = args.output_dir
+combine_exe = AlignedBankCatExecutable(
+    workflow.cp,
+    "alignedbankcat",
+    ifos=workflow.ifos,
+    out_dir=combine_dir,
+    tags=args.tags,
+)
+combine_node = combine_exe.create_node(
+    all_outs,
+    metadata_file,
+    workflow.analysis_time,
+    output_file_path=args.output_file,
+)
+workflow += combine_node
+assert len(combine_node.output_files) == 1
+out_bank = combine_node.output_files[0]
+
+chiparams_exe = TmpltbankToChiParams(
+    workflow.cp,
+    "dumptochis",
+    ifos=workflow.ifos,
+    out_dir=combine_dir,
+    tags=args.tags,
+)
+chiparams_node = chiparams_exe.create_node(out_bank, workflow.analysis_time)
+workflow += chiparams_node
+
+bankverify_exe = BankVerification(
+    workflow.cp,
+    "bankverify",
+    ifos=workflow.ifos,
+    out_dir=combine_dir,
+    tags=args.tags,
+)
+bankverify_node = bankverify_exe.create_node(out_bank, workflow.analysis_time)
+workflow += bankverify_node
+
+workflow.save()
+
+logging.info("GENERATION SUCCESSFUL.")

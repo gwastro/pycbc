@@ -145,9 +145,10 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
             Return the raw (unweighted) samples instead of the estimated
             posterior samples. Default is False.
         seed : int, optional
-            When extracting the posterior, samples are randomly shuffled. To
-            make this reproduceable, numpy's random generator seed is set with
-            the given value prior to the extraction. Default is 0.
+            When extracting the posterior, the weighted samples are resampled
+            with a random offset and then randomly shuffled. To make this
+            reproduceable, both draws are taken from a random generator seeded
+            with the given value. Default is 0.
 
         Returns
         -------
@@ -160,9 +161,10 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
             self, ['loglikelihood'])['loglikelihood']
         logz = self.attrs.get('log_evidence')
         if not raw_samples:
+            rng = numpy.random.default_rng(seed)
             weights = numpy.exp(logwt - logz)
             N = len(weights)
-            positions = (numpy.random.random() + numpy.arange(N)) / N
+            positions = (rng.random() + numpy.arange(N)) / N
             idx = numpy.zeros(N, dtype=int)
             cumulative_sum = numpy.cumsum(weights)
             cumulative_sum /= cumulative_sum[-1]
@@ -173,12 +175,6 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
                     i += 1
                 else:
                     j += 1
-            try:
-                rng = numpy.random.default_rng(seed)
-            except AttributeError:
-                # numpy pre-1.17 uses RandomState
-                # Py27: delete this after we drop python 2.7 support
-                rng = numpy.random.RandomState(seed)
             rng.shuffle(idx)
             post = {'loglikelihood': loglikelihood[idx]}
             for i, param in enumerate(fields):

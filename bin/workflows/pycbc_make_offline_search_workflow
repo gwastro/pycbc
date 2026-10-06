@@ -76,13 +76,6 @@ def finalize(container, workflow, finalize_workflow):
             'cmd': "PYCBC_SUBMIT_DAX_ARGV", }
     save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
 
-    # Create pages for the submission script to write data
-    # FIXME: add this
-    # wf.makedir(rdir['workflow/dax'])
-    # wf.makedir(rdir['workflow/input_map'])
-    # wf.makedir(rdir['workflow/output_map'])
-    # wf.makedir(rdir['workflow/planning'])
-
     wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
                                                              rdir.base))
 

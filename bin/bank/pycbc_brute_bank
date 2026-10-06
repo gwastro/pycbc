@@ -86,11 +86,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 numpy.random.seed(args.seed)
 
-config_parser = pycbc.types.config.InterpolatingConfigParser()
-file = open(args.input_config, 'r')
-config_parser.read_file(file)
-file.close()
-
+config_parser = pycbc.types.config.InterpolatingConfigParser([args.input_config])
 variable_args, static_args = read_params_from_config(
     config_parser, prior_section='prior',
     vargs_section='variable_params',
@@ -356,7 +352,7 @@ def handle_exit_signal(signum, frame):
     logging.warning(f"Signal {signum} received. Triggering emergency save...")
     save_bank()
     # Force exit so the script doesn't try to resume the loops
-    os._exit(0)
+    os._exit(1)
 
 def save_bank(): # Use a local name
     logging.info("Saving current bank to %s", args.output_file)

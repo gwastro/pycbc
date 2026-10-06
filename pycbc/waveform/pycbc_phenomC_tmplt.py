@@ -17,7 +17,7 @@
 
 
 import numpy
-from numpy import sqrt, log, float128
+from numpy import sqrt, log, longdouble as float128
 
 from pycuda.elementwise import ElementwiseKernel
 

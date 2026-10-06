@@ -27,16 +27,17 @@
 noise spectrum.
 """
 
-from pycbc import libutils
-from pycbc.types import TimeSeries, zeros
-from pycbc.types import complex_same_precision_as, FrequencySeries
 import lal
 import numpy.random
 
-lalsimulation = libutils.import_optional('lalsimulation')
+from pycbc import libutils
+from pycbc.types import FrequencySeries, TimeSeries, complex_same_precision_as, zeros
+
+lalsimulation = libutils.import_optional("lalsimulation")
+
 
 def frequency_noise_from_psd(psd, seed=None):
-    """ Create noise with a given psd.
+    """Create noise with a given psd.
 
     Return noise coloured with the given psd. The returned noise
     FrequencySeries has the same length and frequency step as the given psd.
@@ -61,7 +62,7 @@ def frequency_noise_from_psd(psd, seed=None):
     sigma = sigma.numpy()
     dtype = complex_same_precision_as(psd)
 
-    not_zero = (sigma != 0)
+    not_zero = sigma != 0
 
     sigma_red = sigma[not_zero]
     noise_re = numpy.random.normal(0, sigma_red)
@@ -71,12 +72,11 @@ def frequency_noise_from_psd(psd, seed=None):
     noise = numpy.zeros(len(sigma), dtype=dtype)
     noise[not_zero] = noise_red
 
-    return FrequencySeries(noise,
-                           delta_f=psd.delta_f,
-                           dtype=dtype)
+    return FrequencySeries(noise, delta_f=psd.delta_f, dtype=dtype)
+
 
 def noise_from_psd(length, delta_t, psd, seed=None):
-    """ Create noise with a given psd.
+    """Create noise with a given psd.
 
     Return noise with a given psd. Note that if unique noise is desired
     a unique seed should be provided.
@@ -104,34 +104,39 @@ def noise_from_psd(length, delta_t, psd, seed=None):
 
     randomness = lal.gsl_rng("ranlux", seed)
 
-    N = int (1.0 / delta_t / psd.delta_f)
-    n = N//2+1
-    stride = N//2
+    N = round(1.0 / delta_t / psd.delta_f)
+    n = N // 2 + 1
+    stride = N // 2
 
     if n > len(psd):
         raise ValueError("PSD not compatible with requested delta_t")
 
     psd = (psd[0:n]).lal()
-    psd.data.data[n-1] = 0
+    psd.data.data[n - 1] = 0
     psd.data.data[0] = 0
 
     segment = TimeSeries(zeros(N), delta_t=delta_t).lal()
     length_generated = 0
 
     lalsimulation.SimNoise(segment, 0, psd, randomness)
-    while (length_generated < length):
+    while length_generated < length:
         if (length_generated + stride) < length:
-            noise_ts.data[length_generated:length_generated+stride] = segment.data.data[0:stride]
+            noise_ts.data[length_generated : length_generated + stride] = (
+                segment.data.data[0:stride]
+            )
         else:
-            noise_ts.data[length_generated:length] = segment.data.data[0:length-length_generated]
+            noise_ts.data[length_generated:length] = segment.data.data[
+                0 : length - length_generated
+            ]
 
         length_generated += stride
         lalsimulation.SimNoise(segment, stride, psd, randomness)
 
     return noise_ts
 
+
 def noise_from_string(psd_name, length, delta_t, seed=None, low_frequency_cutoff=10.0):
-    """ Create noise from an analytic PSD
+    """Create noise from an analytic PSD
 
     Return noise from the chosen PSD. Note that if unique noise is desired
     a unique seed should be provided.
@@ -159,6 +164,6 @@ def noise_from_string(psd_name, length, delta_t, seed=None, low_frequency_cutoff
 
     # We just need enough resolution to resolve lines
     delta_f = 1.0 / 8
-    flen = int(.5 / delta_t / delta_f) + 1
+    flen = round(0.5 / delta_t / delta_f) + 1
     psd = pycbc.psd.from_string(psd_name, flen, delta_f, low_frequency_cutoff)
     return noise_from_psd(int(length), delta_t, psd, seed=seed)

@@ -57,6 +57,57 @@ def add_custom_waveform(approximant, function, domain,
                          "'time' or 'frequency'".format(domain))
 
 
+def add_custom_waveform_modes(approximant, function, domain, force=False):
+    """ Make custom waveform modes available to pycbc
+
+    The function is called by get_td_waveform_modes/get_fd_waveform_modes, so
+    it returns the modes rather than the summed polarizations: a dict keyed by
+    mode, each value a pair holding the real and imaginary parts of the
+    complex hlm,
+
+        hlms[mode] = (hlm.real, hlm.imag)
+
+    with the polarizations recovered as in sum_modes,
+
+        h_+ - i h_x = sum_lm Ylm(theta, phi) hlm
+
+    for Ylm of spin weight -2. So the second entry is +Im(hlm), and the minus
+    sign sits on h_x.
+
+    Mode keys are normally (l, m). Plugins that split a multipole by a further
+    harmonic index n may use (l, m, n), see parse_mode_array.
+
+    Parameters
+    ----------
+    approximant : str
+        The name of the waveform
+    function : function
+        The function to generate the modes. Takes the same keyword arguments
+        as get_td_waveform_modes/get_fd_waveform_modes.
+    domain : str
+        Either 'frequency' or 'time' to indicate the domain of the waveform.
+    force : bool, False
+        Overwrite an existing registration for this approximant.
+    """
+    from pycbc.waveform.waveform_modes import (_mode_waveform_fd,
+                                               _mode_waveform_td)
+
+    used = RuntimeError("Can't load plugin waveform modes {}, the name is"
+                        " already in use.".format(approximant))
+
+    if domain == 'time':
+        if not force and (approximant in _mode_waveform_td):
+            raise used
+        _mode_waveform_td[approximant] = function
+    elif domain == 'frequency':
+        if not force and (approximant in _mode_waveform_fd):
+            raise used
+        _mode_waveform_fd[approximant] = function
+    else:
+        raise ValueError("Invalid domain ({}), should be "
+                         "'time' or 'frequency'".format(domain))
+
+
 def add_length_estimator(approximant, function):
     """ Add length estimator for an approximant
 
@@ -122,6 +173,14 @@ def retrieve_waveform_plugins():
     # Check for td waveforms
     for plugin in entry_points(group='pycbc.waveform.td'):
         add_custom_waveform(plugin.name, plugin.load(), 'time')
+
+    # Check for mode-by-mode fd waveforms (feed get_fd_waveform_modes)
+    for plugin in entry_points(group='pycbc.waveform.fd_modes'):
+        add_custom_waveform_modes(plugin.name, plugin.load(), 'frequency')
+
+    # Check for mode-by-mode td waveforms (feed get_td_waveform_modes)
+    for plugin in entry_points(group='pycbc.waveform.td_modes'):
+        add_custom_waveform_modes(plugin.name, plugin.load(), 'time')
 
     # Check for waveform length estimates
     for plugin in entry_points(group='pycbc.waveform.length'):
