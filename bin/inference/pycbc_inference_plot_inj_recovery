@@ -43,7 +43,7 @@ ax = fig.add_subplot(111)
 
 # typecast to list for iteratation
 samples = [samples] if not isinstance(samples, list) else samples
-fps = fps if not isinstance(fps, list) else fps
+fps = [fps] if not isinstance(fps, list) else fps
 injs = io.injections_from_cli(opts)
 
 # if user wants a colorbar
