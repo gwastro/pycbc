@@ -640,7 +640,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
     def rf_tc(self):
         """Evaluate the geocentric coalescence time if sampling in a frame
         other than geocentric.
-        
+
         If generating in the radiation frame (RF), the given tc value is
         assumed to be in the geocentric frame (i.e., no transformations are
         applied). If the given tc is sampled in a detector reference frame
@@ -1511,7 +1511,6 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
     variable_args : tuple
         The list of names of arguments that are passed to the generate
         function.
-
     """
 
     location_args = set(["tc", "ra", "dec"])
