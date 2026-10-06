@@ -263,6 +263,8 @@ class Relative(DistMarg, BaseGaussianNoise):
                 curr_wav = wave[ifo]
                 self.ta[ifo] = 0.0
             else:
+                fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
+                                                          **self.fid_params)
                 if ifo == "RF":
                     # no detector response; convert to geocentric
                     self.det[ifo] = None
@@ -280,6 +282,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                         self.fid_params["ra"], self.fid_params["dec"],
                         self.fid_params["polarization"],
                         self.fid_params["tc"])
+                    curr_wav = (fid_hp * fp + fid_hc * fc)
 
             # check for zeros at low and high frequencies
             # make sure only nonzero samples are included in bins
@@ -1030,7 +1033,8 @@ class RelativeTimeDom(RelativeTime):
         for ifo in self.sh:
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(ifo)
-                det_pol_phase = pol_phase
+                det_pol_phase = numpy.ones_like(pol_phase) if ifo == "RF" \
+                    else pol_phase
             elif ifo == "RF":
                 # no detector response; convert times to geocentric
                 dt = 0.
