@@ -115,8 +115,9 @@ for psd_file in args.psd_files:
             middle[curr_kmin-kmin:curr_kmax-kmin] = \
                 numpy.percentile(psds, 50, axis=0) ** 0.5 * fac
 
-        if y_min is None or y_min > low.min():
-            y_min = low.min()
+        valid = low[numpy.isfinite(low) & (low > 0)]
+        if len(valid) and (y_min is None or y_min > valid.min()):
+            y_min = valid.min()
 
         color = pycbc.results.ifo_color(ifo)
 
@@ -130,7 +131,8 @@ if args.psd_model or args.psd_file or args.asd_file:
         ax.loglog(reference_psd.sample_frequencies, reference_psd ** 0.5,
                   '-k', lw=0.3, label='Reference')
 
-ax.set_ylim(y_min * 0.5, y_min * 100)
+if y_min is not None:
+    ax.set_ylim(y_min * 0.5, y_min * 100)
 
 ax.legend(loc='upper right', fontsize='small')
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
