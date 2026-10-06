@@ -608,7 +608,7 @@ while tau0s < args.tau0_end:
         kloop = 0
 
         # These variables will be set during the loop,
-        # but as they are used in the loop initialisation,
+        # but as they are mentioned in the loop initialisation,
         # not setting them will cause an error on code quality checks
         kconv = None
         okconv = None
