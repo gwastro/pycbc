@@ -12,7 +12,7 @@ Citing the PyCBC Software
 -------------------------
 
 A bibtex key and DOI for each release is avaliable from `Zenodo
-<http://zenodo.org/>`__ and DOIs for releases can be found on the `PyCBC
+<https://zenodo.org/>`__ and DOIs for releases can be found on the `PyCBC
 release page <https://github.com/gwastro/pycbc/releases>`__. A key for the
 latest release is available at:
 
