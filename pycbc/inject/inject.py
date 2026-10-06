@@ -109,7 +109,7 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
 
     try:
         tc = inj.tc
-    except:
+    except AttributeError:
         tc = inj.time_geocent
     hp.start_time += tc
     hc.start_time += tc
