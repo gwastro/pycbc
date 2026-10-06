@@ -144,9 +144,7 @@ class MatchedFilterRatioControl(object):
 
             # Roll each row so its center tap sits at index 0, with earlier
             # taps wrapping to the end -- the circular layout an FFT-based
-            # FIR filter needs. get_fd_fir in waveform/bank.py undoes this
-            # same roll when reconstructing a single template's time-domain
-            # filter, so the two must stay in sync.
+            # FIR filter needs.
             current_counts = counts[start:end]
             roll_offsets = -(current_counts // 2)
 

@@ -14,7 +14,6 @@ pycbc_inspiral_fir \
     --fir-length 4096 \
     --batch-size 64 \
     --template-normalization-method precalculated_sigma \
-    --fast-chisq \
     --pad-data 8 \
     --strain-high-pass 15 \
     --sample-rate 2048 \

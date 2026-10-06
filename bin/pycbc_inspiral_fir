@@ -27,18 +27,17 @@ from pycbc.waveform.bank import RatioFilterBank
 
 tstart = time.time()
 
-def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
+def compute_batch_chisq(ids_local, t_idxs, snrs,
                         fine_indices, tstarts, stilde, bank, chisq_estimator, engine,
                         filters_f, ref_template,
                         args):
     """Assign a power chisq value to a batch of same-segment triggers.
 
     The FIR/ratio engine only produces SNR, so chisq has to be computed
-    separately here by regenerating (part of) the fine template's own
-    filter -- either the full frequency-domain template (--fast-chisq off)
-    or a cheaper decimated reconstruction from the ratio filter and the
-    coarse template's SNR (--fast-chisq on). That regeneration is the
-    expensive step, so rather than doing it for every trigger, this walks
+    separately here by reconstructing the fine template's filter, decimated,
+    from the ratio filter and the coarse template's cached SNR. That
+    reconstruction is the expensive step, so rather than doing it for every
+    trigger, this walks
     triggers from highest SNR down, computes chisq once per trigger it
     visits, and broadcasts that value to every other unassigned trigger in
     the batch within chisq_window seconds of it -- capped at
@@ -52,8 +51,6 @@ def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
         Sample index (into the reference SNR series) of each trigger.
     snrs : array of complex64
         Complex SNR of each trigger.
-    h_norm : float
-        sigmasq of the coarse reference template, for `chisq_estimator`.
     fine_indices : array of int
         Maps `ids_local` to indices into `bank.table` (the fine bank).
     tstarts : array of int
@@ -65,9 +62,9 @@ def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
     chisq_estimator : pycbc.vetoes.SingleDetPowerChisq
         Does the actual chisq calculation given a correlation series.
     engine : MatchedFilterRatioControl
-        The FIR/ratio engine, for its cached reference SNR (--fast-chisq).
+        The FIR/ratio engine, for its cached reference SNR.
     filters_f : array
-        Frequency-domain ratio filters for this batch (--fast-chisq).
+        Frequency-domain ratio filters for this batch.
     ref_template : FrequencySeries
         The coarse template used as this batch's SNR reference.
     args : argparse.Namespace
@@ -119,67 +116,43 @@ def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
             snrvs = np.array([snrv], ndmin=1) / rescale
             tids = np.array([t_idx], ndmin=1)
 
-            if not args.fast_chisq: # Slow chisq
-                logging.info('regenerating template')
-                ratio_filter = bank.get_fd_fir(target_global_id, len(stilde),
-                                               delta_f=stilde.delta_f)
-                logging.info('finished template regeneration')
-                template = ratio_filter * ref_template
-                template.params = ratio_filter.params
-                template.f_lower = ref_template.f_lower
+            # Reconstruct the template, decimated.
+            logging.info('regenerating chisq inputs')
+            # refine > 1 is not currently supported.
+            refine = 1
+            df = args.sample_rate / args.fir_length
 
-                corr = template.conj() * stilde / stilde.psd * (4 * stilde.delta_f / h_norm ** 0.5 / rescale)
-                corr.resize((len(stilde) - 1)*2)
+            dfr = df / refine
+            ratio = filters_f[local_id]
 
-                psd = stilde.psd.copy()
-                psd[:] = 1
-                template = template / stilde.psd ** 0.5
-                template[:] = abs(template)
-                template.params = ratio_filter.params
-                template.f_lower = ref_template.f_lower
+            # _ref_weight depends only on the coarse reference template
+            # and psd, both fixed for the whole batch, so it is computed
+            # once and reused across triggers. Interpolating instead of
+            # exactly decimating avoids handling delta_f mismatches
+            # between the ratio filter's resolution and the data's.
+            if _ref_weight is None:
+                dec = int(dfr / stilde.delta_f)
+                w = ref_template[::dec] / stilde.psd[::dec] ** 0.5
+                newf = np.arange(0, args.fir_length) * dfr
+                _ref_weight = np.interp(newf, w.sample_frequencies, w)
 
-                logging.info('done')
-                chi, dof = chisq_estimator.values(corr, snrvs, 1, psd, tids, template)
+            template2 = FrequencySeries(ratio * _ref_weight, delta_f=dfr, dtype=stilde.dtype)
+            template2[:] = abs(template2) / args.sample_rate
+            template2.params = bank.table[target_global_id]
+            template2.f_lower = ref_template.f_lower
 
-            else: # Fast chisq
-                # Reconstruct template (decimated)
-                logging.info('regenerating chisq inputs')
-                # refine > 1 is not currently supported.
-                refine = 1
-                df = args.sample_rate / args.fir_length
+            psd2 = FrequencySeries(np.ones(len(ratio), dtype=np.float32), delta_f=dfr)
 
-                dfr = df / refine
-                ratio = filters_f[local_id]
+            # Reconstruct fd correlation vector
+            ref = engine.ref_snr[tstart:tstart+args.fir_length]
+            ref_f = zeros(len(ref), dtype=complex64)
+            pycbc.fft.FFT(Array(ref, dtype=complex64), ref_f).execute()
+            corr2 = FrequencySeries(ratio * ref_f.numpy(), delta_f=df) / rescale / args.fir_length
+            corr2 = corr2.to_timeseries().to_frequencyseries(delta_f=dfr) / refine
 
-                # _ref_weight depends only on the coarse reference template
-                # and psd, both fixed for the whole batch, so it is computed
-                # once and reused across triggers. Interpolating instead of
-                # exactly decimating avoids handling delta_f mismatches
-                # between the ratio filter's resolution and the data's.
-                if _ref_weight is None:
-                    dec = int(dfr / stilde.delta_f)
-                    w = ref_template[::dec] / stilde.psd[::dec] ** 0.5
-                    newf = np.arange(0, args.fir_length) * dfr
-                    _ref_weight = np.interp(newf, w.sample_frequencies, w)
-
-                template2 = FrequencySeries(ratio * _ref_weight, delta_f=dfr, dtype=stilde.dtype)
-                template2[:] = abs(template2) / args.sample_rate
-                template2.params = bank.table[target_global_id]
-                template2.f_lower = ref_template.f_lower
-
-
-                psd2 = FrequencySeries(np.ones(len(ratio), dtype=np.float32), delta_f=dfr)
-
-                # Reconstruct fd correlation vector
-                ref = engine.ref_snr[tstart:tstart+args.fir_length]
-                ref_f = zeros(len(ref), dtype=complex64)
-                pycbc.fft.FFT(Array(ref, dtype=complex64), ref_f).execute()
-                corr2 = FrequencySeries(ratio * ref_f.numpy(), delta_f=df) / rescale / args.fir_length
-                corr2 = corr2.to_timeseries().to_frequencyseries(delta_f=dfr) / refine
-
-                tids2 = tids - tstart
-                logging.info('...done')
-                chi, dof = chisq_estimator.values(corr2, snrvs, 1, psd2, tids2, template2)
+            tids2 = tids - tstart
+            logging.info('...done')
+            chi, dof = chisq_estimator.values(corr2, snrvs, 1, psd2, tids2, template2)
 
             # Determine which points we should use the same chisq value for
             window_mask = (abs(t_idxs - t_idx) <= chisq_window_samp)
@@ -269,7 +242,6 @@ def get_args():
                              " their reference coarse template",
                         choices=('precalculated_sigma', 'mchirp'),
                         default='mchirp')
-    parser.add_argument("--fast-chisq", action='store_true')
 
     return parser, parser.parse_args()
 
@@ -407,7 +379,7 @@ def main():
 
 
                 if len(ids_local) > 0:
-                    chi, chi_dof = compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
+                    chi, chi_dof = compute_batch_chisq(ids_local, t_idxs, snrs,
                         fine_indices, tstarts, stilde, bank, power_chisq, engine, filters_f, ref_template, args)
 
                     t_idxs += (-stilde.analyze.start + stilde.cumulative_index)

@@ -37,7 +37,7 @@ import pycbc.pnutils
 import pycbc.waveform.compress
 from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc import DYN_RANGE_FAC
-from pycbc.types import FrequencySeries, zeros, TimeSeries
+from pycbc.types import FrequencySeries, zeros
 import pycbc.io
 from pycbc.io.ligolw import LIGOLWContentHandler
 import hashlib
@@ -1295,34 +1295,6 @@ class RatioFilterBank(FilterBank):
             return self.sigma_sigma_rescale[indices]
         else:
             raise ValueError('undefined fine template normalization method %s' % method)
-
-    def get_fd_fir(self, fine_index, flen, delta_f):
-        """Reconstruct a single fine template's own frequency-domain FIR
-        filter from its stored (circularly-laid-out) taps.
-
-        This undoes the roll MatchedFilterRatioControl._fft_all_filters
-        applies when building the batched frequency-domain filters used at
-        search time -- the two must stay in sync.
-        """
-        coarse, local = self.fine_coarse_map[fine_index]
-        taps = self.fir_group[str(coarse)]['taps'][local]
-        size = self.fir_group[str(coarse)]['actual_tap_count'][local]
-
-        tlen = int(self.sample_rate / delta_f)
-        ts = np.zeros(tlen)
-        start = size // 2
-        end = len(taps) - start
-        ts[:end] = taps[-end:]
-        ts[-start:] = taps[:start]
-        ts = TimeSeries(ts, delta_t=1.0/self.sample_rate)
-        fs = ts.to_frequencyseries().astype(self.dtype)
-        if flen is not None:
-            if len(fs) > flen:
-                fs = fs[:flen]
-            elif len(fs) < flen:
-                fs.resize(flen)
-        fs.params = self.table[fine_index]
-        return fs
 
     def get_firs(self, coarse_index):
         """Retrieve the FIR tap information for the batch of fine templates
