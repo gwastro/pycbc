@@ -450,8 +450,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
             return self.get_gate_times_hmeco()
         gatestart = params['t_gate_start']
         gateend = params['t_gate_end']
-        # we'll need the sky location for determining time shifts
-        if 'RF' not in self.detectors:
+        # we'll need the sky location for determining time shifts, unless
+        # only using the radiation frame and sampling in geocentric time
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        if any(det != 'RF' for det in self.detectors) or \
+                refframe not in ('geocentric', 'RF'):
             ra = self.current_params['ra']
             dec = self.current_params['dec']
         else:
@@ -505,8 +508,15 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 gatetimes[det] = (gatestartdelay, dgatedelay)
             else:
                 # take the gate times as geocentric
-                dgate = gateend - gatestart
-                gatetimes[det] = (gatestart, dgate)
+                # if sampling in another detector convert to geocentric
+                refdet = self.current_params.get('tc_ref_frame', 'geocentric')
+                if refdet not in ('geocentric', 'RF'):
+                    refdet = Detector(refdet)
+                    gatestart -= refdet.time_delay_from_earth_center(
+                        ra, dec, gatestart)
+                    gateend -= refdet.time_delay_from_earth_center(
+                        ra, dec, gateend)
+                gatetimes[det] = (gatestart, gateend - gatestart)
         return gatetimes
 
     def get_gate_times_hmeco(self):
