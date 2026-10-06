@@ -509,12 +509,14 @@ class BaseGatedGaussian(BaseGaussianNoise):
             else:
                 # take the gate times as geocentric
                 # if sampling in another detector convert to geocentric
+                rfstart = gatestart
+                rfend = gateend
                 refdet = self.current_params.get('tc_ref_frame', 'geocentric')
                 if refdet not in ('geocentric', 'RF'):
                     refdet = Detector(refdet)
-                    gatestart -= refdet.time_delay_from_earth_center(
+                    rfstart -= refdet.time_delay_from_earth_center(
                         ra, dec, gatestart)
-                    gateend -= refdet.time_delay_from_earth_center(
+                    rfend -= refdet.time_delay_from_earth_center(
                         ra, dec, gateend)
                 gatetimes[det] = (gatestart, gateend - gatestart)
         return gatetimes

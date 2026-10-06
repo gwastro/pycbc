@@ -599,7 +599,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
             raise KeyError('Sampling tc in a detector reference frame, but '
                            'sky location parameters are not supplied')
         return tc - Detector(refframe).time_delay_from_earth_center(
-            self.current_params['ra'], self.current_params['dec'])
+            self.current_params['ra'], self.current_params['dec'], tc)
 
     def set_epoch(self, epoch):
         """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
@@ -752,6 +752,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
                         hp, self.rf_tc()+tshift, copy=True)
                 else:
                     h[detname] = hp.copy()
+                continue
             tc = det.arrival_time(ref_tc, ra, dec, refframe)
             # apply response function
             fp, fc = det.antenna_pattern(ra, dec, pol, tc)
@@ -763,12 +764,6 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
                 h[detname] = \
                     self.recalib[detname].map_to_adjust(h[detname],
                         **self.current_params)
-        else:
-            # no detector response, just use the + polarization
-            if 'tc' in self.current_params:
-                hp = apply_fd_time_shift(hp, self.current_params['tc']+tshift,
-                                         copy=False)
-            h['RF'] = hp
         if self.gates is not None:
             # resize all to nearest power of 2
             for d in h.values():
@@ -887,7 +882,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
             if det is None:
                 # handle for radiation frame
                 if 'tc' in self.current_params:
-                    rftc = self.tf_tc() + tshift
+                    rftc = self.rf_tc() + tshift
                     h[detname] = (apply_fd_time_shift(hp, rftc, copy=True),
                                   apply_fd_time_shift(hc, rftc, copy=True))
                 else:
