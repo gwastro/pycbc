@@ -218,8 +218,13 @@ def get_args():
                         help="Maximum reduced chisq (chisq / (dof + delta *"
                              " snr^2)) a trigger may have; triggers above"
                              " this are removed. 0 disables the cut.")
-    parser.add_argument("--chisq-window", type=float, default=1.0)
-    parser.add_argument("--chisq-iterations", type=int, default=100)
+    parser.add_argument("--chisq-window", type=float, default=1.0,
+                        help="Triggers within this window are assigned the "
+                             "same chisq value")
+    parser.add_argument("--chisq-iterations", type=int, default=10000,
+                        help="Maximum chisq calculations per batch, highest "
+                             "SNR first. Triggers not covered by one get no "
+                             "chisq.")
     parser.add_argument("--chisq-delta", type=float, default=0,
                         help="SNR-dependent term added to the chisq dof"
                              " before applying --chisq-threshold.")
