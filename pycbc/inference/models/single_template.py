@@ -103,7 +103,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             fhigh = self.kmax[ifo] * df
             # Extend data to high sample rate
             self.data[ifo].resize(flen)
-            self.det[ifo] = Detector(ifo)
+            self.det[ifo] = None if ifo == 'RF' else Detector(ifo)
             snr, _, norm = pyfilter.matched_filter_core(
                 hp, self.data[ifo],
                 psd=self.psds[ifo],
@@ -205,18 +205,22 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
 
         ic = numpy.cos(p['inclination'])
         ip = 0.5 * (1.0 + ic * ic)
-        pol_phase = numpy.exp(-2.0j * p['polarization'])
+        pol_phase = numpy.exp(-2.0j * p.get('polarization', 0.))
 
         self.snr_draw(snrs=self.snr)
 
         for ifo in self.sh:
-            dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
-                                                            p['tc'])
+            if ifo == 'RF':
+                # no detector response; convert times to geocenter
+                dt = 0.
+                f = 1.
+            else:
+                dt = self.det[ifo].time_delay_from_earth_center(
+                    p['ra'], p['dec'], p['tc'])
+                fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
+                                                       0, p['tc'])
+                f = (fp + 1.0j * fc) * pol_phase
             self.dts[ifo] = p['tc'] + dt
-
-            fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
-                                                   0, p['tc'])
-            f = (fp + 1.0j * fc) * pol_phase
 
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data

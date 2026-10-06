@@ -356,7 +356,8 @@ class DistMarg():
             ifos = list(snrs.keys())
             if hasattr(self, 'keep_ifos'):
                 ifos = self.keep_ifos
-            d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
+            d = {ifo: None if ifo == 'RF' else \
+                 Detector(ifo, reference_time=tcave) for ifo in ifos}
             self.tinfo = tcmin, tcmax, tcave, ifos, d
             self.snr_params = ['tc']
 
@@ -364,13 +365,17 @@ class DistMarg():
         vsamples = size if size is not None else self.vsamples
 
         # Determine the weights for the valid time range
-        ra = self._current_params['ra']
-        dec = self._current_params['dec']
+        ra = self._current_params.get('ra')
+        dec = self._current_params.get('dec')
 
         # Determine the common valid time range
         iref = ifos[0]
         dref = d[iref]
-        dt = dref.time_delay_from_earth_center(ra, dec, tcave)
+        if iref == 'RF':
+            # assume geocenter if no response function applied
+            dt = 0.
+        else:
+            dt = dref.time_delay_from_earth_center(ra, dec, tcave)
 
         starts = []
         ends = []
@@ -389,7 +394,14 @@ class DistMarg():
 
         idels = {}
         for ifo in ifos[1:]:
-            dti = d[ifo].time_delay_from_detector(dref, ra, dec, tcave)
+            if ifo == 'RF':
+                # start detector has no response applied; treat as geocenter
+                dti = -dref.time_delay_from_earth_center(ra, dec, tcave)
+            elif iref == 'RF':
+                # end detector has no response applied; treat as geocenter
+                dti = d[ifo].time_delay_from_earth_center(ra, dec, tcave)
+            else:
+                dti = d[ifo].time_delay_from_detector(dref, ra, dec, tcave)
             idel = round(dti / snrs[iref].delta_t) * snrs[iref].delta_t
             idels[ifo] = idel
 
@@ -460,19 +472,34 @@ class DistMarg():
             dec = self.marginalized_vector_priors['dec'].rvs(size=size)['dec']
             tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
             tcave = (tcmax + tcmin) / 2.0
-            d = {ifo: Detector(ifo, reference_time=tcave) for ifo in self.data}
+            d = {ifo: None if ifo == 'RF' else \
+                 Detector(ifo, reference_time=tcave) for ifo in self.data}
 
             # What data structure to hold times? Dict of offset -> list?
             logging.info('sorting into time delay dict')
             dts = []
             for i in range(len(ifos) - 1):
-                dt = d[ifos[0]].time_delay_from_detector(d[ifos[i+1]],
-                                                         ra, dec, tcave)
+                if ifos[0] == 'RF':
+                    # start ifo is geocenter
+                    dt = -d[ifos[i+1]].time_delay_from_earth_center(
+                        ra, dec, tcave)
+                elif ifos[i+1] == 'RF':
+                    # end ifo is geocenter
+                    dt = d[ifos[0]].time_delay_from_earth_center(
+                        ra, dec, tcave)
+                else:
+                    dt = d[ifos[0]].time_delay_from_detector(d[ifos[i+1]],
+                                                             ra, dec, tcave)
                 dt = numpy.rint(dt / snrs[ifos[0]].delta_t)
                 dts.append(dt)
 
             fp, fc, dtc = {}, {}, {}
             for ifo in self.data:
+                if ifo == 'RF':
+                    fp[ifo] = numpy.ones(ra.shape)
+                    fc[ifo] = numpy.zeros(ra.shape)
+                    dtc[ifo] = numpy.zeros(len(ra))
+                    continue
                 fp[ifo], fc[ifo] = d[ifo].antenna_pattern(ra, dec, 0.0, tcave)
                 dtc[ifo] = d[ifo].time_delay_from_earth_center(ra, dec, tcave)
 
@@ -622,6 +649,7 @@ class DistMarg():
             Number of samples to inclue beyond the strict region
             determined by the relative likelihood
         """
+        from scipy.constants import c as speed_of_light
 
         if 'tc' not in self.marginalized_vector_priors:
             return
@@ -676,8 +704,14 @@ class DistMarg():
                         continue
                     ts2 = self.tstart[ifo2]
                     te2 = ts2 + self.num_samples[ifo2] / sample_rate
-                    det = Detector(ifo)
-                    dt = Detector(ifo2).light_travel_time_to_detector(det)
+                    if 'RF' in (ifo, ifo2):
+                        # treat radiation frame as geocenter
+                        dt = sum(numpy.linalg.norm(Detector(i).location)
+                                 for i in (ifo, ifo2) if i != 'RF')
+                        dt /= speed_of_light
+                    else:
+                        det = Detector(ifo)
+                        dt = Detector(ifo2).light_travel_time_to_detector(det)
 
                     ts = max(ts, ts2 - dt)
                     te = min(te, te2 + dt)
