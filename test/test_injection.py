@@ -24,15 +24,17 @@ import tempfile
 import unittest
 
 import lal
-import numpy
-from igwn_ligolw import ligolw, lsctables
-from igwn_ligolw import utils as ligolw_utils
-from utils import parse_args_cpu_only, simple_exit
-
+from pycbc.types import TimeSeries, FieldArray
 from pycbc.detector import Detector, get_available_detectors
 from pycbc.inject import InjectionSet
-from pycbc.io import FieldArray
-from pycbc.types import TimeSeries
+from pycbc.waveform import get_td_waveform
+import unittest
+import numpy
+import itertools
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
+from utils import parse_args_cpu_only, simple_exit
 
 # Injection tests only need to happen on the CPU
 parse_args_cpu_only("Injections")
@@ -176,6 +178,67 @@ class TestInjection(unittest.TestCase):
                 max_amp, max_loc = ts.abs_max_loc()
                 self.assertEqual(max_amp, 0)
 
+
+class TestRadiationFrameInjection(unittest.TestCase):
+    """Test injecting in the radiation frame (RF) without any sky location or
+    polarization parameters.
+    """
+    def setUp(self):
+        self.sample_rate = 2048.
+        self.tc = 1126259462.42
+        # note: no ra, dec, or polarization
+        self.params = {'tc': self.tc, 'mass1': 37., 'mass2': 32.,
+                       'inclination': 2.5, 'coa_phase': 1.5,
+                       'distance': 100., 'f_ref': 20., 'f_lower': 18.,
+                       'approximant': 'IMRPhenomD'}
+        samples = FieldArray.from_kwargs(
+            **{p: numpy.array([v]) for p, v in self.params.items()})
+        self.inj_file = tempfile.NamedTemporaryFile(suffix='.hdf')
+        InjectionSet.write(self.inj_file.name, samples)
+
+    def test_rf_injection(self):
+        """Verify that an RF injection is the plus polarization at tc"""
+        injections = InjectionSet(self.inj_file.name)
+
+        # zero time series over which to inject signal
+        ts = TimeSeries(numpy.zeros(int(16 * self.sample_rate)),
+                        delta_t=1/self.sample_rate,
+                        epoch=lal.LIGOTimeGPS(self.tc - 12),
+                        dtype=numpy.float64)
+        expected = ts.copy()
+
+        # inject the radiation-frame waveform into zeroes
+        ts = injections.apply(ts, 'RF')
+
+        # compare to the plus polarization shifted to tc
+        hp, _ = get_td_waveform(delta_t=1/self.sample_rate, **self.params)
+        hp.start_time += self.tc
+
+        # inject the plus polarization into zeroes
+        expected = expected.inject(hp)
+
+        # check that the injection wasn't silently skipped
+        max_amp, max_loc = ts.abs_max_loc()
+        self.assertTrue(max_amp > 0)
+
+        # check that the peak of |hp| alone is within a cycle of tc
+        time_error = ts.sample_times.numpy()[max_loc] - self.tc
+        self.assertTrue(abs(time_error) < 0.01)
+        numpy.testing.assert_allclose(ts.numpy(), expected.numpy(),
+                                      rtol=0, atol=1e-3 * max_amp)
+
+    def test_detector_injection_needs_sky_location(self):
+        """Verify that injecting in a real detector still requires the sky
+        location"""
+        injections = InjectionSet(self.inj_file.name)
+        zero_ts = TimeSeries(numpy.zeros(int(16 * self.sample_rate)),
+                        delta_t=1/self.sample_rate,
+                        epoch=lal.LIGOTimeGPS(self.tc - 12),
+                        dtype=numpy.float64)
+        with self.assertRaises(Exception):
+            injections.apply(zero_ts, 'H1')
+
+
     def test_injection_taper(self):
         """
         Verify that injections are tapered as requested by the injection
@@ -256,6 +319,8 @@ class TestInjection(unittest.TestCase):
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestInjection))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(
+    TestRadiationFrameInjection))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
