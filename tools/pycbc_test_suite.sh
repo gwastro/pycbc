@@ -87,6 +87,13 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     test_result
     popd
 
+    # run the hierarchical FIR/ratio matched filtering example and check
+    # its triggers agree with a plain pycbc_inspiral run within tolerance
+    pushd examples/ratio_fir_search
+    bash -e run_example.sh
+    test_result
+    popd
+
     # run pycbc_multi_inspiral (PyGRB) test
     pushd examples/multi_inspiral
     bash -e gw170817_h.sh
