@@ -26,13 +26,11 @@ import numpy
 from .matchedfilter import _BaseCorrelator
 cimport numpy, cython
 from cython.parallel import prange
-from libc.math cimport sqrt
+from libc.stdint cimport int32_t, int64_t
 
 # --- Typedefs for Ratio Filter Kernels ---
-ctypedef numpy.complex64_t complex64_t
-ctypedef numpy.float32_t float32_t
-ctypedef numpy.int32_t int32_t
-ctypedef numpy.int64_t int64_t
+ctypedef float complex complex64_t
+ctypedef float float32_t
 
 ctypedef fused COMPLEXTYPE:
     float complex
@@ -100,9 +98,9 @@ def _correlate_factory(x, y, z):
 @cython.wraparound(False)
 @cython.cdivision(True)
 def fast_multiply_analytic_cython(
-    numpy.ndarray[complex64_t, ndim=1, mode="c"] data_f,
-    numpy.ndarray[complex64_t, ndim=2, mode="c"] filter_batch_f,
-    numpy.ndarray[complex64_t, ndim=2, mode="c"] out_batch
+    complex64_t[::1] data_f,
+    complex64_t[:, ::1] filter_batch_f,
+    complex64_t[:, ::1] out_batch
 ):
     """
     Cython version of the "half-only" analytic signal multiply.
@@ -132,7 +130,7 @@ def fast_multiply_analytic_cython(
 @cython.wraparound(False)
 @cython.cdivision(True)
 def find_peaks_in_block_cython(
-    numpy.ndarray[complex64_t, ndim=2, mode="c"] corr_output,
+    complex64_t[:, ::1] corr_output,
     long t_start,
     long n_valid,
     float threshold_sq,
@@ -161,6 +159,7 @@ def find_peaks_in_block_cython(
     cdef float32_t mag_sq
     cdef float32_t final_max_snr_sq
     cdef int64_t final_max_idx
+    cdef complex64_t final_max_z
 
     for f_batch_idx in range(n_filters_in_batch):
         f_global_idx = <int32_t>(f_start_offset + f_batch_idx)
