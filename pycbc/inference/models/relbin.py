@@ -265,7 +265,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                         self.fid_params["ra"], self.fid_params["dec"],
                         self.fid_params["polarization"],
                         self.fid_params["tc"])
-                    curr_wav = (fid_hp * fp + fid_hc * fc)
+                curr_wav = (fid_hp * fp + fid_hc * fc)
 
             # check for zeros at low and high frequencies
             # make sure only nonzero samples are included in bins

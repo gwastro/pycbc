@@ -192,8 +192,10 @@ class TestRadiationFrameInjection(unittest.TestCase):
                         dtype=numpy.float64)
         expected = ts.copy()
         
-        # inject the radiation-frame waveform into zeroes
-        ts = injections.apply(ts, 'RF')
+        # inject the radiation-frame waveform into zeroes and check it's not
+        # silently skipped
+        injected = injections.apply(ts, 'RF')
+        self.assertEqual(len(injected.table), 1)
         
         # compare to the plus polarization shifted to tc
         hp, _ = get_td_waveform(delta_t=1/self.sample_rate, **self.params)
