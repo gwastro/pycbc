@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Shichao Wu
+# Copyright (C) 2026 Shichao Wu, Alex Nitz, Alex Correia
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-"""Common interface for spacecraft orbits, independent of a TDI response."""
+"""Base class for spacecraft orbit models."""
 
 from abc import ABC, abstractmethod
 
@@ -39,12 +39,10 @@ class BaseOrbit(ABC):
     selects all spacecraft. Subclasses must document their supported time
     interval and whether they permit extrapolation.
 
-    The base class provides metadata and optional input-normalization helpers;
-    it supplies no orbit model, interpolation, derivative approximation or
-    light-time solver. Subclasses with their own constructor should call
-    ``super().__init__``. External providers may remain duck typed: consumers
-    need not require ``isinstance(orbit, BaseOrbit)``. The ABC checks method
-    availability, not the units or shapes returned by an implementation.
+    Subclasses implement orbital kinematics and should call
+    ``super().__init__`` in their constructors. They can use the input helpers
+    below, but remain responsible for output shapes and units. Compatible
+    third-party providers need not inherit from this class.
 
     Parameters
     ----------
@@ -86,11 +84,7 @@ class BaseOrbit(ABC):
         return times
 
     def _sc_indices(self, sc):
-        """Map one-based labels to array indices, preserving their order.
-
-        This is the selection convention used by numerical orbit providers.
-        Subclasses can use it without adding validation to response consumers.
-        """
+        """Map one-based spacecraft labels to indices, preserving order."""
         if sc is None:
             return numpy.arange(self.num_sc)
         labels = numpy.atleast_1d(numpy.asarray(sc))
@@ -129,8 +123,6 @@ class BaseOrbit(ABC):
         """Return velocities in metres/second.
 
         Inputs, frame and output shape follow :meth:`compute_position`.
-        Velocity data or analytic/interpolant derivatives are supplied by
-        the subclass; there is no finite-difference fallback in the ABC.
         """
 
     @abstractmethod
@@ -138,6 +130,4 @@ class BaseOrbit(ABC):
         """Return accelerations in metres/second squared.
 
         Inputs, frame and output shape follow :meth:`compute_position`.
-        The subclass supplies the acceleration, without a base-class
-        finite-difference fallback.
         """

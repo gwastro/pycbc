@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Shichao Wu
+# Copyright (C) 2026 Shichao Wu, Alex Nitz, Alex Correia
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-"""Orbit interface tests using polynomial kinematics, not a mission model."""
+"""Tests for the spacecraft orbit interface."""
 
 import unittest
 
@@ -25,7 +25,7 @@ from pycbc.detector.orbits import BaseOrbit as ModuleBaseOrbit
 
 
 class PolynomialOrbit(BaseOrbit):
-    """Test fixture: x=j+t**2, y=j*t, z=-j, with time epoch t=0."""
+    """Polynomial orbit with x=j+t**2, y=j*t and z=-j."""
 
     def _evaluate(self, t, sc, derivative):
         times = self._prepare_times(t)[:, None]
