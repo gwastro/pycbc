@@ -2,7 +2,6 @@
 """
 
 import logging
-import warnings
 from distutils.util import strtobool
 
 import numpy
@@ -136,14 +135,10 @@ class DistMarg():
                          param, self.vsamples)
             self.marginalized_vector_priors[param] = pop_prior(param)
 
-        # Remove in the future, backwards compatibility
+        # polarization_samples kwarg has been deprecated
         if 'polarization_samples' in kwargs:
-            warnings.warn("use marginalize_vector_samples rather "
-                          "than 'polarization_samples'", DeprecationWarning)
-            pol_uniform = numpy.linspace(0, numpy.pi * 2.0, self.vsamples)
-            self.marginalize_vector_params['polarization'] = pol_uniform
-            self.vsamples = int(kwargs['polarization_samples'])
-            kwargs.pop('polarization_samples')
+            raise ValueError('polarization_samples is no longer supported. '
+                             'Use `marginalize_vector_params` instead.')
 
         self.reset_vector_params()
 
@@ -793,7 +788,7 @@ class DistMarg():
             logging.debug('Reconstruct phase')
             self.reconstruct_phase = True
             s, h = get_loglr()
-            phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
+            phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4), endpoint=False)
             # This assumes that the template was conjugated in inner products
             loglr = (numpy.exp(-2.0j * phasev) * s).real + h
             xl = draw_sample(loglr)

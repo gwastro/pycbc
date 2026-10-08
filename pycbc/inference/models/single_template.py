@@ -50,9 +50,12 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         respective detectors to be used for computing inner products.
     sample_rate : int, optional
         The sample rate to use. Default is 32768.
-    polarization_samples: int, optional
-        Parameter to specify how finely to marginalize over polarization angle.
-        If None, then polarization must be a parameter.
+    marginalize_vector_samples: int, optional
+        Number of samples used for any vector marginalizations, e.g., over
+        polarization angle when ``marginalize_vector_params = polarization``.
+        See :py:meth:`DistMarg.setup_marginalization
+        <pycbc.inference.models.tools.DistMarg.setup_marginalization>`
+        for details.
     \**kwargs :
         All other keyword arguments are passed to
         :py:class:`BaseGaussianNoise`; see that class for details.
