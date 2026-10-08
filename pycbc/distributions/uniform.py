@@ -147,4 +147,166 @@ class Uniform(bounded.BoundedDist):
                      bounds_required=True)
 
 
-__all__ = ['Uniform']
+class Trapezoid(bounded.BoundedDist):
+    """A trapezoidal distribution.
+    """
+    name = 'trapezoid'
+    def __init__(self, **params):
+        self._semimins = {}
+        self._semimaxs = {}
+        self._bounds = {}
+        self._norm = {}
+        self._lognorm = {}
+
+        # read in intermediate points
+        semimin_args = [p for p in params if p.startswith('semimin-')]
+        semimax_args = [p for p in params if p.startswith('semimax-')]
+        self._semimins = dict([[p[8:], params.pop(p)] for p in semimin_args])
+        self._semimaxs = dict([[p[8:], params.pop(p)] for p in semimax_args])
+
+        # initialize bounds objects
+        super(Trapezoid, self).__init__(**params)
+
+        # compute norms
+        for p, bnds in self._bounds.items():
+            a, d = bnds
+            # set semimin/semimax to min/max if not specified
+            if p not in self._semimins:
+                self._semimins[p] = a
+            if p not in self._semimaxs:
+                self._semimaxs[p] = d
+            b = self._semimins[p]
+            c = self._semimaxs[p]
+
+            # normalizations
+            self._norm[p] = 2 / (d + c - b - a)
+            self._lognorm[p] = numpy.log(self._norm[p])
+
+    def _condlists(self, **kwargs):
+        """Set lists determining where param values are in distribution.
+        """
+        condlists = {}
+        for p in self._params:
+            b = self._semimins[p]
+            c = self._semimaxs[p]
+            condlists[p] = [(kwargs[p] < b),
+                            (kwargs[p] >= b) & (kwargs[p] < c),
+                            (kwargs[p] >= c)]
+        return condlists
+
+    def _pdf(self, **kwargs):
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
+        """
+        outlists = {}
+        for p, bnds in self._bounds.items():
+            values = kwargs[p]
+            a, d = (numpy.float64(bnds[0]), numpy.float64(bnds[1]))
+            b = self._semimins[p]
+            c = self._semimaxs[p]
+            condlists = self._condlists(**kwargs)
+
+            # set output values
+            # if semibounds equal bounds, set to uniform limits
+            if b == a:
+                lowout = 1.
+            else:
+                lowout = (values - a)/(b - a)
+            if c == d:
+                highout = 1.
+            else:
+                highout = (d - values)/(d - c)
+            outlists[p] = [lowout,
+                           1.,
+                           highout]
+        return numpy.prod([numpy.select(condlists[p], outlists[p]) * \
+                               self._norm[p] for p in self._params], axis=0)
+
+    def _logpdf(self, **kwargs):
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params. Unrecognized
+        arguments are ignored.
+        """
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            return numpy.log(self._pdf(**kwargs))
+
+    def cdf(self, param, value):
+        """Return the cdf at given values."""
+        bnds = self._bounds[param]
+        a, d = (numpy.float64(bnds[0]), numpy.float64(bnds[1]))
+        b = self._semimins[param]
+        c = self._semimaxs[param]
+        pref = (d + c - a - b)
+
+        # conditions based on position
+        kwargs = {param: value}
+        condlists = self._condlists(**kwargs)
+
+        # set output values
+        # if semibounds equal bounds, set to uniform limits
+        if b == a:
+            lowout = 2 / pref * (value - a)
+        else:
+            lowout = (value - a)**2 / (b - a) / pref
+        if c == d:
+            highout = 1 - 2 / pref * (c - value)
+        else:
+            highout = 1 - (d - value)**2 / (d - c) / pref
+        outlist = [lowout,
+                   (2*value - a - b) / pref,
+                   highout]
+
+        return numpy.select(condlists[param], outlist)
+
+    def _cdfinv_param(self, param, value):
+        """Return the inverse cdf to map the unit interval to parameter bounds.
+        """
+        bnds = self._bounds[param]
+        a, d = (numpy.float64(bnds[0]), numpy.float64(bnds[1]))
+        b = self._semimins[param]
+        c = self._semimaxs[param]
+        pref = (d + c - a - b)
+
+        # get cdf values at turning points and provided values
+        b_cdf = self.cdf(param, b)
+        c_cdf = self.cdf(param, c)
+
+        # conditions based on position
+        # numpy complains when b = a or c = d
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            cdf_condlist = [(value < b_cdf),
+                            (value >= b_cdf) & (value < c_cdf),
+                            (value >= c_cdf)]
+            outlist = [a + numpy.sqrt(value * pref * (b-a)),
+                       (value * pref + b + a) / 2,
+                       d-numpy.sqrt((value - 1) * pref * (c-d))]
+
+        return numpy.select(cdf_condlist, outlist)
+
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        """Returns a distribution based on a configuration file. The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        param : str
+            The name of the parameter for this distribution.
+
+        Returns
+        -------
+        Trapezoid
+            A distribution instance from the pycbc.inference.prior module.
+        """
+        # load this class instance
+        return super(Trapezoid, cls).from_config(cp, section, variable_args,
+                                                 bounds_required=True)
+
+__all__ = ['Uniform', 'Trapezoid']
