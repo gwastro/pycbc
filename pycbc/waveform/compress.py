@@ -684,9 +684,9 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
                                 df, f_lower, imin, start_index)
     else:
         # use scipy for fancier interpolation
-        sample_frequencies = numpy.array(sample_frequencies)
-        amp = numpy.array(amp)
-        phase = numpy.array(phase)
+        sample_frequencies = sample_frequencies.numpy() if hasattr(sample_frequencies, 'numpy') else numpy.asarray(sample_frequencies)
+        amp = amp.numpy() if hasattr(amp, 'numpy') else numpy.asarray(amp)
+        phase = phase.numpy() if hasattr(phase, 'numpy') else numpy.asarray(phase)
         outfreq = out.sample_frequencies.numpy()
         amp_interp = interpolate.interp1d(sample_frequencies, amp,
                                           kind=interpolation,
