@@ -1019,6 +1019,15 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         float
             The value of the log likelihood.
         """
+        # if sampling *only* in radiation frame, the gaussian_noise model is
+        # strictly better; refer the user to that model
+        if not any (self.dets.keys() != 'RF'):
+            raise ValueError("Only sampling in radiation frame using a "
+                             "marginalized polarization model. This is "
+                             "strictly worse (in terms of computation time) "
+                             "than the regular gaussian model. Consider "
+                             "using gated_gaussian_noise or sampling in "
+                             "more than one detector")
         # generate the template waveform
         wfs = self.get_waveforms()
         # get the gated waveforms and data
