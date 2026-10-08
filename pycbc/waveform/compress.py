@@ -301,9 +301,9 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
             if addidx not in sample_index and addidx not in new_addidxs:
                 new_addidxs.append(addidx)
 
-            # Don't propose points within a sample of existing ones
+            # Don't propose duplicate points already added
             new_addidxs = numpy.array(new_addidxs)
-            valid = ~numpy.any(abs(new_addidxs[:, None] - numpy.array(added_points)) <= 2, axis=1)
+            valid = ~numpy.any(abs(new_addidxs[:, None] - numpy.array(added_points)) <= 0, axis=1)
             new_addidxs = list(new_addidxs[valid])
 
         # --- 3. Update and Sort ---
