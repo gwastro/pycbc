@@ -182,13 +182,29 @@ def cluster_reduce(idx, snr, window_size):
 
 class H5FileSyntSugar(object):
     """Convenience class that adds some syntactic sugar to h5py.File.
+
+    Parameters
+    ----------
+    name : str
+        Path to the HDF5 file.
+    group : {None, str}, optional
+        HDF5 group path (e.g. 'H1' or 'L1') under which datasets will be
+        written. If None or empty, datasets are written at the root.
+    mode : {'a', str}, optional
+        File opening mode. Defaults to 'a' (create or append), which
+        universally supports both initial creation and multi-detector appending.
+    prefix : {None, str}, optional
+        Backwards-compatibility alias for `group`.
     """
-    def __init__(self, name, prefix='', mode='a'):
+    def __init__(self, name, group=None, mode='a', prefix=None):
+        if prefix is not None:
+            group = prefix
+        self.group = group or ''
+        self.prefix = self.group  # backwards-compatibility alias
         self.f = h5py.File(name, mode)
-        self.prefix = prefix
 
     def __setitem__(self, name, data):
-        full_path = (self.prefix + '/' + name).strip('/') if self.prefix else name.strip('/')
+        full_path = (self.group + '/' + name).strip('/') if self.group else name.strip('/')
         if full_path in self.f:
             del self.f[full_path]
         self.f.create_dataset(

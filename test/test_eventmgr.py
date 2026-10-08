@@ -15,16 +15,16 @@ class TestEventMgr(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_h5filesyntsugar_append_and_context(self):
-        # 1. Write initial dataset
-        with eventmgr.H5FileSyntSugar(self.h5_path, prefix='H1', mode='a') as f:
+        # 1. Write initial dataset using group and default mode='a'
+        with eventmgr.H5FileSyntSugar(self.h5_path, group='H1') as f:
             f['snr'] = np.array([5.5, 6.2, 7.8], dtype=np.float32)
 
-        # 2. Append dataset for second detector
-        with eventmgr.H5FileSyntSugar(self.h5_path, prefix='L1', mode='a') as f:
+        # 2. Append dataset for second detector using legacy prefix alias
+        with eventmgr.H5FileSyntSugar(self.h5_path, prefix='L1') as f:
             f['snr'] = np.array([4.2, 8.1], dtype=np.float32)
 
-        # 3. Overwrite dataset in first detector (del + recreate)
-        with eventmgr.H5FileSyntSugar(self.h5_path, prefix='H1', mode='a') as f:
+        # 3. Overwrite dataset in first detector (del + recreate) using positional group
+        with eventmgr.H5FileSyntSugar(self.h5_path, 'H1') as f:
             f['snr'] = np.array([10.0], dtype=np.float32)
 
         # Verify content
