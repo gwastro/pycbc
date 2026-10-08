@@ -45,6 +45,30 @@ class DictWithDefaultReturn(defaultdict):
     # Python 2 and 3 have different conventions for boolean method
     __nonzero__ = __bool__
 
+def to_int(value):
+    """Safely convert a string, float, or integer value to an int.
+
+    Accepts integer strings, arbitrarily large integers (>= 2^53) without
+    precision loss, and float strings that represent exact whole numbers
+    (e.g. '2048.0', '1e3'). Strictly rejects fractional numbers
+    (e.g. '2048.5') and non-numeric inputs by raising ValueError.
+    """
+    if isinstance(value, float):
+        if not value.is_integer():
+            raise ValueError(f"Cannot convert non-integer value {value!r} to int")
+        return int(value)
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        try:
+            f = float(value)
+        except (ValueError, TypeError):
+            raise ValueError(f"Cannot convert non-integer value {value!r} to int")
+        if f.is_integer():
+            return int(f)
+        raise ValueError(f"Cannot convert non-integer value {value!r} to int")
+
+
 class MultiDetOptionAction(argparse.Action):
     # Initialise the same as the standard 'append' action
     def __init__(self,
@@ -91,6 +115,7 @@ class MultiDetOptionAction(argparse.Action):
             setattr(namespace, self.dest, DictWithDefaultReturn())
         items = getattr(namespace, self.dest)
         items = copy.copy(items)
+        conv = to_int if self.internal_type is int else self.internal_type
         for value in values:
             value = value.split(':')
             if len(value) == 2:
@@ -99,10 +124,7 @@ class MultiDetOptionAction(argparse.Action):
                     err_msg += "If you are supplying a value for all ifos, you "
                     err_msg += "cannot also supply values for specific ifos."
                     raise ValueError(err_msg)
-                if self.internal_type is int:
-                    items[value[0]] = int(float(value[1]))
-                else:
-                    items[value[0]] = self.internal_type(value[1])
+                items[value[0]] = conv(value[1])
                 items.ifo_set = True
             elif len(value) == 1:
                 # OR supply only one value and use this for all ifos
@@ -116,10 +138,7 @@ class MultiDetOptionAction(argparse.Action):
                     err_msg += "cannot also supply values for specific ifos."
                     raise ValueError(err_msg)
                 #items.default_value = self.internal_type(value[0])
-                if self.internal_type is int:
-                    new_default = int(float(value[0]))
-                else:
-                    new_default = self.internal_type(value[0])
+                new_default = conv(value[0])
                 items.default_factory = lambda: new_default
                 items.default_set = True
             else:
@@ -189,6 +208,7 @@ class MultiDetMultiColonOptionAction(MultiDetOptionAction):
         if getattr(namespace, self.dest, None) is None:
             setattr(namespace, self.dest, {})
         items = copy.copy(getattr(namespace, self.dest))
+        conv = to_int if self.internal_type is int else self.internal_type
         for value in values:
             if ':' not in value:
                 err_msg += ("Each argument must contain at least one ':' "
@@ -200,7 +220,7 @@ class MultiDetMultiColonOptionAction(MultiDetOptionAction):
                             'already have {}.')
                 err_msg = err_msg.format(detector, items[detector])
                 raise ValueError(err_msg)
-            items[detector] = self.internal_type(argument)
+            items[detector] = conv(argument)
         setattr(namespace, self.dest, items)
 
 class MultiDetOptionAppendAction(MultiDetOptionAction):
@@ -210,14 +230,15 @@ class MultiDetOptionAppendAction(MultiDetOptionAction):
             setattr(namespace, self.dest, {})
         items = getattr(namespace, self.dest)
         items = copy.copy(items)
+        conv = to_int if self.internal_type is int else self.internal_type
         for value in values:
             value = value.split(':')
             if len(value) == 2:
                 # "Normal" case, all ifos supplied independetly as "H1:VALUE"
                 if value[0] in items:
-                    items[value[0]].append(self.internal_type(value[1]))
+                    items[value[0]].append(conv(value[1]))
                 else:
-                    items[value[0]] = [self.internal_type(value[1])]
+                    items[value[0]] = [conv(value[1])]
             else:
                 err_msg = "Issue with option: %s \n" %(self.dest,)
                 err_msg += "Received value: %s \n" %(' '.join(values),)
@@ -272,6 +293,7 @@ class DictOptionAction(argparse.Action):
             setattr(namespace, self.dest, {})
         items = getattr(namespace, self.dest)
         items = copy.copy(items)
+        conv = to_int if self.internal_type is int else self.internal_type
         for value in values:
             if values == ['{}']:
                 break
@@ -279,7 +301,7 @@ class DictOptionAction(argparse.Action):
             if len(value) == 2:
                 # "Normal" case, all extra arguments supplied independently
                 # as "param:VALUE"
-                items[value[0]] = self.internal_type(value[1])
+                items[value[0]] = conv(value[1])
             else:
                 err_msg += "The character ':' is used to distinguish the "
                 err_msg += "parameter name and the value. Please do not "
@@ -304,6 +326,7 @@ class MultiDetDictOptionAction(DictOptionAction):
             setattr(namespace, self.dest, {})
         items = copy.copy(getattr(namespace, self.dest))
         detector_args = {}
+        conv = to_int if self.internal_type is int else self.internal_type
         for value in values:
             if values == ['{}']:
                 break
@@ -311,7 +334,7 @@ class MultiDetDictOptionAction(DictOptionAction):
                 detector, param_value = value.split(':', 1)
                 param, val = param_value.split(':')
                 if detector not in detector_args:
-                    detector_args[detector] = {param: self.internal_type(val)}
+                    detector_args[detector] = {param: conv(val)}
                 if param in detector_args[detector]:
                     err_msg += ("Multiple values supplied for the same "
                                 "parameter {} under detector {},\n"
@@ -319,13 +342,13 @@ class MultiDetDictOptionAction(DictOptionAction):
                     err_msg = err_msg.format(param, detector,
                                              detector_args[detector][param])
                 else:
-                    detector_args[detector][param] = self.internal_type(val)
+                    detector_args[detector][param] = conv(val)
             elif value.count(':') == 1:
                 param, val = value.split(':')
                 for detector in getattr(namespace, 'instruments'):
                     if detector not in detector_args:
                         detector_args[detector] = \
-                            {param: self.internal_type(val)}
+                            {param: conv(val)}
                     if param in detector_args[detector]:
                         err_msg += ("Multiple values supplied for the same "
                                     "parameter {} under detector {},\n"
@@ -335,7 +358,7 @@ class MultiDetDictOptionAction(DictOptionAction):
                                     detector_args[detector][param])
                     else:
                         detector_args[detector][param] = \
-                                    self.internal_type(val)
+                                    conv(val)
             else:
                 err_msg += ("Use format `DETECTOR:PARAM:VALUE` for each "
                             "detector, or use `PARAM:VALUE` for all.")
@@ -488,8 +511,9 @@ def _positive_type(s, dtype=None):
     """
     assert dtype is not None
     err_msg = f"Input must be a positive {dtype}, not {s}"
+    conv = to_int if dtype is int else dtype
     try:
-        value = dtype(s)
+        value = conv(s)
     except ValueError:
         raise argparse.ArgumentTypeError(err_msg)
     if value <= 0:
@@ -504,8 +528,9 @@ def _nonnegative_type(s, dtype=None):
     """
     assert dtype is not None
     err_msg = f"Input must be either a positive or zero {dtype}, not {s}"
+    conv = to_int if dtype is int else dtype
     try:
-        value = dtype(s)
+        value = conv(s)
     except ValueError:
         raise argparse.ArgumentTypeError(err_msg)
     if value < 0:
