@@ -40,6 +40,7 @@ from pycbc.io.ligolw import LIGOLWContentHandler
 import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
 from pycbc.waveform import TemplateBank
+from pycbc.waveform.utils import get_taper_settings
 
 ## Remove the need for these functions ########################################
     
@@ -134,12 +135,13 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
                                  f_lower=start_frequency,
                                  amplitude_order=amplitude_order)
         if hasattr(wf_params, 'taper'):
+            tapermethod, taper_window = get_taper_settings(wf_params)
             hp = hp.taper_timeseries(location=wf_params.taper, 
-                                     tapermethod=getattr(wf_params, 'taper_method', 'lal'),
-                                     taper_window=getattr(wf_params, 'taper_window', None))
+                                     tapermethod=tapermethod,
+                                     taper_window=taper_window)
             hc = hc.taper_timeseries(location=wf_params.taper, 
-                                     tapermethod=getattr(wf_params, 'taper_method', 'lal'),
-                                     taper_window=getattr(wf_params, 'taper_window', None))
+                                     tapermethod=tapermethod,
+                                     taper_window=taper_window)
 
     if not sky_max_template:
         hvec = generate_detector_strain(wf_params, hp, hc)
