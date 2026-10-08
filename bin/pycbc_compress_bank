@@ -23,13 +23,14 @@ hdf file."""
 import argparse
 import numpy
 import logging
-import multiprocessing
 
 import pycbc
 import pycbc.psd
 from pycbc.waveform import compress
 from pycbc import waveform
 from pycbc.types import real_same_precision_as
+from pycbc.pool import BroadcastPool
+
 
 # --- WORKER FUNCTION ---
 def _worker(ii):
@@ -207,7 +208,7 @@ if __name__ == "__main__":
 
     logging.info("Starting compression with %d processes", args.nprocesses)
     
-    pool = multiprocessing.Pool(processes=args.nprocesses)
+    pool = BroadcastPool(processes=args.nprocesses)
     results = pool.imap_unordered(_worker, range(bank_table.size))
 
     for result in results:
