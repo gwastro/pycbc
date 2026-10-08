@@ -29,7 +29,22 @@ class TestWaveformCompress(unittest.TestCase):
             hp, sample_points, tolerance=5e-4,
             interpolation='inline_linear', precision='single')
         diffs = np.diff(cwave.sample_points)
-        # Verify all points are strictly monotonically increasing (no duplicate points)
+        self.assertTrue(np.all(diffs > 0))
+
+    def test_narrow_slice_and_adjacent_points_no_singularity(self):
+        hp, _ = get_fd_waveform(approximant='TaylorF2', mass1=1.4, mass2=1.4,
+                                f_lower=30.0, delta_f=1.0/16)
+        df = hp.delta_f
+        # Test _vecdiff directly on adjacent frequencies (<= 1 sample apart)
+        diff = compress._vecdiff(hp, hp, 30.0, 30.0 + df)
+        self.assertEqual(diff, 0.0)
+
+        # Test compression with adjacent sample points in the initial set
+        sample_points = np.array([30.0, 30.0 + df, 30.0 + 2*df, 100.0], dtype=float)
+        cwave = compress.compress_waveform(
+            hp, sample_points, tolerance=1e-3,
+            interpolation='inline_linear', precision='single')
+        diffs = np.diff(cwave.sample_points)
         self.assertTrue(np.all(diffs > 0))
 
 
