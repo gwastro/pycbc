@@ -914,6 +914,14 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             recalibration=self.recalibration,
             generator_class=generator.FDomainDetFrameTwoPolGenerator,
             **self.static_params)
+        # if sampling *only* in radiation frame, the gated_gaussian_noise model
+        # is strictly better; refer the user to that model
+        if set(data) == 'RF':
+            raise ValueError("The only detector requested is the radiation "
+                             "frame (RF). This is strictly slower and more "
+                             "expensive than using the unmarginalized model. "
+                             "Consider using gated_gaussian_noise or adding "
+                             "additional detectors.")
 
     def get_waveforms(self):
         if self._current_wfs is not None:
@@ -1019,15 +1027,6 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         float
             The value of the log likelihood.
         """
-        # if sampling *only* in radiation frame, the gaussian_noise model is
-        # strictly better; refer the user to that model
-        if not any (self.dets.keys() != 'RF'):
-            raise ValueError("Only sampling in radiation frame using a "
-                             "marginalized polarization model. This is "
-                             "strictly worse (in terms of computation time) "
-                             "than the regular gaussian model. Consider "
-                             "using gated_gaussian_noise or sampling in "
-                             "more than one detector")
         # generate the template waveform
         wfs = self.get_waveforms()
         # get the gated waveforms and data
@@ -1038,12 +1037,20 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         lognl = 0.
         refframe = self.current_params.get('tc_ref_frame', 'geocentric')
         ref_tc = self.current_params['tc']
-        ra = self.current_params['ra']
-        dec = self.current_params['dec']
+        ra = self.current_params.get('ra')
+        dec = self.current_params.get('dec')
         for det, (hp, hc) in wfs.items():
-            # get the antenna patterns
-            if det not in self.dets:
-                self.dets[det] = Detector(det)
+            if det == 'RF':
+                # no detector response applied
+                fp = numpy.ones(self.pol.shape)
+                fc = numpy.zeros(self.pol.shape)
+            else:
+                if det not in self.dets:
+                    self.dets[det] = Detector(det)
+                # calculate tc in frame
+                tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
+                # evaluate antenna pattern
+                fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
             # calculate tc in frame
             tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
             # evaluate antenna pattern
