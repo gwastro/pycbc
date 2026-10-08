@@ -2,7 +2,6 @@
 """
 
 import logging
-import warnings
 from distutils.util import strtobool
 
 import numpy
@@ -136,14 +135,10 @@ class DistMarg():
                          param, self.vsamples)
             self.marginalized_vector_priors[param] = pop_prior(param)
 
-        # Remove in the future, backwards compatibility
+        # polarization_samples kwarg has been deprecated
         if 'polarization_samples' in kwargs:
-            warnings.warn("use marginalize_vector_samples rather "
-                          "than 'polarization_samples'", DeprecationWarning)
-            self.vsamples = int(kwargs['polarization_samples'])
-            pol_uniform = numpy.linspace(0, numpy.pi * 2.0, self.vsamples)
-            self.marginalize_vector_params['polarization'] = pol_uniform
-            kwargs.pop('polarization_samples')
+            raise ValueError('polarization_samples is no longer supported. '
+                             'Use `marginalize_vector_params` instead.')
 
         self.reset_vector_params()
 

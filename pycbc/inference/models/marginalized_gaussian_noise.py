@@ -374,20 +374,27 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
     marginalization over polarization angle. This is accomplished using
     a fixed set of integration points distribution uniformation between
     0 and 2pi. By default, 1000 integration points are used.
-    The 'polarization_samples' argument can be passed to set an alternate
-    number of integration points.
+    The 'marginalize_vector_samples' argument can be passed to set an alternate
+    number of integration points. If 'polarization' is instead
+    listed in 'marginalize_vector_params', the integration points are drawn
+    from the polarization prior rather than placed on a uniform grid.
     """
     name = 'marginalized_polarization'
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 polarization_samples=1000,
+                 marginalize_vector_samples=1000,
                  **kwargs):
 
         variable_params, kwargs = self.setup_marginalization(
                                variable_params,
-                               polarization_samples=polarization_samples,
                                **kwargs)
+        
+        # use a uniform prior over polarization except if user specifies
+        # to use a polarization prior
+        if 'polarization' not in self.marginalized_vector_priors:
+            self.marginalize_vector_params['polarization'] = \
+                numpy.linspace(0, 2 * numpy.pi, self.vsamples, endpoint=False)
 
         # set up the boiler-plate attributes
         super(MarginalizedPolarization, self).__init__(
