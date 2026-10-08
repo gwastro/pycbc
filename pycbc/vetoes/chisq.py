@@ -204,16 +204,6 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None,
     for j in range(num_bins):
         k_min = int(bins[j])
         k_max = int(bins[j+1])
-        if k_max <= k_min:
-            if return_bins:
-                if return_bins_slice is not None:
-                    sl_len = len(range(*return_bins_slice.indices(len(snr))))
-                    bin_snrs.append(zeros(sl_len, dtype=snr.dtype).numpy())
-                else:
-                    bin_snrs.append(TimeSeries(zeros(len(snr), dtype=snr.dtype),
-                                              delta_t=snr.delta_t,
-                                              epoch=snr.start_time))
-            continue
 
         qtilde[k_min:k_max] = corr[k_min:k_max]
         pycbc.fft.ifft(qtilde, q)
