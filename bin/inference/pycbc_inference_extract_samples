@@ -38,6 +38,7 @@ across combined files.
 """
 
 import os
+import re
 import numpy
 import pycbc
 from pycbc.inference.io import (ResultsArgumentParser, results_from_cli,
@@ -240,7 +241,25 @@ for fp in fps:
 
 # store what parameters were renamed (if not already saved above)
 if not cat_params:
-    out.attrs['remapped_params'] = list(labels.items())
+    remapped_params = list(labels.items())
+    # if the input file was itself extracted, write in terms of remapped params
+    # this preserves lineage to original sampled params when extracting
+    # multiple times
+    if 'remapped_params' in fps[0].attrs:
+        input_funcs = {format_attr(p): format_attr(f)
+                       for f, p in fps[0].attrs['remapped_params']}
+
+        def to_input_func(match):
+            name = match.group()
+            func = input_funcs.get(name, name)
+            return name if func == name else '({})'.format(func)
+
+        # matches identifiers (e.g., 'q' in 'q*2'), but not attributes or
+        # exponents (e.g., 'bar' in 'foo.bar' or 'e5' in '1e5')
+        remapped_params = [
+            (re.sub(r'(?<![\w.])[A-Za-z_]\w*', to_input_func, func), param)
+            for func, param in remapped_params]
+    out.attrs['remapped_params'] = remapped_params
 
 # write combined evidence and dlog evidence if combining via sampling
 if opts.combine_via_sampling:
