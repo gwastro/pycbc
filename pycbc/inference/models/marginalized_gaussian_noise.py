@@ -436,7 +436,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
         self.dets = {}
         # if sampling *only* in radiation frame, the gaussian_noise model is
         # strictly better; refer the user to that model
-        if set(data) == 'RF':
+        if set(data) == {'RF'}:
             raise ValueError("The only detector requested is the radiation "
                              "frame (RF). This is strictly slower and more "
                              "expensive than using the unmarginalized model. "
@@ -479,15 +479,6 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
         float
             The value of the log likelihood ratio.
         """
-        # if sampling *only* in radiation frame, the gaussian_noise model is
-        # strictly better; refer the user to that model
-        if not any (self.data.keys() != 'RF'):
-            raise ValueError("Only sampling in radiation frame using a "
-                             "marginalized polarization model. This is "
-                             "strictly worse (in terms of computation time) "
-                             "than the regular gaussian model. Consider "
-                             "using gaussian_noise or sampling in "
-                             "more than one detector")
         params = self.current_params
         if self.all_ifodata_same_rate_length:
             wfs = self.waveform_generator.generate(**params)
