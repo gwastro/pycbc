@@ -114,7 +114,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         # $ is ignored.
         env_vals = {
             key: value for key, value in os.environ.items()
-            if '%' not in value and '$' not in value
+            if '%' not in value and '$' not in value and '%' not in key and '$' not in key and key.isidentifier()
         }
         self.read_dict({'environment': env_vals})
 

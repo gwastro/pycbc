@@ -99,7 +99,10 @@ class MultiDetOptionAction(argparse.Action):
                     err_msg += "If you are supplying a value for all ifos, you "
                     err_msg += "cannot also supply values for specific ifos."
                     raise ValueError(err_msg)
-                items[value[0]] = self.internal_type(value[1])
+                if self.internal_type is int:
+                    items[value[0]] = int(float(value[1]))
+                else:
+                    items[value[0]] = self.internal_type(value[1])
                 items.ifo_set = True
             elif len(value) == 1:
                 # OR supply only one value and use this for all ifos
@@ -113,7 +116,10 @@ class MultiDetOptionAction(argparse.Action):
                     err_msg += "cannot also supply values for specific ifos."
                     raise ValueError(err_msg)
                 #items.default_value = self.internal_type(value[0])
-                new_default = self.internal_type(value[0])
+                if self.internal_type is int:
+                    new_default = int(float(value[0]))
+                else:
+                    new_default = self.internal_type(value[0])
                 items.default_factory = lambda: new_default
                 items.default_set = True
             else:
