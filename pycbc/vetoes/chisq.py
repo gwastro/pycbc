@@ -134,13 +134,15 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
         An array containing only the chisq at the selected points.
     """
     num_bins = len(bins) - 1
-    chisq = shift_sum(corr, indices, bins) # pylint:disable=assignment-from-no-return
-    return (chisq * num_bins - (snr.conj() * snr).real) * (snr_norm ** 2.0)
+    chisq = shift_sum(corr, indices, bins)
+    val = (chisq * num_bins - (snr.conj() * snr).real) * (snr_norm ** 2.0)
+    return numpy.abs(val)
 
 _q_l = None
 _qtilde_l = None
 _chisq_l = None
-def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return_bins=False):
+def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None,
+                                  return_bins=False, return_bins_slice=None):
     """Calculate the chisq timeseries from precomputed values.
 
     This function calculates the chisq at all times by performing an
@@ -162,6 +164,9 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return
         chisq values. If none, calculate chisq for all possible indices.
     return_bins: {boolean, False}, optional
         Return a list of the SNRs for each chisq bin.
+    return_bins_slice: {slice, None}, optional
+        If provided, only slice the specified range for each bin and return
+        as numpy arrays, avoiding full-length TimeSeries allocations.
 
     Returns
     -------
@@ -169,6 +174,9 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return
     """
     # Get workspace memory
     global _q_l, _qtilde_l, _chisq_l
+
+    if return_bins_slice is not None:
+        return_bins = True
 
     bin_snrs = []
 
@@ -196,15 +204,28 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return
     for j in range(num_bins):
         k_min = int(bins[j])
         k_max = int(bins[j+1])
+        if k_max <= k_min:
+            if return_bins:
+                if return_bins_slice is not None:
+                    sl_len = len(range(*return_bins_slice.indices(len(snr))))
+                    bin_snrs.append(zeros(sl_len, dtype=snr.dtype).numpy())
+                else:
+                    bin_snrs.append(TimeSeries(zeros(len(snr), dtype=snr.dtype),
+                                              delta_t=snr.delta_t,
+                                              epoch=snr.start_time))
+            continue
 
         qtilde[k_min:k_max] = corr[k_min:k_max]
         pycbc.fft.ifft(qtilde, q)
         qtilde[k_min:k_max].clear()
 
         if return_bins:
-            bin_snrs.append(TimeSeries(q  * snr_norm *  num_bins ** 0.5,
-                                      delta_t=snr.delta_t,
-                                      epoch=snr.start_time))
+            if return_bins_slice is not None:
+                bin_snrs.append((q[return_bins_slice] * (snr_norm * num_bins ** 0.5)).numpy())
+            else:
+                bin_snrs.append(TimeSeries(q  * snr_norm *  num_bins ** 0.5,
+                                          delta_t=snr.delta_t,
+                                          epoch=snr.start_time))
 
         if indices is not None:
             chisq_accum_bin(chisq, q.take(indices))
@@ -262,7 +283,8 @@ def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
 def power_chisq(template, data, num_bins, psd,
                 low_frequency_cutoff=None,
                 high_frequency_cutoff=None,
-                return_bins=False):
+                return_bins=False,
+                return_bins_slice=None):
     """Calculate the chisq timeseries
 
     Parameters
@@ -284,6 +306,9 @@ def power_chisq(template, data, num_bins, psd,
         The high frequency cutoff for the filter
     return_bins: {boolean, False}, optional
         Return a list of the individual chisq bins
+    return_bins_slice: {slice, None}, optional
+        If provided and return_bins is True, returns numpy array slices
+        of each bin's SNR time series instead of full TimeSeries objects.
 
     Returns
     -------
@@ -300,7 +325,9 @@ def power_chisq(template, data, num_bins, psd,
                            low_frequency_cutoff, high_frequency_cutoff,
                            corr_out=corra)
 
-    return power_chisq_from_precomputed(corr, total_snr, tnorm, bins, return_bins=return_bins)
+    return power_chisq_from_precomputed(corr, total_snr, tnorm, bins,
+                                        return_bins=return_bins,
+                                        return_bins_slice=return_bins_slice)
 
 
 class SingleDetPowerChisq(object):
