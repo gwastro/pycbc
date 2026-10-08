@@ -140,9 +140,9 @@ class DistMarg():
         if 'polarization_samples' in kwargs:
             warnings.warn("use marginalize_vector_samples rather "
                           "than 'polarization_samples'", DeprecationWarning)
+            self.vsamples = int(kwargs['polarization_samples'])
             pol_uniform = numpy.linspace(0, numpy.pi * 2.0, self.vsamples)
             self.marginalize_vector_params['polarization'] = pol_uniform
-            self.vsamples = int(kwargs['polarization_samples'])
             kwargs.pop('polarization_samples')
 
         self.reset_vector_params()

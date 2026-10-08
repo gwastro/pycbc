@@ -492,6 +492,32 @@ class TestMarginalizedPolModels(unittest.TestCase):
         # now test
         polsamples = margpol_model.pol
         self._test_models(margpol_model, orig_model, polsamples)
+        
+    def test_polarization_samples(self):
+        """Test that marginalized model matches brute force Gaussian marg
+        when specifying a non-default number of polarization samples.
+        """
+        nsamples = 100
+        margpol_model = models.MarginalizedPolarization(
+            self.marg_variable, data=copy.deepcopy(self.data),
+            low_frequency_cutoff=self.flow,
+            psds=self.psds,
+            static_params=self.static,
+            ignore_failed_waveforms=True,
+            polarization_samples=nsamples
+        )
+        orig_model = models.GaussianNoise(
+            self.orig_variable, data=copy.deepcopy(self.data),
+            low_frequency_cutoff=self.flow,
+            psds=self.psds,
+            static_params=self.static,
+            ignore_failed_waveforms=True
+        )
+        polsamples = margpol_model.marginalize_vector_params['polarization']
+        self.assertEqual(len(polsamples), nsamples)
+        self.assertEqual(margpol_model.vsamples, nsamples)
+        # now test
+        self._test_models(margpol_model, orig_model, polsamples)
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestModels))
