@@ -165,6 +165,11 @@ compression_algorithms = {
         }
 
 def _vecdiff(htilde, hinterp, fmin, fmax, psd=None):
+    kmin = int(fmin/htilde.delta_f)
+    kmax = int(fmax/htilde.delta_f)
+    if kmax <= kmin + 1:
+        # Slices with <= 1 sample cannot compute meaningful overlap or be subdivided
+        return 0.0
     return 1 - abs(filter.overlap_cplx(htilde, hinterp,
                           low_frequency_cutoff=fmin,
                           high_frequency_cutoff=fmax,
@@ -295,16 +300,23 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         # --- 2. Propose new points ---
         new_addidxs = []
         for minpt in selected_segments:
-            # Calculate midpoint using indices to avoid float drift issues
-            add_freq = (sample_points[minpt] + sample_points[minpt+1]) / 2.0
-            addidx = int(add_freq / df)
+            # If the segment cannot be subdivided (<= 1 bin wide), skip it
+            if sample_index[minpt+1] - sample_index[minpt] <= 1:
+                continue
+            # Calculate midpoint using integer indices to avoid float drift issues
+            addidx = int((sample_index[minpt] + sample_index[minpt+1]) // 2)
             if addidx not in sample_index and addidx not in new_addidxs:
                 new_addidxs.append(addidx)
 
-            # Don't propose duplicate points already added
+        # Don't propose duplicate points already added
+        if len(new_addidxs) > 0 and len(added_points) > 0:
             new_addidxs = numpy.array(new_addidxs)
             valid = ~numpy.any(abs(new_addidxs[:, None] - numpy.array(added_points)) <= 0, axis=1)
             new_addidxs = list(new_addidxs[valid])
+
+        if not new_addidxs:
+            # All bad segments are already at fundamental frequency resolution (1 bin wide)
+            break
 
         # --- 3. Update and Sort ---
         sample_index = numpy.unique(numpy.concatenate((sample_index, new_addidxs)))
