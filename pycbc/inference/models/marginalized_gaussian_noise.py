@@ -387,9 +387,9 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
                  **kwargs):
 
         variable_params, kwargs = self.setup_marginalization(
-                               variable_params,
-                               **kwargs)
-
+                        variable_params,
+                        marginalize_vector_samples=marginalize_vector_samples
+                        **kwargs)
         # use a uniform prior over polarization except if user specifies
         # to use a polarization prior
         if 'polarization' not in self.marginalized_vector_priors:
