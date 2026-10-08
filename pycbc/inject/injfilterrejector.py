@@ -98,6 +98,11 @@ _injfilterer_trwindow_help = (
     "window of injection times. This avoids doing expensive chi-squared "
     "computation on triggers not associated with injections."
 )
+_injfilterer_optsnr_help = (
+    "Do not analyze injections whose optimal SNR is below this value in "
+    "every detector. They are still added to the data. Give the same value "
+    "for all detectors."
+)
 
 
 def insert_injfilterrejector_option_group(parser):
@@ -126,6 +131,10 @@ def insert_injfilterrejector_option_group(parser):
     injfilterrejector_group.add_argument(curr_arg, type=positive_float,
                                          default=None,
                                          help=_injfilterer_trwindow_help)
+    curr_arg = "--injection-filter-rejector-optimal-snr-threshold"
+    injfilterrejector_group.add_argument(curr_arg, type=positive_float,
+                                         default=None,
+                                         help=_injfilterer_optsnr_help)
 
 
 def insert_injfilterrejector_option_group_multi_ifo(parser):
@@ -161,6 +170,11 @@ def insert_injfilterrejector_option_group_multi_ifo(parser):
         curr_arg, type=positive_float, default=None,
         help=_injfilterer_trwindow_help,
         metavar='IFO:VALUE', action=MultiDetOptionAction, nargs='+')
+    curr_arg = "--injection-filter-rejector-optimal-snr-threshold"
+    injfilterrejector_group.add_argument(
+        curr_arg, type=positive_float, default=None,
+        help=_injfilterer_optsnr_help,
+        metavar='IFO:VALUE', action=MultiDetOptionAction, nargs='+')
 
 
 class InjFilterRejector(object):
@@ -173,7 +187,8 @@ class InjFilterRejector(object):
 
     def __init__(self, injection_file, chirp_time_window,
                  match_threshold, f_lower, coarsematch_deltaf=1.,
-                 coarsematch_fmax=256, seg_buffer=10, inj_trigger_window=None):
+                 coarsematch_fmax=256, seg_buffer=10, inj_trigger_window=None,
+                 optimal_snr_threshold=None):
         """Initialise InjFilterRejector instance."""
         # Determine if InjFilterRejector is to be enabled
         if (
@@ -181,13 +196,15 @@ class InjFilterRejector(object):
             (
                 chirp_time_window is None and
                 match_threshold is None and
-                inj_trigger_window is None
+                inj_trigger_window is None and
+                optimal_snr_threshold is None
             )
         ):
             self.enabled = False
             self.chirp_time_window = None
             self.match_threshold = None
             self.inj_trigger_window = None
+            self.optimal_snr_threshold = None
             return
         self.enabled = True
 
@@ -199,11 +216,15 @@ class InjFilterRejector(object):
         self.seg_buffer = seg_buffer
         self.f_lower = f_lower
         self.inj_trigger_window = inj_trigger_window
+        self.optimal_snr_threshold = optimal_snr_threshold
         assert(self.f_lower is not None)
 
         # Variables for storing arrays (reduced injections, memory
         # for templates, reduced PSDs ...)
         self.short_injections = {}
+        # Per injection: signal power integrated over coarse bins to Nyquist,
+        # for optimal_snr(); filled when optimal_snr_threshold is set.
+        self.injection_power = {}
         self._short_template_mem = None
         self._short_psd_storage = {}
         self._short_template_id = None
@@ -221,6 +242,7 @@ class InjFilterRejector(object):
         coarsematch_fmax = opt.injection_filter_rejector_coarsematch_fmax
         seg_buffer = opt.injection_filter_rejector_seg_buffer
         trig_window = opt.injection_filter_rejector_trigger_window
+        optsnr = opt.injection_filter_rejector_optimal_snr_threshold
         if opt.injection_filter_rejector_f_lower is not None:
             f_lower = opt.injection_filter_rejector_f_lower
         else:
@@ -232,7 +254,8 @@ class InjFilterRejector(object):
         return cls(injection_file, chirp_time_window, match_threshold,
                    f_lower, coarsematch_deltaf=coarsematch_deltaf,
                    coarsematch_fmax=coarsematch_fmax,
-                   seg_buffer=seg_buffer, inj_trigger_window=trig_window)
+                   seg_buffer=seg_buffer, inj_trigger_window=trig_window,
+                   optimal_snr_threshold=optsnr)
 
     @classmethod
     def from_cli_single_ifo(cls, opt, ifo):
@@ -246,6 +269,7 @@ class InjFilterRejector(object):
         coarsematch_fmax = opt.injection_filter_rejector_coarsematch_fmax[ifo]
         seg_buffer = opt.injection_filter_rejector_seg_buffer[ifo]
         trig_window = opt.injection_filter_rejector_trigger_window[ifo]
+        optsnr = opt.injection_filter_rejector_optimal_snr_threshold[ifo]
         if opt.injection_filter_rejector_f_lower[ifo] is not None:
             f_lower = opt.injection_filter_rejector_f_lower[ifo]
         else:
@@ -257,7 +281,8 @@ class InjFilterRejector(object):
         return cls(injection_file, chirp_time_window,
                    match_threshold, f_lower,
                    coarsematch_deltaf, coarsematch_fmax,
-                   seg_buffer=seg_buffer, inj_trigger_window=trig_window)
+                   seg_buffer=seg_buffer, inj_trigger_window=trig_window,
+                   optimal_snr_threshold=optsnr)
 
     @classmethod
     def from_cli_multi_ifos(cls, opt, ifos):
@@ -266,6 +291,28 @@ class InjFilterRejector(object):
         for ifo in ifos:
             inj_filter_rejectors[ifo] = cls.from_cli_single_ifo(opt, ifo)
         return inj_filter_rejectors
+
+    def optimal_snr(self, simulation_id, psd):
+        """Optimal SNR of a stored injection against psd, in the same
+        dynamic-range units as the analysis, from f_lower. None if the
+        injection is unknown."""
+        if not self.enabled or simulation_id not in self.injection_power:
+            return None
+        coarse = self.injection_power[simulation_id]
+        cdf = self.coarsematch_deltaf
+        s = np.asarray(psd.numpy(), dtype=np.float64)
+        pdf = float(psd.delta_f)
+        inv = np.zeros_like(s)
+        good = s > 0
+        inv[good] = 1.0 / s[good]
+        # mean of 1/S over each coarse bin: exact for a signal flat within the
+        # bin, and narrow lines in S are not smeared out of the average
+        per = max(1, int(round(cdf / pdf)))
+        nbin = min(len(coarse), len(inv) // per)
+        inv_c = inv[:nbin * per].reshape(nbin, per).mean(axis=1)
+        f = np.arange(nbin) * cdf
+        use = f >= self.f_lower
+        return float(np.sqrt(4.0 * np.sum(coarse[:nbin][use] * inv_c[use])))
 
     def get_inj_end_times(self):
         """Return a list of the sorted injection end times."""
@@ -330,16 +377,23 @@ class InjFilterRejector(object):
 
     def generate_short_inj_from_inj(self, inj_waveform, simulation_id):
         """Generate and a store a truncated representation of inj_waveform."""
-        if not self.enabled or not self.match_threshold:
+        if not self.enabled or not (self.match_threshold or
+                                    self.optimal_snr_threshold is not None):
             # Do nothing!
             return
-        if simulation_id in self.short_injections:
+        if simulation_id in self.short_injections or \
+                simulation_id in self.injection_power:
             err_msg = "An injection with simulation id "
             err_msg += str(simulation_id)
             err_msg += " has already been added. This suggests "
             err_msg += "that your injection file contains injections with "
             err_msg += "duplicate simulation_ids. This is not allowed."
             raise ValueError(err_msg)
+        if not self.match_threshold:
+            # The caller adds inj_waveform to the data after this, and the
+            # resize below pads it in place; only the optimal-SNR cut wants
+            # the transform here, so leave the injected signal untouched.
+            inj_waveform = inj_waveform.copy()
         curr_length = len(inj_waveform)
         new_length = int(nearest_larger_binary_number(curr_length))
         # Don't want length less than 1/delta_f
@@ -350,13 +404,22 @@ class InjFilterRejector(object):
         # Dynamic range is important here!
         inj_tilde_np = inj_tilde.numpy() * DYN_RANGE_FAC
         delta_f = inj_tilde.get_delta_f()
+        df_ratio = int(self.coarsematch_deltaf/delta_f)
+        if self.optimal_snr_threshold is not None:
+            # The whole band, not just up to coarsematch_fmax, integrated
+            # over each coarse bin
+            power = np.abs(inj_tilde_np).astype(np.float64) ** 2
+            nbin = len(power) // df_ratio
+            self.injection_power[simulation_id] = power[:nbin * df_ratio]\
+                .reshape(nbin, df_ratio).sum(axis=1) * delta_f
+        if not self.match_threshold:
+            return
         new_freq_len = int(self.coarsematch_fmax / delta_f + 1)
         # This shouldn't be a problem if injections are generated at
         # 16384 Hz ... It is only a problem of injection sample rate
         # gives a lower Nyquist than the trunc_f_max. If this error is
         # ever raised one could consider zero-padding the injection.
         assert(new_freq_len <= len(inj_tilde))
-        df_ratio = int(self.coarsematch_deltaf/delta_f)
         inj_tilde_np = inj_tilde_np[:new_freq_len:df_ratio]
         new_inj = FrequencySeries(inj_tilde_np, dtype=np.complex64,
                                   delta_f=self.coarsematch_deltaf)
