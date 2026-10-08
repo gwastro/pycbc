@@ -1051,10 +1051,6 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                 tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
                 # evaluate antenna pattern
                 fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
-            # calculate tc in frame
-            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
-            # evaluate antenna pattern
-            fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
             start_index, end_index = self.gate_indices(det)
             norm = self.det_lognorm(det, start_index, end_index)
             # we always filter the entire segment starting from kmin, since the
