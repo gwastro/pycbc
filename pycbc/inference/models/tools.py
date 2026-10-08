@@ -788,7 +788,7 @@ class DistMarg():
             logging.debug('Reconstruct phase')
             self.reconstruct_phase = True
             s, h = get_loglr()
-            phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
+            phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4), endpoint=False)
             # This assumes that the template was conjugated in inner products
             loglr = (numpy.exp(-2.0j * phasev) * s).real + h
             xl = draw_sample(loglr)
