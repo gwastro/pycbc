@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+"""Converts the posterior samples in a bilby/PESummary HDF file to a PyCBC
+posterior file, so that they can be compared to ``pycbc_inference`` results
+with ``pycbc_inference_plot_posterior``.
+
+Standard parameters are renamed to their PyCBC names; every other column is
+copied with its original bilby name.
+"""
+
+import argparse
+import logging
+import os
+import h5py
+import pycbc
+from pycbc.inference.io import PosteriorFile, loadfile
+
+# bilby name -> PyCBC name
+BILBY_TO_PYCBC = {
+    'chirp_mass': 'mchirp',
+    'inverted_mass_ratio': 'q',  # m1/m2 >= 1, as in PyCBC
+    'mass_1': 'mass1',
+    'mass_2': 'mass2',
+    'total_mass': 'mtotal',
+    'symmetric_mass_ratio': 'eta',
+    'mass_1_source': 'srcmass1',
+    'mass_2_source': 'srcmass2',
+    'chirp_mass_source': 'srcmchirp',
+    'luminosity_distance': 'distance',
+    'ra': 'ra',
+    'dec': 'dec',
+    'psi': 'polarization',
+    'phase': 'coa_phase',
+    'iota': 'inclination',
+    'geocent_time': 'tc',
+    'a_1': 'spin1_a',
+    'a_2': 'spin2_a',
+    'tilt_1': 'spin1_polar',
+    'tilt_2': 'spin2_polar',
+    'phi_1': 'spin1_azimuthal',
+    'phi_2': 'spin2_azimuthal',
+    'spin_1x': 'spin1x', 'spin_1y': 'spin1y', 'spin_1z': 'spin1z',
+    'spin_2x': 'spin2x', 'spin_2y': 'spin2y', 'spin_2z': 'spin2z',
+    'log_likelihood': 'loglikelihood',
+    'log_prior': 'logprior',
+}
+
+parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument('--input-file', required=True,
+                    help='bilby/PESummary HDF file to convert.')
+parser.add_argument('--output-file', required=True,
+                    help='PyCBC posterior file to create.')
+parser.add_argument('--label',
+                    help='Analysis to convert. Only needed if the input file '
+                         'contains more than one.')
+parser.add_argument('--force', action='store_true',
+                    help='Overwrite the output file if it exists.')
+opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose)
+
+if os.path.exists(opts.output_file) and not opts.force:
+    raise OSError(f'{opts.output_file} exists; use --force to overwrite')
+
+with h5py.File(opts.input_file, 'r') as fp:
+    labels = [k for k in fp if 'posterior_samples' in fp[k]]
+    if opts.label is None and len(labels) != 1:
+        parser.error(f'pick one analysis with --label from {labels}')
+    label = opts.label or labels[0]
+    samples = fp[label]['posterior_samples'][()]
+    meta = fp[label]['meta_data']['meta_data']
+    static = {'approximant': fp[label]['approximant'][0].decode(),
+              'f_lower': meta['f_low'][0],
+              'f_ref': meta['f_ref'][0]}
+
+logging.info('Converting %d samples from %s', len(samples), label)
+names = {p: BILBY_TO_PYCBC.get(p, p) for p in samples.dtype.names}
+
+with loadfile(opts.output_file, 'w', filetype=PosteriorFile.name) as out:
+    out.write_samples({names[p]: samples[p] for p in names})
+    out.attrs.update(static)
+    out.attrs['static_params'] = list(static)
+    # default parameters for pycbc_inference_plot_posterior
+    out.attrs['variable_params'] = [
+        BILBY_TO_PYCBC[p] for p in names
+        if p in BILBY_TO_PYCBC and not p.startswith('log')]
+
+logging.info('Done')

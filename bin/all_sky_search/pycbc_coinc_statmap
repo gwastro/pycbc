@@ -149,12 +149,11 @@ veto_time = abs(veto.start_end_to_segments(remove_start_time,
 
 # Veto indices from list of triggers in the windowed times around fg triggers
 # This gives exclusive background triggers
-exc_zero_trigs = all_trigs.remove([])  # Start by copying existing triggers
-for ifo in ifos:
-    fg_veto_ids = veto.indices_within_times(
-                       exc_zero_trigs.data['%s/time' % ifo],
-                       remove_start_time, remove_end_time)
-    exc_zero_trigs = exc_zero_trigs.remove(fg_veto_ids)
+fg_veto_ids = numpy.concatenate([
+    veto.indices_within_times(all_trigs.data['%s/time' % ifo],
+                              remove_start_time, remove_end_time)
+    for ifo in ifos])
+exc_zero_trigs = all_trigs.remove(fg_veto_ids)
 
 logging.info("Clustering coinc triggers (inclusive of zerolag)")
 all_trigs = all_trigs.cluster(args.cluster_window)
