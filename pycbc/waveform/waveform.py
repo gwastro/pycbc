@@ -1245,8 +1245,11 @@ def get_waveform_filter(out, template=None, **kwargs):
         # taper the time series hp if required
         if 'taper' in input_params.keys() and \
                 input_params['taper'] is not None:
-            hp = wfutils.taper_timeseries(hp, input_params['taper'],
-                                          return_lal=False)
+            tapermethod, taper_window = wfutils.get_taper_settings(input_params)
+            hp = hp.taper_timeseries(location=input_params['taper'],
+                                     tapermethod=tapermethod,
+                                     taper_window=taper_window,
+                                     return_lal=False)
         return td_waveform_to_fd_waveform(hp, out=out)
 
     else:
