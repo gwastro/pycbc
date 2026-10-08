@@ -470,6 +470,29 @@ class TestMarginalizedPolModels(unittest.TestCase):
         # now test
         polsamples = margpol_model.marginalize_vector_params['polarization']
         self._test_models(margpol_model, orig_model, polsamples)
+        
+    def _margpol_model(self, **kwargs):
+        return models.MarginalizedPolarization(
+            self.marg_variable, data=copy.deepcopy(self.data),
+            low_frequency_cutoff=self.flow,
+            psds=self.psds,
+            static_params=self.static,
+            ignore_failed_waveforms=True,
+            **kwargs
+        )
+
+    def test_margpol_samples(self):
+        """Tests that the number of polarization samples in the
+        MarginalizedPolarization model is set correctly."""
+        model = self._margpol_model()
+        self.assertEqual(
+            len(model.marginalize_vector_params['polarization']), 1000)
+        model = self._margpol_model(marginalize_vector_samples=50)
+        self.assertEqual(
+            len(model.marginalize_vector_params['polarization']), 50)
+        # the removed argument is rejected rather than silently ignored
+        with self.assertRaises(ValueError):
+            self._margpol_model(polarization_samples=60)
 
     def test_gated_models(self):
         """Tests that the Gated models are consistent."""
@@ -493,7 +516,7 @@ class TestMarginalizedPolModels(unittest.TestCase):
         polsamples = margpol_model.pol
         self._test_models(margpol_model, orig_model, polsamples)
         
-    def test_polarization_samples(self):
+    def test_marginalize_vector_samples(self):
         """Test that marginalized model matches brute force Gaussian marg
         when specifying a non-default number of polarization samples.
         """
@@ -504,7 +527,7 @@ class TestMarginalizedPolModels(unittest.TestCase):
             psds=self.psds,
             static_params=self.static,
             ignore_failed_waveforms=True,
-            polarization_samples=nsamples
+            marginalize_vector_samples=nsamples
         )
         orig_model = models.GaussianNoise(
             self.orig_variable, data=copy.deepcopy(self.data),
