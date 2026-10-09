@@ -1823,11 +1823,17 @@ class LiveBatchMatchedFilter:
         mem_ids = [(a, b) for a, b in zip(chunk_durations, self.chunks)]
         mem_types = set(zip(mem_ids, samples))
 
+        # Groups are processed strictly one at a time, so we use one pair
+        # of memory buggers for both, sized for the largest and using views
+        # for the others.
+        maxsize = int(max(size for _, size in mem_types))
+        self._out_pool = zeros(maxsize, dtype=numpy.complex64)
+        self._cout_pool = zeros(maxsize, dtype=numpy.complex64)
         self.tgroups, self.mids = [], []
         for i, size in mem_types:
             dur, count = i
-            self.out_mem[i] = zeros(size, dtype=numpy.complex64)
-            self.cout_mem[i] = zeros(size, dtype=numpy.complex64)
+            self.out_mem[i] = self._out_pool[0:int(size)]
+            self.cout_mem[i] = self._cout_pool[0:int(size)]
             self.ifts[i] = IFFT(
                 self.cout_mem[i],
                 self.out_mem[i],
@@ -1952,6 +1958,11 @@ class LiveBatchMatchedFilter:
         valid_start = int(valid_end - self.data.blocksize * self.data.sample_rate)
 
         seg = slice(valid_start, valid_end)
+
+        # Ensure memory is 0 before correlating
+        flen = len(tgroup[0])
+        cmem = self.cout_mem[mid].data.reshape(len(tgroup), psize)
+        cmem[:, flen:] = 0
 
         self.corr[self.block_id].execute(stilde)
         self.ifts[mid].execute()
