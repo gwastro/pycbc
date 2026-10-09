@@ -305,9 +305,6 @@ class InjFilterRejector(object):
         from pycbc.filter import sigma
         return float(sigma(ht, psd=psd, low_frequency_cutoff=self.f_lower))
 
-    # Alias to align with injection_optimal_snr terminology
-    injection_optimal_snr = optimal_snr
-
     def get_inj_end_times(self):
         """Return a list of the sorted injection end times."""
         if self._end_times is None:
@@ -435,56 +432,49 @@ class InjFilterRejector(object):
         seg_start_time = segment.start_time - self.seg_buffer
         seg_end_time = segment.end_time + self.seg_buffer
 
+        # Collect injections that fall within this segment
+        seg_injections = []
+        for ii, inj in enumerate(self.injection_params.table):
+            if isinstance(inj, np.record):
+                end_time = inj['tc']
+                sim_id = self.injection_ids[ii] if self.injection_ids else ii
+            else:
+                end_time = (inj.geocent_end_time +
+                            1E-9 * inj.geocent_end_time_ns)
+                sim_id = getattr(inj, 'simulation_id', ii)
+
+            if seg_start_time <= end_time <= seg_end_time:
+                seg_injections.append((inj, sim_id))
+
+        if not seg_injections:
+            # No injections in this segment
+            return False
+
         # Chirp time test
         if self.chirp_time_window is not None:
             m1 = bank.table[t_num]['mass1']
             m2 = bank.table[t_num]['mass2']
             tau0_temp, _ = mass1_mass2_to_tau0_tau3(m1, m2, self.f_lower)
-            for inj in self.injection_params.table:
-                if isinstance(inj, np.record):
-                    # hdf format file
-                    end_time = inj['tc']
-                else:
-                    # must be an xml file originally
-                    end_time = inj.geocent_end_time + \
-                        1E-9 * inj.geocent_end_time_ns
-
-                if not(seg_start_time <= end_time <= seg_end_time):
-                    continue
-                tau0_inj, _ = \
-                    mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
-                                             self.f_lower)
-                tau_diff = abs(tau0_temp - tau0_inj)
-                if tau_diff <= self.chirp_time_window:
+            for inj, _ in seg_injections:
+                tau0_inj, _ = mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
+                                                       self.f_lower)
+                if abs(tau0_temp - tau0_inj) <= self.chirp_time_window:
                     break
             else:
-                # Get's here if all injections are outside chirp-time window
                 return False
 
         # Optimal SNR test
         if self.optimal_snr_threshold is not None:
-            for ii, inj in enumerate(self.injection_params.table):
-                if isinstance(inj, np.record):
-                    end_time = inj['tc']
-                    sim_id = self.injection_ids[ii]
-                else:
-                    end_time = inj.geocent_end_time + \
-                        1E-9 * inj.geocent_end_time_ns
-                    sim_id = inj.simulation_id
-
-                if not (seg_start_time <= end_time <= seg_end_time):
-                    continue
+            for _, sim_id in seg_injections:
                 snr = self.optimal_snr(sim_id, segment.psd)
                 if snr is not None and snr >= self.optimal_snr_threshold:
                     break
             else:
-                # All injections in segment are below optimal SNR threshold
                 return False
 
         # Coarse match test
         if self.match_threshold:
             if self._short_template_mem is None:
-                # Set the memory for the short templates
                 wav_len = 1 + int(self.coarsematch_fmax /
                                   self.coarsematch_deltaf)
                 self._short_template_mem = zeros(wav_len, dtype=np.complex64)
@@ -493,7 +483,6 @@ class InjFilterRejector(object):
             try:
                 red_psd = self._short_psd_storage[id(segment.psd)]
             except KeyError:
-                # PSD doesn't exist yet, so make it!
                 curr_psd = segment.psd.numpy()
                 step_size = int(self.coarsematch_deltaf / segment.psd.delta_f)
                 max_idx = int(self.coarsematch_fmax / segment.psd.delta_f) + 1
@@ -504,13 +493,11 @@ class InjFilterRejector(object):
 
             # Set htilde to be the current short template
             if not t_num == self._short_template_id:
-                # Set the memory for the short templates if unset
                 if self._short_template_mem is None:
                     wav_len = 1 + int(self.coarsematch_fmax /
                                       self.coarsematch_deltaf)
                     self._short_template_mem = zeros(wav_len,
                                                      dtype=np.complex64)
-                # Generate short waveform
                 htilde = bank.generate_with_delta_f_and_max_freq(
                     t_num, self.coarsematch_fmax, self.coarsematch_deltaf,
                     low_frequency_cutoff=bank.table[t_num].f_lower,
@@ -520,26 +507,13 @@ class InjFilterRejector(object):
             else:
                 htilde = self._short_template_wav
 
-            for ii, inj in enumerate(self.injection_params.table):
-                if isinstance(inj, np.record):
-                    # hdf format file
-                    end_time = inj['tc']
-                    sim_id = self.injection_ids[ii]
-                else:
-                    # must be an xml file originally
-                    end_time = inj.geocent_end_time + \
-                        1E-9 * inj.geocent_end_time_ns
-                    sim_id = inj.simulation_id
-
-                if not(seg_start_time < end_time < seg_end_time):
-                    continue
+            for _, sim_id in seg_injections:
                 curr_inj = self.short_injections[sim_id]
                 o, _ = match(htilde, curr_inj, psd=red_psd,
                              low_frequency_cutoff=self.f_lower)
                 if o > self.match_threshold:
                     break
             else:
-                # Get's here if all injections are outside match threshold
                 return False
 
         return True

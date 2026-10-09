@@ -173,8 +173,8 @@ class TestInjFilterRejector(unittest.TestCase):
         reject = rej.template_segment_checker(DummyBank(), 0, seg)
         self.assertFalse(reject)
 
-    def test_optimal_snr_calculation_and_alias(self):
-        """Verify optimal_snr() calculates coarse SNR and matches alias."""
+    def test_optimal_snr_calculation(self):
+        """Verify optimal_snr() calculates coarse SNR directly."""
         sig = bns_signal(tc=0.0)
         rej = InjFilterRejector('dummy.hdf', chirp_time_window=None,
                                 match_threshold=None, f_lower=F_LOWER,
@@ -190,10 +190,6 @@ class TestInjFilterRejector(unittest.TestCase):
 
         # Coarse SNR agrees with full sigma within ~5% band truncation
         self.assertAlmostEqual(got / expected, 1.0, delta=0.05)
-        # Verify alias produces identical output
-        self.assertEqual(
-            rej.injection_optimal_snr(0, psd * DYN_RANGE_FAC ** 2), got
-        )
 
     def test_disabled_rejector(self):
         """Verify disabled rejector allows all templates and triggers."""
