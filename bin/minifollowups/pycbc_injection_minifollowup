@@ -114,7 +114,7 @@ def sort_injections(args, inj_group, missed):
             inj_group['mass1'][:][missed],
             inj_group['mass2'][:][missed]
         )
-        dec_chirp_dist = chirp_distance(dec_dist, mchirp)
+        dec_chirp_dist = chirp_distance(dec_eff_dist, mchirp)
         sorter = dec_chirp_dist.argsort()
         return missed[sorter]
 

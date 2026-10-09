@@ -193,7 +193,7 @@ two_column_layout('plots', result_plots)
 pycbc.workflow.make_versioning_page(
     workflow,
     container.cp,
-    rdir['workflow/version'],
+    'results/version',
 )
 
 

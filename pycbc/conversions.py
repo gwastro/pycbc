@@ -644,7 +644,7 @@ def mchirp_from_eccmchirp_eccentricity(eccmchirp, eccentricity, method="spa_phas
                                 m2 * ( Delta_gamma +
                                 m2 * ( kappa_gamma  +
                                 m2 * zeta_gamma )))
-            f = m * (1 + e2 * (alpha + e2 * ( beta + e2 *gamma ))) - Emchirp
+            f = m * (1 + e2 * (alpha + e2 * ( beta + e2 *gamma ))) - eccmchirp
             d_alpha = xi
             d_beta = m * ( 2 * Xi_beta + m2 * ( 4 * Delta_beta +
                                                 m2 *( 6 * kappa_beta +

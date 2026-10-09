@@ -42,7 +42,7 @@ _scheme, _context = parse_args_all_schemes("Scheme")
 # easier to check the  array types later
 if isinstance(_context,CUDAScheme):
     import pycuda
-    import pycuda.gpuarray
+    import pycuda.gpuarray  # noqa: F401
     from pycuda.gpuarray import GPUArray as SchemeArray
 elif isinstance(_context,CPUScheme):
     from numpy import ndarray as SchemeArray

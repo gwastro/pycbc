@@ -94,7 +94,7 @@ out_strain = pycbc.strain.from_cli(args, dyn_range_fac=pycbc.DYN_RANGE_FAC,
 # if requested, save the gates while we have them
 if args.output_gates_file:
     logging.info('Writing output gates')
-    with file(args.output_gates_file, 'wb') as gate_f:
+    with open(args.output_gates_file, 'wb') as gate_f:
         for k, v in out_strain.gating_info.items():
             for t, w, p in v:
                 gate_f.write('%.4f %.2f %.2f\n' % (t, w, p))

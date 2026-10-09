@@ -607,6 +607,11 @@ while tau0s < args.tau0_end:
             conv = uconv
         kloop = 0
 
+        # These variables will be set during the loop,
+        # but as they are mentioned in the loop initialisation,
+        # not setting them will cause an error on code quality checks
+        kconv = None
+        okconv = None
         while ((kloop == 0) or (kconv / okconv) > .5) and len(bank) > 10:
             r += 1
             kloop += 1

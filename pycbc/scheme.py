@@ -27,6 +27,7 @@ This modules provides python contexts that set the default behavior for PyCBC
 objects.
 """
 import os
+import ctypes
 import pycbc
 from functools import wraps
 import logging
@@ -275,7 +276,7 @@ def cpuonly(func):
     @wraps(func)
     def _cpuonly(*args, **kwds):
         if not issubclass(type(mgr.state), CPUScheme):
-            raise TypeError(fn.__name__ +
+            raise TypeError(func.__name__ +
                             " can only be called from a CPU processing scheme.")
         else:
             return func(*args, **kwds)

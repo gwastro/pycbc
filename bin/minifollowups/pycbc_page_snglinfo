@@ -215,8 +215,8 @@ if args.significance_file and not args.n_loudest:
         sngl_stat = sig_f['foreground/stat'][:]
         sngl_pastro = sig_f['foreground/p_astro_exc'][:]
 
-    if trig_id in trigger_ids:
-        trig_idx = numpy.nonzero(trigger_ids == trig_id)[0][0]
+    if args.trigger_id in trigger_ids:
+        trig_idx = numpy.nonzero(trigger_ids == args.trigger_id)[0][0]
         headers.append("Single-detector statistic")
         data[0].append("%.2f" % sngl_stat[trig_idx])
         headers.append("Single-detector p_astro")

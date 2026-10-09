@@ -212,7 +212,7 @@ if "hist" not in args.plot_type:
             c.set_label("False Alarm Rate (yr$^{-1}$)")
         except TypeError:
             # Can't make colorbar if no quiet found injections
-            if len(fvals):
+            if len(xvals):
                 raise
 else:
     # it's a histogram!

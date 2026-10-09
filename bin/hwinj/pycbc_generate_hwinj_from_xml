@@ -61,7 +61,7 @@ parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'], required=True,
 opts = parser.parse_args()
 
 # Default logging level is debug: --verbose adds to this
-init_logging(args.verbose, default_level=2)
+init_logging(opts.verbose, default_level=2)
 
 # read in injection LIGOLW XML file
 logging.info('Reading injection file')

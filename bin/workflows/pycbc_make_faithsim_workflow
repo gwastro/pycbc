@@ -118,7 +118,7 @@ split_exe = wf.PycbcSplitBankXmlExecutable(
 )
 splitbank_node = split_exe.create_node(inj)
 
-workflow += spltbank_node
+workflow += splitbank_node
 
 faithsim_exe = FaithsimExecutable(
     workflow.cp, "pycbc_faithsim", ifos=["X1"], out_dir=workflow.output_dir +"match"
@@ -145,7 +145,7 @@ for i, bank in enumerate(splitbank_node.output_files):
 collect_node = collect_exe.create_node(
     workflow.analysis_time,
     faithsim_files,
-    spltbank_node.output_files,
+    splitbank_node.output_files,
     extra_tags=["result"],
 )
 workflow += collect_node
