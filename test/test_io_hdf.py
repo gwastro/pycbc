@@ -1,8 +1,8 @@
 import os
-import unittest
 import tempfile
+import unittest
 import numpy as np
-from utils import simple_exit, parse_args_cpu_only
+from utils import parse_args_cpu_only, simple_exit
 from pycbc.io.hdf import HFile
 
 parse_args_cpu_only("io.hdf")
