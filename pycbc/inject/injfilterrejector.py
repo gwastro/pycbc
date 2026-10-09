@@ -27,15 +27,14 @@ testing the "similarity" of templates and injections.
 """
 
 import numpy as np
-from igwn_segments import segment
-from igwn_segments import segmentlist
+from igwn_segments import segment, segmentlist
+
 from pycbc import DYN_RANGE_FAC
 from pycbc.filter import match
-from pycbc.pnutils import nearest_larger_binary_number
-from pycbc.pnutils import mass1_mass2_to_tau0_tau3
-from pycbc.types import FrequencySeries, zeros
-from pycbc.types import MultiDetOptionAction
-from pycbc.types import positive_float
+from pycbc.pnutils import (mass1_mass2_to_tau0_tau3,
+                           nearest_larger_binary_number)
+from pycbc.types import (FrequencySeries, MultiDetOptionAction,
+                         positive_float, zeros)
 
 _injfilterrejector_group_help = (
     "Options that, if injections are present in "
@@ -221,8 +220,6 @@ class InjFilterRejector(object):
         # Variables for storing arrays (reduced injections, memory
         # for templates, reduced PSDs ...)
         self.short_injections = {}
-        self.injection_power = {}
-        self.injection_tilde = {}
         self._short_template_mem = None
         self._short_psd_storage = {}
         self._short_template_id = None
@@ -292,12 +289,19 @@ class InjFilterRejector(object):
 
     def optimal_snr(self, simulation_id, psd):
         """Optimal SNR of a stored injection against psd."""
-        if not self.enabled or simulation_id not in self.injection_tilde:
+        if not self.enabled or simulation_id not in self.short_injections:
             return None
-        ht = self.injection_tilde[simulation_id]
+        ht = self.short_injections[simulation_id]
         if psd.delta_f != ht.delta_f:
             from pycbc.psd import interpolate
             psd = interpolate(psd, ht.delta_f)
+        min_len = min(len(ht), len(psd))
+        ht = ht[:min_len]
+        psd = psd[:min_len]
+        if psd.precision != ht.precision:
+            from pycbc.types import FrequencySeries
+            psd = FrequencySeries(psd.numpy().astype(np.float32),
+                                  delta_f=ht.delta_f)
         from pycbc.filter import sigma
         return float(sigma(ht, psd=psd, low_frequency_cutoff=self.f_lower))
 
@@ -354,8 +358,7 @@ class InjFilterRejector(object):
 
         # Iterate through each precomputed merged interval
         for start, end in merged_intervals:
-            # Perform a vectorized comparison for the current interval
-            # This finds all elements in trig_times that are >= start AND <= end
+            # This finds elements in trig_times with start <= t <= end
             curr_interval_matches = (trig_times >= start) & (trig_times <= end)
 
             # Use bitwise OR assignment to accumulate the matches.
@@ -371,19 +374,13 @@ class InjFilterRejector(object):
                                     self.optimal_snr_threshold is not None):
             # Do nothing!
             return
-        if simulation_id in self.short_injections or \
-                simulation_id in self.injection_power:
+        if simulation_id in self.short_injections:
             err_msg = "An injection with simulation id "
             err_msg += str(simulation_id)
             err_msg += " has already been added. This suggests "
             err_msg += "that your injection file contains injections with "
             err_msg += "duplicate simulation_ids. This is not allowed."
             raise ValueError(err_msg)
-        if not self.match_threshold:
-            # The caller adds inj_waveform to the data after this, and the
-            # resize below pads it in place; only the optimal-SNR cut wants
-            # the transform here, so leave the injected signal untouched.
-            inj_waveform = inj_waveform.copy()
         curr_length = len(inj_waveform)
         new_length = int(nearest_larger_binary_number(curr_length))
         # Don't want length less than 1/delta_f
@@ -394,21 +391,13 @@ class InjFilterRejector(object):
         # Dynamic range is important here!
         inj_tilde_np = inj_tilde.numpy() * DYN_RANGE_FAC
         delta_f = inj_tilde.get_delta_f()
-        df_ratio = int(self.coarsematch_deltaf/delta_f)
-        if self.optimal_snr_threshold is not None:
-            self.injection_tilde[simulation_id] = inj_tilde * DYN_RANGE_FAC
-            power = np.abs(inj_tilde_np).astype(np.float64) ** 2
-            nbin = len(power) // df_ratio
-            self.injection_power[simulation_id] = power[:nbin * df_ratio]\
-                .reshape(nbin, df_ratio).sum(axis=1) * delta_f
-        if not self.match_threshold:
-            return
         new_freq_len = int(self.coarsematch_fmax / delta_f + 1)
         # This shouldn't be a problem if injections are generated at
         # 16384 Hz ... It is only a problem of injection sample rate
         # gives a lower Nyquist than the trunc_f_max. If this error is
         # ever raised one could consider zero-padding the injection.
         assert(new_freq_len <= len(inj_tilde))
+        df_ratio = int(self.coarsematch_deltaf / delta_f)
         inj_tilde_np = inj_tilde_np[:new_freq_len:df_ratio]
         new_inj = FrequencySeries(inj_tilde_np, dtype=np.complex64,
                                   delta_f=self.coarsematch_deltaf)
@@ -472,6 +461,26 @@ class InjFilterRejector(object):
                 # Get's here if all injections are outside chirp-time window
                 return False
 
+        # Optimal SNR test
+        if self.optimal_snr_threshold is not None:
+            for ii, inj in enumerate(self.injection_params.table):
+                if isinstance(inj, np.record):
+                    end_time = inj['tc']
+                    sim_id = self.injection_ids[ii]
+                else:
+                    end_time = inj.geocent_end_time + \
+                        1E-9 * inj.geocent_end_time_ns
+                    sim_id = inj.simulation_id
+
+                if not (seg_start_time <= end_time <= seg_end_time):
+                    continue
+                snr = self.optimal_snr(sim_id, segment.psd)
+                if snr is not None and snr >= self.optimal_snr_threshold:
+                    break
+            else:
+                # All injections in segment are below optimal SNR threshold
+                return False
+
         # Coarse match test
         if self.match_threshold:
             if self._short_template_mem is None:
@@ -489,7 +498,7 @@ class InjFilterRejector(object):
                 step_size = int(self.coarsematch_deltaf / segment.psd.delta_f)
                 max_idx = int(self.coarsematch_fmax / segment.psd.delta_f) + 1
                 red_psd_data = curr_psd[:max_idx:step_size]
-                red_psd = FrequencySeries(red_psd_data, #copy=False,
+                red_psd = FrequencySeries(red_psd_data.astype(np.float32),
                                           delta_f=self.coarsematch_deltaf)
                 self._short_psd_storage[id(curr_psd)] = red_psd
 
