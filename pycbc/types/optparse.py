@@ -55,7 +55,8 @@ def to_int(value):
     """
     if isinstance(value, float):
         if not value.is_integer():
-            raise ValueError(f"Cannot convert non-integer value {value!r} to int")
+            err = f"Cannot convert non-integer value {value!r} to int"
+            raise ValueError(err)
         return int(value)
     try:
         return int(value)
@@ -63,14 +64,18 @@ def to_int(value):
         try:
             f = float(value)
         except (ValueError, TypeError) as err:
-            raise ValueError(f"Cannot convert non-integer value {value!r} to int") from err
+            msg = f"Cannot convert non-integer value {value!r} to int"
+            raise ValueError(msg) from err
         if f.is_integer():
             return int(f)
-        raise ValueError(f"Cannot convert non-integer value {value!r} to int") from None
+        msg = f"Cannot convert non-integer value {value!r} to int"
+        raise ValueError(msg) from None
 
 
 def _get_converter(dtype):
-    """Return to_int for int dtype to support whole-number float strings, else dtype."""
+    """Return to_int for int dtype to support whole-number float strings,
+    else dtype.
+    """
     return to_int if dtype is int else dtype
 
 
@@ -516,8 +521,8 @@ def _positive_type(s, dtype=None):
     conv = _get_converter(dtype)
     try:
         value = conv(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(err_msg)
+    except ValueError as err:
+        raise argparse.ArgumentTypeError(err_msg) from err
     if value <= 0:
         raise argparse.ArgumentTypeError(err_msg)
     return value
@@ -533,8 +538,8 @@ def _nonnegative_type(s, dtype=None):
     conv = _get_converter(dtype)
     try:
         value = conv(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(err_msg)
+    except ValueError as err:
+        raise argparse.ArgumentTypeError(err_msg) from err
     if value < 0:
         raise argparse.ArgumentTypeError(err_msg)
     return value
