@@ -181,30 +181,14 @@ def cluster_reduce(idx, snr, window_size):
 
 
 class H5FileSyntSugar(object):
-    """Convenience class that adds some syntactic sugar to h5py.File.
-
-    Parameters
-    ----------
-    name : str
-        Path to the HDF5 file.
-    group : {None, str}, optional
-        HDF5 group path (e.g. 'H1' or 'L1') under which datasets will be
-        written. If None or empty, datasets are written at the root.
-    mode : {'a', str}, optional
-        File opening mode. Defaults to 'a' (create or append), which
-        universally supports both initial creation and multi-detector appending.
-    prefix : {None, str}, optional
-        Backwards-compatibility alias for `group`.
-    """
-    def __init__(self, name, group=None, mode='a', prefix=None):
-        if prefix is not None:
-            group = prefix
-        self.group = group or ''
-        self.prefix = self.group  # backwards-compatibility alias
-        self.f = h5py.File(name, mode)
+    """Convenience class that adds some syntactic sugar to h5py.File."""
+    def __init__(self, name, prefix=''):
+        self.prefix = prefix or ''
+        self.f = h5py.File(name, 'a')
 
     def __setitem__(self, name, data):
-        full_path = (self.group + '/' + name).strip('/') if self.group else name.strip('/')
+        full_path = (self.prefix + '/' + name).strip('/') if self.prefix \
+            else name.strip('/')
         if full_path in self.f:
             del self.f[full_path]
         self.f.create_dataset(
@@ -232,11 +216,13 @@ class EventManager(object):
         column,
         column_types,
         array_minsize=10000,
+        ifo=None,
         **kwds
     ):
         self.opt = opt
+        self.ifo = ifo
         self.global_params = kwds
-        self.array_minsize=array_minsize
+        self.array_minsize = array_minsize
 
         self.event_dtype = [('template_id', int)]
         for col, coltype in zip(column, column_types):
@@ -298,9 +284,7 @@ class EventManager(object):
         for arg, value in opt_dict.items():
             if isinstance(value, dict):
                 setattr(opt, arg, getattr(opt, arg)[ifo])
-        mgr = cls(opt, column, column_types, **kwds)
-        mgr.ifo = ifo
-        return mgr
+        return cls(opt, column, column_types, ifo=ifo, **kwds)
 
     def cut_events_via_mask(self, keep):
         # keep should be a boolean array of len self._events_size
@@ -519,12 +503,7 @@ class EventManager(object):
         th = numpy.array([p['tmplt'].template_hash for p in
                           self.template_params])
         tid = self.events['template_id']
-        ifo = getattr(self, 'ifo', None)
-        if ifo is None:
-            if isinstance(self.opt.channel_name, str):
-                ifo = self.opt.channel_name[0:2]
-            elif isinstance(self.opt.channel_name, dict):
-                ifo = list(self.opt.channel_name.keys())[0]
+        ifo = self.ifo if self.ifo is not None else self.opt.channel_name[0:2]
         f = H5FileSyntSugar(outname, ifo)
 
         if len(self.events):
@@ -647,8 +626,6 @@ class EventManager(object):
                             numpy.array([g[1] for g in gating_info[gate_type]])
                     f['gating/' + gate_type + '/pad'] = \
                             numpy.array([g[2] for g in gating_info[gate_type]])
-        if hasattr(self, 'non_threshold_time') and self.non_threshold_time is not None:
-            f['search/non_threshold_time'] = numpy.array([float(self.non_threshold_time)])
 
         f.close()
 
