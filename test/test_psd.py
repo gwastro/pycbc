@@ -31,8 +31,8 @@ from types import SimpleNamespace
 from unittest import mock
 import pycbc
 import pycbc.psd
-from pycbc.psd import (psd_estimation_window, psd_estimation_data_length,
-                       generate_segment_psds)
+from pycbc.psd import generate_segment_psds
+from pycbc.strain import StrainSegments
 from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.fft import ifft
 from pycbc.fft.fftw import set_measure_level
@@ -137,7 +137,7 @@ class TestPSDSegmentPlacement(unittest.TestCase):
         self.context = _context
         self.psd_low_freq_cutoff = 10.
 
-    def _white_noise(self, size, sample_freq):
+    def _white_noise(self, size, sample_freq=1.):
         numpy.random.seed(132435)
         fd_size = size // 2 + 1
         delta_f = sample_freq / size
@@ -149,86 +149,116 @@ class TestPSDSegmentPlacement(unittest.TestCase):
         ifft(FrequencySeries(noise, delta_f=delta_f), out)
         return out
 
+    def _psd_window(self, noise, pdl, seg_start, seg_stop, ana_start, ana_stop):
+        """(start, stop) chosen by generate_segment_psds for one segment.
+        psd_num_segments=1 makes the estimation stretch exactly pdl samples.
+        """
+        opt = SimpleNamespace(
+            psd_estimation='median', psd_segment_length=pdl,
+            psd_segment_stride=pdl, psd_num_segments=1,
+            psd_inverse_length=None, psd_model=None, psd_file=None,
+            asd_file=None, psd_low_frequency_cutoff=None,
+            invpsd_trunc_method=None)
+        with self.context:
+            out = generate_segment_psds(
+                opt, noise, [(seg_start, seg_stop, ana_start, ana_stop)],
+                pdl // 2 + 1, 1. / pdl, self.psd_low_freq_cutoff)
+        start, stop, _ = out[0]
+        return start, stop
+
     def test_window_shorter_than_analysed(self):
         # PSD stretch shorter than the analysed span -> centred in it
-        start, stop = psd_estimation_window(300, 1000, 2000, 1200, 1700, 5000)
+        noise = self._white_noise(5000)
+        start, stop = self._psd_window(noise, 300, 1000, 2000, 1200, 1700)
         self.assertEqual((start, stop), (1300, 1600))
         self.assertEqual((start + stop) // 2, (1200 + 1700) // 2)
 
     def test_window_equal_to_analysed(self):
-        start, stop = psd_estimation_window(500, 1000, 2000, 1200, 1700, 5000)
+        noise = self._white_noise(5000)
+        start, stop = self._psd_window(noise, 500, 1000, 2000, 1200, 1700)
         self.assertEqual((start, stop), (1200, 1700))
 
     def test_window_between_analysed_and_segment(self):
+        noise = self._white_noise(5000)
         # covers the analysed span; spare length goes before it first
-        start, stop = psd_estimation_window(700, 1000, 2000, 1200, 1700, 5000)
+        start, stop = self._psd_window(noise, 700, 1000, 2000, 1200, 1700)
         self.assertEqual((start, stop), (1000, 1700))
         # once the "before" side is exhausted the rest spills after
-        start, stop = psd_estimation_window(850, 1000, 2000, 1200, 1700, 5000)
+        start, stop = self._psd_window(noise, 850, 1000, 2000, 1200, 1700)
         self.assertEqual((start, stop), (1000, 1850))
 
     def test_window_equal_to_segment(self):
-        start, stop = psd_estimation_window(1000, 1000, 2000, 1200, 1700, 5000)
+        noise = self._white_noise(5000)
+        start, stop = self._psd_window(noise, 1000, 1000, 2000, 1200, 1700)
         self.assertEqual((start, stop), (1000, 2000))
 
     def test_window_longer_than_segment(self):
         # centred on the segment
-        start, stop = psd_estimation_window(1400, 1000, 2000, 1200, 1700, 5000)
+        noise = self._white_noise(5000)
+        start, stop = self._psd_window(noise, 1400, 1000, 2000, 1200, 1700)
         self.assertEqual((start, stop), (800, 2200))
         self.assertEqual((start + stop) // 2, (1000 + 2000) // 2)
 
     def test_window_slides_inside_data_at_edges(self):
+        noise = self._white_noise(5000)
         # near the start: cannot begin before sample 0
-        start, stop = psd_estimation_window(1400, 0, 1000, 100, 600, 5000)
+        start, stop = self._psd_window(noise, 1400, 0, 1000, 100, 600)
         self.assertEqual((start, stop), (0, 1400))
         # near the end: cannot finish past the last sample
-        start, stop = psd_estimation_window(1400, 4000, 5000, 4200, 4700, 5000)
+        start, stop = self._psd_window(noise, 1400, 4000, 5000, 4200, 4700)
         self.assertEqual((start, stop), (3600, 5000))
 
     def test_window_with_zero_padding(self):
+        noise = self._white_noise(5000)
         # zero-padded leading segment: seg_start < 0, analysed span reaches
         # into the pad; the stretch must stay within the real data [0, n]
         for pdl in (300, 600, 700, 900):
-            start, stop = psd_estimation_window(pdl, -300, 700, -100, 400, 5000)
+            start, stop = self._psd_window(noise, pdl, -300, 700, -100, 400)
             self.assertGreaterEqual(start, 0)
             self.assertLessEqual(stop, 5000)
             self.assertEqual(stop - start, pdl)
         # zero-padded trailing segment
         for pdl in (300, 600, 700, 900):
-            start, stop = psd_estimation_window(pdl, 4300, 5300, 4600, 5200,
-                                                5000)
+            start, stop = self._psd_window(noise, pdl, 4300, 5300, 4600, 5200)
             self.assertGreaterEqual(start, 0)
             self.assertLessEqual(stop, 5000)
             self.assertEqual(stop - start, pdl)
 
     def test_data_length_clamped_and_warns(self):
-        # --psd-num-segments omitted, data too short for the stride -> the
-        # segment count is clamped to 1 so the length is never < one Welch
-        # segment, and a warning is emitted.
-        opt = SimpleNamespace(psd_segment_length=4, psd_segment_stride=2,
-                              psd_num_segments=None)
-        with mock.patch.object(pycbc.psd.logging, 'warning') as warn:
-            self.assertEqual(psd_estimation_data_length(opt, 1, 3), 4)
-        self.assertTrue(warn.called)
-        # explicit small/zero values are also clamped to at least one segment,
-        # without a warning
-        opt = SimpleNamespace(psd_segment_length=4, psd_segment_stride=2,
-                              psd_num_segments=0)
-        with mock.patch.object(pycbc.psd.logging, 'warning') as warn:
-            self.assertEqual(psd_estimation_data_length(opt, 1, 1000), 4)
+        # --psd-num-segments omitted and data too short for the stride -> the
+        # segment count is clamped to 1, so the estimation stretch is never
+        # shorter than one Welch segment, and a warning is emitted. (Patch
+        # logging.warning rather than use assertLogs: another test module
+        # calls logging.disable().)
+        noise = self._white_noise(4096)
+        opt = SimpleNamespace(
+            psd_estimation='median', psd_segment_length=1024,
+            psd_segment_stride=4096, psd_num_segments=None,
+            psd_inverse_length=None, psd_model=None, psd_file=None,
+            asd_file=None, psd_low_frequency_cutoff=None,
+            invpsd_trunc_method=None)
+        with self.context, \
+                mock.patch.object(pycbc.psd.logging, 'warning') as warn:
+            out = generate_segment_psds(opt, noise, [(0, 4096, 0, 4096)],
+                                        513, 1. / 1024,
+                                        self.psd_low_freq_cutoff)
+        self.assertTrue(
+            any('Welch segment' in call.args[0] for call in warn.call_args_list))
+        self.assertEqual(out[0][1] - out[0][0], 1024)
+        # an explicit (even degenerate) value is also clamped, without that
+        # warning (segment fully covered by the window, so no other warning
+        # fires either)
+        opt.psd_num_segments = 0
+        with self.context, \
+                mock.patch.object(pycbc.psd.logging, 'warning') as warn:
+            out = generate_segment_psds(opt, noise, [(0, 1024, 0, 1024)],
+                                        513, 1. / 1024,
+                                        self.psd_low_freq_cutoff)
         self.assertFalse(warn.called)
-
-    def test_segment_bounds(self):
-        from pycbc.psd import _segment_bounds
-        # from the psd_seg_bounds set by StrainSegments.fourier_segments
-        seg = SimpleNamespace(psd_seg_bounds=(10, 20, 12, 18))
-        self.assertEqual(_segment_bounds(seg), (10, 20, 12, 18))
-        # backward compatible: derive from seg_slice/analyze if that is all the
-        # segment carries (segments built the pre-psd_seg_bounds way)
-        seg = SimpleNamespace(seg_slice=slice(10, 20), analyze=slice(2, 8))
-        self.assertEqual(_segment_bounds(seg), (10, 20, 12, 18))
+        self.assertEqual(out[0][1] - out[0][0], 1024)
 
     def test_generate_segment_psds_alignment(self):
+        # multiple real segments: in-bounds windows, repeats share the PSD
         sr = 4096.
         noise = self._white_noise(262144, sr)   # 64 s
         n = len(noise)
@@ -252,14 +282,33 @@ class TestPSDSegmentPlacement(unittest.TestCase):
             out = generate_segment_psds(opt, noise, analysis_segments,
                                         flen, delta_f, self.psd_low_freq_cutoff)
         self.assertEqual(len(out), len(analysis_segments))
-        pdl = psd_estimation_data_length(opt, sr, n)
-        for (s0, s1, a0, a1), (start, stop, _) in zip(analysis_segments, out):
-            self.assertEqual((start, stop),
-                             psd_estimation_window(pdl, s0, s1, a0, a1, n))
+        for start, stop, _ in out:
             self.assertGreaterEqual(start, 0)
             self.assertLessEqual(stop, n)
-        # segments resolving to the same window share the PSD object
+            self.assertEqual(stop - start, 3 * 2048 + 4096)
         self.assertIs(out[0][2], out[3][2])
+
+    def test_associate_psds_to_segments(self):
+        # end-to-end: associate_psds_to_segments reads seg_slice/analyze
+        # straight off the fourier segments and assigns every one a PSD
+        noise = self._white_noise(8192)
+        opt = SimpleNamespace(
+            psd_estimation='median', psd_segment_length=256,
+            psd_segment_stride=128, psd_num_segments=4,
+            psd_inverse_length=None, psd_model=None, psd_file=None,
+            asd_file=None, psd_low_frequency_cutoff=None,
+            invpsd_trunc_method=None, segment_length=4096,
+            segment_start_pad=128, segment_end_pad=16,
+            trig_start_time=0, trig_end_time=0, filter_inj_only=False,
+            injection_window=None, allow_zero_padding=False)
+        strain_segments = StrainSegments.from_cli(opt, noise)
+        fd_segments = strain_segments.fourier_segments()
+        with self.context:
+            pycbc.psd.associate_psds_to_segments(
+                opt, fd_segments, noise, strain_segments.freq_len,
+                strain_segments.delta_f, self.psd_low_freq_cutoff)
+        self.assertTrue(fd_segments)
+        self.assertTrue(all(fs.psd is not None for fs in fd_segments))
 
 
 suite = unittest.TestSuite()
