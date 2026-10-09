@@ -18,6 +18,7 @@ template banks) should read the documentation at:
    tmpltbank
    hwinj
    banksim
+   bank_verifier
    faithsim
    upload_to_gracedb
    pycbc_condition_strain

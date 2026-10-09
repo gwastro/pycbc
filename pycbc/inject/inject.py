@@ -156,13 +156,20 @@ class _XMLInjectionSet(object):
     Attributes
     ----------
     indoc
-    table
+    table : pycbc.io.WaveformArray
+        The injection parameters, one row per injection.
     """
 
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = lsctables.SimInspiralTable.get_table(self.indoc)
+        sim_table = lsctables.SimInspiralTable.get_table(self.indoc)
+        # time_geocent is a property computed from geocent_end_time(_ns) on
+        # a ligolw row, not a plain column, so it must be added explicitly.
+        time_geocent = np.array([float(row.time_geocent)
+                                 for row in sim_table])
+        self.table = pycbc.io.WaveformArray.from_ligolw_table(sim_table)
+        self.table = self.table.add_fields(time_geocent, 'time_geocent')
         self.extra_args = kwds
 
     def apply(
@@ -239,10 +246,12 @@ class _XMLInjectionSet(object):
 
         injections = self.table
         if simulation_ids:
-            injections = [inj for inj in injections \
-                          if inj.simulation_id in simulation_ids]
-        injection_parameters = []
-        for inj in injections:
+            mask = np.array([inj.simulation_id in simulation_ids
+                             for inj in injections])
+            injections = injections[mask]
+
+        injected_mask = np.zeros(len(injections), dtype=bool)
+        for ii, inj in enumerate(injections):
             f_l = inj.f_lower if f_lower is None else f_lower
             # roughly estimate if the injection may overlap with the segment
             # Add 2s to end_time to account for ringdown and light-travel delay
@@ -262,7 +271,7 @@ class _XMLInjectionSet(object):
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
-            injection_parameters.append(inj)
+            injected_mask[ii] = True
             if inj_filter_rejector is not None:
                 sid = inj.simulation_id
                 inj_filter_rejector.generate_short_inj_from_inj(signal, sid)
@@ -270,8 +279,7 @@ class _XMLInjectionSet(object):
         strain.data[:] = lalstrain.data.data[:]
 
         injected = copy.copy(self)
-        injected.table = lsctables.SimInspiralTable()
-        injected.table += injection_parameters
+        injected.table = injections[injected_mask]
         if inj_filter_rejector is not None:
             inj_filter_rejector.injection_params = injected
         return injected
@@ -316,7 +324,7 @@ class _XMLInjectionSet(object):
 
     def end_times(self):
         """Return the end times of all injections"""
-        return [inj.time_geocent for inj in self.table]
+        return self.table.time_geocent
 
     @staticmethod
     def write(filename, samples, write_params=None, static_args=None):
@@ -1283,6 +1291,82 @@ class InjectionSet(object):
         if opt.injection_f_final is not None:
             kwa['f_final'] = opt.injection_f_final
         return InjectionSet(opt.injection_file, **kwa)
+
+
+def read_hdf_param_table(hdf_file):
+    """Read a plain HDF table of equal-length columns (one dataset per
+    parameter), as used for HDF template banks.
+    """
+    with pycbc.io.HFile(hdf_file, 'r') as f:
+        params = list(f.attrs['parameters']) if 'parameters' in f.attrs \
+            else list(f.keys())
+        params = [p.decode() if hasattr(p, 'decode') else p for p in params]
+        num = f[params[0]].size
+        dtype = [(p, f[p][:].dtype) for p in params]
+        table = pycbc.io.WaveformArray(num, dtype=dtype)
+        for p in params:
+            table[p] = f[p][:]
+    return table
+
+
+def read_injection_table(file_path, xml_tables=('sim_inspiral', 'sngl_inspiral')):
+    """Read a table of waveform parameters from an HDF or LIGOLW XML file.
+
+    HDF files are normally read as an injection set (as written by
+    ``pycbc_create_injections``, which requires a 'tc' column); if that
+    fails, falls back to reading it as a plain HDF table (e.g. an HDF
+    template bank re-used as a parameter file).
+
+    For XML files, each name in ``xml_tables`` is tried in turn until one
+    is found in the document (e.g. a parameter file may hold a
+    ``sim_inspiral`` table of injections, or a ``sngl_inspiral`` template
+    bank, depending on context). The last name given is not caught, so its
+    error propagates if none of the tables are present.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the file to read. HDF and XML are distinguished by
+        extension (``.hdf``/``.h5``/``.hdf5`` vs anything else).
+    xml_tables : tuple of str, optional
+        LIGOLW table names to try, in order, for XML files. Default is
+        ``('sim_inspiral', 'sngl_inspiral')``.
+
+    Returns
+    -------
+    table : pycbc.io.WaveformArray
+        The parameter table, one row per entry.
+    """
+    ext = os.path.basename(file_path)
+    if ext.endswith(('.hdf', '.h5', '.hdf5')):
+        try:
+            return InjectionSet(file_path).table
+        except ValueError:
+            return read_hdf_param_table(file_path)
+
+    indoc = ligolw_utils.load_filename(file_path, False,
+                                       contenthandler=LIGOLWContentHandler)
+    for name in xml_tables[:-1]:
+        try:
+            table = ligolw.Table.get_table(indoc, name)
+            break
+        except ValueError:
+            continue
+    else:
+        table = ligolw.Table.get_table(indoc, xml_tables[-1])
+    return pycbc.io.WaveformArray.from_ligolw_table(table)
+
+
+def get_table_column(table, field):
+    """Return the given field/column from a waveform parameter table.
+
+    Fields missing from the table (e.g. spin1x/spin1y for an
+    aligned-spin-only injection set) default to 0.
+    """
+    try:
+        return table[field]
+    except (ValueError, TypeError):
+        return np.zeros(len(table))
 
 
 class SGBurstInjectionSet(object):

@@ -25,13 +25,11 @@ bank files, and the number of injections in each must correspond one-to-one.
 import argparse
 import numpy as np
 
-from igwn_ligolw import utils, ligolw
-
 import pycbc
 from pycbc import pnutils
 from pycbc.waveform import TemplateBank
-from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.io.hdf import HFile
+from pycbc.inject import read_injection_table
 from pycbc import load_source
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
@@ -109,9 +107,9 @@ for idx, row in enumerate(res):
         btables[row['bank']] = temp_bank.table
 
     if row['sim'] not in itables:
-        indoc = utils.load_filename(row['sim'], False,
-                                    contenthandler=LIGOLWContentHandler)
-        itables[row['sim']] = ligolw.Table.get_table(indoc, "sim_inspiral") 
+        itables[row['sim']] = read_injection_table(
+            row['sim'], xml_tables=('sim_inspiral',)
+        )
     
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]
@@ -126,7 +124,13 @@ for idx, row in enumerate(res):
             # For example spin1x is not always stored in aligned-spin banks
             bank_params[val][idx] = 0.
     for val in inj_par_list:
-        inj_params[val][idx] = getattr(it, val)
+        try:
+            inj_params[val][idx] = getattr(it, val)
+        except AttributeError:
+            # If not present set to 0.
+            # For example spin1x is not always stored for aligned-spin
+            # injection sets.
+            inj_params[val][idx] = 0.
 
 for val in bank_par_list:
     f['bank_params/{}'.format(val)] = bank_params[val] 

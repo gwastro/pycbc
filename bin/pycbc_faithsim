@@ -28,9 +28,6 @@ from numpy import complex64
 import argparse
 import sys
 
-from igwn_ligolw import utils as ligolw_utils
-from igwn_ligolw import lsctables
-
 import pycbc.strain
 import pycbc.psd
 from pycbc.waveform import td_approximants, fd_approximants
@@ -39,7 +36,8 @@ from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 from pycbc.filter import match, overlap, sigma
 from pycbc.scheme import CPUScheme, CUDAScheme
-from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.inject import read_injection_table
+
 
 def update_progress(progress):
     print('Progress: {}/{} members processed'.format(progress, 100))
@@ -84,8 +82,9 @@ parser = argparse.ArgumentParser(usage='',
     description="Calculate faithfulness for a set of waveforms.")
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--param-file", dest="bank_file", metavar="FILE",
-                    help="Sngl or Sim Inspiral Table containing waveform "
-                         "parameters.")
+                    help="File specifying the waveform parameters, either "
+                         "in HDF or as a Sngl or Sim Inspiral Table LIGOLW "
+                         "XML file.")
 parser.add_argument("--match-file", dest="out_file", metavar="FILE",
                     help="File to output match results to.")
 
@@ -155,13 +154,12 @@ if options.cuda:
 else:
     ctx = CPUScheme()
 
-# Load in the waveform1 bank file
-indoc = ligolw_utils.load_filename(options.bank_file, False,
-                                   contenthandler=LIGOLWContentHandler)
-try :
-    waveform_table = lsctables.SnglInspiralTable.get_table(indoc)
-except ValueError:
-    waveform_table = lsctables.SimInspiralTable.get_table(indoc)
+# Load in the waveform parameter file. XML files are tried as a template
+# bank (sngl_inspiral) first, then as injections (sim_inspiral), since
+# --param-file is more often a bank in this script.
+waveform_table = read_injection_table(
+    options.bank_file, xml_tables=('sngl_inspiral', 'sim_inspiral')
+)
 
 # open the output file where the max overlaps over the bank are stored 
 fout = open(options.out_file, "w")

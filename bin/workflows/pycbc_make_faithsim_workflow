@@ -5,11 +5,18 @@ Program for running a faithfulness comparisons workflow analysis between two app
 and generate files containing the match between them and plots.
 """
 
-import pycbc.workflow as wf
+import os
 import argparse
+
+import pycbc.workflow as wf
 
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.workflow.plotting import PlotExecutable
+from pycbc.workflow.jobsetup import (
+    select_generic_executable, int_gps_time_to_str,
+    PycbcCreateInjectionsExecutable, LalappsInspinjExecutable,
+)
+from pycbc.workflow.splittable import select_splitfilejob_instance
 
 def make_faithsim_plot(workflow, analysis_time, input_file, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -29,23 +36,6 @@ def make_faithsim_plot(workflow, analysis_time, input_file, out_dir, tags=None):
         files += node.output_files
 
     return files
-
-
-class CreateInjectionExecutable(wf.Executable):
-    """Class for running create_inj_file"""
-
-    current_retention_level = wf.Executable.ALL_TRIGGERS
-
-    def create_node(self, analysis_time, extra_tags=None):
-        if extra_tags is None:
-            extra_tags = []
-
-        node = wf.Executable.create_node(self)
-
-        node.new_output_file_opt(
-            analysis_time, ".xml", "--output", tags=self.tags + extra_tags
-        )
-        return node
 
 
 class FaithsimExecutable(wf.Executable):
@@ -76,10 +66,15 @@ class CollectResultsExecutable(wf.Executable):
             extra_tags = []
         node = wf.Executable.create_node(self)
 
+        # --match-inputs/--bank-inputs are repeated (action="append") options
+        # in pycbc_faithsim_collect_results, so each value needs its own
+        # copy of the flag rather than being folded into a single option.
         for match in match_list:
-            node.add_input_opt("--match-inputs", match)
+            node.add_input_opt("--match-inputs", match,
+                               check_existing_options=False)
         for bank in bank_list:
-            node.add_input_opt("--bank-inputs", bank)
+            node.add_input_opt("--bank-inputs", bank,
+                               check_existing_options=False)
 
         node.new_output_file_opt(
             analysis_time, ".dat", "--output", tags=self.tags + extra_tags
@@ -97,38 +92,61 @@ args = parser.parse_args()
 init_logging(args.verbose)
 
 workflow = wf.Workflow(args)
+wf.makedir(args.output_dir)
 
 num_banks = workflow.cp.get("splitbank", "num_banks")
 
-injections_exe = CreateInjectionExecutable(
-    workflow.cp,
-    "lalapps_inspinj",
-    ifos=["X1"],
-    out_dir=workflow.output_dir + "injections",
-    tags=["inj"],
+# The injection set is generated with lalapps_inspinj (XML only) or
+# pycbc_create_injections (XML or HDF), and then split into num_banks
+# pieces with whichever of pycbc_split_inspinj/pycbc_hdf_splitinj/
+# pycbc_splitbank/pycbc_hdf5_splitbank is configured as "injsplit" below.
+# All four are equivalent generic table-splitting executables; any of them
+# can split either a template bank or (as here) an injection set.
+splitter_name = os.path.basename(workflow.cp.get('executables', 'injsplit'))
+
+inspinj_exe = select_generic_executable(workflow, 'injection')
+inspinj_exe.extension = \
+    ".xml" if splitter_name in ('pycbc_split_inspinj', 'pycbc_splitbank') \
+    else ".h5"
+inspinj_exe.current_retention_level = wf.Executable.FINAL_RESULT
+
+inspinj_job = inspinj_exe(
+    workflow.cp, 'injection', ifos=["X1"],
+    out_dir=os.path.join(workflow.out_dir, "injections"), tags=["inj"],
 )
 
-inj_node = injections_exe.create_node(workflow.analysis_time)
+if inspinj_exe is LalappsInspinjExecutable:
+    inj_node = inspinj_job.create_node(workflow.analysis_time)
+    inj = inj_node.output_files[0]
+elif inspinj_exe is PycbcCreateInjectionsExecutable:
+    inj_node, inj = inspinj_job.create_node()
+    inj_node.add_opt("--gps-start-time",
+                     int_gps_time_to_str(workflow.analysis_time[0]))
+    inj_node.add_opt("--gps-end-time",
+                     int_gps_time_to_str(workflow.analysis_time[1]))
+else:
+    raise NotImplementedError
 workflow += inj_node
 
-inj = inj_node.output_files[0]
-
-split_exe = wf.PycbcSplitBankXmlExecutable(
-    workflow.cp, "pycbc_splitbank", num_banks=num_banks, out_dir=workflow.output_dir +"bank"
+split_exe_class = select_splitfilejob_instance(splitter_name)
+split_exe = split_exe_class(
+    workflow.cp, "injsplit", num_banks,
+    out_dir=os.path.join(workflow.out_dir, "bank")
 )
 splitbank_node = split_exe.create_node(inj)
 
-workflow += spltbank_node
+workflow += splitbank_node
 
 faithsim_exe = FaithsimExecutable(
-    workflow.cp, "pycbc_faithsim", ifos=["X1"], out_dir=workflow.output_dir +"match"
+    workflow.cp, "pycbc_faithsim", ifos=["X1"],
+    out_dir=os.path.join(workflow.out_dir, "match")
 )
 
 collect_exe = CollectResultsExecutable(
     workflow.cp,
     "pycbc_faithsim_collect_results",
     ifos=["X1"],
-    out_dir=workflow.output_dir +"collect_results",
+    out_dir=os.path.join(workflow.out_dir, "collect_results"),
 )
 
 faithsim_files = wf.FileList([])
@@ -145,7 +163,7 @@ for i, bank in enumerate(splitbank_node.output_files):
 collect_node = collect_exe.create_node(
     workflow.analysis_time,
     faithsim_files,
-    spltbank_node.output_files,
+    splitbank_node.output_files,
     extra_tags=["result"],
 )
 workflow += collect_node
@@ -155,7 +173,7 @@ make_faithsim_plot(
     workflow,
     workflow.analysis_time,
     collect_results,
-    out_dir=workflow.output_dir +"plots",
+    out_dir=os.path.join(workflow.out_dir, "plots"),
     tags=None,
 )
 
