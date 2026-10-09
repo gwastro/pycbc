@@ -221,11 +221,8 @@ class InjFilterRejector(object):
         # Variables for storing arrays (reduced injections, memory
         # for templates, reduced PSDs ...)
         self.short_injections = {}
-        # Per injection: unweighted signal power |h~(f)|^2 * df integrated over
-        # coarse frequency bins to Nyquist (PSD-independent). Stored as power
-        # rather than final scalar SNR because optimal SNR requires the dynamic
-        # detector PSD, which is evaluated on-the-fly via optimal_snr(sim_id, psd).
         self.injection_power = {}
+        self.injection_tilde = {}
         self._short_template_mem = None
         self._short_psd_storage = {}
         self._short_template_id = None
@@ -294,26 +291,15 @@ class InjFilterRejector(object):
         return inj_filter_rejectors
 
     def optimal_snr(self, simulation_id, psd):
-        """Optimal SNR of a stored injection against psd, in the same
-        dynamic-range units as the analysis, from f_lower. None if the
-        injection is unknown."""
-        if not self.enabled or simulation_id not in self.injection_power:
+        """Optimal SNR of a stored injection against psd."""
+        if not self.enabled or simulation_id not in self.injection_tilde:
             return None
-        coarse = self.injection_power[simulation_id]
-        cdf = self.coarsematch_deltaf
-        s = np.asarray(psd.numpy(), dtype=np.float64)
-        pdf = float(psd.delta_f)
-        inv = np.zeros_like(s)
-        good = s > 0
-        inv[good] = 1.0 / s[good]
-        # mean of 1/S over each coarse bin: exact for a signal flat within the
-        # bin, and narrow lines in S are not smeared out of the average
-        per = max(1, int(round(cdf / pdf)))
-        nbin = min(len(coarse), len(inv) // per)
-        inv_c = inv[:nbin * per].reshape(nbin, per).mean(axis=1)
-        f = np.arange(nbin) * cdf
-        use = f >= self.f_lower
-        return float(np.sqrt(4.0 * np.sum(coarse[:nbin][use] * inv_c[use])))
+        ht = self.injection_tilde[simulation_id]
+        if psd.delta_f != ht.delta_f:
+            from pycbc.psd import interpolate
+            psd = interpolate(psd, ht.delta_f)
+        from pycbc.filter import sigma
+        return float(sigma(ht, psd=psd, low_frequency_cutoff=self.f_lower))
 
     # Alias to align with injection_optimal_snr terminology
     injection_optimal_snr = optimal_snr
@@ -410,8 +396,7 @@ class InjFilterRejector(object):
         delta_f = inj_tilde.get_delta_f()
         df_ratio = int(self.coarsematch_deltaf/delta_f)
         if self.optimal_snr_threshold is not None:
-            # The whole band, not just up to coarsematch_fmax, integrated
-            # over each coarse bin
+            self.injection_tilde[simulation_id] = inj_tilde * DYN_RANGE_FAC
             power = np.abs(inj_tilde_np).astype(np.float64) ** 2
             nbin = len(power) // df_ratio
             self.injection_power[simulation_id] = power[:nbin * df_ratio]\
