@@ -49,6 +49,15 @@ logger = logging.getLogger('pycbc.coordinates.space')
 # the waveform plugin and PE config file. In the unit of 's'.
 TIME_OFFSET_20_DEGREES = 7365189.431698299
 
+# Earth's mean orbital angular frequency, 2*pi / sidereal year (365.256363
+# days), matching lisaconstants.ASTRONOMICAL_YEAR. The guiding centre is
+# propagated in a frame pinned to the J2000 equinox, which does not precess,
+# so the period relative to the fixed stars is the right one: the tropical
+# year would only apply if the frame precessed with the equinox, and
+# astropy's units.yr is the Julian year, a defined time unit rather than an
+# orbital period.
+EARTH_ORBIT_ANGULAR_FREQUENCY = 1.99098659277e-7  # [rad/s]
+
 # "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" should be
 # more general for other detectors in the near future.
 
@@ -105,7 +114,7 @@ def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):
         The angular displacement of LISA in the SSB frame.
         In the unit of 'radian'.
     """
-    OMEGA_0 = 1.99098659277e-7
+    OMEGA_0 = EARTH_ORBIT_ANGULAR_FREQUENCY
     R_ORBIT = au.value
     alpha = np.mod(OMEGA_0 * (t_lisa + t0), 2*np.pi)
     p = np.array([[R_ORBIT * np.cos(alpha)],
@@ -942,6 +951,7 @@ def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
 
 
 __all__ = ['TIME_OFFSET_20_DEGREES',
+           'EARTH_ORBIT_ANGULAR_FREQUENCY',
            'localization_to_propagation_vector',
            'propagation_vector_to_localization', 'polarization_newframe',
            't_lisa_from_ssb', 't_ssb_from_t_lisa',
