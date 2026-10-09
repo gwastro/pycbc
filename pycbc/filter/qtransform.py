@@ -210,16 +210,10 @@ def qseries(fseries, Q, f0, return_complex=False):
     end = int(start + window_size)
     center = (start + end) // 2
 
-    f_len = len(fseries)
-    f_start = max(0, start)
-    f_end = min(f_len, end)
-    w_start = f_start - start
-    w_end = w_start + (f_end - f_start)
+    windowed = fseries[start:end] * (1 - xfrequencies ** 2) ** 2 * norm
 
-    tlen = (f_len - 1) * 2
-    windowed = zeros(tlen, dtype=numpy.complex128)
-    if f_end > f_start:
-        windowed[f_start:f_end] = fseries[f_start:f_end] * (1 - xfrequencies[w_start:w_end] ** 2) ** 2 * norm
+    tlen = (len(fseries)-1) * 2
+    windowed.resize(tlen)
     windowed.roll(-center)
 
     # calculate the time series for this q -value
