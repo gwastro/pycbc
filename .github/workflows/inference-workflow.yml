@@ -2,6 +2,13 @@ name: run small inference workflow using pegasus + condor
 
 on: [push, pull_request]
 
+env:
+  # Point curl and wget at the shared retry/hardening config in tools/.
+  # (Running the example scripts directly, without these set, is fine -
+  # they just fall back to curl/wget defaults.)
+  CURL_HOME: ${{ github.workspace }}/tools
+  WGETRC: ${{ github.workspace }}/tools/.wgetrc
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -13,7 +20,7 @@ jobs:
         python-version: '3.11'
     - name: install condor
       run: |
-        wget -qO - --tries=5 --retry-connrefused --waitretry=5 --timeout=30 https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
+        wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
         echo "deb http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
         echo "deb-src http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
         sudo apt-get -o Acquire::Retries=3 update
@@ -21,7 +28,7 @@ jobs:
         bash tools/ci_start_condor.sh
     - name: install pegasus
       run: |
-        wget -qO - --tries=5 --retry-connrefused --waitretry=5 --timeout=30 https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
+        wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
         echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu noble main" | sudo tee -a /etc/apt/sources.list
         sudo apt-get -o Acquire::Retries=3 update
         sudo apt-get -o Acquire::Retries=3 install pegasus=5.1.1-1+ubuntu24
