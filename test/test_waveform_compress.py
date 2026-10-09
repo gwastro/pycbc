@@ -9,7 +9,7 @@ class TestWaveformCompress(unittest.TestCase):
     def setUpClass(cls):
         # Ensure delta_f is chosen so that the full physical signal length
         # fits within 1 / delta_f to avoid time-domain aliasing.
-        # BNS duration from 30 Hz is ~59s, so delta_f = 1/64 (T = 64s > 59s).
+        # BNS duration from 30 Hz is ~55-60s; delta_f = 1/64 (T = 64s > 60s).
         cls.bns_flow = 30.0
         cls.bns_df = 1.0 / 64
         cls.hp_bns, _ = get_fd_waveform(
@@ -57,28 +57,23 @@ class TestWaveformCompress(unittest.TestCase):
                 interpolation=interp, precision='single')
             decomp = cwave.decompress(df=self.hp_bns.delta_f)
             decomp.resize(len(self.hp_bns))
-            m, _ = match(self.hp_bns, decomp, low_frequency_cutoff=self.bns_flow)
+            m, _ = match(
+                self.hp_bns, decomp, low_frequency_cutoff=self.bns_flow)
             self.assertGreater(m, 0.975, f"Failed for interpolation={interp}")
 
-    def test_sample_point_deduplication_allows_adjacent(self):
-        # Verify deduplication and sorting even if caller passes unsorted/duplicate points
-        sample_points = np.array([400.0, self.bns_flow, 200.0, 200.0], dtype=float)
-        cwave = compress.compress_waveform(
-            self.hp_bns, sample_points, tolerance=5e-4,
-            interpolation='inline_linear', precision='single')
-        diffs = np.diff(cwave.sample_points)
-        self.assertTrue(np.all(diffs > 0))
-
-    def test_narrow_slice_and_adjacent_points_no_singularity(self):
+    def test_adjacent_and_duplicate_sample_points(self):
         df = self.hp_bns.delta_f
         # Test _vecdiff directly on adjacent frequencies (<= 1 sample apart)
-        diff = compress._vecdiff(self.hp_bns, self.hp_bns, self.bns_flow, self.bns_flow + df)
+        diff = compress._vecdiff(
+            self.hp_bns, self.hp_bns, self.bns_flow, self.bns_flow + df)
         self.assertAlmostEqual(diff, 0.0, places=10)
 
-        # Test compression with adjacent sample points in the initial set
-        sample_points = np.array([self.bns_flow, self.bns_flow + df, self.bns_flow + 2*df, 100.0], dtype=float)
+        # Test compression with adjacent, unsorted, and duplicate points
+        sample_points = np.array(
+            [400.0, self.bns_flow, self.bns_flow + df, 200.0, 200.0],
+            dtype=float)
         cwave = compress.compress_waveform(
-            self.hp_bns, sample_points, tolerance=1e-3,
+            self.hp_bns, sample_points, tolerance=5e-4,
             interpolation='inline_linear', precision='single')
         diffs = np.diff(cwave.sample_points)
         self.assertTrue(np.all(diffs > 0))
