@@ -1597,7 +1597,7 @@ class LiveBatchMatchedFilter(object):
         mem_types = set(zip(mem_ids, samples))
 
         # Groups are processed strictly one at a time, so we use one pair
-        # of memory buggers for both, sized for the largest and using views
+        # of memory buffers for both, sized for the largest and using views
         # for the others.
         maxsize = int(max(size for _, size in mem_types))
         self._out_pool = zeros(maxsize, dtype=numpy.complex64)
