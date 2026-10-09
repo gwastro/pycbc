@@ -96,9 +96,7 @@ _injfilterer_trwindow_help = (
     "computation on triggers not associated with injections."
 )
 _injfilterer_optsnr_help = (
-    "Do not analyze injections whose optimal SNR is below this value in "
-    "every detector. They are still added to the data. Give the same value "
-    "for all detectors."
+    "Do not analyze injections whose optimal SNR is below this value in every detector."
 )
 
 
@@ -279,8 +277,10 @@ class InjFilterRejector:
         # Variables for storing arrays (reduced injections, memory
         # for templates, reduced PSDs ...)
         self.short_injections = {}
-        # Per injection: signal power integrated over coarse bins to Nyquist,
-        # for optimal_snr(); filled when optimal_snr_threshold is set.
+        # Per injection: unweighted signal power |h~(f)|^2 * df integrated over
+        # coarse frequency bins to Nyquist (PSD-independent). Stored as power
+        # rather than final scalar SNR because optimal SNR requires the dynamic
+        # detector PSD, which is evaluated on-the-fly via optimal_snr(sim_id, psd).
         self.injection_power = {}
         self._short_template_mem = None
         self._short_psd_storage = {}
@@ -381,6 +381,9 @@ class InjFilterRejector:
         f = np.arange(nbin) * cdf
         use = f >= self.f_lower
         return float(np.sqrt(4.0 * np.sum(coarse[:nbin][use] * inv_c[use])))
+
+    # Alias to align with injection_optimal_snr terminology
+    injection_optimal_snr = optimal_snr
 
     def get_inj_end_times(self):
         """Return a list of the sorted injection end times."""
