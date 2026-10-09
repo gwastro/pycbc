@@ -283,6 +283,8 @@ class DictArray(object):
             for k in self.data:
                 if not len(self.data[k]) == 0:
                     self.data[k] = np.concatenate(self.data[k])
+                else:
+                    self.data[k] = np.array([])
 
         for k in self.data:
             setattr(self, k, self.data[k])
@@ -307,22 +309,47 @@ class DictArray(object):
                 logger.info('%s does not exist in other data', k)
         return self._return(data=data)
 
-    def select(self, idx):
-        """ Return a new DictArray containing only the indexed values
+    def select(self, idx, inplace=False):
+        """ Return a new DictArray containing only the indexed values.
+
+        Parameters
+        ----------
+        idx : array-like or slice
+            The indices or boolean mask of elements to select.
+        inplace : bool, optional
+            If True, modify the current DictArray in place and return self.
+            Default is False (return a new DictArray).
         """
+        if inplace:
+            for k in list(self.data.keys()):
+                self.data[k] = np.asarray(self.data[k][idx])
+                setattr(self, k, self.data[k])
+            return self
+
         data = {}
         for k in self.data:
             # Make sure each entry is an array (not a scalar)
-            data[k] = np.array(self.data[k][idx])
+            data[k] = np.asarray(self.data[k][idx])
         return self._return(data=data)
 
-    def remove(self, idx):
-        """ Return a new DictArray that does not contain the indexed values
+    def remove(self, idx, inplace=False):
+        """ Return a new DictArray that does not contain the indexed values.
+
+        Parameters
+        ----------
+        idx : array-like
+            The indices of elements to remove.
+        inplace : bool, optional
+            If True, modify the current DictArray in place and return self.
+            Default is False (return a new DictArray).
         """
-        data = {}
-        for k in self.data:
-            data[k] = np.delete(self.data[k], np.array(idx, dtype=int))
-        return self._return(data=data)
+        idx = np.atleast_1d(idx)
+        if len(idx) == 0:
+            return self if inplace else self.select(slice(None), inplace=False)
+        idx = np.asarray(idx, dtype=int)
+        mask = np.ones(len(self), dtype=bool)
+        mask[idx] = False
+        return self.select(mask, inplace=inplace)
 
     def save(self, outname):
         f = HFile(outname, "w")
@@ -356,7 +383,7 @@ class StatmapData(DictArray):
     def _return(self, data):
         return self.__class__(data=data, attrs=self.attrs, seg=self.seg)
 
-    def cluster(self, window):
+    def cluster(self, window, inplace=False):
         """ Cluster the dict array, assuming it has the relevant Coinc colums,
         time1, time2, stat, and timeslide_id
         """
@@ -367,7 +394,7 @@ class StatmapData(DictArray):
         interval = self.attrs['timeslide_interval']
         cid = cluster_coincs(self.stat, self.time1, self.time2,
                                  self.timeslide_id, interval, window)
-        return self.select(cid)
+        return self.select(cid, inplace=inplace)
 
     def save(self, outname):
         super(StatmapData, self).save(outname)
@@ -394,7 +421,7 @@ class MultiifoStatmapData(StatmapData):
         return self.__class__(data=data, attrs=self.attrs, seg=self.seg,
                               ifos=ifolist)
 
-    def cluster(self, window):
+    def cluster(self, window, inplace=False):
         """ Cluster the dict array, assuming it has the relevant Coinc colums,
         time1, time2, stat, and timeslide_id
         """
@@ -411,7 +438,7 @@ class MultiifoStatmapData(StatmapData):
                              self.timeslide_id,
                              interval,
                              window)
-        return self.select(cid)
+        return self.select(cid, inplace=inplace)
 
 
 class FileData(object):
@@ -652,6 +679,10 @@ class SingleDetTriggers(object):
             logger.info('%i triggers remain after vetoes',
                         self.mask_size)
 
+        self.file = self.trigs_f
+        self.veto_files = [veto_file] if veto_file else []
+        self.segment_name = [segment_name] if segment_name else []
+
     def __getitem__(self, key):
         # Is key in the TRIGGER_MERGE file?
         try:
@@ -682,6 +713,11 @@ class SingleDetTriggers(object):
                 else:
                     mtrigs[k] = self.trigs[k][:]
         mtrigs['ifo'] = self.ifo
+        mtrigs['file'] = self.trigs_f
+        mtrigs['veto_files'] = getattr(self, 'veto_files', [])
+        mtrigs['segment_name'] = getattr(self, 'segment_name', [])
+        mtrigs['gating_veto_windows'] = getattr(
+            self, 'gating_veto_windows', {})
         return mtrigs
 
     @classmethod
@@ -697,20 +733,28 @@ class SingleDetTriggers(object):
         ----------
         logic_mask : boolean array or numpy array of indices
         """
+        arr = np.asanyarray(logic_mask)
         if self.mask is None:
             self.mask = np.zeros(self.ntriggers, dtype=bool)
-            self.mask[logic_mask] = True
+            if arr.dtype.kind == 'b':
+                if arr.ndim == 0:
+                    self.mask[:] = bool(arr)
+                else:
+                    self.mask = np.array(arr, dtype=bool)
+            elif arr.size > 0:
+                self.mask[arr.astype(int)] = True
         elif hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
-            if hasattr(logic_mask, 'dtype') and (logic_mask.dtype == 'bool'):
+            if arr.dtype.kind == 'b':
                 # So both new and old masks are boolean, numpy slice assignment
                 # can be used directly, with no additional memory.
-                self.mask[self.mask] = logic_mask
+                self.mask[self.mask] = arr
             else:
                 # So logic_mask is either an array, or list, of integers.
                 # This case is a little tricksy, so we begin by converting the
                 # list/array to a boolean, and then do what we did above.
                 new_logic_mask = np.zeros(np.sum(self.mask), dtype=bool)
-                new_logic_mask[logic_mask] = True
+                if arr.size > 0:
+                    new_logic_mask[arr.astype(int)] = True
                 self.mask[self.mask] = new_logic_mask
         else:
             self.mask = list(np.array(self.mask)[logic_mask])
@@ -999,9 +1043,16 @@ class ForegroundTriggers(object):
         self.sngl_files = {}
         if sngl_files is not None:
             for sngl_file in sngl_files:
-                curr_dat = FileData(sngl_file)
-                curr_ifo = curr_dat.group_key
-                self.sngl_files[curr_ifo] = curr_dat
+                with HFile(sngl_file, 'r') as hf:
+                    top_keys = list(hf.keys())
+                matching_ifos = [k for k in top_keys if k in self.ifos]
+                if matching_ifos:
+                    for ifo in matching_ifos:
+                        self.sngl_files[ifo] = FileData(sngl_file, group=ifo)
+                else:
+                    curr_dat = FileData(sngl_file)
+                    curr_ifo = curr_dat.group_key
+                    self.sngl_files[curr_ifo] = curr_dat
 
         if not all([ifo in self.sngl_files.keys() for ifo in self.ifos]):
             print("sngl_files: {}".format(sngl_files))
@@ -1071,9 +1122,12 @@ class ForegroundTriggers(object):
     def get_snglfile_array_dict(self, variable):
         return_dict = {}
         for ifo in self.ifos:
+            if len(self.trig_id[ifo]) == 0:
+                return_dict[ifo] = (np.array([]), np.array([], dtype=bool))
+                continue
             try:
                 # Make sure we don't change the internal cached trig_id array
-                tid = np.copy(self.trig_id[ifo])
+                tid = np.copy(self.trig_id[ifo]).astype(int)
                 # Put in *some* value for the invalid points to avoid failure
                 lgc = tid == -1
                 tid[lgc] = 0
@@ -1412,14 +1466,18 @@ class ForegroundTriggers(object):
 
 
 class ReadByTemplate(object):
-    # Default assignment to {} is OK for a variable used only in __init__
     def __init__(self, filename, bank=None, segment_name=None, veto_files=None,
-                 gating_veto_windows={}):
+                 gating_veto_windows=None, ifo=None):
         self.filename = filename
         self.file = HFile(filename, 'r')
-        self.ifo = tuple(self.file.keys())[0]
+        self.ifo = ifo if ifo is not None else tuple(self.file.keys())[0]
         self.valid = None
         self.bank = HFile(bank, 'r') if bank else {}
+        self.segment_name = segment_name
+        self.veto_files = veto_files
+        self.gating_veto_windows = (
+            gating_veto_windows if gating_veto_windows is not None else {}
+        )
 
         # Determine the segments which define the boundaries of valid times
         # to use triggers
