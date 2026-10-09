@@ -450,9 +450,16 @@ class BaseGatedGaussian(BaseGaussianNoise):
             return self.get_gate_times_hmeco()
         gatestart = params['t_gate_start']
         gateend = params['t_gate_end']
-        # we'll need the sky location for determining time shifts
-        ra = self.current_params['ra']
-        dec = self.current_params['dec']
+        # we'll need the sky location for determining time shifts, unless
+        # only using the radiation frame and sampling in geocentric time
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        if any(det != 'RF' for det in self.detectors) or \
+                refframe not in ('geocentric', 'RF'):
+            ra = self.current_params['ra']
+            dec = self.current_params['dec']
+        else:
+            ra = None
+            dec = None
         # try to get from cache
         try:
             gatetimes = self._gatetimes[gatestart, gateend, ra, dec]
@@ -490,14 +497,28 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         gatetimes = {}
         for det in self._invpsds:
-            thisdet = Detector(det)
-            # account for the time delay between the waveforms of the
-            # different detectors
-            refdet = self.current_params.get('tc_ref_frame', 'geocentric')
-            gatestartdelay = thisdet.arrival_time(gatestart, ra, dec, refdet)
-            gateenddelay = thisdet.arrival_time(gateend, ra, dec, refdet)
-            dgatedelay = gateenddelay - gatestartdelay
-            gatetimes[det] = (gatestartdelay, dgatedelay)
+            if det != 'RF':
+                thisdet = Detector(det)
+                # account for the time delay between the waveforms of the
+                # different detectors
+                refdet = self.current_params.get('tc_ref_frame', 'geocentric')
+                gatestartdelay = thisdet.arrival_time(gatestart, ra, dec, refdet)
+                gateenddelay = thisdet.arrival_time(gateend, ra, dec, refdet)
+                dgatedelay = gateenddelay - gatestartdelay
+                gatetimes[det] = (gatestartdelay, dgatedelay)
+            else:
+                # take the gate times as geocentric
+                # if sampling in another detector convert to geocentric
+                rfstart = gatestart
+                rfend = gateend
+                refdet = self.current_params.get('tc_ref_frame', 'geocentric')
+                if refdet not in ('geocentric', 'RF'):
+                    refdet = Detector(refdet)
+                    rfstart -= refdet.time_delay_from_earth_center(
+                        ra, dec, gatestart)
+                    rfend -= refdet.time_delay_from_earth_center(
+                        ra, dec, gateend)
+                gatetimes[det] = (rfstart, rfend - rfstart)
         return gatetimes
 
     def get_gate_times_hmeco(self):
@@ -893,6 +914,14 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             recalibration=self.recalibration,
             generator_class=generator.FDomainDetFrameTwoPolGenerator,
             **self.static_params)
+        # if sampling *only* in radiation frame, the gated_gaussian_noise model
+        # is strictly better; refer the user to that model
+        if set(data) == {'RF'}:
+            raise ValueError("The only detector requested is the radiation "
+                             "frame (RF). This is strictly slower and more "
+                             "expensive than using the unmarginalized model. "
+                             "Consider using gated_gaussian_noise or adding "
+                             "additional detectors.")
 
     def get_waveforms(self):
         if self._current_wfs is not None:
@@ -1008,16 +1037,20 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         lognl = 0.
         refframe = self.current_params.get('tc_ref_frame', 'geocentric')
         ref_tc = self.current_params['tc']
-        ra = self.current_params['ra']
-        dec = self.current_params['dec']
+        ra = self.current_params.get('ra')
+        dec = self.current_params.get('dec')
         for det, (hp, hc) in wfs.items():
-            # get the antenna patterns
-            if det not in self.dets:
-                self.dets[det] = Detector(det)
-            # calculate tc in frame
-            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
-            # evaluate antenna pattern
-            fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
+            if det == 'RF':
+                # no detector response applied
+                fp = numpy.ones(self.pol.shape)
+                fc = numpy.zeros(self.pol.shape)
+            else:
+                if det not in self.dets:
+                    self.dets[det] = Detector(det)
+                # calculate tc in frame
+                tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
+                # evaluate antenna pattern
+                fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
             start_index, end_index = self.gate_indices(det)
             norm = self.det_lognorm(det, start_index, end_index)
             # we always filter the entire segment starting from kmin, since the
@@ -1239,7 +1272,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         hsd = 0.
         dd = 0.
         for det in self.det_names:
-            if det not in self.dets:
+            if det not in self.dets and det != 'RF':
                 self.dets[det] = Detector(det)
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
@@ -1576,7 +1609,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
             setattr(self._current_stats, f'scale_factor_{mode}',
                     scale_factors[mode])
         for det in self.det_names:
-            if det not in self.dets:
+            if det not in self.dets and det != 'RF':
                 self.dets[det] = Detector(det)
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components

@@ -248,18 +248,23 @@ class Relative(DistMarg, BaseGaussianNoise):
             else:
                 fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
                                                           **self.fid_params)
-                # Apply detector response if not handled by
-                # the waveform generator
-                self.det[ifo] = Detector(ifo)
-                dt = self.det[ifo].time_delay_from_earth_center(
-                    self.fid_params["ra"],
-                    self.fid_params["dec"],
-                    self.fid_params["tc"],
-                )
-                self.ta[ifo] = self.fid_params["tc"] + dt
-                fp, fc = self.det[ifo].antenna_pattern(
-                    self.fid_params["ra"], self.fid_params["dec"],
-                    self.fid_params["polarization"], self.fid_params["tc"])
+                if ifo == 'RF':
+                    # no detector response; convert to geocentric
+                    self.det[ifo] = None
+                    self.ta[ifo] = self.fid_params["tc"]
+                    fp, fc = 1., 0.
+                else:
+                    self.det[ifo] = Detector(ifo)
+                    dt = self.det[ifo].time_delay_from_earth_center(
+                        self.fid_params["ra"],
+                        self.fid_params["dec"],
+                        self.fid_params["tc"],
+                    )
+                    self.ta[ifo] = self.fid_params["tc"] + dt
+                    fp, fc = self.det[ifo].antenna_pattern(
+                        self.fid_params["ra"], self.fid_params["dec"],
+                        self.fid_params["polarization"],
+                        self.fid_params["tc"])
                 curr_wav = (fid_hp * fp + fid_hc * fc)
 
             # check for zeros at low and high frequencies
@@ -552,7 +557,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         norm = 0.0
         filt = 0j
         self._current_wf_parts = {}
-        pol_phase = numpy.exp(-2.0j * p['polarization'])
+        pol_phase = numpy.exp(-2.0j * p.get('polarization',  0.))
 
         for ifo in self.data:
             freqs = self.fedges[ifo]
@@ -575,18 +580,31 @@ class Relative(DistMarg, BaseGaussianNoise):
             else:
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]
-                fp, fc = det.antenna_pattern(p["ra"], p["dec"],
-                                             0.0, times)
-                dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
+                if ifo == 'RF':
+                    # no detector response for the radiation frame; convert to
+                    # geocentric frame
+                    if self.earth_rotation:
+                        fp = numpy.ones(times.shape)
+                        fc = numpy.zeros(times.shape)
+                        dt = numpy.zeros(times.shape)
+                    else:
+                        fp, fc, dt = 1., 0., 0.
+                    det_pol_phase = numpy.ones_like(pol_phase)
+                else:
+                    fp, fc = det.antenna_pattern(p["ra"], p["dec"],
+                                                 0.0, times)
+                    dt = det.time_delay_from_earth_center(p["ra"], p["dec"],
+                                                          times)
+                    det_pol_phase = pol_phase
                 dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
                 if self.lformat == 'earth_pol':
-                    filter_i, norm_i = lik(freqs, fp, fc, dtc, pol_phase,
+                    filter_i, norm_i = lik(freqs, fp, fc, dtc, det_pol_phase,
                                            hp, hc, h00,
                                            sdat['a0'], sdat['a1'],
                                            sdat['b0'], sdat['b1'])
                 else:
-                    f = (fp + 1.0j * fc) * pol_phase
+                    f = (fp + 1.0j * fc) * det_pol_phase
                     fp = f.real.copy()
                     fc = f.imag.copy()
                     filter_i, norm_i = lik(freqs, fp, fc, dtc,
@@ -754,7 +772,7 @@ class RelativeTime(Relative):
         lik = self.likelihood_function
         norm = 0.0
         filt = 0j
-        pol_phase = numpy.exp(-2.0j * p['polarization'])
+        pol_phase = numpy.exp(-2.0j * p.get('polarization', 0.))
 
         self.snr_draw(wfs)
         p = self.current_params
@@ -768,19 +786,31 @@ class RelativeTime(Relative):
 
             hp, hc = wfs[ifo]
             det = self.det[ifo]
-            fp, fc = det.antenna_pattern(p["ra"], p["dec"],
-                                         0, times)
-            times = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
+            if ifo == 'RF':
+                # no detector response; convert times to geocentric frame
+                if self.earth_rotation:
+                    fp = numpy.ones(times.shape)
+                    fc = numpy.zeros(times.shape)
+                else:
+                    fp, fc = 1., 0.
+                times = numpy.zeros_like(times)
+                det_pol_phase = numpy.ones_like(pol_phase)
+            else:
+                fp, fc = det.antenna_pattern(p["ra"], p["dec"],
+                                             0, times)
+                times = det.time_delay_from_earth_center(p["ra"], p["dec"],
+                                                         times)
+                det_pol_phase = pol_phase
             dtc = p["tc"] - end_time - self.ta[ifo]
 
             if self.lformat == 'earth_time_pol':
                 filter_i, norm_i = lik(
-                                       freqs, fp, fc, times, dtc, pol_phase,
-                                       hp, hc, h00,
+                                       freqs, fp, fc, times, dtc,
+                                       det_pol_phase, hp, hc, h00,
                                        sdat['a0'], sdat['a1'],
                                        sdat['b0'], sdat['b1'])
             else:
-                f = (fp + 1.0j * fc) * pol_phase
+                f = (fp + 1.0j * fc) * det_pol_phase
                 fp = f.real.copy()
                 fc = f.imag.copy()
                 if self.lformat == 'earth_time':
@@ -870,7 +900,7 @@ class RelativeTimeDom(RelativeTime):
         sh_total = hh_total = 0
         ic = numpy.cos(p['inclination'])
         ip = 0.5 * (1.0 + ic * ic)
-        pol_phase = numpy.exp(-2.0j * p['polarization'])
+        pol_phase = numpy.exp(-2.0j * p.get('polarization', 0.))
 
         snrs = self.get_snr(wfs)
         self.snr_draw(snrs=snrs)
@@ -878,14 +908,22 @@ class RelativeTimeDom(RelativeTime):
         for ifo in self.sh:
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(ifo)
+                det_pol_phase = numpy.ones_like(pol_phase) if ifo == 'RF' \
+                    else pol_phase
+            elif ifo == 'RF':
+                # no detector response; convert times to geocentric
+                dt = 0.
+                fp, fc = 1., 0.
+                det_pol_phase = numpy.ones_like(pol_phase)
             else:
                 dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
                                                                 p['dec'],
                                                                 p['tc'])
                 fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                                        0, p['tc'])
+                det_pol_phase = pol_phase
             dts = p['tc'] + dt
-            f = (fp + 1.0j * fc) * pol_phase
+            f = (fp + 1.0j * fc) * det_pol_phase
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
