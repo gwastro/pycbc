@@ -156,13 +156,20 @@ class _XMLInjectionSet(object):
     Attributes
     ----------
     indoc
-    table
+    table : pycbc.io.WaveformArray
+        The injection parameters, one row per injection.
     """
 
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = lsctables.SimInspiralTable.get_table(self.indoc)
+        sim_table = lsctables.SimInspiralTable.get_table(self.indoc)
+        # time_geocent is a property computed from geocent_end_time(_ns) on
+        # a ligolw row, not a plain column, so it must be added explicitly.
+        time_geocent = np.array([float(row.time_geocent)
+                                 for row in sim_table])
+        self.table = pycbc.io.WaveformArray.from_ligolw_table(sim_table)
+        self.table = self.table.add_fields(time_geocent, 'time_geocent')
         self.extra_args = kwds
 
     def apply(
@@ -239,10 +246,12 @@ class _XMLInjectionSet(object):
 
         injections = self.table
         if simulation_ids:
-            injections = [inj for inj in injections \
-                          if inj.simulation_id in simulation_ids]
-        injection_parameters = []
-        for inj in injections:
+            mask = np.array([inj.simulation_id in simulation_ids
+                             for inj in injections])
+            injections = injections[mask]
+
+        injected_mask = np.zeros(len(injections), dtype=bool)
+        for ii, inj in enumerate(injections):
             f_l = inj.f_lower if f_lower is None else f_lower
             # roughly estimate if the injection may overlap with the segment
             # Add 2s to end_time to account for ringdown and light-travel delay
@@ -262,7 +271,7 @@ class _XMLInjectionSet(object):
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
-            injection_parameters.append(inj)
+            injected_mask[ii] = True
             if inj_filter_rejector is not None:
                 sid = inj.simulation_id
                 inj_filter_rejector.generate_short_inj_from_inj(signal, sid)
@@ -270,8 +279,7 @@ class _XMLInjectionSet(object):
         strain.data[:] = lalstrain.data.data[:]
 
         injected = copy.copy(self)
-        injected.table = lsctables.SimInspiralTable()
-        injected.table += injection_parameters
+        injected.table = injections[injected_mask]
         if inj_filter_rejector is not None:
             inj_filter_rejector.injection_params = injected
         return injected
@@ -316,7 +324,7 @@ class _XMLInjectionSet(object):
 
     def end_times(self):
         """Return the end times of all injections"""
-        return [inj.time_geocent for inj in self.table]
+        return self.table.time_geocent
 
     @staticmethod
     def write(filename, samples, write_params=None, static_args=None):
@@ -1326,7 +1334,7 @@ def read_injection_table(file_path, xml_tables=('sim_inspiral', 'sngl_inspiral')
 
     Returns
     -------
-    table : pycbc.io.WaveformArray or igwn_ligolw table
+    table : pycbc.io.WaveformArray
         The parameter table, one row per entry.
     """
     ext = os.path.basename(file_path)
@@ -1340,28 +1348,25 @@ def read_injection_table(file_path, xml_tables=('sim_inspiral', 'sngl_inspiral')
                                        contenthandler=LIGOLWContentHandler)
     for name in xml_tables[:-1]:
         try:
-            return ligolw.Table.get_table(indoc, name)
+            table = ligolw.Table.get_table(indoc, name)
+            break
         except ValueError:
             continue
-    return ligolw.Table.get_table(indoc, xml_tables[-1])
+    else:
+        table = ligolw.Table.get_table(indoc, xml_tables[-1])
+    return pycbc.io.WaveformArray.from_ligolw_table(table)
 
 
 def get_table_column(table, field):
-    """Return the given field/column from a waveform parameter table,
-    whether it is a WaveformArray (HDF) or an igwn_ligolw Table (XML).
+    """Return the given field/column from a waveform parameter table.
 
-    A ligolw SimInspiral/SnglInspiral row always has every standard column
-    (defaulting to 0 if not explicitly set), but an HDF WaveformArray only
-    has the fields it was actually given. To make the two behave the same
-    way, fields missing (and not derivable) from an HDF file default to 0,
-    e.g. for an aligned-spin-only injection set with no spin1x/spin1y.
+    Fields missing from the table (e.g. spin1x/spin1y for an
+    aligned-spin-only injection set) default to 0.
     """
-    if isinstance(table, pycbc.io.WaveformArray):
-        try:
-            return table[field]
-        except (ValueError, TypeError):
-            return np.zeros(len(table))
-    return table.getColumnByName(field).asarray()
+    try:
+        return table[field]
+    except (ValueError, TypeError):
+        return np.zeros(len(table))
 
 
 class SGBurstInjectionSet(object):
