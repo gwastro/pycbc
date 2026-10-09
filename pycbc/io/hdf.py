@@ -1604,10 +1604,10 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
 
     Parameters
     ----------
-    hdfile: HDF file object, or dictionary, or ReadByTemplate object 
+    hdfile: HDF file object, or dictionary, or ReadByTemplate object
             or SingleDetTriggers object
         The object to retrieve the chi-squared values from.
-    chisq_choice: str 
+    chisq_choice: str
         The choice of chi-squared values to retrieve.
 
     Returns
