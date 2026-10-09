@@ -19,9 +19,11 @@ Unit tests for qtransform filter functions and bounds handling.
 """
 
 import unittest
+
 import numpy
-from pycbc.types import TimeSeries
+
 from pycbc.filter.qtransform import qseries
+from pycbc.types import TimeSeries
 
 
 class TestQTransform(unittest.TestCase):
@@ -49,11 +51,68 @@ class TestQTransform(unittest.TestCase):
         q = qseries(self.fdata, Q=2.0, f0=500.0)
         self.assertEqual(len(q), len(self.data))
 
+    def test_qseries_bounds_outside_nyquist(self):
+        """Verify qseries clips cleanly when window lies outside data bound."""
+        # Central frequency above Nyquist (512 Hz) clips to available range
+        q = qseries(self.fdata, Q=8.0, f0=600.0)
+        self.assertEqual(len(q), len(self.data))
+        self.assertTrue(numpy.isfinite(q.numpy()).all())
+
     def test_qseries_return_complex(self):
         """Verify qseries return_complex returns complex TimeSeries."""
         q = qseries(self.fdata, Q=8.0, f0=100.0, return_complex=True)
         self.assertEqual(len(q), len(self.data))
         self.assertEqual(q.dtype, numpy.complex128)
+
+    def test_qseries_odd_length_input(self):
+        """Verify qseries executes cleanly on odd-length series."""
+        for n in [1023, 1025, 2047, 2049]:
+            ts = TimeSeries(numpy.zeros(n), delta_t=1.0 / 1024)
+            ts[n // 2] = 1.0
+            fs = ts.to_frequencyseries()
+            expected_tlen = (len(fs) - 1) * 2
+
+            q = qseries(fs, Q=8.0, f0=100.0)
+            self.assertEqual(len(q), expected_tlen)
+            self.assertTrue(numpy.isfinite(q.numpy()).all())
+
+            qc = qseries(fs, Q=8.0, f0=100.0, return_complex=True)
+            self.assertEqual(len(qc), expected_tlen)
+            self.assertEqual(qc.dtype, numpy.complex128)
+            self.assertTrue(numpy.isfinite(qc.numpy()).all())
+
+    def test_qtransform_odd_length_series(self):
+        """Verify TimeSeries.qtransform works on odd-length series."""
+        for n in [1023, 1025, 2047, 2049]:
+            ts = TimeSeries(numpy.zeros(n), delta_t=1.0 / 1024)
+            ts[n // 2] = 1.0
+
+            # Test interpolated qtransform
+            times, freqs, qplane = ts.qtransform(
+                delta_t=ts.delta_t, delta_f=1.0, frange=(30, 300)
+            )
+            self.assertEqual(len(times), n)
+            self.assertEqual(qplane.shape, (len(freqs), n))
+            self.assertTrue(numpy.isfinite(qplane).all())
+            self.assertGreater(qplane.max(), 0.0)
+
+            # Test uninterpolated qtransform
+            times_raw, freqs_raw, qplane_raw = ts.qtransform(
+                frange=(30, 300)
+            )
+            self.assertEqual(
+                qplane_raw.shape, (len(freqs_raw), len(times_raw))
+            )
+            self.assertTrue(numpy.isfinite(qplane_raw).all())
+
+            # Test complex output
+            times_c, freqs_c, qplane_c = ts.qtransform(
+                delta_t=ts.delta_t, delta_f=1.0, frange=(30, 300),
+                return_complex=True
+            )
+            self.assertEqual(qplane_c.shape, (len(freqs_c), n))
+            self.assertEqual(qplane_c.dtype, numpy.complex128)
+            self.assertTrue(numpy.isfinite(qplane_c).all())
 
 
 if __name__ == "__main__":

@@ -219,7 +219,8 @@ def qseries(fseries, Q, f0, return_complex=False):
     tlen = (f_len - 1) * 2
     windowed = zeros(tlen, dtype=numpy.complex128)
     if f_end > f_start:
-        windowed[f_start:f_end] = fseries[f_start:f_end] * (1 - xfrequencies[w_start:w_end] ** 2) ** 2 * norm
+        weights = (1 - xfrequencies[w_start:w_end] ** 2) ** 2 * norm
+        windowed[f_start:f_end] = fseries[f_start:f_end] * weights
     windowed.roll(-center)
 
     # calculate the time series for this q -value
