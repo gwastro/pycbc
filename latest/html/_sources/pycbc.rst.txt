@@ -1,0 +1,179 @@
+pycbc package
+=============
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pycbc.catalog
+   pycbc.coordinates
+   pycbc.detector
+   pycbc.distributions
+   pycbc.events
+   pycbc.fft
+   pycbc.filter
+   pycbc.frame
+   pycbc.inference
+   pycbc.inject
+   pycbc.io
+   pycbc.live
+   pycbc.neutron_stars
+   pycbc.noise
+   pycbc.population
+   pycbc.psd
+   pycbc.results
+   pycbc.strain
+   pycbc.tmpltbank
+   pycbc.types
+   pycbc.vetoes
+   pycbc.waveform
+   pycbc.workflow
+
+Submodules
+----------
+
+pycbc.bin\_utils module
+-----------------------
+
+.. automodule:: pycbc.bin_utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.boundaries module
+-----------------------
+
+.. automodule:: pycbc.boundaries
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.constants module
+----------------------
+
+.. automodule:: pycbc.constants
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.conversions module
+------------------------
+
+.. automodule:: pycbc.conversions
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.cosmology module
+----------------------
+
+.. automodule:: pycbc.cosmology
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.dq module
+---------------
+
+.. automodule:: pycbc.dq
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.libutils module
+---------------------
+
+.. automodule:: pycbc.libutils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.mchirp\_area module
+-------------------------
+
+.. automodule:: pycbc.mchirp_area
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.opt module
+----------------
+
+.. automodule:: pycbc.opt
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.pnutils module
+--------------------
+
+.. automodule:: pycbc.pnutils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.pool module
+-----------------
+
+.. automodule:: pycbc.pool
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.rate module
+-----------------
+
+.. automodule:: pycbc.rate
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.scheme module
+-------------------
+
+.. automodule:: pycbc.scheme
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.sensitivity module
+------------------------
+
+.. automodule:: pycbc.sensitivity
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.time module
+-----------------
+
+.. automodule:: pycbc.time
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.transforms module
+-----------------------
+
+.. automodule:: pycbc.transforms
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.version module
+--------------------
+
+.. automodule:: pycbc.version
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc
+   :members:
+   :show-inheritance:
+   :undoc-members:
