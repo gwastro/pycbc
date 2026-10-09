@@ -94,7 +94,7 @@ def setup_template_render(path, config_path):
         output = render_function(path, cp)
 
     # read configuration file for rendering
-    elif os.path.exists(config_path):
+    elif config_path is not None and os.path.exists(config_path):
         cp.read(config_path)
 
         # render template
