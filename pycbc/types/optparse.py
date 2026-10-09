@@ -62,11 +62,11 @@ def to_int(value):
     except (ValueError, TypeError):
         try:
             f = float(value)
-        except (ValueError, TypeError):
-            raise ValueError(f"Cannot convert non-integer value {value!r} to int")
+        except (ValueError, TypeError) as err:
+            raise ValueError(f"Cannot convert non-integer value {value!r} to int") from err
         if f.is_integer():
             return int(f)
-        raise ValueError(f"Cannot convert non-integer value {value!r} to int")
+        raise ValueError(f"Cannot convert non-integer value {value!r} to int") from None
 
 
 def _get_converter(dtype):
