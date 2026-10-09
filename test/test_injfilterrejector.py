@@ -53,6 +53,8 @@ class TestOptimalSNR(unittest.TestCase):
         expected = sigma(padded, psd=psd, low_frequency_cutoff=F_LOWER)
         got = rej.optimal_snr(0, psd * DYN_RANGE_FAC ** 2)
         self.assertAlmostEqual(got / expected, 1.0, delta=0.01)
+        # Verify alias injection_optimal_snr produces identical output
+        self.assertEqual(rej.injection_optimal_snr(0, psd * DYN_RANGE_FAC ** 2), got)
 
     def test_signal_untouched_without_match_test(self):
         """Only the optimal-SNR cut: the waveform handed in is not padded,
