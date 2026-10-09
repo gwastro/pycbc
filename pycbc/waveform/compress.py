@@ -308,11 +308,10 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
             if addidx not in sample_index and addidx not in new_addidxs:
                 new_addidxs.append(addidx)
 
-        # Don't propose duplicate points already added
-        if len(new_addidxs) > 0 and len(added_points) > 0:
-            new_addidxs = numpy.array(new_addidxs)
-            valid = ~numpy.any(abs(new_addidxs[:, None] - numpy.array(added_points)) <= 0, axis=1)
-            new_addidxs = list(new_addidxs[valid])
+        # Don't propose duplicate points that were already added in earlier iterations
+        if new_addidxs and added_points:
+            added_set = set(added_points)
+            new_addidxs = [idx for idx in new_addidxs if idx not in added_set]
 
         if not new_addidxs:
             # All bad segments are already at fundamental frequency resolution (1 bin wide)
@@ -684,9 +683,9 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
                                 df, f_lower, imin, start_index)
     else:
         # use scipy for fancier interpolation
-        sample_frequencies = sample_frequencies.numpy() if hasattr(sample_frequencies, 'numpy') else numpy.asarray(sample_frequencies)
-        amp = amp.numpy() if hasattr(amp, 'numpy') else numpy.asarray(amp)
-        phase = phase.numpy() if hasattr(phase, 'numpy') else numpy.asarray(phase)
+        sample_frequencies = numpy.asarray(sample_frequencies)
+        amp = numpy.asarray(amp)
+        phase = numpy.asarray(phase)
         outfreq = out.sample_frequencies.numpy()
         amp_interp = interpolate.interp1d(sample_frequencies, amp,
                                           kind=interpolation,
