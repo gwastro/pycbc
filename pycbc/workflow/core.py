@@ -368,15 +368,23 @@ class Executable(pegasus_workflow.Executable):
                             ifo = split_path[0]
                             path = split_path[1]
 
-                    # If the file exists make sure to use the
-                    # fill path as a file:// URL
-                    if os.path.isfile(path):
-                        curr_pfn = urljoin('file:',
-                                           pathname2url(os.path.abspath(path)))
+                    # If this looks like a plain local path (no URL
+                    # scheme) turn it into a proper file:// URL;
+                    # anything else (http://, osdf://, an explicit
+                    # file:// URL, ...) is left as given.
+                    if urllib.parse.urlparse(path).scheme == '':
+                        curr_pfn = urljoin(
+                            'file:', pathname2url(os.path.abspath(path)))
                     else:
                         curr_pfn = path
 
-                    curr_file = resolve_url_to_file(curr_pfn)
+                    if cp.has_option('workflow', 'skip-resolve-input-files'):
+                        # Trust curr_pfn directly, without checking it
+                        # exists or fetching it now.
+                        curr_file = File.from_path(curr_pfn)
+                        curr_file.add_pfn(curr_pfn, site='local')
+                    else:
+                        curr_file = resolve_url_to_file(curr_pfn)
                     self.common_input_files.append(curr_file)
                     if ifo:
                         self.common_raw_options.append(ifo + ':')
