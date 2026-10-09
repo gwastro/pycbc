@@ -134,9 +134,9 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
         An array containing only the chisq at the selected points.
     """
     num_bins = len(bins) - 1
-    chisq = shift_sum(corr, indices, bins)
-    val = (chisq * num_bins - (snr.conj() * snr).real) * (snr_norm ** 2.0)
-    return numpy.abs(val)
+    chisq = shift_sum(corr, indices, bins)  # pylint:disable=assignment-from-no-return
+    return (chisq * num_bins - (snr.conj() * snr).real) * (snr_norm ** 2.0)
+
 
 _q_l = None
 _qtilde_l = None
