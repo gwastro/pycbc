@@ -185,6 +185,9 @@ class InjFilterRejector(object):
             )
         ):
             self.enabled = False
+            self.chirp_time_window = None
+            self.match_threshold = None
+            self.inj_trigger_window = None
             return
         self.enabled = True
 

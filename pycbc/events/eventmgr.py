@@ -939,6 +939,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 f['search/setup_time_fraction'] = \
                    numpy.array([float(self.setup_time) / float(self.run_time)])
 
+        f.f.close()
+
     def finalize_template_events(self):
         # Check that none of the template events have the same time index as an
         # existing event in events. I.e. don't list the same ifo event multiple
@@ -1206,6 +1208,8 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                     numpy.array([filters_per_core / float(self.run_time)])
                 f['search/setup_time_fraction'] = \
                    numpy.array([float(self.setup_time) / float(self.run_time)])
+
+        f.f.close()
 
 
 __all__ = ['threshold_and_cluster', 'findchirp_cluster_over_window',

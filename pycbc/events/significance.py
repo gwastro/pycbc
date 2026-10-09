@@ -58,6 +58,9 @@ def count_n_louder(bstat, fstat, dec,
     {} : (empty) dictionary
         Ensure we return the same tuple of objects as n_louder_from_fit()
     """
+    if len(bstat) == 0:
+        return np.array([]), np.zeros_like(fstat, dtype=float), {}
+
     sort = bstat.argsort()
     bstat = copy.deepcopy(bstat)[sort]
     dec = copy.deepcopy(dec)[sort]
