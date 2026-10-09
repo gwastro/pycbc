@@ -232,7 +232,8 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     CompressedWaveform
         The compressed waveform data; see `CompressedWaveform` for details.
     """
-    fmin = sample_points.min()
+    sample_points = numpy.sort(numpy.unique(numpy.asarray(sample_points, dtype=float)))
+    fmin = sample_points[0]
     df = htilde.delta_f
 
     sample_index = (sample_points / df).astype(int)
