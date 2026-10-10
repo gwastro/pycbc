@@ -17,150 +17,63 @@
 This modules contains functions for reading in data from frame files or caches
 """
 
-import glob
 import logging
-import math
-import os.path
 import re
 import warnings
 from urllib.parse import urlparse
 
-import lal
-import lalframe
 import numpy
 from gwdatafind import find_urls as find_frame_urls
 
+from pycbc.frame import gwf
+from pycbc.frame.cache import file_format, locations_to_cache
 from pycbc.types import TimeSeries
 
 logger = logging.getLogger(__name__)
 
-# map LAL series types to corresponding functions and Numpy types
-_fr_type_map = {
-    lal.S_TYPE_CODE: [
-        lalframe.FrStreamReadREAL4TimeSeries,
-        numpy.float32,
-        lal.CreateREAL4TimeSeries,
-        lalframe.FrStreamGetREAL4TimeSeriesMetadata,
-        lal.CreateREAL4Sequence,
-        lalframe.FrameAddREAL4TimeSeriesProcData,
-    ],
-    lal.D_TYPE_CODE: [
-        lalframe.FrStreamReadREAL8TimeSeries,
-        numpy.float64,
-        lal.CreateREAL8TimeSeries,
-        lalframe.FrStreamGetREAL8TimeSeriesMetadata,
-        lal.CreateREAL8Sequence,
-        lalframe.FrameAddREAL8TimeSeriesProcData,
-    ],
-    lal.C_TYPE_CODE: [
-        lalframe.FrStreamReadCOMPLEX8TimeSeries,
-        numpy.complex64,
-        lal.CreateCOMPLEX8TimeSeries,
-        lalframe.FrStreamGetCOMPLEX8TimeSeriesMetadata,
-        lal.CreateCOMPLEX8Sequence,
-        lalframe.FrameAddCOMPLEX8TimeSeriesProcData,
-    ],
-    lal.Z_TYPE_CODE: [
-        lalframe.FrStreamReadCOMPLEX16TimeSeries,
-        numpy.complex128,
-        lal.CreateCOMPLEX16TimeSeries,
-        lalframe.FrStreamGetCOMPLEX16TimeSeriesMetadata,
-        lal.CreateCOMPLEX16Sequence,
-        lalframe.FrameAddCOMPLEX16TimeSeriesProcData,
-    ],
-    lal.U4_TYPE_CODE: [
-        lalframe.FrStreamReadUINT4TimeSeries,
-        numpy.uint32,
-        lal.CreateUINT4TimeSeries,
-        lalframe.FrStreamGetUINT4TimeSeriesMetadata,
-        lal.CreateUINT4Sequence,
-        lalframe.FrameAddUINT4TimeSeriesProcData,
-    ],
-    lal.I4_TYPE_CODE: [
-        lalframe.FrStreamReadINT4TimeSeries,
-        numpy.int32,
-        lal.CreateINT4TimeSeries,
-        lalframe.FrStreamGetINT4TimeSeriesMetadata,
-        lal.CreateINT4Sequence,
-        lalframe.FrameAddINT4TimeSeriesProcData,
-    ],
-}
 
-
-def _read_channel(channel, stream, start, duration):
-    """Get channel using lalframe"""
-    channel_type = lalframe.FrStreamGetTimeSeriesType(channel, stream)
-    read_func = _fr_type_map[channel_type][0]
-    d_type = _fr_type_map[channel_type][1]
-    data = read_func(stream, channel, start, duration, 0)
-    return TimeSeries(data.data.data, delta_t=data.deltaT, epoch=start, dtype=d_type)
-
-
-def _is_gwf(file_path):
+def _read_channel(cache, channel, start, end, check_integrity=False):
     """
-    Test if a file is a frame file by checking if its contents begins with
-    the magic string 'IGWD'.
+    Read one channel from the files in `cache`, which must hold contiguous
+    data from `start` to `end`. If `end` is None, read up to the end of the
+    contiguous data.
     """
-    try:
-        with open(file_path, "rb") as f:
-            if f.read(4) == b"IGWD":
-                return True
-    except OSError:
-        pass
-    return False
+    start = float(start)
+    end = None if end is None else float(end)
+    pieces = []
+    for entry in cache.sieve(start=start, end=end):
+        data, epoch, delta_t = file_format(entry.path).read(
+            entry.path,
+            channel,
+            max(start, entry.start),
+            entry.end if end is None else min(end, entry.end),
+            check_integrity=check_integrity,
+        )
+        if pieces:
+            prev_data, prev_epoch, prev_delta_t = pieces[-1]
+            expected = prev_epoch + len(prev_data) * prev_delta_t
+            if abs(epoch - expected) > delta_t / 2 or delta_t != prev_delta_t:
+                if end is None:
+                    break
+                raise ValueError(
+                    f"{channel} has a gap, overlap or change of "
+                    f"sample rate at GPS time {expected}"
+                )
+        pieces.append((data, epoch, delta_t))
 
-
-def locations_to_cache(locations, latest=False):
-    """
-    Return a cumulative cache file build from the list of locations
-
-    Parameters
-    ----------
-    locations : list
-        A list of strings containing files, globs, or cache files used to
-        build a combined lal cache file object.
-    latest : Optional, {False, Boolean}
-        Only return a cache with the most recent frame in the locations.
-        If false, all results are returned.
-
-    Returns
-    -------
-    cache : lal.Cache
-        A cumulative lal cache object containing the files derived from the
-        list of locations.
-
-    """
-    cum_cache = lal.Cache()
-    for source in locations:
-        flist = glob.glob(source)
-        if latest:
-
-            def relaxed_getctime(fn):
-                # when building a cache from a directory of temporary
-                # low-latency frames, files might disappear between
-                # the glob() and getctime() calls
-                try:
-                    return os.path.getctime(fn)
-                except OSError:
-                    return 0
-
-            if not flist:
-                raise ValueError("no frame or cache files found in " + source)
-            flist = [max(flist, key=relaxed_getctime)]
-
-        for file_path in flist:
-            dir_name, file_name = os.path.split(file_path)
-            _, file_extension = os.path.splitext(file_name)
-
-            if file_extension in [".lcf", ".cache"]:
-                cache = lal.CacheImport(file_path)
-            elif file_extension == ".gwf" or _is_gwf(file_path):
-                cache = lalframe.FrOpen(str(dir_name), str(file_name)).cache
-            else:
-                raise TypeError("Invalid location name")
-
-            cum_cache = lal.CacheMerge(cum_cache, cache)
-    return cum_cache
+    if not pieces:
+        raise ValueError(f"No data found for {channel} at GPS time {start}")
+    data, epoch, delta_t = pieces[0]
+    last_data, last_epoch, _ = pieces[-1]
+    if epoch - start >= delta_t:
+        raise ValueError(
+            f"{channel} data starts at {epoch}, after the requested start time {start}"
+        )
+    if end is not None and end - (last_epoch + len(last_data) * delta_t) >= delta_t:
+        raise ValueError(f"{channel} data ends before the requested end time {end}")
+    return TimeSeries(
+        numpy.concatenate([p[0] for p in pieces]), delta_t=delta_t, epoch=epoch
+    )
 
 
 def read_frame(
@@ -191,7 +104,8 @@ def read_frame(
         The gps start time of the time series. Defaults to reading from the
         beginning of the available frame(s).
     end_time : {None, LIGOTimeGPS}, optional
-        The gps end time of the time series. Defaults to the end of the frame.
+        The gps end time of the time series. Defaults to the end of the
+        contiguous data following `start_time`.
         Note, this argument is incompatible with `duration`.
     duration : {None, float}, optional
         The amount of data to read in seconds. Note, this argument is
@@ -217,69 +131,30 @@ def read_frame(
     else:
         locations = [location]
 
-    cum_cache = locations_to_cache(locations)
+    cache = locations_to_cache(locations)
     if sieve:
         logger.info("Using frames that match regexp: %s", sieve)
-        lal.CacheSieve(cum_cache, 0, 0, None, None, sieve)
-    if start_time is not None and end_time is not None:
-        # Before sieving, check if this is sane. Otherwise it will fail later.
-        if (int(math.ceil(end_time)) - int(start_time)) <= 0:
-            raise ValueError("Negative or null duration")
-        lal.CacheSieve(
-            cum_cache, int(start_time), int(math.ceil(end_time)), None, None, None
-        )
-
-    stream = lalframe.FrStreamCacheOpen(cum_cache)
-    stream.mode = lalframe.FR_STREAM_VERBOSE_MODE
-
-    if check_integrity:
-        stream.mode = stream.mode | lalframe.FR_STREAM_CHECKSUM_MODE
-
-    lalframe.FrStreamSetMode(stream, stream.mode)
-
-    # determine duration of data
-    if type(channels) is list:
-        first_channel = channels[0]
-    else:
-        first_channel = channels
-
-    data_length = lalframe.FrStreamGetVectorLength(first_channel, stream)
-    channel_type = lalframe.FrStreamGetTimeSeriesType(first_channel, stream)
-    create_series_func = _fr_type_map[channel_type][2]
-    get_series_metadata_func = _fr_type_map[channel_type][3]
-    series = create_series_func(first_channel, stream.epoch, 0, 0, lal.ADCCountUnit, 0)
-    get_series_metadata_func(series, stream)
-    data_duration = (data_length + 0.5) * series.deltaT
+        cache = cache.sieve(regex=sieve)
+    if not cache:
+        raise ValueError(f"No frame files found in {location}")
 
     if start_time is None:
-        start_time = stream.epoch * 1
-    if end_time is None:
-        end_time = start_time + data_duration
-
-    if type(start_time) is not lal.LIGOTimeGPS:
-        start_time = lal.LIGOTimeGPS(start_time)
-    if type(end_time) is not lal.LIGOTimeGPS:
-        end_time = lal.LIGOTimeGPS(end_time)
-
-    if duration is None:
-        duration = float(end_time - start_time)
-    else:
-        duration = float(duration)
-
-    # lalframe behaves dangerously with invalid duration so catch it here
-    if duration <= 0:
+        start_time = cache[0].start
+    if duration is not None:
+        end_time = float(start_time) + float(duration)
+    if end_time is not None and end_time <= start_time:
         raise ValueError("Negative or null duration")
-    # if duration > data_duration:
-    #    raise ValueError("Requested duration longer than available data")
 
     if type(channels) is list:
-        all_data = []
-        for channel in channels:
-            channel_data = _read_channel(channel, stream, start_time, duration)
-            lalframe.FrStreamSeek(stream, start_time)
-            all_data.append(channel_data)
-        return all_data
-    return _read_channel(channels, stream, start_time, duration)
+        return [
+            _read_channel(
+                cache, channel, start_time, end_time, check_integrity=check_integrity
+            )
+            for channel in channels
+        ]
+    return _read_channel(
+        cache, channels, start_time, end_time, check_integrity=check_integrity
+    )
 
 
 def frame_paths(
@@ -483,40 +358,7 @@ def write_frame(location, channels, timeseries):
     if gps_start_time % 1 or gps_end_time % 1:
         raise ValueError("Start and end times of TimeSeries must be integer seconds.")
 
-    # create frame
-    frame = lalframe.FrameNew(
-        epoch=gps_start_time,
-        duration=duration,
-        project="",
-        run=1,
-        frnum=1,
-        detectorFlags=lal.LALDETECTORTYPE_ABSENT,
-    )
-
-    for i, tseries in enumerate(timeseries):
-        # get data type
-        for seriestype in _fr_type_map:
-            if _fr_type_map[seriestype][1] == tseries.dtype:
-                create_series_func = _fr_type_map[seriestype][2]
-                create_sequence_func = _fr_type_map[seriestype][4]
-                add_series_func = _fr_type_map[seriestype][5]
-                break
-
-        # add time series to frame
-        series = create_series_func(
-            channels[i],
-            tseries.start_time,
-            0,
-            tseries.delta_t,
-            lal.ADCCountUnit,
-            len(tseries.numpy()),
-        )
-        series.data = create_sequence_func(len(tseries.numpy()))
-        series.data.data = tseries.numpy()
-        add_series_func(frame, series)
-
-    # write frame
-    lalframe.FrameWrite(frame, location)
+    gwf.write(location, channels, timeseries, gps_start_time, duration)
 
 
 __all__ = [
