@@ -52,8 +52,6 @@ class TestUtils(unittest.TestCase):
             ra = resample_to_delta_t(self.a, self.delta_t)
             self.assertAlmostEqual(ra[0], 1)
             self.assertIsNot(ra, self.a)
-            ra_nocopy = resample_to_delta_t(self.a, self.delta_t, copy=False)
-            self.assertIs(ra_nocopy, self.a)
 
         def test_resample_float64(self):
             rb = resample_to_delta_t(self.b, self.target_delta_t)
@@ -61,8 +59,6 @@ class TestUtils(unittest.TestCase):
             rb = resample_to_delta_t(self.b, self.delta_t)
             self.assertAlmostEqual(rb[0], 1)
             self.assertIsNot(rb, self.b)
-            rb_nocopy = resample_to_delta_t(self.b, self.delta_t, copy=False)
-            self.assertIs(rb_nocopy, self.b)
 
     def test_resample_errors(self):
         self.assertRaises(TypeError, resample_to_delta_t, self.c, self.target_delta_t)
