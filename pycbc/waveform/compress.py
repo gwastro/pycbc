@@ -165,6 +165,12 @@ compression_algorithms = {
         }
 
 def _vecdiff(htilde, hinterp, fmin, fmax, psd=None):
+    kmin = int(fmin/htilde.delta_f)
+    kmax = int(fmax/htilde.delta_f)
+    if kmax <= kmin + 1:
+        # Slices with <= 1 sample cannot compute meaningful overlap
+        # or be subdivided
+        return 0.0
     return 1 - abs(filter.overlap_cplx(htilde, hinterp,
                           low_frequency_cutoff=fmin,
                           high_frequency_cutoff=fmax,
@@ -227,11 +233,14 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     CompressedWaveform
         The compressed waveform data; see `CompressedWaveform` for details.
     """
-    fmin = sample_points.min()
     df = htilde.delta_f
-
-    sample_index = (sample_points / df).astype(int)
-
+    sample_points = numpy.sort(
+        numpy.unique(numpy.asarray(sample_points, dtype=float)))
+    sample_index = numpy.unique((sample_points / df).astype(int))
+    sample_index.sort()
+    sample_points = (sample_index * df).astype(
+        real_same_precision_as(htilde))
+    fmin = sample_points[0]
     amp = utils.amplitude_from_frequencyseries(htilde)
     phase = utils.phase_from_frequencyseries(htilde)
 
@@ -295,22 +304,32 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         # --- 2. Propose new points ---
         new_addidxs = []
         for minpt in selected_segments:
-            # Calculate midpoint using indices to avoid float drift issues
-            add_freq = (sample_points[minpt] + sample_points[minpt+1]) / 2.0
-            addidx = int(add_freq / df)
+            # If the segment cannot be subdivided (<= 1 bin wide), skip it
+            if sample_index[minpt+1] - sample_index[minpt] <= 1:
+                continue
+            # Calculate midpoint using integer indices to avoid drift
+            addidx = int((sample_index[minpt] + sample_index[minpt+1]) // 2)
             if addidx not in sample_index and addidx not in new_addidxs:
                 new_addidxs.append(addidx)
 
-            # Don't propose points within a sample of existing ones
-            new_addidxs = numpy.array(new_addidxs)
-            valid = ~numpy.any(abs(new_addidxs[:, None] - numpy.array(added_points)) <= 2, axis=1)
-            new_addidxs = list(new_addidxs[valid])
+        # Don't propose duplicate points already added in earlier iterations
+        if new_addidxs and added_points:
+            added_set = set(added_points)
+            new_addidxs = [
+                idx for idx in new_addidxs if idx not in added_set
+            ]
+
+        if not new_addidxs:
+            # All bad segments are already at fundamental resolution (1 bin)
+            break
 
         # --- 3. Update and Sort ---
-        sample_index = numpy.unique(numpy.concatenate((sample_index, new_addidxs)))
+        sample_index = numpy.unique(
+            numpy.concatenate((sample_index, new_addidxs)))
         sample_index.sort()
         sample_index = sample_index.astype(int)
-        sample_points = (sample_index * df).astype(real_same_precision_as(htilde))
+        sample_points = (sample_index * df).astype(
+            real_same_precision_as(htilde))
         comp_amp = amp.take(sample_index)
         comp_phase = phase.take(sample_index)
         
@@ -328,15 +347,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
                                             low_frequency_cutoff=fmin,
                                             normalized=False))
 
-        o = filter.overlap_cplx(hdecomp / s1, htilde2,
-                                low_frequency_cutoff=fmin,
-                                normalized=False)
-
-        if mismatch <= tolerance:
-            mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
-                                            low_frequency_cutoff=fmin,
-                                            normalized=False))
-        else:
+        if mismatch > tolerance:
             # Calculate the overlap errors within each frequency bins.
             # We use this to determine where to add more interpolation points
             vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
@@ -672,9 +683,9 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
                                 df, f_lower, imin, start_index)
     else:
         # use scipy for fancier interpolation
-        sample_frequencies = numpy.array(sample_frequencies)
-        amp = numpy.array(amp)
-        phase = numpy.array(phase)
+        sample_frequencies = numpy.asarray(sample_frequencies)
+        amp = numpy.asarray(amp)
+        phase = numpy.asarray(phase)
         outfreq = out.sample_frequencies.numpy()
         amp_interp = interpolate.interp1d(sample_frequencies, amp,
                                           kind=interpolation,
