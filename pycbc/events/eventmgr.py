@@ -181,20 +181,32 @@ def cluster_reduce(idx, snr, window_size):
 
 
 class H5FileSyntSugar(object):
-    """Convenience class that adds some syntactic sugar to h5py.File.
-    """
+    """Convenience class that adds some syntactic sugar to h5py.File."""
     def __init__(self, name, prefix=''):
-        self.f = h5py.File(name, 'w')
-        self.prefix = prefix
+        self.prefix = prefix or ''
+        self.f = h5py.File(name, 'a')
 
     def __setitem__(self, name, data):
+        full_path = (self.prefix + '/' + name).strip('/') if self.prefix \
+            else name.strip('/')
+        if full_path in self.f:
+            del self.f[full_path]
         self.f.create_dataset(
-            self.prefix + '/' + name,
+            full_path,
             data=data,
             compression='gzip',
             compression_opts=9,
             shuffle=True
         )
+
+    def close(self):
+        self.f.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
 
 class EventManager(object):
@@ -204,11 +216,13 @@ class EventManager(object):
         column,
         column_types,
         array_minsize=10000,
+        ifo=None,
         **kwds
     ):
         self.opt = opt
+        self.ifo = ifo
         self.global_params = kwds
-        self.array_minsize=array_minsize
+        self.array_minsize = array_minsize
 
         self.event_dtype = [('template_id', int)]
         for col, coltype in zip(column, column_types):
@@ -270,7 +284,7 @@ class EventManager(object):
         for arg, value in opt_dict.items():
             if isinstance(value, dict):
                 setattr(opt, arg, getattr(opt, arg)[ifo])
-        return cls(opt, column, column_types, **kwds)
+        return cls(opt, column, column_types, ifo=ifo, **kwds)
 
     def cut_events_via_mask(self, keep):
         # keep should be a boolean array of len self._events_size
@@ -489,7 +503,8 @@ class EventManager(object):
         th = numpy.array([p['tmplt'].template_hash for p in
                           self.template_params])
         tid = self.events['template_id']
-        f = H5FileSyntSugar(outname, self.opt.channel_name[0:2])
+        ifo = self.ifo if self.ifo is not None else self.opt.channel_name[0:2]
+        f = H5FileSyntSugar(outname, ifo)
 
         if len(self.events):
             f['snr'] = abs(self.events['snr'])
@@ -612,7 +627,7 @@ class EventManager(object):
                     f['gating/' + gate_type + '/pad'] = \
                             numpy.array([g[2] for g in gating_info[gate_type]])
 
-        f.f.close()
+        f.close()
 
 
 class EventManagerMultiDetBase(EventManager):
@@ -939,7 +954,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 f['search/setup_time_fraction'] = \
                    numpy.array([float(self.setup_time) / float(self.run_time)])
 
-        f.f.close()
+        f.close()
 
     def finalize_template_events(self):
         # Check that none of the template events have the same time index as an
@@ -1209,7 +1224,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                 f['search/setup_time_fraction'] = \
                    numpy.array([float(self.setup_time) / float(self.run_time)])
 
-        f.f.close()
+        f.close()
 
 
 __all__ = ['threshold_and_cluster', 'findchirp_cluster_over_window',
