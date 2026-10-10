@@ -36,7 +36,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             The region is a boolean expression such as 'mtotal>40' indicating
             which templates to apply this set of sine-Gaussians to.
         """
-        if snr_threshold is not None:
+        if snr_threshold is not None and chisq_locations is not None:
             self.do = True
             self.num_bins = num_bins
             self.snr_threshold = snr_threshold
