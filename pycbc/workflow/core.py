@@ -46,7 +46,6 @@ from operator import attrgetter
 import igwn_segments as segments
 import lal
 import lal.utils
-import Pegasus.api  # Try and move this into pegasus_workflow
 from igwn_ligolw import lsctables, ligolw
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import segments as ligolw_segments
@@ -155,8 +154,6 @@ class Executable(pegasus_workflow.Executable):
             self.ifo_string = None
         self.cp = cp
         self.name = name
-        self.container_cls = None
-        self.container_type = None
 
         try:
             self.installed = cp.getboolean('pegasus_profile-%s' % name,
@@ -210,7 +207,18 @@ class Executable(pegasus_workflow.Executable):
 
         exe_site = exe_site.strip()
 
-        if exe_url.scheme in ['', 'file']:
+        site_sec = 'pegasus_profile-%s' % exe_site
+        if (exe_url.scheme == '' and '/' not in exe_path
+                and cp.has_option(site_sec, 'pycbc|container-bin-dir')):
+            # We know this will run in a container, and we know the
+            # container's bin dir, so we can construct the path to the
+            # executable accordingly.
+            bin_dir = cp.get(site_sec, 'pycbc|container-bin-dir').strip()
+            exe_path = '%s/%s' % (bin_dir.rstrip('/'), exe_path)
+            # We don't check existence of this file, similar to the
+            # singularity case below, because we don't know if the container
+            # is available for it on the submit host.
+        elif exe_url.scheme in ['', 'file']:
             # NOTE: There could be a case where the exe is available at a
             #       remote site, but not on the submit host. Currently allowed
             #       for the OSG site, versioning will not work as planned if
@@ -252,47 +260,8 @@ class Executable(pegasus_workflow.Executable):
             exe_site
         )
 
-        # FIXME: This hasn't yet been ported to pegasus5 and won't work.
-        #        Pegasus describes two ways to work with containers, and I need
-        #        to figure out which is most appropriate and use that.
-        # Determine if this executables should be run in a container
-        try:
-            self.container_type = cp.get('pegasus_profile-%s' % name,
-                                         'container|type')
-        except:
-            pass
-
-        if self.container_type is not None:
-            # FIXME: Move the actual container setup into pegasus_workflow
-            self.container_img = cp.get('pegasus_profile-%s' % name,
-                                        'container|image')
-            try:
-                self.container_site = cp.get('pegasus_profile-%s' % name,
-                                             'container|image_site')
-            except:
-                self.container_site = 'local'
-
-            try:
-                self.container_mount = cp.get('pegasus_profile-%s' % name,
-                                             'container|mount').split(',')
-            except:
-                self.container_mount = None
-
-
-            self.container_cls = Pegasus.api.Container("{}-container".format(
-                                                    name),
-                                                    self.container_type,
-                                                    self.container_img,
-                                                    imagesite=self.container_site,
-                                                    mount=self.container_mount)
-
-            super(Executable, self).__init__(self.pegasus_name,
-                                             installed=self.installed,
-                                             container=self.container_cls)
-
-        else:
-            super(Executable, self).__init__(self.pegasus_name,
-                                             installed=self.installed)
+        super(Executable, self).__init__(self.pegasus_name,
+                                         installed=self.installed)
 
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
@@ -399,15 +368,23 @@ class Executable(pegasus_workflow.Executable):
                             ifo = split_path[0]
                             path = split_path[1]
 
-                    # If the file exists make sure to use the
-                    # fill path as a file:// URL
-                    if os.path.isfile(path):
-                        curr_pfn = urljoin('file:',
-                                           pathname2url(os.path.abspath(path)))
+                    # If this looks like a plain local path (no URL
+                    # scheme) turn it into a proper file:// URL;
+                    # anything else (http://, osdf://, an explicit
+                    # file:// URL, ...) is left as given.
+                    if urllib.parse.urlparse(path).scheme == '':
+                        curr_pfn = urljoin(
+                            'file:', pathname2url(os.path.abspath(path)))
                     else:
                         curr_pfn = path
 
-                    curr_file = resolve_url_to_file(curr_pfn)
+                    if cp.has_option('workflow', 'skip-resolve-input-files'):
+                        # Trust curr_pfn directly, without checking it
+                        # exists or fetching it now.
+                        curr_file = File.from_path(curr_pfn)
+                        curr_file.add_pfn(curr_pfn, site='local')
+                    else:
+                        curr_file = resolve_url_to_file(curr_pfn)
                     self.common_input_files.append(curr_file)
                     if ifo:
                         self.common_raw_options.append(ifo + ':')
@@ -642,10 +619,6 @@ class Executable(pegasus_workflow.Executable):
 
         if not os.path.isabs(self.out_dir):
             self.out_dir = os.path.join(os.getcwd(), self.out_dir)
-
-        # Make output directory if not there
-        if not os.path.isdir(self.out_dir):
-            make_analysis_dir(self.out_dir)
 
     def _set_pegasus_profile_options(self):
         """Set the pegasus-profile settings for this Executable.

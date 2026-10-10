@@ -185,7 +185,7 @@ def makedir(path):
     Make the analysis directory path and any parent directories that don't
     already exist. Will do nothing if path already exists.
     """
-    if path is not None and not os.path.exists(path):
+    if path and not os.path.exists(path):
         os.makedirs(path)
 
 

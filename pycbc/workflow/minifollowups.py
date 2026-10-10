@@ -14,13 +14,16 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import copy
 import logging
+import math
 import os.path
+import urllib.parse
 
 import igwn_segments as segments
 
 from pycbc.events import coinc
-from pycbc.workflow.core import Executable, FileList
+from pycbc.workflow.core import Executable, File, FileList
 from pycbc.workflow.core import makedir, resolve_url_to_file
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 try:
@@ -32,6 +35,45 @@ except ImportError:
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 
 logger = logging.getLogger('pycbc.workflow.minifollowups')
+
+
+def write_config_for_subworkflow(cp, config_path):
+    """Write a copy of cp to config_path for a minifollowup-style
+    sub-workflow generator to read back in, with a flag set so that it
+    does not try to resolve or fetch any input files named in it: that
+    executable may run somewhere (e.g. inside a container on an execute
+    node) with no reason to have access to whatever those paths name, and
+    the files are only actually needed later, when the sub-workflow it
+    generates is itself planned.
+    """
+    cp = copy.deepcopy(cp)
+    cp.set('workflow', 'skip-resolve-input-files', '')
+    cp.write(open(config_path, 'w'))
+
+
+def add_wellfile_opt(node, workflow, option_name, out_dir, extra_tags=None):
+    """Declare a node's minifollowup summary page ('well.html') as a
+    properly-tracked Pegasus output file.
+    """
+    exe = node.executable
+    tags = list(exe.tags)
+    for tag in (extra_tags or []):
+        if tag not in tags:
+            tags.append(tag)
+
+    valid_seg = workflow.analysis_time
+    start = int(valid_seg[0])
+    duration = int(math.ceil(valid_seg[1])) - start
+    ifo_string = ''.join(exe.ifo_list).upper() if exe.ifo_list else 'ALL'
+    bits = [ifo_string, exe.name.upper()] + [tag.upper() for tag in tags]
+    filename = 'well_%s_%s_%s.html' % ('_'.join(bits), start, duration)
+    path = os.path.join(out_dir, filename)
+    file_url = urllib.parse.urlunparse(
+        ['file', 'localhost', path, None, None, None])
+    fil = File(exe.ifo_list, exe.name, workflow.analysis_time,
+              file_url=file_url, tags=tags)
+    node.add_output_opt(option_name, fil)
+    return fil
 
 def grouper(iterable, n, fillvalue=None):
     """ Create a list of n length tuples
@@ -90,7 +132,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 
     # turn the config file into a File class
     config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'foreground_minifollowup.ini')
-    workflow.cp.write(open(config_path, 'w'))
+    write_config_for_subworkflow(workflow.cp, config_path)
 
     config_file = resolve_url_to_file(config_path)
 
@@ -110,6 +152,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
         node.add_list_opt('--tags', tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
+    add_wellfile_opt(node, workflow, '--html-layout-file', out_dir)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -186,7 +229,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     curr_ifo = single_trig_file.ifo
     config_path = os.path.abspath(dax_output + '/' + curr_ifo + \
                                    '_'.join(tags) + 'singles_minifollowup.ini')
-    workflow.cp.write(open(config_path, 'w'))
+    write_config_for_subworkflow(workflow.cp, config_path)
 
     config_file = resolve_url_to_file(config_path)
 
@@ -220,6 +263,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map',
                              '--output-map')
+    add_wellfile_opt(node, workflow, '--html-layout-file', out_dir)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -294,7 +338,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
     # turn the config file into a File class
     config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'injection_minifollowup.ini')
-    workflow.cp.write(open(config_path, 'w'))
+    write_config_for_subworkflow(workflow.cp, config_path)
 
     config_file = resolve_url_to_file(config_path)
 
@@ -313,6 +357,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
         node.add_list_opt('--tags', tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
+    add_wellfile_opt(node, workflow, '--html-layout-file', out_dir, extra_tags=tags)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -489,7 +534,6 @@ def make_single_template_files(workflow, segs, ifo, data_read_name,
         The list of workflow.Files created in this function.
     """
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = 'single_template'
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
@@ -613,7 +657,6 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
         in this function.
     """
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = 'single_template_plot'
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
@@ -676,7 +719,6 @@ def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
     """ Add plot_waveform jobs to the workflow.
     """
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = 'single_template_plot'
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
@@ -709,7 +751,6 @@ def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
 def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
                   tags=None):
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = 'page_injinfo'
     files = FileList([])
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
@@ -726,7 +767,6 @@ def make_coinc_info(workflow, singles, bank, coinc_file, out_dir,
                     n_loudest=None, trig_id=None, file_substring=None,
                     sort_order=None, sort_var=None, title=None, tags=None):
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = 'page_coincinfo'
     files = FileList([])
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
@@ -756,7 +796,6 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
     """Setup a job to create sngl detector sngl ifo html summary snippet.
     """
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = 'page_snglinfo'
     files = FileList([])
     node = PlotExecutable(workflow.cp, name, ifos=[ifo],
@@ -782,7 +821,6 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
 def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=None,
                             exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = 'plot_trigger_timeseries'
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
@@ -839,7 +877,6 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
         List of tags to add to the created nodes, which determine file naming.
     """
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = 'plot_qscan'
 
     curr_exe = PlotQScanExecutable(workflow.cp, name, ifos=[ifo],
@@ -937,7 +974,6 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
         List of tags to add to the created nodes, which determine file naming.
     """
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = 'plot_singles_timefreq'
 
     curr_exe = SingleTimeFreqExecutable(workflow.cp, name, ifos=[single.ifo],
@@ -1225,12 +1261,11 @@ def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file,
 
     tags = [] if tags is None else tags
     makedir(dax_output)
-    makedir(out_dir)
 
     # turn the config file into a File class
     config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + \
                                   'upload_prep_minifollowup.ini')
-    workflow.cp.write(open(config_path, 'w'))
+    write_config_for_subworkflow(workflow.cp, config_path)
 
     config_file = resolve_url_to_file(config_path)
 
