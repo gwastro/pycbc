@@ -163,7 +163,7 @@ def fir_zero_filter(coeff, timeseries):
     series.roll(-len(coeff)//2)
     return series
 
-def resample_to_delta_t(timeseries, delta_t, method='butterworth', copy=True):
+def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     """Resmple the time_series to delta_t
 
     Resamples the TimeSeries instance time_series to the given time step,
@@ -179,10 +179,6 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth', copy=True):
         The desired time step
     method: {'butterworth', 'ldas'}, optional
         The filter method to use.
-    copy: bool, optional
-        Whether to return a copy if the series is already at the target
-        sample rate. Default is True to guarantee the returned series
-        can be safely modified in-place without mutating the input.
 
     Returns
     -------
@@ -208,7 +204,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth', copy=True):
         raise TypeError("Time series must be real")
 
     if timeseries.sample_rate_close(1.0 / delta_t):
-        return timeseries.copy() if copy else timeseries
+        return timeseries.copy()
 
     if method == 'butterworth':
         lal_data = timeseries.lal()
