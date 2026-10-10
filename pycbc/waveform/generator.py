@@ -36,6 +36,7 @@ from . import supernovae
 from . import waveform_modes
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
+from pycbc.waveform.utils import get_taper_settings
 from pycbc.waveform.utils import apply_fseries_time_shift, \
                                  ceilpow2, apply_fd_time_shift
 from pycbc.detector import Detector
@@ -278,12 +279,13 @@ class TDomainCBCGenerator(BaseCBCGenerator):
         hp, hc = res
         if 'taper' in self.current_params:
             location = self.current_params['taper']
+            tapermethod, taper_window = get_taper_settings(self.current_params)
             hp = hp.taper_timeseries(location=location,
-                                     tapermethod=self.current_params.get('taper_method', 'lal'), 
-                                     taper_window=self.current_params.get('taper_window'))
+                                     tapermethod=tapermethod,
+                                     taper_window=taper_window)
             hc = hc.taper_timeseries(location=location,
-                                     tapermethod=self.current_params.get('taper_method', 'lal'), 
-                                     taper_window=self.current_params.get('taper_window'))
+                                     tapermethod=tapermethod,
+                                     taper_window=taper_window)
  
         return hp, hc
 
@@ -308,14 +310,15 @@ class TDomainCBCModesGenerator(BaseCBCGenerator):
         """
         if 'taper' in self.current_params:
             location = self.current_params['taper']
+            tapermethod, taper_window = get_taper_settings(self.current_params)
             for mode in res:
                 ulm, vlm = res[mode]
-                ulm = ulm.taper_timeseries(location=location, 
-                                           tapermethod=self.current_params.get('taper_method', 'lal'), 
-                                           taper_window=self.current_params.get('taper_window'))
-                vlm = vlm.taper_timeseries(location=location, 
-                                           tapermethod=self.current_params.get('taper_method', 'lal'), 
-                                           taper_window=self.current_params.get('taper_window'))
+                ulm = ulm.taper_timeseries(location=location,
+                                           tapermethod=tapermethod,
+                                           taper_window=taper_window)
+                vlm = vlm.taper_timeseries(location=location,
+                                           tapermethod=tapermethod,
+                                           taper_window=taper_window)
                 res[mode] = (ulm, vlm)
         return res
 

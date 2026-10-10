@@ -738,12 +738,13 @@ def get_fd_waveform_from_td(**params):
         hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
         hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
     else:
+        tapermethod, taper_window = wfutils.get_taper_settings(params)
         hp = hp.taper_timeseries(location=params['taper'],
-                                 tapermethod=params['taper_method'],
-                                 taper_window=params['taper_window'])
+                                 tapermethod=tapermethod,
+                                 taper_window=taper_window)
         hc = hc.taper_timeseries(location=params['taper'],
-                                 tapermethod=params['taper_method'],
-                                 taper_window=params['taper_window'])
+                                 tapermethod=tapermethod,
+                                 taper_window=taper_window)
 
     # avoid wraparound
     hp = hp.to_frequencyseries().cyclic_time_shift(hp.start_time)
@@ -1244,8 +1245,11 @@ def get_waveform_filter(out, template=None, **kwargs):
         # taper the time series hp if required
         if 'taper' in input_params.keys() and \
                 input_params['taper'] is not None:
-            hp = wfutils.taper_timeseries(hp, input_params['taper'],
-                                          return_lal=False)
+            tapermethod, taper_window = wfutils.get_taper_settings(input_params)
+            hp = hp.taper_timeseries(location=input_params['taper'],
+                                     tapermethod=tapermethod,
+                                     taper_window=taper_window,
+                                     return_lal=False)
         return td_waveform_to_fd_waveform(hp, out=out)
 
     else:
@@ -1347,12 +1351,13 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         # taper the time series hp if required
         if 'taper' in input_params.keys() and \
                 input_params['taper'] is not None:
-            hp = hp.taper_timeseries(location=input_params['taper'], 
-            tapermethod=input_params.get('taper_method', 'lal'), 
-            taper_window=input_params.get('taper_window'), return_lal=False)
-            hc = hc.taper_timeseries(location=input_params['taper'], 
-            tapermethod=input_params.get('taper_method', 'lal'), 
-            taper_window=input_params.get('taper_window'), return_lal=False)
+            tapermethod, taper_window = wfutils.get_taper_settings(input_params)
+            hp = hp.taper_timeseries(location=input_params['taper'],
+            tapermethod=tapermethod,
+            taper_window=taper_window, return_lal=False)
+            hc = hc.taper_timeseries(location=input_params['taper'],
+            tapermethod=tapermethod,
+            taper_window=taper_window, return_lal=False)
         # total duration of the waveform
         tmplt_length = len(hp) * hp.delta_t
         # for IMR templates the zero of time is at max amplitude (merger)

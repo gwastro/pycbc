@@ -29,8 +29,9 @@ import numpy
 from numpy import sqrt, cos, sin
 from pycbc.scheme import CPUScheme
 from pycbc.waveform import get_td_waveform, get_fd_waveform, get_fd_waveform_sequence
+from pycbc.waveform import get_waveform_filter
 from utils import parse_args_all_schemes, simple_exit
-from pycbc.types import Array
+from pycbc.types import Array, zeros, complex64
 
 _scheme, _context = parse_args_all_schemes("Waveform")
 
@@ -61,6 +62,24 @@ class TestWaveform(unittest.TestCase):
         hp_ref, hc_ref = get_fd_waveform_sequence(approximant="IMRPhenomXAS", mass1=20, mass2=20, sample_points=Array(sample_points))
         self.assertEqual(hp, hp_ref)
         self.assertEqual(hc, hc_ref)
+
+    def test_waveform_filter_taper(self):
+        """Time-domain templates are tapered as given by their taper fields"""
+        if self.scheme != 'cpu':
+            self.skipTest('constant tapering needs the CPU')
+
+        def htilde(**taper):
+            out = zeros(16 * 4096 // 2 + 1, dtype=complex64)
+            return get_waveform_filter(out, approximant='TaylorT4', mass1=15,
+                                       mass2=15, f_lower=20, delta_f=1./16,
+                                       delta_t=1./4096, **taper).numpy()
+
+        untapered = htilde()
+        for taper in [dict(taper='start'),
+                      dict(taper='start', taper_method='constant',
+                           taper_window=0.5)]:
+            diff = abs(htilde(**taper) - untapered).max()
+            self.assertGreater(diff / abs(untapered).max(), 1e-3, taper)
 
     def test_spintaylorf2GPU(self):
 
