@@ -8,8 +8,12 @@ from pycbc.waveform import get_td_waveform, get_fd_waveform
 from pycbc.waveform.utils import (
     apply_fd_time_shift,
     redshift_waveform,
+    get_taper_settings,
+    DEFAULT_TAPER_METHOD,
+    DEFAULT_TAPER_WINDOW,
 )
 from pycbc.types import (TimeSeries)
+from pycbc.io import FieldArray
 
 
 class TestFDTimeShift(unittest.TestCase):
@@ -214,9 +218,26 @@ class TestRedshiftWaveform(unittest.TestCase):
         self.assertLess(relerr, 2e-3)
 
 
+class TestGetTaperSettings(unittest.TestCase):
+    """Tests ``get_taper_settings``."""
+    def test_get_taper_settings(self):
+        defaults = (DEFAULT_TAPER_METHOD, DEFAULT_TAPER_WINDOW)
+        settings = {'taper_method': 'constant', 'taper_window': 0.5}
+        # dicts, e.g., the parameters of a waveform generator
+        self.assertEqual(get_taper_settings({}), defaults)
+        self.assertEqual(get_taper_settings(settings), ('constant', 0.5))
+        # objects with attributes, e.g., rows of an injection table
+        row = FieldArray.from_kwargs(mass1=[10.])[0]
+        self.assertEqual(get_taper_settings(row), defaults)
+        row = FieldArray.from_kwargs(
+            **{k: [v] for k, v in settings.items()})[0]
+        self.assertEqual(get_taper_settings(row), ('constant', 0.5))
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFDTimeShift))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestRedshiftWaveform))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestGetTaperSettings))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
