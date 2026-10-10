@@ -23,11 +23,11 @@ import re
 from collections import namedtuple
 from urllib.parse import urlparse
 
-from pycbc.frame import gwf
+from pycbc.frame import gwf, gwosc_hdf
 
 # Each supported format is a module providing the functions
 # is_format, span, channel_info and read, which act on a single file.
-_FORMATS = (gwf,)
+_FORMATS = (gwf, gwosc_hdf)
 
 
 def file_format(path):
