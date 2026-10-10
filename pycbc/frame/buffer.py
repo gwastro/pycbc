@@ -21,12 +21,11 @@ import glob
 import os.path
 import time
 
-import lal
-import lalframe
 import numpy
 
 import pycbc
-from pycbc.frame.frame import _fr_type_map, locations_to_cache
+from pycbc.frame.cache import file_format, locations_to_cache
+from pycbc.frame.frame import _read_channel
 from pycbc.types import TimeSeries, zeros
 
 
@@ -70,7 +69,7 @@ class DataBuffer:
 
         self.update_cache()
         self.channel_type, self.raw_sample_rate = self._retrieve_metadata(
-            self.stream, self.channel_name
+            self.cache, self.channel_name
         )
 
         raw_size = self.raw_sample_rate * max_buffer
@@ -83,43 +82,35 @@ class DataBuffer:
 
     def update_cache(self):
         """
-        Reset the lal cache. This can be used to update the cache if the
+        Reset the cache. This can be used to update the cache if the
         result may change due to more files being added to the filesystem,
         for example.
         """
-        cache = locations_to_cache(self.frame_src, latest=True)
-        stream = lalframe.FrStreamCacheOpen(cache)
-        self.stream = stream
+        self.cache = locations_to_cache(self.frame_src, latest=True)
 
     @staticmethod
-    def _retrieve_metadata(stream, channel_name):
+    def _retrieve_metadata(cache, channel_name):
         """
         Retrieve basic metadata by reading the first file in the cache
 
         Parameters
         ----------
-        stream: lal stream object
-            Stream containing a channel we want to learn about
+        cache: FrameCache
+            Cache containing a channel we want to learn about
         channel_name: str
             The name of the channel we want to know the dtype and sample rate of
 
         Returns
         -------
-        channel_type: lal type enum
-            Enum value which indicates the dtype of the channel
+        channel_type: numpy.dtype
+            The dtype of the channel
         sample_rate: int
             The sample rate of the data within this channel
 
         """
-        lalframe.FrStreamGetVectorLength(channel_name, stream)
-        channel_type = lalframe.FrStreamGetTimeSeriesType(channel_name, stream)
-        create_series_func = _fr_type_map[channel_type][2]
-        get_series_metadata_func = _fr_type_map[channel_type][3]
-        series = create_series_func(
-            channel_name, stream.epoch, 0, 0, lal.ADCCountUnit, 0
-        )
-        get_series_metadata_func(series, stream)
-        return channel_type, int(1.0 / series.deltaT)
+        path = cache[0].path
+        dtype, sample_rate = file_format(path).channel_info(path, channel_name)
+        return dtype, int(sample_rate)
 
     def _read_frame(self, blocksize):
         """
@@ -142,13 +133,11 @@ class DataBuffer:
 
         """
         try:
-            read_func = _fr_type_map[self.channel_type][0]
-            dtype = _fr_type_map[self.channel_type][1]
-            data = read_func(
-                self.stream, self.channel_name, self.read_pos, int(blocksize), 0
-            )
-            return TimeSeries(
-                data.data.data, delta_t=data.deltaT, epoch=self.read_pos, dtype=dtype
+            return _read_channel(
+                self.cache,
+                self.channel_name,
+                self.read_pos,
+                self.read_pos + int(blocksize),
             )
         except Exception:
             raise RuntimeError(f"Cannot read {self.channel_name} frame data")
@@ -230,11 +219,9 @@ class DataBuffer:
                 raise RuntimeError
 
             keys.append(name)
-        cache = locations_to_cache(keys)
-        stream = lalframe.FrStreamCacheOpen(cache)
-        self.stream = stream
+        self.cache = locations_to_cache(keys)
         self.channel_type, self.raw_sample_rate = self._retrieve_metadata(
-            self.stream, self.channel_name
+            self.cache, self.channel_name
         )
 
     def attempt_advance(self, blocksize, timeout=10):
