@@ -173,10 +173,12 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
 
     Parameters
     ----------
-    time_series: TimeSeries
+    timeseries: TimeSeries
         The time series to be resampled
     delta_t: float
         The desired time step
+    method: {'butterworth', 'ldas'}, optional
+        The filter method to use.
 
     Returns
     -------
@@ -202,7 +204,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
         raise TypeError("Time series must be real")
 
     if timeseries.sample_rate_close(1.0 / delta_t):
-        return timeseries * 1
+        return timeseries.copy()
 
     if method == 'butterworth':
         lal_data = timeseries.lal()
