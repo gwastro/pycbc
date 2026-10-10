@@ -182,14 +182,26 @@ class TestModels(unittest.TestCase):
                                  psds=self.psds,
                                  static_params=self.static3,
                                  prior=self.prior3, paint_method='matmul',)
+        model_cholesky = models.GatedGaussianNoise(
+                                 self.variable3, copy.deepcopy(self.data),
+                                 low_frequency_cutoff=self.flow,
+                                 psds=self.psds,
+                                 static_params=self.static3,
+                                 prior=self.prior3, paint_method='cholesky',
+                                 paint_ridge=1e-8,)
         model_toeplitz.update(**self.q1)
         model_matmul.update(**self.q1)
+        model_cholesky.update(**self.q1)
         # check likelihoods match calculated
         self.assertAlmostEqual(self.a3, model_toeplitz.loglr, delta=0.01)
         self.assertAlmostEqual(self.a3, model_matmul.loglr, delta=0.01)
+        self.assertAlmostEqual(self.a3, model_cholesky.loglr, delta=0.01)
         # check paint method is being set correctly
         self.assertEqual('toeplitz', model_toeplitz.paint_method)
         self.assertEqual('matmul', model_matmul.paint_method)
+        self.assertEqual('cholesky', model_cholesky.paint_method)
+        self.assertEqual(1e-8, model_cholesky.paint_ridge)
+        self.assertEqual(1e-10, model_toeplitz.paint_ridge)
 
     def test_brute_pol_phase_marg(self):
         # Uses the old polarization syntax untill we decide to remove it.
