@@ -127,25 +127,36 @@ def write(location, channels, timeseries, start_time, duration):
     if not isinstance(timeseries, (list, tuple)):
         timeseries = [timeseries]
 
-    # Determine detector from the first channel prefix, or default to 'H1'
+    # Determine detector from the first channel prefix
     ifo = None
     for channel in channels:
-        prefix, _, _ = channel.partition(":")
-        if prefix:
+        prefix, colon, _ = channel.partition(":")
+        if colon and prefix:
             ifo = prefix
             break
     if not ifo:
-        ifo = "H1"
+        raise ValueError(
+            "GWOSC HDF5 files require channel names formatted "
+            "as '<IFO>:<CHANNEL>' (e.g. 'H1:STRAIN') to "
+            "determine the detector"
+        )
 
     with h5py.File(location, "w") as f:
         f["meta/Detector"] = ifo
         f["meta/GPSstart"] = float(start_time)
         f["meta/Duration"] = float(duration)
         for channel, series in zip(channels, timeseries):
-            prefix, _, name = channel.partition(":")
-            if not name:
-                name = prefix
-            dset_path = _DATASETS.get(name, f"strain/{name}")
+            prefix, colon, name = channel.partition(":")
+            if prefix != ifo or not colon or not name:
+                raise ValueError(f"Channel {channel} does not match detector {ifo}")
+            if name not in _DATASETS:
+                known = ", ".join(f"{ifo}:{n}" for n in _DATASETS)
+                raise ValueError(
+                    f"Channel {channel} cannot be written to "
+                    f"GWOSC HDF5 format; supported channels "
+                    f"are {known}"
+                )
+            dset_path = _DATASETS[name]
             group_name, _, _ = dset_path.rpartition("/")
             if group_name and group_name not in f:
                 f.create_group(group_name)
