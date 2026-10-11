@@ -66,13 +66,21 @@ def _dataset(h5file, channel):
     """
     ifo = h5file["meta/Detector"].asstr()[()]
     prefix, _, name = channel.partition(":")
-    if prefix != ifo or name not in _DATASETS:
-        known = ", ".join(f"{ifo}:{name}" for name in _DATASETS)
+    if prefix != ifo:
+        known = ", ".join(f"{ifo}:{n}" for n in _DATASETS)
         raise ValueError(
             f"Channel {channel} is not in {h5file.filename}; "
             f"GWOSC HDF5 files contain {known}"
         )
-    return h5file[_DATASETS[name]]
+    if name in _DATASETS:
+        return h5file[_DATASETS[name]]
+    if f"strain/{name}" in h5file:
+        return h5file[f"strain/{name}"]
+    known = ", ".join(f"{ifo}:{n}" for n in _DATASETS)
+    raise ValueError(
+        f"Channel {channel} is not in {h5file.filename}; "
+        f"GWOSC HDF5 files contain {known}"
+    )
 
 
 def channel_info(path, channel):
@@ -107,3 +115,41 @@ def read(path, channel, start, end, check_integrity=False):
         first = max(0, math.ceil((start - epoch - _FUZZ) / delta_t))
         count = int((end - start) / delta_t)
         return dset[first : first + count], epoch + first * delta_t, delta_t
+
+
+def write(location, channels, timeseries, start_time, duration):
+    """
+    Write a list of time series to a single GWOSC HDF5 file. See
+    `pycbc.frame.write_frame`.
+    """
+    if not isinstance(channels, (list, tuple)):
+        channels = [channels]
+    if not isinstance(timeseries, (list, tuple)):
+        timeseries = [timeseries]
+
+    # Determine detector from the first channel prefix, or default to 'H1'
+    ifo = None
+    for channel in channels:
+        prefix, _, _ = channel.partition(":")
+        if prefix:
+            ifo = prefix
+            break
+    if not ifo:
+        ifo = "H1"
+
+    with h5py.File(location, "w") as f:
+        f["meta/Detector"] = ifo
+        f["meta/GPSstart"] = float(start_time)
+        f["meta/Duration"] = float(duration)
+        for channel, series in zip(channels, timeseries):
+            prefix, _, name = channel.partition(":")
+            if not name:
+                name = prefix
+            dset_path = _DATASETS.get(name, f"strain/{name}")
+            group_name, _, _ = dset_path.rpartition("/")
+            if group_name and group_name not in f:
+                f.create_group(group_name)
+
+            dset = f.create_dataset(dset_path, data=series.numpy())
+            dset.attrs["Xstart"] = float(series.start_time)
+            dset.attrs["Xspacing"] = float(series.delta_t)
