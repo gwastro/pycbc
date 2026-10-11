@@ -188,6 +188,20 @@ class FrameTestBase(unittest.TestCase):
             self.assertEqual(ts_gwf_list[0], ts_hdf_list[0])
             self.assertEqual(ts_gwf_list[1], ts_hdf_list[1])
 
+            # Writing without IFO prefix must raise ValueError
+            no_ifo_path = os.path.join(tmpdir, "no_ifo.hdf5")
+            with self.assertRaises(ValueError):
+                pycbc.frame.write_frame(no_ifo_path, "STRAIN", self.expected_data1)
+
+            # Writing channels with mismatched IFO must raise ValueError
+            mismatched_path = os.path.join(tmpdir, "mismatched.hdf5")
+            with self.assertRaises(ValueError):
+                pycbc.frame.write_frame(
+                    mismatched_path,
+                    ["H1:STRAIN", "L1:STRAIN"],
+                    [self.expected_data1, self.expected_data2],
+                )
+
 
 def write_gwosc_hdf(path, start, duration, ifo="H1", seed=0):
     """Write a GWOSC HDF5 strain file layout using write_frame."""
