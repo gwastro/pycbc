@@ -18,6 +18,7 @@ This modules contains functions for reading in data from frame files or caches
 """
 
 import logging
+import os
 import re
 import warnings
 from urllib.parse import urlparse
@@ -25,7 +26,7 @@ from urllib.parse import urlparse
 import numpy
 from gwdatafind import find_urls as find_frame_urls
 
-from pycbc.frame import gwf
+from pycbc.frame import gwf, gwosc_hdf
 from pycbc.frame.cache import file_format, locations_to_cache
 from pycbc.types import TimeSeries
 
@@ -358,7 +359,12 @@ def write_frame(location, channels, timeseries):
     if gps_start_time % 1 or gps_end_time % 1:
         raise ValueError("Start and end times of TimeSeries must be integer seconds.")
 
-    gwf.write(location, channels, timeseries, gps_start_time, duration)
+    if location.endswith((".hdf", ".hdf5", ".h5")) or (
+        os.path.exists(location) and gwosc_hdf.is_format(location)
+    ):
+        gwosc_hdf.write(location, channels, timeseries, gps_start_time, duration)
+    else:
+        gwf.write(location, channels, timeseries, gps_start_time, duration)
 
 
 __all__ = [
