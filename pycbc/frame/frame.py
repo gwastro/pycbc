@@ -34,70 +34,76 @@ from gwdatafind import find_urls as find_frame_urls
 import pycbc
 from pycbc.types import TimeSeries, zeros
 
-logger = logging.getLogger('pycbc.frame.frame')
+logger = logging.getLogger("pycbc.frame.frame")
 
 # map LAL series types to corresponding functions and Numpy types
 _fr_type_map = {
     lal.S_TYPE_CODE: [
-        lalframe.FrStreamReadREAL4TimeSeries, numpy.float32,
+        lalframe.FrStreamReadREAL4TimeSeries,
+        numpy.float32,
         lal.CreateREAL4TimeSeries,
         lalframe.FrStreamGetREAL4TimeSeriesMetadata,
         lal.CreateREAL4Sequence,
-        lalframe.FrameAddREAL4TimeSeriesProcData
+        lalframe.FrameAddREAL4TimeSeriesProcData,
     ],
     lal.D_TYPE_CODE: [
-        lalframe.FrStreamReadREAL8TimeSeries, numpy.float64,
+        lalframe.FrStreamReadREAL8TimeSeries,
+        numpy.float64,
         lal.CreateREAL8TimeSeries,
         lalframe.FrStreamGetREAL8TimeSeriesMetadata,
         lal.CreateREAL8Sequence,
-        lalframe.FrameAddREAL8TimeSeriesProcData
+        lalframe.FrameAddREAL8TimeSeriesProcData,
     ],
     lal.C_TYPE_CODE: [
-        lalframe.FrStreamReadCOMPLEX8TimeSeries, numpy.complex64,
+        lalframe.FrStreamReadCOMPLEX8TimeSeries,
+        numpy.complex64,
         lal.CreateCOMPLEX8TimeSeries,
         lalframe.FrStreamGetCOMPLEX8TimeSeriesMetadata,
         lal.CreateCOMPLEX8Sequence,
-        lalframe.FrameAddCOMPLEX8TimeSeriesProcData
+        lalframe.FrameAddCOMPLEX8TimeSeriesProcData,
     ],
     lal.Z_TYPE_CODE: [
-        lalframe.FrStreamReadCOMPLEX16TimeSeries, numpy.complex128,
+        lalframe.FrStreamReadCOMPLEX16TimeSeries,
+        numpy.complex128,
         lal.CreateCOMPLEX16TimeSeries,
         lalframe.FrStreamGetCOMPLEX16TimeSeriesMetadata,
         lal.CreateCOMPLEX16Sequence,
-        lalframe.FrameAddCOMPLEX16TimeSeriesProcData
+        lalframe.FrameAddCOMPLEX16TimeSeriesProcData,
     ],
     lal.U4_TYPE_CODE: [
-        lalframe.FrStreamReadUINT4TimeSeries, numpy.uint32,
+        lalframe.FrStreamReadUINT4TimeSeries,
+        numpy.uint32,
         lal.CreateUINT4TimeSeries,
         lalframe.FrStreamGetUINT4TimeSeriesMetadata,
         lal.CreateUINT4Sequence,
-        lalframe.FrameAddUINT4TimeSeriesProcData
+        lalframe.FrameAddUINT4TimeSeriesProcData,
     ],
     lal.I4_TYPE_CODE: [
-        lalframe.FrStreamReadINT4TimeSeries, numpy.int32,
+        lalframe.FrStreamReadINT4TimeSeries,
+        numpy.int32,
         lal.CreateINT4TimeSeries,
         lalframe.FrStreamGetINT4TimeSeriesMetadata,
         lal.CreateINT4Sequence,
-        lalframe.FrameAddINT4TimeSeriesProcData
+        lalframe.FrameAddINT4TimeSeriesProcData,
     ],
 }
 
+
 def _read_channel(channel, stream, start, duration):
-    """ Get channel using lalframe """
+    """Get channel using lalframe"""
     channel_type = lalframe.FrStreamGetTimeSeriesType(channel, stream)
     read_func = _fr_type_map[channel_type][0]
     d_type = _fr_type_map[channel_type][1]
     data = read_func(stream, channel, start, duration, 0)
-    return TimeSeries(data.data.data, delta_t=data.deltaT, epoch=start,
-                      dtype=d_type)
+    return TimeSeries(data.data.data, delta_t=data.deltaT, epoch=start, dtype=d_type)
 
 
 def _is_gwf(file_path):
     """Test if a file is a frame file by checking if its contents begins with
     the magic string 'IGWD'."""
     try:
-        with open(file_path, 'rb') as f:
-            if f.read(4) == b'IGWD':
+        with open(file_path, "rb") as f:
+            if f.read(4) == b"IGWD":
                 return True
     except IOError:
         pass
@@ -105,7 +111,7 @@ def _is_gwf(file_path):
 
 
 def locations_to_cache(locations, latest=False):
-    """ Return a cumulative cache file build from the list of locations
+    """Return a cumulative cache file build from the list of locations
 
     Parameters
     ----------
@@ -126,6 +132,7 @@ def locations_to_cache(locations, latest=False):
     for source in locations:
         flist = glob.glob(source)
         if latest:
+
             def relaxed_getctime(fn):
                 # when building a cache from a directory of temporary
                 # low-latency frames, files might disappear between
@@ -134,8 +141,9 @@ def locations_to_cache(locations, latest=False):
                     return os.path.getctime(fn)
                 except OSError:
                     return 0
+
             if not flist:
-                raise ValueError('no frame or cache files found in ' + source)
+                raise ValueError("no frame or cache files found in " + source)
             flist = [max(flist, key=relaxed_getctime)]
 
         for file_path in flist:
@@ -152,9 +160,16 @@ def locations_to_cache(locations, latest=False):
             cum_cache = lal.CacheMerge(cum_cache, cache)
     return cum_cache
 
-def read_frame(location, channels, start_time=None,
-               end_time=None, duration=None, check_integrity=False,
-               sieve=None):
+
+def read_frame(
+    location,
+    channels,
+    start_time=None,
+    end_time=None,
+    duration=None,
+    check_integrity=False,
+    sieve=None,
+):
     """Read time series from frame data.
 
     Using the `location`, which can either be a frame file ".gwf" or a
@@ -207,14 +222,15 @@ def read_frame(location, channels, start_time=None,
         # Before sieving, check if this is sane. Otherwise it will fail later.
         if (int(math.ceil(end_time)) - int(start_time)) <= 0:
             raise ValueError("Negative or null duration")
-        lal.CacheSieve(cum_cache, int(start_time), int(math.ceil(end_time)),
-                       None, None, None)
+        lal.CacheSieve(
+            cum_cache, int(start_time), int(math.ceil(end_time)), None, None, None
+        )
 
     stream = lalframe.FrStreamCacheOpen(cum_cache)
     stream.mode = lalframe.FR_STREAM_VERBOSE_MODE
 
     if check_integrity:
-        stream.mode = (stream.mode | lalframe.FR_STREAM_CHECKSUM_MODE)
+        stream.mode = stream.mode | lalframe.FR_STREAM_CHECKSUM_MODE
 
     lalframe.FrStreamSetMode(stream, stream.mode)
 
@@ -228,13 +244,12 @@ def read_frame(location, channels, start_time=None,
     channel_type = lalframe.FrStreamGetTimeSeriesType(first_channel, stream)
     create_series_func = _fr_type_map[channel_type][2]
     get_series_metadata_func = _fr_type_map[channel_type][3]
-    series = create_series_func(first_channel, stream.epoch, 0, 0,
-                                lal.ADCCountUnit, 0)
+    series = create_series_func(first_channel, stream.epoch, 0, 0, lal.ADCCountUnit, 0)
     get_series_metadata_func(series, stream)
     data_duration = (data_length + 0.5) * series.deltaT
 
     if start_time is None:
-        start_time = stream.epoch*1
+        start_time = stream.epoch * 1
     if end_time is None:
         end_time = start_time + data_duration
 
@@ -251,7 +266,7 @@ def read_frame(location, channels, start_time=None,
     # lalframe behaves dangerously with invalid duration so catch it here
     if duration <= 0:
         raise ValueError("Negative or null duration")
-    #if duration > data_duration:
+    # if duration > data_duration:
     #    raise ValueError("Requested duration longer than available data")
 
     if type(channels) is list:
@@ -264,8 +279,9 @@ def read_frame(location, channels, start_time=None,
     else:
         return _read_channel(channels, stream, start_time, duration)
 
+
 def frame_paths(
-    frame_type, start_time, end_time, server=None, url_type='file', site=None
+    frame_type, start_time, end_time, server=None, url_type="file", site=None
 ):
     """Return the paths to a span of frame files.
 
@@ -302,11 +318,11 @@ def frame_paths(
         # this case is tolerated for backward compatibility
         site = frame_type[0]
         warnings.warn(
-            f'Guessing site {site} from frame type {frame_type}',
-            DeprecationWarning
+            f"Guessing site {site} from frame type {frame_type}", DeprecationWarning
         )
-    cache = find_frame_urls(site, frame_type, start_time, end_time,
-                            urltype=url_type, host=server)
+    cache = find_frame_urls(
+        site, frame_type, start_time, end_time, urltype=url_type, host=server
+    )
     return [urlparse(entry).path for entry in cache]
 
 
@@ -334,10 +350,10 @@ def get_site_from_type_or_channel(frame_type, channels):
     frame_type : string
         The frame type with the site prefix (if any) removed.
     """
-    site_re = '^([^:])[^:]?:'
+    site_re = "^([^:])[^:]?:"
     m = re.match(site_re, frame_type)
     if m:
-        return m.groups(1)[0], frame_type[m.end():]
+        return m.groups(1)[0], frame_type[m.end() :]
     chan = channels
     if isinstance(chan, list):
         chan = channels[0]
@@ -345,14 +361,21 @@ def get_site_from_type_or_channel(frame_type, channels):
     if m:
         return m.groups(1)[0], frame_type
     warnings.warn(
-        f'Guessing site {frame_type[0]} from frame type {frame_type}',
-        DeprecationWarning
+        f"Guessing site {frame_type[0]} from frame type {frame_type}",
+        DeprecationWarning,
     )
     return frame_type[0], frame_type
 
 
-def query_and_read_frame(frame_type, channels, start_time, end_time,
-                         sieve=None, check_integrity=False):
+def query_and_read_frame(
+    frame_type,
+    channels,
+    start_time,
+    end_time,
+    sieve=None,
+    check_integrity=False,
+    sample_rate=None,
+):
     """Read time series from frame data.
 
     Query for the location of physical frames matching the frame type. Return
@@ -378,6 +401,9 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
         expression sieve
     check_integrity : boolean
         Do an expensive checksum of the file before returning.
+    sample_rate : int, optional
+        Sample rate in Hz for GWOSC/LOSC frames only. See
+        `pycbc.frame.gwosc.get_run`. Ignored for other frame types.
 
     Returns
     -------
@@ -394,32 +420,33 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
 
     # Allows compatibility with our standard tools
     # We may want to place this into a higher level frame getting tool
-    if frame_type in ['LOSC_STRAIN', 'GWOSC_STRAIN']:
+    if frame_type in ["LOSC_STRAIN", "GWOSC_STRAIN"]:
         from pycbc.frame.gwosc import read_strain_gwosc
+
         if not isinstance(channels, list):
             channels = [channels]
-        data = [read_strain_gwosc(c[:2], start_time, end_time)
-                for c in channels]
+        data = [
+            read_strain_gwosc(c[:2], start_time, end_time, sample_rate)
+            for c in channels
+        ]
         return data if len(data) > 1 else data[0]
-    if frame_type in ['LOSC', 'GWOSC']:
+    if frame_type in ["LOSC", "GWOSC"]:
         from pycbc.frame.gwosc import read_frame_gwosc
-        return read_frame_gwosc(channels, start_time, end_time)
 
-    logger.info('Querying datafind server')
+        return read_frame_gwosc(channels, start_time, end_time, sample_rate)
+
+    logger.info("Querying datafind server")
     paths = frame_paths(
-        frame_type,
-        int(start_time),
-        int(numpy.ceil(end_time)),
-        site=site
+        frame_type, int(start_time), int(numpy.ceil(end_time)), site=site
     )
-    logger.info('Found frame file paths: %s', ' '.join(paths))
+    logger.info("Found frame file paths: %s", " ".join(paths))
     return read_frame(
         paths,
         channels,
         start_time=start_time,
         end_time=end_time,
         sieve=sieve,
-        check_integrity=check_integrity
+        check_integrity=check_integrity,
     )
 
 
@@ -459,11 +486,16 @@ def write_frame(location, channels, timeseries):
         raise ValueError("Start and end times of TimeSeries must be integer seconds.")
 
     # create frame
-    frame = lalframe.FrameNew(epoch=gps_start_time, duration=duration,
-                              project='', run=1, frnum=1,
-                              detectorFlags=lal.LALDETECTORTYPE_ABSENT)
+    frame = lalframe.FrameNew(
+        epoch=gps_start_time,
+        duration=duration,
+        project="",
+        run=1,
+        frnum=1,
+        detectorFlags=lal.LALDETECTORTYPE_ABSENT,
+    )
 
-    for i,tseries in enumerate(timeseries):
+    for i, tseries in enumerate(timeseries):
         # get data type
         for seriestype in _fr_type_map.keys():
             if _fr_type_map[seriestype][1] == tseries.dtype:
@@ -473,9 +505,14 @@ def write_frame(location, channels, timeseries):
                 break
 
         # add time series to frame
-        series = create_series_func(channels[i], tseries.start_time,
-                       0, tseries.delta_t, lal.ADCCountUnit,
-                       len(tseries.numpy()))
+        series = create_series_func(
+            channels[i],
+            tseries.start_time,
+            0,
+            tseries.delta_t,
+            lal.ADCCountUnit,
+            len(tseries.numpy()),
+        )
         series.data = create_sequence_func(len(tseries.numpy()))
         series.data.data = tseries.numpy()
         add_series_func(frame, series)
@@ -483,19 +520,21 @@ def write_frame(location, channels, timeseries):
     # write frame
     lalframe.FrameWrite(frame, location)
 
+
 class DataBuffer(object):
+    """A linear buffer that acts as a FILO for reading in frame data"""
 
-    """A linear buffer that acts as a FILO for reading in frame data
-    """
-
-    def __init__(self, frame_src,
-                 channel_name,
-                 start_time,
-                 max_buffer=2048,
-                 force_update_cache=True,
-                 increment_update_cache=None,
-                 dtype=numpy.float64):
-        """ Create a rolling buffer of frame data
+    def __init__(
+        self,
+        frame_src,
+        channel_name,
+        start_time,
+        max_buffer=2048,
+        force_update_cache=True,
+        increment_update_cache=None,
+        dtype=numpy.float64,
+    ):
+        """Create a rolling buffer of frame data
 
         Parameters
         ---------
@@ -516,16 +555,20 @@ class DataBuffer(object):
         self.read_pos = start_time
         self.force_update_cache = force_update_cache
         self.increment_update_cache = increment_update_cache
-        self.detector = channel_name.split(':')[0]
+        self.detector = channel_name.split(":")[0]
 
         self.update_cache()
-        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(self.stream, self.channel_name)
+        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(
+            self.stream, self.channel_name
+        )
 
         raw_size = self.raw_sample_rate * max_buffer
-        self.raw_buffer = TimeSeries(zeros(raw_size, dtype=dtype),
-                                     copy=False,
-                                     epoch=start_time - max_buffer,
-                                     delta_t=1.0/self.raw_sample_rate)
+        self.raw_buffer = TimeSeries(
+            zeros(raw_size, dtype=dtype),
+            copy=False,
+            epoch=start_time - max_buffer,
+            delta_t=1.0 / self.raw_sample_rate,
+        )
 
     def update_cache(self):
         """Reset the lal cache. This can be used to update the cache if the
@@ -558,10 +601,11 @@ class DataBuffer(object):
         channel_type = lalframe.FrStreamGetTimeSeriesType(channel_name, stream)
         create_series_func = _fr_type_map[channel_type][2]
         get_series_metadata_func = _fr_type_map[channel_type][3]
-        series = create_series_func(channel_name, stream.epoch, 0, 0,
-                            lal.ADCCountUnit, 0)
+        series = create_series_func(
+            channel_name, stream.epoch, 0, 0, lal.ADCCountUnit, 0
+        )
         get_series_metadata_func(series, stream)
-        return channel_type, int(1.0/series.deltaT)
+        return channel_type, int(1.0 / series.deltaT)
 
     def _read_frame(self, blocksize):
         """Try to read the block of data blocksize seconds long
@@ -579,18 +623,22 @@ class DataBuffer(object):
         Raises
         ------
         RuntimeError:
-            If data cannot be read for any reason
+            If data cannot be read for any reason. The original error is
+            retained as the cause.
         """
         try:
             read_func = _fr_type_map[self.channel_type][0]
             dtype = _fr_type_map[self.channel_type][1]
-            data = read_func(self.stream, self.channel_name,
-                             self.read_pos, int(blocksize), 0)
-            return TimeSeries(data.data.data, delta_t=data.deltaT,
-                              epoch=self.read_pos,
-                              dtype=dtype)
-        except Exception:
-            raise RuntimeError('Cannot read {0} frame data'.format(self.channel_name))
+            data = read_func(
+                self.stream, self.channel_name, self.read_pos, int(blocksize), 0
+            )
+            return TimeSeries(
+                data.data.data, delta_t=data.deltaT, epoch=self.read_pos, dtype=dtype
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                "Cannot read {0} frame data".format(self.channel_name)
+            ) from exc
 
     def null_advance(self, blocksize):
         """Advance and insert zeros
@@ -616,7 +664,7 @@ class DataBuffer(object):
         ts = self._read_frame(blocksize)
 
         self.raw_buffer.roll(-len(ts))
-        self.raw_buffer[-len(ts):] = ts[:]
+        self.raw_buffer[-len(ts) :] = ts[:]
         self.read_pos += blocksize
         self.raw_buffer.start_time += blocksize
         return ts
@@ -637,25 +685,27 @@ class DataBuffer(object):
         start = float(self.raw_buffer.end_time)
         end = float(start + blocksize)
 
-        if not hasattr(self, 'dur'):
+        if not hasattr(self, "dur"):
             fname = glob.glob(self.frame_src[0])[0]
-            fname = os.path.splitext(os.path.basename(fname))[0].split('-')
+            fname = os.path.splitext(os.path.basename(fname))[0].split("-")
 
-            self.beg = '-'.join([fname[0], fname[1]])
+            self.beg = "-".join([fname[0], fname[1]])
             self.ref = int(fname[2])
             self.dur = int(fname[3])
 
-        fstart = int(self.ref + numpy.floor((start - self.ref) / float(self.dur)) * self.dur)
+        fstart = int(
+            self.ref + numpy.floor((start - self.ref) / float(self.dur)) * self.dur
+        )
         starts = numpy.arange(fstart, end, self.dur).astype(int)
 
         keys = []
         for s in starts:
             pattern = self.increment_update_cache
-            if 'GPS' in pattern:
-                n = int(pattern[int(pattern.index('GPS') + 3)])
-                pattern = pattern.replace('GPS%s' % n, str(s)[0:n])
+            if "GPS" in pattern:
+                n = int(pattern[int(pattern.index("GPS") + 3)])
+                pattern = pattern.replace("GPS%s" % n, str(s)[0:n])
 
-            name = f'{pattern}/{self.beg}-{s}-{self.dur}.gwf'
+            name = f"{pattern}/{self.beg}-{s}-{self.dur}.gwf"
             # check that file actually exists, else abort now
             if not os.path.exists(name):
                 raise RuntimeError
@@ -664,11 +714,12 @@ class DataBuffer(object):
         cache = locations_to_cache(keys)
         stream = lalframe.FrStreamCacheOpen(cache)
         self.stream = stream
-        self.channel_type, self.raw_sample_rate = \
-            self._retrieve_metadata(self.stream, self.channel_name)
+        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(
+            self.stream, self.channel_name
+        )
 
     def attempt_advance(self, blocksize, timeout=10):
-        """ Attempt to advance the frame buffer. Retry upon failure, except
+        """Attempt to advance the frame buffer. Retry upon failure, except
         if the frame file is beyond the timeout limit.
 
         Parameters
@@ -700,19 +751,22 @@ class DataBuffer(object):
                 # so we should try again
                 time.sleep(0.1)
 
+
 class StatusBuffer(DataBuffer):
+    """Read state vector or DQ information from a frame file"""
 
-    """ Read state vector or DQ information from a frame file """
-
-    def __init__(self, frame_src,
-                       channel_name,
-                       start_time,
-                       max_buffer=2048,
-                       valid_mask=3,
-                       force_update_cache=False,
-                       increment_update_cache=None,
-                       valid_on_zero=False):
-        """ Create a rolling buffer of status data from a frame
+    def __init__(
+        self,
+        frame_src,
+        channel_name,
+        start_time,
+        max_buffer=2048,
+        valid_mask=3,
+        force_update_cache=False,
+        increment_update_cache=None,
+        valid_on_zero=False,
+    ):
+        """Create a rolling buffer of status data from a frame
 
         Parameters
         ---------
@@ -731,11 +785,16 @@ class StatusBuffer(DataBuffer):
             If True, `valid_mask` is ignored and the status is considered
             "good" simply when the channel is zero.
         """
-        DataBuffer.__init__(self, frame_src, channel_name, start_time,
-                            max_buffer=max_buffer,
-                            force_update_cache=force_update_cache,
-                            increment_update_cache=increment_update_cache,
-                            dtype=numpy.int32)
+        DataBuffer.__init__(
+            self,
+            frame_src,
+            channel_name,
+            start_time,
+            max_buffer=max_buffer,
+            force_update_cache=force_update_cache,
+            increment_update_cache=increment_update_cache,
+            dtype=numpy.int32,
+        )
 
         self.valid_mask = valid_mask
         self.valid_on_zero = valid_on_zero
@@ -789,7 +848,7 @@ class StatusBuffer(DataBuffer):
         return self.check_valid(data, flag=flag)
 
     def indices_of_flag(self, start_time, duration, times, padding=0):
-        """ Return the indices of the times lying in the flagged region
+        """Return the indices of the times lying in the flagged region
 
         Parameters
         ----------
@@ -808,6 +867,7 @@ class StatusBuffer(DataBuffer):
         time.
         """
         from pycbc.events.veto import indices_outside_times
+
         sr = self.raw_buffer.sample_rate
         s = int((start_time - self.raw_buffer.start_time - padding) * sr) - 1
         e = s + int((duration + padding) * sr) + 1
@@ -817,8 +877,9 @@ class StatusBuffer(DataBuffer):
         if self.valid_on_zero:
             invalid = data.numpy() != 0
         else:
-            invalid = numpy.bitwise_and(data.numpy(), self.valid_mask) \
-                    != self.valid_mask
+            invalid = (
+                numpy.bitwise_and(data.numpy(), self.valid_mask) != self.valid_mask
+            )
 
         starts = stamps[invalid] - padding
         ends = starts + 1.0 / sr + padding * 2.0
@@ -826,7 +887,7 @@ class StatusBuffer(DataBuffer):
         return idx
 
     def advance(self, blocksize):
-        """ Add blocksize seconds more to the buffer, push blocksize seconds
+        """Add blocksize seconds more to the buffer, push blocksize seconds
         from the beginning.
 
         Parameters
@@ -849,18 +910,21 @@ class StatusBuffer(DataBuffer):
             self.null_advance(blocksize)
             return False
 
+
 class iDQBuffer(object):
+    """Read iDQ timeseries from a frame file"""
 
-    """ Read iDQ timeseries from a frame file """
-
-    def __init__(self, frame_src,
-                 idq_channel_name,
-                 idq_status_channel_name,
-                 idq_threshold,
-                 start_time,
-                 max_buffer=512,
-                 force_update_cache=False,
-                 increment_update_cache=None):
+    def __init__(
+        self,
+        frame_src,
+        idq_channel_name,
+        idq_status_channel_name,
+        idq_threshold,
+        start_time,
+        max_buffer=512,
+        force_update_cache=False,
+        increment_update_cache=None,
+    ):
         """
         Parameters
         ----------
@@ -887,17 +951,25 @@ class iDQBuffer(object):
             filesystem.
         """
         self.threshold = idq_threshold
-        self.idq = DataBuffer(frame_src, idq_channel_name, start_time,
-                                max_buffer=max_buffer,
-                                force_update_cache=force_update_cache,
-                                increment_update_cache=increment_update_cache)
-        self.idq_state = DataBuffer(frame_src, idq_status_channel_name, start_time,
-                                        max_buffer=max_buffer,
-                                        force_update_cache=force_update_cache,
-                                        increment_update_cache=increment_update_cache)
+        self.idq = DataBuffer(
+            frame_src,
+            idq_channel_name,
+            start_time,
+            max_buffer=max_buffer,
+            force_update_cache=force_update_cache,
+            increment_update_cache=increment_update_cache,
+        )
+        self.idq_state = DataBuffer(
+            frame_src,
+            idq_status_channel_name,
+            start_time,
+            max_buffer=max_buffer,
+            force_update_cache=force_update_cache,
+            increment_update_cache=increment_update_cache,
+        )
 
     def flag_at_times(self, start_time, duration, times, padding=0):
-        """ Check whether the idq flag was on at given times
+        """Check whether the idq flag was on at given times
 
         Parameters
         ----------
@@ -946,7 +1018,7 @@ class iDQBuffer(object):
         return flagged_bool
 
     def advance(self, blocksize):
-        """ Add blocksize seconds more to the buffer, push blocksize seconds
+        """Add blocksize seconds more to the buffer, push blocksize seconds
         from the beginning.
 
         Parameters
@@ -977,12 +1049,12 @@ class iDQBuffer(object):
 
 
 __all__ = [
-    'locations_to_cache',
-    'read_frame',
-    'query_and_read_frame',
-    'frame_paths',
-    'write_frame',
-    'DataBuffer',
-    'StatusBuffer',
-    'iDQBuffer'
+    "locations_to_cache",
+    "read_frame",
+    "query_and_read_frame",
+    "frame_paths",
+    "write_frame",
+    "DataBuffer",
+    "StatusBuffer",
+    "iDQBuffer",
 ]
