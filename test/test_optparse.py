@@ -17,6 +17,7 @@
 """Unit tests for robust integer parsing and optparse actions in PyCBC."""
 
 import argparse
+import os
 import unittest
 
 from pycbc.types.config import InterpolatingConfigParser
@@ -230,6 +231,30 @@ fractional = 2048.5
         cp.read_string("[workflow]\nfractional = 2048.5\n")
         with self.assertRaises(ValueError):
             cp.getint("workflow", "fractional")
+
+    def test_environment_identifiers_only(self):
+        """Verify InterpolatingConfigParser loads valid identifier env vars."""
+        os.environ["PYCBC_TEST_VALID_VAR"] = "valid_val"
+        os.environ["PYCBC_INVALID-VAR"] = "invalid_hyphen"
+        os.environ["PYCBC_VAR%INVALID"] = "percent"
+        os.environ["PYCBC_VAR_WITH_PERCENT"] = "val%percent"
+        os.environ["PYCBC_VAR_WITH_DOLLAR"] = "val$dollar"
+        try:
+            cp = InterpolatingConfigParser()
+            self.assertEqual(cp.get("environment", "PYCBC_TEST_VALID_VAR"), "valid_val")
+            self.assertFalse(cp.has_option("environment", "PYCBC_INVALID-VAR"))
+            self.assertFalse(cp.has_option("environment", "PYCBC_VAR%INVALID"))
+            self.assertFalse(cp.has_option("environment", "PYCBC_VAR_WITH_PERCENT"))
+            self.assertFalse(cp.has_option("environment", "PYCBC_VAR_WITH_DOLLAR"))
+        finally:
+            for k in [
+                "PYCBC_TEST_VALID_VAR",
+                "PYCBC_INVALID-VAR",
+                "PYCBC_VAR%INVALID",
+                "PYCBC_VAR_WITH_PERCENT",
+                "PYCBC_VAR_WITH_DOLLAR",
+            ]:
+                os.environ.pop(k, None)
 
 
 if __name__ == "__main__":
