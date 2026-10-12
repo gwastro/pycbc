@@ -67,17 +67,21 @@ class TestEventManager(unittest.TestCase):
         )
         self.assertEqual(mgr_h1.ifo, 'H1')
 
-        mgr_h1.new_template(tmplt=MockTemplate(template_hash=101))
-        h1_events = [
-            np.array([8.5, 12.0], dtype=np.float32),  # snr
-            np.array([1.1, 0.95], dtype=np.float32),  # chisq
-            np.array([0.0, 0.0], dtype=np.float32),   # bank_chisq
-            np.array([0.0, 0.0], dtype=np.float32),   # bank_chisq_dof
-            np.array([0.0, 0.0], dtype=np.float32),   # cont_chisq
-            np.array([2048, 4096], dtype=np.int64),   # time_index
-            np.array([50.0, 60.0], dtype=np.float32),  # sigmasq
-        ]
-        mgr_h1.add_template_events(self.columns, h1_events)
+        h1_hash = 101
+        mgr_h1.new_template(tmplt=MockTemplate(template_hash=h1_hash))
+        h1_events = {
+            'snr': np.array([8.5, 12.0], dtype=np.float32),
+            'chisq': np.array([1.1, 0.95], dtype=np.float32),
+            'bank_chisq': np.array([0.0, 0.0], dtype=np.float32),
+            'bank_chisq_dof': np.array([0.0, 0.0], dtype=np.float32),
+            'cont_chisq': np.array([0.0, 0.0], dtype=np.float32),
+            'time_index': np.array([2048, 4096], dtype=np.int64),
+            'sigmasq': np.array([50.0, 60.0], dtype=np.float32),
+            'template_hash': np.array([h1_hash, h1_hash]),
+        }
+        mgr_h1.add_template_events(
+            self.columns, [h1_events[c] for c in self.columns]
+        )
         mgr_h1.finalize_template_events()
         mgr_h1.write_events(self.h5_path)
 
@@ -88,17 +92,21 @@ class TestEventManager(unittest.TestCase):
         )
         self.assertEqual(mgr_l1.ifo, 'L1')
 
-        mgr_l1.new_template(tmplt=MockTemplate(template_hash=202))
-        l1_events = [
-            np.array([6.5], dtype=np.float32),        # snr
-            np.array([1.05], dtype=np.float32),       # chisq
-            np.array([0.0], dtype=np.float32),        # bank_chisq
-            np.array([0.0], dtype=np.float32),        # bank_chisq_dof
-            np.array([0.0], dtype=np.float32),        # cont_chisq
-            np.array([3000], dtype=np.int64),         # time_index
-            np.array([45.0], dtype=np.float32),       # sigmasq
-        ]
-        mgr_l1.add_template_events(self.columns, l1_events)
+        l1_hash = 202
+        mgr_l1.new_template(tmplt=MockTemplate(template_hash=l1_hash))
+        l1_events = {
+            'snr': np.array([6.5], dtype=np.float32),
+            'chisq': np.array([1.05], dtype=np.float32),
+            'bank_chisq': np.array([0.0], dtype=np.float32),
+            'bank_chisq_dof': np.array([0.0], dtype=np.float32),
+            'cont_chisq': np.array([0.0], dtype=np.float32),
+            'time_index': np.array([3000], dtype=np.int64),
+            'sigmasq': np.array([45.0], dtype=np.float32),
+            'template_hash': np.array([l1_hash]),
+        }
+        mgr_l1.add_template_events(
+            self.columns, [l1_events[c] for c in self.columns]
+        )
         mgr_l1.finalize_template_events()
         mgr_l1.write_events(self.h5_path)
 
@@ -109,7 +117,22 @@ class TestEventManager(unittest.TestCase):
             opt_multi, 'V1', self.columns, self.column_types
         )
         self.assertEqual(mgr_v1.ifo, 'V1')
-        mgr_v1.new_template(tmplt=MockTemplate(template_hash=303))
+
+        v1_hash = 303
+        mgr_v1.new_template(tmplt=MockTemplate(template_hash=v1_hash))
+        v1_events = {
+            'snr': np.array([7.5], dtype=np.float32),
+            'chisq': np.array([1.2], dtype=np.float32),
+            'bank_chisq': np.array([0.0], dtype=np.float32),
+            'bank_chisq_dof': np.array([0.0], dtype=np.float32),
+            'cont_chisq': np.array([0.0], dtype=np.float32),
+            'time_index': np.array([5120], dtype=np.int64),
+            'sigmasq': np.array([35.0], dtype=np.float32),
+            'template_hash': np.array([v1_hash]),
+        }
+        mgr_v1.add_template_events(
+            self.columns, [v1_events[c] for c in self.columns]
+        )
         mgr_v1.finalize_template_events()
         mgr_v1.write_events(self.h5_path)
 
@@ -123,25 +146,40 @@ class TestEventManager(unittest.TestCase):
             # Check H1 datasets
             self.assertIn('H1/snr', hf)
             np.testing.assert_allclose(
-                hf['H1/snr'][:], [8.5, 12.0], rtol=1e-5
+                hf['H1/snr'][:], h1_events['snr'], rtol=1e-5
             )
-            np.testing.assert_allclose(
-                hf['H1/template_hash'][:], [101, 101]
+            np.testing.assert_array_equal(
+                hf['H1/template_hash'][:], h1_events['template_hash']
             )
             self.assertIn('H1/search/start_time', hf)
 
             # Check L1 datasets
             self.assertIn('L1/snr', hf)
             np.testing.assert_allclose(
-                hf['L1/snr'][:], [6.5], rtol=1e-5
+                hf['L1/snr'][:], l1_events['snr'], rtol=1e-5
             )
-            np.testing.assert_allclose(
-                hf['L1/template_hash'][:], [202]
+            np.testing.assert_array_equal(
+                hf['L1/template_hash'][:], l1_events['template_hash']
             )
             self.assertIn('L1/search/start_time', hf)
 
-            # Check V1 metadata
+            # Check V1 datasets
+            self.assertIn('V1/snr', hf)
+            np.testing.assert_allclose(
+                hf['V1/snr'][:], v1_events['snr'], rtol=1e-5
+            )
+            np.testing.assert_array_equal(
+                hf['V1/template_hash'][:], v1_events['template_hash']
+            )
             self.assertIn('V1/search/start_time', hf)
+
+    def test_h5filesyntsugar_prefix_and_rstrip(self):
+        # Verify default prefix is '' and rstrip preserves leading slash
+        with eventmgr.H5FileSyntSugar(self.h5_path) as f:
+            self.assertEqual(f.prefix, '')
+            f['/leading/slash/'] = np.array([1, 2, 3])
+        with h5py.File(self.h5_path, 'r') as hf:
+            self.assertIn('leading/slash', hf)
 
     def test_eventmgr_single_ifo_fallback(self):
         # Verify fallback to opt.channel_name[0:2] when ifo is not passed

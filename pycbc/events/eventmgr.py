@@ -183,12 +183,12 @@ def cluster_reduce(idx, snr, window_size):
 class H5FileSyntSugar(object):
     """Convenience class that adds some syntactic sugar to h5py.File."""
     def __init__(self, name, prefix=''):
-        self.prefix = prefix or ''
+        self.prefix = prefix
         self.f = h5py.File(name, 'a')
 
     def __setitem__(self, name, data):
-        full_path = (self.prefix + '/' + name).strip('/') if self.prefix \
-            else name.strip('/')
+        full_path = (self.prefix + '/' + name).rstrip('/') if self.prefix \
+            else name.rstrip('/')
         if full_path in self.f:
             del self.f[full_path]
         self.f.create_dataset(
