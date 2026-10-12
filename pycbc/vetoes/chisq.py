@@ -35,22 +35,20 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
 
     Parameters
     ----------
-
     sigmasq_series: FrequencySeries
         A frequency series containing the cumulative power of a filter template
         preweighted by a psd.
     num_bins: int
         The number of chisq bins to calculate.
     kmin: int
-        DOCUMENTME
+        Index corresponding to the lowest frequency to use in chisq calculation.
     kmax: int
-        DOCUMENTME
+        Index for the highest (ie maximum) frequency to use in chisq.
 
     Returns
     -------
-
     bins: List of ints
-        A list of the edges of the chisq bins is returned.
+        A list of the edges of the chisq bins.
     """
     sigmasq = sigmasq_series[kmax - 1]
     edge_vec = numpy.arange(0, num_bins) * sigmasq / num_bins
@@ -65,14 +63,13 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,
 
     Parameters
     ----------
-
     htilde: FrequencySeries
         A frequency series containing the template waveform
     num_bins: int
         The number of chisq bins to calculate.
     psd: FrequencySeries
         A frequency series containing the psd. Its length must be commensurate
-        with the template waveform.
+        with the template waveform. 
     low_frequency_cutoff: {None, float}, optional
         The low frequency cutoff to apply
     high_frequency_cutoff: {None, float}, optional
@@ -80,16 +77,15 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,
 
     Returns
     -------
-
     bins: List of ints
-        A list of the edges of the chisq bins is returned.
+        A list of the edges of the chisq bins.
     """
     sigma_vec = sigmasq_series(htilde, psd, low_frequency_cutoff,
                                high_frequency_cutoff).numpy()
     kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
                                     high_frequency_cutoff,
                                     htilde.delta_f,
-                                    (len(htilde)-1)*2)
+                                    (len(htilde) - 1) * 2)
     return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
 
 
@@ -98,6 +94,7 @@ def chisq_accum_bin(chisq, q):
     err_msg = "This function is a stub that should be overridden using the "
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
+
 
 @schemed(BACKEND_PREFIX)
 def shift_sum(v1, shifts, bins):
@@ -137,6 +134,7 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     chisq = shift_sum(corr, indices, bins) # pylint:disable=assignment-from-no-return
     return (chisq * num_bins - (snr.conj() * snr).real) * (snr_norm ** 2.0)
 
+
 _q_l = None
 _qtilde_l = None
 _chisq_l = None
@@ -154,7 +152,7 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return
     snr: TimeSeries
         The unnormalized snr time series.
     snr_norm:
-        The snr normalization factor (true snr = snr * snr_norm) EXPLAINME - define 'true snr'?
+        The snr normalization factor (properly normalized snr = snr * snr_norm)
     bins: List of integers
         The edges of the chisq bins.
     indices: {Array, None}, optional
@@ -236,7 +234,7 @@ def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
     snr: Array
         The unnormalized snr
     snr_norm: float
-        The snr normalization factor  --- EXPLAINME
+        The snr normalization factor (properly normalized snr = snr * snr_norm)
     bins: List of integers
         The edges of the equal power bins
     indices: Array
@@ -275,7 +273,7 @@ def power_chisq(template, data, num_bins, psd,
         (EXPLAINME - does this mean 'the same as' or something else?)
     num_bins: int
         The number of frequency bins used for chisq. The number of statistical
-        degrees of freedom ('dof') is 2*num_bins-2.
+        degrees of freedom ('dof') is 2 * num_bins - 2.
     psd: FrequencySeries
         The psd of the data.
     low_frequency_cutoff: {None, float}, optional
@@ -350,7 +348,13 @@ class SingleDetPowerChisq(object):
                     kmax
                 )
             else:
-                bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
+                bins = power_chisq_bins(
+                    template,
+                    num_bins,
+                    psd,
+                    template.f_lower,
+                    template.end_frequency
+                )
             template._bin_cache[key] = bins
 
         return template._bin_cache[key]
@@ -398,7 +402,7 @@ class SingleDetPowerChisq(object):
                 else:
                     chisq_out = _chisq
 
-            return chisq_out, numpy.repeat(dof, len(indices))# dof * numpy.ones_like(indices)
+            return chisq_out, numpy.repeat(dof, len(indices))  # dof * numpy.ones_like(indices)
         else:
             return None, None
 
@@ -424,7 +428,12 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
             bins = power_chisq_bins_from_sigmasq_series(
                    psd.sigmasq_vec[template.approximant], num_bins, kmin, kmax)
         else:
-            bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
+            bins = power_chisq_bins(
+                template,
+                num_bins,
+                psd,
+                template.f_lower,
+                template.end_frequency)
         return bins
 
     def values(self, corr_plus, corr_cross, snrv, psd,
@@ -515,6 +524,6 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
             else:
                 rchisq = chisq
 
-            return rchisq, numpy.repeat(dof, len(indices))# dof * numpy.ones_like(indices)
+            return rchisq, numpy.repeat(dof, len(indices))  # dof * numpy.ones_like(indices)
         else:
             return None, None
