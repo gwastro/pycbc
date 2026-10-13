@@ -135,6 +135,7 @@ class TestInjFilterRejector(unittest.TestCase):
         tlen = 256 * int(1 / DELTA_T)
         delta_f = 1.0 / 256
         psd = aLIGOZeroDetHighPower(tlen // 2 + 1, delta_f, F_LOWER) * DYN_RANGE_FAC**2
+        psd = psd.astype(np.float32)
         seg = SimpleNamespace(start_time=90.0, end_time=110.0, psd=psd)
 
         # Matching waveform: match ~ 1.0 > 0.8 -> KEPT
@@ -206,7 +207,7 @@ class TestInjFilterRejector(unittest.TestCase):
         self.assertFalse(reject)
 
     def test_optimal_snr_calculation(self):
-        """Verify optimal_snr() calculates coarse SNR directly."""
+        """Verify optimal_snr() agrees with pycbc.filter.sigma()."""
         sig = bns_signal(tc=0.0)
         rej = InjFilterRejector(
             "dummy.hdf",
@@ -224,8 +225,7 @@ class TestInjFilterRejector(unittest.TestCase):
         expected = sigma(padded, psd=psd, low_frequency_cutoff=F_LOWER)
         got = rej.optimal_snr(0, psd * DYN_RANGE_FAC**2)
 
-        # Coarse SNR agrees with full sigma within ~5% band truncation
-        self.assertAlmostEqual(got / expected, 1.0, delta=0.05)
+        self.assertAlmostEqual(got / expected, 1.0, delta=0.01)
 
     def test_disabled_rejector(self):
         """Verify disabled rejector allows all templates and triggers."""
