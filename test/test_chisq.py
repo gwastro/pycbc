@@ -122,6 +122,27 @@ class TestChisq(unittest.TestCase):
             max_diff = max(abs(chisq_full[ifo] - chisq_quick[ifo]))
             self.assertTrue(max_diff < 1E-5)
 
+    def test_power_chisq_return_bins_slice(self):
+        ifo = self.ifos[0]
+        nbins = 16
+        sl = slice(27400, 27500)
+        # 1. Full return_bins (user-side slicing)
+        chisq_full, bins_full = power_chisq(
+            self.hp, self.data[ifo], nbins, self.psd[ifo],
+            low_frequency_cutoff=20.0, return_bins=True)
+        # 2. Optimized internal return_bins_slice
+        chisq_sl, bins_sl = power_chisq(
+            self.hp, self.data[ifo], nbins, self.psd[ifo],
+            low_frequency_cutoff=20.0, return_bins_slice=sl)
+
+        self.assertEqual(len(bins_full), nbins)
+        self.assertEqual(len(bins_sl), nbins)
+        # Verify exact numerical equivalence across all bins
+        for i in range(nbins):
+            expected = bins_full[i][sl].numpy()
+            actual = bins_sl[i]
+            numpy.testing.assert_allclose(actual, expected, rtol=1e-5, atol=1e-7)
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestChisq))
