@@ -317,9 +317,12 @@ class TriangleBank:
                 hp.indices = rsorted[keep].copy()
 
                 logger.info(
-                    "TADD MaxMatch:%0.3f Size:%i "
-                    "AfterSigma:%i AfterTau0:%i Matches:%i"
-                    % (mmax, len(self), msig, mtau, mnum)
+                    "TADD MaxMatch:%0.3f Size:%i AfterSigma:%i AfterTau0:%i Matches:%i",
+                    mmax,
+                    len(self),
+                    msig,
+                    mtau,
+                    mnum,
                 )
                 hp.max_match = mmax
                 return False
@@ -435,7 +438,7 @@ def decimate_frequency_domain(template, target_df):
 
 
 def handle_exit_signal(signum, frame):
-    logger.warning(f"Signal {signum} received. Triggering emergency save...")
+    logger.warning("Signal %s received. Triggering emergency save...", signum)
     save_bank()
     # Force exit so the script doesn't try to resume the loops
     os._exit(1)
@@ -746,8 +749,8 @@ while tau0s < args.tau0_end:
             )
 
             if uconv:
-                logger.info("Ratio of convergences: %2.3f" % (kconv / (uconv)))
-                logger.info(f"Progress: {tau0e / args.tau0_end:.0%} completed")
+                logger.info("Ratio of convergences: %2.3f", kconv / (uconv))
+                logger.info("Progress: %.0f%% completed", 100 * tau0e / args.tau0_end)
 
             if kloop == 1:
                 okconv = kconv

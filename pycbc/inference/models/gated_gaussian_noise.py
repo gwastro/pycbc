@@ -701,7 +701,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
         for d, lfs in opts.low_frequency_cutoff.items():
             if d not in opts.psd_low_frequency_cutoff:
                 # set to half the model's likelihood cutoffs
-                logger.info(f"Setting low frequency cutoff of {d} PSD to {lfs / 2.0}")
+                logger.info(
+                    "Setting low frequency cutoff of %s PSD to %s", d, lfs / 2.0
+                )
                 opts.psd_low_frequency_cutoff[d] = lfs / 2.0
         out = fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
         return out
@@ -1278,8 +1280,9 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         self.ref_phase = ref_phase
         if phase_names is None:
             logger.warning(
-                "No phase_names provided. Assuming single mode "
-                f"specified by ref_phase {ref_phase}"
+                "No phase_names provided. Assuming single mode specified by "
+                "ref_phase %s",
+                ref_phase,
             )
             self.phase_names = [ref_phase]
         elif type(phase_names) == list:
@@ -1548,8 +1551,9 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         self.ref_phase = ref_phase
         if phase_names is None:
             logger.warning(
-                "No phase_names provided. Assuming single mode "
-                f"specified by ref_phase {ref_phase}"
+                "No phase_names provided. Assuming single mode specified by "
+                "ref_phase %s",
+                ref_phase,
             )
             self.phase_names = [ref_phase]
         elif isinstance(phase_names, list):

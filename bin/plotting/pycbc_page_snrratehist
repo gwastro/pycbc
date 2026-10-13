@@ -143,14 +143,14 @@ else:
 
 s = bstat.argsort()
 dec, bstat, fap = dec[s], bstat[s], fap[s]
-logger.info("Found %s background (inclusive zerolag) triggers" % len(bstat))
+logger.info("Found %s background (inclusive zerolag) triggers", len(bstat))
 
 dec_exc = f["background_exc/decimation_factor"][:]
 bstat_exc = f["background_exc/stat"][:]
 s = bstat_exc.argsort()
 dec_exc, bstat_exc = dec_exc[s], bstat_exc[s]
 
-logger.info("Found %s background (exclusive zerolag) triggers" % len(bstat_exc))
+logger.info("Found %s background (exclusive zerolag) triggers", len(bstat_exc))
 
 fig = plt.figure()
 

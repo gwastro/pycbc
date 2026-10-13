@@ -57,7 +57,7 @@ for ifo in ifos:
     segs = pycbc.events.select_segments_by_definer(
         args.veto_file, args.segment_name, ifo
     )
-    logger.info("Read in veto segments from %s" % ifo)
+    logger.info("Read in veto segments from %s", ifo)
     fsegs += [segs.coalesce() + vsegs.coalesce()]
     names += [args.output_segment_name]
 

@@ -180,7 +180,10 @@ def compute_batch_chisq(
             num_assigned = update_mask.sum()
             iterations += 1
             logger.info(
-                f"... assigning {chi / dof} to {num_assigned} triggers, peak SNR of {snr_amp[idx]}"
+                "... assigning %s to %s triggers, peak SNR of %s",
+                chi / dof,
+                num_assigned,
+                snr_amp[idx],
             )
     return chisq_vals, chisq_dof_vals
 
@@ -476,10 +479,12 @@ def main():
             ref_template = bank.get_coarse_template(coarse_idx)
             taps, counts, fine_indices = bank.get_firs(coarse_idx)
             filters_f, n_taps = engine.prepare_filters(taps, counts)
-            logger.info(f"  Ratio Batch {i + 1}/{n_coarse}, {len(taps)} FIR templates")
+            logger.info(
+                "  Ratio Batch %s/%s, %s FIR templates", i + 1, n_coarse, len(taps)
+            )
 
             for s_num, stilde in enumerate(segments):
-                logger.info(f"Processing Segment {s_num}")
+                logger.info("Processing Segment %s", s_num)
                 t1 = time.time()
 
                 ids_local, t_idxs, snrs, tstarts, h_norm = engine.process_segment(
@@ -525,7 +530,7 @@ def main():
                     / (t2 - t1)
                     * len(taps)
                 )
-                logger.info(f"batch perf: {tperf} templates s/s")
+                logger.info("batch perf: %s templates s/s", tperf)
 
         logger.info("Grouping triggers...")
 

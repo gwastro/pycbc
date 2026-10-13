@@ -79,12 +79,12 @@ pycbc.init_logging(args.verbose)
 significance.check_significance_options(args, parser)
 
 logger.info("Loading triggers")
-logger.info("IFO input: %s" % args.ifos[0])
+logger.info("IFO input: %s", args.ifos[0])
 all_trigs = pycbc.io.MultiifoStatmapData(files=args.sngls_files, ifos=args.ifos)
 ifo = args.ifos[0]
 assert ifo + "/time" in all_trigs.data
 
-logger.info("We have %s triggers" % len(all_trigs.stat))
+logger.info("We have %s triggers", len(all_trigs.stat))
 logger.info("Clustering triggers")
 all_trigs = all_trigs.cluster(args.cluster_window)
 

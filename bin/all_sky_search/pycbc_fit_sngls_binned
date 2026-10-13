@@ -208,9 +208,9 @@ if args.bin_spacing == "irregular":
     else:
         args.bin_edges = [float(b) for b in args.irregular_bins.split(",")]
 
-logger.info("Opening trigger file: %s" % args.trigger_file)
+logger.info("Opening trigger file: %s", args.trigger_file)
 trigf = HFile(args.trigger_file, "r")
-logger.info("Opening template file: %s" % args.bank_file)
+logger.info("Opening template file: %s", args.bank_file)
 templatef = HFile(args.bank_file, "r")
 
 # get the stat values
@@ -232,7 +232,7 @@ tid = trigf[args.ifo + "/template_id"][:][abovethresh]
 time = trigf[args.ifo + "/end_time"][:][abovethresh]
 if trig_dur:
     tdur = trigf[args.ifo + "/template_duration"][:][abovethresh]
-logger.info("%i trigs left after thresholding at %f" % (len(stat), minth))
+logger.info("%i trigs left after thresholding at %f", len(stat), minth)
 
 # now do vetoing
 for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
@@ -244,7 +244,7 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     time = time[retain]
     if trig_dur:
         tdur = tdur[retain]
-    logger.info("%i trigs left after vetoing with %s" % (len(stat), args.veto_file))
+    logger.info("%i trigs left after vetoing with %s", len(stat), args.veto_file)
 
 ### Functions for doing the pruning (removal of trigs at loudest times)
 
@@ -254,7 +254,7 @@ def get_pars(args, tag, m1, m2, s1z, s2z):
     paramarg = getattr(args, tag + "_param")
     try:
         # will fail if m1 is a float rather than a sequence
-        logger.info("Getting %s values for %i triggers" % (paramarg, len(m1)))
+        logger.info("Getting %s values for %i triggers", paramarg, len(m1))
     except:
         pass
     return triggers.get_param(paramarg, args, m1, m2, s1z, s2z)
@@ -273,7 +273,7 @@ if args.prune_param:
     minprpar = min(prpars)
     maxprpar = max(prpars)
     del prpars
-    logger.info("prune param range %f %f" % (minprpar, maxprpar))
+    logger.info("prune param range %f %f", minprpar, maxprpar)
 
     # hard-coded time window of 0.1s
     args.prune_window = 0.1
@@ -297,7 +297,7 @@ if args.prune_param:
             break
         if numpruned > args.prune_bins * args.prune_number:
             logger.error(
-                "Uh-oh, we pruned too many things .. %i, to be precise" % numpruned
+                "Uh-oh, we pruned too many things .. %i, to be precise", numpruned
             )
             raise RuntimeError
         loudest = np.argmax(statpruneall)
@@ -315,8 +315,11 @@ if args.prune_param:
         # is the bin where the loudest trigger lives full already?
         if len(prunedtimes[lbin]) == args.prune_number:
             logger.info(
-                "%i - Bin %i full, not pruning event with stat %f at time "
-                "%.3f" % (j, lbin, lstat, ltime)
+                "%i - Bin %i full, not pruning event with stat %f at time %.3f",
+                j,
+                lbin,
+                lstat,
+                ltime,
             )
             # prune the reference trigger array
             retain = abs(timepruneall - ltime) > args.prune_window
@@ -327,14 +330,13 @@ if args.prune_param:
             continue
         else:
             logger.info(
-                "Pruning event with stat %f at time %.3f in bin %i"
-                % (lstat, ltime, lbin)
+                "Pruning event with stat %f at time %.3f in bin %i", lstat, ltime, lbin
             )
             # now do the pruning
             retain = abs(time - ltime) > args.prune_window
-            logger.info("%i trigs before pruning" % len(stat))
+            logger.info("%i trigs before pruning", len(stat))
             stat = stat[retain]
-            logger.info("%i trigs remain" % len(stat))
+            logger.info("%i trigs remain", len(stat))
             tid = tid[retain]
             time = time[retain]
             if trig_dur:
@@ -357,13 +359,14 @@ if trig_dur:
 else:
     m1, m2, s1z, s2z = triggers.get_mass_spin(templatef, tid)
     binpars = get_pars(args, "bin", m1, m2, s1z, s2z)
-logger.info("Parameter range of triggers: %f - %f" % (min(binpars), max(binpars)))
+logger.info("Parameter range of triggers: %f - %f", min(binpars), max(binpars))
 
 # remove triggers outside irregular bins
 if args.bin_spacing == "irregular":
     logger.info(
-        "Removing triggers outside bin range %f - %f"
-        % (min(args.bin_edges), max(args.bin_edges))
+        "Removing triggers outside bin range %f - %f",
+        min(args.bin_edges),
+        max(args.bin_edges),
     )
     in_range = np.logical_and(
         binpars >= min(args.bin_edges), binpars <= max(args.bin_edges)
@@ -371,7 +374,7 @@ if args.bin_spacing == "irregular":
     binpars = binpars[in_range]
     stat = stat[in_range]
     tid = tid[in_range]
-    logger.info("%i remain" % len(binpars))
+    logger.info("%i remain", len(binpars))
 
 # get the bins
 # we assume that parvals are all positive
@@ -425,7 +428,7 @@ histcolors = [
 ]
 
 for th in args.stat_threshold:
-    logger.info("Fitting above threshold %f" % th)
+    logger.info("Fitting above threshold %f", th)
     counts[th] = {}
     alphas[th] = {}
     stdev[th] = {}
@@ -512,10 +515,10 @@ for th in args.stat_threshold:
             + str(th)
             + ".png"
         )
-        logger.info("Saving cumhist to %s" % dest)
+        logger.info("Saving cumhist to %s", dest)
         plt.savefig(dest)
     elif args.output_file:
-        logger.info("Saving cumhist to %s" % args.output_file)
+        logger.info("Saving cumhist to %s", args.output_file)
         results.save_fig_with_metadata(
             fig,
             args.output_file,

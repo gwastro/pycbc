@@ -183,7 +183,7 @@ def report_percentage(i, length):
     pc = int(numpy.floor(i / length * 100))
     pc_last = int(numpy.floor((i - 1) / length * 100))
     if not pc % 10 and pc_last % 10:
-        logger.info(f"Template {i} out of {length} ({pc:.0f}%)")
+        logger.info("Template %s out of %s (%.0f%%)", i, length, pc)
 
 
 parser = argparse.ArgumentParser(

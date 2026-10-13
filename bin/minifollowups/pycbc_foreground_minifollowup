@@ -287,8 +287,9 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                 break
         else:
             logger.info(
-                f"Trigger time {time} is not valid in "
-                f"{single.ifo}, skipping singles plots"
+                "Trigger time %s is not valid in %s, skipping singles plots",
+                time,
+                single.ifo,
             )
 
     layouts += list(layout.grouper(files, 2))

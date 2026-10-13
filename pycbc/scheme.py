@@ -390,7 +390,7 @@ def from_cli(opt):
             ctx = MKLScheme(num_threads=numt)
         else:
             ctx = MKLScheme()
-        logger.info("Running with MKL support: %s threads" % ctx.num_threads)
+        logger.info("Running with MKL support: %s threads", ctx.num_threads)
     elif name == "cupy":
         logger.info("Running with CUPY support")
         ctx = CUPYScheme()
@@ -402,7 +402,7 @@ def from_cli(opt):
             ctx = CPUScheme(num_threads=numt)
         else:
             ctx = CPUScheme()
-        logger.info("Running with CPU support: %s threads" % ctx.num_threads)
+        logger.info("Running with CPU support: %s threads", ctx.num_threads)
     return ctx
 
 

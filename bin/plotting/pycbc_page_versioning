@@ -51,7 +51,7 @@ library_list = get_library_version_info()
 html_text = ""
 for curr_lib in library_list:
     lib_name = curr_lib["Name"]
-    logger.info(f"Getting {lib_name} information")
+    logger.info("Getting %s information", lib_name)
     html_text += f"<h2>{lib_name} Version Information</h2>:<br>\n"
     for key, value in curr_lib.items():
         html_text += "<li> %s : %s </li>\n" % (key, value)

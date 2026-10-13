@@ -227,7 +227,7 @@ points_info = []
 numtemps = len(temp_bank)
 for entry in temp_bank:
     temp_number += 1
-    logger.info("Analysing template %d" % temp_number)
+    logger.info("Analysing template %d", temp_number)
     # First find the closest point in our set of 2000000 defined above
     # This is used as the starting point
     xi1_des = entry[0]
@@ -244,10 +244,10 @@ for entry in temp_bank:
     masses_close = physMasses[dist < 0.03]
     bestMasses = physMasses[dist.argmin()]
     bestXis = xis[dist.argmin()]
-    logger.info("Template %d has initial distance of %e" % (temp_number, dist.min()))
+    logger.info("Template %d has initial distance of %e", temp_number, dist.min())
     # Reject point if it is too far away from *any* of these points
     if dist.min() > 2.0:
-        logger.info("Template %d rejected as too far away" % temp_number)
+        logger.info("Template %d rejected as too far away", temp_number)
         # Print info to the rejected points file
         if opts.threed_lattice:
             reject_info.append([xi1_des, xi2_des, xi3_des, 0, 0, 0, 0, dist.min()])
@@ -267,10 +267,10 @@ for entry in temp_bank:
     )
 
     # Now how close is it?
-    logger.info("Template %d has corrected distance of %e" % (temp_number, masses[5]))
+    logger.info("Template %d has corrected distance of %e", temp_number, masses[5])
     if masses[5] > opts.max_mismatch:
         # Reject point, it is too far away
-        logger.info("Template %d rejected as too far away" % temp_number)
+        logger.info("Template %d rejected as too far away", temp_number)
         if opts.threed_lattice:
             reject_info.append(
                 [

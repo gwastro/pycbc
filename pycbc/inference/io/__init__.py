@@ -779,7 +779,7 @@ def results_from_cli(opts, load_samples=True, **kwargs):
 
             # read samples from file
             samples = fp.samples_from_cli(opts, parameters=opts.parameters, **kwargs)
-            logger.info(f"Loaded {samples.size} samples")
+            logger.info("Loaded %s samples", samples.size)
 
             if input_file in constraints:
                 logger.info("Applying constraints")
@@ -789,7 +789,7 @@ def results_from_cli(opts, load_samples=True, **kwargs):
                     raise ValueError(
                         f"No samples remain after constraint {constraints[input_file]} applied"
                     )
-                logger.info(f"{samples.size} samples remain")
+                logger.info("%s samples remain", samples.size)
 
         # else do not read samples
         else:

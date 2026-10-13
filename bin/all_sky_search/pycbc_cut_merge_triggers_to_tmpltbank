@@ -134,7 +134,7 @@ template_boundaries = [tmpx[0] for tmpx in new_boundaries]
 ofd[ifo]["template_boundaries"] = template_boundaries
 
 for c in copy_params:
-    logger.info("Copying parameter " + c)
+    logger.info("Copying parameter %s", c)
     currdtype = ifd[ifo][c][:2].dtype
     temp_array = numpy.zeros([new_boundaries[-1][1]], dtype=currdtype)
     for i in range(len(old_boundaries)):

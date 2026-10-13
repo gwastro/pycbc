@@ -48,7 +48,7 @@ for attr_name in input_kdes[0].attrs.keys():
         f_dest.attrs[attr_name] = attr_values[0]
 
 if args.min_ratio is not None:
-    logger.info(f"Applying minimum template KDE ratio {args.min_ratio}")
+    logger.info("Applying minimum template KDE ratio %s", args.min_ratio)
     f_dest.attrs["min-kde-ratio"] = args.min_ratio
     min_val = args.min_ratio * numpy.max(template_kde)
     template_kde = numpy.maximum(template_kde, min_val)

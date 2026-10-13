@@ -72,8 +72,10 @@ if args.ifar_threshold:
     idx = ifar > args.ifar_threshold
     ifar = ifar[idx]
     logger.info(
-        "%i triggers out of %i with IFAR > %s"
-        % (len(ifar), N_original, str(args.ifar_threshold))
+        "%i triggers out of %i with IFAR > %s",
+        len(ifar),
+        N_original,
+        str(args.ifar_threshold),
     )
 else:
     idx = np.full(N_original, True)

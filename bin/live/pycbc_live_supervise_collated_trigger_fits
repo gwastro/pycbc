@@ -186,8 +186,9 @@ def find_daily_files(
         # is wrong with the analysis. Warn about this and use fewer
         # files
         logger.warning(
-            f"More than {max_nmissed} days between files, only using "
-            f"{found_files} files!"
+            "More than %s days between files, only using %s files!",
+            max_nmissed,
+            found_files,
         )
 
     return daily_files, first_date, end_date
@@ -426,7 +427,7 @@ def daily_dq_trigger_rates(
     in each dq bin, total triggers in each dq bin, the amount
     of time flagged by idq and the total observing time.
     """
-    logger.info(f"Calculating daily dq trigger rates for {ifo}")
+    logger.info("Calculating daily dq trigger rates for %s", ifo)
     fname_format = daily_dq_controls["daily-dq-format"]
     ddtr_out_fname = fname_format.format(date=day_str, ifo=ifo)
 
@@ -472,8 +473,10 @@ def combine_dq_trigger_rates(
     )
 
     logger.info(
-        f"Combining {ifo} dq trigger rates over {len(daily_files)} files "
-        f"from {date_range}"
+        "Combining %s dq trigger rates over %s files from %s",
+        ifo,
+        len(daily_files),
+        date_range,
     )
 
     combined_dq_options["output"] = os.path.join(output_dir, outfile_name)

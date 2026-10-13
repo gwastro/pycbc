@@ -112,7 +112,7 @@ else:
 observing_flag.protract(args.replay_offset)
 
 livetime = abs(observing_flag)
-logger.info(f"Found {livetime} seconds of observing time at {args.ifo}.")
+logger.info("Found %s seconds of observing time at %s.", livetime, args.ifo)
 
 # for each segment, check how much time was dq flagged
 flagged_time = 0
@@ -162,13 +162,13 @@ for seg in observing_flag:
     # intersection with observing_flag and add livetime
     flagged_time += abs(valid_bad_dq & observing_flag)
 
-logger.info(f"Found {flagged_time} seconds of dq flagged time at {args.ifo}.")
+logger.info("Found %s seconds of dq flagged time at %s.", flagged_time, args.ifo)
 
 bg_livetime = livetime - flagged_time
 state_time = np.array([bg_livetime, flagged_time])
 
 # read in template bins
-logger.info(f"Reading template bins from {args.template_bin_file}")
+logger.info("Reading template bins from %s", args.template_bin_file)
 template_bins = {}
 num_templates = 0
 with HFile(args.template_bin_file, "r") as bin_file:
@@ -187,7 +187,7 @@ with HFile(args.template_bin_file, "r") as bin_file:
 bin_total_triggers = np.zeros(num_bins)
 bin_dq_triggers = np.zeros(num_bins)
 
-logger.info(f"Reading triggers from {args.trigger_file}")
+logger.info("Reading triggers from %s", args.trigger_file)
 with HFile(args.trigger_file, "r") as trigf:
     for bin_name in template_bins:
         # bins are named as 'bin{bin_num}'
@@ -204,7 +204,7 @@ with HFile(args.trigger_file, "r") as trigf:
             bin_dq_triggers[bin_num] += np.sum(dq_states)
 
 # write outputs to file
-logger.info(f"Writing results to {args.output}")
+logger.info("Writing results to %s", args.output)
 with HFile(args.output, "w") as f:
     ifo_group = f.create_group(args.ifo)
     ifo_group.create_dataset("observing_livetime", data=livetime)

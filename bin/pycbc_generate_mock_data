@@ -266,7 +266,7 @@ for ifo in opts.ifo_list:
         if set(opts.ifo_list) != set(opts.fake_strain_seed.keys()):
             raise ValueError("Fake strain seed for each detector is required")
 
-    logger.info("Generating strain for the Detector:%s" % ifo)
+    logger.info("Generating strain for the Detector:%s", ifo)
     if opts.fake_strain_seed[ifo] is None:
         rseed = numpy.random.randint(1e8)
     else:

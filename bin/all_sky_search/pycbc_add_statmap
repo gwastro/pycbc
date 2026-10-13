@@ -163,7 +163,7 @@ for fi in files:
 
 significance_dict = significance.digest_significance_options(all_ifo_combos, args)
 
-logger.info("Copying segments and attributes to %s" % args.output_file)
+logger.info("Copying segments and attributes to %s", args.output_file)
 # Move segments information into the final file - remove some duplication
 # in earlier files. Also set up dictionaries to contain segments from the
 # individual statmap files
@@ -318,7 +318,7 @@ for f_in in files:
                     ]
                 )
 n_triggers = f["foreground/stat"].size
-logger.info(f"{n_triggers} foreground events before clustering")
+logger.info("%s foreground events before clustering", n_triggers)
 
 for ifo in all_ifos:
     f.create_dataset(f"foreground/{ifo}/time", data=fg_trig_times[ifo])
@@ -567,7 +567,7 @@ else:
 # Break out of loop if max number of removals is reached
 # or no more triggers above specified IFAR threshold
 while True:
-    logger.info("Hierarchical iteration %d" % h_iterations)
+    logger.info("Hierarchical iteration %d", h_iterations)
     bg_grps = {}
 
     if h_iterations == 0:  # copy over existing data as h0
@@ -622,7 +622,7 @@ while True:
 
     if h_iterations == args.max_hierarchical_removal:
         logger.info(
-            "Reached hierarchical removal limit of %d" % args.max_hierarchical_removal
+            "Reached hierarchical removal limit of %d", args.max_hierarchical_removal
         )
         break
 
@@ -638,20 +638,22 @@ while True:
 
     logger.info("Maximum IFAR values per combination:")
     for k in max_ifars:
-        logger.info(f"{k}: {max_ifars[k]:.3g}")
+        logger.info("%s: %.3g", k, max_ifars[k])
     if args.verbose:  # Debug statements
         max_combd = combined_fg_data.data[ifar_key].argmax()
         max_combd_ifar = combined_fg_data.data[ifar_key][max_combd]
-        logger.info(f"combined: {max_combd_ifar:.3g}")
+        logger.info("combined: %.3g", max_combd_ifar)
 
     maxcombo = max(max_ifars, key=lambda k: max_ifars[k])
     max_ifar_idx = max_each_combo[maxcombo]
     max_ifar = max_ifars[maxcombo]
     if not max_ifar > args.hierarchical_removal_ifar_thresh:
         logger.info(
-            "Loudest event IFAR of %.3f in %s is less than threshold"
-            " %f, stopping hierarchical removal"
-            % (max_ifar, maxcombo, args.hierarchical_removal_ifar_thresh)
+            "Loudest event IFAR of %.3f in %s is less than threshold %f, stopping "
+            "hierarchical removal",
+            max_ifar,
+            maxcombo,
+            args.hierarchical_removal_ifar_thresh,
         )
         break
 
@@ -670,8 +672,10 @@ while True:
         ]
     )[0]
     logger.info(
-        f"Removing trigger at time {maxtime:.2f} with ifar {max_ifar:.3g} from {maxcombo} "
-        "& combined foreground "
+        "Removing trigger at time %.2f with ifar %.3g from %s & combined foreground ",
+        maxtime,
+        max_ifar,
+        maxcombo,
     )
     where_combined = np.flatnonzero(
         combined_fg_data.data["stat"]
@@ -686,7 +690,9 @@ while True:
     n_triggers -= 1
 
     logger.info(
-        f"Removing background triggers at time {maxtime} within window {args.hierarchical_removal_window}s"
+        "Removing background triggers at time %s within window %ss",
+        maxtime,
+        args.hierarchical_removal_window,
     )
     for combo in all_ifo_combos:
         all_hred_idx = []
@@ -697,7 +703,7 @@ while True:
                     abs(times - maxtime) < args.hierarchical_removal_window
                 )[0]
                 all_hred_idx += list(hred_ids)
-        logger.info(f"Removing {len(all_hred_idx)} background triggers from {combo}")
+        logger.info("Removing %s background triggers from %s", len(all_hred_idx), combo)
         sep_bg_data[combo] = sep_bg_data[combo].remove(all_hred_idx)
 
     hred_ids = []
@@ -708,7 +714,7 @@ while True:
         )
         hred_ids += list(within_window)
     logger.info(
-        f"Removing {len(hred_ids)} background triggers from combined background"
+        "Removing %s background triggers from combined background", len(hred_ids)
     )
     combined_bg_data = combined_bg_data.remove(hred_ids)
 

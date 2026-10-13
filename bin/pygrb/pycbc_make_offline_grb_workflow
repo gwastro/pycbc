@@ -56,7 +56,7 @@ wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
 tags = []
 
-logger.info("Generating %s workflow" % workflow_name)
+logger.info("Generating %s workflow", workflow_name)
 
 # Setup run directory
 triggername = str(wflow.cp.get("workflow", "trigger-name"))

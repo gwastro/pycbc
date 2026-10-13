@@ -153,7 +153,7 @@ class CPNestSampler(BaseSampler):
     def finalize(self):
         logz = self._sampler.NS.logZ
         dlogz = 0.1  #######FIXME!!!!!###############
-        logger.info(f"log Z, dlog Z: {logz}, {dlogz}")
+        logger.info("log Z, dlog Z: %s, %s", logz, dlogz)
         for fn in [self.checkpoint_file]:
             with self.io(fn, "a") as fp:
                 fp.write_logevidence(logz, dlogz)

@@ -213,7 +213,7 @@ def create_new_output_file(sampler, filename, **kwargs):
         ``write_metadata`` function.
 
     """
-    logger.info(f"Creating file {filename}")
+    logger.info("Creating file %s", filename)
     with sampler.io(filename, "w") as fp:
         # create the samples group and sampler info group
         fp.create_group(fp.samples_group)

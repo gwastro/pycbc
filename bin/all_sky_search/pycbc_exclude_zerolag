@@ -57,11 +57,11 @@ all_ifo_key = "".join(all_ifos)
 
 significance_dict = significance.digest_significance_options([all_ifo_key], args)
 
-logger.info("Copying attributes to %s" % args.output_file)
+logger.info("Copying attributes to %s", args.output_file)
 for attrk in f_in.attrs.keys():
     f_out.attrs[attrk] = f_in.attrs[attrk]
 
-logger.info("Copying unchanged datasets to %s" % args.output_file)
+logger.info("Copying unchanged datasets to %s", args.output_file)
 keys = pycbc.io.name_all_datasets([f_in])
 for k in keys:
     if "background_exc" not in k:
@@ -89,10 +89,11 @@ data = {g: f_in["background_exc/%s" % g] for g in groups}
 all_trigs = pycbc.io.DictArray(data=data)
 
 n_triggers = f_in["background_exc/%s/time" % all_ifos[0]].size
-logger.info("%d background_exc triggers" % n_triggers)
+logger.info("%d background_exc triggers", n_triggers)
 
 logger.info(
-    f"Finding background_exc triggers within {args.veto_window}s of any foreground triggers"
+    "Finding background_exc triggers within %ss of any foreground triggers",
+    args.veto_window,
 )
 remove_start_time = all_fg_times - args.veto_window
 remove_end_time = all_fg_times + args.veto_window
@@ -105,11 +106,12 @@ for ifo in all_ifos:
 all_vetoed_idx = np.unique(all_vetoed_idx)
 
 logger.info(
-    f"Removing {len(all_vetoed_idx)} background_exc triggers close to foreground coincs"
+    "Removing %s background_exc triggers close to foreground coincs",
+    len(all_vetoed_idx),
 )
 filtered_trigs = all_trigs.remove(all_vetoed_idx)
 n_triggers_new = len(filtered_trigs.data["stat"])
-logger.info("%d triggers remaining" % n_triggers_new)
+logger.info("%d triggers remaining", n_triggers_new)
 
 logger.info("Writing updated background_exc to file")
 for k in filtered_trigs.data:

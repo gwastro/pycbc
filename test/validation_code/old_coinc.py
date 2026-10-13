@@ -335,7 +335,7 @@ def time_multi_coincidence(times, slide_step=0, slop=0.003, pivot="H1", fixed="L
         #  tested against fixed and pivot are now present for testing with new
         #  dependent ifos
         for ifo2 in ids:
-            logger.info("added ifo %s, testing against %s" % (ifo1, ifo2))
+            logger.info("added ifo %s, testing against %s", ifo1, ifo2)
             w = win(ifo1, ifo2)
             left = numpy.searchsorted(time1, ctimes[ifo2] - w)
             right = numpy.searchsorted(time1, ctimes[ifo2] + w)
@@ -354,9 +354,9 @@ def time_multi_coincidence(times, slide_step=0, slop=0.003, pivot="H1", fixed="L
                 #  discard the second (and any subsequent ones).
                 where = right - left == rlmax
                 logger.warning(
-                    "Triggers in %s are closer than coincidence "
-                    "window, 1 or more coincs will be discarded. "
-                    "This is a warning, not an error." % ifo1
+                    "Triggers in %s are closer than coincidence window, 1 or more "
+                    "coincs will be discarded. This is a warning, not an error.",
+                    ifo1,
                 )
                 print([float(ti) for ti in time1[left[where][0] : right[where][0]]])
             # identify indices of times in ifo1 that form coincs with ifo2
@@ -406,7 +406,7 @@ def cluster_coincs(
         The set of indices corresponding to the surviving coincidences.
 
     """
-    logger.info("clustering coinc triggers over %ss window" % window)
+    logger.info("clustering coinc triggers over %ss window", window)
 
     if len(time1) == 0 or len(time2) == 0:
         logger.info("No coinc triggers in one, or both, ifos.")

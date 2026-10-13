@@ -225,7 +225,7 @@ temp_samples = numpy.vstack(template_pars).T
 if args.make_template_kde:
     # Rejection sampling to reduce computational load
     if args.mchirp_downsample_power is not None:
-        logger.info(f"Downsampling with mchirp power {args.mchirp_downsample_power}")
+        logger.info("Downsampling with mchirp power %s", args.mchirp_downsample_power)
         f_dest.attrs["mchirp_downsample_power"] = args.mchirp_downsample_power
         try:
             mchirp_index = args.fit_param.index("mchirp")
@@ -242,7 +242,7 @@ if args.make_template_kde:
             numpy.random.seed(args.seed)
         rand_nums = numpy.random.uniform(0, 1, len(mass1))
         ind = rand_nums < probabilities
-        logger.info(f"{ind.sum()} templates after downsampling")
+        logger.info("%s templates after downsampling", ind.sum())
         kde_train_samples = temp_samples[ind]
         f_dest.create_dataset("kde_train_samples", data=kde_train_samples)
 
@@ -253,7 +253,7 @@ if args.make_template_kde:
             bwgrid=args.bw_grid,
             nfold=args.nfold_template,
         )
-        logger.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
+        logger.info("Bandwidth %.4f, alpha %.2f", optbw, optalpha)
         logger.info("Evaluating template KDE")
         template_kde = kde_awkde(
             kde_train_samples, temp_samples, alp=optalpha, gl_bandwidth=optbw
@@ -262,7 +262,7 @@ if args.make_template_kde:
         # Compensation factor for downsampling of templates
         template_kde *= 1.0 / probabilities
         if args.min_ratio is not None:
-            logger.info(f"Applying minimum template KDE ratio {args.min_ratio}")
+            logger.info("Applying minimum template KDE ratio %s", args.min_ratio)
             f_dest.attrs["min-kde-ratio"] = args.min_ratio
             min_val = args.min_ratio * numpy.max(template_kde)
             template_kde = numpy.maximum(template_kde, min_val)
@@ -275,7 +275,7 @@ if args.make_template_kde:
             bwgrid=args.bw_grid,
             nfold=args.nfold_template,
         )
-        logger.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
+        logger.info("Bandwidth %.4f, alpha %.2f", optbw, optalpha)
         logger.info("Evaluating template KDE")
         template_kde = kde_awkde(
             temp_samples, temp_samples, alp=optalpha, gl_bandwidth=optbw
@@ -307,8 +307,10 @@ if args.make_signal_kde:
         idx = mass2_sgnl > args.min_mass
         mass2_sgnl = mass2_sgnl[idx]
         logger.info(
-            "%i triggers out of %i with MASS2 > %s"
-            % (len(mass2_sgnl), N_original, str(args.min_mass))
+            "%i triggers out of %i with MASS2 > %s",
+            len(mass2_sgnl),
+            N_original,
+            str(args.min_mass),
         )
     else:
         idx = numpy.full(N_original, True)
@@ -338,7 +340,7 @@ if args.make_signal_kde:
         alphagrid=args.alpha_grid,
         nfold=args.nfold_signal,
     )
-    logger.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
+    logger.info("Bandwidth %.4f, alpha %.2f", optbw, optalpha)
     logger.info("Evaluating signal KDE")
     signal_kde = kde_awkde(
         signal_samples, temp_samples, alp=optalpha, gl_bandwidth=optbw
@@ -366,8 +368,10 @@ if args.make_injection_kde:
         idx = snr > args.min_snr
         snr = snr[idx]
         logger.info(
-            "%i triggers out of %i with SNR > %s"
-            % (len(snr), N_original, str(args.min_snr))
+            "%i triggers out of %i with SNR > %s",
+            len(snr),
+            N_original,
+            str(args.min_snr),
         )
     else:
         idx = numpy.full(N_original, True)
@@ -396,7 +400,7 @@ if args.make_injection_kde:
         bwgrid=args.bw_grid,
         nfold=args.nfold_injection,
     )
-    logger.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
+    logger.info("Bandwidth %.4f, alpha %.2f", optbw, optalpha)
     logger.info("Evaluating injection KDE")
     injection_kde = kde_awkde(
         inj_samples, temp_samples, alp=optalpha, gl_bandwidth=optbw

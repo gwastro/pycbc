@@ -118,7 +118,7 @@ def parse_template_range(num_templates, rangestr):
 
 num_templates = io.HFile(args.template_bank, "r")["template_hash"].size
 tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
-logger.info("Analyzing template %s - %s" % (tmin, tmax - 1))
+logger.info("Analyzing template %s - %s", tmin, tmax - 1)
 
 if args.randomize_template_order:
     seed(0)

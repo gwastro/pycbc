@@ -240,9 +240,9 @@ class SamplingTransforms:
             cp, "sampling_transforms"
         )
         logger.info(
-            "Sampling in {} in place of {}".format(
-                ", ".join(sampling_params), ", ".join(replace_parameters)
-            )
+            "Sampling in %s in place of %s",
+            ", ".join(sampling_params),
+            ", ".join(replace_parameters),
         )
         return cls(
             variable_params, sampling_params, replace_parameters, sampling_transforms
@@ -921,8 +921,10 @@ def check_for_cartesian_spins(
     # don't do this check if the config file has the ignore section
     if cp.has_section(ignore):
         logger.info(
-            f"[{ignore}] found in config file; not performing check for "
-            f"cartesian spin{which} parameters"
+            "[%s] found in config file; not performing check for cartesian spin%s "
+            "parameters",
+            ignore,
+            which,
         )
         return
     errmsg = (

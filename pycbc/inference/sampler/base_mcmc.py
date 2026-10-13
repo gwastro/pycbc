@@ -507,7 +507,9 @@ class BaseMCMC(metaclass=ABCMeta):
             # run sampler and set initial values to None so that sampler
             # picks up from where it left off next call
             logger.info(
-                f"Running sampler for {self.niterations} to {self.niterations + iterinterval} iterations"
+                "Running sampler for %s to %s iterations",
+                self.niterations,
+                self.niterations + iterinterval,
             )
             # run the underlying sampler for the desired interval
             self.run_mcmc(iterinterval)
@@ -518,7 +520,7 @@ class BaseMCMC(metaclass=ABCMeta):
             # update nsamples for next loop
             if self.target_eff_nsamples is not None:
                 nsamples = self.effective_nsamples
-                logger.info(f"Have {nsamples} effective samples post burn in")
+                logger.info("Have %s effective samples post burn in", nsamples)
             else:
                 nsamples += iterinterval * self.nchains
 
@@ -619,7 +621,7 @@ class BaseMCMC(metaclass=ABCMeta):
             raise OSError("error writing to checkpoint file")
         if self.checkpoint_signal:
             # kill myself with the specified signal
-            logger.info(f"Exiting with SIG{self.checkpoint_signal}")
+            logger.info("Exiting with SIG%s", self.checkpoint_signal)
             kill_cmd = f"os.kill(os.getpid(), signal.SIG{self.checkpoint_signal})"
             exec(kill_cmd)
         # clear the in-memory chain to save memory

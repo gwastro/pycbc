@@ -36,13 +36,13 @@ parser.add_argument("--output-file")
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
-logger.info("File: %s" % args.injection_file)
+logger.info("File: %s", args.injection_file)
 indoc = ligolw_utils.load_filename(
     args.injection_file, False, contenthandler=LIGOLWContentHandler
 )
 sim_table = ligolw.Table.get_table(indoc, "sim_inspiral")
 
-logger.info("%s Injections in file" % len(sim_table))
+logger.info("%s Injections in file", len(sim_table))
 
 if args.veto_file:
     logger.info("Removing injections outside coincident time")
@@ -56,7 +56,7 @@ if args.veto_file:
             inj_time, [args.veto_file], ifo, args.segment_name
         )
         remove(sim_table, idx)
-    logger.info("We now have %s injections" % len(sim_table))
+    logger.info("We now have %s injections", len(sim_table))
 
 if args.max_effective_chirp_distance:
     logger.info("Removing injections that are quiet in one detector")
@@ -70,7 +70,7 @@ if args.max_effective_chirp_distance:
         chirp_distance = pycbc.pnutils.chirp_distance(eff_distance, mchirp)
         idx = numpy.where(chirp_distance > args.max_effective_chirp_distance)[0]
         remove(sim_table, idx)
-    logger.info("We now have %s injections" % len(sim_table))
+    logger.info("We now have %s injections", len(sim_table))
 
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW()).appendChild(sim_table)

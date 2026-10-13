@@ -154,7 +154,7 @@ trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 num_templates = len(HFile(args.template_bank, "r")["template_hash"])
 tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
-logger.info("Analyzing template %s - %s" % (tmin, tmax - 1))
+logger.info("Analyzing template %s - %s", tmin, tmax - 1)
 
 
 class MultiifoTrigs:
@@ -194,7 +194,7 @@ for i in range(len(args.trigger_files)):
     else:
         dest = args.trigger_files[i]
 
-    logger.info("Opening trigger file %s: %s" % (i, dest))
+    logger.info("Opening trigger file %s: %s", i, dest)
     reader = ReadByTemplate(
         dest,
         args.template_bank,
@@ -215,8 +215,7 @@ for i in range(len(args.trigger_files)):
     # time shift is subtracted from pivot ifo time
     trigs.to_shift.append(-1 if ifo == args.pivot_ifo else 0)
     logger.info(
-        "Applying time shift multiple %i to ifo %s"
-        % (trigs.to_shift[-1], trigs.ifos[-1])
+        "Applying time shift multiple %i to ifo %s", trigs.to_shift[-1], trigs.ifos[-1]
     )
     trigs.singles.append(reader)
 
@@ -311,7 +310,7 @@ def process_template(tnum):
     times_full = {}
     sds_full = {}
     tids_full = {}
-    logger.debug("Obtaining trigs for template %i .." % (tnum))
+    logger.debug("Obtaining trigs for template %i ..", tnum)
     for i, sngl in zip(trigs.ifos, trigs.singles):
         # Apply cuts to triggers
         tids_uncut = sngl.set_template(tnum)
@@ -330,7 +329,7 @@ def process_template(tnum):
 
     mintrigs = min([len(ti) for ti in tids_full.values()])
     if mintrigs == 0:
-        logger.info("No triggers in at least one ifo for template %i, skipping" % tnum)
+        logger.info("No triggers in at least one ifo for template %i, skipping", tnum)
         return local_data
 
     if type(rank_method.single_dtype) == list:

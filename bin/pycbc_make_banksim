@@ -332,7 +332,7 @@ dag.add_node(rnode)
 pnode.add_parent(rnode)
 dag.add_node(pnode)
 
-logger.info("DO : %d SKIP %d" % (do_count, skip_count))
+logger.info("DO : %d SKIP %d", do_count, skip_count)
 f.close()
 
 f = open("scripts/pycbc_banksim_match_combine", "w")

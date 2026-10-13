@@ -73,6 +73,6 @@ def determine_epoch(epoch, initial_array):
     except TypeError as e:
         # Give something helpful before failing.
         logger.warning(
-            f"epoch cannot be determined: type: {type(epoch)}, value: {epoch}"
+            "epoch cannot be determined: type: %s, value: %s", type(epoch), epoch
         )
         raise e

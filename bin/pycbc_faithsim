@@ -238,13 +238,13 @@ except ValueError:
 
 # open the output file where the max overlaps over the bank are stored
 fout = open(options.out_file, "w")
-logger.info("Writing matches to " + options.out_file)
+logger.info("Writing matches to %s", options.out_file)
 
 filter_N = options.filter_waveform_length * options.filter_sample_rate
 filter_n = int(filter_N / 2) + 1
 delta_f = float(options.filter_sample_rate) / filter_N
 
-logger.info("Number of Waveforms      : %d" % len(waveform_table))
+logger.info("Number of Waveforms      : %d", len(waveform_table))
 
 logger.info("Reading and Interpolating PSD")
 # If we are going to use h(t) to estimate a PSD we need h(t)

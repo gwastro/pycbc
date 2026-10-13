@@ -308,7 +308,7 @@ for ifo in opt.ifos:
     # rchisq = np.maximum(rchisq, bank_rchisq)
 
     if opt.veto_file and not done_vetoing:
-        logger.info("Applying vetoes from %s for ifo %s" % (opt.veto_file, ifo))
+        logger.info("Applying vetoes from %s for ifo %s", opt.veto_file, ifo)
         keep_idx, segs = events.veto.indices_outside_segments(
             sngls.get_column("end_time").astype(int),
             [opt.veto_file],
@@ -324,23 +324,24 @@ for ifo in opt.ifos:
         if tid is not None:
             tid = tid[keep_idx]
         parvals = parvals[keep_idx]
-        logger.info("%i trigs remain" % len(snr))
+        logger.info("%i trigs remain", len(snr))
 
     logger.info("Calculating ranking statistic values")
     statv = get_stat(opt.sngl_stat, snr, rchisq, opt.stat_factor)
 
-    logger.info("Parameter range of triggers: %f - %f" % (min(parvals), max(parvals)))
+    logger.info("Parameter range of triggers: %f - %f", min(parvals), max(parvals))
     if opt.bin_spacing == "irregular":
         logger.info(
-            "Removing triggers outside bin range %f - %f"
-            % (min(opt.bin_edges), max(opt.bin_edges))
+            "Removing triggers outside bin range %f - %f",
+            min(opt.bin_edges),
+            max(opt.bin_edges),
         )
         in_range = np.logical_and(
             parvals >= min(opt.bin_edges), parvals <= max(opt.bin_edges)
         )
         statv = statv[in_range]
         parvals = parvals[in_range]
-        logger.info("%i remain" % len(statv))
+        logger.info("%i remain", len(statv))
     pbins = get_bins(opt, 0.99 * min(parvals), 1.01 * max(parvals))
     # list of bin indices
     binind = [pbins[c] for c in pbins.centres()]
@@ -367,7 +368,7 @@ for ifo in opt.ifos:
     ks_prob[ifo] = {}
 
     for th in opt.stat_threshold:
-        logger.info("Fitting above threshold %f" % th)
+        logger.info("Fitting above threshold %f", th)
         counts[ifo][th] = {}
         fits[ifo][th] = {}
         stdev[ifo][th] = {}
@@ -482,7 +483,7 @@ for ifo in opt.ifos:
                 + str(th)
                 + ".png"
             )
-            logger.info("Saving plot to %s" % dest)
+            logger.info("Saving plot to %s", dest)
             plt.savefig(dest)
             plt.close()
 

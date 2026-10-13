@@ -614,7 +614,7 @@ class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             thin_end=thin_end,
             thin_interval=thin_interval,
         )
-        logger.info(f"log Z, dlog Z: {logz}, {dlogz}")
+        logger.info("log Z, dlog Z: %s, %s", logz, dlogz)
         for fn in [self.checkpoint_file, self.backup_file]:
             with self.io(fn, "a") as fp:
                 fp.write_logevidence(logz, dlogz)

@@ -227,13 +227,13 @@ bg = utils.BackgroundEventRate(
 )
 
 for fd, b in zl_inputs:
-    logger.info("Adding bank info from " + b)
+    logger.info("Adding bank info from %s", b)
     fg.add_bank(b)
     fg.filter_templates()
     bg.add_bank(b)
     bg.filter_templates()
 
-    logger.info("Adding event info from " + fd)
+    logger.info("Adding event info from %s", fd)
     fg.add_zerolag(fd)
     bg.add_background(fd)
 
@@ -254,8 +254,8 @@ if args.plot_bg_hist:
 
 # normalize and count expected bg events
 bg.get_norms()
-logger.info("Total expected bg count " + str(bg.norm))
-logger.info("Actual zerolag event count " + str(len(fg.stat)))
+logger.info("Total expected bg count %s", bg.norm)
+logger.info("Actual zerolag event count %s", len(fg.stat))
 
 # Read signal (injection) data
 inj_inputs = zip(args.injection_files, args.bank_files, args.full_data_files)
@@ -264,7 +264,7 @@ sg = utils.SignalEventRate(
 )
 
 for jf, b, fd in inj_inputs:
-    logger.info("Adding inj info from" + jf)
+    logger.info("Adding inj info from%s", jf)
     sg.add_bank(b)
     sg.filter_templates()
     sg.add_injections(jf, fd)
@@ -273,7 +273,7 @@ if args.plot_inj_hist:
     sg.plot_inj()
 
 sg.get_norms()
-logger.info("Total number of inj used " + str(sg.norm))
+logger.info("Total number of inj used %s", sg.norm)
 
 fg.get_bg_pdf(bg)
 fg.get_sg_pdf(sg)
@@ -408,7 +408,7 @@ if args.vt_mean:
     if args.vt_err is None:
         logger.warning("NB : no VT error provided, will use 0!")
         args.vt_err = 0.0
-    logger.info("Rate in units of " + args.rate_units + " ...")
+    logger.info("Rate in units of %s ...", args.rate_units)
     print("Rate without VT uncertainty :")
     print(
         "%.1f_{-%.1f}^{+%.1f}"
@@ -448,11 +448,11 @@ if args.rank_injections:
         assert len(args.rank_injections) == len(args.bank_files)
         banks = args.bank_files
     for i, b in zip(args.rank_injections, banks):
-        logger.info("Adding bank info from " + b)
+        logger.info("Adding bank info from %s", b)
         inj.add_bank(b)
         inj.filter_templates()
 
-        logger.info("Adding event info from " + i)
+        logger.info("Adding event info from %s", i)
         inj.add_zerolag(i)
 
     # get densities for injections as if zerolag

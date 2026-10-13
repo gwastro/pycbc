@@ -305,7 +305,7 @@ for j in range(len(args.bins) - 1):
 
         left = float(args.bins[j])
         right = float(args.bins[j + 1])
-        logger.info("Injections between param values %5.2f and %5.2f" % (left, right))
+        logger.info("Injections between param values %5.2f and %5.2f", left, right)
 
         # Get distance of missed injections within parameter bin
         binm = numpy.logical_and(missed["param"] >= left, missed["param"] < right)
@@ -323,7 +323,7 @@ for j in range(len(args.bins) - 1):
 
         # Calculate each sensitive distance at a given significance threshold
         for x_val in x_values:
-            logger.info("Thresholding on significance at %5.2f" % x_val)
+            logger.info("Thresholding on significance at %5.2f", x_val)
             # Count found inj towards sensitivity if IFAR/stat exceeds threshold
             # or if FAP value is less than threshold
             if args.sig_type == "ifar" or args.sig_type == "stat":

@@ -652,7 +652,7 @@ class LiveEventManager:
                 continue
 
             sifar = single["foreground/ifar"]
-            logger.info(f"Found {ifo} single with ifar {sifar}")
+            logger.info("Found %s single with ifar %s", ifo, sifar)
 
             followup_ifos = [i for i in active if i is not ifo]
             followup_ifos = list(set(followup_ifos) | self.skymap_only_ifos)

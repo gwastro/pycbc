@@ -158,7 +158,7 @@ def check_stop(job_name, container, workflow, finalize_workflow):
     if workflow.cp.has_option("workflow", "stop-after"):
         stop_after = workflow.cp.get("workflow", "stop-after")
         if stop_after == job_name:
-            logger.info("Search worflow will be stopped after " + str(job_name))
+            logger.info("Search worflow will be stopped after %s", job_name)
             finalize(container, workflow, finalize_workflow)
         else:
             pass
@@ -208,7 +208,7 @@ wf_log_file = wf.File(
 )
 
 pycbc.init_logging(args.verbose, default_level=1, to_file=wf_log_file.storage_path)
-logger.info("Created log file %s" % wf_log_file.storage_path)
+logger.info("Created log file %s", wf_log_file.storage_path)
 
 # put start / end time at top of summary page
 time = workflow.analysis_time

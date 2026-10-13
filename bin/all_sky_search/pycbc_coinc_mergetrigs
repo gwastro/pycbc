@@ -63,7 +63,7 @@ for fname in args.trigger_files:
     try:
         f2 = HFile(fname, "r")
     except OSError as e:
-        logger.exception("Cannot open %s" % fname)
+        logger.exception("Cannot open %s", fname)
         raise e
     ifo = tuple(f2.keys())[0]
     if len(f2[ifo].keys()) > 0:

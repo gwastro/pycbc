@@ -66,16 +66,16 @@ ifar_calc_points = np.linspace(opts.min_x, opts.max_x, 200)
 
 fitted = []  # List of combos for which a fit is used
 for f in opts.trigger_files:
-    logger.info(f"Opening {f}")
+    logger.info("Opening %s", f)
     with h5py.File(f, "r") as exc_zlag_f:
-        logger.info(f"Ifos {exc_zlag_f.attrs['ifos']}")  # eg 'H1 L1'
+        logger.info("Ifos %s", exc_zlag_f.attrs["ifos"])  # eg 'H1 L1'
         sig_key = exc_zlag_f.attrs["ifos"].replace(" ", "")  # eg 'H1L1'
         coinc_key = sig_key.replace("1", "")  # eg 'HL'
         stat_exc = exc_zlag_f["background_exc"]["stat"][:]
         dec_fac_exc = exc_zlag_f["background_exc"]["decimation_factor"][:]
         bg_time = convert_s_to_y(exc_zlag_f.attrs["background_time_exc"])
         ifar_file = exc_zlag_f["background_exc"]["ifar"][:]
-    logger.info(f"{coinc_key} background time (y): {bg_time}")
+    logger.info("%s background time (y): %s", coinc_key, bg_time)
 
     # If fitting / extrapolation is done
     if sig_dict[sig_key]["method"] == "trigger_fit":

@@ -59,7 +59,7 @@ zdata = pycbc.io.MultiifoStatmapData(files=args.zero_lag_coincs, ifos=args.ifos)
 
 if "ifos" in zdata.attrs:
     ifos = zdata.attrs["ifos"].split(" ")
-    logger.info(f"using ifos from file {args.zero_lag_coincs[0]}")
+    logger.info("using ifos from file %s", args.zero_lag_coincs[0])
 else:
     ifos = args.ifos
     logger.info("using ifos from command line input")

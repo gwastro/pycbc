@@ -337,7 +337,7 @@ def build_includes():
         if len(running) < run_num and i < len(run_args):
             args = run_args[i]
             proc = subprocess.Popen(args, stdout=None, stderr=None)
-            logger.info("Running: {}".format(" ".join(proc.args)))
+            logger.info("Running: %s", " ".join(proc.args))
             i += 1
             running.append(proc)
 

@@ -133,7 +133,7 @@ class RunInjectionResults:
         self.dirpath = dirpath
         self.nmissed = nmissed
         self.ifar_threshold = ifar_threshold
-        logger.info(f"Reading injection directory {self.dirpath}")
+        logger.info("Reading injection directory %s", self.dirpath)
         self.injfile = File(injfile, "r")
         self.bankfile = File(bankfile, "r")
         self.inj_dets = [
@@ -195,7 +195,9 @@ class RunInjectionResults:
         self.single_detector_statistic = single_detector_statistic
         # Next, read information from the two trigger merge files
         logger.info(
-            f"Reading single detector triggers from {self.dirpath}; findingminimum of {self.single_detector_statistic}"
+            "Reading single detector triggers from %s; findingminimum of %s",
+            self.dirpath,
+            self.single_detector_statistic,
         )
         for fdict in [self.found, self.found_after_vetoes]:
             for ifo in self.inj_dets:
@@ -293,7 +295,7 @@ def populate_injection_group(fgroup, fidx, fdict, ifos):
 def compare_found_injs(reference_run, comparison_run, outfp):
     ifos = reference_run.inj_dets
     for found_class in ["found", "found_after_vetoes"]:
-        logger.info(f"Comparing found injections for class '{found_class}'")
+        logger.info("Comparing found injections for class '%s'", found_class)
         fgroup = outfp.create_group(found_class)
         ref_found = getattr(reference_run, found_class)
         com_found = getattr(comparison_run, found_class)
@@ -355,7 +357,7 @@ def compare_missed_injs(reference_run, comparison_run, outfp):
     # Note that we are assuming that the injection table contains
     # optimal SNR columns, which may not always be true.
     logger.info(
-        f"Finding {reference_run.nmissed} loudest missed injections in reference run"
+        "Finding %s loudest missed injections in reference run", reference_run.nmissed
     )
     o1 = reference_run.injgroup["optimal_snr_1"][:][ref_missed]
     o2 = reference_run.injgroup["optimal_snr_2"][:][ref_missed]
@@ -364,7 +366,7 @@ def compare_missed_injs(reference_run, comparison_run, outfp):
     ref_sort = ref_sort[::-1]
     ref_missed_n = ref_missed[ref_sort][0 : reference_run.nmissed]
     logger.info(
-        f"Finding {comparison_run.nmissed} loudest missed injections in comparison run"
+        "Finding %s loudest missed injections in comparison run", comparison_run.nmissed
     )
     o1 = comparison_run.injgroup["optimal_snr_1"][:][com_missed]
     o2 = comparison_run.injgroup["optimal_snr_2"][:][com_missed]

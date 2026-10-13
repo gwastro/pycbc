@@ -112,11 +112,11 @@ logger.info("Plotting autocorrelation functions")
 fig = plt.figure(figsize=(8, fig_height))
 for kk, tk in enumerate(temps):
     if multi_tempered:
-        logger.info(f"Temperature {tk}")
+        logger.info("Temperature %s", tk)
     axnum = len(temps) - kk
     ax = fig.add_subplot(len(temps), 1, axnum)
     for param in parameters:
-        logger.info(f"Parameter {param}")
+        logger.info("Parameter %s", param)
         if multi_tempered:
             acf = acfs[param][kk, ...]
         else:

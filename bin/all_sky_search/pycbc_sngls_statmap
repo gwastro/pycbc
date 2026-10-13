@@ -138,14 +138,14 @@ pycbc.init_logging(args.verbose)
 
 logger.info("Loading triggers")
 ifo = args.ifos[0]
-logger.info("IFO input: %s" % ifo)
+logger.info("IFO input: %s", ifo)
 all_trigs = pycbc.io.MultiifoStatmapData(files=args.sngls_files, ifos=[ifo])
 assert ifo + "/time" in all_trigs.data
 
-logger.info("We have %s triggers" % len(all_trigs.stat))
+logger.info("We have %s triggers", len(all_trigs.stat))
 logger.info("Clustering triggers")
 all_trigs = all_trigs.cluster(args.cluster_window)
-logger.info("%s triggers remain" % len(all_trigs.stat))
+logger.info("%s triggers remain", len(all_trigs.stat))
 
 fg_time = float(all_trigs.attrs["foreground_time"])
 
@@ -361,14 +361,14 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
     indices_to_rm = numpy.concatenate([indices_to_rm, ind_to_rm[ifo]])
 
     all_trigs = all_trigs.remove(indices_to_rm.astype(int))
-    logger.info("We have %s triggers after hierarchical removal." % len(all_trigs.stat))
+    logger.info("We have %s triggers after hierarchical removal.", len(all_trigs.stat))
 
     # Step 4: Re-cluster the triggers and calculate the inclusive ifar/fap
     logger.info("Clustering coinc triggers (inclusive of zerolag)")
     all_trigs = all_trigs.cluster(args.cluster_window)
 
-    logger.info("%s clustered foreground triggers" % len(all_trigs))
-    logger.info("%s hierarchically removed foreground trigger(s)" % h_iterations)
+    logger.info("%s clustered foreground triggers", len(all_trigs))
+    logger.info("%s hierarchically removed foreground trigger(s)", h_iterations)
 
     logger.info("Dumping foreground triggers")
     logger.info("Dumping background triggers (inclusive of zerolag)")

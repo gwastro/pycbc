@@ -205,7 +205,7 @@ else:
     cstat_fore = cstat_fore[ssort]
     cstat_fap = p_from_far(cstat_rate, foreground_livetime)
 
-logger.info("Found %s foreground triggers" % len(cstat_fore))
+logger.info("Found %s foreground triggers", len(cstat_fore))
 
 if cstat_fore is not None and len(cstat_fore) == 0:
     cstat_fore = None
@@ -231,7 +231,7 @@ if not args.cumulative:
 
 fap_back = p_from_far(far_back, foreground_livetime)
 
-logger.info("Found %s background (inclusive zerolag) triggers" % len(cstat_back))
+logger.info("Found %s background (inclusive zerolag) triggers", len(cstat_back))
 
 back_ifar_exc = f["background_exc/ifar"][:]
 cstat_back_exc = f["background_exc/stat"][:]
@@ -242,7 +242,7 @@ far_back_exc = 1.0 / back_ifar_exc[back_sort_exc]
 if not args.cumulative:
     far_back_exc *= args.trials_factor
 
-logger.info("Found %s background (exclusive zerolag) triggers" % len(cstat_back_exc))
+logger.info("Found %s background (exclusive zerolag) triggers", len(cstat_back_exc))
 
 # We'll use the background far for the ylimits if closed box, foreground
 # otherwise

@@ -129,7 +129,7 @@ ifo = fits.attrs["ifo"]
 # get template id and template parameter values
 tid = fits["template_id"][:]
 if args.use_template_fit_param:
-    logger.info("Reading %s values from the template fit file" % args.fit_param)
+    logger.info("Reading %s values from the template fit file", args.fit_param)
     # check we're asking for the right param name
     assert fits.attrs["save_trig_param"] == args.fit_param
     parvals = fits["template_param"][:]
@@ -162,10 +162,10 @@ if tcount:
 invalpha = invalpha[parsort]
 
 if args.log_param:
-    logger.info("Using log %s to perform smoothing" % args.fit_param)
+    logger.info("Using log %s to perform smoothing", args.fit_param)
     parvals = np.log(parvals)
 else:
-    logger.info("Using %s to perform smoothing" % args.fit_param)
+    logger.info("Using %s to perform smoothing", args.fit_param)
 
 # do nearest-neighbours regression
 # use Gaussian weight over fitting parameter

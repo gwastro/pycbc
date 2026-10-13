@@ -107,7 +107,7 @@ fo = HFile(args.output_file, "w")
 
 injection_index = 0
 for trigger_file, injection_file in zip(args.trigger_files, args.injection_files):
-    logger.info("Read in the coinc data: %s" % trigger_file)
+    logger.info("Read in the coinc data: %s", trigger_file)
     f = HFile(trigger_file, "r")
 
     # Get list of groups which contain subgroup 'time'
@@ -187,8 +187,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     ambiguous = numpy.where((right - left) > 1)[0]
     missed = numpy.concatenate([missed, ambiguous])
     logger.info(
-        "Found: %s, Missed: %s Ambiguous: %s"
-        % (len(found), len(missed), len(ambiguous))
+        "Found: %s, Missed: %s Ambiguous: %s", len(found), len(missed), len(ambiguous)
     )
 
     if len(ambiguous) > 0:
@@ -201,7 +200,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     found_within_time = numpy.intersect1d(ki, found)
     missed_within_time = numpy.intersect1d(ki, missed)
     logger.info(
-        "Found: %s, Missed: %s" % (len(found_within_time), len(missed_within_time))
+        "Found: %s, Missed: %s", len(found_within_time), len(missed_within_time)
     )
 
     if args.veto_file:
@@ -234,8 +233,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
             [i for i in missed_within_time if i not in vetoed_all]
         ).astype(int)
         logger.info(
-            "Found: %s, Missed: %s"
-            % (len(found_after_vetoes), len(missed_after_vetoes))
+            "Found: %s, Missed: %s", len(found_after_vetoes), len(missed_after_vetoes)
         )
     else:
         veto_dict = {ifo: [] for ifo in ifo_list}

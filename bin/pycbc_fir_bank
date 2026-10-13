@@ -304,7 +304,12 @@ def process_template(i):
         max_tap_val = np.max(np.abs(taps))
         if max_tap_val > g_args.max_tap_value:
             logger.warning(
-                f"Template {i} (Ref {c_idx}, {n_taps} taps) rejected: Max tap value {max_tap_val:.2e} exceeded safety threshold."
+                "Template %s (Ref %s, %s taps) rejected: Max tap value %.2e "
+                "exceeded safety threshold.",
+                i,
+                c_idx,
+                n_taps,
+                max_tap_val,
             )
             return -1, taps, None, n_peak_passes, n_bins_capped, max_tap_val
         qa, sigmas = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
@@ -345,7 +350,11 @@ def process_template(i):
                 best_unsuppressed = (qa0, c_idx, best_match, current_taps)
 
             logger.debug(
-                f"CoarseTemp:{c_idx} QA-Match(unsuppressed):{qa0} Taps:{current_taps} Max Tap Val: {max_tap0}"
+                "CoarseTemp:%s QA-Match(unsuppressed):%s Taps:%s Max Tap Val: %s",
+                c_idx,
+                qa0,
+                current_taps,
+                max_tap0,
             )
 
             if qa0 < g_args.min_match:
@@ -374,8 +383,14 @@ def process_template(i):
                 n_attempts_suppressed += 1
 
             logger.debug(
-                f"CoarseTemp:{c_idx} QA-Match(suppressed):{qa1} Taps:{current_taps} Max Tap Val: {max_tap1} "
-                f"PeakSuppression: passes={n_pp1} remaining_capped_bins={n_bc1}"
+                "CoarseTemp:%s QA-Match(suppressed):%s Taps:%s Max Tap Val: %s "
+                "PeakSuppression: passes=%s remaining_capped_bins=%s",
+                c_idx,
+                qa1,
+                current_taps,
+                max_tap1,
+                n_pp1,
+                n_bc1,
             )
 
             if best[3] < qa1:
@@ -496,7 +511,7 @@ def main():
 
     f_final = args.sample_rate / 2.0
     flen = int(f_final / args.delta_f) + 1
-    logger.info(f"Setup: Rate={args.sample_rate}, df={args.delta_f}, flen={flen}")
+    logger.info("Setup: Rate=%s, df=%s, flen=%s", args.sample_rate, args.delta_f, flen)
 
     psd = pycbc.psd.from_cli(
         args, length=flen, delta_f=args.delta_f, low_frequency_cutoff=args.f_low
@@ -558,7 +573,7 @@ def main():
             fir_group.attrs[arg] = val
 
     # --- PHASE 2: Calculation Loop ---
-    logger.info(f"Starting pool with {args.n_processes} processes...")
+    logger.info("Starting pool with %s processes...", args.n_processes)
     failed_count = 0
     peak_suppressed_count = 0
     peak_still_capped_count = 0
@@ -626,9 +641,16 @@ def main():
                 if args.verbose >= 1:
                     mismatch = 1.0 - qa_match
                     logger.info(
-                        f"T{i} (Ref {c_idx}): Coarse={coarse_match:.4f}, Taps={len(final_taps_data)}, "
-                        f"Final={qa_match:.5f}, Mism={mismatch:.5e}, "
-                        f"PeakSuppression: passes={n_peak_passes} remaining_capped_bins={n_bins_capped}"
+                        "T%s (Ref %s): Coarse=%.4f, Taps=%s, Final=%.5f, Mism=%.5e, "
+                        "PeakSuppression: passes=%s remaining_capped_bins=%s",
+                        i,
+                        c_idx,
+                        coarse_match,
+                        len(final_taps_data),
+                        qa_match,
+                        mismatch,
+                        n_peak_passes,
+                        n_bins_capped,
                     )
                     log.handlers[0].flush()  # Flush stdout
 
@@ -714,7 +736,7 @@ def main():
                 dset_c_sigma[j] = sigma
             tap_counts.append(dset_actual[:])
 
-        logger.info(f"Done. Saved to {args.output_file}")
+        logger.info("Done. Saved to %s", args.output_file)
 
     finally:
         f_out.close()

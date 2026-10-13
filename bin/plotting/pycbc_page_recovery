@@ -153,7 +153,7 @@ if not all(found_in_ifo):
     inj_xparams = inj_xparams[found_in_ifo]
     ifar_found = ifar_found[found_in_ifo]
     logger.info(
-        "Removing %i inj not found in %s" % ((found_in_ifo == False).sum(), args.ifo)
+        "Removing %i inj not found in %s", (found_in_ifo == False).sum(), args.ifo
     )
 
 # calculate needed values
@@ -213,7 +213,7 @@ ylabels = {
 xvals = eval(x_dict[args.plot_type])
 yvals = eval(y_dict[args.plot_type])
 
-logger.info("Plotting %i found inj ..." % len(xvals))
+logger.info("Plotting %i found inj ...", len(xvals))
 fig = plot.figure()
 
 if "hist" not in args.plot_type:

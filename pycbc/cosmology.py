@@ -189,10 +189,10 @@ def z_at_value(func, fval, unit, zmax=1000.0, **kwargs):
             if counter == 5:
                 # give up and warn the user
                 logger.warning(
-                    "One or more values correspond to a "
-                    f"redshift > {zmax:.1e}. The redshift for these "
-                    "have been set to inf. If you would like "
-                    "better precision, call God."
+                    "One or more values correspond to a redshift > %.1e. The "
+                    "redshift for these have been set to inf. If you would like "
+                    "better precision, call God.",
+                    zmax,
                 )
                 break
     return pycbc.conversions.formatreturn(zs, input_is_array)

@@ -372,10 +372,9 @@ class TemplateBank:
                     if isinstance(root.get(k), h5py.Dataset):
                         fileparams.append(k)
                 logger.info(
+                    "%sare the parameters.",
                     "WARNING: no parameters attribute found. "
-                    "Assuming that %s "
-                    % (", ".join(fileparams))
-                    + "are the parameters."
+                    "Assuming that %s " % (", ".join(fileparams)),
                 )
 
             tmp_params = []
@@ -1023,7 +1022,7 @@ class FilterBank(TemplateBank):
         f_low = find_variable_start_frequency(
             approximant, self.table[index], self.f_lower, self.max_template_length
         )
-        logger.info("%s: generating %s from %s Hz" % (index, approximant, f_low))
+        logger.info("%s: generating %s from %s Hz", index, approximant, f_low)
 
         # Clear the storage memory
         poke = tempout.data  # pylint:disable=unused-variable

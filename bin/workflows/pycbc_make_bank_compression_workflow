@@ -137,7 +137,7 @@ wf_log_file = wf.File(
 )
 
 pycbc.init_logging(args.verbose, default_level=1, to_file=wf_log_file.storage_path)
-logger.info("Created log file %s" % wf_log_file.storage_path)
+logger.info("Created log file %s", wf_log_file.storage_path)
 
 # Setup the workflow with the bank input file,
 # this will do the job to convert from e.g. xml to hdf as well

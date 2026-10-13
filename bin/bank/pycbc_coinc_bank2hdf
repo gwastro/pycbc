@@ -122,7 +122,7 @@ else:
     name_map = None
 
 # load the file
-logger.info("Loading %s" % (args.bank_file))
+logger.info("Loading %s", args.bank_file)
 bankf = bank.TemplateBank(
     args.bank_file, approximant=args.approximant, parameters=columns
 )
@@ -142,5 +142,5 @@ logger.info("Getting template hashes")
 bankf.ensure_hash()
 
 # write to output
-logger.info("Writing to %s" % (args.output_file))
+logger.info("Writing to %s", args.output_file)
 bankf.write_to_hdf(args.output_file, force=args.force)

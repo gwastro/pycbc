@@ -257,7 +257,7 @@ class DynestySampler(BaseSampler):
                 logger.info("Checking if we should checkpoint: %.2f s", delta_t)
 
                 if delta_t >= self.checkpoint_time_interval:
-                    logger.info(f"Checkpointing N={n_checkpointing}")
+                    logger.info("Checkpointing N=%s", n_checkpointing)
                     self.checkpoint()
                     n_checkpointing += 1
                     t0 = time.time()
@@ -522,7 +522,7 @@ class DynestySampler(BaseSampler):
         """Finalze and write it to the results file"""
         logz = self._sampler.results.logz[-1:][0]
         dlogz = self._sampler.results.logzerr[-1:][0]
-        logger.info(f"log Z, dlog Z: {logz}, {dlogz}")
+        logger.info("log Z, dlog Z: %s, %s", logz, dlogz)
 
         if self.no_save_state:
             self.write_results(self.checkpoint_file)
@@ -695,8 +695,12 @@ def sample_rwalk_mod(args):
         # If we've taken too many likelihood evaluations then break
         if accept + reject > maxmcmc:
             logger.warning(
-                f"Hit maximum number of walks {maxmcmc} with accept={accept}, reject={reject}, "
-                f"and nfail={nfail} try increasing maxmcmc"
+                "Hit maximum number of walks %s with accept=%s, reject=%s, and "
+                "nfail=%s try increasing maxmcmc",
+                maxmcmc,
+                accept,
+                reject,
+                nfail,
             )
             break
 

@@ -136,11 +136,11 @@ elif args.hierarchical_removal_against == "none":
 pycbc.init_logging(args.verbose)
 
 logger.info("Loading coinc triggers")
-logger.info("IFO input: %s" % args.ifos)
+logger.info("IFO input: %s", args.ifos)
 all_trigs = pycbc.io.MultiifoStatmapData(files=args.coinc_files, ifos=args.ifos)
 if "ifos" in all_trigs.attrs:
     ifos = all_trigs.attrs["ifos"].split(" ")
-    logger.info(f"using ifos from file {args.coinc_files[0]}")
+    logger.info("using ifos from file %s", args.coinc_files[0])
 else:
     ifos = args.ifos
     logger.info("using ifos from command line input")
@@ -148,7 +148,7 @@ else:
 ifo_combo = "".join(ifos)
 significance_dict = significance.digest_significance_options([ifo_combo], args)
 
-logger.info("We have %s triggers" % len(all_trigs.stat))
+logger.info("We have %s triggers", len(all_trigs.stat))
 
 # Remove triggers from manually flagged times:
 if args.additional_event_times:
@@ -168,7 +168,7 @@ if args.additional_event_times:
     logger.info("Removing %d triggers", len(manual_rm_idx))
     all_trigs = all_trigs.remove(manual_rm_idx)
 
-logger.info("%s triggers remain" % len(all_trigs.stat))
+logger.info("%s triggers remain", len(all_trigs.stat))
 fore_locs = all_trigs.timeslide_id == 0
 
 # Foreground trigger times for ifos
@@ -209,7 +209,7 @@ all_trigs = all_trigs.cluster(args.cluster_window)
 
 # Return an array of true or false if the trigger has not been time-slid
 fore_locs = all_trigs.timeslide_id == 0
-logger.info("%s clustered foreground triggers" % fore_locs.sum())
+logger.info("%s clustered foreground triggers", fore_locs.sum())
 
 logger.info("Clustering coinc triggers (exclusive of zerolag)")
 exc_zero_trigs = exc_zero_trigs.cluster(args.cluster_window)
@@ -448,15 +448,15 @@ while numpy.any(ifar_foreground >= background_time):
         indices_to_rm = numpy.concatenate([indices_to_rm, ind_to_rm[ifo]])
 
     all_trigs = all_trigs.remove(indices_to_rm.astype(int))
-    logger.info("We have %s triggers after hierarchical removal." % len(all_trigs.stat))
+    logger.info("We have %s triggers after hierarchical removal.", len(all_trigs.stat))
 
     # Step 4: Re-cluster the triggers and calculate the inclusive ifar/fap
     logger.info("Clustering coinc triggers (inclusive of zerolag)")
     all_trigs = all_trigs.cluster(args.cluster_window)
     fore_locs = all_trigs.timeslide_id == 0
 
-    logger.info("%s clustered foreground triggers" % fore_locs.sum())
-    logger.info("%s hierarchically removed foreground trigger(s)" % h_iterations)
+    logger.info("%s clustered foreground triggers", fore_locs.sum())
+    logger.info("%s hierarchically removed foreground trigger(s)", h_iterations)
 
     back_locs = all_trigs.timeslide_id != 0
 

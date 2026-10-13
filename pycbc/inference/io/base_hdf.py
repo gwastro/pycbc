@@ -782,7 +782,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         if read_args is None:
             read_args = {}
         samples = self.read_samples(parameters, **read_args)
-        logger.info(f"Copying {samples.size} samples")
+        logger.info("Copying %s samples", samples.size)
         # if different parameter names are desired, get them from the samples
         if parameter_names:
             arrs = {pname: samples[p] for p, pname in parameter_names.items()}

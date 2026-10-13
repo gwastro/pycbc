@@ -148,8 +148,9 @@ def check_signal_times(
     # make sure signal lies within orbit length
     if hp.duration + hp.start_time > orbit_end_time:
         logger.warning(
-            "Time of signal end is greater than end of orbital "
-            f"data. Cutting signal at {orbit_end_time}."
+            "Time of signal end is greater than end of orbital data. Cutting signal "
+            "at %s.",
+            orbit_end_time,
         )
         # cut off data succeeding orbit end time
         end_idx = numpy.argwhere(hp.sample_times.numpy() <= orbit_end_time)[-1][0]
@@ -158,8 +159,9 @@ def check_signal_times(
 
     if hp.start_time < orbit_start_time:
         logger.warning(
-            "Time of signal start is less than start of orbital "
-            f"data. Cutting signal at {orbit_start_time}."
+            "Time of signal start is less than start of orbital data. Cutting "
+            "signal at %s.",
+            orbit_start_time,
         )
         # cut off data preceding orbit start time
         start_idx = numpy.argwhere(hp.sample_times.numpy() >= orbit_start_time)[0][0]

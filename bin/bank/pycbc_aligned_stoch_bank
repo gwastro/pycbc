@@ -158,9 +158,9 @@ elif ethincaParams.doEthinca and opts.vary_fupper:
     if opts.bank_fupper_step != ethincaParams.freqStep:
         freqStep = min(ethincaParams.freqStep, opts.bank_fupper_step)
         logger.warning(
-            "Frequency step for varying fupper was not equal "
-            "to ethinca frequency step! Setting freqStep to "
-            "the minimum of the two, " + str(freqStep)
+            "Frequency step for varying fupper was not equal to ethinca frequency "
+            "step! Setting freqStep to the minimum of the two, %s",
+            freqStep,
         )
 else:
     freqStep = None

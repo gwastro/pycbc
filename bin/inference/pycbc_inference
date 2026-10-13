@@ -136,9 +136,8 @@ with ctx:
     condor_ckpt = cp.has_option("sampler", "checkpoint-signal")
     if condor_ckpt:
         logger.info(
-            "Sampler will exit with signal {} after checkpointing".format(
-                cp.get("sampler", "checkpoint-signal")
-            )
+            "Sampler will exit with signal %s after checkpointing",
+            cp.get("sampler", "checkpoint-signal"),
         )
         # create an empty output file to keep condor happy
         open(opts.output_file, "a").close()

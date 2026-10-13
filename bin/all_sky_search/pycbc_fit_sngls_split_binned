@@ -180,10 +180,10 @@ assert args.stat_fit_threshold >= args.plot_lower_stat_limit
 
 pycbc.init_logging(args.verbose)
 
-logger.info("Opening trigger file: %s" % args.trigger_file)
+logger.info("Opening trigger file: %s", args.trigger_file)
 trigf = HFile(args.trigger_file, "r")
 
-logger.info("Opening template file: %s" % args.bank_file)
+logger.info("Opening template file: %s", args.bank_file)
 bank = HFile(args.bank_file, "r")
 logger.info("Getting template bank parameters")
 
