@@ -445,7 +445,7 @@ for th in args.stat_threshold:
         vals_inbin = stat[pind == i]
         counts[th][i] = sum(vals_inbin >= th)
         if len(vals_inbin) == 0:
-            logger.info("No trigs in bin %f-%f", (lower, upper))
+            logger.info("No trigs in bin %f-%f", lower, upper)
             continue
         # do the fit
         alpha, sig_alpha = trstats.fit_above_thresh(args.fit_function, vals_inbin, th)

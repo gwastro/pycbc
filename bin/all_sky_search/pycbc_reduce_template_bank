@@ -57,11 +57,10 @@ func = modl.filter_tmpltbank
 bool_arr = func(bank_fd)
 
 logger.info(
-    "Downselecting templates. Started with",
-    len(bool_arr),
-    "templates, now have ",
-    bool_arr.sum(),
+    "Downselecting templates. Started with %s templates, now have %s "
     "after downselecting.",
+    len(bool_arr),
+    bool_arr.sum(),
 )
 bank_ofd = HFile(opt.output_bank, "w")
 for name in bank_fd.keys():

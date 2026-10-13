@@ -315,7 +315,7 @@ for i, lower, upper in zip(binind, pbins.lower(), pbins.upper()):
     bincounts[i] = len(times_inbin)
     print(bincounts[i])
     if len(times_inbin) == 0:
-        logger.info("No trigs in bin %f-%f", (lower, upper))
+        logger.info("No trigs in bin %f-%f", lower, upper)
         continue
     # add KDE to plot
     kd = scistats.gaussian_kde(times_inbin, bw_method=args.kde_bandwidth)

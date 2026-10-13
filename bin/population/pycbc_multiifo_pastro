@@ -358,7 +358,7 @@ if args.diagnostic_plots:
 
 # add in prior event info
 if args.prior_event_info:
-    logger.warning("Adding events from", args.prior_event_info)
+    logger.warning("Adding events from %s", args.prior_event_info)
     prior_info = np.genfromtxt(args.prior_event_info, names=True)
     allfgbg = np.append(allfgbg, prior_info["ln_bayes_factor"])
 else:  # no prior events!
@@ -380,7 +380,8 @@ foreground_count_dist = fgmcl.count_posterior(
 
 # Roulet et al. argue that information on rate scales with sum (p_astro^2)
 logger.info(
-    "sum of p_astro^2", ((1 - foreground_count_dist.p_bg(allfgbg)) ** 2.0).sum()
+    "sum of p_astro^2 %s",
+    ((1 - foreground_count_dist.p_bg(allfgbg)) ** 2.0).sum(),
 )
 
 fgmc_plots.odds_summary(

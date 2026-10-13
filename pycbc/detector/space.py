@@ -710,9 +710,9 @@ class _FLR_detector(AbsSpaceDet):
         **kwargs,
     ):
         logger.warning(
-            "WARNING: FastLISAResponse TDI implementation is a ",
-            "work in progress. Currently unable to reproduce LDC ",
-            "or BBHx waveforms.",
+            "WARNING: FastLISAResponse TDI implementation is a "
+            "work in progress. Currently unable to reproduce LDC "
+            "or BBHx waveforms."
         )
         self.use_gpu = use_gpu
         super().__init__(detector_name, reference_time, **kwargs)
