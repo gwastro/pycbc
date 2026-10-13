@@ -81,6 +81,12 @@ ignore = [
     # The specific D codes from `extend-select` must be listed too, as an
     # explicitly selected code otherwise takes precedence over ignoring "D".
     "D", "D107", "D213", "D402", "D413", "D416", "D417",
+    # Not planned to be enabled: function size/complexity limits (too many
+    # arguments, branches, statements, return statements) are left to qlty's
+    # own smells checks (see .qlty/qlty.toml), and replacing every literal in a
+    # comparison with a named constant (magic values) hurts readability in
+    # numerical code.
+    "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR2004",
 ]
 
 [lint.pydocstyle]
