@@ -70,9 +70,11 @@ select = [
 # on) are deliberately left off.
 extend-select = ["D213", "D107", "D402", "D413", "D416", "D417"]
 
-# Rule families selected above but ignored for now, while higher-priority
-# issues are dealt with. Removing an entry will report all of its findings.
-# The idea is that we can remove this bit over time!
+# Rule families selected above but ignored here. Some of this is things that
+# genuinely are not helpful (too-many-branches etc.), other things are disabled
+# to avoid noise while higher-priority issues are dealt with.
+# For example, we do need to add type-hints to the code, but that's a huge job
+# (ANN here). Removing an entry will report all of its findings.
 ignore = [
     # Type annotations: the codebase predates type hints and adding them is a
     # large job we are not taking on at this stage.
