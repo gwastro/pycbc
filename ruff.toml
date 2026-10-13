@@ -63,8 +63,8 @@ select = [
 ]
 
 # numpy convention excludes D107/D212/D213/D402/D413/D415/D416/D417 by
-# default. We want D213 (see ruff.toml history/PR discussion for why), plus
-# D107/D402/D413/D416/D417 -- all re-enabled explicitly since `select` above
+# default. We want D213, plus# D107/D402/D413/D416/D417
+# -- all re-enabled explicitly since `select` above
 # doesn't override convention filtering (see the `extend-select` docs).
 # D212 (conflicts with D213) and D415 (redundant with D400, which is already
 # on) are deliberately left off.
@@ -72,6 +72,7 @@ extend-select = ["D213", "D107", "D402", "D413", "D416", "D417"]
 
 # Rule families selected above but ignored for now, while higher-priority
 # issues are dealt with. Removing an entry will report all of its findings.
+# The idea is that we can remove this bit over time!
 ignore = [
     # Type annotations: the codebase predates type hints and adding them is a
     # large job we are not taking on at this stage.
@@ -84,9 +85,3 @@ ignore = [
 
 [lint.pydocstyle]
 convention = "numpy"
-
-# To do a one-off deep dive into the codebase's full lint surface, swap the
-# `select` line above for the one below. This enables ruff's entire rule
-# catalog and will likely surface a large volume of findings -- not
-# recommended to leave on as the standing PR gate.
-#select = ["ALL"]
