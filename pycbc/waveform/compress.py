@@ -39,6 +39,8 @@ from pycbc.scheme import schemed
 from pycbc.types import FrequencySeries, real_same_precision_as
 from pycbc.waveform import utils
 
+logger = logging.getLogger(__name__)
+
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
     """
@@ -396,7 +398,7 @@ def compress_waveform(
         added_points.extend(new_addidxs)
 
         # --- 6. Iteration Logging ---
-        logging.debug(
+        logger.debug(
             "Iter %i: mismatch %.6f, added %i points (total %i), iter time %.2f ms",
             iteration_count,
             mismatch,
@@ -406,13 +408,13 @@ def compress_waveform(
         )
 
         if len(new_addidxs) == 0:
-            logging.info("Can't add any more points, stopping here..")
+            logger.info("Can't add any more points, stopping here..")
             break
 
     # Cast compression_factor to float to avoid HDF5 TypeErrors
     compression_factor = float(len(htilde)) / float(len(sample_points))
 
-    logging.info(
+    logger.info(
         "mismatch: %f, N points: %i (%i added), compression:%.3e, final decomp time %.2f ms",
         mismatch,
         len(comp_amp),

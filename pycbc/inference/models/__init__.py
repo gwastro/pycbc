@@ -54,6 +54,8 @@ from .marginalized_gaussian_noise import (
 from .relbin import Relative, RelativeTime, RelativeTimeDom
 from .single_template import SingleTemplate
 
+logger = logging.getLogger(__name__)
+
 # Used to manage a model instance across multiple cores or MPI
 _global_instance = None
 
@@ -257,7 +259,7 @@ class _ModelManager(dict):
         printed in that case.
         """
         if super().__contains__(model.name):
-            logging.warning(
+            logger.warning(
                 "Custom model %s will override a model of the "
                 "same name. If you don't want this, change the "
                 "model's name attribute and restart.",

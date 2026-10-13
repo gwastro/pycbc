@@ -50,7 +50,7 @@ class UniformSky(angular.UniformSolidAngle):
 
     def to_uniform_patch(self, coverage):
         if coverage < 1:
-            logging.warning(
+            logger.warning(
                 "Attempt to convert UniformSky to a uniform patch assumes 100% coverage"
             )
         return self
@@ -152,7 +152,7 @@ class UniformDiskSky:
 
     def to_uniform_patch(self, coverage):
         if coverage < 1:
-            logging.warning(
+            logger.warning(
                 "Attempt to convert UniformDiskSky to a "
                 "uniform patch assumes 100% coverage"
             )

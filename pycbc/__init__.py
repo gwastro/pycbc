@@ -150,14 +150,14 @@ def init_logging(
     """
 
     def sig_handler(signum, frame):
-        logger = logging.getLogger()
-        log_level = logger.level
+        root_logger = logging.getLogger()
+        log_level = root_logger.level
         if log_level == logging.DEBUG:
             log_level = logging.WARNING
         else:
             log_level = logging.DEBUG
-        logging.warning("Got signal %d, setting log level to %d", signum, log_level)
-        logger.setLevel(log_level)
+        root_logger.warning("Got signal %d, setting log level to %d", signum, log_level)
+        root_logger.setLevel(log_level)
 
     signal.signal(signal.SIGUSR1, sig_handler)
 

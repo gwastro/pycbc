@@ -20,6 +20,8 @@ import numpy as np
 from pycbc.filter import make_frequency_series, matched_filter_core
 from pycbc.types import Array
 
+logger = logging.getLogger(__name__)
+
 BACKEND_PREFIX = "pycbc.vetoes.autochisq_"
 
 
@@ -274,7 +276,7 @@ class SingleDetAutoChisq:
         # Check if we need to recompute the autocorrelation
         key = (id(template), id(psd))
         if key != self._autocor_id:
-            logging.debug("Calculating autocorrelation")
+            logger.debug("Calculating autocorrelation")
 
             if not self.reverse_template:
                 Pt, _, P_norm = matched_filter_core(
@@ -304,7 +306,7 @@ class SingleDetAutoChisq:
                 self._autocor = Array(Pt, copy=True)
             self._autocor_id = key
 
-        logging.debug("...Calculating autochisquare")
+        logger.debug("...Calculating autochisquare")
         sn = sn * norm
         if self.reverse_template:
             assert stilde is not None

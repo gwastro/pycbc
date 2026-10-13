@@ -27,6 +27,8 @@ from pycbc.waveform import get_fd_waveform
 from .gaussian_noise import BaseGaussianNoise
 from .tools import DistMarg
 
+logger = logging.getLogger(__name__)
+
 
 class SingleTemplate(DistMarg, BaseGaussianNoise):
     r"""
@@ -150,7 +152,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             or self.marginalize_distance
             or self.marginalize_phase
         ):
-            logging.info(
+            logger.info(
                 "Cannot use single template model inside of"
                 "multi_signal if marginalizations are enabled"
             )

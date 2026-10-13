@@ -1242,12 +1242,12 @@ def make_upload_files(
         List of all output files from this process
 
     """
-    logging.info("Setting up upload files")
+    logger.info("Setting up upload files")
     indiv_xml_exe = Executable(
         workflow.cp, "generate_xml", ifos=workflow.ifos, out_dir=out_dir, tags=tags
     )
 
-    logging.info("Setting up XML generation")
+    logger.info("Setting up XML generation")
     xml_node = indiv_xml_exe.create_node()
     xml_node.add_input_opt("--input-file", xml_all)
     xml_node.add_opt("--event-id", event_id)
@@ -1266,7 +1266,7 @@ def make_upload_files(
 
     workflow += xml_node
 
-    logging.info("Setting up bayestar generation")
+    logger.info("Setting up bayestar generation")
     bayestar_exe = Executable(
         workflow.cp, "bayestar", ifos=workflow.ifos, out_dir=out_dir, tags=tags
     )
@@ -1288,7 +1288,7 @@ def make_upload_files(
 
     workflow += bayestar_node
 
-    logging.info("Setting up skymap plot generation")
+    logger.info("Setting up skymap plot generation")
     skymap_plot_exe = PlotExecutable(
         workflow.cp, "skymap_plot", ifos=workflow.ifos, out_dir=out_dir, tags=tags
     )

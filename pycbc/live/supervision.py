@@ -46,7 +46,7 @@ def symlink(target, link_name):
     try:
         subprocess.run(["ln", "-sf", target, link_name], check=True)
     except subprocess.CalledProcessError as sub_err:
-        logging.exception("Could not link %s to %s", target, link_name)
+        logger.exception("Could not link %s to %s", target, link_name)
         raise sub_err
 
 
@@ -84,7 +84,7 @@ def mail_volunteers_error(controls, mail_body_lines, subject):
     try:
         subprocess.run(mail_command, input=mail_body, text=True, check=True)
     except subprocess.CalledProcessError as sub_err:
-        logging.exception("Could not send mail on error")
+        logger.exception("Could not send mail on error")
         raise sub_err
 
 

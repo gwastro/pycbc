@@ -36,6 +36,8 @@ from .gaussian_noise import (
 )
 from .tools import DistMarg, marginalize_likelihood
 
+logger = logging.getLogger(__name__)
+
 
 class MarginalizedPhaseGaussianNoise(GaussianNoise):
     r"""
@@ -282,7 +284,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             for ifo in self.data:
                 if self.sample_rate < self.data[ifo].sample_rate:
                     raise ValueError("Model sample rate was set less than the data. ")
-            logging.info("Using %s sample rate for marginalization", sample_rate)
+            logger.info("Using %s sample rate for marginalization", sample_rate)
 
     def _nowaveform_handler(self):
         """Convenience function to set loglr values if no waveform generated."""

@@ -35,6 +35,8 @@ from pycbc.inference.io.base_mcmc import nsamples_in_chain
 
 from .base import initial_dist_from_config
 
+logger = logging.getLogger(__name__)
+
 #
 # =============================================================================
 #
@@ -442,7 +444,7 @@ class BaseMCMC(metaclass=ABCMeta):
         """Sets the initial state of the sampler from config file"""
         if cp.has_option("sampler", "start-file"):
             start_file = cp.get("sampler", "start-file")
-            logging.info("Using file %s for initial positions", start_file)
+            logger.info("Using file %s for initial positions", start_file)
             init_prior = None
         else:
             start_file = None
@@ -504,7 +506,7 @@ class BaseMCMC(metaclass=ABCMeta):
                 iterinterval = self.target_niterations - self.niterations
             # run sampler and set initial values to None so that sampler
             # picks up from where it left off next call
-            logging.info(
+            logger.info(
                 f"Running sampler for {self.niterations} to {self.niterations + iterinterval} iterations"
             )
             # run the underlying sampler for the desired interval
@@ -516,7 +518,7 @@ class BaseMCMC(metaclass=ABCMeta):
             # update nsamples for next loop
             if self.target_eff_nsamples is not None:
                 nsamples = self.effective_nsamples
-                logging.info(f"Have {nsamples} effective samples post burn in")
+                logger.info(f"Have {nsamples} effective samples post burn in")
             else:
                 nsamples += iterinterval * self.nchains
 
@@ -565,14 +567,14 @@ class BaseMCMC(metaclass=ABCMeta):
                         thin_interval = fp.thinned_by
                     elif thin_interval > fp.thinned_by:
                         # we need to thin the samples on disk
-                        logging.info(
+                        logger.info(
                             "Thinning samples in %s by a factor of %i",
                             fn,
                             int(thin_interval),
                         )
                         fp.thin(thin_interval)
                 fp_lastiter = fp.last_iteration()
-            logging.info(
+            logger.info(
                 "Writing samples to %s with thin interval %i", fn, thin_interval
             )
             self.write_results(fn)
@@ -583,18 +585,18 @@ class BaseMCMC(metaclass=ABCMeta):
         with self.io(self.checkpoint_file, "r") as fp:
             nsamples_written = fp.last_iteration() - fp_lastiter
         if nsamples_written == 0:
-            logging.info("No samples written due to thinning")
+            logger.info("No samples written due to thinning")
         else:
             # check for burn in, compute the acls
             self.raw_acls = None
             if self.burn_in is not None:
-                logging.info("Updating burn in")
+                logger.info("Updating burn in")
                 self.burn_in.evaluate(self.checkpoint_file)
                 # write
                 for fn in [self.checkpoint_file, self.backup_file]:
                     with self.io(fn, "a") as fp:
                         self.burn_in.write(fp)
-            logging.info("Computing autocorrelation time")
+            logger.info("Computing autocorrelation time")
             self.raw_acls = self.compute_acl(self.checkpoint_file)
             # write acts, effective number of samples
             for fn in [self.checkpoint_file, self.backup_file]:
@@ -609,7 +611,7 @@ class BaseMCMC(metaclass=ABCMeta):
             with self.io(fn, "a") as fp:
                 fp.update_checkpoint_history()
         # check validity
-        logging.info("Validating checkpoint and backup files")
+        logger.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
             self.checkpoint_file, self.backup_file
         )
@@ -617,11 +619,11 @@ class BaseMCMC(metaclass=ABCMeta):
             raise OSError("error writing to checkpoint file")
         if self.checkpoint_signal:
             # kill myself with the specified signal
-            logging.info(f"Exiting with SIG{self.checkpoint_signal}")
+            logger.info(f"Exiting with SIG{self.checkpoint_signal}")
             kill_cmd = f"os.kill(os.getpid(), signal.SIG{self.checkpoint_signal})"
             exec(kill_cmd)
         # clear the in-memory chain to save memory
-        logging.info("Clearing samples from memory")
+        logger.info("Clearing samples from memory")
         self.clear_samples()
 
     @staticmethod
@@ -712,12 +714,12 @@ class BaseMCMC(metaclass=ABCMeta):
         """Sets thinning options from the given config file."""
         if cp.has_option(section, "thin-interval"):
             thin_interval = int(cp.get(section, "thin-interval"))
-            logging.info("Will thin samples using interval %i", thin_interval)
+            logger.info("Will thin samples using interval %i", thin_interval)
         else:
             thin_interval = None
         if cp.has_option(section, "max-samples-per-chain"):
             max_samps_per_chain = int(cp.get(section, "max-samples-per-chain"))
-            logging.info("Setting max samples per chain to %i", max_samps_per_chain)
+            logger.info("Setting max samples per chain to %i", max_samps_per_chain)
         else:
             max_samps_per_chain = None
         # check for consistency
@@ -1025,5 +1027,5 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None, min_nsample
                 acl = numpy.inf
             acls[param] = acl
         maxacl = numpy.array(list(acls.values())).max()
-        logging.info("ACT: %s", str(maxacl * fp.thinned_by))
+        logger.info("ACT: %s", str(maxacl * fp.thinned_by))
     return acls

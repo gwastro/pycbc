@@ -43,6 +43,8 @@ from .snowline import SnowlineFile
 from .txt import InferenceTXTFile
 from .ultranest import UltranestFile
 
+logger = logging.getLogger(__name__)
+
 filetypes = {
     EmceeFile.name: EmceeFile,
     EmceePTFile.name: EmceePTFile,
@@ -279,11 +281,11 @@ def validate_checkpoint_files(checkpoint_file, backup_file, check_nsamples=True)
         # decide what to do based on the files' statuses
     if checkpoint_valid and not backup_valid:
         # copy the checkpoint to the backup
-        logging.info("Backup invalid; copying checkpoint file")
+        logger.info("Backup invalid; copying checkpoint file")
         shutil.copy(checkpoint_file, backup_file)
         backup_valid = True
     elif backup_valid and not checkpoint_valid:
-        logging.info("Checkpoint invalid; copying backup file")
+        logger.info("Checkpoint invalid; copying backup file")
         # copy the backup to the checkpoint
         shutil.copy(backup_file, checkpoint_file)
         checkpoint_valid = True
@@ -766,28 +768,28 @@ def results_from_cli(opts, load_samples=True, **kwargs):
 
     # loop over all input files
     for input_file in input_files:
-        logging.info("Reading input file %s", input_file)
+        logger.info("Reading input file %s", input_file)
 
         # read input file
         fp = loadfile(input_file, "r")
 
         # load the samples
         if load_samples:
-            logging.info("Loading samples")
+            logger.info("Loading samples")
 
             # read samples from file
             samples = fp.samples_from_cli(opts, parameters=opts.parameters, **kwargs)
-            logging.info(f"Loaded {samples.size} samples")
+            logger.info(f"Loaded {samples.size} samples")
 
             if input_file in constraints:
-                logging.info("Applying constraints")
+                logger.info("Applying constraints")
                 mask = samples[constraints[input_file]]
                 samples = samples[mask]
                 if samples.size == 0:
                     raise ValueError(
                         f"No samples remain after constraint {constraints[input_file]} applied"
                     )
-                logging.info(f"{samples.size} samples remain")
+                logger.info(f"{samples.size} samples remain")
 
         # else do not read samples
         else:

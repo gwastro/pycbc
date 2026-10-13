@@ -40,6 +40,8 @@ from .data_utils import (
     gate_overwhitened_data,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def catch_waveform_error(method):
     """
@@ -188,7 +190,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             self.all_ifodata_same_rate_length = True
         else:
             self.all_ifodata_same_rate_length = False
-            logging.info(
+            logger.info(
                 "You are using different data segment lengths or "
                 "sampling rates for different IFOs"
             )
@@ -706,7 +708,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         args.update(cls.extra_args_from_config(cp, "model", skip_args=ignore_args))
         # get ifo-specific instances of calibration model
         if cp.has_section("calibration"):
-            logging.info("Initializing calibration model")
+            logger.info("Initializing calibration model")
             recalib = {
                 ifo: Recalibrate.from_config(cp, ifo, section="calibration")
                 for ifo in opts.instruments

@@ -17,6 +17,8 @@ from pycbc.pool import choose_pool
 
 from .dummy import DummySampler
 
+logger = logging.getLogger(__name__)
+
 
 def call_likelihood(params):
     """Accessor to update the global model"""
@@ -93,7 +95,7 @@ class GameSampler(DummySampler):
 
         if size > 0:
             remain = len(self.draw[i])
-            logging.info("Drew %i, %i remains in bin %i", size, remain, i)
+            logger.info("Drew %i, %i remains in bin %i", size, remain, i)
 
         return self.dmap[i][selected]
 
@@ -110,7 +112,7 @@ class GameSampler(DummySampler):
         lengths: Array
             The size of each bin, used to self-normalize
         """
-        logging.info("...draw template bins")
+        logger.info("...draw template bins")
         drawcount = (bin_weight * self.target_likelihood_calls).astype(int)
 
         dorder = bin_weight.argsort()[::-1]
@@ -129,7 +131,7 @@ class GameSampler(DummySampler):
         drawweight = bin_weight / drawcount
         total_draw = drawcount.sum()
 
-        logging.info("...drawn random points within bins")
+        logger.info("...drawn random points within bins")
         psamp = FieldArray(total_draw, dtype=self.dtype)
         pweight = numpy.zeros(total_draw, dtype=float)
         bin_id = numpy.zeros(total_draw, dtype=int)
@@ -141,9 +143,9 @@ class GameSampler(DummySampler):
             bin_id[j : j + len(bdraw)] = i
             j += len(bdraw)
 
-        logging.info("Possible unique values %s", lengths.sum())
-        logging.info("Templates drawn from %s", len(lengths))
-        logging.info("Unique values first draw %s", len(psamp))
+        logger.info("Possible unique values %s", lengths.sum())
+        logger.info("Templates drawn from %s", len(lengths))
+        logger.info("Unique values first draw %s", len(psamp))
 
         # Calculate the likelihood values for the unique parameter space
         # points
@@ -166,7 +168,7 @@ class GameSampler(DummySampler):
 
     def run(self):
         """Produce posterior samples"""
-        logging.info("Retrieving params of parameter space nodes")
+        logger.info("Retrieving params of parameter space nodes")
         with h5py.File(self.mapfile, "r") as mapfile:
             bparams = {p: mapfile["bank"][p][:] for p in self.variable_params}
             num_nodes = len(bparams[list(bparams.keys())[0]])
@@ -175,7 +177,7 @@ class GameSampler(DummySampler):
             )
             self.dtype = mapfile["map"]["0"].dtype
 
-        logging.info("Calculating likelihood at nodes")
+        logger.info("Calculating likelihood at nodes")
         args = []
         for i in range(num_nodes):
             pset = {p: bparams[p][i] for p in self.model.variable_params}
@@ -188,7 +190,7 @@ class GameSampler(DummySampler):
         loglr_bound = node_loglrs[~numpy.isnan(node_loglrs)].max()
         loglr_bound -= self.loglr_region
 
-        logging.info("Drawing proposal samples from node regions")
+        logger.info("Drawing proposal samples from node regions")
         logw = node_loglrs + numpy.log(lengths)
         passed = (node_loglrs > loglr_bound) & ~numpy.isnan(node_loglrs)
         passed = numpy.where(passed)[0]
@@ -196,7 +198,7 @@ class GameSampler(DummySampler):
         logw2 -= logsumexp(logw2)
         weight = numpy.exp(logw2)
 
-        logging.info("...reading template bins")
+        logger.info("...reading template bins")
         with h5py.File(self.mapfile, "r") as mapfile:
             for i in passed:
                 self.dmap[i] = mapfile["map"][str(i)][:]
@@ -215,7 +217,7 @@ class GameSampler(DummySampler):
                     weight / weight.sum(), passed, lengths[passed]
                 )
             except OutOfSamples:
-                logging.info("No more samples to draw from")
+                logger.info("No more samples to draw from")
                 break
 
             for j, v in zip(bin_id, weight2_v):
@@ -233,7 +235,7 @@ class GameSampler(DummySampler):
                 bin_ids = numpy.concatenate([bin_id, bin_ids])
 
             ess = 1.0 / ((weight2 / weight2.sum()) ** 2.0).sum()
-            logging.info("ESS = %s", ess)
+            logger.info("ESS = %s", ess)
 
         # Prepare the equally weighted output samples
         self.meta["ncalls"] = len(weight2)
@@ -243,7 +245,7 @@ class GameSampler(DummySampler):
         draw2 = numpy.random.choice(
             len(psamp), size=int(ess * 1), replace=True, p=weight2
         )
-        logging.info("Unique values second draw %s", len(numpy.unique(psamp[draw2])))
+        logger.info("Unique values second draw %s", len(numpy.unique(psamp[draw2])))
 
         fsamp = FieldArray(len(draw2), dtype=self.dtype)
         for i, v in enumerate(draw2):

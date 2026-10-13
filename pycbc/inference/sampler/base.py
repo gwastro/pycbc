@@ -34,6 +34,8 @@ from six import add_metaclass
 from pycbc import distributions
 from pycbc.inference.io import validate_checkpoint_files
 
+logger = logging.getLogger(__name__)
+
 #
 # =============================================================================
 #
@@ -168,7 +170,7 @@ def setup_output(sampler, output_file, check_nsamples=True, validate=True):
     checkpoint_file = output_file + ".checkpoint"
     backup_file = output_file + ".bkup"
     # check if we have a good checkpoint and/or backup file
-    logging.info("Looking for checkpoint file")
+    logger.info("Looking for checkpoint file")
     checkpoint_valid = False
     if validate:
         checkpoint_valid = validate_checkpoint_files(
@@ -178,7 +180,7 @@ def setup_output(sampler, output_file, check_nsamples=True, validate=True):
     # corrupted
     sampler.new_checkpoint = False  # keeps track if this is a new file or not
     if not checkpoint_valid:
-        logging.info("Checkpoint not found or not valid")
+        logger.info("Checkpoint not found or not valid")
         create_new_output_file(sampler, checkpoint_file)
         # now the checkpoint is valid
         sampler.new_checkpoint = True
@@ -211,7 +213,7 @@ def create_new_output_file(sampler, filename, **kwargs):
         ``write_metadata`` function.
 
     """
-    logging.info(f"Creating file {filename}")
+    logger.info(f"Creating file {filename}")
     with sampler.io(filename, "w") as fp:
         # create the samples group and sampler info group
         fp.create_group(fp.samples_group)
@@ -245,7 +247,7 @@ def initial_dist_from_config(cp, variable_params, static_params=None):
 
     """
     if len(cp.get_subsections("initial")):
-        logging.info(
+        logger.info(
             "Using a different distribution for the starting points than the prior."
         )
         initial_dists = distributions.read_distributions_from_config(

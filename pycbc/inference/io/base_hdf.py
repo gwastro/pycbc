@@ -39,6 +39,8 @@ from pycbc.io import FieldArray, dump_state, load_state
 from pycbc.types import FrequencySeries
 from pycbc.workflow import WorkflowConfigParser
 
+logger = logging.getLogger(__name__)
+
 
 def format_attr(val):
     """
@@ -615,7 +617,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             file's top level.
 
         """
-        logging.info("Writing injection file to output")
+        logger.info("Writing injection file to output")
         if group is None or group == "/":
             group = self.injections_group
         else:
@@ -624,7 +626,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             with h5py.File(injection_file, "r") as fp:
                 super().copy(fp, group)
         except OSError:
-            logging.warning("Could not read %s as an HDF file", injection_file)
+            logger.warning("Could not read %s as an HDF file", injection_file)
 
     def read_injections(self, group=None):
         """
@@ -713,7 +715,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             An open inference file to write the data to.
 
         """
-        logging.info("Copying metadata")
+        logger.info("Copying metadata")
         # copy attributes
         for key in self.attrs.keys():
             other.attrs[key] = self.attrs[key]
@@ -732,7 +734,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             Don't copy the given groups.
 
         """
-        logging.info("Copying info")
+        logger.info("Copying info")
         # copy non-samples/stats data
         if ignore is None:
             ignore = []
@@ -771,7 +773,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
         """
         # select the samples to copy
-        logging.info("Reading samples to copy")
+        logger.info("Reading samples to copy")
         if parameters is None:
             parameters = self.variable_params
         # if list of desired parameters is different, rename
@@ -780,14 +782,14 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         if read_args is None:
             read_args = {}
         samples = self.read_samples(parameters, **read_args)
-        logging.info(f"Copying {samples.size} samples")
+        logger.info(f"Copying {samples.size} samples")
         # if different parameter names are desired, get them from the samples
         if parameter_names:
             arrs = {pname: samples[p] for p, pname in parameter_names.items()}
             arrs.update({p: samples[p] for p in parameters if p not in parameter_names})
             samples = FieldArray.from_kwargs(**arrs)
             other.attrs["variable_params"] = samples.fieldnames
-        logging.info("Writing samples")
+        logger.info("Writing samples")
         if write_args is None:
             write_args = {}
         other.write_samples({p: samples[p] for p in samples.fieldnames}, **write_args)

@@ -204,7 +204,7 @@ def get_n_louder(
     # than floats in an argsort.
     nanmask = np.isnan(back_stat)
     if any(nanmask):
-        logging.warning(
+        logger.warning(
             "Setting %d NaN background statistic values to inf",
             nanmask.sum(),
         )
