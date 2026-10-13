@@ -65,8 +65,14 @@ enabled = false # was checks.method-complexity.threshold = 1000000 (effectively 
 
 # Replaces plugins.pep8; ruff is Qlty's recommended modern Python linter and
 # a superset of pep8/pycodestyle, so expect it to surface more than pep8 did.
+#
+# The version is pinned so CI checks (and formats) code exactly as the ruff
+# used to clean up the codebase does; ruff's formatting and which fixes count
+# as "safe" both change between versions. Bump this deliberately, rerunning
+# `ruff format` over the codebase when doing so.
 [[plugin]]
 name = "ruff"
+version = "0.15.21"
 
 # was plugins.fixme (scanned for FIXME/XXX); ripgrep's default lint-fixme
 # driver looks for TODO, so it's overridden here to match the old strings.
