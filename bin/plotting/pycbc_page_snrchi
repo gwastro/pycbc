@@ -12,6 +12,8 @@ from matplotlib import pyplot as plt
 import pycbc.results
 from pycbc.io import HFile, SingleDetTriggers, chisq_choices, get_chisq_from_file_choice
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--trigger-file", help="Single ifo trigger file")
@@ -57,14 +59,14 @@ with HFile(args.trigger_file, "r") as f:
     ifo = tuple(f.keys())[0]
     n_triggers = f[ifo]["snr"].size
 
-logging.info("Plotting SNR vs %s chisq for %s triggers", args.chisq_choice, ifo)
+logger.info("Plotting SNR vs %s chisq for %s triggers", args.chisq_choice, ifo)
 
 if args.min_snr is not None:
     filter_rank = "snr"
 else:
     filter_rank = None
     if n_triggers > 1e7:
-        logging.warning(
+        logger.warning(
             "Getting %d triggers with no SNR cut - this will be expensive!", n_triggers
         )
 
@@ -77,7 +79,7 @@ trigs = SingleDetTriggers(
     filter_threshold=args.min_snr,
 )
 
-logging.info(
+logger.info(
     "Reading SNR and %s chisq for %d triggers", args.chisq_choice, trigs.mask_size
 )
 snr = trigs.snr
@@ -96,7 +98,7 @@ fig = plt.figure(1)
 r = numpy.logspace(numpy.log(chisq.min()), numpy.log(chisq.max()), 300)
 
 for i, cval in enumerate(args.newsnr_contours):
-    logging.info("Plotting newsnr %s contour", cval)
+    logger.info("Plotting newsnr %s contour", cval)
     snrv = snr_from_chisq(r, cval)
     plt.plot(snrv, r, color="black", lw=0.5)
     if i == 0:

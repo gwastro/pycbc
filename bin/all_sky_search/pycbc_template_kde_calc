@@ -22,6 +22,8 @@ from pycbc import add_common_pycbc_options, init_logging, libutils
 from pycbc.events import triggers
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 akde = libutils.import_optional("awkde")
 kf = libutils.import_optional("sklearn.model_selection")
 
@@ -204,10 +206,10 @@ for param, slog in zip(args.fit_param, args.log_param):
     # Write the KDE param values to output file
     f_dest.create_dataset(param, data=pvals)
     if slog in ["False"]:
-        logging.info("Using param: %s", param)
+        logger.info("Using param: %s", param)
         template_pars.append(pvals)
     elif slog in ["True"]:
-        logging.info("Using log param: %s", param)
+        logger.info("Using log param: %s", param)
         template_pars.append(numpy.log(pvals))
     else:
         raise ValueError("invalid log param argument, use 'True', or 'False'")
@@ -223,7 +225,7 @@ temp_samples = numpy.vstack(template_pars).T
 if args.make_template_kde:
     # Rejection sampling to reduce computational load
     if args.mchirp_downsample_power is not None:
-        logging.info(f"Downsampling with mchirp power {args.mchirp_downsample_power}")
+        logger.info(f"Downsampling with mchirp power {args.mchirp_downsample_power}")
         f_dest.attrs["mchirp_downsample_power"] = args.mchirp_downsample_power
         try:
             mchirp_index = args.fit_param.index("mchirp")
@@ -240,19 +242,19 @@ if args.make_template_kde:
             numpy.random.seed(args.seed)
         rand_nums = numpy.random.uniform(0, 1, len(mass1))
         ind = rand_nums < probabilities
-        logging.info(f"{ind.sum()} templates after downsampling")
+        logger.info(f"{ind.sum()} templates after downsampling")
         kde_train_samples = temp_samples[ind]
         f_dest.create_dataset("kde_train_samples", data=kde_train_samples)
 
-        logging.info("Starting optimization of template KDE parameters")
+        logger.info("Starting optimization of template KDE parameters")
         optbw, optalpha = optimizedparam(
             kde_train_samples,
             alphagrid=args.alpha_grid,
             bwgrid=args.bw_grid,
             nfold=args.nfold_template,
         )
-        logging.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
-        logging.info("Evaluating template KDE")
+        logger.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
+        logger.info("Evaluating template KDE")
         template_kde = kde_awkde(
             kde_train_samples, temp_samples, alp=optalpha, gl_bandwidth=optbw
         )
@@ -260,21 +262,21 @@ if args.make_template_kde:
         # Compensation factor for downsampling of templates
         template_kde *= 1.0 / probabilities
         if args.min_ratio is not None:
-            logging.info(f"Applying minimum template KDE ratio {args.min_ratio}")
+            logger.info(f"Applying minimum template KDE ratio {args.min_ratio}")
             f_dest.attrs["min-kde-ratio"] = args.min_ratio
             min_val = args.min_ratio * numpy.max(template_kde)
             template_kde = numpy.maximum(template_kde, min_val)
 
     else:
-        logging.info("Starting optimization of template KDE parameters")
+        logger.info("Starting optimization of template KDE parameters")
         optbw, optalpha = optimizedparam(
             temp_samples,
             alphagrid=args.alpha_grid,
             bwgrid=args.bw_grid,
             nfold=args.nfold_template,
         )
-        logging.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
-        logging.info("Evaluating template KDE")
+        logger.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
+        logger.info("Evaluating template KDE")
         template_kde = kde_awkde(
             temp_samples, temp_samples, alp=optalpha, gl_bandwidth=optbw
         )
@@ -304,7 +306,7 @@ if args.make_signal_kde:
     if args.min_mass:
         idx = mass2_sgnl > args.min_mass
         mass2_sgnl = mass2_sgnl[idx]
-        logging.info(
+        logger.info(
             "%i triggers out of %i with MASS2 > %s"
             % (len(mass2_sgnl), N_original, str(args.min_mass))
         )
@@ -316,10 +318,10 @@ if args.make_signal_kde:
     for param, slog in zip(args.fit_param, args.log_param):
         pvals = signal_file[param][idx]
         if slog in ["False"]:
-            logging.info("Using param: %s", param)
+            logger.info("Using param: %s", param)
             signal_pars.append(pvals)
         elif slog in ["True"]:
-            logging.info("Using log param: %s", param)
+            logger.info("Using log param: %s", param)
             signal_pars.append(numpy.log(pvals))
         else:
             raise ValueError(
@@ -329,15 +331,15 @@ if args.make_signal_kde:
 
     signal_samples = numpy.vstack(signal_pars).T
     f_dest.create_dataset("kde_train_samples", data=signal_samples)
-    logging.info("Starting optimization of signal KDE parameters")
+    logger.info("Starting optimization of signal KDE parameters")
     optbw, optalpha = optimizedparam(
         signal_samples,
         bwgrid=args.bw_grid,
         alphagrid=args.alpha_grid,
         nfold=args.nfold_signal,
     )
-    logging.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
-    logging.info("Evaluating signal KDE")
+    logger.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
+    logger.info("Evaluating signal KDE")
     signal_kde = kde_awkde(
         signal_samples, temp_samples, alp=optalpha, gl_bandwidth=optbw
     )
@@ -363,7 +365,7 @@ if args.make_injection_kde:
     if args.min_snr:
         idx = snr > args.min_snr
         snr = snr[idx]
-        logging.info(
+        logger.info(
             "%i triggers out of %i with SNR > %s"
             % (len(snr), N_original, str(args.min_snr))
         )
@@ -377,25 +379,25 @@ if args.make_injection_kde:
     for param, slog in zip(args.fit_param, args.log_param):
         pvals = triggers.get_param(param, args, mass1, mass2, spin1z, spin2z)
         if slog in ["False"]:
-            logging.info("Using param: %s", param)
+            logger.info("Using param: %s", param)
             inj_pars.append(pvals)
         elif slog in ["True"]:
-            logging.info("Using log param: %s", param)
+            logger.info("Using log param: %s", param)
             inj_pars.append(numpy.log(pvals))
         else:
             raise ValueError("invalid log param argument, use 'True', or 'False'")
 
     inj_samples = numpy.vstack(inj_pars).T
     f_dest.create_dataset("kde_train_samples", data=inj_samples)
-    logging.info("Starting optimization of injection KDE parameters")
+    logger.info("Starting optimization of injection KDE parameters")
     optbw, optalpha = optimizedparam(
         inj_samples,
         alphagrid=args.alpha_grid,
         bwgrid=args.bw_grid,
         nfold=args.nfold_injection,
     )
-    logging.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
-    logging.info("Evaluating injection KDE")
+    logger.info("Bandwidth %.4f, alpha %.2f" % (optbw, optalpha))
+    logger.info("Evaluating injection KDE")
     injection_kde = kde_awkde(
         inj_samples, temp_samples, alp=optalpha, gl_bandwidth=optbw
     )
@@ -415,4 +417,4 @@ f_dest.attrs["alpha"] = optalpha
 f_dest.attrs["bandwidth"] = optbw
 f_dest.close()
 
-logging.info("Done!")
+logger.info("Done!")

@@ -30,6 +30,8 @@ from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.types import TimeSeries
 from pycbc.waveform import get_td_waveform
 
+logger = logging.getLogger(__name__)
+
 # command line usage
 parser = argparse.ArgumentParser(
     usage="pycbc_generate_hwinj_from_xml --injection-file [INJECTION_FILE] --sample-rate [SAMPLE_RATE]",
@@ -79,13 +81,13 @@ opts = parser.parse_args()
 init_logging(args.verbose, default_level=2)
 
 # read in injection LIGOLW XML file
-logging.info("Reading injection file")
+logger.info("Reading injection file")
 injections = InjectionSet(opts.injection_file)
 
 # loop over rows in sim_inspiral table
 for sim in injections.table:
     # print statement
-    logging.info("Begin generating waveform for %s", sim.simulation_id)
+    logger.info("Begin generating waveform for %s", sim.simulation_id)
 
     # parse the sim_inspiral waveform column
     name, phase_order = legacy_approximant_name(sim.waveform)
@@ -96,7 +98,7 @@ for sim in injections.table:
     # generate the waveform
     # we generate the waveform so we know how many sample points the ASCII file
     # will need to have to contain the full waveform
-    logging.info("Getting number of sample points in waveform")
+    logger.info("Getting number of sample points in waveform")
     h_plus, _ = get_td_waveform(
         sim, approximant=name, phase_order=phase_order, delta_t=1.0 / opts.sample_rate
     )
@@ -120,7 +122,7 @@ for sim in injections.table:
         )
 
         # inject waveform into time series of zeroes
-        logging.info("Injecting %s waveform into timeseries of zeroes", ifo)
+        logger.info("Injecting %s waveform into timeseries of zeroes", ifo)
         injections.apply(output, ifo, simulation_ids=[sim.simulation_id])
 
         # set output filename
@@ -128,14 +130,14 @@ for sim in injections.table:
 
         # check if filename does not exist
         if os.path.exists(txt_filename):
-            logging.warning(
+            logger.warning(
                 "Filename %s already exists and will not be overwritten", txt_filename
             )
             sys.exit()
 
         # save waveform as single column ASCII for awgstream to use
-        logging.info("Writing strain for %s", ifo)
+        logger.info("Writing strain for %s", ifo)
         numpy.savetxt(txt_filename, output)
 
 # finish
-logging.info("Done")
+logger.info("Done")

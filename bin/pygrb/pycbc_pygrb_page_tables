@@ -38,6 +38,8 @@ from pycbc.events.coherent import reweightedsnr_cut
 from pycbc.io.hdf import HFile
 from pycbc.results import pygrb_postprocessing_utils as ppu
 
+logger = logging.getLogger(__name__)
+
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
@@ -98,7 +100,7 @@ def load_missed_found_injections(
         parameter dictionaries.
 
     """
-    logging.info("Loading injections...")
+    logger.info("Loading injections...")
     inj_data = HFile(hdf_file, "r")
     inj_params = [
         "mass1",
@@ -183,9 +185,9 @@ def load_missed_found_injections(
     # Apply reweighted SNR cut to the found injections
     cut_data = {}
     if snr_threshold:
-        logging.info("%d found injections loaded.", len(found_data[inj_params[0]]))
-        logging.info("%d missed injections loaded.", len(missed_data[inj_params[0]]))
-        logging.info("Applying reweighted SNR cut at %s.", snr_threshold)
+        logger.info("%d found injections loaded.", len(found_data[inj_params[0]]))
+        logger.info("%d missed injections loaded.", len(missed_data[inj_params[0]]))
+        logger.info("Applying reweighted SNR cut at %s.", snr_threshold)
         rw_snr_cut = found_data["reweighted_snr"] < snr_threshold
         for k, v in found_data.items():
             cut_data[k] = v[rw_snr_cut]
@@ -202,13 +204,13 @@ def load_missed_found_injections(
     f_resp = {}
     for ifo in ifos:
         if sum(found_data["sigmasq_" + ifo] == 0):
-            logging.info("%s: sigmasq not set for at least one trigger.", ifo)
+            logger.info("%s: sigmasq not set for at least one trigger.", ifo)
         if sum(found_data["sigmasq_" + ifo] != 0) == 0:
-            logging.info("%s: sigmasq not set for any trigger.", ifo)
+            logger.info("%s: sigmasq not set for any trigger.", ifo)
             if len(ifos) == 1:
                 msg = "This is a single ifo analysis. "
                 msg += "Setting sigmasq to unity for all triggers."
-                logging.info(msg)
+                logger.info(msg)
                 found_data["sigmasq_" + ifo][:] = 1.0
         antenna = Detector(ifo)
         f_resp[ifo] = ppu.get_antenna_responses(
@@ -226,9 +228,9 @@ def load_missed_found_injections(
     # Close the hdf file
     inj_data.close()
 
-    logging.info("%d found injections.", len(found_data["mchirp"]))
-    logging.info("%d missed injections.", len(missed_data["mchirp"]))
-    logging.info("%d injections cut.", len(cut_data["mchirp"]))
+    logger.info("%d found injections.", len(found_data["mchirp"]))
+    logger.info("%d missed injections.", len(missed_data["mchirp"]))
+    logger.info("%d injections cut.", len(cut_data["mchirp"]))
 
     return found_data, missed_data, cut_data
 
@@ -367,7 +369,7 @@ else:
         parser.error(
             "Please provide both off-source output files when using --offsource-file."
         )
-logging.info("Setting output directory.")
+logger.info("Setting output directory.")
 for output_file in output_files:
     if output_file:
         outdir = os.path.split(os.path.abspath(output_file))[0]
@@ -433,7 +435,7 @@ _, median_snr, _ = ppu.max_median_stat(
     slide_dict, background_snr, trig_data_av[keys[1]], total_trials
 )
 
-logging.info("Background SNR and bestNR of trials calculated.")
+logger.info("Background SNR and bestNR of trials calculated.")
 
 # Output details of loudest offsouce triggers: only triggers compatible
 # with the trial_dict are considered
@@ -445,7 +447,7 @@ offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
 
 # Calculate chirp masses of templates
-logging.info("Loading triggers template masses")
+logger.info("Loading triggers template masses")
 bank_data = HFile(opts.bank_file, "r")
 template_mchirps = mchirp_from_mass1_mass2(
     bank_data["mass1"][...], bank_data["mass2"][...]
@@ -535,14 +537,14 @@ if lofft_outfile:
     td = list(zip(*td))
 
     # Write to h5 file
-    logging.info("Writing %d loudest offsource triggers to h5 file.", len(td[0]))
+    logger.info("Writing %d loudest offsource triggers to h5 file.", len(td[0]))
     lofft_h5_fp = HFile(lofft_h5_outfile, "w")
     for i, key in enumerate(th):
         lofft_h5_fp.create_dataset(key, data=td[i])
     lofft_h5_fp.close()
 
     # Write to html file
-    logging.info("Writing %d loudest triggers to html file.", len(td[0]))
+    logger.info("Writing %d loudest triggers to html file.", len(td[0]))
 
     # To ensure desired formatting in the html table:
     # 2) convert the columns to numpy arrays
@@ -621,7 +623,7 @@ if onsource_file:
     if loud_on_bestnr == 0:
         loud_on_bestnr_trigs = None
 
-    logging.info("Onsource analysed.")
+    logger.info("Onsource analysed.")
 
     # Table data
     td = []
@@ -686,13 +688,13 @@ if onsource_file:
         td = [[]] * len(th)
 
     # Write to h5 file
-    logging.info("Writing loudest onsource trigger to h5 file.")
+    logger.info("Writing loudest onsource trigger to h5 file.")
     with HFile(lont_h5_outfile, "w") as lont_h5_fp:
         for i, key in enumerate(th):
             lont_h5_fp.create_dataset(key, data=td[i])
 
     # Write to html file
-    logging.info("Writing loudest onsource trigger to html file.")
+    logger.info("Writing loudest onsource trigger to html file.")
 
     # Format of table data
     format_strings = [
@@ -885,7 +887,7 @@ if found_missed_file is not None:
     td = [found_after_vetoes[key][nonzero_fap] for key in keys]
     td = list(zip(*td))
     td.sort(key=lambda elem: elem[0])
-    logging.info("Writing %d quiet-found injections to h5 and html files.", len(td))
+    logger.info("Writing %d quiet-found injections to h5 and html files.", len(td))
     td = list(zip(*td))
 
     # Handle the case in which there is no data to be placed in the table
@@ -935,7 +937,7 @@ if found_missed_file is not None:
     ]
     t_missed = list(zip(*t_missed))
     t_missed.sort(key=lambda elem: elem[0])
-    logging.info(
+    logger.info(
         "Writing %d missed, vetoed, and cut injections to html file.", len(t_missed)
     )
     t_missed = zip(*t_missed)

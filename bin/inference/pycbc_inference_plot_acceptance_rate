@@ -30,6 +30,8 @@ import pycbc
 from pycbc import results
 from pycbc.inference import io
 
+logger = logging.getLogger(__name__)
+
 # add options to command line
 parser = argparse.ArgumentParser(
     usage="pycbc_inference_plot_acceptance_rate [--options]",
@@ -80,7 +82,7 @@ opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
 
 # load the samples
-logging.info("Reading input file")
+logger.info("Reading input file")
 fp = io.loadfile(opts.input_file, "r")
 
 # if using a parallel-tempered sampler, then
@@ -96,7 +98,7 @@ acceptance_fraction = fp.read_acceptance_fraction(
 fp.close()
 
 # plot acceptance rate and drawn values
-logging.info("Plotting acceptance fraction")
+logger.info("Plotting acceptance fraction")
 fig = plt.figure()
 
 plt.hist(acceptance_fraction.transpose(), opts.bins, histtype="step", lw=2)
@@ -118,4 +120,4 @@ results.save_fig_with_metadata(
 plt.close()
 
 # exit
-logging.info("Done")
+logger.info("Done")

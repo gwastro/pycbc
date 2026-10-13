@@ -47,6 +47,8 @@ from pycbc.psd import interpolate
 from pycbc.results import generate_asd_plot
 from pycbc.types import FrequencySeries
 
+logger = logging.getLogger(__name__)
+
 
 def check_gracedb_for_event(gdb_handle, query, far):
     """
@@ -59,7 +61,7 @@ def check_gracedb_for_event(gdb_handle, query, far):
         # Test each gracedb event to see if the FAR matches this event
         if np.abs(gdb_event["far"] - far) < 1e-16:
             # If an event has been found which matches the FAR
-            logging.info(
+            logger.info(
                 "Event already exists in GraceDb server with "
                 "time %.3f and IFAR %.3e: %s",
                 gdb_event["gpstime"],
@@ -69,7 +71,7 @@ def check_gracedb_for_event(gdb_handle, query, far):
             return True
 
     # If no event has been found, log this, and return False
-    logging.info(
+    logger.info(
         'No event found in GraceDb with IFAR %.3e when using query: "%s"', ifar, query
     )
     return False
@@ -170,7 +172,7 @@ else:
         service_url="https://gracedb-playground.ligo.org/api/", api_version="v2"
     )
 
-logging.info("Creating Kafka producer...")
+logger.info("Creating Kafka producer...")
 ca_bundle = certifi.where()
 producer = GraceDbKafkaProducer(
     bootstrap_servers=args.bootstrap_servers,
@@ -307,7 +309,7 @@ for event in coinc_table:
     ligolw_utils.write_filename(xmldoc, fullpath_xml)
 
     if args.no_upload:
-        logging.info("Not uploading event")
+        logger.info("Not uploading event")
     else:
         group_tag = "Test" if args.testing else "CBC"
         r = gracedb.create_event(
@@ -321,7 +323,7 @@ for event in coinc_table:
             http_fallback=True,
         ).json()
 
-        logging.info("Uploaded event %s.", r["graceid"])
+        logger.info("Uploaded event %s.", r["graceid"])
 
         # add info for tracking code version
         gracedb_tag_with_version(gracedb, r["graceid"])
@@ -340,7 +342,7 @@ for event in coinc_table:
         asd_png_filename = f"{ifos_str}-PYCBC_{id_str}_ASD-{time:d}-1.png"
         fullpath_asd = os.path.join(args.output_directory, asd_png_filename)
         generate_asd_plot(psddict, fullpath_asd)
-        logging.info("Saved ASD plot %s", asd_png_filename)
+        logger.info("Saved ASD plot %s", asd_png_filename)
         if not args.no_upload:
             gracedb.write_log(
                 r["graceid"],
@@ -349,9 +351,7 @@ for event in coinc_table:
                 tag_name=["psd"],
                 displayName=["ASDs"],
             )
-            logging.info(
-                "Uploaded file %s to event %s.", psd_png_filename, r["graceid"]
-            )
+            logger.info("Uploaded file %s to event %s.", psd_png_filename, r["graceid"])
 
     xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)

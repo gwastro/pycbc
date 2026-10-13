@@ -40,6 +40,8 @@ from pycbc.io.hdf import HFile
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results import save_fig_with_metadata
 
+logger = logging.getLogger(__name__)
+
 plt.switch_backend("Agg")
 rc("image")
 
@@ -81,10 +83,10 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
 
     # Check for cases where error bars are negative and set them to zero
     if (err_low_mc < 0).any():
-        logging.warning("Negative lower error bar(s) detected. Setting to zero.")
+        logger.warning("Negative lower error bar(s) detected. Setting to zero.")
         err_low_mc[err_low_mc < 0] = 0
     if (err_high_mc < 0).any():
-        logging.warning("Negative upper error bar(s) detected. Setting to zero.")
+        logger.warning("Negative upper error bar(s) detected. Setting to zero.")
         err_high_mc[err_high_mc < 0] = 0
 
     return err_low_mc, err_high_mc, fraction
@@ -176,7 +178,7 @@ bank_file = HFile(opts.bank_file, "r")
 # Check options
 if opts.exclusion_dist_output_file is not None or opts.onsource_output_file is not None:
     if opts.onsource_file is None:
-        logging.error(
+        logger.error(
             "Requesting the --exclusion-dist-output-file or "
             "the --onsource-output-file requires the "
             "--onsource-file as nput."
@@ -212,7 +214,7 @@ glitch_check_fac = opts.glitch_check_factor
 num_mc_injs = opts.num_mc_injections
 # Initialize random number generator
 np.random.seed(opts.seed)
-logging.info("Setting random seed to %d.", opts.seed)
+logger.info("Setting random seed to %d.", opts.seed)
 
 # Set output directories
 outdir = None
@@ -224,7 +226,7 @@ for output_file in [
     if output_file is not None:
         outdir = os.path.split(os.path.abspath(output_file))[0]
         if not os.path.isdir(outdir):
-            logging.info("Creating the output directory %s.", outdir)
+            logger.info("Creating the output directory %s.", outdir)
             os.makedirs(outdir)
 
 # Extract IFOs
@@ -278,7 +280,7 @@ max_bestnr, median_bestnr, sorted_bkgd = ppu.max_median_stat(
 )
 assert total_trials == len(sorted_bkgd)
 
-logging.info("Background bestNR calculated.")
+logger.info("Background bestNR calculated.")
 
 # Output details of loudest offsouce triggers: only triggers compatible
 # with the trial_dict are considered
@@ -293,7 +295,7 @@ offsource_trigs.reverse()
 
 
 # Calculate chirp masses of templates in bank
-logging.info("Reading template chirp masses")
+logger.info("Reading template chirp masses")
 with HFile(opts.bank_file, "r") as bank_file:
     template_mchirps = mchirp_from_mass1_mass2(
         bank_file["mass1"][:], bank_file["mass2"][:]
@@ -303,7 +305,7 @@ with HFile(opts.bank_file, "r") as bank_file:
 # Load on source triggers
 # =======================
 if onsource_file:
-    logging.info("Processing onsource.")
+    logger.info("Processing onsource.")
     # Load onsoource triggers (apply reweighted SNR cut, not vetoes)
     on_trigs = ppu.load_data(
         onsource_file,
@@ -333,7 +335,7 @@ if onsource_file:
         loud_on_bestnr_idx = None
         loud_on_fap = 1
 
-    logging.info("Onsource analysed.")
+    logger.info("Onsource analysed.")
 
     if loud_on_bestnr_idx is not None:
         loud_on_fap = sum(sorted_bkgd > loud_on_bestnr) / total_trials
@@ -397,14 +399,14 @@ if len(found_after_vetoes["network/template_id"]):
     # but only in the 1-detector case
     for ifo in ifos:
         if sum(inj_sigma[ifo] == 0):
-            logging.info("%s: sigmasq not set for at least one trigger.", ifo)
+            logger.info("%s: sigmasq not set for at least one trigger.", ifo)
         if sum(inj_sigma[ifo] != 0) == 0:
-            logging.info("%s: sigmasq not set for any trigger.", ifo)
+            logger.info("%s: sigmasq not set for any trigger.", ifo)
             if len(ifos) == 1:
                 msg = "Since this is a single ifo analysis, sigmasq will be "
                 msg += "set to unity for all triggers in order to build the "
                 msg += "calibration errors."
-                logging.info(msg)
+                logger.info(msg)
                 inj_sigma[ifo][:] = 1.0
 
     f_resp = {}
@@ -432,7 +434,7 @@ if len(found_after_vetoes["network/template_id"]):
     msg = f"{len(found_after_vetoes['found/tc'])} injections found and "
     msg += f"surviving vetoes and {len(injs['missed/tc'])} missed injections "
     msg += "analysed."
-    logging.info(msg)
+    logger.info(msg)
 
     # Create new set of injections for efficiency calculations:
     # these are as many as the original injections
@@ -442,7 +444,7 @@ if len(found_after_vetoes["network/template_id"]):
         stats.uniform.rvs(size=total_injs) * (upper_dist - lower_dist) + upper_dist
     )
 
-    logging.info("%d long distance injections created.", total_injs)
+    logger.info("%d long distance injections created.", total_injs)
 
     # Set distance bins and data arrays
     dist_bins = zip(
@@ -483,7 +485,7 @@ if len(found_after_vetoes["network/template_id"]):
     max_dc_cal_error = max(cal_dc_errs.values())
 
     # Calibration phase uncertainties are neglected
-    logging.info("Calibration amplitude uncertainty calculated.")
+    logger.info("Calibration amplitude uncertainty calculated.")
 
     # Now create the numbers for the efficiency plots; these include
     # calibration and waveform errors. These are incorporated by running over
@@ -512,7 +514,7 @@ if len(found_after_vetoes["network/template_id"]):
         num_mc_injs, long_inj["dist"], cal_error, wav_err, max_dc_cal_error
     )
 
-    logging.info("MC injection set distributed with %d iterations.", num_mc_injs)
+    logger.info("MC injection set distributed with %d iterations.", num_mc_injs)
 
     # Check injections against on source
     if onsource_file:
@@ -606,14 +608,14 @@ if len(found_after_vetoes["network/template_id"]):
             found_on_bestnr[key][j] += num_excl
             found_on_bestnr[key][-1] += num_excl
 
-    logging.info("Found/missed injection efficiency calculations completed.")
+    logger.info("Found/missed injection efficiency calculations completed.")
 
     # Post-processing of injections ends here
 
 # ==========
 # Make plots
 # ==========
-logging.info("Plotting.")
+logger.info("Plotting.")
 
 # Calculate distances (as means) for the horizontal axis, only if there are
 # found injections
@@ -704,7 +706,7 @@ if len(found_after_vetoes["network/template_id"]):
             # repeat with more injections
             excl_dist[f"{percentile}%"] = 0
             msg = "Efficiency below %d%% in first bin!" % (percentile)
-            logging.warning(msg)
+            logger.warning(msg)
 
 # Write 50% and 90% exclusion distances to JSON file
 # Also include injection set name and trial name
@@ -766,4 +768,4 @@ if opts.onsource_output_file:
     )
     plt.close()
 
-logging.info("Done.")
+logger.info("Done.")

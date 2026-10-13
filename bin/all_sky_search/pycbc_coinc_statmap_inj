@@ -15,6 +15,8 @@ import pycbc.io
 from pycbc import init_logging
 from pycbc.events import significance
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser()
 # General required options
 pycbc.add_common_pycbc_options(parser)
@@ -52,15 +54,15 @@ significance.check_significance_options(args, parser)
 
 
 window = args.cluster_window
-logging.info("Loading coinc zerolag triggers")
+logger.info("Loading coinc zerolag triggers")
 zdata = pycbc.io.MultiifoStatmapData(files=args.zero_lag_coincs, ifos=args.ifos)
 
 if "ifos" in zdata.attrs:
     ifos = zdata.attrs["ifos"].split(" ")
-    logging.info(f"using ifos from file {args.zero_lag_coincs[0]}")
+    logger.info(f"using ifos from file {args.zero_lag_coincs[0]}")
 else:
     ifos = args.ifos
-    logging.info("using ifos from command line input")
+    logger.info("using ifos from command line input")
 
 ifo_key = "".join(ifos)
 significance_dict = significance.digest_significance_options([ifo_key], args)
@@ -80,7 +82,7 @@ for key in zdata.seg.keys():
     f["segments/%s/start" % key] = zdata.seg[key]["start"][:]
     f["segments/%s/end" % key] = zdata.seg[key]["end"][:]
 
-logging.info("writing zero lag triggers")
+logger.info("writing zero lag triggers")
 if len(zdata) > 0:
     for key in zdata.data:
         f["foreground/%s" % key] = zdata.data[key]
@@ -88,7 +90,7 @@ else:
     for key in zdata.data:
         f["foreground/%s" % key] = numpy.array([], dtype=zdata.data[key].dtype)
 
-logging.info("calculating statistics excluding zerolag")
+logger.info("calculating statistics excluding zerolag")
 fb = pycbc.io.HFile(args.full_data_background, "r")
 
 # we expect the injfull file to contain injection data as pivot
@@ -125,4 +127,4 @@ else:
     f["foreground/ifar_exc"] = numpy.array([])
     f["foreground/fap_exc"] = numpy.array([])
 
-logging.info("Done")
+logger.info("Done")

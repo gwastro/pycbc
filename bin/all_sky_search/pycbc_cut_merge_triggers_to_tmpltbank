@@ -30,6 +30,8 @@ import pycbc
 from pycbc import load_source
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -64,7 +66,7 @@ modl = load_source("filter_func", opt.filter_func_file)
 func = modl.filter_tmpltbank
 bool_arr = func(bank_fd)
 
-logging.info(
+logger.info(
     "Downselecting templates. Started with %d templates, now have "
     "%d after downselecting.",
     len(bool_arr),
@@ -105,7 +107,7 @@ for tid in tids:
     tid_count += 1
     # WHICH TEMPLATE DO WE HAVE
     if not tid_count % 1000:
-        logging.info("Processing template %d of %d", tid_count, len(tids))
+        logger.info("Processing template %d of %d", tid_count, len(tids))
     # Where is it's lower boundary
     boundary1 = ifd[ifo + "/template_boundaries"][tid]
     # Upper boundary is harder
@@ -132,7 +134,7 @@ template_boundaries = [tmpx[0] for tmpx in new_boundaries]
 ofd[ifo]["template_boundaries"] = template_boundaries
 
 for c in copy_params:
-    logging.info("Copying parameter " + c)
+    logger.info("Copying parameter " + c)
     currdtype = ifd[ifo][c][:2].dtype
     temp_array = numpy.zeros([new_boundaries[-1][1]], dtype=currdtype)
     for i in range(len(old_boundaries)):
@@ -151,7 +153,7 @@ for c in copy_params:
         c + "_template", data=refs, dtype=h5py.special_dtype(ref=h5py.RegionReference)
     )
 
-logging.info("Updating template IDs")
+logger.info("Updating template IDs")
 c = "template_id"
 currdtype = ifd[ifo][c][:2].dtype
 temp_array = numpy.zeros([new_boundaries[-1][1]], dtype=currdtype)
@@ -184,7 +186,7 @@ ifd.copy(ifo + "/gating", ofd[ifo])
 ifd.copy(ifo + "/search", ofd[ifo])
 
 # Copy attributes
-logging.info("Copying attributes")
+logger.info("Copying attributes")
 for key, value in ifd[ifo].attrs:
     ofd[ifo].attrs[key] = value
 ofd.close()

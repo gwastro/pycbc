@@ -30,6 +30,8 @@ matplotlib.use("agg")
 from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde as gk
 
+logger = logging.getLogger(__name__)
+
 d_power = {"log": 3.0, "uniform": 2.0, "distancesquared": 1.0, "volume": 0.0}
 
 mchirp_power = {
@@ -182,7 +184,7 @@ groups = [
 empty_darray = {g: np.array([]) for g in groups}
 sngl_trigs = pycbc.io.DictArray(data=empty_darray)
 
-logging.info("Getting single-detector triggers and segments")
+logger.info("Getting single-detector triggers and segments")
 sngl_detector_segs = segmentlist([segment(0, 0)])
 for smap_file in args.single_statmap_files:
     with pycbc.io.HFile(smap_file, "r") as f_in:
@@ -194,7 +196,7 @@ for smap_file in args.single_statmap_files:
 fg_time = abs(sngl_detector_segs)
 coinc_segs = segmentlist([segment(0, 0)])
 fgveto_segs = segmentlist([segment(0, 0)])
-logging.info("Getting coinc segments and foreground vetoes")
+logger.info("Getting coinc segments and foreground vetoes")
 for cfilename in args.coinc_statmap_files:
     with pycbc.io.HFile(cfilename, "r") as cfile:
         # Coinc segments are different depending on statmap file
@@ -217,7 +219,7 @@ for cfilename in args.coinc_statmap_files:
                 time_key = "time2"
 
         if sngl_ifo not in ifolist:
-            logging.warning("IFO %s is not in file %s", sngl_ifo, cfilename)
+            logger.warning("IFO %s is not in file %s", sngl_ifo, cfilename)
             continue
 
         # Find the coinc events above a threshold IFAR
@@ -232,12 +234,12 @@ for cfilename in args.coinc_statmap_files:
     fgveto_segs.coalesce()
 
 
-logging.info("Removing triggers in single-detector time from background.")
+logger.info("Removing triggers in single-detector time from background.")
 bg_bool = np.array([t in coinc_segs for t in sngl_trigs.data[sngl_ifo + "/time"]])
 bg_idx = np.flatnonzero(bg_bool)
 bg_trigs = sngl_trigs.select(bg_idx)
 
-logging.info("Removing triggers in foreground vetoed time from background.")
+logger.info("Removing triggers in foreground vetoed time from background.")
 fg_veto_bool_bg = np.array(
     [t not in fgveto_segs for t in bg_trigs.data[sngl_ifo + "/time"]]
 )
@@ -245,13 +247,13 @@ bg_trigs = bg_trigs.select(np.flatnonzero(fg_veto_bool_bg))
 bg_time = abs(coinc_segs - fgveto_segs)
 
 if args.remove_n_loudest:
-    logging.info(
+    logger.info(
         "Removing %d loudest remaining triggers from background", args.remove_n_loudest
     )
     loudest_idx = np.argsort(bg_trigs.data["stat"])[-args.remove_n_loudest :]
     bg_trigs = bg_trigs.remove(loudest_idx)
 
-logging.info("Getting injected signal triggers and information.")
+logger.info("Getting injected signal triggers and information.")
 
 signal_stat = np.array([])
 signal_weights = np.array([])
@@ -260,7 +262,7 @@ signal_weights = np.array([])
 for inj_filename, inj_trigger_filename in zip(
     args.inj_files, args.inj_single_statmap_files
 ):
-    logging.info("Reading injection statistic file")
+    logger.info("Reading injection statistic file")
     with pycbc.io.HFile(inj_trigger_filename, "r") as inj_trig_f:
         inj_trig_id = inj_trig_f[sngl_ifo]["trigger_id"][:]
         inj_trig_time = inj_trig_f[sngl_ifo]["time"][:]
@@ -268,7 +270,7 @@ for inj_filename, inj_trigger_filename in zip(
 
     time_sort = inj_trig_time.argsort()
 
-    logging.info("Reading injection file")
+    logger.info("Reading injection file")
     indoc = ligolw_utils.load_filename(
         inj_filename, False, contenthandler=LIGOLWContentHandler
     )
@@ -305,17 +307,17 @@ bg_stat = bg_trigs.data["stat"]
 fg_stat = sngl_trigs.data["stat"]
 
 n_sig_exp = args.expected_signal_rate * conv.sec_to_year(fg_time)
-logging.info("%.3f signals are expected in this amount of data", n_sig_exp)
+logger.info("%.3f signals are expected in this amount of data", n_sig_exp)
 
 max_bg = bg_stat.max()
 min_bg = bg_stat.min()
 
-logging.info("Getting Gaussian kernel density estimates of signal distribution")
+logger.info("Getting Gaussian kernel density estimates of signal distribution")
 sig_kern = gk(signal_stat, weights=signal_weights, bw_method=1)
 sig_norm = sig_kern.integrate_box_1d(max_bg, np.inf)
 sig_dens = sig_kern(fg_stat) / sig_norm
 
-logging.info("Getting Gaussian kernel density estimates of background distribution")
+logger.info("Getting Gaussian kernel density estimates of background distribution")
 bg_kern = gk(bg_stat, bw_method=1)
 bg_rate_dens = bg_kern(fg_stat) * bg_stat.size
 
@@ -327,7 +329,7 @@ bg_dens_max_idx = bg_rate_dens.argmax()
 bg_dens_max_stat = fg_stat[bg_dens_max_idx]
 fg_stat_below_peak = fg_stat < bg_dens_max_stat
 
-logging.info("Getting noise distribution of %s method.", args.pastro_method)
+logger.info("Getting noise distribution of %s method.", args.pastro_method)
 # If the foreground statistic value is quieter than X
 # then use background density for noise
 pastro_noise_valid = fg_stat >= args.bg_distribution_limit
@@ -345,12 +347,12 @@ elif args.pastro_method == "truncated_shelf":
     )
     noise_model[pastro_noise_valid] = sig_kern(fgs) / ts_norm
 
-logging.info("Calculating pastro for foreground events")
+logger.info("Calculating pastro for foreground events")
 p_astro = n_sig_exp * sig_dens / (noise_model + n_sig_exp * sig_dens)
 p_astro[fg_stat_below_peak] = 0
 
 if args.plot_distribution:
-    logging.info("Making distribution plot")
+    logger.info("Making distribution plot")
     max_bin_c = min(signal_stat.max(), bg_stat.max() * 4)
     stat_bins = np.linspace(min_bg, max_bin_c, 201)
     stat_bin_c = (stat_bins[1:] + stat_bins[:-1]) / 2
@@ -455,4 +457,4 @@ f_out.attrs["pivot"] = sngl_ifo
 f_out.attrs["fixed"] = sngl_ifo
 f_out.attrs["ifos"] = sngl_ifo
 f_out.attrs["pastro_method"] = args.pastro_method
-logging.info("Done")
+logger.info("Done")

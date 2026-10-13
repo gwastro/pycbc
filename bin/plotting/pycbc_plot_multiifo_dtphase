@@ -32,6 +32,8 @@ from pycbc.events import coinc_rate
 from pycbc.io.hdf import HFile
 from pycbc.results import save_fig_with_metadata
 
+logger = logging.getLogger(__name__)
+
 
 def marginalise_pdf(pdf, dimensions_to_keep):
     ndims = len(pdf.shape)
@@ -91,8 +93,8 @@ ref_ifo = args.reference_ifo or ifos[0]
 if ref_ifo not in ifos:
     raise RuntimeError("Reference IFO is not in file")
 
-logging.info("IFOs: %s", " ".join(ifos))
-logging.info("Reference IFO: %s", ref_ifo)
+logger.info("IFOs: %s", " ".join(ifos))
+logger.info("Reference IFO: %s", ref_ifo)
 
 # The param_bin indices will have named datafields
 dtns = f[ref_ifo + "/param_bin"].dtype.names
@@ -149,7 +151,7 @@ hist_range = [
 arr_size = tuple(max_bin[i] - min_bin[i] + 1 for i in range(ndims))
 hist_vals = np.zeros(arr_size)
 
-logging.info("filling histogram")
+logger.info("filling histogram")
 for pb, w in zip(f[ref_ifo]["param_bin"][:], f[ref_ifo]["weights"][:]):
     # Index is the difference between stored bin value and the
     # minimum bin value - this keeps RAM manageable
@@ -173,7 +175,7 @@ else:
 
 # Set up the colorbar normalization to be shared across plots
 if args.shared_color_scale:
-    logging.info("getting min/max plot values")
+    logger.info("getting min/max plot values")
     # max/min weight will be the max after marginalization of all-but 2
     # parts of array
     dim_combos = list(itertools.combinations(np.arange(ndims), 2))
@@ -187,7 +189,7 @@ if args.shared_color_scale:
 else:
     colnorm = matplotlib.colors.LogNorm()
 
-logging.info("Plotting")
+logger.info("Plotting")
 fig, axes = plt.subplots(
     ndims, ndims, sharex="col", sharey="row", figsize=(3 * ndims, 3 * ndims)
 )
@@ -211,7 +213,7 @@ fig.subplots_adjust(
 )
 
 for i in range(ndims):
-    logging.info("Dimension %d: %s", i, labels[i])
+    logger.info("Dimension %d: %s", i, labels[i])
     # Sum all dimensions except for this one
     marg_pdf = marginalise_pdf(hist_vals, [i])
 
@@ -219,7 +221,7 @@ for i in range(ndims):
     # of range. Using a twin axis here means that we can share the
     # x-axis but use it's own y-axis
     margax = axes[i, i].twinx()
-    logging.info("Plotting marginalised histogram")
+    logger.info("Plotting marginalised histogram")
     # Work out the x-values of the marginalised histogram
     i_values = widths[i] * np.arange(min_bin[i], max_bin[i] + 1)
     # move the plot points to the center of the bin
@@ -244,7 +246,7 @@ for i in range(ndims):
     # Loop through other dimensions - stop at i-1 so we don't do the
     # same combination twice
     for j in range(i):
-        logging.info("%s vs %s heatmap", labels[i], labels[j])
+        logger.info("%s vs %s heatmap", labels[i], labels[j])
         twod_pdf = marginalise_pdf(hist_vals, [i, j])
 
         # 2-dimensional color plot of the PDF
@@ -322,7 +324,7 @@ leg_ax.axis("off")
 leg_ax.legend(loc="lower left")
 
 # set the colorbar ticks and tick labels
-logging.info("Saving with metadata")
+logger.info("Saving with metadata")
 
 # Set up metadata
 figure_title = "Corner plot of the %s PTA histogram" % "-".join(ifos)
@@ -347,4 +349,4 @@ save_fig_with_metadata(
     fig, args.output_file, title=figure_title, caption=caption, cmd=" ".join(sys.argv)
 )
 
-logging.info("Done")
+logger.info("Done")

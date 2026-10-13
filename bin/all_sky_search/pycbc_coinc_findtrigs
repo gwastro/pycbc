@@ -19,6 +19,8 @@ from pycbc.io import HFile
 from pycbc.io.hdf import ReadByTemplate
 from pycbc.types.optparse import MultiDetOptionAction
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -146,13 +148,13 @@ def parse_template_range(num_templates, rangestr):
     return tmin, tmax
 
 
-logging.info("Starting...")
+logger.info("Starting...")
 
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 num_templates = len(HFile(args.template_bank, "r")["template_hash"])
 tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
-logging.info("Analyzing template %s - %s" % (tmin, tmax - 1))
+logger.info("Analyzing template %s - %s" % (tmin, tmax - 1))
 
 
 class MultiifoTrigs:
@@ -170,7 +172,7 @@ cleanup_files = []
 
 def exit_cleaning():
     for fname in cleanup_files:
-        logging.info("cleaning up %s", fname)
+        logger.info("cleaning up %s", fname)
         try:
             os.remove(fname)
         except OSError as e:
@@ -186,13 +188,13 @@ tids_with_trigs = None
 for i in range(len(args.trigger_files)):
     if args.stage_input:
         dest = os.path.join(args.stage_input_dir, str(uuid.uuid4()) + ".hdf")
-        logging.info("Moving %s to shared memory as %s", args.trigger_files[i], dest)
+        logger.info("Moving %s to shared memory as %s", args.trigger_files[i], dest)
         cleanup_files.append(dest)
         shutil.copyfile(args.trigger_files[i], dest)
     else:
         dest = args.trigger_files[i]
 
-    logging.info("Opening trigger file %s: %s" % (i, dest))
+    logger.info("Opening trigger file %s: %s" % (i, dest))
     reader = ReadByTemplate(
         dest,
         args.template_bank,
@@ -212,7 +214,7 @@ for i in range(len(args.trigger_files)):
 
     # time shift is subtracted from pivot ifo time
     trigs.to_shift.append(-1 if ifo == args.pivot_ifo else 0)
-    logging.info(
+    logger.info(
         "Applying time shift multiple %i to ifo %s"
         % (trigs.to_shift[-1], trigs.ifos[-1])
     )
@@ -264,7 +266,7 @@ template_ids = cuts.apply_template_cuts(
     template_ids=template_ids,
 )
 
-logging.info(
+logger.info(
     "%d out of %d templates kept after applying template cuts",
     len(template_ids),
     original_bank_len,
@@ -309,7 +311,7 @@ def process_template(tnum):
     times_full = {}
     sds_full = {}
     tids_full = {}
-    logging.debug("Obtaining trigs for template %i .." % (tnum))
+    logger.debug("Obtaining trigs for template %i .." % (tnum))
     for i, sngl in zip(trigs.ifos, trigs.singles):
         # Apply cuts to triggers
         tids_uncut = sngl.set_template(tnum)
@@ -319,16 +321,16 @@ def process_template(tnum):
 
         tids_full[i] = tids_uncut[trigger_keep_ids]
         times_full[i] = sngl["end_time"][trigger_keep_ids]
-        logging.debug("%s:%s", i, len(tids_uncut))
+        logger.debug("%s:%s", i, len(tids_uncut))
         if len(tids_full[i]) < len(tids_uncut):
-            logging.info("%s triggers cut", len(tids_uncut) - len(tids_full[i]))
+            logger.info("%s triggers cut", len(tids_uncut) - len(tids_full[i]))
 
         # get single-detector statistic
         sds_full[i] = rank_method.single(sngl)[trigger_keep_ids]
 
     mintrigs = min([len(ti) for ti in tids_full.values()])
     if mintrigs == 0:
-        logging.info("No triggers in at least one ifo for template %i, skipping" % tnum)
+        logger.info("No triggers in at least one ifo for template %i, skipping" % tnum)
         return local_data
 
     if type(rank_method.single_dtype) == list:
@@ -577,7 +579,7 @@ else:
     p = pool.BroadcastPool(args.nprocesses)
     ldatas = p.map(process_template, list(template_ids))
 
-logging.info("merging data from the templates")
+logger.info("merging data from the templates")
 for ldata in ldatas:
     for key in data:
         data[key] += ldata[key]
@@ -598,7 +600,7 @@ if args.cluster_window and len(data["stat"]) > 0:
         args.cluster_window,
     )
 
-logging.info("saving coincident triggers")
+logger.info("saving coincident triggers")
 f = HFile(args.output_file, "w")
 if len(data["stat"]) > 0:
     for key in data:
@@ -629,4 +631,4 @@ else:
 f.attrs["num_slides"] = nslides
 
 
-logging.info("Done")
+logger.info("Done")

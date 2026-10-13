@@ -20,6 +20,8 @@ import pycbc.results
 from pycbc import conversions as conv
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 
 def sigma_from_p(p):
     return -erfinv(1 - (1 - p) * 2) * 2**0.5
@@ -62,7 +64,7 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-logging.info("Read in the data")
+logger.info("Read in the data")
 f = HFile(args.trigger_file, "r")
 
 # Determine which inclusive background to plot.
@@ -141,14 +143,14 @@ else:
 
 s = bstat.argsort()
 dec, bstat, fap = dec[s], bstat[s], fap[s]
-logging.info("Found %s background (inclusive zerolag) triggers" % len(bstat))
+logger.info("Found %s background (inclusive zerolag) triggers" % len(bstat))
 
 dec_exc = f["background_exc/decimation_factor"][:]
 bstat_exc = f["background_exc/stat"][:]
 s = bstat_exc.argsort()
 dec_exc, bstat_exc = dec_exc[s], bstat_exc[s]
 
-logging.info("Found %s background (exclusive zerolag) triggers" % len(bstat_exc))
+logger.info("Found %s background (exclusive zerolag) triggers" % len(bstat_exc))
 
 fig = plt.figure()
 

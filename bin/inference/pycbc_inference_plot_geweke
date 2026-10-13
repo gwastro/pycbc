@@ -30,6 +30,8 @@ import pycbc
 from pycbc import results
 from pycbc.inference import geweke, io
 
+logger = logging.getLogger(__name__)
+
 # add options to command line
 parser = io.ResultsArgumentParser(skip_args=["walkers"])
 
@@ -111,10 +113,10 @@ fig = plt.figure()
 
 # loop over each parameter
 for param, label in zip(params, labels):
-    logging.info("Plotting parameter %s", param)
+    logger.info("Plotting parameter %s", param)
     # loop over walkers
     for j in walkers:
-        logging.info("Plotting walker %d of %d", j, nwalkers)
+        logger.info("Plotting walker %d of %d", j, nwalkers)
 
         # plot each walker
         y = fp.samples_from_cli(opts, parameters=param, walkers=j)
@@ -158,4 +160,4 @@ plt.close()
 
 # exit
 fp.close()
-logging.info("Done")
+logger.info("Done")

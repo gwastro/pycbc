@@ -10,6 +10,8 @@ import pycbc.pnutils
 from pycbc.events import veto
 from pycbc.io.ligolw import LIGOLWContentHandler
 
+logger = logging.getLogger(__name__)
+
 effd = {"H1": "eff_dist_h", "L1": "eff_dist_l", "V1": "eff_dist_v"}
 
 
@@ -34,16 +36,16 @@ parser.add_argument("--output-file")
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
-logging.info("File: %s" % args.injection_file)
+logger.info("File: %s" % args.injection_file)
 indoc = ligolw_utils.load_filename(
     args.injection_file, False, contenthandler=LIGOLWContentHandler
 )
 sim_table = ligolw.Table.get_table(indoc, "sim_inspiral")
 
-logging.info("%s Injections in file" % len(sim_table))
+logger.info("%s Injections in file" % len(sim_table))
 
 if args.veto_file:
-    logging.info("Removing injections outside coincident time")
+    logger.info("Removing injections outside coincident time")
     for ifo in args.ifos:
         inj_time = numpy.array(
             sim_table.get_column("geocent_end_time")
@@ -54,10 +56,10 @@ if args.veto_file:
             inj_time, [args.veto_file], ifo, args.segment_name
         )
         remove(sim_table, idx)
-    logging.info("We now have %s injections" % len(sim_table))
+    logger.info("We now have %s injections" % len(sim_table))
 
 if args.max_effective_chirp_distance:
-    logging.info("Removing injections that are quiet in one detector")
+    logger.info("Removing injections that are quiet in one detector")
     for ifo in args.ifos:
         eff_distance = numpy.array(sim_table.get_column(effd[ifo]), dtype=numpy.float32)
         m1, m2 = (
@@ -68,9 +70,9 @@ if args.max_effective_chirp_distance:
         chirp_distance = pycbc.pnutils.chirp_distance(eff_distance, mchirp)
         idx = numpy.where(chirp_distance > args.max_effective_chirp_distance)[0]
         remove(sim_table, idx)
-    logging.info("We now have %s injections" % len(sim_table))
+    logger.info("We now have %s injections" % len(sim_table))
 
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW()).appendChild(sim_table)
 ligolw_utils.write_filename(outdoc, args.output_file)
-logging.info("Done")
+logger.info("Done")

@@ -22,6 +22,8 @@ import numpy as np
 import pycbc
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -64,7 +66,7 @@ for fpath in daily_files:
     with HFile(fpath, "r") as f:
         if f.attrs["settings_hash"] != settings_hash:
             warning_str = f"File {fpath} has incompatible settings, skipping"
-            logging.warning(warning_str)
+            logger.warning(warning_str)
             continue
         total_livetime += f[f"{args.ifo}/observing_livetime"][()]
         flagged_livetime += f[f"{args.ifo}/dq_flag_livetime"][()]

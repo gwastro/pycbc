@@ -26,6 +26,8 @@ from igwn_segments import segment, segmentlist
 import pycbc
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -61,13 +63,13 @@ if args.conservative_percentile < 50 or args.conservative_percentile > 99:
         "conservative."
     )
 
-logging.info("%d input files", len(args.trfits_files))
+logger.info("%d input files", len(args.trfits_files))
 
 # We only want to combine fit results if they were done with the same
 # configuration.  So start by finding the most recent fit file and reading its
 # configuration parameters.
 
-logging.info("Determining the most recent configuration parameters")
+logger.info("Determining the most recent configuration parameters")
 
 latest_date = None
 for f in args.trfits_files:
@@ -83,7 +85,7 @@ for f in args.trfits_files:
 # Now go back through the fit files and read the actual information.  Skip the
 # files that have fit parameters inconsistent with what we found earlier.
 
-logging.info("Reading individual fit results")
+logger.info("Reading individual fit results")
 
 live_times = {ifo: [] for ifo in args.ifos}
 trigger_file_starts = []
@@ -108,7 +110,7 @@ for f in args.trfits_files:
             and all(fits_f["bins_upper"][:] == bu)
         )
         if not same_conf:
-            logging.warning("Found a change in the fit configuration, skipping %s", f)
+            logger.warning("Found a change in the fit configuration, skipping %s", f)
             continue
 
         # Get the start/end times of the trigger_fits file
@@ -118,7 +120,7 @@ for f in args.trfits_files:
         trigger_file_ends.append(fit_end)
         seg = segmentlist([segment(fit_start, fit_end)])
         if seg.intersects(seg_all):
-            logging.warning(
+            logger.warning(
                 "File %s fit time %d-%d overlaps with other file(s)",
                 f,
                 fit_start,
@@ -138,8 +140,8 @@ for f in args.trfits_files:
                 counts_all[ifo].append(ffi["counts"][:])
                 alphas_all[ifo].append(ffi["fit_coeff"][:])
                 if any(np.isnan(ffi["fit_coeff"][:])):
-                    logging.warning("nan in %s, %s", f, ifo)
-                    logging.warning(ffi["fit_coeff"][:])
+                    logger.warning("nan in %s, %s", f, ifo)
+                    logger.warning(ffi["fit_coeff"][:])
 
 # Set up the date array, this is stored as an offset from the first trigger time of
 # the first file to the last trigger of the file
@@ -159,7 +161,7 @@ counts_out = {ifo: np.inf * np.ones(len(counts_bin[ifo])) for ifo in args.ifos}
 cons_alphas_out = {ifo: np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
 cons_counts_out = {ifo: np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.ifos}
 
-logging.info("Writing results")
+logger.info("Writing results")
 
 fout = HFile(args.output, "w")
 fout.attrs["conservative_percentile"] = args.conservative_percentile
@@ -168,7 +170,7 @@ fout["bins_edges"] = list(bl) + [bu[-1]]
 fout["fits_dates"] = ad + start_time_n
 
 for ifo in args.ifos:
-    logging.info(ifo)
+    logger.info(ifo)
     fout_ifo = fout.create_group(ifo)
     fout_ifo.attrs["fit_threshold"] = fit_thresh[ifo]
     fout_ifo.attrs["fit_function"] = fit_func[ifo]
@@ -234,4 +236,4 @@ for ifo in args.ifos:
 
 fout.close()
 
-logging.info("Done")
+logger.info("Done")

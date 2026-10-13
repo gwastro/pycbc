@@ -27,6 +27,8 @@ import pycbc
 from pycbc import load_source
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--input-bank", required=True, help="Input template bank HDF file.")
@@ -54,7 +56,7 @@ modl = load_source("filter_func", opt.filter_func_file)
 func = modl.filter_tmpltbank
 bool_arr = func(bank_fd)
 
-logging.info(
+logger.info(
     "Downselecting templates. Started with",
     len(bool_arr),
     "templates, now have ",

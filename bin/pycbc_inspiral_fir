@@ -25,6 +25,8 @@ from pycbc.types import Array, FrequencySeries, complex64, float32, zeros
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.bank import RatioFilterBank
 
+logger = logging.getLogger(__name__)
+
 tstart = time.time()
 
 
@@ -85,7 +87,7 @@ def compute_batch_chisq(
         One entry per trigger in the batch, in `ids_local` order.
 
     """
-    logging.info("starting chisq calculation")
+    logger.info("starting chisq calculation")
     chisq_window_samp = int(args.chisq_window * stilde.sample_rate)
     max_iterations = args.chisq_iterations
 
@@ -128,7 +130,7 @@ def compute_batch_chisq(
             tids = np.array([t_idx], ndmin=1)
 
             # Reconstruct the template, decimated.
-            logging.info("regenerating chisq inputs")
+            logger.info("regenerating chisq inputs")
             # refine > 1 is not currently supported.
             refine = 1
             df = args.sample_rate / args.fir_length
@@ -165,7 +167,7 @@ def compute_batch_chisq(
             corr2 = corr2.to_timeseries().to_frequencyseries(delta_f=dfr) / refine
 
             tids2 = tids - tstart
-            logging.info("...done")
+            logger.info("...done")
             chi, dof = chisq_estimator.values(corr2, snrvs, 1, psd2, tids2, template2)
 
             # Determine which points we should use the same chisq value for
@@ -177,7 +179,7 @@ def compute_batch_chisq(
             assigned_mask[update_mask] = True
             num_assigned = update_mask.sum()
             iterations += 1
-            logging.info(
+            logger.info(
                 f"... assigning {chi / dof} to {num_assigned} triggers, peak SNR of {snr_amp[idx]}"
             )
     return chisq_vals, chisq_dof_vals
@@ -372,7 +374,7 @@ def main():
         flow = args.low_frequency_cutoff
 
         # --- 4. Initialize Classes ---
-        logging.info("Initializing Ratio Filter Bank...")
+        logger.info("Initializing Ratio Filter Bank...")
         bank = RatioFilterBank(
             args.bank_file,
             filter_length=flen,
@@ -381,7 +383,7 @@ def main():
         )
         bank.template_thinning(inj_filter_rejector)
 
-        logging.info("Initializing Ratio Filter Engine...")
+        logger.info("Initializing Ratio Filter Engine...")
         engine = MatchedFilterRatioControl(
             snr_threshold=args.snr_threshold,
             delta_f=delta_f,
@@ -427,7 +429,7 @@ def main():
         cluster_window = int(args.cluster_window * gwstrain.sample_rate)
 
         # --- 6. Analysis Loop ---
-        logging.info("Making frequency-domain data segments")
+        logger.info("Making frequency-domain data segments")
         segments = strain_segments.fourier_segments()
 
         pycbc.psd.associate_psds_to_segments(
@@ -444,7 +446,7 @@ def main():
         # psd_var uses its own internal PSD estimation windows, independent
         # of the PSD each matched-filter segment (associated above) uses.
         if args.psdvar_segment is not None:
-            logging.info("Calculating PSD variation")
+            logger.info("Calculating PSD variation")
             psd_var = pycbc.psd.calc_filt_psd_variation(
                 gwstrain,
                 args.psdvar_segment,
@@ -474,10 +476,10 @@ def main():
             ref_template = bank.get_coarse_template(coarse_idx)
             taps, counts, fine_indices = bank.get_firs(coarse_idx)
             filters_f, n_taps = engine.prepare_filters(taps, counts)
-            logging.info(f"  Ratio Batch {i + 1}/{n_coarse}, {len(taps)} FIR templates")
+            logger.info(f"  Ratio Batch {i + 1}/{n_coarse}, {len(taps)} FIR templates")
 
             for s_num, stilde in enumerate(segments):
-                logging.info(f"Processing Segment {s_num}")
+                logger.info(f"Processing Segment {s_num}")
                 t1 = time.time()
 
                 ids_local, t_idxs, snrs, tstarts, h_norm = engine.process_segment(
@@ -523,9 +525,9 @@ def main():
                     / (t2 - t1)
                     * len(taps)
                 )
-                logging.info(f"batch perf: {tperf} templates s/s")
+                logger.info(f"batch perf: {tperf} templates s/s")
 
-        logging.info("Grouping triggers...")
+        logger.info("Grouping triggers...")
 
         triggers_by_template = {}
         for k in range(len(seg_ids_local)):
@@ -606,12 +608,12 @@ def main():
     run_time = tstop - tstart
     event_mgr.save_performance(1, len(segments), len(bank), run_time, tsetup)
 
-    logging.info("Consolidating and writing events...")
+    logger.info("Consolidating and writing events...")
     event_mgr.consolidate_events(args, gwstrain=gwstrain)
     event_mgr.finalize_events()
     event_mgr.write_events(args.output)
 
-    logging.info("Finished.")
+    logger.info("Finished.")
 
 
 if __name__ == "__main__":

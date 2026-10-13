@@ -34,6 +34,8 @@ from pycbc.io import live as liveio
 from pycbc.live import significance_fits as sngls_io
 from pycbc.types import MultiDetOptionAction
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -87,17 +89,17 @@ sngls_io.verify_live_significance_trigger_pruning_options(args, parser)
 sngls_io.verify_live_significance_duration_bin_options(args, parser)
 
 duration_bin_edges = sngls_io.duration_bins_from_cli(args)
-logging.info(
+logger.info(
     "Duration bin edges: %s", ", ".join([f"{e:.3e}" for e in duration_bin_edges])
 )
 
-logging.info("Finding files")
+logger.info("Finding files")
 
 files = liveio.find_trigger_files_from_cli(args)
 
-logging.info("%s files found", len(files))
+logger.info("%s files found", len(files))
 
-logging.info("Setting up the cut dictionaries")
+logger.info("Setting up the cut dictionaries")
 # Add template duration cuts according to the bin inputs
 args.template_cuts = args.template_cuts or []
 # These won't be needed if using args.duration_from_bank,
@@ -112,7 +114,7 @@ args.trigger_cuts.append(f"end_time:{args.gps_end_time}:upper_inc")
 
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
-logging.info("Setting up duration bins")
+logger.info("Setting up duration bins")
 tbins = IrregularBins(duration_bin_edges)
 
 # Also calculate live time so that this fitting can be used in rate estimation
@@ -121,7 +123,7 @@ tbins = IrregularBins(duration_bin_edges)
 
 live_time = dict.fromkeys(args.ifos, 0)
 
-logging.info("Getting events which meet criteria")
+logger.info("Getting events which meet criteria")
 
 # Loop through files - add events which meet the immediately gettable
 # criteria
@@ -129,16 +131,16 @@ events = {}
 
 rank_method = {ifo: stat.get_statistic_from_opts(args, [ifo]) for ifo in args.ifos}
 
-logging.info("Processing %d files", len(files))
+logger.info("Processing %d files", len(files))
 for counter, filename in enumerate(files):
     if counter and counter % 1000 == 0:
-        logging.info("Processed %d/%d files", counter, len(files))
+        logger.info("Processed %d/%d files", counter, len(files))
         for ifo in args.ifos:
             if ifo not in events:
                 # In case of no triggers for an extended period
-                logging.info("%s: No data", ifo)
+                logger.info("%s: No data", ifo)
             else:
-                logging.info(
+                logger.info(
                     "%s: %d triggers in %.0f s",
                     ifo,
                     events[ifo].data["snr"].size,
@@ -149,7 +151,7 @@ for counter, filename in enumerate(files):
     try:
         HFile(filename, "r")
     except OSError:
-        logging.warning("IOError with file %s", f)
+        logger.warning("IOError with file %s", f)
         continue
 
     # Triggers for this file
@@ -225,16 +227,16 @@ for counter, filename in enumerate(files):
         else:  # Set up a new dictionary entry
             events[ifo] = triggers_da
 
-logging.info("All events processed")
+logger.info("All events processed")
 
-logging.info("Number of events which meet all criteria:")
+logger.info("Number of events which meet all criteria:")
 for ifo in args.ifos:
     if ifo not in events:
-        logging.info("%s: No data", ifo)
+        logger.info("%s: No data", ifo)
     else:
-        logging.info("%s: %d in %.2fs", ifo, len(events[ifo]), live_time[ifo])
+        logger.info("%s: %d in %.2fs", ifo, len(events[ifo]), live_time[ifo])
 
-logging.info("Sorting events into template duration bins")
+logger.info("Sorting events into template duration bins")
 
 # Set up bins and prune loud events in each bin
 n_bins = duration_bin_edges.size - 1
@@ -279,7 +281,7 @@ for ifo in events:
 n_pruned = {ifo: [] for ifo in args.ifos}
 pruned_trigger_times = {}
 if args.prune_loudest:
-    logging.info(
+    logger.info(
         "Pruning triggers %.2fs either side of the loudest %d "
         "triggers in each bin if %s > %.2f",
         args.prune_window,
@@ -309,7 +311,7 @@ if args.prune_loudest:
             pruned_inbin = pruned_trigger_bins == bin_num
             n_pruned_thisbin = np.count_nonzero(pruned_inbin)
             n_pruned[ifo].append(n_pruned_thisbin)
-            logging.info(
+            logger.info(
                 "Pruned %d triggers from %s bin %d", n_pruned_thisbin, ifo, bin_num
             )
 
@@ -331,7 +333,7 @@ for ifo in events:
             args.fit_function[ifo], stat_inbin, args.fit_threshold[ifo]
         )
 
-logging.info("Writing results")
+logger.info("Writing results")
 with HFile(args.output, "w") as fout:
     for ifo in args.ifos:
         fout_ifo = fout.create_group(ifo)
@@ -371,4 +373,4 @@ with HFile(args.output, "w") as fout:
     fout.attrs["sngl_ranking"] = args.sngl_ranking
     fout.attrs["ranking_statistic"] = args.ranking_statistic
 
-logging.info("Done")
+logger.info("Done")

@@ -30,6 +30,8 @@ from pycbc import results
 from pycbc.filter import autocorrelation
 from pycbc.inference import io
 
+logger = logging.getLogger(__name__)
+
 # command line usage
 # turn off thin-interval and temps since they won't be used
 parser = io.ResultsArgumentParser(
@@ -53,7 +55,7 @@ pycbc.init_logging(opts.verbose)
 fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
 
 # calculate autocorrelation length for each walker
-logging.info("Calculating autocorrelation length")
+logger.info("Calculating autocorrelation length")
 fig = plt.figure()
 for param_name in parameters:
     # loop over walkers and save an autocorrelation length
@@ -74,7 +76,7 @@ for param_name in parameters:
         acls.append(acl)
 
     # plot autocorrelation length
-    logging.info("Plotting autocorrelation times")
+    logger.info("Plotting autocorrelation times")
     plt.hist(acls, opts.bins, histtype="step", label=labels[param_name])
 
 plt.xlabel("Autocorrelation time")
@@ -99,4 +101,4 @@ plt.close()
 
 # exit
 fp.close()
-logging.info("Done")
+logger.info("Done")

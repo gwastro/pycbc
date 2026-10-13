@@ -30,6 +30,8 @@ from pycbc.io import WaveformArray
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.waveform import bank as wavebank
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -60,7 +62,7 @@ args, unknown = parser.parse_known_args()
 # Default logging level is info: --verbose adds to this
 pycbc.init_logging(args.verbose, default_level=1)
 
-logging.info("Starting")
+logger.info("Starting")
 
 bayestar_exe = args.bayestar_executable or "bayestar-localize-coincs"
 
@@ -104,7 +106,7 @@ cmd = [
 # Pass any unknown options straight to the subprocess
 cmd += unknown
 
-logging.info("Running %s", " ".join(cmd))
+logger.info("Running %s", " ".join(cmd))
 subprocess.check_output(cmd)
 
 # Find the fits file in the temporary directory:
@@ -116,7 +118,7 @@ if len(fits_filenames) != 1:
         f"argh, got {len(fits_filenames)} FITS files after running BAYESTAR, I want one!"
     )
 
-logging.info("Moving output to %s", args.output_file)
+logger.info("Moving output to %s", args.output_file)
 shutil.move(fits_filenames[0], args.output_file)
 
-logging.info("Done")
+logger.info("Done")

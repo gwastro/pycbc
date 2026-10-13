@@ -33,6 +33,8 @@ from pycbc.filter import resample_to_delta_t
 from pycbc.io import HFile, WaveformArray
 from pycbc.types import complex64, complex_same_precision_as, zeros
 
+logger = logging.getLogger(__name__)
+
 
 def subtract_template(stilde, template, snr, trigger_time, flow):
     idx = int((trigger_time - snr.start_time) / snr.delta_t)
@@ -338,10 +340,10 @@ with ctx:
     flen = strain_segments.freq_len
     delta_f = strain_segments.delta_f
 
-    logging.info("Making frequency-domain data segments")
+    logger.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
 
-    logging.info("Calculating the PSDs")
+    logger.info("Calculating the PSDs")
     psd.associate_psds_to_segments(
         opt,
         segments,
@@ -353,14 +355,14 @@ with ctx:
         precision="single",
     )
 
-    logging.info("Making template: %s", opt.approximant)
+    logger.info("Making template: %s", opt.approximant)
     if opt.use_params_of_closest_injection:
         if not hasattr(gwstrain, "injections") or not opt.trigger_time:
             err_msg = "To use --use-params-of-closest-injection you must "
             err_msg += "be making injections with an injection file and using "
             err_msg += "the --trigger-time option."
             raise ValueError(err_msg)
-        logging.info("Making template directly from injection.")
+        logger.info("Making template directly from injection.")
         inj_set = gwstrain.injections
         end_times = numpy.array(inj_set.end_times())
         inj_idx = abs(end_times - opt.trigger_time).argmin()
@@ -413,7 +415,7 @@ with ctx:
         template = template.astype(complex_same_precision_as(segments[0]))
     else:
         approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0]
-        logging.info("Making template: %s", opt.approximant)
+        logger.info("Making template: %s", opt.approximant)
         if opt.u_val is None:
             template = waveform.get_waveform_filter(
                 zeros(flen, dtype=complex64),
@@ -465,7 +467,7 @@ with ctx:
     ):
         if opt.minimum_chisq_bins:
             chisq_bins = opt.minimum_chisq_bins
-            logging.warning(
+            logger.warning(
                 "Number of chisq bins is less than requested "
                 "minimum or is NaN. Using %d bins.",
                 opt.minimum_chisq_bins,
@@ -503,7 +505,7 @@ with ctx:
         if start > end_time:
             break
 
-        logging.info("Filtering segment %s", s_num)
+        logger.info("Filtering segment %s", s_num)
         snr, corr, norm = filter.matched_filter_core(
             template, stilde, psd=stilde.psd, low_frequency_cutoff=flow
         )
@@ -515,7 +517,7 @@ with ctx:
                 template, stilde, psd=stilde.psd, low_frequency_cutoff=flow
             )
 
-        logging.info("calculating chisq")
+        logger.info("calculating chisq")
         chisq, raw_bin = vetoes.power_chisq(
             template,
             stilde,
@@ -569,4 +571,4 @@ with ctx:
     f.attrs["ifo"] = ifo.encode()
     f.attrs["command_line"] = (" ".join(sys.argv)).encode()
 
-logging.info("Finished")
+logger.info("Finished")

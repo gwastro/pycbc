@@ -16,6 +16,8 @@ from pycbc import results
 from pycbc.events import triggers
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -90,7 +92,7 @@ if "v_param" in args.plot_type and args.x_param is None:
 
 pycbc.init_logging(args.verbose)
 
-logging.info("Reading data...")
+logger.info("Reading data...")
 injs = HFile(args.injection_file, "r")
 bank = HFile(args.bank_file, "r") if args.bank_file else None
 trig = HFile(args.trigger_file, "r") if args.trigger_file else None
@@ -150,7 +152,7 @@ if not all(found_in_ifo):
     inj_params = inj_params[found_in_ifo]
     inj_xparams = inj_xparams[found_in_ifo]
     ifar_found = ifar_found[found_in_ifo]
-    logging.info(
+    logger.info(
         "Removing %i inj not found in %s" % ((found_in_ifo == False).sum(), args.ifo)
     )
 
@@ -211,7 +213,7 @@ ylabels = {
 xvals = eval(x_dict[args.plot_type])
 yvals = eval(y_dict[args.plot_type])
 
-logging.info("Plotting %i found inj ..." % len(xvals))
+logger.info("Plotting %i found inj ..." % len(xvals))
 fig = plot.figure()
 
 if "hist" not in args.plot_type:
@@ -303,4 +305,4 @@ results.save_fig_with_metadata(
     cmd=" ".join(sys.argv),
     caption=caption,
 )
-logging.info("Done!")
+logger.info("Done!")

@@ -15,6 +15,8 @@ from pycbc.filter import match, sigma
 from pycbc.types import TimeSeries
 from pycbc.waveform.bank import FilterBank
 
+logger = logging.getLogger(__name__)
+
 # --- GLOBAL WORKER DATA (set by initializer) ---
 g_coarse_waveforms = None
 g_fine_bank = None
@@ -133,9 +135,9 @@ def design_optimal_real_filter(
         h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver="gelss")
         # h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)
     except:
-        logging.info("Exception with numpy least squares, moving to scipy")
+        logger.info("Exception with numpy least squares, moving to scipy")
         h_optimal, _, _, _ = scipy.linalg.lstsq(A_final, b_final, lapack_driver="gelss")
-        logging.info("Scipy suceeded")
+        logger.info("Scipy suceeded")
 
     n_peak_passes = 0
     n_bins_capped = 0
@@ -301,7 +303,7 @@ def process_template(i):
         # extreme / large values
         max_tap_val = np.max(np.abs(taps))
         if max_tap_val > g_args.max_tap_value:
-            logging.warning(
+            logger.warning(
                 f"Template {i} (Ref {c_idx}, {n_taps} taps) rejected: Max tap value {max_tap_val:.2e} exceeded safety threshold."
             )
             return -1, taps, None, n_peak_passes, n_bins_capped, max_tap_val
@@ -335,14 +337,14 @@ def process_template(i):
                     peak_cap_factor=0,
                 )
             except Exception as e:
-                logging.info(e)
+                logger.info(e)
                 continue
             round_matches.append(qa0)
 
             if best_unsuppressed is None or qa0 > best_unsuppressed[0]:
                 best_unsuppressed = (qa0, c_idx, best_match, current_taps)
 
-            logging.debug(
+            logger.debug(
                 f"CoarseTemp:{c_idx} QA-Match(unsuppressed):{qa0} Taps:{current_taps} Max Tap Val: {max_tap0}"
             )
 
@@ -365,13 +367,13 @@ def process_template(i):
                     peak_cap_factor=g_args.peak_cap_factor,
                 )
             except Exception as e:
-                logging.info(e)
+                logger.info(e)
                 continue
             n_attempts_total += 1
             if n_pp1 > 0:
                 n_attempts_suppressed += 1
 
-            logging.debug(
+            logger.debug(
                 f"CoarseTemp:{c_idx} QA-Match(suppressed):{qa1} Taps:{current_taps} Max Tap Val: {max_tap1} "
                 f"PeakSuppression: passes={n_pp1} remaining_capped_bins={n_bc1}"
             )
@@ -415,7 +417,7 @@ def process_template(i):
             if best[3] < qa1:
                 best = (i, best_match, c_idx, qa1, taps1, sigmas1, n_pp1, n_bc1)
         except Exception as e:
-            logging.info(e)
+            logger.info(e)
 
     return best + (n_attempts_total, n_attempts_suppressed)
 
@@ -494,13 +496,13 @@ def main():
 
     f_final = args.sample_rate / 2.0
     flen = int(f_final / args.delta_f) + 1
-    logging.info(f"Setup: Rate={args.sample_rate}, df={args.delta_f}, flen={flen}")
+    logger.info(f"Setup: Rate={args.sample_rate}, df={args.delta_f}, flen={flen}")
 
     psd = pycbc.psd.from_cli(
         args, length=flen, delta_f=args.delta_f, low_frequency_cutoff=args.f_low
     )
 
-    logging.info("Loading coarse bank references...")
+    logger.info("Loading coarse bank references...")
     coarse_bank = FilterBank(
         args.coarse_bank,
         flen,
@@ -522,7 +524,7 @@ def main():
     if not coarse_waveforms:
         sys.exit("ERROR: Coarse bank empty!")
 
-    logging.info("Opening fine bank...")
+    logger.info("Opening fine bank...")
     fine_bank = FilterBank(
         args.fine_bank,
         flen,
@@ -533,7 +535,7 @@ def main():
     n_fine = len(fine_bank)
 
     # --- PHASE 1: Write File Headers via TemplateBank reuse ---
-    logging.info("Writing bank parameters to output file...")
+    logger.info("Writing bank parameters to output file...")
 
     # 1. Write Fine Bank to Root
     f_out = fine_bank.write_to_hdf(
@@ -556,7 +558,7 @@ def main():
             fir_group.attrs[arg] = val
 
     # --- PHASE 2: Calculation Loop ---
-    logging.info(f"Starting pool with {args.n_processes} processes...")
+    logger.info(f"Starting pool with {args.n_processes} processes...")
     failed_count = 0
     peak_suppressed_count = 0
     peak_still_capped_count = 0
@@ -623,7 +625,7 @@ def main():
 
                 if args.verbose >= 1:
                     mismatch = 1.0 - qa_match
-                    logging.info(
+                    logger.info(
                         f"T{i} (Ref {c_idx}): Coarse={coarse_match:.4f}, Taps={len(final_taps_data)}, "
                         f"Final={qa_match:.5f}, Mism={mismatch:.5e}, "
                         f"PeakSuppression: passes={n_peak_passes} remaining_capped_bins={n_bins_capped}"
@@ -631,7 +633,7 @@ def main():
                     log.handlers[0].flush()  # Flush stdout
 
         # --- PHASE 3: Write Results ---
-        logging.info("All templates processed. Writing grouped results to HDF5...")
+        logger.info("All templates processed. Writing grouped results to HDF5...")
 
         results_by_coarse_idx = defaultdict(list)
         for i, res in enumerate(all_results):
@@ -712,7 +714,7 @@ def main():
                 dset_c_sigma[j] = sigma
             tap_counts.append(dset_actual[:])
 
-        logging.info(f"Done. Saved to {args.output_file}")
+        logger.info(f"Done. Saved to {args.output_file}")
 
     finally:
         f_out.close()
@@ -738,9 +740,9 @@ def main():
         )
 
     if failed_count > 0 or peak_still_capped_count > 0:
-        logging.warning(summary_msg)
+        logger.warning(summary_msg)
     else:
-        logging.info(summary_msg)
+        logger.info(summary_msg)
 
 
 if __name__ == "__main__":

@@ -26,6 +26,8 @@ import pycbc
 from pycbc.events import cuts, veto
 from pycbc.io import live as liveio
 
+logger = logging.getLogger(__name__)
+
 # Set up the command line argument parser
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -50,9 +52,9 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-logging.info("Finding trigger files")
+logger.info("Finding trigger files")
 trigger_files = liveio.find_trigger_files_from_cli(args)
-logging.info("%s files found", len(trigger_files))
+logger.info("%s files found", len(trigger_files))
 
 ###########################
 # COLLATE THE TRIGGER FILES
@@ -64,7 +66,7 @@ args.trigger_cuts.append(f"end_time:{args.gps_end_time}:upper_inc")
 
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
-logging.info("Collating triggers to %s", args.output_file)
+logger.info("Collating triggers to %s", args.output_file)
 
 # Some tracking objects
 file_count = 0
@@ -90,7 +92,7 @@ with h5py.File(args.output_file, "w") as destination:
         end_time = start_time + duration
 
         if file_count % 100 == 0:
-            logging.info("Files appended: %d/%d", file_count, len(trigger_files))
+            logger.info("Files appended: %d/%d", file_count, len(trigger_files))
 
         with h5py.File(source_file, "r") as source:
             for ifo in args.ifos:
@@ -163,26 +165,26 @@ with h5py.File(args.output_file, "w") as destination:
             "start_time",
             data=seg_starts,
         )
-        logging.info(
+        logger.info(
             "Found %d %s triggers in %s seconds", n_triggers[ifo], ifo, abs(segs[ifo])
         )
         if n_triggers[ifo] != n_triggers_cut[ifo]:
-            logging.info(
+            logger.info(
                 "  %d triggers after cuts",
                 n_triggers_cut[ifo],
             )
 
     # Add all the template boundaries
     for ifo in args.ifos:
-        logging.info("Processing %s", ifo)
+        logger.info("Processing %s", ifo)
         triggers = destination[ifo]
         try:
             template_ids = triggers["template_id"][:]
         except KeyError:
-            logging.info("No triggers for %s, skipping", ifo)
+            logger.info("No triggers for %s, skipping", ifo)
             continue
 
-        logging.info("Calculating template boundaries")
+        logger.info("Calculating template boundaries")
         sorted_indices = numpy.argsort(template_ids)
         sorted_template_ids = template_ids[sorted_indices]
         unique_template_ids, template_id_counts = numpy.unique(
@@ -200,11 +202,11 @@ with h5py.File(args.output_file, "w") as destination:
         #   template_duration, template_hash, template_id
         for key in triggers.keys():
             if len(triggers[key]) == len(template_ids):
-                logging.info("Sorting %s by template id", key)
+                logger.info("Sorting %s by template id", key)
                 sorted_key = triggers[key][:][sorted_indices]
                 triggers[key][:] = sorted_key
 
-        logging.info("Setting up region references")
+        logger.info("Setting up region references")
         # Datasets which need region references:
         region_ref_datasets = (
             "chisq_dof",
@@ -226,17 +228,17 @@ with h5py.File(args.output_file, "w") as destination:
         end_boundaries[-1] = len(template_ids)
 
         for dataset in region_ref_datasets:
-            logging.info("Region references for %s", dataset)
+            logger.info("Region references for %s", dataset)
             refs = [
                 triggers[dataset].regionref[l:r]
                 for l, r in zip(start_boundaries, end_boundaries)
             ]
 
-            logging.info("Adding to file")
+            logger.info("Adding to file")
             triggers.create_dataset(
                 dataset + "_template",
                 data=refs,
                 dtype=h5py.special_dtype(ref=h5py.RegionReference),
             )
 
-logging.info("Done!")
+logger.info("Done!")

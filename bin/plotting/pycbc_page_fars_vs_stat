@@ -15,6 +15,8 @@ from pycbc import add_common_pycbc_options, init_logging, results
 from pycbc.conversions import sec_to_year as convert_s_to_y
 from pycbc.events import significance
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(
     usage="pycbc_page_ifar_vs_stat [--options]",
     description="Plots cumulative IFAR vs stat for"
@@ -64,16 +66,16 @@ ifar_calc_points = np.linspace(opts.min_x, opts.max_x, 200)
 
 fitted = []  # List of combos for which a fit is used
 for f in opts.trigger_files:
-    logging.info(f"Opening {f}")
+    logger.info(f"Opening {f}")
     with h5py.File(f, "r") as exc_zlag_f:
-        logging.info(f"Ifos {exc_zlag_f.attrs['ifos']}")  # eg 'H1 L1'
+        logger.info(f"Ifos {exc_zlag_f.attrs['ifos']}")  # eg 'H1 L1'
         sig_key = exc_zlag_f.attrs["ifos"].replace(" ", "")  # eg 'H1L1'
         coinc_key = sig_key.replace("1", "")  # eg 'HL'
         stat_exc = exc_zlag_f["background_exc"]["stat"][:]
         dec_fac_exc = exc_zlag_f["background_exc"]["decimation_factor"][:]
         bg_time = convert_s_to_y(exc_zlag_f.attrs["background_time_exc"])
         ifar_file = exc_zlag_f["background_exc"]["ifar"][:]
-    logging.info(f"{coinc_key} background time (y): {bg_time}")
+    logger.info(f"{coinc_key} background time (y): {bg_time}")
 
     # If fitting / extrapolation is done
     if sig_dict[sig_key]["method"] == "trigger_fit":

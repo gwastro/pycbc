@@ -40,6 +40,8 @@ import pycbc.version
 from pycbc.io import HFile
 from pycbc.io.ligolw import create_process_table
 
+logger = logging.getLogger(__name__)
+
 __author__ = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
@@ -185,13 +187,13 @@ if opts.random_seed is not None:
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
     # FIXME: It would be nice if this was similar to psd.from_cli()
-    logging.info("Obtaining h(t) for PSD generation")
+    logger.info("Obtaining h(t) for PSD generation")
     strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 else:
     strain = None
 
 # Get the PSD using the pycbc interface
-logging.info("Obtaining PSD")
+logger.info("Obtaining PSD")
 # Want the number of samples to be a binary number and Nyquist must be above
 # opts.f_upper. All this assumes that 1 / deltaF is a binary number
 nyquistFreq = 2 ** numpy.ceil(numpy.log2(opts.f_upper))
@@ -207,10 +209,10 @@ psd = pycbc.psd.from_cli(
 metricParams.psd = psd
 
 # Begin by calculating a metric
-logging.info("Calculating metric")
+logger.info("Calculating metric")
 metricParams = pycbc.tmpltbank.determine_eigen_directions(metricParams)
 
-logging.info("Calculating covariance matrix")
+logger.info("Calculating covariance matrix")
 
 vals = pycbc.tmpltbank.estimate_mass_range(
     1000000, massRangeParams, metricParams, metricParams.fUpper, covary=False
@@ -222,7 +224,7 @@ evecsCVdict[metricParams.fUpper] = evecsCV
 metricParams.evecsCV = evecsCVdict
 
 
-logging.info("Determining parameter space extent")
+logger.info("Determining parameter space extent")
 
 vals = pycbc.tmpltbank.estimate_mass_range(
     1000000, massRangeParams, metricParams, metricParams.fUpper, covary=True
@@ -235,7 +237,7 @@ chi2Max = vals[1].max()
 chi2Min = vals[1].min()
 chi2Diff = chi2Max - chi2Min
 
-logging.info("Calculating lattice")
+logger.info("Calculating lattice")
 
 if not opts.threed_lattice:
     v1s, v2s = pycbc.tmpltbank.generate_hexagonal_lattice(
@@ -262,12 +264,12 @@ else:
     chi3Min = vals[2].min()
     chi3Diff = chi3Max - chi3Min
 
-logging.info("Lattice contains %d points", len(v1s))
+logger.info("Lattice contains %d points", len(v1s))
 
 # Now remove points that are too far from edges of parameter space
 
 if opts.filter_points:
-    logging.info("Removing lattice points too far from physical space.")
+    logger.info("Removing lattice points too far from physical space.")
     # Create a large set of points and map to xi_i to give a starting point when
     # mapping from xi_i to masses and spins
     # Use the EM constraint only if asked to do so
@@ -295,7 +297,7 @@ if opts.filter_points:
         newV3s = []
 
     # Use scipy's KDtree to quickly calculate Euclidean distances
-    logging.info("Setting up KDtree to compute distances.")
+    logger.info("Setting up KDtree to compute distances.")
     if opts.threed_lattice:
         tree = spatial.KDTree(xis[:, :3])
         xi_points = list(zip(v1s, v2s, v3s))
@@ -303,10 +305,10 @@ if opts.filter_points:
         tree = spatial.KDTree(xis[:, :2])
         xi_points = list(zip(v1s, v2s))
 
-    logging.info("Computing distances using KDtree.")
+    logger.info("Computing distances using KDtree.")
     dists, pointargs = tree.query(xi_points)
 
-    logging.info("Removing far-away points.")
+    logger.info("Removing far-away points.")
 
     for i in range(len(v1s)):
         if dists[i] < 2.0:
@@ -315,7 +317,7 @@ if opts.filter_points:
             if opts.threed_lattice:
                 newV3s.append(v3s[i])
 
-    logging.info("Filtered lattice contains %d points", len(newV1s))
+    logger.info("Filtered lattice contains %d points", len(newV1s))
 else:
     newV1s = v1s
     newV2s = v2s
@@ -334,7 +336,7 @@ if opts.threed_lattice:
 # Now store split banks
 bank_num = 0
 
-logging.info("Printing split banks to HDF file.")
+logger.info("Printing split banks to HDF file.")
 v1s = []
 v2s = []
 v3s = []
@@ -367,7 +369,7 @@ if v1s:
     if opts.threed_lattice:
         h5file["split_banks/split_bank_%05d/v3s" % bank_num] = v3s
 
-logging.info("Adding metric information to HDF file.")
+logger.info("Adding metric information to HDF file.")
 h5file["cov_evecs"] = metricParams.evecsCV[metricParams.fUpper]
 h5file["metric_evals"] = metricParams.evals[metricParams.fUpper]
 h5file["metric_evecs"] = metricParams.evecs[metricParams.fUpper]

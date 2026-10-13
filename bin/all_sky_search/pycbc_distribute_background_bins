@@ -7,6 +7,8 @@ import numpy
 import pycbc.events
 import pycbc.io
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -55,12 +57,12 @@ locs_dict = pycbc.events.background_bin_from_string(args.background_bins, data)
 names = [b.split(":")[0] for b in args.background_bins]
 
 d = pycbc.io.StatmapData(files=args.coinc_files)
-logging.info("%s coinc triggers" % len(d))
+logger.info("%s coinc triggers" % len(d))
 for name, outname in zip(names, args.output_files):
     # select the coincs from only this bin and save to a single combined file
     locs = locs_dict[name]
     e = d.select(numpy.isin(d.template_id, locs))
-    logging.info("%s coincs in mass bin: %s" % (len(e), name))
+    logger.info("%s coincs in mass bin: %s" % (len(e), name))
     e.save(outname)
     f = pycbc.io.HFile(outname)
     f.attrs["name"] = name

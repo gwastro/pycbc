@@ -18,6 +18,8 @@ from pycbc import conversions as conv
 from pycbc import sensitivity
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -147,7 +149,7 @@ if args.integration_method == "mc" and args.limits_param is None:
 
 pycbc.init_logging(args.verbose)
 
-logging.info("Read in the data")
+logger.info("Read in the data")
 
 
 def get_spin(frame, inc, m1, m2, s1x, s1z, s2x, s2z):
@@ -298,12 +300,12 @@ for j in range(len(args.bins) - 1):
     # cycle over inclusive / exclusive significance if available
     for sig_val, do_label, alpha in zip(fvalues, do_labels, alphas):
         if sig_val[0] is None:
-            logging.info("Skipping exclusive significance")
+            logger.info("Skipping exclusive significance")
             continue
 
         left = float(args.bins[j])
         right = float(args.bins[j + 1])
-        logging.info("Injections between param values %5.2f and %5.2f" % (left, right))
+        logger.info("Injections between param values %5.2f and %5.2f" % (left, right))
 
         # Get distance of missed injections within parameter bin
         binm = numpy.logical_and(missed["param"] >= left, missed["param"] < right)
@@ -321,7 +323,7 @@ for j in range(len(args.bins) - 1):
 
         # Calculate each sensitive distance at a given significance threshold
         for x_val in x_values:
-            logging.info("Thresholding on significance at %5.2f" % x_val)
+            logger.info("Thresholding on significance at %5.2f" % x_val)
             # Count found inj towards sensitivity if IFAR/stat exceeds threshold
             # or if FAP value is less than threshold
             if args.sig_type == "ifar" or args.sig_type == "stat":

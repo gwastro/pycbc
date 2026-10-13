@@ -10,6 +10,8 @@ from pycbc import init_logging, io
 from pycbc.events import coinc, cuts, stat, veto
 from pycbc.types.optparse import MultiDetOptionAction
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 # Basic file input options
@@ -99,7 +101,7 @@ init_logging(args.verbose)
 
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
-logging.info("Opening trigger file: %s", trigger_file)
+logger.info("Opening trigger file: %s", trigger_file)
 trigf = io.HFile(trigger_file, "r")
 ifo = list(trigf.keys())[0]
 
@@ -116,7 +118,7 @@ def parse_template_range(num_templates, rangestr):
 
 num_templates = io.HFile(args.template_bank, "r")["template_hash"].size
 tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
-logging.info("Analyzing template %s - %s" % (tmin, tmax - 1))
+logger.info("Analyzing template %s - %s" % (tmin, tmax - 1))
 
 if args.randomize_template_order:
     seed(0)
@@ -137,7 +139,7 @@ trigs = ReadByTemplate(
     args.veto_files,
     args.gating_veto_windows,
 )
-logging.info("%d triggers in file", trigf[ifo + "/snr"].size)
+logger.info("%d triggers in file", trigf[ifo + "/snr"].size)
 
 stat_all = []
 trigger_ids_all = []
@@ -155,14 +157,14 @@ template_ids = cuts.apply_template_cuts(
     template_ids=template_ids,
 )
 
-logging.info(
+logger.info(
     "%d out of %d templates kept after applying template cuts",
     len(template_ids),
     original_bank_len,
 )
 
 if args.cluster_window is not None:
-    logging.info(
+    logger.info(
         "Clustering events over %s s window within each template", args.cluster_window
     )
 
@@ -192,13 +194,13 @@ factors = np.array(factors)[threshorder]
 
 for i, tnum in enumerate(template_ids):
     if i % 1000 == 0:
-        logging.info(
+        logger.info(
             "Calculating statistic in template %d out of %d",
             i,
             len(template_ids),
         )
     else:
-        logging.debug(
+        logger.debug(
             "Calculating statistic in template %d out of %d",
             i,
             len(template_ids),
@@ -209,9 +211,9 @@ for i, tnum in enumerate(template_ids):
         trigs, trigger_cut_dict, statistic=rank_method
     )
     tids_full = tids_uncut[trigger_keep_ids]
-    logging.debug("%s:%s", tnum, len(tids_uncut))
+    logger.debug("%s:%s", tnum, len(tids_uncut))
     if len(tids_full) < len(tids_uncut):
-        logging.debug("%s triggers cut", len(tids_uncut) - len(tids_full))
+        logger.debug("%s triggers cut", len(tids_uncut) - len(tids_full))
 
     n_tot_trigs = tids_full.size
     if n_tot_trigs == 0:
@@ -239,7 +241,7 @@ template_ids_all = np.array(template_ids_all, dtype=int)
 trigger_ids_all = np.array(trigger_ids_all, dtype=int)
 trigger_times_all = np.array(trigger_times_all)
 
-logging.info("%d events", dec_facs.size)
+logger.info("%d events", dec_facs.size)
 for t, f in zip(threshes, factors):
     # Find the events with statistic above the threshold - these will be kept:
     abovethresh = stat_all >= t
@@ -260,7 +262,7 @@ for t, f in zip(threshes, factors):
     trigger_ids_all = trigger_ids_all[keep]
     trigger_times_all = trigger_times_all[keep]
 
-    logging.info(
+    logger.info(
         "%d events after decimation at statistic %.3f with factor %d",
         dec_facs.size,
         t,
@@ -276,7 +278,7 @@ data = {
     "%s/trigger_id" % ifo: trigger_ids_all,
 }
 
-logging.info("saving triggers")
+logger.info("saving triggers")
 f = io.HFile(args.output_file, "w")
 for key in data:
     f.create_dataset(
@@ -298,4 +300,4 @@ f.attrs["timeslide_interval"] = 0
 # h_iterations = 0
 # if args.max_hierarchical_removal != 0:
 
-logging.info("Done")
+logger.info("Done")

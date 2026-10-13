@@ -31,6 +31,8 @@ from pycbc.inference.io import loadfile
 from pycbc.pool import use_fork_start_method
 from pycbc.workflow import configuration
 
+logger = logging.getLogger(__name__)
+
 # cpnest builds its own pool rather than taking ours, and its children
 # read what this process already has, so the start method is set here
 use_fork_start_method()
@@ -112,7 +114,7 @@ if os.path.exists(opts.output_file) and not opts.force:
 
 # set seed
 numpy.random.seed(opts.seed)
-logging.info("Using seed %i", opts.seed)
+logger.info("Using seed %i", opts.seed)
 
 # we'll silence numpy warnings since they are benign and make for confusing
 # logging output
@@ -133,7 +135,7 @@ with ctx:
     # create an empty checkpoint file, if needed
     condor_ckpt = cp.has_option("sampler", "checkpoint-signal")
     if condor_ckpt:
-        logging.info(
+        logger.info(
             "Sampler will exit with signal {} after checkpointing".format(
                 cp.get("sampler", "checkpoint-signal")
             )
@@ -141,12 +143,12 @@ with ctx:
         # create an empty output file to keep condor happy
         open(opts.output_file, "a").close()
 
-    logging.info("Setting up model")
+    logger.info("Setting up model")
 
     # construct class that will return the natural logarithm of likelihood
     model = models.read_from_config(cp)
 
-    logging.info("Setting up sampler")
+    logger.info("Setting up sampler")
 
     # Create sampler that will run.
     # Note: the pool is created at this point. This means that,
@@ -183,10 +185,10 @@ if condor_ckpt:
         pass
 
 # rename checkpoint to output and delete backup
-logging.info("Moving checkpoint to output")
+logger.info("Moving checkpoint to output")
 os.rename(sampler.checkpoint_file, opts.output_file)
 if not opts.save_backup:
-    logging.info("Deleting backup file")
+    logger.info("Deleting backup file")
     os.remove(sampler.backup_file)
 
 # write the end time
@@ -198,4 +200,4 @@ if condor_ckpt:
     open(sampler.checkpoint_file, "a").close()
 
 # exit
-logging.info("Done")
+logger.info("Done")

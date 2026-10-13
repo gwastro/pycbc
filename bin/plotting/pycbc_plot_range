@@ -18,6 +18,8 @@ import pycbc.waveform
 from pycbc.fft.fftw import set_measure_level
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -108,4 +110,4 @@ pycbc.results.save_fig_with_metadata(
     fig_kwds={"dpi": 200},
 )
 
-logging.info("Done!")
+logger.info("Done!")

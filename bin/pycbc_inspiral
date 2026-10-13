@@ -34,6 +34,8 @@ from pycbc.pool import BroadcastPool as Pool
 from pycbc.types import complex64, float32, zeros
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 
+logger = logging.getLogger(__name__)
+
 last_progress_update = -1.0
 
 
@@ -379,7 +381,7 @@ def template_triggers(t_num):
                 opt.update_progress,
                 opt.update_progress_file,
             )
-        logging.info(
+        logger.info(
             "Filtering template %d/%d segment %d/%d"
             % (t_num + 1, len(bank), s_num + 1, len(segments))
         )
@@ -462,7 +464,7 @@ with ctx:
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
 
-    logging.info("Making frequency-domain data segments")
+    logger.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
     psd.associate_psds_to_segments(
         opt,
@@ -492,7 +494,7 @@ with ctx:
     names = sorted(out_vals_ref.keys())
 
     if len(strain_segments.segment_slices) == 0:
-        logging.info("--filter-inj-only specified and no injections in analysis time")
+        logger.info("--filter-inj-only specified and no injections in analysis time")
         event_mgr = events.EventManager(
             opt,
             names,
@@ -502,12 +504,12 @@ with ctx:
         )
         event_mgr.finalize_template_events()
         event_mgr.write_events(opt.output)
-        logging.info("Finished")
+        logger.info("Finished")
         sys.exit(0)
 
     # FIXME: Maybe we should use the PSD corresponding to each trigger
     if opt.psdvar_segment is not None:
-        logging.info("Calculating PSD variation")
+        logger.info("Calculating PSD variation")
         psd_var = pycbc.psd.calc_filt_psd_variation(
             gwstrain,
             opt.psdvar_segment,
@@ -521,7 +523,7 @@ with ctx:
         )
 
     if opt.enable_q_transform:
-        logging.info("Performing q-transform on analysis segments")
+        logger.info("Performing q-transform on analysis segments")
         q_trans = qtransform.inspiral_qtransform_generator(segments)
 
     else:
@@ -538,11 +540,11 @@ with ctx:
             checkpoint_exists = True
         except Exception as e:
             if args.require_valid_checkpoint:
-                logging.info("Failed to load checkpoint file")
+                logger.info("Failed to load checkpoint file")
                 raise (e)
 
-            logging.info("Failed to load checkpoint file, starting anew")
-            logging.info(e)
+            logger.info("Failed to load checkpoint file, starting anew")
+            logger.info(e)
 
     if not checkpoint_exists:
         event_mgr = events.EventManager(
@@ -608,11 +610,11 @@ with ctx:
         maximal_value_dof=opt.autochi_max_valued_dof,
     )
 
-    logging.info("Overwhitening frequency-domain data segments")
+    logger.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= seg.psd
 
-    logging.info("Read in template bank")
+    logger.info("Read in template bank")
     bank = waveform.FilterBank(
         opt.bank_file,
         flen,
@@ -632,9 +634,9 @@ with ctx:
 
     sg_chisq = SingleDetSGChisq.from_cli(opt, bank, opt.chisq_bins)
 
-    logging.info("Full template bank size: %s", len(bank))
+    logger.info("Full template bank size: %s", len(bank))
     bank.template_thinning(inj_filter_rejector)
-    logging.info("Template bank size after thinning: %s", len(bank))
+    logger.info("Template bank size after thinning: %s", len(bank))
 
     tsetup = time.time() - tstart
     tcheckpoint = time.time()
@@ -679,13 +681,13 @@ with ctx:
 
 event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 event_mgr.finalize_events()
-logging.info("Outputting %s triggers" % str(len(event_mgr.events)))
+logger.info("Outputting %s triggers" % str(len(event_mgr.events)))
 
 tstop = time.time()
 run_time = tstop - tstart
 event_mgr.save_performance(ncores, len(segments), len(bank), run_time, tsetup)
 
-logging.info("Writing out triggers")
+logger.info("Writing out triggers")
 event_mgr.write_events(opt.output)
 
 if opt.fft_backends == "fftw":
@@ -695,4 +697,4 @@ if opt.fft_backends == "fftw":
     if opt.fftw_output_double_wisdom_file:
         fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
 
-logging.info("Finished")
+logger.info("Finished")

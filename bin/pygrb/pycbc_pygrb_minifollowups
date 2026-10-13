@@ -39,6 +39,8 @@ from pycbc.results import layout
 from pycbc.workflow.core import FileList, resolve_url_to_file
 from pycbc.workflow.plotting import PlotExecutable
 
+logger = logging.getLogger(__name__)
+
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
@@ -175,7 +177,7 @@ wf.makedir(args.output_dir)
 layouts = []
 
 # Read the file with the triggers/injections to follow up
-logging.info("Reading list of triggers/injections to followup")
+logger.info("Reading list of triggers/injections to followup")
 fp = HFile(args.followups_file, "r")
 
 # Initialize a wiki table and add the column headers
@@ -224,7 +226,7 @@ except KeyError:
 # Loop over triggers/injections to be followed up
 for num_event in range(num_events):
     files = FileList([])
-    logging.info("Processing event: %s", num_event + 1)
+    logger.info("Processing event: %s", num_event + 1)
     tags = args.tags + [str(num_event + 1)]
     if wiki_file:
         row = []

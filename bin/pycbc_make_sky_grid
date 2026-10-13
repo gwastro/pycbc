@@ -27,6 +27,8 @@ from pycbc.detector import Detector
 from pycbc.tmpltbank.sky_grid import SkyGrid
 from pycbc.types import angle_as_radians
 
+logger = logging.getLogger(__name__)
+
 
 def spher_to_cart(sky_points):
     """Convert spherical coordinates to cartesian coordinates."""
@@ -137,7 +139,7 @@ def make_multi_det_grid(args):
                 # far enough from other points, accept
                 grid = np.vstack((grid, (prop_ra, prop_dec)))
         num_new_accepted = grid.shape[0] - prev_size
-        logging.info("%d points accepted, %d total", num_new_accepted, grid.shape[0])
+        logger.info("%d points accepted, %d total", num_new_accepted, grid.shape[0])
         if num_new_accepted == 0:
             # We reached our convergence criterion
             break

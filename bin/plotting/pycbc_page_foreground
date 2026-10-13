@@ -16,6 +16,8 @@ import pycbc.results
 from pycbc.io import hdf
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--trigger-file", required=True)
@@ -224,7 +226,7 @@ if args.output_file.endswith(".html"):
             names.append("%s Red. Chisq" % (ifo))
             format_strings.append("##.##")
 
-    logging.info("Making table of foreground triggers")
+    logger.info("Making table of foreground triggers")
     html_table = pycbc.results.html_table(
         columns, names, format_strings=format_strings, page_size=10
     )

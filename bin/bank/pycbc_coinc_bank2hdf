@@ -28,6 +28,8 @@ import logging
 import pycbc
 from pycbc.waveform import bank
 
+logger = logging.getLogger(__name__)
+
 # the following are the default parameters that will be loaded from the
 # xml file (and what they are called in the xml file)
 default_parameters = [
@@ -120,7 +122,7 @@ else:
     name_map = None
 
 # load the file
-logging.info("Loading %s" % (args.bank_file))
+logger.info("Loading %s" % (args.bank_file))
 bankf = bank.TemplateBank(
     args.bank_file, approximant=args.approximant, parameters=columns
 )
@@ -136,9 +138,9 @@ if name_map is not None:
     bankf.table.dtype.names = tuple(params)
 
 # compute the hash
-logging.info("Getting template hashes")
+logger.info("Getting template hashes")
 bankf.ensure_hash()
 
 # write to output
-logging.info("Writing to %s" % (args.output_file))
+logger.info("Writing to %s" % (args.output_file))
 bankf.write_to_hdf(args.output_file, force=args.force)

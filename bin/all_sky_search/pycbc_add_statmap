@@ -18,6 +18,8 @@ import pycbc.io
 import pycbc.version
 from pycbc.events import significance
 
+logger = logging.getLogger(__name__)
+
 
 def get_ifo_string(fi):
     # Returns a string of a space-separated list of ifos from input file.
@@ -161,7 +163,7 @@ for fi in files:
 
 significance_dict = significance.digest_significance_options(all_ifo_combos, args)
 
-logging.info("Copying segments and attributes to %s" % args.output_file)
+logger.info("Copying segments and attributes to %s" % args.output_file)
 # Move segments information into the final file - remove some duplication
 # in earlier files. Also set up dictionaries to contain segments from the
 # individual statmap files
@@ -185,7 +187,7 @@ for fi in files:
             f.create_group(key)
         f[key].attrs[attr_name] = fi.attrs[attr_name]
 
-logging.info("Combining foreground segments")
+logger.info("Combining foreground segments")
 
 # combine the segment list from each ifo
 foreground_segs = segments.segmentlist([])
@@ -206,12 +208,12 @@ all_ifos = np.unique([ifo for fi in files for ifo in get_ifo_string(fi).split(" 
 f.attrs["ifos"] = " ".join(sorted(all_ifos))
 all_ifo_combos = [get_ifo_string(fi).replace(" ", "") for fi in files]
 
-logging.info("Copying foreground datasets")
+logger.info("Copying foreground datasets")
 for k in files[0]["foreground"]:
     if not k.startswith("fap") and k not in all_ifos:
         pycbc.io.combine_and_copy(f, files, "foreground/" + k)
 if not injection_style:
-    logging.info("Copying background datasets")
+    logger.info("Copying background datasets")
     for k in files[0]["background"]:
         if k not in all_ifos:
             pycbc.io.combine_and_copy(f, files, "background/" + k)
@@ -229,7 +231,7 @@ for f_in in files:
 if args.output_coinc_types:
     f["foreground/ifo_combination"] = fg_coinc_type
 
-logging.info("Collating triggers into single structure")
+logger.info("Collating triggers into single structure")
 
 # Initialise arrays for filling with time and trigger ids
 fg_trig_times = {}
@@ -316,7 +318,7 @@ for f_in in files:
                     ]
                 )
 n_triggers = f["foreground/stat"].size
-logging.info(f"{n_triggers} foreground events before clustering")
+logger.info(f"{n_triggers} foreground events before clustering")
 
 for ifo in all_ifos:
     f.create_dataset(f"foreground/{ifo}/time", data=fg_trig_times[ifo])
@@ -362,7 +364,7 @@ for key in f["foreground"].keys():
 fg_coinc_type = fg_coinc_type[cidx]
 n_triggers = f["foreground/stat"].size
 
-logging.info("Calculating event times to determine which types of coinc are available")
+logger.info("Calculating event times to determine which types of coinc are available")
 times_tuple = (f[f"foreground/{ifo}/time"][:] for ifo in all_ifos)
 test_times = np.array(
     [pycbc.events.mean_if_greater_than_zero(tc)[0] for tc in zip(*times_tuple)]
@@ -374,7 +376,7 @@ del times_tuple
 # each interferometer combination
 is_in_combo_time = {}
 for key in all_ifo_combos:
-    logging.info("Checking if events are in %s time", key)
+    logger.info("Checking if events are in %s time", key)
     is_in_combo_time[key] = np.zeros(n_triggers)
     end_times = np.array(f["segments/%s/end" % key][:])
     start_times = np.array(f["segments/%s/start" % key][:])
@@ -384,7 +386,7 @@ for key in all_ifo_combos:
     is_in_combo_time[key][idx_within_segment] = np.ones_like(idx_within_segment)
 del idx_within_segment
 
-logging.info("Calculating FAR over all coinc types for foreground events")
+logger.info("Calculating FAR over all coinc types for foreground events")
 
 far = {}
 far_exc = {}
@@ -436,7 +438,7 @@ else:
 
 del ifo_combo_key
 
-logging.info("Combining false alarm rates from all available backgrounds")
+logger.info("Combining false alarm rates from all available backgrounds")
 
 # Convert dictionary of whether the ifo combination is available at trigger
 # time into a 2D mask
@@ -472,7 +474,7 @@ if not injection_style:
     vstart = thr - args.veto_window
     vend = thr + args.veto_window
     vtime = segments.segmentlist([segments.segment(s, e) for s, e in zip(vstart, vend)])
-    logging.info("Censoring %.2f seconds", abs(vtime))
+    logger.info("Censoring %.2f seconds", abs(vtime))
     f.attrs["foreground_time_exc"] -= abs(vtime)
     f["segments/foreground_veto/start"] = vstart
     f["segments/foreground_veto/end"] = vend
@@ -491,10 +493,10 @@ del fg_ifar_exc, fg_ifar
 # Hierarchical removal stage
 if args.max_hierarchical_removal == 0:
     f.close()
-    logging.info("Not performing hierarchical removal. Done!")
+    logger.info("Not performing hierarchical removal. Done!")
     exit()
 
-logging.info("Performing hierarchical removal")
+logger.info("Performing hierarchical removal")
 
 # Datasets required for hier removal
 grps = ["decimation_factor", "stat", "template_id", "timeslide_id", "ifar"]
@@ -565,7 +567,7 @@ else:
 # Break out of loop if max number of removals is reached
 # or no more triggers above specified IFAR threshold
 while True:
-    logging.info("Hierarchical iteration %d" % h_iterations)
+    logger.info("Hierarchical iteration %d" % h_iterations)
     bg_grps = {}
 
     if h_iterations == 0:  # copy over existing data as h0
@@ -619,7 +621,7 @@ while True:
             f["foreground_h%s/%s" % (h_iterations, key)] = combined_fg_data.data[key][:]
 
     if h_iterations == args.max_hierarchical_removal:
-        logging.info(
+        logger.info(
             "Reached hierarchical removal limit of %d" % args.max_hierarchical_removal
         )
         break
@@ -634,19 +636,19 @@ while True:
         for combo, hidx in max_each_combo.items()
     }
 
-    logging.info("Maximum IFAR values per combination:")
+    logger.info("Maximum IFAR values per combination:")
     for k in max_ifars:
-        logging.info(f"{k}: {max_ifars[k]:.3g}")
+        logger.info(f"{k}: {max_ifars[k]:.3g}")
     if args.verbose:  # Debug statements
         max_combd = combined_fg_data.data[ifar_key].argmax()
         max_combd_ifar = combined_fg_data.data[ifar_key][max_combd]
-        logging.info(f"combined: {max_combd_ifar:.3g}")
+        logger.info(f"combined: {max_combd_ifar:.3g}")
 
     maxcombo = max(max_ifars, key=lambda k: max_ifars[k])
     max_ifar_idx = max_each_combo[maxcombo]
     max_ifar = max_ifars[maxcombo]
     if not max_ifar > args.hierarchical_removal_ifar_thresh:
-        logging.info(
+        logger.info(
             "Loudest event IFAR of %.3f in %s is less than threshold"
             " %f, stopping hierarchical removal"
             % (max_ifar, maxcombo, args.hierarchical_removal_ifar_thresh)
@@ -667,7 +669,7 @@ while True:
             if ifo in maxcombo
         ]
     )[0]
-    logging.info(
+    logger.info(
         f"Removing trigger at time {maxtime:.2f} with ifar {max_ifar:.3g} from {maxcombo} "
         "& combined foreground "
     )
@@ -683,7 +685,7 @@ while True:
     fg_coinc_type = np.delete(fg_coinc_type, where_combined)
     n_triggers -= 1
 
-    logging.info(
+    logger.info(
         f"Removing background triggers at time {maxtime} within window {args.hierarchical_removal_window}s"
     )
     for combo in all_ifo_combos:
@@ -695,7 +697,7 @@ while True:
                     abs(times - maxtime) < args.hierarchical_removal_window
                 )[0]
                 all_hred_idx += list(hred_ids)
-        logging.info(f"Removing {len(all_hred_idx)} background triggers from {combo}")
+        logger.info(f"Removing {len(all_hred_idx)} background triggers from {combo}")
         sep_bg_data[combo] = sep_bg_data[combo].remove(all_hred_idx)
 
     hred_ids = []
@@ -705,12 +707,12 @@ while True:
             abs(times - maxtime) < args.hierarchical_removal_window
         )
         hred_ids += list(within_window)
-    logging.info(
+    logger.info(
         f"Removing {len(hred_ids)} background triggers from combined background"
     )
     combined_bg_data = combined_bg_data.remove(hred_ids)
 
-    logging.info("Recalculating IFARs")
+    logger.info("Recalculating IFARs")
     times_tuple = tuple(combined_fg_data.data[ifo + "/time"][:] for ifo in all_ifos)
     test_times = np.array(
         [pycbc.events.mean_if_greater_than_zero(tc)[0] for tc in zip(*times_tuple)]
@@ -743,7 +745,7 @@ while True:
         sep_fg_data[key].data["ifar"] = 1.0 / fg_far
         sep_fg_data[key].data["fap"] = 1 - np.exp(-fg_t_y * fg_far)
 
-    logging.info("Recalculating combined IFARs")
+    logger.info("Recalculating combined IFARs")
     for key in all_ifo_combos:
         _, far[key], _ = significance.get_far(
             sep_bg_data[key].data["stat"],
@@ -797,4 +799,4 @@ for key in f:
 
 f.attrs["hierarchical_removal_iterations"] = h_iterations
 f.close()
-logging.info("Done!")
+logger.info("Done!")

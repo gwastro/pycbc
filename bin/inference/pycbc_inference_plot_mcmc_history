@@ -31,6 +31,8 @@ import pycbc
 from pycbc.inference import io
 from pycbc.results import metadata
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -79,7 +81,7 @@ if nplots == 0:
     raise ValueError("nothing to plot")
 
 # load the data
-logging.info("Loading data")
+logger.info("Loading data")
 
 fp = io.loadfile(opts.input_file, "r")
 history = fp["sampler_info/checkpoint_history"]
@@ -123,7 +125,7 @@ if opts.plot_nchains_burned_in:
 fp.close()
 
 # plot
-logging.info("Plotting")
+logger.info("Plotting")
 fig, axes = pyplot.subplots(nrows=nplots, figsize=(8, 3 * nplots))
 if nplots == 1:
     axes = [axes]

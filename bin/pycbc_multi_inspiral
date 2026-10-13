@@ -51,6 +51,8 @@ from pycbc.tmpltbank.sky_grid import SkyGrid
 from pycbc.types import angle_as_radians, complex64, float32, zeros
 from pycbc.vetoes import sgchisq
 
+logger = logging.getLogger(__name__)
+
 
 def slide_limiter(n_ifos, slide_shift, segment_length):
     """
@@ -440,14 +442,14 @@ with ctx:
             assert delta_f == strain_segments_dict[ifo].delta_f, vname + err_msg
     # segments is a dictionary of frequency domain objects, each one of which
     # is the Fourier transform of the segments in strain_segments_dict
-    logging.info("Making frequency-domain data segments")
+    logger.info("Making frequency-domain data segments")
     segments = {
         ifo: strain_segments_dict[ifo].fourier_segments() for ifo in args.instruments
     }
     # Memory cleaning
     del strain_segments_dict
     # Associate PSDs to segments for all IFOs when using the multi-detector CLI
-    logging.info("Associating PSDs to them")
+    logger.info("Associating PSDs to them")
     psd.associate_psds_to_multi_ifo_segments(
         args,
         segments,
@@ -460,7 +462,7 @@ with ctx:
         precision="single",
     )
 
-    logging.info("Determining time slide shifts and time delays")
+    logger.info("Determining time slide shifts and time delays")
     # Create a dictionary of time slide shifts; IFO 0 is unshifted
     slide_ids = np.arange(num_slides)
     time_slides = {
@@ -486,7 +488,7 @@ with ctx:
     }
     del time_delays_zerolag
 
-    logging.info("Setting up MatchedFilterControl at each IFO")
+    logger.info("Setting up MatchedFilterControl at each IFO")
     # Prototype container for the output of MatchedFilterControl and
     # waveform.FilterBank (see below).
     # Use tlen of the first IFO as it is the same across IFOs.
@@ -519,7 +521,7 @@ with ctx:
     }
 
     # Chi-squares
-    logging.info("Initializing signal-based vetoes: power, bank, and auto")
+    logger.info("Initializing signal-based vetoes: power, bank, and auto")
     # Directly use existing SingleDetPowerChisq, SingleDetBankVeto, and
     # SingleDetAutoChisq to calculate single detector chi-squares for
     # multiple IFOs
@@ -544,12 +546,12 @@ with ctx:
     )
 
     # Overwhiten all frequency-domain segments by dividing by the PSD estimate
-    logging.info("Overwhitening frequency-domain data segments")
+    logger.info("Overwhitening frequency-domain data segments")
     for ifo in args.instruments:
         for seg in segments[ifo]:
             seg /= seg.psd
 
-    logging.info("Setting up event manager")
+    logger.info("Setting up event manager")
     # But first build dictionaries to initialize and feed the event manager
     ifo_out_types = {
         "time_index": int,
@@ -612,7 +614,7 @@ with ctx:
     )
 
     # Template bank: filtering and thinning
-    logging.info("Read in template bank")
+    logger.info("Read in template bank")
     bank = waveform.FilterBank(
         args.bank_file,
         flen,
@@ -628,20 +630,20 @@ with ctx:
     # Use inj_filter_rejector to reduce the bank to only those templates that
     # might actually find something
     n_bank = len(bank)
-    logging.info("Full template bank size: %d", n_bank)
+    logger.info("Full template bank size: %d", n_bank)
     for ifo in args.instruments:
         bank.template_thinning(inj_filter_rejector[ifo])
     if not len(bank) == n_bank:
         n_bank = len(bank)
-        logging.info("Template bank size after thinning: %d", n_bank)
+        logger.info("Template bank size after thinning: %d", n_bank)
 
-    logging.info("Calculating antenna pattern functions at every sky position")
+    logger.info("Calculating antenna pattern functions at every sky position")
     antenna_pattern = sky_positions.calculate_antenna_patterns()
 
     # Record the time at which we finished setting things up
     time_setup = time.time() - time_init
 
-    logging.info("Starting the filtering...")
+    logger.info("Starting the filtering...")
     # Loop over templates
     for t_num, template in enumerate(bank):
         # Loop over segments
@@ -654,7 +656,7 @@ with ctx:
                 if not inj_filter_rejector[ifo].template_segment_checker(
                     bank, t_num, stilde[ifo]
                 ):
-                    logging.debug(
+                    logger.debug(
                         "Skipping segment %d/%d with template %d/%d as no "
                         "detectable injection is present",
                         s_num + 1,
@@ -677,7 +679,7 @@ with ctx:
                 event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
             if not analyse_segment:
                 continue
-            logging.info(
+            logger.info(
                 "Analyzing template %d/%d, segment %d/%d",
                 t_num + 1,
                 n_bank,
@@ -704,9 +706,7 @@ with ctx:
             # For convenience also store the lengths of the snr_dict values
             wraparound_dict = dict.fromkeys(args.instruments)
             for ifo in args.instruments:
-                logging.debug(
-                    "Filtering template %d/%d, ifo %s", t_num + 1, n_bank, ifo
-                )
+                logger.debug("Filtering template %d/%d, ifo %s", t_num + 1, n_bank, ifo)
                 # The following lines unpack and store copies of the matched
                 # filtering results for the current template, segment, and IFO.
                 # No clustering happens in the coherent search until the end.
@@ -754,10 +754,10 @@ with ctx:
 
             # Loop over (short) time-slides, starting with the zero-lag
             for slide in range(num_slides):
-                logging.debug("Analyzing slide %d/%d", slide, num_slides)
+                logger.debug("Analyzing slide %d/%d", slide, num_slides)
                 # Loop over sky positions
                 for position_index in range(len(sky_positions)):
-                    logging.debug(
+                    logger.debug(
                         "Analyzing sky position %d/%d",
                         position_index + 1,
                         len(sky_positions),
@@ -808,7 +808,7 @@ with ctx:
                         args.nifo_sngl_snr_threshold,
                         wraparound_dict,
                     )
-                    logging.debug("Found %d coincident triggers", len(coinc_idx))
+                    logger.debug("Found %d coincident triggers", len(coinc_idx))
                     # Time delay is applied to (coincident) indices at the
                     # geocenter to have them at the IFOs (hence the + which
                     # undoes the delay). The wrap around is performed.
@@ -839,24 +839,24 @@ with ctx:
                             args.coinc_threshold,
                             time_delay_idx[slide][position_index],
                         )
-                        logging.debug(
+                        logger.debug(
                             "%d triggers above coincident SNR threshold",
                             len(coinc_idx),
                         )
                         if len(coinc_idx) != 0:
-                            logging.debug(
+                            logger.debug(
                                 "With max coincident SNR = %.2f",
                                 max(rho_coinc),
                             )
                     else:
                         coinc_triggers = {}
-                        logging.debug("No coincident triggers were found")
+                        logger.debug("No coincident triggers were found")
                     # If there are triggers above coinc threshold and more
                     # than 1 IFO, then calculate the coherent statistics for
                     # them and apply the cut on coherent SNR (with threshold
                     # equal to the coinc SNR one)
                     if len(coinc_idx) != 0 and nifo > 1:
-                        logging.debug("Calculating their coherent statistics")
+                        logger.debug("Calculating their coherent statistics")
                         # Plus and cross antenna pattern dictionaries
                         fp = {
                             ifo: antenna_pattern[ifo][position_index][0]
@@ -946,12 +946,12 @@ with ctx:
                                 project,
                                 rho_coinc,
                             )
-                        logging.debug(
+                        logger.debug(
                             "%d triggers above coherent SNR threshold",
                             len(rho_coh),
                         )
                         if len(coinc_idx) != 0:
-                            logging.debug("With max coherent SNR = %.2f", max(rho_coh))
+                            logger.debug("With max coherent SNR = %.2f", max(rho_coh))
                             # Calculate the null SNR and apply the null SNR cut
                             (
                                 null,
@@ -969,9 +969,9 @@ with ctx:
                                 snrv=coinc_triggers,
                                 index=coinc_idx,
                             )
-                            logging.debug("%d triggers above null threshold", len(null))
+                            logger.debug("%d triggers above null threshold", len(null))
                             if len(coinc_idx) != 0:
-                                logging.debug("With max null SNR = %.2f", max(null))
+                                logger.debug("With max null SNR = %.2f", max(null))
                     # Now calculate the individual detector chi2 values
                     # and the SNR reweighted by chi2 and by null SNR
                     # (no cut on reweighted SNR is applied).
@@ -1142,14 +1142,14 @@ with ctx:
                 cluster_window = int(template.chirp_length * sample_rate)
             # Cluster template events by slide
             for slide in range(num_slides):
-                logging.debug("Clustering slide %d", slide)
+                logger.debug("Clustering slide %d", slide)
                 event_mgr.cluster_template_network_events(
                     "time_index", "reweighted_snr", cluster_window, slide=slide
                 )
         # Left loop over segments
         event_mgr.finalize_template_events()
     # Left loop over templates
-    logging.info("Filtering completed")
+    logger.info("Filtering completed")
 
 # Record some stats about performance
 time_stop = time.time()
@@ -1158,8 +1158,8 @@ event_mgr.save_performance(
     num_cpu_cores, len(segments[args.instruments[0]]), n_bank, run_time, time_setup
 )
 
-logging.info("Writing output")
+logger.info("Writing output")
 event_mgr.write_events(args.output)
 
-logging.info("Finished")
-logging.info("Time to complete analysis: %.0f s", time.time() - time_init)
+logger.info("Finished")
+logger.info("Time to complete analysis: %.0f s", time.time() - time_init)

@@ -36,6 +36,8 @@ import pycbc.tmpltbank.bank_output_utils as bank_output
 import pycbc.version
 from pycbc import pnutils, tmpltbank
 
+logger = logging.getLogger(__name__)
+
 __author__ = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
@@ -103,13 +105,13 @@ if opts.random_seed is not None:
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
-    logging.info("Obtaining h(t) for PSD generation")
+    logger.info("Obtaining h(t) for PSD generation")
     strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 else:
     strain = None
 
 # Get the PSD using the pycbc interface
-logging.info("Obtaining PSD")
+logger.info("Obtaining PSD")
 # FIXME: Revisit the following!
 # Want the number of samples to be a binary number and Nyquist must be above
 # opts.f_upper. All this assumes that 1 / deltaF is a binary number
@@ -126,7 +128,7 @@ psd = pycbc.psd.from_cli(
 )
 metricParams.psd = psd
 
-logging.info("Calculating metric")
+logger.info("Calculating metric")
 
 # Begin by calculating a metric
 metricParams = tmpltbank.determine_eigen_directions(
@@ -135,7 +137,7 @@ metricParams = tmpltbank.determine_eigen_directions(
 
 # This is used to calculate evalsCV and evecsCV with describe the rotations
 # needed to move into the principal component directions. evalsCV will be 1s.
-logging.info("Calculating covariance matrix")
+logger.info("Calculating covariance matrix")
 
 vals = tmpltbank.estimate_mass_range(
     1000000, massRangeParams, metricParams, metricParams.fUpper, covary=False
@@ -147,7 +149,7 @@ evecsCVdict[metricParams.fUpper] = evecsCV
 metricParams.evecsCV = evecsCVdict
 
 
-logging.info("Estimating extent of parameter space")
+logger.info("Estimating extent of parameter space")
 
 # This is to get an estimate of the largest values of \chi1 and \chi2
 vals = tmpltbank.estimate_mass_range(
@@ -162,7 +164,7 @@ chi2Min = vals[1].min()
 chi2Diff = chi2Max - chi2Min
 
 # Generate a lattice of points in \chi1 \chi2 coordinates
-logging.info("Calculating lattice")
+logger.info("Calculating lattice")
 
 # When placing the lattice we transition from 1D lattice to a hexagonal
 # lattice and then back to 1D lattice
@@ -273,7 +275,7 @@ if lower1DBoundary is not None:
 v1s = numpy.array(v1s)
 v2s = numpy.array(v2s)
 
-logging.info("%d points in the lattice", len(v1s))
+logger.info("%d points in the lattice", len(v1s))
 
 # What follows is used to
 #   1) Check if the points are close to the physical space, if not reject
@@ -315,7 +317,7 @@ sortedBins = {}
 #    for j in range(numv2bins):
 #        sortedBins[i][j] = []
 
-logging.info("Sorting guide points")
+logger.info("Sorting guide points")
 
 bin_size = (opts.max_mismatch) ** 0.5 * 6.0
 
@@ -331,7 +333,7 @@ for iter, currXi in enumerate(xis):
     if len(sortedBins[x1bin][x2bin]) < 100:
         sortedBins[x1bin][x2bin].append((iter, xi1, xi2))
 
-logging.info("Converting to physical points")
+logger.info("Converting to physical points")
 
 # Now we start looping through all the points and either accept it, with a
 # physical representation *or* accept it nudged toward the physical space
@@ -392,10 +394,10 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
     # print >>fileP, masses[0],masses[1],masses[2],masses[3],masses[4],\
     #  masses[5],masses[6],masses[7],masses[8],masses[9],v1,v2
 
-logging.info("Writing output to file %s", opts.output_file)
+logger.info("Writing output to file %s", opts.output_file)
 
 bank_output.output_bank_to_file(
     opts.output_file, tempBank, programName=__program__, optDict=opts.__dict__
 )
 
-logging.info("Done")
+logger.info("Done")

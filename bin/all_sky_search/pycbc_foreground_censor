@@ -10,6 +10,8 @@ import pycbc.events
 from pycbc.io import HFile
 from pycbc.workflow import SegFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -32,7 +34,7 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-logging.info("Start")
+logger.info("Start")
 
 f = HFile(args.foreground_triggers, "r")
 
@@ -40,7 +42,7 @@ start = f["segments/foreground_veto/start"][:]
 end = f["segments/foreground_veto/end"][:]
 vsegs = pycbc.events.start_end_to_segments(start, end)
 
-logging.info("Read in foreground veto segments")
+logger.info("Read in foreground veto segments")
 
 # 2-ifo old style format
 if "detector_1" in f.attrs:
@@ -55,7 +57,7 @@ for ifo in ifos:
     segs = pycbc.events.select_segments_by_definer(
         args.veto_file, args.segment_name, ifo
     )
-    logging.info("Read in veto segments from %s" % ifo)
+    logger.info("Read in veto segments from %s" % ifo)
     fsegs += [segs.coalesce() + vsegs.coalesce()]
     names += [args.output_segment_name]
 
@@ -63,4 +65,4 @@ file_url = urlunparse(
     ["file", "localhost", os.path.abspath(args.output_file), None, None, None]
 )
 SegFile.from_multi_segment_list("UNUSED", fsegs, names, ifos, file_url=file_url)
-logging.info("Done")
+logger.info("Done")

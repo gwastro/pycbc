@@ -12,6 +12,8 @@ import pycbc
 from pycbc.events import coinc, stat, veto
 from pycbc.io import HFile, SingleDetTriggers
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -73,7 +75,7 @@ else:
     filter_func = None
 
 if filter_func is not None:
-    logging.info("Will filter trigs using %s", filter_func)
+    logger.info("Will filter trigs using %s", filter_func)
 # Filter will be stored as self.mask attribute of sngls instance
 sngls = SingleDetTriggers(
     args.single_trig_file,
@@ -84,7 +86,7 @@ sngls = SingleDetTriggers(
     filter_func=filter_func,
 )
 
-logging.info("Calculating stat")
+logger.info("Calculating stat")
 rank_method = stat.get_statistic_from_opts(args, [args.detector])
 #  NOTE: inefficient, as we are calculating the stat on all
 #  triggers. Might need to do something complicated to fix this.
@@ -92,20 +94,20 @@ rank_method = stat.get_statistic_from_opts(args, [args.detector])
 sngl_info = ([args.detector], sngls.trigs)
 stat = rank_method.rank_stat_single(sngl_info)[sngls.mask]
 
-logging.info("%i stat values found", len(stat))
+logger.info("%i stat values found", len(stat))
 
 outfile = HFile(args.output_file, "w")
 outgroup = outfile.create_group(args.detector)
 
 if args.cluster_window is not None:
-    logging.info("Clustering events over %s s window", args.cluster_window)
+    logger.info("Clustering events over %s s window", args.cluster_window)
     out_idx = coinc.cluster_over_time(stat, sngls.end_time, window=args.cluster_window)
-    logging.info("%d triggers remaining", len(out_idx))
+    logger.info("%d triggers remaining", len(out_idx))
     outgroup["cluster_window"] = args.cluster_window
 else:
     out_idx = numpy.arange(len(sngls.end_time))
 
-logging.info("Writing %i triggers", len(out_idx))
+logger.info("Writing %i triggers", len(out_idx))
 
 # get the columns to copy over
 with HFile(args.single_trig_file, "r") as trigfile:
@@ -127,7 +129,7 @@ if args.store_bank_values:
         if n == "template_hash":
             continue
         if not hasattr(sngls, n):
-            logging.warning(
+            logger.warning(
                 "Bank's %s dataset or group is not supported "
                 "by SingleDetTriggers, ignoring it",
                 n,
@@ -169,4 +171,4 @@ outgroup.attrs["sngl_ranking"] = args.sngl_ranking
 outgroup.attrs["statistic_files"] = args.statistic_files
 
 outfile.close()
-logging.info("Done!")
+logger.info("Done!")

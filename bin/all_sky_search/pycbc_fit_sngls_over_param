@@ -23,6 +23,8 @@ from pycbc import init_logging
 from pycbc.events import triggers
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(
     usage="",
     description="Smooth (regress) the dependence of coefficients describing "
@@ -127,13 +129,13 @@ ifo = fits.attrs["ifo"]
 # get template id and template parameter values
 tid = fits["template_id"][:]
 if args.use_template_fit_param:
-    logging.info("Reading %s values from the template fit file" % args.fit_param)
+    logger.info("Reading %s values from the template fit file" % args.fit_param)
     # check we're asking for the right param name
     assert fits.attrs["save_trig_param"] == args.fit_param
     parvals = fits["template_param"][:]
 
 else:
-    logging.info("Calculating template parameter values")
+    logger.info("Calculating template parameter values")
     bank = HFile(args.bank_file, "r")
     m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
     parvals = triggers.get_param(args.fit_param, args, m1, m2, s1z, s2z)
@@ -160,10 +162,10 @@ if tcount:
 invalpha = invalpha[parsort]
 
 if args.log_param:
-    logging.info("Using log %s to perform smoothing" % args.fit_param)
+    logger.info("Using log %s to perform smoothing" % args.fit_param)
     parvals = np.log(parvals)
 else:
-    logging.info("Using %s to perform smoothing" % args.fit_param)
+    logger.info("Using %s to perform smoothing" % args.fit_param)
 
 # do nearest-neighbours regression
 # use Gaussian weight over fitting parameter
@@ -174,24 +176,24 @@ if args.regression_method == "nn":
     weights = lambda d: np.exp(-0.5 * (d / args.smoothing_width) ** 2)
     knn = neighbors.KNeighborsRegressor(args.num_neighbors, weights=weights)
 
-    logging.info("Smoothing nabove data")
+    logger.info("Smoothing nabove data")
     nabove_knn = knn.fit(parvals[:, np.newaxis], nabove)
-    logging.info("Evaluating smoothed nabove")
+    logger.info("Evaluating smoothed nabove")
     nabove_smoothed = [nabove_knn.predict([[p]]) for p in parvals]
     del nabove_knn
 
     if tcount:
-        logging.info("Smoothing ntotal data")
+        logger.info("Smoothing ntotal data")
         ntotal_knn = knn.fit(parvals[:, np.newaxis], ntotal)
-        logging.info("Evaluating smoothed ntotal")
+        logger.info("Evaluating smoothed ntotal")
         ntotal_smoothed = [ntotal_knn.predict([[p]]) for p in parvals]
         del ntotal_knn
 
-    logging.info("Smoothing invalpha data")
+    logger.info("Smoothing invalpha data")
     # smooth the inverse alpha values times trig count above threshold
     invalphan = invalpha * nabove
     invalphan_knn = knn.fit(parvals[:, np.newaxis], invalphan)
-    logging.info("Evaluating smoothed invalpha")
+    logger.info("Evaluating smoothed invalpha")
     # loop over parameter values to avoid memory error in knn predict
     invalphan_smoothed = [invalphan_knn.predict([[p]]) for p in parvals]
     del invalphan_knn
@@ -206,10 +208,10 @@ elif args.regression_method == "tricube":
     nabove_smoothed = []
     if tcount:
         ntotal_smoothed = []
-    logging.info("Evaluating smoothed invalpha and n_above")
+    logger.info("Evaluating smoothed invalpha and n_above")
     for i, p in enumerate(parvals):
         if not i % 100:
-            logging.info("Smoothing template %i", i)
+            logger.info("Smoothing template %i", i)
         # find parameter values that go into average
         par_diff = parvals - p
         in_kernel = abs(par_diff) < args.smoothing_width
@@ -251,4 +253,4 @@ if "analysis_time" in fits.attrs:
 outfile.attrs.create("stat", data=ifo + "-fit_coeffs")
 
 outfile.close()
-logging.info("Done!")
+logger.info("Done!")

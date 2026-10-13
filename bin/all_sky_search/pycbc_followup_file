@@ -12,6 +12,8 @@ import numpy
 import pycbc
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -96,7 +98,7 @@ for k in sfile:
 # multiple background types)
 values = numpy.concatenate(values)
 values, invmap = numpy.unique(values, return_inverse=True)
-logging.info("%s triggers to follow up", len(values))
+logger.info("%s triggers to follow up", len(values))
 
 f = HFile(args.output_file, "w")
 f["inverse"] = invmap
@@ -116,4 +118,4 @@ for k in bank:
 
 f["waveparams"] = wparam
 
-logging.info("Done")
+logger.info("Done")

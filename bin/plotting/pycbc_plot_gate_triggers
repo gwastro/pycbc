@@ -29,6 +29,8 @@ from pycbc import add_common_pycbc_options, init_logging
 from pycbc.events import ranking
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
 parser.add_argument(
@@ -105,26 +107,26 @@ ifo_trigger_times = [[] for thr in snr_cut_vals]
 n_gates = 0
 
 for single_file in args.single_trigger_files:
-    logging.info("Reading trigger file %s...", single_file.split("/")[-1])
+    logger.info("Reading trigger file %s...", single_file.split("/")[-1])
     file_ = HFile(single_file, "r")
     ifo = str(list(file_.keys())[0])
     data = file_[ifo]
 
     if gating_type in data["gating"].keys():
-        logging.info("Extracting gated times...")
+        logger.info("Extracting gated times...")
         gate_time = numpy.unique(data[f"gating/{gating_type}/time"][:])
         n_gates += len(gate_time)
-        logging.info("%i %s gates found", len(gate_time), args.gating_type)
+        logger.info("%i %s gates found", len(gate_time), args.gating_type)
     else:
-        logging.info(
+        logger.info(
             "Trigger file does not contain %s gates. Skipping file...", args.gating_type
         )
         continue
-    logging.info("Extracting trigger times...")
+    logger.info("Extracting trigger times...")
     times = data["end_time"][:]
 
     if args.template_duration:
-        logging.info("Cutting on template duration...")
+        logger.info("Cutting on template duration...")
         template_duration = data["template_duration"][:]
         if args.duration_ltgt == "LT":
             times = times[template_duration <= args.duration_cut]
@@ -132,7 +134,7 @@ for single_file in args.single_trigger_files:
             times = times[template_duration >= args.duration_cut]
 
     if args.snr_cut_type:
-        logging.info("Cutting on %s...", args.snr_cut_type)
+        logger.info("Cutting on %s...", args.snr_cut_type)
         if args.snr_cut_type == "snr":
             snr_val = data["snr"][:]
         if args.snr_cut_type == "newsnr":
@@ -148,7 +150,7 @@ for single_file in args.single_trigger_files:
             else:
                 snr_val = snr_val[template_duration >= args.duration_cut]
 
-    logging.info("Starting loop over gates...")
+    logger.info("Starting loop over gates...")
     time_triggers = [[] for thr in snr_cut_vals]
     for i, thr in enumerate(snr_cut_vals):
         if args.snr_cut_type:
@@ -242,8 +244,8 @@ else:  # Nothing to plot, make an empty figure
         verticalalignment="center",
     )
 
-logging.info("Saving histogram...")
+logger.info("Saving histogram...")
 plt.savefig(out_name)
 plt.close()
 
-logging.info("Done")
+logger.info("Done")
