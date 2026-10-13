@@ -84,8 +84,8 @@ def make_padded_frequency_series(vec,filter_N=None):
     if isinstance(vec,FrequencySeries):
         vectilde = FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)),
                                    delta_f=1.0,copy=False)
-	if len(vectilde) < len(vec):
-	    cplen = len(vectilde)
+        if len(vectilde) < len(vec):
+            cplen = len(vectilde)
         else:
             cplen = len(vec)
         vectilde[0:cplen] = vec[0:cplen]
