@@ -817,6 +817,7 @@ class Workflow(pegasus_workflow.Workflow):
         # Must execute in output directory.
         curr_dir = os.getcwd()
         out_dir = node.executable.out_dir
+        make_analysis_dir(out_dir)
         os.chdir(out_dir)
 
         # Make call
