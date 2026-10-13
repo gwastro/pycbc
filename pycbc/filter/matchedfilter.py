@@ -45,7 +45,7 @@ from pycbc.types import (
     zeros,
 )
 
-logger = logging.getLogger("pycbc.filter.matchedfilter")
+logger = logging.getLogger(__name__)
 
 BACKEND_PREFIX = "pycbc.filter.matchedfilter_"
 

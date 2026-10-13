@@ -22,7 +22,7 @@ from pycbc.io.ligolw import (
     return_search_summary,
 )
 
-logger = logging.getLogger("pycbc.io.hdf")
+logger = logging.getLogger(__name__)
 
 
 class HGroup(h5py.Group):

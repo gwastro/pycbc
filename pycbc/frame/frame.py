@@ -34,7 +34,7 @@ from gwdatafind import find_urls as find_frame_urls
 import pycbc
 from pycbc.types import TimeSeries, zeros
 
-logger = logging.getLogger("pycbc.frame.frame")
+logger = logging.getLogger(__name__)
 
 # map LAL series types to corresponding functions and Numpy types
 _fr_type_map = {

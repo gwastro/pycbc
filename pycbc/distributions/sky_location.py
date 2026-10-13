@@ -31,7 +31,7 @@ from pycbc.io import FieldArray
 from pycbc.libutils import import_optional
 from pycbc.types import angle_as_radians
 
-logger = logging.getLogger("pycbc.distributions.sky_location")
+logger = logging.getLogger(__name__)
 
 
 class UniformSky(angular.UniformSolidAngle):

@@ -39,7 +39,7 @@ from pycbc.io import get_chisq_from_file_choice, hdf
 from pycbc.io.hdf import ReadByTemplate
 from pycbc.tmpltbank import bank_conversions as bank_conv
 
-logger = logging.getLogger("pycbc.events.cuts")
+logger = logging.getLogger(__name__)
 
 # sngl_rank_keys are the allowed names of reweighted SNR functions
 sngl_rank_keys = ranking.sngls_ranking_function_dict.keys()

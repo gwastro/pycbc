@@ -22,7 +22,7 @@ from igwn_segments import segmentlist
 
 from pycbc.workflow.core import Executable, FileList, SegFile, make_analysis_dir
 
-logger = logging.getLogger("pycbc.workflow.psd")
+logger = logging.getLogger(__name__)
 
 
 class CalcPSDExecutable(Executable):

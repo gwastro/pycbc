@@ -14,7 +14,7 @@ from pycbc.events import trigger_fits as fits
 from pycbc.io.hdf import HFile
 from pycbc.types import MultiDetOptionAction
 
-logger = logging.getLogger("pycbc.events.single")
+logger = logging.getLogger(__name__)
 
 
 class LiveSingle:

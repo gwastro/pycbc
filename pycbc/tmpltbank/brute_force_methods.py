@@ -4,7 +4,7 @@ import numpy
 
 from pycbc.tmpltbank.coord_utils import get_cov_params
 
-logger = logging.getLogger("pycbc.tmpltbank.brute_force_methods")
+logger = logging.getLogger(__name__)
 
 
 def get_physical_covaried_masses(

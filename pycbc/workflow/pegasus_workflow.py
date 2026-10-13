@@ -40,7 +40,7 @@ from urllib.request import pathname2url
 import Pegasus.api as dax
 from packaging import version
 
-logger = logging.getLogger("pycbc.workflow.pegasus_workflow")
+logger = logging.getLogger(__name__)
 
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), "pegasus_files")
 

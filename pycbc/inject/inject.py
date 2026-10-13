@@ -51,7 +51,7 @@ from pycbc.waveform import (
 )
 from pycbc.waveform import utils as wfutils
 
-logger = logging.getLogger("pycbc.inject.inject")
+logger = logging.getLogger(__name__)
 
 sim = libutils.import_optional("lalsimulation")
 

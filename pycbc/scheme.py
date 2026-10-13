@@ -36,7 +36,7 @@ import pycbc
 from .libutils import get_ctypes_library
 from .pool import use_mpi
 
-logger = logging.getLogger("pycbc.scheme")
+logger = logging.getLogger(__name__)
 
 
 class _SchemeManager:

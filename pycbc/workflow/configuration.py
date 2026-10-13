@@ -39,7 +39,7 @@ from shutil import which
 
 from pycbc.types.config import InterpolatingConfigParser
 
-logger = logging.getLogger("pycbc.workflow.configuration")
+logger = logging.getLogger(__name__)
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp

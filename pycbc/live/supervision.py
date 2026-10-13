@@ -31,7 +31,7 @@ from dateutil.relativedelta import relativedelta
 
 import pycbc
 
-logger = logging.getLogger("pycbc.live.supervision")
+logger = logging.getLogger(__name__)
 
 
 def symlink(target, link_name):

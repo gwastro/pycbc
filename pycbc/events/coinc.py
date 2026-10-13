@@ -48,7 +48,7 @@ from .eventmgr_cython import (
     timecoincidence_getslideint,
 )
 
-logger = logging.getLogger("pycbc.events.coinc")
+logger = logging.getLogger(__name__)
 
 
 def background_bin_from_string(background_bins, data):

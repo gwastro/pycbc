@@ -35,7 +35,7 @@ from igwn_segments import segment, segmentlist
 from pycbc.frame.gwosc import get_run
 from pycbc.io import get_file
 
-logger = logging.getLogger("pycbc.dq")
+logger = logging.getLogger(__name__)
 
 
 def parse_veto_definer(veto_def_filename, ifos):

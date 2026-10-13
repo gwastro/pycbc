@@ -31,7 +31,7 @@ except ImportError:
     from itertools import izip_longest as zip_longest
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 
-logger = logging.getLogger("pycbc.workflow.minifollowups")
+logger = logging.getLogger(__name__)
 
 
 def grouper(iterable, n, fillvalue=None):

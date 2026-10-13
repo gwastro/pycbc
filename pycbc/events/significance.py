@@ -35,7 +35,7 @@ import numpy as np
 from pycbc import conversions as conv
 from pycbc.events import trigger_fits as trstats
 
-logger = logging.getLogger("pycbc.events.significance")
+logger = logging.getLogger(__name__)
 
 
 def count_n_louder(bstat, fstat, dec, **kwargs):  # pylint:disable=unused-argument

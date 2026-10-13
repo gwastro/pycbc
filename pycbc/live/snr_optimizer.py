@@ -41,7 +41,7 @@ from pycbc import DYN_RANGE_FAC, waveform
 from pycbc.filter import matched_filter_core
 from pycbc.types import zeros
 
-logger = logging.getLogger("pycbc.live.snr_optimizer")
+logger = logging.getLogger(__name__)
 
 try:
     import pyswarms as ps

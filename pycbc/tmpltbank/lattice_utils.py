@@ -19,7 +19,7 @@ import logging
 
 import numpy
 
-logger = logging.getLogger("pycbc.tmpltbank.lattice_utils")
+logger = logging.getLogger(__name__)
 
 
 def generate_hexagonal_lattice(maxv1, minv1, maxv2, minv2, mindist):

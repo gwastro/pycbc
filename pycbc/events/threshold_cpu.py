@@ -29,7 +29,7 @@ from .. import opt
 from .eventmgr import _BaseThresholdCluster
 from .simd_threshold_cython import parallel_thresh_cluster, parallel_threshold
 
-logger = logging.getLogger("pycbc.events.threshold_cpu")
+logger = logging.getLogger(__name__)
 
 l2_cache_size = opt.get_l2_cache_size()
 if l2_cache_size is not None:

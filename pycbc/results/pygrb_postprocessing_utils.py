@@ -38,7 +38,7 @@ from pycbc.events import veto
 from pycbc.events.coherent import reweightedsnr_cut
 from pycbc.io.hdf import HFile
 
-logger = logging.getLogger("pycbc.results.pygrb_postprocessing_utils")
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================

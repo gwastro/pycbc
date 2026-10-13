@@ -26,7 +26,7 @@ from pycbc.io.ligolw import (
 from pycbc.mchirp_area import calc_probabilities
 from pycbc.results import generate_asd_plot, generate_snr_plot, source_color
 
-logger = logging.getLogger("pycbc.io.gracedb")
+logger = logging.getLogger(__name__)
 
 
 def _single_value(value):

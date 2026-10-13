@@ -20,7 +20,7 @@ import numpy
 
 from pycbc.tmpltbank.lambda_mapping import generate_mapping
 
-logger = logging.getLogger("pycbc.tmpltbank.calc_moments")
+logger = logging.getLogger(__name__)
 
 
 def determine_eigen_directions(

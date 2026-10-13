@@ -32,7 +32,7 @@ from collections import deque
 from ctypes.util import find_library
 from subprocess import getoutput
 
-logger = logging.getLogger("pycbc.libutils")
+logger = logging.getLogger(__name__)
 
 # Be careful setting the mode for opening libraries! Some libraries (e.g.
 # libgomp) seem to require the DEFAULT_MODE is used. Others (e.g. FFTW when

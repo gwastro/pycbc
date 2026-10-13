@@ -19,7 +19,7 @@ from scipy.integrate import quad
 from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 from pycbc.cosmology import _redshift
 
-logger = logging.getLogger("pycbc.mchirp_area")
+logger = logging.getLogger(__name__)
 
 
 def insert_args(parser):

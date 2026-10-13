@@ -41,7 +41,7 @@ from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.workflow.plotting import PlotExecutable
 
-logger = logging.getLogger("pycbc.workflow.grb_utils")
+logger = logging.getLogger(__name__)
 
 
 def _select_grb_pp_class(wflow, curr_exe):

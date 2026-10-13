@@ -20,7 +20,7 @@ import numpy
 
 from pycbc.io.record import FieldArray
 
-logger = logging.getLogger("pycbc.distributions.joint")
+logger = logging.getLogger(__name__)
 
 
 class JointDistribution:

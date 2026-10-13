@@ -26,7 +26,7 @@ from scipy.special import hyp2f1
 
 from pycbc.distributions import bounded, power_law
 
-logger = logging.getLogger("pycbc.distributions.mass")
+logger = logging.getLogger(__name__)
 
 
 class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):

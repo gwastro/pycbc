@@ -45,7 +45,7 @@ from astropy.time import Time
 from scipy.optimize import fsolve
 from scipy.spatial.transform import Rotation
 
-logger = logging.getLogger("pycbc.coordinates.space")
+logger = logging.getLogger(__name__)
 
 # This constant makes sure LISA is behind the Earth by 19-23 degrees.
 # Making this a stand-alone constant will also make it callable by

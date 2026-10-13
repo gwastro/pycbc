@@ -26,7 +26,7 @@ lalframe = import_optional("lalframe")
 lalsimulation = import_optional("lalsimulation")
 
 
-logger = logging.getLogger("pycbc.results.versioning")
+logger = logging.getLogger(__name__)
 
 
 def get_library_version_info():

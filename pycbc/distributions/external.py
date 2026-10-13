@@ -26,7 +26,7 @@ import scipy.interpolate as scipy_interpolate
 
 from pycbc import VARARGS_DELIM
 
-logger = logging.getLogger("pycbc.distributions.external")
+logger = logging.getLogger(__name__)
 
 
 class External:

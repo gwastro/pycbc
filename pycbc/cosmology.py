@@ -39,7 +39,7 @@ from scipy import interpolate
 
 import pycbc.conversions
 
-logger = logging.getLogger("pycbc.cosmology")
+logger = logging.getLogger(__name__)
 
 DEFAULT_COSMOLOGY = "Planck15"
 

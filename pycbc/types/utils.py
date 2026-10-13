@@ -5,7 +5,7 @@ from numpy import float64
 
 from pycbc.libutils import import_optional
 
-logger = logging.getLogger("pycbc.type.utils")
+logger = logging.getLogger(__name__)
 
 _lal = import_optional("lal")
 

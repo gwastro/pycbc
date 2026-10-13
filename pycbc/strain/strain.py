@@ -52,7 +52,7 @@ from pycbc.types import (
 )
 from pycbc.waveform.spa_tmplt import spa_distance
 
-logger = logging.getLogger("pycbc.strain.strain")
+logger = logging.getLogger(__name__)
 
 
 def next_power_of_2(n):

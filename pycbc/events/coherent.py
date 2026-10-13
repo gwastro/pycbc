@@ -32,7 +32,7 @@ import numpy as np
 
 from .eventmgr_cython import get_coinc_indexes_cython_twodet_twocoinc
 
-logger = logging.getLogger("pycbc.events.coherent")
+logger = logging.getLogger(__name__)
 
 
 def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos, wraparound_dict):
