@@ -63,7 +63,7 @@ select = [
 ]
 
 # numpy convention excludes D107/D212/D213/D402/D413/D415/D416/D417 by
-# default. We want D213, plus# D107/D402/D413/D416/D417
+# default. We want D213, plus D107/D402/D413/D416/D417
 # -- all re-enabled explicitly since `select` above
 # doesn't override convention filtering (see the `extend-select` docs).
 # D212 (conflicts with D213) and D415 (redundant with D400, which is already
