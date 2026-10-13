@@ -108,7 +108,7 @@ class TestEventManager(unittest.TestCase):
             self.columns, [l1_events[c] for c in self.columns]
         )
         mgr_l1.finalize_template_events()
-        mgr_l1.write_events(self.h5_path)
+        mgr_l1.write_events(self.h5_path, mode='a')
 
         # 3. Instantiate via from_multi_ifo_interface for V1
         opt_multi = MockOptions()
@@ -134,7 +134,7 @@ class TestEventManager(unittest.TestCase):
             self.columns, [v1_events[c] for c in self.columns]
         )
         mgr_v1.finalize_template_events()
-        mgr_v1.write_events(self.h5_path)
+        mgr_v1.write_events(self.h5_path, mode='a')
 
         # 4. Verify the multi-detector HDF5 structure
         with h5py.File(self.h5_path, 'r') as hf:
@@ -173,13 +173,25 @@ class TestEventManager(unittest.TestCase):
             )
             self.assertIn('V1/search/start_time', hf)
 
-    def test_h5filesyntsugar_prefix_and_rstrip(self):
-        # Verify default prefix is '' and rstrip preserves leading slash
-        with eventmgr.H5FileSyntSugar(self.h5_path) as f:
-            self.assertEqual(f.prefix, '')
-            f['/leading/slash/'] = np.array([1, 2, 3])
+    def _write(self, ifo, mode='w'):
+        opt = MockOptions(channel_name=ifo + ':STRAIN')
+        mgr = eventmgr.EventManager(opt, self.columns, self.column_types,
+                                    ifo=ifo)
+        mgr.new_template(tmplt=MockTemplate())
+        mgr.finalize_template_events()
+        mgr.write_events(self.h5_path, mode=mode)
+
+    def test_default_mode_overwrites_file(self):
+        # An existing output file is replaced, not added to
+        self._write('L1')
+        self._write('H1')
         with h5py.File(self.h5_path, 'r') as hf:
-            self.assertIn('leading/slash', hf)
+            self.assertEqual(list(hf.keys()), ['H1'])
+
+    def test_append_same_ifo_fails(self):
+        self._write('H1')
+        with self.assertRaises(ValueError):
+            self._write('H1', mode='a')
 
     def test_eventmgr_single_ifo_fallback(self):
         # Verify fallback to opt.channel_name[0:2] when ifo is not passed
