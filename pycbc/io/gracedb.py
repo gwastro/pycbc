@@ -456,9 +456,8 @@ class CandidateForGraceDB:
 
                 self.gracedb = GraceDb(**gdbargs)
 
-            except Exception as exc:
-                logger.error("Failed to create GraceDB client")
-                logger.error(exc)
+            except Exception:
+                logger.exception("Failed to create GraceDB client")
 
         if not hasattr(self, "producer") and bootstrap_servers is not None:
             logger.info("Creating Kafka producer...")
@@ -487,9 +486,8 @@ class CandidateForGraceDB:
             )
             gid = response.json()["graceid"]
             logger.info("Uploaded event %s", gid)
-        except Exception as exc:
-            logger.error("Failed to create GraceDB event")
-            logger.error(str(exc))
+        except Exception:
+            logger.exception("Failed to create GraceDB event")
 
         # Upload em_bright properties JSON
         if self.hasmassgap is not None and gid is not None:
@@ -501,9 +499,10 @@ class CandidateForGraceDB:
                     tag_name=["em_bright"],
                 )
                 logger.info("Uploaded em_bright properties for %s", gid)
-            except Exception as exc:
-                logger.error("Failed to upload em_bright properties file for %s", gid)
-                logger.error(str(exc))
+            except Exception:
+                logger.exception(
+                    "Failed to upload em_bright properties file for %s", gid
+                )
 
         # Upload multi-cpt p_astro JSON
         if self.astro_probs is not None and gid is not None:
@@ -516,9 +515,8 @@ class CandidateForGraceDB:
                     label="PASTRO_READY",
                 )
                 logger.info("Uploaded multi p_astro for %s", gid)
-            except Exception as exc:
-                logger.error("Failed to upload multi p_astro file for %s", gid)
-                logger.error(str(exc))
+            except Exception:
+                logger.exception("Failed to upload multi p_astro file for %s", gid)
 
         # If there is p_astro but no probabilities, upload p_astro JSON
         if hasattr(self, "pastro_file") and gid is not None:
@@ -530,9 +528,8 @@ class CandidateForGraceDB:
                     tag_name=["sig_info"],
                 )
                 logger.info("Uploaded p_astro for %s", gid)
-            except Exception as exc:
-                logger.error("Failed to upload p_astro file for %s", gid)
-                logger.error(str(exc))
+            except Exception:
+                logger.exception("Failed to upload p_astro file for %s", gid)
 
         # plot the SNR timeseries and noise PSDs
         if self.snr_series is not None:
@@ -585,9 +582,8 @@ class CandidateForGraceDB:
                     tag_name=["psd"],
                     displayName=["ASDs"],
                 )
-            except Exception as exc:
-                logger.error("Failed to upload SNR timeseries and ASD for %s", gid)
-                logger.error(str(exc))
+            except Exception:
+                logger.exception("Failed to upload SNR timeseries and ASD for %s", gid)
 
         # If 'self.prob_file' exists, make pie plot and do uploads.
         # The pie plot only shows relative astrophysical source
@@ -625,11 +621,10 @@ class CandidateForGraceDB:
                         tag_name=["pe"],
                     )
                     logger.info("Uploaded source probabilities pie chart for %s", gid)
-                except Exception as exc:
-                    logger.error(
+                except Exception:
+                    logger.exception(
                         "Failed to upload source probability results for %s", gid
                     )
-                    logger.error(str(exc))
 
         if gid is not None:
             try:
@@ -638,13 +633,12 @@ class CandidateForGraceDB:
                 # Add any annotations to the event log
                 for text in extra_strings or []:
                     self.gracedb.write_log(gid, text, tag_name=["analyst_comments"])
-            except Exception as exc:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "Something failed during annotation of analyst "
                     "comments for event %s on GraceDB.",
                     fname,
                 )
-                logger.error(str(exc))
 
         return gid
 

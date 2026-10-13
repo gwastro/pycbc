@@ -379,7 +379,7 @@ class LiveSingle:
                 rates = dist_grp["counts"][:] / live_time
                 coeffs = dist_grp["fit_coeff"][:]
         except FileNotFoundError:
-            logger.error(
+            logger.exception(
                 "Single fit file %s not found; "
                 "dropping a potential single-detector candidate!",
                 self.fit_file,
