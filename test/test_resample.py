@@ -51,12 +51,14 @@ class TestUtils(unittest.TestCase):
             self.assertAlmostEqual(ra[0], 0.00696246)
             ra = resample_to_delta_t(self.a, self.delta_t)
             self.assertAlmostEqual(ra[0], 1)
+            self.assertIsNot(ra, self.a)
 
         def test_resample_float64(self):
             rb = resample_to_delta_t(self.b, self.target_delta_t)
             self.assertAlmostEqual(rb[0], 0.00696246)
             rb = resample_to_delta_t(self.b, self.delta_t)
             self.assertAlmostEqual(rb[0], 1)
+            self.assertIsNot(rb, self.b)
 
     def test_resample_errors(self):
         self.assertRaises(TypeError, resample_to_delta_t, self.c, self.target_delta_t)
