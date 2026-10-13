@@ -301,6 +301,8 @@ from unittest.mock import MagicMock
 
 import pycbc.libutils
 
+logger = logging.getLogger(__name__)
+
 pycbc.libutils.get_ctypes_library = MagicMock()
 
 
@@ -311,7 +313,7 @@ def build_includes():
 
     This will ignore any files in the _include directory that start with ``_``.
     """
-    logging.info("Running scripts in _include:")
+    logger.info("Running scripts in _include:")
     cwd = os.getcwd()
     os.chdir("_include")
     pyfiles = glob.glob("*.py") + glob.glob("*.sh")
@@ -335,7 +337,7 @@ def build_includes():
         if len(running) < run_num and i < len(run_args):
             args = run_args[i]
             proc = subprocess.Popen(args, stdout=None, stderr=None)
-            logging.info("Running: {}".format(" ".join(proc.args)))
+            logger.info("Running: {}".format(" ".join(proc.args)))
             i += 1
             running.append(proc)
 

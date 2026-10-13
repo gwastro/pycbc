@@ -11,6 +11,8 @@ import numpy as np
 
 from pycbc import init_logging
 
+logger = logging.getLogger(__name__)
+
 init_logging(True)
 gw170817_time = 1187008882
 end_times = (np.arange(3) - 1) * 300 + gw170817_time
@@ -35,5 +37,5 @@ for pol in pols:
     result = "PASS" if n == 3 else "FAIL"
     if result == "FAIL":
         status = 1
-    logging.info('"%s" polarization: %s (%d/3 triggers found)', pol, result, n)
+    logger.info('"%s" polarization: %s (%d/3 triggers found)', pol, result, n)
 sys.exit(status)

@@ -2,7 +2,7 @@
 
 import argparse
 import glob
-import logging as log
+import logging
 import sys
 
 import numpy as np
@@ -14,6 +14,8 @@ import pycbc
 from pycbc import conversions as conv
 from pycbc.io import FieldArray, HFile
 from pycbc.io.ligolw import LIGOLWContentHandler
+
+logger = logging.getLogger(__name__)
 
 
 def close(a, b, c):
@@ -56,7 +58,7 @@ def check_single_results(args):
                     or psd_epoch < args.gps_start
                     or psd_epoch > args.gps_end
                 ):
-                    log.info("Invalid PSD in %s %s", trigfp, detector)
+                    logger.info("Invalid PSD in %s %s", trigfp, detector)
                     single_fail = True
 
                 if "snr" not in group or len(group["snr"]) == 0:
@@ -67,7 +69,7 @@ def check_single_results(args):
                 # check that SNR is non-negative and finite
                 snr = group["snr"][:]
                 if (snr < 0).any() or not np.isfinite(snr).all():
-                    log.error("Invalid SNR in %s %s", trigfp, detector)
+                    logger.error("Invalid SNR in %s %s", trigfp, detector)
                     single_fail = True
 
                 # check that Allen chi^2 is non-negative and finite
@@ -79,13 +81,13 @@ def check_single_results(args):
                     or (chisq_dof < 0).any()
                     or not np.isfinite(chisq_dof).all()
                 ):
-                    log.error("Invalid Allen chi^2 in %s %s", trigfp, detector)
+                    logger.error("Invalid Allen chi^2 in %s %s", trigfp, detector)
                     single_fail = True
 
                 # check that merger time is within the simulated time range
                 end_time = group["end_time"][:]
                 if (end_time < args.gps_start).any() or (end_time > args.gps_end).any():
-                    log.error("Invalid merger time in %s %s", trigfp, detector)
+                    logger.error("Invalid merger time in %s %s", trigfp, detector)
                     single_fail = True
 
                 # check that template parameters are consistent with the bank
@@ -102,17 +104,19 @@ def check_single_results(args):
                     (test_mass1, test_mass2, test_s1z, test_s2z)
                 )
                 if not test_all.all():
-                    log.error("Invalid template parameters in %s %s", trigfp, detector)
+                    logger.error(
+                        "Invalid template parameters in %s %s", trigfp, detector
+                    )
                     single_fail = True
 
     # check that triggers were produced in all detectors
     missing = sorted(detectors - detectors_with_trigs)
     if missing:
-        log.error("No triggers found in %s", ", ".join(missing))
+        logger.error("No triggers found in %s", ", ".join(missing))
         single_fail = True
 
     if single_fail:
-        log.error("Single Trigger Test Failed")
+        logger.error("Single Trigger Test Failed")
     return single_fail
 
 
@@ -131,13 +135,13 @@ def check_found_events(args):
     found_trig_paths = sorted(glob.glob("output/????_??_??/candidate_*/*.xml.gz"))
     n_found = len(found_trig_paths)
     if n_found == 0:
-        log.error("No triggers detected")
+        logger.error("No triggers detected")
         found_fail = True
     elif n_found >= 10:
-        log.error("Too many triggers detected")
+        logger.error("Too many triggers detected")
         found_fail = True
     else:
-        log.info("%d found trigger(s) detected", n_found)
+        logger.info("%d found trigger(s) detected", n_found)
 
     # create field array to store properties of triggers
     dtype = [
@@ -153,7 +157,7 @@ def check_found_events(args):
 
     # store properties of found triggers
     for x, ctrigfp in enumerate(found_trig_paths):
-        log.info("Checking trigger %s", ctrigfp)
+        logger.info("Checking trigger %s", ctrigfp)
         xmldoc = load_xml_doc(ctrigfp, False, contenthandler=LIGOLWContentHandler)
         si_table = lsctables.SnglInspiralTable.get_table(xmldoc)
         ci_table = lsctables.CoincInspiralTable.get_table(xmldoc)
@@ -163,7 +167,7 @@ def check_found_events(args):
         for entry in event.singles:
             psd = entry.psd.data.data
             if (psd < 1e-48).any() or (psd > 1e-40).any() or not np.isfinite(psd).all():
-                log.error("Invalid PSD in %s", ctrigfp)
+                logger.error("Invalid PSD in %s", ctrigfp)
                 found_fail = True
 
         trig_props["tc"][x] = si_table[0].end
@@ -176,14 +180,14 @@ def check_found_events(args):
         snr_list = si_table.getColumnByName("snr").asarray()
         trig_props["net_snr"][x] = sum(snr_list**2) ** 0.5
 
-        log.info("Single-detector SNRs: %s", snr_list)
-        log.info("Network SNR: %f", trig_props["net_snr"][x])
-        log.info("IFAR: %f", trig_props["ifar"][x])
-        log.info("Merger time: %f", trig_props["tc"][x])
-        log.info("Mass 1: %f", trig_props["mass1"][x])
-        log.info("Mass 2: %f", trig_props["mass2"][x])
-        log.info("Spin1z: %f", trig_props["spin1z"][x])
-        log.info("Spin2z: %f", trig_props["spin2z"][x])
+        logger.info("Single-detector SNRs: %s", snr_list)
+        logger.info("Network SNR: %f", trig_props["net_snr"][x])
+        logger.info("IFAR: %f", trig_props["ifar"][x])
+        logger.info("Merger time: %f", trig_props["tc"][x])
+        logger.info("Mass 1: %f", trig_props["mass1"][x])
+        logger.info("Mass 2: %f", trig_props["mass2"][x])
+        logger.info("Spin1z: %f", trig_props["spin1z"][x])
+        logger.info("Spin2z: %f", trig_props["spin2z"][x])
 
     # check if injections match trigger params
     for i in range(len(inj_mass1)):
@@ -204,10 +208,10 @@ def check_found_events(args):
 
         if not has_match:
             found_fail = True
-            log.error("Injection %i was missed", i)
+            logger.error("Injection %i was missed", i)
 
     if found_fail:
-        log.error("Found Trigger Test Failed")
+        logger.error("Found Trigger Test Failed")
     return found_fail
 
 
@@ -228,8 +232,8 @@ found_fail = check_found_events(args)
 fail = single_fail or found_fail
 
 if fail:
-    log.error("Test Failed")
+    logger.error("Test Failed")
 else:
-    log.info("Test Passed")
+    logger.info("Test Passed")
 
 sys.exit(1 if fail else 0)
