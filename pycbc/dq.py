@@ -124,15 +124,11 @@ def query_dqsegdb2(detector, flag_name, start_time, end_time, server):
         )
         return query_res["active"]
     except Exception as e:
-        logger.error(
-            "Could not query segment database, check name "
-            "(%s), times (%d-%d) and server (%s)",
-            complete_flag,
-            int(start_time),
-            int(end_time),
-            server,
+        e.add_note(
+            f"Could not query segment database, check name ({complete_flag}), "
+            f"times ({int(start_time)}-{int(end_time)}) and server ({server})"
         )
-        raise e
+        raise
 
 
 def query_flag(
