@@ -16,9 +16,9 @@ jobs:
         python-version: ['3.11', '3.12', '3.13']
         test-type: [unittest, search, docs]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
     - name: installing system packages
@@ -28,7 +28,7 @@ jobs:
         pip install tox pip setuptools --upgrade
     - name: Cache LAL auxiliary data files
       id: cache-lal-aux-data
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         key: lal-aux-data
         path: ~/lal_aux_data
@@ -43,7 +43,7 @@ jobs:
         popd
     - name: Cache example GW data
       id: cache-example-gw-data
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         key: example-gw-data
         path: |
@@ -74,7 +74,7 @@ jobs:
         tox -e py-inference
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: documentation-page
         path: _gh-pages

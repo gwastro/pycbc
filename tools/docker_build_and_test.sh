@@ -10,7 +10,7 @@ fi
 
 SOURCE_TAG=`git show-ref | grep ${GITHUB_SHA} | grep -E -o "refs/tags.{0,100}" | cut -c11-`
 
-sudo docker run --name buildvm -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash /pycbc/tools/docker_build_dist.sh --pycbc-container=${PYCBC_CONTAINER} --pycbc-code=${GITHUB_REF} --secure=${DOCKER_SECURE_ENV_VARS} --tag=${SOURCE_TAG}"
+sudo docker run --name buildvm -v `pwd`:/pycbc:rw -e GITHUB_ACTIONS="${GITHUB_ACTIONS}" ${DOCKER_IMG} /bin/bash -c "bash /pycbc/tools/docker_build_dist.sh --pycbc-container=${PYCBC_CONTAINER} --pycbc-code=${GITHUB_REF} --secure=${DOCKER_SECURE_ENV_VARS} --tag=${SOURCE_TAG}"
 
 echo -e "\\n>> [`date`] Docker exited"
 

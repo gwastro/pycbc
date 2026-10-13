@@ -161,7 +161,7 @@ class Merger(object):
                 ifo, sampling_map[sample_rate], ver)
 
         filename = get_file(url, cache=True)
-        return read_frame(str(filename), str(channel))
+        return read_frame(filename, str(channel))
 
 
 class Catalog(object):

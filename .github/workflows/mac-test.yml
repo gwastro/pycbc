@@ -24,10 +24,10 @@ jobs:
         shell: bash -el {0}
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v5
 
     - name: Cache conda packages
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       env:
         # increment to reset cache
         CACHE_NUMBER: 0
@@ -36,7 +36,7 @@ jobs:
         key: ${{ runner.os }}-conda-${{ matrix.python-version}}-${{ env.CACHE_NUMBER }}
 
     - name: Configure conda
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
         activate-environment: test
         channels: conda-forge

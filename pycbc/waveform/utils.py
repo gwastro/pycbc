@@ -37,6 +37,38 @@ from pycbc.types import (
 )
 from pycbc.constants import PI
 
+DEFAULT_TAPER_METHOD = 'lal'
+DEFAULT_TAPER_WINDOW = None
+
+
+def get_taper_settings(obj):
+    """Gets taper settings from an object with waveform parameters.
+
+    The obj may be a dict (e.g., the parameters of a waveform generator) or
+    an object with the parameters as attributes (e.g., a row of an injection
+    table). If it does not have ``taper_method`` or ``taper_window``, then
+    ``DEFAULT_TAPER_METHOD`` and ``DEFAULT_TAPER_WINDOW`` are used,
+    respectively.
+
+    Parameters
+    ----------
+    obj : dict or object
+        The waveform parameters.
+
+    Returns
+    -------
+    tapermethod : str
+        The taper method.
+    taper_window : float or None
+        The taper window.
+    """
+    if isinstance(obj, dict):
+        return (obj.get('taper_method', DEFAULT_TAPER_METHOD),
+                obj.get('taper_window', DEFAULT_TAPER_WINDOW))
+    return (getattr(obj, 'taper_method', DEFAULT_TAPER_METHOD),
+            getattr(obj, 'taper_window', DEFAULT_TAPER_WINDOW))
+
+
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""
     signif,exponent = frexp(n)
