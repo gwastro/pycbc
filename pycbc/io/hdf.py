@@ -734,28 +734,28 @@ class SingleDetTriggers(object):
         ----------
         logic_mask : boolean array or numpy array of indices
         """
-        arr = np.asanyarray(logic_mask)
+        logic_arr = np.asanyarray(logic_mask)
         if self.mask is None:
             self.mask = np.zeros(self.ntriggers, dtype=bool)
-            if arr.dtype.kind == 'b':
-                if arr.ndim == 0:
-                    self.mask[:] = bool(arr)
+            if logic_arr.dtype.kind == 'b':
+                if logic_arr.ndim == 0:
+                    self.mask[:] = bool(logic_arr)
                 else:
-                    self.mask = np.array(arr, dtype=bool)
-            elif arr.size > 0:
-                self.mask[arr.astype(int)] = True
+                    self.mask = np.array(logic_arr, dtype=bool)
+            elif logic_arr.size > 0:
+                self.mask[logic_arr.astype(int)] = True
         elif hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
-            if arr.dtype.kind == 'b':
+            if logic_arr.dtype.kind == 'b':
                 # So both new and old masks are boolean, numpy slice assignment
                 # can be used directly, with no additional memory.
-                self.mask[self.mask] = arr
+                self.mask[self.mask] = logic_arr
             else:
                 # So logic_mask is either an array, or list, of integers.
                 # This case is a little tricksy, so we begin by converting the
                 # list/array to a boolean, and then do what we did above.
                 new_logic_mask = np.zeros(np.sum(self.mask), dtype=bool)
-                if arr.size > 0:
-                    new_logic_mask[arr.astype(int)] = True
+                if logic_arr.size > 0:
+                    new_logic_mask[logic_arr.astype(int)] = True
                 self.mask[self.mask] = new_logic_mask
         else:
             self.mask = list(np.array(self.mask)[logic_mask])
