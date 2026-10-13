@@ -717,7 +717,8 @@ class SingleDetTriggers(object):
         mtrigs['veto_files'] = getattr(self, 'veto_files', [])
         mtrigs['segment_name'] = getattr(self, 'segment_name', [])
         mtrigs['gating_veto_windows'] = getattr(
-            self, 'gating_veto_windows', {})
+            self, 'gating_veto_windows', {}
+        )
         return mtrigs
 
     @classmethod
