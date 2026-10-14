@@ -139,6 +139,21 @@ class TestStatsCache(unittest.TestCase):
         model.update(**points[1])
         self.assertEqual(model.cached_stats(points[0]), before)
 
+    def test_revisit_is_evaluated_again(self):
+        """
+        The cache only answers cached_stats; the model still evaluates.
+
+        Anything about the model other than the parameters can change
+        between visits, ignore_failed_waveforms for one.
+        """
+        model = self.model()
+        calls = []
+        evaluate = model._loglikelihood
+        model._loglikelihood = lambda: calls.append(1) or evaluate()
+        points = self.points(2)
+        self.evaluate(model, [points[0], points[1], points[0]])
+        self.assertEqual(len(calls), 3)
+
     def test_array_valued_params_are_not_cached(self):
         """Reconstruction updates with arrays of trial values, not a point."""
         model = self.model()

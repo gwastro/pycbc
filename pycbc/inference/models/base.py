@@ -486,9 +486,7 @@ class BaseModel(metaclass=ABCMeta):
         If any sampling transforms are specified, they are applied to the
         params before being stored.
 
-        The stats of the evaluation being replaced go into the cache, and
-        an earlier evaluation at these same parameters has its stats restored
-        rather than reset.
+        The stats of the evaluation being replaced go into the cache.
         """
         self._store_stats()
         # add the static params
@@ -496,20 +494,18 @@ class BaseModel(metaclass=ABCMeta):
         values.update(params)
         self._current_params = self._transform_params(**values)
         self._current_key = _stats_key(params)
-        self._current_stats = (
-            ModelStats()
-            if self._current_key is None
-            else self._stats_cache.get(self._current_key, ModelStats())
-        )
+        self._current_stats = ModelStats()
 
     def _store_stats(self):
         """
-        Remembers the stats of the current parameters, dropping the oldest
-        entry once the cache is full.
+        Remembers the stats of the current parameters, adding them to what
+        an earlier evaluation of them left, and drops the oldest entry once
+        the cache is full.
         """
         if self._current_key is None:
             return
-        self._stats_cache[self._current_key] = self._current_stats
+        entry = self._stats_cache.setdefault(self._current_key, ModelStats())
+        entry.__dict__.update(self._current_stats.__dict__)
         self._trim_stats_cache()
 
     def _trim_stats_cache(self):
