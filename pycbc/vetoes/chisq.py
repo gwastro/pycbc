@@ -389,6 +389,32 @@ class SingleDetPowerChisq:
         safe_dict.update(pycbc.pnutils.__dict__)
         return eval(arg, {"__builtins__": None}, safe_dict)
 
+    @staticmethod
+    def insert_option_group(parser):
+        """Add the power chisq options to an argument parser."""
+        group = parser.add_argument_group("Power chisq")
+        group.add_argument(
+            "--chisq-snr-threshold",
+            type=float,
+            help="Minimum SNR to calculate the power chisq",
+        )
+        group.add_argument(
+            "--chisq-bins",
+            default=0,
+            help="Number of frequency bins to use for power "
+            "chisq. Specify an integer for a constant "
+            "number of bins, or a function of template "
+            "attributes. Math functions are allowed, ex. "
+            "'10./math.sqrt((params.mass1+params.mass2)"
+            "/100.)'. Non-integer values will be rounded "
+            "down.",
+        )
+
+    @classmethod
+    def from_cli(cls, args):
+        """Create the power chisq from the options of insert_option_group."""
+        return cls(num_bins=args.chisq_bins, snr_threshold=args.chisq_snr_threshold)
+
     def cached_chisq_bins(self, template, psd):
         from pycbc.opt import LimitedSizeDict
 

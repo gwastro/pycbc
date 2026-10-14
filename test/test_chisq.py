@@ -25,6 +25,7 @@
 These are the unittests for the pycbc.waveform module
 """
 
+import argparse
 import unittest
 
 import numpy
@@ -40,6 +41,7 @@ from pycbc.catalog import Merger
 from pycbc.filter import matched_filter_core, resample_to_delta_t
 from pycbc.psd import interpolate, inverse_spectrum_truncation
 from pycbc.vetoes import (
+    SingleDetPowerChisq,
     chisq_accum_bin,
     power_chisq,
     power_chisq_at_points_from_precomputed,
@@ -172,8 +174,27 @@ class TestChisq(unittest.TestCase):
             numpy.testing.assert_allclose(actual, expected, rtol=1e-5, atol=1e-7)
 
 
+class TestPowerChisqOptions(unittest.TestCase):
+    def parse(self, args):
+        parser = argparse.ArgumentParser()
+        SingleDetPowerChisq.insert_option_group(parser)
+        return SingleDetPowerChisq.from_cli(parser.parse_args(args))
+
+    def test_options_reach_the_estimator(self):
+        est = self.parse(["--chisq-bins", "16", "--chisq-snr-threshold", "4.5"])
+        self.assertTrue(est.do)
+        self.assertEqual(est.num_bins, "16")
+        self.assertEqual(est.snr_threshold, 4.5)
+
+    def test_off_by_default(self):
+        est = self.parse([])
+        self.assertFalse(est.do)
+        self.assertIsNone(est.snr_threshold)
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestChisq))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPowerChisqOptions))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
