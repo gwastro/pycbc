@@ -39,7 +39,9 @@ from pycbc.strain.calibration import CubicSpline, Recalibrate
 from pycbc.waveform import get_td_waveform
 
 TC = 1187008882.42840
-FLOW, SEGLEN, SRATE = 25.0, 32, 2048
+# The signal lasts about 90 s from FLOW and TC is in the middle of the
+# segment, so the segment is long enough to hold all of it.
+FLOW, SEGLEN, SRATE = 25.0, 256, 2048
 INJ = dict(
     mass1=1.42,
     mass2=1.36,
