@@ -1,7 +1,13 @@
-name: Flake8 check
-on: [pull_request]
+name: Code Checks
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+
 jobs:
     flake8_unused_imports:
+        name: Flake8 Unused Imports
         runs-on: ubuntu-latest
         steps:
             - name: Check out repository
@@ -22,6 +28,7 @@ jobs:
                 flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
 
     qlty_check:
+        name: Qlty Check
         runs-on: ubuntu-latest
         permissions:
             contents: read
@@ -64,4 +71,47 @@ jobs:
               uses: github/codeql-action/upload-sarif@v4
               with:
                   sarif_file: qlty-results.sarif
+
+    coverage:
+      name: Coverage
+      runs-on: ubuntu-latest
+      # Run on push to master OR on pull_request when the PR has the 'coverage' label
+      if: >
+        (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'coverage') && (needs.flake8_unused_imports.result == 'success' || needs.flake8_unused_imports.result == 'skipped'))
+
+      needs: flake8_unused_imports
+      steps:
+        - name: Check out repository
+          uses: actions/checkout@v5
+        - name: Setup Pixi
+          uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+          with:
+            pixi-version: latest
+        - name: Cache LAL auxiliary data files
+          id: cache-lal-aux-data
+          uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+          with:
+            key: lal-aux-data
+            path: ~/lal_aux_data
+        - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
+          name: Download LAL auxiliary data files
+          run: |
+            mkdir ~/lal_aux_data
+            pushd ~/lal_aux_data
+            curl --show-error --silent \
+              --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
+              --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
+            popd
+        - name: Install dependencies and run tests with coverage
+          run: |
+            export LAL_DATA_PATH=$HOME/lal_aux_data
+            pixi run python -m coverage run --source=pycbc -m pytest test
+            pixi run python -m coverage html -d htmlcov
+            pixi run python -m coverage report -m
+        - name: Upload HTML coverage report
+          uses: actions/upload-artifact@v4
+          with:
+            name: htmlcov
+            path: htmlcov
 
