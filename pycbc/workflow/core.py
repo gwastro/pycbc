@@ -40,6 +40,7 @@ import subprocess
 import urllib
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
+from pathlib import Path
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 
@@ -201,12 +202,6 @@ class Executable(pegasus_workflow.Executable):
             self.current_retention_level = getattr(self, cfg_ret_level)
 
         self.update_current_retention_level(self.current_retention_level)
-
-        self.stage_out = None
-        if cp.has_option_tags("pegasus_profile-%s" % name, "pycbc|stage-out", tags):
-            self.stage_out = cp.get_opt_tags(
-                "pegasus_profile-%s" % name, "pycbc|stage-out", tags
-            )
 
         # Should I reuse this executable?
         if reuse_executable:
@@ -534,7 +529,7 @@ class Executable(pegasus_workflow.Executable):
         self.current_retention_level = value
         try:
             global_retention_level = self.cp.get_opt_tags(
-                "workflow", "file-retention-level", self.tags + [self.name]
+                "workflow", "file-retention-level", [*self.tags, self.name]
             )
         except ConfigParser.Error:
             msg = "Cannot find file-retention-level in [workflow] section "
@@ -671,19 +666,26 @@ class Executable(pegasus_workflow.Executable):
 
         """
         # Determine the output directory
-        if out_dir is not None:
+        if self.cp.has_option_tags(
+            "pegasus_profile", "pycbc|stage-out", [*self.tags, self.name]
+        ):
+            self.out_dir = self.cp.get_opt_tags(
+                "pegasus_profile", "pycbc|stage-out", [*self.tags, self.name]
+            )
+        elif out_dir is not None:
             self.out_dir = out_dir
         elif len(self.tags) == 0:
             self.out_dir = self.name + "_output"
         else:
             self.out_dir = self.tagged_name + "_output"
 
-        if not os.path.isabs(self.out_dir):
-            self.out_dir = os.path.join(os.getcwd(), self.out_dir)
+        if "://" not in self.out_dir:
+            if not Path(self.out_dir).is_absolute():
+                self.out_dir = str(Path.cwd() / self.out_dir)
 
-        # Make output directory if not there
-        if not os.path.isdir(self.out_dir):
-            make_analysis_dir(self.out_dir)
+            # Make output directory if not there
+            if not Path(self.out_dir).is_dir():
+                make_analysis_dir(self.out_dir)
 
     def _set_pegasus_profile_options(self):
         """
@@ -1066,7 +1068,6 @@ class Node(pegasus_workflow.Node):
             directory=self.executable.out_dir,
             tags=all_tags,
             use_tmp_subdirs=use_tmp_subdirs,
-            stage_out=self.executable.stage_out,
         )
         self.add_output_opt(option_name, fil)
         return fil
@@ -1144,7 +1145,6 @@ class Node(pegasus_workflow.Node):
                 directory=self.executable.out_dir,
                 tags=all_tags,
                 use_tmp_subdirs=use_tmp_subdirs,
-                stage_out=self.executable.stage_out,
             )
             output_files.append(curr_file)
         self.add_multiifo_output_list_opt(opt, output_files)
@@ -1206,7 +1206,6 @@ class File(pegasus_workflow.File):
         tags=None,
         store_file=True,
         use_tmp_subdirs=False,
-        stage_out=None,
     ):
         """
         Create a File instance
@@ -1239,15 +1238,13 @@ class File(pegasus_workflow.File):
             following the workflow standard.
         directory : string (optional, default=None)
             Either supply this *and* extension *or* supply only file_url.
-            If given this gives the directory in which the file exists, or will
-            exists. The file name will be inferred from the other arguments
-            following the workflow standard.
+            If given this gives the directory or stage-out URL in which the
+            file exists, or will exist. The file name will be inferred from
+            the other arguments following the workflow standard.
         tags : list of strings (optional, default=None)
             This is a list of descriptors describing what this file is. For
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
             These are used in file naming.
-        stage_out: str
-            Path to stage output file to if stored, otherwise assumed local.
 
         """
         self.metadata = {}
@@ -1312,18 +1309,16 @@ class File(pegasus_workflow.File):
                 extension,
                 self.segment_list.extent(),
             )
+            file_url = (
+                f"{directory.rstrip('/')}/{filename}"
+                if "://" in directory
+                else str(Path(directory) / filename)
+            )
+            if "://" not in file_url and not Path(file_url).is_absolute():
+                file_url = str(Path.cwd() / file_url)
 
-            if stage_out:
-                if not stage_out.endswith("/"):
-                    stage_out += "/"
-                file_url = stage_out + filename
-            else:
-                path = os.path.join(directory, filename)
-                if not os.path.isabs(path):
-                    path = os.path.join(os.getcwd(), path)
-                file_url = urllib.parse.urlunparse(
-                    ["file", "localhost", path, None, None, None]
-                )
+        if file_url.startswith("file://"):
+            file_url = urllib.parse.urlsplit(file_url).path
 
         if use_tmp_subdirs and len(self.segment_list):
             pegasus_lfn = str(int(self.segment_list.extent()[0]))[:-4]
@@ -1333,10 +1328,7 @@ class File(pegasus_workflow.File):
         super().__init__(pegasus_lfn)
 
         if store_file:
-            if stage_out:
-                self.storage_path = file_url
-            else:
-                self.storage_path = urllib.parse.urlsplit(file_url).path
+            self.storage_path = file_url
         else:
             self.storage_path = None
 
