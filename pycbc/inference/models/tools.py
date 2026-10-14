@@ -639,7 +639,9 @@ class DistMarg:
         peak_lock_search_samples: int
             How far to search for the peak before each likelihood, in
             samples, centered on the region locked here. The region is then
-            moved to wherever the peak turned out to be. Off if not given.
+            moved to wherever the peak turned out to be. It has to cover the
+            furthest the peak can move; a warning is logged if the search
+            ends at the edge. Off if not given.
         peak_lock_search_decimate: int
             Stride of that search, in samples. It only has to place the
             peak inside the region, so it must be no wider than one.
@@ -806,6 +808,15 @@ class DistMarg:
             curve = a - 2.0 * b + c
             if curve < 0:
                 i += numpy.clip(0.5 * (a - c) / curve, -0.5, 0.5)
+        elif not getattr(self, "peak_lock_edge_warned", False):
+            # the edge is still the best guess, so the region goes there
+            logging.warning(
+                "%s: the peak search ended at the edge of its "
+                "window, so the peak may be beyond it; widen "
+                "peak_lock_search_samples",
+                ifo,
+            )
+            self.peak_lock_edge_warned = True
 
         # rounded to a whole sample of the region's own grid: a fractional
         # offset samples the series at shifted phases, which costs more than

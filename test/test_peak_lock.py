@@ -46,7 +46,9 @@ POINT = dict(distance=40.0, inclination=0.5)
 # how far the reference is put from the signal. The last of these moves the
 # peak by more than the width of a locked region.
 OFFSETS = [0.0, 0.002, 0.005, 0.01]
-SEARCH = dict(peak_lock_search_samples=246, peak_lock_search_decimate=8)
+# the search has to reach the peak at the last offset, which is 65 ms from
+# where it was locked: search 125 ms either side
+SEARCH = dict(peak_lock_search_samples=1024, peak_lock_search_decimate=8)
 
 
 class TestPeakLockSearch(unittest.TestCase):
@@ -69,8 +71,7 @@ class TestPeakLockSearch(unittest.TestCase):
         psd = aLIGOZeroDetHighPower(int(SRATE * SEGLEN / 2) + 1, 1.0 / SEGLEN, FLOW)
         # one detector: a locked region can be narrower than the light
         # travel time between two, which is a separate problem from this one
-        noise = noise_from_psd(int(SEGLEN * SRATE), 1.0 / SRATE, psd, seed=7)
-        noise._epoch = TC - SEGLEN / 2
+        noise = cls.noise(psd)
         signal = Detector("H1").project_wave(hp, hc, 1.7, -0.4, 0.3)
         cls.data = {"H1": noise.add_into(signal).to_frequencyseries()}
         cls.psds = {"H1": psd}
@@ -84,6 +85,13 @@ class TestPeakLockSearch(unittest.TestCase):
             polarization=0.3,
         )
         cls.fiducial = dict(mass1=1.4, tc=TC, ra=1.7, dec=-0.4, polarization=0.3)
+
+    @classmethod
+    def noise(cls, psd):
+        """Stationary Gaussian noise with the given PSD."""
+        noise = noise_from_psd(int(SEGLEN * SRATE), 1.0 / SRATE, psd, seed=7)
+        noise._epoch = TC - SEGLEN / 2
+        return noise
 
     def model(self, mass_offset=0.0, data=None, **kwargs):
         numpy.random.seed(5)
@@ -360,6 +368,40 @@ class TestPeakLockSearch(unittest.TestCase):
             asked, ["L1"], "the offset was taken from %s, not the loudest" % asked
         )
 
+    def test_a_peak_beyond_the_search_says_so(self):
+        """
+        A search that ends at its edge has probably not found the peak.
+
+        The series here only rises across the window, so its maximum is the
+        last sample. That is reported once, not on every likelihood call.
+        """
+        rate = 4096.0
+        span = 0.1
+        t = numpy.arange(int(span * rate)) / rate
+        z = 30.0 * numpy.exp(-0.5 * ((t - 0.05) / 2e-4) ** 2.0)
+        snrs = {"H1": TimeSeries(z + 0j, delta_t=1.0 / rate, epoch=TC)}
+
+        class One(DistMarg):
+            data = {"H1": None}
+            marginalized_vector_priors = {"tc": Uniform(tc=(TC, TC + span))}
+
+            def coarse_series(self, ifo, wfs, tstart, delta_t, num_samples):
+                return numpy.arange(num_samples, dtype=float)
+
+        one = One()
+        one.setup_peak_lock(
+            sample_rate=rate,
+            snrs=snrs,
+            peak_lock_snr=5.0,
+            peak_lock_ratio=1e4,
+            **SEARCH,
+        )
+        with self.logging_enabled(), self.assertLogs(level="WARNING") as caught:
+            one.follow_peak({"H1": None})
+            one.follow_peak({"H1": None})
+        self.assertEqual(len(caught.records), 1)
+        self.assertIn("edge", caught.records[0].getMessage())
+
     def test_a_model_that_cannot_search_says_so(self):
         """
         Silently ignoring the option would be worse than not having it.
@@ -393,12 +435,31 @@ class TestPeakLockSearchRelativeTime(TestPeakLockSearch):
     MODEL = "RelativeTime"
 
 
+class TestPeakLockSearchNonstationary(TestPeakLockSearch):
+    """
+    The same, in noise louder at the signal than its PSD says.
+
+    The model is given the stationary PSD. The noise around the peak is
+    1.5 times what it expects, and three times the quietest part of the
+    segment.
+    """
+
+    @classmethod
+    def noise(cls, psd):
+        noise = super().noise(psd)
+        t = noise.sample_times.numpy() - TC
+        return noise * (1.0 + 0.5 * numpy.cos(2 * numpy.pi * t / 16.0))
+
+
 suite = unittest.TestSuite()
 # not a loop variable: anything left bound at module scope here is a
 # TestCase subclass, which pytest collects and runs a second time
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPeakLockSearch))
 suite.addTest(
     unittest.TestLoader().loadTestsFromTestCase(TestPeakLockSearchRelativeTime)
+)
+suite.addTest(
+    unittest.TestLoader().loadTestsFromTestCase(TestPeakLockSearchNonstationary)
 )
 
 if __name__ == "__main__":
