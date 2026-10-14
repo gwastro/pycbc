@@ -85,7 +85,7 @@ class TestMargDistanceInterp(unittest.TestCase):
         )
         cls.hh = numpy.exp(
             numpy.random.uniform(
-                numpy.log(lo * lo / smax * 1.2), numpy.log(hi / smin * 0.8), 200
+                numpy.log(lo / smax * 1.2), numpy.log(hi / smin * 0.8), 200
             )
         )
         cls.truth = numpy.array(
@@ -139,6 +139,41 @@ class TestMargDistanceInterp(unittest.TestCase):
         self.assertLess(
             worst, 0.1, "off the marginalized likelihood by %s nats" % worst
         )
+
+    def test_it_is_as_good_at_the_edge_of_its_range(self):
+        """
+        The edge of the range is where a posterior near it samples.
+
+        The points here are within one grid cell of its four sides, which
+        the spline's boundary condition reaches unless the table extends
+        past the range.
+        """
+        smin, smax = RESCALE.min(), RESCALE.max()
+        sh = numpy.geomspace(
+            SNR_RANGE[0] ** 2 / smax, SNR_RANGE[1] ** 2 / smin, DENSITY[0]
+        )
+        hh = numpy.geomspace(
+            SNR_RANGE[0] ** 2 / smax**2, SNR_RANGE[1] ** 2 / smin**2, DENSITY[1]
+        )
+        rng = numpy.random.RandomState(12)
+        a = numpy.exp(rng.uniform(numpy.log(sh[0]), numpy.log(sh[-1]), 50))
+        b = numpy.exp(rng.uniform(numpy.log(hh[0]), numpy.log(hh[-1]), 50))
+        u = rng.uniform(0.0, 1.0, 50)
+        points = [
+            (sh[0] * (sh[1] / sh[0]) ** u, b),
+            (sh[-1] / (sh[1] / sh[0]) ** u, b),
+            (a, hh[0] * (hh[1] / hh[0]) ** u),
+            (a, hh[-1] / (hh[1] / hh[0]) ** u),
+        ]
+        for x, y in points:
+            truth = numpy.array(
+                [
+                    marginalize_likelihood(p, q, distance=DIST_MARG, phase=True)
+                    for p, q in zip(x, y)
+                ]
+            )
+            worst = numpy.abs(self.interp(x, y) - truth).max()
+            self.assertLess(worst, 0.1, "off by %s nats next to the edge" % worst)
 
     def test_a_single_point_is_not_marginalized_a_second_time(self):
         """

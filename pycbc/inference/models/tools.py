@@ -870,19 +870,25 @@ def setup_distance_marg_interpolant(
     shr_min = snr_min**2.0 / smax
     hhr_min = snr_min**2.0 / smax / smax
 
-    shr = numpy.geomspace(shr_min, shr_max, density[0])
-    hhr = numpy.geomspace(hhr_min, hhr_max, density[1])
-    lvals = numpy.zeros((len(shr), len(hhr)))
+    # The table is uniform in log(sh) and log(hh), so where a point falls in
+    # it is arithmetic. The spline is fixed by assuming the table carries on
+    # flat past its edge, an error that falls by a factor of ~4 per cell
+    # inwards, so the table extends this many cells beyond the range.
+    pad = 8
+
+    def axis(vmin, vmax, num):
+        step = numpy.log(vmax / vmin) / (num - 1)
+        return numpy.log(vmin) + step * numpy.arange(-pad, num + pad), step
+
+    log_shr, dlog_shr = axis(shr_min, shr_max, density[0])
+    log_hhr, dlog_hhr = axis(hhr_min, hhr_max, density[1])
+    lvals = numpy.zeros((len(log_shr), len(log_hhr)))
     logging.info("Setup up likelihood interpolator")
-    for i, sh in enumerate(tqdm.tqdm(shr)):
-        for j, hh in enumerate(hhr):
+    for i, sh in enumerate(tqdm.tqdm(numpy.exp(log_shr))):
+        for j, hh in enumerate(numpy.exp(log_hhr)):
             lvals[i, j] = marginalize_likelihood(
                 sh, hh, distance=dist_marg, phase=phase
             )
-    # geomspace: uniform in log, so the cell index is arithmetic
-    log_shr, log_hhr = numpy.log(shr), numpy.log(hhr)
-    dlog_shr = (log_shr[-1] - log_shr[0]) / (len(log_shr) - 1)
-    dlog_hhr = (log_hhr[-1] - log_hhr[0]) / (len(log_hhr) - 1)
     coeffs = ndimage.spline_filter(lvals, order=3, mode="nearest")
 
     # said once, the first time it happens
@@ -916,9 +922,7 @@ def setup_distance_marg_interpolant(
                     warn_out_of_range()
 
         # clipped before the log: sh can be negative without phase
-        # marginalization, and the mask does not overwrite a nan. Nothing
-        # then reaches the boundary, but mode must not be the default,
-        # which reads outside the grid as zero.
+        # marginalization, and the mask does not overwrite a nan
         index = numpy.empty((2, numpy.size(x)))
         index[0] = (numpy.log(numpy.clip(x, shr_min, shr_max)) - log_shr[0]) / dlog_shr
         index[1] = (numpy.log(numpy.clip(y, hhr_min, hhr_max)) - log_hhr[0]) / dlog_hhr
