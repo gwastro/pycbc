@@ -67,9 +67,10 @@ class TestRelbinCalibration(unittest.TestCase):
                 for k in ("mass1", "mass2", "distance", "inclination", "coa_phase")
             },
         )
-        peak = float(
-            hp.sample_times[numpy.argmax(abs(hp.data) ** 2 + abs(hc.data) ** 2)]
-        )
+        # placed before projecting, which evaluates the detector response
+        # and delay at the waveform's own time
+        hp.start_time += TC
+        hc.start_time += TC
         cls.data, cls.psds = {}, {}
         seed = 5
         for ifo in ["H1", "L1"]:
@@ -79,7 +80,6 @@ class TestRelbinCalibration(unittest.TestCase):
             signal = Detector(ifo).project_wave(
                 hp, hc, INJ["ra"], INJ["dec"], INJ["polarization"]
             )
-            signal.start_time += TC - peak
             cls.data[ifo] = ts.add_into(signal).to_frequencyseries()
             cls.psds[ifo] = psd
 
