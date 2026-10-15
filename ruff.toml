@@ -89,6 +89,12 @@ ignore = [
     # comparison with a named constant (magic values) hurts readability in
     # numerical code.
     "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR2004",
+    # Not planned to be enabled: unittest-style assertions (assertEqual,
+    # assertRaises, ...). The tests are unittest.TestCase classes run both by
+    # pytest and as scripts (with --scheme for cpu/cuda); plain asserts would
+    # lose their failure details outside pytest, and pytest.raises would make
+    # pytest a hard dependency of every test file.
+    "PT009", "PT027",
 ]
 
 [lint.pydocstyle]
