@@ -40,6 +40,7 @@ import subprocess
 import urllib
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
+from pathlib import Path
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 
@@ -528,7 +529,7 @@ class Executable(pegasus_workflow.Executable):
         self.current_retention_level = value
         try:
             global_retention_level = self.cp.get_opt_tags(
-                "workflow", "file-retention-level", self.tags + [self.name]
+                "workflow", "file-retention-level", [*self.tags, self.name]
             )
         except ConfigParser.Error:
             msg = "Cannot find file-retention-level in [workflow] section "
@@ -665,19 +666,26 @@ class Executable(pegasus_workflow.Executable):
 
         """
         # Determine the output directory
-        if out_dir is not None:
+        if self.cp.has_option_tags(
+            "pegasus_profile", "pycbc|stage-out", [*self.tags, self.name]
+        ):
+            self.out_dir = self.cp.get_opt_tags(
+                "pegasus_profile", "pycbc|stage-out", [*self.tags, self.name]
+            )
+        elif out_dir is not None:
             self.out_dir = out_dir
         elif len(self.tags) == 0:
             self.out_dir = self.name + "_output"
         else:
             self.out_dir = self.tagged_name + "_output"
 
-        if not os.path.isabs(self.out_dir):
-            self.out_dir = os.path.join(os.getcwd(), self.out_dir)
+        if "://" not in self.out_dir:
+            if not Path(self.out_dir).is_absolute():
+                self.out_dir = str(Path.cwd() / self.out_dir)
 
-        # Make output directory if not there
-        if not os.path.isdir(self.out_dir):
-            make_analysis_dir(self.out_dir)
+            # Make output directory if not there
+            if not Path(self.out_dir).is_dir():
+                make_analysis_dir(self.out_dir)
 
     def _set_pegasus_profile_options(self):
         """
@@ -1230,9 +1238,9 @@ class File(pegasus_workflow.File):
             following the workflow standard.
         directory : string (optional, default=None)
             Either supply this *and* extension *or* supply only file_url.
-            If given this gives the directory in which the file exists, or will
-            exists. The file name will be inferred from the other arguments
-            following the workflow standard.
+            If given this gives the directory or stage-out URL in which the
+            file exists, or will exist. The file name will be inferred from
+            the other arguments following the workflow standard.
         tags : list of strings (optional, default=None)
             This is a list of descriptors describing what this file is. For
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
@@ -1301,12 +1309,16 @@ class File(pegasus_workflow.File):
                 extension,
                 self.segment_list.extent(),
             )
-            path = os.path.join(directory, filename)
-            if not os.path.isabs(path):
-                path = os.path.join(os.getcwd(), path)
-            file_url = urllib.parse.urlunparse(
-                ["file", "localhost", path, None, None, None]
+            file_url = (
+                f"{directory.rstrip('/')}/{filename}"
+                if "://" in directory
+                else str(Path(directory) / filename)
             )
+            if "://" not in file_url and not Path(file_url).is_absolute():
+                file_url = str(Path.cwd() / file_url)
+
+        if file_url.startswith("file://"):
+            file_url = urllib.parse.urlsplit(file_url).path
 
         if use_tmp_subdirs and len(self.segment_list):
             pegasus_lfn = str(int(self.segment_list.extent()[0]))[:-4]
@@ -1316,7 +1328,7 @@ class File(pegasus_workflow.File):
         super().__init__(pegasus_lfn)
 
         if store_file:
-            self.storage_path = urllib.parse.urlsplit(file_url).path
+            self.storage_path = file_url
         else:
             self.storage_path = None
 
