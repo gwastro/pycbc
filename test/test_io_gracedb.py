@@ -54,7 +54,21 @@ class TestIOGraceDB(unittest.TestCase):
 
         self.possible_ifos = 'H1 L1 V1 K1 I1'.split()
 
-    def do_test(self, n_ifos, n_ifos_extra, stat_as_array=False):
+        # Arguments matching what pycbc.mchirp_area.from_cli() builds, so
+        # the source probability code path runs in the tests below.
+        self.mc_area_args = {
+            'mass_limits': {'max_m1': 45., 'min_m2': 1.},
+            'mass_bdary': {'ns_max': 3., 'gap_max': 5.},
+            'estimation_coeff': {'a0': 0.7598, 'b0': -0.42, 'b1': 1.6,
+                                 'm0': 0.01, 'a1': 1., 'a2': 1.},
+            'mass_gap': False,
+            'mass_gap_separate': False,
+            'lal_cosmology': True,
+            'truncate_lower_dist': None
+        }
+
+    def do_test(self, n_ifos, n_ifos_extra, stat_as_array=False,
+                mc_area_args=None):
         # choose a random selection of interferometers
         # n_ifos will be used to generate the simulated trigger including
         # significance followup
@@ -104,6 +118,8 @@ class TestIOGraceDB(unittest.TestCase):
                   'low_frequency_cutoff': 20.,
                   'skyloc_data': skyloc_data,
                   'channel_names': channel_names}
+        if mc_area_args is not None:
+            kwargs['mc_area_args'] = mc_area_args
         coinc = CandidateForGraceDB(coinc_ifos, trig_ifos, results, **kwargs)
 
         tempdir = tempfile.mkdtemp()
@@ -141,6 +157,8 @@ class TestIOGraceDB(unittest.TestCase):
 
         shutil.rmtree(tempdir)
 
+        return coinc
+
     def test_2_ifos_no_followup(self):
         self.do_test(2, 0)
 
@@ -173,6 +191,23 @@ class TestIOGraceDB(unittest.TestCase):
 
     def test_4_ifos_1_followup(self):
         self.do_test(4, 1)
+
+    def test_source_probs_2_ifos_no_followup(self):
+        # Every detector in the candidate has an SNR, so every sngl row has
+        # an effective distance. Baseline for the tests below.
+        coinc = self.do_test(2, 0, mc_area_args=self.mc_area_args)
+        self.assertIsNotNone(coinc.probabilities)
+
+    def test_source_probs_with_skyloc_only_ifo(self):
+        # Detectors used only for sky localization have no SNR, hence no
+        # effective distance. Source probability estimation must ignore them
+        # rather than trying to compare None against a float.
+        coinc = self.do_test(2, 1, mc_area_args=self.mc_area_args)
+        self.assertIsNotNone(coinc.probabilities)
+
+    def test_source_probs_with_two_skyloc_only_ifos(self):
+        coinc = self.do_test(2, 2, mc_area_args=self.mc_area_args)
+        self.assertIsNotNone(coinc.probabilities)
 
 
 suite = unittest.TestSuite()
