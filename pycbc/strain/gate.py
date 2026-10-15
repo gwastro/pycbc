@@ -199,7 +199,7 @@ def gate_and_paint(
     if copy:
         data = data.copy()
     data[lindex:rindex] = 0.0
-    K = rindex - lindex
+    ngate = rindex - lindex
     # get the over-whitened gated data
     tdfilter = invpsd.astype("complex").to_timeseries() * invpsd.delta_t
     owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()
@@ -207,14 +207,14 @@ def gate_and_paint(
 
     diag = tdfilter[0]
     if method == "cholesky":
-        col = tdfilter[:K].numpy() / diag
-        T = linalg.toeplitz(col)
+        col = tdfilter[:ngate].numpy() / diag
+        tmat = linalg.toeplitz(col)
         if ridge > 0:
-            T += ridge * np.eye(K)
-        c, lower = linalg.cho_factor(T)
+            tmat += ridge * np.eye(ngate)
+        c, lower = linalg.cho_factor(tmat)
         proj = linalg.cho_solve((c, lower), rhs / diag)
     elif method == "toeplitz":
-        proj = linalg.solve_toeplitz(tdfilter[:K], owhgated_data[lindex:rindex])
+        proj = linalg.solve_toeplitz(tdfilter[:ngate], owhgated_data[lindex:rindex])
     else:
         raise ValueError(f"Unknown inpainting method: {method}")
 
@@ -245,12 +245,12 @@ def invert_covariance(invpsd, lindex, rindex, ridge=1e-10):
         time window [lindex, rindex].
 
     """
-    K = rindex - lindex
+    ngate = rindex - lindex
     tdfilter = invpsd.astype("complex").to_timeseries() * invpsd.delta_t
     diag = tdfilter[0]
-    mat = linalg.toeplitz(tdfilter[:K].numpy() / diag)
+    mat = linalg.toeplitz(tdfilter[:ngate].numpy() / diag)
     if ridge > 0:
-        mat += ridge * np.eye(K)
+        mat += ridge * np.eye(ngate)
     invmat = linalg.inv(mat) / diag
     return invmat
 

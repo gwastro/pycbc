@@ -444,15 +444,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
         out = {}
         for det, d in self.td_data.items():
             # make sure the cache at least has the detectors in it
-            try:
-                cache = self._gated_data[det]
-            except KeyError:
-                cache = self._gated_data[det] = {}
+            cache = self._gated_data.setdefault(det, {})
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
-            try:
+            if (gatestartdelay, dgatedelay) in cache:
                 dtilde = cache[gatestartdelay, dgatedelay]
-            except KeyError:
+            else:
                 # doesn't exist yet, or the gate times changed
                 cache.clear()
                 invmat = self.invert_covariance(det)
