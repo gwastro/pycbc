@@ -774,7 +774,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         *,
         raw=False,
         vars=None,
-        fallback=ConfigParser._UNSET,
+        fallback=ConfigParser._UNSET,  # noqa: SLF001
         **kwargs,
     ):
         """
@@ -782,7 +782,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         (e.g. '2048.0', '1e3') while strictly rejecting fractional values
         (e.g. '2048.5') and arbitrary large integers without precision loss.
         """
-        from pycbc.types.optparse import to_int
+        from pycbc.types.optparse import to_int  # noqa: PLC0415
 
         return self._get_conv(
             section, option, to_int, raw=raw, vars=vars, fallback=fallback, **kwargs
