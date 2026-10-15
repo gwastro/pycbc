@@ -774,7 +774,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         *,
         raw=False,
         vars=None,
-        fallback=ConfigParser._UNSET,
+        fallback=configparser._UNSET,
         **kwargs,
     ):
         """
