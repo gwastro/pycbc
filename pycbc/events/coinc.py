@@ -869,7 +869,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                  coinc_window_pad=.002,
                  statistic_refresh_rate=None,
                  return_background=False,
+                 return_background_info=False,
                  ifar_remove_threshold=None,
+                 injection_veto_chunks=None,
                  boundary_veto_window=0.1,
                  **kwargs):
         """
@@ -911,6 +913,16 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             chunks do not count towards the background time. The zerolag
             candidate itself is still reported. Default None, which
             disables this removal.
+        return_background_info: boolean
+            If true, per-coinc metadata (stat, end times, template id,
+            timeslide offset) for background triggers found in each update
+            are included in the coinc results under the
+            'background_coincs/' namespace.
+        injection_veto_chunks: list of int or None
+            Integer chunk indices (gps_time // analysis_block) that are
+            permanently excluded from background estimation regardless of
+            ifar_remove_threshold. Intended for injections whose times are
+            known in advance.
         boundary_veto_window: float
             If a loud trigger falls within this many seconds of a chunk
             boundary, the neighbouring chunk is also flagged as loud.
@@ -936,12 +948,18 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
+        self.return_background_info = return_background_info
         self.coinc_window_pad = coinc_window_pad
         self.ifar_remove_threshold = ifar_remove_threshold
         self.boundary_veto_window = boundary_veto_window
         # Set of integer chunk indices (gps_time // analysis_block) whose
         # triggers are excluded from coincidence formation
         self.loud_chunks = set()
+        # Full set of injection-based veto chunk indices (never pruned).
+        self.injection_veto_chunks = frozenset(injection_veto_chunks or [])
+        # Subset of injection_veto_chunks within the current rolling window;
+        # updated each iteration so background_time is not over-subtracted.
+        self.active_injection_veto_chunks = frozenset()
 
         self.ifos = ifos
         if len(self.ifos) != 2:
@@ -1033,6 +1051,14 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             stat_keywords,
         )
 
+        injection_veto_chunks = None
+        veto_file = getattr(args, 'veto_injection_time_file', None)
+        if veto_file:
+            times = numpy.atleast_1d(numpy.loadtxt(veto_file))
+            injection_veto_chunks = (
+                (times // analysis_chunk).astype(numpy.int64).tolist()
+            )
+
         return cls(num_templates, analysis_chunk,
                    args.ranking_statistic,
                    args.sngl_ranking,
@@ -1044,6 +1070,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                    coinc_window_pad=args.coinc_window_pad,
                    statistic_refresh_rate=args.statistic_refresh_rate,
                    ifar_remove_threshold=args.ifar_remove_threshold,
+                   injection_veto_chunks=injection_veto_chunks,
                    **kwargs)
 
     @staticmethod
@@ -1065,6 +1092,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                                 "threshold, the analysis chunks containing "
                                 "its triggers are marked as loud and "
                                 "excluded from background estimation")
+        group.add_argument('--veto-injection-time-file', type=str,
+            help="File with one GPS time per line. Analysis blocks "
+                 "containing any of these times are permanently excluded "
+                 "from background estimation, independently of "
+                 "--ifar-remove-threshold.", default=None)
 
     @staticmethod
     def verify_args(args, parser):
@@ -1074,30 +1106,30 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             parser.error(f"The single ifo ranking stat {args.sngl_ranking} "
                          "requires --psd-variation.")
 
-    def _filter_loud_coincs(self, cstat, ctime0, ctime1, offsets):
-        """Remove background coincs that fall in loud chunks.
+    def _filter_loud_coincs(self, cstat, ctime0, ctime1, offsets, min_end):
+        """Remove background coincs that fall in loud or vetoed chunks.
 
-        Prunes stale loud chunks, then returns an index array selecting
-        only the coincs that are *not* in a loud chunk (background coincs
-        in loud chunks are excluded; zerolag coincs are always kept).
-        Returns slice(None) when no filtering is needed so the caller can
-        treat all cases uniformly.
+        Prunes stale dynamic loud chunks using min_end, combines them with
+        the active injection veto chunks, then returns an index array
+        selecting coincs not in any excluded chunk (background coincs are
+        removed; zerolag coincs are always kept). Returns slice(None) when
+        no filtering is needed so the caller can treat all cases uniformly.
         """
-        # Prune loud chunks older than the lookback time: their triggers
-        # have expired from the singles buffers, so they must no longer
-        # reduce the background time.
-        min_end = max(ctime0.max(), ctime1.max()) - self.lookback_time
+        # Prune dynamic loud chunks older than the lookback time: their
+        # triggers have expired from the singles buffers, so they must no
+        # longer reduce the background time.
         self.loud_chunks = {
             c for c in self.loud_chunks
             if (c + 1) * self.analysis_block > min_end
         }
-        if not self.loud_chunks:
+        all_loud = self.loud_chunks | self.active_injection_veto_chunks
+        if not all_loud:
             return slice(None)
-        # Exclude background (timeslide) coincs in loud chunks; zerolag
-        # coincs are kept so loud signals/injections are always reported.
+        # Exclude background (timeslide) coincs in any loud/vetoed chunk;
+        # zerolag coincs are kept so candidates are always reported.
         chunk0 = (ctime0 // self.analysis_block).astype(numpy.int64)
         chunk1 = (ctime1 // self.analysis_block).astype(numpy.int64)
-        loud = numpy.fromiter(self.loud_chunks, dtype=numpy.int64)
+        loud = numpy.fromiter(all_loud, dtype=numpy.int64)
         in_loud_block = numpy.isin(chunk0, loud) | numpy.isin(chunk1, loud)
         good = numpy.flatnonzero(~(in_loud_block & (offsets != 0)))
         if len(good) < len(cstat):
@@ -1111,13 +1143,14 @@ class LiveCoincTimeslideBackgroundEstimator(object):
     def background_time(self):
         """Return the amount of background time that the buffers contain.
 
-        A loud chunk is an analysis_block-length time segment identified as
-        containing a loud candidate (IFAR above ifar_remove_threshold). Loud
-        chunks are excluded from background coincidence formation in both
-        detectors, so they do not contribute to the background time.
+        Excluded chunks — dynamic loud chunks (IFAR above
+        ifar_remove_threshold) and injection veto chunks — are not counted
+        towards the background time because their triggers are removed from
+        coincidence formation.
         """
         time = 1.0 / self.timeslide_interval
-        loud_time = len(self.loud_chunks) * self.analysis_block
+        all_loud = self.loud_chunks | self.active_injection_veto_chunks
+        loud_time = len(all_loud) * self.analysis_block
         for ifo in self.singles:
             livetime = self.singles[ifo].filled_time * self.analysis_block
             # Clamp at zero: loud chunks can cover the whole filled buffer
@@ -1398,14 +1431,34 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # (both zerolag and shifted are handled together)
         num_zerolag = 0
         num_background = 0
+        _bkg_info = None
 
         if len(cstat) > 0:
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
             ctime1 = numpy.concatenate(ctimes[self.ifos[1]]).astype(numpy.float64)
             good = slice(None)
-            if self.ifar_remove_threshold is not None and self.loud_chunks:
-                good = self._filter_loud_coincs(cstat, ctime0, ctime1, offsets)
+            cur_max_time = max(ctime0.max(), ctime1.max())
+            min_end = cur_max_time - self.lookback_time
+
+            # Restrict injection vetoes to the current rolling window so
+            # background_time is not over-subtracted by stale chunk indices.
+            if self.injection_veto_chunks:
+                win_min = int(min_end // self.analysis_block)
+                win_max = int(cur_max_time // self.analysis_block)
+                self.active_injection_veto_chunks = (
+                    self.injection_veto_chunks
+                    & frozenset(range(win_min, win_max + 1))
+                )
+
+            any_loud = (
+                (self.ifar_remove_threshold is not None and self.loud_chunks)
+                or self.active_injection_veto_chunks
+            )
+            if any_loud:
+                good = self._filter_loud_coincs(
+                    cstat, ctime0, ctime1, offsets, min_end
+                )
 
             logger.info("Clustering %s coincs", ppdets(self.ifos, "-"))
             cluster_window = self.analysis_block + 2 * self.time_window
@@ -1472,6 +1525,19 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             self.coincs.add(cstat[cidx][bkg_idx], single_expire, valid_ifos)
             num_zerolag = zerolag_idx.sum()
             num_background = bkg_idx.sum()
+
+            # Capture per-coinc metadata for offline diagnostics.
+            # offsets is already re-indexed to cidx, so offsets[bkg_idx]
+            # aligns with cstat[cidx][bkg_idx].
+            if self.return_background_info and num_background > 0:
+                bkg_cidx = cidx[bkg_idx]
+                _bkg_info = {
+                    'stat':        cstat[bkg_cidx],
+                    'end_time_0':  ctime0[bkg_cidx],
+                    'end_time_1':  ctime1[bkg_cidx],
+                    'template_id': template_ids[bkg_cidx].astype(numpy.int32),
+                    'offset':      offsets[bkg_idx],
+                }
         elif len(valid_ifos) > 0:
             self.coincs.increment(valid_ifos)
 
@@ -1504,6 +1570,21 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # Save all the background triggers
         if self.return_background:
             coinc_results['background/stat'] = self.coincs.data
+
+        # Per-coinc metadata (end times, template id, offset) for this
+        # update's background triggers; only when return_background_info=True.
+        if _bkg_info is not None:
+            coinc_results['background_coincs/stat'] = _bkg_info['stat']
+            coinc_results[f'background_coincs/{self.ifos[0]}/end_time'] = (
+                _bkg_info['end_time_0']
+            )
+            coinc_results[f'background_coincs/{self.ifos[1]}/end_time'] = (
+                _bkg_info['end_time_1']
+            )
+            coinc_results['background_coincs/template_id'] = (
+                _bkg_info['template_id']
+            )
+            coinc_results['background_coincs/offset'] = _bkg_info['offset']
 
         return num_background, coinc_results
 
