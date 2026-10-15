@@ -318,12 +318,12 @@ _handed_over = set()
 
 def _worker_stats_cache(_):
     """Hand back the stats this process remembered and has not sent yet."""
-    from pycbc.inference import models
+    from pycbc.inference import models  # noqa: PLC0415
 
-    model = getattr(models._global_instance, "model", models._global_instance)
+    model = getattr(models._global_instance, "model", models._global_instance)  # noqa: SLF001
     # the evaluation this process is holding has not been moved in yet
-    model._store_stats()
-    fresh = {k: v for k, v in model._stats_cache.items() if k not in _handed_over}
+    model._store_stats()  # noqa: SLF001
+    fresh = {k: v for k, v in model._stats_cache.items() if k not in _handed_over}  # noqa: SLF001
     _handed_over.update(fresh)
     return fresh
 
