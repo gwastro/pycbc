@@ -1959,7 +1959,11 @@ class LiveBatchMatchedFilter:
 
         seg = slice(valid_start, valid_end)
 
-        # Ensure memory is 0 before correlating
+        # Zero the tail of each template's slot in cout (the IFFT *input*).
+        # Correlation only fills the first flen = N/2+1 samples, and the
+        # complex IFFT needs the rest to be 0. cout is shared between groups
+        # of different slot sizes (and the veto correlate), so stale data
+        # can be left there. out needs no clearing: the IFFT overwrites it.
         flen = len(tgroup[0])
         cmem = self.cout_mem[mid].data.reshape(len(tgroup), psize)
         cmem[:, flen:] = 0
