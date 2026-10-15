@@ -1,6 +1,8 @@
 """Common utility functions for calculation of likelihoods"""
 
 import logging
+
+logger = logging.getLogger(__name__)
 from distutils.util import strtobool
 
 import numpy
@@ -656,7 +658,7 @@ class DistMarg:
         # a model whose reference series is fixed has no peak to follow and
         # provides no coarse_series to look for one with
         if self.peak_lock_search_samples and not hasattr(self, "coarse_series"):
-            logging.warning(
+            logger.warning(
                 "%s cannot search for the peak, so peak_lock_search_samples is ignored",
                 type(self).__name__,
             )
@@ -731,7 +733,7 @@ class DistMarg:
                 # which the kernel reports as an unexplained ValueError
                 if te <= ts:
                     ts, te = locked
-                    logging.warning(
+                    logger.warning(
                         "%s: the locked regions have no time in common; "
                         "keeping %s-%s. Widen them with peak_lock_ratio or "
                         "peak_lock_region, or check the reference "
@@ -810,7 +812,7 @@ class DistMarg:
                 i += numpy.clip(0.5 * (a - c) / curve, -0.5, 0.5)
         elif not getattr(self, "peak_lock_edge_warned", False):
             # the edge is still the best guess, so the region goes there
-            logging.warning(
+            logger.warning(
                 "%s: the peak search ended at the edge of its "
                 "window, so the peak may be beyond it; widen "
                 "peak_lock_search_samples",
@@ -1002,7 +1004,7 @@ def setup_distance_marg_interpolant(
 
     def warn_out_of_range():
         warned[0] = True
-        logging.warning(
+        logger.warning(
             "A likelihood evaluation asked for a signal to noise ratio "
             "outside marginalize_distance_snr_range %s; beyond it the "
             "distance marginalized likelihood is set to zero, which biases "
