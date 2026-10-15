@@ -29,11 +29,13 @@ import logging
 import shutil
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-import numpy
+import numpy  # noqa: ICN001
 from six import add_metaclass
 
 from pycbc import distributions
 from pycbc.inference.io import validate_checkpoint_files
+
+logger = logging.getLogger(__name__)
 
 #
 # =============================================================================
@@ -161,7 +163,7 @@ class BaseSampler:
                 missed += 1
             out[i] = cached
         if missed:
-            logging.info(
+            logger.info(
                 "Recalculated model stats for %s of %s points", missed, out.shape[0]
             )
         return {name: out[:, j].reshape(shape) for j, name in enumerate(names)}
