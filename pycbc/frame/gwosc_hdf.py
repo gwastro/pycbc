@@ -26,6 +26,7 @@ This module provides the same functions as `pycbc.frame.gwf`.
 """
 
 import math
+from pathlib import Path
 
 import h5py
 
@@ -46,7 +47,7 @@ _DATASETS = {
 def is_format(path):
     """Test if a file is an HDF5 file by checking its signature."""
     try:
-        with open(path, "rb") as f:
+        with Path(path).open("rb") as f:
             return f.read(8) == _HDF5_SIGNATURE
     except OSError:
         return False
@@ -68,7 +69,7 @@ def _dataset(h5file, channel):
     prefix, _, name = channel.partition(":")
     if prefix != ifo:
         known = ", ".join(f"{ifo}:{n}" for n in _DATASETS)
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             f"Channel {channel} is not in {h5file.filename}; "
             f"GWOSC HDF5 files contain {known}"
         )
@@ -77,7 +78,7 @@ def _dataset(h5file, channel):
     if f"strain/{name}" in h5file:
         return h5file[f"strain/{name}"]
     known = ", ".join(f"{ifo}:{n}" for n in _DATASETS)
-    raise ValueError(
+    raise ValueError(  # noqa: TRY003
         f"Channel {channel} is not in {h5file.filename}; "
         f"GWOSC HDF5 files contain {known}"
     )
@@ -90,7 +91,7 @@ def channel_info(path, channel):
         return dset.dtype, 1.0 / dset.attrs["Xspacing"]
 
 
-def read(path, channel, start, end, check_integrity=False):
+def read(path, channel, start, end, check_integrity=False):  # noqa: ARG001
     """
     Read the samples of a channel between GPS times `start` and `end`,
     which must lie within the file. `check_integrity` is ignored, as GWOSC
@@ -135,7 +136,7 @@ def write(location, channels, timeseries, start_time, duration):
             ifo = prefix
             break
     if not ifo:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             "GWOSC HDF5 files require channel names formatted "
             "as '<IFO>:<CHANNEL>' (e.g. 'H1:STRAIN') to "
             "determine the detector"
@@ -145,13 +146,13 @@ def write(location, channels, timeseries, start_time, duration):
         f["meta/Detector"] = ifo
         f["meta/GPSstart"] = float(start_time)
         f["meta/Duration"] = float(duration)
-        for channel, series in zip(channels, timeseries):
+        for channel, series in zip(channels, timeseries, strict=False):
             prefix, colon, name = channel.partition(":")
             if prefix != ifo or not colon or not name:
-                raise ValueError(f"Channel {channel} does not match detector {ifo}")
+                raise ValueError(f"Channel {channel} does not match detector {ifo}")  # noqa: TRY003
             if name not in _DATASETS:
                 known = ", ".join(f"{ifo}:{n}" for n in _DATASETS)
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"Channel {channel} cannot be written to "
                     f"GWOSC HDF5 format; supported channels "
                     f"are {known}"
