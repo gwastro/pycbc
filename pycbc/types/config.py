@@ -117,7 +117,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         env_vals = {
             key: value
             for key, value in os.environ.items()
-            if "%" not in value and "$" not in value
+            if "%" not in value and "$" not in value and key.isidentifier()
         }
         self.read_dict({"environment": env_vals})
 
@@ -766,3 +766,24 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             return True
         except ConfigParser.Error:
             return False
+
+    def getint(
+        self,
+        section,
+        option,
+        *,
+        raw=False,
+        vars=None,
+        fallback=ConfigParser._UNSET,  # noqa: SLF001
+        **kwargs,
+    ):
+        """
+        Coerce option value to integer, supporting float-like strings
+        (e.g. '2048.0', '1e3') while strictly rejecting fractional values
+        (e.g. '2048.5') and arbitrary large integers without precision loss.
+        """
+        from pycbc.types.optparse import to_int  # noqa: PLC0415
+
+        return self._get_conv(
+            section, option, to_int, raw=raw, vars=vars, fallback=fallback, **kwargs
+        )

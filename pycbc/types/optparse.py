@@ -47,6 +47,34 @@ class DictWithDefaultReturn(defaultdict):
     __nonzero__ = __bool__
 
 
+def to_int(value):
+    """
+    Safely convert a string, float, or integer value to an int.
+
+    Accepts integer strings, arbitrarily large integers (>= 2^53) without
+    precision loss, and float strings that represent exact whole numbers
+    (e.g. '2048.0', '1e3'). Strictly rejects fractional numbers
+    (e.g. '2048.5') and non-numeric inputs by raising ValueError.
+    """
+    if isinstance(value, float):
+        if not value.is_integer():
+            err = f"Cannot convert non-integer value {value!r} to int"
+            raise ValueError(err)
+        return int(value)
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        try:
+            f = float(value)
+        except (ValueError, TypeError) as err:
+            msg = f"Cannot convert non-integer value {value!r} to int"
+            raise ValueError(msg) from err
+        if f.is_integer():
+            return int(f)
+        msg = f"Cannot convert non-integer value {value!r} to int"
+        raise ValueError(msg) from None
+
+
 class MultiDetOptionAction(argparse.Action):
     # Initialise the same as the standard 'append' action
     def __init__(
@@ -63,7 +91,10 @@ class MultiDetOptionAction(argparse.Action):
         metavar=None,
     ):
         if type is not None:
-            self.internal_type = type
+            if type is int:
+                self.internal_type = to_int
+            else:
+                self.internal_type = type
         else:
             self.internal_type = str
         new_default = DictWithDefaultReturn(lambda: default)
@@ -249,7 +280,10 @@ class DictOptionAction(argparse.Action):
         metavar=None,
     ):
         if type is not None:
-            self.internal_type = type
+            if type is int:
+                self.internal_type = to_int
+            else:
+                self.internal_type = type
         else:
             self.internal_type = str
         new_default = DictWithDefaultReturn(lambda: default)
@@ -516,10 +550,11 @@ def _positive_type(s, dtype=None):
     """
     assert dtype is not None
     err_msg = f"Input must be a positive {dtype}, not {s}"
+    conv = to_int if dtype is int else dtype
     try:
-        value = dtype(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(err_msg)
+        value = conv(s)
+    except ValueError as err:
+        raise argparse.ArgumentTypeError(err_msg) from err
     if value <= 0:
         raise argparse.ArgumentTypeError(err_msg)
     return value
@@ -533,10 +568,11 @@ def _nonnegative_type(s, dtype=None):
     """
     assert dtype is not None
     err_msg = f"Input must be either a positive or zero {dtype}, not {s}"
+    conv = to_int if dtype is int else dtype
     try:
-        value = dtype(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(err_msg)
+        value = conv(s)
+    except ValueError as err:
+        raise argparse.ArgumentTypeError(err_msg) from err
     if value < 0:
         raise argparse.ArgumentTypeError(err_msg)
     return value
