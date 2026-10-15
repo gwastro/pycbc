@@ -205,6 +205,44 @@ class TestStatsCacheInAPool(unittest.TestCase):
         found = [model.cached_stats({"x": p[0], "y": p[1]}) for p in points]
         self.assertEqual(sum(f is not None for f in found), len(points))
 
+    def test_gather_without_global_instance(self):
+        """Samplers like nessai attach a pool without setting _global_instance."""
+        from pycbc.inference import models
+        from pycbc.pool import SinglePool
+
+        params = ["x", "y"]
+        prior = JointDistribution(
+            params, Uniform(x=(-5.0, 5.0)), Uniform(y=(-5.0, 5.0))
+        )
+        model = TestNormal(params, prior=prior)
+        models._global_instance = None
+        model.update(x=0.5, y=-0.5)
+        _ = model.logposterior
+        model.gather_stats_cache(SinglePool())
+        self.assertIsNotNone(model.cached_stats({"x": 0.5, "y": -0.5}))
+
+    def test_sampling_transforms_hit_and_miss(self):
+        """
+        Samplers step in sampling_params but write variable_params; both a
+        cache hit and a cache miss must work in variable_params space.
+        """
+        from pycbc.inference.models.base import SamplingTransforms
+        from pycbc.transforms import Mass1Mass2ToMchirpQ
+
+        params = ["mass1", "mass2"]
+        prior = JointDistribution(
+            params, Uniform(mass1=(10.0, 50.0)), Uniform(mass2=(10.0, 50.0))
+        )
+        st = SamplingTransforms(
+            params, ["mchirp", "q"], params, [Mass1Mass2ToMchirpQ()]
+        )
+        model = TestNormal(params, prior=prior, sampling_transforms=st)
+        sp = st.apply({"mass1": 30.0, "mass2": 20.0})
+        model.update(mchirp=sp["mchirp"], q=sp["q"])
+        _ = model.logposterior
+        vp = {p: model.current_params[p] for p in params}
+        self.assertIsNotNone(model.cached_stats(vp))
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestStatsCache))
