@@ -23,12 +23,14 @@
 #
 
 import numpy as np
+from scipy.signal import sosfilt, zpk2sos
 
-from scipy.signal import zpk2sos, sosfilt
 from pycbc.types import TimeSeries
 
+
 def filter_zpk(timeseries, z, p, k):
-    """Return a new timeseries that was filtered with a zero-pole-gain filter.
+    """
+    Return a new timeseries that was filtered with a zero-pole-gain filter.
     The transfer function in the s-domain looks like:
     .. math::
     \\frac{H(s) = (s - s_1) * (s - s_3) * ... * (s - s_n)}{(s - s_2) * (s - s_4) * ... * (s - s_m)}, m >= n
@@ -68,8 +70,8 @@ def filter_zpk(timeseries, z, p, k):
     To apply a 5 zeroes at 100Hz, 5 poles at 1Hz, and a gain of 1e-10 filter
     to a TimeSeries instance, do:
     >>> filtered_data = zpk_filter(timeseries, [100]*5, [1]*5, 1e-10)
-    """
 
+    """
     # sanity check type
     if not isinstance(timeseries, TimeSeries):
         raise TypeError("Can only filter TimeSeries instances.")
@@ -77,8 +79,10 @@ def filter_zpk(timeseries, z, p, k):
     # sanity check casual filter
     degree = len(p) - len(z)
     if degree < 0:
-        raise TypeError("May not have more zeroes than poles. \
-                         Filter is not casual.")
+        raise TypeError(
+            "May not have more zeroes than poles. \
+                         Filter is not casual."
+        )
 
     # cast zeroes and poles as arrays and gain as a float
     z = np.array(z)
@@ -94,14 +98,14 @@ def filter_zpk(timeseries, z, p, k):
     fs = 2.0 * timeseries.sample_rate
 
     # zeroes in the z-domain
-    z_zd = (1 + z/fs) / (1 - z/fs)
+    z_zd = (1 + z / fs) / (1 - z / fs)
 
     # any zeros that were at infinity are moved to the Nyquist frequency
     z_zd = z_zd[np.isfinite(z_zd)]
     z_zd = np.append(z_zd, -np.ones(degree))
 
     # poles in the z-domain
-    p_zd = (1 + p/fs) / (1 - p/fs)
+    p_zd = (1 + p / fs) / (1 - p / fs)
 
     # gain change in z-domain
     k_zd = k * np.prod(fs - z) / np.prod(fs - p)
@@ -112,6 +116,9 @@ def filter_zpk(timeseries, z, p, k):
     # filter
     filtered_data = sosfilt(sos, timeseries.numpy())
 
-    return TimeSeries(filtered_data, delta_t = timeseries.delta_t,
-                      dtype=timeseries.dtype,
-                      epoch=timeseries._epoch)
+    return TimeSeries(
+        filtered_data,
+        delta_t=timeseries.delta_t,
+        dtype=timeseries.dtype,
+        epoch=timeseries._epoch,
+    )

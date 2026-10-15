@@ -14,49 +14,49 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import numpy
 import unittest
+
+import numpy
+from utils import parse_args_cpu_only, simple_exit
+
 from pycbc import transforms
-from utils import parse_args_cpu_only
-from utils import simple_exit
 
 # list of transforms without an inverse function and to ignore
-IGNORE = [t.name for t in transforms.common_cbc_transforms
-          if t.inverse is None]
+IGNORE = [t.name for t in transforms.common_cbc_transforms if t.inverse is None]
 
 # ranges to draw random numbers for each parameter
 RANGES = {
-    "mass1" : (1.0, 100.0),
-    "mass2" : (1.0, 100.0),
-    "mchirp" : (1.0, 20.0),
-    "q" : (1.0, 10.0),
-    "spin1_a" : (0.0, 1.0),
-    "spin1_polar" : (0, numpy.pi),
-    "spin1_azimuthal" : (0.0, 2 * numpy.pi),
-    "spin2_a" : (0.0, 1.0),
-    "spin2_polar" : (0, numpy.pi),
-    "spin2_azimuthal" : (0.0, 2 * numpy.pi),
-    "chi_eff" : (-1.0, 1.0),
-    "chi_a" : (0.0, 1.0),
-    "chi_p" : (0.0, 1.0),
-    "phi_s" : (0.0, 2 * numpy.pi),
-    "phi_a" : (0.0, 2 * numpy.pi),
-    "xi1" : (0.0, 1.0),
-    "xi2" : (0.0, 1.0),
-    "chirp_distance" : (2.0, 10.0),
-    "tc" : (1126259462.43, 1526259462.43),
-    "ra" : (0.0, 2 * numpy.pi),
-    "dec" : (-numpy.pi / 2, numpy.pi / 2),
-    "eclipticlongitude" : (0.0, 2 * numpy.pi),
-    "eclipticlatitude" : (-numpy.pi / 2, numpy.pi / 2),
-    "polarization" : (0.0, 2 * numpy.pi),
+    "mass1": (1.0, 100.0),
+    "mass2": (1.0, 100.0),
+    "mchirp": (1.0, 20.0),
+    "q": (1.0, 10.0),
+    "spin1_a": (0.0, 1.0),
+    "spin1_polar": (0, numpy.pi),
+    "spin1_azimuthal": (0.0, 2 * numpy.pi),
+    "spin2_a": (0.0, 1.0),
+    "spin2_polar": (0, numpy.pi),
+    "spin2_azimuthal": (0.0, 2 * numpy.pi),
+    "chi_eff": (-1.0, 1.0),
+    "chi_a": (0.0, 1.0),
+    "chi_p": (0.0, 1.0),
+    "phi_s": (0.0, 2 * numpy.pi),
+    "phi_a": (0.0, 2 * numpy.pi),
+    "xi1": (0.0, 1.0),
+    "xi2": (0.0, 1.0),
+    "chirp_distance": (2.0, 10.0),
+    "tc": (1126259462.43, 1526259462.43),
+    "ra": (0.0, 2 * numpy.pi),
+    "dec": (-numpy.pi / 2, numpy.pi / 2),
+    "eclipticlongitude": (0.0, 2 * numpy.pi),
+    "eclipticlatitude": (-numpy.pi / 2, numpy.pi / 2),
+    "polarization": (0.0, 2 * numpy.pi),
 }
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Transforms")
 
-class TestTransforms(unittest.TestCase):
 
+class TestTransforms(unittest.TestCase):
     def setUp(self):
 
         # set random seed
@@ -69,21 +69,19 @@ class TestTransforms(unittest.TestCase):
 
         # loop over forward CBC transforms
         for trans in transforms.common_cbc_forward_transforms:
-
             # check if inverse exists
             if trans.name in IGNORE:
                 continue
-            if trans.name == 'spherical_to_cartesian':
+            if trans.name == "spherical_to_cartesian":
                 # spherical to cartesian requires the cartesian and spherical
                 # parameter names to be specified, which we can get from
                 # the inputs and outputs
-                inv = trans.inverse(*trans._outputs+trans._inputs)
+                inv = trans.inverse(*trans._outputs + trans._inputs)
             else:
                 inv = trans.inverse()
 
             # generate some random points
-            in_map = {p : numpy.random.uniform(*RANGES[p])
-                      for p in trans.inputs}
+            in_map = {p: numpy.random.uniform(*RANGES[p]) for p in trans.inputs}
 
             # transforms to and back from inverse transform
             intermediate_map = trans.transform(in_map)
@@ -94,26 +92,35 @@ class TestTransforms(unittest.TestCase):
             out_arr = numpy.array([out_map[p] for p in trans.inputs])
             if not numpy.all(1.0 - in_arr / out_arr < threshold):
                 raise ValueError(
-                "Transform {} does not map back to itself.".format(trans.name))
+                    f"Transform {trans.name} does not map back to itself."
+                )
 
     def test_logit_arrays(self):
-        """ Checks that the Logit transform and its jacobian take arrays.
+        """
+        Checks that the Logit transform and its jacobian take arrays.
 
         ``jacobian`` used to raise on an array with everything in bounds: its
         array branch only caught the out-of-bounds case, and the scalar branch
         it fell through to could not evaluate an array of booleans.
         """
-        trans = transforms.Logit("x", "logitx", domain=(0., 1.))
+        trans = transforms.Logit("x", "logitx", domain=(0.0, 1.0))
         values = numpy.linspace(0.01, 0.99, 5)
         for name in ("transform", "jacobian"):
             func = getattr(trans, name)
-            array = numpy.atleast_1d(numpy.asarray(
-                func({"x": values})["logitx"] if name == "transform"
-                else func({"x": values})))
+            array = numpy.atleast_1d(
+                numpy.asarray(
+                    func({"x": values})["logitx"]
+                    if name == "transform"
+                    else func({"x": values})
+                )
+            )
             self.assertEqual(array.shape, values.shape)
             for i, value in enumerate(values):
-                one = (func({"x": value})["logitx"] if name == "transform"
-                       else func({"x": value}))
+                one = (
+                    func({"x": value})["logitx"]
+                    if name == "transform"
+                    else func({"x": value})
+                )
                 self.assertEqual(array[i], one)
         for bad in ({"x": numpy.array([0.5, 1.5])}, {"x": 1.5}):
             self.assertRaises(ValueError, trans.transform, bad)

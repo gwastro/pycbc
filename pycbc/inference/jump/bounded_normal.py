@@ -17,8 +17,11 @@
 
 from epsie import proposals as epsie_proposals
 
-from .normal import (epsie_from_config, epsie_adaptive_from_config,
-                     epsie_at_adaptive_from_config)
+from .normal import (
+    epsie_adaptive_from_config,
+    epsie_at_adaptive_from_config,
+    epsie_from_config,
+)
 
 
 class EpsieBoundedNormal(epsie_proposals.BoundedNormal):
@@ -26,7 +29,8 @@ class EpsieBoundedNormal(epsie_proposals.BoundedNormal):
 
     @classmethod
     def from_config(cls, cp, section, tag):
-        r"""Loads a proposal from a config file.
+        r"""
+        Loads a proposal from a config file.
 
         This calls :py:func:`epsie_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.BoundedNormal` and ``with_boundaries`` set
@@ -55,6 +59,7 @@ class EpsieBoundedNormal(epsie_proposals.BoundedNormal):
         -------
         :py:class:`epsie.proposals.BoundedNormal`:
             A bounded normal proposal for use with ``epsie`` samplers.
+
         """
         return epsie_from_config(cls, cp, section, tag, with_boundaries=True)
 
@@ -64,7 +69,8 @@ class EpsieAdaptiveBoundedNormal(epsie_proposals.AdaptiveBoundedNormal):
 
     @classmethod
     def from_config(cls, cp, section, tag):
-        """Loads a proposal from a config file.
+        """
+        Loads a proposal from a config file.
 
         This calls :py:func:`epsie_adaptive_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.AdaptiveBoundedNormal`. See that function
@@ -92,6 +98,7 @@ class EpsieAdaptiveBoundedNormal(epsie_proposals.AdaptiveBoundedNormal):
         -------
         :py:class:`epsie.proposals.AdaptiveBoundedNormal`:
             An adaptive normal proposal for use with ``epsie`` samplers.
+
         """
         return epsie_adaptive_from_config(cls, cp, section, tag)
 
@@ -101,7 +108,8 @@ class EpsieATAdaptiveBoundedNormal(epsie_proposals.ATAdaptiveBoundedNormal):
 
     @classmethod
     def from_config(cls, cp, section, tag):
-        """Loads a proposal from a config file.
+        """
+        Loads a proposal from a config file.
 
         This calls :py:func:`epsie_adaptive_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.AdaptiveBoundedProposal`. See that function
@@ -128,6 +136,8 @@ class EpsieATAdaptiveBoundedNormal(epsie_proposals.ATAdaptiveBoundedNormal):
         -------
         :py:class:`epsie.proposals.AdaptiveBoundedProposal`:
             An adaptive bounded proposal for use with ``epsie`` samplers.
+
         """
-        return epsie_at_adaptive_from_config(cls, cp, section, tag,
-                                             with_boundaries=True)
+        return epsie_at_adaptive_from_config(
+            cls, cp, section, tag, with_boundaries=True
+        )

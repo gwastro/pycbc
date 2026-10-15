@@ -13,22 +13,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """Provides IO for the nautilus sampler"""
+
 from .dynesty import DynestyFile
 
 
 class NautilusFile(DynestyFile):
-    """Class to handle file IO for the ``nautilus`` sampler.
+    """
+    Class to handle file IO for the ``nautilus`` sampler.
 
     Nautilus returns weighted samples in the same form as dynesty (samples
     plus log-weights), so turning them into a posterior is identical.
     """
 
-    name = 'nautilus_file'
+    name = "nautilus_file"
     # nautilus' own state is kept verbatim under this path
-    state_path = 'sampler_info/nautilus'
+    state_path = "sampler_info/nautilus"
 
     def validate(self):
-        """A nautilus checkpoint is only resumable if nautilus' own state is
+        """
+        A nautilus checkpoint is only resumable if nautilus' own state is
         in it, since that is what nautilus reads to pick a run back up.
         """
         return self.state_path in self

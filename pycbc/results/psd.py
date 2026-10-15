@@ -26,11 +26,12 @@
 """
 Module to generate PSD figures
 """
-from pycbc.results import ifo_color
+
 from pycbc import DYN_RANGE_FAC
+from pycbc.results import ifo_color
 
 
-def generate_asd_plot(psddict, output_filename, f_min=10.):
+def generate_asd_plot(psddict, output_filename, f_min=10.0):
     """
     Generate an ASD plot as used for upload to GraceDB.
 
@@ -49,28 +50,27 @@ def generate_asd_plot(psddict, output_filename, f_min=10.):
     Returns
     -------
         None
+
     """
     from matplotlib import pyplot as plt
+
     asd_fig, asd_ax = plt.subplots(1)
-    asd_min = [1E-24]  # Default minimum to plot
+    asd_min = [1e-24]  # Default minimum to plot
 
     for ifo in sorted(psddict.keys()):
         curr_psd = psddict[ifo]
         freqs = curr_psd.sample_frequencies
-        physical = (freqs >= f_min)  # Ignore lower frequencies
+        physical = freqs >= f_min  # Ignore lower frequencies
         asd_to_plot = curr_psd[physical] ** 0.5 / DYN_RANGE_FAC
         asd_min.append(min(asd_to_plot))
-        asd_ax.loglog(freqs[physical],
-                      asd_to_plot,
-                      c=ifo_color(ifo),
-                      label=ifo)
+        asd_ax.loglog(freqs[physical], asd_to_plot, c=ifo_color(ifo), label=ifo)
 
     asd_ax.grid(True)
     asd_ax.legend()
     asd_ax.set_xlim([f_min, 1300])
-    asd_ax.set_ylim([min(asd_min), 1E-20])
-    asd_ax.set_xlabel('Frequency (Hz)')
-    asd_ax.set_ylabel('ASD')
+    asd_ax.set_ylim([min(asd_min), 1e-20])
+    asd_ax.set_xlabel("Frequency (Hz)")
+    asd_ax.set_ylabel("ASD")
     asd_fig.savefig(output_filename)
 
 

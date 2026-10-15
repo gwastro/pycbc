@@ -21,29 +21,28 @@
 #
 # =============================================================================
 #
-"""This modules defines functions for reading and writing samples that the
+"""
+This modules defines functions for reading and writing samples that the
 inference samplers generate.
 """
 
-
-import sys
 import logging
+import sys
+from abc import ABCMeta, abstractmethod
 from io import StringIO
 
-from abc import (ABCMeta, abstractmethod)
-
-import numpy
 import h5py
+import numpy
 
-from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
-from pycbc.io import (dump_state, load_state)
-from pycbc.workflow import WorkflowConfigParser
+from pycbc.io import FieldArray, dump_state, load_state
 from pycbc.types import FrequencySeries
+from pycbc.workflow import WorkflowConfigParser
 
 
 def format_attr(val):
-    """Formats an attr so that it can be read in either python 2 or 3.
+    """
+    Formats an attr so that it can be read in either python 2 or 3.
 
     In python 2, strings that are saved as an attribute in an hdf file default
     to unicode. Since unicode was removed in python 3, if you load that file
@@ -64,6 +63,7 @@ def format_attr(val):
         If ``val`` was a byte string, the value as a ``str``. If the value
         was a numpy array of ``bytes_``, the value as a list of ``str``.
         Otherwise, just returns the value.
+
     """
     try:
         val = str(val.decode())
@@ -75,36 +75,38 @@ def format_attr(val):
 
 
 class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
-    """Base class for all inference hdf files.
+    """
+    Base class for all inference hdf files.
 
     This is a subclass of the h5py.File object. It adds functions for
     handling reading and writing the samples from the samplers.
 
     Parameters
-    -----------
+    ----------
     path : str
         The path to the HDF file.
     mode : {None, str}
         The mode to open the file, eg. "w" for write and "r" for read.
+
     """
 
     name = None
-    samples_group = 'samples'
-    sampler_group = 'sampler_info'
-    data_group = 'data'
-    injections_group = 'injections'
-    config_group = 'config_file'
+    samples_group = "samples"
+    sampler_group = "sampler_info"
+    data_group = "data"
+    injections_group = "injections"
+    config_group = "config_file"
 
     def __init__(self, path, mode=None, **kwargs):
-        super(BaseInferenceFile, self).__init__(path, mode, **kwargs)
+        super().__init__(path, mode, **kwargs)
         # check that file type matches self
         try:
-            filetype = self.attrs['filetype']
+            filetype = self.attrs["filetype"]
         except KeyError:
-            if mode == 'w':
+            if mode == "w":
                 # first time creating the file, add this class's name
                 filetype = self.name
-                self.attrs['filetype'] = filetype
+                self.attrs["filetype"] = filetype
             else:
                 filetype = None
         try:
@@ -112,13 +114,16 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         except AttributeError:
             pass
         if filetype != self.name:
-            raise ValueError("This file has filetype {}, whereas this class "
-                             "is named {}. This indicates that the file was "
-                             "not written by this class, and so cannot be "
-                             "read by this class.".format(filetype, self.name))
+            raise ValueError(
+                f"This file has filetype {filetype}, whereas this class "
+                f"is named {self.name}. This indicates that the file was "
+                "not written by this class, and so cannot be "
+                "read by this class."
+            )
 
     def __getattr__(self, attr):
-        """Things stored in ``.attrs`` are promoted to instance attributes.
+        """
+        Things stored in ``.attrs`` are promoted to instance attributes.
 
         Note that properties will be called before this, so if there are any
         properties that share the same name as something in ``.attrs``, that
@@ -127,7 +132,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         return self.attrs[attr]
 
     def getattrs(self, group=None, create_missing=True):
-        """Convenience function for getting the `attrs` from the file or group.
+        """
+        Convenience function for getting the `attrs` from the file or group.
 
         Parameters
         ----------
@@ -142,6 +148,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         h5py.File.attrs
             An attrs instance of the file or requested group.
+
         """
         if group is None or group == "/":
             attrs = self.attrs
@@ -158,7 +165,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @abstractmethod
     def write_samples(self, samples, **kwargs):
-        r"""This should write all of the provided samples.
+        r"""
+        This should write all of the provided samples.
 
         This function should be used to write both samples and model stats.
 
@@ -168,11 +176,12 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             Samples should be provided as a dictionary of numpy arrays.
         \**kwargs :
             Any other keyword args the sampler needs to write data.
+
         """
-        pass
 
     def parse_parameters(self, parameters, array_class=None):
-        """Parses a parameters arg to figure out what fields need to be loaded.
+        """
+        Parses a parameters arg to figure out what fields need to be loaded.
 
         Parameters
         ----------
@@ -191,6 +200,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         list :
             A list of strings giving the fields to load from the file.
+
         """
         # get the type of array class to use
         if array_class is None:
@@ -200,7 +210,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         return array_class.parse_parameters(parameters, possible_fields)
 
     def read_samples(self, parameters, array_class=None, **kwargs):
-        r"""Reads samples for the given parameter(s).
+        r"""
+        Reads samples for the given parameter(s).
 
         The ``parameters`` can be the name of any dataset in ``samples_group``,
         a virtual field or method of ``FieldArray`` (as long as the file
@@ -215,7 +226,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         ``FieldArray``.
 
         Parameters
-        -----------
+        ----------
         parameters : (list of) strings
             The parameter(s) to retrieve.
         array_class : FieldArray-like class, optional
@@ -229,6 +240,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         FieldArray :
             The samples as a ``FieldArray``.
+
         """
         # get the type of array class to use
         if array_class is None:
@@ -240,9 +252,10 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         # convert to FieldArray
         samples = array_class.from_kwargs(**samples)
         # add the static params and attributes
-        addatrs = (list(self.static_params.items()) +
-                   list(self[self.samples_group].attrs.items()))
-        for (p, val) in addatrs:
+        addatrs = list(self.static_params.items()) + list(
+            self[self.samples_group].attrs.items()
+        )
+        for p, val in addatrs:
             if p in loadfields:
                 continue
             setattr(samples, format_attr(p), format_attr(val))
@@ -250,15 +263,16 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @abstractmethod
     def read_raw_samples(self, fields, **kwargs):
-        """Low level function for reading datasets in the samples group.
+        """
+        Low level function for reading datasets in the samples group.
 
         This should return a dictionary of numpy arrays.
         """
-        pass
 
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
-        r"""Provides a parser that can be used to parse sampler-specific command
+        r"""
+        Provides a parser that can be used to parse sampler-specific command
         line options for loading samples.
 
         This is optional. Inheriting classes may override this if they want to
@@ -286,12 +300,14 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             for the ``parser`` argument (default is None).
         actions : list of argparse.Action
             List of the actions that were added.
+
         """
         return parser, []
 
     @staticmethod
     def _get_optional_args(args, opts, err_on_missing=False, **kwargs):
-        r"""Convenience function to retrieve arguments from an argparse
+        r"""
+        Convenience function to retrieve arguments from an argparse
         namespace.
 
         Parameters
@@ -314,6 +330,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             Dictionary mapping arguments to values retrieved from ``opts``. If
             keyword arguments were provided, these will also be included in the
             dictionary.
+
         """
         parsed = {}
         for arg in args:
@@ -322,13 +339,13 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             except AttributeError as e:
                 if err_on_missing:
                     raise AttributeError(e)
-                else:
-                    continue
+                continue
         parsed.update(kwargs)
         return parsed
 
     def samples_from_cli(self, opts, parameters=None, **kwargs):
-        r"""Reads samples from the given command-line options.
+        r"""
+        Reads samples from the given command-line options.
 
         Parameters
         ----------
@@ -346,6 +363,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         FieldArray :
             Array of the loaded samples.
+
         """
         if parameters is None and opts.parameters is None:
             parameters = self.variable_params
@@ -359,27 +377,28 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @property
     def static_params(self):
-        """Returns a dictionary of the static_params. The keys are the argument
+        """
+        Returns a dictionary of the static_params. The keys are the argument
         names, values are the value they were set to.
         """
         return {arg: self.attrs[arg] for arg in self.attrs["static_params"]}
 
     @property
     def effective_nsamples(self):
-        """Returns the effective number of samples stored in the file.
-        """
+        """Returns the effective number of samples stored in the file."""
         try:
-            return self.attrs['effective_nsamples']
+            return self.attrs["effective_nsamples"]
         except KeyError:
             return 0
 
     def write_effective_nsamples(self, effective_nsamples):
         """Writes the effective number of samples stored in the file."""
-        self.attrs['effective_nsamples'] = effective_nsamples
+        self.attrs["effective_nsamples"] = effective_nsamples
 
     @property
     def thin_start(self):
-        """The default start index to use when reading samples.
+        """
+        The default start index to use when reading samples.
 
         Unless overridden by sub-class attribute, just returns 0.
         """
@@ -387,7 +406,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @property
     def thin_interval(self):
-        """The default interval to use when reading samples.
+        """
+        The default interval to use when reading samples.
 
         Unless overridden by sub-class attribute, just returns 1.
         """
@@ -395,7 +415,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @property
     def thin_end(self):
-        """The defaut end index to use when reading samples.
+        """
+        The defaut end index to use when reading samples.
 
         Unless overriden by sub-class attribute, just return ``None``.
         """
@@ -403,7 +424,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @property
     def cmd(self):
-        """Returns the (last) saved command line.
+        """
+        Returns the (last) saved command line.
 
         If the file was created from a run that resumed from a checkpoint, only
         the last command line used is returned.
@@ -412,6 +434,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         cmd : string
             The command line that created this InferenceFile.
+
         """
         cmd = self.attrs["cmd"]
         if isinstance(cmd, numpy.ndarray):
@@ -419,7 +442,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         return cmd
 
     def write_logevidence(self, lnz, dlnz):
-        """Writes the given log evidence and its error.
+        """
+        Writes the given log evidence and its error.
 
         Results are saved to file's 'log_evidence' and 'dlog_evidence'
         attributes.
@@ -430,19 +454,22 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             The log of the evidence.
         dlnz : float
             The error in the estimate of the log evidence.
+
         """
-        self.attrs['log_evidence'] = lnz
-        self.attrs['dlog_evidence'] = dlnz
+        self.attrs["log_evidence"] = lnz
+        self.attrs["dlog_evidence"] = dlnz
 
     @property
     def log_evidence(self):
-        """Returns the log of the evidence and its error, if they exist in the
+        """
+        Returns the log of the evidence and its error, if they exist in the
         file. Raises a KeyError otherwise.
         """
         return self.attrs["log_evidence"], self.attrs["dlog_evidence"]
 
     def write_random_state(self, group=None, state=None):
-        """Writes the state of the random number generator from the file.
+        """
+        Writes the state of the random number generator from the file.
 
         The random state is written to ``sampler_group``/random_state.
 
@@ -453,6 +480,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         state : tuple, optional
             Specify the random state to write. If None, will use
             ``numpy.random.get_state()``.
+
         """
         # Write out the default numpy random state
         group = self.sampler_group if group is None else group
@@ -463,8 +491,9 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         if dataset_name in self:
             self[dataset_name][:] = arr
         else:
-            self.create_dataset(dataset_name, arr.shape, fletcher32=True,
-                                dtype=arr.dtype)
+            self.create_dataset(
+                dataset_name, arr.shape, fletcher32=True, dtype=arr.dtype
+            )
             self[dataset_name][:] = arr
         self[dataset_name].attrs["s"] = s
         self[dataset_name].attrs["pos"] = pos
@@ -472,7 +501,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         self[dataset_name].attrs["cached_gauss"] = cached_gauss
 
     def read_random_state(self, group=None):
-        """Reads the state of the random number generator from the file.
+        """
+        Reads the state of the random number generator from the file.
 
         Parameters
         ----------
@@ -483,6 +513,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         tuple
             A tuple with 5 elements that can be passed to numpy.set_state.
+
         """
         # Read numpy randomstate
         group = self.sampler_group if group is None else group
@@ -496,73 +527,79 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         return state
 
     def write_strain(self, strain_dict, group=None):
-        """Writes strain for each IFO to file.
+        """
+        Writes strain for each IFO to file.
 
         Parameters
-        -----------
+        ----------
         strain : {dict, FrequencySeries}
             A dict of FrequencySeries where the key is the IFO.
         group : {None, str}
             The group to write the strain to. If None, will write to the top
             level.
+
         """
         subgroup = self.data_group + "/{ifo}/strain"
         if group is None:
             group = subgroup
         else:
-            group = '/'.join([group, subgroup])
+            group = "/".join([group, subgroup])
         for ifo, strain in strain_dict.items():
             self[group.format(ifo=ifo)] = strain
-            self[group.format(ifo=ifo)].attrs['delta_t'] = strain.delta_t
-            self[group.format(ifo=ifo)].attrs['start_time'] = \
-                float(strain.start_time)
+            self[group.format(ifo=ifo)].attrs["delta_t"] = strain.delta_t
+            self[group.format(ifo=ifo)].attrs["start_time"] = float(strain.start_time)
 
     def write_stilde(self, stilde_dict, group=None):
-        """Writes stilde for each IFO to file.
+        """
+        Writes stilde for each IFO to file.
 
         Parameters
-        -----------
+        ----------
         stilde : {dict, FrequencySeries}
             A dict of FrequencySeries where the key is the IFO.
         group : {None, str}
             The group to write the strain to. If None, will write to the top
             level.
+
         """
         subgroup = self.data_group + "/{ifo}/stilde"
         if group is None:
             group = subgroup
         else:
-            group = '/'.join([group, subgroup])
+            group = "/".join([group, subgroup])
         for ifo, stilde in stilde_dict.items():
             self[group.format(ifo=ifo)] = stilde
-            self[group.format(ifo=ifo)].attrs['delta_f'] = stilde.delta_f
-            self[group.format(ifo=ifo)].attrs['epoch'] = float(stilde.epoch)
+            self[group.format(ifo=ifo)].attrs["delta_f"] = stilde.delta_f
+            self[group.format(ifo=ifo)].attrs["epoch"] = float(stilde.epoch)
 
     def write_psd(self, psds, group=None):
-        """Writes PSD for each IFO to file.
+        """
+        Writes PSD for each IFO to file.
 
         PSDs are written to ``[{group}/]data/{detector}/psds/0``, where {group}
         is the optional keyword argument.
 
         Parameters
-        -----------
+        ----------
         psds : dict
             A dict of detector name -> FrequencySeries.
         group : str, optional
             Specify a top-level group to write the data to. If ``None`` (the
             default), data will be written to the file's top level.
+
         """
         subgroup = self.data_group + "/{ifo}/psds/0"
         if group is None:
             group = subgroup
         else:
-            group = '/'.join([group, subgroup])
+            group = "/".join([group, subgroup])
         for ifo in psds:
             self[group.format(ifo=ifo)] = psds[ifo]
-            self[group.format(ifo=ifo)].attrs['delta_f'] = psds[ifo].delta_f
+            self[group.format(ifo=ifo)].attrs["delta_f"] = psds[ifo].delta_f
 
     def write_injections(self, injection_file, group=None):
-        """Writes injection parameters from the given injection file.
+        """
+        Writes injection parameters from the given injection file.
 
         Everything in the injection file is copied to
         ``[{group}/]injections_group``, where ``{group}`` is the optional
@@ -576,23 +613,22 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             Specify a top-level group to write the injections group to. If
             ``None`` (the default), injections group will be written to the
             file's top level.
+
         """
         logging.info("Writing injection file to output")
-        if group is None or group == '/':
+        if group is None or group == "/":
             group = self.injections_group
         else:
-            group = '/'.join([group, self.injections_group])
+            group = "/".join([group, self.injections_group])
         try:
             with h5py.File(injection_file, "r") as fp:
-                super(BaseInferenceFile, self).copy(fp, group)
-        except IOError:
-            logging.warning(
-                "Could not read %s as an HDF file",
-                injection_file
-            )
+                super().copy(fp, group)
+        except OSError:
+            logging.warning("Could not read %s as an HDF file", injection_file)
 
     def read_injections(self, group=None):
-        """Gets injection parameters.
+        """
+        Gets injection parameters.
 
         Injections are retrieved from ``[{group}/]injections``.
 
@@ -606,17 +642,19 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         FieldArray
             Array of the injection parameters.
+
         """
-        if group is None or group == '/':
+        if group is None or group == "/":
             group = self.injections_group
         else:
-            group = '/'.join([group, self.injections_group])
+            group = "/".join([group, self.injections_group])
         injset = InjectionSet(self.filename, hdf_group=group)
         injections = injset.table.view(FieldArray)
         return injections
 
     def write_command_line(self):
-        """Writes command line to attributes.
+        """
+        Writes command line to attributes.
 
         The command line is written to the file's ``attrs['cmd']``. If this
         attribute already exists in the file (this can happen when resuming
@@ -637,7 +675,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @staticmethod
     def get_slice(thin_start=None, thin_interval=None, thin_end=None):
-        """Formats a slice to retrieve a thinned array from an HDF file.
+        """
+        Formats a slice to retrieve a thinned array from an HDF file.
 
         Parameters
         ----------
@@ -652,6 +691,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         slice :
             The slice needed.
+
         """
         if thin_start is not None:
             thin_start = int(thin_start)
@@ -662,7 +702,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         return slice(thin_start, thin_end, thin_interval)
 
     def copy_metadata(self, other):
-        """Copies all metadata from this file to the other file.
+        """
+        Copies all metadata from this file to the other file.
 
         Metadata is defined as everything in the top-level ``.attrs``.
 
@@ -670,6 +711,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         ----------
         other : InferenceFile
             An open inference file to write the data to.
+
         """
         logging.info("Copying metadata")
         # copy attributes
@@ -677,7 +719,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             other.attrs[key] = self.attrs[key]
 
     def copy_info(self, other, ignore=None):
-        """Copies "info" from this file to the other.
+        """
+        Copies "info" from this file to the other.
 
         "Info" is defined all groups that are not the samples group.
 
@@ -687,6 +730,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             The output file. Must be an hdf file.
         ignore : (list of) str
             Don't copy the given groups.
+
         """
         logging.info("Copying info")
         # copy non-samples/stats data
@@ -697,11 +741,18 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         ignore = set(ignore + [self.samples_group])
         copy_groups = set(self.keys()) - ignore
         for key in copy_groups:
-            super(BaseInferenceFile, self).copy(key, other)
+            super().copy(key, other)
 
-    def copy_samples(self, other, parameters=None, parameter_names=None,
-                     read_args=None, write_args=None):
-        """Should copy samples to the other files.
+    def copy_samples(
+        self,
+        other,
+        parameters=None,
+        parameter_names=None,
+        read_args=None,
+        write_args=None,
+    ):
+        """
+        Should copy samples to the other files.
 
         Parameters
         ----------
@@ -717,6 +768,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             Arguments to pass to ``read_samples``.
         write_args : dict, optional
             Arguments to pass to ``write_samples``.
+
         """
         # select the samples to copy
         logging.info("Reading samples to copy")
@@ -724,27 +776,33 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             parameters = self.variable_params
         # if list of desired parameters is different, rename
         if set(parameters) != set(self.variable_params):
-            other.attrs['variable_params'] = parameters
+            other.attrs["variable_params"] = parameters
         if read_args is None:
             read_args = {}
         samples = self.read_samples(parameters, **read_args)
-        logging.info("Copying {} samples".format(samples.size))
+        logging.info(f"Copying {samples.size} samples")
         # if different parameter names are desired, get them from the samples
         if parameter_names:
             arrs = {pname: samples[p] for p, pname in parameter_names.items()}
-            arrs.update({p: samples[p] for p in parameters if
-                         p not in parameter_names})
+            arrs.update({p: samples[p] for p in parameters if p not in parameter_names})
             samples = FieldArray.from_kwargs(**arrs)
-            other.attrs['variable_params'] = samples.fieldnames
+            other.attrs["variable_params"] = samples.fieldnames
         logging.info("Writing samples")
         if write_args is None:
             write_args = {}
-        other.write_samples({p: samples[p] for p in samples.fieldnames},
-                            **write_args)
+        other.write_samples({p: samples[p] for p in samples.fieldnames}, **write_args)
 
-    def copy(self, other, ignore=None, parameters=None, parameter_names=None,
-             read_args=None, write_args=None):
-        """Copies metadata, info, and samples in this file to another file.
+    def copy(
+        self,
+        other,
+        ignore=None,
+        parameters=None,
+        parameter_names=None,
+        read_args=None,
+        write_args=None,
+    ):
+        """
+        Copies metadata, info, and samples in this file to another file.
 
         Parameters
         ----------
@@ -772,12 +830,13 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         InferenceFile
             The open file handler to other.
+
         """
         if not isinstance(other, h5py.File):
             # check that we're not trying to overwrite this file
             if other == self.name:
-                raise IOError("destination is the same as this file")
-            other = self.__class__(other, 'w')
+                raise OSError("destination is the same as this file")
+            other = self.__class__(other, "w")
         # metadata
         self.copy_metadata(other)
         # info
@@ -788,10 +847,13 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         self.copy_info(other, ignore=ignore)
         # samples
         if self.samples_group not in ignore:
-            self.copy_samples(other, parameters=parameters,
-                              parameter_names=parameter_names,
-                              read_args=read_args,
-                              write_args=write_args)
+            self.copy_samples(
+                other,
+                parameters=parameters,
+                parameter_names=parameter_names,
+                read_args=read_args,
+                write_args=write_args,
+            )
             # if any down selection was done, re-set the default
             # thin-start/interval/end
             p = tuple(self[self.samples_group].keys())[0]
@@ -799,14 +861,15 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             p = tuple(other[other.samples_group].keys())[0]
             other_shape = other[other.samples_group][p].shape
             if my_shape != other_shape:
-                other.attrs['thin_start'] = 0
-                other.attrs['thin_interval'] = 1
-                other.attrs['thin_end'] = None
+                other.attrs["thin_start"] = 0
+                other.attrs["thin_interval"] = 1
+                other.attrs["thin_end"] = None
         return other
 
     @classmethod
     def write_kwargs_to_attrs(cls, attrs, **kwargs):
-        r"""Writes the given keywords to the given ``attrs``.
+        r"""
+        Writes the given keywords to the given ``attrs``.
 
         If any keyword argument points to a dict, the keyword will point to a
         list of the dict's keys. Each key is then written to the attrs with its
@@ -818,6 +881,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             The ``attrs`` of an hdf file or a group in an hdf file.
         \**kwargs :
             The keywords to write.
+
         """
         for arg, val in kwargs.items():
             if val is None:
@@ -830,7 +894,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
                 attrs[str(arg)] = val
 
     def write_data(self, name, data, path=None, append=False):
-        """Convenience function to write data.
+        """
+        Convenience function to write data.
 
         Given ``data`` is written as a dataset with ``name`` in ``path``.
         If the dataset or path do not exist yet, the dataset and path will
@@ -858,9 +923,10 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             the data, it must be resizable along this dimension. If ``False``
             (the default) what is in the file will be overwritten, and the
             given data must have the same shape.
+
         """
         if path is None:
-            path = '/'
+            path = "/"
         try:
             group = self[path]
         except KeyError:
@@ -870,8 +936,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         if isinstance(data, dict):
             # call myself for each key, value pair in the dictionary
             for key, val in data.items():
-                self.write_data(key, val, path='/'.join([path, name]),
-                                append=append)
+                self.write_data(key, val, path="/".join([path, name]), append=append)
         # if appending, we need to resize the data on disk, or, if it doesn't
         # exist yet, create a dataset that is resizable along the last
         # dimension
@@ -885,15 +950,20 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             ndata = dshape[-1]
             try:
                 startidx = group[name].shape[-1]
-                group[name].resize(dshape[-1]+group[name].shape[-1],
-                                   axis=len(group[name].shape)-1)
+                group[name].resize(
+                    dshape[-1] + group[name].shape[-1], axis=len(group[name].shape) - 1
+                )
             except KeyError:
                 # dataset doesn't exist yet
-                group.create_dataset(name, dshape,
-                                     maxshape=tuple(list(dshape)[:-1]+[None]),
-                                     dtype=data.dtype, fletcher32=True)
+                group.create_dataset(
+                    name,
+                    dshape,
+                    maxshape=tuple(list(dshape)[:-1] + [None]),
+                    dtype=data.dtype,
+                    fletcher32=True,
+                )
                 startidx = 0
-            group[name][..., startidx:startidx+ndata] = data[..., :]
+            group[name][..., startidx : startidx + ndata] = data[..., :]
         else:
             try:
                 group[name][()] = data
@@ -902,7 +972,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
                 group[name] = data
 
     def write_config_file(self, cp):
-        """Writes the given config file parser.
+        """
+        Writes the given config file parser.
 
         File is stored as a pickled buffer array to ``config_parser/{index}``,
         where ``{index}`` is an integer corresponding to the number of config
@@ -913,6 +984,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         ----------
         cp : ConfigParser
             Config parser to save.
+
         """
         # get the index of the last saved file
         try:
@@ -931,7 +1003,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         dump_state(out, self, path=self.config_group, dsetname=str(index))
 
     def read_config_file(self, return_cp=True, index=-1):
-        """Reads the config file that was used.
+        """
+        Reads the config file that was used.
 
         A ``ValueError`` is raised if no config files have been saved, or if
         the requested index larger than the number of stored config files.
@@ -952,6 +1025,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         WorkflowConfigParser or StringIO :
             The parsed config file.
+
         """
         # get the stored indices
         try:
@@ -970,7 +1044,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         return cf
 
     def read_data(self, group=None):
-        """Loads the data stored in the file as a FrequencySeries.
+        """
+        Loads the data stored in the file as a FrequencySeries.
 
         Only works for models that store data as a frequency series in
         ``data/DET/stilde``. A ``KeyError`` will be raised if the model used
@@ -986,22 +1061,24 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         dict :
             Dictionary of detector name -> FrequencySeries.
+
         """
-        fmt = '{}/{}/stilde'
-        if group is None or group == '/':
+        fmt = "{}/{}/stilde"
+        if group is None or group == "/":
             path = self.data_group
         else:
-            path = '/'.join([group, self.data_group])
+            path = "/".join([group, self.data_group])
         data = {}
         for det in self[path].keys():
             group = self[fmt.format(path, det)]
             data[det] = FrequencySeries(
-                group[()], delta_f=group.attrs['delta_f'],
-                epoch=group.attrs['epoch'])
+                group[()], delta_f=group.attrs["delta_f"], epoch=group.attrs["epoch"]
+            )
         return data
 
     def read_psds(self, group=None):
-        """Loads the PSDs stored in the file as a FrequencySeries.
+        """
+        Loads the PSDs stored in the file as a FrequencySeries.
 
         Only works for models that store PSDs in
         ``data/DET/psds/0``. A ``KeyError`` will be raised if the model used
@@ -1017,15 +1094,15 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         -------
         dict :
             Dictionary of detector name -> FrequencySeries.
+
         """
-        fmt = '{}/{}/psds/0'
-        if group is None or group == '/':
+        fmt = "{}/{}/psds/0"
+        if group is None or group == "/":
             path = self.data_group
         else:
-            path = '/'.join([group, self.data_group])
+            path = "/".join([group, self.data_group])
         psds = {}
         for det in self[path].keys():
             group = self[fmt.format(path, det)]
-            psds[det] = FrequencySeries(
-                group[()], delta_f=group.attrs['delta_f'])
+            psds[det] = FrequencySeries(group[()], delta_f=group.attrs["delta_f"])
         return psds

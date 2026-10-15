@@ -16,16 +16,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Prints an RST table of available distributions from the distributions
+"""
+Prints an RST table of available distributions from the distributions
 module.
 """
+
+from _dict_to_rst import format_class, rst_dict_table
+
 from pycbc.transforms import transforms
-from _dict_to_rst import (rst_dict_table, format_class)
 
-tbl = rst_dict_table(transforms, key_format='``\'{0}\'``'.format,
-                     header=('Name', 'Class'),
-                     val_format=format_class)
+tbl = rst_dict_table(
+    transforms,
+    key_format="``'{0}'``".format,
+    header=("Name", "Class"),
+    val_format=format_class,
+)
 
-filename = 'transforms-table.rst'
-with open(filename, 'w') as fp:
+filename = "transforms-table.rst"
+with open(filename, "w") as fp:
     print(tbl, file=fp)

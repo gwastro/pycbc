@@ -21,38 +21,45 @@
 #
 # =============================================================================
 #
-"""Provides I/O support for multi-tempered sampler.
-"""
+"""Provides I/O support for multi-tempered sampler."""
 
 import argparse
+
 import numpy
-from .base_mcmc import (CommonMCMCMetadataIO, thin_samples_for_writing,
-                        _ensemble_get_index, _ensemble_get_walker_index,
-                        _get_index)
+
+from .base_mcmc import (
+    CommonMCMCMetadataIO,
+    _ensemble_get_index,
+    _ensemble_get_walker_index,
+    _get_index,
+    thin_samples_for_writing,
+)
+
 
 class ParseTempsArg(argparse.Action):
-    """Argparse action that will parse temps argument.
+    """
+    Argparse action that will parse temps argument.
 
     If the provided argument is 'all', sets 'all' in the namespace dest. If a
     a sequence of numbers are provided, converts those numbers to ints before
     saving to the namespace.
     """
-    def __init__(self, type=str, **kwargs): # pylint: disable=redefined-builtin
+
+    def __init__(self, type=str, **kwargs):  # pylint: disable=redefined-builtin
         # check that type is string
         if type != str:
             raise ValueError("the type for this action must be a string")
-        super(ParseTempsArg, self).__init__(type=type, **kwargs)
+        super().__init__(type=type, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
         singlearg = isinstance(values, str)
         if singlearg:
             values = [values]
-        if values[0] == 'all':
+        if values[0] == "all":
             # check that only a single value was provided
             if len(values) > 1:
-                raise ValueError("if provide 'all', should not specify any "
-                                 "other temps")
-            temps = 'all'
+                raise ValueError("if provide 'all', should not specify any other temps")
+            temps = "all"
         else:
             temps = []
             for val in values:
@@ -67,43 +74,49 @@ class ParseTempsArg(argparse.Action):
 
 
 class CommonMultiTemperedMetadataIO(CommonMCMCMetadataIO):
-    """Adds support for reading/writing multi-tempered metadata to
+    """
+    Adds support for reading/writing multi-tempered metadata to
     :py:class:`~pycbc.inference.io.base_mcmc.CommonMCMCMetadatIO`.
     """
+
     @property
     def ntemps(self):
         """Returns the number of temperatures used by the sampler."""
-        return self[self.sampler_group].attrs['ntemps']
+        return self[self.sampler_group].attrs["ntemps"]
 
     def write_sampler_metadata(self, sampler):
-        """Adds writing ntemps to file.
-        """
-        super(CommonMultiTemperedMetadataIO, self).write_sampler_metadata(
-            sampler)
+        """Adds writing ntemps to file."""
+        super().write_sampler_metadata(sampler)
         self[self.sampler_group].attrs["ntemps"] = sampler.ntemps
 
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
-        """Adds --temps to MCMCIO parser.
-        """
+        """Adds --temps to MCMCIO parser."""
         if skip_args is None:
             skip_args = []
         parser, actions = CommonMCMCMetadataIO.extra_args_parser(
-            parser=parser, skip_args=skip_args, **kwargs)
-        if 'temps' not in skip_args:
+            parser=parser, skip_args=skip_args, **kwargs
+        )
+        if "temps" not in skip_args:
             act = parser.add_argument(
-                "--temps", nargs="+", default=0, action=ParseTempsArg,
+                "--temps",
+                nargs="+",
+                default=0,
+                action=ParseTempsArg,
                 help="Get the given temperatures. May provide either a "
-                     "sequence of integers specifying the temperatures to "
-                     "plot, or 'all' for all temperatures. Default is to only "
-                     "plot the coldest (= 0) temperature chain.")
+                "sequence of integers specifying the temperatures to "
+                "plot, or 'all' for all temperatures. Default is to only "
+                "plot the coldest (= 0) temperature chain.",
+            )
             actions.append(act)
         return parser, actions
 
 
-def write_samples(fp, samples, parameters=None, last_iteration=None,
-                  samples_group=None, thin_by=None):
-    """Writes samples to the given file.
+def write_samples(
+    fp, samples, parameters=None, last_iteration=None, samples_group=None, thin_by=None
+):
+    """
+    Writes samples to the given file.
 
     This works both for standard MCMC and ensemble MCMC samplers with
     parallel tempering.
@@ -113,7 +126,7 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
     ``ntemps x nwalkers x niterations`` array.
 
     Parameters
-    -----------
+    ----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
         BaseInferenceFile with CommonMultiTemperedMetadataIO methods added.
@@ -134,21 +147,22 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
         Override the ``thinned_by`` attribute in the file with the given
         value. **Only set this if you are using this function to write
         something other than inference samples!**
+
     """
     ntemps, nwalkers, niterations = tuple(samples.values())[0].shape
-    assert all(p.shape == (ntemps, nwalkers, niterations)
-               for p in samples.values()), (
-           "all samples must have the same shape")
+    assert all(p.shape == (ntemps, nwalkers, niterations) for p in samples.values()), (
+        "all samples must have the same shape"
+    )
     if samples_group is None:
         samples_group = fp.samples_group
     if parameters is None:
         parameters = list(samples.keys())
     # thin the samples
-    samples = thin_samples_for_writing(fp, samples, parameters,
-                                       last_iteration, samples_group,
-                                       thin_by=thin_by)
+    samples = thin_samples_for_writing(
+        fp, samples, parameters, last_iteration, samples_group, thin_by=thin_by
+    )
     # loop over number of dimensions
-    group = samples_group + '/{name}'
+    group = samples_group + "/{name}"
     for param in parameters:
         dataset_name = group.format(name=param)
         data = samples[param]
@@ -167,18 +181,30 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
             # dataset doesn't exist yet
             istart = 0
             istop = istart + data.shape[2]
-            fp.create_dataset(dataset_name, (ntemps, nwalkers, istop),
-                              maxshape=(ntemps, nwalkers, None),
-                              dtype=data.dtype,
-                              fletcher32=True)
+            fp.create_dataset(
+                dataset_name,
+                (ntemps, nwalkers, istop),
+                maxshape=(ntemps, nwalkers, None),
+                dtype=data.dtype,
+                fletcher32=True,
+            )
         fp[dataset_name][:, :, istart:istop] = data
 
 
-def read_raw_samples(fp, fields,
-                     thin_start=None, thin_interval=None, thin_end=None,
-                     iteration=None, temps='all', chains=None,
-                     flatten=True, group=None):
-    """Base function for reading samples from a collection of independent
+def read_raw_samples(
+    fp,
+    fields,
+    thin_start=None,
+    thin_interval=None,
+    thin_end=None,
+    iteration=None,
+    temps="all",
+    chains=None,
+    flatten=True,
+    group=None,
+):
+    """
+    Base function for reading samples from a collection of independent
     MCMC chains file with parallel tempering.
 
     This may collect differing numbering of samples from each chains,
@@ -189,7 +215,7 @@ def read_raw_samples(fp, fields,
     ``numpy.nan``. If flattened, the NaNs are removed prior to returning.
 
     Parameters
-    -----------
+    ----------
     fp : BaseInferenceFile
         Open file handler to read samples from. Must be an instance of
         BaseInferenceFile with CommonMultiTemperedMetadataIO methods added.
@@ -238,19 +264,19 @@ def read_raw_samples(fp, fields,
     -------
     dict
         A dictionary of field name -> numpy array pairs.
+
     """
     if isinstance(fields, str):
         fields = [fields]
     if group is None:
         group = fp.samples_group
-    group = group + '/{name}'
+    group = group + "/{name}"
     # chains to load
     if chains is None:
         chains = numpy.arange(fp.nchains)
     elif not isinstance(chains, (list, numpy.ndarray)):
         chains = numpy.array([chains]).astype(int)
-    get_index = _get_index(fp, chains, thin_start, thin_interval, thin_end,
-                           iteration)
+    get_index = _get_index(fp, chains, thin_start, thin_interval, thin_end, iteration)
     # load the samples
     arrays = {}
     for name in fields:
@@ -269,7 +295,7 @@ def read_raw_samples(fp, fields,
                 continue
             if isinstance(idx, (int, numpy.int_)):
                 # make sure the last dimension corresponds to iteration
-                thisarr = thisarr.reshape(list(thisarr.shape)+[1])
+                thisarr = thisarr.reshape(list(thisarr.shape) + [1])
             # pull out the temperatures we need
             if selecttemps:
                 thisarr = thisarr[temps, ...]
@@ -278,11 +304,12 @@ def read_raw_samples(fp, fields,
             alist.append(thisarr)
             maxiters = max(maxiters, thisarr.shape[-1])
         # stack into a single array
-        arr = numpy.full((ntemps, len(chains), maxiters), numpy.nan,
-                         dtype=fp[dset].dtype)
+        arr = numpy.full(
+            (ntemps, len(chains), maxiters), numpy.nan, dtype=fp[dset].dtype
+        )
         for ii, thisarr in enumerate(alist):
             if thisarr is not None:
-                arr[:, ii, :thisarr.shape[-1]] = thisarr
+                arr[:, ii, : thisarr.shape[-1]] = thisarr
         if flatten:
             # flatten and remove nans
             arr = arr.flatten()
@@ -291,15 +318,24 @@ def read_raw_samples(fp, fields,
     return arrays
 
 
-def ensemble_read_raw_samples(fp, fields, thin_start=None,
-                              thin_interval=None, thin_end=None,
-                              iteration=None, temps='all', walkers=None,
-                              flatten=True, group=None):
-    """Base function for reading samples from ensemble MCMC file with
+def ensemble_read_raw_samples(
+    fp,
+    fields,
+    thin_start=None,
+    thin_interval=None,
+    thin_end=None,
+    iteration=None,
+    temps="all",
+    walkers=None,
+    flatten=True,
+    group=None,
+):
+    """
+    Base function for reading samples from ensemble MCMC file with
     parallel tempering.
 
     Parameters
-    -----------
+    ----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
         BaseInferenceFile with CommonMultiTemperedMetadataIO methods added.
@@ -334,18 +370,18 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     -------
     dict
         A dictionary of field name -> numpy array pairs.
+
     """
     if isinstance(fields, str):
         fields = [fields]
     # walkers to load
     widx, nwalkers = _ensemble_get_walker_index(fp, walkers)
     # get the slice to use
-    get_index = _ensemble_get_index(fp, thin_start, thin_interval, thin_end,
-                                    iteration)
+    get_index = _ensemble_get_index(fp, thin_start, thin_interval, thin_end, iteration)
     # load
     if group is None:
         group = fp.samples_group
-    group = group + '/{name}'
+    group = group + "/{name}"
     arrays = {}
     for name in fields:
         dset = group.format(name=name)
@@ -365,10 +401,11 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
 
 
 def _get_temps_index(temps, fp, dataset):
-    """Convenience function to determine which temperatures to load.
+    """
+    Convenience function to determine which temperatures to load.
 
     Parameters
-    -----------
+    ----------
     temps : 'all' or (list of) int
         The temperature index (or list of indices) to retrieve. To retrieve
         all temperates pass 'all', or a list of all of the temperatures.
@@ -387,8 +424,9 @@ def _get_temps_index(temps, fp, dataset):
         array after it is loaded from the file.
     ntemps : int
         The number of temperatures that will be loaded.
+
     """
-    if temps == 'all':
+    if temps == "all":
         # all temperatures were requested; just need to know how many
         ntemps = fp[dataset].shape[0]
         tidx = slice(None, None)

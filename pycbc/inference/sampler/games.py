@@ -1,22 +1,25 @@
-""" Direct monte carlo sampling using pregenerated mapping files that
+"""
+Direct monte carlo sampling using pregenerated mapping files that
 encode the intrinsic parameter space.
 """
+
 import logging
-import tqdm
+
 import h5py
 import numpy
 import numpy.random
+import tqdm
 from scipy.special import logsumexp
-from pycbc.io import FieldArray
 
 from pycbc.inference import models
+from pycbc.io import FieldArray
 from pycbc.pool import choose_pool
+
 from .dummy import DummySampler
 
 
 def call_likelihood(params):
-    """ Accessor to update the global model
-    """
+    """Accessor to update the global model"""
     models._global_instance.update(**params)
     return models._global_instance.loglikelihood
 
@@ -26,7 +29,8 @@ class OutOfSamples(Exception):
 
 
 class GameSampler(DummySampler):
-    """Direct importance sampling using a preconstructed parameter space
+    """
+    Direct importance sampling using a preconstructed parameter space
     mapping file.
 
     Parameters
@@ -42,15 +46,23 @@ class GameSampler(DummySampler):
         Try to use this many likelihood calls in each round of the analysis.
     rounds: int
         The number of iterations to use before terminated.
-    """
-    name = 'games'
 
-    def __init__(self, model, *args, nprocesses=1, use_mpi=False,
-                 mapfile=None,
-                 loglr_region=25,
-                 target_likelihood_calls=1e5,
-                 rounds=1,
-                 **kwargs):
+    """
+
+    name = "games"
+
+    def __init__(
+        self,
+        model,
+        *args,
+        nprocesses=1,
+        use_mpi=False,
+        mapfile=None,
+        loglr_region=25,
+        target_likelihood_calls=1e5,
+        rounds=1,
+        **kwargs,
+    ):
         super().__init__(model, *args)
 
         self.meta = {}
@@ -68,7 +80,7 @@ class GameSampler(DummySampler):
         self.loglr_region = float(loglr_region)
 
     def draw_samples_from_bin(self, i, size):
-        """ Get samples from the binned prior space """
+        """Get samples from the binned prior space"""
         if i not in self.draw:
             self.draw[i] = numpy.arange(0, len(self.dmap[i]))
 
@@ -81,12 +93,13 @@ class GameSampler(DummySampler):
 
         if size > 0:
             remain = len(self.draw[i])
-            logging.info('Drew %i, %i remains in bin %i', size, remain, i)
+            logging.info("Drew %i, %i remains in bin %i", size, remain, i)
 
         return self.dmap[i][selected]
 
     def sample_round(self, bin_weight, node_idx, lengths):
-        """ Sample from the posterior using pre-binned sets of points and
+        """
+        Sample from the posterior using pre-binned sets of points and
         the weighting factor of each bin.
 
         bin_weight: Array
@@ -116,17 +129,16 @@ class GameSampler(DummySampler):
         drawweight = bin_weight / drawcount
         total_draw = drawcount.sum()
 
-        logging.info('...drawn random points within bins')
+        logging.info("...drawn random points within bins")
         psamp = FieldArray(total_draw, dtype=self.dtype)
         pweight = numpy.zeros(total_draw, dtype=float)
         bin_id = numpy.zeros(total_draw, dtype=int)
         j = 0
         for i, (c, w) in enumerate(zip(drawcount, drawweight)):
             bdraw = self.draw_samples_from_bin(node_idx[i], c)
-            psamp[j:j+len(bdraw)] = FieldArray.from_records(bdraw,
-                                                            dtype=self.dtype)
-            pweight[j:j+len(bdraw)] = numpy.log(bin_weight[i]) - numpy.log(w)
-            bin_id[j:j+len(bdraw)] = i
+            psamp[j : j + len(bdraw)] = FieldArray.from_records(bdraw, dtype=self.dtype)
+            pweight[j : j + len(bdraw)] = numpy.log(bin_weight[i]) - numpy.log(w)
+            bin_id[j : j + len(bdraw)] = i
             j += len(bdraw)
 
         logging.info("Possible unique values %s", lengths.sum())
@@ -140,8 +152,9 @@ class GameSampler(DummySampler):
             pset = {p: psamp[p][i] for p in self.model.variable_params}
             args.append(pset)
 
-        loglr_samp = list(tqdm.tqdm(self.pool.imap(call_likelihood, args),
-                                    total=len(args)))
+        loglr_samp = list(
+            tqdm.tqdm(self.pool.imap(call_likelihood, args), total=len(args))
+        )
         loglr_samp = numpy.array(loglr_samp)
 
         # Calculate the weights from the actual likelihood relative to the
@@ -152,28 +165,30 @@ class GameSampler(DummySampler):
         return psamp, loglr_samp, weight2, bin_id
 
     def run(self):
-        """ Produce posterior samples """
-        logging.info('Retrieving params of parameter space nodes')
-        with h5py.File(self.mapfile, 'r') as mapfile:
-            bparams = {p: mapfile['bank'][p][:] for p in self.variable_params}
+        """Produce posterior samples"""
+        logging.info("Retrieving params of parameter space nodes")
+        with h5py.File(self.mapfile, "r") as mapfile:
+            bparams = {p: mapfile["bank"][p][:] for p in self.variable_params}
             num_nodes = len(bparams[list(bparams.keys())[0]])
-            lengths = numpy.array([len(mapfile['map'][str(x)])
-                                   for x in range(num_nodes)])
-            self.dtype = mapfile['map']['0'].dtype
+            lengths = numpy.array(
+                [len(mapfile["map"][str(x)]) for x in range(num_nodes)]
+            )
+            self.dtype = mapfile["map"]["0"].dtype
 
-        logging.info('Calculating likelihood at nodes')
+        logging.info("Calculating likelihood at nodes")
         args = []
         for i in range(num_nodes):
             pset = {p: bparams[p][i] for p in self.model.variable_params}
             args.append(pset)
 
-        node_loglrs = list(tqdm.tqdm(self.pool.imap(call_likelihood, args),
-                                     total=len(args)))
+        node_loglrs = list(
+            tqdm.tqdm(self.pool.imap(call_likelihood, args), total=len(args))
+        )
         node_loglrs = numpy.array(node_loglrs)
         loglr_bound = node_loglrs[~numpy.isnan(node_loglrs)].max()
         loglr_bound -= self.loglr_region
 
-        logging.info('Drawing proposal samples from node regions')
+        logging.info("Drawing proposal samples from node regions")
         logw = node_loglrs + numpy.log(lengths)
         passed = (node_loglrs > loglr_bound) & ~numpy.isnan(node_loglrs)
         passed = numpy.where(passed)[0]
@@ -182,9 +197,9 @@ class GameSampler(DummySampler):
         weight = numpy.exp(logw2)
 
         logging.info("...reading template bins")
-        with h5py.File(self.mapfile, 'r') as mapfile:
+        with h5py.File(self.mapfile, "r") as mapfile:
             for i in passed:
-                self.dmap[i] = mapfile['map'][str(i)][:]
+                self.dmap[i] = mapfile["map"][str(i)][:]
 
         # Sample from posterior
         psamp = None
@@ -196,9 +211,9 @@ class GameSampler(DummySampler):
 
         for i in range(self.rounds):
             try:
-                psamp_v, loglr_samp_v, weight2_v, bin_id = \
-                    self.sample_round(weight / weight.sum(),
-                                      passed, lengths[passed])
+                psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(
+                    weight / weight.sum(), passed, lengths[passed]
+                )
             except OutOfSamples:
                 logging.info("No more samples to draw from")
                 break
@@ -217,22 +232,22 @@ class GameSampler(DummySampler):
                 weight2 = numpy.concatenate([weight2_v, weight2])
                 bin_ids = numpy.concatenate([bin_id, bin_ids])
 
-            ess = 1.0 / ((weight2/weight2.sum()) ** 2.0).sum()
+            ess = 1.0 / ((weight2 / weight2.sum()) ** 2.0).sum()
             logging.info("ESS = %s", ess)
 
         # Prepare the equally weighted output samples
-        self.meta['ncalls'] = len(weight2)
-        self.meta['ess'] = ess
+        self.meta["ncalls"] = len(weight2)
+        self.meta["ess"] = ess
 
         weight2 /= weight2.sum()
-        draw2 = numpy.random.choice(len(psamp), size=int(ess * 1),
-                                    replace=True, p=weight2)
-        logging.info("Unique values second draw %s",
-                     len(numpy.unique(psamp[draw2])))
+        draw2 = numpy.random.choice(
+            len(psamp), size=int(ess * 1), replace=True, p=weight2
+        )
+        logging.info("Unique values second draw %s", len(numpy.unique(psamp[draw2])))
 
         fsamp = FieldArray(len(draw2), dtype=self.dtype)
         for i, v in enumerate(draw2):
             fsamp[i] = psamp[v]
 
         self._samples = {p: fsamp[p] for p in self.model.variable_params}
-        self._samples['loglikelihood'] = loglr_samp[draw2]
+        self._samples["loglikelihood"] = loglr_samp[draw2]

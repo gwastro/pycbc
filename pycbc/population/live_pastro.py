@@ -1,15 +1,17 @@
 import logging
+
 import h5py
 import numpy
 
-from pycbc.tmpltbank import bank_conversions as bankconv
-from pycbc.events import triggers
 from pycbc import conversions as conv
+from pycbc.events import triggers
+from pycbc.tmpltbank import bank_conversions as bankconv
+
 from . import fgmc_functions as fgmcfun
 
-_s_per_yr = 1. / conv.sec_to_year(1.)
+_s_per_yr = 1.0 / conv.sec_to_year(1.0)
 
-logger = logging.getLogger('pycbc.population.live_pastro')
+logger = logging.getLogger("pycbc.population.live_pastro")
 
 
 def check_template_param_bin_data(spec_json):
@@ -22,16 +24,16 @@ def check_template_param_bin_data(spec_json):
     Returns
     -------
     spec_json: dictionary
+
     """
     # Check the necessary data are present
-    assert 'param' in spec_json
-    assert 'bin_edges' in spec_json  # should be a list of floats
-    assert 'sig_per_yr_binned' in spec_json  # signal rate per bin (per year)
+    assert "param" in spec_json
+    assert "bin_edges" in spec_json  # should be a list of floats
+    assert "sig_per_yr_binned" in spec_json  # signal rate per bin (per year)
     # Do the lengths of bin arrays match?
-    assert len(spec_json['bin_edges']) == \
-           len(spec_json['sig_per_yr_binned']) + 1
-    assert 'ref_bns_horizon' in spec_json  # float
-    assert 'netsnr_thresh' in spec_json  # float
+    assert len(spec_json["bin_edges"]) == len(spec_json["sig_per_yr_binned"]) + 1
+    assert "ref_bns_horizon" in spec_json  # float
+    assert "netsnr_thresh" in spec_json  # float
 
     return spec_json
 
@@ -46,13 +48,14 @@ def check_template_param_bin_farlim_data(spec_json):
     Returns
     -------
     spec_json: dictionary
+
     """
     # Standard template param bin checks
     check_template_param_bin_data(spec_json)
 
     # In addition, need limiting FAR and SNR values
-    assert 'limit_far' in spec_json
-    assert 'limit_snr' in spec_json
+    assert "limit_far" in spec_json
+    assert "limit_snr" in spec_json
 
     return spec_json
 
@@ -70,16 +73,17 @@ def read_template_bank_param(spec_d, bankf):
     -------
     bank_data: dictionary
         Template counts binned over specified param
+
     """
-    with h5py.File(bankf, 'r') as bank:
+    with h5py.File(bankf, "r") as bank:
         # All the templates
-        tids = numpy.arange(len(bank['mass1']))
+        tids = numpy.arange(len(bank["mass1"]))
         # Get param vals
-        logger.info('Getting %s values from bank', spec_d['param'])
-        parvals = bankconv.get_bank_property(spec_d['param'], bank, tids)
-    counts, edges = numpy.histogram(parvals, bins=spec_d['bin_edges'])
-    bank_data = {'bin_edges': edges, 'tcounts': counts, 'num_t': counts.sum()}
-    logger.info('Binned template counts: %s', counts)
+        logger.info("Getting %s values from bank", spec_d["param"])
+        parvals = bankconv.get_bank_property(spec_d["param"], bank, tids)
+    counts, edges = numpy.histogram(parvals, bins=spec_d["bin_edges"])
+    bank_data = {"bin_edges": edges, "tcounts": counts, "num_t": counts.sum()}
+    logger.info("Binned template counts: %s", counts)
 
     return bank_data
 
@@ -111,13 +115,14 @@ def trials_type(ntriggered, nactive):
     if ntriggered == 2 and nactive == 3:
         return 6
     # All valid inputs are exhausted, throw an error
-    raise ValueError(f"I don't know what to do with {ntriggered} triggered and"
-                     f" {nactive} active ifos!")
+    raise ValueError(
+        f"I don't know what to do with {ntriggered} triggered and"
+        f" {nactive} active ifos!"
+    )
 
 
 def signal_pdf_from_snr(netsnr, thresh):
-    """ FGMC approximate signal distribution ~ SNR ** -4
-    """
+    """FGMC approximate signal distribution ~ SNR ** -4"""
     return numpy.exp(fgmcfun.log_rho_fg_analytic(netsnr, thresh))
 
 
@@ -127,9 +132,9 @@ def signal_rate_rescale(horizons, ref_dhor):
     to account for network sensitivity variation relative to a reference state
     """
     # Combine sensitivities over ifos in a way analogous to network SNR
-    net_horizon = sum(hor ** 2. for hor in horizons.values()) ** 0.5
+    net_horizon = sum(hor**2.0 for hor in horizons.values()) ** 0.5
     # signal rate is proportional to horizon distance cubed
-    return net_horizon ** 3. / ref_dhor ** 3.
+    return net_horizon**3.0 / ref_dhor**3.0
 
 
 def signal_rate_trig_type(horizons, sens_ifos, trig_ifos):
@@ -140,17 +145,20 @@ def signal_rate_trig_type(horizons, sens_ifos, trig_ifos):
     # Single-ifo time
     if len(sens_ifos) == 1:
         assert len(trig_ifos) == 1
-        return 1.
+        return 1.0
     # Single trigger in multi-ifo time
     if len(trig_ifos) == 1:
         # Sensitive volume scales with horizon^3
         # Suppress horizon by sqrt(2) wrt coincs
-        return (horizons[trig_ifos[0]] / 2**0.5) ** 3. /\
-            sum([horizons[i] ** 3. for i in sens_ifos])
+        return (horizons[trig_ifos[0]] / 2**0.5) ** 3.0 / sum(
+            [horizons[i] ** 3.0 for i in sens_ifos]
+        )
     # Double coinc : volume determined by less sensitive ifo
     # Compare to 2nd most sensitive ifo over the observing network
-    return sorted([horizons[i] for i in trig_ifos])[0] ** 3. /\
-        sorted([horizons[i] for i in sens_ifos])[-2] ** 3.
+    return (
+        sorted([horizons[i] for i in trig_ifos])[0] ** 3.0
+        / sorted([horizons[i] for i in sens_ifos])[-2] ** 3.0
+    )
 
 
 def template_param_bin_pa(padata, trdata, horizons):
@@ -167,40 +175,38 @@ def template_param_bin_pa(padata, trdata, horizons):
     Returns
     -------
     p_astro, p_terr: tuple of floats
+
     """
-    massspin = (trdata['mass1'], trdata['mass2'],
-                trdata['spin1z'], trdata['spin2z'])
-    trig_param = triggers.get_param(padata.spec['param'], None, *massspin)
+    massspin = (trdata["mass1"], trdata["mass2"], trdata["spin1z"], trdata["spin2z"])
+    trig_param = triggers.get_param(padata.spec["param"], None, *massspin)
     # NB digitize gives '1' for first bin, '2' for second etc.
-    bind = numpy.digitize(trig_param, padata.bank['bin_edges']) - 1
-    logger.debug('Trigger %s is in bin %i', padata.spec['param'], bind)
+    bind = numpy.digitize(trig_param, padata.bank["bin_edges"]) - 1
+    logger.debug("Trigger %s is in bin %i", padata.spec["param"], bind)
 
     # Get noise rate density
-    if 'bg_fac' not in padata.spec:
-        expfac = 6.
+    if "bg_fac" not in padata.spec:
+        expfac = 6.0
     else:
-        expfac = padata.spec['bg_fac']
+        expfac = padata.spec["bg_fac"]
 
     # FAR is in Hz, therefore convert to rate per year (per SNR)
-    dnoise = noise_density_from_far(trdata['far'], expfac) * _s_per_yr
-    logger.debug('FAR %.3g, noise density per yr per SNR %.3g',
-                 trdata['far'], dnoise)
+    dnoise = noise_density_from_far(trdata["far"], expfac) * _s_per_yr
+    logger.debug("FAR %.3g, noise density per yr per SNR %.3g", trdata["far"], dnoise)
     # Scale by fraction of templates in bin
-    dnoise *= padata.bank['tcounts'][bind] / padata.bank['num_t']
-    logger.debug('Noise density in bin %.3g', dnoise)
+    dnoise *= padata.bank["tcounts"][bind] / padata.bank["num_t"]
+    logger.debug("Noise density in bin %.3g", dnoise)
 
     # Get signal rate density per year at given SNR
-    dsig = signal_pdf_from_snr(trdata['network_snr'],
-                               padata.spec['netsnr_thresh'])
-    logger.debug('SNR %.3g, signal pdf %.3g', trdata['network_snr'], dsig)
-    dsig *= padata.spec['sig_per_yr_binned'][bind]
-    logger.debug('Signal density per yr per SNR in bin %.3g', dsig)
+    dsig = signal_pdf_from_snr(trdata["network_snr"], padata.spec["netsnr_thresh"])
+    logger.debug("SNR %.3g, signal pdf %.3g", trdata["network_snr"], dsig)
+    dsig *= padata.spec["sig_per_yr_binned"][bind]
+    logger.debug("Signal density per yr per SNR in bin %.3g", dsig)
     # Scale by network sensitivity accounting for BNS horizon distances
-    dsig *= signal_rate_rescale(horizons, padata.spec['ref_bns_horizon'])
-    logger.debug('After horizon rescaling %.3g', dsig)
+    dsig *= signal_rate_rescale(horizons, padata.spec["ref_bns_horizon"])
+    logger.debug("After horizon rescaling %.3g", dsig)
 
     p_astro = dsig / (dsig + dnoise)
-    logger.debug('p_astro %.4g', p_astro)
+    logger.debug("p_astro %.4g", p_astro)
     return p_astro, 1 - p_astro
 
 
@@ -218,49 +224,47 @@ def template_param_bin_types_pa(padata, trdata, horizons):
     Returns
     -------
     p_astro, p_terr: tuple of floats
+
     """
-    massspin = (trdata['mass1'], trdata['mass2'],
-                trdata['spin1z'], trdata['spin2z'])
-    trig_param = triggers.get_param(padata.spec['param'], None, *massspin)
+    massspin = (trdata["mass1"], trdata["mass2"], trdata["spin1z"], trdata["spin2z"])
+    trig_param = triggers.get_param(padata.spec["param"], None, *massspin)
     # NB digitize gives '1' for first bin, '2' for second etc.
-    bind = numpy.digitize(trig_param, padata.bank['bin_edges']) - 1
-    logger.debug('Trigger %s is in bin %i', padata.spec['param'], bind)
+    bind = numpy.digitize(trig_param, padata.bank["bin_edges"]) - 1
+    logger.debug("Trigger %s is in bin %i", padata.spec["param"], bind)
 
     # Get noise rate density
-    if 'bg_fac' not in padata.spec:
-        expfac = 6.
+    if "bg_fac" not in padata.spec:
+        expfac = 6.0
     else:
-        expfac = padata.spec['bg_fac']
+        expfac = padata.spec["bg_fac"]
 
     # List of ifos over trigger threshold
-    tr_ifos = trdata['triggered']
+    tr_ifos = trdata["triggered"]
 
     # FAR is in Hz, therefore convert to rate per year (per SNR)
-    dnoise = noise_density_from_far(trdata['far'], expfac) * _s_per_yr
-    logger.debug('FAR %.3g, noise density per yr per SNR %.3g',
-                 trdata['far'], dnoise)
+    dnoise = noise_density_from_far(trdata["far"], expfac) * _s_per_yr
+    logger.debug("FAR %.3g, noise density per yr per SNR %.3g", trdata["far"], dnoise)
     # Scale by fraction of templates in bin
-    dnoise *= padata.bank['tcounts'][bind] / padata.bank['num_t']
-    logger.debug('Noise density in bin %.3g', dnoise)
+    dnoise *= padata.bank["tcounts"][bind] / padata.bank["num_t"]
+    logger.debug("Noise density in bin %.3g", dnoise)
     # Back out trials factor to give noise density for triggered event type
-    dnoise /= float(trials_type(len(tr_ifos), len(trdata['sensitive'])))
-    logger.debug('Divide by previously applied trials factor: %.3g', dnoise)
+    dnoise /= float(trials_type(len(tr_ifos), len(trdata["sensitive"])))
+    logger.debug("Divide by previously applied trials factor: %.3g", dnoise)
 
     # Get signal rate density per year at given SNR
-    dsig = signal_pdf_from_snr(trdata['network_snr'],
-                               padata.spec['netsnr_thresh'])
-    logger.debug('SNR %.3g, signal pdf %.3g', trdata['network_snr'], dsig)
-    dsig *= padata.spec['sig_per_yr_binned'][bind]
-    logger.debug('Total signal density per yr per SNR in bin %.3g', dsig)
+    dsig = signal_pdf_from_snr(trdata["network_snr"], padata.spec["netsnr_thresh"])
+    logger.debug("SNR %.3g, signal pdf %.3g", trdata["network_snr"], dsig)
+    dsig *= padata.spec["sig_per_yr_binned"][bind]
+    logger.debug("Total signal density per yr per SNR in bin %.3g", dsig)
     # Scale by network sensitivity accounting for BNS horizons
-    dsig *= signal_rate_rescale(horizons, padata.spec['ref_bns_horizon'])
-    logger.debug('After network horizon rescaling %.3g', dsig)
+    dsig *= signal_rate_rescale(horizons, padata.spec["ref_bns_horizon"])
+    logger.debug("After network horizon rescaling %.3g", dsig)
     # Scale by relative signal rate in triggered ifos
-    dsig *= signal_rate_trig_type(horizons, trdata['sensitive'], tr_ifos)
-    logger.debug('After triggered ifo rate rescaling %.3g', dsig)
+    dsig *= signal_rate_trig_type(horizons, trdata["sensitive"], tr_ifos)
+    logger.debug("After triggered ifo rate rescaling %.3g", dsig)
 
     p_astro = dsig / (dsig + dnoise)
-    logger.debug('p_astro %.4g', p_astro)
+    logger.debug("p_astro %.4g", p_astro)
     return p_astro, 1 - p_astro
 
 
@@ -278,6 +282,7 @@ def template_param_bin_types_farlim_pa(padata, trdata, horizons):
     Returns
     -------
     p_astro, p_terr: tuple of floats
+
     """
     # If the network SNR and FAR indicate saturation of the FAR estimate,
     # set them to specified fixed values
@@ -289,12 +294,12 @@ def template_param_bin_types_farlim_pa(padata, trdata, horizons):
 
 __all__ = [
     "check_template_param_bin_data",
-    "read_template_bank_param",
     "noise_density_from_far",
+    "read_template_bank_param",
     "signal_pdf_from_snr",
     "signal_rate_rescale",
     "signal_rate_trig_type",
     "template_param_bin_pa",
-    "template_param_bin_types_pa",
     "template_param_bin_types_farlim_pa",
+    "template_param_bin_types_pa",
 ]

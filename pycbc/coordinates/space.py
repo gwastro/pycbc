@@ -30,19 +30,22 @@ model in the near future.
 """
 
 import logging
+
 import numpy as np
-
-from scipy.spatial.transform import Rotation
-from scipy.optimize import fsolve
 from astropy import units
-from astropy.constants import c, au
-from astropy.time import Time
-from astropy.coordinates import BarycentricMeanEcliptic, PrecessedGeocentric
-from astropy.coordinates import get_body_barycentric
-from astropy.coordinates import SkyCoord
+from astropy.constants import au, c
+from astropy.coordinates import (
+    BarycentricMeanEcliptic,
+    PrecessedGeocentric,
+    SkyCoord,
+    get_body_barycentric,
+)
 from astropy.coordinates.builtin_frames import ecliptic_transforms
+from astropy.time import Time
+from scipy.optimize import fsolve
+from scipy.spatial.transform import Rotation
 
-logger = logging.getLogger('pycbc.coordinates.space')
+logger = logging.getLogger("pycbc.coordinates.space")
 
 # This constant makes sure LISA is behind the Earth by 19-23 degrees.
 # Making this a stand-alone constant will also make it callable by
@@ -54,7 +57,8 @@ TIME_OFFSET_20_DEGREES = 7365189.431698299
 
 
 def rotation_matrix_ssb_to_lisa(alpha):
-    """ The rotation matrix (of frame basis) from SSB frame to LISA frame.
+    """
+    The rotation matrix (of frame basis) from SSB frame to LISA frame.
     This function assumes the angle between LISA plane and the ecliptic
     is 60 degrees, and the period of LISA's self-rotation and orbital
     revolution is both one year.
@@ -69,19 +73,19 @@ def rotation_matrix_ssb_to_lisa(alpha):
     -------
     r_total : numpy.array
         A 3x3 rotation matrix from SSB frame to LISA frame.
+
     """
-    r = Rotation.from_rotvec([
-        [0, 0, alpha],
-        [0, -np.pi/3, 0],
-        [0, 0, -alpha]
-    ]).as_matrix()
+    r = Rotation.from_rotvec(
+        [[0, 0, alpha], [0, -np.pi / 3, 0], [0, 0, -alpha]]
+    ).as_matrix()
     r_total = np.array(r[0]) @ np.array(r[1]) @ np.array(r[2])
 
     return r_total
 
 
 def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):
-    """ Calculating the position vector and angular displacement of LISA
+    """
+    Calculating the position vector and angular displacement of LISA
     in the SSB frame, at a given time. This function assumes LISA's barycenter
     is orbiting around a circular orbit within the ecliptic behind the Earth.
     The period of it is one year.
@@ -104,19 +108,22 @@ def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):
     alpha : float
         The angular displacement of LISA in the SSB frame.
         In the unit of 'radian'.
+
     """
     OMEGA_0 = 1.99098659277e-7
     R_ORBIT = au.value
-    alpha = np.mod(OMEGA_0 * (t_lisa + t0), 2*np.pi)
-    p = np.array([[R_ORBIT * np.cos(alpha)],
-                  [R_ORBIT * np.sin(alpha)],
-                  [0]], dtype=object)
+    alpha = np.mod(OMEGA_0 * (t_lisa + t0), 2 * np.pi)
+    p = np.array(
+        [[R_ORBIT * np.cos(alpha)], [R_ORBIT * np.sin(alpha)], [0]], dtype=object
+    )
     return (p, alpha)
 
 
-def localization_to_propagation_vector(longitude, latitude,
-                                       use_astropy=True, frame=None):
-    """ Converting the sky localization to the corresponding
+def localization_to_propagation_vector(
+    longitude, latitude, use_astropy=True, frame=None
+):
+    """
+    Converting the sky localization to the corresponding
     propagation unit vector of a GW signal.
 
     Parameters
@@ -136,6 +143,7 @@ def localization_to_propagation_vector(longitude, latitude,
     -------
     [[x], [y], [z]] : numpy.array
         The propagation unit vector of that GW signal.
+
     """
     if use_astropy:
         x = -frame.cartesian.x.value
@@ -151,7 +159,8 @@ def localization_to_propagation_vector(longitude, latitude,
 
 
 def propagation_vector_to_localization(k, use_astropy=True, frame=None):
-    """ Converting the propagation unit vector to the corresponding
+    """
+    Converting the propagation unit vector to the corresponding
     sky localization of a GW signal.
 
     Parameters
@@ -169,6 +178,7 @@ def propagation_vector_to_localization(k, use_astropy=True, frame=None):
     -------
     (longitude, latitude) : tuple
         The sky localization of that GW signal.
+
     """
     if use_astropy:
         try:
@@ -179,18 +189,21 @@ def propagation_vector_to_localization(k, use_astropy=True, frame=None):
             latitude = frame.dec.rad
     else:
         # latitude already within [-pi/2, pi/2]
-        latitude = np.float64(np.arcsin(-k[2,0]))
-        longitude = np.float64(np.arctan2(-k[1,0]/np.cos(latitude),
-                               -k[0,0]/np.cos(latitude)))
+        latitude = np.float64(np.arcsin(-k[2, 0]))
+        longitude = np.float64(
+            np.arctan2(-k[1, 0] / np.cos(latitude), -k[0, 0] / np.cos(latitude))
+        )
         # longitude should within [0, 2*pi)
-        longitude = np.mod(longitude, 2*np.pi)
+        longitude = np.mod(longitude, 2 * np.pi)
 
     return (longitude, latitude)
 
 
-def polarization_newframe(polarization, k, rotation_matrix, use_astropy=True,
-                          old_frame=None, new_frame=None):
-    """ Converting a polarization angle from a frame to a new frame
+def polarization_newframe(
+    polarization, k, rotation_matrix, use_astropy=True, old_frame=None, new_frame=None
+):
+    """
+    Converting a polarization angle from a frame to a new frame
     by using rotation matrix method.
 
     Parameters
@@ -217,37 +230,42 @@ def polarization_newframe(polarization, k, rotation_matrix, use_astropy=True,
     -------
     polarization_new_frame : float
         The polarization angle in the new frame of that GW signal.
+
     """
-    longitude, _ = propagation_vector_to_localization(
-                        k, use_astropy, old_frame)
+    longitude, _ = propagation_vector_to_localization(k, use_astropy, old_frame)
     u = np.array([[np.sin(longitude)], [-np.cos(longitude)], [0]])
     rotation_vector = polarization * k
     rotation_polarization = Rotation.from_rotvec(rotation_vector.T[0])
     p = rotation_polarization.apply(u.T[0]).reshape(3, 1)
     p_newframe = rotation_matrix.T @ p
     k_newframe = rotation_matrix.T @ k
-    longitude_newframe, latitude_newframe = \
-        propagation_vector_to_localization(k_newframe, use_astropy, new_frame)
-    u_newframe = np.array([[np.sin(longitude_newframe)],
-                           [-np.cos(longitude_newframe)], [0]])
-    v_newframe = np.array([
-                    [-np.sin(latitude_newframe) * np.cos(longitude_newframe)],
-                    [-np.sin(latitude_newframe) * np.sin(longitude_newframe)],
-                    [np.cos(latitude_newframe)]])
+    longitude_newframe, latitude_newframe = propagation_vector_to_localization(
+        k_newframe, use_astropy, new_frame
+    )
+    u_newframe = np.array(
+        [[np.sin(longitude_newframe)], [-np.cos(longitude_newframe)], [0]]
+    )
+    v_newframe = np.array(
+        [
+            [-np.sin(latitude_newframe) * np.cos(longitude_newframe)],
+            [-np.sin(latitude_newframe) * np.sin(longitude_newframe)],
+            [np.cos(latitude_newframe)],
+        ]
+    )
     p_dot_u_newframe = np.vdot(p_newframe, u_newframe)
     p_dot_v_newframe = np.vdot(p_newframe, v_newframe)
     polarization_new_frame = np.arctan2(p_dot_v_newframe, p_dot_u_newframe)
-    polarization_new_frame = np.mod(polarization_new_frame, 2*np.pi)
+    polarization_new_frame = np.mod(polarization_new_frame, 2 * np.pi)
     # avoid the round error
-    if polarization_new_frame == 2*np.pi:
+    if polarization_new_frame == 2 * np.pi:
         polarization_new_frame = 0
 
     return polarization_new_frame
 
 
-def t_lisa_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
-                    t0=TIME_OFFSET_20_DEGREES):
-    """ Calculating the time when a GW signal arrives at the barycenter
+def t_lisa_from_ssb(t_ssb, longitude_ssb, latitude_ssb, t0=TIME_OFFSET_20_DEGREES):
+    """
+    Calculating the time when a GW signal arrives at the barycenter
     of LISA, by using the time and sky localization in SSB frame.
 
     Parameters
@@ -270,9 +288,11 @@ def t_lisa_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
     -------
     t_lisa : float
         The time when a GW signal arrives at the origin of LISA frame.
+
     """
     k = localization_to_propagation_vector(
-            longitude_ssb, latitude_ssb, use_astropy=False)
+        longitude_ssb, latitude_ssb, use_astropy=False
+    )
 
     def equation(t_lisa):
         # LISA is moving, when GW arrives at LISA center,
@@ -283,9 +303,9 @@ def t_lisa_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
     return fsolve(equation, t_ssb)[0]
 
 
-def t_ssb_from_t_lisa(t_lisa, longitude_ssb, latitude_ssb,
-                      t0=TIME_OFFSET_20_DEGREES):
-    """ Calculating the time when a GW signal arrives at the barycenter
+def t_ssb_from_t_lisa(t_lisa, longitude_ssb, latitude_ssb, t0=TIME_OFFSET_20_DEGREES):
+    """
+    Calculating the time when a GW signal arrives at the barycenter
     of SSB, by using the time in LISA frame and sky localization in SSB frame.
 
     Parameters
@@ -308,9 +328,11 @@ def t_ssb_from_t_lisa(t_lisa, longitude_ssb, latitude_ssb,
     -------
     t_ssb : float
         The time when a GW signal arrives at the origin of SSB frame.
+
     """
     k = localization_to_propagation_vector(
-            longitude_ssb, latitude_ssb, use_astropy=False)
+        longitude_ssb, latitude_ssb, use_astropy=False
+    )
     # LISA is moving, when GW arrives at LISA center,
     # time is t_lisa, not t_ssb.
     p = lisa_position_ssb(t_lisa, t0)[0]
@@ -321,9 +343,11 @@ def t_ssb_from_t_lisa(t_lisa, longitude_ssb, latitude_ssb,
     return fsolve(equation, t_lisa)[0]
 
 
-def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
-                t0=TIME_OFFSET_20_DEGREES):
-    """ Converting the arrive time, the sky localization, and the polarization
+def ssb_to_lisa(
+    t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, t0=TIME_OFFSET_20_DEGREES
+):
+    """
+    Converting the arrive time, the sky localization, and the polarization
     from the SSB frame to the LISA frame.
 
     Parameters
@@ -358,6 +382,7 @@ def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
     polarization_lisa : float or numpy.array
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
+
     """
     if not isinstance(t_ssb, np.ndarray):
         t_ssb = np.array([t_ssb])
@@ -372,41 +397,47 @@ def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
     latitude_lisa, polarization_lisa = np.zeros(num), np.zeros(num)
 
     for i in range(num):
-        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2*np.pi:
+        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2 * np.pi:
             raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_ssb[i] < -np.pi/2 or latitude_ssb[i] > np.pi/2:
+        if latitude_ssb[i] < -np.pi / 2 or latitude_ssb[i] > np.pi / 2:
             raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2*np.pi:
+        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2 * np.pi:
             raise ValueError("Polarization angle should within [0, 2*pi).")
-        t_lisa[i] = t_lisa_from_ssb(t_ssb[i], longitude_ssb[i],
-                                    latitude_ssb[i], t0)
+        t_lisa[i] = t_lisa_from_ssb(t_ssb[i], longitude_ssb[i], latitude_ssb[i], t0)
         k_ssb = localization_to_propagation_vector(
-                    longitude_ssb[i], latitude_ssb[i], use_astropy=False)
+            longitude_ssb[i], latitude_ssb[i], use_astropy=False
+        )
         # Although t_lisa calculated above using the corrected LISA position
         # vector by adding t0, it corresponds to the true t_ssb, not t_ssb+t0,
         # we need to include t0 again to correct LISA position.
         alpha = lisa_position_ssb(t_lisa[i], t0)[1]
         rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
         k_lisa = rotation_matrix_lisa.T @ k_ssb
-        longitude_lisa[i], latitude_lisa[i] = \
-            propagation_vector_to_localization(k_lisa, use_astropy=False)
+        longitude_lisa[i], latitude_lisa[i] = propagation_vector_to_localization(
+            k_lisa, use_astropy=False
+        )
         polarization_lisa[i] = polarization_newframe(
-            polarization_ssb[i], k_ssb, rotation_matrix_lisa,
-            use_astropy=False)
+            polarization_ssb[i], k_ssb, rotation_matrix_lisa, use_astropy=False
+        )
 
     if num == 1:
-        params_lisa = (t_lisa[0], longitude_lisa[0],
-                       latitude_lisa[0], polarization_lisa[0])
+        params_lisa = (
+            t_lisa[0],
+            longitude_lisa[0],
+            latitude_lisa[0],
+            polarization_lisa[0],
+        )
     else:
-        params_lisa = (t_lisa, longitude_lisa,
-                       latitude_lisa, polarization_lisa)
+        params_lisa = (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa)
 
     return params_lisa
 
 
-def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
-                t0=TIME_OFFSET_20_DEGREES):
-    """ Converting the arrive time, the sky localization, and the polarization
+def lisa_to_ssb(
+    t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, t0=TIME_OFFSET_20_DEGREES
+):
+    """
+    Converting the arrive time, the sky localization, and the polarization
     from the LISA frame to the SSB frame.
 
     Parameters
@@ -441,6 +472,7 @@ def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
     polarization_ssb : float or numpy.array
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
+
     """
     if not isinstance(t_lisa, np.ndarray):
         t_lisa = np.array([t_lisa])
@@ -455,37 +487,37 @@ def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
     latitude_ssb, polarization_ssb = np.zeros(num), np.zeros(num)
 
     for i in range(num):
-        if longitude_lisa[i] < 0 or longitude_lisa[i] >= 2*np.pi:
+        if longitude_lisa[i] < 0 or longitude_lisa[i] >= 2 * np.pi:
             raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_lisa[i] < -np.pi/2 or latitude_lisa[i] > np.pi/2:
+        if latitude_lisa[i] < -np.pi / 2 or latitude_lisa[i] > np.pi / 2:
             raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_lisa[i] < 0 or polarization_lisa[i] >= 2*np.pi:
+        if polarization_lisa[i] < 0 or polarization_lisa[i] >= 2 * np.pi:
             raise ValueError("Polarization angle should within [0, 2*pi).")
         k_lisa = localization_to_propagation_vector(
-                    longitude_lisa[i], latitude_lisa[i], use_astropy=False)
+            longitude_lisa[i], latitude_lisa[i], use_astropy=False
+        )
         alpha = lisa_position_ssb(t_lisa[i], t0)[1]
         rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
         k_ssb = rotation_matrix_lisa @ k_lisa
-        longitude_ssb[i], latitude_ssb[i] = \
-            propagation_vector_to_localization(k_ssb, use_astropy=False)
-        t_ssb[i] = t_ssb_from_t_lisa(t_lisa[i], longitude_ssb[i],
-                                     latitude_ssb[i], t0)
+        longitude_ssb[i], latitude_ssb[i] = propagation_vector_to_localization(
+            k_ssb, use_astropy=False
+        )
+        t_ssb[i] = t_ssb_from_t_lisa(t_lisa[i], longitude_ssb[i], latitude_ssb[i], t0)
         polarization_ssb[i] = polarization_newframe(
-            polarization_lisa[i], k_lisa, rotation_matrix_lisa.T,
-            use_astropy=False)
+            polarization_lisa[i], k_lisa, rotation_matrix_lisa.T, use_astropy=False
+        )
 
     if num == 1:
-        params_ssb = (t_ssb[0], longitude_ssb[0],
-                      latitude_ssb[0], polarization_ssb[0])
+        params_ssb = (t_ssb[0], longitude_ssb[0], latitude_ssb[0], polarization_ssb[0])
     else:
-        params_ssb = (t_ssb, longitude_ssb,
-                      latitude_ssb, polarization_ssb)
+        params_ssb = (t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)
 
     return params_ssb
 
 
 def rotation_matrix_ssb_to_geo(epsilon=np.deg2rad(23.439281)):
-    """ The rotation matrix (of frame basis) from SSB frame to
+    """
+    The rotation matrix (of frame basis) from SSB frame to
     geocentric frame.
 
     Parameters
@@ -497,16 +529,16 @@ def rotation_matrix_ssb_to_geo(epsilon=np.deg2rad(23.439281)):
     -------
     r : numpy.array
         A 3x3 rotation matrix from SSB frame to geocentric frame.
+
     """
-    r = Rotation.from_rotvec([
-        [-epsilon, 0, 0]
-    ]).as_matrix()
+    r = Rotation.from_rotvec([[-epsilon, 0, 0]]).as_matrix()
 
     return np.array(r[0])
 
 
 def earth_position_ssb(t_geo):
-    """ Calculating the position vector and angular displacement of the Earth
+    """
+    Calculating the position vector and angular displacement of the Earth
     in the SSB frame, at a given time. By using Astropy.
 
     Parameters
@@ -523,14 +555,14 @@ def earth_position_ssb(t_geo):
     alpha : float
         The angular displacement of the Earth in the SSB frame.
         In the unit of 'radian'.
+
     """
-    t = Time(t_geo, format='gps')
-    pos = get_body_barycentric('earth', t)
+    t = Time(t_geo, format="gps")
+    pos = get_body_barycentric("earth", t)
     # BarycentricMeanEcliptic doesn't have obstime attribute,
     # it's a good inertial frame, but ICRS is not.
-    icrs_coord = SkyCoord(pos, frame='icrs', obstime=t)
-    bme_coord = icrs_coord.transform_to(
-                    BarycentricMeanEcliptic(equinox='J2000'))
+    icrs_coord = SkyCoord(pos, frame="icrs", obstime=t)
+    bme_coord = icrs_coord.transform_to(BarycentricMeanEcliptic(equinox="J2000"))
     x = bme_coord.cartesian.x.to(units.m).value
     y = bme_coord.cartesian.y.to(units.m).value
     z = bme_coord.cartesian.z.to(units.m).value
@@ -540,9 +572,9 @@ def earth_position_ssb(t_geo):
     return (p, alpha)
 
 
-def t_geo_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
-                   use_astropy=True, frame=None):
-    """ Calculating the time when a GW signal arrives at the barycenter
+def t_geo_from_ssb(t_ssb, longitude_ssb, latitude_ssb, use_astropy=True, frame=None):
+    """
+    Calculating the time when a GW signal arrives at the barycenter
     of the Earth, by using the time and sky localization in SSB frame.
 
     Parameters
@@ -561,9 +593,11 @@ def t_geo_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
     -------
     t_geo : float
         The time when a GW signal arrives at the origin of geocentric frame.
+
     """
     k = localization_to_propagation_vector(
-            longitude_ssb, latitude_ssb, use_astropy, frame)
+        longitude_ssb, latitude_ssb, use_astropy, frame
+    )
 
     def equation(t_geo):
         # Earth is moving, when GW arrives at Earth center,
@@ -574,9 +608,9 @@ def t_geo_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
     return fsolve(equation, t_ssb)[0]
 
 
-def t_ssb_from_t_geo(t_geo, longitude_ssb, latitude_ssb,
-                     use_astropy=True, frame=None):
-    """ Calculating the time when a GW signal arrives at the barycenter
+def t_ssb_from_t_geo(t_geo, longitude_ssb, latitude_ssb, use_astropy=True, frame=None):
+    """
+    Calculating the time when a GW signal arrives at the barycenter
     of SSB, by using the time in geocentric frame and sky localization
     in SSB frame.
 
@@ -596,9 +630,11 @@ def t_ssb_from_t_geo(t_geo, longitude_ssb, latitude_ssb,
     -------
     t_ssb : float
         The time when a GW signal arrives at the origin of SSB frame.
+
     """
     k = localization_to_propagation_vector(
-            longitude_ssb, latitude_ssb, use_astropy, frame)
+        longitude_ssb, latitude_ssb, use_astropy, frame
+    )
     # Earth is moving, when GW arrives at Earth center,
     # time is t_geo, not t_ssb.
     p = earth_position_ssb(t_geo)[0]
@@ -609,9 +645,9 @@ def t_ssb_from_t_geo(t_geo, longitude_ssb, latitude_ssb,
     return fsolve(equation, t_geo)[0]
 
 
-def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
-               use_astropy=True):
-    """ Converting the arrive time, the sky localization, and the polarization
+def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, use_astropy=True):
+    """
+    Converting the arrive time, the sky localization, and the polarization
     from the SSB frame to the geocentric frame.
 
     Parameters
@@ -647,6 +683,7 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
     polarization_geo : float or numpy.array
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
+
     """
     if not isinstance(t_ssb, np.ndarray):
         t_ssb = np.array([t_ssb])
@@ -663,71 +700,79 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
     polarization_geo = np.full(num, np.nan)
 
     for i in range(num):
-        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2*np.pi:
+        if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2 * np.pi:
             raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_ssb[i] < -np.pi/2 or latitude_ssb[i] > np.pi/2:
+        if latitude_ssb[i] < -np.pi / 2 or latitude_ssb[i] > np.pi / 2:
             raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2*np.pi:
+        if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2 * np.pi:
             raise ValueError("Polarization angle should within [0, 2*pi).")
 
         if use_astropy:
             # BarycentricMeanEcliptic doesn't have obstime attribute,
             # it's a good inertial frame, but PrecessedGeocentric is not.
             bme_coord = BarycentricMeanEcliptic(
-                            lon=longitude_ssb[i]*units.radian,
-                            lat=latitude_ssb[i]*units.radian,
-                            equinox='J2000')
-            t_geo[i] = t_geo_from_ssb(t_ssb[i], longitude_ssb[i],
-                                      latitude_ssb[i], use_astropy, bme_coord)
-            geo_sky = bme_coord.transform_to(PrecessedGeocentric(
-                equinox='J2000', obstime=Time(t_geo[i], format='gps')))
+                lon=longitude_ssb[i] * units.radian,
+                lat=latitude_ssb[i] * units.radian,
+                equinox="J2000",
+            )
+            t_geo[i] = t_geo_from_ssb(
+                t_ssb[i], longitude_ssb[i], latitude_ssb[i], use_astropy, bme_coord
+            )
+            geo_sky = bme_coord.transform_to(
+                PrecessedGeocentric(
+                    equinox="J2000", obstime=Time(t_geo[i], format="gps")
+                )
+            )
             longitude_geo[i] = geo_sky.ra.rad
             latitude_geo[i] = geo_sky.dec.rad
             k_geo = localization_to_propagation_vector(
-                        longitude_geo[i], latitude_geo[i],
-                        use_astropy, geo_sky)
+                longitude_geo[i], latitude_geo[i], use_astropy, geo_sky
+            )
             k_ssb = localization_to_propagation_vector(
-                        None, None, use_astropy, bme_coord)
-            rotation_matrix_geo = \
-                ecliptic_transforms.icrs_to_baryecliptic(
-                    from_coo=None,
-                    to_frame=BarycentricMeanEcliptic(equinox='J2000'))
+                None, None, use_astropy, bme_coord
+            )
+            rotation_matrix_geo = ecliptic_transforms.icrs_to_baryecliptic(
+                from_coo=None, to_frame=BarycentricMeanEcliptic(equinox="J2000")
+            )
             polarization_geo[i] = polarization_newframe(
-                                    polarization_ssb[i], k_ssb,
-                                    rotation_matrix_geo, use_astropy,
-                                    old_frame=bme_coord,
-                                    new_frame=geo_sky)
+                polarization_ssb[i],
+                k_ssb,
+                rotation_matrix_geo,
+                use_astropy,
+                old_frame=bme_coord,
+                new_frame=geo_sky,
+            )
         else:
-            t_geo[i] = t_geo_from_ssb(t_ssb[i], longitude_ssb[i],
-                                      latitude_ssb[i], use_astropy)
+            t_geo[i] = t_geo_from_ssb(
+                t_ssb[i], longitude_ssb[i], latitude_ssb[i], use_astropy
+            )
             rotation_matrix_geo = rotation_matrix_ssb_to_geo()
             k_ssb = localization_to_propagation_vector(
-                        longitude_ssb[i], latitude_ssb[i],
-                        use_astropy)
+                longitude_ssb[i], latitude_ssb[i], use_astropy
+            )
             k_geo = rotation_matrix_geo.T @ k_ssb
-            longitude_geo[i], latitude_geo[i] = \
-                propagation_vector_to_localization(k_geo, use_astropy)
+            longitude_geo[i], latitude_geo[i] = propagation_vector_to_localization(
+                k_geo, use_astropy
+            )
             polarization_geo[i] = polarization_newframe(
-                                    polarization_ssb[i], k_ssb,
-                                    rotation_matrix_geo, use_astropy)
+                polarization_ssb[i], k_ssb, rotation_matrix_geo, use_astropy
+            )
 
         # As mentioned in LDC manual, the p,q vectors are opposite between
         # LDC and LAL conventions, see Sec 4.1.5 in <LISA-LCST-SGS-MAN-001>.
-        polarization_geo[i] = np.mod(polarization_geo[i]+np.pi, 2*np.pi)
+        polarization_geo[i] = np.mod(polarization_geo[i] + np.pi, 2 * np.pi)
 
     if num == 1:
-        params_geo = (t_geo[0], longitude_geo[0],
-                      latitude_geo[0], polarization_geo[0])
+        params_geo = (t_geo[0], longitude_geo[0], latitude_geo[0], polarization_geo[0])
     else:
-        params_geo = (t_geo, longitude_geo,
-                      latitude_geo, polarization_geo)
+        params_geo = (t_geo, longitude_geo, latitude_geo, polarization_geo)
 
     return params_geo
 
 
-def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
-               use_astropy=True):
-    """ Converting the arrive time, the sky localization, and the polarization
+def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy=True):
+    """
+    Converting the arrive time, the sky localization, and the polarization
     from the geocentric frame to the SSB frame.
 
     Parameters
@@ -763,6 +808,7 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
     polarization_ssb : float or numpy.array
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
+
     """
     if not isinstance(t_geo, np.ndarray):
         t_geo = np.array([t_geo])
@@ -779,73 +825,83 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
     polarization_ssb = np.full(num, np.nan)
 
     for i in range(num):
-        if longitude_geo[i] < 0 or longitude_geo[i] >= 2*np.pi:
+        if longitude_geo[i] < 0 or longitude_geo[i] >= 2 * np.pi:
             raise ValueError("Longitude should within [0, 2*pi).")
-        if latitude_geo[i] < -np.pi/2 or latitude_geo[i] > np.pi/2:
+        if latitude_geo[i] < -np.pi / 2 or latitude_geo[i] > np.pi / 2:
             raise ValueError("Latitude should within [-pi/2, pi/2].")
-        if polarization_geo[i] < 0 or polarization_geo[i] >= 2*np.pi:
+        if polarization_geo[i] < 0 or polarization_geo[i] >= 2 * np.pi:
             raise ValueError("Polarization angle should within [0, 2*pi).")
 
         if use_astropy:
             # BarycentricMeanEcliptic doesn't have obstime attribute,
             # it's a good inertial frame, but PrecessedGeocentric is not.
             geo_coord = PrecessedGeocentric(
-                            ra=longitude_geo[i]*units.radian,
-                            dec=latitude_geo[i]*units.radian,
-                            equinox='J2000',
-                            obstime=Time(t_geo[i], format='gps'))
-            ssb_sky = geo_coord.transform_to(
-                        BarycentricMeanEcliptic(equinox='J2000'))
+                ra=longitude_geo[i] * units.radian,
+                dec=latitude_geo[i] * units.radian,
+                equinox="J2000",
+                obstime=Time(t_geo[i], format="gps"),
+            )
+            ssb_sky = geo_coord.transform_to(BarycentricMeanEcliptic(equinox="J2000"))
             longitude_ssb[i] = ssb_sky.lon.rad
             latitude_ssb[i] = ssb_sky.lat.rad
             k_ssb = localization_to_propagation_vector(
-                        longitude_ssb[i], latitude_ssb[i],
-                        use_astropy, ssb_sky)
+                longitude_ssb[i], latitude_ssb[i], use_astropy, ssb_sky
+            )
             k_geo = localization_to_propagation_vector(
-                None, None, use_astropy, geo_coord)
-            rotation_matrix_geo = \
-                ecliptic_transforms.icrs_to_baryecliptic(
-                    from_coo=None,
-                    to_frame=BarycentricMeanEcliptic(equinox='J2000'))
-            t_ssb[i] = t_ssb_from_t_geo(t_geo[i], longitude_ssb[i],
-                                        latitude_ssb[i], use_astropy,
-                                        ssb_sky)
+                None, None, use_astropy, geo_coord
+            )
+            rotation_matrix_geo = ecliptic_transforms.icrs_to_baryecliptic(
+                from_coo=None, to_frame=BarycentricMeanEcliptic(equinox="J2000")
+            )
+            t_ssb[i] = t_ssb_from_t_geo(
+                t_geo[i], longitude_ssb[i], latitude_ssb[i], use_astropy, ssb_sky
+            )
             polarization_ssb[i] = polarization_newframe(
-                                    polarization_geo[i], k_geo,
-                                    rotation_matrix_geo.T,
-                                    use_astropy,
-                                    old_frame=geo_coord,
-                                    new_frame=ssb_sky)
+                polarization_geo[i],
+                k_geo,
+                rotation_matrix_geo.T,
+                use_astropy,
+                old_frame=geo_coord,
+                new_frame=ssb_sky,
+            )
         else:
             rotation_matrix_geo = rotation_matrix_ssb_to_geo()
             k_geo = localization_to_propagation_vector(
-                        longitude_geo[i], latitude_geo[i], use_astropy)
+                longitude_geo[i], latitude_geo[i], use_astropy
+            )
             k_ssb = rotation_matrix_geo @ k_geo
-            longitude_ssb[i], latitude_ssb[i] = \
-                propagation_vector_to_localization(k_ssb, use_astropy)
-            t_ssb[i] = t_ssb_from_t_geo(t_geo[i], longitude_ssb[i],
-                                        latitude_ssb[i], use_astropy)
+            longitude_ssb[i], latitude_ssb[i] = propagation_vector_to_localization(
+                k_ssb, use_astropy
+            )
+            t_ssb[i] = t_ssb_from_t_geo(
+                t_geo[i], longitude_ssb[i], latitude_ssb[i], use_astropy
+            )
             polarization_ssb[i] = polarization_newframe(
-                                    polarization_geo[i], k_geo,
-                                    rotation_matrix_geo.T, use_astropy)
+                polarization_geo[i], k_geo, rotation_matrix_geo.T, use_astropy
+            )
 
         # As mentioned in LDC manual, the p,q vectors are opposite between
         # LDC and LAL conventions, see Sec 4.1.5 in <LISA-LCST-SGS-MAN-001>.
-        polarization_ssb[i] = np.mod(polarization_ssb[i]-np.pi, 2*np.pi)
+        polarization_ssb[i] = np.mod(polarization_ssb[i] - np.pi, 2 * np.pi)
 
     if num == 1:
-        params_ssb = (t_ssb[0], longitude_ssb[0],
-                      latitude_ssb[0], polarization_ssb[0])
+        params_ssb = (t_ssb[0], longitude_ssb[0], latitude_ssb[0], polarization_ssb[0])
     else:
-        params_ssb = (t_ssb, longitude_ssb,
-                      latitude_ssb, polarization_ssb)
+        params_ssb = (t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)
 
     return params_ssb
 
 
-def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
-                t0=TIME_OFFSET_20_DEGREES, use_astropy=True):
-    """ Converting the arrive time, the sky localization, and the polarization
+def lisa_to_geo(
+    t_lisa,
+    longitude_lisa,
+    latitude_lisa,
+    polarization_lisa,
+    t0=TIME_OFFSET_20_DEGREES,
+    use_astropy=True,
+):
+    """
+    Converting the arrive time, the sky localization, and the polarization
     from the LISA frame to the geocentric frame.
 
     Parameters
@@ -883,18 +939,28 @@ def lisa_to_geo(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
     polarization_geo : float or numpy.array
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
+
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = lisa_to_ssb(
-        t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, t0)
+        t_lisa, longitude_lisa, latitude_lisa, polarization_lisa, t0
+    )
     t_geo, longitude_geo, latitude_geo, polarization_geo = ssb_to_geo(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, use_astropy)
+        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, use_astropy
+    )
 
     return (t_geo, longitude_geo, latitude_geo, polarization_geo)
 
 
-def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
-                t0=TIME_OFFSET_20_DEGREES, use_astropy=True):
-    """ Converting the arrive time, the sky localization, and the polarization
+def geo_to_lisa(
+    t_geo,
+    longitude_geo,
+    latitude_geo,
+    polarization_geo,
+    t0=TIME_OFFSET_20_DEGREES,
+    use_astropy=True,
+):
+    """
+    Converting the arrive time, the sky localization, and the polarization
     from the geocentric frame to the LISA frame.
 
     Parameters
@@ -932,22 +998,35 @@ def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
     polarization_geo : float or numpy.array
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
+
     """
     t_ssb, longitude_ssb, latitude_ssb, polarization_ssb = geo_to_ssb(
-        t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy)
+        t_geo, longitude_geo, latitude_geo, polarization_geo, use_astropy
+    )
     t_lisa, longitude_lisa, latitude_lisa, polarization_lisa = ssb_to_lisa(
-        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, t0)
+        t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, t0
+    )
 
     return (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa)
 
 
-__all__ = ['TIME_OFFSET_20_DEGREES',
-           'localization_to_propagation_vector',
-           'propagation_vector_to_localization', 'polarization_newframe',
-           't_lisa_from_ssb', 't_ssb_from_t_lisa',
-           'ssb_to_lisa', 'lisa_to_ssb',
-           'rotation_matrix_ssb_to_lisa', 'rotation_matrix_ssb_to_geo',
-           'lisa_position_ssb', 'earth_position_ssb',
-           't_geo_from_ssb', 't_ssb_from_t_geo', 'ssb_to_geo', 'geo_to_ssb',
-           'lisa_to_geo', 'geo_to_lisa',
-           ]
+__all__ = [
+    "TIME_OFFSET_20_DEGREES",
+    "earth_position_ssb",
+    "geo_to_lisa",
+    "geo_to_ssb",
+    "lisa_position_ssb",
+    "lisa_to_geo",
+    "lisa_to_ssb",
+    "localization_to_propagation_vector",
+    "polarization_newframe",
+    "propagation_vector_to_localization",
+    "rotation_matrix_ssb_to_geo",
+    "rotation_matrix_ssb_to_lisa",
+    "ssb_to_geo",
+    "ssb_to_lisa",
+    "t_geo_from_ssb",
+    "t_lisa_from_ssb",
+    "t_ssb_from_t_geo",
+    "t_ssb_from_t_lisa",
+]

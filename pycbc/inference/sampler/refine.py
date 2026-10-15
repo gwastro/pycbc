@@ -1,19 +1,18 @@
-""" Sampler that uses kde refinement of an existing posterior estimate.
-"""
+"""Sampler that uses kde refinement of an existing posterior estimate."""
 
 import logging
+
 import numpy
 import numpy.random
-
 from scipy.special import logsumexp
-from scipy.stats import gaussian_kde
 from scipy.stats import entropy as sentropy
+from scipy.stats import gaussian_kde
 
 from pycbc.inference import models
-from pycbc.pool import choose_pool
 from pycbc.inference.io import loadfile
+from pycbc.pool import choose_pool
 
-from .base import setup_output, initial_dist_from_config
+from .base import initial_dist_from_config, setup_output
 from .dummy import DummySampler
 
 
@@ -51,7 +50,8 @@ def resample_equal(samples, logwt, seed=0):
 
 
 class RefineSampler(DummySampler):
-    """Sampler for kde drawn refinement of existing posterior estimate
+    """
+    Sampler for kde drawn refinement of existing posterior estimate
 
     Parameters
     ----------
@@ -70,6 +70,7 @@ class RefineSampler(DummySampler):
         The target evidence difference between iterative kde updates
     kde: scipy.stats.gaussian_kde
         The inital kde to use.
+
     """
 
     name = "refine"
@@ -90,7 +91,7 @@ class RefineSampler(DummySampler):
         kde=None,
         update_groups=None,
         max_kde_samples=int(5e4),
-        **kwargs
+        **kwargs,
     ):
         super().__init__(model, *args)
 
@@ -176,8 +177,7 @@ class RefineSampler(DummySampler):
         frac_offbase = (logp < logp.max() - 5.0).sum() / len(logp)
 
         logging.info(
-            "%s: dlogz_iter=%.4f,"
-            "dlogz_half=%.4f, entropy=%.4f offbase fraction=%.4f",
+            "%s: dlogz_iter=%.4f,dlogz_half=%.4f, entropy=%.4f offbase fraction=%.4f",
             step,
             dlogz,
             dlogz2,
@@ -191,13 +191,10 @@ class RefineSampler(DummySampler):
             and frac_offbase < self.offbase_fraction
         ):
             return True
-        else:
-            return False
+        return False
 
     @classmethod
-    def from_config(
-        cls, cp, model, output_file=None, nprocesses=1, use_mpi=False
-    ):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """This should initialize the sampler given a config file."""
         kwargs = {k: cp.get("sampler", k) for k in cp.options("sampler")}
         obj = cls(model, nprocesses=nprocesses, use_mpi=use_mpi, **kwargs)
@@ -290,9 +287,7 @@ class RefineSampler(DummySampler):
 
             gsample = self.group_kde.resample(int(1e5))
             gsample = [
-                gsample[i, :]
-                for i, k in enumerate(self.vparam)
-                if k in param_group
+                gsample[i, :] for i, k in enumerate(self.vparam) if k in param_group
             ]
             self.kde = gaussian_kde(numpy.array(gsample))
             self.fixed_samples = self.group_kde.resample(1)
@@ -307,9 +302,7 @@ class RefineSampler(DummySampler):
                 )
 
                 if total_samples is not None:
-                    total_samples = numpy.concatenate(
-                        [total_samples, ksamples], axis=1
-                    )
+                    total_samples = numpy.concatenate([total_samples, ksamples], axis=1)
                     total_logp = numpy.concatenate([total_logp, logp])
                     total_logw = numpy.concatenate([total_logw, logw])
                     total_logl = numpy.concatenate([total_logl, logl])
@@ -321,9 +314,7 @@ class RefineSampler(DummySampler):
 
                 logging.info("setting up next kde iteration..")
                 ntotal_logw = total_logw - logsumexp(total_logw)
-                kde_new = gaussian_kde(
-                    total_samples, weights=numpy.exp(ntotal_logw)
-                )
+                kde_new = gaussian_kde(total_samples, weights=numpy.exp(ntotal_logw))
 
                 if self.converged(r, kde_new, total_logl + total_logw, logp):
                     break

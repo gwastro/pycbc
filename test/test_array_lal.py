@@ -24,39 +24,60 @@
 """
 These are the unittests for the pycbc.filter.matchedfilter module
 """
+
 import unittest
-from pycbc.types import (
-    Array, TimeSeries, FrequencySeries,
-    float32, float64, complex64, complex128
-)
+
 from lal import LIGOTimeGPS as LTG
 from utils import parse_args_all_schemes, simple_exit
 
+from pycbc.types import (
+    Array,
+    FrequencySeries,
+    TimeSeries,
+    complex64,
+    complex128,
+    float32,
+    float64,
+)
+
 _scheme, _context = parse_args_all_schemes("lal() method")
 
+
 class TestUtils(unittest.TestCase):
-    def setUp(self,*args):
+    def setUp(self, *args):
         self.context = _context
         self.delta_t = 1.0 / 4096
-        self.epoch = LTG(0,0)
+        self.epoch = LTG(0, 0)
 
-        self.at = TimeSeries([1], delta_t=self.delta_t, dtype=float32,epoch=self.epoch)
-        self.bt = TimeSeries([1], delta_t=self.delta_t, dtype=float64,epoch=self.epoch)
-        self.ct = TimeSeries([1], delta_t=self.delta_t, dtype=complex64,epoch=self.epoch)
-        self.dt = TimeSeries([1], delta_t=self.delta_t, dtype=complex128,epoch=self.epoch)
+        self.at = TimeSeries([1], delta_t=self.delta_t, dtype=float32, epoch=self.epoch)
+        self.bt = TimeSeries([1], delta_t=self.delta_t, dtype=float64, epoch=self.epoch)
+        self.ct = TimeSeries(
+            [1], delta_t=self.delta_t, dtype=complex64, epoch=self.epoch
+        )
+        self.dt = TimeSeries(
+            [1], delta_t=self.delta_t, dtype=complex128, epoch=self.epoch
+        )
 
         self.a = Array([1], dtype=float32)
         self.b = Array([1], dtype=float64)
         self.c = Array([1], dtype=complex64)
         self.d = Array([1], dtype=complex128)
 
-        self.af = FrequencySeries([1], delta_f=self.delta_t, dtype=float32,epoch=self.epoch)
-        self.bf = FrequencySeries([1], delta_f=self.delta_t, dtype=float64,epoch=self.epoch)
-        self.cf = FrequencySeries([1], delta_f=self.delta_t, dtype=complex64,epoch=self.epoch)
-        self.df = FrequencySeries([1], delta_f=self.delta_t, dtype=complex128,epoch=self.epoch)
+        self.af = FrequencySeries(
+            [1], delta_f=self.delta_t, dtype=float32, epoch=self.epoch
+        )
+        self.bf = FrequencySeries(
+            [1], delta_f=self.delta_t, dtype=float64, epoch=self.epoch
+        )
+        self.cf = FrequencySeries(
+            [1], delta_f=self.delta_t, dtype=complex64, epoch=self.epoch
+        )
+        self.df = FrequencySeries(
+            [1], delta_f=self.delta_t, dtype=complex128, epoch=self.epoch
+        )
 
+    if _scheme == "cpu":
 
-    if _scheme == 'cpu':
         def test_array_to_lal(self):
             al = self.a.lal()
             self.assertEqual(al.data.dtype, self.a.dtype)
@@ -70,7 +91,6 @@ class TestUtils(unittest.TestCase):
             al = self.d.lal()
             self.assertEqual(al.data.dtype, self.d.dtype)
             self.assertEqual(al.data[0], self.d[0])
-
 
         def test_timeseries_to_lal(self):
             al = self.at.lal()
@@ -108,13 +128,15 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(al.data.data[0], self.df[0])
             self.assertEqual(al.deltaF, self.df.delta_f)
     else:
+
         def test_array_lal_errors(self):
             with self.context:
                 self.assertRaises(TypeError, self.a.lal)
 
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestUtils))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

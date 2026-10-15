@@ -13,10 +13,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-from pycbc.types import float32, complex64
 import numpy as _np
+
+from pycbc.types import complex64, float32
+
 from .. import opt
-from .simd_correlate_cython import ccorrf_simd, ccorrf_parallel
+from .simd_correlate_cython import ccorrf_parallel, ccorrf_simd
 
 """
 This module interfaces to C functions for multiplying
@@ -62,6 +64,7 @@ if l2_cache_size is not None:
 else:
     # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?
     default_segsize = 8192
+
 
 def correlate_parallel(ht, st, qt):
     htilde = _np.array(ht.data, copy=False, dtype=complex64)

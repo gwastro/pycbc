@@ -1,5 +1,6 @@
-from pycbc.detector import Detector
 from astropy.utils import iers
+
+from pycbc.detector import Detector
 
 # Make sure the documentation can be built without an internet connection
 iers.conf.auto_download = False

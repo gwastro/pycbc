@@ -21,25 +21,34 @@
 #
 # =============================================================================
 #
-""" This module provides functions to generate followup plots and trigger
+"""
+This module provides functions to generate followup plots and trigger
 time series.
 """
-import numpy, matplotlib
+
 # Only if a backend is not already set ... This should really *not* be done
 # here, but in the executables you should set matplotlib.use()
 # This matches the check that matplotlib does internally, but this *may* be
 # version dependenant. If this is a problem then remove this and control from
 # the executables directly.
 import sys
-if 'matplotlib.backends' not in sys.modules:
-    matplotlib.use('agg')
+
+import matplotlib
+import numpy
+
+if "matplotlib.backends" not in sys.modules:
+    matplotlib.use("agg")
     from matplotlib import pyplot as plt
-import mpld3, mpld3.plugins
+import mpld3
+import mpld3.plugins
 from igwn_segments import segment
+
 from pycbc.io.hdf import HFile
 
+
 def columns_from_file_list(file_list, columns, ifo, start, end):
-    """ Return columns of information stored in single detector trigger
+    """
+    Return columns of information stored in single detector trigger
     files.
 
     Parameters
@@ -60,15 +69,16 @@ def columns_from_file_list(file_list, columns, ifo, start, end):
     -------
     trigger_dict : dict
         A dictionary of column vectors with column names as keys.
+
     """
     file_list = file_list.find_output_with_ifo(ifo)
     file_list = file_list.find_all_output_in_range(ifo, segment(start, end))
 
     trig_dict = {}
     for trig_file in file_list:
-        f = HFile(trig_file.storage_path, 'r')
+        f = HFile(trig_file.storage_path, "r")
 
-        time = f['end_time'][:]
+        time = f["end_time"][:]
         pick = numpy.logical_and(time < end, time > start)
         pick_loc = numpy.where(pick)[0]
 
@@ -79,52 +89,54 @@ def columns_from_file_list(file_list, columns, ifo, start, end):
 
     return trig_dict
 
-ifo_color = {'H1': 'blue', 'L1':'red', 'V1':'green'}
+
+ifo_color = {"H1": "blue", "L1": "red", "V1": "green"}
+
 
 def coinc_timeseries_plot(coinc_file, start, end):
     fig = plt.figure()
-    f = HFile(coinc_file, 'r')
+    f = HFile(coinc_file, "r")
 
-    stat1 = f['foreground/stat1']
-    stat2 = f['foreground/stat2']
-    time1 = f['foreground/time1']
-    time2 = f['foreground/time2']
-    ifo1 = f.attrs['detector_1']
-    ifo2 = f.attrs['detector_2']
+    stat1 = f["foreground/stat1"]
+    stat2 = f["foreground/stat2"]
+    time1 = f["foreground/time1"]
+    time2 = f["foreground/time2"]
+    ifo1 = f.attrs["detector_1"]
+    ifo2 = f.attrs["detector_2"]
 
     plt.scatter(time1, stat1, label=ifo1, color=ifo_color[ifo1])
     plt.scatter(time2, stat2, label=ifo2, color=ifo_color[ifo2])
 
-    fmt = '.12g'
+    fmt = ".12g"
     mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt=fmt))
     plt.legend()
-    plt.xlabel('Time (s)')
-    plt.ylabel('NewSNR')
+    plt.xlabel("Time (s)")
+    plt.ylabel("NewSNR")
     plt.grid()
     return mpld3.fig_to_html(fig)
+
 
 def trigger_timeseries_plot(file_list, ifos, start, end):
 
     fig = plt.figure()
     for ifo in ifos:
-        trigs = columns_from_file_list(file_list,
-                                       ['snr', 'end_time'],
-                                       ifo, start, end)
+        trigs = columns_from_file_list(file_list, ["snr", "end_time"], ifo, start, end)
         print(trigs)
-        plt.scatter(trigs['end_time'], trigs['snr'], label=ifo,
-                      color=ifo_color[ifo])
+        plt.scatter(trigs["end_time"], trigs["snr"], label=ifo, color=ifo_color[ifo])
 
-        fmt = '.12g'
+        fmt = ".12g"
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt=fmt))
     plt.legend()
-    plt.xlabel('Time (s)')
-    plt.ylabel('SNR')
+    plt.xlabel("Time (s)")
+    plt.ylabel("SNR")
     plt.grid()
     return mpld3.fig_to_html(fig)
 
+
 def times_to_urls(times, window, tag):
-    base = '/../followup/%s/%s/%s'
+    base = "/../followup/%s/%s/%s"
     return times_to_links(times, window, tag, base=base)
+
 
 def times_to_links(times, window, tag, base=None):
     if base is None:
@@ -137,11 +149,10 @@ def times_to_links(times, window, tag, base=None):
         urls.append(base % (tag, start, end))
     return urls
 
+
 def get_gracedb_search_link(time):
     # Set up a search string for a 3s window around the coincidence
-    gdb_search_query = '%.0f+..+%.0f' % (numpy.floor(time) - 1,
-                                         numpy.ceil(time) + 1)
-    gdb_search_url = ('https://gracedb.ligo.org/search/?query='
-                      '{}&query_type=S'.format(gdb_search_query))
+    gdb_search_query = "%.0f+..+%.0f" % (numpy.floor(time) - 1, numpy.ceil(time) + 1)
+    gdb_search_url = f"https://gracedb.ligo.org/search/?query={gdb_search_query}&query_type=S"
     gdb_search_link = '<a href="' + gdb_search_url + '">Search</a>'
     return gdb_search_link

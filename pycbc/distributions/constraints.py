@@ -15,30 +15,35 @@
 """
 This modules provides classes for evaluating multi-dimensional constraints.
 """
+
 import logging
 import re
-import scipy.spatial
+
 import numpy
+import scipy.spatial
 
 from pycbc import transforms
-from pycbc.io import record, HFile
+from pycbc.io import HFile, record
 
-logger = logging.getLogger('pycbc.distributions.constraints')
+logger = logging.getLogger("pycbc.distributions.constraints")
 
 
-class Constraint(object):
-    """Creates a constraint that evaluates to True if parameters obey
+class Constraint:
+    """
+    Creates a constraint that evaluates to True if parameters obey
     the constraint and False if they do not.
     """
+
     name = "custom"
 
-    def __init__(self, constraint_arg, static_args=None, transforms=None,
-                 **kwargs):
+    def __init__(self, constraint_arg, static_args=None, transforms=None, **kwargs):
         static_args = (
-            {} if static_args is None
-            else dict(sorted(
-                static_args.items(), key=lambda x: len(x[0]), reverse=True))
+            {}
+            if static_args is None
+            else dict(
+                sorted(static_args.items(), key=lambda x: len(x[0]), reverse=True)
             )
+        )
         for arg, val in static_args.items():
             swp = f"'{val}'" if isinstance(val, str) else str(val)
             # Substitute static arg name for value if it appears in the
@@ -47,17 +52,14 @@ class Constraint(object):
             # This ensures that static_args that are also kwargs in function calls are
             # handled correctly, i.e., the kwarg is not touched while its value is replaced
             # with the static_arg value.
-            constraint_arg = re.sub(
-                r'\b{}(?!\_|\=)'.format(arg), swp, constraint_arg)
+            constraint_arg = re.sub(rf"\b{arg}(?!\_|\=)", swp, constraint_arg)
         self.constraint_arg = constraint_arg
         self.transforms = transforms
-        for kwarg in kwargs.keys():
+        for kwarg in kwargs:
             setattr(self, kwarg, kwargs[kwarg])
 
     def __call__(self, params):
-        """Evaluates constraint.
-        """
-
+        """Evaluates constraint."""
         if isinstance(params, dict):
             params = record.FieldArray.from_kwargs(**params)
         elif not isinstance(params, record.FieldArray):
@@ -66,41 +68,41 @@ class Constraint(object):
         try:
             out = self._constraint(params)
         except (NameError, AttributeError, TypeError):
-
             if self.transforms:
                 params = transforms.apply_transforms(params, self.transforms)
 
             out = self._constraint(params)
-
 
         if isinstance(out, record.FieldArray):
             out = out.item() if params.size == 1 else out
         return out
 
     def _constraint(self, params):
-        """ Evaluates constraint function.
-        """
+        """Evaluates constraint function."""
         return params[self.constraint_arg]
 
 
 class SupernovaeConvexHull(Constraint):
-    """Pre defined constraint for core-collapse waveforms that checks
+    """
+    Pre defined constraint for core-collapse waveforms that checks
     whether a given set of coefficients lie within the convex hull of
     the coefficients of the principal component basis vectors.
     """
+
     name = "supernovae_convex_hull"
     required_parameters = ["coeff_0", "coeff_1"]
 
     def __init__(self, constraint_arg, transforms=None, **kwargs):
-        super(SupernovaeConvexHull,
-              self).__init__(constraint_arg, transforms=transforms, **kwargs)
+        super().__init__(
+            constraint_arg, transforms=transforms, **kwargs
+        )
 
-        if 'principal_components_file' in kwargs:
-            pc_filename = kwargs['principal_components_file']
-            hull_dimention = numpy.array(kwargs['hull_dimention'])
+        if "principal_components_file" in kwargs:
+            pc_filename = kwargs["principal_components_file"]
+            hull_dimention = numpy.array(kwargs["hull_dimention"])
             self.hull_dimention = int(hull_dimention)
-            pc_file = HFile(pc_filename, 'r')
-            pc_coefficients = numpy.array(pc_file.get('coefficients'))
+            pc_file = HFile(pc_filename, "r")
+            pc_coefficients = numpy.array(pc_file.get("coefficients"))
             pc_file.close()
             hull_points = []
             for dim in range(self.hull_dimention):
@@ -112,17 +114,15 @@ class SupernovaeConvexHull(Constraint):
     def _constraint(self, params):
 
         output_array = []
-        points = numpy.array([params["coeff_0"],
-                              params["coeff_1"],
-                              params["coeff_2"]])
+        points = numpy.array([params["coeff_0"], params["coeff_1"], params["coeff_2"]])
         for coeff_index in range(len(params["coeff_0"])):
-            point = points[:, coeff_index][:self.hull_dimention]
+            point = points[:, coeff_index][: self.hull_dimention]
             output_array.append(self._hull.find_simplex(point) >= 0)
         return numpy.array(output_array)
 
 
 # list of all constraints
 constraints = {
-    Constraint.name : Constraint,
-    SupernovaeConvexHull.name : SupernovaeConvexHull,
+    Constraint.name: Constraint,
+    SupernovaeConvexHull.name: SupernovaeConvexHull,
 }

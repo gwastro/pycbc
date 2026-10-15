@@ -25,14 +25,16 @@
 This package provides a front-end to various fast Fourier transform
 implementations within PyCBC.
 """
+
 from pycbc.types import Array as _Array
-from pycbc.types import TimeSeries as _TimeSeries
 from pycbc.types import FrequencySeries as _FrequencySeries
+from pycbc.types import TimeSeries as _TimeSeries
 
 # The following helper function is in this top-level module because it
 # is used by the scheme-dependent files to write their version of the
 # _available_backends() function. It cannot go in backend_support as
 # that woulc cause circular imports
+
 
 def _list_available(possible_list, possible_dict):
     # It possibly is strange that we have both a list and a dict.
@@ -47,12 +49,15 @@ def _list_available(possible_list, possible_dict):
     available_dict = {}
     for backend in possible_list:
         try:
-            mod = __import__('pycbc.fft.' + possible_dict[backend], fromlist = ['pycbc.fft'])
-            available_dict.update({backend:mod})
+            mod = __import__(
+                "pycbc.fft." + possible_dict[backend], fromlist=["pycbc.fft"]
+            )
+            available_dict.update({backend: mod})
             available_list.append(backend)
         except (ImportError, OSError):
             pass
     return available_list, available_dict
+
 
 # The main purpose of the top-level module is to present a
 # uniform interface for a forward and reverse FFT, independent of
@@ -61,28 +66,21 @@ def _list_available(possible_list, possible_dict):
 # facilitate this checking, we define dicts mapping the numpy dtype
 # to the corresponding precisions and types.
 
+
 def _check_fft_args(invec, outvec):
-    if not isinstance(invec,_Array):
+    if not isinstance(invec, _Array):
         raise TypeError("Input is not a PyCBC Array")
-    if not isinstance(outvec,_Array):
+    if not isinstance(outvec, _Array):
         raise TypeError("Output is not a PyCBC Array")
 
-    if isinstance(invec,_TimeSeries) and not isinstance(
-        outvec,_FrequencySeries):
-        raise TypeError(
-            "When input is TimeSeries output must be FrequencySeries")
-    if isinstance(outvec,_TimeSeries) and not isinstance(
-        invec,_FrequencySeries):
-        raise TypeError(
-            "When output is TimeSeries input must be FrequencySeries")
-    if isinstance(invec,_FrequencySeries) and not isinstance(
-        outvec,_TimeSeries):
-        raise TypeError(
-            "When input is FrequencySeries output must be TimeSeries")
-    if isinstance(outvec,_FrequencySeries) and not isinstance(
-        invec,_TimeSeries):
-        raise TypeError(
-            "When output is FrequencySeries input must be TimeSeries")
+    if isinstance(invec, _TimeSeries) and not isinstance(outvec, _FrequencySeries):
+        raise TypeError("When input is TimeSeries output must be FrequencySeries")
+    if isinstance(outvec, _TimeSeries) and not isinstance(invec, _FrequencySeries):
+        raise TypeError("When output is TimeSeries input must be FrequencySeries")
+    if isinstance(invec, _FrequencySeries) and not isinstance(outvec, _TimeSeries):
+        raise TypeError("When input is FrequencySeries output must be TimeSeries")
+    if isinstance(outvec, _FrequencySeries) and not isinstance(invec, _TimeSeries):
+        raise TypeError("When output is FrequencySeries input must be TimeSeries")
 
     iprec = invec.precision
     oprec = outvec.precision
@@ -91,7 +89,8 @@ def _check_fft_args(invec, outvec):
 
     itype = invec.kind
     otype = outvec.kind
-    return [iprec,itype,otype]
+    return [iprec, itype, otype]
+
 
 def _check_fwd_args(invec, itype, outvec, otype, nbatch, size):
     ilen = len(invec)
@@ -102,27 +101,31 @@ def _check_fwd_args(invec, itype, outvec, otype, nbatch, size):
         raise ValueError("When nbatch > 1, size cannot be 'None'")
     if size is None:
         size = ilen
-    inplace = (invec.ptr == outvec.ptr)
+    inplace = invec.ptr == outvec.ptr
     if (ilen % nbatch) != 0:
         raise ValueError("Input length must be divisible by nbatch")
     if (olen % nbatch) != 0:
         raise ValueError("Output length must be divisible by nbatch")
-    if itype == 'complex' and otype == 'complex':
-        if (ilen/nbatch) != size:
+    if itype == "complex" and otype == "complex":
+        if (ilen / nbatch) != size:
             raise ValueError("For C2C FFT, len(invec) must be nbatch*size")
-        if (olen/nbatch) != size:
+        if (olen / nbatch) != size:
             raise ValueError("For C2C FFT, len(outvec) must be nbatch*size")
-    elif itype == 'real' and otype == 'complex':
-        if (olen/nbatch) != int(size/2 + 1):
+    elif itype == "real" and otype == "complex":
+        if (olen / nbatch) != int(size / 2 + 1):
             raise ValueError("For R2C FFT, len(outvec) must be nbatch*(size/2 + 1)")
         if inplace:
-            if (ilen/nbatch) != int(2*(size/2 + 1)):
-                raise ValueError("For R2C in-place FFT, len(invec) must be nbatch*2*(size/2+1)")
-        else:
-            if (ilen/nbatch) != size:
-                raise ValueError("For R2C out-of-place FFT, len(invec) must be nbatch*size")
+            if (ilen / nbatch) != int(2 * (size / 2 + 1)):
+                raise ValueError(
+                    "For R2C in-place FFT, len(invec) must be nbatch*2*(size/2+1)"
+                )
+        elif (ilen / nbatch) != size:
+            raise ValueError(
+                "For R2C out-of-place FFT, len(invec) must be nbatch*size"
+            )
     else:
         raise ValueError("Inconsistent dtypes for forward FFT")
+
 
 def _check_inv_args(invec, itype, outvec, otype, nbatch, size):
     ilen = len(invec)
@@ -133,25 +136,29 @@ def _check_inv_args(invec, itype, outvec, otype, nbatch, size):
         raise ValueError("When nbatch > 1, size cannot be 'None'")
     if size is None:
         size = olen
-    inplace = (invec.ptr == outvec.ptr)
+    inplace = invec.ptr == outvec.ptr
     if (ilen % nbatch) != 0:
         raise ValueError("Input length must be divisible by nbatch")
     if (olen % nbatch) != 0:
         raise ValueError("Output length must be divisible by nbatch")
-    if itype == 'complex' and otype == 'complex':
-        if (ilen/nbatch) != size:
+    if itype == "complex" and otype == "complex":
+        if (ilen / nbatch) != size:
             raise ValueError("For C2C IFFT, len(invec) must be nbatch*size")
-        if (olen/nbatch) != size:
+        if (olen / nbatch) != size:
             raise ValueError("For C2C IFFT, len(outvec) must be nbatch*size")
-    elif itype == 'complex' and otype == 'real':
-        if (ilen/nbatch) != int(size/2 + 1):
+    elif itype == "complex" and otype == "real":
+        if (ilen / nbatch) != int(size / 2 + 1):
             raise ValueError("For C2R IFFT, len(invec) must be nbatch*(size/2 + 1)")
         if inplace:
-            if (olen/nbatch) != 2*int(size/2 + 1):
-                raise ValueError("For C2R in-place IFFT, len(outvec) must be nbatch*2*(size/2+1)")
-        else:
-            if (olen/nbatch) != size:
-                raise ValueError("For C2R out-of-place IFFT, len(outvec) must be nbatch*size")
+            if (olen / nbatch) != 2 * int(size / 2 + 1):
+                raise ValueError(
+                    "For C2R in-place IFFT, len(outvec) must be nbatch*2*(size/2+1)"
+                )
+        elif (olen / nbatch) != size:
+            raise ValueError(
+                "For C2R out-of-place IFFT, len(outvec) must be nbatch*size"
+            )
+
 
 # The class-based approach requires the following:
 
@@ -169,14 +176,15 @@ def _check_inv_args(invec, itype, outvec, otype, nbatch, size):
 # nontrivial work and hence should be called inside the __init__ method of all child classes,
 # before anything else.
 
-class _BaseFFT(object):
+
+class _BaseFFT:
     def __init__(self, invec, outvec, nbatch, size):
         _, itype, otype = _check_fft_args(invec, outvec)
         _check_fwd_args(invec, itype, outvec, otype, nbatch, size)
         self.forward = True
         self.invec = invec
         self.outvec = outvec
-        self.inplace = (self.invec.ptr == self.outvec.ptr)
+        self.inplace = self.invec.ptr == self.outvec.ptr
         self.nbatch = nbatch
         if nbatch > 1:
             self.size = size
@@ -184,15 +192,15 @@ class _BaseFFT(object):
             self.size = len(invec)
         # Whether we are complex-to-complex or real-to-complex is determined
         # by itype:
-        if itype == 'complex':
+        if itype == "complex":
             # Complex-to-complex case:
             self.idist = self.size
             self.odist = self.size
         else:
             # Real-to-complex case:
-            self.odist = int(self.size/2 + 1)
+            self.odist = int(self.size / 2 + 1)
             if self.inplace:
-                self.idist = 2*int(self.size/2 + 1)
+                self.idist = 2 * int(self.size / 2 + 1)
             else:
                 self.idist = self.size
 
@@ -200,11 +208,11 @@ class _BaseFFT(object):
         # we should divide by, whether C2C or R2HC transform
         if isinstance(self.invec, _TimeSeries):
             self.outvec._epoch = self.invec._epoch
-            self.outvec._delta_f = 1.0/(self.invec._delta_t * len(self.invec))
+            self.outvec._delta_f = 1.0 / (self.invec._delta_t * len(self.invec))
             self.scale = self.invec._delta_t
         elif isinstance(self.invec, _FrequencySeries):
             self.outvec._epoch = self.invec._epoch
-            self.outvec._delta_t = 1.0/(self.invec._delta_f * len(self.invec))
+            self.outvec._delta_t = 1.0 / (self.invec._delta_f * len(self.invec))
             self.scale = self.invec._delta_f
 
     def execute(self):
@@ -220,16 +228,16 @@ class _BaseFFT(object):
         its output by the input vector's delta_t (when input is a TimeSeries)
         or delta_f (when input is a FrequencySeries).
         """
-        pass
 
-class _BaseIFFT(object):
+
+class _BaseIFFT:
     def __init__(self, invec, outvec, nbatch, size):
         _, itype, otype = _check_fft_args(invec, outvec)
         _check_inv_args(invec, itype, outvec, otype, nbatch, size)
         self.forward = False
         self.invec = invec
         self.outvec = outvec
-        self.inplace = (self.invec.ptr == self.outvec.ptr)
+        self.inplace = self.invec.ptr == self.outvec.ptr
         self.nbatch = nbatch
         if nbatch > 1:
             self.size = size
@@ -237,15 +245,15 @@ class _BaseIFFT(object):
             self.size = len(outvec)
         # Whether we are complex-to-complex or complex-to-real is determined
         # by otype:
-        if otype == 'complex':
+        if otype == "complex":
             # Complex-to-complex case:
             self.idist = self.size
             self.odist = self.size
         else:
             # Complex-to-real case:
-            self.idist = int(self.size/2 + 1)
+            self.idist = int(self.size / 2 + 1)
             if self.inplace:
-                self.odist = 2*int(self.size/2 + 1)
+                self.odist = 2 * int(self.size / 2 + 1)
             else:
                 self.odist = self.size
 
@@ -253,11 +261,11 @@ class _BaseIFFT(object):
         # we should divide by, whether C2C or HC2R transform
         if isinstance(self.invec, _TimeSeries):
             self.outvec._epoch = self.invec._epoch
-            self.outvec._delta_f = 1.0/(self.invec._delta_t * len(self.outvec))
+            self.outvec._delta_f = 1.0 / (self.invec._delta_t * len(self.outvec))
             self.scale = self.invec._delta_t
         elif isinstance(self.invec, _FrequencySeries):
             self.outvec._epoch = self.invec._epoch
-            self.outvec._delta_t = 1.0/(self.invec._delta_f * len(self.outvec))
+            self.outvec._delta_t = 1.0 / (self.invec._delta_f * len(self.outvec))
             self.scale = self.invec._delta_f
 
     def execute(self):
@@ -273,5 +281,3 @@ class _BaseIFFT(object):
         its output by the input vector's delta_t (when input is a TimeSeries)
         or delta_f (when input is a FrequencySeries).
         """
-        pass
-

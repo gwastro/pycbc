@@ -19,60 +19,73 @@ These are the unittests for distributions in the pycbc.distribtions subpackage.
 """
 
 import itertools
-import numpy
 import os
 import unittest
+
+import numpy
+from utils import parse_args_cpu_only, simple_exit
+
 from pycbc import distributions
 from pycbc.inference import entropy
-from utils import parse_args_cpu_only
-from utils import simple_exit
 from pycbc.workflow import WorkflowConfigParser
 
 # distributions to exclude from one-dimensional distribution unit tests
 # some of these distributons have their own specific unit test
-EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
-                      "external", "external_func_fromfile",
-                      "fisher_sky",
-                      "healpix_sky",
-                      "uniform_disk_sky",
-                      "uniform_solidangle", "uniform_sky",
-                      "independent_chip_chieff",
-                      "uniform_f0_tau", "fixed_samples"]
+EXCLUDE_DIST_NAMES = [
+    "fromfile",
+    "arbitrary",
+    "external",
+    "external_func_fromfile",
+    "fisher_sky",
+    "healpix_sky",
+    "uniform_disk_sky",
+    "uniform_solidangle",
+    "uniform_sky",
+    "independent_chip_chieff",
+    "uniform_f0_tau",
+    "fixed_samples",
+]
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Distributions")
 
+
 def cartesian(arrays):
-    """ Returns a cartesian product from a list of iterables.
-    """
-    return numpy.array([numpy.array(element)
-                        for element in itertools.product(*arrays)])
+    """Returns a cartesian product from a list of iterables."""
+    return numpy.array([numpy.array(element) for element in itertools.product(*arrays)])
+
 
 class TestDistributions(unittest.TestCase):
-
     def setUp(self):
 
         # set random seed
         numpy.random.seed(1024)
 
         # path to example configuration file for testing
-        config_path = "/".join([os.path.dirname(os.path.realpath(__file__)),
-                                "../examples/distributions/example.ini"])
+        config_path = "/".join(
+            [
+                os.path.dirname(os.path.realpath(__file__)),
+                "../examples/distributions/example.ini",
+            ]
+        )
 
         # get a set of simulated command line options for
         # configuration file reading
-        class Arguments(object):
+        class Arguments:
             config_overrides = []
             config_delete = []
             config_files = [config_path]
+
         self.opts = Arguments()
 
         # read configuration files
         self.cp = WorkflowConfigParser.from_cli(self.opts)
-        self.variable_args, self.static_args = \
-            distributions.read_params_from_config(self.cp)
+        self.variable_args, self.static_args = distributions.read_params_from_config(
+            self.cp
+        )
         self.constraints = distributions.read_constraints_from_config(
-            self.cp, static_args=self.static_args)
+            self.cp, static_args=self.static_args
+        )
 
         # read distributions
         self.dists = distributions.read_distributions_from_config(self.cp)
@@ -80,18 +93,19 @@ class TestDistributions(unittest.TestCase):
         # check that all distriubtions will be tested
         for dname in distributions.distribs:
             dclass = distributions.distribs[dname]
-            if (not numpy.any([isinstance(dist, dclass)
-                               for dist in self.dists])
-                    and dname not in EXCLUDE_DIST_NAMES):
-                raise ValueError("There is no test for {}".format(dname))
+            if (
+                not numpy.any([isinstance(dist, dclass) for dist in self.dists])
+                and dname not in EXCLUDE_DIST_NAMES
+            ):
+                raise ValueError(f"There is no test for {dname}")
 
     def test_pdf_rvs(self):
-        """ Check the Kullback-Leibler divergence between draws of random
+        """
+        Check the Kullback-Leibler divergence between draws of random
         samples form the distribution and the probability density function
         of the distribution. This implementation only works for
         one dimensional distriubtions.
         """
-
         # set threshold for KL divergence
         threshold = 0.1
 
@@ -106,7 +120,6 @@ class TestDistributions(unittest.TestCase):
             if dist.name in EXCLUDE_DIST_NAMES:
                 continue
             for param in dist.params:
-
                 # get min and max
                 hist_min = dist.bounds[param][0]
                 hist_max = dist.bounds[param][1]
@@ -116,23 +129,30 @@ class TestDistributions(unittest.TestCase):
 
                 # get the PDF
                 x = numpy.arange(hist_min, hist_max, step)
-                pdf = numpy.array([dist.pdf(**{param : xx}) for xx in x])
+                pdf = numpy.array([dist.pdf(**{param: xx}) for xx in x])
 
                 # compute the KL divergence and check if below threshold
-                kl_val = entropy.kl(samples, pdf, bins=pdf.size, pdf2=True,
-                                    hist_min=hist_min, hist_max=hist_max)
+                kl_val = entropy.kl(
+                    samples,
+                    pdf,
+                    bins=pdf.size,
+                    pdf2=True,
+                    hist_min=hist_min,
+                    hist_max=hist_max,
+                )
                 if not (kl_val < threshold):
                     raise ValueError(
-                              "Class {} KL divergence is {} which is "
-                              "greater than the threshold "
-                              "of {}".format(dist.name, kl_val, threshold))
+                        f"Class {dist.name} KL divergence is {kl_val} which is "
+                        "greater than the threshold "
+                        f"of {threshold}"
+                    )
 
     def test_pdf_logpdf(self):
-        """ Checks that the probability density function (PDF) is within some
+        """
+        Checks that the probability density function (PDF) is within some
         tolerance of the natural logarithm of the PDF. This implementation is
         for one dimensional distributions.
         """
-
         # assign tolerance for element-wise ratio of logarithm of PDF
         tolerance = 0.01
 
@@ -144,15 +164,14 @@ class TestDistributions(unittest.TestCase):
             if dist.name in EXCLUDE_DIST_NAMES:
                 continue
             for param in dist.params:
-
                 # get min and max
                 hist_min = dist.bounds[param][0]
                 hist_max = dist.bounds[param][1]
 
                 # get the PDF and logarithm of the PDF from the distriubtion
                 x = numpy.arange(hist_min, hist_max, step)
-                pdf = numpy.array([dist.pdf(**{param : xx}) for xx in x])
-                logpdf = numpy.array([dist.logpdf(**{param : xx}) for xx in x])
+                pdf = numpy.array([dist.pdf(**{param: xx}) for xx in x])
+                logpdf = numpy.array([dist.logpdf(**{param: xx}) for xx in x])
 
                 # find the logarithm of the PDF
                 pdf_log = numpy.log(pdf)
@@ -160,12 +179,15 @@ class TestDistributions(unittest.TestCase):
                 # see if each element in ratio of these two logarithm of PDF
                 # values are within the specified tolerance
                 if not numpy.all(abs(1.0 - logpdf / pdf_log) < tolerance):
-                    raise ValueError("The PDF and logarithm of the PDF "
-                                     "functions for distribution {} "
-                                     "do not agree".format(dist.name))
+                    raise ValueError(
+                        "The PDF and logarithm of the PDF "
+                        f"functions for distribution {dist.name} "
+                        "do not agree"
+                    )
 
     def test_pdf_arrays(self):
-        """ Checks that handing arrays to the PDF and its logarithm gives the
+        """
+        Checks that handing arrays to the PDF and its logarithm gives the
         same answer, element by element, as asking one point at a time.
 
         The points straddle each parameter's bounds. Outside is what a
@@ -184,21 +206,29 @@ class TestDistributions(unittest.TestCase):
                 func = getattr(dist, name)
                 array = numpy.asarray(func(**points))
                 one_at_a_time = numpy.array(
-                    [func(**{p: points[p][i] for p in dist.params})
-                     for i in range(npts)])
+                    [
+                        func(**{p: points[p][i] for p in dist.params})
+                        for i in range(npts)
+                    ]
+                )
                 self.assertEqual(
-                    array.shape, (npts,),
-                    "{}.{} returned shape {} for {} points".format(
-                        dist.name, name, array.shape, npts))
+                    array.shape,
+                    (npts,),
+                    f"{dist.name}.{name} returned shape {array.shape} for {npts} points",
+                )
                 numpy.testing.assert_allclose(
-                    array, one_at_a_time, rtol=0., atol=0.,
-                    err_msg="{}.{} disagrees with the one-point call".format(
-                        dist.name, name))
+                    array,
+                    one_at_a_time,
+                    rtol=0.0,
+                    atol=0.0,
+                    err_msg=f"{dist.name}.{name} disagrees with the one-point call",
+                )
             tested += 1
         self.assertGreater(tested, 5)
 
     def test_outside_the_bounds_is_zero(self):
-        """ A point outside the bounds has zero density, scalar or array.
+        """
+        A point outside the bounds has zero density, scalar or array.
 
         `test_pdf_arrays` straddles the bounds but only checks the array
         against the one-point call, and both go through the same containment
@@ -215,61 +245,71 @@ class TestDistributions(unittest.TestCase):
                 low[param] = lo - pad
                 high[param] = hi + pad
             if any(v in dist.bounds[p] for p, v in low.items()):
-                continue            # cyclic bounds wrap, nothing is outside
+                continue  # cyclic bounds wrap, nothing is outside
             for outside in (low, high):
                 self.assertEqual(
-                    dist.pdf(**outside), 0.,
-                    "{}.pdf is not zero outside the bounds".format(dist.name))
+                    dist.pdf(**outside),
+                    0.0,
+                    f"{dist.name}.pdf is not zero outside the bounds",
+                )
                 self.assertEqual(
-                    dist.logpdf(**outside), -numpy.inf,
-                    "{}.logpdf is not -inf outside the bounds".format(
-                        dist.name))
+                    dist.logpdf(**outside),
+                    -numpy.inf,
+                    f"{dist.name}.logpdf is not -inf outside the bounds",
+                )
                 # and the same point inside an array
                 arr = {p: numpy.array([v, v]) for p, v in outside.items()}
                 numpy.testing.assert_array_equal(
-                    numpy.asarray(dist.pdf(**arr)), numpy.zeros(2),
-                    "{}.pdf is not zero outside the bounds for an "
-                    "array".format(dist.name))
+                    numpy.asarray(dist.pdf(**arr)),
+                    numpy.zeros(2),
+                    f"{dist.name}.pdf is not zero outside the bounds for an array",
+                )
             tested += 1
-        self.assertGreater(tested, 5,
-                           "too few distributions had an outside to test")
+        self.assertGreater(tested, 5, "too few distributions had an outside to test")
 
     def test_pdf_arrays_with_constraints(self):
-        """ Same check where the bounds are not the whole story:
+        """
+        Same check where the bounds are not the whole story:
         ``UniformF0Tau`` also requires the implied final mass and spin to be
         in range, so the bounds alone would admit points it must reject.
         """
         npts = 9
-        dist = distributions.UniformF0Tau(f0=(10., 100.), tau=(1e-3, 1e-1))
+        dist = distributions.UniformF0Tau(f0=(10.0, 100.0), tau=(1e-3, 1e-1))
         # strictly inside both bounds, so only the constraint can reject any
-        points = {"f0": numpy.linspace(12., 98., npts),
-                  "tau": numpy.linspace(2e-3, 9e-2, npts)}
+        points = {
+            "f0": numpy.linspace(12.0, 98.0, npts),
+            "tau": numpy.linspace(2e-3, 9e-2, npts),
+        }
         for param in dist.params:
             for value in points[param]:
                 self.assertTrue(value in dist.bounds[param])
         isin = dist.contains(points)
         self.assertEqual(isin.shape, (npts,))
         self.assertTrue(isin.any(), "the constraint rejected every point")
-        self.assertFalse(isin.all(),
-                         "the final mass and spin constraint was not applied")
+        self.assertFalse(
+            isin.all(), "the final mass and spin constraint was not applied"
+        )
         for name in ("pdf", "logpdf"):
             func = getattr(dist, name)
             array = numpy.asarray(func(**points))
             one_at_a_time = numpy.array(
-                [func(f0=points["f0"][i], tau=points["tau"][i])
-                 for i in range(npts)])
+                [func(f0=points["f0"][i], tau=points["tau"][i]) for i in range(npts)]
+            )
             numpy.testing.assert_allclose(
-                array, one_at_a_time, rtol=0., atol=0.,
-                err_msg="UniformF0Tau.{} disagrees with the one-point "
-                        "call".format(name))
+                array,
+                one_at_a_time,
+                rtol=0.0,
+                atol=0.0,
+                err_msg=f"UniformF0Tau.{name} disagrees with the one-point call",
+            )
 
     def test_solid_angle(self):
-        """ The uniform solid angle and uniform sky position distributions
+        """
+        The uniform solid angle and uniform sky position distributions
         are two independent one-dimensional distributions. This tests checks
         that the two indepdent one-dimensional distributions agree by comparing
         the `rvs`, `pdf`, and `logpdf` functions' output.
         """
-
         # set tolerance for comparing PDF and logPDF functions
         tolerance = 0.01
 
@@ -281,8 +321,8 @@ class TestDistributions(unittest.TestCase):
 
         # create generic angular distributions for test
         sin_dist = distributions.SinAngle(theta=(0, numpy.pi))
-        cos_dist = distributions.CosAngle(theta=(-numpy.pi/2.0, numpy.pi/2.0))
-        ang_dist = distributions.UniformAngle(theta=(0, numpy.pi*2.0))
+        cos_dist = distributions.CosAngle(theta=(-numpy.pi / 2.0, numpy.pi / 2.0))
+        ang_dist = distributions.UniformAngle(theta=(0, numpy.pi * 2.0))
 
         # step size for PDF calculation
         step = 0.1
@@ -307,57 +347,87 @@ class TestDistributions(unittest.TestCase):
                 continue
 
             # check PDF equilvalent
-            pdf_1 = numpy.array([dist.pdf(**{dist.polar_angle : p,
-                                             dist.azimuthal_angle : a})
-                                 for p, a in cart_sin])
-            pdf_2 = numpy.array([polar_dist.pdf(**{"theta" : p})
-                                 * ang_dist.pdf(**{"theta" : a})
-                                 for p, a in cart_sin])
+            pdf_1 = numpy.array(
+                [
+                    dist.pdf(**{dist.polar_angle: p, dist.azimuthal_angle: a})
+                    for p, a in cart_sin
+                ]
+            )
+            pdf_2 = numpy.array(
+                [
+                    polar_dist.pdf(theta=p) * ang_dist.pdf(theta=a)
+                    for p, a in cart_sin
+                ]
+            )
 
             # Catch and silence warnings here
-            with numpy.errstate(invalid="ignore", divide='ignore'):
-                if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
-                                  < tolerance)):
-                    raise ValueError("The {} distribution PDF does not match "
-                                     "its component "
-                                     "distributions.".format(dist.name))
+            with numpy.errstate(invalid="ignore", divide="ignore"):
+                if not (
+                    numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2)) < tolerance)
+                ):
+                    raise ValueError(
+                        f"The {dist.name} distribution PDF does not match "
+                        "its component "
+                        "distributions."
+                    )
 
                 # check logarithm of PDF equivalent
-                pdf_1 = numpy.array([dist.logpdf(**{dist.polar_angle : p,
-                                                    dist.azimuthal_angle : a})
-                                     for p, a in cart_sin])
-                pdf_2 = numpy.array([polar_dist.logpdf(**{"theta" : p})
-                                     + ang_dist.logpdf(**{"theta" : a})
-                                     for p, a in cart_sin])
-                if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
-                           < tolerance)):
-                    raise ValueError("The {} distribution PDF does not match "
-                                     "its component "
-                                     "distriubtions.".format(dist.name))
+                pdf_1 = numpy.array(
+                    [
+                        dist.logpdf(**{dist.polar_angle: p, dist.azimuthal_angle: a})
+                        for p, a in cart_sin
+                    ]
+                )
+                pdf_2 = numpy.array(
+                    [
+                        polar_dist.logpdf(theta=p)
+                        + ang_dist.logpdf(theta=a)
+                        for p, a in cart_sin
+                    ]
+                )
+                if not (
+                    numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2)) < tolerance)
+                ):
+                    raise ValueError(
+                        f"The {dist.name} distribution PDF does not match "
+                        "its component "
+                        "distriubtions."
+                    )
 
             # check random draws from polar angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.polar_angle]
             ang_2 = polar_dist.rvs(n_samples)["theta"]
-            kl_val = entropy.kl(ang_1, ang_2, bins=polar_vals.size,
-                                hist_min=polar_vals.min(),
-                                hist_max=polar_vals.max())
+            kl_val = entropy.kl(
+                ang_1,
+                ang_2,
+                bins=polar_vals.size,
+                hist_min=polar_vals.min(),
+                hist_max=polar_vals.max(),
+            )
             if not (kl_val < threshold):
                 raise ValueError(
-                          "Class {} KL divergence is {} which is "
-                          "greater than the threshold for polar angle"
-                          "of {}".format(dist.name, kl_val, threshold))
+                    f"Class {dist.name} KL divergence is {kl_val} which is "
+                    "greater than the threshold for polar angle"
+                    f"of {threshold}"
+                )
 
             # check random draws from azimuthal angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.azimuthal_angle]
             ang_2 = ang_dist.rvs(n_samples)["theta"]
-            kl_val = entropy.kl(ang_1, ang_2, bins=azimuthal.size,
-                                hist_min=azimuthal.min(),
-                                hist_max=azimuthal.max())
+            kl_val = entropy.kl(
+                ang_1,
+                ang_2,
+                bins=azimuthal.size,
+                hist_min=azimuthal.min(),
+                hist_max=azimuthal.max(),
+            )
             if not (kl_val < threshold):
                 raise ValueError(
-                          "Class {} KL divergence is {} which is "
-                          "greater than the threshold for azimuthal angle"
-                          "of {}".format(dist.name, kl_val, threshold))
+                    f"Class {dist.name} KL divergence is {kl_val} which is "
+                    "greater than the threshold for azimuthal angle"
+                    f"of {threshold}"
+                )
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDistributions))

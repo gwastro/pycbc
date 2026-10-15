@@ -17,19 +17,23 @@
 """
 Provides a class representing a frequency series.
 """
+
 import os as _os
+
 import h5py
 import numpy as _numpy
 
-from pycbc.types.array import Array, _convert, zeros, _noreal
-from pycbc.types.utils import determine_epoch
-from pycbc.types import float64
 from pycbc.libutils import import_optional
+from pycbc.types import float64
+from pycbc.types.array import Array, _convert, _noreal, zeros
+from pycbc.types.utils import determine_epoch
 
-_lal = import_optional('lal')
+_lal = import_optional("lal")
+
 
 class FrequencySeries(Array):
-    """Models a frequency series consisting of uniformly sampled scalar values.
+    """
+    Models a frequency series consisting of uniformly sampled scalar values.
 
     Parameters
     ----------
@@ -43,18 +47,21 @@ class FrequencySeries(Array):
         Sample data type.
     copy : boolean, optional
         If True, samples are copied to a new array.
+
     """
 
     def __init__(self, initial_array, delta_f=None, epoch="", dtype=None, copy=True):
         if len(initial_array) < 1:
-            raise ValueError('initial_array must contain at least one sample.')
+            raise ValueError("initial_array must contain at least one sample.")
         if delta_f is None:
             try:
                 delta_f = initial_array.delta_f
             except AttributeError:
-                raise TypeError('must provide either an initial_array with a delta_f attribute, or a value for delta_f')
+                raise TypeError(
+                    "must provide either an initial_array with a delta_f attribute, or a value for delta_f"
+                )
         if not delta_f > 0:
-            raise ValueError('delta_f must be a positive number')
+            raise ValueError("delta_f must be a positive number")
 
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_f = delta_f
@@ -66,90 +73,88 @@ class FrequencySeries(Array):
     def _typecheck(self, other):
         if isinstance(other, FrequencySeries):
             try:
-                _numpy.testing.assert_almost_equal(other._delta_f,
-                                                   self._delta_f)
+                _numpy.testing.assert_almost_equal(other._delta_f, self._delta_f)
             except:
-                raise ValueError('different delta_f')
+                raise ValueError("different delta_f")
             # consistency of _epoch is not required because we may want
             # to combine frequency series estimated at different times
             # (e.g. PSD estimation)
 
     def get_delta_f(self):
-        """Return frequency between consecutive samples in Hertz.
-        """
+        """Return frequency between consecutive samples in Hertz."""
         return self._delta_f
-    delta_f = property(get_delta_f,
-                       doc="Frequency between consecutive samples in Hertz.")
+
+    delta_f = property(
+        get_delta_f, doc="Frequency between consecutive samples in Hertz."
+    )
 
     def get_epoch(self):
-        """Return frequency series epoch
-        """
+        """Return frequency series epoch"""
         return self._epoch
-    
-    epoch = property(get_epoch,
-                     doc="Frequency series epoch.")
+
+    epoch = property(get_epoch, doc="Frequency series epoch.")
 
     def get_sample_frequencies(self):
-        """Return an Array containing the sample frequencies.
-        """
+        """Return an Array containing the sample frequencies."""
         return Array(range(len(self))) * self._delta_f
-    sample_frequencies = property(get_sample_frequencies,
-                                  doc="Array of the sample frequencies.")
+
+    sample_frequencies = property(
+        get_sample_frequencies, doc="Array of the sample frequencies."
+    )
 
     def _getslice(self, index):
         if index.step is not None:
             new_delta_f = self._delta_f * index.step
         else:
             new_delta_f = self._delta_f
-        return FrequencySeries(Array._getslice(self, index),
-                               delta_f=new_delta_f,
-                               epoch=self._epoch,
-                               copy=False)
+        return FrequencySeries(
+            Array._getslice(self, index),
+            delta_f=new_delta_f,
+            epoch=self._epoch,
+            copy=False,
+        )
 
     def at_frequency(self, freq):
-        """ Return the value at the specified frequency
-        """
+        """Return the value at the specified frequency"""
         return self[int(freq / self.delta_f)]
 
     @property
     def start_time(self):
-        """Return the start time of this vector
-        """
+        """Return the start time of this vector"""
         return self.epoch
 
     @start_time.setter
     def start_time(self, time):
-        """ Set the start time
-        """
+        """Set the start time"""
         self._epoch = float64(time)
 
     @property
     def end_time(self):
-        """Return the end time of this vector
-        """
+        """Return the end time of this vector"""
         return self.start_time + self.duration
 
     @property
     def duration(self):
-        """Return the time duration of this vector
-        """
+        """Return the time duration of this vector"""
         return 1.0 / self.delta_f
 
     @property
     def delta_t(self):
-        """Return the time between samples if this were a time series.
+        """
+        Return the time between samples if this were a time series.
         This assume the time series is even in length!
         """
         return 1.0 / self.sample_rate
 
     @property
     def sample_rate(self):
-        """Return the sample rate this would have in the time domain. This
+        """
+        Return the sample rate this would have in the time domain. This
         assumes even length time series!
         """
         return (len(self) - 1) * self.delta_f * 2.0
 
-    def __eq__(self,other):
+    def __eq__(self, other):
         """
         This is the Python special method invoked whenever the '=='
         comparison is used.  It will return true if the data of two
@@ -182,13 +187,13 @@ class FrequencySeries(Array):
         -------
         boolean: 'True' if the types, dtypes, lengths, epochs, delta_fs
             and data of the two objects are each identical.
-        """
-        if super(FrequencySeries,self).__eq__(other):
-            return (self._epoch == other._epoch and self._delta_f == other._delta_f)
-        else:
-            return False
 
-    def almost_equal_elem(self,other,tol,relative=True,dtol=0.0):
+        """
+        if super().__eq__(other):
+            return self._epoch == other._epoch and self._delta_f == other._delta_f
+        return False
+
+    def almost_equal_elem(self, other, tol, relative=True, dtol=0.0):
         """
         Compare whether two frequency series are almost equal, element
         by element.
@@ -234,22 +239,27 @@ class FrequencySeries(Array):
         boolean: 'True' if the data and delta_fs agree within the tolerance,
             as interpreted by the 'relative' keyword, and if the types,
             lengths, dtypes, and epochs are exactly the same.
+
         """
         # Check that the delta_f tolerance is non-negative; raise an exception
         # if needed.
-        if (dtol < 0.0):
+        if dtol < 0.0:
             raise ValueError("Tolerance in delta_f cannot be negative")
-        if super(FrequencySeries,self).almost_equal_elem(other,tol=tol,relative=relative):
+        if super().almost_equal_elem(
+            other, tol=tol, relative=relative
+        ):
             if relative:
-                return (self._epoch == other._epoch and
-                        abs(self._delta_f-other._delta_f) <= dtol*self._delta_f)
-            else:
-                return (self._epoch == other._epoch and
-                        abs(self._delta_f-other._delta_f) <= dtol)
-        else:
-            return False
+                return (
+                    self._epoch == other._epoch
+                    and abs(self._delta_f - other._delta_f) <= dtol * self._delta_f
+                )
+            return (
+                self._epoch == other._epoch
+                and abs(self._delta_f - other._delta_f) <= dtol
+            )
+        return False
 
-    def almost_equal_norm(self,other,tol,relative=True,dtol=0.0):
+    def almost_equal_norm(self, other, tol, relative=True, dtol=0.0):
         """
         Compare whether two frequency series are almost equal, normwise.
 
@@ -292,24 +302,30 @@ class FrequencySeries(Array):
         boolean: 'True' if the data and delta_fs agree within the tolerance,
             as interpreted by the 'relative' keyword, and if the types,
             lengths, dtypes, and epochs are exactly the same.
+
         """
         # Check that the delta_f tolerance is non-negative; raise an exception
         # if needed.
-        if (dtol < 0.0):
+        if dtol < 0.0:
             raise ValueError("Tolerance in delta_f cannot be negative")
-        if super(FrequencySeries,self).almost_equal_norm(other,tol=tol,relative=relative):
+        if super().almost_equal_norm(
+            other, tol=tol, relative=relative
+        ):
             if relative:
-                return (self._epoch == other._epoch and
-                        abs(self._delta_f-other._delta_f) <= dtol*self._delta_f)
-            else:
-                return (self._epoch == other._epoch and
-                        abs(self._delta_f-other._delta_f) <= dtol)
-        else:
-            return False
+                return (
+                    self._epoch == other._epoch
+                    and abs(self._delta_f - other._delta_f) <= dtol * self._delta_f
+                )
+            return (
+                self._epoch == other._epoch
+                and abs(self._delta_f - other._delta_f) <= dtol
+            )
+        return False
 
     @_convert
     def lal(self):
-        """Produces a LAL frequency series object equivalent to self.
+        """
+        Produces a LAL frequency series object equivalent to self.
 
         Returns
         -------
@@ -323,28 +339,36 @@ class FrequencySeries(Array):
         ------
         TypeError
             If frequency series is stored in GPU memory.
-        """
 
+        """
         lal_data = None
         if self._epoch is None:
-            ep = _lal.LIGOTimeGPS(0,0)
+            ep = _lal.LIGOTimeGPS(0, 0)
         else:
             ep = _lal.LIGOTimeGPS(self._epoch)
 
         if self._data.dtype == _numpy.float32:
-            lal_data = _lal.CreateREAL4FrequencySeries("",ep,0,self.delta_f,_lal.SecondUnit,len(self))
+            lal_data = _lal.CreateREAL4FrequencySeries(
+                "", ep, 0, self.delta_f, _lal.SecondUnit, len(self)
+            )
         elif self._data.dtype == _numpy.float64:
-            lal_data = _lal.CreateREAL8FrequencySeries("",ep,0,self.delta_f,_lal.SecondUnit,len(self))
+            lal_data = _lal.CreateREAL8FrequencySeries(
+                "", ep, 0, self.delta_f, _lal.SecondUnit, len(self)
+            )
         elif self._data.dtype == _numpy.complex64:
-            lal_data = _lal.CreateCOMPLEX8FrequencySeries("",ep,0,self.delta_f,_lal.SecondUnit,len(self))
+            lal_data = _lal.CreateCOMPLEX8FrequencySeries(
+                "", ep, 0, self.delta_f, _lal.SecondUnit, len(self)
+            )
         elif self._data.dtype == _numpy.complex128:
-            lal_data = _lal.CreateCOMPLEX16FrequencySeries("",ep,0,self.delta_f,_lal.SecondUnit,len(self))
+            lal_data = _lal.CreateCOMPLEX16FrequencySeries(
+                "", ep, 0, self.delta_f, _lal.SecondUnit, len(self)
+            )
 
         lal_data.data.data[:] = self.numpy()
 
         return lal_data
 
-    def save(self, path, group=None, ifo='P1'):
+    def save(self, path, group=None, ifo="P1"):
         """
         Save frequency series to a Numpy .npy, hdf, or text file. The first column
         contains the sample frequencies, the second contains the values.
@@ -365,63 +389,68 @@ class FrequencySeries(Array):
         ------
         ValueError
             If path does not end in .npy or .txt.
-        """
 
+        """
         ext = _os.path.splitext(path)[1]
-        if ext == '.npy':
-            output = _numpy.vstack((self.sample_frequencies.numpy(),
-                                    self.numpy())).T
+        if ext == ".npy":
+            output = _numpy.vstack((self.sample_frequencies.numpy(), self.numpy())).T
             _numpy.save(path, output)
-        elif ext == '.txt':
-            if self.kind == 'real':
-                output = _numpy.vstack((self.sample_frequencies.numpy(),
-                                        self.numpy())).T
-            elif self.kind == 'complex':
-                output = _numpy.vstack((self.sample_frequencies.numpy(),
-                                        self.numpy().real,
-                                        self.numpy().imag)).T
+        elif ext == ".txt":
+            if self.kind == "real":
+                output = _numpy.vstack(
+                    (self.sample_frequencies.numpy(), self.numpy())
+                ).T
+            elif self.kind == "complex":
+                output = _numpy.vstack(
+                    (
+                        self.sample_frequencies.numpy(),
+                        self.numpy().real,
+                        self.numpy().imag,
+                    )
+                ).T
             _numpy.savetxt(path, output)
-        elif ext == '.xml' or path.endswith('.xml.gz'):
-            from pycbc.io.ligolw import make_psd_xmldoc
+        elif ext == ".xml" or path.endswith(".xml.gz"):
             from igwn_ligolw import utils
 
-            if self.kind != 'real':
-                raise ValueError('XML only supports real frequency series')
+            from pycbc.io.ligolw import make_psd_xmldoc
+
+            if self.kind != "real":
+                raise ValueError("XML only supports real frequency series")
             output = self.lal()
-            output.name = 'psd'
+            output.name = "psd"
             # When writing in this format we must *not* have the 0 values at
             # frequencies less than flow. To resolve this we set the first
             # non-zero value < flow.
             data_lal = output.data.data
-            first_idx = _numpy.argmax(data_lal>0)
+            first_idx = _numpy.argmax(data_lal > 0)
             if not first_idx == 0:
                 data_lal[:first_idx] = data_lal[first_idx]
             psddict = {ifo: output}
-            utils.write_filename(
-                make_psd_xmldoc(psddict),
-                path,
-                compress='auto'
-            )
-        elif ext == '.hdf':
-            key = 'data' if group is None else group
-            with h5py.File(path, 'a') as f:
-                ds = f.create_dataset(key, data=self.numpy(),
-                                      compression='gzip',
-                                      compression_opts=9, shuffle=True)
+            utils.write_filename(make_psd_xmldoc(psddict), path, compress="auto")
+        elif ext == ".hdf":
+            key = "data" if group is None else group
+            with h5py.File(path, "a") as f:
+                ds = f.create_dataset(
+                    key,
+                    data=self.numpy(),
+                    compression="gzip",
+                    compression_opts=9,
+                    shuffle=True,
+                )
                 if self.epoch is not None:
-                    ds.attrs['epoch'] = float(self.epoch)
-                ds.attrs['delta_f'] = float(self.delta_f)
+                    ds.attrs["epoch"] = float(self.epoch)
+                ds.attrs["delta_f"] = float(self.delta_f)
         else:
-            raise ValueError('Path must end with .npy, .txt, .xml, .xml.gz '
-                             'or .hdf')
+            raise ValueError("Path must end with .npy, .txt, .xml, .xml.gz or .hdf")
 
     def to_frequencyseries(self):
-        """ Return frequency series """
+        """Return frequency series"""
         return self
 
     @_noreal
     def to_timeseries(self, delta_t=None):
-        """ Return the Fourier transform of this time series.
+        """
+        Return the Fourier transform of this time series.
 
         Note that this assumes even length time series!
 
@@ -436,39 +465,47 @@ class FrequencySeries(Array):
         -------
         TimeSeries:
             The inverse fourier transform of this frequency series.
+
         """
         from pycbc.fft import ifft
         from pycbc.types import TimeSeries, real_same_precision_as
-        nat_delta_t =  1.0 / ((len(self)-1)*2) / self.delta_f
+
+        nat_delta_t = 1.0 / ((len(self) - 1) * 2) / self.delta_f
         if not delta_t:
             delta_t = nat_delta_t
 
         # add 0.5 to round integer
-        tlen  = int(1.0 / self.delta_f / delta_t + 0.5)
+        tlen = int(1.0 / self.delta_f / delta_t + 0.5)
         flen = int(tlen / 2 + 1)
 
         if flen < len(self):
-            raise ValueError("The value of delta_t (%s) would be "
-                             "undersampled. Maximum delta_t "
-                             "is %s." % (delta_t, nat_delta_t))
+            raise ValueError(
+                "The value of delta_t (%s) would be "
+                "undersampled. Maximum delta_t "
+                "is %s." % (delta_t, nat_delta_t)
+            )
         if not delta_t:
             tmp = self
         else:
-            tmp = FrequencySeries(zeros(flen, dtype=self.dtype),
-                             delta_f=self.delta_f, epoch=self.epoch,
-                             copy=False)
-            tmp[:len(self)] = self[:]
+            tmp = FrequencySeries(
+                zeros(flen, dtype=self.dtype),
+                delta_f=self.delta_f,
+                epoch=self.epoch,
+                copy=False,
+            )
+            tmp[: len(self)] = self[:]
 
-        f = TimeSeries(zeros(tlen,
-                           dtype=real_same_precision_as(self)),
-                           delta_t=delta_t, copy=False)
+        f = TimeSeries(
+            zeros(tlen, dtype=real_same_precision_as(self)), delta_t=delta_t, copy=False
+        )
         ifft(tmp, f)
         f._delta_t = delta_t
         return f
 
     @_noreal
     def cyclic_time_shift(self, dt):
-        """Shift the data and timestamps by a given number of seconds
+        """
+        Shift the data and timestamps by a given number of seconds
 
         Shift the data and timestamps in the time domain a given number of
         seconds. To just change the time stamps, do ts.start_time += dt.
@@ -486,15 +523,19 @@ class FrequencySeries(Array):
         -------
         data : pycbc.types.FrequencySeries
             The time shifted frequency series.
+
         """
         from pycbc.waveform import apply_fseries_time_shift
+
         data = apply_fseries_time_shift(self, dt)
         data.start_time = self.start_time - dt
         return data
 
-    def match(self, other, psd=None,
-              low_frequency_cutoff=None, high_frequency_cutoff=None):
-        """ Return the match between the two TimeSeries or FrequencySeries.
+    def match(
+        self, other, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=None
+    ):
+        """
+        Return the match between the two TimeSeries or FrequencySeries.
 
         Return the match between two waveforms. This is equivalent to the overlap
         maximized over time and phase. By default, the other vector will be
@@ -519,9 +560,10 @@ class FrequencySeries(Array):
         match: float
         index: int
             The number of samples to shift to get the match.
+
         """
-        from pycbc.types import TimeSeries
         from pycbc.filter import match
+        from pycbc.types import TimeSeries
 
         if isinstance(other, TimeSeries):
             if other.duration != self.duration:
@@ -538,25 +580,30 @@ class FrequencySeries(Array):
             psd = psd.copy()
             psd.resize(len(self))
 
-        return match(self, other, psd=psd,
-                     low_frequency_cutoff=low_frequency_cutoff,
-                     high_frequency_cutoff=high_frequency_cutoff)
+        return match(
+            self,
+            other,
+            psd=psd,
+            low_frequency_cutoff=low_frequency_cutoff,
+            high_frequency_cutoff=high_frequency_cutoff,
+        )
 
     def plot(self, **kwds):
-        """ Basic plot of this frequency series
-        """
+        """Basic plot of this frequency series"""
         from matplotlib import pyplot
 
-        if self.kind == 'real':
+        if self.kind == "real":
             plot = pyplot.plot(self.sample_frequencies, self, **kwds)
             return plot
-        elif self.kind == 'complex':
+        if self.kind == "complex":
             plot1 = pyplot.plot(self.sample_frequencies, self.real(), **kwds)
             plot2 = pyplot.plot(self.sample_frequencies, self.imag(), **kwds)
             return plot1, plot2
 
+
 def load_frequencyseries(path, group=None):
-    """Load a FrequencySeries from an HDF5, ASCII or Numpy file. The file type
+    """
+    Load a FrequencySeries from an HDF5, ASCII or Numpy file. The file type
     is inferred from the file extension, which must be `.hdf`, `.txt` or
     `.npy`.
 
@@ -587,29 +634,34 @@ def load_frequencyseries(path, group=None):
         If the path does not end in a supported extension.
         For Numpy and ASCII input files, this is also raised if the array
         does not have 2 or 3 dimensions.
+
     """
     ext = _os.path.splitext(path)[1]
-    if ext == '.npy':
+    if ext == ".npy":
         data = _numpy.load(path)
-    elif ext == '.txt':
+    elif ext == ".txt":
         data = _numpy.loadtxt(path)
-    elif ext == '.hdf':
-        key = 'data' if group is None else group
-        with h5py.File(path, 'r') as f:
+    elif ext == ".hdf":
+        key = "data" if group is None else group
+        with h5py.File(path, "r") as f:
             data = f[key][:]
-            delta_f = f[key].attrs['delta_f']
-            epoch = f[key].attrs['epoch'] if 'epoch' in f[key].attrs else None
+            delta_f = f[key].attrs["delta_f"]
+            epoch = f[key].attrs["epoch"] if "epoch" in f[key].attrs else None
             series = FrequencySeries(data, delta_f=delta_f, epoch=epoch)
         return series
     else:
-        raise ValueError('Path must end with .npy, .hdf, or .txt')
+        raise ValueError("Path must end with .npy, .hdf, or .txt")
 
     delta_f = (data[-1][0] - data[0][0]) / (len(data) - 1)
     if data.ndim == 2:
-        return FrequencySeries(data[:,1], delta_f=delta_f, epoch=None)
-    elif data.ndim == 3:
-        return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f,
-                               epoch=None)
+        return FrequencySeries(data[:, 1], delta_f=delta_f, epoch=None)
+    if data.ndim == 3:
+        return FrequencySeries(
+            data[:, 1] + 1j * data[:, 2], delta_f=delta_f, epoch=None
+        )
 
-    raise ValueError('File has %s dimensions, cannot convert to FrequencySeries, \
-                      must be 2 (real) or 3 (complex)' % data.ndim)
+    raise ValueError(
+        "File has %s dimensions, cannot convert to FrequencySeries, \
+                      must be 2 (real) or 3 (complex)"
+        % data.ndim
+    )

@@ -19,39 +19,39 @@
 setup.py file for PyCBC package
 """
 
-import sys
-import os, subprocess
+import os
 import platform
+import subprocess
+import sys
 
-from setuptools import Extension, setup, Command
+from setuptools import Command, Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext as _build_ext
-from setuptools import find_packages
-
 
 requires = []
-setup_requires = ['numpy>=1.16.0']
+setup_requires = ["numpy>=1.16.0"]
 install_requires = setup_requires + [
-    'cython>=0.29',
-    'numpy>=1.16.0,!=1.19.0,!=2.2.2',
-    'scipy>=0.16.0,<1.17.0',
-    'astropy>=2.0.3,!=4.2.1,!=4.0.5',
-    'matplotlib>=1.5.1',
-    'mpld3>=0.3',
-    'pillow',
-    'h5py>=3.0.0,!=3.7.0',
-    'jinja2',
-    'Mako>=1.0.1',
-    'beautifulsoup4>=4.6.0',
-    'tqdm',
-    'setuptools',
-    'gwdatafind',
-    'pegasus-wms.api >= 5.1.1',
-    'igwn-ligolw >= 2.1.0',
-    'igwn-segments',
-    'lalsuite!=7.2',
-    'lscsoft-glue>=1.59.3',
-    'pykerr',
+    "cython>=0.29",
+    "numpy>=1.16.0,!=1.19.0,!=2.2.2",
+    "scipy>=0.16.0,<1.17.0",
+    "astropy>=2.0.3,!=4.2.1,!=4.0.5",
+    "matplotlib>=1.5.1",
+    "mpld3>=0.3",
+    "pillow",
+    "h5py>=3.0.0,!=3.7.0",
+    "jinja2",
+    "Mako>=1.0.1",
+    "beautifulsoup4>=4.6.0",
+    "tqdm",
+    "setuptools",
+    "gwdatafind",
+    "pegasus-wms.api >= 5.1.1",
+    "igwn-ligolw >= 2.1.0",
+    "igwn-segments",
+    "lalsuite!=7.2",
+    "lscsoft-glue>=1.59.3",
+    "pykerr",
 ]
+
 
 def find_files(dirname, relpath=None):
     def find_paths(dirname):
@@ -63,39 +63,41 @@ def find_files(dirname, relpath=None):
             elif not path.endswith(".py") and not path.endswith(".pyc"):
                 items.append(path)
         return items
+
     items = find_paths(dirname)
     if relpath is None:
         relpath = dirname
     return [os.path.relpath(path, relpath) for path in items]
 
+
 class cbuild_ext(_build_ext):
     def run(self):
         # At this point we can be sure pip has already installed numpy
         import numpy
+
         numpy_incl = numpy.get_include()
 
         for ext in self.extensions:
-            if (hasattr(ext, 'include_dirs') and
-                    numpy_incl not in ext.include_dirs):
+            if hasattr(ext, "include_dirs") and numpy_incl not in ext.include_dirs:
                 ext.include_dirs.append(numpy_incl)
 
         _build_ext.run(self)
 
+
 def get_version_info():
-    """Get VCS info and write version info to version.py.
-    """
+    """Get VCS info and write version info to version.py."""
     from pycbc import _version_helper
 
-    class vdummy(object):
+    class vdummy:
         def __getattr__(self, attr):
-            return ''
+            return ""
 
     # If this is a pycbc git repo always populate version information using GIT
     try:
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.12.dev1'
+        vinfo.version = "2.12.dev1"
         vinfo.release = False
 
     version_script = f"""# coding: utf-8
@@ -126,19 +128,24 @@ Repository status is {vinfo.status}\"\"\"
 
 from pycbc._version import *
 """
-    with open('pycbc/version.py', 'wb') as f:
-        f.write(version_script.encode('utf-8'))
+    with open("pycbc/version.py", "wb") as f:
+        f.write(version_script.encode("utf-8"))
 
     from pycbc import version
+
     return version.version
+
 
 class build_docs(Command):
     user_options = []
     description = "Build the documentation pages"
+
     def initialize_options(self):
         pass
+
     def finalize_options(self):
         pass
+
     def run(self):
         cmd = (
             "cd docs; "
@@ -148,13 +155,17 @@ class build_docs(Command):
         )
         subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=True)
 
+
 class build_gh_pages(Command):
     user_options = []
     description = "Build the documentation pages for GitHub"
+
     def initialize_options(self):
         pass
+
     def finalize_options(self):
         pass
+
     def run(self):
         cmd = (
             "mkdir -p _gh-pages/latest "
@@ -166,123 +177,124 @@ class build_gh_pages(Command):
         )
         subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=True)
 
+
 cmdclass = {
-    'build_docs': build_docs,
-    'build_gh_pages': build_gh_pages,
-    'build_ext': cbuild_ext
+    "build_docs": build_docs,
+    "build_gh_pages": build_gh_pages,
+    "build_ext": cbuild_ext,
 }
 
 extras_require = {
-    'cuda': [
-        'pycuda>=2015.1',
-        'scikit-cuda',
+    "cuda": [
+        "pycuda>=2015.1",
+        "scikit-cuda",
     ],
-    'igwn': [
-        'ciecplib>=0.7.0',
+    "igwn": [
+        "ciecplib>=0.7.0",
     ],
 }
+
 
 def get_reqs_from_file(filename):
     reqs = []
     if os.path.exists(filename):
-        with open(filename, 'r') as f:
+        with open(filename) as f:
             for line in f:
                 line = line.strip()
-                if line and not line.startswith('#') and not line.startswith('--'):
+                if line and not line.startswith("#") and not line.startswith("--"):
                     reqs.append(line)
     return reqs
 
-extras_require['test'] = get_reqs_from_file('requirements.txt') + get_reqs_from_file('companion.txt')
+
+extras_require["test"] = get_reqs_from_file("requirements.txt") + get_reqs_from_file(
+    "companion.txt"
+)
 
 # do the actual work of building the package
 VERSION = get_version_info()
 
-cythonext = ['pycbc.waveform.spa_tmplt_cpu',
-             'pycbc.waveform.utils_cpu',
-             'pycbc.types.array_cpu',
-             'pycbc.filter.matchedfilter_cpu',
-             'pycbc.vetoes.chisq_cpu',
-             "pycbc.fft.fftw_pruned_cython",
-             "pycbc.events.eventmgr_cython",
-             "pycbc.events.simd_threshold_cython",
-             "pycbc.filter.simd_correlate_cython",
-             "pycbc.waveform.decompress_cpu_cython",
-             "pycbc.inference.models.relbin_cpu",
-             ]
+cythonext = [
+    "pycbc.waveform.spa_tmplt_cpu",
+    "pycbc.waveform.utils_cpu",
+    "pycbc.types.array_cpu",
+    "pycbc.filter.matchedfilter_cpu",
+    "pycbc.vetoes.chisq_cpu",
+    "pycbc.fft.fftw_pruned_cython",
+    "pycbc.events.eventmgr_cython",
+    "pycbc.events.simd_threshold_cython",
+    "pycbc.filter.simd_correlate_cython",
+    "pycbc.waveform.decompress_cpu_cython",
+    "pycbc.inference.models.relbin_cpu",
+]
 ext = []
 
-libraries = ['m']  # Some platforms / toolchains don't implicitly link this
-cython_compile_args = ['-O3', '-w', '-ffast-math',
-                       '-ffinite-math-only']
+libraries = ["m"]  # Some platforms / toolchains don't implicitly link this
+cython_compile_args = ["-O3", "-w", "-ffast-math", "-ffinite-math-only"]
 
-if platform.machine() == 'x86_64':
-    cython_compile_args.append('-msse4.2')
+if platform.machine() == "x86_64":
+    cython_compile_args.append("-msse4.2")
 cython_link_args = []
 
 # Mac's clang compiler doesn't have openMP support by default. Therefore
 # disable openmp builds on MacOSX. Optimization should never really be a
 # concern on that OS, and this line can be commented out if needed anyway.
 # Mac's also alias gcc and can run into troubles getting libc correctly
-if not sys.platform == 'darwin':
-    cython_compile_args += ['-fopenmp']
-    cython_link_args += ['-fopenmp']
+if not sys.platform == "darwin":
+    cython_compile_args += ["-fopenmp"]
+    cython_link_args += ["-fopenmp"]
 else:
     cython_compile_args += ["-stdlib=libc++"]
     cython_link_args += ["-stdlib=libc++"]
 
 
 for name in cythonext:
-    fname = name.replace('.', '/')
-    e = Extension(name,
-                  [f"{fname}.pyx"],
-                  language='c++',
-                  extra_compile_args=cython_compile_args,
-                  extra_link_args=cython_link_args,
-                  libraries=libraries,
-                  compiler_directives={'embedsignature': True})
+    fname = name.replace(".", "/")
+    e = Extension(
+        name,
+        [f"{fname}.pyx"],
+        language="c++",
+        extra_compile_args=cython_compile_args,
+        extra_link_args=cython_link_args,
+        libraries=libraries,
+        compiler_directives={"embedsignature": True},
+    )
     ext.append(e)
 
 setup(
-    name = 'PyCBC',
-    version = VERSION,
-    description = 'Core library to analyze gravitational-wave data, find signals, and study their parameters.',
-    long_description = open('README.md').read(),
-    long_description_content_type='text/markdown',
-    author = 'The PyCBC team',
-    author_email = 'alex.nitz@gmail.org',
-    url = 'http://pycbc.org/',
-    download_url = f'https://github.com/gwastro/pycbc/tarball/v{VERSION}',
-    keywords = [
-        'ligo',
-        'physics',
-        'gravity',
-        'signal processing',
-        'gravitational waves'
-    ],
-    cmdclass = cmdclass,
-    setup_requires = setup_requires,
-    extras_require = extras_require,
-    install_requires = install_requires,
-    scripts  = find_files('bin', relpath='./'),
-    packages = find_packages(),
-    package_data = {
-        'pycbc.workflow': find_files('pycbc/workflow'),
-        'pycbc.results': find_files('pycbc/results'),
-        'pycbc.neutron_stars': find_files('pycbc/neutron_stars')
+    name="PyCBC",
+    version=VERSION,
+    description="Core library to analyze gravitational-wave data, find signals, and study their parameters.",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    author="The PyCBC team",
+    author_email="alex.nitz@gmail.org",
+    url="http://pycbc.org/",
+    download_url=f"https://github.com/gwastro/pycbc/tarball/v{VERSION}",
+    keywords=["ligo", "physics", "gravity", "signal processing", "gravitational waves"],
+    cmdclass=cmdclass,
+    setup_requires=setup_requires,
+    extras_require=extras_require,
+    install_requires=install_requires,
+    scripts=find_files("bin", relpath="./"),
+    packages=find_packages(),
+    package_data={
+        "pycbc.workflow": find_files("pycbc/workflow"),
+        "pycbc.results": find_files("pycbc/results"),
+        "pycbc.neutron_stars": find_files("pycbc/neutron_stars"),
     },
-    ext_modules = ext,
-    python_requires='>=3.11',
+    ext_modules=ext,
+    python_requires=">=3.11",
     classifiers=[
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.12',
-        'Programming Language :: Python :: 3.13',
-        'Programming Language :: Python :: 3.14',
-        'Intended Audience :: Science/Research',
-        'Natural Language :: English',
-        'Topic :: Scientific/Engineering',
-        'Topic :: Scientific/Engineering :: Astronomy',
-        'Topic :: Scientific/Engineering :: Physics',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
+        "Intended Audience :: Science/Research",
+        "Natural Language :: English",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Astronomy",
+        "Topic :: Scientific/Engineering :: Physics",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     ],
 )

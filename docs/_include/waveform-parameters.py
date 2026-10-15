@@ -16,25 +16,27 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Prints the usable waveform parameters as a RST table.
-"""
+"""Prints the usable waveform parameters as a RST table."""
 
 # NOTE: the manual call to OrdereDict can be removed in favour of
 # `ParameterList.description_dict` when gwastro/pycbc#2125 is merged
 # and released
 
-from pycbc import waveform
 from _dict_to_rst import rst_dict_table
 
-allparams = (waveform.td_waveform_params +
-             waveform.fd_waveform_params +
-             waveform.location_params)
+from pycbc import waveform
 
-tbl = rst_dict_table(allparams.description_dict,
-                     key_format='``\'{0}\'``'.format,
-                     header=('Parameter', 'Description'),
-                     sort=False)
+allparams = (
+    waveform.td_waveform_params + waveform.fd_waveform_params + waveform.location_params
+)
 
-filename = 'waveform-parameters.rst'
-with open(filename, 'w') as fp:
+tbl = rst_dict_table(
+    allparams.description_dict,
+    key_format="``'{0}'``".format,
+    header=("Parameter", "Description"),
+    sort=False,
+)
+
+filename = "waveform-parameters.rst"
+with open(filename, "w") as fp:
     print(tbl, file=fp)

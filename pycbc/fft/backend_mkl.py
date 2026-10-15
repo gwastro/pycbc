@@ -17,12 +17,13 @@
 
 from .core import _list_available
 
-_backend_dict = {'mkl' : 'mkl'}
-_backend_list = ['mkl']
+_backend_dict = {"mkl": "mkl"}
+_backend_list = ["mkl"]
 
 _alist, _adict = _list_available(_backend_list, _backend_dict)
 
 mkl_backend = None
+
 
 def set_backend(backend_list):
     global mkl_backend
@@ -31,7 +32,9 @@ def set_backend(backend_list):
             mkl_backend = backend
             break
 
+
 def get_backend():
     return _adict[mkl_backend]
+
 
 set_backend(_backend_list)

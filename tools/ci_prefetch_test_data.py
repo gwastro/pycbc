@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Pre-seed the astropy download cache with the remote data files used by the
+"""
+Pre-seed the astropy download cache with the remote data files used by the
 unit-test suite and the tutorial-notebook tests.
 
 Those pull data files from the pycbc-config repo and the pycbc_data release
@@ -24,9 +25,7 @@ import time
 import urllib.parse
 import urllib.request
 
-PYCBC_CONFIG = (
-    "https://github.com/gwastro/pycbc-config/raw/master/test_data_files/{}"
-)
+PYCBC_CONFIG = "https://github.com/gwastro/pycbc-config/raw/master/test_data_files/{}"
 RELEASE = "https://github.com/gwastro/pycbc_data/releases/download/ci-data/{}"
 
 URLS = []
@@ -62,14 +61,12 @@ URLS += [PYCBC_CONFIG.format("H1L1-PTA_HISTOGRAM.hdf")]
 
 # test/test_infmodel.py
 URLS += [
-    RELEASE.format(f"{ifo}-{ifo}1_LOSC_CLN_4_V1-1187007040-2048.gwf")
-    for ifo in "HLV"
+    RELEASE.format(f"{ifo}-{ifo}1_LOSC_CLN_4_V1-1187007040-2048.gwf") for ifo in "HLV"
 ]
 
 # test/test_bhspec.py
 URLS += [
-    RELEASE.format(f"{ifo}-{ifo}1_GWOSC_4KHZ_R1-1126259447-32.gwf")
-    for ifo in "HL"
+    RELEASE.format(f"{ifo}-{ifo}1_GWOSC_4KHZ_R1-1126259447-32.gwf") for ifo in "HL"
 ]
 
 # PyCBC-Tutorials notebooks run in the "tutorial tests" workflow.  They pass
@@ -80,16 +77,16 @@ URLS += [
 URLS += [
     RELEASE.format(name)
     for name in (
-        "H-H1_LOSC_4_V2-1126259446-32.gwf",   # examples/gw150914_audio
-        "L-L1_LOSC_4_V2-1135136334-32.gwf",   # examples/gw151226_snr
-        "H-H1_LOSC_4_V1-1167559920-32.gwf",   # examples/gw170104_look
-        "L-L1_LOSC_4_V1-1167559920-32.gwf",   # examples/gw170104_look
-        "H-H1_LOSC_4_V2-1128678884-32.gwf",   # tutorial/1_CatalogData
+        "H-H1_LOSC_4_V2-1126259446-32.gwf",  # examples/gw150914_audio
+        "L-L1_LOSC_4_V2-1135136334-32.gwf",  # examples/gw151226_snr
+        "H-H1_LOSC_4_V1-1167559920-32.gwf",  # examples/gw170104_look
+        "L-L1_LOSC_4_V1-1167559920-32.gwf",  # examples/gw170104_look
+        "H-H1_LOSC_4_V2-1128678884-32.gwf",  # tutorial/1_CatalogData
     )
 ]
 URLS += [
     RELEASE.format(f"{ifo}-{ifo}1_GWOSC_4KHZ_R2-1242440920-4096.gwf")
-    for ifo in "HLV"                          # tutorial/inference_8_BHRingdown
+    for ifo in "HLV"  # tutorial/inference_8_BHRingdown
 ]
 
 CACHE_DIR = os.path.join(
@@ -131,7 +128,7 @@ def prefetch(url, attempts=5):
         except Exception as exc:  # best effort
             last_exc = exc
             if i < attempts:
-                time.sleep(min(5, 2 ** i))
+                time.sleep(min(5, 2**i))
     raise last_exc
 
 

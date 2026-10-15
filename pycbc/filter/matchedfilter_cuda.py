@@ -22,26 +22,31 @@
 # =============================================================================
 #
 from pycuda.elementwise import ElementwiseKernel
-from pycuda.tools import context_dependent_memoize
-from pycuda.tools import dtype_to_ctype
 from pycuda.gpuarray import _get_common_dtype
+from pycuda.tools import context_dependent_memoize, dtype_to_ctype
+
 from .matchedfilter import _BaseCorrelator
 
+
 @context_dependent_memoize
-def get_correlate_kernel(dtype_x, dtype_y,dtype_out):
+def get_correlate_kernel(dtype_x, dtype_y, dtype_out):
     return ElementwiseKernel(
-            "%(tp_x)s *x, %(tp_y)s *y, %(tp_z)s *z" % {
-                "tp_x": dtype_to_ctype(dtype_x),
-                "tp_y": dtype_to_ctype(dtype_y),
-                "tp_z": dtype_to_ctype(dtype_out),
-                },
-            "z[i] = conj(x[i]) * y[i]",
-            "correlate")
+        "%(tp_x)s *x, %(tp_y)s *y, %(tp_z)s *z"
+        % {
+            "tp_x": dtype_to_ctype(dtype_x),
+            "tp_y": dtype_to_ctype(dtype_y),
+            "tp_z": dtype_to_ctype(dtype_out),
+        },
+        "z[i] = conj(x[i]) * y[i]",
+        "correlate",
+    )
+
 
 def correlate(a, b, out, stream=None):
-    dtype_out = _get_common_dtype(a,b)
+    dtype_out = _get_common_dtype(a, b)
     krnl = get_correlate_kernel(a.dtype, b.dtype, dtype_out)
     krnl(a.data, b.data, out.data)
+
 
 class CUDACorrelator(_BaseCorrelator):
     def __init__(self, x, y, z):
@@ -54,7 +59,6 @@ class CUDACorrelator(_BaseCorrelator):
     def correlate(self):
         self.krnl(self.x, self.y, self.z)
 
+
 def _correlate_factory(x, y, z):
     return CUDACorrelator
-
-

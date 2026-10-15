@@ -14,15 +14,21 @@ d = Detector("H1")
 
 # We get back the fp and fc antenna pattern weights.
 fp, fc = d.antenna_pattern(ra, dec, pol, time)
-print("fp={}, fc={}".format(fp, fc))
+print(f"fp={fp}, fc={fc}")
 
 # These factors allow us to project a signal into what the detector would
 # observe
 
 ## Generate a waveform
-hp, hc = get_td_waveform(approximant="IMRPhenomD", mass1=10, mass2=10,
-                         f_lower=30, delta_t=1.0/4096, inclination=inc,
-                         distance=400)
+hp, hc = get_td_waveform(
+    approximant="IMRPhenomD",
+    mass1=10,
+    mass2=10,
+    f_lower=30,
+    delta_t=1.0 / 4096,
+    inclination=inc,
+    distance=400,
+)
 
 ## Apply the factors to get the detector frame strain
 ht = fp * hp + fc * hc

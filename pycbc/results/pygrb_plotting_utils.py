@@ -24,8 +24,10 @@ Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
 import copy
-import numpy
+
 import igwn_segments as segments
+import numpy
+
 from pycbc.results import save_fig_with_metadata
 
 
@@ -34,17 +36,16 @@ from pycbc.results import save_fig_with_metadata
 # =============================================================================
 def contour_plotter(axis, snr_vals, contours, colors, vert_spike=False):
     """Plot contours in a scatter plot where SNR is on the horizontal axis"""
-
     for i, _ in enumerate(contours):
         plot_vals_x = []
         plot_vals_y = []
         if vert_spike:
             for j, _ in enumerate(snr_vals):
                 # Workaround to ensure vertical spike is shown on veto plots
-                if contours[i][j] > 1E-15 and not plot_vals_x:
+                if contours[i][j] > 1e-15 and not plot_vals_x:
                     plot_vals_x.append(snr_vals[j])
                     plot_vals_y.append(0.1)
-                if contours[i][j] > 1E-15 and plot_vals_x:
+                if contours[i][j] > 1e-15 and plot_vals_x:
                     plot_vals_x.append(snr_vals[j])
                     plot_vals_y.append(contours[i][j])
         else:
@@ -57,31 +58,44 @@ def contour_plotter(axis, snr_vals, contours, colors, vert_spike=False):
 # Functions used in executables
 #
 
+
 # =============================================================================
 # Plot trigger time and offsource extent over segments
 # Courtesy of Alex Dietz
 # =============================================================================
-def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
-                           out_dir, coherent_seg=None, fail_criterion=None):
+def make_grb_segments_plot(
+    wkflow,
+    science_segs,
+    trigger_time,
+    trigger_name,
+    out_dir,
+    coherent_seg=None,
+    fail_criterion=None,
+):
     """Plot trigger time and offsource extent over segments"""
-
     import matplotlib.pyplot as plt
-    from matplotlib.patches import Rectangle
     from matplotlib.lines import Line2D
+    from matplotlib.patches import Rectangle
+
     from pycbc.results.color import ifo_color
 
     ifos = wkflow.ifos
     if len(sum(science_segs.values(), [])) == 0:
-        extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
-                                  int(wkflow.cp.get("workflow", "end-time")))
+        extent = segments.segment(
+            int(wkflow.cp.get("workflow", "start-time")),
+            int(wkflow.cp.get("workflow", "end-time")),
+        )
     else:
-        pltpad = [science_segs.extent_all()[1] - trigger_time,
-                  trigger_time - science_segs.extent_all()[0]]
-        extent = segments.segmentlist([science_segs.extent_all(),
-                                       segments.segment(trigger_time
-                                                        - pltpad[0],
-                                                        trigger_time
-                                                        + pltpad[1])]).extent()
+        pltpad = [
+            science_segs.extent_all()[1] - trigger_time,
+            trigger_time - science_segs.extent_all()[0],
+        ]
+        extent = segments.segmentlist(
+            [
+                science_segs.extent_all(),
+                segments.segment(trigger_time - pltpad[0], trigger_time + pltpad[1]),
+            ]
+        ).extent()
 
     ifo_colors = {}
     for ifo in ifos:
@@ -93,38 +107,68 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
     fig, subs = plt.subplots(len(ifos), sharey=True)
     if len(ifos) == 1:
         subs = [subs]
-    plt.xticks(rotation=20, ha='right')
+    plt.xticks(rotation=20, ha="right")
     for sub, ifo in zip(subs, ifos):
         for seg in science_segs[ifo]:
-            sub.add_patch(Rectangle((seg[0], 0.1), abs(seg), 0.8,
-                                    facecolor=ifo_colors[ifo],
-                                    edgecolor='none'))
+            sub.add_patch(
+                Rectangle(
+                    (seg[0], 0.1),
+                    abs(seg),
+                    0.8,
+                    facecolor=ifo_colors[ifo],
+                    edgecolor="none",
+                )
+            )
         if coherent_seg:
-            if len(science_segs[ifo]) > 0 and \
-                    coherent_seg in science_segs[ifo]:
-                sub.plot([trigger_time, trigger_time], [0, 1], '-',
-                         c='orange')
-                sub.add_patch(Rectangle((coherent_seg[0], 0),
-                                        abs(coherent_seg), 1, alpha=0.5,
-                                        facecolor='orange', edgecolor='none'))
+            if len(science_segs[ifo]) > 0 and coherent_seg in science_segs[ifo]:
+                sub.plot([trigger_time, trigger_time], [0, 1], "-", c="orange")
+                sub.add_patch(
+                    Rectangle(
+                        (coherent_seg[0], 0),
+                        abs(coherent_seg),
+                        1,
+                        alpha=0.5,
+                        facecolor="orange",
+                        edgecolor="none",
+                    )
+                )
             else:
-                sub.plot([trigger_time, trigger_time], [0, 1], ':',
-                         c='orange')
-                sub.plot([coherent_seg[0], coherent_seg[0]], [0, 1], '--',
-                         c='orange', alpha=0.5)
-                sub.plot([coherent_seg[1], coherent_seg[1]], [0, 1], '--',
-                         c='orange', alpha=0.5)
+                sub.plot([trigger_time, trigger_time], [0, 1], ":", c="orange")
+                sub.plot(
+                    [coherent_seg[0], coherent_seg[0]],
+                    [0, 1],
+                    "--",
+                    c="orange",
+                    alpha=0.5,
+                )
+                sub.plot(
+                    [coherent_seg[1], coherent_seg[1]],
+                    [0, 1],
+                    "--",
+                    c="orange",
+                    alpha=0.5,
+                )
         else:
-            sub.plot([trigger_time, trigger_time], [0, 1], ':k')
+            sub.plot([trigger_time, trigger_time], [0, 1], ":k")
         if fail_criterion:
             if len(science_segs[ifo]) > 0:
-                style_str = '--'
+                style_str = "--"
             else:
-                style_str = '-'
-            sub.plot([fail_criterion[0], fail_criterion[0]], [0, 1], style_str,
-                     c='black', alpha=0.5)
-            sub.plot([fail_criterion[1], fail_criterion[1]], [0, 1], style_str,
-                     c='black', alpha=0.5)
+                style_str = "-"
+            sub.plot(
+                [fail_criterion[0], fail_criterion[0]],
+                [0, 1],
+                style_str,
+                c="black",
+                alpha=0.5,
+            )
+            sub.plot(
+                [fail_criterion[1], fail_criterion[1]],
+                [0, 1],
+                style_str,
+                c="black",
+                alpha=0.5,
+            )
 
         sub.set_frame_on(False)
         sub.set_yticks([])
@@ -142,17 +186,18 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
 
     xmin, xmax = fig.axes[-1].get_xaxis().get_view_interval()
     ymin, _ = fig.axes[-1].get_yaxis().get_view_interval()
-    fig.axes[-1].add_artist(Line2D((xmin, xmax), (ymin, ymin), color='black',
-                                   linewidth=2))
-    fig.axes[-1].set_xlabel('GPS Time')
+    fig.axes[-1].add_artist(
+        Line2D((xmin, xmax), (ymin, ymin), color="black", linewidth=2)
+    )
+    fig.axes[-1].set_xlabel("GPS Time")
 
-    fig.axes[0].set_title('Science Segments for GRB%s' % trigger_name)
+    fig.axes[0].set_title("Science Segments for GRB%s" % trigger_name)
     plt.tight_layout()
     fig.subplots_adjust(hspace=0)
 
-    plot_name = 'GRB%s_segments.png' % trigger_name
-    plot_url = 'file://localhost%s/%s' % (out_dir, plot_name)
-    fig.savefig('%s/%s' % (out_dir, plot_name))
+    plot_name = "GRB%s_segments.png" % trigger_name
+    plot_url = "file://localhost%s/%s" % (out_dir, plot_name)
+    fig.savefig("%s/%s" % (out_dir, plot_name))
 
     return [ifos, plot_name, extent, plot_url]
 
@@ -162,7 +207,6 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
 # =============================================================================
 def axis_max_value(trig_values, inj_values, inj_file):
     """Deterime the maximum of a quantity in the trigger and injection data"""
-
     axis_max = trig_values.max()
     if inj_file and inj_values.size and inj_values.max() > axis_max:
         axis_max = inj_values.max()
@@ -175,7 +219,6 @@ def axis_max_value(trig_values, inj_values, inj_file):
 # =============================================================================
 def axis_min_value(trig_values, inj_values, inj_file):
     """Deterime the minimum of a quantity in the trigger and injection data"""
-
     axis_min = trig_values.min()
     if inj_file and inj_values.size and inj_values.min() < axis_min:
         axis_min = inj_values.min()
@@ -186,9 +229,19 @@ def axis_min_value(trig_values, inj_values, inj_file):
 # =============================================================================
 # Master plotting function: fits all plotting needs in for PyGRB results
 # =============================================================================
-def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
-                  snr_vals=None, conts=None, shade_cont_value=None,
-                  colors=None, vert_spike=False, cmd=None):
+def pygrb_plotter(
+    trigs,
+    injs,
+    xlabel,
+    ylabel,
+    opts,
+    snr_vals=None,
+    conts=None,
+    shade_cont_value=None,
+    colors=None,
+    vert_spike=False,
+    cmd=None,
+):
     """Master function to plot PyGRB results"""
     from matplotlib import pyplot as plt
 
@@ -197,9 +250,9 @@ def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
     cax = fig.gca()
     # Plot trigger-related and (if present) injection-related quantities
     cax_plotter = cax.loglog if opts.use_logs else cax.plot
-    cax_plotter(trigs[0], trigs[1], 'bx')
+    cax_plotter(trigs[0], trigs[1], "bx")
     if not (injs[0] is None and injs[1] is None):
-        cax_plotter(injs[0], injs[1], 'r+')
+        cax_plotter(injs[0], injs[1], "r+")
     cax.grid()
     # Plot contours
     if conts is not None:
@@ -211,19 +264,19 @@ def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
         polyy = copy.deepcopy(conts[shade_cont_value])
         polyx = numpy.append(polyx, [max(snr_vals), min(snr_vals)])
         polyy = numpy.append(polyy, [limy, limy])
-        cax.fill(polyx, polyy, color='#dddddd')
+        cax.fill(polyx, polyy, color="#dddddd")
     # Axes: labels and limits
     cax.set_xlabel(xlabel)
     cax.set_ylabel(ylabel)
     if opts.x_lims:
-        x_lims = map(float, opts.x_lims.split(','))
+        x_lims = map(float, opts.x_lims.split(","))
         cax.set_xlim(x_lims)
     if opts.y_lims:
-        y_lims = map(float, opts.y_lims.split(','))
+        y_lims = map(float, opts.y_lims.split(","))
         cax.set_ylim(y_lims)
     # Wrap up
     plt.tight_layout()
-    save_fig_with_metadata(fig, opts.output_file, cmd=cmd,
-                           title=opts.plot_title,
-                           caption=opts.plot_caption)
+    save_fig_with_metadata(
+        fig, opts.output_file, cmd=cmd, title=opts.plot_title, caption=opts.plot_caption
+    )
     plt.close()

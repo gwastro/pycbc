@@ -25,20 +25,23 @@
 These are the unittests for the pycbc.detector module
 """
 
+import unittest
+
+import numpy
+from numpy.random import seed, uniform
+
 import pycbc.detector as det
-import unittest, numpy
-from numpy.random import uniform, seed
+
 seed(0)
 
 # We require lal as a reference comparison
 import lal
-
 from utils import simple_exit
+
 
 class TestDetector(unittest.TestCase):
     def setUp(self):
-        self.d = [det.Detector(ifo)
-                  for ifo in det.get_available_detectors()]
+        self.d = [det.Detector(ifo) for ifo in det.get_available_detectors()]
 
         # not distributed sanely, but should provide some good coverage
         N = 1000
@@ -67,7 +70,8 @@ class TestDetector(unittest.TestCase):
 
     def test_response_matrix(self):
         import lal
-        for ifo in ['H1', 'L1', 'V1', 'K1', 'I1']:
+
+        for ifo in ["H1", "L1", "V1", "K1", "I1"]:
             ref_resp = lal.cached_detector_by_prefix[ifo].response
             resp = det.Detector(ifo).response
             self.assertAlmostEqual((ref_resp - resp).max(), 0, places=6)
@@ -79,7 +83,9 @@ class TestDetector(unittest.TestCase):
             fc = []
             for ra1, dec1, pol1, time1 in vals:
                 gmst = lal.GreenwichMeanSiderealTime(time1)
-                fp1, fc1 = tuple(lal.ComputeDetAMResponse(ifo.response, ra1, dec1, pol1, gmst))
+                fp1, fc1 = tuple(
+                    lal.ComputeDetAMResponse(ifo.response, ra1, dec1, pol1, gmst)
+                )
                 fp.append(fp1)
                 fc.append(fc1)
 
@@ -97,7 +103,8 @@ class TestDetector(unittest.TestCase):
             self.assertLess(diff.max(), tolerance)
 
     def test_antenna_pattern_from_direction(self):
-        """The vector form must answer what the ra/dec form answers.
+        """
+        The vector form must answer what the ra/dec form answers.
 
         antenna_pattern_from_direction and time_delay_from_direction take
         the source direction as a vector in the earth-fixed frame instead
@@ -109,26 +116,31 @@ class TestDetector(unittest.TestCase):
             gmst = numpy.array([ifo.gmst_estimate(t) for t in self.time])
             gha = gmst - self.ra
             direction = numpy.array(
-                [numpy.cos(self.dec) * numpy.cos(gha),
-                 -numpy.cos(self.dec) * numpy.sin(gha),
-                 numpy.sin(self.dec)])
+                [
+                    numpy.cos(self.dec) * numpy.cos(gha),
+                    -numpy.cos(self.dec) * numpy.sin(gha),
+                    numpy.sin(self.dec),
+                ]
+            )
 
             fp, fc = ifo.antenna_pattern_from_direction(direction)
-            fp0, fc0 = ifo.antenna_pattern(self.ra, self.dec,
-                                           numpy.zeros_like(self.ra),
-                                           self.time)
+            fp0, fc0 = ifo.antenna_pattern(
+                self.ra, self.dec, numpy.zeros_like(self.ra), self.time
+            )
             self.assertLess(abs(fp - fp0).max(), 1e-12)
             self.assertLess(abs(fc - fc0).max(), 1e-12)
 
             delay = ifo.time_delay_from_direction(direction)
             delay0 = numpy.array(
-                [ifo.time_delay_from_earth_center(r, d, t)
-                 for r, d, t in zip(self.ra, self.dec, self.time)])
+                [
+                    ifo.time_delay_from_earth_center(r, d, t)
+                    for r, d, t in zip(self.ra, self.dec, self.time)
+                ]
+            )
             self.assertLess(abs(delay - delay0).max(), 1e-12)
 
             # one direction at a time is the same as all of them at once
-            one_fp, one_fc = ifo.antenna_pattern_from_direction(
-                direction[:, 0])
+            one_fp, one_fc = ifo.antenna_pattern_from_direction(direction[:, 0])
             self.assertAlmostEqual(float(one_fp), float(fp[0]), places=12)
             self.assertAlmostEqual(float(one_fc), float(fc[0]), places=12)
 
@@ -138,8 +150,7 @@ class TestDetector(unittest.TestCase):
             for d2 in self.d:
                 time1 = []
                 for ra1, dec1, tim1 in zip(ra, dec, time):
-                    t1 = lal.ArrivalTimeDiff(d1.location, d2.location,
-                                             ra1, dec1, tim1)
+                    t1 = lal.ArrivalTimeDiff(d1.location, d2.location, ra1, dec1, tim1)
                     time1.append(t1)
                 time1 = numpy.array(time1)
                 time2 = d1.time_delay_from_detector(d2, ra, dec, time)
@@ -148,21 +159,24 @@ class TestDetector(unittest.TestCase):
     def test_optimal_orientation(self):
         for d1 in self.d:
             ra, dec = d1.optimal_orientation(self.time[0])
-            ra1 = d1.longitude + lal.GreenwichMeanSiderealTime(self.time[0]) % (numpy.pi *2)
+            ra1 = d1.longitude + lal.GreenwichMeanSiderealTime(self.time[0]) % (
+                numpy.pi * 2
+            )
             dec1 = d1.latitude
 
             self.assertAlmostEqual(ra, ra1, 3)
             self.assertAlmostEqual(dec, dec1, 7)
-            
+
     def test_det_tc_conversion(self):
-        """Test that the convert_tc method functions properly. The same times
+        """
+        Test that the convert_tc method functions properly. The same times
         should be returned in all frames regardless of the reference.
         """
         vals = list(zip(self.ra, self.dec, self.time))
-        ref_frames = ['geocentric', 'H1', 'L1', 'V1']
-        target_frames = ['H1', 'L1', 'V1']
+        ref_frames = ["geocentric", "H1", "L1", "V1"]
+        target_frames = ["H1", "L1", "V1"]
         # convert the times from geocentric using time_delay_from_earth_center
-        test_times = {'geocentric': self.time}
+        test_times = {"geocentric": self.time}
         for ifo in target_frames:
             d = det.Detector(ifo)
             det_times = []
@@ -182,16 +196,18 @@ class TestDetector(unittest.TestCase):
                     ra1, dec1, _ = vals[i]
                     ref_tc = ref_times[i]
                     # convert the reference time to the target detector
-                    tc = d.arrival_time(ref_tc, ra1, dec1, ref_frame = ref_ifo)
+                    tc = d.arrival_time(ref_tc, ra1, dec1, ref_frame=ref_ifo)
                     converted_times.append(tc)
                 # check that the times converted to target match nominal
                 print(f"Testing conversion from {ref_ifo} to {target_ifo}")
                 for i in range(len(converted_times)):
-                    self.assertAlmostEqual(converted_times[i], target_times[i], 
-                                           places=6)
+                    self.assertAlmostEqual(
+                        converted_times[i], target_times[i], places=6
+                    )
 
     def test_one_at_a_time_matches_vector(self):
-        """Calling one at a time must match calling with a vector.
+        """
+        Calling one at a time must match calling with a vector.
 
         The response is applied to the whole set at once, so a mistake in
         lining the components up would show at some positions and not
@@ -203,15 +219,21 @@ class TestDetector(unittest.TestCase):
         set than over one position, in the last bit of a double.
         """
         test_time = 1187008882.0
-        polarizations = [{}, {'polarization_type': 'vector'},
-                         {'polarization_type': 'scalar'}]
+        polarizations = [
+            {},
+            {"polarization_type": "vector"},
+            {"polarization_type": "scalar"},
+        ]
         for detector in self.d:
             delay_vector = detector.time_delay_from_earth_center(
-                self.ra, self.dec, test_time)
+                self.ra, self.dec, test_time
+            )
             response_vectors = [
-                detector.antenna_pattern(self.ra, self.dec, self.pol,
-                                         test_time, **kwargs)
-                for kwargs in polarizations]
+                detector.antenna_pattern(
+                    self.ra, self.dec, self.pol, test_time, **kwargs
+                )
+                for kwargs in polarizations
+            ]
 
             for index in (0, 137, len(self.ra) - 1):
                 right_ascension = float(self.ra[index])
@@ -221,26 +243,28 @@ class TestDetector(unittest.TestCase):
                 self.assertEqual(
                     delay_vector[index],
                     detector.time_delay_from_earth_center(
-                        right_ascension, declination, test_time))
+                        right_ascension, declination, test_time
+                    ),
+                )
 
-                for kwargs, from_vector in zip(polarizations,
-                                               response_vectors):
+                for kwargs, from_vector in zip(polarizations, response_vectors):
                     one_at_a_time = detector.antenna_pattern(
-                        right_ascension, declination, polarization,
-                        test_time, **kwargs)
+                        right_ascension, declination, polarization, test_time, **kwargs
+                    )
                     for whole, single in zip(from_vector, one_at_a_time):
                         self.assertTrue(
-                            numpy.isclose(whole[index], single,
-                                          rtol=1e-14, atol=1e-16),
+                            numpy.isclose(whole[index], single, rtol=1e-14, atol=1e-16),
                             "%s at %s: %r against %r"
-                            % (kwargs, index, whole[index], single))
+                            % (kwargs, index, whole[index], single),
+                        )
 
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDetector))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from astropy.utils import iers
+
     iers.conf.auto_download = False
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

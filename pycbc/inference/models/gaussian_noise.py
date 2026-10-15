@@ -13,33 +13,37 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""This module provides model classes that assume the noise is Gaussian.
-"""
+"""This module provides model classes that assume the noise is Gaussian."""
 
 import logging
 import shlex
 from abc import ABCMeta
 from functools import wraps
+
 import numpy
 
 from pycbc import filter as pyfilter
-from pycbc.waveform import (NoWaveformError, FailedWaveformError)
-from pycbc.waveform import generator
-from pycbc.types import FrequencySeries
-from pycbc.strain import gates_from_cli
-from pycbc.strain.calibration import Recalibrate
 from pycbc.inject import InjectionSet
 from pycbc.io import FieldArray
+from pycbc.strain import gates_from_cli
+from pycbc.strain.calibration import Recalibrate
+from pycbc.types import FrequencySeries
 from pycbc.types.optparse import MultiDetOptionAction
+from pycbc.waveform import FailedWaveformError, NoWaveformError, generator
 
 from .base import ModelStats
 from .base_data import BaseDataModel
-from .data_utils import (data_opts_from_config, data_from_cli,
-                         fd_data_from_strain_dict, gate_overwhitened_data)
+from .data_utils import (
+    data_from_cli,
+    data_opts_from_config,
+    fd_data_from_strain_dict,
+    gate_overwhitened_data,
+)
 
 
 def catch_waveform_error(method):
-    """Decorator that will catch no waveform errors.
+    """
+    Decorator that will catch no waveform errors.
 
     This can be added to a method in an inference model. The decorator will
     call the model's `_nowaveform_return` method if either of the following
@@ -51,6 +55,7 @@ def catch_waveform_error(method):
 
     This requires the model to have a `_nowaveform_handler` method.
     """
+
     # the functools.wroaps decorator preserves the original method's name
     # and docstring
     @wraps(method)
@@ -69,11 +74,13 @@ def catch_waveform_error(method):
             else:
                 raise e
         return retval
+
     return method_wrapper
 
 
 class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
-    r"""Model for analyzing GW data with assuming a wide-sense stationary
+    r"""
+    Model for analyzing GW data with assuming a wide-sense stationary
     Gaussian noise model.
 
     This model will load gravitational wave data and calculate the log noise
@@ -132,18 +139,30 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         fail (i.e., they raise a ``FailedWaveformError``) will be treated as
         points with zero likelihood. Otherwise, such points will cause the
         model to raise a ``FailedWaveformError``.
+
     """
 
-    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
-                 high_frequency_cutoff=None, normalize=False,
-                 static_params=None, ignore_failed_waveforms=False,
-                 no_save_data=False,
-                 **kwargs):
+    def __init__(
+        self,
+        variable_params,
+        data,
+        low_frequency_cutoff,
+        psds=None,
+        high_frequency_cutoff=None,
+        normalize=False,
+        static_params=None,
+        ignore_failed_waveforms=False,
+        no_save_data=False,
+        **kwargs,
+    ):
         # set up the boiler-plate attributes
-        super(BaseGaussianNoise, self).__init__(variable_params, data,
-                                                static_params=static_params,
-                                                no_save_data=no_save_data,
-                                                **kwargs)
+        super().__init__(
+            variable_params,
+            data,
+            static_params=static_params,
+            no_save_data=no_save_data,
+            **kwargs,
+        )
         self.ignore_failed_waveforms = ignore_failed_waveforms
         self.no_save_data = no_save_data
         # check if low frequency cutoff has been provided for every IFO with
@@ -159,7 +178,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
                     "every detector in the `[model]` section, where "
                     "`{DETECTOR} is the name of the detector,"
                     "or provide a single low-frequency-cutoff option"
-                    "which will be used for all detectors")
+                    "which will be used for all detectors"
+                )
 
         # check that the data sets all have the same delta fs and delta ts
         dts = numpy.array([d.delta_t for d in self.data.values()])
@@ -170,16 +190,17 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             self.all_ifodata_same_rate_length = False
             logging.info(
                 "You are using different data segment lengths or "
-                "sampling rates for different IFOs")
+                "sampling rates for different IFOs"
+            )
 
         # store the number of samples in the time domain
         self._N = {}
-        for (det, d) in self._data.items():
-            self._N[det] = int(1./(d.delta_f*d.delta_t))
+        for det, d in self._data.items():
+            self._N[det] = int(1.0 / (d.delta_f * d.delta_t))
 
         # set lower/upper frequency cutoff
         if high_frequency_cutoff is None:
-            high_frequency_cutoff = {ifo: None for ifo in self.data}
+            high_frequency_cutoff = dict.fromkeys(self.data)
         self._f_upper = high_frequency_cutoff
         self._f_lower = low_frequency_cutoff
 
@@ -187,10 +208,10 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         self._kmin = {}
         self._kmax = {}
 
-        for (det, d) in self._data.items():
-            kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
-                                                     self._f_upper[det],
-                                                     d.delta_f, self._N[det])
+        for det, d in self._data.items():
+            kmin, kmax = pyfilter.get_cutoff_indices(
+                self._f_lower[det], self._f_upper[det], d.delta_f, self._N[det]
+            )
             self._kmin[det] = kmin
             self._kmax[det] = kmax
 
@@ -228,7 +249,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
 
     @property
     def kmin(self):
-        """Dictionary of starting indices for the inner product.
+        """
+        Dictionary of starting indices for the inner product.
 
         This is determined from the lower frequency cutoff and the ``delta_f``
         of the data using
@@ -238,7 +260,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
 
     @property
     def kmax(self):
-        """Dictionary of ending indices for the inner product.
+        """
+        Dictionary of ending indices for the inner product.
 
         This is determined from the high frequency cutoff and the ``delta_f``
         of the data using
@@ -250,7 +273,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
 
     @property
     def psds(self):
-        """Dictionary of detectors -> PSD frequency series.
+        """
+        Dictionary of detectors -> PSD frequency series.
 
         If no PSD was provided for a detector, this will just be a frequency
         series of ones.
@@ -259,7 +283,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
 
     @psds.setter
     def psds(self, psds):
-        """Sets the psds, and calculates the weight and norm from them.
+        """
+        Sets the psds, and calculates the weight and norm from them.
 
         The data and the low and high frequency cutoffs must be set first.
         """
@@ -280,8 +305,9 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         for det, d in self._data.items():
             if psds is None:
                 # No psd means assume white PSD
-                p = FrequencySeries(numpy.ones(int(self._N[det]/2+1)),
-                                    delta_f=d.delta_f)
+                p = FrequencySeries(
+                    numpy.ones(int(self._N[det] / 2 + 1)), delta_f=d.delta_f
+                )
             else:
                 # copy for storage
                 p = psds[det].copy()
@@ -291,7 +317,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             kmin = self._kmin[det]
             kmax = self._kmax[det]
             invp = FrequencySeries(numpy.zeros(len(p)), delta_f=p.delta_f)
-            invp[kmin:kmax] = 1./p[kmin:kmax]
+            invp[kmin:kmax] = 1.0 / p[kmin:kmax]
             self._invpsds[det] = invp
             self._weight[det] = numpy.sqrt(4 * invp.delta_f * invp)
             self._whitened_data[det] = d.copy()
@@ -301,7 +327,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
 
     @property
     def psd_segments(self):
-        """Dictionary giving times used for PSD estimation for each detector.
+        """
+        Dictionary giving times used for PSD estimation for each detector.
 
         If a detector's PSD was not estimated from data, or the segment wasn't
         provided, that detector will not be in the dictionary.
@@ -309,7 +336,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         return self._psd_segments
 
     def set_psd_segments(self, psds):
-        """Sets the PSD segments from a dictionary of PSDs.
+        """
+        Sets the PSD segments from a dictionary of PSDs.
 
         This attempts to get the PSD segment from a ``psd_segment`` attribute
         of each detector's PSD frequency series. If that attribute isn't set,
@@ -321,6 +349,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             Dictionary of detector name -> PSD frequency series. The segment
             used for each PSD will try to be retrieved from the PSD's
             ``.psd_segment`` attribute.
+
         """
         for det, p in psds.items():
             try:
@@ -330,7 +359,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
 
     @property
     def weight(self):
-        r"""Dictionary of detectors -> frequency series of inner-product
+        r"""
+        Dictionary of detectors -> frequency series of inner-product
         weights.
 
         The weights are :math:`\sqrt{4 \Delta f / S_n(f)}`. This is set when
@@ -340,7 +370,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
 
     @property
     def whitened_data(self):
-        r"""Dictionary of detectors -> whitened data frequency series.
+        r"""
+        Dictionary of detectors -> whitened data frequency series.
 
         The whitened data is the data multiplied by the inner-product weight.
         Note that this includes the :math:`\sqrt{4 \Delta f}` factor. This
@@ -349,12 +380,13 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         return self._whitened_data
 
     def det_lognorm(self, det):
-        """The log of the likelihood normalization in the given detector.
+        """
+        The log of the likelihood normalization in the given detector.
 
         If ``self.normalize`` is False, will just return 0.
         """
         if not self.normalize:
-            return 0.
+            return 0.0
         try:
             return self._lognorm[det]
         except KeyError:
@@ -363,21 +395,21 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             dt = self._whitened_data[det].delta_t
             kmin = self._kmin[det]
             kmax = self._kmax[det]
-            lognorm = -float(self._N[det]*numpy.log(numpy.pi*self._N[det]*dt)/2.
-                             + numpy.log(p[kmin:kmax]).sum())
+            lognorm = -float(
+                self._N[det] * numpy.log(numpy.pi * self._N[det] * dt) / 2.0
+                + numpy.log(p[kmin:kmax]).sum()
+            )
             self._lognorm[det] = lognorm
             return self._lognorm[det]
 
     @property
     def normalize(self):
-        """Determines if the loglikelihood includes the normalization term.
-        """
+        """Determines if the loglikelihood includes the normalization term."""
         return self._normalize
 
     @normalize.setter
     def normalize(self, normalize):
-        """Clears the current stats if the normalization state is changed.
-        """
+        """Clears the current stats if the normalization state is changed."""
         if normalize != self._normalize:
             self._current_stats = ModelStats()
             self._lognorm.clear()
@@ -390,7 +422,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         return sum(self.det_lognorm(det) for det in self._data)
 
     def det_lognl(self, det):
-        r"""Returns the log likelihood of the noise in the given detector:
+        r"""
+        Returns the log likelihood of the noise in the given detector:
 
         .. math::
 
@@ -407,6 +440,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         -------
         float :
             The log likelihood of the noise in the requested detector.
+
         """
         try:
             return self._det_lognls[det]
@@ -421,7 +455,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             return self._det_lognls[det]
 
     def _lognl(self):
-        """Computes the log likelihood assuming the data is noise.
+        """
+        Computes the log likelihood assuming the data is noise.
 
         Since this is a constant for Gaussian noise, this is only computed once
         then stored.
@@ -435,7 +470,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         self._current_wfs = None
 
     def _loglikelihood(self):
-        r"""Computes the log likelihood of the paramaters,
+        r"""
+        Computes the log likelihood of the paramaters,
 
         .. math::
 
@@ -448,13 +484,15 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         -------
         float
             The value of the log likelihood evaluated at the given point.
+
         """
         # since the loglr has fewer terms, we'll call that, then just add
         # back the noise term that canceled in the log likelihood ratio
         return self.loglr + self.lognl
 
     def write_metadata(self, fp, group=None):
-        """Adds writing the psds, analyzed detectors, and lognl.
+        """
+        Adds writing the psds, analyzed detectors, and lognl.
 
         The analyzed detectors, their analysis segments, and the segments
         used for psd estimation are written as
@@ -478,39 +516,39 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             If provided, the metadata will be written to the attrs specified
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
+
         """
         super().write_metadata(fp, group=group)
         attrs = fp.getattrs(group=group)
         # write the analyzed detectors and times
-        attrs['analyzed_detectors'] = self.detectors
+        attrs["analyzed_detectors"] = self.detectors
         for det, data in self.data.items():
-            key = '{}_analysis_segment'.format(det)
+            key = f"{det}_analysis_segment"
             attrs[key] = [float(data.start_time), float(data.end_time)]
         if self._psds is not None and not self.no_save_data:
             fp.write_psd(self._psds, group=group)
         # write the times used for psd estimation (if they were provided)
         for det in self.psd_segments:
-            key = '{}_psd_segment'.format(det)
+            key = f"{det}_psd_segment"
             attrs[key] = list(map(float, self.psd_segments[det]))
         # save the frequency cutoffs
         for det in self.detectors:
-            attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
+            attrs[f"{det}_likelihood_low_freq"] = self._f_lower[det]
             if self._f_upper[det] is not None:
-                attrs['{}_likelihood_high_freq'.format(det)] = \
-                    self._f_upper[det]
+                attrs[f"{det}_likelihood_high_freq"] = self._f_upper[det]
         # write the lognl to the samples group attrs
         sampattrs = fp.getattrs(group=fp.samples_group)
         # if a group is specified, prepend the lognl names with it
-        if group is None or group == '/':
-            prefix = ''
+        if group is None or group == "/":
+            prefix = ""
         else:
-            prefix = group.replace('/', '__')
-            if not prefix.endswith('__'):
-                prefix += '__'
-        sampattrs['{}lognl'.format(prefix)] = self.lognl
+            prefix = group.replace("/", "__")
+            if not prefix.endswith("__"):
+                prefix += "__"
+        sampattrs[f"{prefix}lognl"] = self.lognl
         # also save the lognl in each detector
         for det in self.detectors:
-            sampattrs['{}{}_lognl'.format(prefix, det)] = self.det_lognl(det)
+            sampattrs[f"{prefix}{det}_lognl"] = self.det_lognl(det)
 
     @staticmethod
     def _fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict):
@@ -518,7 +556,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         return fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
 
     def _nowaveform_handler(self):
-        """Method that gets called if a NoWaveformError or FailedWaveformError
+        """
+        Method that gets called if a NoWaveformError or FailedWaveformError
         is raised. See the :py:func:catch_waveform_error decorator for details.
 
         Here, this will just raise a NotImplementedError, since how this should
@@ -527,12 +566,13 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         """
         raise NotImplementedError(
             f"A waveform could not be generated, but this model does not know "
-            f"how to handle that. The parameters were: {self.current_params}.")
+            f"how to handle that. The parameters were: {self.current_params}."
+        )
 
     @classmethod
-    def from_config(cls, cp, data_section='data', data=None, psds=None,
-                    **kwargs):
-        r"""Initializes an instance of this class from the given config file.
+    def from_config(cls, cp, data_section="data", data=None, psds=None, **kwargs):
+        r"""
+        Initializes an instance of this class from the given config file.
 
         In addition to ``[model]``, a ``data_section`` (default ``[data]``)
         must be in the configuration file. The data section specifies settings
@@ -582,10 +622,11 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         \**kwargs :
             All additional keyword arguments are passed to the class. Any
             provided keyword will override what is in the config file.
+
         """
         # get the injection file, to replace any FROM_INJECTION settings
-        if 'injection-file' in cp.options('data'):
-            injection_file = cp.get('data', 'injection-file')
+        if "injection-file" in cp.options("data"):
+            injection_file = cp.get("data", "injection-file")
         else:
             injection_file = None
         # update any values that are to be retrieved from the injection
@@ -593,85 +634,95 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         get_values_from_injection(cp, injection_file, update_cp=True)
         args = cls._init_args_from_config(cp)
         # add the injection file
-        args['injection_file'] = injection_file
+        args["injection_file"] = injection_file
         # check if normalize is set
-        if cp.has_option('model', 'normalize'):
-            args['normalize'] = True
-        if cp.has_option('model', 'ignore-failed-waveforms'):
-            args['ignore_failed_waveforms'] = True
-        if cp.has_option('model', 'det-frame-waveform'):
-            args['det_frame_waveform'] = True
-        if cp.has_option('model', 'no-save-data'):
-            args['no_save_data'] = True
+        if cp.has_option("model", "normalize"):
+            args["normalize"] = True
+        if cp.has_option("model", "ignore-failed-waveforms"):
+            args["ignore_failed_waveforms"] = True
+        if cp.has_option("model", "det-frame-waveform"):
+            args["det_frame_waveform"] = True
+        if cp.has_option("model", "no-save-data"):
+            args["no_save_data"] = True
         # set inverse spectrum to truncate if not set
-        if cp.has_option(data_section, 'invpsd-trunc-which-spectrum'):
-            cp.set(data_section, 'invpsd-trunc-which-spectrum', 'invpsd')
+        if cp.has_option(data_section, "invpsd-trunc-which-spectrum"):
+            cp.set(data_section, "invpsd-trunc-which-spectrum", "invpsd")
         # get any other keyword arguments provided in the model section
         ignore_args = [
-            'name',
-            'normalize',
-            'ignore-failed-waveforms',
-            'no-save-data',
-            'det-frame-waveform'
+            "name",
+            "normalize",
+            "ignore-failed-waveforms",
+            "no-save-data",
+            "det-frame-waveform",
         ]
         for option in cp.options("model"):
             if option in ("low-frequency-cutoff", "high-frequency-cutoff"):
                 ignore_args.append(option)
-                name = option.replace('-', '_')
-                args[name] = cp.get_cli_option('model', name,
-                                               nargs='+', type=float,
-                                               action=MultiDetOptionAction)
+                name = option.replace("-", "_")
+                args[name] = cp.get_cli_option(
+                    "model", name, nargs="+", type=float, action=MultiDetOptionAction
+                )
 
-        if 'low_frequency_cutoff' not in args:
-            raise ValueError("low-frequency-cutoff must be provided in the"
-                             " model section, but is not found!")
+        if "low_frequency_cutoff" not in args:
+            raise ValueError(
+                "low-frequency-cutoff must be provided in the"
+                " model section, but is not found!"
+            )
 
         # data args
-        bool_args = ['check-for-valid-times', 'shift-psd-times-to-valid',
-                     'err-on-missing-detectors']
-        data_args = {arg.replace('-', '_'): True for arg in bool_args
-                     if cp.has_option('model', arg)}
+        bool_args = [
+            "check-for-valid-times",
+            "shift-psd-times-to-valid",
+            "err-on-missing-detectors",
+        ]
+        data_args = {
+            arg.replace("-", "_"): True
+            for arg in bool_args
+            if cp.has_option("model", arg)
+        }
         ignore_args += bool_args
         # load the data
-        opts = data_opts_from_config(cp, data_section,
-                                     args['low_frequency_cutoff'])
+        opts = data_opts_from_config(cp, data_section, args["low_frequency_cutoff"])
         if data is None or psds is None:
             strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
             # convert to frequency domain and get psds
             stilde_dict, psds = cls._fd_data_from_strain_dict(
-                opts, strain_dict, psd_strain_dict)
+                opts, strain_dict, psd_strain_dict
+            )
             # save the psd data segments if the psd was estimated from data
             if opts.psd_estimation:
                 _tdict = psd_strain_dict or strain_dict
                 for det in psds:
-                    psds[det].psd_segment = (_tdict[det].start_time,
-                                             _tdict[det].end_time)
+                    psds[det].psd_segment = (
+                        _tdict[det].start_time,
+                        _tdict[det].end_time,
+                    )
             # gate overwhitened if desired
             if opts.gate_overwhitened and opts.gate is not None:
-                stilde_dict = gate_overwhitened_data(
-                    stilde_dict, psds, opts.gate)
+                stilde_dict = gate_overwhitened_data(stilde_dict, psds, opts.gate)
             data = stilde_dict
-        args.update({'data': data, 'psds': psds})
+        args.update({"data": data, "psds": psds})
         # any extra args
-        args.update(cls.extra_args_from_config(cp, "model",
-                                               skip_args=ignore_args))
+        args.update(cls.extra_args_from_config(cp, "model", skip_args=ignore_args))
         # get ifo-specific instances of calibration model
-        if cp.has_section('calibration'):
+        if cp.has_section("calibration"):
             logging.info("Initializing calibration model")
             recalib = {
-                ifo: Recalibrate.from_config(cp, ifo, section='calibration')
-                for ifo in opts.instruments}
-            args['recalibration'] = recalib
+                ifo: Recalibrate.from_config(cp, ifo, section="calibration")
+                for ifo in opts.instruments
+            }
+            args["recalibration"] = recalib
         # get gates for templates
         gates = gates_from_cli(opts)
         if gates:
-            args['gates'] = gates
+            args["gates"] = gates
         args.update(kwargs)
         return cls(**args)
 
 
 class GaussianNoise(BaseGaussianNoise):
-    r"""Model that assumes data is stationary Gaussian noise.
+    r"""
+    Model that assumes data is stationary Gaussian noise.
 
     With Gaussian noise the log likelihood functions for signal
     :math:`\log p(d|\Theta, h)` and for noise :math:`\log p(d|n)` are given by:
@@ -880,16 +931,32 @@ class GaussianNoise(BaseGaussianNoise):
     logprior: 0.92
 
     """
-    name = 'gaussian_noise'
 
-    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
-                 high_frequency_cutoff=None, normalize=False,
-                 static_params=None, det_frame_waveform=False, **kwargs):
+    name = "gaussian_noise"
+
+    def __init__(
+        self,
+        variable_params,
+        data,
+        low_frequency_cutoff,
+        psds=None,
+        high_frequency_cutoff=None,
+        normalize=False,
+        static_params=None,
+        det_frame_waveform=False,
+        **kwargs,
+    ):
         # set up the boiler-plate attributes
-        super(GaussianNoise, self).__init__(
-            variable_params, data, low_frequency_cutoff, psds=psds,
-            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
-            static_params=static_params, **kwargs)
+        super().__init__(
+            variable_params,
+            data,
+            low_frequency_cutoff,
+            psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff,
+            normalize=normalize,
+            static_params=static_params,
+            **kwargs,
+        )
         # Determine if all data have the same sampling rate and segment length
         if det_frame_waveform:
             generator_class = generator.FDomainDirectDetFrameGenerator
@@ -898,52 +965,60 @@ class GaussianNoise(BaseGaussianNoise):
         if self.all_ifodata_same_rate_length:
             # create a waveform generator for all ifos
             self.waveform_generator = create_waveform_generator(
-                self.variable_params, self.data,
+                self.variable_params,
+                self.data,
                 generator_class=generator_class,
                 waveform_transforms=self.waveform_transforms,
                 recalibration=self.recalibration,
-                gates=self.gates, **self.static_params)
+                gates=self.gates,
+                **self.static_params,
+            )
         else:
             # create a waveform generator for each ifo respestively
             self.waveform_generator = {}
             for det in self.data:
                 self.waveform_generator[det] = create_waveform_generator(
-                    self.variable_params, {det: self.data[det]},
+                    self.variable_params,
+                    {det: self.data[det]},
                     generator_class=generator_class,
                     waveform_transforms=self.waveform_transforms,
                     recalibration=self.recalibration,
-                    gates=self.gates, **self.static_params)
+                    gates=self.gates,
+                    **self.static_params,
+                )
 
     @property
     def _extra_stats(self):
-        """Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
-        detector."""
-        return ['loglr'] + \
-               ['{}_cplx_loglr'.format(det) for det in self._data] + \
-               ['{}_optimal_snrsq'.format(det) for det in self._data]
+        """
+        Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
+        detector.
+        """
+        return (
+            ["loglr"]
+            + [f"{det}_cplx_loglr" for det in self._data]
+            + [f"{det}_optimal_snrsq" for det in self._data]
+        )
 
     def _nowaveform_handler(self):
-        """Convenience function to set loglr values if no waveform generated.
-        """
+        """Convenience function to set loglr values if no waveform generated."""
         for det in self._data:
-            setattr(self._current_stats, 'loglikelihood', -numpy.inf)
-            setattr(self._current_stats, '{}_cplx_loglr'.format(det),
-                    -numpy.inf)
+            self._current_stats.loglikelihood = -numpy.inf
+            setattr(self._current_stats, f"{det}_cplx_loglr", -numpy.inf)
             # snr can't be < 0 by definition, so return 0
-            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
+            setattr(self._current_stats, f"{det}_optimal_snrsq", 0.0)
         return -numpy.inf
 
     @property
     def multi_signal_support(self):
-        """ The list of classes that this model supports in a multi-signal
+        """
+        The list of classes that this model supports in a multi-signal
         likelihood
         """
         return [type(self)]
 
     @catch_waveform_error
     def multi_loglikelihood(self, models):
-        """ Calculate a multi-model (signal) likelihood
-        """
+        """Calculate a multi-model (signal) likelihood"""
         # Generate the waveforms for each submodel
         wfs = []
         for m in models + [self]:
@@ -962,7 +1037,8 @@ class GaussianNoise(BaseGaussianNoise):
         return loglr + self.lognl
 
     def get_waveforms(self):
-        """The waveforms generated using the current parameters.
+        """
+        The waveforms generated using the current parameters.
 
         If the waveforms haven't been generated yet, they will be generated.
 
@@ -970,6 +1046,7 @@ class GaussianNoise(BaseGaussianNoise):
         -------
         dict :
             Dictionary of detector names -> FrequencySeries.
+
         """
         if self._current_wfs is None:
             params = self.current_params
@@ -984,7 +1061,8 @@ class GaussianNoise(BaseGaussianNoise):
 
     @catch_waveform_error
     def _loglr(self):
-        r"""Computes the log likelihood ratio,
+        r"""
+        Computes the log likelihood ratio,
 
         .. math::
 
@@ -998,9 +1076,10 @@ class GaussianNoise(BaseGaussianNoise):
         -------
         float
             The value of the log likelihood ratio.
+
         """
         wfs = self.get_waveforms()
-        lr = 0.
+        lr = 0.0
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
             kmax = min(len(h), self._kmax[det])
@@ -1008,20 +1087,19 @@ class GaussianNoise(BaseGaussianNoise):
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, then the loglr is just 0 for this detector
                 cplx_hd = 0j
-                hh = 0.
+                hh = 0.0
             else:
                 slc = slice(self._kmin[det], kmax)
                 # whiten the waveform
-                h[self._kmin[det]:kmax] *= self._weight[det][slc]
+                h[self._kmin[det] : kmax] *= self._weight[det][slc]
 
                 # the inner products
                 cplx_hd = h[slc].inner(self._whitened_data[det][slc])  # <h, d>
                 hh = h[slc].inner(h[slc]).real  # < h, h>
             cplx_loglr = cplx_hd - 0.5 * hh
             # store
-            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh)
-            setattr(self._current_stats, '{}_cplx_loglr'.format(det),
-                    cplx_loglr)
+            setattr(self._current_stats, f"{det}_optimal_snrsq", hh)
+            setattr(self._current_stats, f"{det}_cplx_loglr", cplx_loglr)
             lr += cplx_loglr.real
         # also store the loglikelihood, to ensure it is populated in the
         # current stats even if loglikelihood is never called
@@ -1029,7 +1107,8 @@ class GaussianNoise(BaseGaussianNoise):
         return float(lr)
 
     def det_cplx_loglr(self, det):
-        """Returns the complex log likelihood ratio in the given detector.
+        """
+        Returns the complex log likelihood ratio in the given detector.
 
         Parameters
         ----------
@@ -1040,18 +1119,20 @@ class GaussianNoise(BaseGaussianNoise):
         -------
         complex float :
             The complex log likelihood ratio.
+
         """
         # try to get it from current stats
         try:
-            return getattr(self._current_stats, '{}_cplx_loglr'.format(det))
+            return getattr(self._current_stats, f"{det}_cplx_loglr")
         except AttributeError:
             # hasn't been calculated yet; call loglr to do so
             self._loglr()
             # now try returning again
-            return getattr(self._current_stats, '{}_cplx_loglr'.format(det))
+            return getattr(self._current_stats, f"{det}_cplx_loglr")
 
     def det_optimal_snrsq(self, det):
-        """Returns the opitmal SNR squared in the given detector.
+        """
+        Returns the opitmal SNR squared in the given detector.
 
         Parameters
         ----------
@@ -1062,15 +1143,16 @@ class GaussianNoise(BaseGaussianNoise):
         -------
         float :
             The opimtal SNR squared.
+
         """
         # try to get it from current stats
         try:
-            return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
+            return getattr(self._current_stats, f"{det}_optimal_snrsq")
         except AttributeError:
             # hasn't been calculated yet; call loglr to do so
             self._loglr()
             # now try returning again
-            return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
+            return getattr(self._current_stats, f"{det}_optimal_snrsq")
 
 
 #
@@ -1083,7 +1165,8 @@ class GaussianNoise(BaseGaussianNoise):
 
 
 def get_values_from_injection(cp, injection_file, update_cp=True):
-    """Replaces all FROM_INJECTION values in a config file with the
+    """
+    Replaces all FROM_INJECTION values in a config file with the
     corresponding value from the injection.
 
     This looks for any options that start with ``FROM_INJECTION[:ARG]`` in
@@ -1132,8 +1215,9 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
     list
         The parameters that were replaced, as a tuple of section name, option,
         value.
+
     """
-    lookfor = 'FROM_INJECTION'
+    lookfor = "FROM_INJECTION"
     # figure out what parameters need to be set
     replace_params = []
     for sec in cp.sections():
@@ -1144,7 +1228,7 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
             for ii, subval in enumerate(splitvals):
                 if subval.startswith(lookfor):
                     # determine what we should retrieve from the injection
-                    subval = subval.split(':', 1)
+                    subval = subval.split(":", 1)
                     if len(subval) == 1:
                         subval = opt
                     else:
@@ -1155,15 +1239,17 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
     if replace_params:
         # check that we have an injection file
         if injection_file is None:
-            raise ValueError("One or values are set to {}, but no injection "
-                             "file provided".format(lookfor))
+            raise ValueError(
+                f"One or values are set to {lookfor}, but no injection file provided"
+            )
         # load the injection file
         inj = InjectionSet(injection_file).table.view(type=FieldArray)
         # make sure there's only one injection provided
         if inj.size > 1:
-            raise ValueError("One or more values are set to {}, but more than "
-                             "one injection exists in the injection file."
-                             .format(lookfor))
+            raise ValueError(
+                f"One or more values are set to {lookfor}, but more than "
+                "one injection exists in the injection file."
+            )
     # get the injection values to replace
     for ii, (sec, opt, splitvals, replace_this) in enumerate(replace_params):
         # replace the value in the shlex-splitted string with the value
@@ -1180,24 +1266,29 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
         # following can just be replaced by:
         # replace_val = shlex.join(splitvals)
         for jj, arg in enumerate(splitvals):
-            if ' ' in arg:
+            if " " in arg:
                 arg = "'" + arg + "'"
                 splitvals[jj] = arg
-        replace_val = ' '.join(splitvals)
+        replace_val = " ".join(splitvals)
         replace_params[ii] = (sec, opt, replace_val)
     # replace in the config file
     if update_cp:
-        for (sec, opt, replace_val) in replace_params:
+        for sec, opt, replace_val in replace_params:
             cp.set(sec, opt, replace_val)
     return replace_params
 
 
 def create_waveform_generator(
-        variable_params, data, waveform_transforms=None,
-        recalibration=None, gates=None,
-        generator_class=generator.FDomainDetFrameGenerator,
-        **static_params):
-    r"""Creates a waveform generator for use with a model.
+    variable_params,
+    data,
+    waveform_transforms=None,
+    recalibration=None,
+    gates=None,
+    generator_class=generator.FDomainDetFrameGenerator,
+    **static_params,
+):
+    r"""
+    Creates a waveform generator for use with a model.
 
     Parameters
     ----------
@@ -1228,24 +1319,24 @@ def create_waveform_generator(
     -------
     pycbc.waveform.FDomainDetFrameGenerator
         A waveform generator for frequency domain generation.
+
     """
     # the waveform generator will get the variable_params + the output
     # of the waveform transforms, so we'll add them to the list of
     # parameters
     if waveform_transforms is not None:
-        wfoutputs = set.union(*[t.outputs
-                                for t in waveform_transforms])
+        wfoutputs = set.union(*[t.outputs for t in waveform_transforms])
     else:
         wfoutputs = set()
     variable_params = list(variable_params) + list(wfoutputs)
     # figure out what generator to use based on the approximant
     try:
-        approximant = static_params['approximant']
+        approximant = static_params["approximant"]
     except KeyError:
         raise ValueError("no approximant provided in the static args")
 
-    dm = static_params.get('preferred_domain', None)
-    if isinstance(dm, str) and dm.lower() == 'none':
+    dm = static_params.get("preferred_domain")
+    if isinstance(dm, str) and dm.lower() == "none":
         dm = None
 
     gen_function = generator_class.select_rframe_generator(approximant, dm)
@@ -1257,15 +1348,21 @@ def create_waveform_generator(
             delta_f = d.delta_f
             delta_t = d.delta_t
             start_time = d.start_time
-        else:
-            if not all([d.delta_f == delta_f, d.delta_t == delta_t,
-                        d.start_time == start_time]):
-                raise ValueError("data must all have the same delta_t, "
-                                 "delta_f, and start_time")
+        elif not all(
+            [d.delta_f == delta_f, d.delta_t == delta_t, d.start_time == start_time]
+        ):
+            raise ValueError(
+                "data must all have the same delta_t, delta_f, and start_time"
+            )
     waveform_generator = generator_class(
-        gen_function, epoch=start_time,
-        variable_args=variable_params, detectors=list(data.keys()),
-        delta_f=delta_f, delta_t=delta_t,
-        recalib=recalibration, gates=gates,
-        **static_params)
+        gen_function,
+        epoch=start_time,
+        variable_args=variable_params,
+        detectors=list(data.keys()),
+        delta_f=delta_f,
+        delta_t=delta_t,
+        recalib=recalibration,
+        gates=gates,
+        **static_params,
+    )
     return waveform_generator

@@ -19,6 +19,7 @@ log likelihood.
 """
 
 import logging
+
 import numpy
 import numpy.random
 from scipy import stats
@@ -27,7 +28,8 @@ from .base import BaseModel
 
 
 class TestNormal(BaseModel):
-    r"""The test distribution is an multi-variate normal distribution.
+    r"""
+    The test distribution is an multi-variate normal distribution.
 
     The number of dimensions is set by the number of ``variable_params`` that
     are passed. For details on the distribution used, see
@@ -64,31 +66,32 @@ class TestNormal(BaseModel):
     {'logjacobian': 0.0, 'loglikelihood': -1.8628770664093453, 'logprior': 0.0}
 
     """
+
     name = "test_normal"
 
     def __init__(self, variable_params, mean=None, cov=None, **kwargs):
         # set up base likelihood parameters
-        super(TestNormal, self).__init__(variable_params, **kwargs)
+        super().__init__(variable_params, **kwargs)
         # store the pdf
         if mean is None:
-            mean = [0.]*len(variable_params)
+            mean = [0.0] * len(variable_params)
         if cov is None:
-            cov = [1.]*len(variable_params)
+            cov = [1.0] * len(variable_params)
         self._dist = stats.multivariate_normal(mean=mean, cov=cov)
         # check that the dimension is correct
         if self._dist.dim != len(variable_params):
-            raise ValueError("dimension mis-match between variable_params and "
-                             "mean and/or cov")
+            raise ValueError(
+                "dimension mis-match between variable_params and mean and/or cov"
+            )
 
     def _loglikelihood(self):
-        """Returns the log pdf of the multivariate normal.
-        """
-        return self._dist.logpdf([self.current_params[p]
-                                  for p in self.variable_params])
+        """Returns the log pdf of the multivariate normal."""
+        return self._dist.logpdf([self.current_params[p] for p in self.variable_params])
 
 
 class TestEggbox(BaseModel):
-    r"""The test distribution is an 'eggbox' function:
+    r"""
+    The test distribution is an 'eggbox' function:
 
     .. math::
 
@@ -106,21 +109,26 @@ class TestEggbox(BaseModel):
         All other keyword arguments are passed to ``BaseModel``.
 
     """
+
     name = "test_eggbox"
 
     def __init__(self, variable_params, **kwargs):
         # set up base likelihood parameters
-        super(TestEggbox, self).__init__(variable_params, **kwargs)
+        super().__init__(variable_params, **kwargs)
 
     def _loglikelihood(self):
-        """Returns the log pdf of the eggbox function.
-        """
-        return (2 + numpy.prod(numpy.cos([
-            self.current_params[p]/2. for p in self.variable_params]))) ** 5
+        """Returns the log pdf of the eggbox function."""
+        return (
+            2
+            + numpy.prod(
+                numpy.cos([self.current_params[p] / 2.0 for p in self.variable_params])
+            )
+        ) ** 5
 
 
 class TestRosenbrock(BaseModel):
-    r"""The test distribution is the Rosenbrock function:
+    r"""
+    The test distribution is the Rosenbrock function:
 
     .. math::
 
@@ -138,24 +146,25 @@ class TestRosenbrock(BaseModel):
         All other keyword arguments are passed to ``BaseModel``.
 
     """
+
     name = "test_rosenbrock"
 
     def __init__(self, variable_params, **kwargs):
         # set up base likelihood parameters
-        super(TestRosenbrock, self).__init__(variable_params, **kwargs)
+        super().__init__(variable_params, **kwargs)
 
     def _loglikelihood(self):
-        """Returns the log pdf of the Rosenbrock function.
-        """
+        """Returns the log pdf of the Rosenbrock function."""
         logl = 0
         p = [self.current_params[p] for p in self.variable_params]
         for i in range(len(p) - 1):
-            logl -= ((1 - p[i])**2 + 100 * (p[i+1] - p[i]**2)**2)
+            logl -= (1 - p[i]) ** 2 + 100 * (p[i + 1] - p[i] ** 2) ** 2
         return logl
 
 
 class TestVolcano(BaseModel):
-    r"""The test distribution is a two-dimensional 'volcano' function:
+    r"""
+    The test distribution is a two-dimensional 'volcano' function:
 
     .. math::
         \Theta =
@@ -171,30 +180,35 @@ class TestVolcano(BaseModel):
         All other keyword arguments are passed to ``BaseModel``.
 
     """
+
     name = "test_volcano"
 
     def __init__(self, variable_params, **kwargs):
         # set up base likelihood parameters
-        super(TestVolcano, self).__init__(variable_params, **kwargs)
+        super().__init__(variable_params, **kwargs)
 
         # make sure there are exactly two variable args
         if len(self.variable_params) != 2:
-            raise ValueError("TestVolcano distribution requires exactly "
-                             "two variable args")
+            raise ValueError(
+                "TestVolcano distribution requires exactly two variable args"
+            )
 
     def _loglikelihood(self):
-        """Returns the log pdf of the 2D volcano function.
-        """
+        """Returns the log pdf of the 2D volcano function."""
         p = [self.current_params[p] for p in self.variable_params]
-        r = numpy.sqrt(p[0]**2 + p[1]**2)
+        r = numpy.sqrt(p[0] ** 2 + p[1] ** 2)
         mu, sigma = 5.0, 2.0
         return 25 * (
-            numpy.exp(-r/35) + 1 / (sigma * numpy.sqrt(2 * numpy.pi)) *
-            numpy.exp(-0.5 * ((r - mu) / sigma) ** 2))
+            numpy.exp(-r / 35)
+            + 1
+            / (sigma * numpy.sqrt(2 * numpy.pi))
+            * numpy.exp(-0.5 * ((r - mu) / sigma) ** 2)
+        )
 
 
 class TestPrior(BaseModel):
-    r"""Uses the prior as the test distribution.
+    r"""
+    Uses the prior as the test distribution.
 
     Parameters
     ----------
@@ -204,20 +218,21 @@ class TestPrior(BaseModel):
         All other keyword arguments are passed to ``BaseModel``.
 
     """
+
     name = "test_prior"
 
     def __init__(self, variable_params, **kwargs):
         # set up base likelihood parameters
-        super(TestPrior, self).__init__(variable_params, **kwargs)
+        super().__init__(variable_params, **kwargs)
 
     def _loglikelihood(self):
-        """Returns zero.
-        """
-        return 0.
+        """Returns zero."""
+        return 0.0
 
 
 class TestPosterior(BaseModel):
-    r"""Build a test posterior from a set of samples using a kde
+    r"""
+    Build a test posterior from a set of samples using a kde
 
     Parameters
     ----------
@@ -232,15 +247,17 @@ class TestPosterior(BaseModel):
         All other keyword arguments are passed to ``BaseModel``.
 
     """
+
     name = "test_posterior"
 
     def __init__(self, variable_params, posterior_file, nsamples, **kwargs):
-        super(TestPosterior, self).__init__(variable_params, **kwargs)
+        super().__init__(variable_params, **kwargs)
 
         from pycbc.inference.io import loadfile  # avoid cyclic import
-        logging.info('loading test posterior model')
+
+        logging.info("loading test posterior model")
         inf_file = loadfile(posterior_file)
-        logging.info('reading samples')
+        logging.info("reading samples")
         samples = inf_file.read_samples(variable_params)
         samples = numpy.array([samples[v] for v in variable_params])
 
@@ -249,13 +266,12 @@ class TestPosterior(BaseModel):
         idx = numpy.random.choice(idx, size=int(nsamples), replace=False)
         samples = samples[:, idx]
 
-        logging.info('making kde with %s samples', samples.shape[-1])
+        logging.info("making kde with %s samples", samples.shape[-1])
         self.kde = stats.gaussian_kde(samples)
-        logging.info('done initializing test posterior model')
+        logging.info("done initializing test posterior model")
 
     def _loglikelihood(self):
-        """Returns the log pdf of the test posterior kde
-        """
+        """Returns the log pdf of the test posterior kde"""
         p = numpy.array([self.current_params[p] for p in self.variable_params])
         logpost = self.kde.logpdf(p)
         return float(logpost[0])

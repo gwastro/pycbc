@@ -2,22 +2,26 @@
 Test that the constants provided from LAL match closely to the options that
 we fall back on from astropy or numpy as appropriate
 """
+
+import sys
 import unittest
 import unittest.mock
-import sys
+
 import numpy as np
 
 
 def get_constant_names(module):
     """Dynamically find uppercase constants, excluding module internals."""
     return [
-        c for c in dir(module)
-        if c.upper() == c
-        and not c.startswith('_') # Exclude all internal vars
+        c
+        for c in dir(module)
+        if c.upper() == c and not c.startswith("_")  # Exclude all internal vars
     ]
 
+
 # Define the module name - this is just to make it easier to rename later
-_PYCBC_CONSTANTS_MODULE_NAME = 'pycbc.constants'
+_PYCBC_CONSTANTS_MODULE_NAME = "pycbc.constants"
+
 
 class TestPycbcConstants(unittest.TestCase):
     """Tests the choice mechanism of pycbc.constants."""
@@ -28,7 +32,9 @@ class TestPycbcConstants(unittest.TestCase):
             del sys.modules[_PYCBC_CONSTANTS_MODULE_NAME]
 
         # Default constants
-        with unittest.mock.patch.dict('os.environ', {'PYCBC_CONSTANT_SOURCE': 'default'}):
+        with unittest.mock.patch.dict(
+            "os.environ", {"PYCBC_CONSTANT_SOURCE": "default"}
+        ):
             import pycbc.constants as default_constants
         self.default_constants = default_constants
 
@@ -37,7 +43,7 @@ class TestPycbcConstants(unittest.TestCase):
             del sys.modules[_PYCBC_CONSTANTS_MODULE_NAME]
 
         # LAL is used here
-        with unittest.mock.patch.dict('os.environ', {'PYCBC_CONSTANT_SOURCE': 'lal'}):
+        with unittest.mock.patch.dict("os.environ", {"PYCBC_CONSTANT_SOURCE": "lal"}):
             import pycbc.constants as lal_constants
         self.lal_constants = lal_constants
 
@@ -46,17 +52,16 @@ class TestPycbcConstants(unittest.TestCase):
 
     def test_constants_choice(self):
         """Tests that constants are chosen correctly given the environment variable"""
-        
         # Assert _CONSTANTS value check for default version
         self.assertTrue(
-            self.default_constants._CONSTANTS == 'default',
-            "Import has provided wrong constants given environment variable."
+            self.default_constants._CONSTANTS == "default",
+            "Import has provided wrong constants given environment variable.",
         )
 
         # Assert _CONSTANTS value check for LAL version
         self.assertTrue(
-            self.lal_constants._CONSTANTS == 'lal',
-            "Import has provided wrong constants given environment variable."
+            self.lal_constants._CONSTANTS == "lal",
+            "Import has provided wrong constants given environment variable.",
         )
 
     def test_lal_default_match(self):
@@ -71,10 +76,10 @@ class TestPycbcConstants(unittest.TestCase):
                 self.assertTrue(
                     np.isclose(lc, fc),
                     msg=(
-                        f"Constant {const_name} value mismatch. "
-                        f"LAL:{lc}, DEFAULT:{fc}"
-                    )
+                        f"Constant {const_name} value mismatch. LAL:{lc}, DEFAULT:{fc}"
+                    ),
                 )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

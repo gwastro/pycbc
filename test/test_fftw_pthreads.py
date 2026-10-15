@@ -26,26 +26,28 @@ These are the unit-tests for the pycbc.fft.fftw subpackage, testing only the
 pthreads threading backend.
 """
 
+import unittest
+
+from fft_base import _BaseTestFFTClass
+from utils import parse_args_cpu_only, simple_exit
+
 import pycbc.fft
 from pycbc.scheme import CPUScheme
-import unittest
-from utils import parse_args_cpu_only, simple_exit
-from fft_base import _BaseTestFFTClass
-
 
 parse_args_cpu_only("FFTW pthreads backend")
 
 # See if we can set the FFTW backend to 'pthreads'; if not, say so and exit.
 
-if 'fftw' not in pycbc.fft.get_backend_names():
+if "fftw" not in pycbc.fft.get_backend_names():
     raise unittest.SkipTest(
         "FFTW does not seem to be an available CPU backend; "
         "skipping pthreads thread tests"
     )
 
 import pycbc.fft.fftw
+
 try:
-    pycbc.fft.fftw.set_threads_backend('pthreads')
+    pycbc.fft.fftw.set_threads_backend("pthreads")
 except:
     raise unittest.SkipTest(
         "Unable to import pthreads threads backend to FFTW; "
@@ -55,19 +57,19 @@ except:
 # Most of the work is now done in fft_base.
 
 FFTTestClasses = []
-for num_threads in [2,4,6,8]:
-    kdict = {'backends' : ['fftw'],
-             'scheme' : 'cpu',
-             'context' : CPUScheme(num_threads=num_threads)}
-    klass = type('FFTW_OpenMP_test',
-                 (_BaseTestFFTClass,),kdict)
+for num_threads in [2, 4, 6, 8]:
+    kdict = {
+        "backends": ["fftw"],
+        "scheme": "cpu",
+        "context": CPUScheme(num_threads=num_threads),
+    }
+    klass = type("FFTW_OpenMP_test", (_BaseTestFFTClass,), kdict)
     klass.__test__ = True
     FFTTestClasses.append(klass)
 
 # Finally, we create suites and run them
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     suite = unittest.TestSuite()
     for klass in FFTTestClasses:
         suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))

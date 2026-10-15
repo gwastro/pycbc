@@ -19,10 +19,12 @@ Unit tests for PyCBC's thresholding code.
 """
 
 import unittest
+
 import numpy
-from pycbc.types import Array, complex64
-from pycbc.events import threshold
 from utils import parse_args_all_schemes, simple_exit
+
+from pycbc.events import threshold
+from pycbc.types import Array, complex64
 
 _scheme, _context = parse_args_all_schemes("Threshold")
 
@@ -39,12 +41,12 @@ class TestThreshold(unittest.TestCase):
         self.series = Array(v, dtype=complex64)
         self.threshold = 1.3
         self.locs, self.vals = trusted_threshold(self.series, self.threshold)
-        print(f'Reference: {len(self.locs)} locs, {len(self.vals)} vals')
+        print(f"Reference: {len(self.locs)} locs, {len(self.vals)} vals")
 
     def test_threshold(self):
         with self.context:
             locs, vals = threshold(self.series, self.threshold)
-            print(f'Test: {len(locs)} locs, {len(vals)} vals')
+            print(f"Test: {len(locs)} locs, {len(vals)} vals")
             self.assertTrue((locs == self.locs).all())
             self.assertTrue((vals == self.vals).all())
 
@@ -52,6 +54,6 @@ class TestThreshold(unittest.TestCase):
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestThreshold))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

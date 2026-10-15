@@ -13,17 +13,21 @@ and technical documentation at https://dcc.ligo.org/LIGO-T1700029/public
 """
 
 import numpy
-import scipy.stats as sst
-import scipy.special as ssp
 import scipy.integrate as sig
 import scipy.optimize as sop
+import scipy.special as ssp
+import scipy.stats as sst
 
 
 class augmented_rv_continuous(sst.rv_continuous):
-
-    def __init__(self, unit='dimensionless', texunit=r'\mbox{dimensionless}',
-                 texsymb=r'x', **kwargs):
-        '''
+    def __init__(
+        self,
+        unit="dimensionless",
+        texunit=r"\mbox{dimensionless}",
+        texsymb=r"x",
+        **kwargs,
+    ):
+        """
         Parameters
         ----------
         unit : string, optional
@@ -32,9 +36,9 @@ class augmented_rv_continuous(sst.rv_continuous):
             units of independent variable, in tex format
         texsymb : string, optional
             symbol of independent variable, in tex format
-        '''
 
-        super(augmented_rv_continuous, self).__init__(**kwargs)
+        """
+        super().__init__(**kwargs)
         self._hpd_interval_vec = numpy.vectorize(self._hpd_interval_scalar)
         self.unit = unit
         self.texunit = texunit
@@ -54,7 +58,7 @@ class augmented_rv_continuous(sst.rv_continuous):
         return a, b
 
     def hpd_interval(self, alpha):
-        '''
+        """
         Confidence interval of highest probability density.
 
         Parameters
@@ -68,7 +72,8 @@ class augmented_rv_continuous(sst.rv_continuous):
         a, b : ndarray of float
             end-points of range that contain ``100 * alpha %`` of the rv's
             possible values.
-        '''
+
+        """
         if isinstance(alpha, (float, numpy.number)):
             a, b = self._hpd_interval_scalar(alpha)
         else:
@@ -77,15 +82,22 @@ class augmented_rv_continuous(sst.rv_continuous):
 
 
 class count_posterior(augmented_rv_continuous):
-    '''
+    """
     Count posterior distribution.
-    '''
+    """
 
-    def __init__(self, logbf, laguerre_n, Lambda0, prior=-0.5,
-                 name='count posterior', unit='signals/experiment',
-                 texunit=r'\mathrm{signals}/\mathrm{experiment}',
-                 texsymb=r'\Lambda_1'):
-        '''
+    def __init__(
+        self,
+        logbf,
+        laguerre_n,
+        Lambda0,
+        prior=-0.5,
+        name="count posterior",
+        unit="signals/experiment",
+        texunit=r"\mathrm{signals}/\mathrm{experiment}",
+        texsymb=r"\Lambda_1",
+    ):
+        """
         Parameters
         ----------
         logbf : array_like
@@ -98,10 +110,11 @@ class count_posterior(augmented_rv_continuous):
             prior distribution power law of improper prior if float
             or count posterior distribution if count_posterior
             (default=-0.5: Jeffreys prior)
-        '''
-        super(count_posterior, self).__init__(a=0.0, b=numpy.inf, name=name,
-                                              unit=unit, texunit=texunit,
-                                              texsymb=texsymb)
+
+        """
+        super().__init__(
+            a=0.0, b=numpy.inf, name=name, unit=unit, texunit=texunit, texsymb=texsymb
+        )
         self.Lambda0 = Lambda0
         # weighted Bayes factor
         self.k = numpy.exp(numpy.array(logbf)) / self.Lambda0
@@ -111,7 +124,7 @@ class count_posterior(augmented_rv_continuous):
         if prior == 0:
             self.prior = lambda x: 1.0
         elif prior > 0:
-            self.prior = lambda x: x ** prior
+            self.prior = lambda x: x**prior
         else:
             # regularize at x = 0
             self.prior = lambda x: (x + self.xtol) ** prior
@@ -119,8 +132,9 @@ class count_posterior(augmented_rv_continuous):
         # pre-compute Gaussian-Generalized-Laguerre quadrature
         # abscissas and weights, along with pdf at these abscissas
         self.x, w = ssp.la_roots(laguerre_n, self.alpha)
-        self.p = numpy.array([ww * numpy.prod(1.0 + self.k * xx)
-                              for xx, ww in zip(self.x, w)])
+        self.p = numpy.array(
+            [ww * numpy.prod(1.0 + self.k * xx) for xx, ww in zip(self.x, w)]
+        )
         self.norm = 1.0 / sum(self.p)
         self.p *= self.norm
 
@@ -134,7 +148,7 @@ class count_posterior(augmented_rv_continuous):
         return sig.quad(self._pdf, 0.0, x)
 
     def expect(self, func):
-        '''
+        """
         Calculate expected value of a function with respect to the
             distribution.
 
@@ -152,7 +166,8 @@ class count_posterior(augmented_rv_continuous):
         -------
         expect : float
             The calculated expected value.
-        '''
+
+        """
         # FIXME: not as feature rich as the expect method this overrides
         return sum(pp * func(xx) for xx, pp in zip(self.x, self.p))
 
@@ -160,18 +175,19 @@ class count_posterior(augmented_rv_continuous):
         return self.expect(lambda x: x**n)
 
     def p_bg(self, logbf):
-        '''
+        """
         Calculate the false alarm probabilities of the events.
 
         Parameters
         ----------
         logbf : array_like
             Logs of foreground over background probability ratios of events.
-        '''
+
+        """
         # get weighted bayes factor
         k = numpy.exp(numpy.asarray(logbf)) / self.Lambda0
 
-        P0 = numpy.dot(1./(1. + numpy.outer(k, self.x)), self.p)
+        P0 = numpy.dot(1.0 / (1.0 + numpy.outer(k, self.x)), self.p)
         if isinstance(k, (float, int, numpy.number)):
             return P0.item()
         if isinstance(k, numpy.ndarray) and k.ndim == 0:
@@ -179,4 +195,5 @@ class count_posterior(augmented_rv_continuous):
         # except in special cases above, return array of values
         return P0
 
-__all__ = ['augmented_rv_continuous', 'count_posterior']
+
+__all__ = ["augmented_rv_continuous", "count_posterior"]

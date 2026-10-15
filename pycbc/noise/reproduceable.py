@@ -21,15 +21,19 @@
 #
 # =============================================================================
 #
-import numpy, pycbc.psd
-from pycbc.types import TimeSeries, complex_same_precision_as
+import numpy
 from numpy.random import RandomState
+
+import pycbc.psd
+from pycbc.types import TimeSeries, complex_same_precision_as
 
 # This constant need to be constant to be able to recover identical results.
 BLOCK_SAMPLES = 1638400
 
+
 def block(seed, sample_rate):
-    """ Return block of normal random numbers
+    """
+    Return block of normal random numbers
 
     Parameters
     ----------
@@ -39,17 +43,20 @@ def block(seed, sample_rate):
         Sets the variance of the white noise
 
     Returns
-    --------
+    -------
     noise : numpy.ndarray
         Array of random numbers
+
     """
     num = BLOCK_SAMPLES
     rng = RandomState(seed % 2**32)
     variance = sample_rate / 2
     return rng.normal(size=num, scale=variance**0.5)
 
+
 def normal(start, end, sample_rate=16384, seed=0):
-    """ Generate data with a white Gaussian (normal) distribution
+    """
+    Generate data with a white Gaussian (normal) distribution
 
     Parameters
     ----------
@@ -64,9 +71,10 @@ def normal(start, end, sample_rate=16384, seed=0):
         The seed to generate the noise.
 
     Returns
-    --------
+    -------
     noise : TimeSeries
         A TimeSeries containing gaussian noise
+
     """
     # This is reproduceable because we used fixed seeds from known values
     block_dur = BLOCK_SAMPLES / sample_rate
@@ -77,18 +85,26 @@ def normal(start, end, sample_rate=16384, seed=0):
     if end % block_dur == 0:
         e -= 1
 
-    sv = RandomState(seed).randint(-2**50, 2**50)
-    data = numpy.concatenate([block(i + sv, sample_rate)
-                              for i in numpy.arange(s, e + 1, 1)])
+    sv = RandomState(seed).randint(-(2**50), 2**50)
+    data = numpy.concatenate(
+        [block(i + sv, sample_rate) for i in numpy.arange(s, e + 1, 1)]
+    )
     ts = TimeSeries(data, delta_t=1.0 / sample_rate, epoch=(s * block_dur))
     return ts.time_slice(start, end)
 
-def colored_noise(psd, start_time, end_time,
-                  seed=0, sample_rate=16384,
-                  low_frequency_cutoff=1.0,
-                  filter_duration=128,
-                  scale=1.0):
-    """ Create noise from a PSD
+
+def colored_noise(
+    psd,
+    start_time,
+    end_time,
+    seed=0,
+    sample_rate=16384,
+    low_frequency_cutoff=1.0,
+    filter_duration=128,
+    scale=1.0,
+):
+    """
+    Create noise from a PSD
 
     Return noise from the chosen PSD. Note that if unique noise is desired
     a unique seed should be provided.
@@ -112,9 +128,10 @@ def colored_noise(psd, start_time, end_time,
         The duration in seconds of the coloring filter
 
     Returns
-    --------
+    -------
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd.
+
     """
     psd = psd.copy()
 
@@ -125,25 +142,26 @@ def colored_noise(psd, start_time, end_time,
     # Want to avoid zeroes in PSD.
     max_val = psd.max()
     for i in range(len(psd)):
-        if i >= (oldlen-1):
+        if i >= (oldlen - 1):
             psd.data[i] = psd[oldlen - 2]
         if psd[i] == 0:
             psd.data[i] = max_val
 
     fil_len = int(filter_duration * sample_rate)
     wn_dur = int(end_time - start_time) + 2 * filter_duration
-    if psd.delta_f >= 1. / (2.*filter_duration):
+    if psd.delta_f >= 1.0 / (2.0 * filter_duration):
         # If the PSD is short enough, this method is less memory intensive than
         # resizing and then calling inverse_spectrum_truncation
-        psd = pycbc.psd.interpolate(psd, 1.0 / (2. * filter_duration))
+        psd = pycbc.psd.interpolate(psd, 1.0 / (2.0 * filter_duration))
         # inverse_spectrum_truncation truncates the inverted PSD. To truncate
         # the non-inverted PSD we give it the inverted PSD to truncate and then
         # invert the output.
-        psd = 1. / pycbc.psd.inverse_spectrum_truncation(
-                                1./psd,
-                                fil_len,
-                                low_frequency_cutoff=low_frequency_cutoff,
-                                trunc_method='hann')
+        psd = 1.0 / pycbc.psd.inverse_spectrum_truncation(
+            1.0 / psd,
+            fil_len,
+            low_frequency_cutoff=low_frequency_cutoff,
+            trunc_method="hann",
+        )
         psd = psd.astype(complex_same_precision_as(psd))
         # Zero-pad the time-domain PSD to desired length. Zeroes must be added
         # in the middle, so some rolling between a resize is used.
@@ -156,36 +174,45 @@ def colored_noise(psd, start_time, end_time,
         psd = psd.to_frequencyseries()
     else:
         psd = pycbc.psd.interpolate(psd, 1.0 / wn_dur)
-        psd = 1. / pycbc.psd.inverse_spectrum_truncation(
-                                1./psd,
-                                fil_len,
-                                low_frequency_cutoff=low_frequency_cutoff,
-                                trunc_method='hann')
+        psd = 1.0 / pycbc.psd.inverse_spectrum_truncation(
+            1.0 / psd,
+            fil_len,
+            low_frequency_cutoff=low_frequency_cutoff,
+            trunc_method="hann",
+        )
 
     kmin = int(low_frequency_cutoff / psd.delta_f)
     psd[:kmin].clear()
-    asd = (psd.squared_norm())**0.25
+    asd = (psd.squared_norm()) ** 0.25
     del psd
 
-    white_noise = normal(start_time - filter_duration,
-                         end_time + filter_duration,
-                         seed=seed,
-                         sample_rate=sample_rate)
+    white_noise = normal(
+        start_time - filter_duration,
+        end_time + filter_duration,
+        seed=seed,
+        sample_rate=sample_rate,
+    )
     white_noise = white_noise.to_frequencyseries()
     # Here we color. Do not want to duplicate memory here though so use '*='
-    white_noise *= asd*scale
+    white_noise *= asd * scale
     del asd
-    colored = white_noise.to_timeseries(delta_t=1.0/sample_rate)
+    colored = white_noise.to_timeseries(delta_t=1.0 / sample_rate)
     del white_noise
     return colored.time_slice(start_time, end_time)
 
-def noise_from_string(psd_name, start_time, end_time,
-                      seed=0,
-                      sample_rate=16384,
-                      low_frequency_cutoff=1.0,
-                      filter_duration=128,
-                      scale=1.0):
-    """ Create noise from an analytic PSD
+
+def noise_from_string(
+    psd_name,
+    start_time,
+    end_time,
+    seed=0,
+    sample_rate=16384,
+    low_frequency_cutoff=1.0,
+    filter_duration=128,
+    scale=1.0,
+):
+    """
+    Create noise from an analytic PSD
 
     Return noise from the chosen PSD. Note that if unique noise is desired
     a unique seed should be provided.
@@ -209,16 +236,21 @@ def noise_from_string(psd_name, start_time, end_time,
         The duration in seconds of the coloring filter
 
     Returns
-    --------
+    -------
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd.
+
     """
     delta_f = 1.0 / filter_duration
     flen = int(sample_rate / delta_f) // 2 + 1
     psd = pycbc.psd.from_string(psd_name, flen, delta_f, low_frequency_cutoff)
-    return colored_noise(psd, start_time, end_time,
-                         seed=seed,
-                         sample_rate=sample_rate,
-                         low_frequency_cutoff=low_frequency_cutoff,
-                         filter_duration=filter_duration,
-                         scale=scale)
+    return colored_noise(
+        psd,
+        start_time,
+        end_time,
+        seed=seed,
+        sample_rate=sample_rate,
+        low_frequency_cutoff=low_frequency_cutoff,
+        filter_duration=filter_duration,
+        scale=scale,
+    )

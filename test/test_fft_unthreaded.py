@@ -27,10 +27,12 @@ backends for the various schemes.
 """
 
 import logging
-import pycbc.fft
 import unittest
-from utils import parse_args_all_schemes, simple_exit
+
 from fft_base import _BaseTestFFTClass
+from utils import parse_args_all_schemes, simple_exit
+
+import pycbc.fft
 
 _scheme, _context = parse_args_all_schemes("FFT")
 
@@ -42,7 +44,7 @@ _scheme, _context = parse_args_all_schemes("FFT")
 backends = pycbc.fft.get_backend_names()
 
 # Numpy will warn not to use its class interface, silence it.
-logging.disable(logging.WARNING) 
+logging.disable(logging.WARNING)
 
 FFTTestClasses = []
 for backend in backends:
@@ -51,9 +53,8 @@ for backend in backends:
     # the additional property 'self.backend' set to the value
     # of backend.  One such class for each backend is appended
     # to the list
-    kdict = {'backends' : [backend], 'scheme' : _scheme, 'context' : _context}
-    klass = type('{0}_{1}_test'.format(_scheme,backend),
-                 (_BaseTestFFTClass,),kdict)
+    kdict = {"backends": [backend], "scheme": _scheme, "context": _context}
+    klass = type(f"{_scheme}_{backend}_test", (_BaseTestFFTClass,), kdict)
     klass.__test__ = True
     vars()[klass.__name__] = klass
     FFTTestClasses.append(klass)
@@ -61,8 +62,7 @@ for backend in backends:
 
 # Finally, we create suites and run them
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     suite = unittest.TestSuite()
     for klass in FFTTestClasses:
         suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))

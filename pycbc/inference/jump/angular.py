@@ -17,8 +17,11 @@
 
 from epsie import proposals as epsie_proposals
 
-from .normal import (epsie_from_config, epsie_adaptive_from_config,
-                     epsie_at_adaptive_from_config)
+from .normal import (
+    epsie_adaptive_from_config,
+    epsie_at_adaptive_from_config,
+    epsie_from_config,
+)
 
 
 class EpsieAngular(epsie_proposals.Angular):
@@ -26,7 +29,8 @@ class EpsieAngular(epsie_proposals.Angular):
 
     @classmethod
     def from_config(cls, cp, section, tag):
-        """Loads a proposal from a config file.
+        """
+        Loads a proposal from a config file.
 
         This calls :py:func:`epsie_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.Angular` and ``with_boundaries`` set
@@ -52,6 +56,7 @@ class EpsieAngular(epsie_proposals.Angular):
         -------
         :py:class:`epsie.proposals.Angular`:
             An angular proposal for use with ``epsie`` samplers.
+
         """
         return epsie_from_config(cls, cp, section, tag, with_boundaries=False)
 
@@ -61,7 +66,8 @@ class EpsieAdaptiveAngular(epsie_proposals.AdaptiveAngular):
 
     @classmethod
     def from_config(cls, cp, section, tag):
-        r"""Loads a proposal from a config file.
+        r"""
+        Loads a proposal from a config file.
 
         This calls :py:func:`epsie_adaptive_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.AdaptiveBoundedNormal` and
@@ -89,9 +95,9 @@ class EpsieAdaptiveAngular(epsie_proposals.AdaptiveAngular):
         -------
         :py:class:`epsie.proposals.AdaptiveAngular`:
             An adaptive angular proposal for use with ``epsie`` samplers.
+
         """
-        return epsie_adaptive_from_config(cls, cp, section, tag,
-                                          with_boundaries=False)
+        return epsie_adaptive_from_config(cls, cp, section, tag, with_boundaries=False)
 
 
 class EpsieATAdaptiveAngular(epsie_proposals.ATAdaptiveAngular):
@@ -99,7 +105,8 @@ class EpsieATAdaptiveAngular(epsie_proposals.ATAdaptiveAngular):
 
     @classmethod
     def from_config(cls, cp, section, tag):
-        r"""Loads a proposal from a config file.
+        r"""
+        Loads a proposal from a config file.
 
         This calls :py:func:`epsie_adaptive_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.AdaptiveBoundedNormal` and
@@ -127,6 +134,8 @@ class EpsieATAdaptiveAngular(epsie_proposals.ATAdaptiveAngular):
         -------
         :py:class:`epsie.proposals.AdaptiveAngularProposal`:
             An adaptive angular proposal for use with ``epsie`` samplers.
+
         """
-        return epsie_at_adaptive_from_config(cls, cp, section, tag,
-                                             with_boundaries=False)
+        return epsie_at_adaptive_from_config(
+            cls, cp, section, tag, with_boundaries=False
+        )

@@ -21,10 +21,11 @@
 #
 # =============================================================================
 #
-import numpy
 import mako.template
+import numpy
 from pycuda import gpuarray
 from pycuda.compiler import SourceModule
+
 import pycbc.scheme
 from pycbc.types import zeros
 
@@ -251,6 +252,8 @@ __global__ void linear_interp(float2 *h, float df, int hlen,
 """)
 
 dckernel_cache = {}
+
+
 def get_dckernel(slen):
     # Right now, hardcoding the number of threads per block
     nt = 1024
@@ -273,7 +276,8 @@ def get_dckernel(slen):
         dckernel_cache[nb] = (fn1, fn2, freq_tex, amp_tex, phase_tex, nt, nb)
         return dckernel_cache[nb]
 
-class CUDALinearInterpolate(object):
+
+class CUDALinearInterpolate:
     def __init__(self, output):
         self.output = output.data.gpudata
         self.df = numpy.float32(output.delta_f)
@@ -292,7 +296,7 @@ class CUDALinearInterpolate(object):
     def interpolate(self, flow, freqs, amps, phases):
         flow = numpy.float32(flow)
         texlen = numpy.int32(len(freqs))
-        fmax = numpy.float32(freqs[texlen-1])
+        fmax = numpy.float32(freqs[texlen - 1])
         freqs_gpu = gpuarray.to_gpu(freqs)
         freqs_gpu.bind_to_texref_ext(self.freq_tex, allow_offset=False)
         amps_gpu = gpuarray.to_gpu(amps)
@@ -301,19 +305,34 @@ class CUDALinearInterpolate(object):
         phases_gpu.bind_to_texref_ext(self.phase_tex, allow_offset=False)
         fn1 = self.fn1.prepared_call
         fn2 = self.fn2.prepared_call
-        fn1((1, 1), (self.nb, 1, 1), self.lower, self.upper, texlen, self.df, flow, fmax)
-        fn2((self.nb, 1), (self.nt, 1, 1), self.output, self.df, self.hlen, flow, fmax, texlen, self.lower, self.upper)
+        fn1(
+            (1, 1), (self.nb, 1, 1), self.lower, self.upper, texlen, self.df, flow, fmax
+        )
+        fn2(
+            (self.nb, 1),
+            (self.nt, 1, 1),
+            self.output,
+            self.df,
+            self.hlen,
+            flow,
+            fmax,
+            texlen,
+            self.lower,
+            self.upper,
+        )
         pycbc.scheme.mgr.state.context.synchronize()
-        return
+
 
 def inline_linear_interp(amps, phases, freqs, output, df, flow, imin, start_index):
     # Note that imin and start_index are ignored in the GPU code; they are only
     # needed for CPU.
-    if output.precision == 'double':
-        raise NotImplementedError("Double precision linear interpolation not currently supported on CUDA scheme")
+    if output.precision == "double":
+        raise NotImplementedError(
+            "Double precision linear interpolation not currently supported on CUDA scheme"
+        )
     flow = numpy.float32(flow)
     texlen = numpy.int32(len(freqs))
-    fmax = numpy.float32(freqs[texlen-1])
+    fmax = numpy.float32(freqs[texlen - 1])
     hlen = numpy.int32(len(output))
     (fn1, fn2, ftex, atex, ptex, nt, nb) = get_dckernel(hlen)
     freqs_gpu = gpuarray.to_gpu(freqs)

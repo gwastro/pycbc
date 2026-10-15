@@ -14,15 +14,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Utilitiy for converting a python dictionary to a rst table.
-"""
+"""Utilitiy for converting a python dictionary to a rst table."""
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
-                   sort=True):
-    """Returns an RST-formatted table of keys and values from a `dict`
+def rst_dict_table(dict_, key_format=str, val_format=str, header=None, sort=True):
+    """
+    Returns an RST-formatted table of keys and values from a `dict`
 
     Parameters
     ----------
@@ -55,6 +54,7 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
     ``key1``  :class:`value1`
     ``key2``  :class:`value2`
     ========  ===============
+
     """
     keys, values = zip(*dict_.items())
 
@@ -71,10 +71,10 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
         ncval = max(ncval, len(vhead))
 
     # build table header line
-    divider = "{}  {}".format('='*nckey, '='*ncval)
+    divider = "{}  {}".format("=" * nckey, "=" * ncval)
 
     def row(key, val):
-        fmt = '{{0:{0}s}}  {{1}}'.format(nckey, ncval)
+        fmt = f"{{0:{nckey}s}}  {{1}}"
         return fmt.format(key, val)
 
     # build table of lines
@@ -82,20 +82,21 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
     if header:
         lines.extend((row(*header), divider))
     params = zip(keys, values)
-    
+
     if sort:
         params = sorted(params)
-        
+
     for key, val in params:
-        fmt = '{{0:{0}s}}  {{1}}'.format(nckey, ncval)
+        fmt = f"{{0:{nckey}s}}  {{1}}"
         lines.append(fmt.format(key, val))
     lines.append(divider)
 
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def format_pyobj(obj, objtype):
-    """Function for formatting python objects in the table.
+    """
+    Function for formatting python objects in the table.
 
     An object can be a module, class, or function.
 
@@ -112,20 +113,24 @@ def format_pyobj(obj, objtype):
     -------
     str :
         Formatted RST string that will cross reference to the object.
+
     """
-    return ':py:{0}:`{1}.{2}`'.format(objtype, obj.__module__, obj.__name__)
+    return f":py:{objtype}:`{obj.__module__}.{obj.__name__}`"
 
 
 def format_class(class_):
-    """Function for formatting classes in the table.
+    """
+    Function for formatting classes in the table.
 
     This can be passed to ``rst_dict_table``'s ``val_format`` argument.
     """
-    return format_pyobj(class_, 'class')
+    return format_pyobj(class_, "class")
+
 
 def format_function(func_):
-    """Function for formatting python functions in the table.
+    """
+    Function for formatting python functions in the table.
 
     This can be passed to ``rst_dict_table``'s ``val_format`` argument.
     """
-    return format_pyobj(func_, 'func')
+    return format_pyobj(func_, "func")

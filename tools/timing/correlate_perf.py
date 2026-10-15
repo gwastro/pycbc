@@ -1,8 +1,11 @@
+from time import time
+
+from numpy.random import uniform
+
 from pycbc.filter import correlate
 from pycbc.filter.matchedfilter import BatchCorrelator, Correlator
-from pycbc.types import zeros, complex64, complex128, Array
-from time import time
-from numpy.random import uniform
+from pycbc.types import Array, complex64, complex128, zeros
+
 niter = 2000
 
 
@@ -15,22 +18,23 @@ for N in [2**10, 2**15, 2**18]:
     xs = []
     zs = []
     for i in range(50):
-        xs.append(a*i)
-        zs.append(c*i)
+        xs.append(a * i)
+        zs.append(c * i)
     corr = BatchCorrelator(xs, zs, N)
     t1 = time()
     for i in range(niter):
         corr.execute(b)
 
     t2 = time()
-    print("Batch Correlate Perf Size:{} Time:{:3.3f}".format(
-          N, (t2-t1)*1000 / niter))
+    print(
+        f"Batch Correlate Perf Size:{N} Time:{(t2 - t1) * 1000 / niter:3.3f}"
+    )
 
 
 for dtp in [complex64, complex128]:
     for N in [2**10, 2**15, 2**20]:
         a = zeros(N, dtype=dtp)
-        a += Array(uniform(-1, 1, size=N) * (1 + -.5j), dtype=a.dtype)
+        a += Array(uniform(-1, 1, size=N) * (1 + -0.5j), dtype=a.dtype)
         b = zeros(N, dtype=dtp)
         c = zeros(N, dtype=dtp)
         correlate(a, b, c)
@@ -39,8 +43,9 @@ for dtp in [complex64, complex128]:
         for i in range(niter):
             correlate(a, b, c)
         t2 = time()
-        print("Correlate Perf Type:{} Size:{} Time:{:3.3f}".format(repr(dtp),
-              N, (t2-t1)*1000 / niter))
+        print(
+            f"Correlate Perf Type:{dtp!r} Size:{N} Time:{(t2 - t1) * 1000 / niter:3.3f}"
+        )
 
         if dtp is complex64:
             corr = Correlator(a, b, c)
@@ -48,6 +53,6 @@ for dtp in [complex64, complex128]:
             for i in range(niter):
                 corr.correlate()
             t2 = time()
-            print("Correlator Perf Type:{} Size:{} Time:{:3.3f}".format(repr(dtp),
-                  N, (t2-t1)*1000 / niter))
-
+            print(
+                f"Correlator Perf Type:{dtp!r} Size:{N} Time:{(t2 - t1) * 1000 / niter:3.3f}"
+            )

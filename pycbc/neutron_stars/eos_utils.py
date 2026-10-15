@@ -17,19 +17,23 @@
 """
 Utility functions for handling NS equations of state
 """
+
 import os.path
+
 import numpy as np
 from scipy.interpolate import interp1d
-from . import NS_SEQUENCES, NS_DATA_DIRECTORY
-from .pg_isso_solver import PG_ISSO_solver
 
 from pycbc.libutils import import_optional
+
+from . import NS_DATA_DIRECTORY, NS_SEQUENCES
+from .pg_isso_solver import PG_ISSO_solver
+
 #  Imports needed if we implement the lalsimulation EOS interface
 # from pycbc.constants import (
 #     MSUN_SI, G_SI, C_SI
 # )
 
-lalsim = import_optional('lalsimulation')
+lalsim = import_optional("lalsimulation")
 
 
 def load_ns_sequence(eos_name):
@@ -39,13 +43,13 @@ def load_ns_sequence(eos_name):
     File format is: grav mass (Msun), baryonic mass (Msun), compactness
 
     Parameters
-    -----------
+    ----------
     eos_name : string
         NS equation of state label ('2H' is the only supported
         choice at the moment)
 
     Returns
-    ----------
+    -------
     ns_sequence : numpy.array
         contains the sequence data in the form NS gravitational
         mass (in solar masses), NS baryonic mass (in solar
@@ -54,15 +58,16 @@ def load_ns_sequence(eos_name):
         the maximum NS gravitational mass (in solar masses) in
         the sequence (this is the mass of the most massive stable
         NS)
+
     """
-    ns_sequence_file = os.path.join(
-        NS_DATA_DIRECTORY, 'equil_{}.dat'.format(eos_name))
+    ns_sequence_file = os.path.join(NS_DATA_DIRECTORY, f"equil_{eos_name}.dat")
     if eos_name not in NS_SEQUENCES:
         raise NotImplementedError(
-            f'{eos_name} does not have an implemented NS sequence file! '
-            f'To implement, the file {ns_sequence_file} must exist and '
-            'contain: NS gravitational mass (in solar masses), NS baryonic '
-            'mass (in solar masses), NS compactness (dimensionless)')
+            f"{eos_name} does not have an implemented NS sequence file! "
+            f"To implement, the file {ns_sequence_file} must exist and "
+            "contain: NS gravitational mass (in solar masses), NS baryonic "
+            "mass (in solar masses), NS compactness (dimensionless)"
+        )
     ns_sequence = np.loadtxt(ns_sequence_file)
     max_ns_g_mass = max(ns_sequence[:, 0])
     return (ns_sequence, max_ns_g_mass)
@@ -74,7 +79,7 @@ def interp_grav_mass_to_baryon_mass(ns_g_mass, ns_sequence, extrapolate=False):
     mass and an NS equilibrium sequence (in solar masses).
 
     Parameters
-    -----------
+    ----------
     ns_g_mass : float
         NS gravitational mass (in solar masses)
     ns_sequence : numpy.array
@@ -86,8 +91,9 @@ def interp_grav_mass_to_baryon_mass(ns_g_mass, ns_sequence, extrapolate=False):
         Default is False (so ValueError is raised for ns_g_mass out of bounds)
 
     Returns
-    ----------
+    -------
     float
+
     """
     x = ns_sequence[:, 0]
     y = ns_sequence[:, 1]
@@ -102,7 +108,7 @@ def interp_grav_mass_to_compactness(ns_g_mass, ns_sequence, extrapolate=False):
     its gravitational mass and an NS equilibrium sequence.
 
     Parameters
-    -----------
+    ----------
     ns_g_mass : float
         NS gravitational mass (in solar masses)
     ns_sequence : numpy.array
@@ -114,8 +120,9 @@ def interp_grav_mass_to_compactness(ns_g_mass, ns_sequence, extrapolate=False):
         Default is False (so ValueError is raised for ns_g_mass out of bounds)
 
     Returns
-    ----------
+    -------
     float
+
     """
     x = ns_sequence[:, 0]
     y = ns_sequence[:, 2]
@@ -125,7 +132,8 @@ def interp_grav_mass_to_compactness(ns_g_mass, ns_sequence, extrapolate=False):
 
 
 def initialize_eos(ns_mass, eos, extrapolate=False):
-    """Load an equation of state and return the compactness and baryonic
+    """
+    Load an equation of state and return the compactness and baryonic
     mass for a given neutron star mass
 
     Parameters
@@ -146,6 +154,7 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
         Compactness parameter of the neutron star.
     ns_b_mass : float
         Baryonic mass of the neutron star.
+
     """
     if isinstance(ns_mass, np.ndarray):
         input_is_array = True
@@ -155,36 +164,39 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
         try:
             if any(ns_mass > ns_max) and input_is_array:
                 raise ValueError(
-                    f'Maximum NS mass for {eos} is {ns_max}, received masses '
-                    f'up to {max(ns_mass[ns_mass > ns_max])}')
+                    f"Maximum NS mass for {eos} is {ns_max}, received masses "
+                    f"up to {max(ns_mass[ns_mass > ns_max])}"
+                )
         except TypeError:
             if ns_mass > ns_max and not input_is_array:
                 raise ValueError(
-                    f'Maximum NS mass for {eos} is {ns_max}, received '
-                    f'{ns_mass}')
+                    f"Maximum NS mass for {eos} is {ns_max}, received {ns_mass}"
+                )
         # Interpolate NS compactness and rest mass
         ns_compactness = interp_grav_mass_to_compactness(
-            ns_mass, ns_seq, extrapolate=extrapolate)
+            ns_mass, ns_seq, extrapolate=extrapolate
+        )
         ns_b_mass = interp_grav_mass_to_baryon_mass(
-            ns_mass, ns_seq, extrapolate=extrapolate)
+            ns_mass, ns_seq, extrapolate=extrapolate
+        )
     elif eos in lalsim.SimNeutronStarEOSNames:
-        #from pycbc.constants import MSUN_SI, G_SI, C_SI
-        #eos_obj = lalsim.SimNeutronStarEOSByName(eos)
-        #eos_fam = lalsim.CreateSimNeutronStarFamily(eos_obj)
-        #r_ns = lalsim.SimNeutronStarRadius(ns_mass * MSUN_SI, eos_obj)
-        #ns_compactness = G_SI * ns_mass * MSUN_SI / (r_ns * C_SI**2)
-        raise NotImplementedError(
-            'LALSimulation EOS interface not yet implemented!')
+        # from pycbc.constants import MSUN_SI, G_SI, C_SI
+        # eos_obj = lalsim.SimNeutronStarEOSByName(eos)
+        # eos_fam = lalsim.CreateSimNeutronStarFamily(eos_obj)
+        # r_ns = lalsim.SimNeutronStarRadius(ns_mass * MSUN_SI, eos_obj)
+        # ns_compactness = G_SI * ns_mass * MSUN_SI / (r_ns * C_SI**2)
+        raise NotImplementedError("LALSimulation EOS interface not yet implemented!")
     else:
         raise NotImplementedError(
-            f'{eos} is not implemented! Available are: '
-            f'{NS_SEQUENCES + list(lalsim.SimNeutronStarEOSNames)}')
+            f"{eos} is not implemented! Available are: "
+            f"{NS_SEQUENCES + list(lalsim.SimNeutronStarEOSNames)}"
+        )
     return (ns_compactness, ns_b_mass)
 
 
-def foucart18(
-        eta, ns_compactness, ns_b_mass, bh_spin_mag, bh_spin_pol):
-    """Function that determines the remnant disk mass of an NS-BH system
+def foucart18(eta, ns_compactness, ns_b_mass, bh_spin_mag, bh_spin_pol):
+    """
+    Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
     `Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018)`_.
 
@@ -204,16 +216,17 @@ def foucart18(
         Dimensionless spin magnitude of the BH.
     bh_spin_pol : {float, array}
         The tilt angle of the BH spin.
+
     """
     isso = PG_ISSO_solver(bh_spin_mag, bh_spin_pol)
     # Fit parameters and tidal correction
     alpha = 0.406
-    beta  = 0.139
+    beta = 0.139
     gamma = 0.255
     delta = 1.761
     fit = (
-        alpha / eta ** (1/3) * (1 - 2 * ns_compactness)
+        alpha / eta ** (1 / 3) * (1 - 2 * ns_compactness)
         - beta * ns_compactness / eta * isso
         + gamma
-        )
+    )
     return ns_b_mass * np.where(fit > 0.0, fit, 0.0) ** delta

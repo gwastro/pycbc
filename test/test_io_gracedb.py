@@ -14,20 +14,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import unittest
-import os
-import shutil
-import random
-import tempfile
 import itertools
+import os
+import random
+import shutil
+import tempfile
+import unittest
+
 import numpy as np
-from utils import parse_args_cpu_only, simple_exit
-from pycbc.types import TimeSeries, FrequencySeries
-from pycbc.io.gracedb import CandidateForGraceDB
-from pycbc.io.ligolw import LIGOLWContentHandler
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from lal import series as lalseries
+from utils import parse_args_cpu_only, simple_exit
+
+from pycbc.io.gracedb import CandidateForGraceDB
+from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.types import FrequencySeries, TimeSeries
 
 # if we have the GraceDb module then we can do deeper tests,
 # otherwise just fall back to quicker ones
@@ -42,33 +44,40 @@ parse_args_cpu_only("io.gracedb")
 
 class TestIOGraceDB(unittest.TestCase):
     def setUp(self):
-        self.template = {'template_id': 0,
-                         'mass1': 10,
-                         'mass2': 11,
-                         'spin1x': 0,
-                         'spin1y': 0,
-                         'spin1z': 0,
-                         'spin2x': 0,
-                         'spin2y': 0,
-                         'spin2z': 0}
+        self.template = {
+            "template_id": 0,
+            "mass1": 10,
+            "mass2": 11,
+            "spin1x": 0,
+            "spin1y": 0,
+            "spin1z": 0,
+            "spin2x": 0,
+            "spin2y": 0,
+            "spin2z": 0,
+        }
 
-        self.possible_ifos = 'H1 L1 V1 K1 I1'.split()
+        self.possible_ifos = ["H1", "L1", "V1", "K1", "I1"]
 
         # Arguments matching what pycbc.mchirp_area.from_cli() builds, so
         # the source probability code path runs in the tests below.
         self.mc_area_args = {
-            'mass_limits': {'max_m1': 45., 'min_m2': 1.},
-            'mass_bdary': {'ns_max': 3., 'gap_max': 5.},
-            'estimation_coeff': {'a0': 0.7598, 'b0': -0.42, 'b1': 1.6,
-                                 'm0': 0.01, 'a1': 1., 'a2': 1.},
-            'mass_gap': False,
-            'mass_gap_separate': False,
-            'lal_cosmology': True,
-            'truncate_lower_dist': None
+            "mass_limits": {"max_m1": 45.0, "min_m2": 1.0},
+            "mass_bdary": {"ns_max": 3.0, "gap_max": 5.0},
+            "estimation_coeff": {
+                "a0": 0.7598,
+                "b0": -0.42,
+                "b1": 1.6,
+                "m0": 0.01,
+                "a1": 1.0,
+                "a2": 1.0,
+            },
+            "mass_gap": False,
+            "mass_gap_separate": False,
+            "lal_cosmology": True,
+            "truncate_lower_dist": None,
         }
 
-    def do_test(self, n_ifos, n_ifos_extra, stat_as_array=False,
-                mc_area_args=None):
+    def do_test(self, n_ifos, n_ifos_extra, stat_as_array=False, mc_area_args=None):
         # choose a random selection of interferometers
         # n_ifos will be used to generate the simulated trigger including
         # significance followup
@@ -81,8 +90,10 @@ class TestIOGraceDB(unittest.TestCase):
         stat = np.random.uniform(4, 20)
         if stat_as_array:
             stat = np.array([stat])
-        results = {'foreground/stat': stat,
-                   'foreground/ifar': np.random.uniform(0.01, 1000)}
+        results = {
+            "foreground/stat": stat,
+            "foreground/ifar": np.random.uniform(0.01, 1000),
+        }
         skyloc_data = {}
         for ifo in all_ifos:
             offset = 10000 + np.random.uniform(-0.02, 0.02)
@@ -90,68 +101,75 @@ class TestIOGraceDB(unittest.TestCase):
 
             # generate a mock SNR time series with a peak
             n = 201
-            dt = 1. / 2048.
+            dt = 1.0 / 2048.0
             t = np.arange(n) * dt
             t_peak = dt * n / 2
-            snr = np.exp(-(t - t_peak) ** 2 * 3e-3 ** -2) * amplitude
-            snr_series = TimeSeries((snr + 1j * 0).astype(np.complex64),
-                                    delta_t=dt, epoch=offset)
+            snr = np.exp(-((t - t_peak) ** 2) * 3e-3**-2) * amplitude
+            snr_series = TimeSeries(
+                (snr + 1j * 0).astype(np.complex64), delta_t=dt, epoch=offset
+            )
 
             # generate a mock PSD
             psd_samples = np.random.exponential(size=1024)
-            psd = FrequencySeries(psd_samples, delta_f=1.)
+            psd = FrequencySeries(psd_samples, delta_f=1.0)
 
             # fill in the various fields
             if ifo in trig_ifos:
-                base = 'foreground/' + ifo + '/'
-                results[base + 'end_time'] = t_peak + offset
-                results[base + 'snr'] = amplitude
-                results[base + 'sigmasq'] = np.random.uniform(1e6, 2e6)
-            skyloc_data[ifo] = {'snr_series': snr_series,
-                                  'psd': psd}
+                base = "foreground/" + ifo + "/"
+                results[base + "end_time"] = t_peak + offset
+                results[base + "snr"] = amplitude
+                results[base + "sigmasq"] = np.random.uniform(1e6, 2e6)
+            skyloc_data[ifo] = {"snr_series": snr_series, "psd": psd}
 
         for ifo, k in itertools.product(trig_ifos, self.template):
-            results['foreground/' + ifo + '/' + k] = self.template[k]
+            results["foreground/" + ifo + "/" + k] = self.template[k]
 
-        channel_names = {ifo: 'TEST' for ifo in all_ifos}
-        kwargs = {'psds': {ifo: skyloc_data[ifo]['psd'] for ifo in all_ifos},
-                  'low_frequency_cutoff': 20.,
-                  'skyloc_data': skyloc_data,
-                  'channel_names': channel_names}
+        channel_names = dict.fromkeys(all_ifos, "TEST")
+        kwargs = {
+            "psds": {ifo: skyloc_data[ifo]["psd"] for ifo in all_ifos},
+            "low_frequency_cutoff": 20.0,
+            "skyloc_data": skyloc_data,
+            "channel_names": channel_names,
+        }
         if mc_area_args is not None:
-            kwargs['mc_area_args'] = mc_area_args
+            kwargs["mc_area_args"] = mc_area_args
         coinc = CandidateForGraceDB(coinc_ifos, trig_ifos, results, **kwargs)
 
         tempdir = tempfile.mkdtemp()
 
-        coinc_file_name = os.path.join(tempdir, 'coinc.xml.gz')
+        coinc_file_name = os.path.join(tempdir, "coinc.xml.gz")
 
         if GraceDb is not None:
             # pretend to upload the event to GraceDB.
             # The upload will fail, but it should not raise an exception
             # and it should still leave the event file around
-            coinc.upload(coinc_file_name, gracedb_server='https://localhost:8080/api/',
-                         testing=True, force_noauth=True)
+            coinc.upload(
+                coinc_file_name,
+                gracedb_server="https://localhost:8080/api/",
+                testing=True,
+                force_noauth=True,
+            )
         else:
             # no GraceDb module, so just save the coinc file
             coinc.save(coinc_file_name)
 
         # read back and check the coinc document
         read_coinc = ligolw_utils.load_filename(
-                coinc_file_name, verbose=False,
-                contenthandler=LIGOLWContentHandler)
+            coinc_file_name, verbose=False, contenthandler=LIGOLWContentHandler
+        )
         single_table = lsctables.SnglInspiralTable.get_table(read_coinc)
         self.assertEqual(len(single_table), len(all_ifos))
         coinc_table = lsctables.CoincInspiralTable.get_table(read_coinc)
         self.assertEqual(len(coinc_table), 1)
         coinc_event_table = lsctables.CoincTable.get_table(read_coinc)
-        self.assertTrue(np.isclose(coinc_event_table[0].likelihood,
-                                   np.asarray(stat).item()))
+        self.assertTrue(
+            np.isclose(coinc_event_table[0].likelihood, np.asarray(stat).item())
+        )
 
         # make sure lalseries can read the PSDs
         psd_doc = ligolw_utils.load_filename(
-                coinc_file_name, verbose=False,
-                contenthandler=lalseries.PSDContentHandler)
+            coinc_file_name, verbose=False, contenthandler=lalseries.PSDContentHandler
+        )
         psd_dict = lalseries.read_psd_xmldoc(psd_doc)
         self.assertEqual(set(psd_dict.keys()), set(all_ifos))
 
@@ -213,6 +231,6 @@ class TestIOGraceDB(unittest.TestCase):
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestIOGraceDB))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

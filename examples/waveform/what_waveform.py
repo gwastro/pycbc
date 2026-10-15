@@ -1,4 +1,4 @@
-from pycbc.waveform import td_approximants, fd_approximants
+from pycbc.waveform import fd_approximants, td_approximants
 
 # List of td approximants that are available
 print(td_approximants())

@@ -24,7 +24,7 @@
 import cupy as cp
 import mako.template
 
-from pycbc.constants import PI_4, TWOPI, LN2
+from pycbc.constants import LN2, PI_4, TWOPI
 
 taylorf2_text = mako.template.Template("""
     const float f = (i + kmin ) * delta_f;
@@ -74,7 +74,7 @@ taylorf2_text = mako.template.Template("""
 
     htilde.real(pcos * amp2);
     htilde.imag(-psin * amp2);
-""").render(TWOPI=TWOPI, PI_4=PI_4, LN4=2*LN2)
+""").render(TWOPI=TWOPI, PI_4=PI_4, LN4=2 * LN2)
 
 
 taylorf2_kernel = cp.ElementwiseKernel(
@@ -89,13 +89,38 @@ taylorf2_kernel = cp.ElementwiseKernel(
 )
 
 
-def spa_tmplt_engine(htilde,  kmin,  phase_order,
-                    delta_f,  piM,  pfaN,
-                    pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, amp_factor):
-    """ Calculate the spa tmplt phase
-    """
-    taylorf2_kernel(kmin,  phase_order,
-                    delta_f,  piM,  pfaN,
-                    pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, amp_factor, htilde.data)
+def spa_tmplt_engine(
+    htilde,
+    kmin,
+    phase_order,
+    delta_f,
+    piM,
+    pfaN,
+    pfa2,
+    pfa3,
+    pfa4,
+    pfa5,
+    pfl5,
+    pfa6,
+    pfl6,
+    pfa7,
+    amp_factor,
+):
+    """Calculate the spa tmplt phase"""
+    taylorf2_kernel(
+        kmin,
+        phase_order,
+        delta_f,
+        piM,
+        pfaN,
+        pfa2,
+        pfa3,
+        pfa4,
+        pfa5,
+        pfl5,
+        pfa6,
+        pfl6,
+        pfa7,
+        amp_factor,
+        htilde.data,
+    )
