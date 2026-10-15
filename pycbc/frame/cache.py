@@ -18,9 +18,9 @@ Lists of data files (caches) and the file formats that can be read from them.
 """
 
 import glob
-import os
 import re
 from collections import namedtuple
+from pathlib import Path
 from urllib.parse import urlparse
 
 from pycbc.frame import gwf, gwosc_hdf
@@ -50,6 +50,8 @@ class CacheEntry(
 ):
     """One data file and the span of time it contains."""
 
+    __slots__ = ()
+
     @property
     def end(self):
         return self.start + self.duration
@@ -64,8 +66,8 @@ class CacheEntry(
         Describe a file, using its name if it follows LIGO-T050017 and
         its content otherwise.
         """
-        path = os.path.abspath(path)
-        match = _T050017.match(os.path.basename(path))
+        path = str(Path(path).resolve())
+        match = _T050017.match(Path(path).name)
         if match:
             return cls(
                 match["obs"],
@@ -76,7 +78,7 @@ class CacheEntry(
             )
         fmt = file_format(path)
         if fmt is None:
-            raise TypeError(f"{path} is not a supported data file")
+            raise TypeError(f"{path} is not a supported data file")  # noqa: TRY003
         start, duration = fmt.span(path)
         return cls("-", "-", start, duration, path)
 
@@ -127,7 +129,7 @@ def locations_to_cache(locations, latest=False):
     """
     entries = {}
     for source in locations:
-        flist = glob.glob(source)
+        flist = glob.glob(source)  # noqa: PTH207
         if latest:
 
             def relaxed_getctime(fn):
@@ -135,7 +137,7 @@ def locations_to_cache(locations, latest=False):
                 # low-latency frames, files might disappear between
                 # the glob() and getctime() calls
                 try:
-                    return os.path.getctime(fn)
+                    return Path(fn).stat().st_ctime
                 except OSError:
                     return 0
 
@@ -144,8 +146,8 @@ def locations_to_cache(locations, latest=False):
             flist = [max(flist, key=relaxed_getctime)]
 
         for file_path in flist:
-            if os.path.splitext(file_path)[1] in [".lcf", ".cache"]:
-                with open(file_path) as cache_file:
+            if Path(file_path).suffix in [".lcf", ".cache"]:
+                with Path(file_path).open() as cache_file:
                     new = [
                         CacheEntry.from_lal_line(line)
                         for line in cache_file
@@ -154,6 +156,6 @@ def locations_to_cache(locations, latest=False):
             elif file_format(file_path) is not None:
                 new = [CacheEntry.from_file(file_path)]
             else:
-                raise TypeError("Invalid location name")
+                raise TypeError("Invalid location name")  # noqa: TRY003
             entries.update((e.path, e) for e in new)
     return FrameCache(sorted(entries.values(), key=lambda e: (e.start, e.path)))

@@ -18,12 +18,13 @@ Rolling buffers of frame data, used by low-latency analyses.
 """
 
 import glob
-import os.path
 import time
+from pathlib import Path
 
-import numpy
+import numpy as np
 
 import pycbc
+from pycbc.events.veto import indices_outside_times, indices_within_times
 from pycbc.frame.cache import file_format, locations_to_cache
 from pycbc.frame.frame import _read_channel
 from pycbc.types import TimeSeries, zeros
@@ -40,7 +41,7 @@ class DataBuffer:
         max_buffer=2048,
         force_update_cache=True,
         increment_update_cache=None,
-        dtype=numpy.float64,
+        dtype=np.float64,
     ):
         """
         Create a rolling buffer of frame data
@@ -56,7 +57,7 @@ class DataBuffer:
             Time to start reading from.
         max_buffer: {int, 2048}, Optional
             Length of the buffer in seconds
-        dtype: {dtype, numpy.float32}, Optional
+        dtype: {dtype, np.float32}, Optional
             Data type to use for the interal buffer
 
         """
@@ -102,7 +103,7 @@ class DataBuffer:
 
         Returns
         -------
-        channel_type: numpy.dtype
+        channel_type: np.dtype
             The dtype of the channel
         sample_rate: int
             The sample rate of the data within this channel
@@ -139,8 +140,8 @@ class DataBuffer:
                 self.read_pos,
                 self.read_pos + int(blocksize),
             )
-        except Exception:
-            raise RuntimeError(f"Cannot read {self.channel_name} frame data")
+        except Exception as exc:
+            raise RuntimeError(f"Cannot read {self.channel_name} frame data") from exc  # noqa: TRY003
 
     def null_advance(self, blocksize):
         """
@@ -194,28 +195,28 @@ class DataBuffer:
         end = float(start + blocksize)
 
         if not hasattr(self, "dur"):
-            fname = glob.glob(self.frame_src[0])[0]
-            fname = os.path.splitext(os.path.basename(fname))[0].split("-")
+            fname = glob.glob(self.frame_src[0])[0]  # noqa: PTH207
+            fname = Path(fname).stem.split("-")
 
             self.beg = "-".join([fname[0], fname[1]])
             self.ref = int(fname[2])
             self.dur = int(fname[3])
 
         fstart = int(
-            self.ref + numpy.floor((start - self.ref) / float(self.dur)) * self.dur
+            self.ref + np.floor((start - self.ref) / float(self.dur)) * self.dur
         )
-        starts = numpy.arange(fstart, end, self.dur).astype(int)
+        starts = np.arange(fstart, end, self.dur).astype(int)
 
         keys = []
         for s in starts:
             pattern = self.increment_update_cache
             if "GPS" in pattern:
                 n = int(pattern[int(pattern.index("GPS") + 3)])
-                pattern = pattern.replace("GPS%s" % n, str(s)[0:n])
+                pattern = pattern.replace(f"GPS{n}", str(s)[0:n])
 
             name = f"{pattern}/{self.beg}-{s}-{self.dur}.gwf"
             # check that file actually exists, else abort now
-            if not os.path.exists(name):
+            if not Path(name).exists():
                 raise RuntimeError
 
             keys.append(name)
@@ -249,7 +250,7 @@ class DataBuffer:
                 if self.increment_update_cache:
                     self.update_cache_by_increment(blocksize)
                 return DataBuffer.advance(self, blocksize)
-            except RuntimeError:
+            except RuntimeError:  # noqa: PERF203
                 if pycbc.gps_now() > timeout + self.raw_buffer.end_time:
                     # The frame is not there and it should be by now,
                     # so we give up and treat it as zeros
@@ -303,7 +304,7 @@ class StatusBuffer(DataBuffer):
             max_buffer=max_buffer,
             force_update_cache=force_update_cache,
             increment_update_cache=increment_update_cache,
-            dtype=numpy.int32,
+            dtype=np.int32,
         )
 
         self.valid_mask = valid_mask
@@ -332,8 +333,8 @@ class StatusBuffer(DataBuffer):
         else:
             if flag is None:
                 flag = self.valid_mask
-            valid = numpy.bitwise_and(values.numpy(), flag) == flag
-        return bool(numpy.all(valid))
+            valid = np.bitwise_and(values.numpy(), flag) == flag
+        return bool(np.all(valid))
 
     def is_extent_valid(self, start_time, duration, flag=None):
         """
@@ -377,13 +378,11 @@ class StatusBuffer(DataBuffer):
 
         Returns
         -------
-        indices: numpy.ndarray
+        indices: np.ndarray
             Array of indices marking the location of triggers within valid
         time.
 
         """
-        from pycbc.events.veto import indices_outside_times
-
         sr = self.raw_buffer.sample_rate
         s = int((start_time - self.raw_buffer.start_time - padding) * sr) - 1
         e = s + int((duration + padding) * sr) + 1
@@ -393,14 +392,11 @@ class StatusBuffer(DataBuffer):
         if self.valid_on_zero:
             invalid = data.numpy() != 0
         else:
-            invalid = (
-                numpy.bitwise_and(data.numpy(), self.valid_mask) != self.valid_mask
-            )
+            invalid = np.bitwise_and(data.numpy(), self.valid_mask) != self.valid_mask
 
         starts = stamps[invalid] - padding
         ends = starts + 1.0 / sr + padding * 2.0
-        idx = indices_outside_times(times, starts, ends)
-        return idx
+        return indices_outside_times(times, starts, ends)
 
     def advance(self, blocksize):
         """
@@ -429,7 +425,7 @@ class StatusBuffer(DataBuffer):
             return False
 
 
-class iDQBuffer:
+class iDQBuffer:  # noqa: N801
     """Read iDQ timeseries from a frame file"""
 
     def __init__(
@@ -505,12 +501,10 @@ class iDQBuffer:
 
         Returns
         -------
-        flag_state: numpy.ndarray
+        flag_state: np.ndarray
             Boolean array of whether flag was on at given times
 
         """
-        from pycbc.events.veto import indices_within_times
-
         # convert start and end times to buffer indices
         sr = self.idq.raw_buffer.sample_rate
         s = int((start_time - self.idq.raw_buffer.start_time - padding) * sr) - 1
@@ -521,10 +515,10 @@ class iDQBuffer:
         low_fap = idq_fap.numpy() <= self.threshold
         idq_valid = self.idq_state.raw_buffer[s:e]
         idq_valid = idq_valid.numpy().astype(bool)
-        valid_low_fap = numpy.logical_and(idq_valid, low_fap)
+        valid_low_fap = np.logical_and(idq_valid, low_fap)
 
         # find times corresponding to the valid low FAP samples
-        glitch_idx = numpy.flatnonzero(valid_low_fap)
+        glitch_idx = np.flatnonzero(valid_low_fap)
         stamps = idq_fap.sample_times.numpy()
         glitch_times = stamps[glitch_idx]
 
@@ -534,7 +528,7 @@ class iDQBuffer:
 
         # check if times were flagged
         idx = indices_within_times(times, starts, ends)
-        flagged_bool = numpy.zeros(len(times), dtype=bool)
+        flagged_bool = np.zeros(len(times), dtype=bool)
         flagged_bool[idx] = True
         return flagged_bool
 

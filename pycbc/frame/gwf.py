@@ -22,16 +22,17 @@ read), each acting on a single file.
 """
 
 import os.path
+from pathlib import Path
 
 import lal
 import lalframe
-import numpy
+import numpy as np
 
 # map LAL series types to corresponding functions and Numpy types
 _fr_type_map = {
     lal.S_TYPE_CODE: [
         lalframe.FrStreamReadREAL4TimeSeries,
-        numpy.float32,
+        np.float32,
         lal.CreateREAL4TimeSeries,
         lalframe.FrStreamGetREAL4TimeSeriesMetadata,
         lal.CreateREAL4Sequence,
@@ -39,7 +40,7 @@ _fr_type_map = {
     ],
     lal.D_TYPE_CODE: [
         lalframe.FrStreamReadREAL8TimeSeries,
-        numpy.float64,
+        np.float64,
         lal.CreateREAL8TimeSeries,
         lalframe.FrStreamGetREAL8TimeSeriesMetadata,
         lal.CreateREAL8Sequence,
@@ -47,7 +48,7 @@ _fr_type_map = {
     ],
     lal.C_TYPE_CODE: [
         lalframe.FrStreamReadCOMPLEX8TimeSeries,
-        numpy.complex64,
+        np.complex64,
         lal.CreateCOMPLEX8TimeSeries,
         lalframe.FrStreamGetCOMPLEX8TimeSeriesMetadata,
         lal.CreateCOMPLEX8Sequence,
@@ -55,7 +56,7 @@ _fr_type_map = {
     ],
     lal.Z_TYPE_CODE: [
         lalframe.FrStreamReadCOMPLEX16TimeSeries,
-        numpy.complex128,
+        np.complex128,
         lal.CreateCOMPLEX16TimeSeries,
         lalframe.FrStreamGetCOMPLEX16TimeSeriesMetadata,
         lal.CreateCOMPLEX16Sequence,
@@ -63,7 +64,7 @@ _fr_type_map = {
     ],
     lal.U4_TYPE_CODE: [
         lalframe.FrStreamReadUINT4TimeSeries,
-        numpy.uint32,
+        np.uint32,
         lal.CreateUINT4TimeSeries,
         lalframe.FrStreamGetUINT4TimeSeriesMetadata,
         lal.CreateUINT4Sequence,
@@ -71,7 +72,7 @@ _fr_type_map = {
     ],
     lal.I4_TYPE_CODE: [
         lalframe.FrStreamReadINT4TimeSeries,
-        numpy.int32,
+        np.int32,
         lal.CreateINT4TimeSeries,
         lalframe.FrStreamGetINT4TimeSeriesMetadata,
         lal.CreateINT4Sequence,
@@ -86,7 +87,7 @@ def is_format(path):
     the magic string 'IGWD'.
     """
     try:
-        with open(path, "rb") as f:
+        with Path(path).open("rb") as f:
             return f.read(4) == b"IGWD"
     except OSError:
         return False
@@ -94,7 +95,7 @@ def is_format(path):
 
 def _open(path, check_integrity=False):
     """Open a lalframe stream reading the single file `path`."""
-    dir_name, file_name = os.path.split(os.path.abspath(path))
+    dir_name, file_name = os.path.split(str(Path(path).resolve()))
     stream = lalframe.FrStreamOpen(dir_name, file_name)
     mode = lalframe.FR_STREAM_VERBOSE_MODE
     if check_integrity:
@@ -105,7 +106,7 @@ def _open(path, check_integrity=False):
 
 def span(path):
     """Return the GPS start time and duration of the data in a file."""
-    dir_name, file_name = os.path.split(os.path.abspath(path))
+    dir_name, file_name = os.path.split(str(Path(path).resolve()))
     entry = lalframe.FrOpen(dir_name, file_name).cache.list
     return float(entry.t0), float(entry.dt)
 
@@ -119,7 +120,7 @@ def channel_info(path, channel):
     get_series_metadata_func = _fr_type_map[channel_type][3]
     series = create_series_func(channel, stream.epoch, 0, 0, lal.ADCCountUnit, 0)
     get_series_metadata_func(series, stream)
-    return numpy.dtype(_fr_type_map[channel_type][1]), 1.0 / series.deltaT
+    return np.dtype(_fr_type_map[channel_type][1]), 1.0 / series.deltaT
 
 
 def read(path, channel, start, end, check_integrity=False):
@@ -129,7 +130,7 @@ def read(path, channel, start, end, check_integrity=False):
 
     Returns
     -------
-    data : numpy.ndarray
+    data : np.ndarray
     epoch : float
         GPS time of the first sample.
     delta_t : float

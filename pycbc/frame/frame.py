@@ -18,9 +18,9 @@ This modules contains functions for reading in data from frame files or caches
 """
 
 import logging
-import os
 import re
 import warnings
+from pathlib import Path
 from urllib.parse import urlparse
 
 import numpy
@@ -56,22 +56,22 @@ def _read_channel(cache, channel, start, end, check_integrity=False):
             if abs(epoch - expected) > delta_t / 2 or delta_t != prev_delta_t:
                 if end is None:
                     break
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"{channel} has a gap, overlap or change of "
                     f"sample rate at GPS time {expected}"
                 )
         pieces.append((data, epoch, delta_t))
 
     if not pieces:
-        raise ValueError(f"No data found for {channel} at GPS time {start}")
+        raise ValueError(f"No data found for {channel} at GPS time {start}")  # noqa: TRY003
     data, epoch, delta_t = pieces[0]
     last_data, last_epoch, _ = pieces[-1]
     if epoch - start >= delta_t:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             f"{channel} data starts at {epoch}, after the requested start time {start}"
         )
     if end is not None and end - (last_epoch + len(last_data) * delta_t) >= delta_t:
-        raise ValueError(f"{channel} data ends before the requested end time {end}")
+        raise ValueError(f"{channel} data ends before the requested end time {end}")  # noqa: TRY003
     return TimeSeries(
         numpy.concatenate([p[0] for p in pieces]), delta_t=delta_t, epoch=epoch
     )
@@ -137,7 +137,7 @@ def read_frame(
         logger.info("Using frames that match regexp: %s", sieve)
         cache = cache.sieve(regex=sieve)
     if not cache:
-        raise ValueError(f"No frame files found in {location}")
+        raise ValueError(f"No frame files found in {location}")  # noqa: TRY003
 
     if start_time is None:
         start_time = cache[0].start
@@ -360,7 +360,7 @@ def write_frame(location, channels, timeseries):
         raise ValueError("Start and end times of TimeSeries must be integer seconds.")
 
     if location.endswith((".hdf", ".hdf5", ".h5")) or (
-        os.path.exists(location) and gwosc_hdf.is_format(location)
+        Path(location).exists() and gwosc_hdf.is_format(location)
     ):
         gwosc_hdf.write(location, channels, timeseries, gps_start_time, duration)
     else:
