@@ -323,6 +323,8 @@ def _worker_stats_cache(_):
     from pycbc.inference import models
 
     model = getattr(models._global_instance, "model", models._global_instance)
+    if model is None:
+        return {}
     # the evaluation this process is holding has not been moved in yet
     model._store_stats()
     fresh = {k: v for k, v in model._stats_cache.items() if k not in _handed_over}
@@ -495,7 +497,14 @@ class BaseModel(metaclass=ABCMeta):
         values = self.static_params.copy()
         values.update(params)
         self._current_params = self._transform_params(**values)
-        self._current_key = _stats_key(params)
+        self._current_key = _stats_key(
+            {
+                p: self._current_params[p]
+                for p in self.variable_params
+                if p in self._current_params
+            }
+            or params
+        )
         self._current_stats = ModelStats()
 
     def _store_stats(self):

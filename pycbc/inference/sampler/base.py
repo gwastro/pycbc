@@ -29,7 +29,7 @@ import logging
 import shutil
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-import numpy
+import numpy as np
 from six import add_metaclass
 
 from pycbc import distributions
@@ -145,28 +145,34 @@ class BaseSampler:
         model = self.model
         model.gather_stats_cache(getattr(self, "pool", None))
         params = list(model.variable_params)
+        if not params:
+            return {}
         samples = self.samples if samples is None else samples
-        shape = numpy.asarray(samples[params[0]]).shape
-        flat = {p: numpy.asarray(samples[p]).flatten() for p in params}
+        shape = np.asarray(samples[params[0]]).shape
+        flat = {p: np.asarray(samples[p]).flatten() for p in params}
         names = model.default_stats
-        out = numpy.full((flat[params[0]].size, len(names)), numpy.nan)
+        npoints = flat[params[0]].size
+        rows = []
         missed = 0
-        for i in range(out.shape[0]):
+        for i in range(npoints):
             point = {p: flat[p][i] for p in params}
             cached = model.cached_stats(point, names)
             if cached is None:
                 # not remembered: a worker we cannot reach, or a bound
                 # that dropped it. Evaluating fills the stats in.
+                if model.sampling_transforms is not None:
+                    point = model.sampling_transforms.apply(point)
                 model.update(**point)
                 _ = model.logposterior
                 cached = model.get_current_stats(names)
                 missed += 1
-            out[i] = cached
+            rows.append(cached)
         if missed:
-            logging.info(
-                "Recalculated model stats for %s of %s points", missed, out.shape[0]
-            )
-        return {name: out[:, j].reshape(shape) for j, name in enumerate(names)}
+            logger.info("Recalculated model stats for %s of %s points", missed, npoints)
+        return {
+            name: np.asarray([row[j] for row in rows]).reshape(shape)
+            for j, name in enumerate(names)
+        }
 
     def write_cached_stats(self):
         """
@@ -175,6 +181,8 @@ class BaseSampler:
         The MCMC samplers store them as they checkpoint; the rest drop them.
         Stats already in the file are left alone.
         """
+        if not self.model.variable_params:
+            return
         with self.io(self.checkpoint_file, "r") as fp:
             group = fp[fp.samples_group]
             missing = [s for s in self.model.default_stats if s not in group]
