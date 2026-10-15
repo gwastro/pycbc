@@ -21,24 +21,27 @@
 #
 # =============================================================================
 #
-"""Provides I/O that is specific to MCMC samplers.
-"""
+"""Provides I/O that is specific to MCMC samplers."""
 
-
-import numpy
 import argparse
 
+import numpy
 
-class CommonMCMCMetadataIO(object):
-    """Provides functions for reading/writing MCMC metadata to file.
+
+class CommonMCMCMetadataIO:
+    """
+    Provides functions for reading/writing MCMC metadata to file.
 
     The functions here are common to both standard MCMC (in which chains
     are independent) and ensemble MCMC (in which chains/walkers share
     information).
     """
+
     def write_resume_point(self):
-        """Keeps a list of the number of iterations that were in a file when a
-        run was resumed from a checkpoint."""
+        """
+        Keeps a list of the number of iterations that were in a file when a
+        run was resumed from a checkpoint.
+        """
         try:
             resume_pts = self.attrs["resume_points"].tolist()
         except KeyError:
@@ -52,37 +55,40 @@ class CommonMCMCMetadataIO(object):
 
     def write_niterations(self, niterations):
         """Writes the given number of iterations to the sampler group."""
-        self[self.sampler_group].attrs['niterations'] = niterations
+        self[self.sampler_group].attrs["niterations"] = niterations
 
     @property
     def niterations(self):
         """Returns the number of iterations the sampler was run for."""
-        return self[self.sampler_group].attrs['niterations']
+        return self[self.sampler_group].attrs["niterations"]
 
     @property
     def nwalkers(self):
-        """Returns the number of walkers used by the sampler.
+        """
+        Returns the number of walkers used by the sampler.
 
         Alias of ``nchains``.
         """
         try:
-            return self[self.sampler_group].attrs['nwalkers']
+            return self[self.sampler_group].attrs["nwalkers"]
         except KeyError:
-            return self[self.sampler_group].attrs['nchains']
+            return self[self.sampler_group].attrs["nchains"]
 
     @property
     def nchains(self):
-        """Returns the number of chains used by the sampler.
+        """
+        Returns the number of chains used by the sampler.
 
         Alias of ``nwalkers``.
         """
         try:
-            return self[self.sampler_group].attrs['nchains']
+            return self[self.sampler_group].attrs["nchains"]
         except KeyError:
-            return self[self.sampler_group].attrs['nwalkers']
+            return self[self.sampler_group].attrs["nwalkers"]
 
     def _thin_data(self, group, params, thin_interval):
-        """Thins data on disk by the given interval.
+        """
+        Thins data on disk by the given interval.
 
         This makes no effort to record the thinning interval that is applied.
 
@@ -94,11 +100,16 @@ class CommonMCMCMetadataIO(object):
             The list of dataset names to thin.
         thin_interval : int
             The interval to thin the samples on disk by.
+
         """
-        samples = self.read_raw_samples(params, thin_start=0,
-                                        thin_interval=thin_interval,
-                                        thin_end=None, flatten=False,
-                                        group=group)
+        samples = self.read_raw_samples(
+            params,
+            thin_start=0,
+            thin_interval=thin_interval,
+            thin_end=None,
+            flatten=False,
+            group=group,
+        )
         # now resize and write the data back to disk
         fpgroup = self[group]
         for param in params:
@@ -109,7 +120,8 @@ class CommonMCMCMetadataIO(object):
             fpgroup[param][:] = data
 
     def thin(self, thin_interval):
-        """Thins the samples on disk to the given thinning interval.
+        """
+        Thins the samples on disk to the given thinning interval.
 
         The interval must be a multiple of the file's current ``thinned_by``.
 
@@ -117,13 +129,15 @@ class CommonMCMCMetadataIO(object):
         ----------
         thin_interval : int
             The interval the samples on disk should be thinned by.
+
         """
         # get the new interval to thin by
         new_interval = thin_interval / self.thinned_by
         if new_interval % 1:
-            raise ValueError("thin interval ({}) must be a multiple of the "
-                             "current thinned_by ({})"
-                             .format(thin_interval, self.thinned_by))
+            raise ValueError(
+                f"thin interval ({thin_interval}) must be a multiple of the "
+                f"current thinned_by ({self.thinned_by})"
+            )
         new_interval = int(new_interval)
         # now thin the data on disk
         params = list(self[self.samples_group].keys())
@@ -133,29 +147,32 @@ class CommonMCMCMetadataIO(object):
 
     @property
     def thinned_by(self):
-        """Returns interval samples have been thinned by on disk.
+        """
+        Returns interval samples have been thinned by on disk.
 
         This looks for ``thinned_by`` in the samples group attrs. If none is
         found, will just return 1.
         """
         try:
-            thinned_by = self.attrs['thinned_by']
+            thinned_by = self.attrs["thinned_by"]
         except KeyError:
             thinned_by = 1
         return thinned_by
 
     @thinned_by.setter
     def thinned_by(self, thinned_by):
-        """Sets the thinned_by attribute.
+        """
+        Sets the thinned_by attribute.
 
         This is the interval that samples have been thinned by on disk. The
         given value is written to
         ``self[self.samples_group].attrs['thinned_by']``.
         """
-        self.attrs['thinned_by'] = int(thinned_by)
+        self.attrs["thinned_by"] = int(thinned_by)
 
     def last_iteration(self, parameter=None, group=None):
-        """Returns the iteration of the last sample of the given parameter.
+        """
+        Returns the iteration of the last sample of the given parameter.
 
         Parameters
         ----------
@@ -165,6 +182,7 @@ class CommonMCMCMetadataIO(object):
         group : str, optional
             The name of the group to get the last iteration from. Default is
             the ``samples_group``.
+
         """
         if group is None:
             group = self.samples_group
@@ -188,39 +206,42 @@ class CommonMCMCMetadataIO(object):
 
     def write_sampler_metadata(self, sampler):
         """Writes the sampler's metadata."""
-        self.attrs['sampler'] = sampler.name
+        self.attrs["sampler"] = sampler.name
         try:
-            self[self.sampler_group].attrs['nchains'] = sampler.nchains
+            self[self.sampler_group].attrs["nchains"] = sampler.nchains
         except ValueError:
-            self[self.sampler_group].attrs['nwalkers'] = sampler.nwalkers
+            self[self.sampler_group].attrs["nwalkers"] = sampler.nwalkers
         # write the model's metadata
         sampler.model.write_metadata(self)
 
     @property
     def is_burned_in(self):
-        """Returns whether or not chains are burned in.
+        """
+        Returns whether or not chains are burned in.
 
         Raises a ``ValueError`` if no burn in tests were done.
         """
         try:
-            return self[self.sampler_group]['is_burned_in'][()]
+            return self[self.sampler_group]["is_burned_in"][()]
         except KeyError:
             raise ValueError("No burn in tests were performed")
 
     @property
     def burn_in_iteration(self):
-        """Returns the burn in iteration of all the chains.
+        """
+        Returns the burn in iteration of all the chains.
 
         Raises a ``ValueError`` if no burn in tests were done.
         """
         try:
-            return self[self.sampler_group]['burn_in_iteration'][()]
+            return self[self.sampler_group]["burn_in_iteration"][()]
         except KeyError:
             raise ValueError("No burn in tests were performed")
 
     @property
     def burn_in_index(self):
-        """Returns the burn in index.
+        """
+        Returns the burn in index.
 
         This is the burn in iteration divided by the file's ``thinned_by``.
         Requires the class that this is used with has a ``burn_in_iteration``
@@ -230,19 +251,21 @@ class CommonMCMCMetadataIO(object):
 
     @property
     def act(self):
-        """The autocorrelation time (ACT).
+        """
+        The autocorrelation time (ACT).
 
         This is the ACL times the file's thinned by. Raises a ``ValueError``
         if the ACT has not been calculated.
         """
         try:
-            return self[self.sampler_group]['act'][()]
+            return self[self.sampler_group]["act"][()]
         except KeyError:
             raise ValueError("ACT has not been calculated")
 
     @act.setter
     def act(self, act):
-        """Writes the autocorrelation time(s).
+        """
+        Writes the autocorrelation time(s).
 
         ACT(s) are written to the ``sample_group`` as a dataset with name
         ``act``.
@@ -251,13 +274,15 @@ class CommonMCMCMetadataIO(object):
         ----------
         act : array or int
             ACT(s) to write.
+
         """
         # pylint: disable=no-member
-        self.write_data('act', act, path=self.sampler_group)
+        self.write_data("act", act, path=self.sampler_group)
 
     @property
     def raw_acts(self):
-        """Dictionary of parameter names -> raw autocorrelation time(s).
+        """
+        Dictionary of parameter names -> raw autocorrelation time(s).
 
         Depending on the sampler, the autocorrelation times may be floats,
         or [ntemps x] [nchains x] arrays.
@@ -265,7 +290,7 @@ class CommonMCMCMetadataIO(object):
         Raises a ``ValueError`` is no raw acts have been set.
         """
         try:
-            group = self[self.sampler_group]['raw_acts']
+            group = self[self.sampler_group]["raw_acts"]
         except KeyError:
             raise ValueError("ACTs have not been calculated")
         acts = {}
@@ -275,7 +300,8 @@ class CommonMCMCMetadataIO(object):
 
     @raw_acts.setter
     def raw_acts(self, acts):
-        """Writes the raw autocorrelation times.
+        """
+        Writes the raw autocorrelation times.
 
         The ACT of each parameter is saved to
         ``[sampler_group]/raw_acts/{param}']``. Works for all types of MCMC
@@ -285,14 +311,16 @@ class CommonMCMCMetadataIO(object):
         ----------
         acts : dict
             A dictionary of ACTs keyed by the parameter.
+
         """
-        path = self.sampler_group + '/raw_acts'
+        path = self.sampler_group + "/raw_acts"
         for param in acts:
             self.write_data(param, acts[param], path=path)
 
     @property
     def acl(self):
-        """The autocorrelation length (ACL) of the samples.
+        """
+        The autocorrelation length (ACL) of the samples.
 
         This is the autocorrelation time (ACT) divided by the file's
         ``thinned_by`` attribute. Raises a ``ValueError`` if the ACT has not
@@ -302,7 +330,8 @@ class CommonMCMCMetadataIO(object):
 
     @acl.setter
     def acl(self, acl):
-        """Sets the autocorrelation length (ACL) of the samples.
+        """
+        Sets the autocorrelation length (ACL) of the samples.
 
         This will convert the given value(s) to autocorrelation time(s) and
         save to the ``act`` attribute; see that attribute for details.
@@ -311,7 +340,8 @@ class CommonMCMCMetadataIO(object):
 
     @property
     def raw_acls(self):
-        """Dictionary of parameter names -> raw autocorrelation length(s).
+        """
+        Dictionary of parameter names -> raw autocorrelation length(s).
 
         Depending on the sampler, the autocorrelation lengths may be floats,
         or [ntemps x] [nchains x] arrays.
@@ -324,7 +354,8 @@ class CommonMCMCMetadataIO(object):
 
     @raw_acls.setter
     def raw_acls(self, acls):
-        """Sets the raw autocorrelation lengths.
+        """
+        Sets the raw autocorrelation lengths.
 
         The given ACLs are converted to autocorrelation times (ACTs) and saved
         to the ``raw_acts`` attribute; see that attribute for details.
@@ -333,19 +364,21 @@ class CommonMCMCMetadataIO(object):
         ----------
         acls : dict
             A dictionary of ACLs keyed by the parameter.
+
         """
         self.raw_acts = {p: acls[p] * self.thinned_by for p in acls}
 
     def _update_sampler_history(self):
-        """Writes the number of iterations, effective number of samples,
+        """
+        Writes the number of iterations, effective number of samples,
         autocorrelation times, and burn-in iteration to the history.
         """
-        path = '/'.join([self.sampler_group, 'checkpoint_history'])
+        path = "/".join([self.sampler_group, "checkpoint_history"])
         # write the current number of iterations
-        self.write_data('niterations', self.niterations, path=path,
-                        append=True)
-        self.write_data('effective_nsamples', self.effective_nsamples,
-                        path=path, append=True)
+        self.write_data("niterations", self.niterations, path=path, append=True)
+        self.write_data(
+            "effective_nsamples", self.effective_nsamples, path=path, append=True
+        )
         # write the act: we'll make sure that this is 2D, so that the acts
         # can be appened along the last dimension
         try:
@@ -354,8 +387,8 @@ class CommonMCMCMetadataIO(object):
             # no acts were calculate
             act = None
         if act is not None:
-            act = act.reshape(tuple(list(act.shape)+[1]))
-            self.write_data('act', act, path=path, append=True)
+            act = act.reshape(tuple(list(act.shape) + [1]))
+            self.write_data("act", act, path=path, append=True)
         # write the burn in iteration in the same way
         try:
             burn_in = self.burn_in_iteration
@@ -363,13 +396,13 @@ class CommonMCMCMetadataIO(object):
             # no burn in tests were done
             burn_in = None
         if burn_in is not None:
-            burn_in = burn_in.reshape(tuple(list(burn_in.shape)+[1]))
-            self.write_data('burn_in_iteration', burn_in, path=path,
-                            append=True)
+            burn_in = burn_in.reshape(tuple(list(burn_in.shape) + [1]))
+            self.write_data("burn_in_iteration", burn_in, path=path, append=True)
 
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
-        r"""Create a parser to parse sampler-specific arguments for loading
+        r"""
+        Create a parser to parse sampler-specific arguments for loading
         samples.
 
         Parameters
@@ -392,63 +425,85 @@ class CommonMCMCMetadataIO(object):
             An argument parser with th extra arguments added.
         actions : list of argparse.Action
             A list of the actions that were added.
+
         """
         if parser is None:
             parser = argparse.ArgumentParser(**kwargs)
         elif kwargs:
-            raise ValueError("No other keyword arguments should be provded if "
-                             "a parser is provided.")
+            raise ValueError(
+                "No other keyword arguments should be provded if a parser is provided."
+            )
         if skip_args is None:
             skip_args = []
         actions = []
-        if 'thin-start' not in skip_args:
+        if "thin-start" not in skip_args:
             act = parser.add_argument(
-                "--thin-start", type=int, default=None,
+                "--thin-start",
+                type=int,
+                default=None,
                 help="Sample number to start collecting samples. If "
-                     "none provided, will use the input file's `thin_start` "
-                     "attribute.")
+                "none provided, will use the input file's `thin_start` "
+                "attribute.",
+            )
             actions.append(act)
-        if 'thin-interval' not in skip_args:
+        if "thin-interval" not in skip_args:
             act = parser.add_argument(
-                "--thin-interval", type=int, default=None,
+                "--thin-interval",
+                type=int,
+                default=None,
                 help="Interval to use for thinning samples. If none provided, "
-                     "will use the input file's `thin_interval` attribute.")
+                "will use the input file's `thin_interval` attribute.",
+            )
             actions.append(act)
-        if 'thin-end' not in skip_args:
+        if "thin-end" not in skip_args:
             act = parser.add_argument(
-                "--thin-end", type=int, default=None,
+                "--thin-end",
+                type=int,
+                default=None,
                 help="Sample number to stop collecting samples. If "
-                     "none provided, will use the input file's `thin_end` "
-                     "attribute.")
+                "none provided, will use the input file's `thin_end` "
+                "attribute.",
+            )
             actions.append(act)
-        if 'iteration' not in skip_args:
+        if "iteration" not in skip_args:
             act = parser.add_argument(
-                "--iteration", type=int, default=None,
+                "--iteration",
+                type=int,
+                default=None,
                 help="Only retrieve the given iteration. To load "
-                     "the last n-th sampe use -n, e.g., -1 will "
-                     "load the last iteration. This overrides "
-                     "the thin-start/interval/end options.")
+                "the last n-th sampe use -n, e.g., -1 will "
+                "load the last iteration. This overrides "
+                "the thin-start/interval/end options.",
+            )
             actions.append(act)
-        if 'walkers' not in skip_args and 'chains' not in skip_args:
+        if "walkers" not in skip_args and "chains" not in skip_args:
             act = parser.add_argument(
-                "--walkers", "--chains", type=int, nargs="+", default=None,
+                "--walkers",
+                "--chains",
+                type=int,
+                nargs="+",
+                default=None,
                 help="Only retrieve samples from the listed "
-                     "walkers/chains. Default is to retrieve from all "
-                     "walkers/chains.")
+                "walkers/chains. Default is to retrieve from all "
+                "walkers/chains.",
+            )
             actions.append(act)
         return parser, actions
 
 
-class MCMCMetadataIO(object):
-    """Provides functions for reading/writing metadata to file for MCMCs in
+class MCMCMetadataIO:
+    """
+    Provides functions for reading/writing metadata to file for MCMCs in
     which all chains are independent of each other.
 
     Overrides the ``BaseInference`` file's ``thin_start`` and ``thin_interval``
     attributes. Instead of integers, these return arrays.
     """
+
     @property
     def thin_start(self):
-        """Returns the default thin start to use for reading samples.
+        """
+        Returns the default thin start to use for reading samples.
 
         If burn-in tests were done, this will return the burn-in index of every
         chain that has burned in. The start index for chains that have not
@@ -462,8 +517,9 @@ class MCMCMetadataIO(object):
             # replace any that have not been burned in with the number
             # of iterations; this will cause those chains to not return
             # any samples
-            thin_start[~self.is_burned_in] = \
-                int(numpy.ceil(self.niterations/self.thinned_by))
+            thin_start[~self.is_burned_in] = int(
+                numpy.ceil(self.niterations / self.thinned_by)
+            )
             return thin_start
         except ValueError:
             # no burn in, just return array of zeros
@@ -471,7 +527,8 @@ class MCMCMetadataIO(object):
 
     @property
     def thin_interval(self):
-        """Returns the default thin interval to use for reading samples.
+        """
+        Returns the default thin interval to use for reading samples.
 
         If a finite ACL exists in the file, will return that. Otherwise,
         returns 1.
@@ -485,13 +542,16 @@ class MCMCMetadataIO(object):
         return numpy.ceil(acl).astype(int)
 
 
-class EnsembleMCMCMetadataIO(object):
-    """Provides functions for reading/writing metadata to file for ensemble
+class EnsembleMCMCMetadataIO:
+    """
+    Provides functions for reading/writing metadata to file for ensemble
     MCMCs.
     """
+
     @property
     def thin_start(self):
-        """Returns the default thin start to use for reading samples.
+        """
+        Returns the default thin start to use for reading samples.
 
         If burn-in tests were done, returns the burn in index. Otherwise,
         returns 0.
@@ -504,7 +564,8 @@ class EnsembleMCMCMetadataIO(object):
 
     @property
     def thin_interval(self):
-        """Returns the default thin interval to use for reading samples.
+        """
+        Returns the default thin interval to use for reading samples.
 
         If a finite ACL exists in the file, will return that. Otherwise,
         returns 1.
@@ -520,9 +581,11 @@ class EnsembleMCMCMetadataIO(object):
         return acl
 
 
-def write_samples(fp, samples, parameters=None, last_iteration=None,
-                  samples_group=None, thin_by=None):
-    """Writes samples to the given file.
+def write_samples(
+    fp, samples, parameters=None, last_iteration=None, samples_group=None, thin_by=None
+):
+    """
+    Writes samples to the given file.
 
     This works for both standard MCMC and ensemble MCMC samplers without
     parallel tempering.
@@ -541,7 +604,7 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
     sample, then none of the samples will be written.
 
     Parameters
-    -----------
+    ----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
         BaseInferenceFile with CommonMCMCMetadataIO methods added.
@@ -564,21 +627,22 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
         Override the ``thinned_by`` attribute in the file with the given
         value. **Only set this if you are using this function to write
         something other than inference samples!**
+
     """
     nwalkers, nsamples = list(samples.values())[0].shape
-    assert all(p.shape == (nwalkers, nsamples)
-               for p in samples.values()), (
-           "all samples must have the same shape")
+    assert all(p.shape == (nwalkers, nsamples) for p in samples.values()), (
+        "all samples must have the same shape"
+    )
     if samples_group is None:
         samples_group = fp.samples_group
     if parameters is None:
         parameters = samples.keys()
     # thin the samples
-    samples = thin_samples_for_writing(fp, samples, parameters,
-                                       last_iteration, samples_group,
-                                       thin_by=thin_by)
+    samples = thin_samples_for_writing(
+        fp, samples, parameters, last_iteration, samples_group, thin_by=thin_by
+    )
     # loop over number of dimensions
-    group = samples_group + '/{name}'
+    group = samples_group + "/{name}"
     for param in parameters:
         dataset_name = group.format(name=param)
         data = samples[param]
@@ -597,22 +661,33 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
             # dataset doesn't exist yet
             istart = 0
             istop = istart + data.shape[1]
-            fp.create_dataset(dataset_name, (nwalkers, istop),
-                              maxshape=(nwalkers, None),
-                              dtype=data.dtype,
-                              fletcher32=True)
+            fp.create_dataset(
+                dataset_name,
+                (nwalkers, istop),
+                maxshape=(nwalkers, None),
+                dtype=data.dtype,
+                fletcher32=True,
+            )
         fp[dataset_name][:, istart:istop] = data
 
 
-def ensemble_read_raw_samples(fp, fields, thin_start=None,
-                              thin_interval=None, thin_end=None,
-                              iteration=None, walkers=None, flatten=True,
-                              group=None):
-    """Base function for reading samples from ensemble MCMC files without
+def ensemble_read_raw_samples(
+    fp,
+    fields,
+    thin_start=None,
+    thin_interval=None,
+    thin_end=None,
+    iteration=None,
+    walkers=None,
+    flatten=True,
+    group=None,
+):
+    """
+    Base function for reading samples from ensemble MCMC files without
     parallel tempering.
 
     Parameters
-    -----------
+    ----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
         BaseInferenceFile with EnsembleMCMCMetadataIO methods added.
@@ -643,18 +718,18 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     -------
     dict
         A dictionary of field name -> numpy array pairs.
+
     """
     if isinstance(fields, str):
         fields = [fields]
     # walkers to load
     widx, nwalkers = _ensemble_get_walker_index(fp, walkers)
     # get the slice to use
-    get_index = _ensemble_get_index(fp, thin_start, thin_interval, thin_end,
-                                    iteration)
+    get_index = _ensemble_get_index(fp, thin_start, thin_interval, thin_end, iteration)
     # load
     if group is None:
         group = fp.samples_group
-    group = group + '/{name}'
+    group = group + "/{name}"
     arrays = {}
     for name in fields:
         arr = fp[group.format(name=name)][widx, get_index]
@@ -669,7 +744,8 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
 
 
 def _ensemble_get_walker_index(fp, walkers=None):
-    """Convenience function to determine which walkers to load.
+    """
+    Convenience function to determine which walkers to load.
 
     Parameters
     ----------
@@ -685,6 +761,7 @@ def _ensemble_get_walker_index(fp, walkers=None):
         The walker indices to load.
     nwalkers : int
         The number of walkers that will be loaded.
+
     """
     if walkers is not None:
         widx = numpy.zeros(fp.nwalkers, dtype=bool)
@@ -696,12 +773,14 @@ def _ensemble_get_walker_index(fp, walkers=None):
     return widx, nwalkers
 
 
-def _ensemble_get_index(fp, thin_start=None, thin_interval=None, thin_end=None,
-                        iteration=None):
-    """Determines the sample indices to retrieve for an ensemble MCMC.
+def _ensemble_get_index(
+    fp, thin_start=None, thin_interval=None, thin_end=None, iteration=None
+):
+    """
+    Determines the sample indices to retrieve for an ensemble MCMC.
 
     Parameters
-    -----------
+    ----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
         BaseInferenceFile with EnsembleMCMCMetadataIO methods added.
@@ -721,6 +800,7 @@ def _ensemble_get_index(fp, thin_start=None, thin_interval=None, thin_end=None,
     -------
     slice or int
         The indices to retrieve.
+
     """
     if iteration is not None:
         get_index = int(iteration)
@@ -731,19 +811,21 @@ def _ensemble_get_index(fp, thin_start=None, thin_interval=None, thin_end=None,
             thin_interval = fp.thin_interval
         if thin_end is None:
             thin_end = fp.thin_end
-        get_index = fp.get_slice(thin_start=thin_start,
-                                 thin_interval=thin_interval,
-                                 thin_end=thin_end)
+        get_index = fp.get_slice(
+            thin_start=thin_start, thin_interval=thin_interval, thin_end=thin_end
+        )
     return get_index
 
 
-def _get_index(fp, chains, thin_start=None, thin_interval=None, thin_end=None,
-               iteration=None):
-    """Determines the sample indices to retrieve for an MCMC with independent
+def _get_index(
+    fp, chains, thin_start=None, thin_interval=None, thin_end=None, iteration=None
+):
+    """
+    Determines the sample indices to retrieve for an MCMC with independent
     chains.
 
     Parameters
-    -----------
+    ----------
     fp : BaseInferenceFile
         Open file handler to read samples from. Must be an instance of
         BaseInferenceFile with EnsembleMCMCMetadataIO methods added.
@@ -778,27 +860,32 @@ def _get_index(fp, chains, thin_start=None, thin_interval=None, thin_end=None,
     -------
     get_index : list of slice or int
         The indices to retrieve.
+
     """
     nchains = len(chains)
     # convenience function to get the right thin start/interval/end
     if iteration is not None:
-        get_index = [int(iteration)]*nchains
+        get_index = [int(iteration)] * nchains
     else:
         # get the slice arguments
         thin_start = _format_slice_arg(thin_start, fp.thin_start, chains)
-        thin_interval = _format_slice_arg(thin_interval, fp.thin_interval,
-                                          chains)
+        thin_interval = _format_slice_arg(thin_interval, fp.thin_interval, chains)
         thin_end = _format_slice_arg(thin_end, fp.thin_end, chains)
         # the slices to use for each chain
-        get_index = [fp.get_slice(thin_start=thin_start[ci],
-                                  thin_interval=thin_interval[ci],
-                                  thin_end=thin_end[ci])
-                     for ci in range(nchains)]
+        get_index = [
+            fp.get_slice(
+                thin_start=thin_start[ci],
+                thin_interval=thin_interval[ci],
+                thin_end=thin_end[ci],
+            )
+            for ci in range(nchains)
+        ]
     return get_index
 
 
 def _format_slice_arg(value, default, chains):
-    """Formats a start/interval/end argument for picking out chains.
+    """
+    Formats a start/interval/end argument for picking out chains.
 
     Parameters
     ----------
@@ -818,11 +905,12 @@ def _format_slice_arg(value, default, chains):
     array
         Array giving the value to use for each chain in ``chains``. The array
         will have the same length as ``chains``.
+
     """
     if value is None and default is None:
         # no value provided, and default is None, just return Nones with the
         # same length as chains
-        value = [None]*len(chains)
+        value = [None] * len(chains)
     elif value is None:
         # use the default, with the desired values extracted
         value = default[chains]
@@ -832,15 +920,18 @@ def _format_slice_arg(value, default, chains):
     elif len(value) != len(chains):
         # a list of values was provided, but the length does not match the
         # chains, raise an error
-        raise ValueError("Number of requested thin-start/interval/end values "
-                         "({}) does not match number of requested chains ({})"
-                         .format(len(value), len(chains)))
+        raise ValueError(
+            "Number of requested thin-start/interval/end values "
+            f"({len(value)}) does not match number of requested chains ({len(chains)})"
+        )
     return value
 
 
-def thin_samples_for_writing(fp, samples, parameters, last_iteration,
-                             group, thin_by=None):
-    """Thins samples for writing to disk.
+def thin_samples_for_writing(
+    fp, samples, parameters, last_iteration, group, thin_by=None
+):
+    """
+    Thins samples for writing to disk.
 
     The thinning interval to use is determined by the given file handler's
     ``thinned_by`` attribute. If that attribute is 1, just returns the samples.
@@ -873,14 +964,16 @@ def thin_samples_for_writing(fp, samples, parameters, last_iteration,
     -------
     dict :
         Dictionary of the thinned samples to write.
+
     """
     if thin_by is None:
         thin_by = fp.thinned_by
     if thin_by > 1:
         if last_iteration is None:
-            raise ValueError("File's thinned_by attribute is > 1 ({}), "
-                             "but last_iteration not provided."
-                             .format(thin_by))
+            raise ValueError(
+                f"File's thinned_by attribute is > 1 ({thin_by}), "
+                "but last_iteration not provided."
+            )
         thinned_samples = {}
         for param in parameters:
             data = samples[param]
@@ -892,8 +985,12 @@ def thin_samples_for_writing(fp, samples, parameters, last_iteration,
             # sample in samples. Subtracting the latter from the former - 1
             # (-1 to convert from iteration to index) therefore gives the index
             # in the samples data to start using samples.
-            thin_start = fp.last_iteration(param, group) + thin_by \
-                - (last_iteration - nsamples) - 1
+            thin_start = (
+                fp.last_iteration(param, group)
+                + thin_by
+                - (last_iteration - nsamples)
+                - 1
+            )
             thinned_samples[param] = data[..., thin_start::thin_by]
     else:
         thinned_samples = samples
@@ -901,7 +998,8 @@ def thin_samples_for_writing(fp, samples, parameters, last_iteration,
 
 
 def nsamples_in_chain(start_iter, interval, niterations):
-    """Calculates the number of samples in an MCMC chain given a thinning
+    """
+    Calculates the number of samples in an MCMC chain given a thinning
     start, end, and interval.
 
     This function will work with either python scalars, or numpy arrays.
@@ -922,6 +1020,7 @@ def nsamples_in_chain(start_iter, interval, niterations):
     -------
     num_samples : (array of) numpy.int
         The number of samples in a chain, >= 0.
+
     """
     # this is written in a slightly wonky way so that it will work with either
     # python scalars or numpy arrays; it is equivalent to:
@@ -931,9 +1030,9 @@ def nsamples_in_chain(start_iter, interval, niterations):
     #        count = max(niterations - start_iter, 0)
     slt0 = start_iter < 0
     sgt0 = start_iter >= 0
-    count = slt0*abs(start_iter) + sgt0*(niterations - start_iter)
+    count = slt0 * abs(start_iter) + sgt0 * (niterations - start_iter)
     # ensure count is in [0, niterations]
     cgtn = count > niterations
     cok = (count >= 0) & (count <= niterations)
-    count = cgtn*niterations + cok*count
+    count = cgtn * niterations + cok * count
     return numpy.ceil(count / interval).astype(int)

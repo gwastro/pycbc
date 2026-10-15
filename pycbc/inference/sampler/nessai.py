@@ -4,22 +4,23 @@ estimation.
 
 Documentation for nessai: https://nessai.readthedocs.io/en/latest/
 """
+
 import ast
 import logging
 import os
 
 import nessai.flowsampler
-import nessai.model
 import nessai.livepoint
+import nessai.model
 import nessai.utils.multiprocessing
 import nessai.utils.settings
 import numpy
 import numpy.lib.recfunctions as rfn
 
+from ...pool import choose_pool
+from ..io import NessaiFile, loadfile
 from .base import BaseSampler, setup_output
 from .base_mcmc import get_optional_arg_from_config
-from ..io import NessaiFile, loadfile
-from ...pool import choose_pool
 
 
 class NessaiSampler(BaseSampler):
@@ -107,12 +108,8 @@ class NessaiSampler(BaseSampler):
 
         if kwargs is not None:
             logging.info("Updating keyword arguments with %s", kwargs)
-            extra_kwds.update(
-                {k: v for k, v in kwargs.items() if k in default_kwds}
-            )
-            run_kwds.update(
-                {k: v for k, v in kwargs.items() if k in default_run_kwds}
-            )
+            extra_kwds.update({k: v for k, v in kwargs.items() if k in default_kwds})
+            run_kwds.update({k: v for k, v in kwargs.items() if k in default_run_kwds})
 
         if self._sampler is None:
             logging.info("Initialising nessai FlowSampler")
@@ -132,7 +129,8 @@ class NessaiSampler(BaseSampler):
 
     @staticmethod
     def get_default_kwds(importance_nested_sampler=False):
-        """Return lists of all allowed keyword arguments for nessai.
+        """
+        Return lists of all allowed keyword arguments for nessai.
 
         Returns
         -------
@@ -140,6 +138,7 @@ class NessaiSampler(BaseSampler):
             List of keyword arguments that can be passed to FlowSampler
         run_kwds: list
             List of keyword arguments that can be passed to FlowSampler.run
+
         """
         return nessai.utils.settings.get_all_kwargs(
             importance_nested_sampler=importance_nested_sampler,
@@ -147,17 +146,15 @@ class NessaiSampler(BaseSampler):
         )
 
     @classmethod
-    def from_config(
-        cls, cp, model, output_file=None, nprocesses=1, use_mpi=False
-    ):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """
         Loads the sampler from the given config file.
         """
         section = "sampler"
         # check name
-        assert (
-            cp.get(section, "name") == cls.name
-        ), "name in section [sampler] must match mine"
+        assert cp.get(section, "name") == cls.name, (
+            "name in section [sampler] must match mine"
+        )
 
         if cp.has_option(section, "importance_nested_sampler"):
             importance_nested_sampler = cp.getboolean(
@@ -167,9 +164,7 @@ class NessaiSampler(BaseSampler):
         else:
             importance_nested_sampler = False
 
-        default_kwds, default_run_kwds = cls.get_default_kwds(
-            importance_nested_sampler
-        )
+        default_kwds, default_run_kwds = cls.get_default_kwds(importance_nested_sampler)
 
         # Keyword arguments the user cannot configure via the config
         remove_kwds = [
@@ -206,15 +201,11 @@ class NessaiSampler(BaseSampler):
         # Specified kwds
         ignore_kwds = {"nlive", "name"}
         invalid_kwds = (
-            cp[section].keys()
-            - set().union(kwds.keys(), run_kwds.keys())
-            - ignore_kwds
+            cp[section].keys() - set().union(kwds.keys(), run_kwds.keys()) - ignore_kwds
         )
 
         if invalid_kwds:
-            raise RuntimeError(
-                f"Config contains unknown options: {invalid_kwds}"
-            )
+            raise RuntimeError(f"Config contains unknown options: {invalid_kwds}")
         logging.info("nessai keyword arguments: %s", kwds)
         logging.info("nessai run keyword arguments: %s", run_kwds)
 
@@ -242,13 +233,15 @@ class NessaiSampler(BaseSampler):
         initial_distribution=None,
         samples_file=None,
     ):
-        """Sets up the starting point for the sampler.
+        """
+        Sets up the starting point for the sampler.
 
         This is not used for nessai.
         """
 
     def checkpoint_callback(self, state):
-        """Callback for checkpointing.
+        """
+        Callback for checkpointing.
 
         This will be called periodically by nessai.
         """
@@ -266,9 +259,7 @@ class NessaiSampler(BaseSampler):
         try:
             with loadfile(self.checkpoint_file, "r") as fp:
                 self.resume_data = fp.read_pickled_data_from_checkpoint_file()
-            logging.info(
-                "Found valid checkpoint file: %s", self.checkpoint_file
-            )
+            logging.info("Found valid checkpoint file: %s", self.checkpoint_file)
         except Exception as e:
             logging.info("Failed to load checkpoint file with error: %s", e)
 
@@ -280,7 +271,8 @@ class NessaiSampler(BaseSampler):
         self.checkpoint()
 
     def write_results(self, filename):
-        """Write the results to a given file.
+        """
+        Write the results to a given file.
 
         Writes the nested samples, log-evidence and log-evidence error.
         """
@@ -293,7 +285,8 @@ class NessaiSampler(BaseSampler):
 
 
 class NessaiModel(nessai.model.Model):
-    """Wrapper for PyCBC Inference model class for use with nessai.
+    """
+    Wrapper for PyCBC Inference model class for use with nessai.
 
     Parameters
     ----------
@@ -301,6 +294,7 @@ class NessaiModel(nessai.model.Model):
         A model instance from PyCBC.
     loglikelihood_function : str
         Name of the log-likelihood method to call.
+
     """
 
     def __init__(self, model, loglikelihood_function=None):
@@ -316,11 +310,7 @@ class NessaiModel(nessai.model.Model):
         bounds = {}
         for dist in model.prior_distribution.distributions:
             bounds.update(
-                **{
-                    k: [v.min, v.max]
-                    for k, v in dist.bounds.items()
-                    if k in self.names
-                }
+                **{k: [v.min, v.max] for k, v in dist.bounds.items() if k in self.names}
             )
         self.bounds = bounds
         # Prior and likelihood are not vectorised
@@ -360,19 +350,20 @@ class NessaiModel(nessai.model.Model):
         return getattr(self.model, self.loglikelihood_function)
 
     def from_unit_hypercube(self, x):
-        """Map from the unit-hypercube to the prior.
+        """
+        Map from the unit-hypercube to the prior.
 
         This is the only direction the importance nested sampler needs.
         """
         out = x.copy()
-        inv = self.model.prior_distribution.cdfinv(
-            **{p: x[p] for p in self.names})
+        inv = self.model.prior_distribution.cdfinv(**{p: x[p] for p in self.names})
         for p in self.names:
             out[p] = inv[p]
         return out
 
     def to_unit_hypercube(self, x):
-        """Map to the unit-hypercube from the prior.
+        """
+        Map to the unit-hypercube from the prior.
 
         Not supported: pycbc distributions provide the inverse CDF but not
         the forward CDF needed here. Only nessai options that map the flow
@@ -380,5 +371,5 @@ class NessaiModel(nessai.model.Model):
         sampler.
         """
         raise NotImplementedError(
-            "pycbc does not provide the forward CDF needed to map to the "
-            "unit hypercube")
+            "pycbc does not provide the forward CDF needed to map to the unit hypercube"
+        )

@@ -16,21 +16,21 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Prints an RST table of available psd models.
-"""
+"""Prints an RST table of available psd models."""
 
+from _dict_to_rst import format_function, rst_dict_table
 
 from pycbc import psd
 
-from _dict_to_rst import (rst_dict_table, format_function)
+psds = {p: getattr(psd.analytical, p) for p in psd.analytical.get_psd_model_list()}
 
-psds = {p: getattr(psd.analytical, p)
-        for p in psd.analytical.get_psd_model_list()}
+tbl = rst_dict_table(
+    psds,
+    key_format="``{0}``".format,
+    header=("Name", "Function"),
+    val_format=format_function,
+)
 
-tbl = rst_dict_table(psds, key_format='``{0}``'.format,
-                     header=('Name', 'Function'),
-                     val_format=format_function)
-
-filename = 'psd_models-table.rst'
-with open(filename, 'w') as fp:
+filename = "psd_models-table.rst"
+with open(filename, "w") as fp:
     print(tbl, file=fp)

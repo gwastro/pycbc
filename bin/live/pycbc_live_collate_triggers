@@ -14,17 +14,17 @@
 
 """Find trigger files and combine them into a single hdf trigger merge file."""
 
-import numpy
 import argparse
-import h5py
-import os
 import logging
+import os
 
-from igwn_segments import segmentlist, segment
+import h5py
+import numpy
+from igwn_segments import segment, segmentlist
 
 import pycbc
-from pycbc.io import live as liveio
 from pycbc.events import cuts, veto
+from pycbc.io import live as liveio
 
 # Set up the command line argument parser
 parser = argparse.ArgumentParser(description=__doc__)
@@ -33,21 +33,17 @@ liveio.add_live_trigger_selection_options(parser)
 cuts.insert_cuts_option_group(parser)
 
 parser.add_argument(
-    '--ifos',
-    nargs='+',
+    "--ifos",
+    nargs="+",
     required=True,
-    help="The list of detectors to include triggers in the merged file"
+    help="The list of detectors to include triggers in the merged file",
 )
 
 parser.add_argument(
-    '--output-file',
-    required=True,
-    help='The output file containing merged triggers.'
+    "--output-file", required=True, help="The output file containing merged triggers."
 )
 parser.add_argument(
-    "--bank-file",
-    required=True,
-    help="The bank file used in the search"
+    "--bank-file", required=True, help="The bank file used in the search"
 )
 
 args = parser.parse_args()
@@ -68,22 +64,19 @@ args.trigger_cuts.append(f"end_time:{args.gps_end_time}:upper_inc")
 
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
-logging.info(
-    "Collating triggers to %s",
-    args.output_file
-)
+logging.info("Collating triggers to %s", args.output_file)
 
 # Some tracking objects
 file_count = 0
-n_triggers = {ifo: 0 for ifo in args.ifos}
-n_triggers_cut = {ifo: 0 for ifo in args.ifos}
+n_triggers = dict.fromkeys(args.ifos, 0)
+n_triggers_cut = dict.fromkeys(args.ifos, 0)
 segs = {ifo: segmentlist([]) for ifo in args.ifos}
 
-with h5py.File(args.bank_file,'r') as bank_file:
+with h5py.File(args.bank_file, "r") as bank_file:
     # Count the number of templates
-    n_templates = bank_file['template_hash'].size
+    n_templates = bank_file["template_hash"].size
 
-with h5py.File(args.output_file, 'w') as destination:
+with h5py.File(args.output_file, "w") as destination:
     # Create the ifo groups in the trigger file
     for ifo in args.ifos:
         if ifo not in destination:
@@ -92,21 +85,17 @@ with h5py.File(args.output_file, 'w') as destination:
     for file_count, source_file in enumerate(trigger_files):
         trigger_file = os.path.basename(source_file)
 
-        start_time = float(trigger_file.split('-')[2])
-        duration = float(trigger_file.split('-')[3][:-4])
+        start_time = float(trigger_file.split("-")[2])
+        duration = float(trigger_file.split("-")[3][:-4])
         end_time = start_time + duration
 
         if file_count % 100 == 0:
-            logging.info(
-                "Files appended: %d/%d",
-                file_count,
-                len(trigger_files)
-            )
+            logging.info("Files appended: %d/%d", file_count, len(trigger_files))
 
-        with h5py.File(source_file, 'r') as source:
+        with h5py.File(source_file, "r") as source:
             for ifo in args.ifos:
                 try:
-                    n_trigs_ifo = source[ifo]['snr'].size
+                    n_trigs_ifo = source[ifo]["snr"].size
                     n_triggers[ifo] += n_trigs_ifo
                 except KeyError:
                     # No triggers in this IFO in this file
@@ -116,14 +105,15 @@ with h5py.File(args.output_file, 'w') as destination:
                 segs[ifo].append(segment(start_time, end_time))
 
                 triggers = {
-                    k: source[ifo][k][:] for k in source[ifo].keys()
-                    if k not in ('loudest', 'stat', 'gates', 'psd')
+                    k: source[ifo][k][:]
+                    for k in source[ifo].keys()
+                    if k not in ("loudest", "stat", "gates", "psd")
                     and source[ifo][k].size == n_trigs_ifo
                 }
                 # The stored chisq is actually reduced chisq, so convert back
                 # to unreduced chisq using chisq_dof
-                tmpchisq = triggers['chisq'][:] * (2 * triggers['chisq_dof'][:] - 2)
-                triggers['chisq'][:] = tmpchisq
+                tmpchisq = triggers["chisq"][:] * (2 * triggers["chisq_dof"][:] - 2)
+                triggers["chisq"][:] = tmpchisq
 
                 # Apply the cuts to triggers
                 keep_idx = cuts.apply_trigger_cuts(triggers, trigger_cut_dict)
@@ -131,39 +121,30 @@ with h5py.File(args.output_file, 'w') as destination:
                 # triggers contains the datasets that we want to use for
                 # the template cuts, so here it can be used as the template bank
                 keep_idx = cuts.apply_template_cuts(
-                    triggers,
-                    template_cut_dict,
-                    template_ids=keep_idx
+                    triggers, template_cut_dict, template_ids=keep_idx
                 )
                 if not any(keep_idx):
                     # No triggers kept after cuts in this ifo for this file
                     continue
                 n_triggers_cut[ifo] += keep_idx.size
 
-                triggers = {
-                    k: triggers[k][keep_idx]
-                    for k in triggers.keys()
-                }
+                triggers = {k: triggers[k][keep_idx] for k in triggers}
 
-                if ('approximant' not in triggers) or (len(triggers['approximant']) == 0):
+                if ("approximant" not in triggers) or (
+                    len(triggers["approximant"]) == 0
+                ):
                     continue
 
                 for name, dataset in triggers.items():
                     if name in destination[ifo]:
                         # Append new data to existing dataset in destination
-                        if triggers[name].shape[0] == 0:
+                        if dataset.shape[0] == 0:
                             continue
-                        destination[ifo][name].resize(
-                            n_triggers_cut[ifo],
-                            axis=0
-                        )
-                        destination[ifo][name][-keep_idx.size:] = dataset
+                        destination[ifo][name].resize(n_triggers_cut[ifo], axis=0)
+                        destination[ifo][name][-keep_idx.size :] = dataset
                     else:
                         destination[ifo].create_dataset(
-                            name,
-                            data=dataset,
-                            chunks=True,
-                            maxshape=(None,)
+                            name, data=dataset, chunks=True, maxshape=(None,)
                         )
 
                 for attr_name, attr_value in source.attrs.items():
@@ -171,22 +152,19 @@ with h5py.File(args.output_file, 'w') as destination:
 
     for ifo in args.ifos:
         # Collect the segments, and output to the file
-        search_grp = destination[ifo].create_group('search')
+        search_grp = destination[ifo].create_group("search")
         segs[ifo].coalesce()
         seg_starts, seg_ends = veto.segments_to_start_end(segs[ifo])
         search_grp.create_dataset(
-            'end_time',
+            "end_time",
             data=seg_ends,
         )
         search_grp.create_dataset(
-            'start_time',
+            "start_time",
             data=seg_starts,
         )
         logging.info(
-            "Found %d %s triggers in %s seconds",
-            n_triggers[ifo],
-            ifo,
-            abs(segs[ifo])
+            "Found %d %s triggers in %s seconds", n_triggers[ifo], ifo, abs(segs[ifo])
         )
         if n_triggers[ifo] != n_triggers_cut[ifo]:
             logging.info(
@@ -199,7 +177,7 @@ with h5py.File(args.output_file, 'w') as destination:
         logging.info("Processing %s", ifo)
         triggers = destination[ifo]
         try:
-            template_ids = triggers['template_id'][:]
+            template_ids = triggers["template_id"][:]
         except KeyError:
             logging.info("No triggers for %s, skipping", ifo)
             continue
@@ -208,14 +186,12 @@ with h5py.File(args.output_file, 'w') as destination:
         sorted_indices = numpy.argsort(template_ids)
         sorted_template_ids = template_ids[sorted_indices]
         unique_template_ids, template_id_counts = numpy.unique(
-            sorted_template_ids,
-            return_counts=True
+            sorted_template_ids, return_counts=True
         )
         template_boundaries = numpy.searchsorted(
-            sorted_template_ids,
-            numpy.arange(n_templates)
+            sorted_template_ids, numpy.arange(n_templates)
         )
-        triggers['template_boundaries'] = template_boundaries
+        triggers["template_boundaries"] = template_boundaries
 
         # Sort other datasets by template_id so it makes sense
         # Datasets with the same length as the number of triggers:
@@ -224,29 +200,33 @@ with h5py.File(args.output_file, 'w') as destination:
         #   template_duration, template_hash, template_id
         for key in triggers.keys():
             if len(triggers[key]) == len(template_ids):
-                logging.info('Sorting %s by template id', key)
+                logging.info("Sorting %s by template id", key)
                 sorted_key = triggers[key][:][sorted_indices]
                 triggers[key][:] = sorted_key
 
         logging.info("Setting up region references")
         # Datasets which need region references:
-        region_ref_datasets = ('chisq_dof', 'chisq', 'coa_phase',
-                               'end_time', 'sg_chisq', 'snr',
-                               'template_duration', 'sigmasq')
-        if 'psd_var_val' in triggers.keys():
-            region_ref_datasets += ('psd_var_val',)
-        if 'dq_state' in triggers.keys():
-            region_ref_datasets += ('dq_state',)
+        region_ref_datasets = (
+            "chisq_dof",
+            "chisq",
+            "coa_phase",
+            "end_time",
+            "sg_chisq",
+            "snr",
+            "template_duration",
+            "sigmasq",
+        )
+        if "psd_var_val" in triggers.keys():
+            region_ref_datasets += ("psd_var_val",)
+        if "dq_state" in triggers.keys():
+            region_ref_datasets += ("dq_state",)
 
         start_boundaries = template_boundaries
         end_boundaries = numpy.roll(start_boundaries, -1)
         end_boundaries[-1] = len(template_ids)
 
         for dataset in region_ref_datasets:
-            logging.info(
-                "Region references for %s",
-                dataset
-            )
+            logging.info("Region references for %s", dataset)
             refs = [
                 triggers[dataset].regionref[l:r]
                 for l, r in zip(start_boundaries, end_boundaries)
@@ -254,9 +234,9 @@ with h5py.File(args.output_file, 'w') as destination:
 
             logging.info("Adding to file")
             triggers.create_dataset(
-                dataset + '_template',
+                dataset + "_template",
                 data=refs,
-                dtype=h5py.special_dtype(ref=h5py.RegionReference)
+                dtype=h5py.special_dtype(ref=h5py.RegionReference),
             )
 
 logging.info("Done!")

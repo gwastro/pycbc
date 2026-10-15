@@ -23,6 +23,7 @@
 #
 
 import cupy as cp
+
 from .matchedfilter import _BaseCorrelator
 
 # Here X,Y,Z are "type placeholder"s, so this covers 32 and 64 bit inputs.
@@ -30,14 +31,13 @@ from .matchedfilter import _BaseCorrelator
 # I've also made this work for mixed types (32 bit -> 64 bit), but this means
 # we need to always supply the output, which we do.
 correlate_kernel = cp.ElementwiseKernel(
-    "X x, Y y",
-    "Z z",
-    "z = conj(x) * y",
-    "correlate_kernel"
+    "X x, Y y", "Z z", "z = conj(x) * y", "correlate_kernel"
 )
+
 
 def correlate(a, b, out):
     correlate_kernel(a.data, b.data, out.data)
+
 
 class CUPYCorrelator(_BaseCorrelator):
     def __init__(self, x, y, z):
@@ -48,7 +48,6 @@ class CUPYCorrelator(_BaseCorrelator):
     def correlate(self):
         correlate_kernel(self.x, self.y, self.z)
 
+
 def _correlate_factory(x, y, z):
     return CUPYCorrelator
-
-

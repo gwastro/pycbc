@@ -16,20 +16,22 @@
 This modules provides classes for evaluating PDF, logPDF, CDF and inverse CDF
 from external arbitrary distributions, and drawing samples from them.
 """
-import logging
-import importlib
-import numpy as np
 
+import importlib
+import logging
+
+import numpy as np
 import scipy.integrate as scipy_integrate
 import scipy.interpolate as scipy_interpolate
 
 from pycbc import VARARGS_DELIM
 
-logger = logging.getLogger('pycbc.distributions.external')
+logger = logging.getLogger("pycbc.distributions.external")
 
 
-class External(object):
-    """ Distribution defined by external cdfinv and logpdf functions
+class External:
+    """
+    Distribution defined by external cdfinv and logpdf functions
 
     To add to an inference configuration file:
 
@@ -69,11 +71,12 @@ class External(object):
     ...     return kwds
     >>> e = External(['x', 'y'], logpdf, cdfinv=cdfinv)
     >>> e.rvs(size=10)
+
     """
+
     name = "external"
 
-    def __init__(self, params=None, logpdf=None,
-                 rvs=None, cdfinv=None, **kwds):
+    def __init__(self, params=None, logpdf=None, rvs=None, cdfinv=None, **kwds):
         self.params = params
         self.logpdf = logpdf
         self.cdfinv = cdfinv
@@ -83,11 +86,10 @@ class External(object):
             raise ValueError("Must provide either rvs or cdfinv")
 
     def rvs(self, size=1, **kwds):
-        "Draw random value"
+        """Draw random value"""
         if self._rvs:
             return self._rvs(size=size)
-        samples = {param: np.random.uniform(0, 1, size=size)
-                   for param in self.params}
+        samples = {param: np.random.uniform(0, 1, size=size) for param in self.params}
         return self.cdfinv(**samples)
 
     def apply_boundary_conditions(self, **params):
@@ -100,26 +102,27 @@ class External(object):
     def from_config(cls, cp, section, variable_args):
         tag = variable_args
         params = variable_args.split(VARARGS_DELIM)
-        modulestr = cp.get_opt_tag(section, 'module', tag)
+        modulestr = cp.get_opt_tag(section, "module", tag)
         mod = importlib.import_module(modulestr)
 
-        logpdfstr = cp.get_opt_tag(section, 'logpdf', tag)
+        logpdfstr = cp.get_opt_tag(section, "logpdf", tag)
         logpdf = getattr(mod, logpdfstr)
 
         cdfinv = rvs = None
-        if cp.has_option_tag(section, 'cdfinv', tag):
-            cdfinvstr = cp.get_opt_tag(section, 'cdfinv', tag)
+        if cp.has_option_tag(section, "cdfinv", tag):
+            cdfinvstr = cp.get_opt_tag(section, "cdfinv", tag)
             cdfinv = getattr(mod, cdfinvstr)
 
-        if cp.has_option_tag(section, 'rvs', tag):
-            rvsstr = cp.get_opt_tag(section, 'rvs', tag)
+        if cp.has_option_tag(section, "rvs", tag):
+            rvsstr = cp.get_opt_tag(section, "rvs", tag)
             rvs = getattr(mod, rvsstr)
 
         return cls(params=params, logpdf=logpdf, rvs=rvs, cdfinv=cdfinv)
 
 
 class DistributionFunctionFromFile(External):
-    r"""Evaluating PDF, logPDF, CDF and inverse CDF from the external
+    r"""
+    Evaluating PDF, logPDF, CDF and inverse CDF from the external
         density function.
 
     To add to an inference configuration file:
@@ -153,19 +156,20 @@ class DistributionFunctionFromFile(External):
     This class is different from `pycbc.distributions.arbitrary.FromFile`,
     which needs samples from the hdf file to construct the PDF by using KDE.
     This class reads in any continuous functions of the parameter.
+
     """
+
     name = "external_func_fromfile"
 
-    def __init__(self, params=None, file_path=None,
-                 column_index=None, **kwargs):
+    def __init__(self, params=None, file_path=None, column_index=None, **kwargs):
         super().__init__(cdfinv=self._cdfinv, logpdf=self.logpdf)
         self.params = params
-        self.data = np.loadtxt(fname=file_path, unpack=True, comments='#')
+        self.data = np.loadtxt(fname=file_path, unpack=True, comments="#")
         self.column_index = int(column_index)
-        self.epsabs = kwargs.get('epsabs', 1.49e-05)
-        self.epsrel = kwargs.get('epsrel', 1.49e-05)
+        self.epsabs = kwargs.get("epsabs", 1.49e-05)
+        self.epsrel = kwargs.get("epsrel", 1.49e-05)
         self.x_list = np.linspace(self.data[0][0], self.data[0][-1], 1000)
-        self.interp = {'pdf': callable, 'cdf': callable, 'cdfinv': callable}
+        self.interp = {"pdf": callable, "cdf": callable, "cdfinv": callable}
         if not file_path:
             raise ValueError("Must provide the path to density function file.")
 
@@ -174,19 +178,30 @@ class DistributionFunctionFromFile(External):
         return self._logpdf(x, **kwargs)
 
     def _pdf(self, x010, **kwargs):
-        """Calculate and interpolate the PDF by using the given density
-        function, then return the corresponding value at the given x."""
-        if self.interp['pdf'] == callable:
+        """
+        Calculate and interpolate the PDF by using the given density
+        function, then return the corresponding value at the given x.
+        """
+        if self.interp["pdf"] == callable:
             func_unnorm = scipy_interpolate.interp1d(
-                self.data[0], self.data[self.column_index])
+                self.data[0], self.data[self.column_index]
+            )
             norm_const = scipy_integrate.quad(
-                func_unnorm, self.data[0][0], self.data[0][-1],
-                epsabs=self.epsabs, epsrel=self.epsrel, limit=500,
-                **kwargs)[0]
-            self.interp['pdf'] = scipy_interpolate.interp1d(
-                self.data[0], self.data[self.column_index]/norm_const,
-                bounds_error=False, fill_value=0)
-        pdf_val = np.float64(self.interp['pdf'](x010))
+                func_unnorm,
+                self.data[0][0],
+                self.data[0][-1],
+                epsabs=self.epsabs,
+                epsrel=self.epsrel,
+                limit=500,
+                **kwargs,
+            )[0]
+            self.interp["pdf"] = scipy_interpolate.interp1d(
+                self.data[0],
+                self.data[self.column_index] / norm_const,
+                bounds_error=False,
+                fill_value=0,
+            )
+        pdf_val = np.float64(self.interp["pdf"](x010))
         return pdf_val
 
     def _logpdf(self, x010, **kwargs):
@@ -195,41 +210,49 @@ class DistributionFunctionFromFile(External):
         return z
 
     def _cdf(self, x, **kwargs):
-        """Calculate and interpolate the CDF, then return the corresponding
-        value at the given x."""
-        if self.interp['cdf'] == callable:
+        """
+        Calculate and interpolate the CDF, then return the corresponding
+        value at the given x.
+        """
+        if self.interp["cdf"] == callable:
             cdf_list = []
             for x_val in self.x_list:
                 cdf_x = scipy_integrate.quad(
-                    self._pdf, self.data[0][0], x_val, epsabs=self.epsabs,
-                    epsrel=self.epsrel, limit=500, **kwargs)[0]
+                    self._pdf,
+                    self.data[0][0],
+                    x_val,
+                    epsabs=self.epsabs,
+                    epsrel=self.epsrel,
+                    limit=500,
+                    **kwargs,
+                )[0]
                 cdf_list.append(cdf_x)
-            self.interp['cdf'] = \
-                scipy_interpolate.interp1d(self.x_list, cdf_list)
-        cdf_val = np.float64(self.interp['cdf'](x))
+            self.interp["cdf"] = scipy_interpolate.interp1d(self.x_list, cdf_list)
+        cdf_val = np.float64(self.interp["cdf"](x))
         return cdf_val
 
     def _cdfinv(self, **kwargs):
-        """Calculate and interpolate the inverse CDF, then return the
-        corresponding parameter value at the given CDF value."""
-        if self.interp['cdfinv'] == callable:
+        """
+        Calculate and interpolate the inverse CDF, then return the
+        corresponding parameter value at the given CDF value.
+        """
+        if self.interp["cdfinv"] == callable:
             cdf_list = []
             for x_value in self.x_list:
                 cdf_list.append(self._cdf(x_value))
-            self.interp['cdfinv'] = \
-                scipy_interpolate.interp1d(cdf_list, self.x_list)
-        cdfinv_val = {self.params[0]: np.float64(
-            self.interp['cdfinv'](kwargs[self.params[0]]))}
+            self.interp["cdfinv"] = scipy_interpolate.interp1d(cdf_list, self.x_list)
+        cdfinv_val = {
+            self.params[0]: np.float64(self.interp["cdfinv"](kwargs[self.params[0]]))
+        }
         return cdfinv_val
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
         tag = variable_args
         params = variable_args.split(VARARGS_DELIM)
-        file_path = cp.get_opt_tag(section, 'file_path', tag)
-        column_index = cp.get_opt_tag(section, 'column_index', tag)
-        return cls(params=params, file_path=file_path,
-                   column_index=column_index)
+        file_path = cp.get_opt_tag(section, "file_path", tag)
+        column_index = cp.get_opt_tag(section, "column_index", tag)
+        return cls(params=params, file_path=file_path, column_index=column_index)
 
 
-__all__ = ['External', 'DistributionFunctionFromFile']
+__all__ = ["DistributionFunctionFromFile", "External"]

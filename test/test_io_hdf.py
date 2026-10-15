@@ -1,15 +1,16 @@
 import os
 import tempfile
 import unittest
+
 import numpy as np
 from utils import parse_args_cpu_only, simple_exit
+
 from pycbc.io.hdf import HFile
 
 parse_args_cpu_only("io.hdf")
 
 
 class TestIOHDF(unittest.TestCase):
-
     def test_hfile_select_basic_and_premask(self):
         """Test HFile.select basic selection, premask as indices/boolean."""
         with tempfile.TemporaryDirectory() as td:
@@ -21,9 +22,7 @@ class TestIOHDF(unittest.TestCase):
             with HFile(p, "r") as f:
                 # simple select on x > 5
                 idxs, (xs,) = f.select(lambda x: x > 5, "x")
-                np.testing.assert_array_equal(
-                    idxs, np.flatnonzero(np.arange(10) > 5)
-                )
+                np.testing.assert_array_equal(idxs, np.flatnonzero(np.arange(10) > 5))
                 np.testing.assert_array_equal(xs, np.arange(6, 10))
 
                 # premask as boolean array (only first 5 allowed)
@@ -40,9 +39,7 @@ class TestIOHDF(unittest.TestCase):
                 idxs3, _ = f.select(lambda x: x > 7, "x", premask=premask_idx)
                 # only index 8,9 pass (x>7) while premask restricts to 7,8,9
                 # -> final global indices 8 and 9
-                np.testing.assert_array_equal(
-                    idxs3, np.array([8, 9], dtype=np.uint64)
-                )
+                np.testing.assert_array_equal(idxs3, np.array([8, 9], dtype=np.uint64))
 
     def test_hfile_select_mismatched_lengths_raises(self):
         """If datasets have different lengths, select should raise error."""
@@ -52,9 +49,8 @@ class TestIOHDF(unittest.TestCase):
                 f.create_dataset("a", data=np.arange(5))
                 f.create_dataset("b", data=np.arange(6))
 
-            with HFile(p, "r") as f:
-                with self.assertRaises(RuntimeError):
-                    f.select(lambda a, b: a > 0, "a", "b")
+            with HFile(p, "r") as f, self.assertRaises(RuntimeError):
+                f.select(lambda a, b: a > 0, "a", "b")
 
     def test_filedata_mask_and_get_column(self):
         """Test FileData.mask and get_column with a simple filter_func."""
@@ -128,10 +124,7 @@ class TestIOHDF(unittest.TestCase):
         from pycbc.io.hdf import DictArray
 
         # 1. Default copy (inplace=False)
-        data = {
-            "a": np.array([10, 20, 30, 40]),
-            "b": np.array([100, 200, 300, 400])
-        }
+        data = {"a": np.array([10, 20, 30, 40]), "b": np.array([100, 200, 300, 400])}
         da = DictArray(data=data)
         da_sub = da.select([1, 3])
         self.assertIsNot(da_sub, da)

@@ -13,18 +13,21 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-"""Utilities to read PSDs from files.
-"""
+"""Utilities to read PSDs from files."""
 
 import logging
+
 import numpy
 import scipy.interpolate
+
 from pycbc.types import FrequencySeries
 
-logger = logging.getLogger('pycbc.psd.read')
+logger = logging.getLogger("pycbc.psd.read")
+
 
 def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
-    """Interpolate n PSD (as two 1-dimensional arrays of frequency and data)
+    """
+    Interpolate n PSD (as two 1-dimensional arrays of frequency and data)
     to the desired length, delta_f and low frequency cutoff.
 
     Parameters
@@ -44,49 +47,59 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     -------
     psd : FrequencySeries
         The generated frequency series.
+
     """
     # Only include points above the low frequency cutoff
     if freq_data[0] > low_freq_cutoff:
         raise ValueError(
-            f'Lowest frequency in input PSD data ({freq_data[0]} Hz) is '
-            f'higher than requested low-frequency cutoff ({low_freq_cutoff} Hz)'
+            f"Lowest frequency in input PSD data ({freq_data[0]} Hz) is "
+            f"higher than requested low-frequency cutoff ({low_freq_cutoff} Hz)"
         )
 
     kmin = int(low_freq_cutoff / delta_f)
     flow = kmin * delta_f
 
-    data_start = (0 if freq_data[0]==low_freq_cutoff else numpy.searchsorted(freq_data, flow) - 1)
+    data_start = (
+        0
+        if freq_data[0] == low_freq_cutoff
+        else numpy.searchsorted(freq_data, flow) - 1
+    )
     data_start = max(0, data_start)
     # If the cutoff is exactly in the file, start there
-    if freq_data[data_start+1] == low_freq_cutoff:
+    if freq_data[data_start + 1] == low_freq_cutoff:
         data_start += 1
 
     freq_data = freq_data[data_start:]
     noise_data = noise_data[data_start:]
 
     if (length - 1) * delta_f > freq_data[-1]:
-        logger.warning('Requested number of samples exceeds the highest '
-                       'available frequency in the input data, '
-                       'will use max available frequency instead. '
-                       '(requested %f Hz, available %f Hz)',
-                       (length - 1) * delta_f, freq_data[-1])
-        length = int(freq_data[-1]/delta_f + 1)
+        logger.warning(
+            "Requested number of samples exceeds the highest "
+            "available frequency in the input data, "
+            "will use max available frequency instead. "
+            "(requested %f Hz, available %f Hz)",
+            (length - 1) * delta_f,
+            freq_data[-1],
+        )
+        length = int(freq_data[-1] / delta_f + 1)
 
     flog = numpy.log(freq_data)
     slog = numpy.log(noise_data)
 
     psd_interp = scipy.interpolate.interp1d(
-        flog, slog, fill_value=(slog[0], slog[-1]), bounds_error=False)
+        flog, slog, fill_value=(slog[0], slog[-1]), bounds_error=False
+    )
     psd = numpy.zeros(length, dtype=numpy.float64)
 
     vals = numpy.log(numpy.arange(kmin, length) * delta_f)
-    psd[kmin:] =  numpy.exp(psd_interp(vals))
+    psd[kmin:] = numpy.exp(psd_interp(vals))
 
     return FrequencySeries(psd, delta_f=delta_f)
 
 
 def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
-    """Read an ASCII file containing one-sided ASD or PSD data and generate
+    """
+    Read an ASCII file containing one-sided ASD or PSD data and generate
     a frequency series with the corresponding PSD. The ASD or PSD data is
     interpolated in order to match the desired frequency resolution.
 
@@ -117,23 +130,25 @@ def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
     ValueError
         If the ASCII file contains negative, infinite or NaN frequencies
         or amplitude densities.
+
     """
     file_data = numpy.loadtxt(filename)
-    if (file_data < 0).any() or \
-                            numpy.logical_not(numpy.isfinite(file_data)).any():
-        raise ValueError('Invalid data in ' + filename)
+    if (file_data < 0).any() or numpy.logical_not(numpy.isfinite(file_data)).any():
+        raise ValueError("Invalid data in " + filename)
 
     freq_data = file_data[:, 0]
     noise_data = file_data[:, 1]
     if is_asd_file:
-        noise_data = noise_data ** 2
+        noise_data = noise_data**2
 
-    return from_numpy_arrays(freq_data, noise_data, length, delta_f,
-                             low_freq_cutoff)
+    return from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff)
 
-def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
-             root_name='psd'):
-    """Read a LIGOLW XML file containing one-sided PSD data and generate
+
+def from_xml(
+    filename, length, delta_f, low_freq_cutoff, ifo_string=None, root_name="psd"
+):
+    """
+    Read a LIGOLW XML file containing one-sided PSD data and generate
     a frequency series with the corresponding PSD. The data is interpolated in
     order to match the desired frequency resolution.
 
@@ -159,14 +174,16 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
     -------
     psd : FrequencySeries
         The generated frequency series.
+
     """
     import lal.series
     from igwn_ligolw import utils as ligolw_utils
 
-    with open(filename, 'rb') as fp:
+    with open(filename, "rb") as fp:
         ct_handler = lal.series.PSDContentHandler
-        xml_doc = ligolw_utils.load_fileobj(fp, compress='auto',
-                                            contenthandler=ct_handler)
+        xml_doc = ligolw_utils.load_fileobj(
+            fp, compress="auto", contenthandler=ct_handler
+        )
         psd_dict = lal.series.read_psd_xmldoc(xml_doc, root_name=root_name)
 
     if ifo_string is not None:
@@ -184,9 +201,9 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
     if f0 != 0.0:
         logger.warning(
             "XML PSD has non-zero start frequency f0=%.4f Hz; "
-            "applying offset to frequency axis.", f0
+            "applying offset to frequency axis.",
+            f0,
         )
     freq_data = f0 + numpy.arange(len(noise_data)) * psd_freq_series.deltaF
 
-    return from_numpy_arrays(freq_data, noise_data, length, delta_f,
-                             low_freq_cutoff)
+    return from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff)

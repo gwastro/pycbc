@@ -13,13 +13,17 @@
 # Public License for more details.
 
 
-import argparse, logging, numpy
+import argparse
+import logging
+
+import numpy
 from scipy.stats import norm
 
 import pycbc
+from pycbc import init_logging
 from pycbc.events import triggers
 from pycbc.io import HFile
-from pycbc import init_logging
+
 
 def dist(i1, i2, parvals, smoothing_width):
     """
@@ -29,12 +33,11 @@ def dist(i1, i2, parvals, smoothing_width):
     """
     dsq = 0
     for v, s in zip(parvals, smoothing_width):
-        dsq += (v[i2] - v[i1]) ** 2.0 / s ** 2.0
-    return dsq ** 0.5
+        dsq += (v[i2] - v[i1]) ** 2.0 / s**2.0
+    return dsq**0.5
 
 
-def smooth_templates(nabove, invalphan, ntotal, template_idx,
-                     weights=None):
+def smooth_templates(nabove, invalphan, ntotal, template_idx, weights=None):
     """
     Find the smoothed values according to the specified templates,
     weighted appropriately.
@@ -73,9 +76,11 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
     ntotal_t_smoothed = numpy.average(ntotal[template_idx], weights=weights)
     invalphan_mean = numpy.average(invalphan[template_idx], weights=weights)
 
-    return_tuple = (nabove_t_smoothed,
-                    nabove_t_smoothed / invalphan_mean,
-                    ntotal_t_smoothed)
+    return_tuple = (
+        nabove_t_smoothed,
+        nabove_t_smoothed / invalphan_mean,
+        ntotal_t_smoothed,
+    )
     return return_tuple
 
 
@@ -84,18 +89,17 @@ def smooth_tophat(nabove, invalphan, ntotal, dists):
     Smooth templates using a tophat function with templates within unit
     dists
     """
-    idx_within_area = numpy.flatnonzero(dists < 1.)
-    return smooth_templates(nabove,
-                            invalphan,
-                            ntotal,
-                            idx_within_area)
+    idx_within_area = numpy.flatnonzero(dists < 1.0)
+    return smooth_templates(nabove, invalphan, ntotal, idx_within_area)
+
 
 # This is the default number of triggers required for n_closest smoothing
 _default_total_trigs = 500
 
 
-def smooth_n_closest(nabove, invalphan, ntotal, dists,
-                     total_trigs=_default_total_trigs):
+def smooth_n_closest(
+    nabove, invalphan, ntotal, dists, total_trigs=_default_total_trigs
+):
     """
     Smooth templates according to the closest N templates
     No weighting is applied
@@ -107,8 +111,12 @@ def smooth_n_closest(nabove, invalphan, ntotal, dists,
     # starting at closest
     ntcs = nabove[dist_sort].cumsum()
     templates_required = numpy.searchsorted(ntcs, total_trigs) + 1
-    logging.debug("%d template(s) required to obtain %d(>%d) triggers",
-                  templates_required, ntcs[templates_required - 1], total_trigs)
+    logging.debug(
+        "%d template(s) required to obtain %d(>%d) triggers",
+        templates_required,
+        ntcs[templates_required - 1],
+        total_trigs,
+    )
     idx_to_smooth = dist_sort[:templates_required]
     return smooth_templates(nabove, invalphan, ntotal, idx_to_smooth)
 
@@ -118,15 +126,15 @@ def smooth_distance_weighted(nabove, invalphan, ntotal, dists):
     Smooth templates weighted according to dists in a unit-width normal
     distribution, truncated at three sigma
     """
-    idx_within_area = dists < 3.
+    idx_within_area = dists < 3.0
     weights = norm.pdf(dists[idx_within_area])
-    return smooth_templates(nabove, invalphan, ntotal,
-                            idx_within_area, weights=weights)
+    return smooth_templates(nabove, invalphan, ntotal, idx_within_area, weights=weights)
+
 
 _smooth_dist_func = {
-    'smooth_tophat': smooth_tophat,
-    'n_closest': smooth_n_closest,
-    'distance_weighted': smooth_distance_weighted
+    "smooth_tophat": smooth_tophat,
+    "n_closest": smooth_n_closest,
+    "distance_weighted": smooth_distance_weighted,
 }
 
 
@@ -140,8 +148,10 @@ def smooth(nabove, invalphan, ntotal, dists, smoothing_method, **kwargs):
     dists is an array of the distances of the templates from the
     template of interest
     """
-    return _smooth_dist_func[smoothing_method](nabove, invalphan,
-                                               ntotal, dists, **kwargs)
+    return _smooth_dist_func[smoothing_method](
+        nabove, invalphan, ntotal, dists, **kwargs
+    )
+
 
 # Number of smoothing lengths around the current template where
 # distances will be calculated
@@ -149,9 +159,9 @@ def smooth(nabove, invalphan, ntotal, dists, smoothing_method, **kwargs):
 # templates to contain n triggers, which we cannot know beforehand
 
 _smooth_cut = {
-    'smooth_tophat': 1,
-    'n_closest': numpy.inf,
-    'distance_weighted': 3,
+    "smooth_tophat": 1,
+    "n_closest": numpy.inf,
+    "distance_weighted": 3,
 }
 
 
@@ -159,12 +169,14 @@ def report_percentage(i, length):
     """
     Convenience function - report how long through the loop we are.
     Every ten percent
+
     Parameters
     ----------
     i: integer
         index being looped through
     length : integer
         number of loops we will go through in total
+
     """
     pc = int(numpy.floor(i / length * 100))
     pc_last = int(numpy.floor((i - 1) / length * 100))
@@ -172,64 +184,102 @@ def report_percentage(i, length):
         logging.info(f"Template {i} out of {length} ({pc:.0f}%)")
 
 
-parser = argparse.ArgumentParser(usage="",
+parser = argparse.ArgumentParser(
+    usage="",
     description="Smooth (regress) the dependence of coefficients describing "
-                "single-ifo background trigger distributions on a template "
-                "parameter, to suppress random noise in the resulting "
-                "background model.")
+    "single-ifo background trigger distributions on a template "
+    "parameter, to suppress random noise in the resulting "
+    "background model.",
+)
 
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--template-fit-file", required=True, nargs='+',
-                    help="hdf5 file(s) containing fit coefficients for each "
-                         "individual template. Can smooth over multiple "
-                         "files provided they correspond to the same bank "
-                         "and fitting settings. Required")
-parser.add_argument("--bank-file", required=True,
-                    help="hdf file containing template parameters. Required")
-parser.add_argument("--output", required=True,
-                    help="Location for output file containing smoothed fit "
-                         "coefficients. Required")
-parser.add_argument("--fit-param", nargs='+',
-                    help="Parameter(s) over which to regress the background "
-                         "fit coefficients. Required. Either read from "
-                         "template fit file or choose from mchirp, mtotal, "
-                         "chi_eff, eta, tau_0, tau_3, template_duration, "
-                         "a frequency cutoff in pnutils or a frequency function"
-                         "in LALSimulation. To regress the background over "
-                         "multiple parameters, provide them as a list.")
-parser.add_argument("--approximant", default="SEOBNRv4",
-                    help="Approximant for template duration. Default SEOBNRv4")
-parser.add_argument("--f-lower", type=float,
-                    help="Start frequency for calculating template duration.")
-parser.add_argument("--min-duration", type=float, default=0.,
-                    help="Fudge factor for templates with tiny or negative "
-                         "values of template_duration: add to duration values"
-                         " before fitting. Units seconds.")
-parser.add_argument("--log-param", nargs='+',
-                    help="Take the log of the fit param before smoothing. "
-                         "Must be a list corresponding to fit params.")
-parser.add_argument("--smoothing-width", type=float, nargs='+', required=True,
-                    help="Distance in the space of fit param values (or their"
-                         " logs) to smooth over. Required. Must be a list "
-                         "corresponding to fit params.")
-parser.add_argument("--smoothing-method", default="smooth_tophat",
-                    choices = _smooth_dist_func.keys(),
-                    help="Method used to smooth the fit parameters; "
-                         "'smooth_tophat' (default) finds all templates within "
-                         "unit distance from the template of interest "
-                         "(distance normalised by --smoothing-width). "
-                         "'n_closest' adds the closest templates to "
-                         "the smoothing until 500 triggers are reached. "
-                         "'distance_weighted' weights the closest templates "
-                         "with a normal distribution of width smoothing-width "
-                         "truncated at three smoothing-widths.")
-parser.add_argument("--smoothing-keywords", nargs='*',
-                    help="Keywords for the smoothing function, supplied "
-                         "as key:value pairs, e.g. total_trigs:500 to define "
-                         "the number of templates for n_closest smoothing.")
-parser.add_argument("--output-fits-by-template", action='store_true',
-                    help="If given, will output the input file fits to "
-                         "fit_by_template group.")
+parser.add_argument(
+    "--template-fit-file",
+    required=True,
+    nargs="+",
+    help="hdf5 file(s) containing fit coefficients for each "
+    "individual template. Can smooth over multiple "
+    "files provided they correspond to the same bank "
+    "and fitting settings. Required",
+)
+parser.add_argument(
+    "--bank-file",
+    required=True,
+    help="hdf file containing template parameters. Required",
+)
+parser.add_argument(
+    "--output",
+    required=True,
+    help="Location for output file containing smoothed fit coefficients. Required",
+)
+parser.add_argument(
+    "--fit-param",
+    nargs="+",
+    help="Parameter(s) over which to regress the background "
+    "fit coefficients. Required. Either read from "
+    "template fit file or choose from mchirp, mtotal, "
+    "chi_eff, eta, tau_0, tau_3, template_duration, "
+    "a frequency cutoff in pnutils or a frequency function"
+    "in LALSimulation. To regress the background over "
+    "multiple parameters, provide them as a list.",
+)
+parser.add_argument(
+    "--approximant",
+    default="SEOBNRv4",
+    help="Approximant for template duration. Default SEOBNRv4",
+)
+parser.add_argument(
+    "--f-lower", type=float, help="Start frequency for calculating template duration."
+)
+parser.add_argument(
+    "--min-duration",
+    type=float,
+    default=0.0,
+    help="Fudge factor for templates with tiny or negative "
+    "values of template_duration: add to duration values"
+    " before fitting. Units seconds.",
+)
+parser.add_argument(
+    "--log-param",
+    nargs="+",
+    help="Take the log of the fit param before smoothing. "
+    "Must be a list corresponding to fit params.",
+)
+parser.add_argument(
+    "--smoothing-width",
+    type=float,
+    nargs="+",
+    required=True,
+    help="Distance in the space of fit param values (or their"
+    " logs) to smooth over. Required. Must be a list "
+    "corresponding to fit params.",
+)
+parser.add_argument(
+    "--smoothing-method",
+    default="smooth_tophat",
+    choices=_smooth_dist_func.keys(),
+    help="Method used to smooth the fit parameters; "
+    "'smooth_tophat' (default) finds all templates within "
+    "unit distance from the template of interest "
+    "(distance normalised by --smoothing-width). "
+    "'n_closest' adds the closest templates to "
+    "the smoothing until 500 triggers are reached. "
+    "'distance_weighted' weights the closest templates "
+    "with a normal distribution of width smoothing-width "
+    "truncated at three smoothing-widths.",
+)
+parser.add_argument(
+    "--smoothing-keywords",
+    nargs="*",
+    help="Keywords for the smoothing function, supplied "
+    "as key:value pairs, e.g. total_trigs:500 to define "
+    "the number of templates for n_closest smoothing.",
+)
+parser.add_argument(
+    "--output-fits-by-template",
+    action="store_true",
+    help="If given, will output the input file fits to fit_by_template group.",
+)
 args = parser.parse_args()
 
 if args.smoothing_keywords:
@@ -240,14 +290,16 @@ else:
 kwarg_dict = {}
 for inputstr in smooth_kwargs:
     try:
-        key, value = inputstr.split(':')
-        if key == 'total_trigs':
+        key, value = inputstr.split(":")
+        if key == "total_trigs":
             value = int(value)
         kwarg_dict[key] = value
     except ValueError:
-        err_txt = "--smoothing-keywords must take input in the " \
-                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                  "Received {}".format(' '.join(args.smoothing_keywords))
+        err_txt = (
+            "--smoothing-keywords must take input in the "
+            "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... "
+            "Received {}".format(" ".join(args.smoothing_keywords))
+        )
         raise ValueError(err_txt)
 
 assert len(args.log_param) == len(args.fit_param) == len(args.smoothing_width)
@@ -270,24 +322,24 @@ logging.info("Loading input template fits")
 # they use the same bank
 num_templates = None
 for filename in args.template_fit_file:
-    with HFile(filename, 'r') as fits:
+    with HFile(filename, "r") as fits:
         if num_templates is None:
-            num_templates = fits['template_id'].size
-        elif not num_templates == fits['template_id'].size:
+            num_templates = fits["template_id"].size
+        elif not num_templates == fits["template_id"].size:
             raise RuntimeError(
                 "Input fit files correspond to different banks. "
                 "This situation is not yet supported."
             )
         # get attributes from the template-level fit
         for k in fits.attrs.keys():
-            if k == 'analysis_time':
+            if k == "analysis_time":
                 # For this attribute only, we want the mean
-                analysis_time += fits.attrs['analysis_time']
+                analysis_time += fits.attrs["analysis_time"]
                 continue
             if k not in attr_dict:
                 # It's the first time we encounter this attribute
                 attr_dict[k] = fits.attrs[k]
-            elif k == 'ifo':
+            elif k == "ifo":
                 # We don't mind if this attribute is different, however the
                 # output attributes will only correspond to the first file's
                 # IFO. Warn if different IFOs are being used.
@@ -295,7 +347,9 @@ for filename in args.template_fit_file:
                     logging.warning(
                         "Fit files correspond to different IFOs: %s and %s, "
                         "only %s is being used for output file attributes",
-                        attr_dict[k], fits.attrs[k], attr_dict[k],
+                        attr_dict[k],
+                        fits.attrs[k],
+                        attr_dict[k],
                     )
                 continue
             elif not attr_dict[k] == fits.attrs[k]:
@@ -306,19 +360,19 @@ for filename in args.template_fit_file:
                 raise RuntimeError(err_msg)
 
         # get template id and template parameter values
-        tid = numpy.concatenate((tid, fits['template_id'][:]))
-        nabove = numpy.concatenate((nabove, fits['count_above_thresh'][:]))
-        ntotal = numpy.concatenate((ntotal, fits['count_in_template'][:]))
-        alpha = numpy.concatenate((alpha, fits['fit_coeff'][:]))
+        tid = numpy.concatenate((tid, fits["template_id"][:]))
+        nabove = numpy.concatenate((nabove, fits["count_above_thresh"][:]))
+        ntotal = numpy.concatenate((ntotal, fits["count_in_template"][:]))
+        alpha = numpy.concatenate((alpha, fits["fit_coeff"][:]))
         try:
-            median_sigma = numpy.concatenate((median_sigma, fits['median_sigma'][:]))
+            median_sigma = numpy.concatenate((median_sigma, fits["median_sigma"][:]))
         except KeyError:
-            logging.info('Median_sigma dataset not present in input file')
+            logging.info("Median_sigma dataset not present in input file")
             median_sigma = None
 
 # For an exponential fit 1/alpha is linear in the trigger statistic values
 # so calculating weighted sums or averages of 1/alpha is appropriate
-invalpha = 1. / alpha
+invalpha = 1.0 / alpha
 invalphan = invalpha * nabove
 
 # convert the sum above into a mean
@@ -337,8 +391,8 @@ if len(args.template_fit_file) > 1:
     tidsort = tid.argsort()
 
     # For each unique template id, find the range of identical template ids
-    left = numpy.searchsorted(tid[tidsort], tid_unique, side='left')
-    right = numpy.searchsorted(tid[tidsort], tid_unique, side='right') - 1
+    left = numpy.searchsorted(tid[tidsort], tid_unique, side="left")
+    right = numpy.searchsorted(tid[tidsort], tid_unique, side="right") - 1
 
     # Precompute the sums so we can quickly look up differences
     nasum = nabove[tidsort].cumsum()
@@ -355,8 +409,7 @@ if len(args.template_fit_file) > 1:
         # we do not mess things up when nan values are given, so we
         # can't use the special cumsum fast option
         median_sigma = [
-            numpy.nanmean(median_sigma[tidsort[l:r]])
-            for l, r in zip(left, right)
+            numpy.nanmean(median_sigma[tidsort[l:r]]) for l, r in zip(left, right)
         ]
 
 if args.output_fits_by_template:
@@ -364,30 +417,33 @@ if args.output_fits_by_template:
     # For more than one input fit file, these values are averaged over the same
     # template in different files
     fbt_dict = {
-        'count_above_thresh': nabove,
-        'count_in_template': ntotal,
+        "count_above_thresh": nabove,
+        "count_in_template": ntotal,
     }
-    with numpy.errstate(invalid='ignore'):
+    with numpy.errstate(invalid="ignore"):
         # If n_above is zero, then we'll get an 'invalid' warning as we
         # are dividing zero by zero. This is normal, and we'll deal with
         # those properly just below, so ignore this so people don't see
         # a warning and panic
         alpha = nabove / invalphan
     alpha[nabove == 0] = -100
-    fbt_dict['fit_coeff'] = alpha
+    fbt_dict["fit_coeff"] = alpha
 
-n_required = _default_total_trigs if 'total_trigs' not in kwarg_dict \
-    else kwarg_dict['total_trigs']
-if args.smoothing_method == 'n_closest' and n_required > nabove.sum():
+n_required = (
+    _default_total_trigs
+    if "total_trigs" not in kwarg_dict
+    else kwarg_dict["total_trigs"]
+)
+if args.smoothing_method == "n_closest" and n_required > nabove.sum():
     logging.warning(
         "There are %.2f triggers above threshold, not enough to give a "
         "total of %d for smoothing",
         nabove.sum(),
-        n_required
+        n_required,
     )
 
-logging.info('Calculating template parameter values')
-bank = HFile(args.bank_file, 'r')
+logging.info("Calculating template parameter values")
+bank = HFile(args.bank_file, "r")
 m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
 
 parvals = []
@@ -395,12 +451,12 @@ parnames = []
 
 for param, slog in zip(args.fit_param, args.log_param):
     data = triggers.get_param(param, args, m1, m2, s1z, s2z)
-    if slog in ['false', 'False', 'FALSE']:
-        logging.info('Using param: %s', param)
+    if slog in ["false", "False", "FALSE"]:
+        logging.info("Using param: %s", param)
         parvals.append(data)
         parnames.append(param)
-    elif slog in ['true', 'True', 'TRUE']:
-        logging.info('Using log param: %s', param)
+    elif slog in ["true", "True", "TRUE"]:
+        logging.info("Using log param: %s", param)
         parvals.append(numpy.log(data))
         parnames.append(f"log({param})")
     else:
@@ -417,14 +473,14 @@ smoothed_vals = numpy.zeros((num_templates, 3))
 
 # Handle the one-dimensional case of tophat smoothing separately
 # as it is easier to optimize computational performance.
-if len(parvals) == 1 and args.smoothing_method == 'smooth_tophat':
+if len(parvals) == 1 and args.smoothing_method == "smooth_tophat":
     logging.info("Using efficient 1D tophat smoothing")
     sort = parvals[0].argsort()
     parvals_0 = parvals[0][sort]
     ntotal = ntotal[sort]
     nabove = nabove[sort]
     invalphan = invalphan[sort]
-    
+
     # For each template, find the range of nearby templates which fall within
     # the chosen window.
     left = numpy.searchsorted(parvals_0, parvals[0] - args.smoothing_width[0])
@@ -439,17 +495,18 @@ if len(parvals) == 1 and args.smoothing_method == 'smooth_tophat':
     num = right - left
 
     logging.info("Smoothing ...")
-    smoothed_vals[:,0] = (nasum[right] - nasum[left]) / num
+    smoothed_vals[:, 0] = (nasum[right] - nasum[left]) / num
     invmean = (invsum[right] - invsum[left]) / num
-    smoothed_vals[:,1] = smoothed_vals[:, 0] / invmean
-    smoothed_vals[:,2] = (ntsum[right] - ntsum[left]) / num
+    smoothed_vals[:, 1] = smoothed_vals[:, 0] / invmean
+    smoothed_vals[:, 2] = (ntsum[right] - ntsum[left]) / num
 
 elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     c = _smooth_cut[args.smoothing_method]
     cut_lengths = [s * c for s in args.smoothing_width]
     # Find the "longest" dimension in cut lengths
-    sort_dim = numpy.argmax([(v.max() - v.min()) / c
-                              for v, c in zip(parvals, cut_lengths)])
+    sort_dim = numpy.argmax(
+        [(v.max() - v.min()) / c for v, c in zip(parvals, cut_lengths)]
+    )
     logging.info("Sorting / Cutting on dimension %s", parnames[sort_dim])
 
     # Sort parvals by the sort dimension
@@ -458,17 +515,22 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
 
     # For each template, find the range of nearby templates which fall within
     # the chosen window.
-    lefts = numpy.searchsorted(parvals[sort_dim],
-            parvals[sort_dim] - cut_lengths[sort_dim])
-    rights = numpy.searchsorted(parvals[sort_dim],
-            parvals[sort_dim] + cut_lengths[sort_dim])
+    lefts = numpy.searchsorted(
+        parvals[sort_dim], parvals[sort_dim] - cut_lengths[sort_dim]
+    )
+    rights = numpy.searchsorted(
+        parvals[sort_dim], parvals[sort_dim] + cut_lengths[sort_dim]
+    )
     n_removed = num_templates - rights + lefts
-    logging.info("Cutting between %d and %d templates for each smoothing",
-                 n_removed.min(), n_removed.max())
+    logging.info(
+        "Cutting between %d and %d templates for each smoothing",
+        n_removed.min(),
+        n_removed.max(),
+    )
 
     # Sort the values to be smoothed by parameter value
     logging.info("Smoothing ...")
-    nabove_sort =  nabove[par_sort]
+    nabove_sort = nabove[par_sort]
     invalphan_sort = invalphan[par_sort]
     ntotal_sort = ntotal[par_sort]
     slices = [slice(l, r) for l, r in zip(lefts, rights)]
@@ -477,13 +539,13 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
         slc = slices[i]
         d = dist(i, slc, parvals, args.smoothing_width)
 
-        smoothed_vals[i,:] = smooth(
+        smoothed_vals[i, :] = smooth(
             nabove_sort[slc],
             invalphan_sort[slc],
             ntotal_sort[slc],
             d,
             args.smoothing_method,
-            **kwarg_dict
+            **kwarg_dict,
         )
 
     # Undo the sorts
@@ -497,31 +559,26 @@ else:
         report_percentage(i, num_templates)
         d = dist(i, rang, parvals, args.smoothing_width)
         smoothed_vals[i, :] = smooth(
-            nabove,
-            invalphan,
-            ntotal,
-            d,
-            args.smoothing_method,
-            **kwarg_dict
+            nabove, invalphan, ntotal, d, args.smoothing_method, **kwarg_dict
         )
 
 logging.info("Writing output")
-outfile = HFile(args.output, 'w')
-outfile['template_id'] = tid
-outfile['count_above_thresh'] = smoothed_vals[:, 0]
-outfile['fit_coeff'] = smoothed_vals[:, 1]
-outfile['count_in_template'] = smoothed_vals[:, 2]
+outfile = HFile(args.output, "w")
+outfile["template_id"] = tid
+outfile["count_above_thresh"] = smoothed_vals[:, 0]
+outfile["fit_coeff"] = smoothed_vals[:, 1]
+outfile["count_in_template"] = smoothed_vals[:, 2]
 if median_sigma is not None:
-    outfile['median_sigma'] = median_sigma
+    outfile["median_sigma"] = median_sigma
 
 for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
-    if slog in ['false', 'False', 'FALSE']:
+    if slog in ["false", "False", "FALSE"]:
         outfile[param] = vals
-    elif slog in ['true', 'True', 'TRUE']:
+    elif slog in ["true", "True", "TRUE"]:
         outfile[param] = numpy.exp(vals)
 
 if args.output_fits_by_template:
-    fbt_group = outfile.create_group('fit_by_template')
+    fbt_group = outfile.create_group("fit_by_template")
     for k, v in fbt_dict.items():
         fbt_group[k] = v
 
@@ -529,8 +586,8 @@ if args.output_fits_by_template:
 for k, v in attr_dict.items():
     outfile.attrs[k] = v
 if not analysis_time == 0:
-    outfile.attrs['analysis_time'] = analysis_time
+    outfile.attrs["analysis_time"] = analysis_time
 
 # Add a magic file attribute so that coinc_findtrigs can parse it
-outfile.attrs['stat'] = attr_dict['ifo'] + '-fit_coeffs'
-logging.info('Done!')
+outfile.attrs["stat"] = attr_dict["ifo"] + "-fit_coeffs"
+logging.info("Done!")

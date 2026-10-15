@@ -97,18 +97,13 @@ class TestQTransform(unittest.TestCase):
             self.assertGreater(qplane.max(), 0.0)
 
             # Test uninterpolated qtransform
-            times_raw, freqs_raw, qplane_raw = ts.qtransform(
-                frange=(30, 300)
-            )
-            self.assertEqual(
-                qplane_raw.shape, (len(freqs_raw), len(times_raw))
-            )
+            times_raw, freqs_raw, qplane_raw = ts.qtransform(frange=(30, 300))
+            self.assertEqual(qplane_raw.shape, (len(freqs_raw), len(times_raw)))
             self.assertTrue(numpy.isfinite(qplane_raw).all())
 
             # Test complex output
             times_c, freqs_c, qplane_c = ts.qtransform(
-                delta_t=ts.delta_t, delta_f=1.0, frange=(30, 300),
-                return_complex=True
+                delta_t=ts.delta_t, delta_f=1.0, frange=(30, 300), return_complex=True
             )
             self.assertEqual(qplane_c.shape, (len(freqs_c), n))
             self.assertEqual(qplane_c.dtype, numpy.complex128)

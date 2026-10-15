@@ -24,27 +24,33 @@
 """
 These are the unittests for noise generation
 """
+
 import unittest
 
 import numpy
-import pycbc.psd
 from utils import simple_exit
+
+import pycbc.psd
+from pycbc.fft.fftw import set_measure_level
 from pycbc.noise.gaussian import noise_from_psd as gaussian_noise_from_psd
 from pycbc.noise.gaussian import noise_from_string as gaussian_noise_from_string
-from pycbc.noise.reproduceable import noise_from_string
-from pycbc.fft.fftw import set_measure_level
-from pycbc.noise.reproduceable import normal
+from pycbc.noise.reproduceable import noise_from_string, normal
 from pycbc.types import FrequencySeries
+
 set_measure_level(0)
 
+
 class TestNoise(unittest.TestCase):
-    def setUp(self,*args):
-        self.ts = noise_from_string('aLIGOZeroDetHighPower',
-                                    100, 200,
-                                    sample_rate=1024,
-                                    seed=0,
-                                    low_frequency_cutoff=1.0,
-                                    filter_duration=64)
+    def setUp(self, *args):
+        self.ts = noise_from_string(
+            "aLIGOZeroDetHighPower",
+            100,
+            200,
+            sample_rate=1024,
+            seed=0,
+            low_frequency_cutoff=1.0,
+            filter_duration=64,
+        )
 
     def test_consistent_result(self):
         # This just checks that the result hasn't changed. If it has
@@ -57,8 +63,7 @@ class TestNoise(unittest.TestCase):
 
     def test_noise_psd(self):
         p = self.ts.psd(4)
-        p2 = pycbc.psd.from_string('aLIGOZeroDetHighPower', len(p),
-                                  p.delta_f, 1.0)
+        p2 = pycbc.psd.from_string("aLIGOZeroDetHighPower", len(p), p.delta_f, 1.0)
         kmin = int(1.0 / p.delta_f)
         kmax = int(500 / p.delta_f)
         ratio = p[kmin:kmax] / p2[kmin:kmax]
@@ -90,7 +95,7 @@ class TestGaussianNoise(unittest.TestCase):
         delta_t = 4.0 / 93
 
         noise = gaussian_noise_from_string(
-            'aLIGOZeroDetHighPower',
+            "aLIGOZeroDetHighPower",
             length,
             delta_t,
             seed=1234,
@@ -98,10 +103,11 @@ class TestGaussianNoise(unittest.TestCase):
 
         self.assertEqual(len(noise), length)
 
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNoise))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestGaussianNoise))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

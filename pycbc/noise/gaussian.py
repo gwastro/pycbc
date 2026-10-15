@@ -23,7 +23,8 @@
 #
 # =============================================================================
 #
-"""This module contains functions to generate gaussian noise colored with a
+"""
+This module contains functions to generate gaussian noise colored with a
 noise spectrum.
 """
 
@@ -37,7 +38,8 @@ lalsimulation = libutils.import_optional("lalsimulation")
 
 
 def frequency_noise_from_psd(psd, seed=None):
-    """Create noise with a given psd.
+    """
+    Create noise with a given psd.
 
     Return noise coloured with the given psd. The returned noise
     FrequencySeries has the same length and frequency step as the given psd.
@@ -52,9 +54,10 @@ def frequency_noise_from_psd(psd, seed=None):
         the seed will not be reset.
 
     Returns
-    --------
+    -------
     noise : FrequencySeriesSeries
         A FrequencySeries containing gaussian noise colored by the given psd.
+
     """
     sigma = 0.5 * (psd / psd.delta_f) ** (0.5)
     if seed is not None:
@@ -76,7 +79,8 @@ def frequency_noise_from_psd(psd, seed=None):
 
 
 def noise_from_psd(length, delta_t, psd, seed=None):
-    """Create noise with a given psd.
+    """
+    Create noise with a given psd.
 
     Return noise with a given psd. Note that if unique noise is desired
     a unique seed should be provided.
@@ -93,9 +97,10 @@ def noise_from_psd(length, delta_t, psd, seed=None):
         The seed to generate the noise.
 
     Returns
-    --------
+    -------
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd.
+
     """
     noise_ts = TimeSeries(zeros(length), delta_t=delta_t)
 
@@ -136,7 +141,8 @@ def noise_from_psd(length, delta_t, psd, seed=None):
 
 
 def noise_from_string(psd_name, length, delta_t, seed=None, low_frequency_cutoff=10.0):
-    """Create noise from an analytic PSD
+    """
+    Create noise from an analytic PSD
 
     Return noise from the chosen PSD. Note that if unique noise is desired
     a unique seed should be provided.
@@ -156,9 +162,10 @@ def noise_from_string(psd_name, length, delta_t, seed=None, low_frequency_cutoff
         The low frequency cutoff to pass to the PSD generation.
 
     Returns
-    --------
+    -------
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd.
+
     """
     import pycbc.psd
 

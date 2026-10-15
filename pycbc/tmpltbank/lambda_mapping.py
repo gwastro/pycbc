@@ -13,24 +13,31 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-import re
 import logging
+import re
+
 import numpy
 
-
-from pycbc.constants import MTSUN_SI, PI
 import pycbc.libutils
+from pycbc.constants import MTSUN_SI, PI
 
-lal = pycbc.libutils.import_optional('lal')
-lalsimulation = pycbc.libutils.import_optional('lalsimulation')
+lal = pycbc.libutils.import_optional("lal")
+lalsimulation = pycbc.libutils.import_optional("lalsimulation")
 
-logger = logging.getLogger('pycbc.tmpltbank.lambda_mapping')
+logger = logging.getLogger("pycbc.tmpltbank.lambda_mapping")
 
 # PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
-pycbcValidTmpltbankOrders = ['zeroPN','onePN','onePointFivePN','twoPN',\
-      'twoPointFivePN','threePN','threePointFivePN']
+pycbcValidTmpltbankOrders = [
+    "zeroPN",
+    "onePN",
+    "onePointFivePN",
+    "twoPN",
+    "twoPointFivePN",
+    "threePN",
+    "threePointFivePN",
+]
 
-pycbcValidOrdersHelpDescriptions="""
+pycbcValidOrdersHelpDescriptions = """
      * zeroPN: Will only include the dominant term (proportional to chirp mass)
      * onePN: Will only the leading orbit term and first correction at 1PN
      * onePointFivePN: Will include orbit and spin terms to 1.5PN.
@@ -58,47 +65,52 @@ def generate_mapping(order):
         A string containing a PN order. Valid values are given above.
 
     Returns
-    --------
+    -------
     mapping : dictionary
         A mapping between the active Lambda terms and index in the metric
+
     """
     mapping = {}
-    mapping['Lambda0'] = 0
-    if order == 'zeroPN':
+    mapping["Lambda0"] = 0
+    if order == "zeroPN":
         return mapping
-    mapping['Lambda2'] = 1
-    if order == 'onePN':
+    mapping["Lambda2"] = 1
+    if order == "onePN":
         return mapping
-    mapping['Lambda3'] = 2
-    if order == 'onePointFivePN':
+    mapping["Lambda3"] = 2
+    if order == "onePointFivePN":
         return mapping
-    mapping['Lambda4'] = 3
-    if order == 'twoPN':
+    mapping["Lambda4"] = 3
+    if order == "twoPN":
         return mapping
-    mapping['LogLambda5'] = 4
-    if order == 'twoPointFivePN':
+    mapping["LogLambda5"] = 4
+    if order == "twoPointFivePN":
         return mapping
-    mapping['Lambda6'] = 5
-    mapping['LogLambda6'] = 6
-    if order == 'threePN':
+    mapping["Lambda6"] = 5
+    mapping["LogLambda6"] = 6
+    if order == "threePN":
         return mapping
-    mapping['Lambda7'] = 7
-    if order == 'threePointFivePN':
+    mapping["Lambda7"] = 7
+    if order == "threePointFivePN":
         return mapping
     # For some as-of-yet unknown reason, the tidal terms are not giving correct
     # match estimates when enabled. So, for now, this order is commented out.
-    #if order == 'tidalTesting':
+    # if order == 'tidalTesting':
     #    mapping['Lambda10'] = 8
     #    mapping['Lambda12'] = 9
     #    return mapping
-    raise ValueError("Order %s is not understood." %(order))
+    raise ValueError("Order %s is not understood." % (order))
+
 
 # Override doc so the PN orders are added automatically to online docs
-generate_mapping.__doc__ = \
-    generate_mapping.__doc__.format(pycbcValidOrdersHelpDescriptions)
+generate_mapping.__doc__ = generate_mapping.__doc__.format(
+    pycbcValidOrdersHelpDescriptions
+)
+
 
 def generate_inverse_mapping(order):
-    """Genereate a lambda entry -> PN order map.
+    """
+    Genereate a lambda entry -> PN order map.
 
     This function will generate the opposite of generate mapping. So where
     generate_mapping gives dict[key] = item this will give
@@ -111,35 +123,41 @@ def generate_inverse_mapping(order):
         A string containing a PN order. Valid values are given above.
 
     Returns
-    --------
+    -------
     mapping : dictionary
         An inverse mapping between the active Lambda terms and index in the
         metric
+
     """
     mapping = generate_mapping(order)
     inv_mapping = {}
-    for key,value in mapping.items():
+    for key, value in mapping.items():
         inv_mapping[value] = key
 
     return inv_mapping
 
-generate_inverse_mapping.__doc__ = \
-    generate_inverse_mapping.__doc__.format(pycbcValidOrdersHelpDescriptions)
+
+generate_inverse_mapping.__doc__ = generate_inverse_mapping.__doc__.format(
+    pycbcValidOrdersHelpDescriptions
+)
+
 
 def get_ethinca_orders():
     """
     Returns the dictionary mapping TaylorF2 PN order names to twice-PN
     orders (powers of v/c)
     """
-    ethinca_orders = {"zeroPN"           : 0,
-                      "onePN"            : 2,
-                      "onePointFivePN"   : 3,
-                      "twoPN"            : 4,
-                      "twoPointFivePN"   : 5,
-                      "threePN"          : 6,
-                      "threePointFivePN" : 7
-                     }
+    ethinca_orders = {
+        "zeroPN": 0,
+        "onePN": 2,
+        "onePointFivePN": 3,
+        "twoPN": 4,
+        "twoPointFivePN": 5,
+        "threePN": 6,
+        "threePointFivePN": 7,
+    }
     return ethinca_orders
+
 
 def ethinca_order_from_string(order):
     """
@@ -153,16 +171,28 @@ def ethinca_order_from_string(order):
     Returns
     -------
     int
+
     """
     if order in get_ethinca_orders().keys():
         return get_ethinca_orders()[order]
-    else: raise ValueError("Order "+str(order)+" is not valid for ethinca"
-                           "calculation! Valid orders: "+
-                           str(get_ethinca_orders().keys()))
+    raise ValueError(
+        "Order " + str(order) + " is not valid for ethinca"
+        "calculation! Valid orders: " + str(get_ethinca_orders().keys())
+    )
 
-def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order,
-                     quadparam1=None, quadparam2=None, lambda1=None,
-                     lambda2=None):
+
+def get_chirp_params(
+    mass1,
+    mass2,
+    spin1z,
+    spin2z,
+    f0,
+    order,
+    quadparam1=None,
+    quadparam2=None,
+    lambda1=None,
+    lambda2=None,
+):
     """
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are:
@@ -190,11 +220,11 @@ def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order,
         spins to the lambda_i coordinate system. Valid orders given above.
 
     Returns
-    --------
+    -------
     lambdas : list of floats or numpy.arrays
         The lambda coordinates for the input system(s)
-    """
 
+    """
     # Determine whether array or single value input
     sngl_inp = False
     try:
@@ -239,15 +269,22 @@ def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order,
     lambda2_v = lal.CreateREAL8Vector(len(mass1))
     lambda2_v.data[:] = lambda2[:]
     dquadparam1_v = lal.CreateREAL8Vector(len(mass1))
-    dquadparam1_v.data[:] = quadparam1[:] - 1.
+    dquadparam1_v.data[:] = quadparam1[:] - 1.0
     dquadparam2_v = lal.CreateREAL8Vector(len(mass1))
-    dquadparam2_v.data[:] = quadparam2[:] - 1.
+    dquadparam2_v.data[:] = quadparam2[:] - 1.0
 
-    phasing_arr = lalsimulation.SimInspiralTaylorF2AlignedPhasingArray\
-        (mass1_v, mass2_v, spin1z_v, spin2z_v, lambda1_v, lambda2_v,
-         dquadparam1_v, dquadparam2_v)
+    phasing_arr = lalsimulation.SimInspiralTaylorF2AlignedPhasingArray(
+        mass1_v,
+        mass2_v,
+        spin1z_v,
+        spin2z_v,
+        lambda1_v,
+        lambda2_v,
+        dquadparam1_v,
+        dquadparam2_v,
+    )
 
-    vec_len = lalsimulation.PN_PHASING_SERIES_MAX_ORDER + 1;
+    vec_len = lalsimulation.PN_PHASING_SERIES_MAX_ORDER + 1
     phasing_vs = numpy.zeros([num_points, vec_len])
     phasing_vlogvs = numpy.zeros([num_points, vec_len])
     phasing_vlogvsqs = numpy.zeros([num_points, vec_len])
@@ -255,49 +292,52 @@ def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order,
     lng = len(mass1)
     jmp = lng * vec_len
     for idx in range(vec_len):
-        phasing_vs[:,idx] = phasing_arr.data[lng*idx : lng*(idx+1)]
-        phasing_vlogvs[:,idx] = \
-            phasing_arr.data[jmp + lng*idx : jmp + lng*(idx+1)]
-        phasing_vlogvsqs[:,idx] = \
-            phasing_arr.data[2*jmp + lng*idx : 2*jmp + lng*(idx+1)]
+        phasing_vs[:, idx] = phasing_arr.data[lng * idx : lng * (idx + 1)]
+        phasing_vlogvs[:, idx] = phasing_arr.data[
+            jmp + lng * idx : jmp + lng * (idx + 1)
+        ]
+        phasing_vlogvsqs[:, idx] = phasing_arr.data[
+            2 * jmp + lng * idx : 2 * jmp + lng * (idx + 1)
+        ]
 
-    pim = PI * (mass1 + mass2)*MTSUN_SI
+    pim = PI * (mass1 + mass2) * MTSUN_SI
     pmf = pim * f0
-    pmf13 = pmf**(1./3.)
-    logpim13 = numpy.log((pim)**(1./3.))
+    pmf13 = pmf ** (1.0 / 3.0)
+    logpim13 = numpy.log((pim) ** (1.0 / 3.0))
 
     mapping = generate_inverse_mapping(order)
     lambdas = []
-    lambda_str = '^Lambda([0-9]+)'
-    loglambda_str = '^LogLambda([0-9]+)'
-    logloglambda_str = '^LogLogLambda([0-9]+)'
+    lambda_str = "^Lambda([0-9]+)"
+    loglambda_str = "^LogLambda([0-9]+)"
+    logloglambda_str = "^LogLogLambda([0-9]+)"
     for idx in range(len(mapping.keys())):
         # RE magic engage!
         rematch = re.match(lambda_str, mapping[idx])
         if rematch:
             pn_order = int(rematch.groups()[0])
-            term = phasing_vs[:,pn_order]
-            term = term + logpim13 * phasing_vlogvs[:,pn_order]
-            lambdas.append(term * pmf13**(-5+pn_order))
+            term = phasing_vs[:, pn_order]
+            term = term + logpim13 * phasing_vlogvs[:, pn_order]
+            lambdas.append(term * pmf13 ** (-5 + pn_order))
             continue
         rematch = re.match(loglambda_str, mapping[idx])
         if rematch:
             pn_order = int(rematch.groups()[0])
-            lambdas.append((phasing_vlogvs[:,pn_order]) * pmf13**(-5+pn_order))
+            lambdas.append((phasing_vlogvs[:, pn_order]) * pmf13 ** (-5 + pn_order))
             continue
         rematch = re.match(logloglambda_str, mapping[idx])
         if rematch:
             raise ValueError("LOGLOG terms are not implemented")
-            #pn_order = int(rematch.groups()[0])
-            #lambdas.append(phasing_vlogvsqs[:,pn_order] * pmf13**(-5+pn_order))
-            #continue
-        err_msg = "Failed to parse " +  mapping[idx]
+            # pn_order = int(rematch.groups()[0])
+            # lambdas.append(phasing_vlogvsqs[:,pn_order] * pmf13**(-5+pn_order))
+            # continue
+        err_msg = "Failed to parse " + mapping[idx]
         raise ValueError(err_msg)
 
     if sngl_inp:
         return [l[0] for l in lambdas]
-    else:
-        return lambdas
+    return lambdas
 
-get_chirp_params.__doc__ = \
-    get_chirp_params.__doc__.format(pycbcValidOrdersHelpDescriptions)
+
+get_chirp_params.__doc__ = get_chirp_params.__doc__.format(
+    pycbcValidOrdersHelpDescriptions
+)

@@ -1,9 +1,11 @@
 import os
-import unittest
 import tempfile
+import unittest
+
 import h5py
 import numpy as np
-from utils import simple_exit, parse_args_cpu_only
+from utils import parse_args_cpu_only, simple_exit
+
 from pycbc.io.hdf import HFile, HGroup
 
 parse_args_cpu_only("io.hgroup")
@@ -43,9 +45,7 @@ class TestIOHFile(unittest.TestCase):
             with HFile(p, "w") as f:
                 # This is a dataset which has been initialised without any data,
                 # but has a numeric dtype set
-                f.create_dataset(
-                    "shape_based_with_dtype", shape=(10,), dtype="f8"
-                )
+                f.create_dataset("shape_based_with_dtype", shape=(10,), dtype="f8")
                 should_be_checksummed.append("shape_based_with_dtype")
 
                 # Make a shape-based dataset where dtype isnt given
@@ -95,9 +95,7 @@ class TestIOHFile(unittest.TestCase):
                 should_not_be_checksummed.append("data_str_list")
 
                 # Make an object array from some string data
-                f.create_dataset(
-                    "data_obj_list", data=np.array(str_list, dtype=object)
-                )
+                f.create_dataset("data_obj_list", data=np.array(str_list, dtype=object))
                 should_not_be_checksummed.append("data_obj_list")
 
                 # Make a datasets from scalars:
@@ -114,8 +112,7 @@ class TestIOHFile(unittest.TestCase):
                     d = f[dataset_name]
                     self.assertTrue(
                         _dataset_has_checksumming(d),
-                        "checksumming should be enabled for %s dataset"
-                        % dataset_name,
+                        "checksumming should be enabled for %s dataset" % dataset_name,
                     )
                 for dataset_name in should_not_be_checksummed:
                     d = f[dataset_name]
@@ -153,7 +150,8 @@ class TestIOHFile(unittest.TestCase):
                 )
 
     def test_create_dataset_incompatible_dtype_raises(self):
-        """Creating a dataset where data cannot be converted to the
+        """
+        Creating a dataset where data cannot be converted to the
         requested dtype should raise a TypeError or ValueError.
         """
         with tempfile.TemporaryDirectory() as td:

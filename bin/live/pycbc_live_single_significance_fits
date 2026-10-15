@@ -12,52 +12,69 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-"""Fit a background model to single-detector triggers from PyCBC Live.
+"""
+Fit a background model to single-detector triggers from PyCBC Live.
 
-See https://arxiv.org/abs/2008.07494 for a description of the method."""
+See https://arxiv.org/abs/2008.07494 for a description of the method.
+"""
 
-import sys
 import argparse
 import logging
+import sys
+
 import numpy as np
 
 import pycbc
 from pycbc.bin_utils import IrregularBins
-from pycbc.events import cuts, trigger_fits as trstats, stat
+from pycbc.events import cuts, stat
+from pycbc.events import trigger_fits as trstats
+from pycbc.events.coinc import cluster_over_time
 from pycbc.io import DictArray, HFile
 from pycbc.io import live as liveio
 from pycbc.live import significance_fits as sngls_io
-from pycbc.events.coinc import cluster_over_time
 from pycbc.types import MultiDetOptionAction
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--ifos", nargs="+", required=True,
-                    help="Which ifo(s) are we fitting the triggers for? "
-                         "Required")
+parser.add_argument(
+    "--ifos",
+    nargs="+",
+    required=True,
+    help="Which ifo(s) are we fitting the triggers for? Required",
+)
 liveio.add_live_trigger_selection_options(parser)
 sngls_io.add_live_significance_trigger_pruning_options(parser)
 sngls_io.add_live_significance_duration_bin_options(parser)
-parser.add_argument("--fit-function", default="exponential",
-                    action=MultiDetOptionAction,
-                    choices=["exponential", "rayleigh", "power"],
-                    help="Functional form for the maximum likelihood fit. "
-                         "Choose from exponential, rayleigh or power. "
-                         "Default: exponential")
-parser.add_argument("--fit-threshold", type=float, default=5,
-                    action=MultiDetOptionAction,
-                    help="Lower threshold used in fitting the triggers."
-                         "Default 5. Can be supplied as a single value, "
-                         "or as a set of IFO:value pairs, e.g. H1:0:, L1:-1")
-parser.add_argument("--cluster", action='store_true',
-                    help="Only use maximum of the --sngl-ranking value "
-                         "from each file.")
-parser.add_argument("--output", required=True,
-                    help="File in which to save the output trigger fit "
-                         "parameters.")
+parser.add_argument(
+    "--fit-function",
+    default="exponential",
+    action=MultiDetOptionAction,
+    choices=["exponential", "rayleigh", "power"],
+    help="Functional form for the maximum likelihood fit. "
+    "Choose from exponential, rayleigh or power. "
+    "Default: exponential",
+)
+parser.add_argument(
+    "--fit-threshold",
+    type=float,
+    default=5,
+    action=MultiDetOptionAction,
+    help="Lower threshold used in fitting the triggers."
+    "Default 5. Can be supplied as a single value, "
+    "or as a set of IFO:value pairs, e.g. H1:0:, L1:-1",
+)
+parser.add_argument(
+    "--cluster",
+    action="store_true",
+    help="Only use maximum of the --sngl-ranking value from each file.",
+)
+parser.add_argument(
+    "--output",
+    required=True,
+    help="File in which to save the output trigger fit parameters.",
+)
 stat.insert_statistic_option_group(
-    parser,
-    default_ranking_statistic='single_ranking_only'
+    parser, default_ranking_statistic="single_ranking_only"
 )
 cuts.insert_cuts_option_group(parser)
 
@@ -71,8 +88,7 @@ sngls_io.verify_live_significance_duration_bin_options(args, parser)
 
 duration_bin_edges = sngls_io.duration_bins_from_cli(args)
 logging.info(
-    "Duration bin edges: %s",
-    ', '.join([f'{e:.3e}' for e in duration_bin_edges])
+    "Duration bin edges: %s", ", ".join([f"{e:.3e}" for e in duration_bin_edges])
 )
 
 logging.info("Finding files")
@@ -103,7 +119,7 @@ tbins = IrregularBins(duration_bin_edges)
 # Live time is not immediately obvious - get an approximation with 8 second
 # granularity by adding 8 seconds per 'valid' file
 
-live_time = {ifo: 0 for ifo in args.ifos}
+live_time = dict.fromkeys(args.ifos, 0)
 
 logging.info("Getting events which meet criteria")
 
@@ -122,31 +138,35 @@ for counter, filename in enumerate(files):
                 # In case of no triggers for an extended period
                 logging.info("%s: No data", ifo)
             else:
-                logging.info("%s: %d triggers in %.0f s", ifo,
-                             events[ifo].data['snr'].size, live_time[ifo])
+                logging.info(
+                    "%s: %d triggers in %.0f s",
+                    ifo,
+                    events[ifo].data["snr"].size,
+                    live_time[ifo],
+                )
 
     # If there is an IOerror with the file, don't fail, just carry on
     try:
-        HFile(filename, 'r')
-    except IOError:
-        logging.warning('IOError with file %s', f)
+        HFile(filename, "r")
+    except OSError:
+        logging.warning("IOError with file %s", f)
         continue
 
     # Triggers for this file
     triggers = {}
-    with HFile(filename, 'r') as fin:
+    with HFile(filename, "r") as fin:
         # Open the file: does it have the ifo group and snr dataset?
         for ifo in args.ifos:
-            if not (ifo in fin and 'snr' in fin[ifo]):
+            if not (ifo in fin and "snr" in fin[ifo]):
                 continue
             # Eventual FIX ME: live output files should (soon) have the live time
             # added, but for now, extract from the filename
             # Format of the filename is to have the live time as a dash,
             # followed by '.hdf' at the end of the filename
-            lt = int(filename.split('-')[-1][:-4])
+            lt = int(filename.split("-")[-1][:-4])
             live_time[ifo] += lt
 
-            n_triggers = fin[ifo]['snr'].size
+            n_triggers = fin[ifo]["snr"].size
             # Skip if there are no triggers
             if not n_triggers:
                 continue
@@ -155,34 +175,34 @@ for counter, filename in enumerate(files):
             # Get all datasets with the same size as the trigger SNRs,
             # except for edge cases where the number of loudest, gates etc.
             # happens to be the same as the trigger count
-            triggers[ifo] = {k: fin[ifo][k][:] for k in fin[ifo].keys()
-                             if k not in ('loudest', 'stat', 'gates', 'psd')
-                             and fin[ifo][k].size == n_triggers}
+            triggers[ifo] = {
+                k: fin[ifo][k][:]
+                for k in fin[ifo].keys()
+                if k not in ("loudest", "stat", "gates", "psd")
+                and fin[ifo][k].size == n_triggers
+            }
 
             # The stored chisq is actually reduced chisq, so hack the
             # chisq_dof dataset to use the standard conversions.
             # chisq_dof of 1.5 gives the right number (2 * 1.5 - 2 = 1)
-            triggers[ifo]['chisq_dof'] = \
-                1.5 * np.ones_like(triggers[ifo]['snr'])
-
+            triggers[ifo]["chisq_dof"] = 1.5 * np.ones_like(triggers[ifo]["snr"])
 
     for ifo, trigs_ifo in triggers.items():
-
         # Apply the cuts to triggers
         keep_idx = cuts.apply_trigger_cuts(trigs_ifo, trigger_cut_dict)
 
         # triggers contains the datasets that we want to use for
         # the template cuts, so here it can be used as the template bank
-        keep_idx = cuts.apply_template_cuts(trigs_ifo, template_cut_dict,
-                                            template_ids=keep_idx)
+        keep_idx = cuts.apply_template_cuts(
+            trigs_ifo, template_cut_dict, template_ids=keep_idx
+        )
 
         # Skip if no triggers survive the cuts
         if not keep_idx.size:
             continue
 
         # Apply the cuts
-        triggers_cut = {k: trigs_ifo[k][keep_idx]
-                        for k in trigs_ifo.keys()}
+        triggers_cut = {k: trigs_ifo[k][keep_idx] for k in trigs_ifo.keys()}
 
         # Calculate the sngl_ranking values
         sds = rank_method[ifo].single(triggers_cut)
@@ -190,7 +210,7 @@ for counter, filename in enumerate(files):
             (ifo, sds),
         )
 
-        triggers_cut['stat'] = sngls_value
+        triggers_cut["stat"] = sngls_value
 
         triggers_da = DictArray(data=triggers_cut)
 
@@ -212,10 +232,9 @@ for ifo in args.ifos:
     if ifo not in events:
         logging.info("%s: No data", ifo)
     else:
-        logging.info("%s: %d in %.2fs",
-                     ifo, len(events[ifo]), live_time[ifo])
+        logging.info("%s: %d in %.2fs", ifo, len(events[ifo]), live_time[ifo])
 
-logging.info('Sorting events into template duration bins')
+logging.info("Sorting events into template duration bins")
 
 # Set up bins and prune loud events in each bin
 n_bins = duration_bin_edges.size - 1
@@ -226,20 +245,22 @@ times_to_prune = {ifo: [] for ifo in args.ifos}
 
 for ifo in events:
     # Sort the events into their bins
-    event_bins[ifo] = np.array([tbins[d]
-                               for d in events[ifo].data['template_duration']])
+    event_bins[ifo] = np.array(
+        [tbins[d] for d in events[ifo].data["template_duration"]]
+    )
 
     if args.prune_loudest:
         for bin_num in range(n_bins):
             inbin = event_bins[ifo] == bin_num
 
-            binned_events = events[ifo].data['stat'][inbin]
-            binned_event_times = events[ifo].data['end_time'][inbin]
+            binned_events = events[ifo].data["stat"][inbin]
+            binned_event_times = events[ifo].data["end_time"][inbin]
 
             # Cluster triggers in time with the pruning window to ensure
             # that clusters are independent
-            cidx = cluster_over_time(binned_events, binned_event_times,
-                                     args.prune_window)
+            cidx = cluster_over_time(
+                binned_events, binned_event_times, args.prune_window
+            )
 
             # Find clusters at/above the statistic threshold
             above_stat_min = binned_events[cidx] >= args.prune_stat_threshold
@@ -252,18 +273,22 @@ for ifo in events:
                 continue
 
             # Find the loudest of the triggers in this bin
-            argloudest = np.argsort(binned_events[cidx])[-args.prune_loudest:]
+            argloudest = np.argsort(binned_events[cidx])[-args.prune_loudest :]
             times_to_prune[ifo] += list(binned_event_times[cidx][argloudest])
 
 n_pruned = {ifo: [] for ifo in args.ifos}
 pruned_trigger_times = {}
 if args.prune_loudest:
-    logging.info("Pruning triggers %.2fs either side of the loudest %d "
-                 "triggers in each bin if %s > %.2f", args.prune_window,
-                 args.prune_loudest, args.sngl_ranking,
-                 args.prune_stat_threshold)
+    logging.info(
+        "Pruning triggers %.2fs either side of the loudest %d "
+        "triggers in each bin if %s > %.2f",
+        args.prune_window,
+        args.prune_loudest,
+        args.sngl_ranking,
+        args.prune_stat_threshold,
+    )
     for ifo in events:
-        times = events[ifo].data['end_time'][:]
+        times = events[ifo].data["end_time"][:]
         outwith_window = np.ones_like(times, dtype=bool)
         for t in times_to_prune[ifo]:
             outwith_window &= abs(times - t) > args.prune_window
@@ -284,13 +309,13 @@ if args.prune_loudest:
             pruned_inbin = pruned_trigger_bins == bin_num
             n_pruned_thisbin = np.count_nonzero(pruned_inbin)
             n_pruned[ifo].append(n_pruned_thisbin)
-            logging.info("Pruned %d triggers from %s bin %d",
-                         n_pruned_thisbin, ifo, bin_num)
+            logging.info(
+                "Pruned %d triggers from %s bin %d", n_pruned_thisbin, ifo, bin_num
+            )
 
 # Do the fitting for each bin
 for ifo in events:
     for bin_num in range(n_bins):
-
         inbin = event_bins[ifo] == bin_num
 
         if not np.count_nonzero(inbin):
@@ -299,54 +324,51 @@ for ifo in events:
             alphas[ifo][bin_num] = -1
             continue
 
-        stat_inbin = events[ifo].data['stat'][inbin]
-        counts[ifo][bin_num] = \
-            np.count_nonzero(stat_inbin > args.fit_threshold[ifo])
+        stat_inbin = events[ifo].data["stat"][inbin]
+        counts[ifo][bin_num] = np.count_nonzero(stat_inbin > args.fit_threshold[ifo])
 
         alphas[ifo][bin_num], _ = trstats.fit_above_thresh(
-            args.fit_function[ifo],
-            stat_inbin,
-            args.fit_threshold[ifo]
+            args.fit_function[ifo], stat_inbin, args.fit_threshold[ifo]
         )
 
 logging.info("Writing results")
-with HFile(args.output, 'w') as fout:
+with HFile(args.output, "w") as fout:
     for ifo in args.ifos:
         fout_ifo = fout.create_group(ifo)
-        fout_ifo.attrs['fit_function'] = args.fit_function[ifo]
-        fout_ifo.attrs['fit_threshold'] = args.fit_threshold[ifo]
+        fout_ifo.attrs["fit_function"] = args.fit_function[ifo]
+        fout_ifo.attrs["fit_threshold"] = args.fit_threshold[ifo]
         if ifo not in events:
             # There were no triggers, but we should still produce some
             # information
-            fout_ifo['fit_coeff'] = -1 * np.zeros(n_bins)
-            fout_ifo['counts'] = np.zeros(n_bins)
-            fout_ifo.attrs['live_time'] = live_time[ifo]
-            fout_ifo.attrs['pruned_times'] = []
-            fout_ifo.attrs['n_pruned'] = 0
+            fout_ifo["fit_coeff"] = -1 * np.zeros(n_bins)
+            fout_ifo["counts"] = np.zeros(n_bins)
+            fout_ifo.attrs["live_time"] = live_time[ifo]
+            fout_ifo.attrs["pruned_times"] = []
+            fout_ifo.attrs["n_pruned"] = 0
             continue
 
         # Save the triggers we have used for the fits
-        fout_ifo_trigs = fout_ifo.create_group('triggers')
+        fout_ifo_trigs = fout_ifo.create_group("triggers")
         for key in events[ifo].data:
             fout_ifo_trigs[key] = events[ifo].data[key]
         if ifo in pruned_trigger_times:
-            fout_ifo['pruned_trigger_times'] = pruned_trigger_times[ifo]
+            fout_ifo["pruned_trigger_times"] = pruned_trigger_times[ifo]
 
-        fout_ifo['fit_coeff'] = alphas[ifo]
-        fout_ifo['counts'] = counts[ifo]
-        fout_ifo.attrs['live_time'] = live_time[ifo]
-        fout_ifo.attrs['pruned_times'] = times_to_prune[ifo]
-        fout_ifo.attrs['n_pruned'] = n_pruned[ifo]
+        fout_ifo["fit_coeff"] = alphas[ifo]
+        fout_ifo["counts"] = counts[ifo]
+        fout_ifo.attrs["live_time"] = live_time[ifo]
+        fout_ifo.attrs["pruned_times"] = times_to_prune[ifo]
+        fout_ifo.attrs["n_pruned"] = n_pruned[ifo]
 
-    fout['bins_upper'] = tbins.upper()
-    fout['bins_lower'] = tbins.lower()
+    fout["bins_upper"] = tbins.upper()
+    fout["bins_lower"] = tbins.lower()
 
-    fout.attrs['ifos'] = ','.join(args.ifos)
-    fout.attrs['fit_start_gps_time'] = args.gps_start_time
-    fout.attrs['fit_end_gps_time'] = args.gps_end_time
-    fout.attrs['input'] = sys.argv
-    fout.attrs['cuts'] = args.template_cuts + args.trigger_cuts
-    fout.attrs['sngl_ranking'] = args.sngl_ranking
-    fout.attrs['ranking_statistic'] = args.ranking_statistic
+    fout.attrs["ifos"] = ",".join(args.ifos)
+    fout.attrs["fit_start_gps_time"] = args.gps_start_time
+    fout.attrs["fit_end_gps_time"] = args.gps_end_time
+    fout.attrs["input"] = sys.argv
+    fout.attrs["cuts"] = args.template_cuts + args.trigger_cuts
+    fout.attrs["sngl_ranking"] = args.sngl_ranking
+    fout.attrs["ranking_statistic"] = args.ranking_statistic
 
 logging.info("Done")

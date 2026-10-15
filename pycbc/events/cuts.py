@@ -26,43 +26,46 @@
 This module contains functions for reading in command line options and
 applying cuts to triggers or templates in the offline search
 """
-import logging
+
 import copy
+import logging
+
 import numpy as np
+
 from pycbc.events import ranking
-from pycbc.io import hdf
-from pycbc.tmpltbank import bank_conversions as bank_conv
-from pycbc.io import get_chisq_from_file_choice
+from pycbc.io import get_chisq_from_file_choice, hdf
 
 # Only used to check isinstance:
 from pycbc.io.hdf import ReadByTemplate
+from pycbc.tmpltbank import bank_conversions as bank_conv
 
-logger = logging.getLogger('pycbc.events.cuts')
+logger = logging.getLogger("pycbc.events.cuts")
 
 # sngl_rank_keys are the allowed names of reweighted SNR functions
 sngl_rank_keys = ranking.sngls_ranking_function_dict.keys()
 
 trigger_param_choices = list(sngl_rank_keys)
-trigger_param_choices += [cc + '_chisq' for cc in hdf.chisq_choices]
-trigger_param_choices += ['end_time', 'psd_var_val', 'sigmasq',
-                          'sigma_multiple']
+trigger_param_choices += [cc + "_chisq" for cc in hdf.chisq_choices]
+trigger_param_choices += ["end_time", "psd_var_val", "sigmasq", "sigma_multiple"]
 
-template_fit_param_choices = ['fit_by_fit_coeff', 'smoothed_fit_coeff',
-                              'fit_by_count_above_thresh',
-                              'smoothed_fit_count_above_thresh',
-                              'fit_by_count_in_template',
-                              'smoothed_fit_count_in_template']
-template_param_choices = bank_conv.conversion_options + \
-                             template_fit_param_choices
+template_fit_param_choices = [
+    "fit_by_fit_coeff",
+    "smoothed_fit_coeff",
+    "fit_by_count_above_thresh",
+    "smoothed_fit_count_above_thresh",
+    "fit_by_count_in_template",
+    "smoothed_fit_count_in_template",
+]
+template_param_choices = bank_conv.conversion_options + template_fit_param_choices
 
 # What are the inequalities associated with the cuts?
 # 'upper' means upper limit, and so requires value < threshold
 # to keep a trigger
 ineq_functions = {
-    'upper': np.less,
-    'lower': np.greater,
-    'upper_inc': np.less_equal,
-    'lower_inc': np.greater_equal
+    "upper": np.less,
+    "lower": np.greater,
+    "upper_inc": np.less_equal,
+    "lower_inc": np.greater_equal,
 }
 ineq_choices = list(ineq_functions.keys())
 
@@ -71,22 +74,29 @@ def insert_cuts_option_group(parser):
     """
     Add options to the parser for cuts to the templates/triggers
     """
-    parser.add_argument('--trigger-cuts', nargs='+',
-                        help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE:LIMIT, where, PARAMETER is the "
-                             "parameter to be cut, VALUE is the value at "
-                             "which it is cut, and LIMIT is one of '"
-                             + "', '".join(ineq_choices) +
-                             "' to indicate the inequality needed. "
-                             "PARAMETER is one of:'"
-                             + "', '".join(trigger_param_choices) +
-                             "'. For example snr:6:LOWER removes triggers "
-                             "with matched filter SNR < 6")
-    parser.add_argument('--template-cuts', nargs='+',
-                        help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE:LIMIT. Format is the same as in "
-                             "--trigger-cuts. PARAMETER can be one of '"
-                             + "', '".join(template_param_choices) + "'.")
+    parser.add_argument(
+        "--trigger-cuts",
+        nargs="+",
+        help="Cuts to apply to the triggers, supplied as "
+        "PARAMETER:VALUE:LIMIT, where, PARAMETER is the "
+        "parameter to be cut, VALUE is the value at "
+        "which it is cut, and LIMIT is one of '"
+        + "', '".join(ineq_choices)
+        + "' to indicate the inequality needed. "
+        "PARAMETER is one of:'"
+        + "', '".join(trigger_param_choices)
+        + "'. For example snr:6:LOWER removes triggers "
+        "with matched filter SNR < 6",
+    )
+    parser.add_argument(
+        "--template-cuts",
+        nargs="+",
+        help="Cuts to apply to the triggers, supplied as "
+        "PARAMETER:VALUE:LIMIT. Format is the same as in "
+        "--trigger-cuts. PARAMETER can be one of '"
+        + "', '".join(template_param_choices)
+        + "'.",
+    )
 
 
 def convert_inputstr(inputstr, choices):
@@ -97,26 +107,32 @@ def convert_inputstr(inputstr, choices):
     Do input checks
     """
     try:
-        cut_param, cut_value_str, cut_limit = inputstr.split(':')
+        cut_param, cut_value_str, cut_limit = inputstr.split(":")
     except ValueError as value_e:
-        logger.warning("ERROR: Cut string format not correct, please "
-                       "supply as PARAMETER:VALUE:LIMIT")
+        logger.warning(
+            "ERROR: Cut string format not correct, please "
+            "supply as PARAMETER:VALUE:LIMIT"
+        )
         raise value_e
 
     if cut_param.lower() not in choices:
-        raise NotImplementedError("Cut parameter " + cut_param.lower() + " "
-                                  "not recognised, choose from "
-                                  + ", ".join(choices))
+        raise NotImplementedError(
+            "Cut parameter " + cut_param.lower() + " "
+            "not recognised, choose from " + ", ".join(choices)
+        )
     if cut_limit.lower() not in ineq_choices:
-        raise NotImplementedError("Cut inequality " + cut_limit.lower() + " "
-                                  "not recognised, choose from "
-                                  + ", ".join(ineq_choices))
+        raise NotImplementedError(
+            "Cut inequality " + cut_limit.lower() + " "
+            "not recognised, choose from " + ", ".join(ineq_choices)
+        )
 
     try:
         cut_value = float(cut_value_str)
     except ValueError as value_e:
-        logger.warning("ERROR: Cut value must be convertible into a float, "
-                       "got '%s'.", cut_value_str)
+        logger.warning(
+            "ERROR: Cut value must be convertible into a float, got '%s'.",
+            cut_value_str,
+        )
         raise value_e
 
     return {(cut_param, ineq_functions[cut_limit]): cut_value}
@@ -135,13 +151,17 @@ def check_update_cuts(cut_dict, new_cut):
 
     new_cut: single-entry dictionary
         dictionary to define the new cut which is being considered to add
+
     """
     new_cut_key = list(new_cut.keys())[0]
     if new_cut_key in cut_dict:
         # The cut has already been called
-        logger.warning("WARNING: Cut parameter %s and function %s have "
-                       "already been used. Utilising the strictest cut.",
-                       new_cut_key[0], new_cut_key[1].__name__)
+        logger.warning(
+            "WARNING: Cut parameter %s and function %s have "
+            "already been used. Utilising the strictest cut.",
+            new_cut_key[0],
+            new_cut_key[1].__name__,
+        )
         # Extract the function and work out which is strictest
         cut_function = new_cut_key[1]
         value_new = list(new_cut.values())[0]
@@ -150,17 +170,25 @@ def check_update_cuts(cut_dict, new_cut):
             # The new threshold would survive the cut of the
             # old threshold, therefore the new threshold is stricter
             # - update it
-            logger.warning("WARNING: New threshold of %.3f is "
-                           "stricter than old threshold %.3f, "
-                           "using cut at %.3f.",
-                           value_new, value_old, value_new)
+            logger.warning(
+                "WARNING: New threshold of %.3f is "
+                "stricter than old threshold %.3f, "
+                "using cut at %.3f.",
+                value_new,
+                value_old,
+                value_new,
+            )
             cut_dict.update(new_cut)
         else:
             # New cut would not make a difference, ignore it
-            logger.warning("WARNING: New threshold of %.3f is less "
-                           "strict than old threshold %.3f, using "
-                           "cut at %.3f.",
-                           value_new, value_old, value_old)
+            logger.warning(
+                "WARNING: New threshold of %.3f is less "
+                "strict than old threshold %.3f, using "
+                "cut at %.3f.",
+                value_new,
+                value_old,
+                value_old,
+            )
     else:
         # This is a new cut - add it
         cut_dict.update(new_cut)
@@ -194,14 +222,12 @@ def ingest_cuts_option_group(args):
     return trigger_cut_dict, template_cut_dict
 
 
-def sigma_multiple_cut_thresh(template_ids, statistic,
-                              cut_thresh, ifo):
+def sigma_multiple_cut_thresh(template_ids, statistic, cut_thresh, ifo):
     """
     Apply cuts based on a multiple of the median sigma value for the template
 
     Parameters
     ----------
-
     template_ids:
         template_id values for each of the triggers to be considered,
         this will be used to associate a sigma threshold for each trigger
@@ -219,14 +245,18 @@ def sigma_multiple_cut_thresh(template_ids, statistic,
     idx_out: numpy array
         An array of the indices of triggers which meet the criteria
         set by the dictionary
+
     """
     statistic_classname = statistic.__class__.__name__
-    if not hasattr(statistic, 'fits_by_tid'):
-        raise ValueError("Cut parameter 'sigma_muliple' cannot "
-                         "be used when the ranking statistic " +
-                         statistic_classname + " does not use "
-                         "template fitting.")
-    tid_med_sigma = statistic.fits_by_tid[ifo]['median_sigma']
+    if not hasattr(statistic, "fits_by_tid"):
+        raise ValueError(
+            "Cut parameter 'sigma_muliple' cannot "
+            "be used when the ranking statistic "
+            + statistic_classname
+            + " does not use "
+            "template fitting."
+        )
+    tid_med_sigma = statistic.fits_by_tid[ifo]["median_sigma"]
     return cut_thresh * tid_med_sigma[template_ids]
 
 
@@ -253,8 +283,9 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
     idx_out: numpy array
         An array of the indices which meet the criteria
         set by the dictionary
+
     """
-    idx_out = np.arange(len(triggers['snr']))
+    idx_out = np.arange(len(triggers["snr"]))
 
     # Loop through the different cuts, and apply them
     for parameter_cut_function, cut_thresh in trigger_cut_dict.items():
@@ -262,32 +293,31 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
         parameter, cut_function = parameter_cut_function
 
         # What kind of parameter is it?
-        if parameter.endswith('_chisq'):
+        if parameter.endswith("_chisq"):
             # parameter is a chisq-type thing
-            chisq_choice = parameter.split('_')[0]
+            chisq_choice = parameter.split("_")[0]
             # Currently calculated for all triggers - this seems inefficient
             value = get_chisq_from_file_choice(triggers, chisq_choice)
             # Apply any previous cuts to the value for comparison
             value = value[idx_out]
         elif parameter == "sigma_multiple":
             if isinstance(triggers, ReadByTemplate):
-                value = np.sqrt(triggers['sigmasq'][idx_out])
+                value = np.sqrt(triggers["sigmasq"][idx_out])
                 # Get a cut threshold value, this will be different
                 # depending on the template ID, so we rewrite cut_thresh
                 # as a value for each trigger, numpy comparison functions
                 # allow this
-                cut_thresh = sigma_multiple_cut_thresh(triggers.template_num,
-                                                       statistic,
-                                                       cut_thresh,
-                                                       triggers.ifo)
+                cut_thresh = sigma_multiple_cut_thresh(
+                    triggers.template_num, statistic, cut_thresh, triggers.ifo
+                )
             else:
                 err_msg = "Cuts on 'sigma_multiple' are only implemented for "
                 err_msg += "triggers in a ReadByTemplate format. This code "
                 err_msg += f"uses a {type(triggers).__name__} format."
                 raise NotImplementedError(err_msg)
-        elif ((not hasattr(triggers, "file") and parameter in triggers)
-                or (hasattr(triggers, "file")
-                    and parameter in triggers.file[triggers.ifo])):
+        elif (not hasattr(triggers, "file") and parameter in triggers) or (
+            hasattr(triggers, "file") and parameter in triggers.file[triggers.ifo]
+        ):
             # parameter can be read direct from the trigger dictionary / file
             value = triggers[parameter]
             # Apply any previous cuts to the value for comparison
@@ -299,17 +329,20 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
             # Apply any previous cuts to the value for comparison
             value = value[idx_out]
         else:
-            raise NotImplementedError("Parameter '" + parameter + "' not "
-                                      "recognised. Input sanitisation means "
-                                      "this shouldn't have happened?!")
+            raise NotImplementedError(
+                "Parameter '" + parameter + "' not "
+                "recognised. Input sanitisation means "
+                "this shouldn't have happened?!"
+            )
 
         idx_out = idx_out[cut_function(value, cut_thresh)]
 
     return idx_out
 
 
-def apply_template_fit_cut(statistic, ifos, parameter_cut_function, cut_thresh,
-                           template_ids):
+def apply_template_fit_cut(
+    statistic, ifos, parameter_cut_function, cut_thresh, template_ids
+):
     """
     Apply cuts to template fit parameters, these have a few more checks
     needed, so we separate out from apply_template_cuts defined later
@@ -341,22 +374,25 @@ def apply_template_fit_cut(statistic, ifos, parameter_cut_function, cut_thresh,
     -------
     tids_out: numpy array
         Array of template_ids which have passed this cut
+
     """
     parameter, cut_function = parameter_cut_function
     statistic_classname = statistic.__class__.__name__
 
     # We can only apply template fit cuts if template fits have been done
-    if not hasattr(statistic, 'fits_by_tid'):
-        raise ValueError("Cut parameter " + parameter + " cannot "
-                         "be used when the ranking statistic " +
-                         statistic_classname + " does not use "
-                         "template fitting.")
+    if not hasattr(statistic, "fits_by_tid"):
+        raise ValueError(
+            "Cut parameter " + parameter + " cannot "
+            "be used when the ranking statistic "
+            + statistic_classname
+            + " does not use "
+            "template fitting."
+        )
 
     # Is the parameter actually in the fits dictionary?
     if parameter not in statistic.fits_by_tid[ifos[0]]:
         # Shouldn't get here due to input sanitisation
-        raise ValueError("Cut parameter " + parameter + " not "
-                         "available in fits file.")
+        raise ValueError("Cut parameter " + parameter + " not available in fits file.")
 
     # Template IDs array to cut down in each IFO
     tids_out = copy.copy(template_ids)
@@ -370,8 +406,9 @@ def apply_template_fit_cut(statistic, ifos, parameter_cut_function, cut_thresh,
     return tids_out
 
 
-def apply_template_cuts(bank, template_cut_dict, template_ids=None,
-                        statistic=None, ifos=None):
+def apply_template_cuts(
+    bank, template_cut_dict, template_ids=None, statistic=None, ifos=None
+):
     """
     Fetch/calculate the parameter for the templates, possibly already
     preselected by template_ids, and then apply the cuts defined
@@ -412,14 +449,17 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
     -------
     tids_out: numpy array
         Array of template_ids which have passed all cuts
+
     """
     # Get the initial list of templates:
-    tids_out = np.arange(bank['mass1'].size) \
-        if template_ids is None else template_ids[:]
+    tids_out = (
+        np.arange(bank["mass1"].size) if template_ids is None else template_ids[:]
+    )
 
     if (statistic is None) ^ (ifos is None):
-        raise NotImplementedError("Either both or neither of statistic and "
-                                  "ifos must be supplied.")
+        raise NotImplementedError(
+            "Either both or neither of statistic and ifos must be supplied."
+        )
 
     if not template_cut_dict:
         # No cuts are defined in the dictionary: just return the
@@ -438,13 +478,13 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
             tids_out = tids_out[cut_function(values, cut_thresh)]
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
-                tids_out = apply_template_fit_cut(statistic,
-                                                  ifos,
-                                                  parameter_cut_function,
-                                                  cut_thresh,
-                                                  tids_out)
+                tids_out = apply_template_fit_cut(
+                    statistic, ifos, parameter_cut_function, cut_thresh, tids_out
+                )
         else:
-            raise ValueError("Cut parameter " + parameter + " not recognised."
-                             " This shouldn't happen with input sanitisation")
+            raise ValueError(
+                "Cut parameter " + parameter + " not recognised."
+                " This shouldn't happen with input sanitisation"
+            )
 
     return tids_out

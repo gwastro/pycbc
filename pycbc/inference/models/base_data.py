@@ -22,16 +22,18 @@
 # =============================================================================
 #
 
-"""Base classes for mofdels with data.
-"""
+"""Base classes for mofdels with data."""
+
+from abc import ABCMeta, abstractmethod
 
 import numpy
-from abc import (ABCMeta, abstractmethod)
+
 from .base import BaseModel
 
 
 class BaseDataModel(BaseModel, metaclass=ABCMeta):
-    r"""Base class for models that require data and a waveform generator.
+    r"""
+    Base class for models that require data and a waveform generator.
 
     This adds propeties for the log of the likelihood that the data contain
     noise, ``lognl``, and the log likelihood ratio ``loglr``.
@@ -63,17 +65,26 @@ class BaseDataModel(BaseModel, metaclass=ABCMeta):
 
 
     See ``BaseModel`` for additional attributes and properties.
+
     """
 
-    def __init__(self, variable_params, data, recalibration=None, gates=None,
-                 injection_file=None, no_save_data=False, **kwargs):
+    def __init__(
+        self,
+        variable_params,
+        data,
+        recalibration=None,
+        gates=None,
+        injection_file=None,
+        no_save_data=False,
+        **kwargs,
+    ):
         self._data = None
         self.data = data
         self.recalibration = recalibration
         self.no_save_data = no_save_data
         self.gates = gates
         self.injection_file = injection_file
-        super(BaseDataModel, self).__init__(variable_params, **kwargs)
+        super().__init__(variable_params, **kwargs)
 
     @property
     def data(self):
@@ -88,26 +99,27 @@ class BaseDataModel(BaseModel, metaclass=ABCMeta):
     @property
     def _extra_stats(self):
         """Adds ``loglr`` and ``lognl`` to the ``default_stats``."""
-        return ['loglr', 'lognl']
+        return ["loglr", "lognl"]
 
     @property
     def lognl(self):
-        """The log likelihood of the model assuming the data is noise.
+        """
+        The log likelihood of the model assuming the data is noise.
 
         This will initially try to return the ``current_stats.lognl``.
         If that raises an ``AttributeError``, will call `_lognl`` to
         calculate it and store it to ``current_stats``.
         """
-        return self._trytoget('lognl', self._lognl)
+        return self._trytoget("lognl", self._lognl)
 
     @abstractmethod
     def _lognl(self):
         """Low-level function that calculates the lognl."""
-        pass
 
     @property
     def loglr(self):
-        """The log likelihood ratio at the current parameters,
+        """
+        The log likelihood ratio at the current parameters,
         or the inner product <s|h> and <h|h> if set the flag
         `self.return_sh_hh` to be True.
 
@@ -115,16 +127,16 @@ class BaseDataModel(BaseModel, metaclass=ABCMeta):
         If that raises an ``AttributeError``, will call `_loglr`` to
         calculate it and store it to ``current_stats``.
         """
-        return self._trytoget('loglr', self._loglr, apply_transforms=True)
+        return self._trytoget("loglr", self._loglr, apply_transforms=True)
 
     @abstractmethod
     def _loglr(self):
         """Low-level function that calculates the loglr."""
-        pass
 
     @property
     def logplr(self):
-        """Returns the log of the prior-weighted likelihood ratio at the
+        """
+        Returns the log of the prior-weighted likelihood ratio at the
         current parameter values.
 
         The logprior is calculated first. If the logprior returns ``-inf``
@@ -134,8 +146,7 @@ class BaseDataModel(BaseModel, metaclass=ABCMeta):
         logp = self.logprior
         if logp == -numpy.inf:
             return logp
-        else:
-            return logp + self.loglr
+        return logp + self.loglr
 
     @property
     def detectors(self):
@@ -143,7 +154,8 @@ class BaseDataModel(BaseModel, metaclass=ABCMeta):
         return list(self._data.keys())
 
     def write_metadata(self, fp, group=None):
-        """Adds data to the metadata that's written.
+        """
+        Adds data to the metadata that's written.
 
         Parameters
         ----------
@@ -153,6 +165,7 @@ class BaseDataModel(BaseModel, metaclass=ABCMeta):
             If provided, the metadata will be written to the attrs specified
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
+
         """
         super().write_metadata(fp, group=group)
         if not self.no_save_data:

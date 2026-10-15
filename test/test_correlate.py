@@ -24,20 +24,25 @@
 """
 These are the unittests for the correlate functions in pycbc.filter.matchedfilter_cpu
 """
+
 import unittest
+
 import numpy
-from pycbc.types import Array, zeros, complex64
-from pycbc.filter import correlate
 from utils import parse_args_all_schemes, simple_exit
+
+from pycbc.filter import correlate
 from pycbc.filter.matchedfilter import BatchCorrelator, Correlator
+from pycbc.types import Array, complex64, zeros
 
 _scheme, _context = parse_args_all_schemes("correlate")
 
 from pycbc.filter.matchedfilter_cpu import correlate_numpy
+
 trusted_correlate = correlate_numpy
 
+
 class Testcorrelate(unittest.TestCase):
-    def setUp(self,*args):
+    def setUp(self, *args):
         self.context = _context
         self.scheme = _scheme
         self.tolerance = 1e-6
@@ -67,8 +72,8 @@ class Testcorrelate(unittest.TestCase):
 
     def test_batch_correlate(self):
         size = len(self.x)
-        xs = [self.x+0, self.x+1, self.x+2, self.x+3]
-        zs = [self.z*0, self.z*1, self.z*2, self.z*3]
+        xs = [self.x + 0, self.x + 1, self.x + 2, self.x + 3]
+        zs = [self.z * 0, self.z * 1, self.z * 2, self.z * 3]
         b = BatchCorrelator(xs, zs, size)
         b.execute(self.y)
 
@@ -76,9 +81,10 @@ class Testcorrelate(unittest.TestCase):
             trusted_correlate(xs[i], self.y, self.z)
             self.assertTrue(self.z.almost_equal_elem(zs[i], self.tolerance))
 
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Testcorrelate))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

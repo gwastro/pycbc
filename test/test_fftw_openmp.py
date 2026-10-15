@@ -26,21 +26,24 @@ These are the unit-tests for the pycbc.fft subpackage, testing only unthreaded
 backends for the various schemes.
 """
 
-import unittest
 import sys
+import unittest
+
+from fft_base import _BaseTestFFTClass
+from utils import parse_args_cpu_only, simple_exit
+
 import pycbc.fft
 from pycbc.scheme import CPUScheme
-from utils import parse_args_cpu_only, simple_exit
-from fft_base import _BaseTestFFTClass
 
 parse_args_cpu_only("FFTW openmp backend")
 
 # See if we can get set the FFTW backend to 'openmp'; if not, say so and exit.
 
-if 'fftw' in pycbc.fft.get_backend_names():
+if "fftw" in pycbc.fft.get_backend_names():
     import pycbc.fft.fftw
+
     try:
-        pycbc.fft.fftw.set_threads_backend('openmp')
+        pycbc.fft.fftw.set_threads_backend("openmp")
     except:
         raise unittest.SkipTest(
             "Unable to import openmp threads backend to FFTW; "
@@ -52,10 +55,8 @@ else:
         "skipping openmp thread tests"
     )
 
-if sys.platform == 'darwin':
-    raise unittest.SkipTest(
-        "macOS has known issues with openmp, skip this"
-    )
+if sys.platform == "darwin":
+    raise unittest.SkipTest("macOS has known issues with openmp, skip this")
 
 
 # Now set the number of threads to something nontrivial
@@ -63,20 +64,20 @@ if sys.platform == 'darwin':
 # Most of the work is now done in fft_base.
 
 FFTTestClasses = []
-for num_threads in [2,4,6,8]:
-    kdict = {'backends' : ['fftw'],
-             'scheme' : 'cpu',
-             'context' : CPUScheme(num_threads=num_threads)}
-    klass = type('FFTW_OpenMP_test',
-                 (_BaseTestFFTClass,),kdict)
+for num_threads in [2, 4, 6, 8]:
+    kdict = {
+        "backends": ["fftw"],
+        "scheme": "cpu",
+        "context": CPUScheme(num_threads=num_threads),
+    }
+    klass = type("FFTW_OpenMP_test", (_BaseTestFFTClass,), kdict)
     klass.__test__ = True
     FFTTestClasses.append(klass)
 
 
 # Finally, we create suites and run them
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     suite = unittest.TestSuite()
     for klass in FFTTestClasses:
         suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))

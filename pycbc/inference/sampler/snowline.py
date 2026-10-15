@@ -26,15 +26,15 @@ This modules provides classes and functions for using the snowline sampler
 packages for parameter estimation.
 """
 
-import sys
 import logging
+import sys
 
 from pycbc.inference.io.snowline import SnowlineFile
 from pycbc.io.hdf import dump_state
 from pycbc.pool import use_mpi
-from .base import (BaseSampler, setup_output)
-from .base_cube import setup_calls
 
+from .base import BaseSampler, setup_output
+from .base_cube import setup_calls
 
 #
 # =============================================================================
@@ -44,15 +44,19 @@ from .base_cube import setup_calls
 # =============================================================================
 #
 
+
 class SnowlineSampler(BaseSampler):
-    """This class is used to construct an Snowline sampler from the snowline
+    """
+    This class is used to construct an Snowline sampler from the snowline
     package.
 
     Parameters
     ----------
     model : model
         A model from ``pycbc.inference.models``
+
     """
+
     name = "snowline"
     _io = SnowlineFile
 
@@ -60,12 +64,12 @@ class SnowlineSampler(BaseSampler):
         super().__init__(model)
 
         import snowline
+
         log_likelihood_call, prior_call = setup_calls(model, copy_prior=True)
 
         self._sampler = snowline.ReactiveImportanceSampler(
-            list(self.model.variable_params),
-            log_likelihood_call,
-            transform=prior_call)
+            list(self.model.variable_params), log_likelihood_call, transform=prior_call
+        )
 
         do_mpi, _, rank = use_mpi()
         self.main = (not do_mpi) or (rank == 0)
@@ -85,7 +89,7 @@ class SnowlineSampler(BaseSampler):
 
     @property
     def niterations(self):
-        return self.result['niter']
+        return self.result["niter"]
 
     @classmethod
     def from_config(cls, cp, model, output_file=None, **kwds):
@@ -93,15 +97,16 @@ class SnowlineSampler(BaseSampler):
         Loads the sampler from the given config file.
         """
         skeys = {}
-        opts = {'num_global_samples': int,
-                'num_gauss_samples': int,
-                'max_ncalls': int,
-                'min_ess': int,
-                'max_improvement_loops': int
-                }
+        opts = {
+            "num_global_samples": int,
+            "num_gauss_samples": int,
+            "max_ncalls": int,
+            "min_ess": int,
+            "max_improvement_loops": int,
+        }
         for opt_name in opts:
-            if cp.has_option('sampler', opt_name):
-                value = cp.get('sampler', opt_name)
+            if cp.has_option("sampler", opt_name):
+                value = cp.get("sampler", opt_name)
                 skeys[opt_name] = opts[opt_name](value)
         inst = cls(model, **skeys)
 
@@ -111,12 +116,10 @@ class SnowlineSampler(BaseSampler):
         return inst
 
     def checkpoint(self):
-        """ There is currently no checkpointing implemented"""
-        pass
+        """There is currently no checkpointing implemented"""
 
     def resume_from_checkpoint(self):
-        """ There is currently no checkpointing implemented"""
-        pass
+        """There is currently no checkpointing implemented"""
 
     def finalize(self):
         logging.info("Writing samples to files")
@@ -129,13 +132,14 @@ class SnowlineSampler(BaseSampler):
 
     @property
     def samples(self):
-        samples = self.result['samples']
+        samples = self.result["samples"]
         params = list(self.model.variable_params)
         samples_dict = {p: samples[:, i] for i, p in enumerate(params)}
         return samples_dict
 
     def write_results(self, filename):
-        """Writes samples, model stats, acceptance fraction, and random state
+        """
+        Writes samples, model stats, acceptance fraction, and random state
         to the given file.
 
         Parameters
@@ -143,26 +147,23 @@ class SnowlineSampler(BaseSampler):
         filename : str
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
+
         """
-        with self.io(filename, 'a') as fp:
+        with self.io(filename, "a") as fp:
             # write samples
             fp.write_samples(self.samples, self.samples.keys())
             # write log evidence
             fp.write_logevidence(self.logz, self.logz_err)
 
             # write full results
-            dump_state(self.result, fp,
-                       path='sampler_info',
-                       dsetname='presult')
+            dump_state(self.result, fp, path="sampler_info", dsetname="presult")
 
     @property
     def logz(self):
-        """Return bayesian evidence estimated by snowline sampler.
-        """
-        return self.result['logz']
+        """Return bayesian evidence estimated by snowline sampler."""
+        return self.result["logz"]
 
     @property
     def logz_err(self):
-        """Return error in bayesian evidence estimated by snowline sampler.
-        """
-        return self.result['logzerr']
+        """Return error in bayesian evidence estimated by snowline sampler."""
+        return self.result["logzerr"]

@@ -27,11 +27,14 @@ and length of a data series.
 """
 
 import numpy
+
 from pycbc.filter.matchedfilter import correlate
 from pycbc.types import FrequencySeries, TimeSeries, zeros
 
+
 def calculate_acf(data, delta_t=1.0, unbiased=False):
-    r"""Calculates the one-sided autocorrelation function.
+    r"""
+    Calculates the one-sided autocorrelation function.
 
     Calculates the autocorrelation function (ACF) and returns the one-sided
     ACF. The ACF is defined as the autocovariance divided by the variance. The
@@ -46,7 +49,7 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
     the variance of :math:`X_{t}`.
 
     Parameters
-    -----------
+    ----------
     data : TimeSeries or numpy.array
         A TimeSeries or numpy.array of data.
     delta_t : float
@@ -61,8 +64,8 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
     acf : numpy.array
         If data is a TimeSeries then acf will be a TimeSeries of the
         one-sided ACF. Else acf is a numpy.array.
-    """
 
+    """
     # if given a TimeSeries instance then get numpy.array
     if isinstance(data, TimeSeries):
         y = data.numpy()
@@ -75,7 +78,7 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
     ny_orig = len(y)
 
     npad = 1
-    while npad < 2*ny_orig:
+    while npad < 2 * ny_orig:
         npad = npad << 1
     ypad = numpy.zeros(npad)
     ypad[:ny_orig] = y
@@ -85,8 +88,9 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
 
     # correlate
     # do not need to give the congjugate since correlate function does it
-    cdata = FrequencySeries(zeros(len(fdata), dtype=fdata.dtype),
-                           delta_f=fdata.delta_f, copy=False)
+    cdata = FrequencySeries(
+        zeros(len(fdata), dtype=fdata.dtype), delta_f=fdata.delta_f, copy=False
+    )
     correlate(fdata, fdata, cdata)
 
     # IFFT correlated data to get unnormalized autocovariance time series
@@ -96,19 +100,19 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
     # normalize the autocovariance
     # note that dividing by acf[0] is the same as ( y.var() * len(acf) )
     if unbiased:
-        acf /= ( y.var() * numpy.arange(len(acf), 0, -1) )
+        acf /= y.var() * numpy.arange(len(acf), 0, -1)
     else:
         acf /= acf[0]
 
     # return input datatype
     if isinstance(data, TimeSeries):
         return TimeSeries(acf, delta_t=delta_t)
-    else:
-        return acf
+    return acf
 
 
 def calculate_acl(data, m=5, dtype=int):
-    r"""Calculates the autocorrelation length (ACL).
+    r"""
+    Calculates the autocorrelation length (ACL).
 
     Given a normalized autocorrelation function :math:`\rho[i]` (by normalized,
     we mean that :math:`\rho[0] = 1`), the ACL :math:`\tau` is:
@@ -133,7 +137,7 @@ def calculate_acl(data, m=5, dtype=int):
     N. Madras and A.D. Sokal, J. Stat. Phys. 50, 109 (1988).
 
     Parameters
-    -----------
+    ----------
     data : TimeSeries or array
         A TimeSeries of data.
     m : int
@@ -148,8 +152,8 @@ def calculate_acl(data, m=5, dtype=int):
     acl : int or float
         The autocorrelation length. If the ACL cannot be estimated, returns
         ``numpy.inf``.
-    """
 
+    """
     # sanity check output data type
     if dtype not in [int, float]:
         raise ValueError("The dtype must be either int or float.")

@@ -16,16 +16,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Prints an RST table of available models from the inference.models
+"""
+Prints an RST table of available models from the inference.models
 module.
 """
+
+from _dict_to_rst import format_class, rst_dict_table
+
 from pycbc.inference.sampler import samplers
-from _dict_to_rst import (rst_dict_table, format_class)
 
-tbl = rst_dict_table(samplers, key_format='``\'{0}\'``'.format,
-                     header=('Name', 'Class'),
-                     val_format=format_class)
+tbl = rst_dict_table(
+    samplers,
+    key_format="``'{0}'``".format,
+    header=("Name", "Class"),
+    val_format=format_class,
+)
 
-filename = 'samplers-table.rst'
-with open(filename, 'w') as fp:
+filename = "samplers-table.rst"
+with open(filename, "w") as fp:
     print(tbl, file=fp)

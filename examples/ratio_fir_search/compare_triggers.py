@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-"""Compare triggers from the FIR/ratio search (run_fir_search.sh) against
+"""
+Compare triggers from the FIR/ratio search (run_fir_search.sh) against
 the plain matched-filter reference search (run_reference_search.sh).
 
 For each FIR-search trigger, finds the closest-in-time reference trigger
@@ -15,6 +16,7 @@ accuracy relative to the bank's own (double-precision) construction-time
 verification -- so a several-times-larger measured value than predicted
 is expected, not a sign of a bug.
 """
+
 import argparse
 
 import h5py
@@ -49,14 +51,15 @@ def matched_snr_diffs(reference, fir, sample_rate):
     for i in range(len(fir["end_time"])):
         t = fir["end_time"][i]
         j = np.abs(ref_time - t).argmin()
-        if (abs(ref_time[j] - t) < tol
-                and fir["template_hash"][i] == reference["template_hash"][j]):
+        if (
+            abs(ref_time[j] - t) < tol
+            and fir["template_hash"][i] == reference["template_hash"][j]
+        ):
             diffs.append(fir["snr"][i] - reference["snr"][j])
             ref_snrs.append(reference["snr"][j])
             fir_snrs.append(fir["snr"][i])
             times.append(t)
-    return (np.array(diffs), np.array(ref_snrs),
-            np.array(fir_snrs), np.array(times))
+    return (np.array(diffs), np.array(ref_snrs), np.array(fir_snrs), np.array(times))
 
 
 def main():
@@ -64,23 +67,28 @@ def main():
     parser.add_argument("--reference-file", default="reference.hdf")
     parser.add_argument("--fir-file", default="fir.hdf")
     parser.add_argument("--fir-bank-file", default="fir_full_bank.hdf")
-    parser.add_argument("--allowed-margin-factor", type=float, default=4.0,
-                        help="How many multiples of the mismatch-predicted "
-                             "std to allow before flagging a problem.")
-    parser.add_argument("--output-plot", default=None,
-                        help="Path to save trigger comparison plot.")
+    parser.add_argument(
+        "--allowed-margin-factor",
+        type=float,
+        default=4.0,
+        help="How many multiples of the mismatch-predicted "
+        "std to allow before flagging a problem.",
+    )
+    parser.add_argument(
+        "--output-plot", default=None, help="Path to save trigger comparison plot."
+    )
     args = parser.parse_args()
 
     reference = load_triggers(args.reference_file)
     fir = load_triggers(args.fir_file)
     min_match, sample_rate = fir_bank_params(args.fir_bank_file)
 
-    diffs, ref_snrs, fir_snrs, times = matched_snr_diffs(
-        reference, fir, sample_rate
-    )
+    diffs, ref_snrs, fir_snrs, times = matched_snr_diffs(reference, fir, sample_rate)
     if len(diffs) == 0:
-        raise SystemExit("No triggers matched between the two searches -- "
-                         "did both searches run over the same data/bank?")
+        raise SystemExit(
+            "No triggers matched between the two searches -- "
+            "did both searches run over the same data/bank?"
+        )
 
     measured_std = float(np.std(diffs))
     predicted_std = float(np.sqrt(2.0 * (1.0 - min_match)))
@@ -96,6 +104,7 @@ def main():
 
     if args.output_plot:
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
@@ -104,8 +113,7 @@ def main():
         fir_mag = np.abs(fir_snrs)
         diff_mag = np.abs(diffs)
         ax1.scatter(ref_mag, fir_mag, s=8, alpha=0.5)
-        lims = [min(ref_mag.min(), fir_mag.min()),
-                max(ref_mag.max(), fir_mag.max())]
+        lims = [min(ref_mag.min(), fir_mag.min()), max(ref_mag.max(), fir_mag.max())]
         ax1.plot(lims, lims, "r--", label="y = x")
         ax1.set_xlabel("Reference |SNR|")
         ax1.set_ylabel("FIR |SNR|")

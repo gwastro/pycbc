@@ -25,10 +25,9 @@
 Defines the base sampler class to be inherited by all samplers.
 """
 
-
-from abc import ABCMeta, abstractmethod, abstractproperty
-import shutil
 import logging
+import shutil
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 from six import add_metaclass
 
@@ -45,8 +44,9 @@ from pycbc.inference.io import validate_checkpoint_files
 
 
 @add_metaclass(ABCMeta)
-class BaseSampler(object):
-    """Abstract base class for all inference samplers.
+class BaseSampler:
+    """
+    Abstract base class for all inference samplers.
 
     All sampler classes must inherit from this class and implement its abstract
     methods.
@@ -55,7 +55,9 @@ class BaseSampler(object):
     ----------
     model : Model
         An instance of a model from ``pycbc.inference.models``.
+
     """
+
     name = None
 
     def __init__(self, model):
@@ -67,83 +69,75 @@ class BaseSampler(object):
 
     # @classmethod <--uncomment when we move to python 3.3
     @abstractmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1,
-                    use_mpi=False):
-        """This should initialize the sampler given a config file.
-        """
-        pass
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+        """This should initialize the sampler given a config file."""
 
     @property
     def variable_params(self):
-        """Returns the parameters varied in the model.
-        """
+        """Returns the parameters varied in the model."""
         return self.model.variable_params
 
     @property
     def sampling_params(self):
-        """Returns the sampling params used by the model.
-        """
+        """Returns the sampling params used by the model."""
         return self.model.sampling_params
 
     @property
     def static_params(self):
-        """Returns the model's fixed parameters.
-        """
+        """Returns the model's fixed parameters."""
         return self.model.static_params
 
     @abstractproperty
     def samples(self):
-        """A dict mapping variable_params to arrays of samples currently
+        """
+        A dict mapping variable_params to arrays of samples currently
         in memory. The dictionary may also contain sampling_params.
 
         The sample arrays may have any shape, and may or may not be thinned.
         """
-        pass
 
     @abstractproperty
     def model_stats(self):
-        """A dict mapping model's metadata fields to arrays of values for
+        """
+        A dict mapping model's metadata fields to arrays of values for
         each sample in ``raw_samples``.
 
         The arrays may have any shape, and may or may not be thinned.
         """
-        pass
 
     @abstractmethod
     def run(self):
-        """This function should run the sampler.
+        """
+        This function should run the sampler.
 
         Any checkpointing should be done internally in this function.
         """
-        pass
 
     @abstractproperty
     def io(self):
-        """A class that inherits from ``BaseInferenceFile`` to handle IO with
+        """
+        A class that inherits from ``BaseInferenceFile`` to handle IO with
         an hdf file.
 
         This should be a class, not an instance of class, so that the sampler
         can initialize it when needed.
         """
-        pass
 
     @abstractmethod
     def checkpoint(self):
-        """The sampler must have a checkpoint method for dumping raw samples
+        """
+        The sampler must have a checkpoint method for dumping raw samples
         and stats to the file type defined by ``io``.
         """
-        pass
 
     @abstractmethod
     def finalize(self):
         """Do any finalization to the samples file before exiting."""
-        pass
 
     @abstractmethod
     def resume_from_checkpoint(self):
-        """Resume the sampler from the output file.
-        """
-        pass
+        """Resume the sampler from the output file."""
+
 
 #
 # =============================================================================
@@ -155,7 +149,8 @@ class BaseSampler(object):
 
 
 def setup_output(sampler, output_file, check_nsamples=True, validate=True):
-    r"""Sets up the sampler's checkpoint and output files.
+    r"""
+    Sets up the sampler's checkpoint and output files.
 
     The checkpoint file has the same name as the output file, but with
     ``.checkpoint`` appended to the name. A backup file will also be
@@ -167,17 +162,18 @@ def setup_output(sampler, output_file, check_nsamples=True, validate=True):
         Sampler
     output_file : str
         Name of the output file.
+
     """
     # check for backup file(s)
-    checkpoint_file = output_file + '.checkpoint'
-    backup_file = output_file + '.bkup'
+    checkpoint_file = output_file + ".checkpoint"
+    backup_file = output_file + ".bkup"
     # check if we have a good checkpoint and/or backup file
     logging.info("Looking for checkpoint file")
     checkpoint_valid = False
     if validate:
-        checkpoint_valid = validate_checkpoint_files(checkpoint_file,
-                                                     backup_file,
-                                                     check_nsamples)
+        checkpoint_valid = validate_checkpoint_files(
+            checkpoint_file, backup_file, check_nsamples
+        )
     # Create a new file if the checkpoint doesn't exist, or if it is
     # corrupted
     sampler.new_checkpoint = False  # keeps track if this is a new file or not
@@ -201,7 +197,8 @@ def setup_output(sampler, output_file, check_nsamples=True, validate=True):
 
 
 def create_new_output_file(sampler, filename, **kwargs):
-    r"""Creates a new output file.
+    r"""
+    Creates a new output file.
 
     Parameters
     ----------
@@ -212,8 +209,9 @@ def create_new_output_file(sampler, filename, **kwargs):
     \**kwargs :
         All other keyword arguments are passed through to the file's
         ``write_metadata`` function.
+
     """
-    logging.info("Creating file {}".format(filename))
+    logging.info(f"Creating file {filename}")
     with sampler.io(filename, "w") as fp:
         # create the samples group and sampler info group
         fp.create_group(fp.samples_group)
@@ -223,7 +221,8 @@ def create_new_output_file(sampler, filename, **kwargs):
 
 
 def initial_dist_from_config(cp, variable_params, static_params=None):
-    r"""Loads a distribution for the sampler start from the given config file.
+    r"""
+    Loads a distribution for the sampler start from the given config file.
 
     A distribution will only be loaded if the config file has a [initial-\*]
     section(s).
@@ -243,18 +242,21 @@ def initial_dist_from_config(cp, variable_params, static_params=None):
     JointDistribution or None :
         The initial distribution. If no [initial-\*] section found in the
         config file, will just return None.
+
     """
     if len(cp.get_subsections("initial")):
-        logging.info("Using a different distribution for the starting points "
-                     "than the prior.")
+        logging.info(
+            "Using a different distribution for the starting points than the prior."
+        )
         initial_dists = distributions.read_distributions_from_config(
-            cp, section="initial")
+            cp, section="initial"
+        )
         constraints = distributions.read_constraints_from_config(
-            cp, constraint_section="initial_constraint",
-            static_args=static_params)
+            cp, constraint_section="initial_constraint", static_args=static_params
+        )
         init_dist = distributions.JointDistribution(
-            variable_params, *initial_dists,
-            **{"constraints": constraints})
+            variable_params, *initial_dists, constraints=constraints
+        )
     else:
         init_dist = None
     return init_dist

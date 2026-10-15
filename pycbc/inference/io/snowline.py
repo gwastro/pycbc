@@ -21,12 +21,12 @@
 #
 # =============================================================================
 #
-"""Provides IO for the snowline sampler.
-"""
+"""Provides IO for the snowline sampler."""
+
 from .posterior import PosteriorFile
 
 
 class SnowlineFile(PosteriorFile):
     """Class to handle file IO for the ``snowline`` sampler."""
 
-    name = 'snowline_file'
+    name = "snowline_file"

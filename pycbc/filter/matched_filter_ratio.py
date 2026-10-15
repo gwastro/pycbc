@@ -9,7 +9,7 @@ from pycbc.filter.matchedfilter_cpu import (
 from pycbc.types import complex64, zeros
 
 
-class MatchedFilterRatioControl(object):
+class MatchedFilterRatioControl:
     """
     High-performance engine for hierarchical "Ratio/FIR" matched filtering.
     Uses pycbc's class-based FFT interface (pycbc.fft.FFT/IFFT) for all FFT
@@ -21,8 +21,16 @@ class MatchedFilterRatioControl(object):
     numpy.fft.ifft does; see _forward_block_fft for where that's corrected.
     """
 
-    def __init__(self, snr_threshold, delta_f,
-                 high_frequency_cutoff=None, fir_fft_length=4096, batch_size=64, tap_sample_rate=2048, engine_sample_rate=2048):
+    def __init__(
+        self,
+        snr_threshold,
+        delta_f,
+        high_frequency_cutoff=None,
+        fir_fft_length=4096,
+        batch_size=64,
+        tap_sample_rate=2048,
+        engine_sample_rate=2048,
+    ):
         self.delta_f = delta_f
         self.snr_threshold = snr_threshold
         self.f_high = high_frequency_cutoff
@@ -81,31 +89,37 @@ class MatchedFilterRatioControl(object):
         """
         n_filters, n_taps = fir_taps.shape
         if n_taps >= self.tap_fft_len:
-             raise ValueError("FIR Taps (%d) exceed the tap FFT length (%d)" %
-                              (n_taps, self.tap_fft_len))
+            raise ValueError(
+                "FIR Taps (%d) exceed the tap FFT length (%d)"
+                % (n_taps, self.tap_fft_len)
+            )
 
         # the overlap-save guard works in engine samples, not bank ones
-        n_taps = np.ceil(np.asarray(tap_counts)
-                         * self.fir_fft_len / self.tap_fft_len).astype(int)
+        n_taps = np.ceil(
+            np.asarray(tap_counts) * self.fir_fft_len / self.tap_fft_len
+        ).astype(int)
 
         filters_f = self._fft_all_filters(fir_taps, tap_counts)
         return filters_f, n_taps
 
-    def process_segment(self, stilde, psd, ref_template, filters_f, n_taps, indices,
-                        valid_slice=None):
+    def process_segment(
+        self, stilde, psd, ref_template, filters_f, n_taps, indices, valid_slice=None
+    ):
         """
         Process a single data segment.
         """
         if valid_slice is None:
-            valid_slice = getattr(stilde, 'analyze', None)
+            valid_slice = getattr(stilde, "analyze", None)
 
         h_norm = ref_template.sigmasq(psd)
 
         snr, _, norm = matched_filter_core(
-            ref_template, stilde, psd=psd,
+            ref_template,
+            stilde,
+            psd=psd,
             low_frequency_cutoff=ref_template.f_lower,
             high_frequency_cutoff=self.f_high,
-            h_norm=h_norm
+            h_norm=h_norm,
         )
 
         self.ref_snr = snr.numpy() * (norm * stilde.delta_t)
@@ -117,8 +131,7 @@ class MatchedFilterRatioControl(object):
         if len(local_idxs) > 0:
             global_ids = indices[local_idxs]
             return global_ids, t_idxs, snr_vals, tstarts, h_norm
-        else:
-            return [], [], [], tstarts, h_norm
+        return [], [], [], tstarts, h_norm
 
     def _fft_all_filters(self, taps, counts):
         """Helper to FFT all filters, batch_size rows at a time."""
@@ -146,7 +159,9 @@ class MatchedFilterRatioControl(object):
 
             cols_high = np.arange(tap_fft_len)
             rows = np.arange(batch_len)[:, None]
-            shifted_cols_high = (cols_high[None, :] - roll_offsets[:, None]) % tap_fft_len
+            shifted_cols_high = (
+                cols_high[None, :] - roll_offsets[:, None]
+            ) % tap_fft_len
 
             current_data = in_view.copy()
             in_view[:] = current_data[rows, shifted_cols_high]
@@ -156,10 +171,9 @@ class MatchedFilterRatioControl(object):
             # drop the band the search cannot reach, or pad the band the
             # taps have no content in
             if tap_fft_len >= self.fir_fft_len:
-                fft_out = out_view[:, :self.fir_fft_len]
+                fft_out = out_view[:, : self.fir_fft_len]
             else:
-                fft_out = np.zeros((batch_len, self.fir_fft_len),
-                                   dtype=out_view.dtype)
+                fft_out = np.zeros((batch_len, self.fir_fft_len), dtype=out_view.dtype)
                 fft_out[:, :tap_fft_len] = out_view
 
             # Conjugate so multiplying against the data spectrum and
@@ -170,7 +184,8 @@ class MatchedFilterRatioControl(object):
         return filters_f
 
     def _forward_block_fft(self, segment):
-        """FFT one time-domain block (nbatch=1), pre-dividing by fir_fft_len.
+        """
+        FFT one time-domain block (nbatch=1), pre-dividing by fir_fft_len.
 
         pycbc's class-based IFFT (unlike numpy.fft.ifft) does
         not normalize its output by 1/N. Since this block spectrum only
@@ -182,7 +197,7 @@ class MatchedFilterRatioControl(object):
         """
         plan, in_view, out_view = self._get_fft_plan(1, self.fir_fft_len)
         in_view[0, :] = 0.0
-        in_view[0, :len(segment)] = segment
+        in_view[0, : len(segment)] = segment
         plan.execute()
         return out_view[0].copy() / self.fir_fft_len
 
@@ -191,7 +206,7 @@ class MatchedFilterRatioControl(object):
         Inner loop: Time-Blocking + Filter-Batching.
         """
         tap_groups = 3
-        nsizes = np.quantile(n_taps, np.linspace(0, 1, tap_groups+1)[1:]).astype(int)
+        nsizes = np.quantile(n_taps, np.linspace(0, 1, tap_groups + 1)[1:]).astype(int)
         n_samples = len(data)
         n_filters = len(filters_f)
 
@@ -211,7 +226,6 @@ class MatchedFilterRatioControl(object):
 
         block_f_cache = {}
         for f_start in range(0, n_filters, self.batch_size):
-
             f_end = min(f_start + self.batch_size, n_filters)
             actual_batch_size = f_end - f_start
 
@@ -232,7 +246,6 @@ class MatchedFilterRatioControl(object):
             loop_start = first_block_idx * STEP
 
             for t_start in range(loop_start, n_samples, STEP):
-
                 block_valid_t0 = t_start + bad_start
 
                 if block_valid_t0 >= v_stop:
@@ -253,7 +266,9 @@ class MatchedFilterRatioControl(object):
 
                 t_end = min(t_start + N_FFT, n_samples)
                 if t_start not in block_f_cache:
-                    block_f_cache[t_start] = self._forward_block_fft(data[t_start:t_end])
+                    block_f_cache[t_start] = self._forward_block_fft(
+                        data[t_start:t_end]
+                    )
 
                 block_f_view = block_f_cache[t_start]
                 filter_batch_f = filters_f[f_start:f_end]
@@ -269,7 +284,7 @@ class MatchedFilterRatioControl(object):
                     roi_len,
                     self.threshold_sq,
                     f_start,
-                    input_offset=buf_slice_start
+                    input_offset=buf_slice_start,
                 )
 
                 if f_list:
@@ -278,7 +293,9 @@ class MatchedFilterRatioControl(object):
                     all_snrs.extend(s_list)
                     all_tstarts.extend([t_start] * len(s_list))
 
-        return (np.array(all_f_idxs, dtype=np.int32),
-                np.array(all_t_idxs, dtype=np.int64),
-                np.array(all_snrs, dtype=np.complex64),
-                np.array(all_tstarts, dtype=np.int32))
+        return (
+            np.array(all_f_idxs, dtype=np.int32),
+            np.array(all_t_idxs, dtype=np.int64),
+            np.array(all_snrs, dtype=np.complex64),
+            np.array(all_tstarts, dtype=np.int32),
+        )

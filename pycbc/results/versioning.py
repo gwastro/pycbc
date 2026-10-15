@@ -21,114 +21,120 @@ import urllib.parse
 import pycbc.version
 from pycbc.libutils import import_optional
 
-lal = import_optional('lal')
-lalframe = import_optional('lalframe')
-lalsimulation = import_optional('lalsimulation')
+lal = import_optional("lal")
+lalframe = import_optional("lalframe")
+lalsimulation = import_optional("lalsimulation")
 
 
-logger = logging.getLogger('pycbc.results.versioning')
+logger = logging.getLogger("pycbc.results.versioning")
+
 
 def get_library_version_info():
-    """This will return a list of dictionaries containing versioning
+    """
+    This will return a list of dictionaries containing versioning
     information about the various LIGO libraries that PyCBC will use in an
-    analysis run."""
+    analysis run.
+    """
     library_list = []
 
     def add_info_new_version(info_dct, curr_module, extra_str):
-        vcs_object = getattr(curr_module, extra_str +'VCSInfo')
-        info_dct['ID'] =  vcs_object.vcsId
-        info_dct['Status'] = vcs_object.vcsStatus
-        info_dct['Version'] = vcs_object.version
-        info_dct['Tag'] = vcs_object.vcsTag
-        info_dct['Author'] = vcs_object.vcsAuthor
-        info_dct['Branch'] = vcs_object.vcsBranch
-        info_dct['Committer'] = vcs_object.vcsCommitter
-        info_dct['Date'] = vcs_object.vcsDate
+        vcs_object = getattr(curr_module, extra_str + "VCSInfo")
+        info_dct["ID"] = vcs_object.vcsId
+        info_dct["Status"] = vcs_object.vcsStatus
+        info_dct["Version"] = vcs_object.version
+        info_dct["Tag"] = vcs_object.vcsTag
+        info_dct["Author"] = vcs_object.vcsAuthor
+        info_dct["Branch"] = vcs_object.vcsBranch
+        info_dct["Committer"] = vcs_object.vcsCommitter
+        info_dct["Date"] = vcs_object.vcsDate
 
     if lal is not None:
         lalinfo = {}
-        lalinfo['Name'] = 'LAL'
+        lalinfo["Name"] = "LAL"
         try:
-            lalinfo['ID'] = lal.VCSId
-            lalinfo['Status'] = lal.VCSStatus
-            lalinfo['Version'] = lal.VCSVersion
-            lalinfo['Tag'] = lal.VCSTag
-            lalinfo['Author'] = lal.VCSAuthor
-            lalinfo['Branch'] = lal.VCSBranch
-            lalinfo['Committer'] = lal.VCSCommitter
-            lalinfo['Date'] = lal.VCSDate
+            lalinfo["ID"] = lal.VCSId
+            lalinfo["Status"] = lal.VCSStatus
+            lalinfo["Version"] = lal.VCSVersion
+            lalinfo["Tag"] = lal.VCSTag
+            lalinfo["Author"] = lal.VCSAuthor
+            lalinfo["Branch"] = lal.VCSBranch
+            lalinfo["Committer"] = lal.VCSCommitter
+            lalinfo["Date"] = lal.VCSDate
         except AttributeError:
-            add_info_new_version(lalinfo, lal, '')
+            add_info_new_version(lalinfo, lal, "")
         library_list.append(lalinfo)
 
     if lalframe is not None:
         lalframeinfo = {}
         try:
-            lalframeinfo['Name'] = 'LALFrame'
-            lalframeinfo['ID'] = lalframe.FrameVCSId
-            lalframeinfo['Status'] = lalframe.FrameVCSStatus
-            lalframeinfo['Version'] = lalframe.FrameVCSVersion
-            lalframeinfo['Tag'] = lalframe.FrameVCSTag
-            lalframeinfo['Author'] = lalframe.FrameVCSAuthor
-            lalframeinfo['Branch'] = lalframe.FrameVCSBranch
-            lalframeinfo['Committer'] = lalframe.FrameVCSCommitter
-            lalframeinfo['Date'] = lalframe.FrameVCSDate
+            lalframeinfo["Name"] = "LALFrame"
+            lalframeinfo["ID"] = lalframe.FrameVCSId
+            lalframeinfo["Status"] = lalframe.FrameVCSStatus
+            lalframeinfo["Version"] = lalframe.FrameVCSVersion
+            lalframeinfo["Tag"] = lalframe.FrameVCSTag
+            lalframeinfo["Author"] = lalframe.FrameVCSAuthor
+            lalframeinfo["Branch"] = lalframe.FrameVCSBranch
+            lalframeinfo["Committer"] = lalframe.FrameVCSCommitter
+            lalframeinfo["Date"] = lalframe.FrameVCSDate
         except AttributeError:
-            add_info_new_version(lalframeinfo, lalframe, 'Frame')
+            add_info_new_version(lalframeinfo, lalframe, "Frame")
         library_list.append(lalframeinfo)
 
     if lalsimulation is not None:
         lalsimulationinfo = {}
-        lalsimulationinfo['Name'] = 'LALSimulation'
+        lalsimulationinfo["Name"] = "LALSimulation"
         try:
-            lalsimulationinfo['ID'] = lalsimulation.SimulationVCSId
-            lalsimulationinfo['Status'] = lalsimulation.SimulationVCSStatus
-            lalsimulationinfo['Version'] = lalsimulation.SimulationVCSVersion
-            lalsimulationinfo['Tag'] = lalsimulation.SimulationVCSTag
-            lalsimulationinfo['Author'] = lalsimulation.SimulationVCSAuthor
-            lalsimulationinfo['Branch'] = lalsimulation.SimulationVCSBranch
-            lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
-            lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
+            lalsimulationinfo["ID"] = lalsimulation.SimulationVCSId
+            lalsimulationinfo["Status"] = lalsimulation.SimulationVCSStatus
+            lalsimulationinfo["Version"] = lalsimulation.SimulationVCSVersion
+            lalsimulationinfo["Tag"] = lalsimulation.SimulationVCSTag
+            lalsimulationinfo["Author"] = lalsimulation.SimulationVCSAuthor
+            lalsimulationinfo["Branch"] = lalsimulation.SimulationVCSBranch
+            lalsimulationinfo["Committer"] = lalsimulation.SimulationVCSCommitter
+            lalsimulationinfo["Date"] = lalsimulation.SimulationVCSDate
         except AttributeError:
-            add_info_new_version(lalsimulationinfo, lalsimulation, 'Simulation')
+            add_info_new_version(lalsimulationinfo, lalsimulation, "Simulation")
 
         library_list.append(lalsimulationinfo)
 
     pycbcinfo = {}
-    pycbcinfo['Name'] = 'PyCBC'
-    pycbcinfo['ID'] = pycbc.version.git_hash
-    pycbcinfo['Status'] = pycbc.version.git_status
-    pycbcinfo['Version'] = pycbc.version.version
+    pycbcinfo["Name"] = "PyCBC"
+    pycbcinfo["ID"] = pycbc.version.git_hash
+    pycbcinfo["Status"] = pycbc.version.git_status
+    pycbcinfo["Version"] = pycbc.version.version
     if pycbc.version.release:
-        pycbcinfo['Version'] += ' (release)'
-    pycbcinfo['Tag'] = pycbc.version.git_tag
-    pycbcinfo['Author'] = pycbc.version.git_author
-    pycbcinfo['Builder'] = pycbc.version.git_builder
-    pycbcinfo['Branch'] = pycbc.version.git_branch
-    pycbcinfo['Committer'] = pycbc.version.git_committer
-    pycbcinfo['Date'] = pycbc.version.git_build_date
+        pycbcinfo["Version"] += " (release)"
+    pycbcinfo["Tag"] = pycbc.version.git_tag
+    pycbcinfo["Author"] = pycbc.version.git_author
+    pycbcinfo["Builder"] = pycbc.version.git_builder
+    pycbcinfo["Branch"] = pycbc.version.git_branch
+    pycbcinfo["Committer"] = pycbc.version.git_committer
+    pycbcinfo["Date"] = pycbc.version.git_build_date
     library_list.append(pycbcinfo)
 
     return library_list
 
+
 def get_code_version_numbers(executable_names, executable_files):
-    """Will extract the version information from the executables listed in
+    """
+    Will extract the version information from the executables listed in
     the executable section of the supplied ConfigParser object.
 
     Returns
-    --------
+    -------
     dict
         A dictionary keyed by the executable name with values giving the
         version string for each executable.
+
     """
     code_version_dict = {}
     for exe_name, value in zip(executable_names, executable_files):
         value = urllib.parse.urlparse(value)
         logger.info("Getting version info for %s", exe_name)
         version_string = None
-        if value.scheme in ['gsiftp', 'http', 'https']:
+        if value.scheme in ["gsiftp", "http", "https"]:
             code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
-        elif value.scheme == 'singularity':
+        elif value.scheme == "singularity":
             txt = (
                 "Executable run from a singularity image. See config file "
                 "and site catalog for details of what image was used."
@@ -137,8 +143,7 @@ def get_code_version_numbers(executable_names, executable_files):
         else:
             try:
                 version_string = subprocess.check_output(
-                    [value.path, '--version'],
-                    stderr=subprocess.STDOUT
+                    [value.path, "--version"], stderr=subprocess.STDOUT
                 ).decode()
             except subprocess.CalledProcessError:
                 version_string = "Executable fails on {} --version"

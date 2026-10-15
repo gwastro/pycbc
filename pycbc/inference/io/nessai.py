@@ -1,10 +1,10 @@
 """Provides IO for the nessai sampler"""
+
 import numpy
 
 from .base_nested_sampler import BaseNestedSamplerFile
-
-from .posterior import read_raw_samples_from_file
 from .dynesty import CommonNestedMetadataIO
+from .posterior import read_raw_samples_from_file
 
 
 class NessaiFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
@@ -13,7 +13,8 @@ class NessaiFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
     name = "nessai_file"
 
     def read_raw_samples(self, fields, raw_samples=False, seed=0):
-        """Reads samples from a nessai file and constructs a posterior.
+        """
+        Reads samples from a nessai file and constructs a posterior.
 
         Using rejection sampling to resample the nested samples
 
@@ -30,11 +31,13 @@ class NessaiFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
         -------
         dict :
             Dictionary of parameter fields -> samples.
+
         """
         samples = read_raw_samples_from_file(self, fields)
-        logwt = read_raw_samples_from_file(self, ['logwt'])['logwt']
-        loglikelihood = read_raw_samples_from_file(
-            self, ['loglikelihood'])['loglikelihood']
+        logwt = read_raw_samples_from_file(self, ["logwt"])["logwt"]
+        loglikelihood = read_raw_samples_from_file(self, ["loglikelihood"])[
+            "loglikelihood"
+        ]
         if not raw_samples:
             n_samples = len(logwt)
             # Rejection sample
@@ -42,7 +45,7 @@ class NessaiFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
             logwt -= logwt.max()
             logu = numpy.log(rng.random(n_samples))
             keep = logwt > logu
-            post = {'loglikelihood': loglikelihood[keep]}
+            post = {"loglikelihood": loglikelihood[keep]}
             for param in fields:
                 post[param] = samples[param][keep]
             return post

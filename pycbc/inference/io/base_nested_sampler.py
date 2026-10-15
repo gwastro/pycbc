@@ -21,8 +21,8 @@
 #
 # =============================================================================
 #
-"""Provides IO for the dynesty sampler.
-"""
+"""Provides IO for the dynesty sampler."""
+
 from .base_sampler import BaseSamplerFile
 from .posterior import read_raw_samples_from_file, write_samples_to_file
 
@@ -30,7 +30,7 @@ from .posterior import read_raw_samples_from_file, write_samples_to_file
 class BaseNestedSamplerFile(BaseSamplerFile):
     """Class to handle file IO for the nested samplers cpnest and dynesty."""
 
-    name = 'base_nest_file'
+    name = "base_nest_file"
 
     def read_raw_samples(self, fields, **kwargs):
         return read_raw_samples_from_file(self, fields, **kwargs)
@@ -42,35 +42,37 @@ class BaseNestedSamplerFile(BaseSamplerFile):
         """
         Writes the given number of iterations to the sampler group.
         """
-        self[self.sampler_group].attrs['niterations'] = niterations
+        self[self.sampler_group].attrs["niterations"] = niterations
 
     def write_sampler_metadata(self, sampler):
         """
         Adds writing betas to MultiTemperedMCMCIO.
         """
-        self.attrs['sampler'] = sampler.name
+        self.attrs["sampler"] = sampler.name
         if self.sampler_group not in self.keys():
             # create the sampler group
             self.create_group(self.sampler_group)
-        self[self.sampler_group].attrs['nlivepoints'] = sampler.nlive
+        self[self.sampler_group].attrs["nlivepoints"] = sampler.nlive
         # write the model's metadata
         sampler.model.write_metadata(self)
 
     def write_samples(self, samples, parameters=None):
-        """Writes samples to the given file.
+        """
+        Writes samples to the given file.
 
         Results are written to ``samples_group/{vararg}``, where ``{vararg}``
         is the name of a model params. The samples are written as an
         array of length ``niterations``.
 
         Parameters
-        -----------
+        ----------
         samples : dict
             The samples to write. Each array in the dictionary should have
             length niterations.
         parameters : list, optional
             Only write the specified parameters to the file. If None, will
             write all of the keys in the ``samples`` dict.
+
         """
         # since we're just writing a posterior use
         # PosteriorFile's write_samples

@@ -19,119 +19,133 @@ Plots various parameters against one
 another for pycbc banks in an hdf file.
 """
 
-
-import os
-import sys
-import h5py
-import numpy as np
 import argparse
 import logging
+import os
+import sys
 from textwrap import wrap
 
+import h5py
+import numpy as np
+
 import pycbc
-from pycbc.results.plot import (add_style_opt_to_parser, set_style_from_cli)
-from pycbc.io import FieldArray, HFile
 from pycbc.inference import option_utils
-from pycbc.tmpltbank import bank_conversions as bconv
-from pycbc.results.scatter_histograms import create_multidim_plot
+from pycbc.io import FieldArray, HFile
 from pycbc.results import metadata
+from pycbc.results.plot import add_style_opt_to_parser, set_style_from_cli
+from pycbc.results.scatter_histograms import create_multidim_plot
+from pycbc.tmpltbank import bank_conversions as bconv
 
 conversion_options = bconv.conversion_options
 _fit_parameters = [
-    'count_above_thresh',
-    'count_in_template',
-    'fit_coeff',
-    'median_sigma'
+    "count_above_thresh",
+    "count_in_template",
+    "fit_coeff",
+    "median_sigma",
 ]
 parameter_options = conversion_options + _fit_parameters
 
 
-parser = argparse.ArgumentParser(usage='pycbc_plot_bank_corner [--options]',
-                    description=__doc__)
+parser = argparse.ArgumentParser(
+    usage="pycbc_plot_bank_corner [--options]", description=__doc__
+)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--bank-file",
-    required=True,
-    help="The bank file to read in and plot")
-parser.add_argument("--output-plot-file",
-    required=True,
-    help="Name of the output file")
-parser.add_argument("--parameters",
+parser.add_argument(
+    "--bank-file", required=True, help="The bank file to read in and plot"
+)
+parser.add_argument("--output-plot-file", required=True, help="Name of the output file")
+parser.add_argument(
+    "--parameters",
     nargs="+",
     default=[],
     action=option_utils.ParseParametersArg,
     metavar="PARAM[:LABEL]",
     help="Only plot the given parameters. May also provide a "
-         "label for each parameter. Choose from a combination of " + \
-         ", ".join(parameter_options)  + ", though some "
-         "may not be buildable from bank parameters. Can optionally "
-         "also specify a LABEL for each parameter. If no LABEL is "
-         "provided, PARAM will used as the LABEL. If LABEL "
-         "is the same as a parameter in "
-         "pycbc.waveform.parameters, the label "
-         "property of that parameter will be used. If not "
-         "provided, will plot all of the parameters in the "
-         "bank.")
+    "label for each parameter. Choose from a combination of "
+    + ", ".join(parameter_options)
+    + ", though some "
+    "may not be buildable from bank parameters. Can optionally "
+    "also specify a LABEL for each parameter. If no LABEL is "
+    "provided, PARAM will used as the LABEL. If LABEL "
+    "is the same as a parameter in "
+    "pycbc.waveform.parameters, the label "
+    "property of that parameter will be used. If not "
+    "provided, will plot all of the parameters in the "
+    "bank.",
+)
 parser.add_argument(
-    '--log-parameters',
-    nargs='+',
+    "--log-parameters",
+    nargs="+",
     default=[],
     help="Which parameters are to be plotted on a log scale? "
-         "Must be also given in parameters"
+    "Must be also given in parameters",
 )
-parser.add_argument('--plot-histogram',
-    action='store_true',
-    help="Plot 1D histograms of parameters on the "
-         "diagonal axes.")
+parser.add_argument(
+    "--plot-histogram",
+    action="store_true",
+    help="Plot 1D histograms of parameters on the diagonal axes.",
+)
 # add mins, maxs options
-parser.add_argument('--mins',
-    nargs='+',
-    metavar='PARAM:VAL',
+parser.add_argument(
+    "--mins",
+    nargs="+",
+    metavar="PARAM:VAL",
     default=[],
     help="Specify minimum parameter values to plot. This "
-         "should be done by specifying the parameter name "
-         "followed by the value. Parameter names must be "
-         "the same as the PARAM argument in --parameters "
-         "(or, if no parameters are provided, the same as "
-         "the parameter name specified in the variable "
-         "args in the input bank. If none provided, "
-         "the smallest parameter value in the posterior "
-         "will be used.")
-parser.add_argument('--maxs',
-    nargs='+',
-    metavar='PARAM:VAL',
+    "should be done by specifying the parameter name "
+    "followed by the value. Parameter names must be "
+    "the same as the PARAM argument in --parameters "
+    "(or, if no parameters are provided, the same as "
+    "the parameter name specified in the variable "
+    "args in the input bank. If none provided, "
+    "the smallest parameter value in the posterior "
+    "will be used.",
+)
+parser.add_argument(
+    "--maxs",
+    nargs="+",
+    metavar="PARAM:VAL",
     default=[],
-    help="Same as mins, but for the maximum values to "
-         "plot.")
-parser.add_argument("--color-parameter",
+    help="Same as mins, but for the maximum values to plot.",
+)
+parser.add_argument(
+    "--color-parameter",
     nargs=1,
     action=option_utils.ParseParametersArg,
-    metavar='PARAM[:LABEL]',
+    metavar="PARAM[:LABEL]",
     help="Color scatter points according to the parameter given. "
-         "May optionally provide a label in the same way as for "
-         "--parameters. Default=No scatter point coloring.")
-parser.add_argument(
-    '--log-colormap',
-    action='store_true',
-    help="Should the colorbar be plotted on a log scale?"
+    "May optionally provide a label in the same way as for "
+    "--parameters. Default=No scatter point coloring.",
 )
-parser.add_argument('--dpi',
-    type=int,
-    default=200,
-    help="Set the DPI of the plot. Default is 200.")
-parser.add_argument('--fits-file',
-    help="Provide a fits file to plot parameters from. Required if any of "
-         ', '.join(_fit_parameters) + " are given as parameters.")
-parser.add_argument('--title',
+parser.add_argument(
+    "--log-colormap",
+    action="store_true",
+    help="Should the colorbar be plotted on a log scale?",
+)
+parser.add_argument(
+    "--dpi", type=int, default=200, help="Set the DPI of the plot. Default is 200."
+)
+parser.add_argument(
+    "--fits-file",
+    help="Provide a fits file to plot parameters from. Required if any of , ".join(
+        _fit_parameters
+    )
+    + " are given as parameters.",
+)
+parser.add_argument(
+    "--title",
     help="A title for the plot. If not given, the files supplied "
-         "and the number of templates will be used")
-parser.add_argument('--no-suptitle', action='store_true',
-                    help="If true no suptitle is shown.")
+    "and the number of templates will be used",
+)
+parser.add_argument(
+    "--no-suptitle", action="store_true", help="If true no suptitle is shown."
+)
 
 add_style_opt_to_parser(parser)
 args = parser.parse_args()
 
 for lp in args.log_parameters:
-    if not lp in args.parameters:
+    if lp not in args.parameters:
         parser.error(
             "--log-parameters should be in --parameters. "
             f"{lp} not in [{', '.join(args.parameters)}]"
@@ -144,18 +158,20 @@ mins, maxs = option_utils.plot_ranges_from_cli(args)
 
 logging.info("Reading in the bank")
 bank = {}
-with HFile(args.bank_file, 'r') as bankf:
+with HFile(args.bank_file, "r") as bankf:
     for p in bankf.keys():
-        if not isinstance(bankf[p], h5py.Dataset): continue
+        if not isinstance(bankf[p], h5py.Dataset):
+            continue
         # Ignore things which aren't numbers, which cannot
         # be histogrammed - e.g. approximant
-        if not np.issubdtype(bankf[p].dtype, np.number): continue
+        if not np.issubdtype(bankf[p].dtype, np.number):
+            continue
         bank[p] = bankf[p][:]
         banklen = bankf[p].size
 
 if args.fits_file is not None:
     # Add fit parameters to the bank object
-    with HFile(args.fits_file, 'r') as fits_f:
+    with HFile(args.fits_file, "r") as fits_f:
         for p in _fit_parameters:
             if not fits_f[p].size == banklen:
                 raise RuntimeError(
@@ -174,8 +190,7 @@ logging.info("Got %d templates from the bank", banklen)
 # If no parameters are given - just plot whatever is in the bank
 if not args.parameters:
     # Plot anything which is not singular
-    args.parameters = [k for k in bank
-                       if len(np.unique(bank[k])) > 1]
+    args.parameters = [k for k in bank if len(np.unique(bank[k])) > 1]
     args.parameters_labels = {k: k for k in bank}
 
 # Check through the conversion options to see if any are used in
@@ -191,46 +206,47 @@ for co in parameter_options:
         required_params.append(co)
 
 # Check for possible double-counting of duration parameter:
-if 'duration' in required_params and any([p.endswith('_duration')
-                                          for p in required_params]):
+if "duration" in required_params and any(
+    [p.endswith("_duration") for p in required_params]
+):
     # Check whether duration was specified directly:
-    dur_pars = [par for par in args.parameters if 'duration' in par]
-    _dur_pars = [par for par in args.parameters if '_duration' in par]
+    dur_pars = [par for par in args.parameters if "duration" in par]
+    _dur_pars = [par for par in args.parameters if "_duration" in par]
     if len(dur_pars) == len(_dur_pars):
         # It looks like duration has been added where it didnt need to be
-        required_params.remove('duration')
+        required_params.remove("duration")
 
 # Do the same with the duration functions, but here we need to make
 # sure we have some other keys in order to calculate duration
-duration_required_keys = ['mass1', 'mass2', 'spin1z',
-                          'spin2z', 'f_lower']
+duration_required_keys = ["mass1", "mass2", "spin1z", "spin2z", "f_lower"]
 
-if any(['duration' in par for par in args.parameters]):
+if any(["duration" in par for par in args.parameters]):
     required_params += duration_required_keys
 
 # Some things may have been double counted - undo this
 required_params = np.unique(required_params)
 
-logging.info("Required parameters to get from bank: %s",
-             ', '.join(required_params))
+logging.info("Required parameters to get from bank: %s", ", ".join(required_params))
 
 # Get parameters not directly in the bank:
 for p in required_params:
-    if p in bank: continue
+    if p in bank:
+        continue
     if p not in parameter_options:
-        raise KeyError(f"Parameter {p} not in bank, fits or conversion "
-                       "options, choose from bank parameters or " + \
-                       ', '.join(parameter_options))
+        raise KeyError(
+            f"Parameter {p} not in bank, fits or conversion "
+            "options, choose from bank parameters or " + ", ".join(parameter_options)
+        )
     if p in _fit_parameters and args.fits_file is None:
         parser.error(f"Parameter {p} needs a --fits-file, but none is given")
 
     logging.info("Converting %s", p)
     bank[p] = bconv.get_bank_property(p, bank, np.arange(banklen))
 
-if args.mpl_style == 'dark_background':
-    hist_color = 'white'
+if args.mpl_style == "dark_background":
+    hist_color = "white"
 else:
-    hist_color = 'black'
+    hist_color = "black"
 
 # All parameters should be in the bank now, check they are the right size:
 assert all([len(bank[p]) == banklen for p in bank])
@@ -279,7 +295,7 @@ fig, axis_dict = create_multidim_plot(
     scatter_log_cmap=args.log_colormap,
     marginal_title=False,
     marginal_percentiles=[],
-    fill_color='g',
+    fill_color="g",
     zvals=zvals,
     show_colorbar=cpar is not False,
     cbar_label=cpar_label,
@@ -295,7 +311,7 @@ title_text = f"{os.path.basename(args.bank_file)}"
 if args.fits_file is not None:
     title_text += f", {os.path.basename(args.fits_file)}"
 title_text += f" - {banklen}\u00a0templates"
-title_text = '\n'.join(wrap(args.title if args.title is not None else title_text, 60))
+title_text = "\n".join(wrap(args.title if args.title is not None else title_text, 60))
 if not args.no_suptitle:
     fig.suptitle(title_text)
 for k, v in axis_dict.items():
@@ -343,15 +359,16 @@ logging.info("Plot generated")
 fig.set_dpi(args.dpi)
 
 # save
-caption = ("Template bank as a corner plot with "
-           "scatter points for each waveform.")
+caption = "Template bank as a corner plot with scatter points for each waveform."
 
 metadata.save_fig_with_metadata(
-                 fig, args.output_plot_file,
-                 cmd=" ".join(sys.argv),
-                 title=title_text,
-                 caption=caption,
-                 fig_kwds={'bbox_inches': 'tight'})
+    fig,
+    args.output_plot_file,
+    cmd=" ".join(sys.argv),
+    title=title_text,
+    caption=caption,
+    fig_kwds={"bbox_inches": "tight"},
+)
 
 # finish
 logging.info("Done")

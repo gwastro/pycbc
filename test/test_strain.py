@@ -1,24 +1,27 @@
 """
 These unit tests are for the pycbc.strain.strain module
 """
+
+import unittest
+
 import numpy
-from pycbc.types import TimeSeries
+from utils import simple_exit
+
 from pycbc.strain.strain import (
     execute_cached_fft,
     execute_cached_ifft,
 )
-import unittest
-
-from utils import simple_exit
+from pycbc.types import TimeSeries
 
 
 class TestStrain(unittest.TestCase):
-
     def setUp(self):
 
         self.rng = numpy.random.default_rng()
         self.td_data = TimeSeries(
-            self.rng.normal(size=100), delta_t=0.2, epoch=1123456789.6,
+            self.rng.normal(size=100),
+            delta_t=0.2,
+            epoch=1123456789.6,
         )
         self.fd_data = self.td_data.to_frequencyseries()
         # Tolerance for float64
@@ -31,9 +34,7 @@ class TestStrain(unittest.TestCase):
             copy_output=True,
         )
         self.assertTrue(
-            fd_data.almost_equal_norm(
-                self.fd_data, tol=self.tol, dtol=self.tol
-            )
+            fd_data.almost_equal_norm(self.fd_data, tol=self.tol, dtol=self.tol)
         )
 
     def test_cached_ifft(self):
@@ -43,15 +44,13 @@ class TestStrain(unittest.TestCase):
             copy_output=True,
         )
         self.assertTrue(
-            td_data.almost_equal_norm(
-                self.td_data, tol=self.tol, dtol=self.tol
-            )
+            td_data.almost_equal_norm(self.td_data, tol=self.tol, dtol=self.tol)
         )
 
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestStrain))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

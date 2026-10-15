@@ -1,23 +1,24 @@
 import unittest
-import numpy
 
+import numpy
 from utils import simple_exit
 
 from pycbc import cosmology
-from pycbc.waveform import get_td_waveform, get_fd_waveform
+from pycbc.io import FieldArray
+from pycbc.types import TimeSeries
+from pycbc.waveform import get_fd_waveform, get_td_waveform
 from pycbc.waveform.utils import (
-    apply_fd_time_shift,
-    redshift_waveform,
-    get_taper_settings,
     DEFAULT_TAPER_METHOD,
     DEFAULT_TAPER_WINDOW,
+    apply_fd_time_shift,
+    get_taper_settings,
+    redshift_waveform,
 )
-from pycbc.types import (TimeSeries)
-from pycbc.io import FieldArray
 
 
 class TestFDTimeShift(unittest.TestCase):
     """Tests ``apply_fd_time_shift``."""
+
     def setUp(self):
         # we'll use a sine wave time series to do the testing, with the
         # the segment length such that an interger number of cycles fit, so
@@ -26,23 +27,25 @@ class TestFDTimeShift(unittest.TestCase):
         self.sample_rate = 4096
         self.seglen = 1
         ncycles = self.freq * self.seglen
-        t = numpy.linspace(0, ncycles*2*numpy.pi,
-                           num=self.sample_rate*self.seglen,
-                           endpoint=False)
-        self.time_series = TimeSeries(t, delta_t=1./self.sample_rate, epoch=0)
+        t = numpy.linspace(
+            0,
+            ncycles * 2 * numpy.pi,
+            num=self.sample_rate * self.seglen,
+            endpoint=False,
+        )
+        self.time_series = TimeSeries(t, delta_t=1.0 / self.sample_rate, epoch=0)
         self.tdsinx = numpy.sin(self.time_series)
         self.fdsinx = self.tdsinx.to_frequencyseries()
 
     def _shift_and_ifft(self, fdsinx, tshift, fseries=None):
-        """Calls apply_fd_time_shift, and iFFTs to the time domain.
-        """
+        """Calls apply_fd_time_shift, and iFFTs to the time domain."""
         start_time = self.time_series.start_time
-        tdshift = apply_fd_time_shift(fdsinx, start_time+tshift,
-                                      fseries=fseries)
+        tdshift = apply_fd_time_shift(fdsinx, start_time + tshift, fseries=fseries)
         return tdshift.to_timeseries()
 
     def _test_apply_fd_time_shift(self, fdsinx, fseries=None, atol=1e-8):
-        """Tests ``apply_fd_time_shift`` with the given fdseries.
+        """
+        Tests ``apply_fd_time_shift`` with the given fdseries.
 
         If ``fdsinx`` is a FrequencySeries, this will test the shift code
         written in C. Otherwise, this will test the numpy version.
@@ -57,52 +60,53 @@ class TestFDTimeShift(unittest.TestCase):
         atol : float, optional
             The absolute tolerance for the comparison test. See
             ``numpy.isclose`` for details.
+
         """
         # shift by -pi/2: should be the same as the cosine
-        tshift = 1./(4*self.freq)
+        tshift = 1.0 / (4 * self.freq)
         tdshift = self._shift_and_ifft(fdsinx, -tshift, fseries=fseries)
         # check
         comp = numpy.cos(self.time_series)
-        if tdshift.precision == 'single':
+        if tdshift.precision == "single":
             # cast to single
             comp = comp.astype(numpy.float32)
         self.assertTrue(numpy.isclose(tdshift, comp, atol=atol).all())
         # shift by +pi/2: should be the same as the -cosine
         tdshift = self._shift_and_ifft(fdsinx, tshift, fseries=fseries)
-        self.assertTrue(numpy.isclose(tdshift, -1*comp, atol=atol).all())
+        self.assertTrue(numpy.isclose(tdshift, -1 * comp, atol=atol).all())
         # shift by a non-integer fraction of the period; we'll do this by
         # shifting by a prime number times dt / 3
         # forward:
-        tshift = 193 * self.time_series.delta_t / 3.
+        tshift = 193 * self.time_series.delta_t / 3.0
         tdshift = self._shift_and_ifft(fdsinx, tshift, fseries=fseries)
-        comp = numpy.sin(self.time_series - 2*numpy.pi*self.freq*tshift)
-        if tdshift.precision == 'single':
+        comp = numpy.sin(self.time_series - 2 * numpy.pi * self.freq * tshift)
+        if tdshift.precision == "single":
             # cast to single
             comp = comp.astype(numpy.float32)
         self.assertTrue(numpy.isclose(tdshift, comp, atol=atol).all())
         # backward:
         tdshift = self._shift_and_ifft(fdsinx, -tshift, fseries=fseries)
-        comp = numpy.sin(self.time_series + 2*numpy.pi*self.freq*tshift)
-        if tdshift.precision == 'single':
+        comp = numpy.sin(self.time_series + 2 * numpy.pi * self.freq * tshift)
+        if tdshift.precision == "single":
             # cast to single
             comp = comp.astype(numpy.float32)
         self.assertTrue(numpy.isclose(tdshift, comp, atol=atol).all())
 
     def test_fd_time_shift(self):
-        """Applies shifts to fdsinx using cython code, and compares the
+        """
+        Applies shifts to fdsinx using cython code, and compares the
         result to applying the shift directly in the time domain.
         """
         self._test_apply_fd_time_shift(self.fdsinx)
 
     def test_fd_time_shift32(self):
-        """Tests the cython code using single precision.
-        """
+        """Tests the cython code using single precision."""
         # we need to increase the tolerance on isclose
-        self._test_apply_fd_time_shift(self.fdsinx.astype(numpy.complex64),
-                                       atol=1e-4)
+        self._test_apply_fd_time_shift(self.fdsinx.astype(numpy.complex64), atol=1e-4)
 
     def test_fseries_time_shift(self):
-        """Applies shifts to fdsinx using numpy code, and compares the result
+        """
+        Applies shifts to fdsinx using numpy code, and compares the result
         to applying the shift directly in the time domain.
         """
         fdsinx = self.fdsinx.copy()
@@ -111,8 +115,9 @@ class TestFDTimeShift(unittest.TestCase):
 
 
 class TestRedshiftWaveform(unittest.TestCase):
-    """Tests ``redshift_waveform`` against detector-frame generation.
-    
+    """
+    Tests ``redshift_waveform`` against detector-frame generation.
+
     Specifically, this tests that a waveform generated in the source frame and
     then redshifted using ``redshift_waveform`` matches a waveform generated
     directly in the detector frame with redshifted masses. This is done for
@@ -122,7 +127,7 @@ class TestRedshiftWaveform(unittest.TestCase):
     def setUp(self):
         self.srcm1 = 30.0
         self.srcm2 = 20.0
-        self.distance = 4000.
+        self.distance = 4000.0
         self.z = cosmology.redshift(self.distance)
 
         # Detector-frame settings.
@@ -142,25 +147,31 @@ class TestRedshiftWaveform(unittest.TestCase):
         """Returns relative L2 norm of ``test - ref``."""
         return numpy.linalg.norm(test - ref) / numpy.linalg.norm(ref)
 
-
     def _check_epochs(self, redshifted_hp, det_hp, err=0.01):
-        """Checks that the epochs of the two waveforms are close enough.
+        """
+        Checks that the epochs of the two waveforms are close enough.
 
         Small differences in the epochs may arise due to floating point
         errors. That may cause a failure when we compute the relative L2
         error, so we'll check that the epochs are close enough.
         """
-        isclose = numpy.isclose(redshifted_hp.start_time, det_hp.start_time,
-                                      rtol=0., atol=err*det_hp.delta_t)
-        self.assertTrue(isclose,
-                        msg=f"Epochs differ by more than {err*det_hp.delta_t}:"
-                            f" |redshifted - detector epoch| = "
-                            f"{abs(redshifted_hp.start_time - det_hp.start_time)}")
+        isclose = numpy.isclose(
+            redshifted_hp.start_time,
+            det_hp.start_time,
+            rtol=0.0,
+            atol=err * det_hp.delta_t,
+        )
+        self.assertTrue(
+            isclose,
+            msg=f"Epochs differ by more than {err * det_hp.delta_t}:"
+            f" |redshifted - detector epoch| = "
+            f"{abs(redshifted_hp.start_time - det_hp.start_time)}",
+        )
 
     def test_td_redshift_matches_redshifted_masses(self):
         """Redshifting a source-frame TD waveform matches detector-frame TD."""
         src_hp, _ = get_td_waveform(
-            approximant='SEOBNRv4',
+            approximant="SEOBNRv4",
             mass1=self.srcm1,
             mass2=self.srcm2,
             distance=self.distance,
@@ -170,7 +181,7 @@ class TestRedshiftWaveform(unittest.TestCase):
         redshifted_hp = redshift_waveform(src_hp, self.z)
 
         det_hp, _ = get_td_waveform(
-            approximant='SEOBNRv4',
+            approximant="SEOBNRv4",
             mass1=self.detm1,
             mass2=self.detm2,
             distance=self.distance,
@@ -184,11 +195,10 @@ class TestRedshiftWaveform(unittest.TestCase):
         relerr = self._relative_l2_error(redshifted_hp, det_hp)
         self.assertLess(relerr, 2e-3)
 
-
     def test_fd_redshift_matches_redshifted_masses(self):
         """Redshifting a source-frame FD waveform matches detector-frame FD."""
         src_hptilde, _ = get_fd_waveform(
-            approximant='IMRPhenomXPHM',
+            approximant="IMRPhenomXPHM",
             mass1=self.srcm1,
             mass2=self.srcm2,
             distance=self.distance,
@@ -199,7 +209,7 @@ class TestRedshiftWaveform(unittest.TestCase):
         redshifted_hptilde = redshift_waveform(src_hptilde, self.z)
 
         det_hptilde, _ = get_fd_waveform(
-            approximant='IMRPhenomXPHM',
+            approximant="IMRPhenomXPHM",
             mass1=self.detm1,
             mass2=self.detm2,
             distance=self.distance,
@@ -220,18 +230,18 @@ class TestRedshiftWaveform(unittest.TestCase):
 
 class TestGetTaperSettings(unittest.TestCase):
     """Tests ``get_taper_settings``."""
+
     def test_get_taper_settings(self):
         defaults = (DEFAULT_TAPER_METHOD, DEFAULT_TAPER_WINDOW)
-        settings = {'taper_method': 'constant', 'taper_window': 0.5}
+        settings = {"taper_method": "constant", "taper_window": 0.5}
         # dicts, e.g., the parameters of a waveform generator
         self.assertEqual(get_taper_settings({}), defaults)
-        self.assertEqual(get_taper_settings(settings), ('constant', 0.5))
+        self.assertEqual(get_taper_settings(settings), ("constant", 0.5))
         # objects with attributes, e.g., rows of an injection table
-        row = FieldArray.from_kwargs(mass1=[10.])[0]
+        row = FieldArray.from_kwargs(mass1=[10.0])[0]
         self.assertEqual(get_taper_settings(row), defaults)
-        row = FieldArray.from_kwargs(
-            **{k: [v] for k, v in settings.items()})[0]
-        self.assertEqual(get_taper_settings(row), ('constant', 0.5))
+        row = FieldArray.from_kwargs(**{k: [v] for k, v in settings.items()})[0]
+        self.assertEqual(get_taper_settings(row), ("constant", 0.5))
 
 
 suite = unittest.TestSuite()
@@ -239,6 +249,6 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFDTimeShift))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestRedshiftWaveform))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestGetTaperSettings))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

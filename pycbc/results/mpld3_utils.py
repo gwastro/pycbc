@@ -1,6 +1,9 @@
-""" This module provides functionality to extend mpld3
-"""
-import mpld3, mpld3.plugins, mpld3.utils
+"""This module provides functionality to extend mpld3"""
+
+import mpld3
+import mpld3.plugins
+import mpld3.utils
+
 
 class ClickLink(mpld3.plugins.PluginBase):
     """Plugin for following a link on click"""
@@ -28,11 +31,14 @@ class ClickLink(mpld3.plugins.PluginBase):
                           );
     }
     """
+
     def __init__(self, points, links):
-        self.dict_ = {"type": "clicklink",
-                      "id": mpld3.utils.get_id(points),
-                      "links": links,
-                      }
+        self.dict_ = {
+            "type": "clicklink",
+            "id": mpld3.utils.get_id(points),
+            "links": links,
+        }
+
 
 class MPLSlide(mpld3.plugins.PluginBase):
     JAVASCRIPT = """
@@ -102,20 +108,22 @@ class MPLSlide(mpld3.plugins.PluginBase):
                 if (this.props.enabled) this.fig.enable_zoom(); else this.fig.disable_zoom();
             };
         """
+
     def __init__(self, button=True, enabled=None):
         if enabled is None:
             enabled = not button
-        self.dict_ = {"type": "zoom",
-                      "button": button,
-                      "enabled": enabled}
+        self.dict_ = {"type": "zoom", "button": button, "enabled": enabled}
+
 
 class Tooltip(mpld3.plugins.PointHTMLTooltip):
     JAVASCRIPT = ""
-    def __init__(self, points, labels=None,
-                 hoffset=0, voffset=10, css=None):
-        super(Tooltip, self).__init__(points, labels, hoffset, voffset, "")
+
+    def __init__(self, points, labels=None, hoffset=0, voffset=10, css=None):
+        super().__init__(points, labels, hoffset, voffset, "")
+
 
 class LineTooltip(mpld3.plugins.LineHTMLTooltip):
     JAVASCRIPT = ""
+
     def __init__(self, line, label=None, hoffset=0, voffset=10, css=None):
-        super(LineTooltip, self).__init__(line, label, hoffset, voffset, "")
+        super().__init__(line, label, hoffset, voffset, "")

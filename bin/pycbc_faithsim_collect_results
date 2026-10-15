@@ -2,13 +2,13 @@
 
 """
 Program for collecting the results of pycbc_faithsim comparing two approximants
-computing the match between them and creating a .dat file with the results. 
+computing the match between them and creating a .dat file with the results.
 """
 
 import argparse
-import numpy as np
 
-from igwn_ligolw import utils, lsctables
+import numpy as np
+from igwn_ligolw import lsctables, utils
 
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.io.ligolw import LIGOLWContentHandler
@@ -97,7 +97,7 @@ for i in range(len(match_files)):
         md = np.loadtxt(match, dtype=dtypem)
         if md.size == 0:
             continue
-    except IOError:
+    except OSError:
         continue
     pdata = np.zeros(len(bt), dtype=dtypeo)
 

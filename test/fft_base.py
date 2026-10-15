@@ -60,44 +60,56 @@ in particular that whichever backend is the default will be tested twice, once a
 """
 
 import unittest
+
 import numpy
-from numpy import dtype, float32, float64, complex64, complex128, zeros, real
+from numpy import complex64, complex128, dtype, float32, float64, real, zeros
 from numpy.random import randn
 
-import pycbc.fft
-from pycbc.fft.backend_support import set_backend
 import pycbc
+import pycbc.fft
 import pycbc.scheme
-from pycbc.types import (
-    Array as ar,
-    TimeSeries as ts,
-    FrequencySeries as fs,
-    zeros
-)
+from pycbc.fft.backend_support import set_backend
+from pycbc.types import Array as ar
+from pycbc.types import FrequencySeries as fs
+from pycbc.types import TimeSeries as ts
+from pycbc.types import zeros
 
 # Because we run many similar tests where we only vary dtypes, precisions,
 # or Array/TimeSeries/FrequencySeries, it is helpful to define the following
 # dictionarys and functions and then call those from within the actual tests.
 
 # Map the same kind (real or complex) to the other precision
-_other_prec = {float32:float64, float64:float32,
-               complex64:complex128, complex128:complex64}
+_other_prec = {
+    float32: float64,
+    float64: float32,
+    complex64: complex128,
+    complex128: complex64,
+}
 # Map the same precision to the other kind
-_other_kind = {float32:complex64, float64:complex128,
-               complex64:float32, complex128:float64}
+_other_kind = {
+    float32: complex64,
+    float64: complex128,
+    complex64: float32,
+    complex128: float64,
+}
 
 # Map the dtype of a valid *forward* fft *input* array to the wrong kind,
 # but correct precision, dtype of the *output* array. This is either R2R or C2R.
 # The same mapping also send the dtype of a valid *output* array for an inverse
 # fft to the wrong kind but correct precision *input* array, corresponding to
 # a R2R or R2C transform.
-_bad_dtype = {float32: float32, float64: float64,
-              complex64: float32, complex128: float64}
+_bad_dtype = {
+    float32: float32,
+    float64: float64,
+    complex64: float32,
+    complex128: float64,
+}
 
 
 # Our actual helper functions.  Note that these perform the necessary operations
 # within the appropriate context, so they should not themselves be called inside
 # of a context block.
+
 
 def _test_fft(test_case, inarr, expec, tol):
     # Basic test to see that the forward FFT doesn't
@@ -111,16 +123,16 @@ def _test_fft(test_case, inarr, expec, tol):
     outarr = outty(expec)
     # Clear it and change values (so we test something meaningful):
     outarr.clear()
-    if hasattr(outarr,'_epoch'):
-        outarr._epoch *= 5*tol
-    if hasattr(outarr,'_delta_t'):
-        outarr._delta_t *= 5*tol
-    if hasattr(outarr,'_delta_f'):
-        outarr._delta_f *= 5*tol
+    if hasattr(outarr, "_epoch"):
+        outarr._epoch *= 5 * tol
+    if hasattr(outarr, "_delta_t"):
+        outarr._delta_t *= 5 * tol
+    if hasattr(outarr, "_delta_f"):
+        outarr._delta_f *= 5 * tol
     with tc.context:
         set_backend(tc.backends)
-        for api in ['func', 'class']:
-            if api == 'func':
+        for api in ["func", "class"]:
+            if api == "func":
                 pycbc.fft.fft(inarr, outarr)
             else:
                 fft_class = pycbc.fft.FFT(inarr, outarr)
@@ -131,22 +143,17 @@ def _test_fft(test_case, inarr, expec, tol):
                     outarr *= inarr._delta_f
 
             # First, verify that the input hasn't been overwritten
-            emsg = 'FFT overwrote input array'
-            tc.assertEqual(inarr, in_pristine,emsg)
+            emsg = "FFT overwrote input array"
+            tc.assertEqual(inarr, in_pristine, emsg)
             # Next, check that the output is correct to within tolerance.
             # That will require exact equality of all other meta-data
-            emsg = ('FFT output differs by more than a factor of '
-                    '{0} from expected'.format(tol))
+            emsg = f"FFT output differs by more than a factor of {tol} from expected"
             if isinstance(outarr, ts) or isinstance(outarr, fs):
                 tc.assertTrue(
-                    outarr.almost_equal_norm(expec, tol=tol, dtol=tol),
-                    msg=emsg
+                    outarr.almost_equal_norm(expec, tol=tol, dtol=tol), msg=emsg
                 )
             else:
-                tc.assertTrue(
-                    outarr.almost_equal_norm(expec, tol=tol),
-                    msg=emsg
-                )
+                tc.assertTrue(outarr.almost_equal_norm(expec, tol=tol), msg=emsg)
             outarr.clear()
 
 
@@ -162,16 +169,16 @@ def _test_ifft(test_case, inarr, expec, tol):
     outarr = outty(expec)
     # Clear it and change values (so we test something meaningful):
     outarr.clear()
-    if hasattr(outarr,'_epoch'):
-        outarr._epoch *= 5*tol
-    if hasattr(outarr,'_delta_t'):
-        outarr._delta_t *= 5*tol
-    if hasattr(outarr,'_delta_f'):
-        outarr._delta_f *= 5*tol
+    if hasattr(outarr, "_epoch"):
+        outarr._epoch *= 5 * tol
+    if hasattr(outarr, "_delta_t"):
+        outarr._delta_t *= 5 * tol
+    if hasattr(outarr, "_delta_f"):
+        outarr._delta_f *= 5 * tol
     with tc.context:
         set_backend(tc.backends)
-        for api in ['func', 'class']:
-            if api == 'func':
+        for api in ["func", "class"]:
+            if api == "func":
                 pycbc.fft.ifft(inarr, outarr)
             else:
                 ifft_class = pycbc.fft.IFFT(inarr, outarr)
@@ -182,22 +189,20 @@ def _test_ifft(test_case, inarr, expec, tol):
                     outarr *= inarr._delta_f
 
             # First, verify that the input hasn't been overwritten
-            emsg = 'Inverse FFT overwrote input array'
+            emsg = "Inverse FFT overwrote input array"
             tc.assertEqual(inarr, in_pristine, emsg)
             # Next, check that the output is correct to within tolerance.
             # That will require exact equality of all other meta-data
-            emsg = ('Inverse FFT output differs by more than a factor '
-                    'of {0} from expected'.format(tol))
+            emsg = (
+                "Inverse FFT output differs by more than a factor "
+                f"of {tol} from expected"
+            )
             if isinstance(outarr, ts) or isinstance(outarr, fs):
                 tc.assertTrue(
-                    outarr.almost_equal_norm(expec, tol=tol, dtol=tol),
-                    msg=emsg
+                    outarr.almost_equal_norm(expec, tol=tol, dtol=tol), msg=emsg
                 )
             else:
-                tc.assertTrue(
-                    outarr.almost_equal_norm(expec, tol=tol),
-                    msg=emsg
-                )
+                tc.assertTrue(outarr.almost_equal_norm(expec, tol=tol), msg=emsg)
             outarr.clear()
 
 
@@ -211,22 +216,22 @@ def _test_random(test_case, inarr, outarr, tol):
     # First test IFFT(FFT(random))
     # The numpy randn(n) provides an array of n numbers drawn from standard
     # normal
-    if dtype(inarr).kind == 'c':
-        inarr._data[:] = randn(len(inarr)) + 1j*randn(len(inarr))
+    if dtype(inarr).kind == "c":
+        inarr._data[:] = randn(len(inarr)) + 1j * randn(len(inarr))
         # If we're going to do a HC2R transform we must worry about DC/Nyquist
         # imaginary
-        if dtype(outarr).kind == 'f':
+        if dtype(outarr).kind == "f":
             inarr._data[0] = real(inarr[0])
             if (len(outarr) % 2) == 0:
-                inarr._data[len(inarr)-1] = real(inarr[len(inarr)-1])
+                inarr._data[len(inarr) - 1] = real(inarr[len(inarr) - 1])
     else:
         inarr._data[:] = randn(len(inarr))
     incopy = type(inarr)(inarr)
     outarr.clear()
     with tc.context:
         set_backend(tc.backends)
-        for api in ['func', 'class']:
-            if api == 'func':
+        for api in ["func", "class"]:
+            if api == "func":
                 pycbc.fft.fft(inarr, outarr)
                 pycbc.fft.ifft(outarr, inarr)
             else:
@@ -245,40 +250,38 @@ def _test_random(test_case, inarr, outarr, tol):
             if type(inarr) == ar:
                 # An Array FFTed and then IFFTEd will be scaled by its length
                 # Frequency and TimeSeries have no scaling
-                inarr /= len(inarr) 
+                inarr /= len(inarr)
 
-            emsg=("IFFT(FFT(random)) did not reproduce original array to "
-                  "within tolerance {0}".format(tol))
+            emsg = (
+                "IFFT(FFT(random)) did not reproduce original array to "
+                f"within tolerance {tol}"
+            )
             if isinstance(incopy, ts) or isinstance(incopy, fs):
                 tc.assertTrue(
-                    incopy.almost_equal_norm(inarr, tol=tol, dtol=tol),
-                    msg=emsg
+                    incopy.almost_equal_norm(inarr, tol=tol, dtol=tol), msg=emsg
                 )
             else:
-                tc.assertTrue(
-                    incopy.almost_equal_norm(inarr, tol=tol),
-                    msg=emsg
-                )
+                tc.assertTrue(incopy.almost_equal_norm(inarr, tol=tol), msg=emsg)
     # Perform arithmetic on outarr and inarr to pull them off of the GPU:
     outarr *= 1.0
     inarr *= 1.0
     # Now the same for FFT(IFFT(random))
-    if dtype(outarr).kind == 'c':
-        outarr._data[:] = randn(len(outarr)) + 1j*randn(len(outarr))
+    if dtype(outarr).kind == "c":
+        outarr._data[:] = randn(len(outarr)) + 1j * randn(len(outarr))
         # If we're going to do a HC2R transform we must worry about
         # DC/Nyquist imaginary
-        if dtype(inarr).kind == 'f':
+        if dtype(inarr).kind == "f":
             outarr._data[0] = real(outarr[0])
             if (len(inarr) % 2) == 0:
-                outarr._data[len(outarr)-1] = real(outarr[len(outarr)-1])
+                outarr._data[len(outarr) - 1] = real(outarr[len(outarr) - 1])
     else:
         outarr._data[:] = randn(len(outarr))
     inarr.clear()
     outcopy = type(outarr)(outarr)
     with tc.context:
         set_backend(tc.backends)
-        for api in ['func', 'class']:
-            if api == 'func':
+        for api in ["func", "class"]:
+            if api == "func":
                 pycbc.fft.ifft(outarr, inarr)
                 pycbc.fft.fft(inarr, outarr)
             else:
@@ -299,20 +302,18 @@ def _test_random(test_case, inarr, outarr, tol):
                 # Frequency and TimeSeries have no scaling
                 outarr /= len(inarr)
 
-            emsg = ("FFT(IFFT(random)) did not reproduce original array to "
-                    "within tolerance {0}".format(tol))
+            emsg = (
+                "FFT(IFFT(random)) did not reproduce original array to "
+                f"within tolerance {tol}"
+            )
             if isinstance(outcopy, ts) or isinstance(outcopy, fs):
                 tc.assertTrue(
-                    outcopy.almost_equal_norm(outarr, tol=tol, dtol=tol),
-                    msg=emsg
+                    outcopy.almost_equal_norm(outarr, tol=tol, dtol=tol), msg=emsg
                 )
-        else:
-            tc.assertTrue(
-                outcopy.almost_equal_norm(outarr, tol=tol),
-                msg=emsg
-            )
+        tc.assertTrue(outcopy.almost_equal_norm(outarr, tol=tol), msg=emsg)
 
-def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
+
+def _test_raise_excep_fft(test_case, inarr, outarr, other_args=None):
     # As far as can be told from the unittest module documentation, the
     # 'assertRaises' tests do not permit a custom message.  So more
     # comments than usual here, to help diagnose and test failures.
@@ -334,28 +335,25 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
         outty = type(outarr)
         outzer = zeros(len(outarr))
         # If we give an output array that is wrong only in length, raise ValueError:
-        out_badlen = outty(zeros(len(outarr)+1),
-                           dtype=outarr.dtype, **other_args)
+        out_badlen = outty(zeros(len(outarr) + 1), dtype=outarr.dtype, **other_args)
         args = [inarr, out_badlen]
         tc.assertRaises(ValueError, pycbc.fft.fft, *args)
         tc.assertRaises(ValueError, class_fft, *args)
         # If we give an output array that has the wrong precision,
         # raise ValueError:
-        out_badprec = outty(outzer, dtype=_other_prec[dtype(outarr).type],
-                            **other_args)
+        out_badprec = outty(outzer, dtype=_other_prec[dtype(outarr).type], **other_args)
         args = [inarr, out_badprec]
         tc.assertRaises(ValueError, pycbc.fft.fft, *args)
         tc.assertRaises(ValueError, class_fft, *args)
-        # If we give an output array that has the wrong kind (real or 
+        # If we give an output array that has the wrong kind (real or
         # complex) but correct precision, then raise a ValueError.  This only
         # makes sense if we try to do either C2R or R2R.
-        out_badkind = outty(outzer, dtype=_bad_dtype[dtype(inarr).type],
-                            **other_args)
+        out_badkind = outty(outzer, dtype=_bad_dtype[dtype(inarr).type], **other_args)
         args = [inarr, out_badkind]
         tc.assertRaises(ValueError, pycbc.fft.fft, *args)
         tc.assertRaises(ValueError, class_fft, *args)
         # If we give an output array that isn't a PyCBC type, raise TypeError:
-        out_badtype = numpy.zeros(len(outarr),dtype=outarr.dtype)
+        out_badtype = numpy.zeros(len(outarr), dtype=outarr.dtype)
         args = [inarr, out_badtype]
         tc.assertRaises(TypeError, pycbc.fft.fft, *args)
         tc.assertRaises(TypeError, class_fft, *args)
@@ -364,6 +362,7 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
         args = [in_badtype, outarr]
         tc.assertRaises(TypeError, pycbc.fft.fft, *args)
         tc.assertRaises(TypeError, class_fft, *args)
+
 
 def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
     # As far as can be told from the unittest module documentation, the
@@ -388,15 +387,13 @@ def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
         outzer = zeros(len(outarr))
         # If we give an output array that is wrong only in length,
         # raise ValueError:
-        out_badlen = outty(zeros(len(outarr)+1), 
-                           dtype=outarr.dtype, **other_args)
+        out_badlen = outty(zeros(len(outarr) + 1), dtype=outarr.dtype, **other_args)
         args = [inarr, out_badlen]
         tc.assertRaises(ValueError, pycbc.fft.ifft, *args)
         tc.assertRaises(ValueError, class_ifft, *args)
         # If we give an output array that has the wrong precision,
         # raise ValueError:
-        out_badprec = outty(outzer, dtype=_other_prec[dtype(outarr).type],
-                            **other_args)
+        out_badprec = outty(outzer, dtype=_other_prec[dtype(outarr).type], **other_args)
         args = [inarr, out_badprec]
         tc.assertRaises(ValueError, pycbc.fft.ifft, *args)
         tc.assertRaises(ValueError, class_ifft, *args)
@@ -408,17 +405,17 @@ def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
         new_args = other_args.copy()
         if new_args != {}:
             try:
-                delta = new_args.pop('delta_t')
-                new_args.update({'delta_f' : delta})
+                delta = new_args.pop("delta_t")
+                new_args.update({"delta_f": delta})
             except KeyError:
-                delta = new_args.pop('delta_f')
-                new_args.update({'delta_t' : delta})
-        in_badkind = type(inarr)(zeros(len(inarr)),
-                                 dtype=_bad_dtype[dtype(outarr).type],
-                                 **new_args)
+                delta = new_args.pop("delta_f")
+                new_args.update({"delta_t": delta})
+        in_badkind = type(inarr)(
+            zeros(len(inarr)), dtype=_bad_dtype[dtype(outarr).type], **new_args
+        )
         args = [in_badkind, outarr]
         # This will run pycbc.fft.ifft(in_badkind, outarr)
-        if str(outarr.dtype) not in ['complex64', 'complex128']:
+        if str(outarr.dtype) not in ["complex64", "complex128"]:
             tc.assertRaises((ValueError, KeyError), pycbc.fft.ifft, *args)
             tc.assertRaises((ValueError, KeyError), class_ifft, *args)
 
@@ -433,20 +430,26 @@ def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
         tc.assertRaises(TypeError, pycbc.fft.ifft, *args)
         tc.assertRaises(TypeError, class_ifft, *args)
 
+
 class _BaseTestFFTClass(unittest.TestCase):
     """
     This is the base class from which unit tests for all FFT backends
     are derived.
     """
+
     __test__ = False
+
     def setUp(self):
         # Dictionary to convert a dtype to a relative precision to test
-        self.tdict = { float32: 1e-6, float64: 1e-14,
-                       complex64: 1e-6, complex128: 1e-14}
-        if self.backends[0] == 'mkl':
+        self.tdict = {float32: 1e-6, float64: 1e-14, complex64: 1e-6, complex128: 1e-14}
+        if self.backends[0] == "mkl":
             # MKL precision is not as high
-            self.tdict = { float32: 1e-4, float64: 1e-6,
-                           complex64: 1e-4, complex128: 1e-6}
+            self.tdict = {
+                float32: 1e-4,
+                float64: 1e-6,
+                complex64: 1e-4,
+                complex128: 1e-6,
+            }
         # Next we set up various lists that are used to build our 'known'
         # test, which are repeated for a variety of different precisions
         # and basic types. All of the lists should be consistent with a
@@ -455,75 +458,96 @@ class _BaseTestFFTClass(unittest.TestCase):
 
         # First, R2C transforms.  We have both even and odd length inputs,
         # since the appropriate values for the output lengths vary.
-        self.in_r2c_e = [1.0,-1.0,2.0,-2.0]
-        self.out_r2c_e = [0.0+0.0j,-1.0-1.0j,6.0+0.0j]
-        self.in_r2c_o = [1.0,2.0,2.0]
-        self.out_r2c_o = [5.0+0.0j,-1.0+0.0j]
+        self.in_r2c_e = [1.0, -1.0, 2.0, -2.0]
+        self.out_r2c_e = [0.0 + 0.0j, -1.0 - 1.0j, 6.0 + 0.0j]
+        self.in_r2c_o = [1.0, 2.0, 2.0]
+        self.out_r2c_o = [5.0 + 0.0j, -1.0 + 0.0j]
         # Next, C2R transforms, again for both even and odd lengths
-        self.in_c2r_e = [0.0+0.0j,-1.0-1.0j,6.0+0.0j]
+        self.in_c2r_e = [0.0 + 0.0j, -1.0 - 1.0j, 6.0 + 0.0j]
         self.out_c2r_e = [4.0, -4.0, 8.0, -8.0]
-        self.in_c2r_o = [5.0+0.0j,-1.0+0.0j]
-        self.out_c2r_o = [3.0,6.0,6.0]
+        self.in_c2r_o = [5.0 + 0.0j, -1.0 + 0.0j]
+        self.out_c2r_o = [3.0, 6.0, 6.0]
         # Finally, C2C transforms, where we don't do both even and odd,
         # but do have different lists for fwd and rev (i.e., fft and ifft)
-        self.in_c2c_fwd = [1.0+1.0j,2.0-2.0j]
-        self.out_c2c_fwd = [3.0-1.0j,-1.0+3.0j]
-        self.in_c2c_rev = [3.0-1.0j,-1.0+3.0j]
-        self.out_c2c_rev = [2.0+2.0j,4.0-4.0j]
+        self.in_c2c_fwd = [1.0 + 1.0j, 2.0 - 2.0j]
+        self.out_c2c_fwd = [3.0 - 1.0j, -1.0 + 3.0j]
+        self.in_c2c_rev = [3.0 - 1.0j, -1.0 + 3.0j]
+        self.out_c2c_rev = [2.0 + 2.0j, 4.0 - 4.0j]
         # For Time/FrequencySeries, we want to test with a non-trivial epoch
         self.epoch = 3 + 4 * 1e-9
         # When we need a delta_t or delta_f for input, use this.
         # Output-appropriate variable is computed.
-        self.delta = 1.0/4096.0
+        self.delta = 1.0 / 4096.0
         # Length of our random arrays, for both real and complex arrays.
         self.rand_len_r = 2046
         self.rand_len_c = 1024
 
     def test_fwd_real_arr(self):
-        for fwd_dtype in [float32,float64]:
+        for fwd_dtype in [float32, float64]:
             # Even input
-            inarr = ar(self.in_r2c_e,dtype=fwd_dtype)
-            outexp = ar(self.out_r2c_e,dtype=_other_kind[fwd_dtype])
-            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            inarr = ar(self.in_r2c_e, dtype=fwd_dtype)
+            outexp = ar(self.out_r2c_e, dtype=_other_kind[fwd_dtype])
+            _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Odd input
-            inarr = ar(self.in_r2c_o,dtype=fwd_dtype)
-            outexp = ar(self.out_r2c_o,dtype=_other_kind[fwd_dtype])
-            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            inarr = ar(self.in_r2c_o, dtype=fwd_dtype)
+            outexp = ar(self.out_r2c_o, dtype=_other_kind[fwd_dtype])
+            _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = ar(zeros(self.rand_len_r,dtype=fwd_dtype))
-            rand_outarr = ar(zeros(self.rand_len_c,dtype=_other_kind[fwd_dtype]))
-            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            rand_inarr = ar(zeros(self.rand_len_r, dtype=fwd_dtype))
+            rand_outarr = ar(zeros(self.rand_len_c, dtype=_other_kind[fwd_dtype]))
+            _test_random(self, rand_inarr, rand_outarr, self.tdict[fwd_dtype])
             # Clean these up since they could be big:
             del rand_inarr
             del rand_outarr
             # Check that exceptions are raised.  Need input and
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
-            _test_raise_excep_fft(self,inarr,outexp)
+            _test_raise_excep_fft(self, inarr, outexp)
 
     def test_fwd_real_ts(self):
-        for fwd_dtype in [float32,float64]:
+        for fwd_dtype in [float32, float64]:
             delta_t = self.delta
             # Even input
-            inarr = ts(self.in_r2c_e,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
-            delta_f = 1.0/(inarr.delta_t * len(inarr))
-            outexp = fs(self.out_r2c_e,dtype=_other_kind[fwd_dtype],delta_f=delta_f,epoch=self.epoch)
+            inarr = ts(
+                self.in_r2c_e, dtype=fwd_dtype, delta_t=delta_t, epoch=self.epoch
+            )
+            delta_f = 1.0 / (inarr.delta_t * len(inarr))
+            outexp = fs(
+                self.out_r2c_e,
+                dtype=_other_kind[fwd_dtype],
+                delta_f=delta_f,
+                epoch=self.epoch,
+            )
             outexp *= delta_t
-            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Odd input
-            inarr = ts(self.in_r2c_o,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
-            delta_f = 1.0/(inarr.delta_t * len(inarr))
-            outexp = fs(self.out_r2c_o,dtype=_other_kind[fwd_dtype],delta_f=delta_f,epoch=self.epoch)
+            inarr = ts(
+                self.in_r2c_o, dtype=fwd_dtype, delta_t=delta_t, epoch=self.epoch
+            )
+            delta_f = 1.0 / (inarr.delta_t * len(inarr))
+            outexp = fs(
+                self.out_r2c_o,
+                dtype=_other_kind[fwd_dtype],
+                delta_f=delta_f,
+                epoch=self.epoch,
+            )
             outexp *= delta_t
-            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = ts(zeros(self.rand_len_r,dtype=fwd_dtype),epoch=self.epoch,delta_t=delta_t)
-            delta_f = 1.0/(rand_inarr.delta_t * len(rand_inarr))
-            rand_outarr = fs(zeros(self.rand_len_c,dtype=_other_kind[fwd_dtype]),epoch=self.epoch,
-                             delta_f=delta_f)
-            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            rand_inarr = ts(
+                zeros(self.rand_len_r, dtype=fwd_dtype),
+                epoch=self.epoch,
+                delta_t=delta_t,
+            )
+            delta_f = 1.0 / (rand_inarr.delta_t * len(rand_inarr))
+            rand_outarr = fs(
+                zeros(self.rand_len_c, dtype=_other_kind[fwd_dtype]),
+                epoch=self.epoch,
+                delta_f=delta_f,
+            )
+            _test_random(self, rand_inarr, rand_outarr, self.tdict[fwd_dtype])
             # Reuse random arrays for the LAL tests:
-            #_test_lal_tf_fft(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            # _test_lal_tf_fft(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
             # Clean these up since they could be big:
             del rand_inarr
             del rand_outarr
@@ -531,29 +555,50 @@ class _BaseTestFFTClass(unittest.TestCase):
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
             output_args = {"delta_f": self.delta, "epoch": self.epoch}
-            _test_raise_excep_fft(self,inarr,outexp,output_args)
+            _test_raise_excep_fft(self, inarr, outexp, output_args)
 
     def test_fwd_real_fs(self):
-        for fwd_dtype in [float32,float64]:
+        for fwd_dtype in [float32, float64]:
             delta_f = self.delta
             # Even input
-            inarr = fs(self.in_r2c_e,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
-            delta_t = 1.0/(inarr.delta_f * len(inarr))
-            outexp = ts(self.out_r2c_e,dtype=_other_kind[fwd_dtype],delta_t=delta_t,epoch=self.epoch)
+            inarr = fs(
+                self.in_r2c_e, dtype=fwd_dtype, delta_f=delta_f, epoch=self.epoch
+            )
+            delta_t = 1.0 / (inarr.delta_f * len(inarr))
+            outexp = ts(
+                self.out_r2c_e,
+                dtype=_other_kind[fwd_dtype],
+                delta_t=delta_t,
+                epoch=self.epoch,
+            )
             outexp *= delta_f
-            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Odd input
-            inarr = fs(self.in_r2c_o,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
-            delta_t = 1.0/(inarr.delta_f * len(inarr))
-            outexp = ts(self.out_r2c_o,dtype=_other_kind[fwd_dtype],delta_t=delta_t,epoch=self.epoch)
+            inarr = fs(
+                self.in_r2c_o, dtype=fwd_dtype, delta_f=delta_f, epoch=self.epoch
+            )
+            delta_t = 1.0 / (inarr.delta_f * len(inarr))
+            outexp = ts(
+                self.out_r2c_o,
+                dtype=_other_kind[fwd_dtype],
+                delta_t=delta_t,
+                epoch=self.epoch,
+            )
             outexp *= delta_f
-            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = fs(zeros(self.rand_len_r,dtype=fwd_dtype),epoch=self.epoch,delta_f=delta_f)
-            delta_t = 1.0/(rand_inarr.delta_f * len(rand_inarr))
-            rand_outarr = ts(zeros(self.rand_len_c,dtype=_other_kind[fwd_dtype]),epoch=self.epoch,
-                             delta_t=delta_t)
-            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            rand_inarr = fs(
+                zeros(self.rand_len_r, dtype=fwd_dtype),
+                epoch=self.epoch,
+                delta_f=delta_f,
+            )
+            delta_t = 1.0 / (rand_inarr.delta_f * len(rand_inarr))
+            rand_outarr = ts(
+                zeros(self.rand_len_c, dtype=_other_kind[fwd_dtype]),
+                epoch=self.epoch,
+                delta_t=delta_t,
+            )
+            _test_random(self, rand_inarr, rand_outarr, self.tdict[fwd_dtype])
             # LAL doesn't have forward FFT funcs starting from a FS, so skip _test_lal
             # Clean these up since they could be big:
             del rand_inarr
@@ -562,18 +607,18 @@ class _BaseTestFFTClass(unittest.TestCase):
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
             output_args = {"delta_t": self.delta, "epoch": self.epoch}
-            _test_raise_excep_fft(self,inarr,outexp,output_args)
+            _test_raise_excep_fft(self, inarr, outexp, output_args)
 
     def test_rev_real_arr(self):
-        for rev_dtype in [float32,float64]:
+        for rev_dtype in [float32, float64]:
             # Even input
-            inarr = ar(self.in_c2r_e,dtype=_other_kind[rev_dtype])
-            outexp = ar(self.out_c2r_e,dtype=rev_dtype)
-            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            inarr = ar(self.in_c2r_e, dtype=_other_kind[rev_dtype])
+            outexp = ar(self.out_c2r_e, dtype=rev_dtype)
+            _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Odd input
-            inarr = ar(self.in_c2r_o,dtype=_other_kind[rev_dtype])
-            outexp = ar(self.out_c2r_o,dtype=rev_dtype)
-            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            inarr = ar(self.in_c2r_o, dtype=_other_kind[rev_dtype])
+            outexp = ar(self.out_c2r_o, dtype=rev_dtype)
+            _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
             # in arrays in the other order we'd only get exceptions
@@ -581,23 +626,37 @@ class _BaseTestFFTClass(unittest.TestCase):
             # Check that exceptions are raised.  Need input and
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
-            _test_raise_excep_ifft(self,inarr,outexp)
+            _test_raise_excep_ifft(self, inarr, outexp)
 
     def test_rev_real_ts(self):
-        for rev_dtype in [float32,float64]:
+        for rev_dtype in [float32, float64]:
             delta_t = self.delta
             # Even input
-            inarr = ts(self.in_c2r_e,dtype=_other_kind[rev_dtype],delta_t=delta_t,epoch=self.epoch)
-            delta_f = 1.0/(delta_t*len(self.out_c2r_e))
-            outexp = fs(self.out_c2r_e,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            inarr = ts(
+                self.in_c2r_e,
+                dtype=_other_kind[rev_dtype],
+                delta_t=delta_t,
+                epoch=self.epoch,
+            )
+            delta_f = 1.0 / (delta_t * len(self.out_c2r_e))
+            outexp = fs(
+                self.out_c2r_e, dtype=rev_dtype, delta_f=delta_f, epoch=self.epoch
+            )
             outexp *= delta_t
-            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Odd input
-            inarr = ts(self.in_c2r_o,dtype=_other_kind[rev_dtype],delta_t=delta_t,epoch=self.epoch)
-            delta_f = 1.0/(delta_t*len(self.out_c2r_o))
-            outexp = fs(self.out_c2r_o,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            inarr = ts(
+                self.in_c2r_o,
+                dtype=_other_kind[rev_dtype],
+                delta_t=delta_t,
+                epoch=self.epoch,
+            )
+            delta_f = 1.0 / (delta_t * len(self.out_c2r_o))
+            outexp = fs(
+                self.out_c2r_o, dtype=rev_dtype, delta_f=delta_f, epoch=self.epoch
+            )
             outexp *= delta_t
-            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
             # in arrays in the other order we'd only get exceptions
@@ -609,66 +668,92 @@ class _BaseTestFFTClass(unittest.TestCase):
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
             output_args = {"delta_f": self.delta, "epoch": self.epoch}
-            _test_raise_excep_ifft(self,inarr,outexp,output_args)
+            _test_raise_excep_ifft(self, inarr, outexp, output_args)
 
     def test_rev_real_fs(self):
-        for rev_dtype in [float32,float64]:
+        for rev_dtype in [float32, float64]:
             delta_f = self.delta
             # Even input
-            inarr = fs(self.in_c2r_e,dtype=_other_kind[rev_dtype],delta_f=delta_f,epoch=self.epoch)
-            delta_t = 1.0/(delta_f*len(self.out_c2r_e))
-            outexp = ts(self.out_c2r_e,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
+            inarr = fs(
+                self.in_c2r_e,
+                dtype=_other_kind[rev_dtype],
+                delta_f=delta_f,
+                epoch=self.epoch,
+            )
+            delta_t = 1.0 / (delta_f * len(self.out_c2r_e))
+            outexp = ts(
+                self.out_c2r_e, dtype=rev_dtype, delta_t=delta_t, epoch=self.epoch
+            )
             outexp *= delta_f
-            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Odd input
-            inarr = fs(self.in_c2r_o,dtype=_other_kind[rev_dtype],delta_f=delta_f,epoch=self.epoch)
-            delta_t = 1.0/(delta_f*len(self.out_c2r_o))
-            outexp = ts(self.out_c2r_o,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
+            inarr = fs(
+                self.in_c2r_o,
+                dtype=_other_kind[rev_dtype],
+                delta_f=delta_f,
+                epoch=self.epoch,
+            )
+            delta_t = 1.0 / (delta_f * len(self.out_c2r_o))
+            outexp = ts(
+                self.out_c2r_o, dtype=rev_dtype, delta_t=delta_t, epoch=self.epoch
+            )
             outexp *= delta_f
-            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Check that exceptions are raised.  Need input and
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
             output_args = {"delta_t": self.delta, "epoch": self.epoch}
-            _test_raise_excep_ifft(self,inarr,outexp,output_args)
+            _test_raise_excep_ifft(self, inarr, outexp, output_args)
 
     def test_fwd_complex_arr(self):
-        for fwd_dtype in [complex64,complex128]:
+        for fwd_dtype in [complex64, complex128]:
             # Don't do separate even/odd tests for complex
-            inarr = ar(self.in_c2c_fwd,dtype=fwd_dtype)
-            outexp = ar(self.out_c2c_fwd,dtype=fwd_dtype)
-            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            inarr = ar(self.in_c2c_fwd, dtype=fwd_dtype)
+            outexp = ar(self.out_c2c_fwd, dtype=fwd_dtype)
+            _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = ar(zeros(self.rand_len_c,dtype=fwd_dtype))
-            rand_outarr = ar(zeros(self.rand_len_c,dtype=fwd_dtype))
-            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            rand_inarr = ar(zeros(self.rand_len_c, dtype=fwd_dtype))
+            rand_outarr = ar(zeros(self.rand_len_c, dtype=fwd_dtype))
+            _test_random(self, rand_inarr, rand_outarr, self.tdict[fwd_dtype])
             # Clean these up since they could be big:
             del rand_inarr
             del rand_outarr
             # Check that exceptions are raised.  Need input and
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
-            _test_raise_excep_fft(self,inarr,outexp)
+            _test_raise_excep_fft(self, inarr, outexp)
 
     def test_fwd_complex_ts(self):
-        for fwd_dtype in [complex64,complex128]:
+        for fwd_dtype in [complex64, complex128]:
             delta_t = self.delta
             # Don't do separate even/odd tests for complex
-            inarr = ts(self.in_c2c_fwd,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
-            delta_f = 1.0/(delta_t * len(inarr))
-            outexp = fs(self.out_c2c_fwd,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
+            inarr = ts(
+                self.in_c2c_fwd, dtype=fwd_dtype, delta_t=delta_t, epoch=self.epoch
+            )
+            delta_f = 1.0 / (delta_t * len(inarr))
+            outexp = fs(
+                self.out_c2c_fwd, dtype=fwd_dtype, delta_f=delta_f, epoch=self.epoch
+            )
             outexp *= delta_t
-            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = ts(zeros(self.rand_len_c,dtype=fwd_dtype),delta_t=delta_t,epoch=self.epoch)
-            delta_f = 1.0/(delta_t*len(rand_inarr))
-            rand_outarr = fs(zeros(self.rand_len_c,dtype=fwd_dtype),delta_f=delta_f,epoch=self.epoch)
-            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            rand_inarr = ts(
+                zeros(self.rand_len_c, dtype=fwd_dtype),
+                delta_t=delta_t,
+                epoch=self.epoch,
+            )
+            delta_f = 1.0 / (delta_t * len(rand_inarr))
+            rand_outarr = fs(
+                zeros(self.rand_len_c, dtype=fwd_dtype),
+                delta_f=delta_f,
+                epoch=self.epoch,
+            )
+            _test_random(self, rand_inarr, rand_outarr, self.tdict[fwd_dtype])
             # Reuse random arrays for the LAL tests:
             # COMMENTED OUT: The LAL Complex TimeFreqFFT and FreqTimeFFT functions perform
             # a repacking of data because they seem to assume that the array represents both
             # positive and negative frequencies.  We don't do this, so we don't compare.
-            #_test_lal_tf_fft(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            # _test_lal_tf_fft(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
             # Clean these up since they could be big:
             del rand_inarr
             del rand_outarr
@@ -676,22 +761,34 @@ class _BaseTestFFTClass(unittest.TestCase):
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
             output_args = {"delta_f": self.delta, "epoch": self.epoch}
-            _test_raise_excep_fft(self,inarr,outexp,output_args)
+            _test_raise_excep_fft(self, inarr, outexp, output_args)
 
     def test_fwd_complex_fs(self):
-        for fwd_dtype in [complex64,complex128]:
+        for fwd_dtype in [complex64, complex128]:
             delta_f = self.delta
             # Don't do separate even/odd tests for complex
-            inarr = fs(self.in_c2c_fwd,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
-            delta_t = 1.0/(delta_f * len(inarr))
-            outexp = ts(self.out_c2c_fwd,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
+            inarr = fs(
+                self.in_c2c_fwd, dtype=fwd_dtype, delta_f=delta_f, epoch=self.epoch
+            )
+            delta_t = 1.0 / (delta_f * len(inarr))
+            outexp = ts(
+                self.out_c2c_fwd, dtype=fwd_dtype, delta_t=delta_t, epoch=self.epoch
+            )
             outexp *= delta_f
-            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = fs(zeros(self.rand_len_c,dtype=fwd_dtype),delta_f=delta_f,epoch=self.epoch)
-            delta_t = 1.0/(delta_t*len(rand_inarr))
-            rand_outarr = ts(zeros(self.rand_len_c,dtype=fwd_dtype),delta_t=delta_t,epoch=self.epoch)
-            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            rand_inarr = fs(
+                zeros(self.rand_len_c, dtype=fwd_dtype),
+                delta_f=delta_f,
+                epoch=self.epoch,
+            )
+            delta_t = 1.0 / (delta_t * len(rand_inarr))
+            rand_outarr = ts(
+                zeros(self.rand_len_c, dtype=fwd_dtype),
+                delta_t=delta_t,
+                epoch=self.epoch,
+            )
+            _test_random(self, rand_inarr, rand_outarr, self.tdict[fwd_dtype])
             # LAL doesn't have forward FFT funcs starting from a FS, so skip _test_lal
             # Clean these up since they could be big:
             del rand_inarr
@@ -700,14 +797,14 @@ class _BaseTestFFTClass(unittest.TestCase):
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
             output_args = {"delta_t": self.delta, "epoch": self.epoch}
-            _test_raise_excep_fft(self,inarr,outexp,output_args)
+            _test_raise_excep_fft(self, inarr, outexp, output_args)
 
     def test_rev_complex_arr(self):
-        for rev_dtype in [complex64,complex128]:
+        for rev_dtype in [complex64, complex128]:
             # Don't do separate even/odd tests for complex
-            inarr = ar(self.in_c2c_rev,dtype=rev_dtype)
-            outexp = ar(self.out_c2c_rev,dtype=rev_dtype)
-            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            inarr = ar(self.in_c2c_rev, dtype=rev_dtype)
+            outexp = ar(self.out_c2c_rev, dtype=rev_dtype)
+            _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
             # in arrays in the other order we'd only get exceptions
@@ -715,17 +812,21 @@ class _BaseTestFFTClass(unittest.TestCase):
             # Check that exceptions are raised.  Need input and
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
-            _test_raise_excep_ifft(self,inarr,outexp)
+            _test_raise_excep_ifft(self, inarr, outexp)
 
     def test_rev_complex_ts(self):
-        for rev_dtype in [complex64,complex128]:
+        for rev_dtype in [complex64, complex128]:
             delta_t = self.delta
             # Don't do separate even/odd tests for complex
-            inarr = ts(self.in_c2c_rev,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
-            delta_f = 1.0/(delta_t*len(self.out_c2c_rev))
-            outexp = fs(self.out_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            inarr = ts(
+                self.in_c2c_rev, dtype=rev_dtype, delta_t=delta_t, epoch=self.epoch
+            )
+            delta_f = 1.0 / (delta_t * len(self.out_c2c_rev))
+            outexp = fs(
+                self.out_c2c_rev, dtype=rev_dtype, delta_f=delta_f, epoch=self.epoch
+            )
             outexp *= delta_t
-            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
             # in arrays in the other order we'd only get exceptions
@@ -737,17 +838,21 @@ class _BaseTestFFTClass(unittest.TestCase):
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
             output_args = {"delta_f": self.delta, "epoch": self.epoch}
-            _test_raise_excep_ifft(self,inarr,outexp,output_args)
+            _test_raise_excep_ifft(self, inarr, outexp, output_args)
 
     def test_rev_complex_fs(self):
-        for rev_dtype in [complex64,complex128]:
+        for rev_dtype in [complex64, complex128]:
             delta_f = self.delta
             # Don't do separate even/odd tests for complex
-            inarr = fs(self.in_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
-            delta_t = 1.0/(delta_f*len(self.out_c2c_rev))
-            outexp = ts(self.out_c2c_rev,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
+            inarr = fs(
+                self.in_c2c_rev, dtype=rev_dtype, delta_f=delta_f, epoch=self.epoch
+            )
+            delta_t = 1.0 / (delta_f * len(self.out_c2c_rev))
+            outexp = ts(
+                self.out_c2c_rev, dtype=rev_dtype, delta_t=delta_t, epoch=self.epoch
+            )
             outexp *= delta_f
-            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
             # in arrays in the other order we'd only get exceptions
@@ -758,19 +863,19 @@ class _BaseTestFFTClass(unittest.TestCase):
             # COMMENTED OUT: The LAL Complex TimeFreqFFT and FreqTimeFFT functions perform
             # a repacking of data because they seem to assume that the array represents both
             # positive and negative frequencies.  We don't do this, so we don't compare.
-            #rand_inarr = fs(zeros(self.rand_len_c,dtype=rev_dtype),epoch=self.epoch,
+            # rand_inarr = fs(zeros(self.rand_len_c,dtype=rev_dtype),epoch=self.epoch,
             #                delta_f=self.delta)
-            #rand_outarr = ts(zeros(self.rand_len_c,dtype=rev_dtype),epoch=self.epoch,
+            # rand_outarr = ts(zeros(self.rand_len_c,dtype=rev_dtype),epoch=self.epoch,
             #                 delta_t=self.delta)
-            #_test_lal_tf_ifft(self,rand_inarr,rand_outarr,self.tdict[rev_dtype])
-            #del rand_inarr
-            #del rand_outarr
+            # _test_lal_tf_ifft(self,rand_inarr,rand_outarr,self.tdict[rev_dtype])
+            # del rand_inarr
+            # del rand_outarr
             #
             # Check that exceptions are raised.  Need input and
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
             output_args = {"delta_t": self.delta, "epoch": self.epoch}
-            _test_raise_excep_ifft(self,inarr,outexp,output_args)
+            _test_raise_excep_ifft(self, inarr, outexp, output_args)
 
     def test_batched_c2c(self):
         nbatch, size = 4, 16
@@ -779,38 +884,39 @@ class _BaseTestFFTClass(unittest.TestCase):
 
         with self.context:
             set_backend(self.backends)
-            rows = [ar(randn(size) + 1j * randn(size), dtype=dt)
-                    for _ in range(nbatch)]
+            rows = [ar(randn(size) + 1j * randn(size), dtype=dt) for _ in range(nbatch)]
 
             # Each row of a batched FFT should match that row's own
             # unbatched FFT.
             batch_in = ar(zeros(nbatch * size, dtype=dt))
             batch_out = ar(zeros(nbatch * size, dtype=dt))
             for i, row in enumerate(rows):
-                batch_in[i * size:(i + 1) * size] = row
+                batch_in[i * size : (i + 1) * size] = row
             pycbc.fft.FFT(batch_in, batch_out, nbatch=nbatch, size=size).execute()
 
             for i, row in enumerate(rows):
                 row_out = ar(zeros(size, dtype=dt))
                 pycbc.fft.FFT(ar(row), row_out).execute()
-                got = batch_out[i * size:(i + 1) * size]
+                got = batch_out[i * size : (i + 1) * size]
                 self.assertTrue(
                     row_out.almost_equal_norm(got, tol=tol),
-                    msg="batched (nbatch={0}) FFT row {1} did not match "
-                        "the same row's unbatched FFT".format(nbatch, i))
+                    msg=f"batched (nbatch={nbatch}) FFT row {i} did not match "
+                    "the same row's unbatched FFT",
+                )
 
             # Same check for IFFT.
             batch_in2 = ar(zeros(nbatch * size, dtype=dt))
             batch_out2 = ar(zeros(nbatch * size, dtype=dt))
             for i, row in enumerate(rows):
-                batch_in2[i * size:(i + 1) * size] = row
+                batch_in2[i * size : (i + 1) * size] = row
             pycbc.fft.IFFT(batch_in2, batch_out2, nbatch=nbatch, size=size).execute()
 
             for i, row in enumerate(rows):
                 row_out = ar(zeros(size, dtype=dt))
                 pycbc.fft.IFFT(ar(row), row_out).execute()
-                got = batch_out2[i * size:(i + 1) * size]
+                got = batch_out2[i * size : (i + 1) * size]
                 self.assertTrue(
                     row_out.almost_equal_norm(got, tol=tol),
-                    msg="batched (nbatch={0}) IFFT row {1} did not match "
-                        "the same row's unbatched IFFT".format(nbatch, i))
+                    msg=f"batched (nbatch={nbatch}) IFFT row {i} did not match "
+                    "the same row's unbatched IFFT",
+                )

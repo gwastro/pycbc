@@ -5,11 +5,12 @@ Program for running a faithfulness comparisons workflow analysis between two app
 and generate files containing the match between them and plots.
 """
 
-import pycbc.workflow as wf
 import argparse
 
+import pycbc.workflow as wf
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.workflow.plotting import PlotExecutable
+
 
 def make_faithsim_plot(workflow, analysis_time, input_file, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -114,21 +115,24 @@ workflow += inj_node
 inj = inj_node.output_files[0]
 
 split_exe = wf.PycbcSplitBankXmlExecutable(
-    workflow.cp, "pycbc_splitbank", num_banks=num_banks, out_dir=workflow.output_dir +"bank"
+    workflow.cp,
+    "pycbc_splitbank",
+    num_banks=num_banks,
+    out_dir=workflow.output_dir + "bank",
 )
 splitbank_node = split_exe.create_node(inj)
 
 workflow += spltbank_node
 
 faithsim_exe = FaithsimExecutable(
-    workflow.cp, "pycbc_faithsim", ifos=["X1"], out_dir=workflow.output_dir +"match"
+    workflow.cp, "pycbc_faithsim", ifos=["X1"], out_dir=workflow.output_dir + "match"
 )
 
 collect_exe = CollectResultsExecutable(
     workflow.cp,
     "pycbc_faithsim_collect_results",
     ifos=["X1"],
-    out_dir=workflow.output_dir +"collect_results",
+    out_dir=workflow.output_dir + "collect_results",
 )
 
 faithsim_files = wf.FileList([])
@@ -155,7 +159,7 @@ make_faithsim_plot(
     workflow,
     workflow.analysis_time,
     collect_results,
-    out_dir=workflow.output_dir +"plots",
+    out_dir=workflow.output_dir + "plots",
     tags=None,
 )
 

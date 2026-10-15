@@ -2,9 +2,10 @@
 
 # Copyright (C) 2014 Andrew Lundgren
 import argparse
-from igwn_ligolw import utils as ligolw_utils
-from igwn_ligolw import lsctables
 from itertools import cycle
+
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 
 import pycbc
 from pycbc.io.ligolw import LIGOLWContentHandler, get_table_columns
@@ -13,14 +14,15 @@ from pycbc.io.ligolw import LIGOLWContentHandler, get_table_columns
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("-n", "--num-splits", type=int,
-                   help="Number of files to be generated")
-group.add_argument("-f", "--output-files", nargs='*', default=None,
-                   help="Names of output files")
+group.add_argument(
+    "-n", "--num-splits", type=int, help="Number of files to be generated"
+)
+group.add_argument(
+    "-f", "--output-files", nargs="*", default=None, help="Names of output files"
+)
 
 parser.add_argument("-i", "--input-file", help="Injection file to be split")
-parser.add_argument("-o", "--output-dir", default=None,
-                    help="Location of output files")
+parser.add_argument("-o", "--output-dir", default=None, help="Location of output files")
 
 args = parser.parse_args()
 
@@ -29,9 +31,7 @@ if args.output_files and args.output_dir:
 
 # Read in input file
 xmldoc = ligolw_utils.load_filename(
-    args.input_file,
-    verbose=args.verbose,
-    contenthandler=LIGOLWContentHandler
+    args.input_file, verbose=args.verbose, contenthandler=LIGOLWContentHandler
 )
 tabletype = lsctables.SimInspiralTable
 allinjs = tabletype.get_table(xmldoc)
@@ -44,8 +44,7 @@ xmlroot.removeChild(allinjs)
 num_splits = args.num_splits or len(args.output_files)
 
 new_inj_tables = [
-    tabletype.new(columns=get_table_columns(allinjs))
-    for _ in range(num_splits)
+    tabletype.new(columns=get_table_columns(allinjs)) for _ in range(num_splits)
 ]
 
 table_cycle = cycle(new_inj_tables)
@@ -53,15 +52,15 @@ for inj in sorted(allinjs, key=lambda x: x.time_geocent):
     next(table_cycle).append(inj)
 
 if not args.output_files:
-    temp = args.input_file.split('-')
-    temp[1] += '_%.4u'
-    filename_pattern = '-'.join(temp)
+    temp = args.input_file.split("-")
+    temp[1] += "_%.4u"
+    filename_pattern = "-".join(temp)
 
 for idx, simtable in enumerate(new_inj_tables):
     xmlroot.appendChild(simtable)
     if not args.output_files:
-        out_path = args.output_dir + '/' + filename_pattern % idx
+        out_path = args.output_dir + "/" + filename_pattern % idx
     else:
         out_path = args.output_files[idx]
-    ligolw_utils.write_filename(xmldoc, out_path, compress='auto')
+    ligolw_utils.write_filename(xmldoc, out_path, compress="auto")
     xmlroot.removeChild(simtable)

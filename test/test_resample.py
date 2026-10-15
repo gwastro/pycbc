@@ -24,28 +24,33 @@
 """
 These are the unittests for the pycbc.filter.matchedfilter module
 """
+
 import unittest
-from pycbc.types import Array, TimeSeries, float32, float64, complex64
-from pycbc.filter import resample_to_delta_t
-from utils import parse_args_all_schemes, simple_exit
-from numpy.random import uniform
+
 import scipy.signal
+from numpy.random import uniform
+from utils import parse_args_all_schemes, simple_exit
+
+from pycbc.filter import resample_to_delta_t
 from pycbc.filter.resample import lfilter
+from pycbc.types import Array, TimeSeries, complex64, float32, float64
 
 _scheme, _context = parse_args_all_schemes("Resampling")
 
+
 class TestUtils(unittest.TestCase):
-    def setUp(self,*args):
+    def setUp(self, *args):
         self.scheme = _scheme
         self.context = _context
         self.delta_t = 1.0 / 4096
         self.target_delta_t = 1.0 / 1024
-        self.a = TimeSeries([1,2,3,4], delta_t=self.delta_t, dtype=float32)
-        self.b = TimeSeries([1,2,3,4], delta_t=self.delta_t, dtype=float64)
-        self.c = TimeSeries([1,2,3,4], delta_t=self.delta_t, dtype=complex64)
-        self.d = Array([1,2,3,4], dtype=float32)
+        self.a = TimeSeries([1, 2, 3, 4], delta_t=self.delta_t, dtype=float32)
+        self.b = TimeSeries([1, 2, 3, 4], delta_t=self.delta_t, dtype=float64)
+        self.c = TimeSeries([1, 2, 3, 4], delta_t=self.delta_t, dtype=complex64)
+        self.d = Array([1, 2, 3, 4], dtype=float32)
 
-    if _scheme == 'cpu':
+    if _scheme == "cpu":
+
         def test_resample_float32(self):
             ra = resample_to_delta_t(self.a, self.target_delta_t)
             self.assertAlmostEqual(ra[0], 0.00696246)
@@ -64,12 +69,14 @@ class TestUtils(unittest.TestCase):
         self.assertRaises(TypeError, resample_to_delta_t, self.c, self.target_delta_t)
         self.assertRaises(TypeError, resample_to_delta_t, self.d, self.target_delta_t)
 
-        if self.scheme != 'cpu':
+        if self.scheme != "cpu":
             with self.context:
-                self.assertRaises(TypeError, resample_to_delta_t, self.a, self.target_delta_t)
+                self.assertRaises(
+                    TypeError, resample_to_delta_t, self.a, self.target_delta_t
+                )
 
     def test_lfilter(self):
-        "Check our hand written lfilter"
+        """Check our hand written lfilter"""
         for csize, vsize in [(1024, 4302300), (10, 1000)]:
             c = uniform(-10, 10, size=csize)
             ts = TimeSeries(uniform(-1, 1, size=vsize), delta_t=self.delta_t)
@@ -79,16 +86,17 @@ class TestUtils(unittest.TestCase):
 
             # These only agree where there is no fft wraparound
             # so excluded corrupted region from test
-            ref = ref[len(c):]
-            test = test[len(c):]
+            ref = ref[len(c) :]
+            test = test[len(c) :]
 
-            maxreldiff =  ((ref - test) / ref).max()
+            maxreldiff = ((ref - test) / ref).max()
             self.assertTrue(isinstance(test, TimeSeries))
             self.assertTrue(maxreldiff < 1e-7)
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestUtils))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

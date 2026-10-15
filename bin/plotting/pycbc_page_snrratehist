@@ -1,24 +1,29 @@
 #!/usr/bin/python
-""" Make SNR vs rate of triggers histogram for foreground coincident events.
-    Also has the ability to plot inclusive backgrounds from different stages
-    of hierarchical removal.
 """
+Make SNR vs rate of triggers histogram for foreground coincident events.
+Also has the ability to plot inclusive backgrounds from different stages
+of hierarchical removal.
+"""
+
 import argparse
-import numpy
 import logging
 import sys
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import pyplot as plt
 
+import matplotlib
+import numpy
+
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
 from scipy.special import erf, erfinv
-from pycbc.io.hdf import HFile
 
 import pycbc.results
 from pycbc import conversions as conv
+from pycbc.io.hdf import HFile
+
 
 def sigma_from_p(p):
-    return - erfinv(1 - (1 - p) * 2) * 2**0.5
+    return -erfinv(1 - (1 - p) * 2) * 2**0.5
+
 
 def p_from_sigma(sig):
     return 1 - (1 - erf(sig / 2**0.5)) / 2
@@ -27,38 +32,44 @@ def p_from_sigma(sig):
 parser = argparse.ArgumentParser()
 # General required options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--trigger-file')
-parser.add_argument('--output-file')
-parser.add_argument('--bin-size', type=float)
-parser.add_argument('--x-min', type=float)
-parser.add_argument('--trials-factor', type=int, default=1)
-parser.add_argument('--use-hierarchical-level', type=int, default=None,
-                    help='Indicate which inclusive background to plot '
-                         'with the foreground triggers if there were '
-                         'any hierarchical removals done. Choosing 0 '
-                         'indicates plotting the inclusive background prior '
-                         'to any hierarchical removals. Choosing 1 indicates '
-                         'the inclusive background after the loudest '
-                         'foreground trigger was removed. Choosing another '
-                         'integer gives the inclusive background after that '
-                         'integer number of hierarchical removals. If not '
-                         'provided, default to the background from after all '
-                         'hierarchical removals performed. [default=None]')
-parser.add_argument('--closed-box', action='store_true',
-                    help='Make a closed box version that excludes '
-                         'foreground triggers')
+parser.add_argument("--trigger-file")
+parser.add_argument("--output-file")
+parser.add_argument("--bin-size", type=float)
+parser.add_argument("--x-min", type=float)
+parser.add_argument("--trials-factor", type=int, default=1)
+parser.add_argument(
+    "--use-hierarchical-level",
+    type=int,
+    default=None,
+    help="Indicate which inclusive background to plot "
+    "with the foreground triggers if there were "
+    "any hierarchical removals done. Choosing 0 "
+    "indicates plotting the inclusive background prior "
+    "to any hierarchical removals. Choosing 1 indicates "
+    "the inclusive background after the loudest "
+    "foreground trigger was removed. Choosing another "
+    "integer gives the inclusive background after that "
+    "integer number of hierarchical removals. If not "
+    "provided, default to the background from after all "
+    "hierarchical removals performed. [default=None]",
+)
+parser.add_argument(
+    "--closed-box",
+    action="store_true",
+    help="Make a closed box version that excludes foreground triggers",
+)
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-logging.info('Read in the data')
-f = HFile(args.trigger_file, 'r')
+logging.info("Read in the data")
+f = HFile(args.trigger_file, "r")
 
 # Determine which inclusive background to plot.
 h_inc_back_num = args.use_hierarchical_level
 
 try:
-    h_iterations = f.attrs['hierarchical_removal_iterations']
+    h_iterations = f.attrs["hierarchical_removal_iterations"]
 except KeyError:
     h_iterations = 0
 
@@ -68,24 +79,37 @@ if h_inc_back_num is None:
 if h_inc_back_num > h_iterations:
     # Produce a null plot saying no hierarchical removals can be plotted
     import sys
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
 
-    output_message = "No more foreground events louder than all background\n" \
-                     "at this removal level.\n" \
-                     "Attempted to show " + str(h_inc_back_num) + " removal(s),\n" \
-                     "but only " + str(h_iterations) + " removal(s) done."
+    output_message = (
+        "No more foreground events louder than all background\n"
+        "at this removal level.\n"
+        "Attempted to show " + str(h_inc_back_num) + " removal(s),\n"
+        "but only " + str(h_iterations) + " removal(s) done."
+    )
 
-    ax.text(0.5, 0.5, output_message, horizontalalignment='center',
-            verticalalignment='center')
+    ax.text(
+        0.5,
+        0.5,
+        output_message,
+        horizontalalignment="center",
+        verticalalignment="center",
+    )
 
-    pycbc.results.save_fig_with_metadata(fig, args.output_file,
-        title="%s bin, Count vs Rank" % f.attrs['name'] if 'name' in f.attrs else "Count vs Rank",
+    pycbc.results.save_fig_with_metadata(
+        fig,
+        args.output_file,
+        title="%s bin, Count vs Rank" % f.attrs["name"]
+        if "name" in f.attrs
+        else "Count vs Rank",
         caption=output_message,
-        cmd=' '.join(sys.argv))
+        cmd=" ".join(sys.argv),
+    )
 
     # Exit the code successfully and bypass the rest of the plotting code.
     sys.exit(0)
@@ -94,7 +118,7 @@ if args.closed_box:
     fstat = None
 else:
     try:
-        fstat = f['foreground/stat'][:]
+        fstat = f["foreground/stat"][:]
         fstat.sort()
     except:
         fstat = None
@@ -102,24 +126,29 @@ else:
         fstat = None
 
 if h_inc_back_num == 0:
-    bstat = f['background/stat'][:]
-    fap = 1 - numpy.exp(- conv.sec_to_year(f.attrs['foreground_time']) / f['background/ifar'][:])
-    dec = f['background/decimation_factor'][:]
-else :
-    bstat = f['background_h%s/stat' % h_inc_back_num][:]
-    fap = 1 - numpy.exp(- conv.sec_to_year(f.attrs['foreground_time_h%s' % h_inc_back_num]) / f['background_h%s/ifar' % h_inc_back_num][:])
-    dec = f['background_h%s/decimation_factor' % h_inc_back_num][:]
+    bstat = f["background/stat"][:]
+    fap = 1 - numpy.exp(
+        -conv.sec_to_year(f.attrs["foreground_time"]) / f["background/ifar"][:]
+    )
+    dec = f["background/decimation_factor"][:]
+else:
+    bstat = f["background_h%s/stat" % h_inc_back_num][:]
+    fap = 1 - numpy.exp(
+        -conv.sec_to_year(f.attrs["foreground_time_h%s" % h_inc_back_num])
+        / f["background_h%s/ifar" % h_inc_back_num][:]
+    )
+    dec = f["background_h%s/decimation_factor" % h_inc_back_num][:]
 
 s = bstat.argsort()
 dec, bstat, fap = dec[s], bstat[s], fap[s]
-logging.info('Found %s background (inclusive zerolag) triggers' % len(bstat))
+logging.info("Found %s background (inclusive zerolag) triggers" % len(bstat))
 
-dec_exc = f['background_exc/decimation_factor'][:]
-bstat_exc = f['background_exc/stat'][:]
+dec_exc = f["background_exc/decimation_factor"][:]
+bstat_exc = f["background_exc/stat"][:]
 s = bstat_exc.argsort()
 dec_exc, bstat_exc = dec_exc[s], bstat_exc[s]
 
-logging.info('Found %s background (exclusive zerolag) triggers' % len(bstat_exc))
+logging.info("Found %s background (exclusive zerolag) triggers" % len(bstat_exc))
 
 fig = plt.figure()
 
@@ -133,47 +162,55 @@ else:
     minimum = bstat.min()
     maximum = bstat.max()
 
-bin_size = args.bin_size if args.bin_size else (maximum - minimum) / 100.
+bin_size = args.bin_size or (maximum - minimum) / 100.0
 
 bins = numpy.arange(minimum, maximum + bin_size, bin_size)
 
 # plot background minus foreground
-exc_binweights = dec_exc / conv.sec_to_year(f.attrs['background_time_exc'])
-exc_binvals = plt.hist(bstat_exc, bins=bins, histtype='step',
-                         linewidth=2,
-                         color='grey', log=True,
-                         label= 'Background Uncorrelated with Foreground',
-                         weights=exc_binweights)
+exc_binweights = dec_exc / conv.sec_to_year(f.attrs["background_time_exc"])
+exc_binvals = plt.hist(
+    bstat_exc,
+    bins=bins,
+    histtype="step",
+    linewidth=2,
+    color="grey",
+    log=True,
+    label="Background Uncorrelated with Foreground",
+    weights=exc_binweights,
+)
 
 histpeak = bins[exc_binvals[0].argmax()]
 
 # plot full background
 if not args.closed_box:
-    bg_key = 'background_time' if h_inc_back_num == 0 \
-        else 'background_time_h%s' % h_inc_back_num
+    bg_key = (
+        "background_time"
+        if h_inc_back_num == 0
+        else "background_time_h%s" % h_inc_back_num
+    )
     binweights = dec / conv.sec_to_year(f.attrs[bg_key])
     plt.hist(
         bstat,
         bins=bins,
-        histtype='step',
+        histtype="step",
         linewidth=2,
-        color='black',
+        color="black",
         log=True,
-        label='Full Background',
-        weights=binweights
+        label="Full Background",
+        weights=binweights,
     )
 
 if fstat is not None and not args.closed_box:
     le, re = bins[:-1], bins[1:]
     # We need to plot a histogram "errorbar" with the hierarchically
     # removed foreground triggers in purple.
-    if h_iterations > 0 :
+    if h_iterations > 0:
         fstat_h_rm = numpy.array([], dtype=float)
 
         # Since there is only one background bin we can just remove
         # hierarchically removed triggers from highest ranking statistic
         # to lower ranking statistic.
-        for i in range(0, h_inc_back_num):
+        for i in range(h_inc_back_num):
             rm_idx = fstat.argmax()
             fstat_h_rm = numpy.append(fstat_h_rm, fstat[rm_idx])
             fstat = numpy.delete(fstat, rm_idx)
@@ -189,34 +226,52 @@ if fstat is not None and not args.closed_box:
         # Just use the top level foreground time if you want background
         # before h-removal.
         if h_inc_back_num == 0:
-            count_h_rm = (right_h_rm - left_h_rm) / \
-                         conv.sec_to_year(f.attrs['foreground_time'])
+            count_h_rm = (right_h_rm - left_h_rm) / conv.sec_to_year(
+                f.attrs["foreground_time"]
+            )
 
         # Or use the foreground time after h-removal
         else:
-            count_h_rm = (right_h_rm - left_h_rm) / \
-                         conv.sec_to_year(f.attrs['foreground_time_h%s' % h_inc_back_num])
+            count_h_rm = (right_h_rm - left_h_rm) / conv.sec_to_year(
+                f.attrs["foreground_time_h%s" % h_inc_back_num]
+            )
 
-        plt.errorbar(bins[:-1] + bin_size / 2, count_h_rm,
-                       xerr=bin_size/2,
-                       label='Hierarchically Removed Foreground', mec='none',
-                       fmt='s', ms=1, capthick=0, elinewidth=4,
-                       color='#b66dff')
+        plt.errorbar(
+            bins[:-1] + bin_size / 2,
+            count_h_rm,
+            xerr=bin_size / 2,
+            label="Hierarchically Removed Foreground",
+            mec="none",
+            fmt="s",
+            ms=1,
+            capthick=0,
+            elinewidth=4,
+            color="#b66dff",
+        )
 
     left = numpy.searchsorted(fstat, le)
     right = numpy.searchsorted(fstat, re)
-    count = (right - left) / conv.sec_to_year(f.attrs['foreground_time'])
-    plt.errorbar(bins[:-1] + bin_size / 2, count, xerr=bin_size/2,
-                   label='Foreground', mec='none', fmt='o', ms=1, capthick=0,
-                   elinewidth=4,  color='#ff6600')
+    count = (right - left) / conv.sec_to_year(f.attrs["foreground_time"])
+    plt.errorbar(
+        bins[:-1] + bin_size / 2,
+        count,
+        xerr=bin_size / 2,
+        label="Foreground",
+        mec="none",
+        fmt="o",
+        ms=1,
+        capthick=0,
+        elinewidth=4,
+        color="#ff6600",
+    )
 
-plt.xlabel('Ranking statistic (bin size = %.2f)' % bin_size)
-plt.ylabel('Trigger Rate (yr$^{-1})$')
+plt.xlabel("Ranking statistic (bin size = %.2f)" % bin_size)
+plt.ylabel("Trigger Rate (yr$^{-1})$")
 if args.x_min is not None:
     plt.xlim(xmin=args.x_min)
 else:
     plt.xlim(xmin=numpy.floor(histpeak))
-plt.ylim(ymin=0.5 / conv.sec_to_year(f.attrs['background_time_exc']))
+plt.ylim(ymin=0.5 / conv.sec_to_year(f.attrs["background_time_exc"]))
 plt.grid()
 leg = plt.legend(fontsize=9)
 
@@ -245,41 +300,48 @@ if not args.closed_box:
             x = [bstat[::-1][x1], bstat[::-1][x2]]
         except IndexError:
             break
-        plt.fill_between(x, ymin, ymax, zorder=-1,
-                           color=plt.cm.Blues(next_sig / 8.0))
+        plt.fill_between(x, ymin, ymax, zorder=-1, color=plt.cm.Blues(next_sig / 8.0))
 
         if next_sig == end:
-            next_sig = '%.1f' % next_sig
+            next_sig = "%.1f" % next_sig
 
-        plt.text(bstat[::-1][x2] - .1, ymax, r"$%s \sigma$" % next_sig,
-                   fontsize=10, horizontalalignment='center',
-                   verticalalignment='bottom')
+        plt.text(
+            bstat[::-1][x2] - 0.1,
+            ymax,
+            r"$%s \sigma$" % next_sig,
+            fontsize=10,
+            horizontalalignment="center",
+            verticalalignment="bottom",
+        )
 
-ax1 =  plt.gca()
+ax1 = plt.gca()
 ax2 = ax1.twinx()
 
 if h_inc_back_num == 0:
-    fac = conv.sec_to_year(f.attrs['foreground_time'])
-else :
-    fac = conv.sec_to_year(f.attrs['foreground_time_h%s' % h_inc_back_num])
+    fac = conv.sec_to_year(f.attrs["foreground_time"])
+else:
+    fac = conv.sec_to_year(f.attrs["foreground_time_h%s" % h_inc_back_num])
 
 ymin = ax1.get_ylim()[0] * fac
-ymax =  ax1.get_ylim()[1] * fac
+ymax = ax1.get_ylim()[1] * fac
 
 ax2.set_ylim(ymin=ymin, ymax=ymax)
-ax2.set_yscale('log')
-ax2.set_ylabel('Number per Experiment')
+ax2.set_yscale("log")
+ax2.set_ylabel("Number per Experiment")
 
-if 'name' in f.attrs:
-    title = "%s bin, Count vs Rank" % f.attrs['name']
-    caption="Histogram of FAR vs the ranking statistic in the search."
-elif 'ifos' in f.attrs:
-    title = "%s coincidences, Count vs Rank" % f.attrs['ifos']
-    caption="Histogram of the FAR vs the ranking statistic " \
-            "for %s coincidences only" % f.attrs['ifos']
+if "name" in f.attrs:
+    title = "%s bin, Count vs Rank" % f.attrs["name"]
+    caption = "Histogram of FAR vs the ranking statistic in the search."
+elif "ifos" in f.attrs:
+    title = "%s coincidences, Count vs Rank" % f.attrs["ifos"]
+    caption = (
+        "Histogram of the FAR vs the ranking statistic "
+        "for %s coincidences only" % f.attrs["ifos"]
+    )
 else:
     title = "Count vs Rank"
-    caption="Histogram of the FAR vs the ranking statistic in the search."
+    caption = "Histogram of the FAR vs the ranking statistic in the search."
 
-pycbc.results.save_fig_with_metadata(fig, args.output_file,
-     title=title, caption=caption, cmd=' '.join(sys.argv))
+pycbc.results.save_fig_with_metadata(
+    fig, args.output_file, title=title, caption=caption, cmd=" ".join(sys.argv)
+)

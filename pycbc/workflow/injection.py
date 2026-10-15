@@ -32,140 +32,150 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 import logging
 import os.path
 
-from pycbc.workflow.core import FileList, make_analysis_dir, Node
-from pycbc.workflow.core import Executable, resolve_url_to_file
+from pycbc.workflow.core import (
+    Executable,
+    FileList,
+    Node,
+    make_analysis_dir,
+    resolve_url_to_file,
+)
 from pycbc.workflow.jobsetup import (
-        PycbcCreateInjectionsExecutable, select_generic_executable)
+    PycbcCreateInjectionsExecutable,
+    select_generic_executable,
+)
 
-logger = logging.getLogger('pycbc.workflow.injection')
+logger = logging.getLogger("pycbc.workflow.injection")
+
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
     make_analysis_dir(out_dir)
 
-    node = Executable(workflow.cp, 'strip_injections', ifos=workflow.ifos,
-                          out_dir=out_dir, tags=tags).create_node()
-    node.add_opt('--segment-name', veto_name)
-    node.add_input_opt('--veto-file', veto_file)
-    node.add_input_opt('--injection-file', inj_file)
-    node.add_opt('--ifos', ' '.join(workflow.ifos))
-    node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+    node = Executable(
+        workflow.cp, "strip_injections", ifos=workflow.ifos, out_dir=out_dir, tags=tags
+    ).create_node()
+    node.add_opt("--segment-name", veto_name)
+    node.add_input_opt("--veto-file", veto_file)
+    node.add_input_opt("--injection-file", inj_file)
+    node.add_opt("--ifos", " ".join(workflow.ifos))
+    node.new_output_file_opt(workflow.analysis_time, ".xml", "--output-file")
     workflow += node
     return node.output_files[0]
 
 
 class PyCBCOptimalSNRExecutable(Executable):
     """Compute optimal SNR for injections"""
+
     current_retention_level = Executable.ALL_TRIGGERS
 
     def create_node(self, workflow, inj_file, precalc_psd_files, group_str):
         node = Node(self)
         _, ext = os.path.splitext(inj_file.name)
-        node.add_input_opt('--input-file', inj_file)
-        node.add_opt('--injection-fraction-range', group_str)
-        node.add_opt('--ifos', ' '.join(workflow.ifos))
-        node.add_input_list_opt('--time-varying-psds', precalc_psd_files)
-        node.new_output_file_opt(workflow.analysis_time, ext,
-                                 '--output-file')
+        node.add_input_opt("--input-file", inj_file)
+        node.add_opt("--injection-fraction-range", group_str)
+        node.add_opt("--ifos", " ".join(workflow.ifos))
+        node.add_input_list_opt("--time-varying-psds", precalc_psd_files)
+        node.new_output_file_opt(workflow.analysis_time, ext, "--output-file")
         return node
 
 
 class PyCBCMergeHDFExecutable(Executable):
     """Merge HDF injection files executable class"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
 
     def create_node(self, workflow, input_files):
         node = Node(self)
-        node.add_input_list_opt('--injection-files', input_files)
-        node.new_output_file_opt(workflow.analysis_time, '.hdf',
-                                 '--output-file')
+        node.add_input_list_opt("--injection-files", input_files)
+        node.new_output_file_opt(workflow.analysis_time, ".hdf", "--output-file")
         return node
 
 
-def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
-                            tags=None):
-    "Set up a job for computing optimal SNRs of a sim_inspiral file."
+def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir, tags=None):
+    """Set up a job for computing optimal SNRs of a sim_inspiral file."""
     if tags is None:
         tags = []
 
     try:
-        factor = int(workflow.cp.get_opt_tags('workflow-optimal-snr',
-                                              'parallelization-factor',
-                                              tags))
+        factor = int(
+            workflow.cp.get_opt_tags(
+                "workflow-optimal-snr", "parallelization-factor", tags
+            )
+        )
     except Exception as e:
         logger.warning(e)
         factor = 1
 
     if factor == 1:
         # parallelization factor not given - default to single optimal snr job
-        opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
-                                                ifos=workflow.ifos,
-                                                out_dir=out_dir, tags=tags)
-        node = opt_snr_exe.create_node(workflow, inj_file,
-                                       precalc_psd_files, '0/1')
+        opt_snr_exe = PyCBCOptimalSNRExecutable(
+            workflow.cp, "optimal_snr", ifos=workflow.ifos, out_dir=out_dir, tags=tags
+        )
+        node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files, "0/1")
         workflow += node
 
         return node.output_files[0]
 
     opt_snr_split_files = []
     for i in range(factor):
-        group_str = '%s/%s' % (i, factor)
-        opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
-                                                ifos=workflow.ifos,
-                                                out_dir=out_dir,
-                                                tags=tags + [str(i)])
-        opt_snr_exe.update_current_retention_level(
-            Executable.INTERMEDIATE_PRODUCT)
-        node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files,
-                                       group_str)
+        group_str = "%s/%s" % (i, factor)
+        opt_snr_exe = PyCBCOptimalSNRExecutable(
+            workflow.cp,
+            "optimal_snr",
+            ifos=workflow.ifos,
+            out_dir=out_dir,
+            tags=tags + [str(i)],
+        )
+        opt_snr_exe.update_current_retention_level(Executable.INTERMEDIATE_PRODUCT)
+        node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files, group_str)
         opt_snr_split_files += [node.output_files[0]]
         workflow += node
 
     hdfcombine_exe = PyCBCMergeHDFExecutable(
-        workflow.cp,
-        'optimal_snr_merge',
-        ifos=workflow.ifos,
-        out_dir=out_dir,
-        tags=tags
+        workflow.cp, "optimal_snr_merge", ifos=workflow.ifos, out_dir=out_dir, tags=tags
     )
 
-    hdfcombine_node = hdfcombine_exe.create_node(
-        workflow,
-        opt_snr_split_files
-    )
+    hdfcombine_node = hdfcombine_exe.create_node(workflow, opt_snr_split_files)
     workflow += hdfcombine_node
 
     return hdfcombine_node.output_files[0]
 
+
 def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
-    "Set up a job for removing injections that are too distant to be seen"
+    """Set up a job for removing injections that are too distant to be seen"""
     if tags is None:
         tags = []
 
-    node = Executable(workflow.cp, 'inj_cut', ifos=workflow.ifos,
-                      out_dir=out_dir, tags=tags).create_node()
-    node.add_input_opt('--input', inj_file)
-    node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+    node = Executable(
+        workflow.cp, "inj_cut", ifos=workflow.ifos, out_dir=out_dir, tags=tags
+    ).create_node()
+    node.add_input_opt("--input", inj_file)
+    node.new_output_file_opt(workflow.analysis_time, ".xml", "--output-file")
     workflow += node
     return node.output_files[0]
 
+
 def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
-    """ Convert injection file to hdf format.
+    """
+    Convert injection file to hdf format.
 
     If the file is already PyCBC HDF format, this will just make a copy.
     """
     if tags is None:
         tags = []
 
-    node = Executable(workflow.cp, 'inj2hdf', ifos=workflow.ifos,
-                      out_dir=out_dir, tags=tags).create_node()
-    node.add_input_opt('--injection-file', inj_file)
-    node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
+    node = Executable(
+        workflow.cp, "inj2hdf", ifos=workflow.ifos, out_dir=out_dir, tags=tags
+    ).create_node()
+    node.add_input_opt("--injection-file", inj_file)
+    node.new_output_file_opt(workflow.analysis_time, ".hdf", "--output-file")
     workflow += node
     return node.output_file
 
-def setup_injection_workflow(workflow, output_dir=None,
-                             inj_section_name='injections', tags=None):
+
+def setup_injection_workflow(
+    workflow, output_dir=None, inj_section_name="injections", tags=None
+):
     """
     This function is the gateway for setting up injection-generation jobs in a
     workflow. It should be possible for this function to support a number
@@ -174,7 +184,7 @@ def setup_injection_workflow(workflow, output_dir=None,
     inspinj) there are currently no subfunctions in this moudle.
 
     Parameters
-    -----------
+    ----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
     output_dir : path
@@ -189,13 +199,14 @@ def setup_injection_workflow(workflow, output_dir=None,
         by this call to the workflow. This will be used in output names.
 
     Returns
-    --------
+    -------
     inj_files : pycbc.workflow.core.FileList
         The list of injection files created by this call.
     inj_tags : list of strings
         The tag corresponding to each injection file and used to uniquely
         identify them. The FileList class contains functions to search
         based on tags.
+
     """
     if tags is None:
         tags = []
@@ -210,26 +221,32 @@ def setup_injection_workflow(workflow, output_dir=None,
     inj_tags = []
     inj_files = FileList([])
 
-    for section in  workflow.cp.get_subsections(inj_section_name):
+    for section in workflow.cp.get_subsections(inj_section_name):
         inj_tag = section.upper()
         curr_tags = tags + [inj_tag]
 
         # Parse for options in ini file
-        injection_method = workflow.cp.get_opt_tags("workflow-injections",
-                                                    "injections-method",
-                                                    curr_tags)
+        injection_method = workflow.cp.get_opt_tags(
+            "workflow-injections", "injections-method", curr_tags
+        )
 
         if injection_method in ["IN_WORKFLOW", "AT_RUNTIME"]:
-            exe = select_generic_executable(workflow, 'injections')
-            inj_job = exe(workflow.cp, inj_section_name,
-                          out_dir=output_dir, ifos='HL',
-                          tags=curr_tags)
+            exe = select_generic_executable(workflow, "injections")
+            inj_job = exe(
+                workflow.cp,
+                inj_section_name,
+                out_dir=output_dir,
+                ifos="HL",
+                tags=curr_tags,
+            )
             if exe is PycbcCreateInjectionsExecutable:
-                config_urls = workflow.cp.get('workflow-injections',
-                                              section+'-config-files')
-                config_urls = config_urls.split(',')
-                config_files = FileList([resolve_url_to_file(cf.strip())
-                                         for cf in config_urls])
+                config_urls = workflow.cp.get(
+                    "workflow-injections", section + "-config-files"
+                )
+                config_urls = config_urls.split(",")
+                config_files = FileList(
+                    [resolve_url_to_file(cf.strip()) for cf in config_urls]
+                )
                 node, inj_file = inj_job.create_node(config_files)
             else:
                 node = inj_job.create_node(full_segment)
@@ -240,15 +257,9 @@ def setup_injection_workflow(workflow, output_dir=None,
             inj_file = node.output_files[0]
             inj_files.append(inj_file)
         elif injection_method == "PREGENERATED":
-            file_attrs = {
-                'ifos': ['HL'],
-                'segs': full_segment,
-                'tags': curr_tags
-            }
+            file_attrs = {"ifos": ["HL"], "segs": full_segment, "tags": curr_tags}
             injection_path = workflow.cp.get_opt_tags(
-                "workflow-injections",
-                "injections-pregenerated-file",
-                curr_tags
+                "workflow-injections", "injections-pregenerated-file", curr_tags
             )
             curr_file = resolve_url_to_file(injection_path, attrs=file_attrs)
             inj_files.append(curr_file)

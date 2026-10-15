@@ -13,26 +13,26 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""This module provides IO classes for epsie samplers.
-"""
+"""This module provides IO classes for epsie samplers."""
 
+from pickle import UnpicklingError
 
 import numpy
-from pickle import UnpicklingError
 from epsie import load_state
 
-from .base_sampler import BaseSamplerFile
 from .base_mcmc import MCMCMetadataIO
-from .base_multitemper import (CommonMultiTemperedMetadataIO,
-                               write_samples,
-                               read_raw_samples)
+from .base_multitemper import (
+    CommonMultiTemperedMetadataIO,
+    read_raw_samples,
+    write_samples,
+)
+from .base_sampler import BaseSamplerFile
 
 
-class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
-                BaseSamplerFile):
+class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO, BaseSamplerFile):
     """Class to handle IO for Epsie's parallel-tempered sampler."""
 
-    name = 'epsie_file'
+    name = "epsie_file"
 
     @property
     def nchains(self):
@@ -42,23 +42,23 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
     @property
     def betas(self):
         """The betas that were used."""
-        return self[self.sampler_group]['betas'][()]
+        return self[self.sampler_group]["betas"][()]
 
     @property
     def swap_interval(self):
         """The interval that temperature swaps occurred at."""
-        return self[self.sampler_group].attrs['swap_interval']
+        return self[self.sampler_group].attrs["swap_interval"]
 
     @swap_interval.setter
     def swap_interval(self, swap_interval):
         """Stores the swap interval to the sampler group's attrs."""
-        self[self.sampler_group].attrs['swap_interval'] = swap_interval
+        self[self.sampler_group].attrs["swap_interval"] = swap_interval
 
     @property
     def seed(self):
         """The sampler's seed."""
         # convert seed from str back to int (see setter below for reason)
-        return int(self[self.sampler_group].attrs['seed'])
+        return int(self[self.sampler_group].attrs["seed"])
 
     @seed.setter
     def seed(self, seed):
@@ -66,17 +66,17 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         # epsie uses the numpy's new random generators, which use long integers
         # for seeds. hdf5 doesn't know how to handle long integers, so we'll
         # store it as a string
-        self[self.sampler_group].attrs['seed'] = str(seed)
+        self[self.sampler_group].attrs["seed"] = str(seed)
 
     def write_sampler_metadata(self, sampler):
-        """Adds writing seed and betas to MultiTemperedMCMCIO.
-        """
-        super(EpsieFile, self).write_sampler_metadata(sampler)
+        """Adds writing seed and betas to MultiTemperedMCMCIO."""
+        super().write_sampler_metadata(sampler)
         self.seed = sampler.seed
         self.write_data("betas", sampler.betas, path=self.sampler_group)
 
     def thin(self, thin_interval):
-        """Thins the samples on disk to the given thinning interval.
+        """
+        Thins the samples on disk to the given thinning interval.
 
         Also thins the acceptance ratio and the temperature data, both of
         which are stored in the ``sampler_info`` group.
@@ -87,22 +87,20 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         # what the current thinned by is.
         new_interval = thin_interval // self.thinned_by
         # now thin the samples
-        super(EpsieFile, self).thin(thin_interval)
+        super().thin(thin_interval)
         # thin the acceptance ratio
-        self._thin_data(self.sampler_group, ['acceptance_ratio'],
-                        new_interval)
+        self._thin_data(self.sampler_group, ["acceptance_ratio"], new_interval)
         # thin the temperature swaps; since these may not happen every
         # iteration, the thin interval we use for these is different
-        ts_group = '/'.join([self.sampler_group, 'temperature_swaps'])
+        ts_group = "/".join([self.sampler_group, "temperature_swaps"])
         ts_thin_interval = new_interval // self.swap_interval
         if ts_thin_interval > 1:
-            self._thin_data(ts_group, ['swap_index'],
-                            ts_thin_interval)
-            self._thin_data(ts_group, ['acceptance_ratio'],
-                            ts_thin_interval)
+            self._thin_data(ts_group, ["swap_index"], ts_thin_interval)
+            self._thin_data(ts_group, ["acceptance_ratio"], ts_thin_interval)
 
     def write_samples(self, samples, **kwargs):
-        r"""Writes samples to the given file.
+        r"""
+        Writes samples to the given file.
 
         Calls :py:func:`base_multitemper.write_samples`. See that function for
         details.
@@ -115,17 +113,19 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         \**kwargs :
             All other keyword arguments are passed to
             :py:func:`base_multitemper.write_samples`.
+
         """
         write_samples(self, samples, **kwargs)
 
     def read_raw_samples(self, fields, **kwargs):
-        r"""Base function for reading samples.
+        r"""
+        Base function for reading samples.
 
         Calls :py:func:`base_multitemper.read_raw_samples`. See that
         function for details.
 
         Parameters
-        -----------
+        ----------
         fields : list
             The list of field names to retrieve.
         \**kwargs :
@@ -136,30 +136,36 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         -------
         dict
             A dictionary of field name -> numpy array pairs.
+
         """
         return read_raw_samples(self, fields, **kwargs)
 
     def write_acceptance_ratio(self, acceptance_ratio, last_iteration=None):
-        """Writes the acceptance ratios to the sampler info group.
+        """
+        Writes the acceptance ratios to the sampler info group.
 
         Parameters
         ----------
         acceptance_ratio : array
             The acceptance ratios to write. Should have shape
             ``ntemps x nchains x niterations``.
+
         """
         # we'll use the write_samples machinery to write the acceptance ratios
-        self.write_samples({'acceptance_ratio': acceptance_ratio},
-                           last_iteration=last_iteration,
-                           samples_group=self.sampler_group)
+        self.write_samples(
+            {"acceptance_ratio": acceptance_ratio},
+            last_iteration=last_iteration,
+            samples_group=self.sampler_group,
+        )
 
     def read_acceptance_ratio(self, temps=None, chains=None):
-        """Reads the acceptance ratios.
+        """
+        Reads the acceptance ratios.
 
         Ratios larger than 1 are set back to 1 before returning.
 
         Parameters
-        -----------
+        ----------
         temps : (list of) int, optional
             The temperature index (or a list of indices) to retrieve. If None,
             acceptance ratios from all temperatures and all chains will be
@@ -173,8 +179,9 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         array
             Array of acceptance ratios with shape (requested temps,
             requested chains, niterations).
+
         """
-        group = self.sampler_group + '/acceptance_ratio'
+        group = self.sampler_group + "/acceptance_ratio"
         if chains is None:
             wmask = numpy.ones(self.nchains, dtype=bool)
         else:
@@ -187,17 +194,18 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
             tmask[temps] = True
         all_ratios = self[group][:]
         # make sure values > 1 are set back to 1
-        all_ratios[all_ratios > 1] = 1.
+        all_ratios[all_ratios > 1] = 1.0
         return all_ratios[numpy.ix_(tmask, wmask)]
 
     def read_acceptance_rate(self, temps=None, chains=None):
-        """Reads the acceptance rate.
+        """
+        Reads the acceptance rate.
 
         This calls :py:func:`read_acceptance_ratio`, then averages the ratios
         over all iterations to get the average rate.
 
         Parameters
-        -----------
+        ----------
         temps : (list of) int, optional
             The temperature index (or a list of indices) to retrieve. If None,
             acceptance rates from all temperatures and all chains will be
@@ -211,6 +219,7 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         array
             Array of acceptance ratios with shape (requested temps,
             requested chains).
+
         """
         all_ratios = self.read_acceptance_ratio(temps, chains)
         # average over the number of iterations
@@ -218,13 +227,14 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         return all_ratios
 
     def read_acceptance_fraction(self, temps=None, walkers=None):
-        """Alias for :py:func:`read_acceptance_rate`.
-        """
+        """Alias for :py:func:`read_acceptance_rate`."""
         return self.read_acceptance_rate(temps=temps, chains=walkers)
 
-    def write_temperature_data(self, swap_index, acceptance_ratio,
-                               swap_interval, last_iteration):
-        """Writes temperature swaps and acceptance ratios.
+    def write_temperature_data(
+        self, swap_index, acceptance_ratio, swap_interval, last_iteration
+    ):
+        """
+        Writes temperature swaps and acceptance ratios.
 
         Parameters
         ----------
@@ -239,9 +249,10 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
             The number of iterations between temperature swaps.
         last_iteration : int
             The iteration of the last sample.
+
         """
         self.swap_interval = swap_interval
-        group = '/'.join([self.sampler_group, 'temperature_swaps'])
+        group = "/".join([self.sampler_group, "temperature_swaps"])
         # we'll use the write_samples machinery to write the acceptance ratios;
         # if temperature swaps didn't happen every iteration, then a smaller
         # thinning interval than what is used for the samples should be used
@@ -251,16 +262,22 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         last_iteration = last_iteration // swap_interval
         # we need to write the two arrays separately, since they have different
         # dimensions in temperature
-        self.write_samples({'swap_index': swap_index},
-                           last_iteration=last_iteration,
-                           samples_group=group, thin_by=thin_by)
-        self.write_samples({'acceptance_ratio': acceptance_ratio},
-                           last_iteration=last_iteration,
-                           samples_group=group, thin_by=thin_by)
+        self.write_samples(
+            {"swap_index": swap_index},
+            last_iteration=last_iteration,
+            samples_group=group,
+            thin_by=thin_by,
+        )
+        self.write_samples(
+            {"acceptance_ratio": acceptance_ratio},
+            last_iteration=last_iteration,
+            samples_group=group,
+            thin_by=thin_by,
+        )
 
     def validate(self):
         """Adds attemp to load checkpoint to validation test."""
-        valid = super(EpsieFile, self).validate()
+        valid = super().validate()
         # try to load the checkpoint
         if valid:
             try:
@@ -276,10 +293,11 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         # need this to make sure options called "walkers" are renamed to
         # "chains"
         parsed = BaseSamplerFile._get_optional_args(
-            args, opts, err_on_missing=err_on_missing, **kwargs)
+            args, opts, err_on_missing=err_on_missing, **kwargs
+        )
         try:
-            chains = parsed.pop('walkers')
-            parsed['chains'] = chains
+            chains = parsed.pop("walkers")
+            parsed["chains"] = chains
         except KeyError:
             pass
         return parsed

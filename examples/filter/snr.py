@@ -1,9 +1,9 @@
 import matplotlib.pyplot as pp
+
+import pycbc.filter
 import pycbc.noise
 import pycbc.psd
-import pycbc.filter
 import pycbc.waveform
-
 
 # Generate some noise with an advanced ligo psd
 flow = 30.0
@@ -18,16 +18,15 @@ strain = pycbc.noise.noise_from_psd(tsamples, delta_t, psd, seed=127)
 stilde = strain.to_frequencyseries()
 
 # Use a waveform as a matched filter
-hp, hc = pycbc.waveform.get_fd_waveform(approximant='IMRPhenomD',
-                             mass1=25, mass2=25,
-                             f_lower=flow, delta_f=stilde.delta_f)
+hp, hc = pycbc.waveform.get_fd_waveform(
+    approximant="IMRPhenomD", mass1=25, mass2=25, f_lower=flow, delta_f=stilde.delta_f
+)
 
 hp.resize(len(stilde))
-snr = pycbc.filter.matched_filter(hp, stilde, psd=psd,
-                                      low_frequency_cutoff=flow)
+snr = pycbc.filter.matched_filter(hp, stilde, psd=psd, low_frequency_cutoff=flow)
 
 
 pp.plot(snr.sample_times, abs(snr))
-pp.ylabel('signal-to-noise ratio')
-pp.xlabel('time (s)')
+pp.ylabel("signal-to-noise ratio")
+pp.xlabel("time (s)")
 pp.show()

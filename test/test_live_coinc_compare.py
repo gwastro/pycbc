@@ -1,29 +1,34 @@
 """Mock simulation to easily test and profile PyCBC Live's coincidence code."""
 
-import unittest
-import os
 import copy
-import tempfile
-from types import SimpleNamespace
-import numpy as np
-import h5py
 import logging
-from pycbc.io import get_file
-from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
+import os
+import tempfile
+import unittest
+from types import SimpleNamespace
+
+import h5py
+import numpy as np
 from utils import simple_exit
-import validation_code.old_coinc as old_coinc
+from validation_code import old_coinc
+
+from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
+from pycbc.io import get_file
 
 OriginalCoincer = old_coinc.LiveCoincTimeslideBackgroundEstimator
 
 # This seed is chosen because the impelentations agree here.
 # They should only differ due to different numerical precission
-SEED = int(os.environ.get('PYCBC_LIVE_COINC_SEED', 0))
+SEED = int(os.environ.get("PYCBC_LIVE_COINC_SEED", 0))
 START_TIME = 1187008882
 
+
 class SingleDetTrigSimulator:
-    """An object that simulates single-detector triggers in the same format
+    """
+    An object that simulates single-detector triggers in the same format
     as produced by the matched-filtering processes of PyCBC Live.
     """
+
     def __init__(self, num_templates, analysis_chunk, detectors, num_trigs_per_block):
         self.num_templates = num_templates
         self.detectors = detectors
@@ -35,33 +40,42 @@ class SingleDetTrigSimulator:
         trigs = {}
         for det in self.detectors:
             rand_end = np.random.randint(
-                self.start_time*4096,
-                (self.start_time + self.analysis_chunk)*4096,
-                size=self.num_trigs
+                self.start_time * 4096,
+                (self.start_time + self.analysis_chunk) * 4096,
+                size=self.num_trigs,
             )
-            rand_end = (rand_end / 4096.).astype(np.float64)
+            rand_end = (rand_end / 4096.0).astype(np.float64)
 
             trigs[det] = {
-                "snr": np.random.uniform(4.5, 10, size=self.num_trigs).astype(np.float32),
+                "snr": np.random.uniform(4.5, 10, size=self.num_trigs).astype(
+                    np.float32
+                ),
                 "end_time": rand_end,
-                "chisq": np.random.uniform(0.5, 1.5, size=self.num_trigs).astype(np.float32),
+                "chisq": np.random.uniform(0.5, 1.5, size=self.num_trigs).astype(
+                    np.float32
+                ),
                 "chisq_dof": np.ones(self.num_trigs, dtype=np.int32) * 10,
-                "coa_phase": np.random.uniform(0, 2*np.pi, size=self.num_trigs).astype(np.float32),
+                "coa_phase": np.random.uniform(
+                    0, 2 * np.pi, size=self.num_trigs
+                ).astype(np.float32),
                 "sigmasq": np.ones(self.num_trigs, dtype=np.float32),  # FIXME (maybe)
                 "template_id": np.random.uniform(
-                    0,
-                    self.num_templates,
-                    size=self.num_trigs
+                    0, self.num_templates, size=self.num_trigs
                 ).astype(np.int32),
-                "mass1": np.random.uniform(2.0, 100.0, size=self.num_trigs).astype(np.float32),
-                "mass2": np.random.uniform(2.0, 100.0, size=self.num_trigs).astype(np.float32)
+                "mass1": np.random.uniform(2.0, 100.0, size=self.num_trigs).astype(
+                    np.float32
+                ),
+                "mass2": np.random.uniform(2.0, 100.0, size=self.num_trigs).astype(
+                    np.float32
+                ),
             }
         self.start_time += self.analysis_chunk
         return trigs
 
 
 def add_loud_trigger_pair(trigs, template_id, end_time, snr=50.0):
-    """Append one obviously loud, exactly-coincident trigger to each
+    """
+    Append one obviously loud, exactly-coincident trigger to each
     detector's trigger dict (in place), guaranteeing a genuine (zerolag)
     H1-L1 coincidence with a very high ranking statistic value.
 
@@ -79,17 +93,18 @@ def add_loud_trigger_pair(trigs, template_id, end_time, snr=50.0):
         SNR to give the extra trigger in both detectors. Kept well above
         the normal simulated range (4.5-10) so the resulting coinc is
         unambiguously the loudest thing around.
+
     """
     extra = {
-        'snr': snr,
-        'end_time': end_time,
-        'chisq': 0.5,
-        'chisq_dof': 10,
-        'coa_phase': 0.0,
-        'sigmasq': 1.0,
-        'template_id': template_id,
-        'mass1': 30.0,
-        'mass2': 30.0,
+        "snr": snr,
+        "end_time": end_time,
+        "chisq": 0.5,
+        "chisq_dof": 10,
+        "coa_phase": 0.0,
+        "sigmasq": 1.0,
+        "template_id": template_id,
+        "mass1": 30.0,
+        "mass2": 30.0,
     }
     for det in trigs:
         for key, value in trigs[det].items():
@@ -108,8 +123,8 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
 
         # simulate the `args` object we normally get from the command line arguments
 
-        url = 'https://github.com/gwastro/pycbc-config/raw/master/'
-        url += 'test_data_files/{}-PTA_HISTOGRAM.hdf'
+        url = "https://github.com/gwastro/pycbc-config/raw/master/"
+        url += "test_data_files/{}-PTA_HISTOGRAM.hdf"
         stat_file_paths = [
             get_file(url.format("H1L1"), cache=True),
         ]
@@ -150,17 +165,19 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
             self.num_templates, analysis_chunk, detectors, num_single_trigs
         )
 
-        self.new_trigs = [single_det_trig_sim.get_trigs()
-                          for _ in range(self.num_iterations)]
+        self.new_trigs = [
+            single_det_trig_sim.get_trigs() for _ in range(self.num_iterations)
+        ]
 
         # create the current "coincer" object
-        self.new_coincer = Coincer.from_cli(args, self.num_templates,
-                                            analysis_chunk, detectors)
+        self.new_coincer = Coincer.from_cli(
+            args, self.num_templates, analysis_chunk, detectors
+        )
 
         # create the validation "coincer" object
-        self.old_coincer = OriginalCoincer.from_cli(args, self.num_templates,
-                                                    analysis_chunk, detectors)
-
+        self.old_coincer = OriginalCoincer.from_cli(
+            args, self.num_templates, analysis_chunk, detectors
+        )
 
     def test_coincer_runs(self):
         # the following loop simulates the "infinite" analysis loop
@@ -168,24 +185,24 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
 
         def assess_same_output(newout, oldout):
             checkkeys = [
-                'background/time',
-                'background/count',
-                'background/stat',
-                'foreground/ifar',
-                'foreground/stat',
-                'foreground/type'
+                "background/time",
+                "background/count",
+                "background/stat",
+                "foreground/ifar",
+                "foreground/stat",
+                "foreground/type",
             ]
 
-            for ifo in ['H1', 'L1']:
+            for ifo in ["H1", "L1"]:
                 checkkeys += [
-                    f'foreground/{ifo}/snr',
-                    f'foreground/{ifo}/end_time',
-                    f'foreground/{ifo}/chisq',
-                    f'foreground/{ifo}/chisq_dof',
-                    f'foreground/{ifo}/coa_phase',
-                    f'foreground/{ifo}/sigmasq',
-                    f'foreground/{ifo}/template_id',
-                    f'foreground/{ifo}/stat'
+                    f"foreground/{ifo}/snr",
+                    f"foreground/{ifo}/end_time",
+                    f"foreground/{ifo}/chisq",
+                    f"foreground/{ifo}/chisq_dof",
+                    f"foreground/{ifo}/coa_phase",
+                    f"foreground/{ifo}/sigmasq",
+                    f"foreground/{ifo}/template_id",
+                    f"foreground/{ifo}/stat",
                 ]
 
             for key in checkkeys:
@@ -197,7 +214,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                     a = newout[key]
                     b = oldout[key]
 
-                    if key == 'foreground/stat':
+                    if key == "foreground/stat":
                         self.assertIsInstance(a, np.ndarray)
                         self.assertEqual(a.ndim, 1)
                         self.assertEqual(len(a), 1)
@@ -214,17 +231,17 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                         b_comp = b
 
                         # For background/stat, order by time as the sort is not stable
-                        if key == 'background/stat' and len(a) > 1:
-                            tnew = newout.get('background/time', None)
-                            told = oldout.get('background/time', None)
-                            idx_new = np.argsort(tnew, kind='stable')
-                            idx_old = np.argsort(told, kind='stable')
+                        if key == "background/stat" and len(a) > 1:
+                            tnew = newout.get("background/time", None)
+                            told = oldout.get("background/time", None)
+                            idx_new = np.argsort(tnew, kind="stable")
+                            idx_old = np.argsort(told, kind="stable")
                             a_comp = a[idx_new]
                             b_comp = b[idx_old]
 
                         self.assertTrue(np.isclose(a_comp, b_comp).all())
                     else:
-                        self.assertEqual(a,b)
+                        self.assertEqual(a, b)
 
         for i in range(self.num_iterations):
             logging.info("Iteration %d", i)
@@ -237,17 +254,28 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         new_coincer = self.new_coincer
         old_coincer = self.old_coincer
         self.assertTrue(len(new_coincer.coincs.data) == len(old_coincer.coincs.data))
-        self.assertTrue(np.isclose(new_coincer.coincs.data, old_coincer.coincs.data, rtol=1e-06).all())
+        self.assertTrue(
+            np.isclose(
+                new_coincer.coincs.data, old_coincer.coincs.data, rtol=1e-06
+            ).all()
+        )
 
         for ifo in new_coincer.singles:
             lgc = True
             for temp in range(self.num_templates):
                 # Check that all singles, for all templates, are identical
-                lgc = lgc & (new_coincer.singles[ifo].data(temp) == old_coincer.singles[ifo].data(temp)).all()
+                lgc = (
+                    lgc
+                    & (
+                        new_coincer.singles[ifo].data(temp)
+                        == old_coincer.singles[ifo].data(temp)
+                    ).all()
+                )
             self.assertTrue(lgc)
 
     def test_ifar_remove_threshold(self):
-        """With a nonzero ifar_remove_threshold, a loud zerolag coincidence
+        """
+        With a nonzero ifar_remove_threshold, a loud zerolag coincidence
         should mark its analysis chunk as loud: the chunk is then excluded
         from the background time and future background coincidences, while
         the zerolag candidate itself is still found and reported exactly
@@ -266,12 +294,10 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         args_nothresh.ifar_remove_threshold = None
 
         coincer_thresh = Coincer.from_cli(
-            args_thresh, self.num_templates, self.analysis_chunk,
-            self.detectors
+            args_thresh, self.num_templates, self.analysis_chunk, self.detectors
         )
         coincer_nothresh = Coincer.from_cli(
-            args_nothresh, self.num_templates, self.analysis_chunk,
-            self.detectors
+            args_nothresh, self.num_templates, self.analysis_chunk, self.detectors
         )
 
         # A few chunks of ordinary noise triggers to establish a
@@ -286,7 +312,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         # very high SNR triggers for H1 and L1 in the same template at
         # exactly the same time.
         loud_trigs = copy.deepcopy(self.new_trigs[num_warmup])
-        loud_time = loud_trigs['H1']['end_time'][0]
+        loud_time = loud_trigs["H1"]["end_time"][0]
         add_loud_trigger_pair(loud_trigs, template_id=0, end_time=loud_time)
 
         res_thresh = coincer_thresh.add_singles(copy.deepcopy(loud_trigs))
@@ -294,9 +320,9 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
 
         # The candidate itself is found and reported the same way whether
         # or not removal is enabled.
-        self.assertIn('foreground/ifar', res_thresh)
-        self.assertIn('foreground/ifar', res_nothresh)
-        self.assertGreater(res_thresh['foreground/ifar'], threshold)
+        self.assertIn("foreground/ifar", res_thresh)
+        self.assertIn("foreground/ifar", res_nothresh)
+        self.assertGreater(res_thresh["foreground/ifar"], threshold)
 
         # Only the thresholded coincer marks its chunk loud.
         expected_chunk = int(loud_time // self.analysis_chunk)
@@ -306,8 +332,9 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         # A loud chunk is excluded from both ifos' contribution to the
         # background time, so it must be strictly smaller than in the
         # unfiltered run, even though both saw identical triggers.
-        self.assertLess(coincer_thresh.background_time,
-                        coincer_nothresh.background_time)
+        self.assertLess(
+            coincer_thresh.background_time, coincer_nothresh.background_time
+        )
 
         # On the very update that creates the loud chunk, the background
         # coincs formed from it are stripped out of the surviving
@@ -332,29 +359,31 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
             coincer_nothresh.add_singles(copy.deepcopy(trigs))
 
         self.assertIn(expected_chunk, coincer_thresh.loud_chunks)
-        self.assertLess(coincer_thresh.background_time,
-                        coincer_nothresh.background_time)
+        self.assertLess(
+            coincer_thresh.background_time, coincer_nothresh.background_time
+        )
 
     def test_foreground_stat_hdf_contract(self):
         self.assert_foreground_stat_hdf_readable(np.array([12.5]))
 
     def assert_foreground_stat_hdf_readable(self, stat):
         """Check live HDF output keeps foreground/stat slice-readable."""
-        fd, path = tempfile.mkstemp(suffix='.hdf')
+        fd, path = tempfile.mkstemp(suffix=".hdf")
         os.close(fd)
         try:
-            with h5py.File(path, 'w') as fp:
-                fp['foreground/stat'] = stat
-            with h5py.File(path, 'r') as fp:
-                saved = fp['foreground/stat'][:]
+            with h5py.File(path, "w") as fp:
+                fp["foreground/stat"] = stat
+            with h5py.File(path, "r") as fp:
+                saved = fp["foreground/stat"][:]
         finally:
             os.remove(path)
         self.assertEqual(saved.shape, (1,))
         self.assertTrue(np.isclose(saved, stat).all())
 
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPyCBCLiveCoinc))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

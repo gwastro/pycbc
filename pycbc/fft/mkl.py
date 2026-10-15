@@ -1,18 +1,21 @@
-import ctypes, pycbc.libutils
-from pycbc.types import zeros
-from .core import _BaseFFT, _BaseIFFT
-import pycbc.scheme as _scheme
+import ctypes
 
-lib = pycbc.libutils.get_ctypes_library('mkl_rt', [])
+import pycbc.libutils
+import pycbc.scheme as _scheme
+from pycbc.types import zeros
+
+from .core import _BaseFFT, _BaseIFFT
+
+lib = pycbc.libutils.get_ctypes_library("mkl_rt", [])
 if lib is None:
     raise ImportError
 
-#MKL constants  taken from mkl_df_defines.h
+# MKL constants  taken from mkl_df_defines.h
 DFTI_FORWARD_DOMAIN = 0
 DFTI_DIMENSION = 1
 DFTI_LENGTHS = 2
 DFTI_PRECISION = 3
-DFTI_FORWARD_SCALE  = 4
+DFTI_FORWARD_SCALE = 4
 DFTI_BACKWARD_SCALE = 5
 DFTI_NUMBER_OF_TRANSFORMS = 7
 DFTI_COMPLEX_STORAGE = 8
@@ -54,24 +57,30 @@ DFTI_PACK_FORMAT = 55
 DFTI_PERM_FORMAT = 56
 DFTI_CCE_FORMAT = 57
 
-mkl_domain = {'real': {'complex': DFTI_REAL},
-              'complex': {'real': DFTI_REAL,
-                          'complex':DFTI_COMPLEX,
-                         }
-             }
+mkl_domain = {
+    "real": {"complex": DFTI_REAL},
+    "complex": {
+        "real": DFTI_REAL,
+        "complex": DFTI_COMPLEX,
+    },
+}
 
-mkl_descriptor = {'single': lib.DftiCreateDescriptor_s_1d,
-                  'double': lib.DftiCreateDescriptor_d_1d,
-                  }
+mkl_descriptor = {
+    "single": lib.DftiCreateDescriptor_s_1d,
+    "double": lib.DftiCreateDescriptor_d_1d,
+}
+
 
 def check_status(status):
-    """ Check the status of a mkl functions and raise a python exeption if
+    """
+    Check the status of a mkl functions and raise a python exeption if
     there is an error.
     """
     if status:
         lib.DftiErrorMessage.restype = ctypes.c_char_p
         msg = lib.DftiErrorMessage(status)
         raise RuntimeError(msg)
+
 
 def create_descriptor(size, idtype, odtype, inplace):
     invec = zeros(1, dtype=idtype)
@@ -99,25 +108,37 @@ def create_descriptor(size, idtype, odtype, inplace):
 
     return desc
 
+
 def fft(invec, outvec, prec, itype, otype):
-    descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype,
-                              outvec.dtype, (invec.ptr == outvec.ptr))
+    descr = create_descriptor(
+        max(len(invec), len(outvec)),
+        invec.dtype,
+        outvec.dtype,
+        (invec.ptr == outvec.ptr),
+    )
     f = lib.DftiComputeForward
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
     lib.DftiFreeDescriptor(ctypes.byref(descr))
     check_status(status)
 
+
 def ifft(invec, outvec, prec, itype, otype):
-    descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype,
-                              outvec.dtype, (invec.ptr == outvec.ptr))
+    descr = create_descriptor(
+        max(len(invec), len(outvec)),
+        invec.dtype,
+        outvec.dtype,
+        (invec.ptr == outvec.ptr),
+    )
     f = lib.DftiComputeBackward
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
     lib.DftiFreeDescriptor(ctypes.byref(descr))
     check_status(status)
 
+
 # Class based API
+
 
 def _get_desc(fftobj):
     desc = ctypes.c_void_p(1)
@@ -134,8 +155,7 @@ def _get_desc(fftobj):
     lib.DftiSetValue.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int]
 
     # The following only matters if the transform is C2R or R2C
-    status = lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE,
-                              DFTI_COMPLEX_COMPLEX)
+    status = lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX)
     check_status(status)
 
     # In-place or out-of-place:
@@ -165,9 +185,10 @@ def _get_desc(fftobj):
 
     return desc
 
+
 class FFT(_BaseFFT):
     def __init__(self, invec, outvec, nbatch=1, size=None):
-        super(FFT, self).__init__(invec, outvec, nbatch, size)
+        super().__init__(invec, outvec, nbatch, size)
         self.iptr = self.invec.ptr
         self.optr = self.outvec.ptr
         self._efunc = lib.DftiComputeForward
@@ -177,9 +198,10 @@ class FFT(_BaseFFT):
     def execute(self):
         self._efunc(self.desc, self.iptr, self.optr)
 
+
 class IFFT(_BaseIFFT):
     def __init__(self, invec, outvec, nbatch=1, size=None):
-        super(IFFT, self).__init__(invec, outvec, nbatch, size)
+        super().__init__(invec, outvec, nbatch, size)
         self.iptr = self.invec.ptr
         self.optr = self.outvec.ptr
         self._efunc = lib.DftiComputeBackward
