@@ -266,9 +266,7 @@ def query_flag(
         )
 
     else:
-        raise ValueError(
-            f"Source must be `dqsegdb`, `GWOSC` or `any`. Got {source}"
-        )
+        raise ValueError(f"Source must be `dqsegdb`, `GWOSC` or `any`. Got {source}")
 
     return segmentlist(flag_segments).coalesce()
 

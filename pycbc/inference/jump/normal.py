@@ -583,7 +583,5 @@ def get_epsie_discrete_successive_settings(params, opts):
     """
     successive = {}
     for param in params:
-        successive.update(
-            {param: opts.pop(f"successive_{param}", None) is not None}
-        )
+        successive.update({param: opts.pop(f"successive_{param}", None) is not None})
     return successive

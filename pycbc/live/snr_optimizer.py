@@ -400,7 +400,7 @@ def check_snr_optimizer_options(args, parser):
         if any(options[k]):
             parser.error(
                 "Argument has been supplied which is not suitable "
-                 f"for the optimizer given ({args.snr_opt_method})"
+                f"for the optimizer given ({args.snr_opt_method})"
             )
 
     # Give the arguments the default values according to the dictionary

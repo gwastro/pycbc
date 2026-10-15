@@ -93,9 +93,7 @@ class SupernovaeConvexHull(Constraint):
     required_parameters = ["coeff_0", "coeff_1"]
 
     def __init__(self, constraint_arg, transforms=None, **kwargs):
-        super().__init__(
-            constraint_arg, transforms=transforms, **kwargs
-        )
+        super().__init__(constraint_arg, transforms=transforms, **kwargs)
 
         if "principal_components_file" in kwargs:
             pc_filename = kwargs["principal_components_file"]

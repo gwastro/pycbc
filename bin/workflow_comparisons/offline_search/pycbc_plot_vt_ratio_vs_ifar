@@ -131,9 +131,7 @@ for n, key in zip(range(nkeys), keys):
     if args.log_y:
         ax.set_yscale("log")
 
-    print(
-        f"Bin {key}: minimum ratio {ys.min()}, maximum ratio {ys.max()}"
-    )
+    print(f"Bin {key}: minimum ratio {ys.min()}, maximum ratio {ys.max()}")
 
 for ax in axs.flat:
     ax.set(xlabel="Inverse False Alarm Rate (years)", ylabel="VT ratio")

@@ -1240,9 +1240,7 @@ class ExpFitBgRateStatistic(ExpFitStatistic):
             The default comes from H1L1 (O2) and is 4.5e-7 Hz.
 
         """
-        super().__init__(
-            sngl_ranking, files=files, ifos=ifos, **kwargs
-        )
+        super().__init__(sngl_ranking, files=files, ifos=ifos, **kwargs)
         self.benchmark_lograte = benchmark_lograte
 
         # Reassign the rate to be number per time rather than an arbitrarily

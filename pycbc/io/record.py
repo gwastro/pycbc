@@ -1735,9 +1735,7 @@ class _FieldArrayWithDefaults(FieldArray):
             if not isinstance(kwargs["dtype"], list):
                 kwargs["dtype"] = [kwargs["dtype"]]
             kwargs["dtype"] += additional_fields
-        return super().__new__(
-            cls, shape, name=name, **kwargs
-        )
+        return super().__new__(cls, shape, name=name, **kwargs)
 
     def add_default_fields(self, names, **kwargs):
         """

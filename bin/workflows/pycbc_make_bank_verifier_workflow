@@ -366,10 +366,7 @@ for f in sorted(output_pointinjs):
 curr_node = point_injs_table_exe.create_node(
     workflow.analysis_time,
     [output_pointinjs[f] for f in sorted(output_pointinjs)],
-    [
-        "../" + rdir.name[f"point_injection_sets/{f}"]
-        for f in sorted(output_pointinjs)
-    ],
+    ["../" + rdir.name[f"point_injection_sets/{f}"] for f in sorted(output_pointinjs)],
 )
 workflow += curr_node
 plotting_nodes.append(curr_node)
@@ -396,9 +393,7 @@ secs = workflow.cp.get_subsections("banksim_plot_fitting_factors")
 for tag in sorted(output_broadinjs):
     curr_outs = []
     curr_file = output_broadinjs[tag]
-    plot_fitting_facs_exe.update_output_directory(
-        rdir[f"broad_injection_sets/{tag}"]
-    )
+    plot_fitting_facs_exe.update_output_directory(rdir[f"broad_injection_sets/{tag}"])
     for tag2 in secs:
         plot_fitting_facs_exe.update_current_tags([tag, tag2])
         curr_node = plot_fitting_facs_exe.create_node(workflow.analysis_time, curr_file)
@@ -411,9 +406,7 @@ for tag in sorted(output_broadinjs):
 for tag in sorted(output_pointinjs):
     curr_outs = []
     curr_file = output_pointinjs[tag]
-    plot_fitting_facs_exe.update_output_directory(
-        rdir[f"point_injection_sets/{tag}"]
-    )
+    plot_fitting_facs_exe.update_output_directory(rdir[f"point_injection_sets/{tag}"])
     for tag2 in secs:
         plot_fitting_facs_exe.update_current_tags([tag, tag2])
         curr_node = plot_fitting_facs_exe.create_node(workflow.analysis_time, curr_file)

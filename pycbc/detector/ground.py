@@ -194,9 +194,7 @@ def load_detector_config(config_files):
         try:
             method, arg_names = methods[kwds.pop("method")]
         except KeyError:
-            raise ValueError(
-                f"Missing or unkown method, options are {methods.keys()}"
-            )
+            raise ValueError(f"Missing or unkown method, options are {methods.keys()}")
         for k in kwds:
             kwds[k] = float(kwds[k])
         try:

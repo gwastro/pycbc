@@ -318,15 +318,9 @@ print("Reference run directory path: {0}".format(same_dict["reference_dir"]))
 print("Comparison run directory path: {0}".format(same_dict["comparison_dir"]))
 print(f"Comparing {nfiles} distinct injection sets between the two searches\n")
 print(f"Number of triggers found in both: {len(rth)}")
-print(
-    f"Number from same template: {same} ({same_pct:.2f} % of found in both)\n"
-)
-print(
-    f"Number found in reference only: {nref} ({ref_pct:.2f} % of found in both)"
-)
-print(
-    f"Number found in comparison only: {ncom} ({com_pct:.2f} % of found in both)"
-)
+print(f"Number from same template: {same} ({same_pct:.2f} % of found in both)\n")
+print(f"Number found in reference only: {nref} ({ref_pct:.2f} % of found in both)")
+print(f"Number found in comparison only: {ncom} ({com_pct:.2f} % of found in both)")
 
 
 # Write everything and finish

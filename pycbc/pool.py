@@ -85,9 +85,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         # copy on write
         if context is None:
             context = get_context("fork")
-        super().__init__(
-            processes, noint, initargs, context=context, **kwds
-        )
+        super().__init__(processes, noint, initargs, context=context, **kwds)
         atexit.register(_shutdown_pool, self)
 
     def __len__(self):

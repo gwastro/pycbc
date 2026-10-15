@@ -71,8 +71,7 @@ class TestParams(unittest.TestCase):
 
         # generate some random points
         random_params = {
-            p: numpy.random.uniform(*RANGES[p], size=self.numtests)
-            for p in RANGES
+            p: numpy.random.uniform(*RANGES[p], size=self.numtests) for p in RANGES
         }
         self.tc_ssb = random_params["tc_ssb"]
         self.eclipticlongitude_ssb = random_params["eclipticlongitude_ssb"]

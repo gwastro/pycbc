@@ -106,7 +106,6 @@ def update_mass_parameters(tmpltbank_class):
         yield idx
 
 
-
 class TmpltbankTestClass(unittest.TestCase):
     def setUp(self):
 

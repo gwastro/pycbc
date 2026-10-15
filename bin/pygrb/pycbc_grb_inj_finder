@@ -87,7 +87,9 @@ def read_hdf5_triggers(inputfiles, verbose=False):
     datasets = {}
 
     def _scan_dataset(name, obj):
-        if not isinstance(obj, h5py.Dataset) or (name.startswith("network") and NETWORK_IFO_EVENT_ID_REGEX.match(name)):
+        if not isinstance(obj, h5py.Dataset) or (
+            name.startswith("network") and NETWORK_IFO_EVENT_ID_REGEX.match(name)
+        ):
             return
         if "template_id" in name or "search" in name or "gating" in name:
             return

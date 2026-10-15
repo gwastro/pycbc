@@ -75,11 +75,9 @@ def fd_sine_gaussian(amp, quality, central_frequency, fmin, fmax, delta_f):
         -exp_term_cutoff / quality_sq * central_frequency // delta_f
     )
 
-    exp_term_1 = (
-        -(
-            (tau * pi * (f[low_freq_first_idx:high_freq_first_idx] - central_frequency))
-            ** 2.0
-        )
+    exp_term_1 = -(
+        (tau * pi * (f[low_freq_first_idx:high_freq_first_idx] - central_frequency))
+        ** 2.0
     )
 
     A_term = amp * (pi**0.5) / 2 * tau

@@ -195,7 +195,9 @@ for i in range(100):
             if (currChi1 < tempChi1Lower) and (i != 0):
                 currIter = currIter + 1
                 continue
-            elif ((currChi1 > tempChi1Upper) and (i != 99)) or currChi1 > tempChi1Upper + 0.02 * chi1Diff:
+            elif (
+                (currChi1 > tempChi1Upper) and (i != 99)
+            ) or currChi1 > tempChi1Upper + 0.02 * chi1Diff:
                 break
             v1s.append(currChi1)
             v2s.append(chi2Loc)
@@ -229,7 +231,9 @@ for i in range(99, -1, -1):
             if (currChi1 < tempChi1Lower) and (i != 0):
                 currIter = currIter + 1
                 continue
-            elif ((currChi1 > tempChi1Upper) and (i != 99)) or currChi1 > tempChi1Upper + 0.02 * chi1Diff:
+            elif (
+                (currChi1 > tempChi1Upper) and (i != 99)
+            ) or currChi1 > tempChi1Upper + 0.02 * chi1Diff:
                 break
             v1s.append(currChi1)
             v2s.append(chi2Loc)

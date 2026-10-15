@@ -233,7 +233,7 @@ class BoundedDist:
             ):
                 warnings.warn(
                     f"Param {param} has one or more "
-                     "reflected boundaries. Reflected boundaries "
+                    "reflected boundaries. Reflected boundaries "
                     "can cause issues when used in an MCMC."
                 )
         self._bounds = params

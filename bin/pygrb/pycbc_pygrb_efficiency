@@ -105,7 +105,7 @@ parser.add_argument(
     "--onsource-file",
     action="store",
     help="Location of on-source trigger file (or a "
-     "background trigger file to be treated as such).",
+    "background trigger file to be treated as such).",
 )
 parser.add_argument(
     "--background-output-file", help="Detection efficiency output file."
@@ -122,9 +122,9 @@ parser.add_argument(
     type=float,
     default=1.0,
     help="When deciding "
-     "exclusion efficiencies this value is multiplied "
-     "to the offsource around the injection trigger to "
-     "determine if it is just a loud glitch.",
+    "exclusion efficiencies this value is multiplied "
+    "to the offsource around the injection trigger to "
+    "determine if it is just a loud glitch.",
 )
 parser.add_argument(
     "--found-missed-file",
@@ -178,8 +178,8 @@ if opts.exclusion_dist_output_file is not None or opts.onsource_output_file is n
     if opts.onsource_file is None:
         logging.error(
             "Requesting the --exclusion-dist-output-file or "
-             "the --onsource-output-file requires the "
-             "--onsource-file as nput."
+            "the --onsource-output-file requires the "
+            "--onsource-file as nput."
         )
 
 # Store options used multiple times in local variables

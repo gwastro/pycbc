@@ -312,9 +312,7 @@ class Executable(pegasus_workflow.Executable):
             )
 
         else:
-            super().__init__(
-                self.pegasus_name, installed=self.installed
-            )
+            super().__init__(self.pegasus_name, installed=self.installed)
 
         if hasattr(self, "group_jobs"):
             self.add_profile("pegasus", "clusters.size", self.group_jobs)
@@ -1803,7 +1801,10 @@ class FileList(list):
         split lists are still valid.
         """
         # FIXME: Currently very primitive, but needs to be fast
-        if not (hasattr(self, "_splitListsSet") and (self._splitListsSet)) or len(self) != self._splitListsLength:
+        if (
+            not (hasattr(self, "_splitListsSet") and (self._splitListsSet))
+            or len(self) != self._splitListsLength
+        ):
             return False
         return True
 

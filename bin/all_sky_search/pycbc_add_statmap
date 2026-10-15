@@ -324,12 +324,8 @@ for ifo in all_ifos:
     if not injection_style:
         f.create_dataset(f"background/{ifo}/time", data=bg_trig_times[ifo])
         f.create_dataset(f"background/{ifo}/trigger_id", data=bg_trig_ids[ifo])
-        f.create_dataset(
-            f"background_exc/{ifo}/time", data=bg_exc_trig_times[ifo]
-        )
-        f.create_dataset(
-            f"background_exc/{ifo}/trigger_id", data=bg_exc_trig_ids[ifo]
-        )
+        f.create_dataset(f"background_exc/{ifo}/time", data=bg_exc_trig_times[ifo])
+        f.create_dataset(f"background_exc/{ifo}/trigger_id", data=bg_exc_trig_ids[ifo])
 
 # fg_times is a tuple of trigger time arrays
 fg_times = (f["foreground/%s/time" % ifo][:] for ifo in all_ifos)
@@ -699,9 +695,7 @@ while True:
                     abs(times - maxtime) < args.hierarchical_removal_window
                 )[0]
                 all_hred_idx += list(hred_ids)
-        logging.info(
-            f"Removing {len(all_hred_idx)} background triggers from {combo}"
-        )
+        logging.info(f"Removing {len(all_hred_idx)} background triggers from {combo}")
         sep_bg_data[combo] = sep_bg_data[combo].remove(all_hred_idx)
 
     hred_ids = []

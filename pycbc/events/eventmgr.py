@@ -727,9 +727,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         psd=None,
         **kwargs,
     ):
-        super().__init__(
-            opt, ifos, column, column_types, psd=None, **kwargs
-        )
+        super().__init__(opt, ifos, column, column_types, psd=None, **kwargs)
         self.network_event_dtype = [(ifo + "_event_id", int) for ifo in self.ifos]
         self.network_event_dtype.append(("template_id", int))
         self.network_event_dtype.append(("event_id", int))
@@ -1083,9 +1081,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
 
 class EventManagerMultiDet(EventManagerMultiDetBase):
     def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
-        super().__init__(
-            opt, ifos, column, column_types, psd=None, **kwargs
-        )
+        super().__init__(opt, ifos, column, column_types, psd=None, **kwargs)
         self.event_index = 0
 
     def cluster_template_events_single_ifo(self, tcolumn, column, window_size, ifo):

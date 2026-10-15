@@ -152,9 +152,7 @@ class Uniform(bounded.BoundedDist):
             A distribution instance from the pycbc.inference.prior module.
 
         """
-        return super().from_config(
-            cp, section, variable_args, bounds_required=True
-        )
+        return super().from_config(cp, section, variable_args, bounds_required=True)
 
 
 __all__ = ["Uniform"]

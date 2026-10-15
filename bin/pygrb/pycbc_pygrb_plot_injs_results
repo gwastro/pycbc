@@ -285,7 +285,7 @@ parser.add_argument(
     required=True,
     choices=admitted_vars,
     help="Quantity to plot on the horizontal axis. "
-     "(Underscores may be omitted in specifying this option).",
+    "(Underscores may be omitted in specifying this option).",
 )
 parser.add_argument("--x-log", action="store_true", help="Use log horizontal axis")
 parser.add_argument(
@@ -295,7 +295,7 @@ parser.add_argument(
     required=True,
     choices=admitted_vars,
     help="Quantity to plot on the vertical axis. "
-     "(Underscores may be omitted in specifying this option).",
+    "(Underscores may be omitted in specifying this option).",
 )
 parser.add_argument("--y-log", action="store_true", help="Use log vertical axis")
 parser.add_argument(

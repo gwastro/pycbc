@@ -147,7 +147,7 @@ def check_signal_times(
     if hp.duration + hp.start_time > orbit_end_time:
         logging.warning(
             "Time of signal end is greater than end of orbital "
-             f"data. Cutting signal at {orbit_end_time}."
+            f"data. Cutting signal at {orbit_end_time}."
         )
         # cut off data succeeding orbit end time
         end_idx = numpy.argwhere(hp.sample_times.numpy() <= orbit_end_time)[-1][0]
@@ -157,7 +157,7 @@ def check_signal_times(
     if hp.start_time < orbit_start_time:
         logging.warning(
             "Time of signal start is less than start of orbital "
-             f"data. Cutting signal at {orbit_start_time}."
+            f"data. Cutting signal at {orbit_start_time}."
         )
         # cut off data preceding orbit start time
         start_idx = numpy.argwhere(hp.sample_times.numpy() >= orbit_start_time)[0][0]
@@ -648,8 +648,7 @@ class _LDC_detector(AbsSpaceDet):
             }
         else:
             raise ValueError(
-                "Unrecognized TDI channel input. "
-                 'Please input either "XYZ" or "AET".'
+                'Unrecognized TDI channel input. Please input either "XYZ" or "AET".'
             )
 
         # processing

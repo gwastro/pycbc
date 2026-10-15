@@ -76,9 +76,7 @@ def mail_volunteers_error(controls, mail_body_lines, subject):
     To be used for errors or unusual occurences
     """
     with open(controls["mail-volunteers-file"]) as mail_volunteers_file:
-        volunteers = [
-            volunteer.strip() for volunteer in mail_volunteers_file
-        ]
+        volunteers = [volunteer.strip() for volunteer in mail_volunteers_file]
     logger.info("Emailing %s with warnings", " ".join(volunteers))
     mail_command = ["mail", "-s", subject]
     mail_command += volunteers

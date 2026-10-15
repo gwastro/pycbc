@@ -446,9 +446,7 @@ class MultiifoStatmapData(StatmapData):
             groups += ["%s/time" % ifo]
             groups += ["%s/trigger_id" % ifo]
 
-        super().__init__(
-            data=data, files=files, groups=groups, attrs=attrs, seg=seg
-        )
+        super().__init__(data=data, files=files, groups=groups, attrs=attrs, seg=seg)
 
     def _return(self, data):
         ifolist = self.attrs["ifos"].split(" ")
@@ -1243,9 +1241,7 @@ class ForegroundTriggers:
             self.active_segments[ifo] = veto.start_end_to_segments(starts, ends)
 
     def get_end_time(self):
-        times_gen = (
-            self.get_coincfile_array(f"{ifo}/time") for ifo in self.ifos
-        )
+        times_gen = (self.get_coincfile_array(f"{ifo}/time") for ifo in self.ifos)
         ref_times = np.array([mean_if_greater_than_zero(t)[0] for t in zip(*times_gen)])
         return ref_times
 

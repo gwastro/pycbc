@@ -200,9 +200,7 @@ class BaseCBCGenerator(BaseGenerator):
     """
 
     def __init__(self, generator, variable_args=(), **frozen_params):
-        super().__init__(
-            generator, variable_args=variable_args, **frozen_params
-        )
+        super().__init__(generator, variable_args=variable_args, **frozen_params)
         # decorate the generator function with a list of functions that convert
         # parameters to those used by the waveform generation interface
         all_args = set(list(self.frozen_params.keys()) + list(self.variable_args))
@@ -389,9 +387,7 @@ class FDomainMassSpinRingdownGenerator(BaseGenerator):
             raise ValueError(
                 f"Invalid approximant name: {frozen_params['approximant']}"
             )
-        super().__init__(
-            approximant, variable_args=variable_args, **frozen_params
-        )
+        super().__init__(approximant, variable_args=variable_args, **frozen_params)
 
 
 class FDomainFreqTauRingdownGenerator(BaseGenerator):
@@ -428,9 +424,7 @@ class FDomainFreqTauRingdownGenerator(BaseGenerator):
             raise ValueError(
                 f"Invalid approximant name: {frozen_params['approximant']}"
             )
-        super().__init__(
-            approximant, variable_args=variable_args, **frozen_params
-        )
+        super().__init__(approximant, variable_args=variable_args, **frozen_params)
 
 
 class TDomainMassSpinRingdownGenerator(BaseGenerator):
@@ -467,9 +461,7 @@ class TDomainMassSpinRingdownGenerator(BaseGenerator):
             raise ValueError(
                 f"Invalid approximant name: {frozen_params['approximant']}"
             )
-        super().__init__(
-            approximant, variable_args=variable_args, **frozen_params
-        )
+        super().__init__(approximant, variable_args=variable_args, **frozen_params)
 
 
 class TDomainFreqTauRingdownGenerator(BaseGenerator):
@@ -506,9 +498,7 @@ class TDomainFreqTauRingdownGenerator(BaseGenerator):
             raise ValueError(
                 f"Invalid approximant name: {frozen_params['approximant']}"
             )
-        super().__init__(
-            approximant, variable_args=variable_args, **frozen_params
-        )
+        super().__init__(approximant, variable_args=variable_args, **frozen_params)
 
 
 class TDomainSupernovaeGenerator(BaseGenerator):

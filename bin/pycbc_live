@@ -1522,7 +1522,9 @@ with ctx:
 
     # Create dicts to track whether the psd has been recalculated and to hold
     #  psd variation filters
-    psd_recalculated = dict.fromkeys(evnt.ifos if evnt.rank == 0 else evnt.trigg_ifos, True)
+    psd_recalculated = dict.fromkeys(
+        evnt.ifos if evnt.rank == 0 else evnt.trigg_ifos, True
+    )
     psd_var_filts = dict.fromkeys(evnt.trigg_ifos)
 
     while data_end() < args.end_time:

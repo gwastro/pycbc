@@ -147,13 +147,13 @@ y = y[mask]
 
 title = (
     f"{opts.z_var.title()} of {opts.detector} triggers "
-     f"over {opts.x_var.title()} and {opts.y_var.title()}"
+    f"over {opts.x_var.title()} and {opts.y_var.title()}"
 )
 fig_caption = (
     f"This plot shows the {opts.z_var} of single detector "
-     f"triggers for the {opts.detector} detector. "
-     f"{opts.z_var.title()} is shown on the colorbar axis "
-     f"against {opts.x_var} and {opts.y_var} on the x- and y-axes."
+    f"triggers for the {opts.detector} detector. "
+    f"{opts.z_var.title()} is shown on the colorbar axis "
+    f"against {opts.x_var} and {opts.y_var} on the x- and y-axes."
 )
 
 if not any(mask):

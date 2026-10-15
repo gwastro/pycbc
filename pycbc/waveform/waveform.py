@@ -67,10 +67,8 @@ class NoWaveformError(Exception):
     """
 
 
-
 class FailedWaveformError(Exception):
     """This should be raised if a waveform fails to generate."""
-
 
 
 # If this is set to True, waveform generation codes will try to regenerate

@@ -121,8 +121,7 @@ def format_lmns(lmns):
             )
         if int(lmn[2]) == 0:
             raise ValueError(
-                "Number of overtones (nmodes) must be greater "
-                f"than zero in lmn={lmn}."
+                f"Number of overtones (nmodes) must be greater than zero in lmn={lmn}."
             )
         out.append(lmn)
 

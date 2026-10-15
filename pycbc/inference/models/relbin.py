@@ -207,9 +207,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             variable_params, marginalize_phase=marginalize_phase, **kwargs
         )
 
-        super().__init__(
-            variable_params, data, low_frequency_cutoff, **kwargs
-        )
+        super().__init__(variable_params, data, low_frequency_cutoff, **kwargs)
 
         # If the waveform needs us to apply the detector response,
         # set flag to true (most cases for ground-based observatories).
@@ -418,7 +416,9 @@ class Relative(DistMarg, BaseGaussianNoise):
                 if set(["tc"]).issubset(vmarg):
                     self.lformat = "earth_time"
                     return likelihood_parts_v_time
-            elif set(["ra", "dec", "tc"]).issubset(vmarg) or set(["tc", "polarization"]).issubset(vmarg):
+            elif set(["ra", "dec", "tc"]).issubset(vmarg) or set(
+                ["tc", "polarization"]
+            ).issubset(vmarg):
                 return likelihood_parts_vector
             elif set(["tc"]).issubset(vmarg):
                 return likelihood_parts_vectort

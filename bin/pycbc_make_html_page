@@ -163,8 +163,7 @@ class File:
 
 
 default_logo_location = (
-    "https://raw.githubusercontent.com/gwastro/"
-     "pycbc-logo/master/pycbc_logo_name.png"
+    "https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png"
 )
 
 # parse command line

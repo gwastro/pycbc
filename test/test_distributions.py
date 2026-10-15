@@ -354,10 +354,7 @@ class TestDistributions(unittest.TestCase):
                 ]
             )
             pdf_2 = numpy.array(
-                [
-                    polar_dist.pdf(theta=p) * ang_dist.pdf(theta=a)
-                    for p, a in cart_sin
-                ]
+                [polar_dist.pdf(theta=p) * ang_dist.pdf(theta=a) for p, a in cart_sin]
             )
 
             # Catch and silence warnings here
@@ -380,8 +377,7 @@ class TestDistributions(unittest.TestCase):
                 )
                 pdf_2 = numpy.array(
                     [
-                        polar_dist.logpdf(theta=p)
-                        + ang_dist.logpdf(theta=a)
+                        polar_dist.logpdf(theta=p) + ang_dist.logpdf(theta=a)
                         for p, a in cart_sin
                     ]
                 )

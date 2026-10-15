@@ -91,9 +91,7 @@ class TestTransforms(unittest.TestCase):
             in_arr = numpy.array([in_map[p] for p in trans.inputs])
             out_arr = numpy.array([out_map[p] for p in trans.inputs])
             if not numpy.all(1.0 - in_arr / out_arr < threshold):
-                raise ValueError(
-                    f"Transform {trans.name} does not map back to itself."
-                )
+                raise ValueError(f"Transform {trans.name} does not map back to itself.")
 
     def test_logit_arrays(self):
         """

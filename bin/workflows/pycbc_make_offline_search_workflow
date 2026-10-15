@@ -362,8 +362,7 @@ for ifo, _ in zip(*insps.categorize_by_attr("ifo")):
 # Generate the possible detector combinations
 if workflow.cp.has_option_tags("workflow-data_quality", "no-coinc-veto", tags=None):
     logging.info(
-        "no-coinc-veto option enabled, "
-         "no longer passing veto segments to coinc jobs."
+        "no-coinc-veto option enabled, no longer passing veto segments to coinc jobs."
     )
     coinc_veto_file = None
 else:

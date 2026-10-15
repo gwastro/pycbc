@@ -347,9 +347,7 @@ class CustomTransformMultiOutputs(CustomTransform):
     name = "custom_multi"
 
     def __init__(self, input_args, output_args, transform_functions, jacobian=None):
-        super().__init__(
-            input_args, output_args, transform_functions, jacobian
-        )
+        super().__init__(input_args, output_args, transform_functions, jacobian)
 
     def transform(self, maps):
         """
@@ -2561,9 +2559,7 @@ class Logit(BaseTransform):
             )
         if a is not None:
             additional_opts.update({"domain": (float(a), float(b))})
-        return super().from_config(
-            cp, section, outputs, skip_opts, additional_opts
-        )
+        return super().from_config(cp, section, outputs, skip_opts, additional_opts)
 
 
 #
@@ -3055,9 +3051,7 @@ class Logistic(Logit):
             )
         if a is not None:
             additional_opts.update({"codomain": (float(a), float(b))})
-        return super().from_config(
-            cp, section, outputs, skip_opts, additional_opts
-        )
+        return super().from_config(cp, section, outputs, skip_opts, additional_opts)
 
 
 # set the inverse of the forward transforms to the inverse transforms

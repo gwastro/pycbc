@@ -233,9 +233,7 @@ logging.info("Reading distributions")
 dists = distributions.read_distributions_from_config(cp, opts.dist_section)
 
 # construct class that will draw the samples
-randomsampler = JointDistribution(
-    variable_params, *dists, constraints=constraints
-)
+randomsampler = JointDistribution(variable_params, *dists, constraints=constraints)
 
 if opts.ninjections:
     draw_size = opts.ninjections
@@ -252,10 +250,7 @@ while True:
         for t in waveform_transforms:
             if not set(t.inputs).isdisjoint(set(static_params.keys())):
                 for item in list(
-
-                        set(t.inputs)
-                        & set(static_params.keys()) - set(samples.fieldnames)
-
+                    set(t.inputs) & set(static_params.keys()) - set(samples.fieldnames)
                 ):
                     samples = samples.add_fields(
                         [numpy.repeat(static_params[item], draw_size).astype(float)],

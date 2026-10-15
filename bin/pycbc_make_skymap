@@ -208,12 +208,8 @@ def main(
                 channel_names[ifo] = default_channel_name(mean_trig_time, ifo)
 
         # compose the command line for the single-template process
-        st_psd_paths[ifo] = os.path.join(
-            tmpdir, f"PSD_{file_name_tag}_{ifo}.txt"
-        )
-        st_out_paths[ifo] = os.path.join(
-            tmpdir, f"SNRTS_{file_name_tag}_{ifo}.hdf"
-        )
+        st_psd_paths[ifo] = os.path.join(tmpdir, f"PSD_{file_name_tag}_{ifo}.txt")
+        st_out_paths[ifo] = os.path.join(tmpdir, f"SNRTS_{file_name_tag}_{ifo}.hdf")
 
         command = [
             "pycbc_single_template",

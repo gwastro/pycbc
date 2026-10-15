@@ -113,9 +113,7 @@ def _init_threads(backend):
         double_threaded_libname = _fftw_threading_libnames[backend]["double"]
         float_threaded_libname = _fftw_threading_libnames[backend]["float"]
     except KeyError:
-        raise ValueError(
-            f"Backend {backend} for FFTW threading does not exist!"
-        )
+        raise ValueError(f"Backend {backend} for FFTW threading does not exist!")
     if double_threaded_libname is not None:
         try:
             # For reasons Ian doesn't understand we should not load libgomp
@@ -163,9 +161,7 @@ def set_threads_backend(backend=None):
         retval = _init_threads(backend)
         # Since the user specified this backend raise an exception if the above failed
         if retval != 0:
-            raise RuntimeError(
-                f"Could not initialize FFTW threading backend {backend}"
-            )
+            raise RuntimeError(f"Could not initialize FFTW threading backend {backend}")
     else:
         # Note that we pop() from the end, so 'pthreads'
         # is the first thing tried
@@ -244,9 +240,7 @@ def wisdom_io(filename, precision, action):
     f.argtypes = [ctypes.c_char_p]
     retval = f(filename.encode())
     if retval == 0:
-        raise RuntimeError(
-            f"Could not {action} wisdom from file {filename}"
-        )
+        raise RuntimeError(f"Could not {action} wisdom from file {filename}")
 
 
 def import_single_wisdom_from_filename(filename):
@@ -689,9 +683,7 @@ def verify_fft_options(opt, parser):
 
     """
     if opt.fftw_measure_level not in [0, 1, 2, 3]:
-        parser.error(
-            f"{opt.fftw_measure_level} is not a valid FFTW measure level."
-        )
+        parser.error(f"{opt.fftw_measure_level} is not a valid FFTW measure level.")
 
     if opt.fftw_import_system_wisdom and (
         (opt.fftw_input_float_wisdom_file is not None)

@@ -59,10 +59,11 @@ parser.add_argument(
     type=str,
     default=None,
     help="Determines the PN order to use. Note that if you "
-     "placing a bank of non-spinning templates, any "
-     "spin-related terms in the metric will always "
-     "be zero. REQUIRED ARGUMENT: "
-    + "choices are: %s" % (pycbcValidOrdersHelpDescriptions),
+    "placing a bank of non-spinning templates, any "
+    "spin-related terms in the metric will always "
+    "be zero. REQUIRED ARGUMENT: "
+    + "choices are: %s"
+    % (pycbcValidOrdersHelpDescriptions),
 )
 parser.add_argument(
     "--f0",
@@ -70,13 +71,13 @@ parser.add_argument(
     type=float,
     default=70.0,
     help="f0 is used as a dynamic rescaling factor when "
-     "calculating the integrals used in metric "
-     "construction. IE. instead of integrating F(f) we "
-     "integrate F(f/f0) and then remove f0 after the fact."
-     "The default option should be fine here for most "
-     "applications. OPTIONAL"
-     "WARNING: If using ethinca calculation this must be "
-     "equal to f-low. UNITS=Hz",
+    "calculating the integrals used in metric "
+    "construction. IE. instead of integrating F(f) we "
+    "integrate F(f/f0) and then remove f0 after the fact."
+    "The default option should be fine here for most "
+    "applications. OPTIONAL"
+    "WARNING: If using ethinca calculation this must be "
+    "equal to f-low. UNITS=Hz",
 )
 parser.add_argument(
     "-I",

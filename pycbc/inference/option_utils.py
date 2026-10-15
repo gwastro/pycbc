@@ -122,9 +122,7 @@ class ParseParametersArg(ParseLabelArg):
     """
 
     def __call__(self, parser, namespace, values, option_string=None):
-        super().__call__(
-            parser, namespace, values, option_string=option_string
-        )
+        super().__call__(parser, namespace, values, option_string=option_string)
         # try to replace the labels with a label from waveform.parameters
         labels = getattr(namespace, f"{self.dest}_labels")
         for param, label in labels.items():

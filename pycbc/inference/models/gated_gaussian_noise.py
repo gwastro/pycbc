@@ -868,9 +868,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
         detector.
         """
-        return ["loglr", "maxl_phase"] + [
-            f"{det}_optimal_snrsq" for det in self._data
-        ]
+        return ["loglr", "maxl_phase"] + [f"{det}_optimal_snrsq" for det in self._data]
 
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated."""

@@ -26,9 +26,7 @@ for N in [2**10, 2**15, 2**18]:
         corr.execute(b)
 
     t2 = time()
-    print(
-        f"Batch Correlate Perf Size:{N} Time:{(t2 - t1) * 1000 / niter:3.3f}"
-    )
+    print(f"Batch Correlate Perf Size:{N} Time:{(t2 - t1) * 1000 / niter:3.3f}")
 
 
 for dtp in [complex64, complex128]:

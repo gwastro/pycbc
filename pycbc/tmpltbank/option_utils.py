@@ -1408,7 +1408,10 @@ def verify_ethinca_metric_options(opts, parser):
         The OptionParser instance.
 
     """
-    if opts.filter_cutoff is not None and opts.filter_cutoff not in pnutils.named_frequency_cutoffs.keys():
+    if (
+        opts.filter_cutoff is not None
+        and opts.filter_cutoff not in pnutils.named_frequency_cutoffs.keys()
+    ):
         parser.error(
             "Need a valid cutoff formula to calculate ethinca or "
             "assign filter f_final values! Possible values are "

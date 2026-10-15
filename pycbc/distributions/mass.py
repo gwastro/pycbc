@@ -301,9 +301,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         module.
 
         """
-        return super().from_config(
-            cp, section, variable_args, bounds_required=True
-        )
+        return super().from_config(cp, section, variable_args, bounds_required=True)
 
 
 __all__ = ["MchirpfromUniformMass1Mass2", "QfromUniformMass1Mass2"]

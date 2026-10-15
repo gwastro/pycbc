@@ -39,8 +39,8 @@ parser.add_argument(
     nargs="+",
     required=True,
     help="List of JSON input files"
-     " output by pycbc_pygrb_efficiency"
-     " containing exclusion distances.",
+    " output by pycbc_pygrb_efficiency"
+    " containing exclusion distances.",
 )
 parser.add_argument(
     "--output-file",

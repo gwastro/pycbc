@@ -307,9 +307,9 @@ plt.xlabel(ifar_label, size="large")
 # save
 caption = (
     "This is a cumulative histogram of triggers. The blue triangles "
-     "represent foreground triggers. The dashed line "
-     "represents the expected background given the analysis time. "
-     "The shaded regions represent counting errors."
+    "represent foreground triggers. The dashed line "
+    "represents the expected background given the analysis time. "
+    "The shaded regions represent counting errors."
 )
 pycbc.results.save_fig_with_metadata(
     fig,

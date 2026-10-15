@@ -181,9 +181,9 @@ if opts.plot_caption is None:
     if veto_type == "network":
         opts.plot_caption += (
             "Gray shaded region: area cut by the "
-             "reweighted SNR threshold. "
-             "Black line: reweighted SNR threshold. Yellow "
-             "lines: contours of constant reweighted SNR."
+            "reweighted SNR threshold. "
+            "Black line: reweighted SNR threshold. Yellow "
+            "lines: contours of constant reweighted SNR."
         )
 
 logging.info("Imported and ready to go.")

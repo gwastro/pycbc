@@ -808,9 +808,7 @@ class EnsembleMultiTemperedMCMCBurnInTests(EnsembleMCMCBurnInTests):
 
         Since we calculate the acls, this will also store it to the sampler.
         """
-        acls = super()._getacls(
-            filename, start_index
-        )
+        acls = super()._getacls(filename, start_index)
         # return the max for each parameter
         return {param: vals.max() for (param, vals) in acls.items()}
 

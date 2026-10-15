@@ -77,9 +77,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         variable_params, kwargs = self.setup_marginalization(
             variable_params, marginalize_phase=marginalize_phase, **kwargs
         )
-        super().__init__(
-            variable_params, data, low_frequency_cutoff, **kwargs
-        )
+        super().__init__(variable_params, data, low_frequency_cutoff, **kwargs)
 
         sample_rate = float(sample_rate)
 

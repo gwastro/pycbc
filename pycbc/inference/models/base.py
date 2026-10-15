@@ -799,9 +799,7 @@ class BaseModel(metaclass=ABCMeta):
         # check that the name exists and matches
         name = cp.get(section, "name")
         if name != cls.name:
-            raise ValueError(
-                f"section's {name} name does not match mine {cls.name}"
-            )
+            raise ValueError(f"section's {name} name does not match mine {cls.name}")
         # get model parameters
         variable_params, static_params = distributions.read_params_from_config(
             cp,

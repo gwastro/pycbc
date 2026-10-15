@@ -1559,8 +1559,8 @@ def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
     if duration not in t_obs:
         raise Warning(
             "Note that the results between "
-             "0.5, 1, 2, 4, and 5 years are extrapolated, "
-             "might be non-physical."
+            "0.5, 1, 2, 4, and 5 years are extrapolated, "
+            "might be non-physical."
         )
     # 10/3 is the factor for sky-average, the original fit in the paper
     # is not sky-averaged.
@@ -1635,8 +1635,8 @@ def confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration=1.0):
     if duration not in t_obs:
         raise Warning(
             "Note that the results between "
-             "0.5, 1, 2, and 4 years are extrapolated, "
-             "might be non-physical."
+            "0.5, 1, 2, and 4 years are extrapolated, "
+            "might be non-physical."
         )
     sh_confusion = np.exp(
         fit_a0(duration)

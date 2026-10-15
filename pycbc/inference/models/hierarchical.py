@@ -762,7 +762,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         sh_primary, hh_primary = self.primary_model.loglr
         self.primary_model.return_sh_hh = False
         # set logr, otherwise it will store (sh, hh)
-        self.primary_model._current_stats.loglr = self.primary_model.marginalize_loglr(sh_primary, hh_primary)
+        self.primary_model._current_stats.loglr = self.primary_model.marginalize_loglr(
+            sh_primary, hh_primary
+        )
         if isinstance(sh_primary, numpy.ndarray):
             nums = len(sh_primary)
         else:
@@ -817,7 +819,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     hh_others[i] += hh_other
                     other_model.return_sh_hh = False
                     # set logr, otherwise it will store (sh, hh)
-                    other_model._current_stats.loglr = other_model.marginalize_loglr(sh_other, hh_other)
+                    other_model._current_stats.loglr = other_model.marginalize_loglr(
+                        sh_other, hh_other
+                    )
             else:
                 # use one margin point set to approximate all the others
                 current_params_other.update(
@@ -831,7 +835,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 sh_other, hh_other = other_model.loglr
                 other_model.return_sh_hh = False
                 # set logr, otherwise it will store (sh, hh)
-                other_model._current_stats.loglr = other_model.marginalize_loglr(sh_other, hh_other)
+                other_model._current_stats.loglr = other_model.marginalize_loglr(
+                    sh_other, hh_other
+                )
                 sh_others += sh_other
                 hh_others += hh_other
 

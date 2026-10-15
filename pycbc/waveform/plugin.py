@@ -64,9 +64,7 @@ def add_custom_waveform(
                 raise used
             fd_det[approximant] = function
     else:
-        raise ValueError(
-            f"Invalid domain ({domain}), should be 'time' or 'frequency'"
-        )
+        raise ValueError(f"Invalid domain ({domain}), should be 'time' or 'frequency'")
 
 
 def add_custom_waveform_modes(approximant, function, domain, force=False):
@@ -118,9 +116,7 @@ def add_custom_waveform_modes(approximant, function, domain, force=False):
             raise used
         _mode_waveform_fd[approximant] = function
     else:
-        raise ValueError(
-            f"Invalid domain ({domain}), should be 'time' or 'frequency'"
-        )
+        raise ValueError(f"Invalid domain ({domain}), should be 'time' or 'frequency'")
 
 
 def add_length_estimator(approximant, function):

@@ -143,7 +143,7 @@ elif opts.distribution.startswith("beta"):
     except ValueError:
         raise ValueError(
             "beta distribution requires an a and b to be "
-             "provided; e.g., 'beta:3,2'; see help"
+            "provided; e.g., 'beta:3,2'; see help"
         )
     try:
         alpha, beta = map(float, params.split(","))
@@ -168,8 +168,8 @@ if opts.fixed_distance_range is not None:
 elif opts.scale_by_chirp_dist:
     raise ValueError(
         "cannot use scale-by-chirp-dist if not using a "
-         "fixed-distance-range (scaling by chirp distance doesn't make "
-         "sense when using min/max SNR"
+        "fixed-distance-range (scaling by chirp distance doesn't make "
+        "sense when using min/max SNR"
     )
 elif opts.min_snr is None or opts.max_snr is None:
     if opts.min_snr is None or opts.max_snr is None:
@@ -180,7 +180,7 @@ elif opts.min_snr is None or opts.max_snr is None:
         if opts.max_snr is None and distribution != "beta":
             raise ValueError(
                 "must provide a maximum SNR if not specifying a "
-                 "fixed-distance-range and not using a beta distribution"
+                "fixed-distance-range and not using a beta distribution"
             )
 
 numpy.random.seed(opts.seed)

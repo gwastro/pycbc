@@ -56,9 +56,7 @@ def parse_injection_path(injname, basedir):
             f"There is no sub-directory {injname}_INJ_coinc in {basedir}"
         )
     if not path.isdir(dirpath):
-        raise RuntimeError(
-            f"Path {basedir}/{injname}_INJ_coinc is not a directory"
-        )
+        raise RuntimeError(f"Path {basedir}/{injname}_INJ_coinc is not a directory")
     injfile = glob(dirpath + "/*HDFINJFIND*")
     if len(injfile) == 0:
         raise RuntimeError(f"No found-injections file in directory {dirpath}")
@@ -329,7 +327,6 @@ def compare_found_injs(reference_run, comparison_run, outfp):
         populate_injection_group(com_only_group, com_only_idx, com_found, ifos)
 
 
-
 def compare_missed_injs(reference_run, comparison_run, outfp):
     logging.info("Comparing missed injections after vetoes")
     ifos = reference_run.inj_dets
@@ -407,7 +404,6 @@ def compare_missed_injs(reference_run, comparison_run, outfp):
     populate_injection_group(
         com_missed_ref_group, com_missed_ref_idx, reference_run.found_after_vetoes, ifos
     )
-
 
 
 parser = argparse.ArgumentParser(usage="", description=__doc__)

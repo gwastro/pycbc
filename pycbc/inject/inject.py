@@ -1231,9 +1231,7 @@ def hdf_injtype_from_approximant(approximant):
             retcls = cls
     if retcls is None:
         # none were found, raise an error
-        raise ValueError(
-            f"Injection file type unknown for approximant {approximant}"
-        )
+        raise ValueError(f"Injection file type unknown for approximant {approximant}")
     return retcls
 
 

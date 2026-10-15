@@ -153,7 +153,8 @@ def add_approximant_arg(parser, default=None, help=None):
 
     """
     if help is None:
-        help = ("The approximant(s) to use. Multiple approximants to use "
+        help = (
+            "The approximant(s) to use. Multiple approximants to use "
             "in different regions may be provided. If multiple "
             "approximants are provided, every one but the last must be "
             "be followed by a conditional statement defining where that "
@@ -172,7 +173,8 @@ def add_approximant_arg(parser, default=None, help=None):
             "applied. For the full list of possible parameters to apply "
             "conditionals to, see WaveformArray.default_fields(). Math "
             "operations may also be used on parameters; syntax is python, "
-            "with any operation recognized by numpy.")
+            "with any operation recognized by numpy."
+        )
     parser.add_argument(
         "--approximant",
         nargs="+",

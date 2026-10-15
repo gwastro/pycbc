@@ -174,8 +174,7 @@ class CubicSpline(Recalibrate):
         delta_amplitude = amplitude_spline(strain.sample_frequencies.numpy())
 
         phase_parameters = [
-            self.params[f"phase_{self.ifo_name}_{ii}"]
-            for ii in range(self.n_points)
+            self.params[f"phase_{self.ifo_name}_{ii}"] for ii in range(self.n_points)
         ]
         phase_spline = UnivariateSpline(self.spline_points, phase_parameters)
         delta_phase = phase_spline(strain.sample_frequencies.numpy())

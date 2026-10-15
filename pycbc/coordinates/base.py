@@ -104,9 +104,7 @@ def cartesian_to_spherical_polar(x, y, z):
     rho = cartesian_to_spherical_rho(x, y, z)
     if numpy.isscalar(rho):
         return numpy.arccos(z / rho) if rho else 0.0
-    return numpy.arccos(
-        numpy.divide(z, rho, out=numpy.ones_like(z), where=rho != 0)
-    )
+    return numpy.arccos(numpy.divide(z, rho, out=numpy.ones_like(z), where=rho != 0))
 
 
 def cartesian_to_spherical(x, y, z):

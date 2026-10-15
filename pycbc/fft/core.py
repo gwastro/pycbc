@@ -120,9 +120,7 @@ def _check_fwd_args(invec, itype, outvec, otype, nbatch, size):
                     "For R2C in-place FFT, len(invec) must be nbatch*2*(size/2+1)"
                 )
         elif (ilen / nbatch) != size:
-            raise ValueError(
-                "For R2C out-of-place FFT, len(invec) must be nbatch*size"
-            )
+            raise ValueError("For R2C out-of-place FFT, len(invec) must be nbatch*size")
     else:
         raise ValueError("Inconsistent dtypes for forward FFT")
 

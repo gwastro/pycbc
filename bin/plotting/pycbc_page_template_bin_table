@@ -79,9 +79,9 @@ html_table = pycbc.results.html_table(
 title = f"{args.ifo} DQ Template Bin Information"
 caption = (
     "Table of information about template bins "
-     "used for DQ trigger rate calculations. "
-     "Loud triggers are defined as those with "
-     f"{sngl_ranking} > {sngl_thresh}."
+    "used for DQ trigger rate calculations. "
+    "Loud triggers are defined as those with "
+    f"{sngl_ranking} > {sngl_thresh}."
 )
 
 pycbc.results.save_fig_with_metadata(

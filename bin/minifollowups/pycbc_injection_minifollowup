@@ -418,7 +418,7 @@ for num_event in range(num_events):
         inj_file=injection_xml_file,
         tags=args.tags + ["INJ_PARAMS", str(num_event)],
         params_str="injection parameters as template, "
-         "here the injection is made as normal",
+        "here the injection is made as normal",
         use_exact_inj_params=True,
     )
     files += norm_plot
@@ -433,7 +433,7 @@ for num_event in range(num_events):
         inj_file=injection_xml_file,
         tags=args.tags + ["INJ_PARAMS_INVERTED", str(num_event)],
         params_str="injection parameters as template, "
-         "here the injection is made inverted",
+        "here the injection is made inverted",
         use_exact_inj_params=True,
     )
     files += inv_plot
@@ -447,8 +447,7 @@ for num_event in range(num_events):
         args.output_dir,
         inj_file=injection_xml_file,
         tags=args.tags + ["INJ_PARAMS_NOINJ", str(num_event)],
-        params_str="injection parameters, here no "
-         "injection was actually performed",
+        params_str="injection parameters, here no injection was actually performed",
         use_exact_inj_params=True,
     )
     files += noinj_plot

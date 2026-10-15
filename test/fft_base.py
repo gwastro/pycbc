@@ -147,9 +147,7 @@ def _test_fft(test_case, inarr, expec, tol):
             tc.assertEqual(inarr, in_pristine, emsg)
             # Next, check that the output is correct to within tolerance.
             # That will require exact equality of all other meta-data
-            emsg = (
-                f"FFT output differs by more than a factor of {tol} from expected"
-            )
+            emsg = f"FFT output differs by more than a factor of {tol} from expected"
             if isinstance(outarr, ts) or isinstance(outarr, fs):
                 tc.assertTrue(
                     outarr.almost_equal_norm(expec, tol=tol, dtol=tol), msg=emsg

@@ -245,9 +245,7 @@ class FrequencySeries(Array):
         # if needed.
         if dtol < 0.0:
             raise ValueError("Tolerance in delta_f cannot be negative")
-        if super().almost_equal_elem(
-            other, tol=tol, relative=relative
-        ):
+        if super().almost_equal_elem(other, tol=tol, relative=relative):
             if relative:
                 return (
                     self._epoch == other._epoch
@@ -308,9 +306,7 @@ class FrequencySeries(Array):
         # if needed.
         if dtol < 0.0:
             raise ValueError("Tolerance in delta_f cannot be negative")
-        if super().almost_equal_norm(
-            other, tol=tol, relative=relative
-        ):
+        if super().almost_equal_norm(other, tol=tol, relative=relative):
             if relative:
                 return (
                     self._epoch == other._epoch

@@ -353,7 +353,6 @@ class NoInputFileError(Exception):
     """
 
 
-
 class PrintFileParams(argparse.Action):
     """
     Argparse action that will load input files and print possible parameters
@@ -449,9 +448,7 @@ class PrintFileParams(argparse.Action):
         for ftype, fparser in fileparsers.items():
             fnames = ", ".join(filesbytype[ftype])
             if fparser is None:
-                outstr = textwrap.fill(
-                    f"File(s) {fnames} use no additional options."
-                )
+                outstr = textwrap.fill(f"File(s) {fnames} use no additional options.")
                 print(outstr, end="\n\n")
             else:
                 fparser.usage = fnames
@@ -550,15 +547,11 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         # pass
         self.no_input_file_err = True
         self._unset_required()
-        opts, extra_opts = super().parse_known_args(
-            args, namespace
-        )
+        opts, extra_opts = super().parse_known_args(args, namespace)
         # now do it again
         self.no_input_file_err = False
         self._reset_required()
-        opts, extra_opts = super().parse_known_args(
-            args, opts
-        )
+        opts, extra_opts = super().parse_known_args(args, opts)
         # populate the parameters option if it wasn't specified
         if opts.parameters is None or opts.parameters == ["*"]:
             parameters = get_common_parameters(

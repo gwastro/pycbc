@@ -79,7 +79,6 @@ class NoValidDataError(Exception):
     """
 
 
-
 def create_data_parser():
     """Creates an argument parser for loading GW data."""
     parser = ArgumentParser()

@@ -162,7 +162,6 @@ def parse_args_cpu_only(feature_str):
     print("Running {0} unit tests for {1}:".format("CPU", feature_str))
 
 
-
 def simple_exit(results):
     """
     A simpler version of exit_based_on_results(); this function causes the script
