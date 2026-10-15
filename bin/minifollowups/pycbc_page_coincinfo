@@ -14,116 +14,153 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Make tables describing a foreground event"""
+"""Make tables describing a foreground event"""
 
 import argparse
 import logging
 import sys
+
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import numpy
 
-from pycbc import add_common_pycbc_options
-import pycbc.results
 import pycbc.pnutils
-from pycbc.io.hdf import HFile
+import pycbc.results
+from pycbc import add_common_pycbc_options
 from pycbc.events import stat as pystat
+from pycbc.io.hdf import HFile
 from pycbc.results import followup
 from pycbc.time import gps_to_utc_datetime
 
-
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument('--single-trigger-files', nargs='+',
-    help="HDF format single detector trigger files for the full data run")
-parser.add_argument('--bank-file',
-    help="HDF format template bank file")
-parser.add_argument('--output-file')
-parser.add_argument('--statmap-file', required=True,
-    help="HDF format clustered statmap file containing the result "
-         "triggers. Required")
-parser.add_argument('--statmap-file-subspace-name', default='background_exc',
+parser.add_argument(
+    "--single-trigger-files",
+    nargs="+",
+    help="HDF format single detector trigger files for the full data run",
+)
+parser.add_argument("--bank-file", help="HDF format template bank file")
+parser.add_argument("--output-file")
+parser.add_argument(
+    "--statmap-file",
+    required=True,
+    help="HDF format clustered statmap file containing the result triggers. Required",
+)
+parser.add_argument(
+    "--statmap-file-subspace-name",
+    default="background_exc",
     help="If given look in this 'sub-directory' of the HDF file for triggers, "
-         "takes a default value of 'background_exc'.")
+    "takes a default value of 'background_exc'.",
+)
 trig_input = parser.add_mutually_exclusive_group(required=True)
-trig_input.add_argument('--n-loudest', type=int,
-    help="Examine the n'th loudest trigger, use with statmap file")
-trig_input.add_argument('--trigger-id', type=int,
+trig_input.add_argument(
+    "--n-loudest",
+    type=int,
+    help="Examine the n'th loudest trigger, use with statmap file",
+)
+trig_input.add_argument(
+    "--trigger-id",
+    type=int,
     help="Examine the trigger with specified ID, use with statmap file. An "
-         "alternative to --n-loudest. Cannot be used together")
-parser.add_argument('--sort-variable', default='ifar',
-    help='Which subgroup of --analysis-category to use for '
-         'sorting if using --n-loudest. Default=ifar')
-parser.add_argument('--sort-order', default='descending',
-    choices=['ascending','descending'],
-    help='Which direction to use when sorting on '
-         '--sort-variable with --n-loudest. Default=descending')
-parser.add_argument('--title',
+    "alternative to --n-loudest. Cannot be used together",
+)
+parser.add_argument(
+    "--sort-variable",
+    default="ifar",
+    help="Which subgroup of --analysis-category to use for "
+    "sorting if using --n-loudest. Default=ifar",
+)
+parser.add_argument(
+    "--sort-order",
+    default="descending",
+    choices=["ascending", "descending"],
+    help="Which direction to use when sorting on "
+    "--sort-variable with --n-loudest. Default=descending",
+)
+parser.add_argument(
+    "--title",
     help="Supply a title for the event details. Defaults are "
-         "'Parameters of event ranked N' if --n-loudest is given, or "
-         "'Details of trigger' for --trigger-id.")
-parser.add_argument('--include-summary-page-link', action='store_true',
+    "'Parameters of event ranked N' if --n-loudest is given, or "
+    "'Details of trigger' for --trigger-id.",
+)
+parser.add_argument(
+    "--include-summary-page-link",
+    action="store_true",
     help="If given, will include a link to the DQ summary page on the "
-         "single detector trigger tables.")
-parser.add_argument('--include-gracedb-link', action='store_true',
+    "single detector trigger tables.",
+)
+parser.add_argument(
+    "--include-gracedb-link",
+    action="store_true",
     help="If given, will provide a link to search GraceDB for events "
-         "within a 3s window around the coincidence time.")
-parser.add_argument('--max-columns', type=int,
-    help="Maximum number of columns allowed in the table (not including detector names)")
-pystat.insert_statistic_option_group(parser,
-    default_ranking_statistic='single_ranking_only')
+    "within a 3s window around the coincidence time.",
+)
+parser.add_argument(
+    "--max-columns",
+    type=int,
+    help="Maximum number of columns allowed in the table (not including detector names)",
+)
+pystat.insert_statistic_option_group(
+    parser, default_ranking_statistic="single_ranking_only"
+)
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
-if args.ranking_statistic not in ['quadsum', 'single_ranking_only']:
+if args.ranking_statistic not in ["quadsum", "single_ranking_only"]:
     logging.warning(
         "For the coincident info table, we only use single ranking, not %s, "
         "this option will be ignored",
-        args.ranking_statistic
+        args.ranking_statistic,
     )
-    args.ranking_statistic = 'quadsum'
+    args.ranking_statistic = "quadsum"
 
 # Get the nth loudest trigger from the output of pycbc_coinc_statmap
-f = HFile(args.statmap_file, 'r')
+f = HFile(args.statmap_file, "r")
 d = f[args.statmap_file_subspace_name]
 
 if args.n_loudest is not None:
     sorting = d[args.sort_variable][:].argsort()
-    if args.sort_order == 'descending':
+    if args.sort_order == "descending":
         sorting = sorting[::-1]
     n = sorting[args.n_loudest]
-    title = 'Parameters of event ranked %s' % (args.n_loudest + 1)
-    caption = ('Parameters of event ranked %s by %s %s in the search. The figures below'
-               ' show the mini-followup data for this event.' % 
-               (args.n_loudest + 1, args.sort_order, args.sort_variable))
+    title = "Parameters of event ranked %s" % (args.n_loudest + 1)
+    caption = (
+        "Parameters of event ranked %s by %s %s in the search. The figures below"
+        " show the mini-followup data for this event."
+        % (args.n_loudest + 1, args.sort_order, args.sort_variable)
+    )
 elif args.trigger_id is not None:
     n = args.trigger_id
-    title = 'Details of trigger'
-    caption = ('Parameters of event. The figures below show the '
-               'mini-followup data for this event.')
+    title = "Details of trigger"
+    caption = (
+        "Parameters of event. The figures below show the "
+        "mini-followup data for this event."
+    )
 else:
     # It shouldn't be possible to get here!
-    raise ValueError()
+    raise ValueError
 
 # Make a table for the event information #################################
 
-hdrs = ["Ranking statistic",
-        "Inclusive IFAR (yr)",
-        "Inclusive FAP",
-        "Exclusive IFAR (yr)",
-        "Exclusive FAP"
-       ]
+hdrs = [
+    "Ranking statistic",
+    "Inclusive IFAR (yr)",
+    "Inclusive FAP",
+    "Exclusive IFAR (yr)",
+    "Exclusive FAP",
+]
 
-dsets = ['stat', 'ifar', 'fap', 'ifar_exc', 'fap_exc']
-formats = ['%5.2f', '%5.2f', '%5.2e', '%5.2f', '%5.2e']
+dsets = ["stat", "ifar", "fap", "ifar_exc", "fap_exc"]
+formats = ["%5.2f", "%5.2f", "%5.2e", "%5.2f", "%5.2e"]
 tbl = [[h, fmt % d[dst][n]] for fmt, dst, h in zip(formats, dsets, hdrs) if dst in d]
 headers, table = zip(*tbl)
 headers = list(headers)
 table = list(table)
 if args.include_gracedb_link:
     # Get the time from the single detectors
-    times = [d['%s/time' % ifo][n] for ifo in f.attrs['ifos'].split(' ')]
+    times = [d["%s/time" % ifo][n] for ifo in f.attrs["ifos"].split(" ")]
     times = numpy.array(times)
     time = numpy.mean(times[times > 0])
     gdb_search_link = followup.get_gracedb_search_link(time)
@@ -132,25 +169,26 @@ if args.include_gracedb_link:
 
 table = numpy.array([table], dtype=str)
 
-html = pycbc.results.dq.redirect_javascript + \
-                                str(pycbc.results.static_table(table, headers))
+html = pycbc.results.dq.redirect_javascript + str(
+    pycbc.results.static_table(table, headers)
+)
 
 # Make a table for the single detector information ############################
 
 idx = {}
-ifo_list = f.attrs['ifos'].split(' ')
+ifo_list = f.attrs["ifos"].split(" ")
 for ifo in ifo_list:
-    idx[ifo] = d['%s/trigger_id' % ifo][n]
+    idx[ifo] = d["%s/trigger_id" % ifo][n]
 
 # Store the single detector trigger files keyed by ifo in a dictionary
 files = {}
 for fname in args.single_trigger_files:
-    f2 = HFile(fname, 'r')
+    f2 = HFile(fname, "r")
     ifos = f2.keys()
     for ifo in ifos:
         files[ifo] = f2[ifo]
 
-bank = HFile(args.bank_file, 'r')
+bank = HFile(args.bank_file, "r")
 statmapfile = d
 # Data will store the values that will appear in the resulting single-detector
 # table. Each entry in data corresponds to each row in the final table and
@@ -159,28 +197,28 @@ data = []
 row_labels = []
 rank_method = pystat.get_statistic_from_opts(args, list(files.keys()))
 
-for ifo in files.keys():
-
+for ifo in files:
     # ignore ifo if coinc didn't participate (only for multi-ifo workflow)
-    if (statmapfile['%s/time' % ifo][n] == -1.0):
+    if statmapfile["%s/time" % ifo][n] == -1.0:
         continue
 
     row_labels.append(ifo)
     d = files[ifo]
     i = idx[ifo]
-    tid = d['template_id'][i]
-    rchisq =  d['chisq'][i] / (d['chisq_dof'][i] * 2 - 2)
-    mchirp = (pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][tid],
-                                                      bank['mass2'][tid]))[0]
+    tid = d["template_id"][i]
+    rchisq = d["chisq"][i] / (d["chisq_dof"][i] * 2 - 2)
+    mchirp = (
+        pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank["mass1"][tid], bank["mass2"][tid])
+    )[0]
 
-    time = d['end_time'][i]
+    time = d["end_time"][i]
     utc = gps_to_utc_datetime(time)
 
     trig_dict = {
         k: numpy.array([d[k][i]])
         for k in d.keys()
-        if not k.endswith('_template')
-        and k not in ['gating', 'search', 'template_boundaries']
+        if not k.endswith("_template")
+        and k not in ["gating", "search", "template_boundaries"]
     }
     # Headers will store the headers that will appear in the table.
     headers = []
@@ -193,11 +231,11 @@ for ifo in files.keys():
 
     # End times
     data[-1].append(str(utc))
-    data[-1].append('%.3f' % time)
+    data[-1].append("%.3f" % time)
     headers.append("UTC&nbsp;End&nbsp;Time")
     headers.append("GPS&nbsp;End&nbsp;time")
 
-    #headers.append("Stat")
+    # headers.append("Stat")
     # Determine statistic naming
     if args.sngl_ranking == "newsnr":
         sngl_stat_name = "Reweighted SNR"
@@ -212,36 +250,36 @@ for ifo in files.keys():
 
     stat = rank_method.get_sngl_ranking(trig_dict)
     headers.append(sngl_stat_name)
-    data[-1].append('%5.2f' % stat[0])
+    data[-1].append("%5.2f" % stat[0])
 
     # SNR and phase (not showing any single-det stat here)
-    data[-1].append('%5.2f' % d['snr'][i])
-    data[-1].append('%5.2f' % d['coa_phase'][i])
+    data[-1].append("%5.2f" % d["snr"][i])
+    data[-1].append("%5.2f" % d["coa_phase"][i])
     headers.append("&rho;")
     headers.append("Phase")
     # Signal-glitch discrimators
-    data[-1].append('%5.2f' % rchisq)
-    data[-1].append('%i' % d['chisq_dof'][i])
+    data[-1].append("%5.2f" % rchisq)
+    data[-1].append("%i" % d["chisq_dof"][i])
     headers.append("&chi;<sup>2</sup><sub>r</sub>")
     headers.append("&chi;<sup>2</sup>&nbsp;bins")
     try:
-        data[-1].append('%5.2f' % d['sg_chisq'][i])
+        data[-1].append("%5.2f" % d["sg_chisq"][i])
         headers.append("sg&nbsp;&chi;<sup>2</sup>")
     except:
         pass
     try:
-        data[-1].append('%5.2f' % d['psd_var_val'][i])
+        data[-1].append("%5.2f" % d["psd_var_val"][i])
         headers.append("PSD var")
     except:
         pass
 
     # Template parameters
-    data[-1].append('%5.2f' % bank['mass1'][tid])
-    data[-1].append('%5.2f' % bank['mass2'][tid])
-    data[-1].append('%5.2f' % mchirp)
-    data[-1].append('%5.2f' % bank['spin1z'][tid])
-    data[-1].append('%5.2f' % bank['spin2z'][tid])
-    data[-1].append('%5.2f' % d['template_duration'][i])
+    data[-1].append("%5.2f" % bank["mass1"][tid])
+    data[-1].append("%5.2f" % bank["mass2"][tid])
+    data[-1].append("%5.2f" % mchirp)
+    data[-1].append("%5.2f" % bank["spin1z"][tid])
+    data[-1].append("%5.2f" % bank["spin2z"][tid])
+    data[-1].append("%5.2f" % d["template_duration"][i])
     headers.append("m<sub>1</sub>")
     headers.append("m<sub>2</sub>")
     headers.append("M<sub>c</sub>")
@@ -250,22 +288,25 @@ for ifo in files.keys():
     headers.append("Duration")
     # display eccentricity and relative anomaly if they exist
     try:
-        data[-1].append('%5.2f' % bank['eccentricity'][tid])
-        data[-1].append('%5.2f' % bank['rel_anomaly'][tid])
+        data[-1].append("%5.2f" % bank["eccentricity"][tid])
+        data[-1].append("%5.2f" % bank["rel_anomaly"][tid])
         headers.append("eccentricity")
         headers.append("anomaly")
     except:
         pass
 
-html += str(pycbc.results.static_table(
-    data,
-    headers,
-    columns_max=args.max_columns,
-    row_labels=row_labels
-))
+html += str(
+    pycbc.results.static_table(
+        data, headers, columns_max=args.max_columns, row_labels=row_labels
+    )
+)
 ###############################################################################
 
-pycbc.results.save_fig_with_metadata(html, args.output_file, {},
-                        cmd=' '.join(sys.argv),
-                        title=args.title if args.title else title,
-                        caption=caption)
+pycbc.results.save_fig_with_metadata(
+    html,
+    args.output_file,
+    {},
+    cmd=" ".join(sys.argv),
+    title=args.title or title,
+    caption=caption,
+)

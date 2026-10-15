@@ -20,72 +20,96 @@
 Plot PyCBC's single-detector triggers over the search parameter space.
 """
 
-import logging
 import argparse
-import numpy as np
+import logging
+
 import matplotlib
-matplotlib.use('agg')
+import numpy as np
+
+matplotlib.use("agg")
+import sys
+
 from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
-import sys
 from packaging.version import Version
 
 import pycbc
-import pycbc.pnutils
 import pycbc.events
-import pycbc.results
 import pycbc.io
+import pycbc.pnutils
+import pycbc.results
 from pycbc.events import ranking
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--single-trig-file', required=True,
-                    help='Path to file containing single-detector triggers in '
-                         'HDF5 format. Required')
-parser.add_argument('--bank-file', required=True,
-                    help='Path to file containing template bank in HDF5 format'
-                         '. Required')
-parser.add_argument('--veto-file', type=str,
-                    help='Optional path to file containing veto segments')
-parser.add_argument('--segment-name', default=None, type=str,
-                    help='Optional, name of segment list to use for vetoes')
-parser.add_argument('--filter-string', default=None, type=str,
-                    help='Optional, boolean expression for filtering triggers.'
-                         'Example: "self.snr >=6"'
-                         'Parameter in "self.parameter" should be either from'
-                         'trigger or bank params.')
-parser.add_argument('--output-file', type=str, required=True,
-                    help='Destination path for plot')
-parser.add_argument('--x-var', required=True,
-                    choices=pycbc.io.SingleDetTriggers.get_param_names(),
-                    help='Parameter to plot on the x-axis. Required')
-parser.add_argument('--y-var', required=True,
-                    choices=pycbc.io.SingleDetTriggers.get_param_names(),
-                    help='Parameter to plot on the y-axis. Required')
+parser.add_argument(
+    "--single-trig-file",
+    required=True,
+    help="Path to file containing single-detector triggers in HDF5 format. Required",
+)
+parser.add_argument(
+    "--bank-file",
+    required=True,
+    help="Path to file containing template bank in HDF5 format. Required",
+)
+parser.add_argument(
+    "--veto-file", type=str, help="Optional path to file containing veto segments"
+)
+parser.add_argument(
+    "--segment-name",
+    default=None,
+    type=str,
+    help="Optional, name of segment list to use for vetoes",
+)
+parser.add_argument(
+    "--filter-string",
+    default=None,
+    type=str,
+    help="Optional, boolean expression for filtering triggers."
+    'Example: "self.snr >=6"'
+    'Parameter in "self.parameter" should be either from'
+    "trigger or bank params.",
+)
+parser.add_argument(
+    "--output-file", type=str, required=True, help="Destination path for plot"
+)
+parser.add_argument(
+    "--x-var",
+    required=True,
+    choices=pycbc.io.SingleDetTriggers.get_param_names(),
+    help="Parameter to plot on the x-axis. Required",
+)
+parser.add_argument(
+    "--y-var",
+    required=True,
+    choices=pycbc.io.SingleDetTriggers.get_param_names(),
+    help="Parameter to plot on the y-axis. Required",
+)
 ranking_keys = list(ranking.sngls_ranking_function_dict.keys())
-parser.add_argument('--z-var', required=True,
-                    choices=['density'] + ranking_keys,
-                    help='Quantity to plot on the color scale. Required')
-parser.add_argument('--detector', required=True,
-                    help='Detector. Required')
-parser.add_argument('--grid-size', type=int, default=80,
-                    help='Bin resolution (larger = smaller bins)')
-parser.add_argument('--log-x', action='store_true',
-                    help='Use log scale for x-axis')
-parser.add_argument('--log-y', action='store_true',
-                    help='Use log scale for y-axis')
-parser.add_argument('--min-x', type=float, help='Optional minimum x value')
-parser.add_argument('--max-x', type=float, help='Optional maximum x value')
-parser.add_argument('--min-y', type=float, help='Optional minimum y value')
-parser.add_argument('--max-y', type=float, help='Optional maximum y value')
-parser.add_argument('--min-z', type=float, help='Optional minimum z value')
-parser.add_argument('--max-z', type=float, help='Optional maximum z value')
+parser.add_argument(
+    "--z-var",
+    required=True,
+    choices=["density"] + ranking_keys,
+    help="Quantity to plot on the color scale. Required",
+)
+parser.add_argument("--detector", required=True, help="Detector. Required")
+parser.add_argument(
+    "--grid-size", type=int, default=80, help="Bin resolution (larger = smaller bins)"
+)
+parser.add_argument("--log-x", action="store_true", help="Use log scale for x-axis")
+parser.add_argument("--log-y", action="store_true", help="Use log scale for y-axis")
+parser.add_argument("--min-x", type=float, help="Optional minimum x value")
+parser.add_argument("--max-x", type=float, help="Optional maximum x value")
+parser.add_argument("--min-y", type=float, help="Optional minimum y value")
+parser.add_argument("--max-y", type=float, help="Optional maximum y value")
+parser.add_argument("--min-z", type=float, help="Optional minimum z value")
+parser.add_argument("--max-z", type=float, help="Optional maximum z value")
 opts = parser.parse_args()
 
 pycbc.init_logging(opts.verbose)
 
-if opts.z_var == 'density' or opts.min_z is None:
+if opts.z_var == "density" or opts.min_z is None:
     filter_rank = None
     filter_thresh = None
 else:
@@ -101,7 +125,7 @@ trigs = pycbc.io.SingleDetTriggers(
     segment_name=opts.segment_name,
     filter_func=opts.filter_string,
     filter_rank=filter_rank,
-    filter_threshold=filter_thresh
+    filter_threshold=filter_thresh,
 )
 
 # Can this be folded into the SingleDetTriggers call? Maybe, but we can
@@ -121,52 +145,53 @@ if opts.max_y is not None:
 x = x[mask]
 y = y[mask]
 
-title = f'{opts.z_var.title()} of {opts.detector} triggers ' + \
-        f'over {opts.x_var.title()} and {opts.y_var.title()}'
-fig_caption = f"This plot shows the {opts.z_var} of single detector " + \
-              f"triggers for the {opts.detector} detector. " + \
-              f"{opts.z_var.title()} is shown on the colorbar axis " + \
-              f"against {opts.x_var} and {opts.y_var} on the x- and y-axes."
+title = (
+    f"{opts.z_var.title()} of {opts.detector} triggers "
+     f"over {opts.x_var.title()} and {opts.y_var.title()}"
+)
+fig_caption = (
+    f"This plot shows the {opts.z_var} of single detector "
+     f"triggers for the {opts.detector} detector. "
+     f"{opts.z_var.title()} is shown on the colorbar axis "
+     f"against {opts.x_var} and {opts.y_var} on the x- and y-axes."
+)
 
 if not any(mask):
     # All triggers removed - make a blank plot which says so:
     fig = plt.figure()
     ax = fig.gca()
-    plt.text(0.5, 0.5, 'no triggers in the range')
+    plt.text(0.5, 0.5, "no triggers in the range")
 
     pycbc.results.save_fig_with_metadata(
         fig,
         opts.output_file,
         title=title,
         caption=fig_caption,
-        cmd=' '.join(sys.argv),
-        fig_kwds={'dpi': 200}
+        cmd=" ".join(sys.argv),
+        fig_kwds={"dpi": 200},
     )
     sys.exit()
 
-hexbin_style = {
-    'gridsize': opts.grid_size,
-    'linewidths': 0.03
-}
+hexbin_style = {"gridsize": opts.grid_size, "linewidths": 0.03}
 
 # In earlier versions mpl will try to take the max over bins with 0 triggers
 # and fail, unless we tell it to leave these blank by setting mincnt
-if Version(matplotlib.__version__) < Version('3.8.1'):
-    hexbin_style['mincnt'] = 0
+if Version(matplotlib.__version__) < Version("3.8.1"):
+    hexbin_style["mincnt"] = 0
 
 if opts.log_x:
-    hexbin_style['xscale'] = 'log'
+    hexbin_style["xscale"] = "log"
 if opts.log_y:
-    hexbin_style['yscale'] = 'log'
-minz = opts.min_z if opts.min_z else 1
+    hexbin_style["yscale"] = "log"
+minz = opts.min_z or 1
 maxz = opts.max_z
-hexbin_style['norm'] = LogNorm(vmin=minz, vmax=maxz)
+hexbin_style["norm"] = LogNorm(vmin=minz, vmax=maxz)
 
-logging.info('Plotting')
+logging.info("Plotting")
 fig = plt.figure()
 ax = fig.gca()
 
-if opts.z_var == 'density':
+if opts.z_var == "density":
     hb = ax.hexbin(x, y, **hexbin_style)
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
 elif opts.z_var in ranking.sngls_ranking_function_dict:
@@ -177,17 +202,22 @@ elif opts.z_var in ranking.sngls_ranking_function_dict:
     min_z = z.min() if opts.min_z is None else opts.min_z
     max_z = z.max() if opts.max_z is None else opts.max_z
     if max_z / min_z > 10:
-        cb_style['ticks'] = LogLocator(subs=range(10))
+        cb_style["ticks"] = LogLocator(subs=range(10))
     hb = ax.hexbin(x, y, C=z, reduce_C_function=np.max, **hexbin_style)
     fig.colorbar(hb, **cb_style)
 else:
-    raise RuntimeError('z_var = %s is not recognized!' % (opts.z_var))
+    raise RuntimeError("z_var = %s is not recognized!" % (opts.z_var))
 
 ax.set_xlabel(opts.x_var)
 ax.set_ylabel(opts.y_var)
-ax.set_title(opts.z_var.title() + ' of %s triggers ' % (opts.detector))
-pycbc.results.save_fig_with_metadata(fig, opts.output_file, title=title,
-                                     caption=fig_caption, cmd=' '.join(sys.argv),
-                                     fig_kwds={'dpi': 200})
+ax.set_title(opts.z_var.title() + " of %s triggers " % (opts.detector))
+pycbc.results.save_fig_with_metadata(
+    fig,
+    opts.output_file,
+    title=title,
+    caption=fig_caption,
+    cmd=" ".join(sys.argv),
+    fig_kwds={"dpi": 200},
+)
 
-logging.info('Done')
+logging.info("Done")

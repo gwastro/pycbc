@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-import os
 import argparse
 import logging
+import os
+
 import pycbc
 import pycbc.workflow as wf
 
@@ -38,9 +39,7 @@ class GeomAligned2DStackExecutable(wf.Executable):
     current_retention_level = wf.Executable.MERGED_TRIGGERS
     file_input_options = ["--asd-file", "--psd-file"]
 
-    def create_node(
-        self, input_file, split_bank_num, analysis_time, extra_tags=None
-    ):
+    def create_node(self, input_file, split_bank_num, analysis_time, extra_tags=None):
         if extra_tags is None:
             extra_tags = []
         node = wf.Executable.create_node(self)
@@ -77,9 +76,7 @@ class AlignedBankCatExecutable(wf.Executable):
             out_file = wf.File.from_path(output_file_path)
             if self.retain_files:
                 if not os.path.isabs(output_file_path):
-                    out_file.storage_path = os.path.join(
-                        self.out_dir, output_file_path
-                    )
+                    out_file.storage_path = os.path.join(self.out_dir, output_file_path)
                 else:
                     out_file.storage_path = output_file_path
             node.add_output_opt("--output-file", out_file)
@@ -93,9 +90,7 @@ class TmpltbankToChiParams(wf.Executable):
     def create_node(self, input_bank, analysis_time):
         node = wf.Executable.create_node(self)
         node.add_input_opt("--input-bank", input_bank)
-        node.new_output_file_opt(
-            analysis_time, ".dat", "--output-file", tags=self.tags
-        )
+        node.new_output_file_opt(analysis_time, ".dat", "--output-file", tags=self.tags)
         return node
 
 
@@ -130,9 +125,7 @@ pycbc.init_logging(args.verbose)
 workflow = wf.Workflow(args)
 wf.makedir(args.output_dir)
 
-num_split_jobs = int(
-    workflow.cp.get_opt_tags("workflow", "num-split-jobs", args.tags)
-)
+num_split_jobs = int(workflow.cp.get_opt_tags("workflow", "num-split-jobs", args.tags))
 
 setup_output_dir = os.path.join(args.output_dir, "geom_aligned_bank_setup")
 setup_exe = GeomAlignedBankSetupExecutable(
@@ -140,12 +133,11 @@ setup_exe = GeomAlignedBankSetupExecutable(
     "geom_aligned_bank_setup",
     ifos=workflow.ifos,
     out_dir=setup_output_dir,
-    tags=args.tags
+    tags=args.tags,
 )
 
 setup_node, intermediate_file, metadata_file = setup_exe.create_node(
-    workflow.analysis_time,
-    num_split_jobs
+    workflow.analysis_time, num_split_jobs
 )
 workflow += setup_node
 
@@ -162,10 +154,7 @@ all_outs = wf.FileList([])
 for idx in range(num_split_jobs):
     stackid = "job%05d" % (idx)
     stack_node = stack_exe.create_node(
-        intermediate_file,
-        idx,
-        workflow.analysis_time,
-        extra_tags=[stackid]
+        intermediate_file, idx, workflow.analysis_time, extra_tags=[stackid]
     )
     workflow += stack_node
     assert len(stack_node.output_files) == 1

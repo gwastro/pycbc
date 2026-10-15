@@ -16,7 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Generates injections drawn from a distribution read from a config file.
+"""
+Generates injections drawn from a distribution read from a config file.
 
 Config file syntax
 ------------------
@@ -108,71 +109,102 @@ along with any numpy ufunc. So, in the above example, mass ratio (q) is
 constrained to be <= 4 by using a function from the conversions module.
 """
 
-import os
-import sys
 import argparse
 import logging
+import os
+import sys
+
 import numpy
 from numpy.random import uniform
 
 import pycbc
-from pycbc.inject import InjectionSet
-from pycbc import distributions
-from pycbc import transforms
+from pycbc import distributions, transforms
 from pycbc.distributions import JointDistribution
-from pycbc.workflow import configuration
-from pycbc.workflow import WorkflowConfigParser
+from pycbc.inject import InjectionSet
+from pycbc.workflow import WorkflowConfigParser, configuration
 
-parser = argparse.ArgumentParser(description=__doc__,
-            formatter_class=argparse.RawDescriptionHelpFormatter)
+parser = argparse.ArgumentParser(
+    description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+)
 configuration.add_workflow_command_line_group(parser)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--ninjections', type=int,
-                    help='Number of injections to create.')
-parser.add_argument('--gps-start-time', type=int, help="Alternative to "
-                    "ninjections argument. "
-                    "The number will be chosen to fill the chosen time range. ")
-parser.add_argument('--gps-end-time', type=int, help="Alternative to "
-                    "ninjections argument. "
-                    "The number will be chosen to fill the chosen time range. ")
-parser.add_argument('--time-step', type=float,
-                    help="Minimum separation between injections")
-parser.add_argument('--time-window', type=float,
-                    help="Uniform window of time to place injection into")
-parser.add_argument('--seed', type=int, default=0,
-                    help='Seed to use for the random number generator. '
-                         'Default is 0.')
-parser.add_argument('--output-file', required=True,
-                    help='Output file to save to. If ends in ".xml[.gz]", '
-                         'injections will be written to a sim_inspiral table '
-                         'in an xml file. Otherwise, results will be written '
-                         'to an hdf file.')
-parser.add_argument('--dist-section', default='prior',
-                    help='What section in the config file to load '
-                          'distributions from. Default is prior.')
-parser.add_argument('--variable-params-section', default='variable_params',
-                    help='What section in the config file to load the '
-                         'parameters to vary. Default is variable_params.')
-parser.add_argument('--static-params-section', default="static_params",
-                    help='What section to load the static params from. Default '
-                         'is static_params.')
-parser.add_argument("--force", action="store_true", default=False,
-                    help="If the output-file already exists, overwrite it. "
-                         "Otherwise, an OSError is raised.")
+parser.add_argument("--ninjections", type=int, help="Number of injections to create.")
+parser.add_argument(
+    "--gps-start-time",
+    type=int,
+    help="Alternative to "
+    "ninjections argument. "
+    "The number will be chosen to fill the chosen time range. ",
+)
+parser.add_argument(
+    "--gps-end-time",
+    type=int,
+    help="Alternative to "
+    "ninjections argument. "
+    "The number will be chosen to fill the chosen time range. ",
+)
+parser.add_argument(
+    "--time-step", type=float, help="Minimum separation between injections"
+)
+parser.add_argument(
+    "--time-window", type=float, help="Uniform window of time to place injection into"
+)
+parser.add_argument(
+    "--seed",
+    type=int,
+    default=0,
+    help="Seed to use for the random number generator. Default is 0.",
+)
+parser.add_argument(
+    "--output-file",
+    required=True,
+    help='Output file to save to. If ends in ".xml[.gz]", '
+    "injections will be written to a sim_inspiral table "
+    "in an xml file. Otherwise, results will be written "
+    "to an hdf file.",
+)
+parser.add_argument(
+    "--dist-section",
+    default="prior",
+    help="What section in the config file to load "
+    "distributions from. Default is prior.",
+)
+parser.add_argument(
+    "--variable-params-section",
+    default="variable_params",
+    help="What section in the config file to load the "
+    "parameters to vary. Default is variable_params.",
+)
+parser.add_argument(
+    "--static-params-section",
+    default="static_params",
+    help="What section to load the static params from. Default is static_params.",
+)
+parser.add_argument(
+    "--force",
+    action="store_true",
+    default=False,
+    help="If the output-file already exists, overwrite it. "
+    "Otherwise, an OSError is raised.",
+)
 opts = parser.parse_args()
 
 pycbc.init_logging(opts.verbose)
 
 if os.path.exists(opts.output_file) and not opts.force:
-    raise OSError("output-file already exists; use --force if you wish to "
-                  "overwrite it.")
+    raise OSError(
+        "output-file already exists; use --force if you wish to overwrite it."
+    )
 
-if opts.ninjections and (opts.gps_start_time is not None or
-                         opts.gps_end_time is not None or
-                         opts.time_step is not None or
-                         opts.time_window is not None):
-    raise ValueError("Cannot provide both ninjections and "
-                     " start/end/step/window time options.")
+if opts.ninjections and (
+    opts.gps_start_time is not None
+    or opts.gps_end_time is not None
+    or opts.time_step is not None
+    or opts.time_window is not None
+):
+    raise ValueError(
+        "Cannot provide both ninjections and  start/end/step/window time options."
+    )
 
 numpy.random.seed(opts.seed)
 
@@ -180,16 +212,18 @@ logging.info("Loading config file")
 cp = WorkflowConfigParser.from_cli(opts)
 
 # get the vairable and static arguments from the config file
-variable_params, static_params = distributions.read_params_from_config(cp,
+variable_params, static_params = distributions.read_params_from_config(
+    cp,
     prior_section=opts.dist_section,
     vargs_section=opts.variable_params_section,
-    sargs_section=opts.static_params_section)
-constraints = distributions.read_constraints_from_config(
-    cp, static_args=static_params)
+    sargs_section=opts.static_params_section,
+)
+constraints = distributions.read_constraints_from_config(cp, static_args=static_params)
 
-if any(cp.get_subsections('waveform_transforms')):
-    waveform_transforms = transforms.read_transforms_from_config(cp,
-        'waveform_transforms')
+if any(cp.get_subsections("waveform_transforms")):
+    waveform_transforms = transforms.read_transforms_from_config(
+        cp, "waveform_transforms"
+    )
 else:
     waveform_transforms = None
     write_args = variable_params
@@ -199,13 +233,14 @@ logging.info("Reading distributions")
 dists = distributions.read_distributions_from_config(cp, opts.dist_section)
 
 # construct class that will draw the samples
-randomsampler = JointDistribution(variable_params, *dists,
-                               **{"constraints": constraints})
+randomsampler = JointDistribution(
+    variable_params, *dists, constraints=constraints
+)
 
 if opts.ninjections:
     draw_size = opts.ninjections
 else:
-    draw_size = 4000 # Just a default so it's not super slow drawing large sets
+    draw_size = 4000  # Just a default so it's not super slow drawing large sets
     old_samples = None
 
 while True:
@@ -216,36 +251,43 @@ while True:
         logging.info("Transforming to waveform transform parameters")
         for t in waveform_transforms:
             if not set(t.inputs).isdisjoint(set(static_params.keys())):
-                for item in list((set(t.inputs) & set(static_params.keys())
-                                 - set(samples.fieldnames))):
-                    samples = samples.add_fields([numpy.repeat(static_params[item],
-                                                 draw_size).astype(float)],
-                                                 [item])
+                for item in list(
+
+                        set(t.inputs)
+                        & set(static_params.keys()) - set(samples.fieldnames)
+
+                ):
+                    samples = samples.add_fields(
+                        [numpy.repeat(static_params[item], draw_size).astype(float)],
+                        [item],
+                    )
         samples = transforms.apply_transforms(samples, waveform_transforms)
 
     # We are drawing until we hit a time so check if we've reached it
     if opts.gps_start_time is not None:
-        if 'tc' in samples.fieldnames or 'tc' in static_params:
-            raise RuntimeError("A value or distribution was given for 'tc'. "
-                               "This is not compatible with providing "
-                               "start/end times.")
+        if "tc" in samples.fieldnames or "tc" in static_params:
+            raise RuntimeError(
+                "A value or distribution was given for 'tc'. "
+                "This is not compatible with providing "
+                "start/end times."
+            )
 
         if old_samples is None:
             tstart = opts.gps_start_time
         else:
-            tstart = old_samples['tc'].max() + opts.time_step
+            tstart = old_samples["tc"].max() + opts.time_step
 
         tc = numpy.arange(0, draw_size) * opts.time_step + tstart
         tc += uniform(0, high=opts.time_window, size=draw_size).cumsum()
-        samples = samples.add_fields([tc], ['tc'])
-        
+        samples = samples.add_fields([tc], ["tc"])
+
         if old_samples is not None:
             samples = old_samples.append(samples)
         old_samples = samples
 
         if tc.max() >= opts.gps_end_time:
-            samples = samples[samples['tc'] < opts.gps_end_time]
-            logging.info('Total Injections: %s', len(samples))
+            samples = samples[samples["tc"] < opts.gps_end_time]
+            logging.info("Total Injections: %s", len(samples))
             break
 
     # We got as many samples as we needed so we can stop
@@ -254,7 +296,7 @@ while True:
 
 # write results
 logging.info("Writing results")
-write_args = [arg for arg in samples.fieldnames
-              if arg not in static_params.keys()]
-InjectionSet.write(opts.output_file, samples, write_args, static_params,
-                   cmd=" ".join(sys.argv))
+write_args = [arg for arg in samples.fieldnames if arg not in static_params.keys()]
+InjectionSet.write(
+    opts.output_file, samples, write_args, static_params, cmd=" ".join(sys.argv)
+)

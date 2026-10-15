@@ -21,71 +21,83 @@ Plot single-detector inspiral triggers in the time-frequency plane along with
 a spectrogram of the strain data.
 """
 
-import sys
-import logging
 import argparse
-import numpy as np
+import logging
+import sys
+
 import matplotlib
-matplotlib.use('agg')
+import numpy as np
+
+matplotlib.use("agg")
+from matplotlib import mlab
 from matplotlib import pyplot as plt
-import matplotlib.mlab as mlab
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
 
 import pycbc
-from pycbc.io import HFile
 import pycbc.events
 import pycbc.pnutils
-import pycbc.strain
 import pycbc.results
+import pycbc.strain
 import pycbc.waveform
-
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--trig-file', required=True,
-                    help='HDF5 file containing single triggers')
-parser.add_argument('--output-file', required=True, help='Output plot')
-parser.add_argument('--bank-file', required=True,
-                    help='HDF5 file containing template bank')
-parser.add_argument('--veto-file', help='LIGOLW file containing veto segments')
-parser.add_argument('--f-low', type=float, default=20,
-                    help='Low-frequency cutoff')
-parser.add_argument('--rank', choices=['snr', 'newsnr'], default='newsnr',
-                    help='Ranking statistic for sorting triggers')
-parser.add_argument('--num-loudest', type=int, default=1000,
-                    help='Number of loudest triggers to plot')
-parser.add_argument('--interesting-trig', type=int,
-                    help='Index of interesting trigger to highlight')
-parser.add_argument('--detector', type=str, required=True)
-parser.add_argument('--center-time', type=float,
-                    help='Center plot on the given GPS time')
+parser.add_argument(
+    "--trig-file", required=True, help="HDF5 file containing single triggers"
+)
+parser.add_argument("--output-file", required=True, help="Output plot")
+parser.add_argument(
+    "--bank-file", required=True, help="HDF5 file containing template bank"
+)
+parser.add_argument("--veto-file", help="LIGOLW file containing veto segments")
+parser.add_argument("--f-low", type=float, default=20, help="Low-frequency cutoff")
+parser.add_argument(
+    "--rank",
+    choices=["snr", "newsnr"],
+    default="newsnr",
+    help="Ranking statistic for sorting triggers",
+)
+parser.add_argument(
+    "--num-loudest", type=int, default=1000, help="Number of loudest triggers to plot"
+)
+parser.add_argument(
+    "--interesting-trig", type=int, help="Index of interesting trigger to highlight"
+)
+parser.add_argument("--detector", type=str, required=True)
+parser.add_argument(
+    "--center-time", type=float, help="Center plot on the given GPS time"
+)
 # add the approximant argument
-pycbc.waveform.bank.add_approximant_arg(parser,
-                    help='Waveform model used for computing inspiral tracks.'
-                         ' Python expressions can be used to specify a '
-                         'parameter-dependent approximant as done in '
-                         'pycbc_inspiral. Default is to use the approximant '
-                         'specified in the bank file.')
+pycbc.waveform.bank.add_approximant_arg(
+    parser,
+    help="Waveform model used for computing inspiral tracks."
+    " Python expressions can be used to specify a "
+    "parameter-dependent approximant as done in "
+    "pycbc_inspiral. Default is to use the approximant "
+    "specified in the bank file.",
+)
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
 
 pycbc.init_logging(opts.verbose)
 
 if opts.center_time is None:
-    center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
+    center_time = (opts.gps_start_time + opts.gps_end_time) / 2.0
 else:
     center_time = opts.center_time
 
-fig = plt.figure(figsize=(11,5.5))
+fig = plt.figure(figsize=(11, 5.5))
 fig.subplots_adjust(left=0.06, right=0.95, bottom=0.09, top=0.95)
 ax = fig.gca()
 
 opts.low_frequency_cutoff = opts.f_low
 strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
-logging.info('Plotting strain spectrogram')
-Pxx, freq, t = mlab.specgram(strain, NFFT=1024, noverlap=1000,
-                             Fs=opts.sample_rate, mode='psd')
+logging.info("Plotting strain spectrogram")
+Pxx, freq, t = mlab.specgram(
+    strain, NFFT=1024, noverlap=1000, Fs=opts.sample_rate, mode="psd"
+)
 del strain
 median_psd = np.median(Pxx, axis=1)
 median_psd_tile = np.tile(np.array([median_psd]).T, (1, len(t)))
@@ -93,37 +105,46 @@ del median_psd
 Pxx /= median_psd_tile
 del median_psd_tile
 norm = LogNorm(vmin=1, vmax=1000)
-pc = ax.pcolormesh(t + opts.gps_start_time - center_time, freq, Pxx,
-                   norm=norm, cmap='afmhot_r', shading='gouraud')
+pc = ax.pcolormesh(
+    t + opts.gps_start_time - center_time,
+    freq,
+    Pxx,
+    norm=norm,
+    cmap="afmhot_r",
+    shading="gouraud",
+)
 del freq, Pxx
 
-logging.info('Loading trigs')
-trig_f = HFile(opts.trig_file, 'r')
+logging.info("Loading trigs")
+trig_f = HFile(opts.trig_file, "r")
 trigs = trig_f[opts.detector]
+
 
 def rough_filter(snr, chisq, chisq_dof, end_time, tmp_id, tmp_dur):
     return np.logical_and(
         end_time > opts.gps_start_time,
-        end_time < opts.gps_end_time + tmp_dur.astype('float64')
+        end_time < opts.gps_end_time + tmp_dur.astype("float64"),
     )
+
 
 indices, data_tuple = trig_f.select(
     rough_filter,
-    'snr',
-    'chisq',
-    'chisq_dof',
-    'end_time',
-    'template_id',
-    'template_duration',
-    group=opts.detector
+    "snr",
+    "chisq",
+    "chisq_dof",
+    "end_time",
+    "template_id",
+    "template_duration",
+    group=opts.detector,
 )
 snr, chisq, chisq_dof, end_time, template_ids, template_duration = data_tuple
 
 if len(indices) > 0:
     if opts.veto_file:
-        logging.info('Loading veto segments')
+        logging.info("Loading veto segments")
         locs, _ = pycbc.events.veto.indices_outside_segments(
-            end_time, [opts.veto_file], ifo=opts.detector)
+            end_time, [opts.veto_file], ifo=opts.detector
+        )
         end_time = end_time[locs]
         snr = snr[locs]
         chisq = chisq[locs]
@@ -132,9 +153,9 @@ if len(indices) > 0:
         indices = indices[locs]
         del locs
 
-    if opts.rank == 'snr':
+    if opts.rank == "snr":
         rank = snr
-    elif opts.rank == 'newsnr':
+    elif opts.rank == "newsnr":
         rchisq = chisq / (chisq_dof * 2 - 2)
         rank = pycbc.events.ranking.newsnr(snr, rchisq)
         if type(rank) in [np.float32, np.float64]:
@@ -142,34 +163,46 @@ if len(indices) > 0:
         del rchisq
     del snr, chisq, chisq_dof
 
-    sorter = np.argsort(rank)[::-1][:opts.num_loudest]
+    sorter = np.argsort(rank)[::-1][: opts.num_loudest]
     sorted_end_time = end_time[sorter]
     sorted_rank = rank[sorter]
     sorted_template_ids = template_ids[sorter]
 
     try:
-        max_rank = max([sorted_rank[i] for i in range(len(sorted_rank))
-                        if sorted_end_time[i] <= opts.gps_end_time])
+        max_rank = max(
+            [
+                sorted_rank[i]
+                for i in range(len(sorted_rank))
+                if sorted_end_time[i] <= opts.gps_end_time
+            ]
+        )
     except ValueError:
         max_rank = None
 
-    logging.info('Loading bank')
-    bank = pycbc.waveform.bank.TemplateBank(opts.bank_file,
-            approximant=opts.approximant,
-            parameters=['mass1', 'mass2', 'spin1z', 'spin2z', 'approximant'],
-            load_compressed=False)
+    logging.info("Loading bank")
+    bank = pycbc.waveform.bank.TemplateBank(
+        opts.bank_file,
+        approximant=opts.approximant,
+        parameters=["mass1", "mass2", "spin1z", "spin2z", "approximant"],
+        load_compressed=False,
+    )
     tmplts = bank.table
 
-    logging.info('Plotting %d trigs', len(sorted_end_time))
+    logging.info("Plotting %d trigs", len(sorted_end_time))
     for tc, rho, tid in zip(sorted_end_time, sorted_rank, sorted_template_ids):
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
-                    tc - center_time, tmplts.mass1[tid], tmplts.mass2[tid],
-                    tmplts.spin1z[tid], tmplts.spin2z[tid],
-                    opts.f_low, approximant=bank.approximant(tid))
+            tc - center_time,
+            tmplts.mass1[tid],
+            tmplts.mass2[tid],
+            tmplts.spin1z[tid],
+            tmplts.spin2z[tid],
+            opts.f_low,
+            approximant=bank.approximant(tid),
+        )
         if max_rank and rho == max_rank:
-            ax.plot(track_t, track_f, '-', color='#0080ff', zorder=3, lw=2)
+            ax.plot(track_t, track_f, "-", color="#0080ff", zorder=3, lw=2)
         else:
-            ax.plot(track_t, track_f, '-', color='#0000ff', zorder=2, lw=0.5, alpha=0.5)
+            ax.plot(track_t, track_f, "-", color="#0000ff", zorder=2, lw=0.5, alpha=0.5)
 
     if opts.interesting_trig is not None and opts.interesting_trig in indices:
         interesting_id = np.where(indices == opts.interesting_trig)[0]
@@ -178,31 +211,46 @@ if len(indices) > 0:
         interesting_trig_rank = rho
         tid = template_ids[interesting_id]
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
-            tc - center_time, tmplts.mass1[tid], tmplts.mass2[tid],
-            tmplts.spin1z[tid], tmplts.spin2z[tid],
-            opts.f_low, approximant=bank.approximant(tid))
-        ax.plot(track_t, track_f, '-', color='#00f000', zorder=3, lw=2)
+            tc - center_time,
+            tmplts.mass1[tid],
+            tmplts.mass2[tid],
+            tmplts.spin1z[tid],
+            tmplts.spin2z[tid],
+            opts.f_low,
+            approximant=bank.approximant(tid),
+        )
+        ax.plot(track_t, track_f, "-", color="#00f000", zorder=3, lw=2)
     else:
         interesting_trig_rank = None
 
     if max_rank:
-        title = '%s - loudest %d triggers by %s - max %s = %.2f (light blue curve)' \
-        % (opts.channel_name, opts.num_loudest, opts.rank, opts.rank, max_rank)
+        title = "%s - loudest %d triggers by %s - max %s = %.2f (light blue curve)" % (
+            opts.channel_name,
+            opts.num_loudest,
+            opts.rank,
+            opts.rank,
+            max_rank,
+        )
     else:
-        title = '%s - loudest %d triggers by %s' \
-        % (opts.channel_name, opts.num_loudest, opts.rank)
+        title = "%s - loudest %d triggers by %s" % (
+            opts.channel_name,
+            opts.num_loudest,
+            opts.rank,
+        )
     if interesting_trig_rank is not None:
-        title += ' - selected %s = %.2f (green curve)' \
-        % (opts.rank, interesting_trig_rank)
+        title += " - selected %s = %.2f (green curve)" % (
+            opts.rank,
+            interesting_trig_rank,
+        )
 else:
-    title = '%s - no triggers' % opts.channel_name
+    title = "%s - no triggers" % opts.channel_name
 
-logging.info('Loading and plotting gates')
-for gate_type, hatch_style in [('file', '\\'), ('auto', '/')]:
+logging.info("Loading and plotting gates")
+for gate_type, hatch_style in [("file", "\\"), ("auto", "/")]:
     try:
-        gate_time = trigs['gating/' + gate_type + '/time'][:]
-        gate_width = trigs['gating/' + gate_type + '/width'][:]
-        gate_pad = trigs['gating/' + gate_type + '/pad'][:]
+        gate_time = trigs["gating/" + gate_type + "/time"][:]
+        gate_width = trigs["gating/" + gate_type + "/width"][:]
+        gate_pad = trigs["gating/" + gate_type + "/pad"][:]
     except KeyError:
         continue
     gate_unique = list(frozenset(zip(gate_time, gate_width, gate_pad)))
@@ -210,46 +258,61 @@ for gate_type, hatch_style in [('file', '\\'), ('auto', '/')]:
         # only plot gates within the plot time window
         if gt + gw < opts.gps_start_time or gt - gw > opts.gps_end_time:
             continue
-        ax.axvspan(gt - gw - center_time, gt + gw - center_time,
-                   hatch=hatch_style, facecolor='none', edgecolor='#00ff00')
+        ax.axvspan(
+            gt - gw - center_time,
+            gt + gw - center_time,
+            hatch=hatch_style,
+            facecolor="none",
+            edgecolor="#00ff00",
+        )
 
 if opts.veto_file:
-    logging.info('Loading and plotting veto segments')
+    logging.info("Loading and plotting veto segments")
     veto_segs = pycbc.events.veto.select_segments_by_definer(
-        opts.veto_file, ifo=opts.detector)
+        opts.veto_file, ifo=opts.detector
+    )
     veto_segs.coalesce()
     for seg in veto_segs:
         if seg[0] > opts.gps_end_time or seg[1] < opts.gps_start_time:
             continue
-        ax.axvspan(seg[0] - center_time, seg[1] - center_time,
-                   hatch='x', facecolor='none', edgecolor='#ff0000')
+        ax.axvspan(
+            seg[0] - center_time,
+            seg[1] - center_time,
+            hatch="x",
+            facecolor="none",
+            edgecolor="#ff0000",
+        )
 
-half_width = max(opts.gps_end_time - center_time,
-                 center_time - opts.gps_start_time)
+half_width = max(opts.gps_end_time - center_time, center_time - opts.gps_start_time)
 ax.set_xlim(-half_width, half_width)
 ax.set_ylim(opts.f_low, opts.sample_rate / 2)
-ax.set_yscale('log')
-ax.grid(ls='solid', alpha=0.2)
-ax.set_xlabel('Time - %.3f (s)' % center_time)
-ax.set_ylabel('Frequency (Hz)')
+ax.set_yscale("log")
+ax.grid(ls="solid", alpha=0.2)
+ax.set_xlabel("Time - %.3f (s)" % center_time)
+ax.set_ylabel("Frequency (Hz)")
 ax.set_title(title)
-cb = fig.colorbar(pc, fraction=0.04, pad=0.01,
-                  ticks=LogLocator(subs=range(10)))
-cb.set_label('Power density normalized to its median over time')
+cb = fig.colorbar(pc, fraction=0.04, pad=0.01, ticks=LogLocator(subs=range(10)))
+cb.set_label("Power density normalized to its median over time")
 
-caption = ('This plot shows the power spectrogram of the strain data, '
-           'normalized to its median over time, as a heatmap. The '
-           'time-frequency evolution of each single trigger is shown as a '
-           'blue curve. The light-blue curve is the loudest trigger by {0}. '
-           'Only the loudest {1} triggers by {0} are shown. Green hatched '
-           'areas denote gated strain data (\\\\ = externally-provided '
-           'gates, // = autogates). Red hatched areas denote vetoed time.')
+caption = (
+    "This plot shows the power spectrogram of the strain data, "
+    "normalized to its median over time, as a heatmap. The "
+    "time-frequency evolution of each single trigger is shown as a "
+    "blue curve. The light-blue curve is the loudest trigger by {0}. "
+    "Only the loudest {1} triggers by {0} are shown. Green hatched "
+    "areas denote gated strain data (\\\\ = externally-provided "
+    "gates, // = autogates). Red hatched areas denote vetoed time."
+)
 caption = caption.format(opts.rank, opts.num_loudest)
-md_title = 'Strain spectrogram and inspiral tracks for ' + opts.detector
+md_title = "Strain spectrogram and inspiral tracks for " + opts.detector
 
 pycbc.results.save_fig_with_metadata(
-    fig, opts.output_file, cmd=' '.join(sys.argv),
+    fig,
+    opts.output_file,
+    cmd=" ".join(sys.argv),
     title=md_title,
-    caption=caption, fig_kwds={'dpi': 100})
+    caption=caption,
+    fig_kwds={"dpi": 100},
+)
 
-logging.info('Done')
+logging.info("Done")

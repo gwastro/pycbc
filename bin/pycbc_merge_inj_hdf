@@ -20,8 +20,9 @@
 Merge hdf injection files
 """
 
-import logging
 import argparse
+import logging
+
 import numpy as np
 
 import pycbc
@@ -29,7 +30,8 @@ import pycbc.inject
 
 
 def get_gc_end_time(injection):
-    """Return the geocenter end time of an injection. Required for seamless
+    """
+    Return the geocenter end time of an injection. Required for seamless
     compatibility with LIGOLW and HDF injection objects, which use different
     names. Copied from pycbc_optimal_snr.
     """
@@ -40,14 +42,20 @@ def get_gc_end_time(injection):
         return injection.tc
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     pycbc.add_common_pycbc_options(parser)
-    parser.add_argument('--injection-files', '-i', dest='injection_file',
-                        required=True, nargs='+',
-                        help='Input HDF5 files defining injections')
-    parser.add_argument('--output-file', '-o', dest='out_file', required=True,
-                        help='Output HDF5 file')
+    parser.add_argument(
+        "--injection-files",
+        "-i",
+        dest="injection_file",
+        required=True,
+        nargs="+",
+        help="Input HDF5 files defining injections",
+    )
+    parser.add_argument(
+        "--output-file", "-o", dest="out_file", required=True, help="Output HDF5 file"
+    )
     opts = parser.parse_args()
 
     pycbc.init_logging(opts.verbose)
@@ -65,33 +73,34 @@ if __name__ == '__main__':
         inj_table = inj_table[np.sort(list(inj_table.dtype.fields.keys()))]
         injection_tables.append(injections.table)
 
-        inj_dtypes = [inj_table.dtype.fields[k] for k in \
-                      inj_table.dtype.fields.keys()]
+        inj_dtypes = [inj_table.dtype.fields[k] for k in inj_table.dtype.fields.keys()]
         injection_dtypes.append(inj_dtypes)
-      
+
     # Check that all files contained the same fields
-    if not np.all([t.dtype.fields.keys() == \
-          injection_tables[0].dtype.fields.keys() for t in injection_tables]):
+    if not np.all(
+        [
+            t.dtype.fields.keys() == injection_tables[0].dtype.fields.keys()
+            for t in injection_tables
+        ]
+    ):
         raise TypeError("All injection files must contain the same fields!")
 
     # Check that all of the dtypes are the same
     if not np.all([dt == injection_dtypes[0] for dt in injection_dtypes]):
-        raise TypeError("All injection files must contain the same " +
-                        "data types!")
+        raise TypeError("All injection files must contain the same " + "data types!")
 
     new_inj_table = []
     for inj_set in injection_tables:
-        for inj in inj_set:   
+        for inj in inj_set:
             new_inj_table.append(inj)
 
     # Store injections sorted by coalescence time
     new_inj_table.sort(key=get_gc_end_time)
 
     inj_dtype = injection_tables[0].dtype
-    new_inj_table = pycbc.io.FieldArray.from_records(
-                new_inj_table, dtype=inj_dtype)
+    new_inj_table = pycbc.io.FieldArray.from_records(new_inj_table, dtype=inj_dtype)
 
-    logging.info('Writing output')
+    logging.info("Writing output")
     pycbc.inject.InjectionSet.write(opts.out_file, new_inj_table)
 
-    logging.info('Done')
+    logging.info("Done")

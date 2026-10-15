@@ -1,70 +1,71 @@
 #!/usr/bin/env python
-import logging
-import numpy
 import argparse
-import matplotlib
+import logging
 import sys
-matplotlib.use('Agg')
+
+import matplotlib
+import numpy
+
+matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 
 import pycbc.results
-from pycbc.io import (
-    get_chisq_from_file_choice, chisq_choices, SingleDetTriggers, HFile
-)
+from pycbc.io import HFile, SingleDetTriggers, chisq_choices, get_chisq_from_file_choice
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--trigger-file', help='Single ifo trigger file')
-parser.add_argument('--veto-file',
-                    help='Optional, file of veto segments to remove triggers')
-parser.add_argument('--segment-name', default=None, type=str,
-                    help='Optional, name of segment list to use for vetoes')
-parser.add_argument('--min-snr', type=float,
-                    help='Optional, Minimum SNR to plot')
-parser.add_argument('--output-file')
+parser.add_argument("--trigger-file", help="Single ifo trigger file")
 parser.add_argument(
-    '--newsnr-contours',
-    nargs='*',
-    help="List of newsnr values to draw contours at. Only valid for "
-         "--chisq-choice traditional (which is default)"
+    "--veto-file", help="Optional, file of veto segments to remove triggers"
 )
-parser.add_argument('--chisq-choice', choices=chisq_choices,
-                    default='traditional',
-                    help='Which chisquared to plot. Default=traditional')
+parser.add_argument(
+    "--segment-name",
+    default=None,
+    type=str,
+    help="Optional, name of segment list to use for vetoes",
+)
+parser.add_argument("--min-snr", type=float, help="Optional, Minimum SNR to plot")
+parser.add_argument("--output-file")
+parser.add_argument(
+    "--newsnr-contours",
+    nargs="*",
+    help="List of newsnr values to draw contours at. Only valid for "
+    "--chisq-choice traditional (which is default)",
+)
+parser.add_argument(
+    "--chisq-choice",
+    choices=chisq_choices,
+    default="traditional",
+    help="Which chisquared to plot. Default=traditional",
+)
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose, default_level=1)
 
 
-if args.newsnr_contours is not None and not args.chisq_choice == 'traditional':
+if args.newsnr_contours is not None and not args.chisq_choice == "traditional":
     parser.error(
         "Newsnr contours are being plotted assuming a traditional "
-        "chisquared, but this is not being plotted! We are plotting %s" %
-        args.chisq_choice
+        "chisquared, but this is not being plotted! We are plotting %s"
+        % args.chisq_choice
     )
 
-args.newsnr_contours = \
-    args.newsnr_contours if args.newsnr_contours is not None else []
+args.newsnr_contours = args.newsnr_contours if args.newsnr_contours is not None else []
 
 # First - get the IFO from the file
-with HFile(args.trigger_file, 'r') as f:
+with HFile(args.trigger_file, "r") as f:
     ifo = tuple(f.keys())[0]
-    n_triggers = f[ifo]['snr'].size
+    n_triggers = f[ifo]["snr"].size
 
-logging.info(
-    "Plotting SNR vs %s chisq for %s triggers",
-    args.chisq_choice,
-    ifo
-)
+logging.info("Plotting SNR vs %s chisq for %s triggers", args.chisq_choice, ifo)
 
 if args.min_snr is not None:
-    filter_rank = 'snr'
+    filter_rank = "snr"
 else:
     filter_rank = None
     if n_triggers > 1e7:
         logging.warning(
-            "Getting %d triggers with no SNR cut - this will be expensive!",
-            n_triggers
+            "Getting %d triggers with no SNR cut - this will be expensive!", n_triggers
         )
 
 trigs = SingleDetTriggers(
@@ -77,19 +78,18 @@ trigs = SingleDetTriggers(
 )
 
 logging.info(
-    "Reading SNR and %s chisq for %d triggers",
-    args.chisq_choice,
-    trigs.mask_size
+    "Reading SNR and %s chisq for %d triggers", args.chisq_choice, trigs.mask_size
 )
 snr = trigs.snr
 chisq = get_chisq_from_file_choice(trigs, args.chisq_choice)
 
 
-def snr_from_chisq(chisq, newsnr, q=6.):
+def snr_from_chisq(chisq, newsnr, q=6.0):
     snr = numpy.zeros(len(chisq)) + float(newsnr)
-    ind = numpy.where(chisq > 1.)[0]
-    snr[ind] = float(newsnr) / ( 0.5 * (1. + chisq[ind] ** (q/2.)) ) ** (-1./q)
+    ind = numpy.where(chisq > 1.0)[0]
+    snr[ind] = float(newsnr) / (0.5 * (1.0 + chisq[ind] ** (q / 2.0))) ** (-1.0 / q)
     return snr
+
 
 fig = plt.figure(1)
 
@@ -98,7 +98,7 @@ r = numpy.logspace(numpy.log(chisq.min()), numpy.log(chisq.max()), 300)
 for i, cval in enumerate(args.newsnr_contours):
     logging.info("Plotting newsnr %s contour", cval)
     snrv = snr_from_chisq(r, cval)
-    plt.plot(snrv, r, color='black', lw=0.5)
+    plt.plot(snrv, r, color="black", lw=0.5)
     if i == 0:
         label = "$\\hat{\\rho} = %s$" % cval
     else:
@@ -107,26 +107,42 @@ for i, cval in enumerate(args.newsnr_contours):
         label_pos_idx = numpy.where(snrv > snr.max() * 0.8)[0][0]
     except IndexError:
         label_pos_idx = 0
-    plt.text(snrv[label_pos_idx], r[label_pos_idx], label, fontsize=6,
-               horizontalalignment='center', verticalalignment='center',
-               bbox=dict(facecolor='white', lw=0, pad=0, alpha=0.9))
+    plt.text(
+        snrv[label_pos_idx],
+        r[label_pos_idx],
+        label,
+        fontsize=6,
+        horizontalalignment="center",
+        verticalalignment="center",
+        bbox=dict(facecolor="white", lw=0, pad=0, alpha=0.9),
+    )
 
-plt.hexbin(snr, chisq, gridsize=300, xscale='log', yscale='log', lw=0.04,
-             mincnt=1, norm=matplotlib.colors.LogNorm())
+plt.hexbin(
+    snr,
+    chisq,
+    gridsize=300,
+    xscale="log",
+    yscale="log",
+    lw=0.04,
+    mincnt=1,
+    norm=matplotlib.colors.LogNorm(),
+)
 
 ax = plt.gca()
-plt.grid()   
-ax.set_xscale('log')
-cb = plt.colorbar() 
+plt.grid()
+ax.set_xscale("log")
+cb = plt.colorbar()
 plt.xlim(snr.min(), snr.max() * 1.1)
 plt.ylim(chisq.min(), chisq.max() * 1.1)
-cb.set_label('Trigger Density')
-plt.xlabel('Signal-to-Noise Ratio')
-plt.ylabel('Reduced $\\chi^2$')
-pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-     title="%s :SNR vs Reduced %s &chi;<sup>2</sup>" % (ifo, args.chisq_choice),
-     caption="Distribution of SNR and %s &chi;&sup2; for single detector triggers: "
-             "Black lines show contours of constant NewSNR." \
-              %(args.chisq_choice,),
-     cmd=' '.join(sys.argv),
-     fig_kwds={'dpi':300})
+cb.set_label("Trigger Density")
+plt.xlabel("Signal-to-Noise Ratio")
+plt.ylabel("Reduced $\\chi^2$")
+pycbc.results.save_fig_with_metadata(
+    fig,
+    args.output_file,
+    title="%s :SNR vs Reduced %s &chi;<sup>2</sup>" % (ifo, args.chisq_choice),
+    caption="Distribution of SNR and %s &chi;&sup2; for single detector triggers: "
+    "Black lines show contours of constant NewSNR." % (args.chisq_choice,),
+    cmd=" ".join(sys.argv),
+    fig_kwds={"dpi": 300},
+)

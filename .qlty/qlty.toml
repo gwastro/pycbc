@@ -20,6 +20,25 @@ exclude_patterns = [
   "test/**",
 ]
 
+# bin/ holds ~220 Python executables with no .py extension (just a
+# `#!/usr/bin/env python` shebang). Qlty's default Python file-type
+# detection doesn't pick these up (unlike ruff itself, which sniffs
+# shebangs fine when run directly), so they were silently skipped by
+# every qlty_check run. Extending the glob list to include bin/** fixes
+# that; the rest of the list matches Qlty's own documented default.
+[file_types.python]
+globs = [
+  "*.py",
+  "*.pyw",
+  "**/DEPS",
+  "**/Snakefile",
+  "**/SConscript",
+  "**/wscript",
+  "**/SConstruct",
+  "**/.gclient",
+  "bin/**",
+]
+
 [[source]]
 name = "default"
 default = true
@@ -56,3 +75,14 @@ name = "ripgrep"
 
 [plugins.definitions.ripgrep.drivers.lint-fixme]
 script = "rg \"FIXME|XXX\" ${target} --json --word-regexp --only-matching"
+
+# bin/** (above) is a path-only glob, so it also swept in a handful of
+# extensionless files under bin/ that are actually bash, not Python --
+# ruff fails to parse these as Python. Skip ruff specifically for them.
+[[exclude]]
+plugins = ["ruff"]
+file_patterns = [
+  "bin/pycbc_copy_output_map",
+  "bin/pycbc_stageout_failed_workflow",
+  "bin/inference/run_pycbc_inference",
+]

@@ -4,16 +4,20 @@
 # By A. Curiel Barroso
 # August 2019
 
-"""This script computes the area corresponding to different CBC on the m1 & m2
+"""
+This script computes the area corresponding to different CBC on the m1 & m2
 plane as a function of central mchirp value.
 """
 
 import argparse
+
 import numpy
-from matplotlib import use; use("Agg")
+from matplotlib import use
+
+use("Agg")
 from matplotlib import pyplot
 
-from pycbc import init_logging, add_common_pycbc_options
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.mchirp_area import calc_areas
 
 # ARGUMENT PARSER
@@ -57,8 +61,8 @@ y_ansbh = numpy.zeros(n, float)
 y_agns = numpy.zeros(n, float)
 y_abns = numpy.zeros(n, float)
 
-for i in range(0, n):
-    central_mc = 0.8 + i*(10.0 - 0.8)/(n - 1)
+for i in range(n):
+    central_mc = 0.8 + i * (10.0 - 0.8) / (n - 1)
     delta_mc = central_mc * 0.01
     trig_mc = {"central": central_mc, "delta": delta_mc}
     x_mc[i] = central_mc

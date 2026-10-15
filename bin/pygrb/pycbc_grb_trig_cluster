@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2019 Duncan Macleod
 #
@@ -17,31 +16,29 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Cluster triggers from a pyGRB run
-"""
+"""Cluster triggers from a pyGRB run"""
 
 import argparse
+import logging
 import os
 import shutil
 import sys
-import logging
-
-import tqdm
-
-import numpy
 
 import h5py
-
+import numpy
+import tqdm
 from gwdatafind.utils import filename_metadata
 
-from pycbc import init_logging, add_common_pycbc_options
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.io.hdf import HFile
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-TQDM_BAR_FORMAT = ("{desc}: |{bar}| "
-                   "{n_fmt}/{total_fmt} {unit} ({percentage:3.0f}%) "
-                   "[{elapsed} | ETA {remaining}]{postfix}")
+TQDM_BAR_FORMAT = (
+    "{desc}: |{bar}| "
+    "{n_fmt}/{total_fmt} {unit} ({percentage:3.0f}%) "
+    "[{elapsed} | ETA {remaining}]{postfix}"
+)
 TQDM_KW = {
     "ascii": " -=#",
     "bar_format": TQDM_BAR_FORMAT,
@@ -51,8 +48,10 @@ TQDM_KW = {
 
 # -- utilities ----------------------------------
 
+
 def slice_hdf5(inputfile, outfile, include, verbose=False):
-    """Create a new HDF5 file containing a slice of the network events
+    """
+    Create a new HDF5 file containing a slice of the network events
 
     Here ``include`` should be an index array
     """
@@ -68,17 +67,20 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
         # find which single-ifo events to keep
         ifo_index = {
             ifo: numpy.unique(
-                h5in["network/{}_event_id".format(ifo)][:][include],
-            ) for ifo in ifos
+                h5in[f"network/{ifo}_event_id"][:][include],
+            )
+            for ifo in ifos
         }
 
-        nsets = sum(isinstance(item, h5py.Dataset)
-                    or isinstance(item, h5py.Group) for
-                    group in h5in.values() for
-                    item in group.values())
-        msg = "Slicing {} network events into new file".format(nevents)
-        bar = tqdm.tqdm(total=nsets, desc=msg, disable=not verbose,
-                        unit="datasets", **TQDM_KW)
+        nsets = sum(
+            isinstance(item, h5py.Dataset) or isinstance(item, h5py.Group)
+            for group in h5in.values()
+            for item in group.values()
+        )
+        msg = f"Slicing {nevents} network events into new file"
+        bar = tqdm.tqdm(
+            total=nsets, desc=msg, disable=not verbose, unit="datasets", **TQDM_KW
+        )
         with HFile(outfile, "w") as h5out:
             for old in h5in["network"].values():
                 if isinstance(old, h5py.Dataset):
@@ -157,12 +159,7 @@ ifotag, filetag, segment = filename_metadata(args.trig_file)
 start, end = segment
 outfile = os.path.join(
     args.output_dir,
-    "{}-{}_CLUSTERED-{}-{}.h5".format(
-        ifotag,
-        filetag,
-        start,
-        end - start,
-    ),
+    f"{ifotag}-{filetag}_CLUSTERED-{start}-{end - start}.h5",
 )
 
 # this list contains the indexing of clusters from all slides
@@ -179,7 +176,7 @@ with HFile(args.trig_file, "r") as h5f:
 if not all_times.size:
     shutil.copyfile(args.trig_file, outfile)
     msg = "trigger file is empty\n"
-    msg += "copied input file to {}".format(outfile)
+    msg += f"copied input file to {outfile}"
     logging.info(msg)
     sys.exit(0)
 
@@ -188,9 +185,7 @@ if not all_times.size:
 unique_slide_ids = numpy.unique(slide_ids)
 max_slide_id = max(unique_slide_ids)
 logging.info(
-    'Clustering %d triggers from %d slides',
-    len(slide_ids),
-    len(unique_slide_ids)
+    "Clustering %d triggers from %d slides", len(slide_ids), len(unique_slide_ids)
 )
 
 for slide_id in unique_slide_ids:
@@ -209,12 +204,14 @@ for slide_id in unique_slide_ids:
     clusters = []
 
     # find loudest trigger in each bin, for the current slide
-    for i in tqdm.tqdm(range(time.size),
-                       desc="Initialising bins",
-                       disable=not args.verbose,
-                       total=time.size,
-                       unit='triggers',
-                       **TQDM_KW):
+    for i in tqdm.tqdm(
+        range(time.size),
+        desc="Initialising bins",
+        disable=not args.verbose,
+        total=time.size,
+        unit="triggers",
+        **TQDM_KW,
+    ):
         t, s = time[i], snr[i]
         idx = int(float(t - start) // win)
         bins[idx].append(i)
@@ -230,13 +227,15 @@ for slide_id in unique_slide_ids:
     nclusters = 0
 
     # cluster
-    bar = tqdm.tqdm(bins,
-                    desc="Clustering bins",
-                    disable=not args.verbose,
-                    total=nbins,
-                    unit='bins',
-                    postfix=dict(nclusters=0),
-                    **TQDM_KW)
+    bar = tqdm.tqdm(
+        bins,
+        desc="Clustering bins",
+        disable=not args.verbose,
+        total=nbins,
+        unit="bins",
+        postfix=dict(nclusters=0),
+        **TQDM_KW,
+    )
     for i, bin_ in enumerate(bar):
         if not bin_:  # empty
             continue
@@ -295,14 +294,14 @@ for slide_id in unique_slide_ids:
     # slide_id_pos which is built at each slide_id
     all_clusters += list(slide_id_pos[clusters])
     logging.info(
-        'Slide %s/%s has %d triggers that were clustered to %d',
+        "Slide %s/%s has %d triggers that were clustered to %d",
         slide_id,
         max_slide_id,
         len(slide_id_pos),
-        len(clusters)
+        len(clusters),
     )
 
-logging.info('Total clustered triggers: %d', len(all_clusters))
+logging.info("Total clustered triggers: %d", len(all_clusters))
 
 # -- write output --------------------------------
 
