@@ -60,6 +60,8 @@ from .relbin_cpu import (
 )
 from .tools import DistMarg, str_to_bool
 
+logger = logging.getLogger(__name__)
+
 
 def setup_bins(
     f_full,
@@ -476,7 +478,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
         self.wf_ret = wf_ret
         if self.check_heterodyne_bins:
-            logging.info("heterodyne bin error: %s", self.heterodyne_bin_error())
+            logger.info("heterodyne bin error: %s", self.heterodyne_bin_error())
         return wf_ret
 
     @property
