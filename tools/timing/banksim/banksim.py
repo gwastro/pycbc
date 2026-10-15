@@ -30,7 +30,6 @@ from optparse import OptionParser
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from numpy import complex64, float32
-from pycbc.utils import mass1_mass2_to_mchirp_eta
 
 import pycbc.psd
 from pycbc import DYN_RANGE_FAC
@@ -44,6 +43,7 @@ from pycbc.types import (
     real_same_precision_as,
     zeros,
 )
+from pycbc.utils import mass1_mass2_to_mchirp_eta
 from pycbc.waveform import (
     fd_approximants,
     get_fd_waveform,

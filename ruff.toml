@@ -93,3 +93,10 @@ ignore = [
 
 [lint.pydocstyle]
 convention = "numpy"
+
+[lint.isort]
+# Declare pycbc explicitly as first-party. Otherwise ruff decides per module
+# by looking for the file, and pycbc/version.py only exists after a build, so
+# `import pycbc.version` would be sorted differently in a fresh checkout (such
+# as CI) than in a built one.
+known-first-party = ["pycbc"]
