@@ -24,7 +24,6 @@ import pycbc
 import pycbc.conversions
 import pycbc.psd
 from pycbc.filter import get_cutoff_indices
-from pycbc.waveform import compress
 from pycbc.waveform.bank import FilterBank
 
 logger = logging.getLogger(__name__)
@@ -97,18 +96,17 @@ def estimate_fir_taps(h1_np, h2_np):
     h1_nz, h2_nz = np.abs(h1_np) > 0, np.abs(h2_np) > 0
     active = g_valid_band & h1_nz & h2_nz
     if np.count_nonzero(active) < 2 or np.any(g_valid_band & h2_nz & ~h1_nz):
-        return 99999
+        return np.inf
     h1_b, h2_b = h1_np[active], h2_np[active]
     w = (np.abs(h1_b) * np.abs(h2_b)) * g_inv_psd[active]
     w_sum = np.sum(w)
     if w_sum <= 0:
-        return 99999
+        return np.inf
     w /= w_sum
     dphi = np.unwrap(np.angle(h2_b / h1_b))
     tg = -np.gradient(dphi, g_delta_f) / (2.0 * np.pi) * g_cfg["sample_rate"]
     std_tg = np.sqrt(np.sum((tg - np.sum(tg * w)) ** 2 * w))
-    supp_taps = 256 if np.any(g_valid_band & h1_nz & ~h2_nz) else 0
-    return int(np.round(4.0 * std_tg + 15)) + supp_taps
+    return 4.0 * std_tg
 
 
 # --- TOEPLITZ FILTER DESIGN ---
@@ -124,11 +122,6 @@ def spectrum_to_correlation(bins, values, fft_len, is_complex=False):
     half[..., 0] *= 2.0
     half[..., -1] *= 2.0
     return (0.5 * fft_len) * np.fft.irfft(half, n=fft_len, axis=-1)
-
-
-def snap_tap_count(tap_count):
-    """Snap tap count down to 8-tap SIMD boundary with minimum 15 taps."""
-    return 15 + max(0, (int(tap_count) - 15) // 8) * 8
 
 
 def compute_filter_response(taps, is_complex=False, fft_len=None):
@@ -203,7 +196,6 @@ def build_fit_problem(cand_idx, fine_np):
     np.nan_to_num(ratio, copy=False)
     np.divide(np.abs(ref_np) ** 2, g_psd_arr, out=match_w, where=band)
     np.nan_to_num(match_w, copy=False)
-    band[np.abs(ratio) > 1000] = False
     if not band.any() or match_w[band].max() <= 0:
         return None
     match_w /= match_w[band].max()
@@ -277,22 +269,18 @@ def evaluate_filter_fit(prob, n_taps, fine_np, fine_norm_sq):
             overlap = min(m_re, m_im)
         else:
             overlap, rec_ss = 0.0, 0.0
-        max_tap = float(
-            max(np.max(np.abs(taps_arr.real)), np.max(np.abs(taps_arr.imag)))
-        )
     else:
         overlap, rec_ss = _eval_branch(resp[sl])
-        max_tap = float(np.max(np.abs(taps_arr)))
 
     sigmas = (
         np.sqrt(sc * prob["ref_ss"]),
         np.sqrt(sc * rec_ss),
         np.sqrt(sc * fine_norm_sq),
     )
-    ok = overlap >= g_cfg["min_match"] and np.isfinite(max_tap) and max_tap <= 1e5
+    ok = bool(np.isfinite(overlap) and overlap >= g_cfg["min_match"])
     return ok, {
         "c_idx": prob["c_idx"],
-        "n_taps": int(n_taps),
+        "n_taps": len(taps_arr),
         "match": overlap,
         "taps": taps_arr,
         "sigmas": sigmas,
@@ -301,32 +289,23 @@ def evaluate_filter_fit(prob, n_taps, fine_np, fine_norm_sq):
 
 
 def find_minimum_taps(prob, tap_cap, fine_np, fine_norm_sq):
-    """Find minimum tap count achieving target match via ladder and bisection."""
-    top = snap_tap_count(min(tap_cap, g_cfg["max_taps"], g_fft_len - 1))
-    if top < 15:
+    """Find minimum odd tap count achieving target match via binary search."""
+    top = min(int(tap_cap), g_cfg["max_taps"], g_fft_len - 1)
+    top -= top % 2 == 0
+    if top < 1:
         return None
-    step = 100 if top <= 1025 else 1000
-    ladder = sorted({*range(15, top, step), top})
-    lo, hi, best = 7, None, None
-
-    for k in ladder:
-        ok, rec = evaluate_filter_fit(prob, k, fine_np, fine_norm_sq)
-        if ok:
-            hi, best = k, rec
-            break
-        lo = k
-    if best is None:
+    ok, best = evaluate_filter_fit(prob, top, fine_np, fine_norm_sq)
+    if not ok:
         return None
 
-    while hi - lo > 8:
-        mid = max(snap_tap_count((lo + hi) // 2), lo + 8)
-        if mid >= hi:
-            break
-        ok, rec = evaluate_filter_fit(prob, mid, fine_np, fine_norm_sq)
+    lo_idx, hi_idx = 0, (top - 1) // 2
+    while lo_idx < hi_idx:
+        mid_idx = (lo_idx + hi_idx) // 2
+        ok, rec = evaluate_filter_fit(prob, 2 * mid_idx + 1, fine_np, fine_norm_sq)
         if ok:
-            hi, best = mid, rec
+            hi_idx, best = mid_idx, rec
         else:
-            lo = mid
+            lo_idx = mid_idx + 1
     return best
 
 
@@ -340,31 +319,24 @@ def process_template(task):
     allowed = np.arange(len(g_coarse_np))
     if excluded:
         allowed = allowed[~np.isin(allowed, np.fromiter(excluded, dtype=int))]
-    if g_coarse_tau0 is not None and g_fine_tau0 is not None and len(allowed) > 60:
-        broad = allowed[
-            np.argsort(np.abs(g_coarse_tau0[allowed] - g_fine_tau0[fine_idx]))[:60]
+    if g_coarse_tau0 is not None and g_fine_tau0 is not None and len(allowed) > 32:
+        allowed = allowed[
+            np.argsort(np.abs(g_coarse_tau0[allowed] - g_fine_tau0[fine_idx]))[:32]
         ]
-    else:
-        broad = allowed
-    k_ests = [estimate_fir_taps(g_coarse_np[c], fine_np) for c in broad]
-    candidates = broad[np.argsort(k_ests)[: min(len(broad), 25)]]
-
-    screen_taps = g_cfg["n_taps"]
-    problems, scores = {}, {}
-    for c in candidates:
-        prob = build_fit_problem(c, fine_np)
-        if prob is not None:
-            problems[c] = prob
-            _, rec = evaluate_filter_fit(prob, screen_taps, fine_np, fine_norm_sq)
-            scores[c] = rec["match"]
+    k_ests = np.array([estimate_fir_taps(g_coarse_np[c], fine_np) for c in allowed])
+    finite = np.isfinite(k_ests)
+    candidates = allowed[finite][np.argsort(k_ests[finite])[:8]]
 
     best_rec = None
-    for rank, c in enumerate(sorted(scores, key=scores.get, reverse=True)):
-        if best_rec is not None and rank >= 3:
+    for c in candidates:
+        cap = g_cfg["max_taps"] if best_rec is None else best_rec["n_taps"] - 2
+        if cap < 1:
             break
-        cap = g_cfg["max_taps"] if best_rec is None else best_rec["n_taps"] - 8
-        rec = find_minimum_taps(problems[c], cap, fine_np, fine_norm_sq)
-        if rec is not None and (best_rec is None or rec["n_taps"] < best_rec["n_taps"]):
+        prob = build_fit_problem(c, fine_np)
+        if prob is None:
+            continue
+        rec = find_minimum_taps(prob, cap, fine_np, fine_norm_sq)
+        if rec is not None:
             best_rec = rec
 
     return fine_idx, best_rec
@@ -404,7 +376,9 @@ def prune_redundant_parents(pool, results, label="level_1"):
 
 
 # --- I/O AND SEED SELECTION ---
-def write_fir_groups(parent_hdf_group, results, is_complex=False, sample_rate=None):
+def write_fir_groups(
+    parent_hdf_group, results, parent_fine_indices, is_complex=False, sample_rate=None
+):
     """Write pre-scaled FIR tap tables and metadata datasets into HDF5 group."""
     groups = defaultdict(list)
     for i, rec in enumerate(results):
@@ -420,6 +394,7 @@ def write_fir_groups(parent_hdf_group, results, is_complex=False, sample_rate=No
 
     for parent_idx, items in groups.items():
         grp = parent_hdf_group.create_group(str(parent_idx))
+        grp.attrs["parent_fine_index"] = int(parent_fine_indices[parent_idx])
         counts = np.array([len(r["taps"]) for r, _ in items], dtype=np.int32)
         max_k = int(counts.max())
         taps_arr = np.zeros((len(items), max_k), dtype=taps_dtype)
@@ -448,20 +423,19 @@ def write_fir_groups(parent_hdf_group, results, is_complex=False, sample_rate=No
 def _seed_worker(indices):
     """Select greedy dispersion-clustered seeds within a tau0-sorted chunk."""
     init_worker([g_fine_bank[int(i)].copy() for i in indices], None, None, g_cfg)
-    k_target = min(snap_tap_count(int(0.85 * g_cfg["max_taps"])), g_fft_len - 1)
-    max_est = g_cfg["max_taps"]
+    max_taps = min(g_cfg["max_taps"], g_fft_len - 1)
     unassigned, seeds = list(range(len(g_coarse_np))), []
     while unassigned:
         seed = unassigned[0]
         seed_np = g_coarse_np[seed]
         keep = []
         for c in unassigned[1:]:
-            if estimate_fir_taps(seed_np, g_coarse_np[c]) <= max_est:
+            if estimate_fir_taps(seed_np, g_coarse_np[c]) <= max_taps:
                 prob = build_fit_problem(seed, g_coarse_np[c])
                 if (
                     prob is not None
                     and evaluate_filter_fit(
-                        prob, k_target, g_coarse_np[c], g_coarse_norm_sq[c]
+                        prob, max_taps, g_coarse_np[c], g_coarse_norm_sq[c]
                     )[0]
                 ):
                     continue
@@ -622,26 +596,19 @@ def main():
     fir_group.attrs["num_levels"] = int(num_levels)
     fir_group.attrs["sample_rate"] = float(args.sample_rate)
     fir_group.attrs["min_match"] = float(args.min_match[0])
-    fir_group.attrs["n_taps"] = int(snap_tap_count(int(args.max_taps[0]) // 2))
 
     current_fine = np.arange(len(fine_bank), dtype=int)
-    top_df, top_min_match = df_1, float(args.min_match[0])
 
     for level in range(1, num_levels + 1):
         is_lowest = level == 1
         label = f"level_{level}"
         max_taps = int(args.max_taps[level - 1])
-        lvl_df = (
-            float(args.delta_f[level - 1])
-            if len(args.delta_f) > 1
-            else df_1 / (16.0 ** (level - 1))
+        lvl_df = float(
+            args.delta_f[level - 1] if len(args.delta_f) > 1 else args.delta_f[0]
         )
-        min_match = (
-            float(args.min_match[level - 1])
-            if len(args.min_match) > 1
-            else 1.0 - (1.0 - float(args.min_match[0])) / (10.0 ** (level - 1))
+        min_match = float(
+            args.min_match[level - 1] if len(args.min_match) > 1 else args.min_match[0]
         )
-        top_df, top_min_match = lvl_df, min_match
         fit_flen = round((args.sample_rate / 2.0) / lvl_df) + 1
         lvl_complex = bool(args.complex_taps) if is_lowest else False
         min_f_low = float(np.min(fine_bank.table["f_lower"][current_fine]))
@@ -652,7 +619,6 @@ def main():
             "f_high": args.f_high,
             "sample_rate": float(args.sample_rate),
             "max_taps": max_taps,
-            "n_taps": snap_tap_count(max_taps // 2),
             "min_match": min_match,
             "reg": 1e-2 if is_lowest else 1e-6,
             "complex_taps": lvl_complex,
@@ -661,9 +627,8 @@ def main():
         psd = pycbc.psd.from_cli(
             args, length=fit_flen, delta_f=lvl_df, low_frequency_cutoff=min_f_low
         )
-        n_procs = args.n_processes if is_lowest else min(args.n_processes, 14)
         lvl_results, current_fine = run_hierarchy_level(
-            fine_bank, current_fine, fit_flen, psd, cfg, label, n_procs
+            fine_bank, current_fine, fit_flen, psd, cfg, label, args.n_processes
         )
 
         lvl_group = fir_group.require_group(label)
@@ -671,29 +636,10 @@ def main():
         write_fir_groups(
             lvl_group,
             lvl_results,
+            current_fine,
             is_complex=lvl_complex,
             sample_rate=None if is_lowest else args.sample_rate,
         )
-
-    # Compress topmost reference waveforms into level_{num_levels}/compressed_waveforms
-    top_lvl_group = fir_group[f"level_{num_levels}"]
-    comp_df = min(top_df, 1.0 / 512.0)
-    comp_flen = round((args.sample_rate / 2.0) / comp_df) + 1
-    comp_tol = min(1e-5, (1.0 - top_min_match) * 0.1)
-    top_bank = subset_filter_bank(fine_bank, comp_flen, comp_df, current_fine)
-    for i in range(len(top_bank)):
-        wave = top_bank[i].copy()
-        fmin = float(top_bank.table["f_lower"][i])
-        kmax = int(np.nonzero(abs(wave.numpy()))[0][-1])
-        hc = compress.compress_waveform(
-            wave,
-            np.array([fmin, kmax * comp_df], float),
-            comp_tol,
-            "inline_quadratic",
-            "single",
-            psd=None,
-        )
-        hc.write_to_hdf(top_lvl_group, str(i))
 
     out_file.close()
     logger.info("Done. Saved to %s", args.output_file)

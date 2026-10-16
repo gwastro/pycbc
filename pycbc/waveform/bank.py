@@ -1219,8 +1219,6 @@ class RatioFilterBank(FilterBank):
     This bank relies on an HDF5 file structure where a 'fine' template bank
     is stored at the root, and one or more hierarchical FIR levels are stored
     under 'fir_data/level_1', ..., 'fir_data/level_{num_levels}'.
-    The highest level ('level_{num_levels}') stores compressed reference
-    waveforms under 'compressed_waveforms/<id>'.
 
     Parameters
     ----------
@@ -1234,17 +1232,37 @@ class RatioFilterBank(FilterBank):
         Data type for the waveforms (usually complex64).
     approximant : str, optional
         Approximant used for the waveforms.
+    low_frequency_cutoff : float, optional
+        Low-frequency cutoff floor applied to per-template `f_lower`.
     **kwds :
         Additional arguments passed to FilterBank/TemplateBank.
 
     """
 
     def __init__(
-        self, filename, filter_length, delta_f, dtype, approximant=None, **kwds
+        self,
+        filename,
+        filter_length,
+        delta_f,
+        dtype,
+        approximant=None,
+        low_frequency_cutoff=None,
+        **kwds,
     ):
         super().__init__(
-            filename, filter_length, delta_f, dtype, approximant=approximant, **kwds
+            filename,
+            filter_length,
+            delta_f,
+            dtype,
+            approximant=approximant,
+            low_frequency_cutoff=None,
+            **kwds,
         )
+        if low_frequency_cutoff is not None:
+            self.table["f_lower"][:] = np.maximum(
+                self.table["f_lower"], low_frequency_cutoff
+            )
+            self.min_f_lower = float(np.min(self.table["f_lower"]))
 
         if "fir_data" not in self.filehandler:
             raise ValueError(
@@ -1253,7 +1271,6 @@ class RatioFilterBank(FilterBank):
 
         self.fir_group = self.filehandler["fir_data"]
         self.num_levels = int(self.fir_group.attrs.get("num_levels", 1))
-        self.n_taps = self.fir_group.attrs.get("n_taps", None)
         self.sample_rate = self.fir_group.attrs.get("sample_rate", None)
 
         self.level_groups = {
@@ -1371,46 +1388,10 @@ class RatioFilterBank(FilterBank):
         Returns
         -------
         htilde : FrequencySeries
-            The decompressed reference waveform.
+            The reference waveform.
         """
-        top_group = self.level_groups[self.num_levels]
-        compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
-            top_group, str(int(coarse_index)), load_now=True
-        )
-        if self.waveform_decompression_method is not None:
-            decompression_method = self.waveform_decompression_method
-        else:
-            decompression_method = compressed_waveform.interpolation
-
-        if self.out is None:
-            tempout = zeros(self.filter_length, dtype=self.dtype)
-        else:
-            tempout = self.out
-            tempout.clear()
-
-        decomp_scratch = FrequencySeries(
-            tempout[0 : self.filter_length], delta_f=self.delta_f, copy=False
-        )
-        min_sample_f = float(compressed_waveform.sample_points[0])
-        if self.f_lower is not None:
-            f_low = max(float(self.f_lower), min_sample_f)
-        elif self.min_f_lower is not None:
-            f_low = max(float(self.min_f_lower), min_sample_f)
-        else:
-            f_low = min_sample_f
-
-        htilde = compressed_waveform.decompress(
-            out=decomp_scratch, f_lower=f_low, interpolation=decompression_method
-        )
-        f_end = (self.filter_length - 1) * self.delta_f
-        htilde = htilde.astype(self.dtype)
-        htilde.f_lower = f_low
-        htilde.min_f_lower = self.min_f_lower
-        htilde.end_idx = int(f_end / htilde.delta_f)
-        htilde.approximant = None
-        htilde.end_frequency = f_end
-        htilde.sigmasq = types.MethodType(sigma_cached, htilde)
-        return htilde
+        top_group = self.level_groups[self.num_levels][str(int(coarse_index))]
+        return self[int(top_group.attrs["parent_fine_index"])]
 
     def setup_sigma_norm(self):
         """

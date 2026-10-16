@@ -369,13 +369,8 @@ def main():
             filter_length=flen,
             delta_f=delta_f,
             dtype=np.complex64,
+            low_frequency_cutoff=args.low_frequency_cutoff,
         )
-        if args.low_frequency_cutoff is not None:
-            bank.table["f_lower"][:] = np.maximum(
-                bank.table["f_lower"], args.low_frequency_cutoff
-            )
-            bank.f_lower = args.low_frequency_cutoff
-            bank.min_f_lower = float(np.min(bank.table["f_lower"]))
         flow = bank.min_f_lower
         bank.template_thinning(inj_filter_rejector)
 
