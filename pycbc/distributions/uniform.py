@@ -173,7 +173,7 @@ class Trapezoid(bounded.BoundedDist):
         self._semimaxs = dict([[p[8:], params.pop(p)] for p in semimax_args])
 
         # initialize bounds objects
-        super(Trapezoid, self).__init__(**params)
+        super().__init__(**params)
 
         # compute norms
         for p, bnds in self._bounds.items():
@@ -217,14 +217,8 @@ class Trapezoid(bounded.BoundedDist):
 
             # set output values
             # if semibounds equal bounds, set to uniform limits
-            if b == a:
-                lowout = 1.
-            else:
-                lowout = (values - a)/(b - a)
-            if c == d:
-                highout = 1.
-            else:
-                highout = (d - values)/(d - c)
+            lowout = 1.0 if b == a else (values - a) / (b - a)
+            highout = 1.0 if c == d else (d - values) / (d - c)
             outlists[p] = [lowout,
                            1.,
                            highout]
@@ -236,7 +230,7 @@ class Trapezoid(bounded.BoundedDist):
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
-        with numpy.errstate(divide='ignore', invalid='ignore'):
+        with numpy.errstate(divide="ignore", invalid="ignore"):
             return numpy.log(self._pdf(**kwargs))
 
     def cdf(self, param, value):
@@ -253,14 +247,10 @@ class Trapezoid(bounded.BoundedDist):
 
         # set output values
         # if semibounds equal bounds, set to uniform limits
-        if b == a:
-            lowout = 2 / pref * (value - a)
-        else:
-            lowout = (value - a)**2 / (b - a) / pref
-        if c == d:
-            highout = 1 - 2 / pref * (c - value)
-        else:
-            highout = 1 - (d - value)**2 / (d - c) / pref
+        lowout = 2 / pref * (value - a) if b == a else \
+            (value - a) ** 2 / (b - a) / pref
+        highout = 1 - 2 / pref * (c - value) if c == d else \
+            1 - (d - value)**2 / (d - c) / pref
         outlist = [lowout,
                    (2*value - a - b) / pref,
                    highout]
@@ -282,7 +272,7 @@ class Trapezoid(bounded.BoundedDist):
 
         # conditions based on position
         # numpy complains when b = a or c = d
-        with numpy.errstate(divide='ignore', invalid='ignore'):
+        with numpy.errstate(divide="ignore", invalid="ignore"):
             cdf_condlist = [(value < b_cdf),
                             (value >= b_cdf) & (value < c_cdf),
                             (value >= c_cdf)]
@@ -314,7 +304,11 @@ class Trapezoid(bounded.BoundedDist):
             A distribution instance from the pycbc.inference.prior module.
         """
         # load this class instance
-        return super(Trapezoid, cls).from_config(cp, section, variable_args,
-                                                 bounds_required=True)
+        return super().from_config(
+            cp,
+            section,
+            variable_args,
+            bounds_required=True
+        )
 
-__all__ = ["Uniform", "Trapezoid"]
+__all__ = ["Trapezoid", "Uniform"]
