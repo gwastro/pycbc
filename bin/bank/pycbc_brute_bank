@@ -23,6 +23,7 @@ import argparse
 import logging
 import os
 import signal
+from types import SimpleNamespace
 
 import numpy
 import numpy.random
@@ -255,11 +256,8 @@ class TriangleBank:
     def culltau0(self, threshold):
         cull = numpy.where(self.tau0() < threshold)[0]
 
-        class dumb:
-            pass
-
         for c in cull:
-            d = dumb()
+            d = SimpleNamespace()
             d.tau0 = self.waveforms[c].tau0
             d.params = self.waveforms[c].params
             d.s = self.waveforms[c].s

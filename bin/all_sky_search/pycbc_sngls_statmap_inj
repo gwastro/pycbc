@@ -18,7 +18,7 @@ from pycbc.events import significance
 logger = logging.getLogger(__name__)
 
 
-class fw:
+class FileWriter:
     def __init__(self, name):
         self.f = pycbc.io.HFile(name, "w")
         self.attrs = self.f.attrs
@@ -104,7 +104,7 @@ fg_time = fb.attrs["background_time"]
 fg_time_exc = fb.attrs["background_time_exc"]
 
 logger.info("Dumping foreground triggers")
-f = fw(args.output_file)
+f = FileWriter(args.output_file)
 f.attrs["num_of_ifos"] = 1
 f.attrs["ifos"] = ifo
 

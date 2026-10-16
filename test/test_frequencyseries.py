@@ -30,7 +30,7 @@ import tempfile
 import unittest
 
 import numpy
-from utils import array_base, parse_args_all_schemes, simple_exit
+from utils import ArrayBase, parse_args_all_schemes, simple_exit
 
 from pycbc.scheme import DefaultScheme
 from pycbc.types import (
@@ -56,7 +56,7 @@ elif _scheme == "cpu":
 CPUArray = numpy.ndarray
 
 
-class TestFrequencySeriesBase(array_base, unittest.TestCase):
+class TestFrequencySeriesBase(ArrayBase, unittest.TestCase):
     __test__ = False
 
     def setUp(self):

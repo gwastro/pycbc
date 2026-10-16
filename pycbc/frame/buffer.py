@@ -425,7 +425,7 @@ class StatusBuffer(DataBuffer):
             return False
 
 
-class iDQBuffer:  # noqa: N801
+class IDQBuffer:
     """Read iDQ timeseries from a frame file"""
 
     def __init__(

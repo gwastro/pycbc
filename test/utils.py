@@ -231,7 +231,7 @@ _real_dtype_dict = {
 }
 
 
-class array_base:
+class ArrayBase:
     def setNumbers(self):
         # We create instances of our types, and need to know the generic answer
         # type so that we can convert the many basic lists into the appropriate

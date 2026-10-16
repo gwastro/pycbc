@@ -261,7 +261,7 @@ class AbsSpaceDet(ABC):
         return
 
 
-class _LDC_detector(AbsSpaceDet):
+class _LDCDetector(AbsSpaceDet):
     """
     LISA detector modeled using LDC software. Constellation orbits are
     generated using LISA Orbits (https://pypi.org/project/lisaorbits/).
@@ -662,7 +662,7 @@ class _LDC_detector(AbsSpaceDet):
         return tdi_dict
 
 
-class _FLR_detector(AbsSpaceDet):
+class _FLRDetector(AbsSpaceDet):
     """
     LISA detector modeled using FastLISAResponse. Constellation orbits are
     generated using LISA Analysis Tools (10.5281/zenodo.10930979). Link
@@ -1013,8 +1013,8 @@ class _FLR_detector(AbsSpaceDet):
 
 _backends = {
     "LISA": {
-        "LDC": _LDC_detector,
-        "FLR": _FLR_detector,
+        "LDC": _LDCDetector,
+        "FLR": _FLRDetector,
     },
 }
 
