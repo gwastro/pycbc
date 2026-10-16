@@ -237,7 +237,6 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
                 f = (fp + 1.0j * fc) * pol_phase
             self.dts[ifo] = p["tc"] + dt
 
->>>>>>> c69c5dfc0 (generalize rf changes to the rest of the generators and the inference models)
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic) / p["distance"] * phase
