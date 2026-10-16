@@ -385,11 +385,8 @@ class DistMarg:
         # Determine the common valid time range
         iref = ifos[0]
         dref = d[iref]
-        if iref == "RF":
-            # assume geocenter if no response function applied
-            dt = 0.
-        else:
-            dt = dref.time_delay_from_earth_center(ra, dec, tcave)
+        dt = 0.0 if iref == "RF" else \
+            dref.time_delay_from_earth_center(ra, dec, tcave)
 
         starts = []
         ends = []

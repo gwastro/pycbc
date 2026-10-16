@@ -623,8 +623,8 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
             missing_args = [arg for arg in self.location_args if not
                 (arg in self.current_params or arg in self.variable_args)]
             if any(missing_args):
-                raise ValueError("detectors provided, but missing location "
-                    "parameters %s. " %(', '.join(missing_args)) +
+                raise ValueError(f"detectors provided, but missing location "
+                    f"parameters {', '.join(missing_args)}. "
                     "These must be either in the frozen params or the "
                     "variable args.")
         self.detector_names = sorted(self.detectors.keys())
@@ -649,16 +649,16 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
         thus, this should only be called when at least one actual detector is
         called alongside RF.
         """
-        tc = self.current_params['tc']
-        refframe = self.current_params.get('tc_ref_frame', 'geocentric')
-        if refframe in ('geocentric', 'RF'):
+        tc = self.current_params["tc"]
+        refframe = self.current_params.get("tc_ref_frame", "geocentric")
+        if refframe in ("geocentric", "RF"):
             return tc
-        if 'ra' not in self.current_params.keys() or \
-            'dec' not in self.current_params.keys():
-            raise KeyError('Sampling tc in a detector reference frame, but '
-                           'sky location parameters are not supplied')
+        if "ra" not in self.current_params.keys() or \
+            "dec" not in self.current_params.keys():
+            raise KeyError("Sampling tc in a detector reference frame, but "
+                           "sky location parameters are not supplied")
         return tc - Detector(refframe).time_delay_from_earth_center(
-            self.current_params['ra'], self.current_params['dec'], tc)
+            self.current_params["ra"], self.current_params["dec"], tc)
 
     def set_epoch(self, epoch):
         """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
@@ -747,7 +747,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
     Initialize a generator:
 
     >>> from pycbc.waveform.generator import FDomainDetFrameGenerator
-    >>> generator = FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
+    >>> generator = FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0.,variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
 
     Generate a waveform:
 
