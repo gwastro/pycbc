@@ -36,7 +36,7 @@ import pycbc.tmpltbank
 import pycbc.version
 from pycbc import pnutils
 from pycbc.io import HFile
-from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions
+from pycbc.tmpltbank.lambda_mapping import pycbc_valid_orders_help_descriptions
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ parser.add_argument(
     "spin-related terms in the metric will always "
     "be zero. REQUIRED ARGUMENT: "
     + "choices are: %s"
-    % (pycbcValidOrdersHelpDescriptions),
+    % (pycbc_valid_orders_help_descriptions),
 )
 parser.add_argument(
     "--f0",
@@ -152,17 +152,17 @@ if not opts.pn_order:
     parser.error("Must supply --pn-order")
 opts.max_mismatch = 1 - opts.min_match
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
-massRangeParams = pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
+mass_range_params = pycbc.tmpltbank.MassRangeParameters.from_argparse(opts)
 # Set random seed if needed
 if opts.random_seed is not None:
     numpy.random.seed(opts.random_seed)
 
 
 # FIXME: Note that a bunch of the options to set this are not passed to this
-# function and are not used. f0 is used in place of fUpper, but this is only
+# function and are not used. f0 is used in place of f_upper, but this is only
 # used as a key so doesn't matter. We have, however, removed information
 # that might be needed for something like ethinca. Maybe restore this?
-metricParams = pycbc.tmpltbank.metricParameters(
+metric_params = pycbc.tmpltbank.MetricParameters(
     opts.pn_order, 0, opts.f0, 0, f0=opts.f0
 )
 
@@ -180,14 +180,14 @@ else:
 # parameter space
 evals = h5file["metric_evals"]
 evecs = h5file["metric_evecs"]
-evecsCV = h5file["cov_evecs"]
+evecs_cv = h5file["cov_evecs"]
 
-metricParams.evals = {}
-metricParams.evecs = {}
-metricParams.evecsCV = {}
-metricParams.evals[opts.f0] = evals
-metricParams.evecs[opts.f0] = evecs
-metricParams.evecsCV[opts.f0] = evecsCV
+metric_params.evals = {}
+metric_params.evecs = {}
+metric_params.evecs_cv = {}
+metric_params.evals[opts.f0] = evals
+metric_params.evecs[opts.f0] = evecs
+metric_params.evecs_cv[opts.f0] = evecs_cv
 
 # If we only have N directions, do not try to evaluate the N+x!
 if len(evals) < 4:
@@ -198,26 +198,26 @@ if len(evals) < 5:
 
 # Create a large set of points and map to xi_i to give a starting point when
 # mapping from xi_i to masses and spins
-rMass1, rMass2, rSpin1z, rSpin2z = pycbc.tmpltbank.get_random_mass(
-    2000000, massRangeParams
+r_mass1, r_mass2, r_spin1z, r_spin2z = pycbc.tmpltbank.get_random_mass(
+    2000000, mass_range_params
 )
-rTotmass, rEta = pnutils.mass1_mass2_to_mtotal_eta(rMass1, rMass2)
+r_totmass, r_eta = pnutils.mass1_mass2_to_mtotal_eta(r_mass1, r_mass2)
 
-rXis = pycbc.tmpltbank.get_cov_params(
-    rMass1, rMass2, rSpin1z, rSpin2z, metricParams, opts.f0
+r_xis = pycbc.tmpltbank.get_cov_params(
+    r_mass1, r_mass2, r_spin1z, r_spin2z, metric_params, opts.f0
 )
 
-xis = (numpy.array(rXis)).T
-physMasses = numpy.array([rTotmass, rEta, rSpin1z, rSpin2z])
-physMasses = physMasses.T
+xis = (numpy.array(r_xis)).T
+phys_masses = numpy.array([r_totmass, r_eta, r_spin1z, r_spin2z])
+phys_masses = phys_masses.T
 f0 = opts.f0
 order = opts.pn_order
 maxmass1 = opts.max_mass1
 maxmass2 = opts.max_mass2
 minmass1 = opts.min_mass1
 minmass2 = opts.min_mass2
-maxNSspin = opts.max_ns_spin_mag
-maxBHspin = opts.max_bh_spin_mag
+max_ns_spin = opts.max_ns_spin_mag
+max_bh_spin = opts.max_bh_spin_mag
 
 # Here we start looping over bank
 temp_number = 0
@@ -241,9 +241,9 @@ for entry in temp_bank:
     if opts.threed_lattice:
         dist += (xi3_des - xis[:, 2]) ** 2
     xis_close = xis[dist < 0.03]
-    masses_close = physMasses[dist < 0.03]
-    bestMasses = physMasses[dist.argmin()]
-    bestXis = xis[dist.argmin()]
+    masses_close = phys_masses[dist < 0.03]
+    best_masses = phys_masses[dist.argmin()]
+    best_xis = xis[dist.argmin()]
     logger.info("Template %d has initial distance of %e", temp_number, dist.min())
     # Reject point if it is too far away from *any* of these points
     if dist.min() > 2.0:
@@ -258,11 +258,11 @@ for entry in temp_bank:
     # physical point has a mismatch < 0.0001 with the desired one
     masses = pycbc.tmpltbank.get_physical_covaried_masses(
         xis_des,
-        copy.deepcopy(bestMasses),
-        copy.deepcopy(bestXis),
+        copy.deepcopy(best_masses),
+        copy.deepcopy(best_xis),
         req_match,
-        massRangeParams,
-        metricParams,
+        mass_range_params,
+        metric_params,
         opts.f0,
     )
 
@@ -302,18 +302,18 @@ for entry in temp_bank:
     # that we need to stack points
     # We begin by evaluating the depth of the third direction, this is not
     # needed if a 3D lattice is being employed
-    tmpTotMass = masses[0] + masses[1]
-    tmpEta = masses[0] * masses[1] / (tmpTotMass * tmpTotMass)
+    tmp_tot_mass = masses[0] + masses[1]
+    tmp_eta = masses[0] * masses[1] / (tmp_tot_mass * tmp_tot_mass)
     if not opts.threed_lattice:
         # If point is close enough, determine depth of xi3 direction
         vec3_min, vec3_max = pycbc.tmpltbank.stack_xi_direction_brute(
             [masses[6][0], masses[6][1]],
-            [tmpTotMass, tmpEta, masses[2], masses[3]],
-            copy.deepcopy(bestXis),
+            [tmp_tot_mass, tmp_eta, masses[2], masses[3]],
+            copy.deepcopy(best_xis),
             2,
             opts.max_mismatch,
-            massRangeParams,
-            metricParams,
+            mass_range_params,
+            metric_params,
             opts.f0,
         )
         vec3_depth = vec3_max - vec3_min
@@ -322,16 +322,16 @@ for entry in temp_bank:
             if vec3_min > xis_close[:, 2].min():
                 logger.warning("WARNING: Numerical placement fails, trying again")
                 temp_idx = xis_close[:, 2].argmin()
-                temmpBestMasses = masses_close[temp_idx]
-                temmpBestXis = xis_close[temp_idx]
+                temmp_best_masses = masses_close[temp_idx]
+                temmp_best_xis = xis_close[temp_idx]
                 temmpvec3_min, temmpvec3_max = pycbc.tmpltbank.stack_xi_direction_brute(
                     [xi1_des, xi2_des],
-                    copy.deepcopy(temmpBestMasses),
-                    copy.deepcopy(temmpBestXis),
+                    copy.deepcopy(temmp_best_masses),
+                    copy.deepcopy(temmp_best_xis),
                     2,
                     opts.max_mismatch,
-                    massRangeParams,
-                    metricParams,
+                    mass_range_params,
+                    metric_params,
                     opts.f0,
                 )
                 temmpvec3_depth = temmpvec3_max - temmpvec3_min
@@ -344,16 +344,16 @@ for entry in temp_bank:
             if vec3_max < xis_close[:, 2].max():
                 logger.warning("WARNING: Numerical placement fails, trying again")
                 temp_idx = xis_close[:, 2].argmax()
-                temmpBestMasses = physMasses[temp_idx]
-                temmpBestXis = xis[temp_idx]
+                temmp_best_masses = phys_masses[temp_idx]
+                temmp_best_xis = xis[temp_idx]
                 temmpvec3_min, temmpvec3_max = pycbc.tmpltbank.stack_xi_direction_brute(
                     [xi1_des, xi2_des],
-                    copy.deepcopy(temmpBestMasses),
-                    copy.deepcopy(temmpBestXis),
+                    copy.deepcopy(temmp_best_masses),
+                    copy.deepcopy(temmp_best_xis),
                     2,
                     opts.max_mismatch,
-                    massRangeParams,
-                    metricParams,
+                    mass_range_params,
+                    metric_params,
                     opts.f0,
                 )
                 temmpvec3_depth = temmpvec3_max - temmpvec3_min
@@ -368,12 +368,12 @@ for entry in temp_bank:
     if opts.eval_vec4_depth:
         vec4_min, vec4_max = pycbc.tmpltbank.stack_xi_direction_brute(
             [masses[6][0], masses[6][1]],
-            [tmpTotMass, tmpEta, masses[2], masses[3]],
-            copy.deepcopy(bestXis),
+            [tmp_tot_mass, tmp_eta, masses[2], masses[3]],
+            copy.deepcopy(best_xis),
             3,
             opts.max_mismatch,
-            massRangeParams,
-            metricParams,
+            mass_range_params,
+            metric_params,
             opts.f0,
         )
         vec4_depth = vec4_max - vec4_min
@@ -383,12 +383,12 @@ for entry in temp_bank:
     if opts.eval_vec5_depth:
         vec5_min, vec5_max = pycbc.tmpltbank.stack_xi_direction_brute(
             [masses[6][0], masses[6][1]],
-            [tmpTotMass, tmpEta, masses[2], masses[3]],
-            copy.deepcopy(bestXis),
+            [tmp_tot_mass, tmp_eta, masses[2], masses[3]],
+            copy.deepcopy(best_xis),
             4,
             opts.max_mismatch,
-            massRangeParams,
-            metricParams,
+            mass_range_params,
+            metric_params,
             opts.f0,
         )
         vec5_depth = vec5_max - vec5_min
@@ -400,33 +400,33 @@ for entry in temp_bank:
     else:
         depths_info.append([xi1_des, xi2_des, vec3_depth, vec4_depth, vec5_depth])
     # Figure out how many templates we need to stack in 3rd direction
-    vec3DepthVal = opts.stack_distance
+    vec3_depth_val = opts.stack_distance
     if opts.threed_lattice:
-        numV3Temps = 1
+        num_v3_temps = 1
     else:
-        numV3Temps = int(round(vec3_depth // vec3DepthVal)) + 1
-    for ite in range(numV3Temps):
+        num_v3_temps = int(round(vec3_depth // vec3_depth_val)) + 1
+    for ite in range(num_v3_temps):
         if not opts.threed_lattice:
-            xi3_des = vec3_min + (vec3_depth) * (2 * ite + 1) / (2.0 * (numV3Temps))
+            xi3_des = vec3_min + (vec3_depth) * (2 * ite + 1) / (2.0 * (num_v3_temps))
         dist = (
             (xi1_des - xis[:, 0]) ** 2
             + (xi2_des - xis[:, 1]) ** 2
             + (xi3_des - xis[:, 2]) ** 2
         )
-        bestMasses = physMasses[dist.argmin()]
-        bestXis = xis[dist.argmin()]
+        best_masses = phys_masses[dist.argmin()]
+        best_xis = xis[dist.argmin()]
         # Find close point to this 3d position
         masses = pycbc.tmpltbank.get_physical_covaried_masses(
             [xi1_des, xi2_des, xi3_des],
-            copy.deepcopy(bestMasses),
-            copy.deepcopy(bestXis),
+            copy.deepcopy(best_masses),
+            copy.deepcopy(best_xis),
             req_match,
-            massRangeParams,
-            metricParams,
+            mass_range_params,
+            metric_params,
             opts.f0,
         )
         # If vec4 depth is negligible or we didn't get close, stop here
-        if vec4_depth < vec3DepthVal or masses[5] > opts.max_mismatch:
+        if vec4_depth < vec3_depth_val or masses[5] > opts.max_mismatch:
             if masses[5]:
                 # Write point to file
                 points_info.append(
@@ -435,24 +435,24 @@ for entry in temp_bank:
         else:
             # OR we need to estimate the depth in the 4th direction at this
             # 3d point
-            tmpTotMass = masses[0] + masses[1]
-            tmpEta = masses[0] * masses[1] / (tmpTotMass * tmpTotMass)
-            vec4_minT, vec4_maxT = pycbc.tmpltbank.stack_xi_direction_brute(
+            tmp_tot_mass = masses[0] + masses[1]
+            tmp_eta = masses[0] * masses[1] / (tmp_tot_mass * tmp_tot_mass)
+            curr_vec4_min, curr_vec4_max = pycbc.tmpltbank.stack_xi_direction_brute(
                 [masses[6][0], masses[6][1], masses[6][2]],
-                [tmpTotMass, tmpEta, masses[2], masses[3]],
-                copy.deepcopy(bestXis),
+                [tmp_tot_mass, tmp_eta, masses[2], masses[3]],
+                copy.deepcopy(best_xis),
                 3,
                 opts.max_mismatch,
-                massRangeParams,
-                metricParams,
+                mass_range_params,
+                metric_params,
                 opts.f0,
             )
-            vec4_depthT = vec4_maxT - vec4_minT
+            curr_vec4_depth = curr_vec4_max - curr_vec4_min
             # Then loop over necessary templates in 4th direction
-            numV4Temps = int(round(vec4_depthT // vec3DepthVal)) + 1
-            for ite in range(numV4Temps):
-                xi4_des = vec4_minT + (vec4_depthT) * (2 * ite + 1) / (
-                    2.0 * (numV4Temps)
+            num_v4_temps = int(round(curr_vec4_depth // vec3_depth_val)) + 1
+            for ite in range(num_v4_temps):
+                xi4_des = curr_vec4_min + (curr_vec4_depth) * (2 * ite + 1) / (
+                    2.0 * (num_v4_temps)
                 )
                 dist = (
                     (xi1_des - xis[:, 0]) ** 2
@@ -460,15 +460,15 @@ for entry in temp_bank:
                     + (xi3_des - xis[:, 2]) ** 2
                     + (xi4_des - xis[:, 3]) ** 2
                 )
-                bestMasses = physMasses[dist.argmin()]
-                bestXis = xis[dist.argmin()]
+                best_masses = phys_masses[dist.argmin()]
+                best_xis = xis[dist.argmin()]
                 masses = pycbc.tmpltbank.get_physical_covaried_masses(
                     [xi1_des, xi2_des, xi3_des, xi4_des],
-                    copy.deepcopy(bestMasses),
-                    copy.deepcopy(bestXis),
+                    copy.deepcopy(best_masses),
+                    copy.deepcopy(best_xis),
                     req_match,
-                    massRangeParams,
-                    metricParams,
+                    mass_range_params,
+                    metric_params,
                     opts.f0,
                 )
                 if masses[5]:

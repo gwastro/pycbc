@@ -114,7 +114,7 @@ class TmpltbankTestClass(unittest.TestCase):
         self.f_upper = 2000
         self.f0 = 70
         self.sampleRate = 4096
-        self.pnOrder = "threePointFivePN"
+        self.pn_order = "threePointFivePN"
         self.min_mass1 = 1
         self.min_mass2 = 1
         self.max_mass1 = 5
@@ -151,42 +151,42 @@ class TmpltbankTestClass(unittest.TestCase):
                 apy_fp, match_psd_size, 1.0 / 256.0, self.f_low, is_asd_file=True
             )
 
-        metricParams = pycbc.tmpltbank.metricParameters(
-            self.pnOrder, self.f_low, self.f_upper, self.deltaF, self.f0
+        metricParams = pycbc.tmpltbank.MetricParameters(
+            self.pn_order, self.f_low, self.f_upper, self.deltaF, self.f0
         )
         metricParams.psd = self.psd
 
-        massRangeParams = pycbc.tmpltbank.massRangeParameters(
+        massRangeParams = pycbc.tmpltbank.MassRangeParameters(
             self.min_mass1,
             self.max_mass1,
             self.min_mass2,
             self.max_mass2,
-            maxNSSpinMag=self.max_ns_spin_mag,
-            maxBHSpinMag=self.max_bh_spin_mag,
-            maxTotMass=self.max_total_mass,
-            minTotMass=self.min_total_mass,
+            max_ns_spin_mag=self.max_ns_spin_mag,
+            max_bh_spin_mag=self.max_bh_spin_mag,
+            max_tot_mass=self.max_total_mass,
+            min_tot_mass=self.min_total_mass,
             max_chirp_mass=self.max_chirp_mass,
             min_chirp_mass=self.min_chirp_mass,
-            maxEta=self.max_eta,
-            minEta=self.min_eta,
+            max_eta=self.max_eta,
+            min_eta=self.min_eta,
             ns_bh_boundary_mass=self.ns_bh_boundary_mass,
         )
 
         # And again with the nsbh flag
-        massRangeParams2 = pycbc.tmpltbank.massRangeParameters(
+        massRangeParams2 = pycbc.tmpltbank.MassRangeParameters(
             self.min_mass1,
             self.max_mass1,
             self.min_mass2,
             self.max_mass2,
-            maxNSSpinMag=self.max_ns_spin_mag,
-            maxBHSpinMag=self.max_bh_spin_mag,
-            maxTotMass=self.max_total_mass,
-            minTotMass=self.min_total_mass,
+            max_ns_spin_mag=self.max_ns_spin_mag,
+            max_bh_spin_mag=self.max_bh_spin_mag,
+            max_tot_mass=self.max_total_mass,
+            min_tot_mass=self.min_total_mass,
             max_chirp_mass=self.max_chirp_mass,
             min_chirp_mass=self.min_chirp_mass,
-            maxEta=self.max_eta,
-            minEta=self.min_eta,
-            nsbhFlag=True,
+            max_eta=self.max_eta,
+            min_eta=self.min_eta,
+            nsbh_flag=True,
         )
 
         metricParams = pycbc.tmpltbank.determine_eigen_directions(metricParams)
@@ -196,9 +196,9 @@ class TmpltbankTestClass(unittest.TestCase):
         )
 
         cov = numpy.cov(vals)
-        _, self.evecsCV = numpy.linalg.eig(cov)
-        metricParams.evecsCV = {}
-        metricParams.evecsCV[self.f_upper] = self.evecsCV
+        _, self.evecs_cv = numpy.linalg.eig(cov)
+        metricParams.evecs_cv = {}
+        metricParams.evecs_cv[self.f_upper] = self.evecs_cv
 
         vals = pycbc.tmpltbank.estimate_mass_range(
             100000, massRangeParams, metricParams, self.f_upper, covary=False
@@ -207,7 +207,7 @@ class TmpltbankTestClass(unittest.TestCase):
         self.metricParams = metricParams
         self.massRangeParams = massRangeParams
         self.massRangeParams2 = massRangeParams2
-        self.ethincaParams = pycbc.tmpltbank.ethincaParameters(
+        self.ethincaParams = pycbc.tmpltbank.EthincaParameters(
             self.ethincaOrder,
             self.ethincaCutoff,
             self.ethincaFreqStep,
@@ -321,37 +321,37 @@ class TmpltbankTestClass(unittest.TestCase):
                     err_msg = "Maximum total mass changed unexpectedly."
                     self.fail(err_msg)
 
-            massRangeParams = pycbc.tmpltbank.massRangeParameters(
+            massRangeParams = pycbc.tmpltbank.MassRangeParameters(
                 self.min_mass1,
                 self.max_mass1,
                 self.min_mass2,
                 self.max_mass2,
-                maxNSSpinMag=self.max_ns_spin_mag,
-                maxBHSpinMag=self.max_bh_spin_mag,
-                maxTotMass=self.max_total_mass,
-                minTotMass=self.min_total_mass,
+                max_ns_spin_mag=self.max_ns_spin_mag,
+                max_bh_spin_mag=self.max_bh_spin_mag,
+                max_tot_mass=self.max_total_mass,
+                min_tot_mass=self.min_total_mass,
                 max_chirp_mass=self.max_chirp_mass,
                 min_chirp_mass=self.min_chirp_mass,
-                maxEta=self.max_eta,
-                minEta=self.min_eta,
+                max_eta=self.max_eta,
+                min_eta=self.min_eta,
                 ns_bh_boundary_mass=self.ns_bh_boundary_mass,
             )
 
             # And again with the nsbh flag
-            massRangeParams2 = pycbc.tmpltbank.massRangeParameters(
+            massRangeParams2 = pycbc.tmpltbank.MassRangeParameters(
                 self.min_mass1,
                 self.max_mass1,
                 self.min_mass2,
                 self.max_mass2,
-                maxNSSpinMag=self.max_ns_spin_mag,
-                maxBHSpinMag=self.max_bh_spin_mag,
-                maxTotMass=self.max_total_mass,
-                minTotMass=self.min_total_mass,
+                max_ns_spin_mag=self.max_ns_spin_mag,
+                max_bh_spin_mag=self.max_bh_spin_mag,
+                max_tot_mass=self.max_total_mass,
+                min_tot_mass=self.min_total_mass,
                 max_chirp_mass=self.max_chirp_mass,
                 min_chirp_mass=self.min_chirp_mass,
-                maxEta=self.max_eta,
-                minEta=self.min_eta,
-                nsbhFlag=True,
+                max_eta=self.max_eta,
+                min_eta=self.min_eta,
+                nsbh_flag=True,
             )
 
             mass1, mass2, spin1z, spin2z = pycbc.tmpltbank.get_random_mass(
@@ -454,7 +454,7 @@ class TmpltbankTestClass(unittest.TestCase):
 
     def test_chirp_params(self):
         chirps = pycbc.tmpltbank.get_chirp_params(
-            2.2, 1.8, 0.2, 0.3, self.metricParams.f0, self.metricParams.pnOrder
+            2.2, 1.8, 0.2, 0.3, self.metricParams.f0, self.metricParams.pn_order
         )
         fname = "stockChirps.dat.gz"
         apy_fname = get_file(DATA_FILE_URL.format(fname), cache=True)
@@ -497,11 +497,11 @@ class TmpltbankTestClass(unittest.TestCase):
             self.massRangeParams,
             self.metricParams,
             self.f_upper,
-            numJumpPoints=123,
-            chirpMassJumpFac=0.0002,
-            etaJumpFac=0.009,
-            spin1zJumpFac=0.1,
-            spin2zJumpFac=0.2,
+            num_jump_points=123,
+            chirp_mass_jump_fac=0.0002,
+            eta_jump_fac=0.009,
+            spin1z_jump_fac=0.1,
+            spin2z_jump_fac=0.2,
         )
 
     def test_get_phys_cov_masses(self):
@@ -622,7 +622,7 @@ class TmpltbankTestClass(unittest.TestCase):
             self.massRangeParams,
             self.metricParams,
             self.f_upper,
-            numIterations=50,
+            num_iterations=50,
         )
 
     def test_point_distance(self):
@@ -648,7 +648,7 @@ class TmpltbankTestClass(unittest.TestCase):
         s1z = 0.0
         s2z = 0.0
         # ethinca calc breaks unless f0 = fLow
-        self.metricParams.f0 = self.metricParams.fLow
+        self.metricParams.f0 = self.metricParams.f_low
         output = llw_output.calculate_ethinca_metric_comps(
             self.metricParams, self.ethincaParams, m1, m2, s1z, s2z
         )
