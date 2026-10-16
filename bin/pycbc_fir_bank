@@ -16,6 +16,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
+from scipy.fft import ifft, irfft, rfft
 from scipy.linalg import solve_toeplitz
 from tqdm import tqdm
 
@@ -29,14 +30,15 @@ logger = logging.getLogger(__name__)
 
 # --- GLOBAL WORKER STATE (Inherited via fork in worker processes) ---
 g_coarse_np, g_coarse_norm_sq, g_coarse_tau0 = None, None, None
+g_coarse_fit, g_coarse_map = None, None
 g_fine_bank, g_fine_tau0, g_cfg = None, None, None
-g_inv_psd, g_freqs, g_delta_f, g_fft_len, g_valid_band = None, None, None, None, None
+g_inv_psd, g_delta_f, g_fft_len, g_valid_band = None, None, None, None
 
 
 def init_level_state(fine_bank, psd, f_low, cfg):
     """Initialize spectral grid, inverse PSD weights, and bank state for a level."""
     global g_fine_bank, g_fine_tau0, g_cfg  # noqa: PLW0603
-    global g_inv_psd, g_freqs, g_delta_f, g_fft_len, g_valid_band  # noqa: PLW0603
+    global g_inv_psd, g_delta_f, g_fft_len, g_valid_band  # noqa: PLW0603
 
     g_cfg = cfg
     g_fine_bank = fine_bank
@@ -50,7 +52,6 @@ def init_level_state(fine_bank, psd, f_low, cfg):
     g_delta_f = float(psd.delta_f)
     psd_arr = psd.numpy().astype(np.float64)
     g_fft_len = 2 * (len(psd_arr) - 1)
-    g_freqs = np.arange(len(psd_arr)) * g_delta_f
 
     # Inverse PSD zeroed outside [f_low, Nyquist) so inner products need no slicing
     k_min, k_max = get_cutoff_indices(f_low, None, g_delta_f, g_fft_len)
@@ -64,64 +65,82 @@ def init_level_state(fine_bank, psd, f_low, cfg):
 def load_reference_templates(indices):
     """Generate reference waveforms and PSD norms for the given bank indices."""
     global g_coarse_np, g_coarse_norm_sq, g_coarse_tau0  # noqa: PLW0603
+    global g_coarse_fit, g_coarse_map  # noqa: PLW0603
 
     idx = np.asarray(indices, dtype=int)
     g_coarse_np = [g_fine_bank[int(i)].numpy().astype(complex) for i in idx]
-    g_coarse_norm_sq = [float(np.sum(np.abs(h) ** 2 * g_inv_psd)) for h in g_coarse_np]
+    g_coarse_norm_sq = [
+        float(np.dot(h.real**2 + h.imag**2, g_inv_psd)) for h in g_coarse_np
+    ]
     g_coarse_tau0 = g_fine_tau0[idx]
+    g_coarse_fit = [None] * len(idx)
+    g_coarse_map = {int(fine_i): k for k, fine_i in enumerate(idx)}
 
 
 def estimate_fir_taps(h1_np, h2_np):
     """Estimate required FIR taps via PSD-weighted group delay dispersion."""
-    h1_nz, h2_nz = np.abs(h1_np) > 0, np.abs(h2_np) > 0
+    h1_nz, h2_nz = h1_np != 0, h2_np != 0
     active = g_valid_band & h1_nz & h2_nz
     if np.count_nonzero(active) < 2 or np.any(g_valid_band & h2_nz & ~h1_nz):
         return np.inf
-    h1_b, h2_b = h1_np[active], h2_np[active]
-    w = (np.abs(h1_b) * np.abs(h2_b)) * g_inv_psd[active]
+    cross = h2_np[active] * np.conj(h1_np[active])
+    w = np.abs(cross) * g_inv_psd[active]
     w_sum = np.sum(w)
     if w_sum <= 0:
         return np.inf
     w /= w_sum
-    dphi = np.unwrap(np.angle(h2_b / h1_b))
+    dphi = np.unwrap(np.angle(cross))
     group_delay = -np.gradient(dphi, g_delta_f) / (2.0 * np.pi) * g_cfg["sample_rate"]
     std_delay = np.sqrt(np.sum((group_delay - np.sum(group_delay * w)) ** 2 * w))
     return 4.0 * std_delay
 
 
-def spectrum_to_correlation(spec, is_complex=False):
-    """Compute time-domain correlation from positive-frequency spectrum."""
-    if is_complex:
-        return np.fft.ifft(spec, n=g_fft_len) * g_fft_len
+def spectrum_to_correlation(spec):
+    """Compute real time-domain autocorrelation from positive-frequency weights."""
     half = np.array(spec, dtype=np.complex128, copy=True)
     half[0] *= 2.0
     half[-1] *= 2.0
-    return (0.5 * g_fft_len) * np.fft.irfft(half, n=g_fft_len)
+    return (0.5 * g_fft_len) * irfft(half, n=g_fft_len)
 
 
 def build_fit_problem(cand_idx, fine_np):
-    """Construct frequency-domain target ratio, weights, and sample shift."""
+    """Construct time-domain normal equations, PSD weights, and sample shift."""
     cand_idx = int(cand_idx)
-    ref_np, ref_norm_sq = g_coarse_np[cand_idx], g_coarse_norm_sq[cand_idx]
-    band = g_valid_band & (np.abs(ref_np) > 0)
+    ref_np = g_coarse_np[cand_idx]
+    sr = g_cfg["sample_rate"]
 
-    # Normalized PSD weights for the least-squares fit: |h_ref(f)|^2 / S_n(f)
-    w2 = np.where(band, np.abs(ref_np) ** 2 * g_inv_psd, 0.0)
-    w2_max = w2.max()
-    if w2_max <= 0:
+    # Cache reference-template PSD weights and autocorrelation on first use
+    ref_fit = g_coarse_fit[cand_idx]
+    if ref_fit is None:
+        band = g_valid_band & (ref_np != 0)
+        w2 = (ref_np.real**2 + ref_np.imag**2) * g_inv_psd
+        w2_max = float(w2.max())
+        if w2_max <= 0:
+            g_coarse_fit[cand_idx] = False
+            return None
+        w2 /= w2_max
+        ref_fit = {
+            "band": band,
+            "w2": w2,
+            "ref_weight": np.conj(ref_np) * (g_inv_psd * (sr / w2_max)),
+            "w2_sum": float(np.sum(w2)),
+            "typ_w2": float(np.median(w2[band])),
+            "w2_scale": float(w2_max / (sr**2)),
+            "r_base": spectrum_to_correlation(w2),
+        }
+        g_coarse_fit[cand_idx] = ref_fit
+    elif ref_fit is False:
         return None
-    w2 /= w2_max
 
-    ratio = np.zeros(len(ref_np), complex)
-    np.divide(fine_np, ref_np, out=ratio, where=band)
+    band, w2 = ref_fit["band"], ref_fit["w2"]
+    target_w2 = fine_np * ref_fit["ref_weight"]
 
     # Estimate bulk integer sample shift from PSD-weighted mean group delay
-    sr = g_cfg["sample_rate"]
     shift = 0
-    overlap_bins = np.flatnonzero(band & (np.abs(fine_np) > 0))
+    overlap_bins = np.flatnonzero(band & (fine_np != 0))
     if len(overlap_bins) >= 2 and w2[overlap_bins].sum() > 0:
         group_delay = (
-            -np.gradient(np.unwrap(np.angle(ratio[overlap_bins])), g_delta_f)
+            -np.gradient(np.unwrap(np.angle(target_w2[overlap_bins])), g_delta_f)
             / (2.0 * np.pi)
             * sr
         )
@@ -129,36 +148,31 @@ def build_fit_problem(cand_idx, fine_np):
             np.round(np.sum(group_delay * w2[overlap_bins]) / np.sum(w2[overlap_bins]))
         )
 
-    target = ratio * sr
-    if shift:
-        target = target * np.exp(1j * 2.0 * np.pi * g_freqs * shift / sr)
-
+    c_full = ifft(target_w2, n=g_fft_len) * g_fft_len
     return {
+        **ref_fit,
         "c_idx": cand_idx,
-        "h_ref": ref_np,
-        "band": band,
-        "w2": w2,
         "shift": shift,
-        "ref_norm_sq": ref_norm_sq,
-        "r_base": spectrum_to_correlation(w2),
-        "b_base": spectrum_to_correlation(target * w2, g_cfg["complex_taps"]),
+        "ref_norm_sq": g_coarse_norm_sq[cand_idx],
+        "c_full": c_full,
+        "b_base": c_full if g_cfg["complex_taps"] else c_full.real,
     }
 
 
-def evaluate_filter_fit(prob, n_taps, fine_np, fine_norm_sq):
+def evaluate_filter_fit(prob, n_taps, fine_norm_sq):
     """Design FIR filter via Toeplitz least-squares and evaluate match."""
     is_complex = g_cfg["complex_taps"]
     reg = g_cfg["reg"]
     sr = g_cfg["sample_rate"]
     band, w2 = prob["band"], prob["w2"]
+    w2_sum, typ_w2 = prob["w2_sum"], prob["typ_w2"]
     n_taps = min(int(n_taps), g_fft_len - 1)
     n_taps -= n_taps % 2 == 0
-    pos = (np.arange(n_taps) - n_taps // 2) % g_fft_len
-    b = prob["b_base"][pos]
+    pos_shifted = (np.arange(n_taps) - n_taps // 2 + prob["shift"]) % g_fft_len
+    b = prob["b_base"][pos_shifted]
+    c_pos = prob["c_full"][pos_shifted]
     fitted = band.copy()
     w2_cur = None
-    typ_w2 = float(np.median(w2[band]))
-    w2_sum = float(np.sum(w2[band]))
 
     # Solve Toeplitz normal equations and iteratively suppress out-of-band spikes
     for attempt in range(4):
@@ -173,18 +187,17 @@ def evaluate_filter_fit(prob, n_taps, fine_np, fine_norm_sq):
         )
 
         if is_complex:
-            w_re, w_im = np.zeros(g_fft_len), np.zeros(g_fft_len)
-            w_re[pos], w_im[pos] = taps_arr.real, taps_arr.imag
-            resp = (np.fft.rfft(w_re), np.fft.rfft(w_im))
-            mags = np.maximum(np.abs(resp[0]), np.abs(resp[1]))
+            resp_re = rfft(taps_arr.real.astype(np.float64), n=g_fft_len)
+            resp_im = rfft(taps_arr.imag.astype(np.float64), n=g_fft_len)
+            mags2_re = resp_re.real**2 + resp_re.imag**2
+            mags2_im = resp_im.real**2 + resp_im.imag**2
+            mags2 = np.maximum(mags2_re, mags2_im)
         else:
-            wave = np.zeros(g_fft_len)
-            wave[pos] = taps_arr
-            resp = np.fft.rfft(wave)
-            mags = np.abs(resp)
+            resp = rfft(taps_arr.astype(np.float64), n=g_fft_len)
+            mags2 = resp.real**2 + resp.imag**2
 
-        cap = 10.0 * np.sqrt(np.sum(w2[band] * mags[band] ** 2) / w2_sum)
-        bad = (mags > cap) & ~fitted
+        w2_mags2 = float(np.dot(w2, mags2))
+        bad = (mags2 > 100.0 * (w2_mags2 / w2_sum)) & ~fitted
         if not np.any(bad) or attempt == 3:
             break
         if w2_cur is None:
@@ -193,26 +206,23 @@ def evaluate_filter_fit(prob, n_taps, fine_np, fine_norm_sq):
         fitted |= bad
 
     # Evaluate PSD-weighted overlap and normalize taps to preserve template norm
-    phase = (
-        np.exp(-1j * 2.0 * np.pi * g_freqs * prob["shift"] / sr)
-        if prob["shift"]
-        else 1.0
-    )
+    w2_scale = prob["w2_scale"]
 
-    def _eval_branch(r_spec):
-        rec = prob["h_ref"] * (r_spec / sr) * phase
-        rec_norm_sq = float(np.sum((rec.real**2 + rec.imag**2) * g_inv_psd))
+    def _eval_branch(taps_branch, branch_mags2_sum):
+        rec_norm_sq = branch_mags2_sum * w2_scale
         if rec_norm_sq <= 0:
             return 0.0, 0.0
-        ip = np.sum(np.conj(fine_np) * rec * g_inv_psd)
+        ip = np.vdot(c_pos, taps_branch) * w2_scale
         num = float(np.real(ip)) if is_complex else float(abs(ip))
         return num / float(np.sqrt(rec_norm_sq * fine_norm_sq)), rec_norm_sq
 
     norm_scale = (1.0 / sr) if g_cfg["scale_by_sr"] else 1.0
     ref_norm_sq = prob["ref_norm_sq"]
     if is_complex:
-        m_re, rec_norm_sq = _eval_branch(resp[0])
-        m_im, rec_im_norm_sq = _eval_branch(1j * resp[1])
+        m_re, rec_norm_sq = _eval_branch(taps_arr.real, float(np.dot(w2, mags2_re)))
+        m_im, rec_im_norm_sq = _eval_branch(
+            1j * taps_arr.imag, float(np.dot(w2, mags2_im))
+        )
         if rec_norm_sq > 0 and rec_im_norm_sq > 0:
             taps_arr.real *= np.float32(np.sqrt(ref_norm_sq / rec_norm_sq) * norm_scale)
             taps_arr.imag *= np.float32(
@@ -222,7 +232,7 @@ def evaluate_filter_fit(prob, n_taps, fine_np, fine_norm_sq):
         else:
             overlap = 0.0
     else:
-        overlap, rec_norm_sq = _eval_branch(resp)
+        overlap, rec_norm_sq = _eval_branch(taps_arr, w2_mags2)
         if rec_norm_sq > 0:
             taps_arr *= np.float32(np.sqrt(ref_norm_sq / rec_norm_sq) * norm_scale)
 
@@ -243,8 +253,12 @@ def evaluate_filter_fit(prob, n_taps, fine_np, fine_norm_sq):
 def process_template(task):
     """Match fine waveform to best coarse parent and determine minimal FIR taps."""
     fine_idx, excluded = task if isinstance(task, tuple) else (task, None)
-    fine_np = g_fine_bank[fine_idx].numpy().astype(complex)
-    fine_norm_sq = float(np.sum(np.abs(fine_np) ** 2 * g_inv_psd))
+    ref_slot = g_coarse_map.get(int(fine_idx)) if g_coarse_map is not None else None
+    if ref_slot is not None:
+        fine_np, fine_norm_sq = g_coarse_np[ref_slot], g_coarse_norm_sq[ref_slot]
+    else:
+        fine_np = g_fine_bank[fine_idx].numpy().astype(complex)
+        fine_norm_sq = float(np.dot(fine_np.real**2 + fine_np.imag**2, g_inv_psd))
 
     # Pre-filter candidate parents by chirp-time proximity and estimated tap count
     allowed = np.arange(len(g_coarse_np))
@@ -271,14 +285,14 @@ def process_template(task):
         prob = build_fit_problem(cand_idx, fine_np)
         if prob is None:
             continue
-        ok, rec = evaluate_filter_fit(prob, top, fine_np, fine_norm_sq)
+        ok, rec = evaluate_filter_fit(prob, top, fine_norm_sq)
         if not ok:
             continue
         best = rec
         lo_idx, hi_idx = 0, (top - 1) // 2
         while lo_idx < hi_idx:
             mid_idx = (lo_idx + hi_idx) // 2
-            ok, rec = evaluate_filter_fit(prob, 2 * mid_idx + 1, fine_np, fine_norm_sq)
+            ok, rec = evaluate_filter_fit(prob, 2 * mid_idx + 1, fine_norm_sq)
             if ok:
                 hi_idx, best = mid_idx, rec
             else:
@@ -304,7 +318,6 @@ def _seed_worker(indices):
                     and evaluate_filter_fit(
                         prob,
                         max_taps,
-                        g_coarse_np[cand_idx],
                         g_coarse_norm_sq[cand_idx],
                     )[0]
                 ):
@@ -459,7 +472,14 @@ def main():
                 if not children:
                     continue
                 excluded = frozenset(unused | removed | {parent})
+                seed_child = int(seed_local[parent])
                 reassignments, absorbed = {}, True
+                if seed_child in children:
+                    _, seed_rec = process_template((seed_child, excluded))
+                    if seed_rec is None:
+                        continue
+                    reassignments[seed_child] = seed_rec
+                    children.remove(seed_child)
                 for c_idx, rec in pool.imap_unordered(
                     process_template, [(c, excluded) for c in children], chunksize=1
                 ):
