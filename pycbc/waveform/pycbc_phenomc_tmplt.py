@@ -15,6 +15,8 @@
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
+# Physics notation throughout; this module is expected to be removed soon.
+# ruff: noqa: N802, N803, N806, N816
 
 import numpy
 from numpy import log, sqrt
@@ -130,7 +132,7 @@ phenomC_kernel = ElementwiseKernel(
 )
 
 
-def FinalSpin(Xi, eta):  # noqa: N802
+def FinalSpin(Xi, eta):
     """Computes the spin of the final BH that gets formed after merger. This is done usingn Eq 5-6 of arXiv:0710.3345"""
     s4 = -0.129
     s5 = -0.384
@@ -153,7 +155,7 @@ def FinalSpin(Xi, eta):  # noqa: N802
     return finspin
 
 
-def fRD(a, M):  # noqa: N802
+def fRD(a, M):
     """Calculate the ring-down frequency for the final Kerr BH. Using Eq. 5.5 of Main paper"""
     f = (C_SI**3.0 / (2.0 * PI * G_SI * M * MSUN_SI)) * (
         1.5251 - 1.1568 * (1.0 - a) ** 0.1292
@@ -161,7 +163,7 @@ def fRD(a, M):  # noqa: N802
     return f
 
 
-def Qa(a):  # noqa: N802
+def Qa(a):
     """Calculate the quality factor of ring-down, using Eq 5.6 of Main paper"""
     return 0.7 + 1.4187 * (1.0 - a) ** -0.4990
 
