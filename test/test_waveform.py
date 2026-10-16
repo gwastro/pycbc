@@ -34,7 +34,7 @@ from utils import parse_args_all_schemes, simple_exit
 
 from pycbc.scheme import CPUScheme
 from pycbc.types import Array, complex64, zeros
-from pycbc.waveform import (
+from pycbc.waveform import (generator,
     get_fd_waveform,
     get_fd_waveform_sequence,
     get_td_waveform,
