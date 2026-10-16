@@ -369,31 +369,14 @@ def main():
     pycbc.init_logging(args.verbose)
     df_1 = float(args.delta_f[0])
     flen_1 = round((args.sample_rate / 2.0) / df_1) + 1
-    try:
-        fine_bank = FilterBank(
-            args.fine_bank,
-            flen_1,
-            df_1,
-            dtype=complex,
-            enable_compressed_waveforms=False,
-        )
-        if args.f_low is not None:
-            fine_bank.table["f_lower"][:] = np.maximum(
-                fine_bank.table["f_lower"], args.f_low
-            )
-            fine_bank.min_f_lower = float(np.min(fine_bank.table["f_lower"]))
-    except (AttributeError, ValueError):
-        if args.f_low is None:
-            sys.exit("Error: --f-low is required when bank has no f_lower column")
-        fine_bank = FilterBank(
-            args.fine_bank,
-            flen_1,
-            df_1,
-            dtype=complex,
-            low_frequency_cutoff=args.f_low,
-            enable_compressed_waveforms=False,
-        )
-        fine_bank.f_lower = None
+    fine_bank = FilterBank(
+        args.fine_bank,
+        flen_1,
+        df_1,
+        dtype=complex,
+        low_frequency_cutoff=args.f_low,
+        enable_compressed_waveforms=False,
+    )
 
     out_file = fine_bank.write_to_hdf(
         args.output_file, force=True, write_compressed_waveforms=True

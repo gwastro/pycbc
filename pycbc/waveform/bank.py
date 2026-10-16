@@ -1255,14 +1255,9 @@ class RatioFilterBank(FilterBank):
             delta_f,
             dtype,
             approximant=approximant,
-            low_frequency_cutoff=None,
+            low_frequency_cutoff=low_frequency_cutoff,
             **kwds,
         )
-        if low_frequency_cutoff is not None:
-            self.table["f_lower"][:] = np.maximum(
-                self.table["f_lower"], low_frequency_cutoff
-            )
-            self.min_f_lower = float(np.min(self.table["f_lower"]))
 
         if "fir_data" not in self.filehandler:
             raise ValueError(
