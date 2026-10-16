@@ -25,7 +25,6 @@ pycbc_fir_bank \
     --output-file fir_full_bank.hdf \
     --psd-model aLIGOZeroDetHighPower \
     --sample-rate 2048 \
-    --f-low 20.0 \
     --max-taps ${MAX_TAPS:-1501} \
     --min-match ${MIN_MATCH:-0.99999} \
     --delta-f ${DELTA_F:-0.5} \

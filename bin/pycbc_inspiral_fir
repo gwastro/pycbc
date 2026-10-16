@@ -361,6 +361,7 @@ def main():
 
         flen = strain_segments.freq_len
         delta_f = strain_segments.delta_f
+        flow = args.low_frequency_cutoff
 
         # --- 4. Initialize Classes ---
         logger.info("Initializing Ratio Filter Bank...")
@@ -369,9 +370,7 @@ def main():
             filter_length=flen,
             delta_f=delta_f,
             dtype=np.complex64,
-            low_frequency_cutoff=args.low_frequency_cutoff,
         )
-        flow = bank.min_f_lower
         bank.template_thinning(inj_filter_rejector)
 
         logger.info("Initializing Ratio Filter Engine...")

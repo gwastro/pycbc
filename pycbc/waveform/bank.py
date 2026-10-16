@@ -1232,31 +1232,16 @@ class RatioFilterBank(FilterBank):
         Data type for the waveforms (usually complex64).
     approximant : str, optional
         Approximant used for the waveforms.
-    low_frequency_cutoff : float, optional
-        Low-frequency cutoff floor applied to per-template `f_lower`.
     **kwds :
         Additional arguments passed to FilterBank/TemplateBank.
 
     """
 
     def __init__(
-        self,
-        filename,
-        filter_length,
-        delta_f,
-        dtype,
-        approximant=None,
-        low_frequency_cutoff=None,
-        **kwds,
+        self, filename, filter_length, delta_f, dtype, approximant=None, **kwds
     ):
         super().__init__(
-            filename,
-            filter_length,
-            delta_f,
-            dtype,
-            approximant=approximant,
-            low_frequency_cutoff=low_frequency_cutoff,
-            **kwds,
+            filename, filter_length, delta_f, dtype, approximant=approximant, **kwds
         )
 
         if "fir_data" not in self.filehandler:

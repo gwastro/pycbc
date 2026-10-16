@@ -322,14 +322,6 @@ def main():
         "--delta-f", nargs="+", type=float, required=True, help="Delta-f per level."
     )
     parser.add_argument(
-        "--f-low",
-        "--low-frequency-cutoff",
-        dest="f_low",
-        type=float,
-        default=None,
-        help="Low frequency cutoff floor (defaults to per-template f_lower in bank).",
-    )
-    parser.add_argument(
         "--f-high",
         "--high-frequency-cutoff",
         dest="f_high",
@@ -374,7 +366,6 @@ def main():
         flen_1,
         df_1,
         dtype=complex,
-        low_frequency_cutoff=args.f_low,
         enable_compressed_waveforms=False,
     )
 
