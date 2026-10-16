@@ -28,6 +28,7 @@
 import itertools
 import logging
 import sys
+import argparse
 
 import matplotlib
 import numpy
@@ -46,7 +47,7 @@ from pycbc.workflow import WorkflowConfigParser
 use("agg")
 
 # add options to command line
-parser = io.ResultsArgumentParser()
+parser = io.ResultsArgumentParser(defaultparams="sampled")
 pycbc.add_common_pycbc_options(parser)
 # program-specific
 parser.add_argument("--output-file", type=str, required=True, help="Output plot path.")
@@ -66,7 +67,9 @@ parser.add_argument(
     "--colors-multi-run",
     nargs="+",
     type=str,
-    help="For multiple runs, provide colours to be used for successively. Default setting is to use the successive colours specified in matplotlib color cycle.",
+    help="For multiple runs, provide colours to be used for successively. "
+         "Default setting is to use the successive colours specified "
+         "in matplotlib color cycle.",
 )
 parser.add_argument(
     "--fill-hist",
@@ -88,6 +91,7 @@ option_utils.add_plot_posterior_option_group(parser)
 option_utils.add_scatter_option_group(parser)
 # density configuration
 option_utils.add_density_option_group(parser)
+
 parser.add_argument(
     "--plot-maxl",
     action="store_true",
@@ -114,6 +118,7 @@ parser.add_argument(
 parser.add_argument(
     "--dpi", type=int, default=200, help="Set the DPI of the plot. Default is 200."
 )
+
 # style option
 add_style_opt_to_parser(parser)
 
@@ -146,14 +151,12 @@ if opts.plot_maxl:
 else:
     add_logl = False
 
-
 # parse legend bbox
 def parse_tuple(value):
     try:
         return tuple(map(float, value.strip("()").split(",")))
     except Exception as e:
         raise argparse.ArgumentTypeError(f"Invalid tuple format: {value}") from e
-
 
 opts.legend_bbox_to_anchor = parse_tuple(opts.legend_bbox_to_anchor)
 
