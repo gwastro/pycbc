@@ -286,7 +286,7 @@ if not cat_params:
         def to_input_func(match):
             name = match.group()
             func = input_funcs.get(name, name)
-            return name if func == name else "({})".format(func)
+            return name if func == name else f"({func})"
 
         # matches identifiers (e.g., 'q' in 'q*2'), but not attributes or
         # exponents (e.g., 'bar' in 'foo.bar' or 'e5' in '1e5')

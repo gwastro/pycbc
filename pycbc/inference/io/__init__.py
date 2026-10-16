@@ -22,12 +22,11 @@ import os
 import shutil
 import textwrap
 import numpy
-import logging
 import h5py as _h5py
+from pycbc.io.hdf import (dump_state, load_state)
 from pycbc.io.record import (FieldArray, _numpy_function_lib,
                              get_vars_from_arg)
 from pycbc import waveform as _waveform
-from pycbc.io.hdf import (dump_state, load_state)
 from pycbc.inference.option_utils import ParseLabelArg, ParseParametersArg
 
 from .cpnest import CPNestFile
@@ -320,7 +319,7 @@ def get_sampled_parameters(fp):
     samples = set(fp[fp.samples_group].keys())
     variable_params = set(fp.variable_params)
     parameters = variable_params & samples
-    for func, param in fp.attrs.get('remapped_params', []):
+    for func, param in fp.attrs.get("remapped_params", []):
         if param in samples and get_vars_from_arg(func) & variable_params:
             parameters.add(param)
     return parameters
@@ -357,7 +356,7 @@ def get_common_parameters(input_files, collection=None):
         fp = loadfile(fn, "r")
         if collection == "all":
             ps = fp[fp.samples_group].keys()
-        elif collection == 'sampled':
+        elif collection == "sampled":
             ps = get_sampled_parameters(fp)
         else:
             ps = fp.attrs[collection]
