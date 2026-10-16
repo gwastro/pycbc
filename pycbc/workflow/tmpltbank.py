@@ -37,7 +37,6 @@ import pycbc
 from pycbc.workflow.core import (
     Executable,
     FileList,
-    make_analysis_dir,
     resolve_url_to_file,
 )
 from pycbc.workflow.jobsetup import select_tmpltbank_class, sngl_ifo_job_setup
@@ -85,7 +84,6 @@ def setup_tmpltbank_workflow(
     if tags is None:
         tags = []
     logger.info("Entering template bank generation module.")
-    make_analysis_dir(output_dir)
     cp = workflow.cp
 
     # Parse for options in ini file

@@ -31,7 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 import logging
 import os
 
-from pycbc.workflow.core import FileList, make_analysis_dir
+from pycbc.workflow.core import FileList
 from pycbc.workflow.jobsetup import (
     multi_ifo_coherent_job_setup,
     select_matchedfilter_class,
@@ -93,7 +93,6 @@ def setup_matchedfltr_workflow(
     if tags is None:
         tags = []
     logger.info("Entering matched-filtering setup module.")
-    make_analysis_dir(output_dir)
     cp = workflow.cp
 
     # Parse for options in .ini file
