@@ -87,7 +87,6 @@ class MatchedFilterRatioControl:
         """
         Prepare frequency-domain filters for a batch of taps.
         """
-        self.is_complex = np.iscomplexobj(fir_taps)
         n_filters, n_taps = fir_taps.shape
         if n_taps >= self.tap_fft_len:
             raise ValueError(
@@ -123,10 +122,7 @@ class MatchedFilterRatioControl:
             h_norm=h_norm,
         )
 
-        ref_snr = snr.numpy()
-        if getattr(self, "is_complex", False):
-            ref_snr = ref_snr.real
-        self.ref_snr = ref_snr * (norm * stilde.delta_t)
+        self.ref_snr = snr.numpy() * (norm * stilde.delta_t)
 
         local_idxs, t_idxs, snr_vals, tstarts = self._execute_blocked_kernel(
             self.ref_snr, filters_f, n_taps, valid_slice
