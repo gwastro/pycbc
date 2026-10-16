@@ -17,7 +17,6 @@
 """Calculate the fitting factors of simulated signals with a template bank."""
 
 import logging
-import os
 from argparse import ArgumentParser
 from math import ceil, log
 
