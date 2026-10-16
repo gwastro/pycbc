@@ -29,9 +29,7 @@ from pycbc.detector import Detector, get_available_detectors
 from pycbc.inject import InjectionSet
 from pycbc.waveform import get_td_waveform
 from pycbc.io import FieldArray
-import unittest
 import numpy
-import itertools
 from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
