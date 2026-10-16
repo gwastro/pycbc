@@ -59,8 +59,6 @@ from .spa_tmplt import (
     spa_tmplt_precondition,
 )
 
-import warnings
-
 class NoWaveformError(Exception):
     """
     This should be raised if generating a waveform would just result in all
