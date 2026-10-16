@@ -19,7 +19,7 @@ probability density function of distributions.
 """
 
 # imports needed for functions below
-import configparser as _ConfigParser
+import configparser as _configparser
 
 from pycbc import VARARGS_DELIM as _VARARGS_DELIM
 from pycbc.distributions import constraints
@@ -183,7 +183,7 @@ def read_params_from_config(
                 for key in cp.options(sargs_section)
             ]
         )
-    except _ConfigParser.NoSectionError:
+    except _configparser.NoSectionError:
         static_args = {}
     # sanity check that each parameter in [variable_args]
     # is not repeated in [static_args]

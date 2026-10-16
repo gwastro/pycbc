@@ -63,9 +63,9 @@ class TestIOHDF(unittest.TestCase):
                 grp.create_dataset("b", data=np.arange(8) * 10)
 
             # Use the FileData class from the module under test
-            from pycbc.io.hdf import FileData as FD
+            from pycbc.io.hdf import FileData
 
-            fdata = FD(p)
+            fdata = FileData(p)
 
             # Before setting filter_func, accessing mask should raise
             with self.assertRaises(RuntimeError):

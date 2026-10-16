@@ -32,7 +32,7 @@ import pycbc
 use("agg")
 from shutil import which
 
-from mpi4py import MPI as mpi
+from mpi4py import MPI
 
 import pycbc.waveform.bank
 from pycbc import conversions as conv
@@ -112,7 +112,7 @@ class LiveEventManager:
         self.trigg_ifos = self.ifos - self.skymap_only_ifos
 
         # Figure out what we are supposed to process within the pool of MPI processes
-        self.comm = mpi.COMM_WORLD
+        self.comm = MPI.COMM_WORLD
         self.size = self.comm.Get_size()
         self.rank = self.comm.Get_rank()
 
@@ -177,7 +177,7 @@ class LiveEventManager:
         self.comm.Barrier()
 
     def barrier_status(self, status):
-        return self.comm.allreduce(status, op=mpi.LAND)
+        return self.comm.allreduce(status, op=MPI.LAND)
 
     def gather_results(self):
         """
@@ -1348,7 +1348,7 @@ if not args.enable_gracedb_upload and args.enable_single_detector_upload:
 # hostname of the originating node and the MPI rank of the originating process
 pycbc.init_logging(
     args.verbose,
-    format=f"%(asctime)s {platform.node()} {mpi.COMM_WORLD.Get_rank()} %(message)s",
+    format=f"%(asctime)s {platform.node()} {MPI.COMM_WORLD.Get_rank()} %(message)s",
 )
 
 ctx = scheme.from_cli(args)
