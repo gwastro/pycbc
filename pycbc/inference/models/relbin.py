@@ -894,7 +894,6 @@ class RelativeTime(Relative):
                                        sdat["a1"],
                                        sdat["b0"],
                                        sdat["b1"])
->>>>>>> c69c5dfc0 (generalize rf changes to the rest of the generators and the inference models)
             else:
                 f = (fp + 1.0j * fc) * det_pol_phase
                 fp = f.real.copy()
