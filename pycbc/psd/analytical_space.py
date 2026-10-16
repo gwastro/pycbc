@@ -361,7 +361,7 @@ def omega_length(f, len_arm=None):
     return omega_len
 
 
-def _analytical_psd_tdi_XYZ(
+def _analytical_psd_tdi_XYZ(  # noqa: N802
     length, delta_f, low_freq_cutoff, len_arm=None, psd_components=None, tdi=None
 ):
     """
@@ -412,7 +412,7 @@ def _analytical_psd_tdi_XYZ(
     return fseries
 
 
-def analytical_psd_lisa_tdi_XYZ(
+def analytical_psd_lisa_tdi_XYZ(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -460,7 +460,7 @@ def analytical_psd_lisa_tdi_XYZ(
     return fseries
 
 
-def analytical_psd_tianqin_tdi_XYZ(
+def analytical_psd_tianqin_tdi_XYZ(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -511,7 +511,7 @@ def analytical_psd_tianqin_tdi_XYZ(
     return fseries
 
 
-def analytical_psd_taiji_tdi_XYZ(
+def analytical_psd_taiji_tdi_XYZ(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -561,7 +561,7 @@ def analytical_psd_taiji_tdi_XYZ(
     return fseries
 
 
-def _analytical_csd_tdi_XY(
+def _analytical_csd_tdi_XY(  # noqa: N802
     length, delta_f, low_freq_cutoff, len_arm=None, psd_components=None, tdi=None
 ):
     """
@@ -607,7 +607,7 @@ def _analytical_csd_tdi_XY(
     return fseries
 
 
-def analytical_csd_lisa_tdi_XY(
+def analytical_csd_lisa_tdi_XY(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -655,7 +655,7 @@ def analytical_csd_lisa_tdi_XY(
     return fseries
 
 
-def _analytical_psd_tdi_AE(
+def _analytical_psd_tdi_AE(  # noqa: N802
     length, delta_f, low_freq_cutoff, len_arm=None, psd_components=None, tdi=None
 ):
     """
@@ -708,7 +708,7 @@ def _analytical_psd_tdi_AE(
     return fseries
 
 
-def analytical_psd_lisa_tdi_AE(
+def analytical_psd_lisa_tdi_AE(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -756,7 +756,7 @@ def analytical_psd_lisa_tdi_AE(
     return fseries
 
 
-def analytical_psd_tianqin_tdi_AE(
+def analytical_psd_tianqin_tdi_AE(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -807,7 +807,7 @@ def analytical_psd_tianqin_tdi_AE(
     return fseries
 
 
-def analytical_psd_taiji_tdi_AE(
+def analytical_psd_taiji_tdi_AE(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -857,7 +857,7 @@ def analytical_psd_taiji_tdi_AE(
     return fseries
 
 
-def _analytical_psd_tdi_T(
+def _analytical_psd_tdi_T(  # noqa: N802
     length, delta_f, low_freq_cutoff, len_arm=None, psd_components=None, tdi=None
 ):
     """
@@ -908,7 +908,7 @@ def _analytical_psd_tdi_T(
     return fseries
 
 
-def analytical_psd_lisa_tdi_T(
+def analytical_psd_lisa_tdi_T(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -956,7 +956,7 @@ def analytical_psd_lisa_tdi_T(
     return fseries
 
 
-def analytical_psd_tianqin_tdi_T(
+def analytical_psd_tianqin_tdi_T(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -1007,7 +1007,7 @@ def analytical_psd_tianqin_tdi_T(
     return fseries
 
 
-def analytical_psd_taiji_tdi_T(
+def analytical_psd_taiji_tdi_T(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -1828,7 +1828,7 @@ def sensitivity_curve_taiji_confusion(
     return fseries
 
 
-def sh_transformed_psd_lisa_tdi_XYZ(
+def sh_transformed_psd_lisa_tdi_XYZ(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -2053,7 +2053,7 @@ def analytical_psd_taiji_confusion_noise(
     return fseries
 
 
-def analytical_psd_lisa_tdi_AE_confusion(
+def analytical_psd_lisa_tdi_AE_confusion(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -2107,7 +2107,7 @@ def analytical_psd_lisa_tdi_AE_confusion(
     return fseries
 
 
-def analytical_psd_tianqin_tdi_AE_confusion(
+def analytical_psd_tianqin_tdi_AE_confusion(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
@@ -2161,7 +2161,7 @@ def analytical_psd_tianqin_tdi_AE_confusion(
     return fseries
 
 
-def analytical_psd_taiji_tdi_AE_confusion(
+def analytical_psd_taiji_tdi_AE_confusion(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
