@@ -631,32 +631,38 @@ class Relative(DistMarg, BaseGaussianNoise):
                         fc = numpy.zeros(times.shape)
                         dt = numpy.zeros(times.shape)
                     else:
-                        fp, fc, dt = 1., 0., 0.
+                        fp, fc, dt = 1.0, 0.0, 0.0
                     det_pol_phase = numpy.ones_like(pol_phase)
                 else:
-                    fp, fc = det.antenna_pattern(p["ra"],
-						 p["dec"],
-                                                 0.0,
-						 times)
-                    dt = det.time_delay_from_earth_center(p["ra"],
-							  p["dec"],
-                                                          times)
+                    fp, fc = det.antenna_pattern(
+                        p["ra"],
+                        p["dec"],
+                        0.0,
+                        times
+                    )
+                    dt = det.time_delay_from_earth_center(
+                        p["ra"],
+                        p["dec"],
+                        times
+                    )
                     det_pol_phase = pol_phase
                 dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
                 if self.lformat == "earth_pol":
-                    filter_i, norm_i = lik(freqs,
-					   fp,
-					   fc,
-					   dtc,
-					   det_pol_phase,
-                                           hp,
-					   hc,
-					   h00,
-                                           sdat["a0"],
-					   sdat["a1"],
-                                           sdat["b0"],
-					   sdat["b1"])
+                    filter_i, norm_i = lik(
+                        freqs,
+                        fp,
+                        fc,
+                        dtc,
+                        det_pol_phase,
+                        hp,
+                        hc,
+                        h00,
+                        sdat["a0"],
+                        sdat["a1"],
+                        sdat["b0"],
+                        sdat["b1"]
+                    )
                 else:
                     f = (fp + 1.0j * fc) * det_pol_phase
                     fp = f.real.copy()
@@ -878,27 +884,36 @@ class RelativeTime(Relative):
                 times = numpy.zeros_like(times)
                 det_pol_phase = numpy.ones_like(pol_phase)
             else:
-                fp, fc = det.antenna_pattern(p["ra"], p["dec"],
-                                             0, times)
-                times = det.time_delay_from_earth_center(p["ra"], p["dec"],
-                                                         times)
+                fp, fc = det.antenna_pattern(
+                    p["ra"],
+                    p["dec"],
+                    0,
+                    times
+                )
+                times = det.time_delay_from_earth_center(
+                    p["ra"],
+                    p["dec"],
+                    times
+                )
                 det_pol_phase = pol_phase
             dtc = p["tc"] - end_time - self.ta[ifo]
 
             if self.lformat == "earth_time_pol":
-                filter_i, norm_i = lik(freqs,
-				       fp,
-				       fc,
-                                       times,
-                                       dtc,
-                                       det_pol_phase,
-                                       hp,
-                                       hc,
-                                       h00,
-                                       sdat["a0"],
-                                       sdat["a1"],
-                                       sdat["b0"],
-                                       sdat["b1"])
+                filter_i, norm_i = lik(
+                    freqs,
+                    fp,
+                    fc,
+                    times,
+                    dtc,
+                    det_pol_phase,
+                    hp,
+                    hc,
+                    h00,
+                    sdat["a0"],
+                    sdat["a1"],
+                    sdat["b0"],
+                    sdat["b1"]
+                )
             else:
                 f = (fp + 1.0j * fc) * det_pol_phase
                 fp = f.real.copy()
@@ -983,7 +998,9 @@ class RelativeTimeDom(RelativeTime):
             start = self.tstart[ifo] - delta_t * 2.0
             sh, hh = self.sh_series(ifo, wfs, start, delta_t, self.num_samples[ifo] + 4)
             snr = TimeSeries(
-                abs(sh[2:-2]) / hh**0.5, delta_t=delta_t, epoch=self.tstart[ifo]
+                abs(sh[2:-2]) / hh**0.5,
+                delta_t=delta_t,
+                epoch=self.tstart[ifo]
             )
             self.sh[ifo] = TimeSeries(sh, delta_t=delta_t, epoch=start)
             self.hh[ifo] = hh
@@ -1040,20 +1057,28 @@ class RelativeTimeDom(RelativeTime):
                 fp, fc = 1., 0.
                 det_pol_phase = numpy.ones_like(pol_phase)
             else:
-                dt = self.det[ifo].time_delay_from_earth_center(p["ra"],
-                                                                p["dec"],
-                                                                p["tc"])
-                fp, fc = self.det[ifo].antenna_pattern(p["ra"],
-						       p["dec"],
-                                                       0,
-						       p["tc"])
+                dt = self.det[ifo].time_delay_from_earth_center(
+                    p["ra"],
+                    p["dec"],
+                    p["tc"]
+                )
+                fp, fc = self.det[ifo].antenna_pattern(
+                    p["ra"],
+                    p["dec"],
+                    0,
+                    p["tc"]
+                )
                 det_pol_phase = pol_phase
             dts = p["tc"] + dt
             f = (fp + 1.0j * fc) * det_pol_phase
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = f.real * ip + 1.0j * f.imag * ic
-            sh = self.sh[ifo].at_time(dts, interpolate="quadratic", extrapolate=0.0j)
+            sh = self.sh[ifo].at_time(
+                dts,
+                interpolate="quadratic",
+                extrapolate=0.0j
+            )
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 

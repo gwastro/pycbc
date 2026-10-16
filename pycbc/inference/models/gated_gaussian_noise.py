@@ -558,8 +558,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 # if sampling in another detector convert to geocentric
                 rfstart = gatestart
                 rfend = gateend
-                refdet = self.current_params.get('tc_ref_frame', 'geocentric')
-                if refdet not in ('geocentric', 'RF'):
+                refdet = self.current_params.get("tc_ref_frame", "geocentric")
+                if refdet not in ("geocentric", "RF"):
                     refdet = Detector(refdet)
                     rfstart -= refdet.time_delay_from_earth_center(
                         ra, dec, gatestart)
@@ -1007,7 +1007,8 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         )
         # the polarization parameters
         self.polarization_samples = polarization_samples
-        self.pol = numpy.linspace(0, 2 * numpy.pi, self.polarization_samples)
+        self.pol = numpy.linspace(0, 2 * numpy.pi, self.polarization_samples,
+                                  endpoint=False)
         self.dets = {}
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
@@ -1017,10 +1018,10 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             recalibration=self.recalibration,
             generator_class=generator.FDomainDetFrameTwoPolGenerator,
             **self.static_params
-	    )
+            )
         # if sampling *only* in radiation frame, the gated_gaussian_noise model
         # is strictly better; refer the user to that model
-        if set(data) == {'RF'}:
+        if set(data) == {"RF"}:
             raise ValueError("The only detector requested is the radiation "
                              "frame (RF). This is strictly slower and more "
                              "expensive than using the unmarginalized model. "
@@ -1416,7 +1417,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         hsd = 0.0
         dd = 0.0
         for det in self.det_names:
-            if det not in self.dets and det != 'RF':
+            if det not in self.dets and det != "RF":
                 self.dets[det] = Detector(det)
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
@@ -1792,7 +1793,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
                 scale_factors[mode] *= scale_factors[rf]
             setattr(self._current_stats, f"scale_factor_{mode}", scale_factors[mode])
         for det in self.det_names:
-            if det not in self.dets and det != 'RF':
+            if det not in self.dets and det != "RF":
                 self.dets[det] = Detector(det)
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
