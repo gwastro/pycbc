@@ -496,7 +496,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
         self.dets = {}
         # if sampling *only* in radiation frame, the gaussian_noise model is
         # strictly better; refer the user to that model
-        if set(data) == {'RF'}:
+        if set(data) == {"RF"}:
             raise ValueError("The only detector requested is the radiation "
                              "frame (RF). This is strictly slower and more "
                              "expensive than using the unmarginalized model. "
