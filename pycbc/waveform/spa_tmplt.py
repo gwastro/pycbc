@@ -39,7 +39,8 @@ lal = import_optional("lal")
 lalsimulation = import_optional("lalsimulation")
 
 
-def findchirp_chirptime(m1, m2, fLower, porder=-1, s1z=0.0, s2z=0.0):
+# fLower is kept: external code (e.g. the pycbc-bbhx-plugin) passes it by keyword.
+def findchirp_chirptime(m1, m2, fLower, porder=-1, s1z=0.0, s2z=0.0):  # noqa: N803
     """
     Estimate the chirp time, i.e. the time from ``fLower`` to coalescence,
     of a TaylorF2 / stationary-phase-approximation waveform.

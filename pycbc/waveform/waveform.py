@@ -1483,14 +1483,14 @@ def td_waveform_to_fd_waveform(waveform, out=None, length=None, buffer_length=10
     # for IMR templates the zero of time is at max amplitude (merger)
     # thus the start time is minus the duration of the template from
     # lower frequency cutoff to merger, i.e. minus the 'chirp time'
-    tChirp = -float(waveform.start_time)  # conversion from LIGOTimeGPS
+    t_chirp = -float(waveform.start_time)  # conversion from LIGOTimeGPS
     waveform.resize(N)
     k_zero = int(waveform.start_time / waveform.delta_t)
     waveform.roll(k_zero)
     htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
     fft(waveform.astype(real_same_precision_as(htilde)), htilde)
     htilde.length_in_time = tmplt_length
-    htilde.chirp_length = tChirp
+    htilde.chirp_length = t_chirp
     return htilde
 
 
@@ -1550,7 +1550,7 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         # for IMR templates the zero of time is at max amplitude (merger)
         # thus the start time is minus the duration of the template from
         # lower frequency cutoff to merger, i.e. minus the 'chirp time'
-        tChirp = -float(hp.start_time)  # conversion from LIGOTimeGPS
+        t_chirp = -float(hp.start_time)  # conversion from LIGOTimeGPS
         hp.resize(N)
         hc.resize(N)
         k_zero = int(hp.start_time / hp.delta_t)
@@ -1561,9 +1561,9 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         fft(hp.astype(real_same_precision_as(hp_tilde)), hp_tilde)
         fft(hc.astype(real_same_precision_as(hc_tilde)), hc_tilde)
         hp_tilde.length_in_time = tmplt_length
-        hp_tilde.chirp_length = tChirp
+        hp_tilde.chirp_length = t_chirp
         hc_tilde.length_in_time = tmplt_length
-        hc_tilde.chirp_length = tChirp
+        hc_tilde.chirp_length = t_chirp
         return hp_tilde, hc_tilde
     raise ValueError("Approximant %s not available" % (input_params["approximant"]))
 
