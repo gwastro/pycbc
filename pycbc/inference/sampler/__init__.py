@@ -29,6 +29,8 @@ from .refine import RefineSampler
 from .snowline import SnowlineSampler
 from .ultranest import UltranestSampler
 
+logger = logging.getLogger(__name__)
+
 # list of available samplers
 samplers = {
     cls.name: cls
@@ -117,7 +119,7 @@ def load_from_config(cp, model, **kwargs):
 
     """
     if len(model.variable_params) == 0:
-        logging.info("No variable params, so assuming Dummy Sampler")
+        logger.info("No variable params, so assuming Dummy Sampler")
         return DummySampler.from_config(cp, model, **kwargs)
 
     name = cp.get("sampler", "name")

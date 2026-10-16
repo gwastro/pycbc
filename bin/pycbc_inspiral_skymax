@@ -29,6 +29,8 @@ from pycbc.filter import MatchedFilterSkyMaxControl, MatchedFilterSkyMaxControlN
 from pycbc.types import complex64, float32, zeros
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(
     usage="", description="Find single detector precessing gravitational-wave triggers."
 )
@@ -292,7 +294,7 @@ with ctx:
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
 
-    logging.info("Making frequency-domain data segments")
+    logger.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
     psd.associate_psds_to_segments(
         opt,
@@ -324,7 +326,7 @@ with ctx:
     names = sorted(out_vals.keys())
 
     if len(strain_segments.segment_slices) == 0:
-        logging.info("--filter-inj-only specified and no injections in analysis time")
+        logger.info("--filter-inj-only specified and no injections in analysis time")
         event_mgr = events.EventManager(
             opt,
             names,
@@ -334,12 +336,12 @@ with ctx:
         )
         event_mgr.finalize_template_events()
         event_mgr.write_events(opt.output)
-        logging.info("Finished")
+        logger.info("Finished")
         sys.exit(0)
 
     # FIXME: Maybe we should use the PSD corresponding to each trigger
     if opt.psdvar_segment is not None:
-        logging.info("Calculating PSD variation")
+        logger.info("Calculating PSD variation")
         psd_var = pycbc.psd.calc_filt_psd_variation(
             gwstrain,
             opt.psdvar_segment,
@@ -385,7 +387,7 @@ with ctx:
         maximal_value_dof=opt.autochi_max_valued_dof,
     )
 
-    logging.info("Overwhitening frequency-domain data segments")
+    logger.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= seg.psd
 
@@ -397,7 +399,7 @@ with ctx:
         gating_info=gwstrain.gating_info,
     )
 
-    logging.info("Read in template bank")
+    logger.info("Read in template bank")
     lfc = None if opt.enable_bank_start_frequency else flow
     bank = waveform.FilterBankSkyMax(
         opt.bank_file,
@@ -431,9 +433,12 @@ with ctx:
             cluster_window = int(template.chirp_length * gwstrain.sample_rate)
 
         for s_num, stilde in enumerate(segments):
-            logging.info(
-                "Filtering template %d/%d segment %d/%d"
-                % (t_num + 1, len(bank), s_num + 1, len(segments))
+            logger.info(
+                "Filtering template %d/%d segment %d/%d",
+                t_num + 1,
+                len(bank),
+                s_num + 1,
+                len(segments),
             )
 
             # FIXME: Why this takes more inputs than for non-spin?
@@ -518,9 +523,9 @@ with ctx:
 
 event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 event_mgr.finalize_events()
-logging.info("Found %s triggers" % str(len(event_mgr.events)))
+logger.info("Found %s triggers", str(len(event_mgr.events)))
 
-logging.info("Writing out triggers")
+logger.info("Writing out triggers")
 event_mgr.write_events(opt.output)
 
 if opt.fftw_output_float_wisdom_file:
@@ -529,4 +534,4 @@ if opt.fftw_output_float_wisdom_file:
 if opt.fftw_output_double_wisdom_file:
     fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
 
-logging.info("Finished")
+logger.info("Finished")

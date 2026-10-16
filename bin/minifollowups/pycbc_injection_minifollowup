@@ -34,6 +34,8 @@ from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.workflow.core import resolve_url_to_file
 
+logger = logging.getLogger(__name__)
+
 legal_distance_types = [
     "decisive_optimal_snr",
     "comb_optimal_snr",
@@ -222,7 +224,7 @@ if args.ifar_threshold is not None:
         ifars = f["found_after_vetoes"]["ifar"][:]
     except KeyError:
         ifars = f["found_after_vetoes"]["ifar_exc"][:]
-        logging.warning("Inclusive IFAR not found, using exclusive")
+        logger.warning("Inclusive IFAR not found, using exclusive")
     lgc_arr = ifars < args.ifar_threshold
     missed = numpy.append(missed, f["found_after_vetoes"]["injection_index"][lgc_arr])
 
@@ -402,7 +404,7 @@ for num_event in range(num_events):
                 )
                 break
         else:
-            logging.info(
+            logger.info(
                 "Trigger time %s is not valid in %s, skipping singles plots",
                 checkedtime,
                 single.ifo,

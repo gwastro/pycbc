@@ -12,6 +12,8 @@ import time
 import pycbc
 import pycbc.workflow as wf
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--inference-file", help="The name of the inference file")
@@ -78,7 +80,7 @@ while 1:
     if not os.path.isfile(fname):
         if os.path.isfile(args.inference_file):
             fname = args.inference_file
-            logging.info("Run appears to have finished making final plots")
+            logger.info("Run appears to have finished making final plots")
             exit = True
         else:
             raise RuntimeError("Could not located inference files, exiting...")
@@ -86,7 +88,7 @@ while 1:
     tmod = os.path.getmtime(fname)
     if tmod > last_changed:
         tstr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(tmod))
-        logging.info("File update %.1f seconds ago: %s", time.time() - tmod, tstr)
+        logger.info("File update %.1f seconds ago: %s", time.time() - tmod, tstr)
         last_changed = tmod
         process_plots(fname, subdir=str(iteration))
         iteration += 1

@@ -22,7 +22,7 @@ from pycbc.io.ligolw import (
     return_search_summary,
 )
 
-logger = logging.getLogger("pycbc.io.hdf")
+logger = logging.getLogger(__name__)
 
 
 class HGroup(h5py.Group):
@@ -45,7 +45,7 @@ class HGroup(h5py.Group):
         try:
             return super().create_dataset(name, *args, **kwds, fletcher32=True)
         except (ValueError, TypeError):
-            logging.debug(
+            logger.debug(
                 "Could not create a dataset with fletcher32, falling back to default"
             )
             return super().create_dataset(name, *args, **kwds)

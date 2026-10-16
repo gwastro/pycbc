@@ -63,6 +63,8 @@ from .base_multitemper import (
     read_betas_from_hdf,
 )
 
+logger = logging.getLogger(__name__)
+
 # fixed-dimension model: a single branch with a single leaf
 BRANCH = "model_0"
 
@@ -587,7 +589,7 @@ class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         stored on disk.
         """
         if self.model.sampling_transforms is not None:
-            logging.info("Correcting logjacobian values on disk")
+            logger.info("Correcting logjacobian values on disk")
             with self.io(self.checkpoint_file, "r") as fp:
                 samples = fp.read_raw_samples(
                     self.variable_params,
@@ -601,7 +603,7 @@ class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
                     fp[fp.samples_group]["logjacobian"][()] = logjacobian
-        logging.info("Calculating log evidence")
+        logger.info("Calculating log evidence")
         with self.io(self.checkpoint_file, "r") as fp:
             thin_start = fp.thin_start
             thin_interval = fp.thin_interval
@@ -612,7 +614,7 @@ class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             thin_end=thin_end,
             thin_interval=thin_interval,
         )
-        logging.info(f"log Z, dlog Z: {logz}, {dlogz}")
+        logger.info("log Z, dlog Z: %s, %s", logz, dlogz)
         for fn in [self.checkpoint_file, self.backup_file]:
             with self.io(fn, "a") as fp:
                 fp.write_logevidence(logz, dlogz)

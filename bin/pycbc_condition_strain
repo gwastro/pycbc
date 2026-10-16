@@ -32,9 +32,11 @@ import pycbc.frame
 import pycbc.strain
 from pycbc.types import float32, float64
 
+logger = logging.getLogger(__name__)
+
 
 def write_strain(file_name, channel, data):
-    logging.info("Writing output strain to %s", file_name)
+    logger.info("Writing output strain to %s", file_name)
 
     if file_name.endswith(".gwf"):
         pycbc.frame.write_frame(file_name, channel, data)
@@ -116,7 +118,7 @@ out_strain = pycbc.strain.from_cli(
 
 # if requested, save the gates while we have them
 if args.output_gates_file:
-    logging.info("Writing output gates")
+    logger.info("Writing output gates")
     with file(args.output_gates_file, "wb") as gate_f:
         for k, v in out_strain.gating_info.items():
             for t, w, p in v:
@@ -148,4 +150,4 @@ if args.frame_duration:
 else:
     write_strain(args.output_strain_file, output_channel_name, out_strain)
 
-logging.info("Done")
+logger.info("Done")

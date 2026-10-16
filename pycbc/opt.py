@@ -23,7 +23,7 @@ import os
 import sys
 from collections import OrderedDict
 
-logger = logging.getLogger("pycbc.opt")
+logger = logging.getLogger(__name__)
 
 
 def get_l2_cache_size():

@@ -20,7 +20,7 @@ from pycbc.libutils import import_optional
 lal = import_optional("lal")
 
 # We define a global logger for this module
-logger = logging.getLogger("pycbc.constants")
+logger = logging.getLogger(__name__)
 
 # Get the environment variable which defines which constants to use
 # Allowed values are 'default' or 'lal'

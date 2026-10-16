@@ -51,7 +51,7 @@ from pycbc.waveform import (
 )
 from pycbc.waveform import utils as wfutils
 
-logger = logging.getLogger("pycbc.inject.inject")
+logger = logging.getLogger(__name__)
 
 sim = libutils.import_optional("lalsimulation")
 
@@ -621,7 +621,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
                     "Be very sure that the injection file exactly matches "
                     "how the injections were pregenerated!"
                 )
-                logging.warning(warn_msg)
+                logger.warning(warn_msg)
         must_make_injections = generate_injections or (
             inj_filter_rejector and inj_filter_rejector.match_threshold
         )

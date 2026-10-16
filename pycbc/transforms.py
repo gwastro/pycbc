@@ -27,7 +27,7 @@ from pycbc.io import record
 from pycbc.pnutils import jframe_to_l0frame
 from pycbc.waveform import parameters
 
-logger = logging.getLogger("pycbc.transforms")
+logger = logging.getLogger(__name__)
 
 
 class BaseTransform:

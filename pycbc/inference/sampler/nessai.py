@@ -22,6 +22,8 @@ from ..io import NessaiFile, loadfile
 from .base import BaseSampler, setup_output
 from .base_mcmc import get_optional_arg_from_config
 
+logger = logging.getLogger(__name__)
+
 
 class NessaiSampler(BaseSampler):
     """Class to construct a FlowSampler from the nessai package."""
@@ -107,12 +109,12 @@ class NessaiSampler(BaseSampler):
             )
 
         if kwargs is not None:
-            logging.info("Updating keyword arguments with %s", kwargs)
+            logger.info("Updating keyword arguments with %s", kwargs)
             extra_kwds.update({k: v for k, v in kwargs.items() if k in default_kwds})
             run_kwds.update({k: v for k, v in kwargs.items() if k in default_run_kwds})
 
         if self._sampler is None:
-            logging.info("Initialising nessai FlowSampler")
+            logger.info("Initialising nessai FlowSampler")
             self._sampler = nessai.flowsampler.FlowSampler(
                 self.model_call,
                 output=output,
@@ -124,7 +126,7 @@ class NessaiSampler(BaseSampler):
                 checkpoint_callback=self.checkpoint_callback,
                 **extra_kwds,
             )
-        logging.info("Starting sampling with nessai")
+        logger.info("Starting sampling with nessai")
         self._sampler.run(**run_kwds)
 
     @staticmethod
@@ -206,8 +208,8 @@ class NessaiSampler(BaseSampler):
 
         if invalid_kwds:
             raise RuntimeError(f"Config contains unknown options: {invalid_kwds}")
-        logging.info("nessai keyword arguments: %s", kwds)
-        logging.info("nessai run keyword arguments: %s", run_kwds)
+        logger.info("nessai keyword arguments: %s", kwds)
+        logger.info("nessai run keyword arguments: %s", run_kwds)
 
         loglikelihood_function = get_optional_arg_from_config(
             cp, section, "loglikelihood-function"
@@ -259,15 +261,15 @@ class NessaiSampler(BaseSampler):
         try:
             with loadfile(self.checkpoint_file, "r") as fp:
                 self.resume_data = fp.read_pickled_data_from_checkpoint_file()
-            logging.info("Found valid checkpoint file: %s", self.checkpoint_file)
+            logger.info("Found valid checkpoint file: %s", self.checkpoint_file)
         except Exception as e:
-            logging.info("Failed to load checkpoint file with error: %s", e)
+            logger.info("Failed to load checkpoint file with error: %s", e)
 
     def finalize(self):
         """Finalize sampling"""
         logz = self._sampler.ns.log_evidence
         dlogz = self._sampler.ns.log_evidence_error
-        logging.info("log Z, dlog Z: %s, %s", logz, dlogz)
+        logger.info("log Z, dlog Z: %s, %s", logz, dlogz)
         self.checkpoint()
 
     def write_results(self, filename):

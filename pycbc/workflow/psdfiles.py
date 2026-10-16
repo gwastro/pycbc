@@ -34,7 +34,7 @@ import logging
 
 from pycbc.workflow.core import FileList, make_analysis_dir, resolve_url_to_file
 
-logger = logging.getLogger("pycbc.workflow.psdfiles")
+logger = logging.getLogger(__name__)
 
 
 def setup_psd_workflow(

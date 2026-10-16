@@ -34,7 +34,7 @@ from scipy.stats import ks_2samp
 
 from pycbc.io.record import get_vars_from_arg
 
-logger = logging.getLogger("pycbc.inference.burn_in")
+logger = logging.getLogger(__name__)
 
 # The value to use for a burn-in iteration if a chain is not burned in
 NOT_BURNED_IN_ITER = -1

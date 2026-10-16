@@ -7,6 +7,8 @@ import os
 import pycbc
 import pycbc.workflow as wf
 
+logger = logging.getLogger(__name__)
+
 
 class GeomAlignedBankSetupExecutable(wf.Executable):
     current_retention_level = wf.Executable.ALL_TRIGGERS
@@ -200,4 +202,4 @@ workflow += bankverify_node
 
 workflow.save()
 
-logging.info("GENERATION SUCCESSFUL.")
+logger.info("GENERATION SUCCESSFUL.")

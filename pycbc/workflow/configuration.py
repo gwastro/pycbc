@@ -39,7 +39,7 @@ from shutil import which
 
 from pycbc.types.config import InterpolatingConfigParser
 
-logger = logging.getLogger("pycbc.workflow.configuration")
+logger = logging.getLogger(__name__)
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
@@ -106,7 +106,7 @@ def resolve_url_http(url, u, filename):
         project = re_match.group(1)
         ref = re_match.group(2)
         file_path = re_match.group(3)
-        logging.info(
+        logger.info(
             "Special-case download from git.ligo.org: "
             "file %s from ref %s of project %s",
             file_path,
@@ -206,9 +206,9 @@ def resolve_url(
             subprocess.run(cmd, check=True, capture_output=True)
         except subprocess.CalledProcessError as err:
             # Print information about the failure
-            logging.exception("Command %s failed with the following output:", err.cmd)
-            logging.exception(err.stderr.decode())
-            logging.exception(err.stdout.decode())
+            logger.exception("Command %s failed with the following output:", err.cmd)
+            logger.exception(err.stderr.decode())
+            logger.exception(err.stdout.decode())
             raise
 
     else:

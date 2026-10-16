@@ -11,6 +11,8 @@ from pycbc.events.veto import segments_to_start_end
 from pycbc.fft.fftw import set_measure_level
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -25,7 +27,7 @@ pycbc.strain.insert_strain_option_group(parser)
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
-logging.info("Querying science segemnts")
+logger.info("Querying science segemnts")
 segs = pycbc.dq.query_str(
     args.instrument,
     args.science_name,
@@ -34,7 +36,7 @@ segs = pycbc.dq.query_str(
     server=args.segment_server,
     veto_definer=args.veto_definer_file,
 )
-logging.info("Found %s segments, %ss total", len(segs), abs(segs))
+logger.info("Found %s segments, %ss total", len(segs), abs(segs))
 
 f = HFile(args.output_file, "w")
 starts, ends = segments_to_start_end(segs)
@@ -43,14 +45,14 @@ f[f"{args.channel_name}/segments/start"] = starts + pad
 f[f"{args.channel_name}/segments/end"] = ends - pad
 
 for i, seg in enumerate(segs):
-    logging.info(
+    logger.info(
         "Processing science segment %s/%s of duration %ss", i, len(segs), abs(seg)
     )
 
     args.gps_start_time = seg[0] + pad
     args.gps_end_time = seg[1] - pad
 
-    logging.info("Reading %s-%s", seg[0], seg[1])
+    logger.info("Reading %s-%s", seg[0], seg[1])
     ht = pycbc.strain.from_cli(args)
     f.create_dataset(
         f"{args.channel_name}/{i}",
@@ -58,4 +60,4 @@ for i, seg in enumerate(segs):
         compression_opts=9,
         compression="gzip",
     )
-logging.info("Done!")
+logger.info("Done!")

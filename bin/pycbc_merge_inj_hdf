@@ -28,6 +28,8 @@ import numpy as np
 import pycbc
 import pycbc.inject
 
+logger = logging.getLogger(__name__)
+
 
 def get_gc_end_time(injection):
     """
@@ -60,7 +62,7 @@ if __name__ == "__main__":
 
     pycbc.init_logging(opts.verbose)
 
-    logging.info("Loading injections")
+    logger.info("Loading injections")
 
     injection_files = opts.injection_file
     injection_tables = []
@@ -100,7 +102,7 @@ if __name__ == "__main__":
     inj_dtype = injection_tables[0].dtype
     new_inj_table = pycbc.io.FieldArray.from_records(new_inj_table, dtype=inj_dtype)
 
-    logging.info("Writing output")
+    logger.info("Writing output")
     pycbc.inject.InjectionSet.write(opts.out_file, new_inj_table)
 
-    logging.info("Done")
+    logger.info("Done")

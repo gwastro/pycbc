@@ -42,6 +42,8 @@ import pycbc.conversions
 import pycbc.pnutils
 from pycbc.detector import Detector, ppdets
 
+logger = logging.getLogger(__name__)
+
 
 def background_bin_from_string(background_bins, data):
     """
@@ -333,7 +335,7 @@ def time_multi_coincidence(times, slide_step=0, slop=0.003, pivot="H1", fixed="L
         #  tested against fixed and pivot are now present for testing with new
         #  dependent ifos
         for ifo2 in ids:
-            logging.info("added ifo %s, testing against %s" % (ifo1, ifo2))
+            logger.info("added ifo %s, testing against %s", ifo1, ifo2)
             w = win(ifo1, ifo2)
             left = numpy.searchsorted(time1, ctimes[ifo2] - w)
             right = numpy.searchsorted(time1, ctimes[ifo2] + w)
@@ -351,10 +353,10 @@ def time_multi_coincidence(times, slide_step=0, slop=0.003, pivot="H1", fixed="L
                 #  jobs. For these, arbitrarily keep the first trigger and
                 #  discard the second (and any subsequent ones).
                 where = right - left == rlmax
-                logging.warning(
-                    "Triggers in %s are closer than coincidence "
-                    "window, 1 or more coincs will be discarded. "
-                    "This is a warning, not an error." % ifo1
+                logger.warning(
+                    "Triggers in %s are closer than coincidence window, 1 or more "
+                    "coincs will be discarded. This is a warning, not an error.",
+                    ifo1,
                 )
                 print([float(ti) for ti in time1[left[where][0] : right[where][0]]])
             # identify indices of times in ifo1 that form coincs with ifo2
@@ -404,10 +406,10 @@ def cluster_coincs(
         The set of indices corresponding to the surviving coincidences.
 
     """
-    logging.info("clustering coinc triggers over %ss window" % window)
+    logger.info("clustering coinc triggers over %ss window", window)
 
     if len(time1) == 0 or len(time2) == 0:
-        logging.info("No coinc triggers in one, or both, ifos.")
+        logger.info("No coinc triggers in one, or both, ifos.")
         return numpy.array([])
 
     if numpy.isfinite(slide):
@@ -454,7 +456,7 @@ def cluster_coincs_multiifo(
     """
     time_coinc_zip = list(zip(*time_coincs))
     if len(time_coinc_zip) == 0:
-        logging.info("No coincident triggers.")
+        logger.info("No coincident triggers.")
         return numpy.array([])
 
     time_avg_num = []
@@ -530,7 +532,7 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
         The set of indices corresponding to the surviving coincidences.
 
     """
-    logging.info("Clustering events over %s s window", window)
+    logger.info("Clustering events over %s s window", window)
 
     indices = []
     time_sorting = time.argsort()
@@ -573,7 +575,7 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
 
     indices = indices[:j]
 
-    logging.info("%d triggers remaining", len(indices))
+    logger.info("%d triggers remaining", len(indices))
     return time_sorting[indices]
 
 
@@ -879,7 +881,7 @@ class LiveCoincTimeslideBackgroundEstimator:
         # apply trials factor for the best coinc
         if mresult:
             mresult["foreground/ifar"] = mifar / float(trials)
-            logging.info(
+            logger.info(
                 "Found %s coinc with ifar %s",
                 mresult["foreground/type"],
                 mresult["foreground/ifar"],
@@ -1039,7 +1041,7 @@ class LiveCoincTimeslideBackgroundEstimator:
         # convert to single detector trigger values
         # FIXME Currently configured to use pycbc live output
         # where chisq is the reduced chisq and chisq_dof is the actual DOF
-        logging.info("adding singles to the background estimate...")
+        logger.info("adding singles to the background estimate...")
         updated_indices = {}
         for ifo in ifos:
             trigs = results[ifo]
@@ -1154,7 +1156,7 @@ class LiveCoincTimeslideBackgroundEstimator:
         num_zerolag = 0
         num_background = 0
 
-        logging.info(
+        logger.info(
             "%s: %s background and zerolag coincs", ppdets(self.ifos, "-"), len(cstat)
         )
         if len(cstat) > 0:
@@ -1250,7 +1252,7 @@ class LiveCoincTimeslideBackgroundEstimator:
 
         """
         # Let's see how large everything is
-        logging.info(
+        logger.info(
             "%s: %s coincs, %s bytes",
             ppdets(self.ifos, "-"),
             len(self.coincs),

@@ -27,7 +27,7 @@ import pycbc.detector
 from pycbc import conversions, pnutils
 from pycbc.events import coinc
 
-logger = logging.getLogger("pycbc.events.triggers")
+logger = logging.getLogger(__name__)
 
 
 def insert_bank_bins_option_group(parser):

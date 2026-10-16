@@ -31,7 +31,7 @@ import logging
 
 import numpy
 
-logger = logging.getLogger("pycbc.catalog")
+logger = logging.getLogger(__name__)
 
 _aliases = {}
 _aliases["mchirp"] = "chirp_mass_source"

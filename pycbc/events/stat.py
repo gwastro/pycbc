@@ -39,7 +39,7 @@ from .eventmgr_cython import (
     logsignalrateinternals_computepsignalbins,
 )
 
-logger = logging.getLogger("pycbc.events.stat")
+logger = logging.getLogger(__name__)
 
 _allowed_statistic_features = [
     "phasetd",

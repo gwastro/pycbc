@@ -34,7 +34,7 @@ import igwn_segments as segments
 
 from pycbc.workflow.core import Executable, File, FileList, Node, make_analysis_dir
 
-logger = logging.getLogger("pycbc.workflow.coincidence")
+logger = logging.getLogger(__name__)
 
 
 class PyCBCBank2HDFExecutable(Executable):

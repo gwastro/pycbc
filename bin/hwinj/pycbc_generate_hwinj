@@ -37,6 +37,8 @@ from pycbc.types import TimeSeries
 from pycbc.types.optparse import convert_to_process_params_dict
 from pycbc.waveform import get_td_waveform, td_approximants
 
+logger = logging.getLogger(__name__)
+
 
 def _empty_row(obj):
     """
@@ -354,7 +356,7 @@ pycbc.init_logging(opts.verbose)
 # check that sample rates are the same
 for ifo in opts.instruments:
     if opts.sample_rate[ifo] != opts.sample_rate[opts.instruments[0]]:
-        logging.warning("Sample rates must be equal for all IFOs.")
+        logger.warning("Sample rates must be equal for all IFOs.")
         sys.exit()
 sample_rate = opts.sample_rate[opts.instruments[0]]
 
@@ -377,7 +379,7 @@ distance = 40.0
 network_snr = 0.0
 
 # create output XML file
-logging.info("Creating XML file")
+logger.info("Creating XML file")
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW())
 
@@ -477,7 +479,7 @@ sngl.spin2y = opts.spin2y
 sngl.spin2x = opts.spin2x
 
 # generate waveform
-logging.info(
+logger.info(
     "Generating waveform at %.3fMpc beginning at %.3fHz for SNR calculation",
     sim.distance,
     opts.waveform_low_frequency_cutoff,
@@ -516,7 +518,7 @@ for ifo in opts.instruments:
     low_frequency_cutoff_dict[ifo] = opts.low_frequency_cutoff
 
 # get PSD
-logging.info("Generating PSDs")
+logger.info("Generating PSDs")
 psd_dict = _psd.from_cli_multi_ifos(
     opts,
     length_dict,
@@ -545,20 +547,20 @@ for ifo in opts.instruments:
     )
 
     # calculate strain
-    logging.info("Calculating strain for %s", ifo)
+    logger.info("Calculating strain for %s", ifo)
     strain = f_plus * h_plus + f_cross * h_cross
 
     # taper waveform
-    logging.info("Tapering strain for %s", ifo)
+    logger.info("Tapering strain for %s", ifo)
     strain = strain.taper_timeseries(location=sim.taper)
 
     # FFT strain
-    logging.info("FFT strain for %s", ifo)
+    logger.info("FFT strain for %s", ifo)
     strain_tilde = make_frequency_series(strain)
 
     # interpolate PSD to waveform delta_f
     if psd_dict[ifo].delta_f != strain_tilde.delta_f:
-        logging.info(
+        logger.info(
             "Interpolating PSD for %s from %fHz to %fHz",
             ifo,
             psd_dict[ifo].delta_f,
@@ -567,14 +569,14 @@ for ifo in opts.instruments:
         psd_dict[ifo] = _psd.interpolate(psd_dict[ifo], strain_tilde.delta_f)
 
     # calculate sigma-squared SNR
-    logging.info("Calculating sigma for %s", ifo)
+    logger.info("Calculating sigma for %s", ifo)
     sigma_squared = sigmasq(
         DYN_RANGE_FAC * strain_tilde,
         psd=psd_dict[ifo],
         low_frequency_cutoff=opts.low_frequency_cutoff,
         high_frequency_cutoff=f_high,
     )
-    logging.info(
+    logger.info(
         "Sigma integrated from %.3f to %.3fHz for %s is %.3f",
         opts.low_frequency_cutoff,
         f_high,
@@ -614,7 +616,7 @@ for ifo in opts.instruments:
     setattr(sim, attrname, effdist * scale)
 
 # generate waveform
-logging.info(
+logger.info(
     "Generating waveform at %.3fMpc beginning at %.3fHz for SNR calculation",
     sim.distance,
     opts.waveform_low_frequency_cutoff,
@@ -633,7 +635,7 @@ h_cross = pad_timeseries_to_integer_length(h_cross, sample_rate)
 
 
 # figure out length of time series to inject waveform into
-logging.info("Calculating number of sample points in output file")
+logger.info("Calculating number of sample points in output file")
 h_plus, _ = get_td_waveform(
     sim, approximant=name, phase_order=phase_order, delta_t=1.0 / sample_rate
 )
@@ -651,10 +653,10 @@ sngl_table.append(sngl)
 prefix = opts.tag + "_" + str(start_time)
 
 # save XML output file if it does not exist
-logging.info("Writing XML file")
+logger.info("Writing XML file")
 xml_filename = prefix + ".xml.gz"
 if os.path.exists(xml_filename):
-    logging.warning(
+    logger.warning(
         "Filename %s already exists and will not be overwritten", xml_filename
     )
     sys.exit()
@@ -670,7 +672,7 @@ for ifo in opts.instruments:
     )
 
     # inject waveform
-    logging.info("Injecting %s waveform into timeseries of zeroes", ifo)
+    logger.info("Injecting %s waveform into timeseries of zeroes", ifo)
     injections = InjectionSet(xml_filename)
     injections.apply(output, ifo)
 
@@ -679,14 +681,14 @@ for ifo in opts.instruments:
 
     # check if filename exists
     if os.path.exists(txt_filename):
-        logging.warning(
+        logger.warning(
             "Filename %s already exists and will not be overwritten", txt_filename
         )
         sys.exit()
 
     # save waveform as single-column ASCII for awgstream to use
-    logging.info("Writing strain for %s", ifo)
+    logger.info("Writing strain for %s", ifo)
     numpy.savetxt(txt_filename, output)
 
 # finish
-logging.info("Done")
+logger.info("Done")

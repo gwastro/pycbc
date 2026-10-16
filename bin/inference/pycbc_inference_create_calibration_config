@@ -35,6 +35,8 @@ from pycbc.strain.recalibrate import (
 )
 from pycbc.types import MultiDetOptionAction
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser()
 
 pycbc.add_common_pycbc_options(parser)
@@ -152,7 +154,7 @@ else:
     tag = opts.tag
 
 for ifo in opts.ifos:
-    logging.info("Minimum %s frequency: %.3f", ifo, min_freq_list[ifo])
+    logger.info("Minimum %s frequency: %.3f", ifo, min_freq_list[ifo])
 
 # Read calibration files
 if opts.calibration_files:
@@ -164,7 +166,7 @@ else:
         opts.ifos, gps_time, calibration_files_path
     )
 
-logging.debug("Calibration files dictionary: %s", calibration_files_dict)
+logger.debug("Calibration files dictionary: %s", calibration_files_dict)
 
 input_dict = {}
 for ii in range(len(opts.ifos)):
@@ -175,7 +177,7 @@ for ii in range(len(opts.ifos)):
     input_dict["calibration_envelop_file_%s" % ifo] = calibration_files_dict[
         ifo.upper()
     ]
-logging.debug("Input dictionary: %s", input_dict)
+logger.debug("Input dictionary: %s", input_dict)
 # Upper and Lower indices of detectors seems unnecessary
 # but they are there to make sure the correct convention
 # is followed for recalibration module in inference config
@@ -201,7 +203,7 @@ for ifo in opts.ifos:
     prior_dict["amplitude_sigma_nodes_%s" % ifo] = amplitude_sigma_nodes
     prior_dict["phase_median_nodes_%s" % ifo] = phase_median_nodes
     prior_dict["phase_sigma_nodes_%s" % ifo] = phase_sigma_nodes
-    logging.info("Done for detector %s", ifo)
+    logger.info("Done for detector %s", ifo)
 
 
 calibration_filename = "%s/calibration-%s.ini" % (output_dir, tag)

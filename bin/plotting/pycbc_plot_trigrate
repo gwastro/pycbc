@@ -28,6 +28,8 @@ import pycbc
 from pycbc import bin_utils, events, io, results
 from pycbc.events import ranking, triggers
 
+logger = logging.getLogger(__name__)
+
 #### DEFINITIONS AND FUNCTIONS ####
 
 
@@ -181,9 +183,9 @@ statname = (
 paramname = args.bin_param.replace("_", " ")
 paramtag = args.bin_param.replace("_", "")
 
-logging.info("Opening trigger file: %s" % args.trigger_file)
+logger.info("Opening trigger file: %s", args.trigger_file)
 trigf = io.HFile(args.trigger_file, "r")
-logging.info("Opening template file: %s" % args.bank_file)
+logger.info("Opening template file: %s", args.bank_file)
 templatef = io.HFile(args.bank_file, "r")
 
 # get the stat values
@@ -191,7 +193,7 @@ stat = get_stat(args.sngl_stat, trigf[args.ifo])
 
 # get the duration values if needed
 if args.bin_param == "template_duration" and not args.f_lower:
-    logging.info("Using template duration from the trigger file")
+    logger.info("Using template duration from the trigger file")
     trig_dur = True
 else:
     trig_dur = False
@@ -203,9 +205,7 @@ tid = trigf[args.ifo + "/template_id"][:][abovethresh]
 time = trigf[args.ifo + "/end_time"][:][abovethresh]
 if trig_dur:
     tdur = trigf[args.ifo + "/template_duration"][:][abovethresh]
-logging.info(
-    "%i trigs left after thresholding at %f" % (len(stat), args.stat_threshold)
-)
+logger.info("%i trigs left after thresholding at %f", len(stat), args.stat_threshold)
 del stat
 
 if args.gps_start_time and args.gps_end_time:
@@ -215,7 +215,7 @@ if args.gps_start_time and args.gps_end_time:
     time = time[inside]
     if trig_dur:
         tdur = tdur[inside]
-    logging.info("%i trigs left after restricting gps times" % len(time))
+    logger.info("%i trigs left after restricting gps times", len(time))
 
 # now do vetoing
 for vfile, vsegmentname in zip(args.veto_file, args.veto_segment_name):
@@ -227,7 +227,7 @@ for vfile, vsegmentname in zip(args.veto_file, args.veto_segment_name):
     time = time[retain]
     if trig_dur:
         tdur = tdur[retain]
-    logging.info("%i trigs left after vetoing with %s" % (len(time), args.veto_file))
+    logger.info("%i trigs left after vetoing with %s", len(time), args.veto_file)
 
 # get a minimum time for plotting purposes
 if not args.gps_start_time:
@@ -250,7 +250,7 @@ def get_pars(args, tag, m1, m2, s1z, s2z):
     paramarg = getattr(args, tag + "_param")
     try:
         # will fail if m1 is a float rather than a sequence
-        logging.info("Getting %s values for %i triggers" % (paramarg, len(m1)))
+        logger.info("Getting %s values for %i triggers", paramarg, len(m1))
     except:
         pass
     return triggers.get_param(paramarg, args, m1, m2, s1z, s2z)
@@ -262,7 +262,7 @@ if trig_dur:
 else:
     m1, m2, s1z, s2z = triggers.get_mass_spin(templatef, tid)
     binpars = get_pars(args, "bin", m1, m2, s1z, s2z)
-logging.info("Parameter range of triggers: %f - %f" % (min(binpars), max(binpars)))
+logger.info("Parameter range of triggers: %f - %f", min(binpars), max(binpars))
 
 # get the bins
 # we assume that parvals are all positive
@@ -293,7 +293,7 @@ elif args.bin_spacing == "irreg":
 
 # list of bin indices
 binind = [pbins[c] for c in pbins.centres()]
-logging.info("Assigning trigger param values to bins")
+logger.info("Assigning trigger param values to bins")
 # This is slow!! Either find a better way of using pylal.rate or write faster binning routine
 pind = np.array([pbins[par] for par in binpars])
 
@@ -315,7 +315,7 @@ for i, lower, upper in zip(binind, pbins.lower(), pbins.upper()):
     bincounts[i] = len(times_inbin)
     print(bincounts[i])
     if len(times_inbin) == 0:
-        logging.info("No trigs in bin %f-%f", (lower, upper))
+        logger.info("No trigs in bin %f-%f", lower, upper)
         continue
     # add KDE to plot
     kd = scistats.gaussian_kde(times_inbin, bw_method=args.kde_bandwidth)
@@ -346,7 +346,7 @@ if args.rate:
     plt.ylabel(r"Trigger rate (s$^{-1}$)", size="large")
 else:
     plt.ylabel(r"Rate per template (s$^{-1}$)", size="large")
-logging.info("Saving to %s" % args.output_file)
+logger.info("Saving to %s", args.output_file)
 results.save_fig_with_metadata(
     fig,
     args.output_file,
@@ -359,4 +359,4 @@ results.save_fig_with_metadata(
 )
 plt.close()
 
-logging.info("Done!")
+logger.info("Done!")

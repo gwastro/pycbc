@@ -53,6 +53,8 @@ except ImportError:
 
     NEW_SAMPLER_API = False
 
+logger = logging.getLogger(__name__)
+
 
 def filter_run_kwds(sampler, kwds):
     """
@@ -65,7 +67,7 @@ def filter_run_kwds(sampler, kwds):
     if any(p.kind == p.VAR_KEYWORD for p in supported.values()):
         return
     for karg in set(kwds) - set(supported):
-        logging.warning("dynesty's run_nested does not accept '%s'; ignoring it", karg)
+        logger.warning("dynesty's run_nested does not accept '%s'; ignoring it", karg)
         del kwds[karg]
 
 
@@ -138,7 +140,7 @@ class DynestySampler(BaseSampler):
             self.run_with_checkpoint = True
             if self.maxcall is None:
                 self.maxcall = 5000 * self.pool.size
-            logging.info(
+            logger.info(
                 "Checkpointing enabled, will verify every %s calls"
                 " and try to checkpoint every %s seconds",
                 self.maxcall,
@@ -152,7 +154,7 @@ class DynestySampler(BaseSampler):
         cyclic = self.model.prior_distribution.cyclic
         for i, param in enumerate(self.variable_params):
             if param in cyclic:
-                logging.info("Param: %s will be cyclic", param)
+                logger.info("Param: %s will be cyclic", param)
                 periodic.append(i)
 
         if len(periodic) == 0:
@@ -164,7 +166,7 @@ class DynestySampler(BaseSampler):
         reflect = self.model.prior_distribution.well_reflected
         for i, param in enumerate(self.variable_params):
             if param in reflect:
-                logging.info("Param: %s will be well reflected", param)
+                logger.info("Param: %s will be well reflected", param)
                 reflective.append(i)
 
         if len(reflective) == 0:
@@ -197,7 +199,7 @@ class DynestySampler(BaseSampler):
                 **extra_kwds,
             )
             self.run_with_checkpoint = False
-            logging.info(
+            logger.info(
                 "Checkpointing not currently supported withDYNAMIC nested sampler"
             )
             # the dynamic sampler suffixes its baseline-run stopping criteria
@@ -246,16 +248,16 @@ class DynestySampler(BaseSampler):
             t0 = time.time()
             it = self._sampler.it
 
-            logging.info("Starting from iteration: %s", it)
+            logger.info("Starting from iteration: %s", it)
             while diff_niter != 0:
                 self._sampler.run_nested(maxcall=self.maxcall, **self.run_kwds)
 
                 delta_t = time.time() - t0
                 diff_niter = self._sampler.it - it
-                logging.info("Checking if we should checkpoint: %.2f s", delta_t)
+                logger.info("Checking if we should checkpoint: %.2f s", delta_t)
 
                 if delta_t >= self.checkpoint_time_interval:
-                    logging.info(f"Checkpointing N={n_checkpointing}")
+                    logger.info("Checkpointing N=%s", n_checkpointing)
                     self.checkpoint()
                     n_checkpointing += 1
                     t0 = time.time()
@@ -435,10 +437,10 @@ class DynestySampler(BaseSampler):
         first_update = {}
         if "first_update_min_ncall" in extra:
             first_update["min_ncall"] = extra.pop("first_update_min_ncall")
-            logging.info("First update: min_ncall:%s", first_update["min_ncall"])
+            logger.info("First update: min_ncall:%s", first_update["min_ncall"])
         if "first_update_min_eff" in extra:
             first_update["min_eff"] = extra.pop("first_update_min_eff")
-            logging.info("First update: min_eff:%s", first_update["min_eff"])
+            logger.info("First update: min_eff:%s", first_update["min_eff"])
         extra["first_update"] = first_update
 
         # populate options for checkpointing
@@ -503,10 +505,10 @@ class DynestySampler(BaseSampler):
                         setattr(self._sampler, key, value)
 
             self.set_state_from_file(self.checkpoint_file)
-            logging.info("Found valid checkpoint file: %s", self.checkpoint_file)
+            logger.info("Found valid checkpoint file: %s", self.checkpoint_file)
         except Exception as e:
             print(e)
-            logging.info("Failed to load checkpoint file")
+            logger.info("Failed to load checkpoint file")
 
     def set_state_from_file(self, filename):
         """Sets the state of the sampler back to the instance saved in a file."""
@@ -520,13 +522,13 @@ class DynestySampler(BaseSampler):
         """Finalze and write it to the results file"""
         logz = self._sampler.results.logz[-1:][0]
         dlogz = self._sampler.results.logzerr[-1:][0]
-        logging.info(f"log Z, dlog Z: {logz}, {dlogz}")
+        logger.info("log Z, dlog Z: %s, %s", logz, dlogz)
 
         if self.no_save_state:
             self.write_results(self.checkpoint_file)
         else:
             self.checkpoint()
-            logging.info("Validating checkpoint and backup files")
+            logger.info("Validating checkpoint and backup files")
             checkpoint_valid = validate_checkpoint_files(
                 self.checkpoint_file, self.backup_file, check_nsamples=False
             )
@@ -692,9 +694,13 @@ def sample_rwalk_mod(args):
 
         # If we've taken too many likelihood evaluations then break
         if accept + reject > maxmcmc:
-            logging.warning(
-                f"Hit maximum number of walks {maxmcmc} with accept={accept}, reject={reject}, "
-                f"and nfail={nfail} try increasing maxmcmc"
+            logger.warning(
+                "Hit maximum number of walks %s with accept=%s, reject=%s, and "
+                "nfail=%s try increasing maxmcmc",
+                maxmcmc,
+                accept,
+                reject,
+                nfail,
             )
             break
 
@@ -705,7 +711,7 @@ def sample_rwalk_mod(args):
         v = v_list[idx]
         logl = logl_list[idx]
     else:
-        logging.debug("Unable to find a new point using walk: returning a random point")
+        logger.debug("Unable to find a new point using walk: returning a random point")
         u = rstate.uniform(size=n)
         v = prior_transform(u)
         logl = loglikelihood(v)

@@ -37,7 +37,7 @@ from igwn_segments import utils as segmentsUtils
 
 from pycbc.workflow.core import SegFile, make_analysis_dir, resolve_url
 
-logger = logging.getLogger("pycbc.workflow.segment")
+logger = logging.getLogger(__name__)
 
 
 def save_veto_definer(cp, out_dir, tags=None):

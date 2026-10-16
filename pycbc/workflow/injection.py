@@ -44,7 +44,7 @@ from pycbc.workflow.jobsetup import (
     select_generic_executable,
 )
 
-logger = logging.getLogger("pycbc.workflow.injection")
+logger = logging.getLogger(__name__)
 
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):

@@ -41,6 +41,8 @@ import pycbc.pnutils
 import pycbc.results
 from pycbc.events import ranking
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -187,7 +189,7 @@ minz = opts.min_z or 1
 maxz = opts.max_z
 hexbin_style["norm"] = LogNorm(vmin=minz, vmax=maxz)
 
-logging.info("Plotting")
+logger.info("Plotting")
 fig = plt.figure()
 ax = fig.gca()
 
@@ -220,4 +222,4 @@ pycbc.results.save_fig_with_metadata(
     fig_kwds={"dpi": 200},
 )
 
-logging.info("Done")
+logger.info("Done")

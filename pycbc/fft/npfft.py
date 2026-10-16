@@ -32,7 +32,7 @@ import numpy.fft
 
 from .core import _BaseFFT, _BaseIFFT, _check_fft_args
 
-logger = logging.getLogger("pycbc.events.npfft")
+logger = logging.getLogger(__name__)
 
 _INV_FFT_MSG = (
     "I cannot perform an {} between data with an input type of "

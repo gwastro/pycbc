@@ -36,6 +36,8 @@ from pycbc.results.plot import add_style_opt_to_parser, set_style_from_cli
 from pycbc.results.scatter_histograms import create_multidim_plot
 from pycbc.tmpltbank import bank_conversions as bconv
 
+logger = logging.getLogger(__name__)
+
 conversion_options = bconv.conversion_options
 _fit_parameters = [
     "count_above_thresh",
@@ -156,7 +158,7 @@ set_style_from_cli(args)
 
 mins, maxs = option_utils.plot_ranges_from_cli(args)
 
-logging.info("Reading in the bank")
+logger.info("Reading in the bank")
 bank = {}
 with HFile(args.bank_file, "r") as bankf:
     for p in bankf.keys():
@@ -185,7 +187,7 @@ if args.fits_file is not None:
             param[param <= 0] = np.nan
             bank[p] = param
 
-logging.info("Got %d templates from the bank", banklen)
+logger.info("Got %d templates from the bank", banklen)
 
 # If no parameters are given - just plot whatever is in the bank
 if not args.parameters:
@@ -226,7 +228,7 @@ if any(["duration" in par for par in args.parameters]):
 # Some things may have been double counted - undo this
 required_params = np.unique(required_params)
 
-logging.info("Required parameters to get from bank: %s", ", ".join(required_params))
+logger.info("Required parameters to get from bank: %s", ", ".join(required_params))
 
 # Get parameters not directly in the bank:
 for p in required_params:
@@ -240,7 +242,7 @@ for p in required_params:
     if p in _fit_parameters and args.fits_file is None:
         parser.error(f"Parameter {p} needs a --fits-file, but none is given")
 
-    logging.info("Converting %s", p)
+    logger.info("Converting %s", p)
     bank[p] = bconv.get_bank_property(p, bank, np.arange(banklen))
 
 if args.mpl_style == "dark_background":
@@ -282,7 +284,7 @@ for p in required_minmax:
 # Deal with non-coloring case:
 zvals = bank_fa[cpar] if cpar else None
 
-logging.info("Generating corner plot")
+logger.info("Generating corner plot")
 
 fig, axis_dict = create_multidim_plot(
     args.parameters,
@@ -355,7 +357,7 @@ for (p1, p2), ax in axis_dict.items():
         if p2 in args.log_parameters:
             ax[0].semilogy()
 
-logging.info("Plot generated")
+logger.info("Plot generated")
 fig.set_dpi(args.dpi)
 
 # save
@@ -371,4 +373,4 @@ metadata.save_fig_with_metadata(
 )
 
 # finish
-logging.info("Done")
+logger.info("Done")

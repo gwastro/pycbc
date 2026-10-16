@@ -12,6 +12,8 @@ from glue.pipeline import CondorDAG, CondorDAGJob, CondorDAGNode, CondorJob
 
 from pycbc import add_common_pycbc_options, init_logging
 
+logger = logging.getLogger(__name__)
+
 
 class BaseJob(CondorDAGJob, CondorJob):
     def __init__(
@@ -189,12 +191,12 @@ try:
     accounting_group = confs.get("workflow", "accounting-group")
 except:
     accounting_group = None
-    logging.warning(
+    logger.warning(
         "Warning: accounting-group not specified, LDG clusters may "
         "reject this workflow!"
     )
 
-logging.info("Making workspace directories")
+logger.info("Making workspace directories")
 mkdir("scripts")
 mkdir("bank")
 mkdir("match")
@@ -203,17 +205,17 @@ mkdir("match-part")
 mkdir("log")
 mkdir("plots")
 
-logging.info("Copying scripts")
+logger.info("Copying scripts")
 shutil.copy(banksim_prog, "scripts/pycbc_banksim")
 os.chmod("scripts/pycbc_banksim", 0o0777)
 
-logging.info("Creating injection file")
+logger.info("Creating injection file")
 if confs.has_section("inspinj"):
-    logging.info("Using lalapps_inspinj to create injections")
+    logger.info("Using lalapps_inspinj to create injections")
     inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
     os.system(inj_str)
 elif confs.has_section("external_injection"):
-    logging.info(
+    logger.info(
         "Using external injection file. Please ensure the file is in sim_inspiral table (.xml) format."
     )
     inj_file_path = confs.get("external_injection", "inj-file")
@@ -226,7 +228,7 @@ else:
         "Need to specify the injection method. Either provide [inspinj] section or [external_injection]"
     )
 
-logging.info("Splitting template bank")
+logger.info("Splitting template bank")
 subprocess.call(
     [
         "pycbc_splitbank",
@@ -240,7 +242,7 @@ subprocess.call(
     ]
 )
 
-logging.info("Splitting injection file")
+logger.info("Splitting injection file")
 subprocess.call(
     [
         "pycbc_splitbank",
@@ -257,7 +259,7 @@ subprocess.call(
 num_banks = len(glob.glob("bank/bank*"))
 num_injs = len(glob.glob("injection/injection*"))
 
-logging.info("Creating DAG")
+logger.info("Creating DAG")
 f = open("banksim.dag", "w")
 
 do_count = 0
@@ -330,7 +332,7 @@ dag.add_node(rnode)
 pnode.add_parent(rnode)
 dag.add_node(pnode)
 
-logging.info("DO : %d SKIP %d" % (do_count, skip_count))
+logger.info("DO : %d SKIP %d", do_count, skip_count)
 f.close()
 
 f = open("scripts/pycbc_banksim_match_combine", "w")
@@ -495,7 +497,7 @@ if gpu:
     """)
     os.chmod("scripts/diff_match.sh", 0o0777)
 
-logging.info("Creating submit script")
+logger.info("Creating submit script")
 f = open("submit.sh", "w")
 if gpu:
     f.write("""#!/bin/bash
@@ -635,4 +637,4 @@ mplot(q, ispin2z, (imchirp-tmchirp)/imchirp, "plots/q-s2z-mchirpreldiff.png")
 """)
 os.chmod("scripts/pycbc_banksim_plots", 0o0777)
 
-logging.info("Done")
+logger.info("Done")

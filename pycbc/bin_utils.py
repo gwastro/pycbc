@@ -11,7 +11,7 @@ import math
 
 import numpy
 
-logger = logging.getLogger("pycbc.bin_utils")
+logger = logging.getLogger(__name__)
 
 
 class Bins:

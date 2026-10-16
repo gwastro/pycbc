@@ -25,7 +25,7 @@ from foton import Filter, iir2z
 
 from pycbc import frame
 
-logger = logging.getLogger("pycbc.filter.fotonfilter")
+logger = logging.getLogger(__name__)
 
 
 def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):

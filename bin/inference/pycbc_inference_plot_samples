@@ -32,6 +32,8 @@ import pycbc
 from pycbc import results
 from pycbc.inference import io
 
+logger = logging.getLogger(__name__)
+
 # command line usage
 parser = argparse.parser = io.ResultsArgumentParser(skip_args=["chains", "iteration"])
 pycbc.add_common_pycbc_options(parser)
@@ -68,7 +70,7 @@ else:
 
 # plot samples
 # plot each parameter as a different subplot
-logging.info("Plotting samples")
+logger.info("Plotting samples")
 fig, axs = plt.subplots(ndim, figsize=(10, 8), sharex=True)
 plt.xlabel("Iteration")
 
@@ -149,4 +151,4 @@ results.save_fig_with_metadata(
 plt.close()
 
 # exit
-logging.info("Done")
+logger.info("Done")

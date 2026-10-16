@@ -17,6 +17,8 @@ import pycbc.results.followup
 from pycbc.detector import Detector
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 labels = {
     "mchirp": "Chirp Mass",
     "mtotal": "Total Mass",
@@ -93,7 +95,7 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-logging.info("Read in the data")
+logger.info("Read in the data")
 f = HFile(args.injection_file, "r")
 time = f["injections/tc"][:]
 found = f["found_after_vetoes/injection_index"][:]
@@ -139,7 +141,7 @@ dvals = {}
 if "ifos" in f.attrs:
     ifos = f.attrs["ifos"].split(" ")
 else:
-    logging.warning("Ifos not found in input file, assuming H-L")
+    logger.warning("Ifos not found in input file, assuming H-L")
     ifos = ["H1", "L1"]
 
 # NOTE: Effective distance is hardcoded to these values. It's also normally

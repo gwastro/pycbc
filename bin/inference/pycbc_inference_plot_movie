@@ -58,6 +58,8 @@ from pycbc.inference import io, option_utils
 from pycbc.results.plot import add_style_opt_to_parser, set_style_from_cli
 from pycbc.results.scatter_histograms import create_multidim_plot, get_scale_fac
 
+logger = logging.getLogger(__name__)
+
 
 def integer_logspace(start, end, num):
     """
@@ -201,7 +203,7 @@ if len(opts.input_file) > 1:
     raise ValueError("this program can only plot one file at a time")
 
 # Get data
-logging.info("Loading parameters")
+logger.info("Loading parameters")
 fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
 
 # get the total number of samples on disk
@@ -261,7 +263,7 @@ else:
 
 # Get z-values
 if opts.z_arg is not None:
-    logging.info("Getting samples for colorbar")
+    logger.info("Getting samples for colorbar")
     if opts.z_arg == "snr":
         z_arg = "loglikelihood"
     else:
@@ -312,7 +314,7 @@ if opts.plot_injection_parameters:
             vals = injections[p]
         except NameError:
             # injection doesn't have this parameter, skip
-            logging.warning("Could not find injection parameter %s", p)
+            logger.warning("Could not find injection parameter %s", p)
             continue
         unique_vals = numpy.unique(vals)
         if unique_vals.size != 1:
@@ -329,7 +331,7 @@ if opts.plot_injection_parameters:
 expected_parameters.update(option_utils.expected_parameters_from_cli(opts))
 expected_parameters_color = opts.expected_parameters_color
 
-logging.info("Choosing common characteristics for all figures")
+logger.info("Choosing common characteristics for all figures")
 # Set common min and max for axis in all plots
 mins, maxs = option_utils.plot_ranges_from_cli(opts)
 # add any missing parameters
@@ -432,11 +434,11 @@ else:
     make_frame = _make_frame
     mfunc = map
 
-logging.info("Making frames")
+logger.info("Making frames")
 aspect_ratio = list(mfunc(make_frame, range(len(indices))))[0]
 
 if opts.movie_file:
-    logging.info("Making movie")
+    logger.info("Making movie")
     frame_files = opts.output_prefix + "*.png"
     # set the aspect ratio
     aspect_ratio = f"1024x{int(1024 * aspect_ratio)}"
@@ -457,8 +459,8 @@ if opts.movie_file:
         ]
     )
     if opts.cleanup:
-        logging.info("Removing frames")
+        logger.info("Removing frames")
         for frame in glob.glob(frame_files):
             os.remove(frame)
 
-logging.info("Done")
+logger.info("Done")

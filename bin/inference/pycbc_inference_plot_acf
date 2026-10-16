@@ -30,6 +30,8 @@ from pycbc import results
 from pycbc.inference import io
 from pycbc.inference.sampler import samplers
 
+logger = logging.getLogger(__name__)
+
 # command line usage
 # turn off thin-interval since it won't be used
 parser = io.ResultsArgumentParser(
@@ -74,12 +76,12 @@ except AttributeError:
     pass
 
 # load the results
-logging.info("Loading parameters")
+logger.info("Loading parameters")
 fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
 
 
 # calculate autocorrelation function
-logging.info("Calculating autocorrelation functions")
+logger.info("Calculating autocorrelation functions")
 acfs = samplers[fp.sampler].compute_acf(
     fp.filename,
     start_index=opts.thin_start,
@@ -106,15 +108,15 @@ except KeyError:
 fig_height = max(6, 3 * len(temps))
 
 # plot autocorrelation
-logging.info("Plotting autocorrelation functions")
+logger.info("Plotting autocorrelation functions")
 fig = plt.figure(figsize=(8, fig_height))
 for kk, tk in enumerate(temps):
     if multi_tempered:
-        logging.info(f"Temperature {tk}")
+        logger.info("Temperature %s", tk)
     axnum = len(temps) - kk
     ax = fig.add_subplot(len(temps), 1, axnum)
     for param in parameters:
-        logging.info(f"Parameter {param}")
+        logger.info("Parameter %s", param)
         if multi_tempered:
             acf = acfs[param][kk, ...]
         else:
@@ -158,4 +160,4 @@ plt.close()
 
 # exit
 fp.close()
-logging.info("Done")
+logger.info("Done")

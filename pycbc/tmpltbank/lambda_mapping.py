@@ -24,7 +24,7 @@ from pycbc.constants import MTSUN_SI, PI
 lal = pycbc.libutils.import_optional("lal")
 lalsimulation = pycbc.libutils.import_optional("lalsimulation")
 
-logger = logging.getLogger("pycbc.tmpltbank.lambda_mapping")
+logger = logging.getLogger(__name__)
 
 # PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
 pycbcValidTmpltbankOrders = [

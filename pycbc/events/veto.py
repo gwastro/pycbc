@@ -10,7 +10,7 @@ from igwn_ligolw import ligolw, lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_segments import segment, segmentlist
 
-logger = logging.getLogger("pycbc.events.veto")
+logger = logging.getLogger(__name__)
 
 
 def start_end_to_segments(start, end):

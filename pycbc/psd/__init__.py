@@ -35,6 +35,8 @@ from pycbc.types import (
     required_opts_multi_ifo,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def from_cli(
     opt,
@@ -752,7 +754,7 @@ def generate_segment_psds(
     if opt.psd_num_segments is None:
         num_segments = max(int(input_data_len // seg_stride) - 1, 1)
         if num_segments < 10:
-            logging.warning(
+            logger.warning(
                 "Only %d Welch segment(s) fit in the %.0fs of data available "
                 "for PSD estimation; the PSD estimate will be noisy. Provide "
                 "more data or set --psd-num-segments explicitly.",
@@ -818,7 +820,7 @@ def generate_segment_psds(
     if uncovered:
         epoch = float(gwstrain.start_time)
         a0, a1, p0, p1 = uncovered[0]
-        logging.warning(
+        logger.warning(
             "%d of %d analysis segment(s) are not fully covered by the data "
             "used to estimate their PSD, so the matched-filter SNR near the "
             "uncovered edge(s) will be slightly over-estimated. Increase "

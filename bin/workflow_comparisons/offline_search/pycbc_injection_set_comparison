@@ -29,6 +29,8 @@ from h5py import File
 import pycbc
 from pycbc.events import ranking
 
+logger = logging.getLogger(__name__)
+
 
 def parse_injection_path(injname, basedir):
     dirpath = path.expandvars(basedir)
@@ -131,7 +133,7 @@ class RunInjectionResults:
         self.dirpath = dirpath
         self.nmissed = nmissed
         self.ifar_threshold = ifar_threshold
-        logging.info(f"Reading injection directory {self.dirpath}")
+        logger.info("Reading injection directory %s", self.dirpath)
         self.injfile = File(injfile, "r")
         self.bankfile = File(bankfile, "r")
         self.inj_dets = [
@@ -192,8 +194,10 @@ class RunInjectionResults:
         # Record what the single detector statistic is
         self.single_detector_statistic = single_detector_statistic
         # Next, read information from the two trigger merge files
-        logging.info(
-            f"Reading single detector triggers from {self.dirpath}; findingminimum of {self.single_detector_statistic}"
+        logger.info(
+            "Reading single detector triggers from %s; findingminimum of %s",
+            self.dirpath,
+            self.single_detector_statistic,
         )
         for fdict in [self.found, self.found_after_vetoes]:
             for ifo in self.inj_dets:
@@ -291,7 +295,7 @@ def populate_injection_group(fgroup, fidx, fdict, ifos):
 def compare_found_injs(reference_run, comparison_run, outfp):
     ifos = reference_run.inj_dets
     for found_class in ["found", "found_after_vetoes"]:
-        logging.info(f"Comparing found injections for class '{found_class}'")
+        logger.info("Comparing found injections for class '%s'", found_class)
         fgroup = outfp.create_group(found_class)
         ref_found = getattr(reference_run, found_class)
         com_found = getattr(comparison_run, found_class)
@@ -300,7 +304,7 @@ def compare_found_injs(reference_run, comparison_run, outfp):
         # Note that intersect1d returns sorted, unique elements in both arrays
         # Because we set 'return_indices' to True, we also get the index into
         # each array of these common elements
-        logging.info(
+        logger.info(
             "Calculating indices of found/missed injections between"
             " reference and comparison runs"
         )
@@ -317,18 +321,18 @@ def compare_found_injs(reference_run, comparison_run, outfp):
         ref_only_group = fgroup.create_group("found_reference_only")
         com_only_group = fgroup.create_group("found_comparison_only")
         # Now fill these groups with the various data they should contain
-        logging.info("Writing injections found in both, reference run")
+        logger.info("Writing injections found in both, reference run")
         populate_injection_group(ref_both_group, ref_both_idx, ref_found, ifos)
-        logging.info("Writing injections found only in reference run")
+        logger.info("Writing injections found only in reference run")
         populate_injection_group(ref_only_group, ref_only_idx, ref_found, ifos)
-        logging.info("Writing injections found in both, comparison run")
+        logger.info("Writing injections found in both, comparison run")
         populate_injection_group(com_both_group, com_both_idx, com_found, ifos)
-        logging.info("Writing injections found only in comparison run")
+        logger.info("Writing injections found only in comparison run")
         populate_injection_group(com_only_group, com_only_idx, com_found, ifos)
 
 
 def compare_missed_injs(reference_run, comparison_run, outfp):
-    logging.info("Comparing missed injections after vetoes")
+    logger.info("Comparing missed injections after vetoes")
     ifos = reference_run.inj_dets
     fgroup = outfp.create_group("missed_after_vetoes")
     ref_missed = reference_run.missed["after_vetoes"]
@@ -352,8 +356,8 @@ def compare_missed_injs(reference_run, comparison_run, outfp):
     # Now find the indices of the required loudest missed injections
     # Note that we are assuming that the injection table contains
     # optimal SNR columns, which may not always be true.
-    logging.info(
-        f"Finding {reference_run.nmissed} loudest missed injections in reference run"
+    logger.info(
+        "Finding %s loudest missed injections in reference run", reference_run.nmissed
     )
     o1 = reference_run.injgroup["optimal_snr_1"][:][ref_missed]
     o2 = reference_run.injgroup["optimal_snr_2"][:][ref_missed]
@@ -361,8 +365,8 @@ def compare_missed_injs(reference_run, comparison_run, outfp):
     ref_sort = ref_dec_snr.argsort()
     ref_sort = ref_sort[::-1]
     ref_missed_n = ref_missed[ref_sort][0 : reference_run.nmissed]
-    logging.info(
-        f"Finding {comparison_run.nmissed} loudest missed injections in comparison run"
+    logger.info(
+        "Finding %s loudest missed injections in comparison run", comparison_run.nmissed
     )
     o1 = comparison_run.injgroup["optimal_snr_1"][:][com_missed]
     o2 = comparison_run.injgroup["optimal_snr_2"][:][com_missed]
@@ -371,13 +375,13 @@ def compare_missed_injs(reference_run, comparison_run, outfp):
     com_sort = com_sort[::-1]
     com_missed_n = com_missed[com_sort][0 : comparison_run.nmissed]
     # Now see which missed injections in one run were found in the other
-    logging.info("Finding loud injections missed only in reference run")
+    logger.info("Finding loud injections missed only in reference run")
     ref_missed_only_idx = np.isin(ref_missed_n, com_above)
     ref_missed_only = ref_missed_n[ref_missed_only_idx]
     ref_missed_only_locs = np.where(ref_missed_only_idx)[0]
     com_ii = comparison_run.found_after_vetoes["injection_index"]
     ref_missed_com_idx = np.isin(com_ii, ref_missed_only)
-    logging.info("Finding loud injections missed only in comparison run")
+    logger.info("Finding loud injections missed only in comparison run")
     com_missed_only_idx = np.isin(com_missed_n, ref_above)
     com_missed_only = com_missed_n[com_missed_only_idx]
     com_missed_only_locs = np.where(com_missed_only_idx)[0]
@@ -387,7 +391,7 @@ def compare_missed_injs(reference_run, comparison_run, outfp):
     ref_only_group = outfp.create_group("missed_after_vetoes/missed_only_reference")
     com_only_group = outfp.create_group("missed_after_vetoes/missed_only_comparison")
     # Now fill these groups with the various data they should contain
-    logging.info("Writing loud injections missed only in reference run")
+    logger.info("Writing loud injections missed only in reference run")
     ref_only_group.create_dataset("injection_index", data=ref_missed_only)
     ref_only_group.create_dataset("loudest_rank", data=ref_missed_only_locs)
     ref_missed_com_group = ref_only_group.create_group("comparison")
@@ -397,7 +401,7 @@ def compare_missed_injs(reference_run, comparison_run, outfp):
         comparison_run.found_after_vetoes,
         ifos,
     )
-    logging.info("Writing loud injections missed only in comparison run")
+    logger.info("Writing loud injections missed only in comparison run")
     com_only_group.create_dataset("injection_index", data=com_missed_only)
     com_only_group.create_dataset("loudest_rank", data=com_missed_only_locs)
     com_missed_ref_group = com_only_group.create_group("reference")
@@ -473,7 +477,7 @@ com_found_injs = RunInjectionResults(
     args.ifar_threshold,
 )
 
-logging.info("Comparing injection parameters between reference and comparison runs")
+logger.info("Comparing injection parameters between reference and comparison runs")
 same_inj = ref_found_injs == com_found_injs
 if not same_inj:
     raise RuntimeError(
@@ -497,4 +501,4 @@ compare_missed_injs(ref_found_injs, com_found_injs, outfp)
 
 outfp.close()
 
-logging.info("Finished")
+logger.info("Finished")

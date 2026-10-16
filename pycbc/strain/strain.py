@@ -52,7 +52,7 @@ from pycbc.types import (
 )
 from pycbc.waveform.spa_tmplt import spa_distance
 
-logger = logging.getLogger("pycbc.strain.strain")
+logger = logging.getLogger(__name__)
 
 
 def next_power_of_2(n):
@@ -330,7 +330,7 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
             )
             raise ValueError(err_msg)
 
-        logging.info("Reading Frames containing injections")
+        logger.info("Reading Frames containing injections")
 
         if opt.injection_frame_type:
             injection_strain = pycbc.frame.query_and_read_frame(

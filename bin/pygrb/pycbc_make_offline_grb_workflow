@@ -39,6 +39,8 @@ from pycbc.workflow.core import FileList, SegFile, configparser_value_to_file
 from pycbc.workflow.injection import compute_inj_optimal_snr
 from pycbc.workflow.psd import make_psd_file
 
+logger = logging.getLogger(__name__)
+
 workflow_name = "pygrb_offline"
 
 # Parse command line options and instantiate pycbc workflow object
@@ -54,12 +56,12 @@ wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
 tags = []
 
-logging.info("Generating %s workflow" % workflow_name)
+logger.info("Generating %s workflow", workflow_name)
 
 # Setup run directory
 triggername = str(wflow.cp.get("workflow", "trigger-name"))
 output_dir = os.path.abspath(args.output_dir)
-logging.info("Workflow will be generated in %s", output_dir)
+logger.info("Workflow will be generated in %s", output_dir)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 os.chdir(output_dir)
@@ -103,7 +105,7 @@ else:
 single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
 if len(sciSegs.keys()) == 0:
     make_grb_segments_plot(wflow, segmentlistdict(), triggertime, triggername, seg_dir)
-    logging.error("No science segments available.")
+    logger.error("No science segments available.")
     sys.exit()
 elif len(sciSegs.keys()) < 2 and not single_ifo:
     make_grb_segments_plot(
@@ -113,14 +115,14 @@ elif len(sciSegs.keys()) < 2 and not single_ifo:
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file."
-    logging.error(msg)
+    logger.error(msg)
     sys.exit()
 
 onSrc, offSrc, bufferSeg = _workflow.generate_triggered_segment(wflow, seg_dir, sciSegs)
 
 sciSegs = segmentlistdict(sciSegs)
 if onSrc is None:
-    logging.info("Making segment plot and exiting.")
+    logger.info("Making segment plot and exiting.")
     # `make_grb_segments_plot()` wants a single segment for fail_criterion.
     fail_criterion = offSrc[wflow.ifos[0]][0]
     make_grb_segments_plot(
@@ -142,7 +144,7 @@ sciSegs = offSrc
 all_files.append(segs_plot)
 
 if len(sciSegs) == 1:
-    logging.info("Generating a single IFO search.")
+    logger.info("Generating a single IFO search.")
     mf_tag = "sngl"
 elif len(sciSegs) > 1:
     mf_tag = "coherent"
@@ -205,7 +207,7 @@ ifo = ifos[0]
 
 # GATING
 if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
-    logging.info("Creating gating jobs.")
+    logger.info("Creating gating jobs.")
     wflow.cp = _workflow.set_grb_start_end(
         wflow.cp, int(sciSegs[ifo][0][0]), int(sciSegs[ifo][0][1])
     )
@@ -217,13 +219,13 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
         if gating_method == "IN_WORKFLOW":
             wflow.add_node(gating_node)
         elif gating_method == "AT_RUNTIME":
-            logging.info("Executing gating node...")
+            logger.info("Executing gating node...")
             wflow.execute_node(gating_node)
         else:
             msg = "[workflow-condition_strain] option 'gating-method' can "
             msg += "only have one of the values 'IN_WORKFLOW' or 'AT_RUNTIME'."
             msg += " You have provided the value %s." % gating_method
-            logging.error(msg)
+            logger.error(msg)
             sys.exit()
     datafind_files = _workflow.FileList([])
     for ifo in ifos:
@@ -262,7 +264,7 @@ for ifo in ifos:
         vetoed_segs = offSrc[ifo] - avail_segs
         if onSrc[ifo].intersects(vetoed_segs):
             intersection = onSrc[ifo] & vetoed_segs
-            logging.error(
+            logger.error(
                 "The onsource %s contains the time %s that is vetoed in %s.",
                 onSrc[ifo][0][:],
                 intersection,
@@ -275,7 +277,7 @@ skygrid_file = None
 if wflow.cp.has_option("workflow", "sky-error") or wflow.cp.has_option(
     "workflow", "input-dist"
 ):
-    logging.info("Generating sky-grid file.")
+    logger.info("Generating sky-grid file.")
     skygrid_file = _workflow.make_skygrid_node(wflow, df_dir, tags=["SEARCH"])
     input_files.extend(skygrid_file)
 
@@ -292,7 +294,7 @@ elif wflow.cp.has_option(
     msg += "[workflow-inspiral] and 'ipn-sim-points' under "
     msg += "[workflow-injections] in your configuration files. If this is an "
     msg += "IPN GRB please provide both, otherwise provide neither."
-    logging.error(msg)
+    logger.error(msg)
     sys.exit()
 else:
     IPN = False
@@ -342,7 +344,7 @@ if wflow.cp.has_section("calculate_psd"):
     tv_psd_files = FileList([])
 
     for ifo in wflow.ifos:
-        logging.info("Creating time-varying PSD job for %s", ifo)
+        logger.info("Creating time-varying PSD job for %s", ifo)
 
         # Segment file containing the FULL analysis segment
         psd_segfile = SegFile.from_segment_list(
@@ -365,7 +367,7 @@ if wflow.cp.has_section("calculate_psd"):
 
         tv_psd_files.append(psd_file)
 
-    logging.info("Created %d time-varying PSDs", len(tv_psd_files))
+    logger.info("Created %d time-varying PSDs", len(tv_psd_files))
 
 # INJECTIONS
 injs = None
@@ -424,7 +426,7 @@ if wflow.cp.has_section("workflow-injections"):
                 wflow, inj, tv_psd_files, snr_dir, tags=[inj_tag]
             )
             optimal_snr_files.append(snr_file)
-            logging.info(
+            logger.info(
                 "Optimal SNR workflow node created for injection tag %s", inj_tag
             )
         all_files.extend(optimal_snr_files)
@@ -577,9 +579,9 @@ if post_proc_method == "PYGRB_OFFLINE":
     sec_name = "workflow-pygrb_results_workflow"
     if not wflow.cp.has_section(sec_name):
         msg = f"No {sec_name} section found in configuration file."
-        logging.info(msg)
+        logger.info(msg)
     else:
-        logging.info("Entering results module")
+        logger.info("Entering results module")
         results_files = _workflow.setup_pygrb_results_workflow(
             wflow,
             pp_dir,
@@ -591,11 +593,11 @@ if post_proc_method == "PYGRB_OFFLINE":
             skygrid_file[0],
             veto_file=veto_file,
         )
-        logging.info("Leaving results module")
+        logger.info("Leaving results module")
 
 all_files.extend(pp_files)
 all_files.extend(results_files)
 
 # COMPILE WORKFLOW AND WRITE DAX
 wflow.save()
-logging.info("Written dax.")
+logger.info("Written dax.")

@@ -53,7 +53,7 @@ import logging
 import numpy
 from scipy.stats import kstest
 
-logger = logging.getLogger("pycbc.events.trigger_fits")
+logger = logging.getLogger(__name__)
 
 
 def exponential_fitalpha(vals, thresh, w):

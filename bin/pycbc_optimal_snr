@@ -46,6 +46,8 @@ from pycbc.types import (
     zeros,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class TimeIndependentPSD:
     def __init__(self, psd_series):
@@ -247,7 +249,7 @@ if __name__ == "__main__":
     flen = tlen // 2 + 1
     f_low = opts.f_low
 
-    logging.info("Loading PSDs")
+    logger.info("Loading PSDs")
     if opts.time_varying_psds:
         psds = {}
         for tvpsd_file in opts.time_varying_psds:
@@ -297,25 +299,25 @@ if __name__ == "__main__":
             psd = psds[det](injection_time)
             if psd is None:
                 continue
-            logging.debug("Trying injection %s at %s", inj.simulation_id, det)
+            logger.debug("Trying injection %s at %s", inj.simulation_id, det)
             try:
                 wave = get_injection(
                     injections, det, injection_time, simulation_id=inj.simulation_id
                 )
             except Exception as e:
                 if opts.ignore_waveform_errors:
-                    logging.debug(
+                    logger.debug(
                         "%s: waveform generation failed, skipping (%s)",
                         inj.simulation_id,
                         e,
                     )
                     continue
-                logging.exception(
+                logger.exception(
                     "%s: waveform generation failed with the following exception",
                     inj.simulation_id,
                 )
                 raise
-            logging.debug("Injection %s at %s completed", inj.simulation_id, det)
+            logger.debug("Injection %s at %s completed", inj.simulation_id, det)
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
             if ligolw:
                 setattr(inj, column, sval)
@@ -323,7 +325,7 @@ if __name__ == "__main__":
                 inj[column] = sval
         return inj
 
-    logging.info("Loading injections")
+    logger.info("Loading injections")
     injections = pycbc.inject.InjectionSet.from_cli(opts)
     inj_table = injections.table
 
@@ -370,7 +372,7 @@ if __name__ == "__main__":
     inj_table = inj_table[imin:imax]
 
     if opts.cores > 1:
-        logging.info("Starting workers")
+        logger.info("Starting workers")
         pool = Pool(processes=opts.cores)
         iterator = pool.imap_unordered(compute_optimal_snr, inj_table)
     else:
@@ -383,7 +385,7 @@ if __name__ == "__main__":
 
             iterator = tqdm(iterator, total=len(inj_table))
         except ImportError:
-            logging.warning("cannot import tqdm; not showing progress bar")
+            logger.warning("cannot import tqdm; not showing progress bar")
 
     for inj in iterator:
         new_inj_table.append(inj)
@@ -394,7 +396,7 @@ if __name__ == "__main__":
     if not ligolw:
         new_inj_table = pycbc.io.FieldArray.from_records(new_inj_table, dtype=inj_dtype)
 
-    logging.info("Writing output")
+    logger.info("Writing output")
 
     if ligolw:
         llw_doc = injections.indoc
@@ -405,4 +407,4 @@ if __name__ == "__main__":
     else:
         pycbc.inject.InjectionSet.write(opts.out_file, new_inj_table)
 
-    logging.info("Done")
+    logger.info("Done")

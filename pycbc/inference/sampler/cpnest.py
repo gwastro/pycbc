@@ -38,6 +38,8 @@ from pycbc.inference.io import CPNestFile, validate_checkpoint_files
 from .base import BaseSampler, setup_output
 from .base_mcmc import get_optional_arg_from_config
 
+logger = logging.getLogger(__name__)
+
 #
 # =============================================================================
 #
@@ -151,14 +153,14 @@ class CPNestSampler(BaseSampler):
     def finalize(self):
         logz = self._sampler.NS.logZ
         dlogz = 0.1  #######FIXME!!!!!###############
-        logging.info(f"log Z, dlog Z: {logz}, {dlogz}")
+        logger.info("log Z, dlog Z: %s, %s", logz, dlogz)
         for fn in [self.checkpoint_file]:
             with self.io(fn, "a") as fp:
                 fp.write_logevidence(logz, dlogz)
-        logging.info("Writing samples to files")
+        logger.info("Writing samples to files")
         for fn in [self.checkpoint_file, self.backup_file]:
             self.write_results(fn)
-        logging.info("Validating checkpoint and backup files")
+        logger.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
             self.checkpoint_file, self.backup_file, check_nsamples=False
         )

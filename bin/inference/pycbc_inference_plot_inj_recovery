@@ -19,6 +19,8 @@ import pycbc
 from pycbc.inference import io, option_utils
 from pycbc.results import save_fig_with_metadata
 
+logger = logging.getLogger(__name__)
+
 # parse command line
 parser = io.ResultsArgumentParser(description=__doc__)
 
@@ -61,7 +63,7 @@ injs = io.injections_from_cli(opts)
 
 # if a z-arg is specified, load samples for it
 if opts.z_arg is not None:
-    logging.info("Getting samples for colorbar")
+    logger.info("Getting samples for colorbar")
     zlbl = opts.z_arg_labels[opts.z_arg]
     zvals = []
     for fp in fps:
@@ -80,7 +82,7 @@ if opts.z_arg is not None:
     norm = mpl.colors.Normalize(vmin, vmax)
 
 # loop over input files and its samples
-logging.info("Plotting")
+logger.info("Plotting")
 for i, (input_file, input_fp, input_samples) in enumerate(
     zip(opts.input_file, fp, samples)
 ):
@@ -144,4 +146,4 @@ save_fig_with_metadata(
 )
 
 # done
-logging.info("Done")
+logger.info("Done")

@@ -31,6 +31,8 @@ from pycbc.pool import BroadcastPool
 from pycbc.types import real_same_precision_as
 from pycbc.waveform import compress
 
+logger = logging.getLogger(__name__)
+
 
 # --- WORKER FUNCTION ---
 def _worker(ii):
@@ -46,7 +48,7 @@ def _worker(ii):
 
     if template_duration is None:
         template_duration = seg_len // 2
-        logging.info(
+        logger.info(
             "Warning: was not able to determine template duration, "
             "setting half segment length for template %s",
             tmplt.template_hash,
@@ -238,7 +240,7 @@ if __name__ == "__main__":
     N = args.sample_rate * args.segment_length
     dtype = numpy.complex128
 
-    logging.info("loading bank")
+    logger.info("loading bank")
     # we'll do everything in double precision; if single is desired, we'll
     # cast to single when saving the waveforms
     bank_obj = waveform.FilterBank(
@@ -265,7 +267,7 @@ if __name__ == "__main__":
     t_pad = args.t_pad
     scale_val = args.scale
 
-    logging.info("getting psd")
+    logger.info("getting psd")
     psd_obj = pycbc.psd.from_cli(
         args,
         length=N // 2 + 1,
@@ -275,13 +277,13 @@ if __name__ == "__main__":
         precision="double",
     )
 
-    logging.info("writing template info to output")
+    logger.info("writing template info to output")
     output = bank_obj.write_to_hdf(
         args.output, force=args.force, write_compressed_waveforms=False
     )
     output.create_group("compressed_waveforms")
 
-    logging.info("Starting compression with %d processes", args.nprocesses)
+    logger.info("Starting compression with %d processes", args.nprocesses)
 
     pool = BroadcastPool(processes=args.nprocesses)
     results = pool.imap_unordered(_worker, range(bank_table.size))
@@ -299,9 +301,9 @@ if __name__ == "__main__":
 
         output["template_duration"][idx] = duration
         hcompressed.write_to_hdf(output, tmplt_hash, precision=args.precision)
-        logging.info("Saved compressed template %s", tmplt_hash)
+        logger.info("Saved compressed template %s", tmplt_hash)
 
     pool.close()
     pool.join()
     output.close()
-    logging.info("finished")
+    logger.info("finished")

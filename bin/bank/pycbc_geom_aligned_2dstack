@@ -38,6 +38,8 @@ from pycbc import pnutils
 from pycbc.io import HFile
 from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions
 
+logger = logging.getLogger(__name__)
+
 __author__ = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
@@ -225,7 +227,7 @@ points_info = []
 numtemps = len(temp_bank)
 for entry in temp_bank:
     temp_number += 1
-    logging.info("Analysing template %d" % temp_number)
+    logger.info("Analysing template %d", temp_number)
     # First find the closest point in our set of 2000000 defined above
     # This is used as the starting point
     xi1_des = entry[0]
@@ -242,10 +244,10 @@ for entry in temp_bank:
     masses_close = physMasses[dist < 0.03]
     bestMasses = physMasses[dist.argmin()]
     bestXis = xis[dist.argmin()]
-    logging.info("Template %d has initial distance of %e" % (temp_number, dist.min()))
+    logger.info("Template %d has initial distance of %e", temp_number, dist.min())
     # Reject point if it is too far away from *any* of these points
     if dist.min() > 2.0:
-        logging.info("Template %d rejected as too far away" % temp_number)
+        logger.info("Template %d rejected as too far away", temp_number)
         # Print info to the rejected points file
         if opts.threed_lattice:
             reject_info.append([xi1_des, xi2_des, xi3_des, 0, 0, 0, 0, dist.min()])
@@ -265,10 +267,10 @@ for entry in temp_bank:
     )
 
     # Now how close is it?
-    logging.info("Template %d has corrected distance of %e" % (temp_number, masses[5]))
+    logger.info("Template %d has corrected distance of %e", temp_number, masses[5])
     if masses[5] > opts.max_mismatch:
         # Reject point, it is too far away
-        logging.info("Template %d rejected as too far away" % temp_number)
+        logger.info("Template %d rejected as too far away", temp_number)
         if opts.threed_lattice:
             reject_info.append(
                 [
@@ -318,7 +320,7 @@ for entry in temp_bank:
         # Double check that no points appear outside what was calculated above
         if len(xis_close):
             if vec3_min > xis_close[:, 2].min():
-                logging.warning("WARNING: Numerical placement fails, trying again")
+                logger.warning("WARNING: Numerical placement fails, trying again")
                 temp_idx = xis_close[:, 2].argmin()
                 temmpBestMasses = masses_close[temp_idx]
                 temmpBestXis = xis_close[temp_idx]
@@ -340,7 +342,7 @@ for entry in temp_bank:
                     vec3_max = temmpvec3_max
                     vec3_depth = vec3_max - vec3_min
             if vec3_max < xis_close[:, 2].max():
-                logging.warning("WARNING: Numerical placement fails, trying again")
+                logger.warning("WARNING: Numerical placement fails, trying again")
                 temp_idx = xis_close[:, 2].argmax()
                 temmpBestMasses = physMasses[temp_idx]
                 temmpBestXis = xis[temp_idx]

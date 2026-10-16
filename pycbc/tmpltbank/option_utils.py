@@ -29,7 +29,7 @@ from pycbc.tmpltbank.lambda_mapping import (
 )
 from pycbc.types import nonnegative_float, positive_float
 
-logger = logging.getLogger("pycbc.tmpltbank.option_utils")
+logger = logging.getLogger(__name__)
 
 
 class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):

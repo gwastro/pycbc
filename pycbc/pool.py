@@ -9,7 +9,7 @@ import sys
 import types
 from multiprocessing import TimeoutError, cpu_count, get_context
 
-logger = logging.getLogger("pycbc.pool")
+logger = logging.getLogger(__name__)
 
 
 def use_fork_start_method():

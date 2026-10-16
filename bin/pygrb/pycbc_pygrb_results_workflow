@@ -36,6 +36,8 @@ import pycbc.workflow as _workflow
 from pycbc.results import layout, save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos
 
+logger = logging.getLogger(__name__)
+
 __author__ = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
@@ -51,7 +53,7 @@ def labels_in_files_metadata(labels, rundir, file_paths):
     based on the file name.
     """
     if len(labels) != len(file_paths):
-        logging.error("The two arguments must have the same length.")
+        logger.error("The two arguments must have the same length.")
 
     # Sort the file paths according to labels
     up_labels = [l.upper() for l in labels]
@@ -169,10 +171,10 @@ pycbc.init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s
 start_rundir = os.getcwd()
 
 # Create the workflow object
-logging.info("Generating %s workflow", args.workflow_name)
+logger.info("Generating %s workflow", args.workflow_name)
 wflow = _workflow.Workflow(args, name=args.workflow_name)
 
-logging.info("Post-processing output will be generated in %s", args.output_dir)
+logger.info("Post-processing output will be generated in %s", args.output_dir)
 if not os.path.exists(args.output_dir):
     _workflow.makedir(args.output_dir)
 os.chdir(args.output_dir)
@@ -202,15 +204,15 @@ trig_files = [
 ]
 [all_times_file, onsource_file, offsource_file] = trig_files[0:3]
 offtrial_files = trig_files[3:]
-logging.info("Using the following trigger files:")
-logging.info("All times: %s", all_times_file.storage_path)
-logging.info("Onsource: %s", onsource_file.storage_path)
-logging.info("Offsource: %s", offsource_file.storage_path)
-logging.info("Offtrials: %s", [f.storage_path for f in offtrial_files])
+logger.info("Using the following trigger files:")
+logger.info("All times: %s", all_times_file.storage_path)
+logger.info("Onsource: %s", onsource_file.storage_path)
+logger.info("Offsource: %s", offsource_file.storage_path)
+logger.info("Offtrials: %s", [f.storage_path for f in offtrial_files])
 
 sky_grid_file = os.path.join(start_rundir, args.sky_grid)
 sky_grid_file = _workflow.resolve_url_to_file(sky_grid_file)
-logging.info("Using the following sky grid : %s", sky_grid_file)
+logger.info("Using the following sky grid : %s", sky_grid_file)
 # File instance of the template bank file
 bank_file = os.path.join(start_rundir, args.bank_file)
 bank_file = _workflow.resolve_url_to_file(bank_file)
@@ -223,7 +225,7 @@ if not set(inj_sets).issubset(eff_secs):
     err_msg += "least one dedicated [pygrb_efficiency] subsection. "
     err_msg += "[injections] subsections found: %s. "
     err_msg += "[pygrb_efficiency] subsections found: %s. "
-    logging.error(err_msg, inj_sets, eff_secs)
+    logger.error(err_msg, inj_sets, eff_secs)
 inj_sets = [i.upper() for i in inj_sets]
 inj_files = labels_in_files_metadata(inj_sets, start_rundir, args.inj_files)
 full_inj_files = labels_in_files_metadata(inj_sets, start_rundir, args.full_inj_files)
@@ -258,7 +260,7 @@ logfile.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s: %(levelname)s: %(message)s")
 logfile.setFormatter(formatter)
 logging.getLogger("").addHandler(logfile)
-logging.info("Created log file %s", wf_log_file.storage_path)
+logger.info("Created log file %s", wf_log_file.storage_path)
 
 # TODO: Pick up inifile, segments plot, GRB time and location, and
 #       report IFO responses
@@ -301,13 +303,13 @@ _workflow.makedir(out_dir)
 # Retrieve the name of the preferred injection set for these plots
 tuning_inj_set = wflow.cp.get("workflow-pygrb_results_workflow", "tuning-inj-set")
 tuning_inj_set = tuning_inj_set.upper()
-logging.info("The tuning injections set is %s", tuning_inj_set)
+logger.info("The tuning injections set is %s", tuning_inj_set)
 
 # Retrieve the injections result File corresponding to the tuning set
 tuning_inj_file = inj_files.find_output_with_tag(
     tuning_inj_set, fail_if_not_single_file=True
 )
-logging.info("The tuning injections results file is %s", tuning_inj_file.storage_path)
+logger.info("The tuning injections results file is %s", tuning_inj_file.storage_path)
 
 # Loop over timeseries request by the user
 timeseries = wflow.cp.get_subsections("pygrb_plot_snr_timeseries")
@@ -427,7 +429,7 @@ if wflow.cp.has_section("pygrb_plot_coh_ifosnr"):
 else:
     msg = "No pygrb_plot_coh_ifosnr section found in the configuration file. "
     msg += "No coherent vs single detector SNR plots will be generated."
-    logging.info(msg)
+    logger.info(msg)
 
 # Null SNR/Overwhitened null stat vs Coherent SNR plots
 null_snr_out_dir = rdir["signal_consistency/null_snrs"]
@@ -557,9 +559,9 @@ for inj_set in inj_sets:
     if not wflow.cp.has_section("workflow-minifollowups"):
         msg = "No [workflow-minifollowups] section found in "
         msg += "configuration file"
-        logging.info(msg)
+        logger.info(msg)
     else:
-        logging.info("Entering minifollowups module for injections")
+        logger.info("Entering minifollowups module for injections")
         mfu_node = _workflow.setup_pygrb_minifollowups(
             wflow,
             qf_h5,
@@ -571,7 +573,7 @@ for inj_set in inj_sets:
             tags=inj_file.tags + ["loudest_quiet_found_injs"],
         )
         mfu_nodes.append(mfu_node)
-        logging.info("Leaving minifollowups")
+        logger.info("Leaving minifollowups")
 
 #
 # FAP distributions
@@ -611,9 +613,9 @@ out_dir = rdir["loudest_offsource_events/followups"]
 if not wflow.cp.has_section("workflow-minifollowups"):
     msg = "No [workflow-minifollowups] section found in "
     msg += "configuration file"
-    logging.info(msg)
+    logger.info(msg)
 else:
-    logging.info("Entering minifollowups module for offsource")
+    logger.info("Entering minifollowups module for offsource")
     mfu_node = _workflow.setup_pygrb_minifollowups(
         wflow,
         lofft_h5,
@@ -625,7 +627,7 @@ else:
         tags=["loudest_offsource_events"],
     )
     mfu_nodes.append(mfu_node)
-    logging.info("Leaving minifollowups")
+    logger.info("Leaving minifollowups")
 
 
 #
@@ -794,9 +796,9 @@ out_dir = rdir["open_box/loudest_event_followup"]
 if not wflow.cp.has_section("workflow-minifollowups"):
     msg = "No [workflow-minifollowups] section found in "
     msg += "configuration file"
-    logging.info(msg)
+    logger.info(msg)
 else:
-    logging.info("Entering minifollowups module for loudest onsource")
+    logger.info("Entering minifollowups module for loudest onsource")
     mfu_node = _workflow.setup_pygrb_minifollowups(
         wflow,
         lont_h5,
@@ -808,7 +810,7 @@ else:
         tags=["loudest_onsource_event"],
     )
     mfu_nodes.append(mfu_node)
-    logging.info("Leaving onsource minifollowups")
+    logger.info("Leaving onsource minifollowups")
 
 # Exclusion distances and efficiency plots based on the on-source
 out_dir = rdir["open_box/exclusion_distances"]
@@ -846,7 +848,7 @@ for inj_set in inj_sets:
 layout.two_column_layout(out_dir, eff_layout)
 
 # Job to gather all html material in the webpage
-logging.info("Path for make_results_web_page: %s", os.path.join(os.getcwd(), rdir.base))
+logger.info("Path for make_results_web_page: %s", os.path.join(os.getcwd(), rdir.base))
 _workflow.make_results_web_page(
     wflow,
     os.path.join(os.getcwd(), rdir.base),
@@ -880,4 +882,4 @@ layout.single_layout(rdir["workflow"], ([dashboard_file, log_file_html]))
 # Go back to the run directory and save the workflow
 os.chdir(start_rundir)
 wflow.save()
-logging.info("Dax written.")
+logger.info("Dax written.")

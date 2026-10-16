@@ -42,6 +42,8 @@ from pycbc.types import (
     zeros,
 )
 
+logger = logging.getLogger(__name__)
+
 BACKEND_PREFIX = "pycbc.vetoes.chisq_"
 
 
@@ -439,7 +441,7 @@ class SingleDetPowerChisq:
             if self.snr_threshold:
                 above = abs(snrv * snr_norm) > self.snr_threshold
                 num_above = above.sum()
-                logging.info("%s above chisq activation threshold" % num_above)
+                logger.info("%s above chisq activation threshold", num_above)
                 above_indices = indices[above]
                 above_snrv = snrv[above]
                 chisq_out = numpy.zeros(len(indices), dtype=numpy.float32)
@@ -526,7 +528,7 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
             if self.snr_threshold:
                 above = abs(snrv) > self.snr_threshold
                 num_above = above.sum()
-                logging.info("%s above chisq activation threshold" % num_above)
+                logger.info("%s above chisq activation threshold", num_above)
                 above_indices = indices[above]
                 above_snrv = snrv[above]
                 u_vals = u_vals[above]

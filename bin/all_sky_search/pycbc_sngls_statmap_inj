@@ -15,6 +15,8 @@ import pycbc.io
 import pycbc.pnutils
 from pycbc.events import significance
 
+logger = logging.getLogger(__name__)
+
 
 class fw:
     def __init__(self, name):
@@ -76,17 +78,17 @@ pycbc.init_logging(args.verbose)
 
 significance.check_significance_options(args, parser)
 
-logging.info("Loading triggers")
-logging.info("IFO input: %s" % args.ifos[0])
+logger.info("Loading triggers")
+logger.info("IFO input: %s", args.ifos[0])
 all_trigs = pycbc.io.MultiifoStatmapData(files=args.sngls_files, ifos=args.ifos)
 ifo = args.ifos[0]
 assert ifo + "/time" in all_trigs.data
 
-logging.info("We have %s triggers" % len(all_trigs.stat))
-logging.info("Clustering triggers")
+logger.info("We have %s triggers", len(all_trigs.stat))
+logger.info("Clustering triggers")
 all_trigs = all_trigs.cluster(args.cluster_window)
 
-logging.info("getting background statistics")
+logger.info("getting background statistics")
 
 fb = pycbc.io.HFile(args.full_data_background, "r")
 back_stat = fb["background/stat"][:]
@@ -101,7 +103,7 @@ fore_locs = numpy.flatnonzero(all_trigs.timeslide_id == 0)
 fg_time = fb.attrs["background_time"]
 fg_time_exc = fb.attrs["background_time_exc"]
 
-logging.info("Dumping foreground triggers")
+logger.info("Dumping foreground triggers")
 f = fw(args.output_file)
 f.attrs["num_of_ifos"] = 1
 f.attrs["ifos"] = ifo
@@ -119,7 +121,7 @@ for k in all_trigs.data:
     f["foreground/" + k] = all_trigs.data[k]
 
 
-logging.info("Estimating FAN from background statistic values")
+logger.info("Estimating FAN from background statistic values")
 # Ranking statistic of foreground and background
 fore_stat = all_trigs.stat[fore_locs]
 
@@ -151,4 +153,4 @@ for key, value in sig_info.items():
 if "name" in all_trigs.attrs:
     f.attrs["name"] = all_trigs.attrs["name"]
 
-logging.info("Done!")
+logger.info("Done!")

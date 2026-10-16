@@ -22,7 +22,7 @@ from pycbc import conversions, pnutils
 from pycbc.neutron_stars import load_ns_sequence
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 
-logger = logging.getLogger("pycbc.tmpltbank.coord_utils")
+logger = logging.getLogger(__name__)
 
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper, covary=True):

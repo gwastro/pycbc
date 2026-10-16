@@ -31,7 +31,7 @@ from pycbc.distributions.bounded import (
 from pycbc.distributions.power_law import UniformPowerLaw
 from pycbc.distributions.uniform import Uniform
 
-logger = logging.getLogger("pycbc.distributions.spins")
+logger = logging.getLogger(__name__)
 
 
 class IndependentChiPChiEff(Arbitrary):

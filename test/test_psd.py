@@ -281,7 +281,7 @@ class TestPSDSegmentPlacement(unittest.TestCase):
             psd_low_frequency_cutoff=None,
             invpsd_trunc_method=None,
         )
-        with self.context, mock.patch.object(pycbc.psd.logging, "warning") as warn:
+        with self.context, mock.patch.object(pycbc.psd.logger, "warning") as warn:
             out = generate_segment_psds(
                 opt,
                 noise,
@@ -298,7 +298,7 @@ class TestPSDSegmentPlacement(unittest.TestCase):
         # warning (segment fully covered by the window, so no other warning
         # fires either)
         opt.psd_num_segments = 0
-        with self.context, mock.patch.object(pycbc.psd.logging, "warning") as warn:
+        with self.context, mock.patch.object(pycbc.psd.logger, "warning") as warn:
             out = generate_segment_psds(
                 opt,
                 noise,

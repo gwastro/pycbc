@@ -17,7 +17,7 @@ import numpy
 
 import pycbc.detector
 
-logger = logging.getLogger("pycbc.events.coinc_rate")
+logger = logging.getLogger(__name__)
 
 
 def multiifo_noise_lograte(log_rates, slop):

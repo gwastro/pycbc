@@ -36,6 +36,8 @@ import pycbc.results.plot
 from pycbc.inference import io, option_utils
 from pycbc.results import save_fig_with_metadata
 
+logger = logging.getLogger(__name__)
+
 # parse command line
 parser = io.ResultsArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -66,14 +68,14 @@ pycbc.results.plot.set_style_from_cli(opts)
 pycbc.init_logging(opts.verbose)
 
 # read results
-logging.info("Loading parameters")
+logger.info("Loading parameters")
 _, parameters, labels, samples = io.results_from_cli(opts)
 
 # typecast to list for iteration
 samples = [samples] if not isinstance(samples, list) else samples
 
 # loop over input files and its samples
-logging.info("Plotting")
+logger.info("Plotting")
 measured_percentiles = {}
 
 for input_file, input_samples in zip(opts.input_file, samples):
@@ -167,4 +169,4 @@ save_fig_with_metadata(
 )
 
 # done
-logging.info("Done")
+logger.info("Done")

@@ -14,7 +14,7 @@ try:
 except ImportError:  # numpy < 2.0
     from numpy import trapz as trapezoid
 
-logger = logging.getLogger("pycbc.sensitivity")
+logger = logging.getLogger(__name__)
 
 
 def compute_search_efficiency_in_bins(
