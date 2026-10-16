@@ -338,9 +338,6 @@ def main():
         "--output-file", required=True, help="Output FIR bank HDF5 file."
     )
     parser.add_argument(
-        "--delta-f", nargs="+", type=float, required=True, help="Delta-f per level."
-    )
-    parser.add_argument(
         "--sample-rate", type=float, default=2048.0, help="Sample rate."
     )
     parser.add_argument(
@@ -363,15 +360,15 @@ def main():
     args = parser.parse_args()
 
     num_levels = len(args.max_taps)
-    for flag, vals in (("--delta-f", args.delta_f), ("--min-match", args.min_match)):
-        if len(vals) not in (1, num_levels):
-            sys.exit(f"Error: {flag} must have 1 or {num_levels} values")
+    if len(args.min_match) not in (1, num_levels):
+        sys.exit(f"Error: --min-match must have 1 or {num_levels} values")
     if Path(args.output_file).exists() and not args.force:
         sys.exit(f"Error: {args.output_file} exists (use --force)")
 
     pycbc.init_logging(args.verbose)
-    df_1 = float(args.delta_f[0])
-    flen_1 = round((args.sample_rate / 2.0) / df_1) + 1
+    fft_len_1 = 1 << max(1, 8 * int(args.max_taps[0]) - 1).bit_length()
+    df_1 = float(args.sample_rate) / fft_len_1
+    flen_1 = fft_len_1 // 2 + 1
     fine_bank = FilterBank(
         args.fine_bank,
         flen_1,
@@ -396,20 +393,19 @@ def main():
         is_lowest = level == 1
         label = f"level_{level}"
         max_taps = int(args.max_taps[level - 1])
-        lvl_df = float(
-            args.delta_f[level - 1] if len(args.delta_f) > 1 else args.delta_f[0]
-        )
+        fft_len = 1 << max(1, 8 * max_taps - 1).bit_length()
+        lvl_df = float(args.sample_rate) / fft_len
+        fit_flen = fft_len // 2 + 1
         min_match = float(
             args.min_match[level - 1] if len(args.min_match) > 1 else args.min_match[0]
         )
-        fit_flen = round((args.sample_rate / 2.0) / lvl_df) + 1
         lvl_complex = bool(args.complex_taps) if is_lowest else False
         min_f_low = float(np.min(fine_bank.table["f_lower"]))
 
         fine_bank.filter_length = fit_flen
         fine_bank.delta_f = lvl_df
-        fine_bank.N = (fit_flen - 1) * 2
-        fine_bank.delta_t = 1.0 / (fine_bank.N * lvl_df)
+        fine_bank.N = fft_len
+        fine_bank.delta_t = 1.0 / (fft_len * lvl_df)
         fine_bank.min_f_lower = min_f_low
 
         cfg = {
