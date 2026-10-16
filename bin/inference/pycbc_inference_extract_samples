@@ -316,7 +316,6 @@ fp = fps[0]
 skip_groups = opts.skip_groups
 if skip_groups is not None and "all" in opts.skip_groups:
     skip_groups = [group for group in fp.keys() if group != fp.samples_group]
-                   if group != fp.samples_group]
 # don't write the sampler info if more than one file was provided
 if len(opts.input_file) > 1:
     if skip_groups is None:
