@@ -128,7 +128,7 @@ def mchirp_q_to_mass1_mass2(mchirp, q):
     return mass1, mass2
 
 
-def A0(f_lower):
+def A0(f_lower):  # noqa: N802
     """
     Used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
     appendix 1, also lalinspiral/python/sbank/tau0tau3.py
@@ -136,7 +136,7 @@ def A0(f_lower):
     return conversions._a0(f_lower)
 
 
-def A3(f_lower):
+def A3(f_lower):  # noqa: N802
     """Another parameter used for chirp times"""
     return conversions._a3(f_lower)
 
