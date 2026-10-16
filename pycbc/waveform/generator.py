@@ -973,7 +973,6 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
                 dethc = self.recalib[detname].map_to_adjust(
                     dethc, **self.current_params)
             h[detname] = (dethp, dethc)
->>>>>>> f065f807c (rework functionality to allow for mixed cases (i.e., specifying RF and known detectors))
         if self.gates is not None:
             # resize all to nearest power of 2
             hps = {}
@@ -1616,7 +1615,6 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
                     dethlm_sin = self.recalib[detname].map_to_adjust(
                         dethlm_sin, **self.current_params)
                 hlm[detname][mode] = (dethlm_cos, dethlm_sin)
->>>>>>> ce6cc13a6 (fix errors)
             if self.gates is not None:
                 # resize all to nearest power of 2
                 hclms = {}
