@@ -1288,32 +1288,23 @@ class RatioFilterBank(FilterBank):
         # Cumulative sample shifts from higher FIR levels (level_num_levels .. level_2)
         self.parent_shift_map = {}
         for lvl in range(self.num_levels, 1, -1):
-            next_shifts = {}
-            for parent_key in self.level_keys[lvl]:
-                p_group = self.level_groups[lvl][parent_key]
-                child_indices = p_group["fine_bank_index"][:]
-                base_shift = self.parent_shift_map.get(int(parent_key), 0)
-                if "sample_shift" in p_group:
-                    shifts = p_group["sample_shift"][:]
-                    for child_idx, sh in zip(child_indices, shifts, strict=False):
-                        next_shifts[int(child_idx)] = base_shift + int(sh)
-                else:
-                    for child_idx in child_indices:
-                        next_shifts[int(child_idx)] = base_shift
-            self.parent_shift_map = next_shifts
-
-        # Mapping from fine template index to (level_1 parent index, local index)
-        self.fine_coarse_map = np.zeros((len(self.table), 2), dtype=int) - 1
-        for coarse_id in self.level_keys[1]:
-            fine_indices = self.level_groups[1][coarse_id]["fine_bank_index"][:]
-            if len(fine_indices) > 0:
-                mapback = np.column_stack(
-                    [
-                        np.ones(len(fine_indices), dtype=int) * int(coarse_id),
-                        np.arange(len(fine_indices), dtype=int),
-                    ]
+            self.parent_shift_map = {
+                int(c): self.parent_shift_map.get(int(k), 0) + int(s)
+                for k in self.level_keys[lvl]
+                for c, s in zip(
+                    self.level_groups[lvl][k]["fine_bank_index"][:],
+                    self.level_groups[lvl][k]["sample_shift"][:],
+                    strict=False,
                 )
-                self.fine_coarse_map[fine_indices] = mapback
+            }
+
+        self.sigma_sigma_rescale = np.ones(len(self.table))
+        for coarse_id in self.level_keys[1]:
+            c_group = self.level_groups[1][coarse_id]
+            fine_indices = c_group["fine_bank_index"][:]
+            sigmas = c_group["sigmas"][:]
+            if len(fine_indices) > 0:
+                self.sigma_sigma_rescale[fine_indices] = sigmas[:, 2] / sigmas[:, 0]
 
     @property
     def coarse_keys(self):
@@ -1342,9 +1333,9 @@ class RatioFilterBank(FilterBank):
         injection_parameters = inj_filter_rejector.injection_params.table
         fref = inj_filter_rejector.f_lower
         threshold = inj_filter_rejector.chirp_time_window
-        m1 = self.table["mass1"]
-        m2 = self.table["mass2"]
-        tau0_temp, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
+        tau0_temp, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(
+            self.table["mass1"], self.table["mass2"], fref
+        )
         sort = tau0_temp.argsort()
         tau0_sorted = tau0_temp[sort]
 
@@ -1357,24 +1348,26 @@ class RatioFilterBank(FilterBank):
             rid = np.searchsorted(tau0_sorted, tau0_inj + threshold)
             matched_fine.append(sort[lid:rid])
 
-        if len(matched_fine) > 0:
-            fine_keep = np.unique(np.concatenate(matched_fine))
-            coarse_keep = np.unique(self.fine_coarse_map[fine_keep, 0])
-            coarse_keep = coarse_keep[coarse_keep >= 0]
-            self.level_indices[1] = np.intersect1d(self.level_indices[1], coarse_keep)
-        else:
-            self.level_indices[1] = np.array([], dtype=int)
-
-        for lvl in range(2, self.num_levels + 1):
-            active_children = {int(x) for x in self.level_indices[lvl - 1]}
-            kept_parents = []
-            for parent_idx in self.level_indices[lvl]:
-                child_indices = self.level_groups[lvl][str(int(parent_idx))][
-                    "fine_bank_index"
-                ][:]
-                if any(int(c) in active_children for c in child_indices):
-                    kept_parents.append(int(parent_idx))
-            self.level_indices[lvl] = np.array(kept_parents, dtype=int)
+        active = (
+            {int(x) for x in np.unique(np.concatenate(matched_fine))}
+            if matched_fine
+            else set()
+        )
+        for lvl in range(1, self.num_levels + 1):
+            self.level_indices[lvl] = np.array(
+                [
+                    int(p)
+                    for p in self.level_indices[lvl]
+                    if any(
+                        int(c) in active
+                        for c in self.level_groups[lvl][str(int(p))]["fine_bank_index"][
+                            :
+                        ]
+                    )
+                ],
+                dtype=int,
+            )
+            active = {int(x) for x in self.level_indices[lvl]}
 
     def get_coarse_template(self, coarse_index):
         """
@@ -1393,28 +1386,11 @@ class RatioFilterBank(FilterBank):
         top_group = self.level_groups[self.num_levels][str(int(coarse_index))]
         return self[int(top_group.attrs["parent_fine_index"])]
 
-    def setup_sigma_norm(self):
-        """
-        Build the precalculated-sigma rescaling used by sigma_rescale
-        from the sigma values recorded per fine template at bank-build time.
-        """
-        self.sigma_sigma_rescale = np.ones(len(self.table))
-        for coarse_id in self.level_keys[1]:
-            c_group = self.level_groups[1][str(coarse_id)]
-            fine_indices = c_group["fine_bank_index"][:]
-            sigmas = c_group["sigmas"][:]
-            if len(fine_indices) > 0:
-                ref_sigma = sigmas[:, 0]
-                target_sigma = sigmas[:, 2]
-                self.sigma_sigma_rescale[fine_indices] = target_sigma / ref_sigma
-
     def sigma_rescale(self, indices):
         """
         Get the sigma normalization factor for templates in the bank
         relative to their associated coarse template.
         """
-        if not hasattr(self, "sigma_sigma_rescale"):
-            self.setup_sigma_norm()
         return self.sigma_sigma_rescale[indices]
 
     def get_firs(self, coarse_index, level=1, return_shifts=False):
@@ -1454,7 +1430,6 @@ class RatioFilterBank(FilterBank):
             raise ValueError(msg)
 
         c_group = lvl_group[group_key]
-
         taps = c_group["taps"][:]
         actual_tap_counts = c_group["actual_tap_count"][:]
         fine_indices = c_group["fine_bank_index"][:]
@@ -1463,14 +1438,9 @@ class RatioFilterBank(FilterBank):
         # filters together (see _execute_blocked_kernel's tap_groups).
         sort_idx = np.argsort(actual_tap_counts)
         if return_shifts:
-            if "sample_shift" in c_group:
-                shifts = c_group["sample_shift"][:].astype(np.int64)
-            else:
-                shifts = np.zeros(len(fine_indices), dtype=np.int64)
+            shifts = c_group["sample_shift"][:].astype(np.int64)
             if level == 1:
-                parent_shift = self.parent_shift_map.get(int(coarse_index), 0)
-                if parent_shift:
-                    shifts = shifts + parent_shift
+                shifts += self.parent_shift_map.get(int(coarse_index), 0)
             return (
                 taps[sort_idx],
                 actual_tap_counts[sort_idx],
@@ -1478,11 +1448,6 @@ class RatioFilterBank(FilterBank):
                 shifts[sort_idx],
             )
         return taps[sort_idx], actual_tap_counts[sort_idx], fine_indices[sort_idx]
-
-    @property
-    def coarse_size(self):
-        """The number of templates in the level-1 reference bank."""
-        return len(self.level_keys[1])
 
 
 __all__ = (
