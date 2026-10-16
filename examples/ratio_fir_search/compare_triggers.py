@@ -44,19 +44,23 @@ def fir_bank_params(path):
 def matched_snr_diffs(reference, fir, sample_rate):
     tol = 0.5 / sample_rate
     ref_time = reference["end_time"]
+    ref_hash = reference["template_hash"]
+    ref_snr = reference["snr"]
     diffs = []
     ref_snrs = []
     fir_snrs = []
     times = []
     for i in range(len(fir["end_time"])):
         t = fir["end_time"][i]
-        j = np.abs(ref_time - t).argmin()
-        if (
-            abs(ref_time[j] - t) < tol
-            and fir["template_hash"][i] == reference["template_hash"][j]
-        ):
-            diffs.append(fir["snr"][i] - reference["snr"][j])
-            ref_snrs.append(reference["snr"][j])
+        mask = ref_hash == fir["template_hash"][i]
+        if not np.any(mask):
+            continue
+        rt = ref_time[mask]
+        j = np.abs(rt - t).argmin()
+        if abs(rt[j] - t) < tol:
+            rs = ref_snr[mask][j]
+            diffs.append(fir["snr"][i] - rs)
+            ref_snrs.append(rs)
             fir_snrs.append(fir["snr"][i])
             times.append(t)
     return (np.array(diffs), np.array(ref_snrs), np.array(fir_snrs), np.array(times))
@@ -73,6 +77,13 @@ def main():
         default=2.0,
         help="How many multiples of the mismatch-predicted "
         "std to allow before flagging a problem.",
+    )
+    parser.add_argument(
+        "--min-match-fraction",
+        type=float,
+        default=0.95,
+        help="Minimum fraction of triggers that must match between "
+        "reference and FIR searches.",
     )
     parser.add_argument(
         "--output-plot", default=None, help="Path to save trigger comparison plot."
@@ -96,7 +107,11 @@ def main():
 
     n_ref = len(reference["end_time"])
     n_fir = len(fir["end_time"])
-    print(f"matched triggers: {len(diffs)} (reference={n_ref}, fir={n_fir})")
+    match_frac = len(diffs) / max(n_ref, n_fir)
+    print(
+        f"matched triggers: {len(diffs)} "
+        f"(reference={n_ref}, fir={n_fir}, fraction={match_frac:.3f})"
+    )
     print(f"FIR bank min_match target: {min_match}")
     print(f"mismatch-predicted SNR-difference std: {predicted_std:.6g}")
     print(f"measured SNR-difference std:           {measured_std:.6g}")
@@ -134,6 +149,11 @@ def main():
         fig.savefig(args.output_plot, dpi=150)
         plt.close(fig)
 
+    if match_frac < args.min_match_fraction:
+        raise SystemExit(
+            f"Matched trigger fraction {match_frac:.3f} is below "
+            f"minimum required {args.min_match_fraction:.3f}."
+        )
     if ratio > args.allowed_margin_factor:
         raise SystemExit(
             f"Measured std is {ratio:.2f}x the mismatch prediction, "
