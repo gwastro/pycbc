@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 # --- GLOBAL WORKER STATE (Inherited via fork in worker processes) ---
 g_coarse_np, g_coarse_norm_sq, g_coarse_tau0 = None, None, None
-g_coarse_fit, g_coarse_map = None, None
+g_coarse_kmax, g_coarse_fit, g_coarse_map = None, None, None
 g_fine_bank, g_fine_tau0, g_cfg = None, None, None
 g_inv_psd, g_delta_f, g_fft_len, g_valid_band = None, None, None, None
 
@@ -63,16 +63,22 @@ def init_level_state(fine_bank, psd, f_low, cfg):
     g_valid_band = g_inv_psd > 0
 
 
+def _waveform_kmax(h_np):
+    nz = np.flatnonzero(g_valid_band & (h_np != 0))
+    return int(nz[-1]) if len(nz) else 0
+
+
 def load_reference_templates(indices):
     """Generate reference waveforms and PSD norms for the given bank indices."""
     global g_coarse_np, g_coarse_norm_sq, g_coarse_tau0  # noqa: PLW0603
-    global g_coarse_fit, g_coarse_map  # noqa: PLW0603
+    global g_coarse_kmax, g_coarse_fit, g_coarse_map  # noqa: PLW0603
 
     idx = np.asarray(indices, dtype=int)
     g_coarse_np = [g_fine_bank[int(i)].numpy().astype(complex) for i in idx]
     g_coarse_norm_sq = [
         float(np.dot(h.real**2 + h.imag**2, g_inv_psd)) for h in g_coarse_np
     ]
+    g_coarse_kmax = np.array([_waveform_kmax(h) for h in g_coarse_np], dtype=int)
     g_coarse_tau0 = g_fine_tau0[idx]
     g_coarse_fit = [None] * len(idx)
     g_coarse_map = {int(fine_i): k for k, fine_i in enumerate(idx)}
@@ -257,21 +263,26 @@ def process_template(task):
     ref_slot = g_coarse_map.get(int(fine_idx)) if g_coarse_map is not None else None
     if ref_slot is not None:
         fine_np, fine_norm_sq = g_coarse_np[ref_slot], g_coarse_norm_sq[ref_slot]
+        fine_kmax = int(g_coarse_kmax[ref_slot])
     else:
         fine_np = g_fine_bank[fine_idx].numpy().astype(complex)
         fine_norm_sq = float(np.dot(fine_np.real**2 + fine_np.imag**2, g_inv_psd))
+        fine_kmax = _waveform_kmax(fine_np)
 
-    # Pre-filter candidate parents by chirp-time proximity and estimated tap count
+    # Pre-filter candidate parents by bandwidth, chirp time, and tap estimate
     allowed = np.arange(len(g_coarse_np))
     if excluded:
         allowed = allowed[~np.isin(allowed, np.fromiter(excluded, dtype=int))]
+    if g_coarse_kmax is not None and len(allowed):
+        covering = allowed[g_coarse_kmax[allowed] >= fine_kmax]
+        if len(covering):
+            allowed = covering
     if g_coarse_tau0 is not None and g_fine_tau0 is not None and len(allowed) > 32:
         allowed = allowed[
             np.argsort(np.abs(g_coarse_tau0[allowed] - g_fine_tau0[fine_idx]))[:32]
         ]
     k_ests = np.array([estimate_fir_taps(g_coarse_np[c], fine_np) for c in allowed])
-    finite = np.isfinite(k_ests)
-    candidates = allowed[finite][np.argsort(k_ests[finite])[:8]]
+    candidates = allowed[np.argsort(k_ests)[:8]]
 
     # Binary search over odd tap counts [1, top] for the shortest valid filter
     best = None
@@ -306,7 +317,8 @@ def _seed_worker(indices):
     """Select greedy dispersion-clustered seeds within a tau0-sorted chunk."""
     load_reference_templates(indices)
     max_taps = min(g_cfg["max_taps"], g_fft_len - 1)
-    unassigned, seeds = list(range(len(g_coarse_np))), []
+    unassigned = list(np.argsort(-g_coarse_kmax, kind="stable"))
+    seeds = []
     while unassigned:
         seed = unassigned[0]
         seed_np = g_coarse_np[seed]
