@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """Functions for applying gates to data."""
 
+import numpy as np
 from scipy import linalg
 
 from . import strain
@@ -159,9 +160,11 @@ def add_gate_option_group(parser):
     return gate_group
 
 
-def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
+def gate_and_paint(
+    data, lindex, rindex, invpsd, copy=True, method="cholesky", ridge=1e-10
+):
     """
-    Gates and in-paints data using a Toeplitz solver.
+    Gates and in-paints data using a hole-filling solver.
 
     Parameters
     ----------
@@ -176,6 +179,14 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     copy : bool, optional
         Copy the data before applying the gate. Otherwise, the gate will
         be applied in-place. Default is True.
+    method : {'cholesky', 'toeplitz'}, optional
+        Algorithm used to solve the linear system for the inpainting projection.
+        'cholesky' (default) uses a regularized Cholesky factorization of the
+        normalized Toeplitz matrix, providing high numerical stability.
+        'toeplitz' uses scipy.linalg.solve_toeplitz (Levinson recursion).
+    ridge : float, optional
+        Diagonal Tikhonov regularization parameter relative to the diagonal
+        element of the inverse covariance operator. Default is 1e-10.
 
     Returns
     -------
@@ -185,25 +196,36 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     """
     # Uses the hole-filling method of
     # https://arxiv.org/pdf/1908.05644.pdf
-    # Copy the data and zero inside the hole
     if copy:
         data = data.copy()
-    data[lindex:rindex] = 0
+    data[lindex:rindex] = 0.0
+    ngate = rindex - lindex
     # get the over-whitened gated data
     tdfilter = invpsd.astype("complex").to_timeseries() * invpsd.delta_t
     owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()
+    rhs = owhgated_data[lindex:rindex].numpy()
+
+    diag = tdfilter[0]
+    if method == "cholesky":
+        col = tdfilter[:ngate].numpy() / diag
+        tmat = linalg.toeplitz(col)
+        if ridge > 0:
+            tmat += ridge * np.eye(ngate)
+        c, lower = linalg.cho_factor(tmat)
+        proj = linalg.cho_solve((c, lower), rhs / diag)
+    elif method == "toeplitz":
+        proj = linalg.solve_toeplitz(tdfilter[:ngate], owhgated_data[lindex:rindex])
+    else:
+        raise ValueError(f"Unknown inpainting method: {method}")  # noqa: TRY003
 
     # remove the projection into the null space
-    proj = linalg.solve_toeplitz(
-        tdfilter[: (rindex - lindex)], owhgated_data[lindex:rindex]
-    )
     data[lindex:rindex] -= proj
     return data
 
 
-def invert_covariance(invpsd, lindex, rindex):
+def invert_covariance(invpsd, lindex, rindex, ridge=1e-10):
     """
-    Calculate the uninverted covariance matrix.
+    Calculate the uninverted covariance matrix with optional regularization.
 
     Parameters
     ----------
@@ -213,6 +235,8 @@ def invert_covariance(invpsd, lindex, rindex):
         The start index of the gate.
     rindex : int
         The end index of the gate.
+    ridge : float, optional
+        Regularization ridge parameter. Default is 1e-10.
 
     Returns
     -------
@@ -221,13 +245,19 @@ def invert_covariance(invpsd, lindex, rindex):
         time window [lindex, rindex].
 
     """
+    ngate = rindex - lindex
     tdfilter = invpsd.astype("complex").to_timeseries() * invpsd.delta_t
-    mat = linalg.toeplitz(tdfilter[: (rindex - lindex)])
-    invmat = linalg.inv(mat)
+    diag = tdfilter[0]
+    mat = linalg.toeplitz(tdfilter[:ngate].numpy() / diag)
+    if ridge > 0:
+        mat += ridge * np.eye(ngate)
+    invmat = linalg.inv(mat) / diag
     return invmat
 
 
-def gate_and_paint_matmul(data, lindex, rindex, invpsd, invmat=None, copy=True):
+def gate_and_paint_matmul(
+    data, lindex, rindex, invpsd, invmat=None, ridge=1e-10, copy=True
+):
     """
     Gates and in-paints data using explicit matrix multiplication.
 
@@ -243,6 +273,8 @@ def gate_and_paint_matmul(data, lindex, rindex, invpsd, invmat=None, copy=True):
         The inverse of the PSD.
     invmat : array, optional
         The uninverted covariance matrix. If None, calculate on function call.
+    ridge : float, optional
+        Regularization ridge parameter if invmat is calculated. Default is 1e-10.
     copy : bool, optional
         Copy the data before applying the gate. Otherwise, the gate will
         be applied in-place. Default is True.
@@ -255,15 +287,15 @@ def gate_and_paint_matmul(data, lindex, rindex, invpsd, invmat=None, copy=True):
     """
     if copy:
         data = data.copy()
-    data[lindex:rindex] = 0
+    data[lindex:rindex] = 0.0
     # get the over-whitened gated data
     owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()
 
     # invert the matrix if not provided
     if invmat is None:
-        invmat = invert_covariance(invpsd, lindex, rindex)
+        invmat = invert_covariance(invpsd, lindex, rindex, ridge=ridge)
 
     # remove the projection into the null space
-    proj = invmat @ owhgated_data[lindex:rindex]
+    proj = invmat @ owhgated_data[lindex:rindex].numpy()
     data[lindex:rindex] -= proj
     return data
