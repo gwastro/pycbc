@@ -1431,7 +1431,7 @@ def sensitivity_curve_taiji_analytical(
     return fseries
 
 
-def sensitivity_curve_lisa_SciRD(length, delta_f, low_freq_cutoff):
+def sensitivity_curve_lisa_scird(length, delta_f, low_freq_cutoff):
     """
     The analytical LISA's sensitivity curve in SciRD,
     averaged over sky and polarization angle.
@@ -1701,7 +1701,7 @@ def sensitivity_curve_lisa_confusion(
             length, delta_f, low_freq_cutoff, len_arm, acc_noise_level, oms_noise_level
         )
     elif base_model == "SciRD":
-        base_curve = sensitivity_curve_lisa_SciRD(length, delta_f, low_freq_cutoff)
+        base_curve = sensitivity_curve_lisa_scird(length, delta_f, low_freq_cutoff)
     else:
         raise ValueError("Must choose from 'semi' or 'SciRD'.")
     if duration < 0 or duration > 10:

@@ -27,7 +27,7 @@ import numpy as np
 from scipy.optimize import root_scalar
 
 
-def ISCO_solution(chi, incl):
+def isco_solution(chi, incl):
     r"""
     Analytic solution of the innermost
     stable circular orbit (ISCO) for the Kerr metric.
@@ -56,7 +56,7 @@ def ISCO_solution(chi, incl):
     return 3 + Z2 - sgn * np.sqrt((3 - Z1) * (3 + Z1 + 2 * Z2))
 
 
-def ISSO_eq_at_pole(r, chi):
+def isso_eq_at_pole(r, chi):
     r"""
     Polynomial that enables the calculation of the Kerr polar
     (:math:`\iota = \pm \pi / 2`) innermost stable spherical orbit
@@ -89,9 +89,9 @@ def ISSO_eq_at_pole(r, chi):
     )
 
 
-def ISSO_eq_at_pole_dr(r, chi):
+def isso_eq_at_pole_dr(r, chi):
     """
-    Partial derivative of :func:`ISSO_eq_at_pole` with respect to r.
+    Partial derivative of :func:`isso_eq_at_pole` with respect to r.
 
     Parameters
     ----------
@@ -113,9 +113,9 @@ def ISSO_eq_at_pole_dr(r, chi):
     )
 
 
-def ISSO_eq_at_pole_dr2(r, chi):
+def isso_eq_at_pole_dr2(r, chi):
     """
-    Double partial derivative of :func:`ISSO_eq_at_pole` with
+    Double partial derivative of :func:`isso_eq_at_pole` with
     respect to r.
 
     Parameters
@@ -134,7 +134,7 @@ def ISSO_eq_at_pole_dr2(r, chi):
     return 30 * r**4 - 120 * r**3 + 36 * chi2 * r**2 + 24 * chi2 * r + 6 * chi2 * chi2
 
 
-def PG_ISSO_eq(r, chi, incl):
+def pg_isso_eq(r, chi, incl):
     r"""
     Polynomial that enables the calculation of a generic innermost
     stable spherical orbit (ISSO) radius via the roots in :math:`r` of
@@ -160,7 +160,7 @@ def PG_ISSO_eq(r, chi, incl):
 
     and :math:`Z(r) =` :func:`ISCO_eq`. Physical solutions are between
     the equatorial ISSO (i.e. the ISCO) radius (:func:`ISCO_eq`) and
-    the polar ISSO radius (:func:`ISSO_eq_at_pole`).
+    the polar ISSO radius (:func:`isso_eq_at_pole`).
     See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
 
     .. _Stone, Loeb, Berger, PRD 87, 084053 (2013):
@@ -200,9 +200,9 @@ def PG_ISSO_eq(r, chi, incl):
     return r4 * r4 * Z + chi2 * sin_incl2 * (chi2 * sin_incl2 * Y - 2 * r4 * X)
 
 
-def PG_ISSO_eq_dr(r, chi, incl):
+def pg_isso_eq_dr(r, chi, incl):
     """
-    Partial derivative of :func:`PG_ISSO_eq` with respect to r.
+    Partial derivative of :func:`pg_isso_eq` with respect to r.
 
     Parameters
     ----------
@@ -252,9 +252,9 @@ def PG_ISSO_eq_dr(r, chi, incl):
     )
 
 
-def PG_ISSO_eq_dr2(r, chi, incl):
+def pg_isso_eq_dr2(r, chi, incl):
     """
-    Second partial derivative of :func:`PG_ISSO_eq` with respect to
+    Second partial derivative of :func:`pg_isso_eq` with respect to
     r.
 
     Parameters
@@ -304,12 +304,12 @@ def PG_ISSO_eq_dr2(r, chi, incl):
     )
 
 
-def PG_ISSO_solver(chi, incl):
+def solve_pg_isso(chi, incl):
     """
     Function that determines the radius of the innermost stable
     spherical orbit (ISSO) for a Kerr BH and a generic inclination
     angle between the BH spin and the orbital angular momentum.
-    This function finds the appropriate root of :func:`PG_ISSO_eq`.
+    This function finds the appropriate root of :func:`pg_isso_eq`.
 
     Parameters
     ----------
@@ -331,7 +331,7 @@ def PG_ISSO_solver(chi, incl):
         incl = np.array(incl, copy=False, ndmin=1)
     chi = np.abs(chi)
     # ISCO radius for the given spin magnitude
-    rISCO_limit = ISCO_solution(chi, incl)
+    rISCO_limit = isco_solution(chi, incl)
     # If the inclination is 0 or pi, just output the ISCO radius
     equatorial = np.isclose(incl, 0) | np.isclose(incl, np.pi)
     if all(equatorial):
@@ -344,10 +344,10 @@ def PG_ISSO_solver(chi, incl):
     rISSO_at_pole_limit = np.array(
         [
             root_scalar(
-                ISSO_eq_at_pole,
+                isso_eq_at_pole,
                 x0=g0,
-                fprime=ISSO_eq_at_pole_dr,
-                fprime2=ISSO_eq_at_pole_dr2,
+                fprime=isso_eq_at_pole_dr,
+                fprime2=isso_eq_at_pole_dr2,
                 args=(c),
             ).root
             for g0, c in zip(initial_guess, chi)
@@ -363,18 +363,18 @@ def PG_ISSO_solver(chi, incl):
     initial_lo = np.minimum(rISCO_limit, rISSO_at_pole_limit)
     brackets = [
         (bl, bh)
-        if (c != 1 and PG_ISSO_eq(bl, c, inc) * PG_ISSO_eq(bh, c, inc) < 0)
+        if (c != 1 and pg_isso_eq(bl, c, inc) * pg_isso_eq(bh, c, inc) < 0)
         else None
         for bl, bh, c, inc in zip(initial_lo, initial_hi, chi, incl)
     ]
     solution = np.array(
         [
             root_scalar(
-                PG_ISSO_eq,
+                pg_isso_eq,
                 x0=g0,
-                fprime=PG_ISSO_eq_dr,
+                fprime=pg_isso_eq_dr,
                 bracket=bracket,
-                fprime2=PG_ISSO_eq_dr2,
+                fprime2=pg_isso_eq_dr2,
                 args=(c, inc),
                 xtol=1e-12,
             ).root
@@ -386,11 +386,11 @@ def PG_ISSO_solver(chi, incl):
         solution = np.array(
             [
                 root_scalar(
-                    PG_ISSO_eq,
+                    pg_isso_eq,
                     x0=g0,
-                    fprime=PG_ISSO_eq_dr,
+                    fprime=pg_isso_eq_dr,
                     bracket=bracket,
-                    fprime2=PG_ISSO_eq_dr2,
+                    fprime2=pg_isso_eq_dr2,
                     args=(c, inc),
                 ).root
                 if ob

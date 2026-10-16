@@ -403,7 +403,7 @@ for ifo in opt.ifos:
             #                             opt.fit_function, vals_inbin, thresh)
             fits[ifo][th][i] = alpha
             stdev[ifo][th][i] = sig_alpha
-            _, ks_prob[ifo][th][i] = trstats.KS_test(
+            _, ks_prob[ifo][th][i] = trstats.ks_test(
                 opt.fit_function, vals_inbin, alpha, th
             )
             outfile.write(

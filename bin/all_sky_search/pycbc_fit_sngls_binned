@@ -451,7 +451,7 @@ for th in args.stat_threshold:
         alpha, sig_alpha = trstats.fit_above_thresh(args.fit_function, vals_inbin, th)
         alphas[th][i] = alpha
         stdev[th][i] = sig_alpha
-        _, ks_prob[th][i] = trstats.KS_test(args.fit_function, vals_inbin, alpha, th)
+        _, ks_prob[th][i] = trstats.ks_test(args.fit_function, vals_inbin, alpha, th)
         # add histogram to plot
         histcounts, edges = np.histogram(vals_inbin, bins=50)
         cum_counts = histcounts[::-1].cumsum()[::-1]

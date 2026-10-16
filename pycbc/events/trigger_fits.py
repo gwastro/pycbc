@@ -32,7 +32,7 @@ exponential_fit_1 = fit_fn('exponential', xvals, alpha, thresh)
 alpha, sigma_alpha = fit_above_thresh('exponential', snrs, weights=weights)
 
 # get the KS test statistic and p-value - see scipy.stats.kstest
-ks_stat, ks_pval = KS_test('exponential', snrs, alpha, thresh)
+ks_stat, ks_pval = ks_test('exponential', snrs, alpha, thresh)
 
 """
 
@@ -236,7 +236,7 @@ def tail_threshold(vals, N=1000):
     return min(vals[-N:])
 
 
-def KS_test(distr, vals, alpha, thresh=None):
+def ks_test(distr, vals, alpha, thresh=None):
     """
     Perform Kolmogorov-Smirnov test for fitted distribution
 
