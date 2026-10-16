@@ -27,7 +27,7 @@ lalsimulation = pycbc.libutils.import_optional("lalsimulation")
 logger = logging.getLogger(__name__)
 
 # PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
-pycbcValidTmpltbankOrders = [
+pycbc_valid_tmpltbank_orders = [
     "zeroPN",
     "onePN",
     "onePointFivePN",
@@ -37,7 +37,7 @@ pycbcValidTmpltbankOrders = [
     "threePointFivePN",
 ]
 
-pycbcValidOrdersHelpDescriptions = """
+pycbc_valid_orders_help_descriptions = """
      * zeroPN: Will only include the dominant term (proportional to chirp mass)
      * onePN: Will only the leading orbit term and first correction at 1PN
      * onePointFivePN: Will include orbit and spin terms to 1.5PN.
@@ -104,7 +104,7 @@ def generate_mapping(order):
 
 # Override doc so the PN orders are added automatically to online docs
 generate_mapping.__doc__ = generate_mapping.__doc__.format(
-    pycbcValidOrdersHelpDescriptions
+    pycbc_valid_orders_help_descriptions
 )
 
 
@@ -138,7 +138,7 @@ def generate_inverse_mapping(order):
 
 
 generate_inverse_mapping.__doc__ = generate_inverse_mapping.__doc__.format(
-    pycbcValidOrdersHelpDescriptions
+    pycbc_valid_orders_help_descriptions
 )
 
 
@@ -299,5 +299,5 @@ def get_chirp_params(
 
 
 get_chirp_params.__doc__ = get_chirp_params.__doc__.format(
-    pycbcValidOrdersHelpDescriptions
+    pycbc_valid_orders_help_descriptions
 )

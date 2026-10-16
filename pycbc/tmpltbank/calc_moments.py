@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def determine_eigen_directions(
-    metricParams, preserveMoments=False, vary_fmax=False, vary_density=None
+    metric_params, preserve_moments=False, vary_fmax=False, vary_density=None
 ):
     """
     This function will calculate the coordinate transfomations that are needed
@@ -34,12 +34,12 @@ def determine_eigen_directions(
 
     Parameters
     ----------
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric.
-    preserveMoments : boolean, optional (default False)
+    preserve_moments : boolean, optional (default False)
         Currently only used for debugging.
         If this is given then if the moments structure is already set
-        within metricParams then they will not be recalculated.
+        within metric_params then they will not be recalculated.
     vary_fmax : boolean, optional (default False)
         If set to False the metric and rotations are calculated once, for the
         full range of frequency [f_low,f_upper).
@@ -54,11 +54,11 @@ def determine_eigen_directions(
 
     Returns
     -------
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric.
         **THIS FUNCTION ONLY RETURNS THE CLASS**
         The following will be **added** to this structure
-    metricParams.evals : Dictionary of numpy.array
+    metric_params.evals : Dictionary of numpy.array
         Each entry in the dictionary corresponds to the different frequency
         ranges described in vary_fmax. If vary_fmax = False, the only entry
         will be f_upper, this corresponds to integrals in [f_low,f_upper). This
@@ -68,16 +68,16 @@ def determine_eigen_directions(
         Each numpy.array contains the eigenvalues which, with the eigenvectors
         in evecs, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix.
-    metricParams.evecs : Dictionary of numpy.matrix
+    metric_params.evecs : Dictionary of numpy.matrix
         Each entry in the dictionary is as described under evals.
         Each numpy.matrix contains the eigenvectors which, with the eigenvalues
         in evals, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix.
-    metricParams.metric : Dictionary of numpy.matrix
+    metric_params.metric : Dictionary of numpy.matrix
         Each entry in the dictionary is as described under evals.
         Each numpy.matrix contains the metric of the parameter space in the
         Lambda_i coordinate system.
-    metricParams.moments : Moments structure
+    metric_params.moments : Moments structure
         See the structure documentation for a description of this. This
         contains the result of all the integrals used in computing the metrics
         above. It can be used for additional metric calculations.
@@ -89,41 +89,41 @@ def determine_eigen_directions(
     unmax_metric = {}
 
     # First step is to get the moments needed to calculate the metric
-    if not (metricParams.moments and preserveMoments):
-        get_moments(metricParams, vary_fmax=vary_fmax, vary_density=vary_density)
+    if not (metric_params.moments and preserve_moments):
+        get_moments(metric_params, vary_fmax=vary_fmax, vary_density=vary_density)
 
     # What values are going to be in the moments
     # J7 is the normalization factor so it *MUST* be present
-    list = metricParams.moments["J7"].keys()
+    list = metric_params.moments["J7"].keys()
 
     # We start looping over every item in the list of metrics
     for item in list:
         # Here we convert the moments into a form easier to use here
         Js = {}
         for i in range(-7, 18):
-            Js[i] = metricParams.moments["J%d" % (i)][item]
+            Js[i] = metric_params.moments["J%d" % (i)][item]
 
-        logJs = {}
+        log_js = {}
         for i in range(-1, 18):
-            logJs[i] = metricParams.moments["log%d" % (i)][item]
+            log_js[i] = metric_params.moments["log%d" % (i)][item]
 
-        loglogJs = {}
+        loglog_js = {}
         for i in range(-1, 18):
-            loglogJs[i] = metricParams.moments["loglog%d" % (i)][item]
+            loglog_js[i] = metric_params.moments["loglog%d" % (i)][item]
 
-        logloglogJs = {}
+        logloglog_js = {}
         for i in range(-1, 18):
-            logloglogJs[i] = metricParams.moments["logloglog%d" % (i)][item]
+            logloglog_js[i] = metric_params.moments["logloglog%d" % (i)][item]
 
-        loglogloglogJs = {}
+        loglogloglog_js = {}
         for i in range(-1, 18):
-            loglogloglogJs[i] = metricParams.moments["loglogloglog%d" % (i)][item]
+            loglogloglog_js[i] = metric_params.moments["loglogloglog%d" % (i)][item]
 
-        mapping = generate_mapping(metricParams.pnOrder)
+        mapping = generate_mapping(metric_params.pn_order)
 
         # Calculate the metric
         gs, unmax_metric_curr = calculate_metric(
-            Js, logJs, loglogJs, logloglogJs, loglogloglogJs, mapping
+            Js, log_js, loglog_js, logloglog_js, loglogloglog_js, mapping
         )
         metric[item] = gs
         unmax_metric[item] = unmax_metric_curr
@@ -144,15 +144,15 @@ def determine_eigen_directions(
                 # mchirp always goes the same way)
                 evecs[item][:, i] = -evecs[item][:, i]
 
-    metricParams.evals = evals
-    metricParams.evecs = evecs
-    metricParams.metric = metric
-    metricParams.time_unprojected_metric = unmax_metric
+    metric_params.evals = evals
+    metric_params.evecs = evecs
+    metric_params.metric = metric
+    metric_params.time_unprojected_metric = unmax_metric
 
-    return metricParams
+    return metric_params
 
 
-def get_moments(metricParams, vary_fmax=False, vary_density=None):
+def get_moments(metric_params, vary_fmax=False, vary_density=None):
     """
     This function will calculate the various integrals (moments) that are
     needed to compute the metric used in template bank placement and
@@ -160,7 +160,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
 
     Parameters
     ----------
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric.
     vary_fmax : boolean, optional (default False)
         If set to False the metric and rotations are calculated once, for the
@@ -178,8 +178,8 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
     -------
     None : None
         **THIS FUNCTION RETURNS NOTHING**
-        The following will be **added** to the metricParams structure
-    metricParams.moments : Moments structure
+        The following will be **added** to the metric_params structure
+    metric_params.moments : Moments structure
         This contains the result of all the integrals used in computing the
         metrics above. It can be used for additional metric calculations.
         This is composed of two compound
@@ -227,18 +227,18 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
     # not needed. As this calculation is not too slow compared to bank
     # placement we just do this anyway.
 
-    psd_amp = metricParams.psd.data
-    psd_f = numpy.arange(len(psd_amp), dtype=float) * metricParams.deltaF
-    new_f, new_amp = interpolate_psd(psd_f, psd_amp, metricParams.deltaF)
+    psd_amp = metric_params.psd.data
+    psd_f = numpy.arange(len(psd_amp), dtype=float) * metric_params.delta_f
+    new_f, new_amp = interpolate_psd(psd_f, psd_amp, metric_params.delta_f)
 
     # Need I7 first as this is the normalization factor
     funct = lambda x, f0: 1
     I7 = calculate_moment(
         new_f,
         new_amp,
-        metricParams.fLow,
-        metricParams.fUpper,
-        metricParams.f0,
+        metric_params.f_low,
+        metric_params.f_upper,
+        metric_params.f0,
         funct,
         vary_fmax=vary_fmax,
         vary_density=vary_density,
@@ -252,9 +252,9 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
         moments["J%d" % (i)] = calculate_moment(
             new_f,
             new_amp,
-            metricParams.fLow,
-            metricParams.fUpper,
-            metricParams.f0,
+            metric_params.f_low,
+            metric_params.f_upper,
+            metric_params.f0,
             funct,
             norm=I7,
             vary_fmax=vary_fmax,
@@ -269,9 +269,9 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
         moments["log%d" % (i)] = calculate_moment(
             new_f,
             new_amp,
-            metricParams.fLow,
-            metricParams.fUpper,
-            metricParams.f0,
+            metric_params.f_low,
+            metric_params.f_upper,
+            metric_params.f0,
             funct,
             norm=I7,
             vary_fmax=vary_fmax,
@@ -286,9 +286,9 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
         moments["loglog%d" % (i)] = calculate_moment(
             new_f,
             new_amp,
-            metricParams.fLow,
-            metricParams.fUpper,
-            metricParams.f0,
+            metric_params.f_low,
+            metric_params.f_upper,
+            metric_params.f0,
             funct,
             norm=I7,
             vary_fmax=vary_fmax,
@@ -303,9 +303,9 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
         moments["logloglog%d" % (i)] = calculate_moment(
             new_f,
             new_amp,
-            metricParams.fLow,
-            metricParams.fUpper,
-            metricParams.f0,
+            metric_params.f_low,
+            metric_params.f_upper,
+            metric_params.f0,
             funct,
             norm=I7,
             vary_fmax=vary_fmax,
@@ -320,21 +320,21 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
         moments["loglogloglog%d" % (i)] = calculate_moment(
             new_f,
             new_amp,
-            metricParams.fLow,
-            metricParams.fUpper,
-            metricParams.f0,
+            metric_params.f_low,
+            metric_params.f_upper,
+            metric_params.f0,
             funct,
             norm=I7,
             vary_fmax=vary_fmax,
             vary_density=vary_density,
         )
 
-    metricParams.moments = moments
+    metric_params.moments = moments
 
 
-def interpolate_psd(psd_f, psd_amp, deltaF):
+def interpolate_psd(psd_f, psd_amp, delta_f):
     """
-    Function to interpolate a PSD to a different value of deltaF. Uses linear
+    Function to interpolate a PSD to a different value of delta_f. Uses linear
     interpolation.
 
     Parameters
@@ -343,8 +343,8 @@ def interpolate_psd(psd_f, psd_amp, deltaF):
         List of the frequencies contained within the PSD.
     psd_amp : numpy.array or list or similar
         List of the PSD values at the frequencies in psd_f.
-    deltaF : float
-        Value of deltaF to interpolate the PSD to.
+    delta_f : float
+        Value of delta_f to interpolate the PSD to.
 
     Returns
     -------
@@ -373,9 +373,9 @@ def interpolate_psd(psd_f, psd_amp, deltaF):
                 break
             new_psd_f.append(fcurr)
             gradient = (amp_high - amp_low) / (f_high - f_low)
-            fDiff = fcurr - f_low
-            new_psd_amp.append(amp_low + fDiff * gradient)
-            fcurr = fcurr + deltaF
+            f_diff = fcurr - f_low
+            new_psd_amp.append(amp_low + f_diff * gradient)
+            fcurr = fcurr + delta_f
     return numpy.asarray(new_psd_f), numpy.asarray(new_psd_amp)
 
 
@@ -433,7 +433,7 @@ def calculate_moment(
         cutoff given by f_cutoff.
 
     """
-    # Must ensure deltaF in psd_f is constant
+    # Must ensure delta_f in psd_f is constant
     psd_x = psd_f / f0
     deltax = psd_x[1] - psd_x[0]
 
@@ -454,7 +454,7 @@ def calculate_moment(
     return moment
 
 
-def calculate_metric(Js, logJs, loglogJs, logloglogJs, loglogloglogJs, mapping):
+def calculate_metric(Js, log_js, loglog_js, logloglog_js, loglogloglog_js, mapping):
     """
     This function will take the various integrals calculated by get_moments and
     convert this into a metric for the appropriate parameter space.
@@ -464,18 +464,18 @@ def calculate_metric(Js, logJs, loglogJs, logloglogJs, loglogloglogJs, mapping):
     Js : Dictionary
         The list of (log^0 x) * x**(-i/3) integrals computed by get_moments()
         The index is Js[i]
-    logJs : Dictionary
+    log_js : Dictionary
         The list of (log^1 x) * x**(-i/3) integrals computed by get_moments()
-        The index is logJs[i]
-    loglogJs : Dictionary
+        The index is log_js[i]
+    loglog_js : Dictionary
         The list of (log^2 x) * x**(-i/3) integrals computed by get_moments()
-        The index is loglogJs[i]
-    logloglogJs : Dictionary
+        The index is loglog_js[i]
+    logloglog_js : Dictionary
         The list of (log^3 x) * x**(-i/3) integrals computed by get_moments()
-        The index is logloglogJs[i]
-    loglogloglogJs : Dictionary
+        The index is logloglog_js[i]
+    loglogloglog_js : Dictionary
         The list of (log^4 x) * x**(-i/3) integrals computed by get_moments()
-        The index is loglogloglogJs[i]
+        The index is loglogloglog_js[i]
     mapping : dictionary
         Used to identify which Lambda components are active in this parameter
         space and map these to entries in the metric matrix.
@@ -487,10 +487,10 @@ def calculate_metric(Js, logJs, loglogJs, logloglogJs, loglogloglogJs, mapping):
 
     """
     # How many dimensions in the parameter space?
-    maxLen = len(mapping.keys())
+    max_len = len(mapping.keys())
 
-    metric = numpy.zeros(shape=(maxLen, maxLen), dtype=float)
-    unmax_metric = numpy.zeros(shape=(maxLen + 1, maxLen + 1), dtype=float)
+    metric = numpy.zeros(shape=(max_len, max_len), dtype=float)
+    unmax_metric = numpy.zeros(shape=(max_len + 1, max_len + 1), dtype=float)
 
     for i in range(16):
         for j in range(16):
@@ -500,17 +500,26 @@ def calculate_metric(Js, logJs, loglogJs, logloglogJs, loglogloglogJs, mapping):
                 i,
                 j,
                 Js,
-                logJs,
-                loglogJs,
-                logloglogJs,
-                loglogloglogJs,
+                log_js,
+                loglog_js,
+                logloglog_js,
+                loglogloglog_js,
                 mapping,
             )
     return metric, unmax_metric
 
 
 def calculate_metric_comp(
-    gs, unmax_metric, i, j, Js, logJs, loglogJs, logloglogJs, loglogloglogJs, mapping
+    gs,
+    unmax_metric,
+    i,
+    j,
+    Js,
+    log_js,
+    loglog_js,
+    logloglog_js,
+    loglogloglog_js,
+    mapping,
 ):
     """
     Used to compute part of the metric. Only call this from within
@@ -533,9 +542,9 @@ def calculate_metric_comp(
         unmax_metric[mapping["Lambda%d" % i], mapping["Lambda%d" % j]] = gammaij
     # Normal,log cross terms
     if "Lambda%d" % i in mapping and "LogLambda%d" % j in mapping:
-        gammaij = logJs[17 - i - j] - logJs[12 - j] * Js[12 - i]
+        gammaij = log_js[17 - i - j] - log_js[12 - j] * Js[12 - i]
         gamma0i = Js[9 - i] - Js[4] * Js[12 - i]
-        gamma0j = logJs[9 - j] - logJs[12 - j] * Js[4]
+        gamma0j = log_js[9 - j] - log_js[12 - j] * Js[4]
         gs[mapping["Lambda%d" % i], mapping["LogLambda%d" % j]] = gs[
             mapping["LogLambda%d" % j], mapping["Lambda%d" % i]
         ] = 0.5 * (gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4]))
@@ -547,9 +556,9 @@ def calculate_metric_comp(
         unmax_metric[mapping["LogLambda%d" % j], mapping["Lambda%d" % i]] = gammaij
     # Log,log terms
     if "LogLambda%d" % i in mapping and "LogLambda%d" % j in mapping:
-        gammaij = loglogJs[17 - i - j] - logJs[12 - j] * logJs[12 - i]
-        gamma0i = logJs[9 - i] - Js[4] * logJs[12 - i]
-        gamma0j = logJs[9 - j] - logJs[12 - j] * Js[4]
+        gammaij = loglog_js[17 - i - j] - log_js[12 - j] * log_js[12 - i]
+        gamma0i = log_js[9 - i] - Js[4] * log_js[12 - i]
+        gamma0j = log_js[9 - j] - log_js[12 - j] * Js[4]
         gs[mapping["LogLambda%d" % i], mapping["LogLambda%d" % j]] = 0.5 * (
             gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4])
         )
@@ -559,9 +568,9 @@ def calculate_metric_comp(
 
     # Normal,loglog cross terms
     if "Lambda%d" % i in mapping and "LogLogLambda%d" % j in mapping:
-        gammaij = loglogJs[17 - i - j] - loglogJs[12 - j] * Js[12 - i]
+        gammaij = loglog_js[17 - i - j] - loglog_js[12 - j] * Js[12 - i]
         gamma0i = Js[9 - i] - Js[4] * Js[12 - i]
-        gamma0j = loglogJs[9 - j] - loglogJs[12 - j] * Js[4]
+        gamma0j = loglog_js[9 - j] - loglog_js[12 - j] * Js[4]
         gs[mapping["Lambda%d" % i], mapping["LogLogLambda%d" % j]] = gs[
             mapping["LogLogLambda%d" % j], mapping["Lambda%d" % i]
         ] = 0.5 * (gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4]))
@@ -574,9 +583,9 @@ def calculate_metric_comp(
 
     # log,loglog cross terms
     if "LogLambda%d" % i in mapping and "LogLogLambda%d" % j in mapping:
-        gammaij = logloglogJs[17 - i - j] - loglogJs[12 - j] * logJs[12 - i]
-        gamma0i = logJs[9 - i] - Js[4] * logJs[12 - i]
-        gamma0j = loglogJs[9 - j] - loglogJs[12 - j] * Js[4]
+        gammaij = logloglog_js[17 - i - j] - loglog_js[12 - j] * log_js[12 - i]
+        gamma0i = log_js[9 - i] - Js[4] * log_js[12 - i]
+        gamma0j = loglog_js[9 - j] - loglog_js[12 - j] * Js[4]
         gs[mapping["LogLambda%d" % i], mapping["LogLogLambda%d" % j]] = gs[
             mapping["LogLogLambda%d" % j], mapping["LogLambda%d" % i]
         ] = 0.5 * (gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4]))
@@ -593,9 +602,9 @@ def calculate_metric_comp(
 
     # Loglog,loglog terms
     if "LogLogLambda%d" % i in mapping and "LogLogLambda%d" % j in mapping:
-        gammaij = loglogloglogJs[17 - i - j] - loglogJs[12 - j] * loglogJs[12 - i]
-        gamma0i = loglogJs[9 - i] - Js[4] * loglogJs[12 - i]
-        gamma0j = loglogJs[9 - j] - loglogJs[12 - j] * Js[4]
+        gammaij = loglogloglog_js[17 - i - j] - loglog_js[12 - j] * loglog_js[12 - i]
+        gamma0i = loglog_js[9 - i] - Js[4] * loglog_js[12 - i]
+        gamma0j = loglog_js[9 - j] - loglog_js[12 - j] * Js[4]
         gs[mapping["LogLogLambda%d" % i], mapping["LogLogLambda%d" % j]] = 0.5 * (
             gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4])
         )

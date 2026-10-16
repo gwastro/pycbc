@@ -122,9 +122,9 @@ if not opts.vary_fupper:
     opts.bank_fupper_formula = None
 opts.max_mismatch = 1 - opts.min_match
 tmpltbank.verify_metric_calculation_options(opts, parser)
-metricParams = tmpltbank.metricParameters.from_argparse(opts)
+metric_params = tmpltbank.MetricParameters.from_argparse(opts)
 tmpltbank.verify_mass_range_options(opts, parser)
-massRangeParams = tmpltbank.massRangeParameters.from_argparse(opts)
+mass_range_params = tmpltbank.MassRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
@@ -143,23 +143,23 @@ else:
 # Get the PSD using the pycbc interface
 logger.info("Obtaining PSD")
 # Want the number of samples to be a binary number and Nyquist must be above
-# opts.f_upper. All this assumes that 1 / deltaF is a binary number
-nyquistFreq = 2 ** numpy.ceil(numpy.log2(opts.f_upper))
-numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
+# opts.f_upper. All this assumes that 1 / delta_f is a binary number
+nyquist_freq = 2 ** numpy.ceil(numpy.log2(opts.f_upper))
+num_samples = int(round(nyquist_freq / opts.delta_f)) + 1
 psd = pycbc.psd.from_cli(
     opts,
-    length=numSamples,
+    length=num_samples,
     delta_f=opts.delta_f,
     low_frequency_cutoff=opts.f_low,
     strain=strain,
     dyn_range_factor=pycbc.DYN_RANGE_FAC,
 )
-metricParams.psd = psd
+metric_params.psd = psd
 
 # Begin by calculating a metric
 logger.info("Calculating metric")
-metricParams = tmpltbank.determine_eigen_directions(
-    metricParams,
+metric_params = tmpltbank.determine_eigen_directions(
+    metric_params,
     vary_fmax=opts.vary_fupper,
     vary_density=opts.bank_fupper_step if opts.vary_fupper else None,
 )
@@ -168,34 +168,38 @@ logger.info("Identifying limits of frequency")
 
 # Choose the frequency values to use for metric calculation
 if opts.vary_fupper == False:
-    refFreq = metricParams.fUpper
+    ref_freq = metric_params.f_upper
 else:
     # determine upper frequency cutoffs corresponding to the min and max
     # total masses
-    fs = numpy.array(list(metricParams.evals.keys()), dtype=float)
+    fs = numpy.array(list(metric_params.evals.keys()), dtype=float)
     fs.sort()
-    lowEve, highEve = tmpltbank.find_max_and_min_frequencies(
-        opts.bank_fupper_formula, massRangeParams, fs
+    low_eve, high_eve = tmpltbank.find_max_and_min_frequencies(
+        opts.bank_fupper_formula, mass_range_params, fs
     )
-    refFreq = lowEve
-    fs = fs[fs >= lowEve]
-    fs = fs[fs <= highEve]
+    ref_freq = low_eve
+    fs = fs[fs >= low_eve]
+    fs = fs[fs <= high_eve]
 
 logger.info("Calculating covariance matrix")
 
 vals = tmpltbank.estimate_mass_range(
-    1000000, massRangeParams, metricParams, refFreq, covary=False
+    1000000, mass_range_params, metric_params, ref_freq, covary=False
 )
 cov = numpy.cov(vals)
-evalsCV, evecsCV = numpy.linalg.eig(cov)
-evecsCVdict = {}
-evecsCVdict[refFreq] = evecsCV
-metricParams.evecsCV = evecsCVdict
+evals_cv, evecs_cv = numpy.linalg.eig(cov)
+evecs_cv_dict = {}
+evecs_cv_dict[ref_freq] = evecs_cv
+metric_params.evecs_cv = evecs_cv_dict
 
 logger.info("Initialize the PartitionedTmpltbank class")
 
 partitioned_bank_object = tmpltbank.PartitionedTmpltbank(
-    massRangeParams, metricParams, refFreq, opts.max_mismatch**0.5, bin_range_check=1
+    mass_range_params,
+    metric_params,
+    ref_freq,
+    opts.max_mismatch**0.5,
+    bin_range_check=1,
 )
 
 # Initialise counters
@@ -215,30 +219,35 @@ logger.info("Starting bank placement")
 while True:
     if not (Ns % 100000):
         # For optimization we generate points in sets of 100000
-        rMass1, rMass2, rSpin1z, rSpin2z = tmpltbank.get_random_mass(
-            100000, massRangeParams
+        r_mass1, r_mass2, r_spin1z, r_spin2z = tmpltbank.get_random_mass(
+            100000, mass_range_params
         )
         if opts.vary_fupper:
             mass_dict = {
-                "mass1": rMass1,
-                "mass2": rMass2,
-                "spin1z": rSpin1z,
-                "spin2z": rSpin2z,
+                "mass1": r_mass1,
+                "mass2": r_mass2,
+                "spin1z": r_spin1z,
+                "spin2z": r_spin2z,
             }
-            refEve = tmpltbank.return_nearest_cutoff(
+            ref_eve = tmpltbank.return_nearest_cutoff(
                 opts.bank_fupper_formula, mass_dict, fs
             )
             lambdas = tmpltbank.get_chirp_params(
-                rMass1, rMass2, rSpin1z, rSpin2z, metricParams.f0, metricParams.pnOrder
+                r_mass1,
+                r_mass2,
+                r_spin1z,
+                r_spin2z,
+                metric_params.f0,
+                metric_params.pn_order,
             )
             mus = []
             idx = 0
             for freq in fs:
-                mus.append(tmpltbank.get_mu_params(lambdas, metricParams, freq))
+                mus.append(tmpltbank.get_mu_params(lambdas, metric_params, freq))
                 idx += 1
             mus = numpy.array(mus)
         vecs = tmpltbank.get_cov_params(
-            rMass1, rMass2, rSpin1z, rSpin2z, metricParams, refFreq
+            r_mass1, r_mass2, r_spin1z, r_spin2z, metric_params, ref_freq
         )
         vecs = numpy.array(vecs)
         Ns = 0
@@ -253,7 +262,7 @@ while True:
     # Calculate if any existing point is too close (set store to False)
     if opts.vary_fupper:
         reject = partitioned_bank_object.test_point_distance_vary(
-            vs, refEve[Ns], mus[:, :, Ns], opts.max_mismatch
+            vs, ref_eve[Ns], mus[:, :, Ns], opts.max_mismatch
         )
     else:
         reject = partitioned_bank_object.test_point_distance(vs, opts.max_mismatch)
@@ -268,16 +277,16 @@ while True:
     Nr = 0
     if opts.vary_fupper:
         curr_mus = mus[:, :, Ns]
-        point_fupper = refEve[Ns]
+        point_fupper = ref_eve[Ns]
     else:
         curr_mus = None
         point_fupper = None
     partitioned_bank_object.add_point_by_chi_coords(
         vs,
-        rMass1[Ns],
-        rMass2[Ns],
-        rSpin1z[Ns],
-        rSpin2z[Ns],
+        r_mass1[Ns],
+        r_mass2[Ns],
+        r_spin1z[Ns],
+        r_spin2z[Ns],
         point_fupper=point_fupper,
         mus=curr_mus,
     )
@@ -290,14 +299,14 @@ logger.info("Outputting bank")
 
 # Put the whole template bank in one list
 mass1, mass2, spin1z, spin2z = partitioned_bank_object.output_all_points()
-tempBank = zip(mass1, mass2, spin1z, spin2z)
+temp_bank = zip(mass1, mass2, spin1z, spin2z)
 
 # Output to file
 bank_output.output_bank_to_file(
     opts.output_file,
-    tempBank,
-    programName="pycbc_aligned_stoch_bank",
-    optDict=opts.__dict__,
+    temp_bank,
+    program_name="pycbc_aligned_stoch_bank",
+    opt_dict=opts.__dict__,
 )
 
 logger.info("Done")

@@ -104,9 +104,9 @@ pycbc.init_logging(opts.verbose)
 
 # Sanity check options
 tmpltbank.verify_metric_calculation_options(opts, parser)
-metricParams = tmpltbank.metricParameters.from_argparse(opts)
+metric_params = tmpltbank.MetricParameters.from_argparse(opts)
 tmpltbank.verify_mass_range_options(opts, parser)
-massRangeParams = tmpltbank.massRangeParameters.from_argparse(opts)
+mass_range_params = tmpltbank.MassRangeParameters.from_argparse(opts)
 psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
@@ -125,37 +125,37 @@ else:
 # Get the PSD using the pycbc interface
 logger.info("Obtaining PSD")
 # Want the number of samples to be a binary number and Nyquist must be above
-# opts.f_upper. All this assumes that 1 / deltaF is a binary number
-nyquistFreq = 2 ** numpy.ceil(numpy.log2(opts.f_upper))
-numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
+# opts.f_upper. All this assumes that 1 / delta_f is a binary number
+nyquist_freq = 2 ** numpy.ceil(numpy.log2(opts.f_upper))
+num_samples = int(round(nyquist_freq / opts.delta_f)) + 1
 psd = pycbc.psd.from_cli(
     opts,
-    length=numSamples,
+    length=num_samples,
     delta_f=opts.delta_f,
     low_frequency_cutoff=opts.f_low,
     strain=strain,
     dyn_range_factor=pycbc.DYN_RANGE_FAC,
 )
-metricParams.psd = psd
+metric_params.psd = psd
 
 # Begin by calculating a metric
 logger.info("Calculating metric")
-metricParams = tmpltbank.determine_eigen_directions(
-    metricParams, vary_fmax=False, vary_density=None
+metric_params = tmpltbank.determine_eigen_directions(
+    metric_params, vary_fmax=False, vary_density=None
 )
 
 # Choose the frequency values to use for metric calculation
-refFreq = metricParams.fUpper
+ref_freq = metric_params.f_upper
 
 logger.info("Calculating covariance matrix")
 
 vals = tmpltbank.estimate_mass_range(
-    1000000, massRangeParams, metricParams, refFreq, covary=False
+    1000000, mass_range_params, metric_params, ref_freq, covary=False
 )
 cov = numpy.cov(vals)
-evalsCV, evecsCV = numpy.linalg.eig(cov)
-metricParams.evecsCV = {}
-metricParams.evecsCV[refFreq] = evecsCV
+evals_cv, evecs_cv = numpy.linalg.eig(cov)
+metric_params.evecs_cv = {}
+metric_params.evecs_cv[ref_freq] = evecs_cv
 
 logger.info("Reading template bank.")
 if opts.input_bank.endswith((".xml", ".xml.gz", ".xmlgz")):
@@ -177,15 +177,15 @@ else:
     err_msg = f"Don't know how to read extension {opts.input_bank}."
     raise NotImplementedError(err_msg)
 
-fP = open(opts.output_file, "w")
+fp = open(opts.output_file, "w")
 for idx in range(len(mass1)):
     chi_coords = tmpltbank.get_cov_params(
-        mass1[idx], mass2[idx], spin1z[idx], spin2z[idx], metricParams, refFreq
+        mass1[idx], mass2[idx], spin1z[idx], spin2z[idx], metric_params, ref_freq
     )
     vals = " ".join(
         [str(mass1[idx]), str(mass2[idx]), str(spin1z[idx]), str(spin2z[idx])]
     )
     vals += " "
     vals += " ".join([str(i) for i in chi_coords])
-    fP.write("%s\n" % (vals))
-fP.close()
+    fp.write("%s\n" % (vals))
+fp.close()

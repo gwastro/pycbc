@@ -25,7 +25,9 @@ from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 logger = logging.getLogger(__name__)
 
 
-def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper, covary=True):
+def estimate_mass_range(
+    num_points, mass_range_params, metric_params, f_upper, covary=True
+):
     """
     This function will generate a large set of points with random masses and
     spins (using pycbc.tmpltbank.get_random_mass) and translate these points
@@ -33,22 +35,22 @@ def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper, covary
 
     Parameters
     ----------
-    numPoints : int
+    num_points : int
         Number of systems to simulate
-    massRangeParams : massRangeParameters instance
+    mass_range_params : MassRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    fUpper : float
-        The value of fUpper to use when getting the mu coordinates from the
-        lambda coordinates. This must be a key in metricParams.evals and
-        metricParams.evecs (ie. we must know how to do the transformation for
-        the given value of fUpper). It also must be a key in
-        metricParams.evecsCV if covary=True.
+    f_upper : float
+        The value of f_upper to use when getting the mu coordinates from the
+        lambda coordinates. This must be a key in metric_params.evals and
+        metric_params.evecs (ie. we must know how to do the transformation for
+        the given value of f_upper). It also must be a key in
+        metric_params.evecs_cv if covary=True.
     covary : boolean, optional (default = True)
-        If this is given then evecsCV will be used to rotate from the Cartesian
+        If this is given then evecs_cv will be used to rotate from the Cartesian
         coordinate system into the principal coordinate direction (xi_i). If
         not given then points in the original Cartesian coordinates are
         returned.
@@ -60,20 +62,20 @@ def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper, covary
         A list of the positions of each point in the xi_i coordinate system.
 
     """
-    vals_set = get_random_mass(numPoints, massRangeParams)
+    vals_set = get_random_mass(num_points, mass_range_params)
     mass1 = vals_set[0]
     mass2 = vals_set[1]
     spin1z = vals_set[2]
     spin2z = vals_set[3]
     if covary:
-        lambdas = get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper)
+        lambdas = get_cov_params(mass1, mass2, spin1z, spin2z, metric_params, f_upper)
     else:
-        lambdas = get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper)
+        lambdas = get_conv_params(mass1, mass2, spin1z, spin2z, metric_params, f_upper)
 
     return numpy.array(lambdas)
 
 
-def get_random_mass_point_particles(numPoints, massRangeParams):
+def get_random_mass_point_particles(num_points, mass_range_params):
     """
     This function will generate a large set of points within the chosen mass
     and spin space. It will also return the corresponding PN spin coefficients
@@ -81,9 +83,9 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
 
     Parameters
     ----------
-    numPoints : int
+    num_points : int
         Number of systems to simulate
-    massRangeParams : massRangeParameters instance
+    mass_range_params : MassRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
 
     Returns
@@ -102,48 +104,48 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
 
     # First we choose the total masses from a unifrom distribution in mass
     # to the -5/3. power.
-    mass = numpy.random.random(numPoints) * (
-        massRangeParams.minTotMass ** (-5.0 / 3.0)
-        - massRangeParams.maxTotMass ** (-5.0 / 3.0)
-    ) + massRangeParams.maxTotMass ** (-5.0 / 3.0)
+    mass = numpy.random.random(num_points) * (
+        mass_range_params.min_tot_mass ** (-5.0 / 3.0)
+        - mass_range_params.max_tot_mass ** (-5.0 / 3.0)
+    ) + mass_range_params.max_tot_mass ** (-5.0 / 3.0)
     mass = mass ** (-3.0 / 5.0)
 
     # Next we choose the mass ratios, this will take different limits based on
     # the value of total mass
-    maxmass2 = numpy.minimum(mass / 2.0, massRangeParams.maxMass2)
-    minmass1 = numpy.maximum(massRangeParams.minMass1, mass / 2.0)
+    maxmass2 = numpy.minimum(mass / 2.0, mass_range_params.max_mass2)
+    minmass1 = numpy.maximum(mass_range_params.min_mass1, mass / 2.0)
     mineta = numpy.maximum(
-        massRangeParams.minCompMass
-        * (mass - massRangeParams.minCompMass)
+        mass_range_params.min_comp_mass
+        * (mass - mass_range_params.min_comp_mass)
         / (mass * mass),
-        massRangeParams.maxCompMass
-        * (mass - massRangeParams.maxCompMass)
+        mass_range_params.max_comp_mass
+        * (mass - mass_range_params.max_comp_mass)
         / (mass * mass),
     )
     # Note that mineta is a numpy.array because mineta depends on the total
-    # mass. Therefore this is not precomputed in the massRangeParams instance
-    if massRangeParams.minEta:
-        mineta = numpy.maximum(massRangeParams.minEta, mineta)
+    # mass. Therefore this is not precomputed in the mass_range_params instance
+    if mass_range_params.min_eta:
+        mineta = numpy.maximum(mass_range_params.min_eta, mineta)
     # Eta also restricted by chirp mass restrictions
-    if massRangeParams.min_chirp_mass:
-        eta_val_at_min_chirp = massRangeParams.min_chirp_mass / mass
+    if mass_range_params.min_chirp_mass:
+        eta_val_at_min_chirp = mass_range_params.min_chirp_mass / mass
         eta_val_at_min_chirp = eta_val_at_min_chirp ** (5.0 / 3.0)
         mineta = numpy.maximum(mineta, eta_val_at_min_chirp)
 
     maxeta = numpy.minimum(
-        massRangeParams.maxEta, maxmass2 * (mass - maxmass2) / (mass * mass)
+        mass_range_params.max_eta, maxmass2 * (mass - maxmass2) / (mass * mass)
     )
     maxeta = numpy.minimum(maxeta, minmass1 * (mass - minmass1) / (mass * mass))
     # max eta also affected by chirp mass restrictions
-    if massRangeParams.max_chirp_mass:
-        eta_val_at_max_chirp = massRangeParams.max_chirp_mass / mass
+    if mass_range_params.max_chirp_mass:
+        eta_val_at_max_chirp = mass_range_params.max_chirp_mass / mass
         eta_val_at_max_chirp = eta_val_at_max_chirp ** (5.0 / 3.0)
         maxeta = numpy.minimum(maxeta, eta_val_at_max_chirp)
 
     if (maxeta < mineta).any():
-        errMsg = "ERROR: Maximum eta is smaller than minimum eta!!"
-        raise ValueError(errMsg)
-    eta = numpy.random.random(numPoints) * (maxeta - mineta) + mineta
+        err_msg = "ERROR: Maximum eta is smaller than minimum eta!!"
+        raise ValueError(err_msg)
+    eta = numpy.random.random(num_points) * (maxeta - mineta) + mineta
 
     # Also calculate the component masses; mass1 > mass2
     diff = (mass * mass * (1 - 4 * eta)) ** 0.5
@@ -151,47 +153,50 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
     mass2 = (mass - diff) / 2.0
     # Check the masses are where we want them to be (allowing some floating
     # point rounding error).
-    if (mass1 > massRangeParams.maxMass1 * 1.001).any() or (
-        mass1 < massRangeParams.minMass1 * 0.999
+    if (mass1 > mass_range_params.max_mass1 * 1.001).any() or (
+        mass1 < mass_range_params.min_mass1 * 0.999
     ).any():
-        errMsg = "Mass1 is not within the specified mass range."
-        raise ValueError(errMsg)
-    if (mass2 > massRangeParams.maxMass2 * 1.001).any() or (
-        mass2 < massRangeParams.minMass2 * 0.999
+        err_msg = "Mass1 is not within the specified mass range."
+        raise ValueError(err_msg)
+    if (mass2 > mass_range_params.max_mass2 * 1.001).any() or (
+        mass2 < mass_range_params.min_mass2 * 0.999
     ).any():
-        errMsg = "Mass2 is not within the specified mass range."
-        raise ValueError(errMsg)
+        err_msg = "Mass2 is not within the specified mass range."
+        raise ValueError(err_msg)
 
     # Next up is the spins. First check if we have non-zero spins
-    if massRangeParams.maxNSSpinMag == 0 and massRangeParams.maxBHSpinMag == 0:
-        spin1z = numpy.zeros(numPoints, dtype=float)
-        spin2z = numpy.zeros(numPoints, dtype=float)
-    elif massRangeParams.nsbhFlag:
+    if (
+        mass_range_params.max_ns_spin_mag == 0
+        and mass_range_params.max_bh_spin_mag == 0
+    ):
+        spin1z = numpy.zeros(num_points, dtype=float)
+        spin2z = numpy.zeros(num_points, dtype=float)
+    elif mass_range_params.nsbh_flag:
         # Spin 1 first
         mspin = numpy.zeros(len(mass1))
-        mspin += massRangeParams.maxBHSpinMag
-        spin1z = (2 * numpy.random.random(numPoints) - 1) * mspin
+        mspin += mass_range_params.max_bh_spin_mag
+        spin1z = (2 * numpy.random.random(num_points) - 1) * mspin
         # Then spin2
         mspin = numpy.zeros(len(mass2))
-        mspin += massRangeParams.maxNSSpinMag
-        spin2z = (2 * numpy.random.random(numPoints) - 1) * mspin
+        mspin += mass_range_params.max_ns_spin_mag
+        spin2z = (2 * numpy.random.random(num_points) - 1) * mspin
     else:
-        boundary_mass = massRangeParams.ns_bh_boundary_mass
+        boundary_mass = mass_range_params.ns_bh_boundary_mass
         # Spin 1 first
         mspin = numpy.zeros(len(mass1))
-        mspin += massRangeParams.maxNSSpinMag
-        mspin[mass1 > boundary_mass] = massRangeParams.maxBHSpinMag
-        spin1z = (2 * numpy.random.random(numPoints) - 1) * mspin
+        mspin += mass_range_params.max_ns_spin_mag
+        mspin[mass1 > boundary_mass] = mass_range_params.max_bh_spin_mag
+        spin1z = (2 * numpy.random.random(num_points) - 1) * mspin
         # Then spin 2
         mspin = numpy.zeros(len(mass2))
-        mspin += massRangeParams.maxNSSpinMag
-        mspin[mass2 > boundary_mass] = massRangeParams.maxBHSpinMag
-        spin2z = (2 * numpy.random.random(numPoints) - 1) * mspin
+        mspin += mass_range_params.max_ns_spin_mag
+        mspin[mass2 > boundary_mass] = mass_range_params.max_bh_spin_mag
+        spin2z = (2 * numpy.random.random(num_points) - 1) * mspin
 
     return mass1, mass2, spin1z, spin2z
 
 
-def get_random_mass(numPoints, massRangeParams, eos="2H"):
+def get_random_mass(num_points, mass_range_params, eos="2H"):
     """
     This function will generate a large set of points within the chosen mass
     and spin space, and with the desired minimum remnant disk mass (this applies
@@ -201,9 +206,9 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
 
     Parameters
     ----------
-    numPoints : int
+    num_points : int
         Number of systems to simulate
-    massRangeParams : massRangeParameters instance
+    mass_range_params : MassRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
     eos : string
         Name of equation of state of neutron star.
@@ -225,9 +230,9 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
     # Check if EM contraints are required, i.e. if the systems must produce
     # a minimum remnant disk mass.  If this is not the case, proceed treating
     # the systems as point particle binaries
-    if massRangeParams.remnant_mass_threshold is None:
+    if mass_range_params.remnant_mass_threshold is None:
         mass1, mass2, spin1z, spin2z = get_random_mass_point_particles(
-            numPoints, massRangeParams
+            num_points, mass_range_params
         )
     # otherwise, load EOS dependent data, generate the EM constraint
     # (i.e. compute the minimum symmetric mass ratio needed to
@@ -236,8 +241,8 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
     # only systems that can yield (at least) the desired remnant
     # disk mass and that pass the mass and spin range cuts.
     else:
-        max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)[1]
-        boundary_mass = massRangeParams.ns_bh_boundary_mass
+        max_ns_g_mass = load_ns_sequence(mass_range_params.ns_eos)[1]
+        boundary_mass = mass_range_params.ns_bh_boundary_mass
         if max_ns_g_mass < boundary_mass:
             warn_msg = "WARNING: "
             warn_msg += "Option of ns-bh-boundary-mass is  %s " % (boundary_mass)
@@ -258,12 +263,12 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
         # As the EM cut can remove several randomly generated
         # binaries, track the number of accepted points that pass
         # all cuts and stop only once enough of them are generated
-        numPointsFound = 0
-        while numPointsFound < numPoints:
+        num_points_found = 0
+        while num_points_found < num_points:
             # Generate the random points within the required mass
             # and spin cuts
             mass1, mass2, spin1z, spin2z = get_random_mass_point_particles(
-                numPoints - numPointsFound, massRangeParams
+                num_points - num_points_found, mass_range_params
             )
 
             # Now proceed with cutting out EM dim systems
@@ -312,7 +317,7 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
                     spin1z=spin1z_nsbh,
                     eos=eos,
                 )
-                mask_bright_nsbh[remnant > massRangeParams.remnant_mass_threshold] = (
+                mask_bright_nsbh[remnant > mass_range_params.remnant_mass_threshold] = (
                     True
                 )
 
@@ -333,7 +338,7 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
             )
 
             # Number of points that survived all cuts
-            numPointsFound = len(mass1_out)
+            num_points_found = len(mass1_out)
 
         # Ready to go
         mass1 = mass1_out
@@ -349,8 +354,8 @@ def get_cov_params(
     mass2,
     spin1z,
     spin2z,
-    metricParams,
-    fUpper,
+    metric_params,
+    f_upper,
     lambda1=None,
     lambda2=None,
     quadparam1=None,
@@ -370,16 +375,16 @@ def get_cov_params(
         Spin of body 1.
     spin2z : float
         Spin of body 2.
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    fUpper : float
-        The value of fUpper to use when getting the mu coordinates from the
-        lambda coordinates. This must be a key in metricParams.evals,
-        metricParams.evecs and metricParams.evecsCV
+    f_upper : float
+        The value of f_upper to use when getting the mu coordinates from the
+        lambda coordinates. This must be a key in metric_params.evals,
+        metric_params.evecs and metric_params.evecs_cv
         (ie. we must know how to do the transformation for
-        the given value of fUpper)
+        the given value of f_upper)
 
     Returns
     -------
@@ -393,15 +398,15 @@ def get_cov_params(
         mass2,
         spin1z,
         spin2z,
-        metricParams,
-        fUpper,
+        metric_params,
+        f_upper,
         lambda1=lambda1,
         lambda2=lambda2,
         quadparam1=quadparam1,
         quadparam2=quadparam2,
     )
     # and then mus -> xis
-    xis = get_covaried_params(mus, metricParams.evecsCV[fUpper])
+    xis = get_covaried_params(mus, metric_params.evecs_cv[f_upper])
     return xis
 
 
@@ -410,8 +415,8 @@ def get_conv_params(
     mass2,
     spin1z,
     spin2z,
-    metricParams,
-    fUpper,
+    metric_params,
+    f_upper,
     lambda1=None,
     lambda2=None,
     quadparam1=None,
@@ -431,15 +436,15 @@ def get_conv_params(
         Spin of body 1.
     spin2z : float
         Spin of body 2.
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    fUpper : float
-        The value of fUpper to use when getting the mu coordinates from the
-        lambda coordinates. This must be a key in metricParams.evals and
-        metricParams.evecs (ie. we must know how to do the transformation for
-        the given value of fUpper)
+    f_upper : float
+        The value of f_upper to use when getting the mu coordinates from the
+        lambda coordinates. This must be a key in metric_params.evals and
+        metric_params.evecs (ie. we must know how to do the transformation for
+        the given value of f_upper)
 
     Returns
     -------
@@ -453,19 +458,19 @@ def get_conv_params(
         mass2,
         spin1z,
         spin2z,
-        metricParams.f0,
-        metricParams.pnOrder,
+        metric_params.f0,
+        metric_params.pn_order,
         lambda1=lambda1,
         lambda2=lambda2,
         quadparam1=quadparam1,
         quadparam2=quadparam2,
     )
     # and lambdas -> mus
-    mus = get_mu_params(lambdas, metricParams, fUpper)
+    mus = get_mu_params(lambdas, metric_params, f_upper)
     return mus
 
 
-def get_mu_params(lambdas, metricParams, fUpper):
+def get_mu_params(lambdas, metric_params, f_upper):
     """
     Function to rotate from the lambda coefficients into position in the mu
     coordinate system. Mu = Cartesian metric, but not principal components.
@@ -474,15 +479,15 @@ def get_mu_params(lambdas, metricParams, fUpper):
     ----------
     lambdas : list of floats or numpy.arrays
         Position of the system(s) in the lambda coefficients
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    fUpper : float
-        The value of fUpper to use when getting the mu coordinates from the
-        lambda coordinates. This must be a key in metricParams.evals and
-        metricParams.evecs (ie. we must know how to do the transformation for
-        the given value of fUpper)
+    f_upper : float
+        The value of f_upper to use when getting the mu coordinates from the
+        lambda coordinates. This must be a key in metric_params.evals and
+        metric_params.evecs (ie. we must know how to do the transformation for
+        the given value of f_upper)
 
     Returns
     -------
@@ -498,8 +503,8 @@ def get_mu_params(lambdas, metricParams, fUpper):
     else:
         resize_needed = False
 
-    evecs = metricParams.evecs[fUpper]
-    evals = metricParams.evals[fUpper]
+    evecs = metric_params.evecs[f_upper]
+    evals = metric_params.evals[f_upper]
 
     evecs = numpy.asarray(evecs)
 
@@ -512,7 +517,7 @@ def get_mu_params(lambdas, metricParams, fUpper):
     return mus
 
 
-def get_covaried_params(mus, evecsCV):
+def get_covaried_params(mus, evecs_cv):
     """
     Function to rotate from position(s) in the mu_i coordinate system into the
     position(s) in the xi_i coordinate system
@@ -521,7 +526,7 @@ def get_covaried_params(mus, evecsCV):
     ----------
     mus : list of floats or numpy.arrays
         Position of the system(s) in the mu coordinate system
-    evecsCV : numpy.matrix
+    evecs_cv : numpy.matrix
         This matrix is used to perform the rotation to the xi_i
         coordinate system.
 
@@ -539,7 +544,7 @@ def get_covaried_params(mus, evecsCV):
     else:
         resize_needed = False
 
-    xis = ((mus.T).dot(evecsCV)).T
+    xis = ((mus.T).dot(evecs_cv)).T
 
     if resize_needed:
         xis = numpy.ndarray.flatten(xis)
@@ -577,7 +582,7 @@ def rotate_vector(evecs, old_vector, rescale_factor, index):
     return temp
 
 
-def get_point_distance(point1, point2, metricParams, fUpper):
+def get_point_distance(point1, point2, metric_params, f_upper):
     """
     Function to calculate the mismatch between two points, supplied in terms
     of the masses and spins, using the xi_i parameter space metric to
@@ -595,16 +600,16 @@ def get_point_distance(point1, point2, metricParams, fUpper):
         point2[1] contains the mass of the smallest body.
         point2[2] contains the spin of the heaviest body.
         point2[3] contains the spin of the smallest body.
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    fUpper : float
-        The value of fUpper to use when getting the mu coordinates from the
-        lambda coordinates. This must be a key in metricParams.evals,
-        metricParams.evecs and metricParams.evecsCV
+    f_upper : float
+        The value of f_upper to use when getting the mu coordinates from the
+        lambda coordinates. This must be a key in metric_params.evals,
+        metric_params.evecs and metric_params.evecs_cv
         (ie. we must know how to do the transformation for
-        the given value of fUpper)
+        the given value of f_upper)
 
     Returns
     -------
@@ -616,38 +621,38 @@ def get_point_distance(point1, point2, metricParams, fUpper):
         Position of the input point2 in the xi_i parameter space
 
     """
-    aMass1 = point1[0]
-    aMass2 = point1[1]
-    aSpin1 = point1[2]
-    aSpin2 = point1[3]
+    a_mass1 = point1[0]
+    a_mass2 = point1[1]
+    a_spin1 = point1[2]
+    a_spin2 = point1[3]
 
-    bMass1 = point2[0]
-    bMass2 = point2[1]
-    bSpin1 = point2[2]
-    bSpin2 = point2[3]
+    b_mass1 = point2[0]
+    b_mass2 = point2[1]
+    b_spin1 = point2[2]
+    b_spin2 = point2[3]
 
-    aXis = get_cov_params(aMass1, aMass2, aSpin1, aSpin2, metricParams, fUpper)
+    a_xis = get_cov_params(a_mass1, a_mass2, a_spin1, a_spin2, metric_params, f_upper)
 
-    bXis = get_cov_params(bMass1, bMass2, bSpin1, bSpin2, metricParams, fUpper)
+    b_xis = get_cov_params(b_mass1, b_mass2, b_spin1, b_spin2, metric_params, f_upper)
 
-    dist = (aXis[0] - bXis[0]) ** 2
-    for i in range(1, len(aXis)):
-        dist += (aXis[i] - bXis[i]) ** 2
+    dist = (a_xis[0] - b_xis[0]) ** 2
+    for i in range(1, len(a_xis)):
+        dist += (a_xis[i] - b_xis[i]) ** 2
 
-    return dist, aXis, bXis
+    return dist, a_xis, b_xis
 
 
-def calc_point_dist(vsA, entryA):
+def calc_point_dist(vs, entry):
     r"""
     This function is used to determine the distance between two points.
 
     Parameters
     ----------
-    vsA : list or numpy.array or similar
+    vs : list or numpy.array or similar
         An array of point 1's position in the \chi_i coordinate system
-    entryA : list or numpy.array or similar
+    entry : list or numpy.array or similar
         An array of point 2's position in the \chi_i coordinate system
-    MMdistA : float
+    minimal_mismatch : float
         The minimal mismatch allowed between the points
 
     Returns
@@ -656,7 +661,7 @@ def calc_point_dist(vsA, entryA):
         The metric distance between the two points.
 
     """
-    chi_diffs = vsA - entryA
+    chi_diffs = vs - entry
     val = ((chi_diffs) * (chi_diffs)).sum()
     return val
 
@@ -680,55 +685,57 @@ def test_point_dist(point_1_chis, point_2_chis, distance_threshold):
     return calc_point_dist(point_1_chis, point_2_chis) < distance_threshold
 
 
-def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, norm_map, MMdistA):
+def calc_point_dist_vary(
+    mus1, f_upper1, mus2, f_upper2, f_map, norm_map, minimal_mismatch
+):
     r"""
     Function to determine if two points, with differing upper frequency cutoffs
-    have a mismatch < MMdistA for *both* upper frequency cutoffs.
+    have a mismatch < minimal_mismatch for *both* upper frequency cutoffs.
 
     Parameters
     ----------
     mus1 : List of numpy arrays
         mus1[i] will give the array of point 1's position in the \chi_j
         coordinate system. The i element corresponds to varying values of the
-        upper frequency cutoff. fMap is used to map between i and actual
+        upper frequency cutoff. f_map is used to map between i and actual
         frequencies
-    fUpper1 : float
+    f_upper1 : float
         The upper frequency cutoff of point 1.
     mus2 : List of numpy arrays
         mus2[i] will give the array of point 2's position in the \chi_j
         coordinate system. The i element corresponds to varying values of the
-        upper frequency cutoff. fMap is used to map between i and actual
+        upper frequency cutoff. f_map is used to map between i and actual
         frequencies
-    fUpper2 : float
+    f_upper2 : float
         The upper frequency cutoff of point 2.
-    fMap : dictionary
-        fMap[fUpper] will give the index needed to get the \chi_j coordinates
+    f_map : dictionary
+        f_map[f_upper] will give the index needed to get the \chi_j coordinates
         in the two sets of mus
     norm_map : dictionary
-        norm_map[fUpper] will give the relative frequency domain template
-        amplitude (sigma) at the given value of fUpper.
-    MMdistA
+        norm_map[f_upper] will give the relative frequency domain template
+        amplitude (sigma) at the given value of f_upper.
+    minimal_mismatch
         The minimal mismatch allowed between the points
 
     Returns
     -------
     Boolean
-        True if the points have a mismatch < MMdistA
-        False if the points have a mismatch > MMdistA
+        True if the points have a mismatch < minimal_mismatch
+        False if the points have a mismatch > minimal_mismatch
 
     """
-    f_upper = min(fUpper1, fUpper2)
-    f_other = max(fUpper1, fUpper2)
-    idx = fMap[f_upper]
+    f_upper = min(f_upper1, f_upper2)
+    f_other = max(f_upper1, f_upper2)
+    idx = f_map[f_upper]
     vecs1 = mus1[idx]
     vecs2 = mus2[idx]
     val = ((vecs1 - vecs2) * (vecs1 - vecs2)).sum()
-    if val > MMdistA:
+    if val > minimal_mismatch:
         return False
     # Reduce match to account for normalization.
     norm_fac = norm_map[f_upper] / norm_map[f_other]
     val = 1 - (1 - val) * norm_fac
-    return val < MMdistA
+    return val < minimal_mismatch
 
 
 def find_max_and_min_frequencies(name, mass_range_params, freqs):
@@ -751,8 +758,8 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
     if name in total_mass_approxs:
         # This can be done quickly if the cutoff only depends on total mass
         # Assumes that lower total mass = higher cutoff frequency
-        upper_f_cutoff = total_mass_approxs[name](mass_range_params.minTotMass)
-        lower_f_cutoff = total_mass_approxs[name](mass_range_params.maxTotMass)
+        upper_f_cutoff = total_mass_approxs[name](mass_range_params.min_tot_mass)
+        lower_f_cutoff = total_mass_approxs[name](mass_range_params.max_tot_mass)
     else:
         # Do this numerically
         # FIXME: Is 1000000 the right choice? I think so, but just highlighting
@@ -844,14 +851,14 @@ def find_closest_calculated_frequencies(input_freqs, metric_freqs):
 
     """
     try:
-        refEv = numpy.zeros(len(input_freqs), dtype=float)
+        ref_ev = numpy.zeros(len(input_freqs), dtype=float)
     except TypeError:
-        refEv = numpy.zeros(1, dtype=float)
+        ref_ev = numpy.zeros(1, dtype=float)
         input_freqs = numpy.array([input_freqs])
 
     if len(metric_freqs) == 1:
-        refEv[:] = metric_freqs[0]
-        return refEv
+        ref_ev[:] = metric_freqs[0]
+        return ref_ev
 
     # FIXME: This seems complicated for what is a simple operation. Is there
     #        a simpler *and* faster way of doing this?
@@ -863,45 +870,47 @@ def find_closest_calculated_frequencies(input_freqs, metric_freqs):
         if i == 0:
             # If frequency is lower than halfway between the first two entries
             # use the first (lowest) value
-            logicArr = input_freqs < ((metric_freqs[0] + metric_freqs[1]) / 2.0)
+            logic_arr = input_freqs < ((metric_freqs[0] + metric_freqs[1]) / 2.0)
         elif i == (len(metric_freqs) - 1):
             # If frequency is larger than halfway between the last two entries
             # use the last (highest) value
-            logicArr = input_freqs > ((metric_freqs[-2] + metric_freqs[-1]) / 2.0)
+            logic_arr = input_freqs > ((metric_freqs[-2] + metric_freqs[-1]) / 2.0)
         else:
             # For frequencies within the range in freqs, check which points
             # should use the frequency corresponding to index i.
-            logicArrA = input_freqs > ((metric_freqs[i - 1] + metric_freqs[i]) / 2.0)
-            logicArrB = input_freqs < ((metric_freqs[i] + metric_freqs[i + 1]) / 2.0)
-            logicArr = numpy.logical_and(logicArrA, logicArrB)
-        if logicArr.any():
-            refEv[logicArr] = metric_freqs[i]
-    return refEv
+            logic_arr_a = input_freqs > ((metric_freqs[i - 1] + metric_freqs[i]) / 2.0)
+            logic_arr_b = input_freqs < ((metric_freqs[i] + metric_freqs[i + 1]) / 2.0)
+            logic_arr = numpy.logical_and(logic_arr_a, logic_arr_b)
+        if logic_arr.any():
+            ref_ev[logic_arr] = metric_freqs[i]
+    return ref_ev
 
 
-def outspiral_loop(N):
+def outspiral_loop(max_dist):
     """
     Return a list of points that will loop outwards in a 2D lattice in terms
-    of distance from a central point. So if N=2 this will be [0,0], [0,1],
+    of distance from a central point. So if max_dist=2 this will be [0,0], [0,1],
     [0,-1],[1,0],[-1,0],[1,1] .... This is useful when you want to loop over
     a number of bins, but want to start in the center and work outwards.
     """
     # Create a 2D lattice of all points
-    X, Y = numpy.meshgrid(numpy.arange(-N, N + 1), numpy.arange(-N, N + 1))
+    x_vals, y_vals = numpy.meshgrid(
+        numpy.arange(-max_dist, max_dist + 1), numpy.arange(-max_dist, max_dist + 1)
+    )
 
     # Flatten it
-    X = numpy.ndarray.flatten(X)
-    Y = numpy.ndarray.flatten(Y)
+    x_vals = numpy.ndarray.flatten(x_vals)
+    y_vals = numpy.ndarray.flatten(y_vals)
 
     # Force to an integer
-    X = numpy.array(X, dtype=int)
-    Y = numpy.array(Y, dtype=int)
+    x_vals = numpy.array(x_vals, dtype=int)
+    y_vals = numpy.array(y_vals, dtype=int)
 
     # Calculate distances
-    G = numpy.sqrt(X**2 + Y**2)
+    dist = numpy.sqrt(x_vals**2 + y_vals**2)
 
     # Combine back into an array
-    out_arr = numpy.array([X, Y, G])
+    out_arr = numpy.array([x_vals, y_vals, dist])
 
     # And order correctly
     sorted_out_arr = out_arr[:, out_arr[2].argsort()]
