@@ -18,21 +18,21 @@ import pycbc
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
-def r_uniform_in_volume(r1, r2, N):
-    xi = numpy.random.uniform(0.0, 1.0, size=N)
+def r_uniform_in_volume(r1, r2, n):
+    xi = numpy.random.uniform(0.0, 1.0, size=n)
     return (xi * r2**3.0 + (1.0 - xi) * r1**3.0) ** (1.0 / 3)
 
 
-def r_uniform_in_distance(r1, r2, N):
-    return numpy.random.uniform(r1, r2, size=N)
+def r_uniform_in_distance(r1, r2, n):
+    return numpy.random.uniform(r1, r2, size=n)
 
 
-def r_uniform_in_logdist(r1, r2, N):
-    return r1 * (r2 / r1) ** numpy.random.uniform(0.0, 1.0, size=N)
+def r_uniform_in_logdist(r1, r2, n):
+    return r1 * (r2 / r1) ** numpy.random.uniform(0.0, 1.0, size=n)
 
 
-def r_beta_distribution(rmax, alpha, beta, N=1):
-    return rmax * stats.beta.rvs(alpha, beta, size=N)
+def r_beta_distribution(rmax, alpha, beta, n=1):
+    return rmax * stats.beta.rvs(alpha, beta, size=n)
 
 
 def beta_weight(r, rmax, alpha, beta):

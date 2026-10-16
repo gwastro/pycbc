@@ -107,7 +107,7 @@ def main(
     sample_rate,
     ifar,
     ifos,
-    thresh_SNR,
+    thresh_snr,
     ligolw_skymap_output=".",
     ligolw_event_output=None,
     snr_series_duration=0.1465,
@@ -409,7 +409,7 @@ def main(
             snr_series_peak = np.argmax(abs(snr_series))
             snr = abs(snr_series[snr_series_peak])
             logger.info("%s peak SNR: %.2f", ifo, snr)
-            if snr < thresh_SNR:
+            if snr < thresh_snr:
                 subthreshold_ifos.append(ifo)
                 continue
         elif trig_time_mode == "exact":
