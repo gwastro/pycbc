@@ -93,7 +93,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
 
         # Now that the kinds are set, we need to call our parent method to set up all the
         # inputs and answers for our functions
-        self.setNumbers()
+        self.set_numbers()
 
         # The above call created instances for all of our inputs and various correct
         # outputs.  But we make a copy of the scalar to check later.

@@ -83,7 +83,7 @@ print("Waveform Generation %.2f msec" % t, " %5.1f gen/min " % (1000 * 60 / t))
 
 if type(ctx) is CUDAScheme:
 
-    def SPAtmplt():
+    def spatmplt():
         with ctx:
             n = int(1.0 / options.deltaf * 4096)
             out = zeros(n, dtype=complex64)
@@ -98,6 +98,6 @@ if type(ctx) is CUDAScheme:
                     amplitude_order=0,
                 )
 
-    gt = timeit.Timer(SPAtmplt)
+    gt = timeit.Timer(spatmplt)
     t = 1000 * gt.timeit(number=1) / niter
     print("SPAtmplt Generation %.2f msec" % t, " %5.1f gen/min " % (1000 * 60 / t))

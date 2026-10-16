@@ -114,7 +114,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
     nsamples = 1000000  # Used to calculate injected astro volume
     injections = copy.deepcopy(injections)
     min_z, max_z = injections["z_range"]
-    V = quad(contracted_dVdc, 0.0, max_z)[0]
+    V = quad(contracted_dvdc, 0.0, max_z)[0]
 
     z_astro = astro_redshifts(min_z, max_z, nsamples)
     astro_lum_dist = WMAP9.luminosity_distance(z_astro).value
@@ -152,8 +152,8 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
 
     # Estimate the sensitive volume
     z_range = injections["z_range"]
-    V_min = quad(contracted_dVdc, 0.0, z_range[0])[0]
-    V_max = quad(contracted_dVdc, 0.0, z_range[1])[0]
+    V_min = quad(contracted_dvdc, 0.0, z_range[0])[0]
+    V_max = quad(contracted_dvdc, 0.0, z_range[1])[0]
 
     thr_falloff, i_inj, i_det, i_det_sq = [], 0, 0, 0
     gps_min, gps_max = 1e15, 0
@@ -325,7 +325,7 @@ def astro_redshifts(min_z, max_z, nsamples):
     """
     dz, fac = 0.001, 3.0
     # use interpolation instead of directly estimating all the pdfz for rndz
-    V = quad(contracted_dVdc, 0.0, max_z)[0]
+    V = quad(contracted_dvdc, 0.0, max_z)[0]
     zbins = np.arange(min_z, max_z + dz / 2.0, dz)
     zcenter = (zbins[:-1] + zbins[1:]) / 2
     pdfz = WMAP9.differential_comoving_volume(zcenter).value / (1 + zcenter) / V
@@ -351,10 +351,10 @@ def pdf_z_astro(z, V_min, V_max):
     Get the probability density for the rate of events
     at a redshift assuming standard cosmology
     """
-    return contracted_dVdc(z) / (V_max - V_min)
+    return contracted_dvdc(z) / (V_max - V_min)
 
 
-def contracted_dVdc(z):
+def contracted_dvdc(z):
     # Return the time-dilated differential comoving volume
     return WMAP9.differential_comoving_volume(z).value / (1 + z)
 

@@ -232,7 +232,7 @@ _real_dtype_dict = {
 
 
 class ArrayBase:
-    def setNumbers(self):
+    def set_numbers(self):
         # We create instances of our types, and need to know the generic answer
         # type so that we can convert the many basic lists into the appropriate
         # precision and kind.  This logic essentially implements (for our limited
@@ -249,7 +249,7 @@ class ArrayBase:
         self.rdtype = _real_dtype_dict[self.dtype]
 
         # The child class (testing one of Array, TimeSeries, or FrequencySeries)
-        # should set the following in its setUp method before this method (setNumbers)
+        # should set the following in its setUp method before this method (set_numbers)
         # is called:
         #    self.type = one of [Array,TimeSeries,FrequencySeries]
         #    self.kwds = dict for other kwd args beyond 'dtype'; normally an

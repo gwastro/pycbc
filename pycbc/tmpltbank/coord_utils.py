@@ -750,9 +750,9 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
 
     # Can I do this quickly?
     total_mass_approxs = {
-        "SchwarzISCO": pnutils.f_SchwarzISCO,
-        "LightRing": pnutils.f_LightRing,
-        "ERD": pnutils.f_ERD,
+        "SchwarzISCO": pnutils.f_schwarz_isco,
+        "LightRing": pnutils.f_light_ring,
+        "ERD": pnutils.f_erd,
     }
 
     if name in total_mass_approxs:

@@ -486,7 +486,7 @@ def spher_harms(
     return xlm, xlnm
 
 
-def Kerr_factor(final_mass, distance):
+def kerr_factor(final_mass, distance):
     """
     Return the factor final_mass/distance (in dimensionless units) for Kerr
     ringdowns
@@ -845,7 +845,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False, sum_modes=T
             input_params["final_mass"], input_params["final_spin"], input_params["lmns"]
         )
         norm = (
-            Kerr_factor(input_params["final_mass"], input_params["distance"])
+            kerr_factor(input_params["final_mass"], input_params["distance"])
             if "distance" in input_params.keys()
             else 1.0
         )
