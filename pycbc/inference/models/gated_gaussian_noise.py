@@ -1026,7 +1026,6 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                              "expensive than using the unmarginalized model. "
                              "Consider using gated_gaussian_noise or adding "
                              "additional detectors.")
->>>>>>> c45a405b9 (add in RF support to gated margpol; throw errors in margpol models and redirect the user if only using RF)
 
     def get_waveforms(self):
         if self._current_wfs is not None:
