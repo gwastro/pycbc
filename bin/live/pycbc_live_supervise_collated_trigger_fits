@@ -28,7 +28,7 @@ def read_options(args):
     Read the options into a dictionary
     """
     logger.info("Reading config file")
-    cp = icp(configFiles=[args.config_file])
+    cp = icp(config_files=[args.config_file])
     config_opts = {
         section: {k: v for k, v in cp[section].items()} for section in cp.sections()
     }

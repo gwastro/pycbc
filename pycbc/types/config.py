@@ -62,10 +62,10 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
     def __init__(
         self,
-        configFiles=None,
-        overrideTuples=None,
-        parsedFilePath=None,
-        deleteTuples=None,
+        config_files=None,
+        override_tuples=None,
+        parsed_file_path=None,
+        delete_tuples=None,
         skip_extended=False,
         sanitize_newline=True,
         delete_sharedoptions_sections=True,
@@ -76,15 +76,15 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         Parameters
         ----------
-         configFiles : Path to .ini file, or list of paths
+         config_files : Path to .ini file, or list of paths
              The file(s) to be read in and parsed.
-         overrideTuples : List of (section, option, value) tuples
+         override_tuples : List of (section, option, value) tuples
              Add the (section, option, value) triplets provided
              in this list to the provided .ini file(s). If the section, option
              pair is already present, it will be overwritten.
-         parsedFilePath : Path, optional (default=None)
+         parsed_file_path : Path, optional (default=None)
              If given, write the parsed .ini file back to disk at this location.
-         deleteTuples : List of (section, option) tuples
+         delete_tuples : List of (section, option) tuples
              Delete the (section, option) pairs provided
              in this list from provided .ini file(s). If the section only
              is provided, the entire section will be deleted.
@@ -95,12 +95,12 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
              Initialized InterpolatingConfigParser instance.
 
         """
-        if configFiles is None:
-            configFiles = []
-        if overrideTuples is None:
-            overrideTuples = []
-        if deleteTuples is None:
-            deleteTuples = []
+        if config_files is None:
+            config_files = []
+        if override_tuples is None:
+            override_tuples = []
+        if delete_tuples is None:
+            delete_tuples = []
 
         super().__init__()
 
@@ -121,7 +121,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         }
         self.read_dict({"environment": env_vals})
 
-        self.read_ini_file(configFiles)
+        self.read_ini_file(config_files)
 
         # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
         self.split_multi_sections()
@@ -130,7 +130,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         self.populate_shared_sections(delete_sections=delete_sharedoptions_sections)
 
         # Do deletes from command line
-        for delete in deleteTuples:
+        for delete in delete_tuples:
             if len(delete) == 1:
                 if self.remove_section(delete[0]) is False:
                     raise ValueError(
@@ -157,7 +157,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 )
 
         # Do overrides from command line
-        for override in overrideTuples:
+        for override in override_tuples:
             if len(override) not in [2, 3]:
                 errmsg = "Overrides must be tuples of length 2 or 3."
                 errmsg = "Got %s." % (str(override))
@@ -191,8 +191,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         self.sanity_check_subsections()
 
         # Dump parsed .ini file if needed
-        if parsedFilePath:
-            fp = open(parsedFilePath, "w")
+        if parsed_file_path:
+            fp = open(parsed_file_path, "w")
             self.write(fp)
             fp.close()
 
@@ -223,7 +223,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             deletes = [tuple(delete.split(":")) for delete in opts.config_delete]
         else:
             deletes = None
-        return cls(opts.config_files, overrides, deleteTuples=deletes)
+        return cls(opts.config_files, overrides, delete_tuples=deletes)
 
     def read_ini_file(self, fpath):
         """

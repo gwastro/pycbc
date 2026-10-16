@@ -27,7 +27,7 @@ creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
-import configparser as ConfigParser
+import configparser
 import copy
 import logging
 import math
@@ -306,9 +306,9 @@ class Executable(pegasus_workflow.Executable):
         """
         if self.ifo_list and len(self.ifo_list) == 1:
             return self.ifo_list[0]
-        errMsg = "self.ifoList must contain only one ifo to access the "
-        errMsg += "ifo property. %s." % (str(self.ifo_list),)
-        raise TypeError(errMsg)
+        err_msg = "self.ifoList must contain only one ifo to access the "
+        err_msg += "ifo property. %s." % (str(self.ifo_list),)
+        raise TypeError(err_msg)
 
     def get_transformation(self):
         if self.execution_site in self.transformations:
@@ -457,7 +457,7 @@ class Executable(pegasus_workflow.Executable):
                 key = self.cp.get(sec, opt)
                 if key:
                     return key
-            except ConfigParser.NoOptionError:
+            except configparser.NoOptionError:
                 pass
 
         return None
@@ -506,7 +506,7 @@ class Executable(pegasus_workflow.Executable):
             global_retention_level = self.cp.get_opt_tags(
                 "workflow", "file-retention-level", self.tags + [self.name]
             )
-        except ConfigParser.Error:
+        except configparser.Error:
             msg = "Cannot find file-retention-level in [workflow] section "
             msg += "of the configuration file. Setting a default value of "
             msg += "retain all files."
@@ -1479,18 +1479,18 @@ class FileList(list):
         """
         # Determine whether I have a specific time, or a range of times
         try:
-            lenTime = len(time)
+            len_time = len(time)
         except TypeError:
             # This is if I have a single time
-            outFile = self.find_output_at_time(ifo, time)
+            out_file = self.find_output_at_time(ifo, time)
         else:
             # This is if I have a range of times
-            if lenTime == 2:
-                outFile = self.find_output_in_range(ifo, time[0], time[1])
+            if len_time == 2:
+                out_file = self.find_output_in_range(ifo, time[0], time[1])
             # This is if I got a list that had more (or less) than 2 entries
             if len(time) != 2:
                 raise TypeError("I do not understand the input variable time")
-        return outFile
+        return out_file
 
     def find_output_at_time(self, ifo, time):
         """
@@ -1511,19 +1511,19 @@ class FileList(list):
 
         """
         # Get list of Files that overlap time, for given ifo
-        outFiles = [i for i in self if ifo in i.ifo_list and time in i.segment_list]
-        if len(outFiles) == 0:
+        out_files = [i for i in self if ifo in i.ifo_list and time in i.segment_list]
+        if len(out_files) == 0:
             # No OutFile at this time
             return None
-        if len(outFiles) == 1:
+        if len(out_files) == 1:
             # 1 OutFile at this time (good!)
-            return outFiles
+            return out_files
         # Multiple output files. Currently this is valid, but we may want
         # to demand exclusivity later, or in certain cases. Hence the
         # separation.
-        return outFiles
+        return out_files
 
-    def find_outputs_in_range(self, ifo, current_segment, useSplitLists=False):
+    def find_outputs_in_range(self, ifo, current_segment, use_split_lists=False):
         """
         Return the list of Files that is most appropriate for the supplied
         time range. That is, the Files whose coverage time has the
@@ -1546,7 +1546,7 @@ class FileList(list):
 
         # Get all files overlapping the window
         overlap_files = self.find_all_output_in_range(
-            ifo, current_segment, useSplitLists=useSplitLists
+            ifo, current_segment, use_split_lists=use_split_lists
         )
 
         # By how much do they overlap?
@@ -1561,10 +1561,10 @@ class FileList(list):
         # Note if two File have identical overlap, the first is used
         # to define the valid segment
         overlap_windows = numpy.array(overlap_windows, dtype=int)
-        segmentLst = overlap_files[overlap_windows.argmax()].segment_list
+        segment_lst = overlap_files[overlap_windows.argmax()].segment_list
 
         # Get all output files with the exact same segment definition
-        output_files = [f for f in overlap_files if f.segment_list == segmentLst]
+        output_files = [f for f in overlap_files if f.segment_list == segment_lst]
         return output_files
 
     def find_output_in_range(self, ifo, start, end):
@@ -1592,37 +1592,39 @@ class FileList(list):
         currsegment_list = segments.segmentlist([segments.segment(start, end)])
 
         # First filter Files corresponding to ifo
-        outFiles = [i for i in self if ifo in i.ifo_list]
+        out_files = [i for i in self if ifo in i.ifo_list]
 
-        if len(outFiles) == 0:
+        if len(out_files) == 0:
             # No OutFiles correspond to that ifo
             return None
         # Filter OutFiles to those overlapping the given window
-        currSeg = segments.segment([start, end])
-        outFiles = [i for i in outFiles if i.segment_list.intersects_segment(currSeg)]
+        curr_seg = segments.segment([start, end])
+        out_files = [
+            i for i in out_files if i.segment_list.intersects_segment(curr_seg)
+        ]
 
-        if len(outFiles) == 0:
+        if len(out_files) == 0:
             # No OutFile overlap that time period
             return None
-        if len(outFiles) == 1:
+        if len(out_files) == 1:
             # One OutFile overlaps that period
-            return outFiles[0]
-        overlap_windows = [abs(i.segment_list & currsegment_list) for i in outFiles]
+            return out_files[0]
+        overlap_windows = [abs(i.segment_list & currsegment_list) for i in out_files]
         # Return the File with the biggest overlap
         # Note if two File have identical overlap, this will return
         # the first File in the list
         overlap_windows = numpy.array(overlap_windows, dtype=int)
-        return outFiles[overlap_windows.argmax()]
+        return out_files[overlap_windows.argmax()]
 
-    def find_all_output_in_range(self, ifo, currSeg, useSplitLists=False):
+    def find_all_output_in_range(self, ifo, curr_seg, use_split_lists=False):
         """
         Return all files that overlap the specified segment.
         """
-        if not useSplitLists:
+        if not use_split_lists:
             # Slower, but simpler method
-            outFiles = [i for i in self if ifo in i.ifo_list]
-            outFiles = [
-                i for i in outFiles if i.segment_list.intersects_segment(currSeg)
+            out_files = [i for i in self if ifo in i.ifo_list]
+            out_files = [
+                i for i in out_files if i.segment_list.intersects_segment(curr_seg)
             ]
         else:
             # Faster, but more complicated
@@ -1631,27 +1633,31 @@ class FileList(list):
             if not self._check_split_list_validity():
                 # FIXME: DO NOT hard code this.
                 self._temporal_split_list(100)
-            startIdx = int((currSeg[0] - self._splitListsStart) / self._splitListsStep)
+            start_idx = int(
+                (curr_seg[0] - self._split_lists_start) / self._split_lists_step
+            )
             # Add some small rounding here
-            endIdx = (currSeg[1] - self._splitListsStart) / self._splitListsStep
-            endIdx = int(endIdx - 0.000001)
+            end_idx = (curr_seg[1] - self._split_lists_start) / self._split_lists_step
+            end_idx = int(end_idx - 0.000001)
 
-            outFiles = []
-            for idx in range(startIdx, endIdx + 1):
-                if idx < 0 or idx >= self._splitListsNum:
+            out_files = []
+            for idx in range(start_idx, end_idx + 1):
+                if idx < 0 or idx >= self._split_lists_num:
                     continue
-                outFilesTemp = [i for i in self._splitLists[idx] if ifo in i.ifo_list]
-                outFiles.extend(
+                out_files_temp = [
+                    i for i in self._split_lists[idx] if ifo in i.ifo_list
+                ]
+                out_files.extend(
                     [
                         i
-                        for i in outFilesTemp
-                        if i.segment_list.intersects_segment(currSeg)
+                        for i in out_files_temp
+                        if i.segment_list.intersects_segment(curr_seg)
                     ]
                 )
                 # Remove duplicates
-                outFiles = list(set(outFiles))
+                out_files = list(set(out_files))
 
-        return self.__class__(outFiles)
+        return self.__class__(out_files)
 
     def find_output_with_tag(self, tag, fail_if_not_single_file=False):
         """
@@ -1726,7 +1732,7 @@ class FileList(list):
                 pass
         return lal_cache
 
-    def _temporal_split_list(self, numSubLists):
+    def _temporal_split_list(self, num_sub_lists):
         """
         This internal function is used to speed the code up in cases where a
         number of operations are being made to determine if files overlap a
@@ -1734,7 +1740,7 @@ class FileList(list):
         *every* call. However, if we predetermine which files are at which
         times, we can avoid testing *every* file every time.
 
-        We therefore create numSubLists distinct and equal length time windows
+        We therefore create num_sub_lists distinct and equal length time windows
         equally spaced from the first time entry in the list until the last.
         A list is made for each window and files are added to lists which they
         overlap.
@@ -1743,39 +1749,39 @@ class FileList(list):
         invalid. Currently the testing for this is pretty basic
         """
         # Assume segment lists are coalesced!
-        startTime = float(min([i.segment_list[0][0] for i in self]))
-        endTime = float(max([i.segment_list[-1][-1] for i in self]))
-        step = (endTime - startTime) / float(numSubLists)
+        start_time = float(min([i.segment_list[0][0] for i in self]))
+        end_time = float(max([i.segment_list[-1][-1] for i in self]))
+        step = (end_time - start_time) / float(num_sub_lists)
 
         # Set up storage
-        self._splitLists = []
-        for idx in range(numSubLists):
-            self._splitLists.append(FileList([]))
+        self._split_lists = []
+        for idx in range(num_sub_lists):
+            self._split_lists.append(FileList([]))
 
         # Sort the files
 
-        for currFile in self:
-            segExtent = currFile.segment_list.extent()
-            startIdx = (segExtent[0] - startTime) / step
-            endIdx = (segExtent[1] - startTime) / step
+        for curr_file in self:
+            seg_extent = curr_file.segment_list.extent()
+            start_idx = (seg_extent[0] - start_time) / step
+            end_idx = (seg_extent[1] - start_time) / step
             # Add some small rounding here
-            startIdx = int(startIdx - 0.001)
-            endIdx = int(endIdx + 0.001)
+            start_idx = int(start_idx - 0.001)
+            end_idx = int(end_idx + 0.001)
 
-            startIdx = max(startIdx, 0)
-            if endIdx >= numSubLists:
-                endIdx = numSubLists - 1
+            start_idx = max(start_idx, 0)
+            if end_idx >= num_sub_lists:
+                end_idx = num_sub_lists - 1
 
-            for idx in range(startIdx, endIdx + 1):
-                self._splitLists[idx].append(currFile)
+            for idx in range(start_idx, end_idx + 1):
+                self._split_lists[idx].append(curr_file)
 
         # Set information needed to detect changes and to be used elsewhere
-        self._splitListsLength = len(self)
-        self._splitListsNum = numSubLists
-        self._splitListsStart = startTime
-        self._splitListsEnd = endTime
-        self._splitListsStep = step
-        self._splitListsSet = True
+        self._split_lists_length = len(self)
+        self._split_lists_num = num_sub_lists
+        self._split_lists_start = start_time
+        self._split_lists_end = end_time
+        self._split_lists_step = step
+        self._split_lists_set = True
 
     def _check_split_list_validity(self):
         """
@@ -1784,8 +1790,8 @@ class FileList(list):
         """
         # FIXME: Currently very primitive, but needs to be fast
         if (
-            not (hasattr(self, "_splitListsSet") and (self._splitListsSet))
-            or len(self) != self._splitListsLength
+            not (hasattr(self, "_split_lists_set") and (self._split_lists_set))
+            or len(self) != self._split_lists_length
         ):
             return False
         return True
@@ -2089,7 +2095,7 @@ class SegFile(File):
             **kwargs,
         )
 
-    def remove_short_sci_segs(self, minSegLength):
+    def remove_short_sci_segs(self, min_seg_length):
         """
         Function to remove all science segments
         shorter than a specific length. Also updates the file on disk to remove
@@ -2097,7 +2103,7 @@ class SegFile(File):
 
         Parameters
         ----------
-        minSegLength : int
+        min_seg_length : int
             Maximum length of science segments. Segments shorter than this will
             be removed.
 
@@ -2106,7 +2112,7 @@ class SegFile(File):
         for key, seglist in self.segment_dict.items():
             newsegment_list = segments.segmentlist()
             for seg in seglist:
-                if abs(seg) > minSegLength:
+                if abs(seg) > min_seg_length:
                     newsegment_list.append(seg)
             newsegment_list.coalesce()
             self.segment_dict[key] = newsegment_list
@@ -2172,7 +2178,11 @@ class SegFile(File):
 
 
 def make_external_call(
-    cmdList, out_dir=None, out_basename="external_call", shell=False, fail_on_error=True
+    cmd_list,
+    out_dir=None,
+    out_basename="external_call",
+    shell=False,
+    fail_on_error=True,
 ):
     """
     Use this to make an external call using the python subprocess module.
@@ -2181,7 +2191,7 @@ def make_external_call(
 
     Parameters
     ----------
-    cmdList : list of strings
+    cmd_list : list of strings
         This list of strings contains the command to be run. See the subprocess
         documentation for more details.
     out_dir : string
@@ -2209,66 +2219,66 @@ def make_external_call(
 
     """
     if out_dir:
-        outBase = os.path.join(out_dir, out_basename)
-        errFile = outBase + ".err"
-        errFP = open(errFile, "w")
-        outFile = outBase + ".out"
-        outFP = open(outFile, "w")
-        cmdFile = outBase + ".sh"
-        cmdFP = open(cmdFile, "w")
-        cmdFP.write(" ".join(cmdList))
-        cmdFP.close()
+        out_base = os.path.join(out_dir, out_basename)
+        err_file = out_base + ".err"
+        err_fp = open(err_file, "w")
+        out_file = out_base + ".out"
+        out_fp = open(out_file, "w")
+        cmd_file = out_base + ".sh"
+        cmd_fp = open(cmd_file, "w")
+        cmd_fp.write(" ".join(cmd_list))
+        cmd_fp.close()
     else:
-        errFile = None
-        outFile = None
-        cmdFile = None
-        errFP = None
-        outFP = None
+        err_file = None
+        out_file = None
+        cmd_file = None
+        err_fp = None
+        out_fp = None
 
-    msg = "Making external call %s" % (" ".join(cmdList))
+    msg = "Making external call %s" % (" ".join(cmd_list))
     logger.info(msg)
-    errCode = subprocess.call(cmdList, stderr=errFP, stdout=outFP, shell=shell)
-    if errFP:
-        errFP.close()
-    if outFP:
-        outFP.close()
+    err_code = subprocess.call(cmd_list, stderr=err_fp, stdout=out_fp, shell=shell)
+    if err_fp:
+        err_fp.close()
+    if out_fp:
+        out_fp.close()
 
-    if errCode and fail_on_error:
-        raise CalledProcessErrorMod(
-            errCode,
-            " ".join(cmdList),
-            errFile=errFile,
-            outFile=outFile,
-            cmdFile=cmdFile,
+    if err_code and fail_on_error:
+        raise ModifiedCalledProcessError(
+            err_code,
+            " ".join(cmd_list),
+            err_file=err_file,
+            out_file=out_file,
+            cmd_file=cmd_file,
         )
     logger.info("Call successful, or error checking disabled.")
 
 
-class CalledProcessErrorMod(Exception):
+class ModifiedCalledProcessError(Exception):
     """
     This exception is raised when subprocess.call returns a non-zero exit code
     and checking has been requested. This should not be accessed by the user
     it is used only within make_external_call.
     """
 
-    def __init__(self, returncode, cmd, errFile=None, outFile=None, cmdFile=None):
+    def __init__(self, returncode, cmd, err_file=None, out_file=None, cmd_file=None):
         self.returncode = returncode
         self.cmd = cmd
-        self.errFile = errFile
-        self.outFile = outFile
-        self.cmdFile = cmdFile
+        self.err_file = err_file
+        self.out_file = out_file
+        self.cmd_file = cmd_file
 
     def __str__(self):
         msg = "Command '%s' returned non-zero exit status %d.\n" % (
             self.cmd,
             self.returncode,
         )
-        if self.errFile:
-            msg += "Stderr can be found in %s .\n" % (self.errFile)
-        if self.outFile:
-            msg += "Stdout can be found in %s .\n" % (self.outFile)
-        if self.cmdFile:
-            msg += "The failed command has been printed in %s ." % (self.cmdFile)
+        if self.err_file:
+            msg += "Stderr can be found in %s .\n" % (self.err_file)
+        if self.out_file:
+            msg += "Stdout can be found in %s .\n" % (self.out_file)
+        if self.cmd_file:
+            msg += "The failed command has been printed in %s ." % (self.cmd_file)
         return msg
 
 
@@ -2378,7 +2388,7 @@ def get_full_analysis_chunk(science_segs):
 
     Returns
     -------
-    fullSegment : igwn_segments.segment
+    full_segment : igwn_segments.segment
         The segment spanning the first and last time point contained in science_segs.
 
     """
@@ -2389,8 +2399,8 @@ def get_full_analysis_chunk(science_segs):
             min = lo
         if max < hi:
             max = hi
-    fullSegment = segments.segment(min, max)
-    return fullSegment
+    full_segment = segments.segment(min, max)
+    return full_segment
 
 
 def get_random_label():
