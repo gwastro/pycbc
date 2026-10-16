@@ -184,7 +184,10 @@ def legacy_row_id_converter(ContentHandler):
     """
 
     def endElementNS(  # noqa: N802
-        self, uri_localname, qname, __orig_endElementNS=ContentHandler.endElementNS
+        self,
+        uri_localname,
+        qname,
+        __orig_endElementNS=ContentHandler.endElementNS,  # noqa: N803
     ):
         """Convert values of <Param> elements from ilwdchar to int."""
         if isinstance(self.current, ligolw.Param) and self.current.Type in IDTypes:
@@ -197,7 +200,7 @@ def legacy_row_id_converter(ContentHandler):
 
     remapped = {}
 
-    def startColumn(self, parent, attrs, __orig_startColumn=ContentHandler.startColumn):  # noqa: N802
+    def startColumn(self, parent, attrs, __orig_startColumn=ContentHandler.startColumn):  # noqa: N802, N803
         """
         Convert types in <Column> elements from ilwdchar to int.
 
@@ -234,7 +237,7 @@ def legacy_row_id_converter(ContentHandler):
 
         return result
 
-    def startStream(self, parent, attrs, __orig_startStream=ContentHandler.startStream):  # noqa: N802
+    def startStream(self, parent, attrs, __orig_startStream=ContentHandler.startStream):  # noqa: N802, N803
         """
         Convert values in table <Stream> elements from ilwdchar to int.
 
