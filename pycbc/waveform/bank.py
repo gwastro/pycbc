@@ -1278,6 +1278,7 @@ class RatioFilterBank(FilterBank):
                 )
             }
 
+        # Precompute fine-to-parent sigma rescaling factors from level-1 FIR groups
         self.sigma_sigma_rescale = np.ones(len(self.table))
         for coarse_id in self.level_keys[1]:
             c_group = self.level_groups[1][coarse_id]
@@ -1308,8 +1309,6 @@ class RatioFilterBank(FilterBank):
         ):
             return
 
-        import pycbc.pnutils
-
         injection_parameters = inj_filter_rejector.injection_params.table
         fref = inj_filter_rejector.f_lower
         threshold = inj_filter_rejector.chirp_time_window
@@ -1328,6 +1327,7 @@ class RatioFilterBank(FilterBank):
             rid = np.searchsorted(tau0_sorted, tau0_inj + threshold)
             matched_fine.append(sort[lid:rid])
 
+        # Propagate active child templates bottom-up through each FIR hierarchy level
         active = (
             {int(x) for x in np.unique(np.concatenate(matched_fine))}
             if matched_fine
