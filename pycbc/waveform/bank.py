@@ -1361,10 +1361,44 @@ class RatioFilterBank(FilterBank):
         Returns
         -------
         htilde : FrequencySeries
-            The reference waveform.
+            The decompressed reference waveform.
         """
-        top_group = self.level_groups[self.num_levels][str(int(coarse_index))]
-        return self[int(top_group.attrs["parent_fine_index"])]
+        top_group = self.level_groups[self.num_levels]
+        compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
+            top_group, str(int(coarse_index)), load_now=True
+        )
+        decompression_method = (
+            self.waveform_decompression_method or compressed_waveform.interpolation
+        )
+        if self.out is None:
+            tempout = zeros(self.filter_length, dtype=self.dtype)
+        else:
+            tempout = self.out
+            tempout.clear()
+
+        decomp_scratch = FrequencySeries(
+            tempout[0 : self.filter_length], delta_f=self.delta_f, copy=False
+        )
+        min_sample_f = float(compressed_waveform.sample_points[0])
+        if self.f_lower is not None:
+            f_low = max(float(self.f_lower), min_sample_f)
+        elif self.min_f_lower is not None:
+            f_low = max(float(self.min_f_lower), min_sample_f)
+        else:
+            f_low = min_sample_f
+
+        htilde = compressed_waveform.decompress(
+            out=decomp_scratch, f_lower=f_low, interpolation=decompression_method
+        )
+        f_end = (self.filter_length - 1) * self.delta_f
+        htilde = htilde.astype(self.dtype)
+        htilde.f_lower = f_low
+        htilde.min_f_lower = self.min_f_lower
+        htilde.end_idx = int(f_end / htilde.delta_f)
+        htilde.approximant = None
+        htilde.end_frequency = f_end
+        htilde.sigmasq = types.MethodType(sigma_cached, htilde)
+        return htilde
 
     def sigma_rescale(self, indices):
         """

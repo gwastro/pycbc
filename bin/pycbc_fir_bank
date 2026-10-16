@@ -24,6 +24,7 @@ import pycbc
 import pycbc.conversions
 import pycbc.psd
 from pycbc.filter import get_cutoff_indices
+from pycbc.waveform import compress
 from pycbc.waveform.bank import FilterBank
 
 logger = logging.getLogger(__name__)
@@ -338,6 +339,12 @@ def main():
         "--output-file", required=True, help="Output FIR bank HDF5 file."
     )
     parser.add_argument(
+        "--segment-length",
+        type=float,
+        required=True,
+        help="Segment length in seconds for generating top-level waveforms.",
+    )
+    parser.add_argument(
         "--sample-rate", type=float, default=2048.0, help="Sample rate."
     )
     parser.add_argument(
@@ -386,7 +393,6 @@ def main():
     fir_group.attrs["sample_rate"] = float(args.sample_rate)
     fir_group.attrs["min_match"] = float(args.min_match[0])
 
-    current_fine = np.arange(len(fine_bank), dtype=int)
     n_procs = args.n_processes
 
     for level in range(1, num_levels + 1):
@@ -502,7 +508,6 @@ def main():
 
         used_pos = np.array(sorted(p for p, ch in groups.items() if ch), dtype=int)
         keep_local = seed_local[used_pos]
-        current_fine = current_fine[keep_local]
         fine_bank.table = fine_bank.table[keep_local]
 
         # Write level datasets to HDF5
@@ -524,7 +529,6 @@ def main():
             child_ids = sorted(groups[int(old_idx)])
             recs = [results[i] for i in child_ids]
             grp = lvl_group.create_group(str(new_idx))
-            grp.attrs["parent_fine_index"] = int(current_fine[new_idx])
             counts = np.array([len(r["taps"]) for r in recs], dtype=np.int32)
             max_k = int(counts.max())
             taps_arr = np.zeros((len(recs), max_k), dtype=taps_dtype)
@@ -547,6 +551,35 @@ def main():
                 data=np.array([r["shift"] for r in recs], np.int32),
                 **meta_kw,
             )
+
+    # Compress top-level reference waveforms into level_{num_levels}
+    top_lvl_group = fir_group[f"level_{num_levels}"]
+    comp_df = 1.0 / float(args.segment_length)
+    comp_flen = round((args.sample_rate / 2.0) / comp_df) + 1
+    comp_tol = min(1e-5, (1.0 - float(args.min_match[-1])) * 0.1)
+    logger.info(
+        "Compressing %d top-level reference waveforms (df=%s, tol=%.1e)...",
+        len(fine_bank),
+        comp_df,
+        comp_tol,
+    )
+    fine_bank.filter_length = comp_flen
+    fine_bank.delta_f = comp_df
+    fine_bank.N = (comp_flen - 1) * 2
+    fine_bank.delta_t = 1.0 / (fine_bank.N * comp_df)
+    for i in range(len(fine_bank)):
+        wave = fine_bank[i]
+        fmin = float(fine_bank.table[i].f_lower)
+        kmax = int(np.nonzero(abs(wave.numpy()))[0][-1])
+        hc = compress.compress_waveform(
+            wave,
+            np.array([fmin, kmax * comp_df], float),
+            comp_tol,
+            "inline_quadratic",
+            "single",
+            psd=None,
+        )
+        hc.write_to_hdf(top_lvl_group, str(i))
 
     out_file.close()
     logger.info("Done. Saved to %s", args.output_file)
