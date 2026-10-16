@@ -76,24 +76,24 @@ def generate_detector_strain(template_params, h_plus, h_cross):
     return h_plus * f_plus + h_cross * f_cross
 
 
-def make_padded_frequency_series(vec, filter_N=None, delta_f=None):
+def make_padded_frequency_series(vec, filter_tlen=None, delta_f=None):
     """
     Convert vec (TimeSeries or FrequencySeries) to a FrequencySeries. If
-    filter_N and/or delta_f are given, the output will take those values. If
+    filter_tlen and/or delta_f are given, the output will take those values. If
     not told otherwise the code will attempt to pad a timeseries first such that
     the waveform will not wraparound. However, if delta_f is specified to be
     shorter than the waveform length then wraparound *will* be allowed.
     """
-    if filter_N is None:
+    if filter_tlen is None:
         power = ceil(log(len(vec), 2)) + 1
-        N = 2**power
+        tlen = 2**power
     else:
-        N = filter_N
-    n = N // 2 + 1
+        tlen = filter_tlen
+    flen = tlen // 2 + 1
 
     if isinstance(vec, FrequencySeries):
         vectilde = FrequencySeries(
-            zeros(n, dtype=complex_same_precision_as(vec)), delta_f=1.0, copy=False
+            zeros(flen, dtype=complex_same_precision_as(vec)), delta_f=1.0, copy=False
         )
         if len(vectilde) < len(vec):
             cplen = len(vectilde)
@@ -120,8 +120,8 @@ def make_padded_frequency_series(vec, filter_N=None, delta_f=None):
         i_delta_f = v_tilde.get_delta_f()
         v_tilde = v_tilde.numpy()
         df_ratio = int(delta_f / i_delta_f)
-        n_freq_len = int((n - 1) * df_ratio + 1)
-        assert n <= len(v_tilde)
+        n_freq_len = int((flen - 1) * df_ratio + 1)
+        assert flen <= len(v_tilde)
         df_ratio = int(delta_f / i_delta_f)
         v_tilde = v_tilde[:n_freq_len:df_ratio]
         vectilde = FrequencySeries(v_tilde, delta_f=delta_f, dtype=complex64)
@@ -182,10 +182,10 @@ def get_waveform(
 
     if not sky_max_template:
         hvec = generate_detector_strain(wf_params, hp, hc)
-        return make_padded_frequency_series(hvec, filter_N, delta_f=delta_f)
+        return make_padded_frequency_series(hvec, filter_tlen, delta_f=delta_f)
     return make_padded_frequency_series(
-        hp, filter_N, delta_f=delta_f
-    ), make_padded_frequency_series(hc, filter_N, delta_f=delta_f)
+        hp, filter_tlen, delta_f=delta_f
+    ), make_padded_frequency_series(hc, filter_tlen, delta_f=delta_f)
 
 
 aprs = sorted(list(set(td_approximants() + fd_approximants())))
@@ -445,14 +445,14 @@ logger.info("  %d signal waveforms", len(signal_table))
 
 logger.info("Matches will be written to %s", options.out_file)
 
-filter_N = int(options.filter_signal_length * options.filter_sample_rate)
-filter_n = filter_N // 2 + 1
+filter_tlen = int(options.filter_signal_length * options.filter_sample_rate)
+filter_flen = filter_tlen // 2 + 1
 filter_delta_f = 1.0 / float(options.filter_signal_length)
 
 logger.info("Reading and Interpolating PSD")
 psd = pycbc.psd.from_cli(
     options,
-    filter_n,
+    filter_flen,
     filter_delta_f,
     options.filter_low_frequency_cutoff,
     strain=strain,
@@ -483,7 +483,7 @@ with ctx:
             signal_params,
             options.signal_start_frequency,
             signal_sample_rate,
-            filter_N,
+            filter_tlen,
             options.filter_sample_rate,
         )
         s_norm = sigmasq(
@@ -574,7 +574,7 @@ with ctx:
                     template_params,
                     options.template_start_frequency,
                     template_sample_rate,
-                    filter_N,
+                    filter_tlen,
                     options.filter_sample_rate,
                     sky_max_template=True,
                 )
@@ -590,7 +590,7 @@ with ctx:
                     low_frequency_cutoff=options.filter_low_frequency_cutoff,
                     normalized=False,
                 )
-                hpc_corr_R = real(hpc_corr)
+                hpc_corr_real = real(hpc_corr)
                 htilde = 1
 
             I_plus = matched_filter(
@@ -611,7 +611,7 @@ with ctx:
                 det_stat = compute_max_snr_over_sky_loc_stat(
                     I_plus,
                     I_cross,
-                    hpc_corr_R,
+                    hpc_corr_real,
                     hpnorm=1.0,
                     hcnorm=1.0,
                     thresh=0.1,
@@ -621,7 +621,7 @@ with ctx:
                 det_stat = compute_max_snr_over_sky_loc_stat_no_phase(
                     I_plus,
                     I_cross,
-                    hpc_corr_R,
+                    hpc_corr_real,
                     hpnorm=1.0,
                     hcnorm=1.0,
                     thresh=0.1,
