@@ -200,16 +200,16 @@ def exit_based_on_results(results):
         results = unittest.TextTestRunner(verbosity=2).run(suite)
 
     """
-    NotImpErrors = 0
+    not_imp_errors = 0
     for error in results.errors:
         for errormsg in error:
             if type(errormsg) is str:
                 if "NotImplemented" in errormsg:
-                    NotImpErrors += 1
+                    not_imp_errors += 1
                     break
     if results.wasSuccessful():
         _exit(0)
-    elif len(results.failures) == 0 and len(results.errors) == NotImpErrors:
+    elif len(results.failures) == 0 and len(results.errors) == not_imp_errors:
         _exit(1)
     else:
         _exit(2)

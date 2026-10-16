@@ -112,12 +112,12 @@ parser.add_argument(
 args = parser.parse_args()
 
 if args.output_filenames and args.output_prefix:
-    errMsg = "Cannot supply --output-filenames with --output-prefix."
-    parser.error(errMsg)
+    err_msg = "Cannot supply --output-filenames with --output-prefix."
+    parser.error(err_msg)
 
 if args.sort_mchirp and args.random_sort:
-    errMsg = "You can't sort by Mchirp *and* randomly, dumbass!"
-    parser.error(errMsg)
+    err_msg = "You can't sort by Mchirp *and* randomly, dumbass!"
+    parser.error(err_msg)
 
 if args.output_filenames:
     args.number_of_banks = len(args.output_filenames)
@@ -196,6 +196,6 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     elif args.output_prefix:
         outname = args.output_prefix + str(num) + ".xml.gz"
     else:
-        errMsg = "Cannot figure out how to set output file names."
-        raise ValueError(errMsg)
+        err_msg = "Cannot figure out how to set output file names."
+        raise ValueError(err_msg)
     ligolw_utils.write_filename(outdoc, outname)

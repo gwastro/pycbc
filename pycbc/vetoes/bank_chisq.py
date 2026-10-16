@@ -102,21 +102,21 @@ def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
         norm = sqrt(1 / template.sigmasq(psd) / bank_template.sigmasq(psd))
         overlaps.append(overlap * norm)
         if abs(overlaps[-1]) > 0.99:
-            errMsg = "Overlap > 0.99 between bank template and filter. "
-            errMsg += "This bank template will not be used to calculate "
-            errMsg += "bank chisq for this filter template. The expected "
-            errMsg += "value will be added to the chisq to account for "
-            errMsg += "the removal of this template.\n"
-            errMsg += "Masses of filter template: %e %e\n" % (
+            err_msg = "Overlap > 0.99 between bank template and filter. "
+            err_msg += "This bank template will not be used to calculate "
+            err_msg += "bank chisq for this filter template. The expected "
+            err_msg += "value will be added to the chisq to account for "
+            err_msg += "the removal of this template.\n"
+            err_msg += "Masses of filter template: %e %e\n" % (
                 template.params.mass1,
                 template.params.mass2,
             )
-            errMsg += "Masses of bank filter template: %e %e\n" % (
+            err_msg += "Masses of bank filter template: %e %e\n" % (
                 bank_template.params.mass1,
                 bank_template.params.mass2,
             )
-            errMsg += "Overlap: %e" % (abs(overlaps[-1]))
-            logger.info(errMsg)
+            err_msg += "Overlap: %e" % (abs(overlaps[-1]))
+            logger.info(err_msg)
     return overlaps
 
 

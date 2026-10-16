@@ -533,7 +533,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
 
     Parameters
     ----------
-    rFrameGeneratorClass : class
+    rframe_generator_class : class
         The class to use for generating the waveform in the radiation frame,
         e.g., FDomainCBCGenerator. This should be the class, not an
         instance of the class (the class will be initialized with the
@@ -542,7 +542,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
         The names of the detectors to use. If provided, all location parameters
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
-        returned by the rFrameGeneratorClass shifted by any desired time shift.
+        returned by the rframe_generator_class shifted by any desired time shift.
     epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
@@ -565,7 +565,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
-    rframe_generator : instance of rFrameGeneratorClass
+    rframe_generator : instance of rframe_generator_class
         The instance of the radiation-frame generator that is used for waveform
         generation. All parameters in current_params except for the
         location params are passed to this class's generate function.
@@ -584,7 +584,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
 
     def __init__(
         self,
-        rFrameGeneratorClass,
+        rframe_generator_class,
         epoch,
         detectors=None,
         variable_args=(),
@@ -606,7 +606,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
         # variables that are sent to the rFrame generator
         rframe_variables = list(set(self.variable_args) - self.location_args)
         # initialize the radiation frame generator
-        self.rframe_generator = rFrameGeneratorClass(
+        self.rframe_generator = rframe_generator_class(
             variable_args=rframe_variables, **frozen_params
         )
         self.set_epoch(epoch)
@@ -670,7 +670,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
 
     Parameters
     ----------
-    rFrameGeneratorClass : class
+    rframe_generator_class : class
         The class to use for generating the waveform in the radiation frame,
         e.g., FDomainCBCGenerator. This should be the class, not an
         instance of the class (the class will be initialized with the
@@ -679,7 +679,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         The names of the detectors to use. If provided, all location parameters
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
-        returned by the rFrameGeneratorClass shifted by any desired time shift.
+        returned by the rframe_generator_class shifted by any desired time shift.
     epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
@@ -706,7 +706,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
-    rframe_generator : instance of rFrameGeneratorClass
+    rframe_generator : instance of rframe_generator_class
         The instance of the radiation-frame generator that is used for waveform
         generation. All parameters in current_params except for the
         location params are passed to this class's generate function.
@@ -825,7 +825,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
 
     Parameters
     ----------
-    rFrameGeneratorClass : class
+    rframe_generator_class : class
         The class to use for generating the waveform in the radiation frame,
         e.g., FDomainCBCGenerator. This should be the class, not an
         instance of the class (the class will be initialized with the
@@ -834,7 +834,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
         The names of the detectors to use. If provided, all location parameters
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
-        returned by the rFrameGeneratorClass shifted by any desired time shift.
+        returned by the rframe_generator_class shifted by any desired time shift.
     epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
@@ -861,7 +861,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
-    rframe_generator : instance of rFrameGeneratorClass
+    rframe_generator : instance of rframe_generator_class
         The instance of the radiation-frame generator that is used for waveform
         generation. All parameters in current_params except for the
         location params are passed to this class's generate function.
@@ -985,7 +985,7 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
 
     Parameters
     ----------
-    rFrameGeneratorClass : class
+    rframe_generator_class : class
         The class to use for generating the waveform in the radiation frame,
         e.g., FDomainCBCGenerator. This should be the class, not an
         instance of the class (the class will be initialized with the
@@ -994,7 +994,7 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
         The names of the detectors to use. If provided, all location parameters
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
-        returned by the rFrameGeneratorClass shifted by any desired time shift.
+        returned by the rframe_generator_class shifted by any desired time shift.
     epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
@@ -1021,7 +1021,7 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
-    rframe_generator : instance of rFrameGeneratorClass
+    rframe_generator : instance of rframe_generator_class
         The instance of the radiation-frame generator that is used for waveform
         generation. All parameters in current_params except for the
         location params are passed to this class's generate function.
@@ -1091,7 +1091,7 @@ class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
 
     Parameters
     ----------
-    rFrameGeneratorClass : class
+    rframe_generator_class : class
         The class to use for generating the waveform in the radiation frame,
         e.g., FDomainCBCGenerator. This should be the class, not an
         instance of the class (the class will be initialized with the
@@ -1100,7 +1100,7 @@ class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
         The names of the detectors to use. If provided, all location parameters
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
-        returned by the rFrameGeneratorClass shifted by any desired time shift.
+        returned by the rframe_generator_class shifted by any desired time shift.
     epoch : {float, lal.LIGOTimeGPS}
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
@@ -1138,7 +1138,7 @@ class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
-    rframe_generator : instance of rFrameGeneratorClass
+    rframe_generator : instance of rframe_generator_class
         The instance of the radiation-frame generator that is used for waveform
         generation. All parameters in current_params except for the
         location params are passed to this class's generate function.
@@ -1266,7 +1266,7 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
 
     Parameters
     ----------
-    rFrameGeneratorClass : class
+    rframe_generator_class : class
         The class to use for generating the waveform modes in the radiation
         frame, e.g., :py:class:`FDomainCBCModesGenerator`. This should be the
         class, not an instance of the class (the class will be initialized with
@@ -1276,7 +1276,7 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
         The names of the detectors to use. If provided, all location parameters
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
-        returned by the rFrameGeneratorClass shifted by any desired time shift.
+        returned by the rframe_generator_class shifted by any desired time shift.
     epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
@@ -1303,7 +1303,7 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
-    rframe_generator : instance of rFrameGeneratorClass
+    rframe_generator : instance of rframe_generator_class
         The instance of the radiation-frame generator that is used for waveform
         generation. All parameters in current_params except for the
         location params are passed to this class's generate function.
@@ -1432,7 +1432,7 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
 
     Parameters
     ----------
-    rFrameGeneratorClass : class
+    rframe_generator_class : class
         The class to use for generating the waveform modes in the radiation
         frame, e.g., :py:class:`FDomainCBCModesGenerator`. This should be the
         class, not an instance of the class (the class will be initialized with
@@ -1442,7 +1442,7 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
         The names of the detectors to use. If provided, all location parameters
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
-        returned by the rFrameGeneratorClass shifted by any desired time shift.
+        returned by the rframe_generator_class shifted by any desired time shift.
     epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
@@ -1480,7 +1480,7 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
-    rframe_generator : instance of rFrameGeneratorClass
+    rframe_generator : instance of rframe_generator_class
         The instance of the radiation-frame generator that is used for waveform
         generation. All parameters in current_params except for the
         location params are passed to this class's generate function.
@@ -1631,7 +1631,7 @@ class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
 
     def __init__(
         self,
-        rFrameGeneratorClass=None,
+        rframe_generator_class=None,
         epoch=None,
         detectors=None,
         variable_args=(),
@@ -1640,7 +1640,7 @@ class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
         **frozen_params,
     ):
 
-        if rFrameGeneratorClass is not None:
+        if rframe_generator_class is not None:
             raise ValueError(
                 f"{self.__class__.__name__} does not supprt using a radiation "
                 "frame generator class."
