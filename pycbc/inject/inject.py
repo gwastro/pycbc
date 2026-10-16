@@ -87,24 +87,30 @@ def set_sim_data(inj, field, data):
 
 
 def projector(detector_name, inj, hp, hc, distance_scale=1):
-    """
-    Use the injection row to project the polarizations into the
-    detector frame
-    """
-    detector = Detector(detector_name)
+    """ Use the injection row to project the polarizations into the
+    detector frame.
 
+    If ``detector_name`` is 'RF' (radiation frame), no detector response is
+    applied. The plus polarization shifted to the input ``tc`` is treated as
+    the output. In this case, ``ra``, ``dec``, and ``polarization`` are not
+    required.
+    """
     hp /= distance_scale
     hc /= distance_scale
 
+    if detector_name != "RF":
+        detector = Detector(detector_name)
+        try:
+            ra = inj.ra
+            dec = inj.dec
+        except AttributeError:
+            ra = inj.longitude
+            dec = inj.latitude
+
     try:
         tc = inj.tc
-        ra = inj.ra
-        dec = inj.dec
-    except:
+    except AttributeError:
         tc = inj.time_geocent
-        ra = inj.longitude
-        dec = inj.latitude
-
     hp.start_time += tc
     hc.start_time += tc
 
@@ -112,10 +118,14 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     tapermethod, taper_window = wfutils.get_taper_settings(inj)
     try:
         hp_tapered = hp.taper_timeseries(
-            location=inj.taper, tapermethod=tapermethod, taper_window=taper_window
+            location=inj.taper,
+            tapermethod=tapermethod,
+            taper_window=taper_window
         )
         hc_tapered = hc.taper_timeseries(
-            location=inj.taper, tapermethod=tapermethod, taper_window=taper_window
+            location=inj.taper,
+            tapermethod=tapermethod,
+            taper_window=taper_window
         )
     except AttributeError:
         hp_tapered = hp
@@ -127,16 +137,19 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
 
     logger.info("Injecting at %s, method is %s", tc, projection_method)
 
-    # compute the detector response and add it to the strain
-    signal = detector.project_wave(
-        hp_tapered,
-        hc_tapered,
-        ra,
-        dec,
-        inj.polarization,
-        method=projection_method,
-        reference_time=tc,
-    )
+    # compute the detector response and add it to the strain...
+    if detector_name != "RF":
+        signal = detector.project_wave(
+            hp_tapered,
+            hc_tapered,
+            ra,
+            dec,
+            inj.polarization,
+            method=projection_method,
+            reference_time=tc,)
+    else:
+        # ...unless working in RF, in which case return the plus polarization
+        signal = hp_tapered
     return signal
 
 
@@ -200,7 +213,8 @@ class _XMLInjectionSet:
         strain : TimeSeries
             Time series to inject signals into, of type float32 or float64.
         detector_name : string
-            Name of the detector used for projecting injections.
+            Name of the detector used for projecting injections. Use 'RF' to
+            inject in the radiation (no detector response applied).
         f_lower : {None, float}, optional
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
@@ -274,7 +288,11 @@ class _XMLInjectionSet:
             if end_time < t0 or start_time > t1:
                 continue
             signal = self.make_strain_from_inj_object(
-                inj, delta_t, detector_name, f_lower=f_l, distance_scale=distance_scale
+                inj,
+                delta_t,
+                detector_name,
+                f_lower=f_l,
+                distance_scale=distance_scale
             )
             signal = resample_to_delta_t(signal, strain.delta_t, method="ldas")
             if float(signal.start_time) > t1:
@@ -339,7 +357,11 @@ class _XMLInjectionSet:
             distance=inj.distance,
             **self.extra_args,
         )
-        return projector(detector_name, inj, hp, hc, distance_scale=distance_scale)
+        return projector(detector_name,
+                         inj,
+                         hp,
+                         hc,
+                         distance_scale=distance_scale)
 
     def end_times(self):
         """Return the end times of all injections"""
@@ -502,7 +524,13 @@ class _HDFInjectionSet(metaclass=ABCMeta):
         """Return a list of the supported approximants."""
 
     @classmethod
-    def write(cls, filename, samples, write_params=None, static_args=None, **metadata):
+    def write(cls,
+              filename,
+              samples,
+              write_params=None,
+              static_args=None,
+              **metadata
+        ):
         r"""
         Writes the injection samples to the given hdf file.
 
@@ -577,7 +605,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         strain : TimeSeries
             Time series to inject signals into, of type float32 or float64.
         detector_name : string
-            Name of the detector used for projecting injections.
+            Name of the detector used for projecting injections. Use 'RF' to
+            inject in the radiation (no detector response applied).
         f_lower : {None, float}, optional
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
@@ -673,7 +702,9 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
                     f_lower=f_l,
                     distance_scale=distance_scale,
                 )
-                signal = resample_to_delta_t(signal, strain.delta_t, method="ldas")
+                signal = resample_to_delta_t(signal,
+                                             strain.delta_t,
+                                             method="ldas")
                 if float(signal.start_time) > t1:
                     continue
                 signal = signal.astype(strain.dtype)
@@ -716,7 +747,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         delta_t : float
             Sample rate to make injection at.
         detector_name : string
-            Name of the detector used for projecting injections.
+            Name of the detector used for projecting injections. Use 'RF' to
+            inject in the radiation (no detector response applied).
         f_lower : {None, float}, optional
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
@@ -736,8 +768,17 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             f_l = f_lower
 
         if inj["approximant"] in fd_det:
+            if detector_name == "RF":
+                raise ValueError(f"Approximant {inj['approximant']} generates "
+                                 "waveforms in the detector frame. It cannot "
+                                 "be injected in the radiation frame "
+                                 "(detector_name = RF)")
             strain = get_td_det_waveform_from_fd_det(
-                inj, delta_t=delta_t, f_lower=f_l, ifos=detector_name, **self.extra_args
+                inj,
+                delta_t=delta_t,
+                f_lower=f_l,
+                ifos=detector_name,
+                **self.extra_args
             )[detector_name]
             strain /= distance_scale
         else:
@@ -791,7 +832,8 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         strain : TimeSeries
             Time series to inject signals into, of type float32 or float64.
         detector_name : string
-            Name of the detector used for projecting injections.
+            Name of the detector used for projecting injections. Use 'RF' to
+            inject in the radiation (no detector response applied).
         distance_scale: float, optional
             Factor to scale the distance of an injection with. The default (=1)
             is no scaling.
@@ -877,7 +919,8 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         delta_t : float
             Sample rate to make injection at.
         detector_name : string
-            Name of the detector used for projecting injections.
+            Name of the detector used for projecting injections. Use 'RF' to
+            inject in the radiation (no detector response applied).
         distance_scale: float, optional
             Factor to scale the distance of an injection with. The default (=1)
             is no scaling.
@@ -892,7 +935,12 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         hp, hc = ringdown_td_approximants[inj["approximant"]](
             inj, delta_t=delta_t, **self.extra_args
         )
-        return projector(detector_name, inj, hp, hc, distance_scale=distance_scale)
+        return projector(detector_name,
+                         inj,
+                         hp,
+                         hc,
+                         distance_scale=distance_scale
+        )
 
     def end_times(self):
         """
