@@ -794,15 +794,17 @@ class BaseMCMC(metaclass=ABCMeta):
             return None
         return acl * self.thin_interval
 
+    @staticmethod
     @abstractmethod
-    def compute_acf(cls, filename, **kwargs):
+    def compute_acf(filename, **kwargs):
         """
         A method to compute the autocorrelation function of samples in the
         given file.
         """
 
+    @staticmethod
     @abstractmethod
-    def compute_acl(cls, filename, **kwargs):
+    def compute_acl(filename, **kwargs):
         """
         A method to compute the autocorrelation length of samples in the
         given file.

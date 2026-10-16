@@ -52,6 +52,21 @@ logger = logging.getLogger(__name__)
 failed_counter = 0
 
 
+def _gdecorator(generate_func):
+    """
+    A decorator that allows for seemless pre/post manipulation of
+    the waveform generator function.
+    """
+
+    def dostuff(self):
+        for func in self._pregenerate_functions:
+            self.current_params = func(self.current_params)
+        res = generate_func(self)  # pylint:disable=not-callable
+        return self._postgenerate(res)
+
+    return dostuff
+
+
 class BaseGenerator:
     r"""
     A wrapper class to call a waveform generator with a set of frozen
@@ -138,20 +153,6 @@ class BaseGenerator:
         manipulated before returning.
         """
         return res
-
-    def _gdecorator(generate_func):
-        """
-        A decorator that allows for seemless pre/post manipulation of
-        the waveform generator function.
-        """
-
-        def dostuff(self):
-            for func in self._pregenerate_functions:
-                self.current_params = func(self.current_params)
-            res = generate_func(self)  # pylint:disable=not-callable
-            return self._postgenerate(res)
-
-        return dostuff
 
     @_gdecorator
     def _generate_from_current(self):
