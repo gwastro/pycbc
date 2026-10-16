@@ -3,7 +3,7 @@ This Module contains generic utility functions for creating plots within
 PyCBC.
 """
 
-import configparser as ConfigParser
+import configparser
 import os.path
 from html.parser import HTMLParser
 from xml.sax.saxutils import escape, unescape
@@ -69,7 +69,7 @@ def load_html_metadata(filename):
     if "pycbc-meta" in data:
         print("LOADING HTML FILE %s" % filename)
     parser.feed(data)
-    cp = ConfigParser.ConfigParser(parser.metadata)
+    cp = configparser.ConfigParser(parser.metadata)
     cp.add_section(os.path.basename(filename))
     return cp
 
@@ -109,7 +109,7 @@ def load_png_metadata(filename):
     from PIL import Image
 
     data = Image.open(filename).info
-    cp = ConfigParser.ConfigParser(data)
+    cp = configparser.ConfigParser(data)
     cp.add_section(os.path.basename(filename))
     return cp
 

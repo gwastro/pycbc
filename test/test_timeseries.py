@@ -44,9 +44,9 @@ if _scheme == "cuda":
     import pycuda.gpuarray
     from pycuda.gpuarray import GPUArray as SchemeArray
 elif _scheme == "cpu":
-    from numpy import ndarray as SchemeArray
+    SchemeArray = numpy.ndarray
 
-from numpy import ndarray as CPUArray
+CPUArray = numpy.ndarray
 
 
 class TestTimeSeriesBase(array_base, unittest.TestCase):

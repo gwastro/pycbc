@@ -1,7 +1,7 @@
 import copy
 
 import numpy as np
-from astropy.cosmology import WMAP9 as cosmo
+from astropy.cosmology import WMAP9
 from numpy import log
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
@@ -25,7 +25,7 @@ _save_params = [
 ]
 
 for zz in _redshifts:
-    _d_lum.append(cosmo.luminosity_distance(zz).value)
+    _d_lum.append(WMAP9.luminosity_distance(zz).value)
 _dlum_interp = interp1d(_d_lum, _redshifts)
 
 
@@ -117,7 +117,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
     V = quad(contracted_dVdc, 0.0, max_z)[0]
 
     z_astro = astro_redshifts(min_z, max_z, nsamples)
-    astro_lum_dist = cosmo.luminosity_distance(z_astro).value
+    astro_lum_dist = WMAP9.luminosity_distance(z_astro).value
 
     mch_astro = np.array(mchirp_sampler(nsamples=nsamples, **kwargs))
     mch_astro_det = mch_astro * (1.0 + z_astro)
@@ -176,8 +176,8 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
         p_out *= pdf_z_astro(z_inj, V_min, V_max)
 
         p_in = 0
-        J = cosmo.luminosity_distance(z_inj + 0.0005).value
-        J -= cosmo.luminosity_distance(z_inj - 0.0005).value
+        J = WMAP9.luminosity_distance(z_inj + 0.0005).value
+        J -= WMAP9.luminosity_distance(z_inj - 0.0005).value
         J = abs(J) / 0.001  # A quick way to get dD_l/dz
 
         # Sum probability of injections from j-th set for all the strategies
@@ -328,7 +328,7 @@ def astro_redshifts(min_z, max_z, nsamples):
     V = quad(contracted_dVdc, 0.0, max_z)[0]
     zbins = np.arange(min_z, max_z + dz / 2.0, dz)
     zcenter = (zbins[:-1] + zbins[1:]) / 2
-    pdfz = cosmo.differential_comoving_volume(zcenter).value / (1 + zcenter) / V
+    pdfz = WMAP9.differential_comoving_volume(zcenter).value / (1 + zcenter) / V
 
     int_pdf = interp1d(zcenter, pdfz, bounds_error=False, fill_value=0)
 
@@ -356,7 +356,7 @@ def pdf_z_astro(z, V_min, V_max):
 
 def contracted_dVdc(z):
     # Return the time-dilated differential comoving volume
-    return cosmo.differential_comoving_volume(z).value / (1 + z)
+    return WMAP9.differential_comoving_volume(z).value / (1 + z)
 
 
 ##### Defining current standard strategies used for making injections #####

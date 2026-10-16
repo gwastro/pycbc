@@ -23,7 +23,7 @@
 #
 """Provides constructor classes and convenience functions for MCMC samplers."""
 
-import configparser as ConfigParser
+import configparser
 import logging
 from abc import ABCMeta, abstractmethod, abstractproperty
 
@@ -708,7 +708,7 @@ class BaseMCMC(metaclass=ABCMeta):
         """
         try:
             bit = self.burn_in_class.from_config(cp, self)
-        except ConfigParser.Error:
+        except configparser.Error:
             bit = None
         self.set_burn_in(bit)
 

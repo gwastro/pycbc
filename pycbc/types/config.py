@@ -26,7 +26,7 @@ This module provides a wrapper to the ConfigParser utilities for pycbc.
 This module is described in the page here:
 """
 
-import configparser as ConfigParser
+import configparser
 import itertools
 import logging
 import os
@@ -36,7 +36,7 @@ from io import StringIO
 logger = logging.getLogger(__name__)
 
 
-class DeepCopyableConfigParser(ConfigParser.ConfigParser):
+class DeepCopyableConfigParser(configparser.ConfigParser):
     """
     The standard SafeConfigParser no longer supports deepcopy() as of python
     2.7 (see http://bugs.python.org/issue16058). This subclass restores that
@@ -250,7 +250,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         options_seen = {}
 
         for filename in fpath:
-            parser = ConfigParser.ConfigParser()
+            parser = configparser.ConfigParser()
             parser.optionxform = str
             parser.read(filename)
 
@@ -387,7 +387,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                         "${" + rep_string + "}",
                         self.get(section, split_string[0]),
                     )
-                except ConfigParser.NoOptionError:
+                except configparser.NoOptionError:
                     print("Substitution failed")
                     raise
             if len(split_string) == 2:
@@ -396,7 +396,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                         "${" + rep_string + "}",
                         self.get(split_string[0], split_string[1]),
                     )
-                except ConfigParser.NoOptionError:
+                except configparser.NoOptionError:
                     print("Substitution failed")
                     raise
             re_obj = re.search(r"\$\{.*?\}", test_string)
@@ -670,10 +670,10 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         try:
             return self.get(section, option)
-        except ConfigParser.Error:
+        except configparser.Error:
             err_string = "No option '%s' in section [%s] " % (option, section)
             if not tags:
-                raise ConfigParser.Error(err_string + ".")
+                raise configparser.Error(err_string + ".")
             return_vals = []
             # First, check if there are any default values set:
             has_defaultvalue = False
@@ -702,12 +702,12 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             # We also want to recursively go into sections
             if not return_vals:
                 err_string += "or in sections [%s]." % ("] [".join(section_list))
-                raise ConfigParser.Error(err_string)
+                raise configparser.Error(err_string)
             if len(return_vals) > 1:
                 err_string += "and multiple entries found in sections [%s]." % (
                     "] [".join(err_section_list)
                 )
-                raise ConfigParser.Error(err_string)
+                raise configparser.Error(err_string)
             return return_vals[0]
 
     def has_option_tag(self, section, option, tag):
@@ -764,5 +764,5 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         try:
             self.get_opt_tags(section, option, tags)
             return True
-        except ConfigParser.Error:
+        except configparser.Error:
             return False

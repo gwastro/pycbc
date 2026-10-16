@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-import configparser as ConfigParser
+import configparser
 import glob
 import logging
 import os
@@ -76,7 +76,7 @@ options = parser.parse_args()
 # Default logging level is info: --verbose adds to this
 init_logging(options.verbose, default_level=1)
 
-confs = ConfigParser.ConfigParser()
+confs = configparser.ConfigParser()
 confs.read(options.config)
 
 banksim_prog = confs.get("executables", "faithsim")

@@ -61,7 +61,7 @@ def parse_veto_definer(veto_def_filename, ifos):
     from igwn_ligolw import ligolw
     from igwn_ligolw import utils as ligolw_utils
 
-    from pycbc.io.ligolw import LIGOLWContentHandler as h
+    from pycbc.io.ligolw import LIGOLWContentHandler
 
     data = {}
     for ifo_name in ifos:
@@ -70,7 +70,9 @@ def parse_veto_definer(veto_def_filename, ifos):
         for cat_num in range(1, 5):
             data[ifo_name][f"CAT_{cat_num}"] = []
 
-    indoc = ligolw_utils.load_filename(veto_def_filename, False, contenthandler=h)
+    indoc = ligolw_utils.load_filename(
+        veto_def_filename, False, contenthandler=LIGOLWContentHandler
+    )
     veto_table = ligolw.Table.get_table(indoc, "veto_definer")
 
     ifo = veto_table.getColumnByName("ifo")
