@@ -155,7 +155,7 @@ class TestWaveform(unittest.TestCase):
                                     inclination=inclination,
                                 )
 
-                                # Generate SpinTaylorF2 from SpinTaylorF2.py
+                                # Generate SpinTaylorF2 from spintaylorf2.py
                                 with self.context:
                                     hp, hc = get_fd_waveform(
                                         mass1=m1,
