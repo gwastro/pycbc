@@ -70,7 +70,7 @@ def main():
     parser.add_argument(
         "--allowed-margin-factor",
         type=float,
-        default=4.0,
+        default=2.0,
         help="How many multiples of the mismatch-predicted "
         "std to allow before flagging a problem.",
     )
