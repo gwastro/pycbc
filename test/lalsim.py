@@ -28,6 +28,7 @@ These are simple unit tests for lalsimulation
 import copy
 import optparse
 import unittest
+from types import SimpleNamespace
 
 import lalsimulation
 import numpy
@@ -140,10 +141,7 @@ class TestLALSimulation(unittest.TestCase):
         self.show_plots = opt.show_plots
         self.plot_dir = "."
 
-        class params:
-            pass
-
-        self.p = params()
+        self.p = SimpleNamespace()
 
         # Overide my parameters with the program input arguments
         self.p.__dict__.update(vars(opt))

@@ -159,7 +159,7 @@ class SchemeTestBase(unittest.TestCase):
 
 
 def scheme_test_maker(dtype, odtype):
-    class tests(SchemeTestBase):
+    class SchemeTests(SchemeTestBase):
         __test__ = True
 
         def __init__(self, *args):
@@ -167,8 +167,8 @@ def scheme_test_maker(dtype, odtype):
             self.odtype = odtype
             unittest.TestCase.__init__(self, *args)
 
-    tests.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
-    return tests
+    SchemeTests.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
+    return SchemeTests
 
 
 types = [

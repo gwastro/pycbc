@@ -19,7 +19,7 @@ import scipy.special as ssp
 import scipy.stats as sst
 
 
-class augmented_rv_continuous(sst.rv_continuous):
+class AugmentedRvContinuous(sst.rv_continuous):
     def __init__(
         self,
         unit="dimensionless",
@@ -81,7 +81,7 @@ class augmented_rv_continuous(sst.rv_continuous):
         return a, b
 
 
-class count_posterior(augmented_rv_continuous):
+class CountPosterior(AugmentedRvContinuous):
     """
     Count posterior distribution.
     """
@@ -106,9 +106,9 @@ class count_posterior(augmented_rv_continuous):
             degree of generalized Laguerre polynomial for quadrature formula
         Lambda0 : float
             background rate (default=len(bayesfac))
-        prior : float or count_posterior, optional
+        prior : float or CountPosterior, optional
             prior distribution power law of improper prior if float
-            or count posterior distribution if count_posterior
+            or count posterior distribution if CountPosterior
             (default=-0.5: Jeffreys prior)
 
         """
@@ -196,4 +196,4 @@ class count_posterior(augmented_rv_continuous):
         return P0
 
 
-__all__ = ["augmented_rv_continuous", "count_posterior"]
+__all__ = ["AugmentedRvContinuous", "CountPosterior"]

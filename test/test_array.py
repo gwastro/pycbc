@@ -30,7 +30,7 @@ import tempfile
 import unittest
 
 import numpy
-from utils import array_base, parse_args_all_schemes, simple_exit
+from utils import ArrayBase, parse_args_all_schemes, simple_exit
 
 from pycbc.scheme import CPUScheme
 from pycbc.types import Array, complex64, complex128, float32, float64, zeros
@@ -51,7 +51,7 @@ CPUArray = numpy.ndarray
 # ********************GENERIC ARRAY TESTS ***********************
 
 
-class ArrayTestBase(array_base, unittest.TestCase):
+class ArrayTestBase(ArrayBase, unittest.TestCase):
     __test__ = False
 
     def setUp(self):
@@ -504,7 +504,7 @@ class ArrayTestBase(array_base, unittest.TestCase):
 
 
 def array_test_maker(dtype, odtype):
-    class tests(ArrayTestBase):
+    class ArrayTests(ArrayTestBase):
         __test__ = True
 
         def __init__(self, *args):
@@ -512,8 +512,8 @@ def array_test_maker(dtype, odtype):
             self.odtype = odtype
             unittest.TestCase.__init__(self, *args)
 
-    tests.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
-    return tests
+    ArrayTests.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
+    return ArrayTests
 
 
 types = [

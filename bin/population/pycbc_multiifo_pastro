@@ -370,7 +370,7 @@ else:  # no prior events!
     }
 
 # do the calculation
-foreground_count_dist = fgmcl.count_posterior(
+foreground_count_dist = fgmcl.CountPosterior(
     allfgbg,
     laguerre_n=args.laguerre_degree,
     Lambda0=bg.norm,
