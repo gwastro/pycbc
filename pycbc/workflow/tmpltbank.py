@@ -28,7 +28,7 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
 """
 
-import configparser as ConfigParser
+import configparser
 import logging
 import math
 import os
@@ -63,7 +63,7 @@ def setup_tmpltbank_workflow(
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
     science_segs : Keyed dictionary of igwn_segments.segmentlist objects
-        scienceSegs[ifo] holds the science segments to be analysed for each
+        science_segs[ifo] holds the science segments to be analysed for each
         ifo.
     datafind_outs : pycbc.workflow.core.FileList
         The file list containing the datafind files.
@@ -87,15 +87,15 @@ def setup_tmpltbank_workflow(
     cp = workflow.cp
 
     # Parse for options in ini file
-    tmpltbankMethod = cp.get_opt_tags("workflow-tmpltbank", "tmpltbank-method", tags)
+    tmpltbank_method = cp.get_opt_tags("workflow-tmpltbank", "tmpltbank-method", tags)
 
     # There can be a large number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
-    if tmpltbankMethod == "PREGENERATED_BANK":
+    if tmpltbank_method == "PREGENERATED_BANK":
         logger.info("Setting template bank from pre-generated bank(s).")
         tmplt_banks = setup_tmpltbank_pregenerated(workflow, tags=tags)
     # Else we assume template banks will be generated in the workflow
-    elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS":
+    elif tmpltbank_method == "WORKFLOW_INDEPENDENT_IFOS":
         logger.info("Adding template bank jobs to workflow.")
         tmplt_banks = setup_tmpltbank_dax_generated(
             workflow,
@@ -105,21 +105,21 @@ def setup_tmpltbank_workflow(
             tags=tags,
             psd_files=psd_files,
         )
-    elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS_NODATA":
+    elif tmpltbank_method == "WORKFLOW_INDEPENDENT_IFOS_NODATA":
         logger.info("Adding template bank jobs to workflow.")
         tmplt_banks = setup_tmpltbank_without_frames(
             workflow, output_dir, tags=tags, independent_ifos=True, psd_files=psd_files
         )
-    elif tmpltbankMethod == "WORKFLOW_NO_IFO_VARIATION_NODATA":
+    elif tmpltbank_method == "WORKFLOW_NO_IFO_VARIATION_NODATA":
         logger.info("Adding template bank jobs to workflow.")
         tmplt_banks = setup_tmpltbank_without_frames(
             workflow, output_dir, tags=tags, independent_ifos=False, psd_files=psd_files
         )
     else:
-        errMsg = "Template bank method not recognized. Must be either "
-        errMsg += "PREGENERATED_BANK, WORKFLOW_INDEPENDENT_IFOS "
-        errMsg += "or WORKFLOW_INDEPENDENT_IFOS_NODATA."
-        raise ValueError(errMsg)
+        err_msg = "Template bank method not recognized. Must be either "
+        err_msg += "PREGENERATED_BANK, WORKFLOW_INDEPENDENT_IFOS "
+        err_msg += "or WORKFLOW_INDEPENDENT_IFOS_NODATA."
+        raise ValueError(err_msg)
 
     # Check the format of the input template bank file and return it in
     # the format requested as per return_format, provided a conversion
@@ -164,7 +164,7 @@ def setup_tmpltbank_dax_generated(
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
     science_segs : Keyed dictionary of igwn_segments.segmentlist objects
-        scienceSegs[ifo] holds the science segments to be analysed for each
+        science_segs[ifo] holds the science segments to be analysed for each
         ifo.
     datafind_outs : pycbc.workflow.core.FileList
         The file list containing the datafind files.
@@ -258,14 +258,14 @@ def setup_tmpltbank_without_frames(
     # will require a bit of effort here ....
 
     ifos = workflow.ifos
-    fullSegment = workflow.analysis_time
+    full_segment = workflow.analysis_time
 
     tmplt_bank_exe = os.path.basename(cp.get("executables", "tmpltbank"))
     # Can not use lalapps_template bank with this
     if tmplt_bank_exe == "lalapps_tmpltbank":
-        errMsg = "Lalapps_tmpltbank cannot be used to generate template banks "
-        errMsg += "without using frames. Try another code."
-        raise ValueError(errMsg)
+        err_msg = "Lalapps_tmpltbank cannot be used to generate template banks "
+        err_msg += "without using frames. Try another code."
+        raise ValueError(err_msg)
 
     # Select the appropriate class
     exe_instance = select_tmpltbank_class(tmplt_bank_exe)
@@ -274,9 +274,9 @@ def setup_tmpltbank_without_frames(
 
     # Make the distinction between one bank for all ifos and one bank per ifo
     if independent_ifos:
-        ifoList = [ifo for ifo in ifos]
+        ifo_list = [ifo for ifo in ifos]
     else:
-        ifoList = [[ifo for ifo in ifos]]
+        ifo_list = [[ifo for ifo in ifos]]
 
     # Check for the write_psd flag
     if cp.has_option_tags("workflow-tmpltbank", "tmpltbank-write-psd-file", tags):
@@ -284,7 +284,7 @@ def setup_tmpltbank_without_frames(
     else:
         exe_instance.write_psd = False
 
-    for ifo in ifoList:
+    for ifo in ifo_list:
         job_instance = exe_instance(
             workflow.cp,
             "tmpltbank",
@@ -293,7 +293,7 @@ def setup_tmpltbank_without_frames(
             tags=tags,
             psd_files=psd_files,
         )
-        node = job_instance.create_nodata_node(fullSegment)
+        node = job_instance.create_nodata_node(full_segment)
         workflow.add_node(node)
         tmplt_banks += node.output_files
 
@@ -342,7 +342,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
         file_attrs["ifos"] = workflow.ifos
         curr_file = resolve_url_to_file(pre_gen_bank, attrs=file_attrs)
         tmplt_banks.append(curr_file)
-    except ConfigParser.Error:
+    except configparser.Error:
         # Okay then I must have banks for each ifo
         for ifo in workflow.ifos:
             try:
@@ -355,7 +355,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                 curr_file = resolve_url_to_file(pre_gen_bank, attrs=file_attrs)
                 tmplt_banks.append(curr_file)
 
-            except ConfigParser.Error:
+            except configparser.Error:
                 err_msg = "Cannot find pregerated template bank in section "
                 err_msg += "[workflow-tmpltbank] or any tagged sections. "
                 if tags:
@@ -365,7 +365,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                     err_msg += "Tagged sections are %s. " % (tagged_secs,)
                 err_msg += "I looked for 'tmpltbank-pregenerated-bank' option "
                 err_msg += "and 'tmpltbank-pregenerated-bank-%s'." % (ifo,)
-                raise ConfigParser.Error(err_msg)
+                raise configparser.Error(err_msg)
 
     return tmplt_banks
 

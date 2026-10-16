@@ -75,10 +75,12 @@ wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 # Retrieve science segments
 curr_dir = os.getcwd()
 seg_dir = os.path.join(curr_dir, "segments")
-sciSegsFile = _workflow.get_segments_file(wflow, "science", "segments-science", seg_dir)
-sciSegs = {}
+sci_segs_file = _workflow.get_segments_file(
+    wflow, "science", "segments-science", seg_dir
+)
+sci_segs = {}
 for ifo in wflow.ifos:
-    sciSegs[ifo] = sciSegsFile.segment_dict[ifo + ":science"]
+    sci_segs[ifo] = sci_segs_file.segment_dict[ifo + ":science"]
 
 # This block of code and PyCBCMultiInspiralExecutable.get_valid_times()
 # must be consistent
@@ -103,56 +105,63 @@ else:
 
 # Do checks for no/single IFO case
 single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
-if len(sciSegs.keys()) == 0:
+if len(sci_segs.keys()) == 0:
     make_grb_segments_plot(wflow, segmentlistdict(), triggertime, triggername, seg_dir)
     logger.error("No science segments available.")
     sys.exit()
-elif len(sciSegs.keys()) < 2 and not single_ifo:
+elif len(sci_segs.keys()) < 2 and not single_ifo:
     make_grb_segments_plot(
-        wflow, segmentlistdict(sciSegs), triggertime, triggername, seg_dir
+        wflow, segmentlistdict(sci_segs), triggertime, triggername, seg_dir
     )
-    msg = "Science segments exist only for %s. " % tuple(sciSegs.keys())[0]
+    msg = "Science segments exist only for %s. " % tuple(sci_segs.keys())[0]
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file."
     logger.error(msg)
     sys.exit()
 
-onSrc, offSrc, bufferSeg = _workflow.generate_triggered_segment(wflow, seg_dir, sciSegs)
+on_src, off_src, buffer_seg = _workflow.generate_triggered_segment(
+    wflow, seg_dir, sci_segs
+)
 
-sciSegs = segmentlistdict(sciSegs)
-if onSrc is None:
+sci_segs = segmentlistdict(sci_segs)
+if on_src is None:
     logger.info("Making segment plot and exiting.")
     # `make_grb_segments_plot()` wants a single segment for fail_criterion.
-    fail_criterion = offSrc[wflow.ifos[0]][0]
+    fail_criterion = off_src[wflow.ifos[0]][0]
     make_grb_segments_plot(
-        wflow, sciSegs, triggertime, triggername, seg_dir, fail_criterion=fail_criterion
+        wflow,
+        sci_segs,
+        triggertime,
+        triggername,
+        seg_dir,
+        fail_criterion=fail_criterion,
     )
     sys.exit()
 
 plot_met = make_grb_segments_plot(
     wflow,
-    sciSegs,
+    sci_segs,
     triggertime,
     triggername,
     seg_dir,
-    coherent_seg=offSrc[tuple(offSrc.keys())[0]][0],
+    coherent_seg=off_src[tuple(off_src.keys())[0]][0],
 )
 segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2], file_url=plot_met[3])
 segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
-sciSegs = offSrc
+sci_segs = off_src
 all_files.append(segs_plot)
 
-if len(sciSegs) == 1:
+if len(sci_segs) == 1:
     logger.info("Generating a single IFO search.")
     mf_tag = "sngl"
-elif len(sciSegs) > 1:
+elif len(sci_segs) > 1:
     mf_tag = "coherent"
 
 # Update analysis time after coherent segment calculation
-ifo = tuple(sciSegs.keys())[0]
+ifo = tuple(sci_segs.keys())[0]
 wflow.cp = _workflow.set_grb_start_end(
-    wflow.cp, int(sciSegs[ifo][0][0]), int(sciSegs[ifo][0][1])
+    wflow.cp, int(sci_segs[ifo][0][0]), int(sci_segs[ifo][0][1])
 )
 
 padding = int(wflow.cp.get("inspiral", "pad-data"))
@@ -164,34 +173,34 @@ if wflow.cp.has_option("inspiral", "segment-start-pad"):
     start_pad = int(wflow.cp.get("inspiral", "segment-start-pad"))
     end_pad = int(wflow.cp.get("inspiral", "segment-end-pad"))
     wflow.analysis_time = segment(
-        int(sciSegs[ifo][0][0]) + start_pad + padding,
-        int(sciSegs[ifo][0][1]) - padding - end_pad,
+        int(sci_segs[ifo][0][0]) + start_pad + padding,
+        int(sci_segs[ifo][0][1]) - padding - end_pad,
     )
 elif wflow.cp.has_option("inspiral", "analyse-segment-end"):
     wflow.analysis_time = segment(
-        int(sciSegs[ifo][0][0]) + deadtime - spec_len + padding - safety,
-        int(sciSegs[ifo][0][1]) - spec_len - padding - safety,
+        int(sci_segs[ifo][0][0]) + deadtime - spec_len + padding - safety,
+        int(sci_segs[ifo][0][1]) - spec_len - padding - safety,
     )
 else:
     wflow.analysis_time = segment(
-        int(sciSegs[ifo][0][0]) + deadtime + padding,
-        int(sciSegs[ifo][0][1]) - deadtime - padding,
+        int(sci_segs[ifo][0][0]) + deadtime + padding,
+        int(sci_segs[ifo][0][1]) - deadtime - padding,
     )
 
 # DATAFIND
 df_dir = os.path.join(curr_dir, "datafind")
-datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(
-    wflow, sciSegs, df_dir, sciSegsFile
+datafind_files, _, sci_segs, _ = _workflow.setup_datafind_workflow(
+    wflow, sci_segs, df_dir, sci_segs_file
 )
 if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
-    new_seg = segment(sciSegs[ifo][0][0] + gate_pad, sciSegs[ifo][0][1] - gate_pad)
-    for iifo in sciSegs:
-        sciSegs[iifo][0] = new_seg
+    new_seg = segment(sci_segs[ifo][0][0] + gate_pad, sci_segs[ifo][0][1] - gate_pad)
+    for iifo in sci_segs:
+        sci_segs[iifo][0] = new_seg
     wflow.cp = _workflow.set_grb_start_end(
-        wflow.cp, int(sciSegs[ifo][0][0]), int(sciSegs[ifo][0][1])
+        wflow.cp, int(sci_segs[ifo][0][0]), int(sci_segs[ifo][0][1])
     )
 
-ifos = sorted(sciSegs.keys())
+ifos = sorted(sci_segs.keys())
 wflow.ifos = ifos
 
 # input_files will contain:
@@ -202,14 +211,14 @@ wflow.ifos = ifos
 # 5) the IPN search points file (if one is produced)
 input_files = _workflow.FileList([])
 
-# Convenience variable to operate on sciSegs within this executable
+# Convenience variable to operate on sci_segs within this executable
 ifo = ifos[0]
 
 # GATING
 if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
     logger.info("Creating gating jobs.")
     wflow.cp = _workflow.set_grb_start_end(
-        wflow.cp, int(sciSegs[ifo][0][0]), int(sciSegs[ifo][0][1])
+        wflow.cp, int(sci_segs[ifo][0][0]), int(sci_segs[ifo][0][1])
     )
     gating_nodes, gated_files = _workflow.make_gating_node(
         wflow, datafind_files, outdir=df_dir
@@ -261,12 +270,12 @@ for ifo in ifos:
     avail_segs.coalesce()
     # If no relevant vetoes are available, avail_segs becomes an empty list
     if len(avail_segs) > 0:
-        vetoed_segs = offSrc[ifo] - avail_segs
-        if onSrc[ifo].intersects(vetoed_segs):
-            intersection = onSrc[ifo] & vetoed_segs
+        vetoed_segs = off_src[ifo] - avail_segs
+        if on_src[ifo].intersects(vetoed_segs):
+            intersection = on_src[ifo] & vetoed_segs
             logger.error(
                 "The onsource %s contains the time %s that is vetoed in %s.",
-                onSrc[ifo][0][:],
+                on_src[ifo][0][:],
                 intersection,
                 ifo,
             )
@@ -323,7 +332,7 @@ if IPN:
 all_files.extend(input_files)
 
 # TEMPLATE BANK AND SPLIT BANK
-bank_files = _workflow.setup_tmpltbank_workflow(wflow, sciSegs, datafind_files, df_dir)
+bank_files = _workflow.setup_tmpltbank_workflow(wflow, sci_segs, datafind_files, df_dir)
 # Check there are not multiple banks
 if len(bank_files) > 1:
     raise NotImplementedError("Multiple banks not supported")
@@ -389,7 +398,7 @@ if wflow.cp.has_section("workflow-injections"):
         "workflow-injections", "tc-prior-at-runtime"
     ):
         tc_path = os.path.join(output_dir, "tc_prior.ini")
-        _workflow.generate_tc_prior(wflow, tc_path, bufferSeg)
+        _workflow.generate_tc_prior(wflow, tc_path, buffer_seg)
 
     # Generate injection files
     if IPN:
@@ -481,7 +490,7 @@ if wflow.cp.has_section("workflow-injections"):
     # Generate injection matched filter workflow
     inj_insp_files = _workflow.setup_matchedfltr_workflow(
         wflow,
-        sciSegs,
+        sci_segs,
         input_files,
         inj_splitbank_files,
         inj_dir,
@@ -504,7 +513,7 @@ if wflow.cp.has_section("workflow-injections"):
         inj_cache = _workflow.File(
             ifos,
             "injections",
-            sciSegs[ifo][0],
+            sci_segs[ifo][0],
             extension="lcf",
             directory=inj_dir,
             tags=[inj_tag],
@@ -520,7 +529,7 @@ if wflow.cp.has_section("workflow-injections"):
         inj_insp_cache = _workflow.File(
             ifos,
             "inspiral_injections",
-            sciSegs[ifo][0],
+            sci_segs[ifo][0],
             extension="lcf",
             directory=inj_dir,
             tags=[inj_tag],
@@ -538,7 +547,7 @@ if wflow.cp.has_section("workflow-injections"):
 insp_dir = os.path.join(curr_dir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(
     wflow,
-    sciSegs,
+    sci_segs,
     input_files,
     splitbank_files,
     insp_dir,
@@ -547,7 +556,7 @@ inspiral_files = _workflow.setup_matchedfltr_workflow(
 all_files.extend(inspiral_files)
 # TODO: Remove .lcf caches here?
 inspiral_cache = _workflow.File(
-    ifos, "inspiral", sciSegs[ifo][0], extension="lcf", directory=insp_dir
+    ifos, "inspiral", sci_segs[ifo][0], extension="lcf", directory=insp_dir
 )
 inspiral_cache.add_pfn(inspiral_cache.cache_entry.path, site="local")
 all_files.append(inspiral_cache)
@@ -568,7 +577,7 @@ if post_proc_method == "PYGRB_OFFLINE":
             wflow,
             pp_dir,
             seg_dir,
-            sciSegs[ifo][0],
+            sci_segs[ifo][0],
             full_bank_file,
             inspiral_files,
             injs,

@@ -1,20 +1,16 @@
+import configparser
 import copy
 import re
 
-try:
-    import configparser as ConfigParser
-except ImportError:
-    import ConfigParser
 
-
-def parse_workflow_ini_file(cpFile, parsed_filepath=None):
+def parse_workflow_ini_file(cp_file, parsed_filepath=None):
     """
     Read a .ini file in, parse it as described in the documentation linked
     to above, and return the parsed ini file.
 
     Parameters
     ----------
-    cpFile : The path to a .ini file to be read in
+    cp_file : The path to a .ini file to be read in
     parsed_filepath: Boolean, optional
         If provided, the .ini file, after parsing, will be written to this
         location
@@ -25,7 +21,7 @@ def parse_workflow_ini_file(cpFile, parsed_filepath=None):
 
     """
     # First read the .ini file
-    cp = read_ini_file(cpFile)
+    cp = read_ini_file(cp_file)
     print(cp.sections())
 
     # Check for any substitutions that can be made
@@ -53,7 +49,7 @@ def parse_workflow_ini_file(cpFile, parsed_filepath=None):
     return cp
 
 
-def read_ini_file(cpFile):
+def read_ini_file(cp_file):
     """
     Read a .ini file and return it as a ConfigParser class.
     This function does none of the parsing/combining of sections. It simply
@@ -61,7 +57,7 @@ def read_ini_file(cpFile):
 
     Parameters
     ----------
-    cpFile : The path to a .ini file to be read in
+    cp_file : The path to a .ini file to be read in
 
     Returns
     -------
@@ -69,9 +65,9 @@ def read_ini_file(cpFile):
 
     """
     # Initialise ConfigParser class
-    cp = ConfigParser.ConfigParser(interpolation=ConfigParser.ExtendedInterpolation())
+    cp = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
     # Read the file
-    fp = open(cpFile)
+    fp = open(cp_file)
     cp.read_file(fp)
     fp.close()
     return cp
@@ -112,19 +108,19 @@ def perform_extended_interpolation(cp, preserve_orig_file=False):
     for section in cp.sections():
         for option, value in cp.items(section):
             # Check the option name
-            newStr = interpolate_string(option, cp, section)
-            if newStr != option:
-                cp.set(section, newStr, value)
+            new_str = interpolate_string(option, cp, section)
+            if new_str != option:
+                cp.set(section, new_str, value)
                 cp.remove_option(section, option)
             # Check the value
-            newStr = interpolate_string(value, cp, section)
-            if newStr != value:
-                cp.set(section, option, newStr)
+            new_str = interpolate_string(value, cp, section)
+            if new_str != value:
+                cp.set(section, option, new_str)
 
     return cp
 
 
-def interpolate_string(testString, cp, section):
+def interpolate_string(test_string, cp, section):
     """
     Take a string and replace all example of ExtendedInterpolation formatting
     within the string with the exact value.
@@ -141,7 +137,7 @@ def interpolate_string(testString, cp, section):
 
     Parameters
     ----------
-    testString: String
+    test_string: String
         The string to parse and interpolate
     cp: ConfigParser
         The ConfigParser object to look for the interpolation strings within
@@ -150,29 +146,29 @@ def interpolate_string(testString, cp, section):
 
     Returns
     -------
-    testString: String
+    test_string: String
         Interpolated string
 
     """
     # First check if any interpolation is needed and abort if not
-    reObj = re.search(r"\$\{.*?\}", testString)
-    while reObj:
+    re_obj = re.search(r"\$\{.*?\}", test_string)
+    while re_obj:
         # Not really sure how this works, but this will obtain the first
         # instance of a string contained within ${....}
-        repString = (reObj).group(0)[2:-1]
+        rep_string = (re_obj).group(0)[2:-1]
         # Need to test which of the two formats we have
-        splitString = repString.split("|")
-        if len(splitString) == 1:
-            testString = testString.replace(
-                "${" + repString + "}", cp.get(section, splitString[0])
+        split_string = rep_string.split("|")
+        if len(split_string) == 1:
+            test_string = test_string.replace(
+                "${" + rep_string + "}", cp.get(section, split_string[0])
             )
-        if len(splitString) == 2:
-            testString = testString.replace(
-                "${" + repString + "}", cp.get(splitString[0], splitString[1])
+        if len(split_string) == 2:
+            test_string = test_string.replace(
+                "${" + rep_string + "}", cp.get(split_string[0], split_string[1])
             )
-        reObj = re.search(r"\$\{.*?\}", testString)
+        re_obj = re.search(r"\$\{.*?\}", test_string)
 
-    return testString
+    return test_string
 
 
 def split_multi_sections(cp, preserve_orig_file=False):
@@ -206,12 +202,12 @@ def split_multi_sections(cp, preserve_orig_file=False):
         if "&" not in section:
             continue
         # Get list of section names to add these options to
-        splitSections = section.split("&")
-        for newSec in splitSections:
+        split_sections = section.split("&")
+        for new_sec in split_sections:
             # Add sections if they don't already exist
-            if not cp.has_section(newSec):
-                cp.add_section(newSec)
-            add_options_to_section(cp, newSec, cp.items(section))
+            if not cp.has_section(new_sec):
+                cp.add_section(new_sec)
+            add_options_to_section(cp, new_sec, cp.items(section))
         cp.remove_section(section)
     return cp
 

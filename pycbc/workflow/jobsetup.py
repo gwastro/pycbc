@@ -247,7 +247,7 @@ def sngl_ifo_job_setup(
             if parents:
                 # Find the set of files with the best overlap
                 curr_parent = parents.find_outputs_in_range(
-                    ifo, job_valid_seg, useSplitLists=True
+                    ifo, job_valid_seg, use_split_lists=True
                 )
                 if not curr_parent:
                     err_string = "No parent jobs found overlapping %d to %d." % (
@@ -262,7 +262,7 @@ def sngl_ifo_job_setup(
             curr_dfouts = None
             if datafind_outs:
                 curr_dfouts = datafind_outs.find_all_output_in_range(
-                    ifo, job_data_seg, useSplitLists=True
+                    ifo, job_data_seg, use_split_lists=True
                 )
                 if not curr_dfouts:
                     err_str = "No datafind jobs found overlapping %d to %d." % (
@@ -344,8 +344,8 @@ def multi_ifo_coherent_job_setup(
                 data_seg,
                 job_valid_seg,
                 parent=split_bank,
-                dfParents=input_files,
-                bankVetoBank=bank_veto,
+                df_parents=input_files,
+                bank_veto_bank=bank_veto,
                 skygrid_file=skygrid_file,
                 ipn_file=ipn_sky_points,
                 slide=slide_dict,
@@ -366,8 +366,8 @@ def multi_ifo_coherent_job_setup(
                     parent=split_bank,
                     inj_file=inj_file,
                     tags=tag,
-                    dfParents=input_files,
-                    bankVetoBank=bank_veto,
+                    df_parents=input_files,
+                    bank_veto_bank=bank_veto,
                     skygrid_file=skygrid_file,
                     ipn_file=ipn_sky_points,
                 )
@@ -769,8 +769,8 @@ class PyCBCMultiInspiralExecutable(Executable):
         valid_seg,
         parent=None,
         inj_file=None,
-        dfParents=None,
-        bankVetoBank=None,
+        df_parents=None,
+        bank_veto_bank=None,
         skygrid_file=None,
         ipn_file=None,
         slide=None,
@@ -780,7 +780,7 @@ class PyCBCMultiInspiralExecutable(Executable):
             tags = []
         node = Node(self)
 
-        if not dfParents:
+        if not df_parents:
             raise ValueError(
                 "%s must be supplied with frame or cache files" % self.name
             )
@@ -808,7 +808,7 @@ class PyCBCMultiInspiralExecutable(Executable):
 
         # Feed in bank_veto_bank.xml, if given
         if self.cp.has_option("workflow-inspiral", "bank-veto-bank-file"):
-            node.add_input_opt("--bank-veto-bank-file", bankVetoBank)
+            node.add_input_opt("--bank-veto-bank-file", bank_veto_bank)
         # Set time options
         node.add_opt("--gps-start-time", data_seg[0] + int(pad_data))
         node.add_opt("--gps-end-time", data_seg[1] - int(pad_data))
@@ -825,9 +825,9 @@ class PyCBCMultiInspiralExecutable(Executable):
             parent,
         )
 
-        if dfParents is not None:
+        if df_parents is not None:
             frame_arg = "--frame-files"
-            for frame_file in dfParents:
+            for frame_file in df_parents:
                 frame_arg += f" {frame_file.ifo}:{frame_file.name}"
                 node.add_input(frame_file)
             node.add_arg(frame_arg)
@@ -1017,7 +1017,7 @@ class LigolwAddExecutable(Executable):
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
 
     def create_node(
-        self, jobSegment, input_files, output=None, use_tmp_subdirs=True, tags=None
+        self, job_segment, input_files, output=None, use_tmp_subdirs=True, tags=None
     ):
         if tags is None:
             tags = []
@@ -1034,7 +1034,7 @@ class LigolwAddExecutable(Executable):
             node.add_output_opt("--output", output)
         else:
             node.new_output_file_opt(
-                jobSegment,
+                job_segment,
                 ".xml.gz",
                 "--output",
                 tags=tags,
