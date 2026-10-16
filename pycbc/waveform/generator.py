@@ -653,8 +653,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
         refframe = self.current_params.get("tc_ref_frame", "geocentric")
         if refframe in ("geocentric", "RF"):
             return tc
-        if "ra" not in self.current_params.keys() or \
-            "dec" not in self.current_params.keys():
+        if "ra" not in self.current_params or "dec" not in self.current_params:
             raise KeyError("Sampling tc in a detector reference frame, but "
                            "sky location parameters are not supplied")
         return tc - Detector(refframe).time_delay_from_earth_center(
@@ -747,11 +746,29 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
     Initialize a generator:
 
     >>> from pycbc.waveform.generator import FDomainDetFrameGenerator
-    >>> generator = FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0.,variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
+    >>> generator = FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 
+                                             0.,
+                                             variable_args=['mass1', 'mass2',
+                                                            'spin1z', 'spin2z',
+                                                            'tc', 'ra', 'dec',
+                                                            'polarization'],
+                                             detectors=['H1', 'L1'],
+                                             delta_f=1./64,
+                                             f_lower=20.,
+                                             approximant='SEOBNRv2_ROM_DoubleSpin'
+                                            )
 
     Generate a waveform:
 
-    >>> generator.generate(mass1=38.6, mass2=29.3, spin1z=0.33, spin2z=-0.94, tc=2.43, ra=1.37, dec=-1.26, polarization=2.76)
+    >>> generator.generate(mass1=38.6,
+                           mass2=29.3,
+                           spin1z=0.33,
+                           spin2z=-0.94,
+                           tc=2.43,
+                           ra=1.37,
+                           dec=-1.26,
+                           polarization=2.76
+                          )
     {'H1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637350>,
      'L1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637a50>}
 
