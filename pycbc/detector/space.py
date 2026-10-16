@@ -608,9 +608,9 @@ class _LDCDetector(AbsSpaceDet):
 
         # set TDI generation
         if tdi == 1.5:
-            X, Y, Z = michelson.X1, michelson.Y1, michelson.Z1
+            X, Y, Z = michelson.X1, michelson.Y1, michelson.Z1  # noqa: N806
         elif tdi == 2:
-            X, Y, Z = michelson.X2, michelson.Y2, michelson.Z2
+            X, Y, Z = michelson.X2, michelson.Y2, michelson.Z2  # noqa: N806
         else:
             raise ValueError(
                 "Unrecognized TDI generation input. " + "Please input either 1 or 2."

@@ -59,9 +59,9 @@ def threshold_inline(series, value):
         outv = numpy.zeros(len(series), dtype=numpy.complex64)
         count = numpy.zeros(1, dtype=numpy.uint32)
 
-    N = len(series)
+    n = len(series)
     threshold = value**2.0
-    parallel_threshold(N, arr, outv, outl, count, threshold)
+    parallel_threshold(n, arr, outv, outl, count, threshold)
     num = count[0]
     if num > 0:
         return outl[0:num], outv[0:num]

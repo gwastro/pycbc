@@ -52,6 +52,10 @@ logger = logging.getLogger(__name__)
 # the waveform plugin and PE config file. In the unit of 's'.
 TIME_OFFSET_20_DEGREES = 7365189.431698299
 
+# Angular frequency (rad/s) and radius (m) of LISA's orbit around the Sun.
+OMEGA_0 = 1.99098659277e-7
+R_ORBIT = au.value
+
 # "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" should be
 # more general for other detectors in the near future.
 
@@ -110,8 +114,6 @@ def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):
         In the unit of 'radian'.
 
     """
-    OMEGA_0 = 1.99098659277e-7
-    R_ORBIT = au.value
     alpha = np.mod(OMEGA_0 * (t_lisa + t0), 2 * np.pi)
     p = np.array(
         [[R_ORBIT * np.cos(alpha)], [R_ORBIT * np.sin(alpha)], [0]], dtype=object

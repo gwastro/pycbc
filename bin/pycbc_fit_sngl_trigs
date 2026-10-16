@@ -393,7 +393,7 @@ for ifo in opt.ifos:
                 continue
             # FIXME: Also allow to use dynamically determined threshold
             # calculated via Nth loudest trig
-            # thresh = trstats.tail_threshold(vals_inbin, N=nmax)
+            # thresh = trstats.tail_threshold(vals_inbin, n=nmax)
             # counts[ifo][th][i] = nmax
             # do the fit
             alpha, sig_alpha = trstats.fit_above_thresh(
