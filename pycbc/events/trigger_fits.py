@@ -18,7 +18,7 @@ alpha, sigma_alpha = fit_above_thresh('exponential', snrs, thresh=6.25)
 alpha, sigma_alpha = fit_above_thresh('exponential', snrs)
 
 # or only fit the largest N values, i.e. tail fitting
-thresh = tail_threshold(snrs, N=500)
+thresh = tail_threshold(snrs, n=500)
 alpha, sigma_alpha = fit_above_thresh('exponential', snrs, thresh)
 
 # obtain the fitted function directly
@@ -227,13 +227,13 @@ def cum_fit(distr, xvals, alpha, thresh):
     return cum_fit
 
 
-def tail_threshold(vals, N=1000):
-    """Determine a threshold above which there are N louder values"""
+def tail_threshold(vals, n=1000):
+    """Determine a threshold above which there are n louder values"""
     vals = numpy.array(vals)
-    if len(vals) < N:
+    if len(vals) < n:
         raise RuntimeError("Not enough input values to determine threshold")
     vals.sort()
-    return min(vals[-N:])
+    return min(vals[-n:])
 
 
 def ks_test(distr, vals, alpha, thresh=None):

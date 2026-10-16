@@ -132,8 +132,8 @@ def add_detector_on_earth(
     vecs = []
     for angle, azi in [(yangle, yaltitude), (xangle, xaltitude)]:
         rm0 = rotation_matrix(angle * units.rad, "z")
-        rmN = rotation_matrix(-azi * units.rad, "y")
-        rm = rm2 @ rm1 @ rm0 @ rmN
+        rm_tilt = rotation_matrix(-azi * units.rad, "y")
+        rm = rm2 @ rm1 @ rm0 @ rm_tilt
         # apply rotation
         resps.append(rm @ resp @ rm.T / 2.0)
         vecs.append(rm @ np.array([-1, 0, 0]))
