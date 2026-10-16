@@ -185,16 +185,6 @@ class Trapezoid(bounded.BoundedDist):
                 self._semimaxs[p] = d
             b = self._semimins[p]
             c = self._semimaxs[p]
-            print(a, b, c, d)
-            print(type(a), type(b), type(c), type(d))
-
-            self._norm[p] = 2 / (d + c - b - a)
-            self._lognorm[p] = numpy.log(self._norm[p])
-
-            # save conditions
-            self._condlists[p] = [(params[p] < b),
-                                  (params[p] >= b) & (params[p] < c),
-                                  (params[p] >= c)]
 
             # normalizations
             self._norm[p] = 2 / (d + c - b - a)
