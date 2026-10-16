@@ -44,7 +44,7 @@ from pycbc.distributions.sky_location import (
     UniformSky,
 )
 from pycbc.distributions.spins import IndependentChiPChiEff
-from pycbc.distributions.uniform import Uniform
+from pycbc.distributions.uniform import Uniform, Trapezoid
 from pycbc.distributions.uniform_log import UniformLog10
 from pycbc.distributions.utils import draw_samples_from_config
 
