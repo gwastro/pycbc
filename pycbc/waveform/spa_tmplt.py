@@ -23,6 +23,10 @@ This module contains functions for generating common SPA template precalculated
 vectors.
 """
 
+# TaylorF2 notation as in LALSimulation (pfaN, FTaN, dETaN, piM, vISCO, ...);
+# spa_tmplt_engine's argument names match its Cython and GPU implementations.
+# ruff: noqa: N803, N806
+
 import warnings
 from math import log, sqrt
 
@@ -40,7 +44,7 @@ lalsimulation = import_optional("lalsimulation")
 
 
 # fLower is kept: external code (e.g. the pycbc-bbhx-plugin) passes it by keyword.
-def findchirp_chirptime(m1, m2, fLower, porder=-1, s1z=0.0, s2z=0.0):  # noqa: N803
+def findchirp_chirptime(m1, m2, fLower, porder=-1, s1z=0.0, s2z=0.0):
     """
     Estimate the chirp time, i.e. the time from ``fLower`` to coalescence,
     of a TaylorF2 / stationary-phase-approximation waveform.

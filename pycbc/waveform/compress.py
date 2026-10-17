@@ -782,9 +782,9 @@ def fd_decompress(
             fill_value=0.0,
             assume_sorted=True,
         )
-        A = amp_interp(outfreq)
+        out_amp = amp_interp(outfreq)
         phi = phase_interp(outfreq)
-        out.data[:] = A * numpy.cos(phi) + (1j) * A * numpy.sin(phi)
+        out.data[:] = out_amp * numpy.cos(phi) + (1j) * out_amp * numpy.sin(phi)
     return out
 
 
