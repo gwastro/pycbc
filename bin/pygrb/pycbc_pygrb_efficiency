@@ -356,7 +356,7 @@ injs = ppu.load_data(
 
 # Gather injections that were not missed
 found_inj = {}
-for k in injs.keys():
+for k in injs:
     if "missed" not in k:
         found_inj[k] = injs[k]
 

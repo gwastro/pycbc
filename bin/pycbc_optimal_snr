@@ -82,7 +82,7 @@ class TimeVaryingPSD:
 
     def get_psd(self, index):
         curr_pid = multiprocessing.current_process().pid
-        if curr_pid not in self._curr_psd_index.keys():
+        if curr_pid not in self._curr_psd_index:
             self._curr_psd_index[curr_pid] = -1
         if not index == self._curr_psd_index[curr_pid]:
             group = self.detector + "/psds/" + str(index)

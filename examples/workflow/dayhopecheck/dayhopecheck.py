@@ -86,7 +86,7 @@ def segment_report(s_segs):
     short_num = 0
     long_len = 0
     long_num = 0
-    for ifo in s_segs.keys():
+    for ifo in s_segs:
         for seg in s_segs[ifo]:
             full_len += abs(seg)
             full_num += 1

@@ -907,9 +907,9 @@ with ctx:
                             rho_coh_r = rho_coh_r[lr_above]
                             coinc_idx_l = coinc_idx_l[lr_above]
                             coinc_idx_r = coinc_idx_r[lr_above]
-                            for ifo in coinc_triggers_l.keys():
+                            for ifo in coinc_triggers_l:
                                 coinc_triggers_l[ifo] = coinc_triggers_l[ifo][lr_above]
-                            for ifo in coinc_triggers_r.keys():
+                            for ifo in coinc_triggers_r:
                                 coinc_triggers_r[ifo] = coinc_triggers_r[ifo][lr_above]
                             rho_coinc_l = rho_coinc_l[lr_above]
                             rho_coinc_r = rho_coinc_r[lr_above]

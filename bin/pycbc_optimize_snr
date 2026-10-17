@@ -361,7 +361,7 @@ coinc_results["foreground/stat"] = numpy.sqrt(netsnr)
 coinc_results["foreground/ifar"] = fp["ifar"][()]
 
 channel_names = {}
-for ifo in fp["channel_names"].keys():
+for ifo in fp["channel_names"]:
     channel_names[ifo] = fp["channel_names"][ifo].asstr()[()]
 
 mc_area_args = load_hdf5_to_dict(fp, "mc_area_args/")

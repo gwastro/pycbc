@@ -82,7 +82,7 @@ stat = trigs.get_ranking(args.sngl_ranking)
 bin_tids_dict = {}
 with h5.File(args.template_bins_file, "r") as f:
     ifo_grp = f[ifo]
-    for bin_name in ifo_grp.keys():
+    for bin_name in ifo_grp:
         bin_tids_dict[bin_name] = ifo_grp[bin_name]["tids"][:]
 
 # get analysis segments

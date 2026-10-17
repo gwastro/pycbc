@@ -308,7 +308,7 @@ def time_multi_coincidence(times, slide_step=0, slop=0.003, pivot="H1", fixed="L
     ctimes = {fixed: fixed_time, pivot: pivot_time}
     ids = {fixed: fix_id, pivot: pivot_id}
 
-    dep_ifos = [ifo for ifo in times.keys() if ifo != fixed and ifo != pivot]
+    dep_ifos = [ifo for ifo in times if ifo != fixed and ifo != pivot]
     for ifo1 in dep_ifos:
         # FIXME - make this loop into a function?
 
@@ -1693,7 +1693,7 @@ class LiveCoincTimeslideBackgroundEstimator:
         )
 
         # If there are no results just return
-        valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]
+        valid_ifos = [k for k in results if results[k] and k in self.ifos]
         if len(valid_ifos) == 0:
             return {}
 

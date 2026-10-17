@@ -100,7 +100,7 @@ def make_grb_segments_plot(
     ifo_colors = {}
     for ifo in ifos:
         ifo_colors[ifo] = ifo_color(ifo)
-        if ifo not in science_segs.keys():
+        if ifo not in science_segs:
             science_segs[ifo] = segments.segmentlist([])
 
     # Make plot

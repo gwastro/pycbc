@@ -42,7 +42,7 @@ for name in input_kdes[0]:
             dataset_values = [kfile[name][:] for kfile in input_kdes]
             f_dest.create_dataset(name, data=dataset_values[0])
 
-for attr_name in input_kdes[0].attrs.keys():
+for attr_name in input_kdes[0].attrs:
     attr_values = [kfile.attrs.get(attr_name) for kfile in input_kdes]
     if all(numpy.array_equal(attr_values[0], attr_val) for attr_val in attr_values[1:]):
         f_dest.attrs[attr_name] = attr_values[0]

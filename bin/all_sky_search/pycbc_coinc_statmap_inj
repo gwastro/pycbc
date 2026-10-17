@@ -78,7 +78,7 @@ f.attrs["timeslide_interval"] = zdata.attrs["timeslide_interval"]
 f.attrs["ifos"] = " ".join(sorted(ifos))
 
 # Copy over the segment for coincs and singles
-for key in zdata.seg.keys():
+for key in zdata.seg:
     f[f"segments/{key}/start"] = zdata.seg[key]["start"][:]
     f[f"segments/{key}/end"] = zdata.seg[key]["end"][:]
 

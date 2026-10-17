@@ -373,7 +373,7 @@ class MetricParameters:
     @evals.setter
     def evals(self, in_evals):
         if self.write_metric:
-            for frequency in in_evals.keys():
+            for frequency in in_evals:
                 numpy.savetxt(f"metric_evals_{int(frequency)}.dat", in_evals[frequency])
         self._evals = in_evals
 
@@ -396,7 +396,7 @@ class MetricParameters:
     @evecs.setter
     def evecs(self, in_evecs):
         if self.write_metric:
-            for frequency in in_evecs.keys():
+            for frequency in in_evecs:
                 numpy.savetxt(f"metric_evecs_{int(frequency)}.dat", in_evecs[frequency])
         self._evecs = in_evecs
 
@@ -418,7 +418,7 @@ class MetricParameters:
     @metric.setter
     def metric(self, in_metric):
         if self.write_metric:
-            for frequency in in_metric.keys():
+            for frequency in in_metric:
                 numpy.savetxt(
                     f"metric_components_{int(frequency)}.dat", in_metric[frequency]
                 )
@@ -443,7 +443,7 @@ class MetricParameters:
     @time_unprojected_metric.setter
     def time_unprojected_metric(self, in_metric):
         if self.write_metric:
-            for frequency in in_metric.keys():
+            for frequency in in_metric:
                 numpy.savetxt(
                     f"metric_timeunprojected_{int(frequency)}.dat", in_metric[frequency]
                 )
@@ -468,7 +468,7 @@ class MetricParameters:
     @evecs_cv.setter
     def evecs_cv(self, in_evecs):
         if self.write_metric:
-            for frequency in in_evecs.keys():
+            for frequency in in_evecs:
                 numpy.savetxt(
                     f"covariance_evecs_{int(frequency)}.dat", in_evecs[frequency]
                 )

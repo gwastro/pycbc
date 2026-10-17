@@ -667,8 +667,8 @@ class PartitionedTmpltbank:
         mass2 = []
         spin1z = []
         spin2z = []
-        for i in self.massbank.keys():
-            for j in self.massbank[i].keys():
+        for i in self.massbank:
+            for j in self.massbank[i]:
                 for k in range(len(self.massbank[i][j]["mass1s"])):
                     curr_bank = self.massbank[i][j]
                     mass1.append(curr_bank["mass1s"][k])

@@ -112,7 +112,7 @@ for single_file in args.single_trigger_files:
     ifo = str(next(iter(file_.keys())))
     data = file_[ifo]
 
-    if gating_type in data["gating"].keys():
+    if gating_type in data["gating"]:
         logger.info("Extracting gated times...")
         gate_time = numpy.unique(data[f"gating/{gating_type}/time"][:])
         n_gates += len(gate_time)

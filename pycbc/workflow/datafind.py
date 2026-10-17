@@ -203,7 +203,7 @@ def setup_datafind_workflow(
         new_science_segs = get_science_segs_from_datafind_outs(datafindcaches)
         logger.info("New segments calculated from data find output.....")
         missing_data = False
-        for ifo in science_segs.keys():
+        for ifo in science_segs:
             # If no science segments in input then do nothing
             if not science_segs[ifo]:
                 msg = f"No science segments are present for ifo {ifo}, "
@@ -248,7 +248,7 @@ def setup_datafind_workflow(
             datafindcaches
         )
         missing_flag = False
-        for ifo in missing_frames.keys():
+        for ifo in missing_frames:
             # If no data in the input then do nothing
             if not science_segs[ifo]:
                 continue
@@ -316,7 +316,7 @@ def setup_datafind_workflow(
             err_msg += "datafind-check-segment-summary option."
             raise ValueError(err_msg)
         seg_summary_times = seg_file.seg_summ_dict
-        for ifo in df_science_segs.keys():
+        for ifo in df_science_segs:
             curr_seg_summ_times = seg_summary_times[ifo + ":" + sci_seg_name]
             missing = df_science_segs[ifo] & seg_file.valid_segments
             missing.coalesce()
@@ -355,7 +355,7 @@ def setup_datafind_workflow(
     sci_avlble_dict = segments.segmentlistdict()
     # NOTE: Should this be overrideable in the config file?
     sci_avlble_name = "SCIENCE_AVAILABLE"
-    for ifo in science_segs.keys():
+    for ifo in science_segs:
         sci_avlble_dict[ifo + ":" + sci_avlble_name] = science_segs[ifo]
 
     sci_avlble_file = SegFile.from_segment_list_dict(

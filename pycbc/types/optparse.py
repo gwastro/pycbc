@@ -491,7 +491,7 @@ def convert_to_process_params_dict(opt):
     for arg, val in vars(opt).items():
         if isinstance(val, DictWithDefaultReturn):
             new_val = []
-            for key in val.keys():
+            for key in val:
                 if isinstance(val[key], list):
                     for item in val[key]:
                         if item is not None:

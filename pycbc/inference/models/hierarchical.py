@@ -1048,7 +1048,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         primary_model = submodels[kwargs["primary_lbl"][0]]
         marginalized_params = primary_model.marginalized_params_name.copy()
 
-        for p in primary_model.static_params.keys():
+        for p in primary_model.static_params:
             p_full = f"{kwargs['primary_lbl'][0]}__{p}"
             if p_full not in cp["static_params"]:
                 cp["static_params"][p_full] = f"{primary_model.static_params[p]}"

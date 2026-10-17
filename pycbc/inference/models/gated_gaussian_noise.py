@@ -613,11 +613,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
 
         """
         gate_idx_len = int(rindex - lindex)
-        if gate_idx_len not in self._cond.keys():
+        if gate_idx_len not in self._cond:
             conds = {}
         else:
             conds = self._cond[gate_idx_len]
-        if det not in conds.keys():
+        if det not in conds:
             # construct the matrix
             invpsd = self._invpsds[det]
             tdfilter = invpsd.astype("complex").to_timeseries() * invpsd.delta_t

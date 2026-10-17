@@ -161,7 +161,7 @@ mins, maxs = option_utils.plot_ranges_from_cli(args)
 logger.info("Reading in the bank")
 bank = {}
 with HFile(args.bank_file, "r") as bankf:
-    for p in bankf.keys():
+    for p in bankf:
         if not isinstance(bankf[p], h5py.Dataset):
             continue
         # Ignore things which aren't numbers, which cannot

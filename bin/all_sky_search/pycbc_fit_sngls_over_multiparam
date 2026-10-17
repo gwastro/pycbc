@@ -332,7 +332,7 @@ for filename in args.template_fit_file:
                 "This situation is not yet supported."
             )
         # get attributes from the template-level fit
-        for k in fits.attrs.keys():
+        for k in fits.attrs:
             if k == "analysis_time":
                 # For this attribute only, we want the mean
                 analysis_time += fits.attrs["analysis_time"]

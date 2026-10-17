@@ -108,7 +108,7 @@ with h5py.File(args.output_file, "w") as destination:
 
                 triggers = {
                     k: source[ifo][k][:]
-                    for k in source[ifo].keys()
+                    for k in source[ifo]
                     if k not in ("loudest", "stat", "gates", "psd")
                     and source[ifo][k].size == n_trigs_ifo
                 }
@@ -200,7 +200,7 @@ with h5py.File(args.output_file, "w") as destination:
         #   approximant, chisq, chisq_dof, coa_phase, end_time, f_lower
         #   mass_1, mass_2, sg_chisq, sigmasq, snr, spin1z, spin2z,
         #   template_duration, template_hash, template_id
-        for key in triggers.keys():
+        for key in triggers:
             if len(triggers[key]) == len(template_ids):
                 logger.info("Sorting %s by template id", key)
                 sorted_key = triggers[key][:][sorted_indices]
@@ -218,9 +218,9 @@ with h5py.File(args.output_file, "w") as destination:
             "template_duration",
             "sigmasq",
         )
-        if "psd_var_val" in triggers.keys():
+        if "psd_var_val" in triggers:
             region_ref_datasets += ("psd_var_val",)
-        if "dq_state" in triggers.keys():
+        if "dq_state" in triggers:
             region_ref_datasets += ("dq_state",)
 
         start_boundaries = template_boundaries
