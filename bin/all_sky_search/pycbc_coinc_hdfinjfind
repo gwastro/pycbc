@@ -320,10 +320,7 @@ for trigger_file, injection_file in zip(
             continue
         if key not in fo:
             fo.create_group(key)
-        if key in f:
-            fkey = f[key]
-        else:
-            fkey = f
+        fkey = f.get(key, f)
         if "pivot" in fo[key].attrs:
             # This is a coincident statmap file
             fo[key].attrs["pivot"] = fkey.attrs["pivot"]

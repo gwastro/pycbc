@@ -269,7 +269,7 @@ for f in args.input_files:
         for key in curr_dict:
             cval = curr_dict[key]
             sval = same_dict[key]
-            if isinstance(cval, list):
+            if isinstance(cval, list):  # noqa: SIM108
                 is_same = set(cval) == set(sval)
             else:
                 is_same = cval == sval

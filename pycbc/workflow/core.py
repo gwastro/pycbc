@@ -688,10 +688,7 @@ class Workflow(pegasus_workflow.Workflow):
         self.cp = WorkflowConfigParser.from_cli(args)
         self.args = args
 
-        if hasattr(args, "dax_file"):
-            dax_file = args.dax_file or None
-        else:
-            dax_file = None
+        dax_file = getattr(args, "dax_file", None) or None
 
         if hasattr(args, "dax_file_directory"):
             output_dir = args.dax_file_directory or args.output_dir or None
@@ -743,10 +740,7 @@ class Workflow(pegasus_workflow.Workflow):
         if hasattr(args, "output_map") and args.output_map is not None:
             return args.output_map
 
-        if self.in_workflow is not False:
-            name = self.name + ".map"
-        else:
-            name = "output.map"
+        name = self.name + ".map" if self.in_workflow is not False else "output.map"
 
         return os.path.join(self.out_dir, name)
 
@@ -1386,22 +1380,13 @@ class File(pegasus_workflow.File):
         """
         if attrs is None:
             attrs = {}
-        if attrs and "ifos" in attrs:
-            ifos = attrs["ifos"]
-        else:
-            ifos = ["H1", "K1", "L1", "V1"]
-        if attrs and "exe_name" in attrs:
-            exe_name = attrs["exe_name"]
-        else:
-            exe_name = "INPUT"
+        ifos = attrs["ifos"] if attrs and "ifos" in attrs else ["H1", "K1", "L1", "V1"]
+        exe_name = attrs["exe_name"] if attrs and "exe_name" in attrs else "INPUT"
         if attrs and "segs" in attrs:
             segs = attrs["segs"]
         else:
             segs = segments.segment([1, 2000000000])
-        if attrs and "tags" in attrs:
-            tags = attrs["tags"]
-        else:
-            tags = []
+        tags = attrs["tags"] if attrs and "tags" in attrs else []
 
         return cls(ifos, exe_name, segs, path, tags=tags, **kwargs)
 

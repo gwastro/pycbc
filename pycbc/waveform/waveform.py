@@ -1113,10 +1113,7 @@ def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True, **params
     params["delta_f"] = df_min
     hp, hc = get_fd_waveform(**params)
     hp = hp.astype(dtype)
-    if return_hc:
-        hc = hc.astype(dtype)
-    else:
-        hc = None
+    hc = hc.astype(dtype) if return_hc else None
 
     f_end = get_waveform_end_frequency(**params)
     if f_end is None:

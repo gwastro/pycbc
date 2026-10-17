@@ -452,10 +452,7 @@ logger.info("Setting up plotting and fitting limit values")
 minplot = max(stat[np.nonzero(stat)].min(), args.plot_lower_stat_limit)
 min_fit = max(minplot, args.stat_fit_threshold)
 max_fit = 1.05 * stat.max()
-if args.plot_max_x:
-    maxplot = args.plot_max_x
-else:
-    maxplot = max_fit
+maxplot = args.plot_max_x or max_fit
 fitrange = np.linspace(min_fit, max_fit, 100)
 
 logger.info("Setting up plotting variables")

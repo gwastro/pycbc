@@ -164,10 +164,7 @@ class HFile(HGroup, h5py.File):
             size = refs[ds].size
 
         # Apply any pre-masks
-        if premask is None:
-            mask = np.ones(size, dtype=bool)
-        else:
-            mask = premask
+        mask = np.ones(size, dtype=bool) if premask is None else premask
 
         if not mask.dtype == bool:
             # mask is an array of indices rather than booleans,
@@ -200,11 +197,8 @@ class HFile(HGroup, h5py.File):
                 i += chunksize
                 continue
 
-            if all(mask[i:r]):
-                # Everything allowed through the mask in this chunk
-                submask = np.arange(r - i)
-            else:
-                submask = np.flatnonzero(mask[i:r])
+            # all(...) is True if everything in this chunk is allowed through
+            submask = np.arange(r - i) if all(mask[i:r]) else np.flatnonzero(mask[i:r])
 
             # Read each chunk's worth of data
             partial_data = {arg: refs[arg][i:r][mask[i:r]] for arg in dsets}
@@ -1843,10 +1837,7 @@ def name_all_datasets(files):
 def get_all_subkeys(grp, key):
     subkey_list = []
     subkey_start = key
-    if key == "":
-        grpk = grp
-    else:
-        grpk = grp[key]
+    grpk = grp if key == "" else grp[key]
     for sk in grpk:
         path = subkey_start + "/" + sk
         if isinstance(grp[path], h5py.Dataset):

@@ -290,10 +290,7 @@ class TriangleBank:
             )
             hp.tbin = int(hp.tau0 / args.tau0_threshold)
 
-            if hp.tbin in self.tbins:
-                r = numpy.array(self.tbins[hp.tbin])
-            else:
-                r = r[:0]
+            r = numpy.array(self.tbins[hp.tbin]) if hp.tbin in self.tbins else r[:0]
 
         mtau = len(r)
 
@@ -553,10 +550,7 @@ class GenUniformWaveform:
 
 
 r = 0
-if not args.tolerance:
-    tolerance = (1 - args.minimal_match) / 10
-else:
-    tolerance = args.tolerance
+tolerance = (1 - args.minimal_match) / 10 if not args.tolerance else args.tolerance
 
 size = int(1.0 / tolerance)
 

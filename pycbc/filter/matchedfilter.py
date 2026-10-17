@@ -1255,10 +1255,7 @@ def sigmasq(htilde, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=N
         except AssertionError:
             raise ValueError("Waveform does not have same delta_f as psd")
 
-    if psd is None:
-        sq = ht.inner(ht)
-    else:
-        sq = ht.weighted_inner(ht, psd[kmin:kmax])
+    sq = ht.inner(ht) if psd is None else ht.weighted_inner(ht, psd[kmin:kmax])
 
     return sq.real * norm
 
@@ -2427,10 +2424,7 @@ def optimized_match(
     waveform_2 = waveform_2[mask]
     frequencies = frequencies[mask]
 
-    if psd is not None:
-        psd_arr = psd.numpy()[mask]
-    else:
-        psd_arr = numpy.ones_like(waveform_1)
+    psd_arr = psd.numpy()[mask] if psd is not None else numpy.ones_like(waveform_1)
 
     def product(a, b):
         integral = numpy.sum(numpy.conj(a) * b / psd_arr) * delta_f

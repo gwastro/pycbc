@@ -151,10 +151,7 @@ def redshift_estimation(distance, distance_std, lal_cosmology):
     https://git.ligo.org/lscsoft/pesummary/-/blob/master/pesummary/gw/
     cosmology.py.
     """
-    if lal_cosmology:
-        cosmology = FlatLambdaCDM(H0=67.90, Om0=0.3065)
-    else:
-        cosmology = None
+    cosmology = FlatLambdaCDM(H0=67.9, Om0=0.3065) if lal_cosmology else None
     z_estimation = _redshift(distance, cosmology=cosmology)
     z_est_max = _redshift((distance + distance_std), cosmology=cosmology)
     z_est_min = _redshift((distance - distance_std), cosmology=cosmology)

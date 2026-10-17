@@ -111,10 +111,7 @@ def from_cli(
                 opt.psd_model, length, delta_f, f_low, **opt.psd_extra_args
             )
         elif opt.psd_file or opt.asd_file:
-            if opt.asd_file:
-                psd_file_name = opt.asd_file
-            else:
-                psd_file_name = opt.psd_file
+            psd_file_name = opt.asd_file or opt.psd_file
             if psd_file_name.endswith((".dat", ".txt")):
                 is_asd_file = bool(opt.asd_file)
                 psd = from_txt(
@@ -214,10 +211,7 @@ def from_cli_multi_ifos(
     """
     psd = {}
     for ifo in ifos:
-        if strain_dict is not None:
-            strain = strain_dict[ifo]
-        else:
-            strain = None
+        strain = strain_dict[ifo] if strain_dict is not None else None
         psd[ifo] = from_cli_single_ifo(
             opt,
             length_dict[ifo],
@@ -952,15 +946,9 @@ def associate_psds_to_multi_ifo_segments(
     Associate PSDs to segments for all ifos when using the multi-detector CLI
     """
     for ifo in ifos:
-        if gwstrain is not None:
-            strain = gwstrain[ifo]
-        else:
-            strain = None
+        strain = gwstrain[ifo] if gwstrain is not None else None
 
-        if fd_segments is not None:
-            segments = fd_segments[ifo]
-        else:
-            segments = None
+        segments = fd_segments[ifo] if fd_segments is not None else None
 
         associate_psds_to_single_ifo_segments(
             opt,

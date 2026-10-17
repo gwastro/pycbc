@@ -53,10 +53,7 @@ def config_from_config(cp, section, skip_opts=None):
 
 def read_inference_settings_from_config(cp, section):
     """Loads the config parser and gets the number of inference runs to do."""
-    if cp.has_option(section, "nruns"):
-        nruns = int(cp.get(section, "nruns"))
-    else:
-        nruns = 1
+    nruns = int(cp.get(section, "nruns")) if cp.has_option(section, "nruns") else 1
     return config_from_config(cp, section, skip_opts=["nruns"]), nruns
 
 

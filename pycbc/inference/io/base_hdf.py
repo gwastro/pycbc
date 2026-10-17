@@ -541,10 +541,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
         """
         subgroup = self.data_group + "/{ifo}/strain"
-        if group is None:
-            group = subgroup
-        else:
-            group = "/".join([group, subgroup])
+        group = subgroup if group is None else "/".join([group, subgroup])
         for ifo, strain in strain_dict.items():
             self[group.format(ifo=ifo)] = strain
             self[group.format(ifo=ifo)].attrs["delta_t"] = strain.delta_t
@@ -564,10 +561,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
         """
         subgroup = self.data_group + "/{ifo}/stilde"
-        if group is None:
-            group = subgroup
-        else:
-            group = "/".join([group, subgroup])
+        group = subgroup if group is None else "/".join([group, subgroup])
         for ifo, stilde in stilde_dict.items():
             self[group.format(ifo=ifo)] = stilde
             self[group.format(ifo=ifo)].attrs["delta_f"] = stilde.delta_f
@@ -590,10 +584,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
         """
         subgroup = self.data_group + "/{ifo}/psds/0"
-        if group is None:
-            group = subgroup
-        else:
-            group = "/".join([group, subgroup])
+        group = subgroup if group is None else "/".join([group, subgroup])
         for ifo in psds:
             self[group.format(ifo=ifo)] = psds[ifo]
             self[group.format(ifo=ifo)].attrs["delta_f"] = psds[ifo].delta_f
@@ -991,11 +982,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             index = list(map(int, self[self.config_group].keys()))
         except KeyError:
             index = []
-        if index == []:
-            # hasn't been written yet
-            index = 0
-        else:
-            index = max(index) + 1
+        # index is [] if it hasn't been written yet
+        index = 0 if index == [] else max(index) + 1
         # we'll store the config file as a text file that is pickled
         out = StringIO()
         cp.write(out)

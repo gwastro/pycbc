@@ -222,10 +222,7 @@ options = parser.parse_args()
 
 pycbc.init_logging(options.verbose)
 
-if options.cuda:
-    ctx = CUDAScheme()
-else:
-    ctx = CPUScheme()
+ctx = CUDAScheme() if options.cuda else CPUScheme()
 
 # Load in the waveform1 bank file
 indoc = ligolw_utils.load_filename(

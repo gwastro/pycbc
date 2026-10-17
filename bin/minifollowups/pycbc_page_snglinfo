@@ -105,11 +105,8 @@ args = parser.parse_args()
 
 init_logging(args.verbose)
 
-if args.trigger_id is not None:
-    # Make a mask which is just the trigger of interest
-    mask = numpy.array([args.trigger_id])
-else:
-    mask = None
+# Make a mask which is just the trigger of interest
+mask = numpy.array([args.trigger_id]) if args.trigger_id is not None else None
 
 # Get the single-ifo triggers
 sngl_file = hdf.SingleDetTriggers(

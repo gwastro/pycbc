@@ -140,10 +140,7 @@ else:
     m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
     parvals = triggers.get_param(args.fit_param, args, m1, m2, s1z, s2z)
 
-if "count_in_template" in fits:  # recently introduced extra dataset
-    tcount = True
-else:
-    tcount = False
+tcount = "count_in_template" in fits  # recently introduced extra dataset
 
 nabove = fits["count_above_thresh"][:]
 if tcount:

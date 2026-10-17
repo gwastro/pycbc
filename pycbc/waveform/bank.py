@@ -543,12 +543,9 @@ class TemplateBank:
             f = pycbc.io.HFile(filename, mode)
 
         # 2. Resolve Write Root (Group vs File)
-        if group_key:
-            # If f is a Group, require_group creates a subgroup.
-            # If f is a File, it creates a root group.
-            root = f.require_group(group_key)
-        else:
-            root = f
+        # If f is a Group, require_group creates a subgroup.
+        # If f is a File, it creates a root group.
+        root = f.require_group(group_key) if group_key else f
 
         # 3. Write Parameters
         parameters = self.parameters
@@ -929,10 +926,7 @@ class FilterBank(TemplateBank):
             decompression_method = compressed_waveform.interpolation
         logger.info("Decompressing waveform using %s", decompression_method)
 
-        if df is not None:
-            delta_f = df
-        else:
-            delta_f = self.delta_f
+        delta_f = df if df is not None else self.delta_f
 
         # Create memory space for writing the decompressed waveform
         decomp_scratch = FrequencySeries(

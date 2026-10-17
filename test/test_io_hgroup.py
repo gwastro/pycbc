@@ -18,10 +18,7 @@ def _dataset_has_checksumming(dataset):
     for i in range(n):
         tpl = plist.get_filter(i)
         name = tpl[-1]
-        if isinstance(name, bytes):
-            name_low = name.lower()
-        else:
-            name_low = str(name).lower()
+        name_low = name.lower() if isinstance(name, bytes) else str(name).lower()
         # check if fletcher32 has been anabled
         if (
             b"fletcher" in name_low

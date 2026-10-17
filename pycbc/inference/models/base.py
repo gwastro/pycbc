@@ -289,10 +289,7 @@ def read_sampling_params_from_config(cp, section_group=None, section="sampling_p
         The list of variable args to replace in the sampler.
 
     """
-    if section_group is not None:
-        section_prefix = f"{section_group}_"
-    else:
-        section_prefix = ""
+    section_prefix = f"{section_group}_" if section_group is not None else ""
     section = section_prefix + section
     replaced_params = set()
     sampling_params = set()

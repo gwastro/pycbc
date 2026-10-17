@@ -102,10 +102,7 @@ class TimeSeries(Array):
         """Check if the sample rate is close enough to allow operations"""
         # compare our delta_t either to a another time series' or
         # to a given sample rate (float)
-        if isinstance(other, TimeSeries):
-            odelta_t = other.delta_t
-        else:
-            odelta_t = 1.0 / other
+        odelta_t = other.delta_t if isinstance(other, TimeSeries) else 1.0 / other
 
         if (odelta_t - self.delta_t) / self.delta_t > 1e-4:
             return False
@@ -1234,10 +1231,7 @@ class TimeSeries(Array):
         if not self.sample_rate_close(other):
             raise ValueError("Sample rate must be the same")
         # determine if we want to inject in place or not
-        if copy:
-            ts = self.copy()
-        else:
-            ts = self
+        ts = self.copy() if copy else self
         # Other is disjoint
         if (other.start_time >= ts.end_time) or (ts.start_time > other.end_time):
             return ts

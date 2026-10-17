@@ -283,10 +283,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-if args.smoothing_keywords:
-    smooth_kwargs = args.smoothing_keywords
-else:
-    smooth_kwargs = []
+smooth_kwargs = args.smoothing_keywords or []
 
 kwarg_dict = {}
 for inputstr in smooth_kwargs:

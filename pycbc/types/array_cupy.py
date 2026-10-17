@@ -82,10 +82,7 @@ def weighted_inner(self, other, weight):
         return self.inner(other)
 
     cdtype = common_kind(self.dtype, other.dtype)
-    if cdtype.kind == "c":
-        acum_dtype = complex128
-    else:
-        acum_dtype = float64
+    acum_dtype = complex128 if cdtype.kind == "c" else float64
 
     return cp.sum(self.data.conj() * other / weight, dtype=acum_dtype)
 

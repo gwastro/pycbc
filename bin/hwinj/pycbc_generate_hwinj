@@ -361,10 +361,7 @@ for ifo in opts.instruments:
 sample_rate = opts.sample_rate[opts.instruments[0]]
 
 # set upper frequency cutoff if not given
-if opts.high_frequency_cutoff:
-    f_high = opts.high_frequency_cutoff
-else:
-    f_high = int(sample_rate / 2)
+f_high = opts.high_frequency_cutoff or int(sample_rate / 2)
 
 # check that frame types are not lists
 if opts.frame_type:

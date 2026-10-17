@@ -518,10 +518,7 @@ if len(found_after_vetoes["network/template_id"]):
     logger.info("MC injection set distributed with %d iterations.", num_mc_injs)
 
     # Check injections against on source
-    if onsource_file:
-        more_sig_than_onsource = inj_fap <= loud_on_fap
-    else:
-        more_sig_than_onsource = inj_fap <= 0.5
+    more_sig_than_onsource = inj_fap <= (loud_on_fap if onsource_file else 0.5)
 
     distance_count = np.zeros(len(dist_bins))
 
@@ -598,10 +595,7 @@ if len(found_after_vetoes["network/template_id"]):
 
             # Record number of injections, number found for exclusion
             # and number of zero FAR
-            if k == 0:
-                key = "no_mc"
-            else:
-                key = "mc"
+            key = "no_mc" if k == 0 else "mc"
             num_pass = num_found_pass + num_missed_pass + num_long_pass
             num_injections[key][j] += num_pass
             num_injections[key][-1] += num_pass

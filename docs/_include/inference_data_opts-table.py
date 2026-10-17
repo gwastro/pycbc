@@ -120,18 +120,9 @@ class Row:
             helpmsg = self.helpmsg.split("\n")
             nlines = max(len(metavar), len(helpmsg))
             for ii in range(nlines):
-                if ii == 0:
-                    optstr = self.option
-                else:
-                    optstr = ""
-                if ii < len(metavar):
-                    metastr = metavar[ii]
-                else:
-                    metastr = ""
-                if ii < len(helpmsg):
-                    helpstr = helpmsg[ii]
-                else:
-                    helpstr = ""
+                optstr = self.option if ii == 0 else ""
+                metastr = metavar[ii] if ii < len(metavar) else ""
+                helpstr = helpmsg[ii] if ii < len(helpmsg) else ""
                 optstr = tmplt.format(msg=optstr, rpad=optlen)
                 metastr = tmplt.format(msg=metastr, rpad=metalen)
                 helpstr = tmplt.format(msg=helpstr, rpad=helplen)

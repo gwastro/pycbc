@@ -90,10 +90,7 @@ newsnr = pycbc.events.ranking.newsnr(snr, reduced_chisq)
 template_ids = trigs[args.ifo]["template_id"][mask]
 end_times = trigs[args.ifo]["end_time"][mask]
 
-if args.ranking_statistic == "snr":
-    idx = np.argmax(snr)
-else:
-    idx = np.argmax(newsnr)
+idx = np.argmax(snr) if args.ranking_statistic == "snr" else np.argmax(newsnr)
 
 tid = template_ids[idx]
 cbc_end_time = end_times[idx]

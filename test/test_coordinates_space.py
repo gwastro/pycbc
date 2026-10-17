@@ -180,10 +180,7 @@ class TestParams(unittest.TestCase):
                 passed, maxdiff, maxidx = almost_equal(
                     derived_val, check_val, self.precision
                 )
-                if not passed:
-                    failinputs = [p[maxidx] for p in args]
-                else:
-                    failinputs = None
+                failinputs = [p[maxidx] for p in args] if not passed else None
                 self.assertTrue(passed, msg.format(func, compval, maxdiff, failinputs))
 
     def test_polarization(self):

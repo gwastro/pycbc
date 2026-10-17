@@ -1309,11 +1309,7 @@ class FieldArray(numpy.recarray):
     @property
     def virtualfields(self):
         """Returns a tuple listing the names of virtual fields in self."""
-        if self._virtualfields is None:
-            vfs = ()
-        else:
-            vfs = tuple(self._virtualfields)
-        return vfs
+        return () if self._virtualfields is None else tuple(self._virtualfields)
 
     @property
     def functionlib(self):

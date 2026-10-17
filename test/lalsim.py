@@ -445,10 +445,7 @@ def test_maker(class_name, name, **kwds):
 
 suite = unittest.TestSuite()
 
-if opt.approximant:
-    apxs = [opt.approximant]
-else:
-    apxs = td_approximants() + fd_approximants()
+apxs = [opt.approximant] if opt.approximant else td_approximants() + fd_approximants()
 
 # These waveforms fail the current sanity checks, and are not used in current
 # analyses. Tracking down reasons for each of these failures is a lot of work,

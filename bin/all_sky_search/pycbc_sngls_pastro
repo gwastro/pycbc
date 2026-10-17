@@ -213,10 +213,7 @@ for cfilename in args.coinc_statmap_files:
             time_key = sngl_ifo + "/time"
         else:
             ifolist = [cfile.attrs["detector_1"], cfile.attrs["detector_2"]]
-            if sngl_ifo == cfile.attrs["detector_1"]:
-                time_key = "time1"
-            else:
-                time_key = "time2"
+            time_key = "time1" if sngl_ifo == cfile.attrs["detector_1"] else "time2"
 
         if sngl_ifo not in ifolist:
             logger.warning("IFO %s is not in file %s", sngl_ifo, cfilename)

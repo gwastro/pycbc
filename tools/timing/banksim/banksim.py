@@ -111,10 +111,7 @@ def make_padded_frequency_series(vec, filter_tlen=None):
         vectilde = FrequencySeries(
             zeros(flen, dtype=complex_same_precision_as(vec)), delta_f=1.0, copy=False
         )
-        if len(vectilde) < len(vec):
-            cplen = len(vectilde)
-        else:
-            cplen = len(vec)
+        cplen = min(len(vectilde), len(vec))
         vectilde[0:cplen] = vec[0:cplen]
         delta_f = vec.delta_f
 
@@ -278,10 +275,7 @@ if options.signal_sample_rate:
 if options.psd and options.asd_file:
     parser.error("PSD and asd-file options are mututally exclusive")
 
-if options.use_cuda:
-    ctx = CUDAScheme()
-else:
-    ctx = DefaultScheme()
+ctx = CUDAScheme() if options.use_cuda else DefaultScheme()
 
 print("STARTING THE BANKSIM")
 
