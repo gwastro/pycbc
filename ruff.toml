@@ -108,6 +108,9 @@ ignore = [
     # idiomatic, and defining a class for each of ~850 messages would add a
     # lot of code for little benefit.
     "TRY003",
+    # Not planned to be enabled: contextlib.suppress() in place of
+    # try/except/pass. Both are clear, and suppress() needs an extra import.
+    "SIM105",
 ]
 
 [lint.pydocstyle]
