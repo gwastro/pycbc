@@ -68,13 +68,20 @@ def _waveform_kmax(h_np):
     return int(nz[-1]) if len(nz) else 0
 
 
+def _get_waveform(index):
+    """Generate template waveform and decimate to current level grid if needed."""
+    h = g_fine_bank[int(index)].numpy().astype(complex)
+    step = (len(h) - 1) // (g_fft_len // 2)
+    return h[::step] if step > 1 else h
+
+
 def load_reference_templates(indices):
     """Generate reference waveforms and PSD norms for the given bank indices."""
     global g_coarse_np, g_coarse_norm_sq, g_coarse_tau0  # noqa: PLW0603
     global g_coarse_kmax, g_coarse_fit, g_coarse_map  # noqa: PLW0603
 
     idx = np.asarray(indices, dtype=int)
-    g_coarse_np = [g_fine_bank[int(i)].numpy().astype(complex) for i in idx]
+    g_coarse_np = [_get_waveform(i) for i in idx]
     g_coarse_norm_sq = [
         float(np.dot(h.real**2 + h.imag**2, g_inv_psd)) for h in g_coarse_np
     ]
@@ -265,7 +272,7 @@ def process_template(task):
         fine_np, fine_norm_sq = g_coarse_np[ref_slot], g_coarse_norm_sq[ref_slot]
         fine_kmax = int(g_coarse_kmax[ref_slot])
     else:
-        fine_np = g_fine_bank[fine_idx].numpy().astype(complex)
+        fine_np = _get_waveform(fine_idx)
         fine_norm_sq = float(np.dot(fine_np.real**2 + fine_np.imag**2, g_inv_psd))
         fine_kmax = _waveform_kmax(fine_np)
 
@@ -341,6 +348,14 @@ def _seed_worker(indices):
     return seeds
 
 
+def _apply_fir_freq(h_freq, taps_real, shift, fft_len):
+    """Multiply frequency series by FIR filter response on fft_len grid."""
+    nt = len(taps_real)
+    pad = np.zeros(fft_len, dtype=np.float64)
+    pad[(np.arange(nt) - nt // 2 + int(shift)) % fft_len] = taps_real
+    return h_freq * rfft(pad, n=fft_len)
+
+
 def main():
     mp.set_start_method("fork", force=True)
     parser = argparse.ArgumentParser(description=__doc__)
@@ -376,6 +391,12 @@ def main():
     parser.add_argument(
         "--complex-taps", action="store_true", help="Use complex taps at level 1."
     )
+    parser.add_argument(
+        "--full-resolution",
+        action="store_true",
+        help="Generate waveforms at full segment-length resolution before "
+        "downsampling to each FIR level's fitting grid.",
+    )
     args = parser.parse_args()
 
     num_levels = len(args.max_taps)
@@ -385,9 +406,13 @@ def main():
         sys.exit(f"Error: {args.output_file} exists (use --force)")
 
     pycbc.init_logging(args.verbose)
+    full_fft_len = (
+        1 << max(1, round(args.sample_rate * args.segment_length) - 1).bit_length()
+    )
     fft_len_1 = 1 << max(1, 8 * int(args.max_taps[0]) - 1).bit_length()
-    df_1 = float(args.sample_rate) / fft_len_1
-    flen_1 = fft_len_1 // 2 + 1
+    init_fft_len = max(fft_len_1, full_fft_len) if args.full_resolution else fft_len_1
+    df_1 = float(args.sample_rate) / init_fft_len
+    flen_1 = init_fft_len // 2 + 1
     fine_bank = FilterBank(
         args.fine_bank,
         flen_1,
@@ -395,6 +420,7 @@ def main():
         dtype=complex,
         enable_compressed_waveforms=False,
     )
+    orig_table = fine_bank.table
 
     out_file = fine_bank.write_to_hdf(
         args.output_file, force=True, write_compressed_waveforms=True
@@ -406,6 +432,7 @@ def main():
     fir_group.attrs["min_match"] = float(args.min_match[0])
 
     n_procs = args.n_processes
+    level_links = []
 
     for level in range(1, num_levels + 1):
         is_lowest = level == 1
@@ -420,10 +447,12 @@ def main():
         lvl_complex = bool(args.complex_taps) if is_lowest else False
         min_f_low = float(np.min(fine_bank.table["f_lower"]))
 
-        fine_bank.filter_length = fit_flen
-        fine_bank.delta_f = lvl_df
-        fine_bank.N = fft_len
-        fine_bank.delta_t = 1.0 / (fft_len * lvl_df)
+        bank_fft_len = max(fft_len, full_fft_len) if args.full_resolution else fft_len
+        bank_df = float(args.sample_rate) / bank_fft_len
+        fine_bank.filter_length = bank_fft_len // 2 + 1
+        fine_bank.delta_f = bank_df
+        fine_bank.N = bank_fft_len
+        fine_bank.delta_t = 1.0 / (bank_fft_len * bank_df)
         fine_bank.min_f_lower = min_f_low
 
         cfg = {
@@ -537,9 +566,12 @@ def main():
             "shuffle": not lvl_complex,
         }
         taps_dtype = np.complex64 if lvl_complex else np.float32
+        lvl_map = {}
         for new_idx, old_idx in enumerate(used_pos):
             child_ids = sorted(groups[int(old_idx)])
             recs = [results[i] for i in child_ids]
+            for cid, r in zip(child_ids, recs, strict=False):
+                lvl_map[int(cid)] = (new_idx, r["taps"], int(r["shift"]))
             grp = lvl_group.create_group(str(new_idx))
             counts = np.array([len(r["taps"]) for r in recs], dtype=np.int32)
             max_k = int(counts.max())
@@ -563,11 +595,13 @@ def main():
                 data=np.array([r["shift"] for r in recs], np.int32),
                 **meta_kw,
             )
+        level_links.append(lvl_map)
 
     # Compress top-level reference waveforms into level_{num_levels}
     top_lvl_group = fir_group[f"level_{num_levels}"]
     comp_df = 1.0 / float(args.segment_length)
     comp_flen = round((args.sample_rate / 2.0) / comp_df) + 1
+    comp_fft_len = (comp_flen - 1) * 2
     comp_tol = min(1e-5, (1.0 - float(args.min_match[-1])) * 0.1)
     logger.info(
         "Compressing %d top-level reference waveforms (df=%s, tol=%.1e)...",
@@ -577,8 +611,9 @@ def main():
     )
     fine_bank.filter_length = comp_flen
     fine_bank.delta_f = comp_df
-    fine_bank.N = (comp_flen - 1) * 2
-    fine_bank.delta_t = 1.0 / (fine_bank.N * comp_df)
+    fine_bank.N = comp_fft_len
+    fine_bank.delta_t = 1.0 / (comp_fft_len * comp_df)
+    top_decomp = {}
     for i in range(len(fine_bank)):
         wave = fine_bank[i]
         fmin = float(fine_bank.table[i].f_lower)
@@ -592,6 +627,64 @@ def main():
             psd=None,
         )
         hc.write_to_hdf(top_lvl_group, str(i))
+        top_decomp[i] = (
+            hc.decompress(
+                out=pycbc.types.FrequencySeries(
+                    pycbc.types.zeros(comp_flen, dtype=np.complex64),
+                    delta_f=comp_df,
+                    copy=False,
+                ),
+                f_lower=fmin,
+            )
+            .numpy()
+            .astype(np.complex128)
+        )
+
+    # End-to-end full-resolution spot check on a random sample of fine templates
+    fine_bank.table = orig_table
+    min_f_low = float(np.min(orig_table["f_lower"]))
+    fine_bank.min_f_lower = min_f_low
+    full_psd = pycbc.psd.from_cli(
+        args, length=comp_flen, delta_f=comp_df, low_frequency_cutoff=min_f_low
+    )
+    init_level_state(fine_bank, full_psd, min_f_low, cfg)
+    rng = np.random.default_rng(0)
+    sample_idxs = rng.choice(
+        len(orig_table), size=min(32, len(orig_table)), replace=False
+    )
+    spot_matches = []
+    for idx in sample_idxs:
+        chain, cur = [], int(idx)
+        for lvl_map in level_links:
+            cur, t, s = lvl_map[cur]
+            chain.append((t, s))
+        h_rec = top_decomp[cur]
+        for t, s in reversed(chain[1:]):
+            h_rec = _apply_fir_freq(h_rec, t.real, s, comp_fft_len)
+        t1, s1 = chain[0]
+        h_re = _apply_fir_freq(h_rec, t1.real, s1, comp_fft_len)
+        h_true = fine_bank[int(idx)].numpy().astype(np.complex128)
+        n_true = np.sqrt(np.dot(h_true.real**2 + h_true.imag**2, g_inv_psd))
+        m_re = np.dot((h_re.conj() * h_true).real, g_inv_psd) / (
+            np.sqrt(np.dot(h_re.real**2 + h_re.imag**2, g_inv_psd)) * n_true
+        )
+        if np.iscomplexobj(t1):
+            h_im = 1j * _apply_fir_freq(h_rec, t1.imag, s1, comp_fft_len)
+            m_im = np.dot((h_im.conj() * h_true).real, g_inv_psd) / (
+                np.sqrt(np.dot(h_im.real**2 + h_im.imag**2, g_inv_psd)) * n_true
+            )
+            spot_matches.append(float(min(m_re, m_im)))
+        else:
+            spot_matches.append(float(abs(m_re)))
+    logger.info(
+        "Full-resolution spot check (%d templates, df=%s): "
+        "min=%.6f, median=%.6f, max=%.6f",
+        len(spot_matches),
+        comp_df,
+        min(spot_matches),
+        float(np.median(spot_matches)),
+        max(spot_matches),
+    )
 
     out_file.close()
     logger.info("Done. Saved to %s", args.output_file)
