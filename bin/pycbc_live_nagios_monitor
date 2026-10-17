@@ -63,5 +63,6 @@ while 1:
                 "txt_status": "PyCBC Live appears to be down!",
             }
         ]
-    open(args.output_file, "w").write(json.dumps(status))
+    with open(args.output_file, "w") as fp:
+        fp.write(json.dumps(status))
     time.sleep(args.check_interval)

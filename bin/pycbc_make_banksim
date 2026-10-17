@@ -260,83 +260,85 @@ num_banks = len(glob.glob("bank/bank*"))
 num_injs = len(glob.glob("injection/injection*"))
 
 logger.info("Creating DAG")
-f = open("banksim.dag", "w")
+with open("banksim.dag", "w") as f:
+    do_count = 0
+    skip_count = 0
 
-do_count = 0
-skip_count = 0
+    dag = CondorDAG(logfile)
+    dag.set_dag_file("banksim")
 
-dag = CondorDAG(logfile)
-dag.set_dag_file("banksim")
+    bsjob = BaseJob(
+        "log",
+        "scripts/pycbc_banksim",
+        confs,
+        "banksim",
+        gpu=gpu,
+        accounting_group=accounting_group,
+    )
+    cjob = BaseJob(
+        "log",
+        "scripts/pycbc_banksim_match_combine",
+        None,
+        None,
+        accounting_group=accounting_group,
+    )
+    rjob = BaseJob(
+        "log",
+        "scripts/pycbc_banksim_collect_results",
+        None,
+        None,
+        accounting_group=accounting_group,
+    )
+    pjob = BaseJob(
+        "log",
+        "scripts/pycbc_banksim_plots",
+        None,
+        None,
+        accounting_group=accounting_group,
+    )
+    rnode = CondorDAGNode(rjob)
+    pnode = CondorDAGNode(pjob)
 
-bsjob = BaseJob(
-    "log",
-    "scripts/pycbc_banksim",
-    confs,
-    "banksim",
-    gpu=gpu,
-    accounting_group=accounting_group,
-)
-cjob = BaseJob(
-    "log",
-    "scripts/pycbc_banksim_match_combine",
-    None,
-    None,
-    accounting_group=accounting_group,
-)
-rjob = BaseJob(
-    "log",
-    "scripts/pycbc_banksim_collect_results",
-    None,
-    None,
-    accounting_group=accounting_group,
-)
-pjob = BaseJob(
-    "log", "scripts/pycbc_banksim_plots", None, None, accounting_group=accounting_group
-)
-rnode = CondorDAGNode(rjob)
-pnode = CondorDAGNode(pjob)
+    for inj_num in range(num_injs):
+        num = str(inj_num)
+        combine_has_jobs = False
+        cnode = CombineNode(cjob, inj_num)
+        for bank_num in range(num_banks):
+            if mchirp_window is not None:
+                bank_part = "bank/bank" + str(bank_num) + ".xml.gz"
+                sim_part = "injection/injection" + str(inj_num) + ".xml.gz"
+                if check_outside_mchirp(bank_part, sim_part, mchirp_window):
+                    skip_count += 1
+                    continue
+                else:
+                    do_count += 1
+            part_num = str(bank_num)
+            mfn = "match-part/match" + num + "part" + part_num + ".dat"
+            sn = "injection/injection" + num + ".xml.gz"
+            bn = "bank/bank" + part_num + ".xml.gz"
+            bsnode = BanksimNode(
+                bsjob,
+                sn,
+                bn,
+                mfn,
+                gpu=gpu,
+                gpu_postscript="scripts/diff_match.sh",
+                inj_per_job=injections_per_job,
+            )
+            cnode.add_parent(bsnode)
+            dag.add_node(bsnode)
+            combine_has_jobs = True
+        if combine_has_jobs:
+            rnode.add_parent(cnode)
+            dag.add_node(cnode)
+    dag.add_node(rnode)
+    pnode.add_parent(rnode)
+    dag.add_node(pnode)
 
-for inj_num in range(num_injs):
-    num = str(inj_num)
-    combine_has_jobs = False
-    cnode = CombineNode(cjob, inj_num)
-    for bank_num in range(num_banks):
-        if mchirp_window is not None:
-            bank_part = "bank/bank" + str(bank_num) + ".xml.gz"
-            sim_part = "injection/injection" + str(inj_num) + ".xml.gz"
-            if check_outside_mchirp(bank_part, sim_part, mchirp_window):
-                skip_count += 1
-                continue
-            else:
-                do_count += 1
-        part_num = str(bank_num)
-        mfn = "match-part/match" + num + "part" + part_num + ".dat"
-        sn = "injection/injection" + num + ".xml.gz"
-        bn = "bank/bank" + part_num + ".xml.gz"
-        bsnode = BanksimNode(
-            bsjob,
-            sn,
-            bn,
-            mfn,
-            gpu=gpu,
-            gpu_postscript="scripts/diff_match.sh",
-            inj_per_job=injections_per_job,
-        )
-        cnode.add_parent(bsnode)
-        dag.add_node(bsnode)
-        combine_has_jobs = True
-    if combine_has_jobs:
-        rnode.add_parent(cnode)
-        dag.add_node(cnode)
-dag.add_node(rnode)
-pnode.add_parent(rnode)
-dag.add_node(pnode)
+    logger.info("DO : %d SKIP %d", do_count, skip_count)
 
-logger.info("DO : %d SKIP %d", do_count, skip_count)
-f.close()
-
-f = open("scripts/pycbc_banksim_match_combine", "w")
-f.write("""#!/usr/bin/env python
+with open("scripts/pycbc_banksim_match_combine", "w") as f:
+    f.write("""#!/usr/bin/env python
 from os.path import isfile
 from optparse import OptionParser
 from numpy import array
@@ -365,8 +367,8 @@ savetxt(options.output_file, maxmatch,fmt=('%5.5f', '%s', '%i', '%s', '%i', '%5.
 """)
 os.chmod("scripts/pycbc_banksim_match_combine", 0o0777)
 
-f = open("scripts/pycbc_banksim_collect_results", "w")
-f.write("""#!/usr/bin/env python
+with open("scripts/pycbc_banksim_collect_results", "w") as f:
+    f.write("""#!/usr/bin/env python
 from os.path import isfile
 import numpy as np
 from igwn_ligolw import utils
@@ -440,13 +442,13 @@ for row in res:
 os.chmod("scripts/pycbc_banksim_collect_results", 0o0777)
 
 if gpu:
-    f = open("cconfig", "w")
-    f.write("""
+    with open("cconfig", "w") as f:
+        f.write("""
     DAGMAN_PROHIBIT_MULTI_JOBS = False
     """)
 
-    f = open("scripts/diff_match.sh", "w")
-    f.write("""#!/bin/bash
+    with open("scripts/diff_match.sh", "w") as f:
+        f.write("""#!/bin/bash
 
     len=`cat $1 | wc -l`
     len2=`cat $2 | wc -l`
@@ -498,19 +500,19 @@ if gpu:
     os.chmod("scripts/diff_match.sh", 0o0777)
 
 logger.info("Creating submit script")
-f = open("submit.sh", "w")
-if gpu:
-    f.write("""#!/bin/bash
+with open("submit.sh", "w") as f:
+    if gpu:
+        f.write("""#!/bin/bash
     condor_submit_dag -config cconfig banksim.dag
     """)
-else:
-    f.write("""#!/bin/bash
+    else:
+        f.write("""#!/bin/bash
     condor_submit_dag banksim.dag
     """)
 os.chmod("submit.sh", 0o0777)
 
-f = open("partial_results.sh", "w")
-f.write("""#!/bin/bash
+with open("partial_results.sh", "w") as f:
+    f.write("""#!/bin/bash
 scripts/pycbc_banksim_collect_results
 """)
 os.chmod("partial_results.sh", 0o0777)
@@ -519,8 +521,8 @@ dag.write_sub_files()
 dag.write_script()
 dag.write_dag()
 
-f = open("scripts/pycbc_banksim_plots", "w")
-f.write("""#!/usr/bin/env python
+with open("scripts/pycbc_banksim_plots", "w") as f:
+    f.write("""#!/usr/bin/env python
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt

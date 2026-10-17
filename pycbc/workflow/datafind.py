@@ -1040,21 +1040,22 @@ def run_datafind_instance(
 
     df_cache.ifo = ifo
     # Dump output to file
-    fp = open(cache_file.storage_path, "w")
-    # FIXME: CANNOT use df_cache.tofile because it will print 815901601.00000
-    #        as a gps time which is incompatible with the lal cache format
-    #        (and the C codes) which demand an integer.
-    # df_cache.tofile(fp)
-    for entry in df_cache:
-        start = str(int(entry.segment[0]))
-        duration = str(int(abs(entry.segment)))
-        print(
-            f"{entry.observatory} {entry.description} {start} {duration} {entry.url}",
-            file=fp,
-        )
-        entry.segment = segments.segment(int(entry.segment[0]), int(entry.segment[1]))
-
-    fp.close()
+    with open(cache_file.storage_path, "w") as fp:
+        # FIXME: CANNOT use df_cache.tofile because it will print 815901601.00000
+        #        as a gps time which is incompatible with the lal cache format
+        #        (and the C codes) which demand an integer.
+        # df_cache.tofile(fp)
+        for entry in df_cache:
+            start = str(int(entry.segment[0]))
+            duration = str(int(abs(entry.segment)))
+            print(
+                f"{entry.observatory} {entry.description} {start} {duration} "
+                f"{entry.url}",
+                file=fp,
+            )
+            entry.segment = segments.segment(
+                int(entry.segment[0]), int(entry.segment[1])
+            )
     return df_cache, cache_file
 
 
@@ -1098,9 +1099,8 @@ def log_datafind_command(
         f"{observatory}-{frame_type}-{int(start_time)}-{int(end_time - start_time)}.sh"
     )
     file_path = os.path.join(output_dir, file_name)
-    fp = open(file_path, "w")
-    fp.write(" ".join(gw_command))
-    fp.close()
+    with open(file_path, "w") as fp:
+        fp.write(" ".join(gw_command))
 
 
 def datafind_keep_unique_backups(backup_outs, orig_outs):

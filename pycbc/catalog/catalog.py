@@ -43,7 +43,8 @@ base_lvc_url = "https://www.gwosc.org/eventapi/jsonfull/{}/"
 
 def lvk_catalogs():
     _catalog_source = "https://gwosc.org/eventapi/json/"
-    return json.load(open(get_file(_catalog_source)))
+    with open(get_file(_catalog_source)) as fp:
+        return json.load(fp)
 
 
 def populate_catalogs():
@@ -82,7 +83,8 @@ def get_source(source):
         catalog_type = _catalogs[source]
         if catalog_type == "LVK":
             fname = get_file(base_lvc_url.format(source), cache=True)
-            data = json.load(open(fname))
+            with open(fname) as fp:
+                data = json.load(fp)
     else:
         raise ValueError(f"Unkown catalog source {source}")
     return data["events"]

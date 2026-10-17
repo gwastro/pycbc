@@ -25,12 +25,9 @@ tmplt = """.. _inheritance-io-{name}:
 |
 
 """
-fp = open(fname, "w")
-
-for ftname, cls in sorted(filetypes.items()):
-    # get the parents
-    topclasses = get_topclasses(cls)
-    out = tmplt.format(name=ftname, clsname=cls.__name__, module=cls.__module__)
-    print(out, file=fp)
-
-fp.close()
+with open(fname, "w") as fp:
+    for ftname, cls in sorted(filetypes.items()):
+        # get the parents
+        topclasses = get_topclasses(cls)
+        out = tmplt.format(name=ftname, clsname=cls.__name__, module=cls.__module__)
+        print(out, file=fp)

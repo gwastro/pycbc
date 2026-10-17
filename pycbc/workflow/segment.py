@@ -389,14 +389,14 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
             )
 
             offsource_segfile = os.path.join(out_dir, "offSourceSeg.txt")
-            segments_utils.tosegwizard(
-                open(offsource_segfile, "w"), next(iter(offsource[best_comb].values()))
-            )
+            with open(offsource_segfile, "w") as fp:
+                segments_utils.tosegwizard(
+                    fp, next(iter(offsource[best_comb].values()))
+                )
 
             onsource_segfile = os.path.join(out_dir, "onSourceSeg.txt")
-            segments_utils.tosegwizard(
-                open(onsource_segfile, "w"), next(iter(onsource[best_comb].values()))
-            )
+            with open(onsource_segfile, "w") as fp:
+                segments_utils.tosegwizard(fp, next(iter(onsource[best_comb].values())))
 
             bufferleft = int(cp.get("workflow-exttrig_segments", "num-buffer-before"))
             bufferright = int(cp.get("workflow-exttrig_segments", "num-buffer-after"))
@@ -406,9 +406,8 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                 triggertime + onafter + bufferright * onlen,
             )
             buffer_segfile = os.path.join(out_dir, "bufferSeg.txt")
-            segments_utils.tosegwizard(
-                open(buffer_segfile, "w"), segments.segmentlist([buffer_segment])
-            )
+            with open(buffer_segfile, "w") as fp:
+                segments_utils.tosegwizard(fp, segments.segmentlist([buffer_segment]))
 
             return onsource[best_comb], offsource[best_comb], buffer_segment
 

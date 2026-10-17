@@ -134,8 +134,9 @@ class TestInjection(unittest.TestCase):
             row.simulation_id = i
             sim_table.append(row)
 
-        # write document to temp file
-        inj_file = tempfile.NamedTemporaryFile(suffix=".xml")
+        # write document to temp file, which is returned open (it is
+        # deleted when closed)
+        inj_file = tempfile.NamedTemporaryFile(suffix=".xml")  # noqa: SIM115
         ligolw_utils.write_fileobj(xmldoc, inj_file)
         return inj_file
 
@@ -236,7 +237,8 @@ class TestInjection(unittest.TestCase):
         )
 
         def write_hdf(**taper_args):
-            inj_file = tempfile.NamedTemporaryFile(suffix=".hdf")
+            # returned open, as it is deleted when closed
+            inj_file = tempfile.NamedTemporaryFile(suffix=".hdf")  # noqa: SIM115
             InjectionSet.write(
                 inj_file.name,
                 samples,

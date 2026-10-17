@@ -178,8 +178,8 @@ dag.add_node(rnode)
 pnode.add_parent(rnode)
 dag.add_node(pnode)
 
-f = open("scripts/pycbc_faithsim_collect_results", "w")
-f.write("""#!/usr/bin/env python
+with open("scripts/pycbc_faithsim_collect_results", "w") as f:
+    f.write("""#!/usr/bin/env python
 import numpy as np
 from igwn_ligolw import utils, lsctables
 import glob
@@ -235,8 +235,8 @@ if __name__ == "__main__":
 os.chmod("scripts/pycbc_faithsim_collect_results", 0o0777)
 
 logger.info("Creating submit script")
-f = open("submit.sh", "w")
-f.write("""#!/bin/bash
+with open("submit.sh", "w") as f:
+    f.write("""#!/bin/bash
 condor_submit_dag faithsim.dag
 """)
 os.chmod("submit.sh", 0o0777)
@@ -245,8 +245,8 @@ dag.write_sub_files()
 dag.write_script()
 dag.write_concrete_dag()
 
-f = open("scripts/pycbc_faithsim_plots", "w")
-f.write("""#!/usr/bin/env python
+with open("scripts/pycbc_faithsim_plots", "w") as f:
+    f.write("""#!/usr/bin/env python
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.cm

@@ -192,9 +192,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         # Dump parsed .ini file if needed
         if parsed_file_path:
-            fp = open(parsed_file_path, "w")
-            self.write(fp)
-            fp.close()
+            with open(parsed_file_path, "w") as fp:
+                self.write(fp)
 
     @classmethod
     def from_cli(cls, opts):

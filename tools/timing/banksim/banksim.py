@@ -287,121 +287,123 @@ except ValueError:
     template_table = lsctables.SimInspiralTable.get_table(indoc)
 
 # open the output file where the max overlaps over the bank are stored
-fout = open(options.out_file, "w")
-fout2 = open(options.out_file + ".found", "w")
+with (
+    open(options.out_file, "w") as fout,
+    open(options.out_file + ".found", "w") as fout2,
+):
+    print("Writing matches to " + options.out_file)
+    print("Writing recovered template in " + options.out_file + ".found")
 
-print("Writing matches to " + options.out_file)
-print("Writing recovered template in " + options.out_file + ".found")
+    # Load in the simulation list
+    indoc = ligolw_utils.load_filename(options.sim_file, False)
+    try:
+        signal_table = lsctables.SimInspiralTable.get_table(indoc)
+    except ValueError:
+        signal_table = lsctables.SnglInspiralTable.get_table(indoc)
 
-# Load in the simulation list
-indoc = ligolw_utils.load_filename(options.sim_file, False)
-try:
-    signal_table = lsctables.SimInspiralTable.get_table(indoc)
-except ValueError:
-    signal_table = lsctables.SnglInspiralTable.get_table(indoc)
+    def outside_mchirp_window(template, signal, w):
+        template_mchirp, et = mass1_mass2_to_mchirp_eta(template.mass1, template.mass2)
+        signal_mchirp, et = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
+        if abs(signal_mchirp - template_mchirp) > (w * signal_mchirp):
+            return True
+        False
 
+    filter_tlen = int(options.filter_signal_length * options.filter_sample_rate)
+    filter_flen = filter_tlen / 2 + 1
+    filter_delta_f = 1.0 / float(options.filter_signal_length)
 
-def outside_mchirp_window(template, signal, w):
-    template_mchirp, et = mass1_mass2_to_mchirp_eta(template.mass1, template.mass2)
-    signal_mchirp, et = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
-    if abs(signal_mchirp - template_mchirp) > (w * signal_mchirp):
-        return True
-    False
+    print("Number of Signal Waveforms: ", len(signal_table))
+    print("Number of Templates       : ", len(template_table))
 
-
-filter_tlen = int(options.filter_signal_length * options.filter_sample_rate)
-filter_flen = filter_tlen / 2 + 1
-filter_delta_f = 1.0 / float(options.filter_signal_length)
-
-print("Number of Signal Waveforms: ", len(signal_table))
-print("Number of Templates       : ", len(template_table))
-
-
-print("Reading and Interpolating PSD")
-if options.asd_file:
-    psd = pycbc.psd.read.from_txt(
-        options.asd_file,
-        filter_flen,
-        filter_delta_f,
-        options.filter_low_frequency_cutoff,
-    )
-elif options.psd:
-    psd = pycbc.psd.analytic.from_string(
-        options.psd, filter_flen, filter_delta_f, options.filter_low_frequency_cutoff
-    )
-
-psd *= DYN_RANGE_FAC**2
-psd = FrequencySeries(psd, delta_f=psd.delta_f, dtype=float32)
-
-with ctx:
-    print("Pregenerating Signals")
-    signals = []
-    index = 0
-    for signal_params in signal_table:
-        index += 1
-        update_progress(index / len(signal_table))
-        stilde = get_waveform(
-            options.signal_approximant,
-            options.signal_phase_order,
-            options.signal_amplitude_order,
-            signal_params,
-            options.signal_start_frequency,
-            options.filter_sample_rate,
-            filter_tlen,
+    print("Reading and Interpolating PSD")
+    if options.asd_file:
+        psd = pycbc.psd.read.from_txt(
+            options.asd_file,
+            filter_flen,
+            filter_delta_f,
+            options.filter_low_frequency_cutoff,
         )
-        s_norm = sigmasq(
-            stilde, psd=psd, low_frequency_cutoff=options.filter_low_frequency_cutoff
+    elif options.psd:
+        psd = pycbc.psd.analytic.from_string(
+            options.psd,
+            filter_flen,
+            filter_delta_f,
+            options.filter_low_frequency_cutoff,
         )
-        stilde /= psd
-        signals.append((stilde, s_norm, [], signal_params))
 
-    print("Calculating Overlaps")
-    index = 0
-    # Calculate the overlaps
-    for template_params in template_table:
-        index += 1
-        update_progress(float(index) / len(template_table))
-        h_norm = htilde = None
-        for stilde, s_norm, matches, signal_params in signals:
-            # Check if we need to look at this template
-            if options.mchirp_window and outside_mchirp_window(
-                template_params, signal_params, options.mchirp_window
-            ):
-                matches.append(-1)
-                continue
+    psd *= DYN_RANGE_FAC**2
+    psd = FrequencySeries(psd, delta_f=psd.delta_f, dtype=float32)
 
-            # Generate htilde if we haven't already done so
-            if htilde is None:
-                htilde = get_waveform(
-                    options.template_approximant,
-                    options.template_phase_order,
-                    options.template_amplitude_order,
-                    template_params,
-                    options.template_start_frequency,
-                    options.filter_sample_rate,
-                    filter_tlen,
-                )
-                h_norm = sigmasq(
-                    htilde,
-                    psd=psd,
-                    low_frequency_cutoff=options.filter_low_frequency_cutoff,
-                )
-
-            o, i = match(
-                htilde,
+    with ctx:
+        print("Pregenerating Signals")
+        signals = []
+        index = 0
+        for signal_params in signal_table:
+            index += 1
+            update_progress(index / len(signal_table))
+            stilde = get_waveform(
+                options.signal_approximant,
+                options.signal_phase_order,
+                options.signal_amplitude_order,
+                signal_params,
+                options.signal_start_frequency,
+                options.filter_sample_rate,
+                filter_tlen,
+            )
+            s_norm = sigmasq(
                 stilde,
-                h_norm=h_norm,
-                s_norm=s_norm,
+                psd=psd,
                 low_frequency_cutoff=options.filter_low_frequency_cutoff,
             )
-            matches.append(o)
+            stilde /= psd
+            signals.append((stilde, s_norm, [], signal_params))
 
+        print("Calculating Overlaps")
+        index = 0
+        # Calculate the overlaps
+        for template_params in template_table:
+            index += 1
+            update_progress(float(index) / len(template_table))
+            h_norm = htilde = None
+            for stilde, s_norm, matches, signal_params in signals:
+                # Check if we need to look at this template
+                if options.mchirp_window and outside_mchirp_window(
+                    template_params, signal_params, options.mchirp_window
+                ):
+                    matches.append(-1)
+                    continue
 
-# Find the maximum overlap in the bank and output to a file
-for stilde, s_norm, matches, sim_template in signals:
-    match_str = f"{max(matches):5.5f} \n"
-    match_str2 = (
-        "  " + options.bank_file + " " + str(matches.index(max(matches))) + "\n"
-    )
-    fout.write(match_str)
-    fout2.write(match_str2)
+                # Generate htilde if we haven't already done so
+                if htilde is None:
+                    htilde = get_waveform(
+                        options.template_approximant,
+                        options.template_phase_order,
+                        options.template_amplitude_order,
+                        template_params,
+                        options.template_start_frequency,
+                        options.filter_sample_rate,
+                        filter_tlen,
+                    )
+                    h_norm = sigmasq(
+                        htilde,
+                        psd=psd,
+                        low_frequency_cutoff=options.filter_low_frequency_cutoff,
+                    )
+
+                o, i = match(
+                    htilde,
+                    stilde,
+                    h_norm=h_norm,
+                    s_norm=s_norm,
+                    low_frequency_cutoff=options.filter_low_frequency_cutoff,
+                )
+                matches.append(o)
+
+    # Find the maximum overlap in the bank and output to a file
+    for stilde, s_norm, matches, sim_template in signals:
+        match_str = f"{max(matches):5.5f} \n"
+        match_str2 = (
+            "  " + options.bank_file + " " + str(matches.index(max(matches))) + "\n"
+        )
+        fout.write(match_str)
+        fout2.write(match_str2)
