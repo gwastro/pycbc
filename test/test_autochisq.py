@@ -89,12 +89,12 @@ class TestAutochisquare(unittest.TestCase):
 
         # generate sin-gaussian signal
         time = np.arange(0, len(hp)) * self.del_t
-        Nby2 = int(len(hp) / 2)
+        half_len = int(len(hp) / 2)
         sngt = np.zeros(len(hp))
         for i in range(len(hp)):
             sngt[i] = (
                 9.0e-21
-                * exp(-((time[i] - time[Nby2]) ** 2) / self.Q)
+                * exp(-((time[i] - time[half_len]) ** 2) / self.Q)
                 * sin(self.om * time[i])
             )
 

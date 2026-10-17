@@ -546,19 +546,19 @@ class TmpltbankTestClass(unittest.TestCase):
         err_msg += "failed to find a point within the desired limits."
         self.assertTrue(diff < 1e-4, msg=err_msg)
         # Test that returned masses and xis agree
-        massT = output[0] + output[1]
-        etaT = output[0] * output[1] / (massT * massT)
-        spinSetT = pycbc.pnutils.get_beta_sigma_from_aligned_spins(
-            etaT, output[2], output[3]
+        mass = output[0] + output[1]
+        eta = output[0] * output[1] / (mass * mass)
+        spin_set = pycbc.pnutils.get_beta_sigma_from_aligned_spins(
+            eta, output[2], output[3]
         )
-        xisT = pycbc.tmpltbank.get_cov_params(
+        xis = pycbc.tmpltbank.get_cov_params(
             output[0], output[1], output[2], output[3], self.metric_params, self.f_upper
         )
         err_msg = "Recovered xis do not agree with those expected."
-        self.assertTrue(abs(xisT[0] - output[6][0]) < 1e-5, msg=err_msg)
-        self.assertTrue(abs(xisT[1] - output[6][1]) < 1e-5, msg=err_msg)
-        self.assertTrue(abs(xisT[2] - output[6][2]) < 1e-5, msg=err_msg)
-        self.assertTrue(abs(xisT[3] - output[6][3]) < 1e-5, msg=err_msg)
+        self.assertTrue(abs(xis[0] - output[6][0]) < 1e-5, msg=err_msg)
+        self.assertTrue(abs(xis[1] - output[6][1]) < 1e-5, msg=err_msg)
+        self.assertTrue(abs(xis[2] - output[6][2]) < 1e-5, msg=err_msg)
+        self.assertTrue(abs(xis[3] - output[6][3]) < 1e-5, msg=err_msg)
 
         # Test again with nsbh flag on
         output = pycbc.tmpltbank.get_physical_covaried_masses(
@@ -577,14 +577,14 @@ class TmpltbankTestClass(unittest.TestCase):
         err_msg += "failed to find a point within the desired limits."
         self.assertTrue(diff < 1e-4, msg=err_msg)
         # Test that returned masses and xis agree
-        xisT = pycbc.tmpltbank.get_cov_params(
+        xis = pycbc.tmpltbank.get_cov_params(
             output[0], output[1], output[2], output[3], self.metric_params, self.f_upper
         )
         err_msg = "Recovered xis do not agree with those expected."
-        self.assertTrue(abs(xisT[0] - output[6][0]) < 1e-5, msg=err_msg)
-        self.assertTrue(abs(xisT[1] - output[6][1]) < 1e-5, msg=err_msg)
-        self.assertTrue(abs(xisT[2] - output[6][2]) < 1e-5, msg=err_msg)
-        self.assertTrue(abs(xisT[3] - output[6][3]) < 1e-5, msg=err_msg)
+        self.assertTrue(abs(xis[0] - output[6][0]) < 1e-5, msg=err_msg)
+        self.assertTrue(abs(xis[1] - output[6][1]) < 1e-5, msg=err_msg)
+        self.assertTrue(abs(xis[2] - output[6][2]) < 1e-5, msg=err_msg)
+        self.assertTrue(abs(xis[3] - output[6][3]) < 1e-5, msg=err_msg)
 
     def test_stack_xi_direction(self):
         # Just run the function, no checking output
