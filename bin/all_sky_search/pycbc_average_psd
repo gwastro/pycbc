@@ -81,7 +81,7 @@ for input_file in args.input_files:
     logger.info("Averaging %s over time", ifo)
     sum_inv_psds = None
     count = 0
-    for key in f[ifo + "/psds"].keys():
+    for key in f[ifo + "/psds"]:
         psd = f[ifo + "/psds/" + key][:]
         if sum_inv_psds is None:
             sum_inv_psds = 1.0 / psd

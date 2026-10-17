@@ -135,7 +135,7 @@ for segment_file in opts.segment_files:
             # get new color for this segment name
             color = next(color_cycle[ifo])
 
-            for key in seg_dict.keys():
+            for key in seg_dict:
                 seg_key = ifo + ":" + segment_name
                 if key == seg_key or key.startswith(ifo + ":" + segment_name + ":"):
                     segs = seg_dict[key]

@@ -76,7 +76,7 @@ def sort_injections(args, inj_group, missed):
     if "optimal_snr" in args.distance_type:
         optimal_snrs = [
             inj_group[dsn][:][missed]
-            for dsn in inj_group.keys()
+            for dsn in inj_group
             if dsn.startswith("optimal_snr_")
         ]
         assert optimal_snrs, "These injections do not have optimal SNRs"

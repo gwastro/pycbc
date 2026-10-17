@@ -13,7 +13,7 @@ with h5py.File("GW170817_test_output.hdf", "r") as f:
     coh_snr = f["network/coherent_snr"][:]
     rw_snr = f["network/reweighted_snr"][:]
     slide_id = f["network/slide_id"][:]
-    present_detectors = "".join(d for d in "HLV" if f"{d}1" in f.keys())
+    present_detectors = "".join(d for d in "HLV" if f"{d}1" in f)
 
 # basic sanity checks
 assert (end_time > 0).all()

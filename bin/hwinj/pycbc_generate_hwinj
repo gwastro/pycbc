@@ -54,7 +54,7 @@ def _empty_row(obj):
         cols = lsctables.SnglInspiralTable.validcolumns
 
     # populate columns with default values
-    for entry in cols.keys():
+    for entry in cols:
         if cols[entry] in ["real_4", "real_8"]:
             setattr(row, entry, 0.0)
         elif cols[entry] == "int_4s":

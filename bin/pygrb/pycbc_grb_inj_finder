@@ -216,7 +216,7 @@ found = []
 out_trigs = {}
 # open first injection file
 firstfile = HFile(args.input_files[0], "r")
-for key in firstfile.keys():
+for key in firstfile:
     # associate ifo names and 'network' with [] so we can append later
     out_trigs[key] = defaultdict(list)
 

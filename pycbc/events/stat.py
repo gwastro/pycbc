@@ -485,9 +485,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         # If there are other phasetd_newsnr files, they aren't needed.
         # So tidy them out of the self.files dictionary
         rejected = [
-            key
-            for key in self.files.keys()
-            if "phasetd_newsnr" in key and not key == selected
+            key for key in self.files if "phasetd_newsnr" in key and not key == selected
         ]
         for k in rejected:
             del self.files[k]
@@ -906,7 +904,7 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         # Get the single-detector rates fit files
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
-        parsed_attrs = [f.split("-") for f in self.files.keys()]
+        parsed_attrs = [f.split("-") for f in self.files]
         self.bg_ifos = [
             at[0] for at in parsed_attrs if (len(at) == 2 and at[1] == "fit_coeffs")
         ]
@@ -969,7 +967,7 @@ class ExpFitStatistic(PhaseTDStatistic):
 
             for ifo in self.ifos:
                 key = f"{ifo}-dq_stat_info"
-                if key in self.files.keys():
+                if key in self.files:
                     self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
                     self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
                     self.check_low_latency(key)
@@ -1016,7 +1014,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             tids = []
             bin_nums = []
             bin_grp = dq_file[f"{ifo}/bins"]
-            for bin_name in bin_grp.keys():
+            for bin_name in bin_grp:
                 bin_tids = bin_grp[f"{bin_name}/tids"][:]
                 tids = list(tids) + list(bin_tids.astype(int))
                 bin_nums = list(bin_nums) + list([bin_name] * len(bin_tids))
@@ -1044,7 +1042,7 @@ class ExpFitStatistic(PhaseTDStatistic):
         with h5py.File(self.files[key], "r") as dq_file:
             bin_grp = dq_file[f"{ifo}/bins"]
             dq_dict = {}
-            for bin_name in bin_grp.keys():
+            for bin_name in bin_grp:
                 dq_dict[bin_name] = bin_grp[f"{bin_name}/dq_rates"][:]
 
         return dq_dict
@@ -1057,7 +1055,7 @@ class ExpFitStatistic(PhaseTDStatistic):
         with h5py.File(self.files[key], "r") as dq_file:
             ifo_grp = dq_file[ifo]
             dq_state_segs_dict = {}
-            for k in ifo_grp["dq_segments"].keys():
+            for k in ifo_grp["dq_segments"]:
                 seg_dict = {}
                 seg_dict["start"] = ifo_grp[f"dq_segments/{k}/segment_starts"][:]
                 seg_dict["end"] = ifo_grp[f"dq_segments/{k}/segment_ends"][:]
@@ -1110,7 +1108,7 @@ class ExpFitStatistic(PhaseTDStatistic):
         ifo = key.split("-")[0]
         with h5py.File(self.files[key], "r") as dq_file:
             ifo_grp = dq_file[ifo]
-            if "dq_segments" not in ifo_grp.keys():
+            if "dq_segments" not in ifo_grp:
                 # if segs are not in file, we must be in LL
                 if self.dq_state_segments is not None:
                     raise ValueError(
@@ -1293,7 +1291,7 @@ class ExpFitStatistic(PhaseTDStatistic):
         """
         # The stat file attributes are hard-coded as 'signal-kde_file'
         # and 'template-kde_file'
-        parsed_attrs = [f.split("-") for f in self.files.keys()]
+        parsed_attrs = [f.split("-") for f in self.files]
         self.kde_names = [
             at[0] for at in parsed_attrs if (len(at) == 2 and at[1] == "kde_file")
         ]

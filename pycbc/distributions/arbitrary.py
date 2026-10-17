@@ -282,10 +282,10 @@ class FromFile(Arbitrary):
             if not isinstance(params, list):
                 params = [params]
             for p in params:
-                if p not in get.keys():
+                if p not in get:
                     raise ValueError(f"Parameter {p} is not in {params_file}")
         else:
-            params = [str(k) for k in get.keys()]
+            params = [str(k) for k in get]
         params_values = {p: get[p][()] for p in params}
         try:
             bandwidth = f.attrs["bandwidth"]

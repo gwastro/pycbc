@@ -715,7 +715,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         """
         logger.info("Copying metadata")
         # copy attributes
-        for key in self.attrs.keys():
+        for key in self.attrs:
             other.attrs[key] = self.attrs[key]
 
     def copy_info(self, other, ignore=None):
@@ -1069,7 +1069,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         else:
             path = "/".join([group, self.data_group])
         data = {}
-        for det in self[path].keys():
+        for det in self[path]:
             group = self[fmt.format(path, det)]
             data[det] = FrequencySeries(
                 group[()], delta_f=group.attrs["delta_f"], epoch=group.attrs["epoch"]
@@ -1102,7 +1102,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         else:
             path = "/".join([group, self.data_group])
         psds = {}
-        for det in self[path].keys():
+        for det in self[path]:
             group = self[fmt.format(path, det)]
             psds[det] = FrequencySeries(group[()], delta_f=group.attrs["delta_f"])
         return psds

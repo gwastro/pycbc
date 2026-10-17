@@ -126,7 +126,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
     mch_astro_det = mch_astro * (1.0 + z_astro)
     idx_within = np.zeros(nsamples)
 
-    for key in injections.keys():
+    for key in injections:
         if key == "z_range":
             # This is repeated down again and is so
             continue

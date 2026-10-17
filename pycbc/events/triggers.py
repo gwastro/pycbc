@@ -82,7 +82,7 @@ def bank_bins_from_cli(opts):
     """
     bank = {}
     fp = h5py.File(opts.bank_file)
-    for key in fp.keys():
+    for key in fp:
         bank[key] = fp[key][:]
     bank["f_lower"] = float(opts.f_lower) if opts.f_lower else None
     if opts.bank_bins:
@@ -157,7 +157,7 @@ def get_param(par, args, m1, m2, s1z, s2z):
         parvals = conversions.tau0_from_mass1_mass2(m1, m2, args.f_lower)
     elif par == "tau3":
         parvals = conversions.tau3_from_mass1_mass2(m1, m2, args.f_lower)
-    elif par in pnutils.named_frequency_cutoffs.keys():
+    elif par in pnutils.named_frequency_cutoffs:
         parvals = pnutils.frequency_cutoff_from_name(par, m1, m2, s1z, s2z)
     else:
         # try asking for a LALSimulation frequency function
@@ -210,9 +210,9 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
             foundtrg = injfile[f"found_after_vetoes/{ifo}/trigger_id"]
             # multi-ifo pipeline assigns -1 for inj not found in specific ifo
             found_in_ifo = foundtrg[:] != -1
-    if bankfile is not None and param in bankfile.keys():
+    if bankfile is not None and param in bankfile:
         return bankfile[param][:][foundtmp], found_in_ifo
-    if trigfile is not None and param in trigfile[ifo].keys():
+    if trigfile is not None and param in trigfile[ifo]:
         return trigfile[ifo][param][:][foundtrg], found_in_ifo
     assert bankfile
     b = bankfile
@@ -246,7 +246,7 @@ def get_inj_param(injfile, param, ifo, args=None):
     det = pycbc.detector.Detector(ifo)
 
     inj = injfile["injections"]
-    if param in inj.keys():
+    if param in inj:
         return inj[param][:]
 
     if param == "end_time_" + ifo[0].lower():

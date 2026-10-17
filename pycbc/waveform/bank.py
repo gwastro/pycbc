@@ -367,7 +367,7 @@ class TemplateBank:
             except KeyError:
                 # Auto-detection: Ignore subgroups (like 'fir_data'), only read Datasets
                 fileparams = []
-                for k in root.keys():
+                for k in root:
                     if isinstance(root.get(k), h5py.Dataset):
                         fileparams.append(k)
                 logger.info(

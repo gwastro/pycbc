@@ -208,7 +208,7 @@ for cfilename in args.coinc_statmap_files:
             c_starts = cfile["segments/" + ctype + "/start"][:]
             c_ends = cfile["segments/" + ctype + "/end"][:]
         # Test if the ifo is actually in this statmap file
-        if "ifos" in cfile.attrs.keys():
+        if "ifos" in cfile.attrs:
             ifolist = cfile.attrs["ifos"].split(" ")
             time_key = sngl_ifo + "/time"
         else:

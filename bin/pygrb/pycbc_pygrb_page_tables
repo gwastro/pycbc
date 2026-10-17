@@ -144,7 +144,7 @@ def load_missed_found_injections(
         ]
     # If there are no found injections, simply move on
     # (there are no injections missed after the cut to return)
-    if "network/end_time_gc" not in inj_data.keys():
+    if "network/end_time_gc" not in inj_data:
         return found_data, missed_data, {}
     # Otherwise carry on getting the recovered parameters and statistic values
     # of the found injections

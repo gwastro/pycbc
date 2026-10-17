@@ -1009,7 +1009,7 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
         )
         return hp, hc
     wfs = get_fd_det_waveform(**nparams)
-    for ifo in wfs.keys():
+    for ifo in wfs:
         wfs[ifo].resize(fsize)
         # avoid wraparound
         wfs[ifo] = wfs[ifo].cyclic_time_shift(-rwrap)
@@ -1422,7 +1422,7 @@ def get_waveform_filter(out, template=None, **kwargs):
         wav_gen = td_wav[type(_scheme.mgr.state)]
         hp, _ = wav_gen[input_params["approximant"]](**input_params)
         # taper the time series hp if required
-        if "taper" in input_params.keys() and input_params["taper"] is not None:
+        if "taper" in input_params and input_params["taper"] is not None:
             tapermethod, taper_window = wfutils.get_taper_settings(input_params)
             hp = hp.taper_timeseries(
                 location=input_params["taper"],
@@ -1529,7 +1529,7 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         wav_gen = td_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params["approximant"]](**input_params)
         # taper the time series hp if required
-        if "taper" in input_params.keys() and input_params["taper"] is not None:
+        if "taper" in input_params and input_params["taper"] is not None:
             tapermethod, taper_window = wfutils.get_taper_settings(input_params)
             hp = hp.taper_timeseries(
                 location=input_params["taper"],

@@ -85,7 +85,7 @@ any_data = False
 fig = plt.figure()
 
 min_rank = numpy.inf
-for ifo in args.single_trigger_files.keys():
+for ifo in args.single_trigger_files:
     logger.info("Getting %s triggers", ifo)
     t = args.times[ifo]
 

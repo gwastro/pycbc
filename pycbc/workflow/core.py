@@ -1987,7 +1987,7 @@ class SegFile(File):
 
         """
         if ifo_list is None:
-            ifo_set = {i.split(":")[0] for i in segmentlistdict.keys()}
+            ifo_set = {i.split(":")[0] for i in segmentlistdict}
             ifo_list = list(ifo_set)
             ifo_list.sort()
         if valid_segment is None:
@@ -2388,7 +2388,7 @@ def get_full_analysis_chunk(science_segs):
         The segment spanning the first and last time point contained in science_segs.
 
     """
-    extents = [science_segs[ifo].extent() for ifo in science_segs.keys()]
+    extents = [science_segs[ifo].extent() for ifo in science_segs]
     min, max = extents[0]
     for lo, hi in extents:
         if min > lo:

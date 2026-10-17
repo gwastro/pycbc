@@ -428,7 +428,7 @@ found_after_vetoes, vetoed, found_idx, _ = ppu.apply_vetoes_to_found_injs(
 if len(list(found_after_vetoes["reweighted_snr"])) > 0:
     found_after_vetoes_stat = (
         found_inj["reweighted_snr"][found_idx]
-        if "found_after_vetoes/stat" not in found_after_vetoes.keys()
+        if "found_after_vetoes/stat" not in found_after_vetoes
         else found_after_vetoes["found_after_vetoes/stat"]
     )
 
@@ -436,7 +436,7 @@ if len(list(found_after_vetoes["reweighted_snr"])) > 0:
     # 1) Found louder than background
     louder_mask = found_after_vetoes_stat > max_bkgd_reweighted_snr
     found_louder = {}
-    for key in found_after_vetoes.keys():
+    for key in found_after_vetoes:
         found_louder[key] = found_after_vetoes[key][louder_mask]
     found_louder["reweighted_snr"] = found_after_vetoes_stat[louder_mask]
 
@@ -446,7 +446,7 @@ if len(list(found_after_vetoes["reweighted_snr"])) > 0:
         found_after_vetoes_stat != 0
     )
     found_quieter = {}
-    for key in found_after_vetoes.keys():
+    for key in found_after_vetoes:
         found_quieter[key] = found_after_vetoes[key][quieter_mask]
     found_quieter["reweighted_snr"] = found_after_vetoes_stat[quieter_mask]
 
