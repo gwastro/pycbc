@@ -2,6 +2,10 @@
 A set of helper functions for evaluating rates.
 """
 
+# Rate notation: R (Rf) for rates, Lf/Lb for the expected foreground and
+# background counts, C for normalisation constants.
+# ruff: noqa: N803, N806
+
 import numpy as np
 import scipy.stats as ss
 from numpy import log

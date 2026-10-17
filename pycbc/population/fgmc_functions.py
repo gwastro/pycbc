@@ -113,7 +113,7 @@ def log_rho_bg(trigs, counts, bins):
 
     assert np.all(trigs >= np.min(bins)), "can't have triggers below bin lower limit"
 
-    N = sum(counts)
+    n = sum(counts)
     log_rhos = []
     fracerr = []
 
@@ -121,14 +121,14 @@ def log_rho_bg(trigs, counts, bins):
     # fictitious count in a bin that extends from the limits of the slide triggers
     # out to the loudest trigger.
     if np.any(trigs >= np.max(bins)):
-        N = N + 1
+        n = n + 1
 
     for t in trigs:
         if t >= np.max(bins):
             # For a trigger louder than the max bin, put one fictitious count in
             # a bin that extends from the limits of the slide triggers out to the
             # loudest trigger.  Fractional error is 100%
-            log_rhos.append(-np.log(N) - np.log(np.max(trigs) - bins[-1]))
+            log_rhos.append(-np.log(n) - np.log(np.max(trigs) - bins[-1]))
             fracerr.append(1.0)
         else:
             i = bisect.bisect(bins, t) - 1
@@ -137,7 +137,7 @@ def log_rho_bg(trigs, counts, bins):
             if counts[i] == 0:
                 counts[i] = 1
             log_rhos.append(
-                np.log(counts[i]) - np.log(bins[i + 1] - bins[i]) - np.log(N)
+                np.log(counts[i]) - np.log(bins[i + 1] - bins[i]) - np.log(n)
             )
             fracerr.append(counts[i] ** -0.5)
     return np.array(log_rhos), np.array(fracerr)
@@ -174,8 +174,8 @@ def log_rho_fg(trigs, injstats, bins):
     assert np.max(trigs) < np.max(bins)  # check it worked
 
     counts, bins = np.histogram(injstats, bins)
-    N = sum(counts)
-    dens = counts / np.diff(bins) / float(N)
+    n = sum(counts)
+    dens = counts / np.diff(bins) / float(n)
     fracerr = counts**-0.5
 
     tinds = np.searchsorted(bins, trigs) - 1

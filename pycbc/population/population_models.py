@@ -158,7 +158,7 @@ def diff_lookback_time(z, **kwargs):
     from sympy import sqrt
 
     cosmology = get_cosmology(**kwargs)
-    H0 = (
+    H0 = (  # noqa: N806
         cosmology.H0.value * (3.0856776e19) ** (-1) / (1 / 24 / 3600 / 365 * 1e-9)
     )  # Gyr^-1
     dt_dz = 1 / H0 / (1 + z) / sqrt(cosmology.Ode0 + cosmology.Om0 * (1 + z) ** 3)
