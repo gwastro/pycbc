@@ -433,10 +433,7 @@ class _HDFInjectionSet(metaclass=ABCMeta):
             if injvals[k].dtype.kind == "S":
                 injvals[k] = injvals[k].astype("U")
         # if there were no variable args, then we only have a single injection
-        if len(parameters) == 0:
-            numinj = 1
-        else:
-            numinj = next(iter(injvals.values())).size
+        numinj = 1 if len(parameters) == 0 else next(iter(injvals.values())).size
         # add any static args in the file
         try:
             # ensure parameter names are string types
@@ -731,10 +728,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             h(t) corresponding to the injection.
 
         """
-        if f_lower is None:
-            f_l = inj.f_lower
-        else:
-            f_l = f_lower
+        f_l = inj.f_lower if f_lower is None else f_lower
 
         if inj["approximant"] in fd_det:
             strain = get_td_det_waveform_from_fd_det(

@@ -508,10 +508,7 @@ for ifo in workflow.ifos:
     insp_files_seg_dict[ifo + ":" + trig_generated_name] = trig_generated_segs[ifo]
     insp_files_seg_dict[ifo + ":" + data_analysed_name] = data_analysed_segs[ifo]
 
-    if datafind_files:
-        frame_files = datafind_files.find_output_with_ifo(ifo)
-    else:
-        frame_files = None
+    frame_files = datafind_files.find_output_with_ifo(ifo) if datafind_files else None
     psd_files += [
         wf.setup_psd_calculate(
             workflow,

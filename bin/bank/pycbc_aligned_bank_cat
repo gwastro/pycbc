@@ -91,10 +91,7 @@ options = parser.parse_args()
 pycbc.init_logging(options.verbose)
 
 
-if options.input_files:
-    input_files = options.input_files
-else:
-    input_files = glob.glob(options.input_glob)
+input_files = options.input_files or glob.glob(options.input_glob)
 
 mass1 = []
 mass2 = []

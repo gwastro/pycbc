@@ -245,10 +245,7 @@ for p in required_params:
     logger.info("Converting %s", p)
     bank[p] = bconv.get_bank_property(p, bank, np.arange(banklen))
 
-if args.mpl_style == "dark_background":
-    hist_color = "white"
-else:
-    hist_color = "black"
+hist_color = "white" if args.mpl_style == "dark_background" else "black"
 
 # All parameters should be in the bank now, check they are the right size:
 assert all(len(bank[p]) == banklen for p in bank)

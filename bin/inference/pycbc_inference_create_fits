@@ -104,10 +104,7 @@ basename = opts.output_file.replace(".fits", "")
 txtfile = f"{basename}.dat"
 numpy.savetxt(txtfile, out, header="ra dec distance time")
 
-if opts.maxpts is not None:
-    maxptsarg = f"--maxpts {opts.maxpts} "
-else:
-    maxptsarg = " "
+maxptsarg = f"--maxpts {opts.maxpts} " if opts.maxpts is not None else " "
 cmd = f"ligo-skymap-from-samples {maxptsarg}{txtfile} --fitsoutname {opts.output_file}"
 ret = subprocess.run(cmd.split(), check=False)
 os.remove(txtfile)

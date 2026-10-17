@@ -151,11 +151,7 @@ def posterior_step(logposts, dim):
     criteria = dim / 2.0
     dp = numpy.diff(logposts)
     indices = numpy.where(dp >= criteria)[0]
-    if indices.size > 0:
-        idx = indices[-1] + 1
-    else:
-        idx = 0
-    return idx
+    return indices[-1] + 1 if indices.size > 0 else 0
 
 
 def nacl(nsamples, acls, nacls=5):
@@ -407,10 +403,7 @@ class BaseBurnInTests(metaclass=ABCMeta):
         """
         niters = self._getniters(filename)
         is_burned_in = self._min_iterations < niters
-        if is_burned_in:
-            burn_in_iter = self._min_iterations
-        else:
-            burn_in_iter = NOT_BURNED_IN_ITER
+        burn_in_iter = self._min_iterations if is_burned_in else NOT_BURNED_IN_ITER
         self.test_is_burned_in["min_iterations"] = is_burned_in
         self.test_burn_in_iteration["min_iterations"] = burn_in_iter
 

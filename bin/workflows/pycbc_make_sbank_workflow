@@ -387,10 +387,7 @@ for cycle_idx in range(num_cycles):
     h5add_final_exe.update_output_directory(out_dir)
     h5add_final_exe.update_current_retention_level(crl)
 
-    if seed_file is None:
-        inputs = [readder_out]
-    else:
-        inputs = [seed_file, readder_out]
+    inputs = [readder_out] if seed_file is None else [seed_file, readder_out]
 
     h5add_node = h5add_final_exe.create_node(
         workflow.analysis_time, inputs, output=output_path

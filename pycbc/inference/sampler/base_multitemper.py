@@ -374,10 +374,7 @@ def compute_acl(filename, start_index=None, end_index=None, min_nsamples=10):
     def _getacl(si):
         # si: the samples loaded for a specific chain; may have nans in it
         si = si[~numpy.isnan(si)]
-        if len(si) < min_nsamples:
-            acl = numpy.inf
-        else:
-            acl = autocorrelation.calculate_acl(si)
+        acl = numpy.inf if len(si) < min_nsamples else autocorrelation.calculate_acl(si)
         if acl <= 0:
             acl = numpy.inf
         return acl

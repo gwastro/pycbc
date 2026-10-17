@@ -244,10 +244,7 @@ class HierarchicalModel(BaseModel):
         super().write_metadata(fp, group=group)
         # write information about each submodel into a different group for
         # each one
-        if group is None or group == "/":
-            prefix = ""
-        else:
-            prefix = group + "/"
+        prefix = "" if group is None or group == "/" else group + "/"
         for lbl, model in self.submodels.items():
             model.write_metadata(fp, group=prefix + lbl)
 
@@ -767,10 +764,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         self.primary_model._current_stats.loglr = self.primary_model.marginalize_loglr(
             sh_primary, hh_primary
         )
-        if isinstance(sh_primary, numpy.ndarray):
-            nums = len(sh_primary)
-        else:
-            nums = 1
+        nums = len(sh_primary) if isinstance(sh_primary, numpy.ndarray) else 1
 
         margin_params = {}
         if self.static_margin_params_in_other_models:

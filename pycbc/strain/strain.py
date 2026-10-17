@@ -1439,10 +1439,7 @@ class StrainSegments:
         self.delta_t = strain.delta_t
         self.sample_rate = strain.sample_rate
 
-        if segment_length:
-            seg_len = segment_length
-        else:
-            seg_len = strain.duration
+        seg_len = segment_length or strain.duration
 
         self.delta_f = 1.0 / seg_len
         self.time_len = int(seg_len * self.sample_rate)
@@ -1883,10 +1880,7 @@ def execute_cached_fft(
     """
     from pycbc.types import real_same_precision_as
 
-    if ifft:
-        npoints_time = (len(invec_data) - 1) * 2
-    else:
-        npoints_time = len(invec_data)
+    npoints_time = (len(invec_data) - 1) * 2 if ifft else len(invec_data)
 
     try:
         delta_t = invec_data.delta_t

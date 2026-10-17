@@ -556,10 +556,7 @@ bg_time_ct = {
 # Counter for number of removals
 h_iterations = 0
 
-if args.hierarchical_removal_against == "inclusive":
-    ifar_key = "ifar"
-else:
-    ifar_key = "ifar_exc"
+ifar_key = "ifar" if args.hierarchical_removal_against == "inclusive" else "ifar_exc"
 
 # Break out of loop if max number of removals is reached
 # or no more triggers above specified IFAR threshold

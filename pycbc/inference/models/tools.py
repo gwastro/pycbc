@@ -35,10 +35,7 @@ def str_to_bool(sval):
 
 def draw_sample(loglr, size=None):
     """Draw a random index from a 1-d vector with loglr weights"""
-    if size:
-        x = numpy.random.uniform(size=size)
-    else:
-        x = numpy.random.uniform()
+    x = numpy.random.uniform(size=size) if size else numpy.random.uniform()
     loglr = loglr - loglr.max()
     cdf = numpy.exp(loglr).cumsum()
     cdf /= cdf[-1]
@@ -1186,10 +1183,7 @@ def marginalize_likelihood(
         )
 
     if logw is None:
-        if isinstance(hh, float):
-            logw = 0
-        else:
-            logw = -numpy.log(len(sh))
+        logw = 0 if isinstance(hh, float) else -numpy.log(len(sh))
 
     if return_complex:
         pass

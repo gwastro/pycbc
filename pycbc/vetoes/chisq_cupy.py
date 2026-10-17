@@ -265,10 +265,7 @@ def shift_sum_points(num, N, arg_tuple):
 
     fn, nt = get_pchisq_fn(num, fuse_correlate=fuse)
     corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins = arg_tuple
-    if fuse:
-        args = [corr.htilde.data, corr.stilde.data]
-    else:
-        args = [corr.data]
+    args = [corr.htilde.data, corr.stilde.data] if fuse else [corr.data]
     args += [outp, N, *phase[0:num]]
     args += [kmin, kmax, bv, nbins]
     fn(
@@ -289,10 +286,7 @@ def shift_sum_points_pow2(num, arg_tuple):
     fn, nt = get_pchisq_fn_pow2(num, fuse_correlate=fuse)
 
     corr, outp, points, np, nb, N, kmin, kmax, bv, nbins = arg_tuple
-    if fuse:
-        args = [corr.htilde.data, corr.stilde.data]
-    else:
-        args = [corr.data]
+    args = [corr.htilde.data, corr.stilde.data] if fuse else [corr.data]
     args += [outp, N, *points[0:num], kmin, kmax, bv, nbins]
     fn((nb,), (nt,), tuple(args))
 

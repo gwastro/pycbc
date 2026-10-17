@@ -240,10 +240,7 @@ class FromFile(Arbitrary):
         self._filename = filename
         self.datagroup = datagroup
         # Get the parameter names to pass to get_kde_from_file
-        if len(params) == 0:
-            ps = None
-        else:
-            ps = list(params.keys())
+        ps = None if len(params) == 0 else list(params.keys())
         param_vals, bw = self.get_arrays_from_file(filename, params=ps)
         super().__init__(bounds=params, bandwidth=bw, **param_vals)
 
@@ -274,10 +271,7 @@ class FromFile(Arbitrary):
             f = HFile(params_file, "r")
         except:
             raise ValueError("File not found.")
-        if self.datagroup is not None:
-            get = f[self.datagroup]
-        else:
-            get = f
+        get = f[self.datagroup] if self.datagroup is not None else f
         if params is not None:
             if not isinstance(params, list):
                 params = [params]

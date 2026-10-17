@@ -101,10 +101,7 @@ for i, (input_file, input_fp, input_samples) in enumerate(
     low = percentiles.min()
 
     # get color
-    if opts.z_arg:
-        color = cmap(norm(zvals[i]))
-    else:
-        color = "black"
+    color = cmap(norm(zvals[i])) if opts.z_arg else "black"
 
     # plot a point for each injection
     ax.errorbar(

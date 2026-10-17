@@ -323,10 +323,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 def generate_triggered_segment(workflow, out_dir, sciencesegs):
     cp = workflow.cp
 
-    if cp.has_option("workflow", "allow-single-ifo-search"):
-        min_ifos = 1
-    else:
-        min_ifos = 2
+    min_ifos = 1 if cp.has_option("workflow", "allow-single-ifo-search") else 2
 
     triggertime = int(os.path.basename(cp.get("workflow", "trigger-time")))
     minbefore = int(os.path.basename(cp.get("workflow-exttrig_segments", "min-before")))

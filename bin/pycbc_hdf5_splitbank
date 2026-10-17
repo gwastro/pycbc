@@ -144,10 +144,7 @@ if num_per_file < 1:
 logger.info("Generating the output sub-banks")
 start_idx = 0
 for ii in range(num_files):
-    if ii == (num_files - 1):
-        end_idx = templates[:].size
-    else:
-        end_idx = int((ii + 1) * num_per_file)
+    end_idx = templates[:].size if ii == num_files - 1 else int((ii + 1) * num_per_file)
 
     # Assign a name to the h5py output file to store the ii'th smaller bank
     if args.output_filenames:

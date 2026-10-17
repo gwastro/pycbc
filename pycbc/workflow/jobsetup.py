@@ -1245,10 +1245,7 @@ class PycbcSplitInspinjExecutable(Executable):
 
         node.add_input_opt("--input-file", parent)
 
-        if parent.name.endswith("gz"):
-            ext = ".xml.gz"
-        else:
-            ext = ".xml"
+        ext = ".xml.gz" if parent.name.endswith("gz") else ".xml"
 
         out_files = FileList([])
         for i in range(self.num_splits):

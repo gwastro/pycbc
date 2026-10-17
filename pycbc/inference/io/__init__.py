@@ -888,8 +888,5 @@ def injections_from_cli(opts):
             # add the rest as new fields
             ps = list(mapvals.keys())
             these_injs = these_injs.add_fields([mapvals[p] for p in ps], names=ps)
-        if injections is None:
-            injections = these_injs
-        else:
-            injections = injections.append(these_injs)
+        injections = these_injs if injections is None else injections.append(these_injs)
     return injections

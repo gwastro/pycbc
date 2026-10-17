@@ -140,11 +140,8 @@ def background_bin_from_string(background_bins, data):
 
             sub_locs = member_func(vals)
             sub_locs = numpy.where(sub_locs)[0]
-            if locs is not None:
-                # find intersection of boundary conditions
-                locs = numpy.intersect1d(locs, sub_locs)
-            else:
-                locs = sub_locs
+            # find intersection of boundary conditions
+            locs = numpy.intersect1d(locs, sub_locs) if locs is not None else sub_locs
 
         # make sure we don't reuse anything from an earlier bin
         locs = numpy.delete(locs, numpy.where(numpy.isin(locs, used))[0])

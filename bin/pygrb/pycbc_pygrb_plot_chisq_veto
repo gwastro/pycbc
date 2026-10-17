@@ -229,10 +229,7 @@ inj_data = ppu.load_data(
 )
 
 # Dataset name for the horizontal direction
-if snr_type == "single":
-    x_key = ifo + "/snr"
-else:
-    x_key = "network/" + snr_type + "_snr"
+x_key = ifo + "/snr" if snr_type == "single" else "network/" + snr_type + "_snr"
 # Dataset name for the vertical direction and for normalization
 if veto_type == "power":
     y_key = opts.ifo + "/chisq"

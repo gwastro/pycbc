@@ -165,10 +165,7 @@ if args.x_min:
 
 # set x upper limit on plot
 if args.x_max:
-    if len(numpy.where(val > args.x_max)[0]):
-        overflow = 1
-    else:
-        overflow = 0
+    overflow = 1 if len(numpy.where(val > args.x_max)[0]) else 0
 
     pyplot.xlim(xmax=args.x_max + overflow)
 

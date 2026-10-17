@@ -151,10 +151,7 @@ def make_grb_segments_plot(
         else:
             sub.plot([trigger_time, trigger_time], [0, 1], ":k")
         if fail_criterion:
-            if len(science_segs[ifo]) > 0:
-                style_str = "--"
-            else:
-                style_str = "-"
+            style_str = "--" if len(science_segs[ifo]) > 0 else "-"
             sub.plot(
                 [fail_criterion[0], fail_criterion[0]],
                 [0, 1],

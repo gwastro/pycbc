@@ -148,10 +148,7 @@ pycbc.init_logging(opts.verbose)
 
 # Function to generate command line script
 def create_command_opts(ifo, rseed, output_file):
-    if "LISA" in ifo:
-        detector_tag = "space"
-    else:
-        detector_tag = "ground"
+    detector_tag = "space" if "LISA" in ifo else "ground"
 
     # Determine the source of the strain (PSD Model OR File)
     strain_source_args = []

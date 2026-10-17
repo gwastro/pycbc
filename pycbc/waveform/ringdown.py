@@ -817,10 +817,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False, sum_modes=T
     except KeyError:
         harmonics = "spherical"
     # we'll need the final spin for spheroidal harmonics
-    if harmonics == "spheroidal":
-        final_spin = input_params["final_spin"]
-    else:
-        final_spin = None
+    final_spin = input_params["final_spin"] if harmonics == "spheroidal" else None
     # add inclination and azimuthal if they aren't provided
     if "inclination" not in input_params:
         input_params["inclination"] = 0.0

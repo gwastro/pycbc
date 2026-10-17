@@ -148,10 +148,7 @@ gps_time = opts.gps_time
 output_dir = opts.output_dir
 n_nodes = opts.n_nodes
 
-if opts.tag is None:
-    tag = int(opts.gps_time)
-else:
-    tag = opts.tag
+tag = int(opts.gps_time) if opts.tag is None else opts.tag
 
 for ifo in opts.ifos:
     logger.info("Minimum %s frequency: %.3f", ifo, min_freq_list[ifo])

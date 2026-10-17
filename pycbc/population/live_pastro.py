@@ -184,10 +184,7 @@ def template_param_bin_pa(padata, trdata, horizons):
     logger.debug("Trigger %s is in bin %i", padata.spec["param"], bind)
 
     # Get noise rate density
-    if "bg_fac" not in padata.spec:
-        expfac = 6.0
-    else:
-        expfac = padata.spec["bg_fac"]
+    expfac = padata.spec.get("bg_fac", 6.0)
 
     # FAR is in Hz, therefore convert to rate per year (per SNR)
     dnoise = noise_density_from_far(trdata["far"], expfac) * _s_per_yr
@@ -233,10 +230,7 @@ def template_param_bin_types_pa(padata, trdata, horizons):
     logger.debug("Trigger %s is in bin %i", padata.spec["param"], bind)
 
     # Get noise rate density
-    if "bg_fac" not in padata.spec:
-        expfac = 6.0
-    else:
-        expfac = padata.spec["bg_fac"]
+    expfac = padata.spec.get("bg_fac", 6.0)
 
     # List of ifos over trigger threshold
     tr_ifos = trdata["triggered"]
