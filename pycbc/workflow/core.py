@@ -574,7 +574,7 @@ class Executable(pegasus_workflow.Executable):
             logger.warning(warn_msg)
 
         if len(tags) != 0:
-            self.tagged_name = "{0}-{1}".format(self.name, "_".join(tags))
+            self.tagged_name = f"{self.name}-{'_'.join(tags)}"
         else:
             self.tagged_name = self.name
         if self.ifo_string is not None:

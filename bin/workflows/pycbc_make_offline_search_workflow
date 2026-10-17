@@ -57,8 +57,7 @@ def symlink_result(f, rdir_path):
 def ifo_combos(ifos):
     for i in range(2, len(ifos) + 1):
         combinations = itertools.combinations(ifos, i)
-        for ifocomb in combinations:
-            yield ifocomb
+        yield from combinations
 
 
 def finalize(container, workflow, finalize_workflow):

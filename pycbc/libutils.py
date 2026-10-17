@@ -132,9 +132,7 @@ def pkg_config_libdirs(packages):
 
     libdirs = []
     for token in getoutput(
-        "PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {0}".format(
-            " ".join(packages)
-        )
+        f"PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {' '.join(packages)}"
     ).split():
         if token.startswith("-L"):
             libdirs.append(token[2:])

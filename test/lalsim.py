@@ -113,7 +113,7 @@ parser.add_option("--tidal-order", type=int, default=-1, help="[default: %defaul
 (opt, args) = parser.parse_args()
 
 print(72 * "=")
-print("Running {0} unit tests for {1}:".format("CPU", "Lalsimulation Waveforms"))
+print("Running CPU unit tests for Lalsimulation Waveforms:")
 
 import matplotlib
 

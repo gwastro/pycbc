@@ -105,11 +105,10 @@ for param in parameters:
     values_min, values_med, values_max = percentiles
     negerror = values_med - values_min
     poserror = values_max - values_med
-    fmt = "${0}$".format(
-        results.format_value(
-            values_med, negerror, plus_error=poserror, use_scientific_notation=5
-        )
+    value_str = results.format_value(
+        values_med, negerror, plus_error=poserror, use_scientific_notation=5
     )
+    fmt = f"${value_str}$"
     row.append(fmt)
     # get the maxl and map values
     mapval = x[mapidx]
@@ -120,11 +119,10 @@ for param in parameters:
     for idx in [mapidx, maxlidx]:
         if idx is not None:
             val = x[idx]
-            fmt = "${0}$".format(
-                results.format_value(
-                    val, error, use_scientific_notation=5, include_error=False
-                )
+            value_str = results.format_value(
+                val, error, use_scientific_notation=5, include_error=False
             )
+            fmt = f"${value_str}$"
         else:
             # sampler didn't provide a loglikelihood or logprior, so just
             # enter nothing
