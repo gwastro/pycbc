@@ -222,7 +222,7 @@ def volume_montecarlo(
 
     # count the samples
     if limits_param == "distance":
-        Ninj = len(mc_weight_samples)
+        ninj = len(mc_weight_samples)
     elif limits_param == "chirp_distance":
         # find the total expected number after extending from maximum chirp
         # dist up to maximum physical distance
@@ -235,19 +235,19 @@ def volume_montecarlo(
             else:
                 min_distance = min(numpy.min(found_d), numpy.min(missed_d))
             logrange = numpy.log(max_distance / min_distance)
-            Ninj = len(mc_weight_samples) + (5.0 / 6.0) * sum(
+            ninj = len(mc_weight_samples) + (5.0 / 6.0) * sum(
                 numpy.log(max_mchirp / all_mchirp) / logrange
             )
         else:
-            Ninj = sum((max_mchirp / all_mchirp) ** mchirp_power)
+            ninj = sum((max_mchirp / all_mchirp) ** mchirp_power)
 
     # sample variance of efficiency: mean of the square - square of the mean
-    mc_sample_variance = sum(mc_weight_samples**2.0) / Ninj - (mc_sum / Ninj) ** 2.0
+    mc_sample_variance = sum(mc_weight_samples**2.0) / ninj - (mc_sum / ninj) ** 2.0
 
     # return MC integral and its standard deviation; variance of mc_sum scales
     # relative to sample variance by Ninj (Bienayme' rule)
     vol = mc_prefactor * mc_sum
-    vol_err = mc_prefactor * (Ninj * mc_sample_variance) ** 0.5
+    vol_err = mc_prefactor * (ninj * mc_sample_variance) ** 0.5
     return vol, vol_err
 
 

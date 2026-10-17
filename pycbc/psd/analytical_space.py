@@ -1457,9 +1457,9 @@ def sensitivity_curve_lisa_scird(length, delta_f, low_freq_cutoff):
 
     """
     fr = np.linspace(low_freq_cutoff, (length - 1) * 2 * delta_f, length)
-    s_I = 5.76e-48 * (1 + (4e-4 / fr) ** 2)
-    s_II = 3.6e-41
-    R = 1 + (fr / 2.5e-2) ** 2
+    s_I = 5.76e-48 * (1 + (4e-4 / fr) ** 2)  # noqa: N806
+    s_II = 3.6e-41  # noqa: N806
+    R = 1 + (fr / 2.5e-2) ** 2  # noqa: N806
     sense_curve = 10 / 3 * (s_I / (2 * np.pi * fr) ** 4 + s_II) * R
     fseries = from_numpy_arrays(fr, sense_curve, length, delta_f, low_freq_cutoff)
 
@@ -2093,10 +2093,10 @@ def analytical_psd_lisa_tdi_AE_confusion(  # noqa: N802
         noise.
 
     """
-    psd_AE = analytical_psd_lisa_tdi_AE(
+    psd_AE = analytical_psd_lisa_tdi_AE(  # noqa: N806
         length, delta_f, low_freq_cutoff, len_arm, acc_noise_level, oms_noise_level, tdi
     )
-    psd_X_confusion = semi_analytical_psd_lisa_confusion_noise(
+    psd_X_confusion = semi_analytical_psd_lisa_confusion_noise(  # noqa: N806
         length, delta_f, low_freq_cutoff, len_arm, duration, tdi
     )
     # S_A = S_E = S_X - S_XY, confusion noise's contribution to
@@ -2147,10 +2147,10 @@ def analytical_psd_tianqin_tdi_AE_confusion(  # noqa: N802
         noise.
 
     """
-    psd_AE = analytical_psd_tianqin_tdi_AE(
+    psd_AE = analytical_psd_tianqin_tdi_AE(  # noqa: N806
         length, delta_f, low_freq_cutoff, len_arm, acc_noise_level, oms_noise_level, tdi
     )
-    psd_X_confusion = analytical_psd_tianqin_confusion_noise(
+    psd_X_confusion = analytical_psd_tianqin_confusion_noise(  # noqa: N806
         length, delta_f, low_freq_cutoff, len_arm, duration, tdi
     )
     # S_A = S_E = S_X - S_XY, confusion noise's contribution to
@@ -2201,10 +2201,10 @@ def analytical_psd_taiji_tdi_AE_confusion(  # noqa: N802
         noise.
 
     """
-    psd_AE = analytical_psd_taiji_tdi_AE(
+    psd_AE = analytical_psd_taiji_tdi_AE(  # noqa: N806
         length, delta_f, low_freq_cutoff, len_arm, acc_noise_level, oms_noise_level, tdi
     )
-    psd_X_confusion = analytical_psd_taiji_confusion_noise(
+    psd_X_confusion = analytical_psd_taiji_confusion_noise(  # noqa: N806
         length, delta_f, low_freq_cutoff, len_arm, duration, tdi
     )
     # S_A = S_E = S_X - S_XY, confusion noise's contribution to

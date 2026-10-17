@@ -78,10 +78,10 @@ def autochisq_from_precomputed(
         autochisq values corresponding to the time instances defined by indices
 
     """
-    Nsnr = len(sn)
+    nsnr = len(sn)
 
     achisq = np.zeros(len(indices))
-    num_points_all = int(Nsnr / stride)
+    num_points_all = int(nsnr / stride)
     if num_points is None:
         num_points = num_points_all
     num_points = min(num_points, num_points_all)
@@ -117,9 +117,9 @@ def autochisq_from_precomputed(
 
         # Wrap index if needed (maybe should fail in this case?)
         if curr_achisq_idx_list[0] < 0:
-            curr_achisq_idx_list[curr_achisq_idx_list < 0] += Nsnr
-        if curr_achisq_idx_list[-1] > (Nsnr - 1):
-            curr_achisq_idx_list[curr_achisq_idx_list > (Nsnr - 1)] -= Nsnr
+            curr_achisq_idx_list[curr_achisq_idx_list < 0] += nsnr
+        if curr_achisq_idx_list[-1] > (nsnr - 1):
+            curr_achisq_idx_list[curr_achisq_idx_list > (nsnr - 1)] -= nsnr
 
         z = (
             corr_sn[curr_achisq_idx_list].real * cphi
@@ -363,17 +363,17 @@ class SingleDetAutoChisq:
             logger.debug("Calculating autocorrelation")
 
             if not self.reverse_template:
-                Pt, _, P_norm = matched_filter_core(
+                autocor, _, autocor_norm = matched_filter_core(
                     htilde,
                     htilde,
                     psd=psd,
                     low_frequency_cutoff=low_frequency_cutoff,
                     high_frequency_cutoff=high_frequency_cutoff,
                 )
-                Pt = Pt * (1.0 / Pt[0])
-                self._autocor = Array(Pt, copy=True)
+                autocor = autocor * (1.0 / autocor[0])
+                self._autocor = Array(autocor, copy=True)
             else:
-                Pt, _, P_norm = matched_filter_core(
+                autocor, _, autocor_norm = matched_filter_core(
                     htilde.conj(),
                     htilde,
                     psd=psd,
@@ -385,9 +385,9 @@ class SingleDetAutoChisq:
                 # so we can normalize using that
                 # FIXME: Here sigmasq has to be cast to a float or the
                 #        code is really slow ... why??
-                norm_fac = P_norm / float((template.sigmasq(psd)) ** 0.5)
-                Pt *= norm_fac
-                self._autocor = Array(Pt, copy=True)
+                norm_fac = autocor_norm / float((template.sigmasq(psd)) ** 0.5)
+                autocor *= norm_fac
+                self._autocor = Array(autocor, copy=True)
             self._autocor_id = key
 
         logger.debug("...Calculating autochisquare")
