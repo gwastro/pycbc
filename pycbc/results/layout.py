@@ -98,7 +98,7 @@ class SectionNumber:
         self.num = {}
 
         for num, sec in enumerate(secs):
-            self.name[sec] = "%s._%s" % (num + 1, sec)
+            self.name[sec] = f"{num + 1}._{sec}"
             self.num[sec] = num
             self.count[sec] = 1
 

@@ -154,7 +154,7 @@ ax.set_ylabel("Frequency (Hz)", fontsize=18)
 fig.set_size_inches(18.5, 10.5)
 plt.tight_layout()
 
-title = "Evolution of the noise spectral density over time in %s" % ifo
+title = f"Evolution of the noise spectral density over time in {ifo}"
 caption = (
     "Variation of the amplitude spectral density over time. The original"
     "frequency bins are reduced to %d logarithmic frequency bins by taking"

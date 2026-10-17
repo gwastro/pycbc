@@ -64,8 +64,7 @@ parser.add_argument(
     "placing a bank of non-spinning templates, any "
     "spin-related terms in the metric will always "
     "be zero. REQUIRED ARGUMENT: "
-    + "choices are: %s"
-    % (pycbc_valid_orders_help_descriptions),
+    f"choices are: {pycbc_valid_orders_help_descriptions}",
 )
 parser.add_argument(
     "--f0",

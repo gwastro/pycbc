@@ -99,8 +99,8 @@ def get_param_bounds_from_config(cp, section, tag, param):
         bnds = None
     elif minbnd is None or maxbnd is None:
         raise ValueError(
-            "if specifying bounds for %s, " % (param)
-            + "you must provide both a minimum and a maximum"
+            f"if specifying bounds for {param}, "
+            "you must provide both a minimum and a maximum"
         )
     else:
         bndargs = {"min_bound": minbnd, "max_bound": maxbnd}
@@ -181,7 +181,7 @@ def bounded_from_config(
     for param in variable_args:
         bounds = get_param_bounds_from_config(cp, section, tag, param)
         if bounds_required and bounds is None:
-            raise ValueError("min and/or max missing for parameter %s" % (param))
+            raise ValueError(f"min and/or max missing for parameter {param}")
         dist_args[param] = bounds
 
     # add any additional options that user put in that section
@@ -260,9 +260,7 @@ class BoundedDist:
             for p in self._params:
                 isin = isin & self._bounds[p].contains_conditioned(params[p])
         except KeyError:
-            raise ValueError(
-                "must provide all parameters [%s]" % (", ".join(self._params))
-            )
+            raise ValueError(f"must provide all parameters [{', '.join(self._params)}]")
         return isin
 
     __contains__ = contains

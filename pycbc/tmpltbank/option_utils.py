@@ -123,7 +123,7 @@ def insert_base_bank_options(parser, match_req=True):
     """
 
     def match_type(s):
-        err_msg = "must be a number between 0 and 1 excluded, not %r" % s
+        err_msg = f"must be a number between 0 and 1 excluded, not {s!r}"
         try:
             value = float(s)
         except ValueError:
@@ -175,7 +175,7 @@ def insert_metric_calculation_options(parser):
         help="Determines the PN order to use.  For a bank of "
         "non-spinning templates, spin-related terms in the "
         "metric will be zero.  REQUIRED. "
-        "Choices: %s" % (pycbc_valid_orders_help_descriptions),
+        f"Choices: {pycbc_valid_orders_help_descriptions}",
     )
     metric_opts.add_argument(
         "--f0",
@@ -662,8 +662,9 @@ def insert_mass_range_option_group(parser, non_spin=False):
         "Components below this mass are considered neutron "
         "stars and are subject to the neutron star spin limits. "
         "Components at/above are subject to the black hole spin "
-        "limits.  OPTIONAL, default=%f.  UNITS=Solar mass"
-        % MassRangeParameters.default_nsbh_boundary_mass,
+        "limits.  OPTIONAL, "
+        f"default={MassRangeParameters.default_nsbh_boundary_mass:f}.  "
+        "UNITS=Solar mass",
     )
     action.add_argument(
         "--nsbh-flag",
@@ -702,14 +703,14 @@ def verify_mass_range_options(opts, parser, non_spin=False):
         parser.error("max-mass1 cannot be less than max-mass2!")
     # If given are min/max total mass/chirp mass possible?
     if opts.min_total_mass and (opts.min_total_mass > opts.max_mass1 + opts.max_mass2):
-        err_msg = "Supplied minimum total mass %f " % (opts.min_total_mass,)
+        err_msg = f"Supplied minimum total mass {opts.min_total_mass:f} "
         err_msg += "greater than the sum of the two max component masses "
-        err_msg += " %f and %f." % (opts.max_mass1, opts.max_mass2)
+        err_msg += f" {opts.max_mass1:f} and {opts.max_mass2:f}."
         parser.error(err_msg)
     if opts.max_total_mass and (opts.max_total_mass < opts.min_mass1 + opts.min_mass2):
-        err_msg = "Supplied maximum total mass %f " % (opts.max_total_mass,)
+        err_msg = f"Supplied maximum total mass {opts.max_total_mass:f} "
         err_msg += "smaller than the sum of the two min component masses "
-        err_msg += " %f and %f." % (opts.min_mass1, opts.min_mass2)
+        err_msg += f" {opts.min_mass1:f} and {opts.min_mass2:f}."
         parser.error(err_msg)
     if (
         opts.max_total_mass

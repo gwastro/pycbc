@@ -254,8 +254,7 @@ class TestDetector(unittest.TestCase):
                     for whole, single in zip(from_vector, one_at_a_time):
                         self.assertTrue(
                             numpy.isclose(whole[index], single, rtol=1e-14, atol=1e-16),
-                            "%s at %s: %r against %r"
-                            % (kwargs, index, whole[index], single),
+                            f"{kwargs} at {index}: {whole[index]!r} against {single!r}",
                         )
 
 

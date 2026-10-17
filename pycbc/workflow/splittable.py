@@ -78,7 +78,7 @@ def select_splitfilejob_instance(curr_exe):
         exe_class = PycbcHDFSplitInjExecutable
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for Executable %s" % (curr_exe,)
+        err_string = f"No class exists for Executable {curr_exe}"
         raise NotImplementedError(err_string)
 
     return exe_class

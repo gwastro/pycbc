@@ -1627,7 +1627,7 @@ def fields_from_names(fields, names=None):
             elif name in names_to_aliases:
                 key = (names_to_aliases[name], name)
             else:
-                raise KeyError("default fields has no field %s" % name)
+                raise KeyError(f"default fields has no field {name}")
             outfields[key] = fields[key]
     return outfields
 

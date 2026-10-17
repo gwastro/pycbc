@@ -72,7 +72,7 @@ def add_wellfile_opt(node, workflow, option_name, out_dir, extra_tags=None):
     duration = int(math.ceil(valid_seg[1])) - start
     ifo_string = ''.join(exe.ifo_list).upper() if exe.ifo_list else 'ALL'
     bits = [ifo_string, exe.name.upper()] + [tag.upper() for tag in tags]
-    filename = 'well_%s_%s_%s.html' % ('_'.join(bits), start, duration)
+    filename = f"well_{'_'.join(bits)}_{start}_{duration}.html"
     path = os.path.join(out_dir, filename)
     file_url = urllib.parse.urlunparse(
         ['file', 'localhost', path, None, None, None])
@@ -501,10 +501,10 @@ def get_single_template_params(curr_idx, times, bank_data, bank_id, fsdt, tids):
     """
     params = {}
     for ifo in times:
-        params["%s_end_time" % ifo] = times[ifo][curr_idx]
+        params[f"{ifo}_end_time"] = times[ifo][curr_idx]
         try:
             # Only present for precessing, so may not exist
-            params["u_vals_%s" % ifo] = fsdt[ifo][ifo]["u_vals"][tids[ifo][curr_idx]]
+            params[f"u_vals_{ifo}"] = fsdt[ifo][ifo]["u_vals"][tids[ifo][curr_idx]]
         except:
             pass
 
@@ -627,26 +627,26 @@ def make_single_template_files(
     if use_exact_inj_params:
         node.add_opt("--use-params-of-closest-injection")
     else:
-        node.add_opt("--mass1", "%.6f" % params["mass1"])
-        node.add_opt("--mass2", "%.6f" % params["mass2"])
-        node.add_opt("--spin1z", "%.6f" % params["spin1z"])
-        node.add_opt("--spin2z", "%.6f" % params["spin2z"])
-        node.add_opt("--template-start-frequency", "%.6f" % params["f_lower"])
+        node.add_opt("--mass1", f"{params['mass1']:.6f}")
+        node.add_opt("--mass2", f"{params['mass2']:.6f}")
+        node.add_opt("--spin1z", f"{params['spin1z']:.6f}")
+        node.add_opt("--spin2z", f"{params['spin2z']:.6f}")
+        node.add_opt("--template-start-frequency", f"{params['f_lower']:.6f}")
         # Is this precessing?
-        if "u_vals" in params or "u_vals_%s" % ifo in params:
-            node.add_opt("--spin1x", "%.6f" % params["spin1x"])
-            node.add_opt("--spin1y", "%.6f" % params["spin1y"])
-            node.add_opt("--spin2x", "%.6f" % params["spin2x"])
-            node.add_opt("--spin2y", "%.6f" % params["spin2y"])
-            node.add_opt("--inclination", "%.6f" % params["inclination"])
+        if "u_vals" in params or f"u_vals_{ifo}" in params:
+            node.add_opt("--spin1x", f"{params['spin1x']:.6f}")
+            node.add_opt("--spin1y", f"{params['spin1y']:.6f}")
+            node.add_opt("--spin2x", f"{params['spin2x']:.6f}")
+            node.add_opt("--spin2y", f"{params['spin2y']:.6f}")
+            node.add_opt("--inclination", f"{params['inclination']:.6f}")
             try:
-                node.add_opt("--u-val", "%.6f" % params["u_vals"])
+                node.add_opt("--u-val", f"{params['u_vals']:.6f}")
             except:
-                node.add_opt("--u-val", "%.6f" % params["u_vals_%s" % ifo])
+                node.add_opt("--u-val", f"{params[f'u_vals_{ifo}']:.6f}")
         # If this is an eccentricity search
         if "eccentricity" in params:
-            node.add_opt("--eccentricity", "%.6f" % params["eccentricity"])
-            node.add_opt("--rel-anomaly", "%.6f" % params["rel_anomaly"])
+            node.add_opt("--eccentricity", f"{params['eccentricity']:.6f}")
+            node.add_opt("--rel-anomaly", f"{params['rel_anomaly']:.6f}")
 
     if params[ifo + "_end_time"] > 0 and not use_mean_time:
         trig_time = params[ifo + "_end_time"]
@@ -756,7 +756,7 @@ def make_single_template_plots(
         valid[ifo] = (
             params["mean_time"] in data_segments[ifo]
             if data_segments
-            else params["%s_end_time" % ifo] > 0
+            else params[f"{ifo}_end_time"] > 0
         )
     for tag in secs:
         for ifo in workflow.ifos:
@@ -785,23 +785,21 @@ def make_single_template_plots(
             ).create_node()
             node.add_input_opt("--single-template-file", data[0])
             node.new_output_file_opt(workflow.analysis_time, ".png", "--output-file")
-            title = "'%s SNR and chi^2 timeseries" % (ifo)
+            title = f"'{ifo} SNR and chi^2 timeseries"
             if params_str is not None:
-                title += " using %s" % (params_str)
+                title += f" using {params_str}"
             title += "'"
             node.add_opt("--plot-title", title)
             caption = "'The SNR and chi^2 timeseries around the injection"
             if params_str is not None:
-                caption += " using %s" % (params_str)
+                caption += f" using {params_str}"
             if use_exact_inj_params:
                 caption += ". The injection itself was used as the template.'"
             else:
                 caption += ". The template used has the following parameters: "
-                caption += "mass1=%s, mass2=%s, spin1z=%s, spin2z=%s'" % (
-                    params["mass1"],
-                    params["mass2"],
-                    params["spin1z"],
-                    params["spin2z"],
+                caption += (
+                    f"mass1={params['mass1']}, mass2={params['mass2']}, "
+                    f"spin1z={params['spin1z']}, spin2z={params['spin2z']}'"
                 )
             node.add_opt("--plot-caption", caption)
             workflow += node
@@ -823,21 +821,21 @@ def make_plot_waveform_plot(
         node = PlotExecutable(
             workflow.cp, "plot_waveform", ifos=ifos, out_dir=out_dir, tags=[tag] + tags
         ).create_node()
-        node.add_opt("--mass1", "%.6f" % params["mass1"])
-        node.add_opt("--mass2", "%.6f" % params["mass2"])
-        node.add_opt("--spin1z", "%.6f" % params["spin1z"])
-        node.add_opt("--spin2z", "%.6f" % params["spin2z"])
+        node.add_opt("--mass1", f"{params['mass1']:.6f}")
+        node.add_opt("--mass2", f"{params['mass2']:.6f}")
+        node.add_opt("--spin1z", f"{params['spin1z']:.6f}")
+        node.add_opt("--spin2z", f"{params['spin2z']:.6f}")
         if "u_vals" in params:
             # Precessing options
-            node.add_opt("--spin1x", "%.6f" % params["spin1x"])
-            node.add_opt("--spin2x", "%.6f" % params["spin2x"])
-            node.add_opt("--spin1y", "%.6f" % params["spin1y"])
-            node.add_opt("--spin2y", "%.6f" % params["spin2y"])
-            node.add_opt("--inclination", "%.6f" % params["inclination"])
-            node.add_opt("--u-val", "%.6f" % params["u_vals"])
+            node.add_opt("--spin1x", f"{params['spin1x']:.6f}")
+            node.add_opt("--spin2x", f"{params['spin2x']:.6f}")
+            node.add_opt("--spin1y", f"{params['spin1y']:.6f}")
+            node.add_opt("--spin2y", f"{params['spin2y']:.6f}")
+            node.add_opt("--inclination", f"{params['inclination']:.6f}")
+            node.add_opt("--u-val", f"{params['u_vals']:.6f}")
         if "eccentricity" in params:
-            node.add_opt("--eccentricity", "%.6f" % params["eccentricity"])
-            node.add_opt("--rel-anomaly", "%.6f" % params["rel_anomaly"])
+            node.add_opt("--eccentricity", f"{params['eccentricity']:.6f}")
+            node.add_opt("--rel-anomaly", f"{params['rel_anomaly']:.6f}")
         node.new_output_file_opt(workflow.analysis_time, ".png", "--output-file")
         workflow += node
         files += node.output_files
@@ -1040,7 +1038,7 @@ def make_qscan_plot(
                 node.add_opt("--gps-start-time", int(trig_time))
                 node.add_opt("--gps-end-time", int(trig_time))
                 node.add_opt("--center-time", trig_time)
-                caption_string = "'No trigger in %s'" % ifo
+                caption_string = f"'No trigger in {ifo}'"
                 node.add_opt("--plot-caption", caption_string)
                 node.new_output_file_opt(
                     workflow.analysis_time, ".png", "--output-file"

@@ -191,13 +191,13 @@ def make_grb_segments_plot(
     )
     fig.axes[-1].set_xlabel("GPS Time")
 
-    fig.axes[0].set_title("Science Segments for GRB%s" % trigger_name)
+    fig.axes[0].set_title(f"Science Segments for GRB{trigger_name}")
     plt.tight_layout()
     fig.subplots_adjust(hspace=0)
 
-    plot_name = "GRB%s_segments.png" % trigger_name
-    plot_url = "file://localhost%s/%s" % (out_dir, plot_name)
-    fig.savefig("%s/%s" % (out_dir, plot_name))
+    plot_name = f"GRB{trigger_name}_segments.png"
+    plot_url = f"file://localhost{out_dir}/{plot_name}"
+    fig.savefig(f"{out_dir}/{plot_name}")
 
     return [ifos, plot_name, extent, plot_url]
 

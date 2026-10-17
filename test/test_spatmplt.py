@@ -96,8 +96,8 @@ class TestSPAtmplt(unittest.TestCase):
                             self.assertAlmostEqual(1.0, o, places=4)
 
                             print(
-                                "checked m1: %s m2:: %s s1z: %s s2z: %s] overlap = %s, diff = %s"
-                                % (m1, m2, s1, s2, o, diff)
+                                f"checked m1: {m1} m2:: {m2} s1z: {s1} s2z: {s2}] "
+                                f"overlap = {o}, diff = {diff}"
                             )
 
 

@@ -81,7 +81,7 @@ parser.add_option(
     "--approximant",
     type="choice",
     choices=td_approximants() + fd_approximants(),
-    help="Choices are %s" % str(td_approximants() + fd_approximants()),
+    help=f"Choices are {td_approximants() + fd_approximants()!s}",
 )
 
 parser.add_option("--mass1", type=float, default=10, help="[default: %default]")
@@ -151,12 +151,10 @@ class TestLALSimulation(unittest.TestCase):
 
         from pycbc import version
 
-        self.version_txt = "pycbc: %s  %s\n" % (
-            version.git_hash,
-            version.date,
-        ) + "lalsimulation: %s  %s" % (
-            lalsimulation.SimulationVCSIdentInfo.vcsId,
-            lalsimulation.SimulationVCSIdentInfo.vcsDate,
+        self.version_txt = (
+            f"pycbc: {version.git_hash}  {version.date}\n"
+            f"lalsimulation: {lalsimulation.SimulationVCSIdentInfo.vcsId}  "
+            f"{lalsimulation.SimulationVCSIdentInfo.vcsDate}"
         )
 
     def test_varying_orbital_phase(self):
@@ -194,7 +192,7 @@ class TestLALSimulation(unittest.TestCase):
         plt.plot(getattr(hp, sample_attr), hp.real(), label=r"$phiref \pi$")
 
         plt.xlim(min(getattr(hp, sample_attr)), max(getattr(hp, sample_attr)))
-        plt.title("Vary %s oribital phiref, h+" % self.p.approximant)
+        plt.title(f"Vary {self.p.approximant} oribital phiref, h+")
 
         if self.p.approximant in td_approximants():
             plt.xlabel("Time to coalescence (s)")
@@ -208,7 +206,7 @@ class TestLALSimulation(unittest.TestCase):
         plt.figtext(0.05, 0.05, info)
 
         if self.save_plots:
-            pname = self.plot_dir + "/%s-vary-phase.png" % self.p.approximant
+            pname = self.plot_dir + f"/{self.p.approximant}-vary-phase.png"
             plt.savefig(pname)
         if self.show_plots:
             plt.show()
@@ -233,15 +231,15 @@ class TestLALSimulation(unittest.TestCase):
         plt.loglog(htilde.sample_frequencies, abs(htilde), label="D")
 
         htilde = make_frequency_series(hpm)
-        plt.loglog(htilde.sample_frequencies, abs(htilde), label="D * %s" % fac)
+        plt.loglog(htilde.sample_frequencies, abs(htilde), label=f"D * {fac}")
 
         htilde = make_frequency_series(hpf)
         plt.loglog(htilde.sample_frequencies, abs(htilde), label="D * %s" % (fac * fac))
 
         htilde = make_frequency_series(hpn)
-        plt.loglog(htilde.sample_frequencies, abs(htilde), label="D / %s" % fac)
+        plt.loglog(htilde.sample_frequencies, abs(htilde), label=f"D / {fac}")
 
-        plt.title("Vary %s distance, $\\tilde{h}$+" % self.p.approximant)
+        plt.title(f"Vary {self.p.approximant} distance, $\\tilde{{h}}$+")
         plt.xlabel("GW Frequency (Hz)")
         plt.ylabel("GW Strain")
         plt.legend()
@@ -251,7 +249,7 @@ class TestLALSimulation(unittest.TestCase):
         plt.figtext(0.05, 0.05, info)
 
         if self.save_plots:
-            pname = self.plot_dir + "/%s-distance-scaling.png" % self.p.approximant
+            pname = self.plot_dir + f"/{self.p.approximant}-distance-scaling.png"
             plt.savefig(pname)
 
         if self.show_plots:
@@ -341,7 +339,7 @@ class TestLALSimulation(unittest.TestCase):
         f = plt.figure()
         plt.axes([0.1, 0.2, 0.8, 0.70])
         plt.plot(incs, sigmas)
-        plt.title("Vary %s inclination, $\\tilde{h}$+" % self.p.approximant)
+        plt.title(f"Vary {self.p.approximant} inclination, $\\tilde{{h}}$+")
         plt.xlabel("Inclination (radians)")
         plt.ylabel("sigma (flat PSD)")
 
@@ -349,7 +347,7 @@ class TestLALSimulation(unittest.TestCase):
         plt.figtext(0.05, 0.05, info)
 
         if self.save_plots:
-            pname = self.plot_dir + "/%s-vary-inclination.png" % self.p.approximant
+            pname = self.plot_dir + f"/{self.p.approximant}-vary-inclination.png"
             plt.savefig(pname)
 
         if self.show_plots:
@@ -404,15 +402,15 @@ class TestLALSimulation(unittest.TestCase):
         plt.plot(
             hp.sample_times,
             hp.data,
-            label="rate %s Hz" % f"{1.0 / self.p.delta_t:.0f}",
+            label=f"rate {1.0 / self.p.delta_t:.0f} Hz",
         )
         plt.plot(
             hp2dec.sample_times,
             hp2dec.data,
-            label="rate %s Hz" % f"{1.0 / (self.p.delta_t * 2.0):.0f}",
+            label=f"rate {1.0 / (self.p.delta_t * 2.0):.0f} Hz",
         )
 
-        plt.title("Halving %s rate, $\\tilde{h}$+" % self.p.approximant)
+        plt.title(f"Halving {self.p.approximant} rate, $\\tilde{{h}}$+")
         plt.xlabel("time (sec)")
         plt.ylabel("amplitude")
         plt.legend()
@@ -421,7 +419,7 @@ class TestLALSimulation(unittest.TestCase):
         plt.figtext(0.05, 0.05, info)
 
         if self.save_plots:
-            pname = self.plot_dir + "/%s-vary-rate.png" % self.p.approximant
+            pname = self.plot_dir + f"/{self.p.approximant}-vary-rate.png"
             plt.savefig(pname)
 
         if self.show_plots:
@@ -441,7 +439,7 @@ def test_maker(class_name, name, **kwds):
             self.kwds = kwds
             class_name.__init__(self, *args)
 
-    Test.__name__ = "Test %s" % name
+    Test.__name__ = f"Test {name}"
     return Test
 
 

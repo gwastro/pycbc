@@ -184,12 +184,10 @@ class TimeSeries(Array):
         in GPS seconds.
         """
         if start < self.start_time:
-            raise ValueError(
-                "Time series does not contain a time as early as %s" % start
-            )
+            raise ValueError(f"Time series does not contain a time as early as {start}")
 
         if end > self.end_time:
-            raise ValueError("Time series does not contain a time as late as %s" % end)
+            raise ValueError(f"Time series does not contain a time as late as {end}")
 
         start_idx = float(start - self.start_time) * self.sample_rate
         end_idx = float(end - self.start_time) * self.sample_rate
@@ -644,8 +642,8 @@ class TimeSeries(Array):
             )
         if location not in taper_map:
             raise ValueError(
-                "Unknown location %s, valid locations are %s"
-                % (location, ", ".join(taper_map.keys()))
+                f"Unknown location {location}, valid locations are "
+                f"{', '.join(taper_map.keys())}"
             )
         if tsdata.dtype not in (float32, float64):
             raise TypeError(
@@ -682,8 +680,7 @@ class TimeSeries(Array):
 
             return gate_data(tsdata, gate_params)
         raise ValueError(
-            "Unknown tapering method %s, valid methods are lal and constant"
-            % (tapermethod)
+            f"Unknown tapering method {tapermethod}, valid methods are lal and constant"
         )
 
     def get_gate_indices(self, time, window):
@@ -1202,9 +1199,9 @@ class TimeSeries(Array):
 
         if tlen < len(self):
             raise ValueError(
-                "The value of delta_f (%s) would be "
+                f"The value of delta_f ({delta_f}) would be "
                 "undersampled. Maximum delta_f "
-                "is %s." % (delta_f, 1.0 / self.duration)
+                f"is {1.0 / self.duration}."
             )
         if not delta_f:
             tmp = self
@@ -1476,7 +1473,6 @@ def load_timeseries(path, group=None):
         return TimeSeries(data[:, 1] + 1j * data[:, 2], delta_t=delta_t, epoch=epoch)
 
     raise ValueError(
-        "File has %s dimensions, cannot convert to TimeSeries, \
+        f"File has {data.ndim} dimensions, cannot convert to TimeSeries, \
                       must be 2 (real) or 3 (complex)"
-        % data.ndim
     )

@@ -304,9 +304,9 @@ for rank, num_event in enumerate(order):
 
     files = wf.FileList([])
     time = times[num_event]
-    ifo_time = "%s:%s" % (args.instrument, str(time))
+    ifo_time = f"{args.instrument}:{time!s}"
     tid = trigger_ids[num_event]
-    ifo_tid = "%s:%s" % (args.instrument, str(tid))
+    ifo_tid = f"{args.instrument}:{tid!s}"
 
     layouts += (
         mini.make_sngl_ifo(

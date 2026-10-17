@@ -44,7 +44,7 @@ def int_gps_time_to_str(t):
     """
     int_t = int(t)
     if abs(float(t - int_t)) > 0.0:
-        raise ValueError("Need an integer GPS time, got %s" % str(t))
+        raise ValueError(f"Need an integer GPS time, got {t!s}")
     return str(int_t)
 
 
@@ -76,7 +76,7 @@ def select_tmpltbank_class(curr_exe):
         return exe_to_class_map[curr_exe]
     except KeyError:
         raise NotImplementedError(
-            "No job class exists for executable %s, exiting" % curr_exe
+            f"No job class exists for executable {curr_exe}, exiting"
         )
 
 
@@ -111,7 +111,7 @@ def select_matchedfilter_class(curr_exe):
     except KeyError:
         # also conceivable to introduce a default class??
         raise NotImplementedError(
-            "No job class exists for executable %s, exiting" % curr_exe
+            f"No job class exists for executable {curr_exe}, exiting"
         )
 
 
@@ -152,7 +152,7 @@ def select_generic_executable(workflow, exe_tag):
     except KeyError:
         # Should we try some sort of default class??
         raise NotImplementedError(
-            "No job class exists for executable %s, exiting" % exe_name
+            f"No job class exists for executable {exe_name}, exiting"
         )
 
 
@@ -581,7 +581,7 @@ class PyCBCInspiralExecutable(Executable):
         if not self.has_opt("pad-data"):
             raise ValueError(
                 "The option pad-data is a required option of "
-                "%s. Please check the ini file." % self.name
+                f"{self.name}. Please check the ini file."
             )
         pad_data = int(self.get_opt("pad-data"))
 
@@ -781,9 +781,7 @@ class PyCBCMultiInspiralExecutable(Executable):
         node = Node(self)
 
         if not df_parents:
-            raise ValueError(
-                "%s must be supplied with frame or cache files" % self.name
-            )
+            raise ValueError(f"{self.name} must be supplied with frame or cache files")
 
         # If doing single IFO search, make sure slides are disabled
         if len(self.ifo_list) < 2 and (
@@ -803,7 +801,7 @@ class PyCBCMultiInspiralExecutable(Executable):
         if pad_data is None:
             raise ValueError(
                 "The option pad-data is a required option of "
-                "%s. Please check the ini file." % self.name
+                f"{self.name}. Please check the ini file."
             )
 
         # Feed in bank_veto_bank.xml, if given
@@ -852,13 +850,13 @@ class PyCBCMultiInspiralExecutable(Executable):
 
         if slide is not None:
             for ifo in self.ifo_list:
-                node.add_opt("--%s-slide-segment" % ifo.lower(), slide[ifo])
+                node.add_opt(f"--{ifo.lower()}-slide-segment", slide[ifo])
 
         # Channels
         channel_names = {}
         for ifo in self.ifo_list:
             channel_names[ifo] = self.cp.get_opt_tags(
-                "workflow", "%s-channel-name" % ifo.lower(), ""
+                "workflow", f"{ifo.lower()}-channel-name", ""
             )
         channel_names_str = " ".join([val for key, val in channel_names.items()])
         node.add_opt("--channel-name", channel_names_str)
@@ -918,13 +916,13 @@ class PyCBCTmpltbankExecutable(Executable):
         node = Node(self)
 
         if not df_parents:
-            raise ValueError("%s must be supplied with data file(s)" % self.name)
+            raise ValueError(f"{self.name} must be supplied with data file(s)")
 
         pad_data = int(self.get_opt("pad-data"))
         if pad_data is None:
             raise ValueError(
                 "The option pad-data is a required option of "
-                "%s. Please check the ini file." % self.name
+                f"{self.name}. Please check the ini file."
             )
 
         # set the remaining option flags
@@ -1132,8 +1130,8 @@ class LalappsInspinjExecutable(Executable):
             triggered = False
         else:
             err_msg = "The argument 'l-distr' passed to the "
-            err_msg += "%s job has the value " % self.tagged_name
-            err_msg += "'%s' but you have not " % self.get_opt("l-distr")
+            err_msg += f"{self.tagged_name} job has the value "
+            err_msg += f"'{self.get_opt('l-distr')}' but you have not "
             err_msg += "provided the corresponding ExtTrig or IPN file. "
             err_msg += "Please check your configuration files and try again."
             raise ValueError(err_msg)

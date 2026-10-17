@@ -281,8 +281,8 @@ data = {
     "decimation_factor": dec_facs,
     "timeslide_id": np.zeros_like(stat_all),
     "template_id": template_ids_all,
-    "%s/time" % ifo: trigger_times_all,
-    "%s/trigger_id" % ifo: trigger_ids_all,
+    f"{ifo}/time": trigger_times_all,
+    f"{ifo}/trigger_id": trigger_ids_all,
 }
 
 logger.info("saving triggers")
@@ -292,7 +292,7 @@ for key in data:
         key, data=data[key], compression="gzip", compression_opts=9, shuffle=True
     )
 # Store segments
-f["segments/%s/start" % ifo], f["segments/%s/end" % ifo] = trigs.valid
+f[f"segments/{ifo}/start"], f[f"segments/{ifo}/end"] = trigs.valid
 fg_segs = veto.start_end_to_segments(*trigs.valid)
 fg_time = abs(fg_segs)
 f.attrs["foreground_time"] = fg_time

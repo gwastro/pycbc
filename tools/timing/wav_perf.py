@@ -79,7 +79,7 @@ import timeit
 
 gt = timeit.Timer(taylorf2)
 t = 1000 * gt.timeit(number=1) / niter
-print("Waveform Generation %.2f msec" % t, " %5.1f gen/min " % (1000 * 60 / t))
+print(f"Waveform Generation {t:.2f} msec", " %5.1f gen/min " % (1000 * 60 / t))
 
 if type(ctx) is CUDAScheme:
 
@@ -100,4 +100,4 @@ if type(ctx) is CUDAScheme:
 
     gt = timeit.Timer(spatmplt)
     t = 1000 * gt.timeit(number=1) / niter
-    print("SPAtmplt Generation %.2f msec" % t, " %5.1f gen/min " % (1000 * 60 / t))
+    print(f"SPAtmplt Generation {t:.2f} msec", " %5.1f gen/min " % (1000 * 60 / t))

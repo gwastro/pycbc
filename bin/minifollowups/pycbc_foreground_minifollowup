@@ -194,8 +194,8 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
             # Use mean time instead and don't plot special trigger
             plottime = mtime
         else:  # Do plot special trigger
-            ifo_tids_strings += ["%s:%s" % (ifo, tids[ifo][curr_idx])]
-        ifo_times_strings += ["%s:%s" % (ifo, plottime)]
+            ifo_tids_strings += [f"{ifo}:{tids[ifo][curr_idx]}"]
+        ifo_times_strings += [f"{ifo}:{plottime}"]
 
         # For background do not want to follow up 10 background coincs with the
         # same event in ifo 1 and different events in ifo 2, so record times

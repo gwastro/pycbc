@@ -54,7 +54,7 @@ def drop_trailing_zeros(num):
     """
     Drops the trailing zeros in a float that is printed.
     """
-    txt = "%f" % (num)
+    txt = f"{num:f}"
     txt = txt.rstrip("0")
     txt = txt.removesuffix(".")
     return txt
@@ -65,7 +65,7 @@ def get_signum(val, err, max_sig=numpy.inf):
     Given an error, returns a string for val formated to the appropriate
     number of significant figures.
     """
-    coeff, pwr = ("%e" % err).split("e")
+    coeff, pwr = (f"{err:e}").split("e")
     if pwr.startswith("-"):
         pwr = int(pwr[1:])
         if round(float(coeff)) == 10.0:
@@ -90,7 +90,7 @@ def get_signum(val, err, max_sig=numpy.inf):
             if loop_count > max_recursion:
                 raise ValueError(
                     "Maximum recursion depth hit! Input "
-                    + "values are: val = %f, err = %f" % (val, err)
+                    f"values are: val = {val:f}, err = {err:f}"
                 )
     return drop_trailing_zeros(return_val)
 
@@ -231,9 +231,9 @@ def format_value(
                 # get_signum will automatically increase the number of values
                 # after the decimal until it gets to the first non-zero value
                 relative_err = get_signum(relative_err, 1.0)
-                txt = r"%s %s \pm%s\%%" % (valtxt, powfactor, relative_err)
+                txt = rf"{valtxt} {powfactor} \pm{relative_err}\%"
             else:
-                txt = r"%s \pm %s%s" % (valtxt, errtxt, powfactor)
+                txt = rf"{valtxt} \pm {errtxt}{powfactor}"
         else:
             plus_err = plus_err * 10 ** (-conversion_factor)
             minus_err = minus_err * 10 ** (-conversion_factor)
@@ -247,21 +247,14 @@ def format_value(
                 rel_minus_err = get_signum(
                     100.0 * float(minus_err_txt) / float(valtxt), 1.0
                 )
-                txt = r"%s%s\,^{+%s\%%}_{-%s\%%}" % (
-                    valtxt,
-                    powfactor,
-                    rel_plus_err,
-                    rel_minus_err,
+                txt = (
+                    rf"{valtxt}{powfactor}\,^{{+{rel_plus_err}\%}}"
+                    rf"_{{-{rel_minus_err}\%}}"
                 )
             else:
-                txt = r"%s^{+%s}_{-%s}%s" % (
-                    valtxt,
-                    plus_err_txt,
-                    minus_err_txt,
-                    powfactor,
-                )
+                txt = rf"{valtxt}^{{+{plus_err_txt}}}_{{-{minus_err_txt}}}{powfactor}"
     else:
-        txt = r"%s%s" % (valtxt, powfactor)
+        txt = rf"{valtxt}{powfactor}"
     return txt
 
 

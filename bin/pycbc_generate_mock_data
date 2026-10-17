@@ -158,11 +158,11 @@ def create_command_opts(ifo, rseed, output_file):
     # Priority: Check if file is provided first
     if opts.fake_strain_from_file and ifo in opts.fake_strain_from_file:
         strain_source_args.append(
-            "--fake-strain-from-file %s" % opts.fake_strain_from_file[ifo]
+            f"--fake-strain-from-file {opts.fake_strain_from_file[ifo]}"
         )
     # Otherwise, check if PSD model is provided
     elif opts.psd_model and ifo in opts.psd_model:
-        strain_source_args.append("--fake-strain %s" % opts.psd_model[ifo])
+        strain_source_args.append(f"--fake-strain {opts.psd_model[ifo]}")
     else:
         # This shouldn't happen if sanity check passes, but good for safety
         raise ValueError(f"No strain source (PSD or File) provided for detector {ifo}")
@@ -174,8 +174,8 @@ def create_command_opts(ifo, rseed, output_file):
             "--sample-rate %d" % (opts.sample_rate),
             "--gps-start-time %d" % (opts.gps_start_time),
             "--gps-end-time %d" % (opts.gps_end_time),
-            "--channel-name %s:%s" % (ifo, opts.channel_name[ifo]),
-            "--output-strain-file %s" % (output_file),
+            f"--channel-name {ifo}:{opts.channel_name[ifo]}",
+            f"--output-strain-file {output_file}",
         ]
 
         # Add the determined source arguments
@@ -184,11 +184,11 @@ def create_command_opts(ifo, rseed, output_file):
         # Pass explicit extended args if provided (no auto-fill for ground)
         if opts.fake_strain_sample_rate is not None:
             args_opt.append(
-                "--fake-strain-sample-rate %f" % opts.fake_strain_sample_rate
+                f"--fake-strain-sample-rate {opts.fake_strain_sample_rate:f}"
             )
         if opts.fake_strain_filter_duration is not None:
             args_opt.append(
-                "--fake-strain-filter-duration %f" % opts.fake_strain_filter_duration
+                f"--fake-strain-filter-duration {opts.fake_strain_filter_duration:f}"
             )
 
     elif detector_tag == "space":
@@ -205,40 +205,40 @@ def create_command_opts(ifo, rseed, output_file):
         # Build extra args for LISA
         extra_args = []
         if opts.len_arm is not None:
-            extra_args.append("len_arm:%s" % opts.len_arm)
+            extra_args.append(f"len_arm:{opts.len_arm}")
         if opts.acc_noise_level is not None:
-            extra_args.append("acc_noise_level:%s" % opts.acc_noise_level)
+            extra_args.append(f"acc_noise_level:{opts.acc_noise_level}")
         if opts.oms_noise_level is not None:
-            extra_args.append("oms_noise_level:%s" % opts.oms_noise_level)
+            extra_args.append(f"oms_noise_level:{opts.oms_noise_level}")
         if opts.tdi is not None:
-            extra_args.append("tdi:%s" % opts.tdi)
+            extra_args.append(f"tdi:{opts.tdi}")
         if opts.duration is not None:
-            extra_args.append("duration:%s" % opts.duration)
+            extra_args.append(f"duration:{opts.duration}")
 
         args_opt = [
             "pycbc_condition_strain",
             "--fake-strain-seed %d" % rseed,
-            "--sample-rate %f" % (opts.sample_rate),
+            f"--sample-rate {opts.sample_rate:f}",
             "--gps-start-time %d" % (opts.gps_start_time),
             "--gps-end-time %d" % (opts.gps_end_time),
-            "--channel-name %s:%s" % (ifo, opts.channel_name[ifo]),
-            "--output-strain-file %s" % (output_file),
+            f"--channel-name {ifo}:{opts.channel_name[ifo]}",
+            f"--output-strain-file {output_file}",
         ]
 
         # Add the determined source arguments
         args_opt.extend(strain_source_args)
 
         if fake_rate is not None:
-            args_opt.append("--fake-strain-sample-rate %f" % fake_rate)
+            args_opt.append(f"--fake-strain-sample-rate {fake_rate:f}")
 
         if opts.fake_strain_filter_duration is not None:
             args_opt.append(
-                "--fake-strain-filter-duration %f" % opts.fake_strain_filter_duration
+                f"--fake-strain-filter-duration {opts.fake_strain_filter_duration:f}"
             )
 
         # Add extra args if any
         if extra_args:
-            args_opt.append("--fake-strain-extra-args %s" % " ".join(extra_args))
+            args_opt.append(f"--fake-strain-extra-args {' '.join(extra_args)}")
 
     return args_opt
 
@@ -292,9 +292,9 @@ for ifo in opts.ifo_list:
     # Get the base command options
     args_opt = create_command_opts(ifo, rseed, output_file)
     if opts.injection_file is not None:
-        args_opt.append("--injection-file %s" % (opts.injection_file))
+        args_opt.append(f"--injection-file {opts.injection_file}")
     if opts.low_frequency_cutoff is not None:
-        args_opt.append("--fake-strain-flow %f" % (opts.low_frequency_cutoff[ifo]))
+        args_opt.append(f"--fake-strain-flow {opts.low_frequency_cutoff[ifo]:f}")
 
     cmd = " ".join(args_opt)
     print(cmd)

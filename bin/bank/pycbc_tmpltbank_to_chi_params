@@ -187,5 +187,5 @@ for idx in range(len(mass1)):
     )
     vals += " "
     vals += " ".join([str(i) for i in chi_coords])
-    fp.write("%s\n" % (vals))
+    fp.write(f"{vals}\n")
 fp.close()

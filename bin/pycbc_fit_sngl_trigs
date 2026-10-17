@@ -140,7 +140,7 @@ cuts.add_argument(
     "--snr-threshold",
     type=float,
     help="Only fit triggers with SNR above this threshold. "
-    "Default %.1f" % default_thresh,
+    f"Default {default_thresh:.1f}",
 )
 cuts.add_argument(
     "--trig-filter",
@@ -223,9 +223,9 @@ if opt.trig_filter and trigformat != "hdf":
 # hack default values of SNR threshold and filter function
 if not opt.snr_threshold and not opt.trig_filter:
     opt.snr_threshold = default_thresh
-    filter_func = "self.snr > %f" % opt.snr_threshold
+    filter_func = f"self.snr > {opt.snr_threshold:f}"
 elif opt.snr_threshold:
-    filter_func = "self.snr > %f" % opt.snr_threshold
+    filter_func = f"self.snr > {opt.snr_threshold:f}"
 else:
     filter_func = opt.trig_filter
 
@@ -425,7 +425,7 @@ for ifo in opt.ifos:
             if opt.plot_dir:
                 histcounts, edges = np.histogram(vals_inbin, bins=50)
                 cum_counts = histcounts[::-1].cumsum()[::-1]
-                binlabel = r"%.2g - %.2g" % (lower, upper)
+                binlabel = rf"{lower:.2g} - {upper:.2g}"
                 plt.semilogy(
                     edges[:-1],
                     cum_counts,
@@ -441,7 +441,7 @@ for ifo in opt.ifos:
                     * trstats.cum_fit(opt.fit_function, plotrange, alpha, th),
                     "--",
                     color=histcolors[i],
-                    label=r"$\alpha = $%.2f $\pm$ %.2f" % (alpha, sig_alpha),
+                    label=rf"$\alpha = ${alpha:.2f} $\pm$ {sig_alpha:.2f}",
                 )
                 plt.semilogy(
                     plotrange,
@@ -496,7 +496,7 @@ if opt.plot_dir:
                 [fits[ifo][th][i] for i in binind],
                 yerr=[stdev[ifo][th][i] for i in binind],
                 fmt="+-",
-                label=ifo + " fit above %.2f" % th,
+                label=ifo + f" fit above {th:.2f}",
             )
         if opt.bin_spacing == "log":
             plt.semilogx()
@@ -512,7 +512,7 @@ if opt.plot_dir:
                 pbins.centres(),
                 [ks_prob[ifo][th][i] for i in binind],
                 "+--",
-                label=ifo + " KS prob, thresh %.2f" % th,
+                label=ifo + f" KS prob, thresh {th:.2f}",
             )
         if opt.bin_spacing == "log":
             plt.loglog()

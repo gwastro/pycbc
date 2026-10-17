@@ -296,17 +296,15 @@ def generate_tc_prior(wflow, tc_path, buffer_seg):
     """
     # Write the tc-prior configuration file if it does not exist
     if os.path.exists(tc_path):
-        raise ValueError("Refusing to overwrite %s." % tc_path)
+        raise ValueError(f"Refusing to overwrite {tc_path}.")
     tc_file = open(tc_path, "w")
     tc_file.write("[prior-tc]\n")
     tc_file.write("name = uniform\n")
-    tc_file.write("min-tc = %s\n" % wflow.analysis_time[0])
-    tc_file.write("max-tc = %s\n\n" % wflow.analysis_time[1])
+    tc_file.write(f"min-tc = {wflow.analysis_time[0]}\n")
+    tc_file.write(f"max-tc = {wflow.analysis_time[1]}\n\n")
     tc_file.write("[constraint-tc]\n")
     tc_file.write("name = custom\n")
-    tc_file.write(
-        "constraint_arg = (tc < %s) | (tc > %s)\n" % (buffer_seg[0], buffer_seg[1])
-    )
+    tc_file.write(f"constraint_arg = (tc < {buffer_seg[0]}) | (tc > {buffer_seg[1]})\n")
     tc_file.close()
 
     # Add the tc-prior configuration file url to wflow.cp if necessary

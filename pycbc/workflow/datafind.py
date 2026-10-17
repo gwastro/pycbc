@@ -206,7 +206,7 @@ def setup_datafind_workflow(
         for ifo in science_segs.keys():
             # If no science segments in input then do nothing
             if not science_segs[ifo]:
-                msg = "No science segments are present for ifo %s, " % (ifo)
+                msg = f"No science segments are present for ifo {ifo}, "
                 msg += "the segment metadata indicates there is no analyzable"
                 msg += " strain data between the selected GPS start and end "
                 msg += "times."
@@ -214,7 +214,7 @@ def setup_datafind_workflow(
                 continue
             if ifo not in new_science_segs:
                 msg = "No data frames were found corresponding to the science "
-                msg += "segments for ifo %s" % (ifo)
+                msg += f"segments for ifo {ifo}"
                 logger.error(msg)
                 missing_data = True
                 if check_segment_gaps == "update_times":
@@ -222,8 +222,8 @@ def setup_datafind_workflow(
                 continue
             missing = science_segs[ifo] - new_science_segs[ifo]
             if abs(missing):
-                msg = "From ifo %s we are missing frames covering:" % (ifo)
-                msg += "\n%s" % "\n".join(map(str, missing))
+                msg = f"From ifo {ifo} we are missing frames covering:"
+                msg += "\n{}".format("\n".join(map(str, missing)))
                 missing_data = True
                 logger.error(msg)
                 if check_segment_gaps == "update_times":
@@ -268,9 +268,10 @@ def setup_datafind_workflow(
                             if len(dfout.pfns) == 0:
                                 new_list.append(frame)
                             else:
-                                msg = "Frame %s not found locally. " % (frame.url,)
-                                msg += "Replacing with remote url(s) %s." % (
-                                    str([a.url for a in dfout.pfns]),
+                                msg = f"Frame {frame.url} not found locally. "
+                                msg += (
+                                    "Replacing with remote url(s) "
+                                    f"{[a.url for a in dfout.pfns]!s}."
                                 )
                                 logger.info(msg)
                             break
@@ -278,7 +279,7 @@ def setup_datafind_workflow(
                         new_list.append(frame)
                 missing_frames[ifo] = new_list
             if missing_frames[ifo]:
-                msg = "From ifo %s we are missing the following frames:" % (ifo)
+                msg = f"From ifo {ifo} we are missing the following frames:"
                 msg += "\n".join([a.url for a in missing_frames[ifo]])
                 missing_flag = True
                 logger.error(msg)
@@ -328,16 +329,16 @@ def setup_datafind_workflow(
             missing2 = missing2 - curr_seg_summ_times
             missing2.coalesce()
             if abs(missing):
-                msg = "From ifo %s the following times have frames, " % (ifo)
+                msg = f"From ifo {ifo} the following times have frames, "
                 msg += "but are not covered in the segment summary table."
-                msg += "\n%s" % "\n".join(map(str, missing))
+                msg += "\n{}".format("\n".join(map(str, missing)))
                 logger.error(msg)
                 missing_flag = True
             if abs(missing2):
-                msg = "From ifo %s the following times have frames, " % (ifo)
+                msg = f"From ifo {ifo} the following times have frames, "
                 msg += "are science, and are not covered in the segment "
                 msg += "summary table."
-                msg += "\n%s" % "\n".join(map(str, missing2))
+                msg += "\n{}".format("\n".join(map(str, missing2)))
                 logger.error(msg)
                 missing_flag = True
         if check_segment_summary == "raise_error" and missing_flag:
@@ -429,11 +430,11 @@ def setup_datafind_runtime_cache_multi_calls_perifo(
     for ifo, science_segs_ifo in science_segs.items():
         observatory = ifo[0].upper()
         frame_type = cp.get_opt_tags(
-            "workflow-datafind", "datafind-%s-frame-type" % (ifo.lower()), tags
+            "workflow-datafind", f"datafind-{ifo.lower()}-frame-type", tags
         )
         for seg in science_segs_ifo:
             msg = "Finding data between %d and %d " % (seg[0], seg[1])
-            msg += "for ifo %s" % (ifo)
+            msg += f"for ifo {ifo}"
             logger.info(msg)
             # WARNING: For now the workflow will expect times to be in integer seconds
             start_time = int(seg[0])
@@ -526,7 +527,7 @@ def setup_datafind_runtime_cache_single_call_perifo(
         observatory = ifo[0].upper()
         checked_times = segments.segmentlist([])
         frame_types = cp.get_opt_tags(
-            "workflow-datafind", "datafind-%s-frame-type" % (ifo.lower()), tags
+            "workflow-datafind", f"datafind-{ifo.lower()}-frame-type", tags
         )
         # Check if this is one type, or time varying
         frame_types = frame_types.replace(" ", "").strip().split(",")
@@ -713,7 +714,7 @@ def setup_datafind_from_pregenerated_lcf_files(cp, ifos, output_dir, tags=None):
 
     datafindcaches = []
     for ifo in ifos:
-        search_string = "datafind-pregenerated-cache-file-%s" % (ifo.lower(),)
+        search_string = f"datafind-pregenerated-cache-file-{ifo.lower()}"
         frame_cache_file_name = cp.get_opt_tags(
             "workflow-datafind", search_string, tags=tags
         )
@@ -857,7 +858,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
             # Don't bother if these are not file:// urls, assume all urls in
             # one cache file must be the same type
             if not cache[0].scheme == "file":
-                warn_msg = "We have %s entries in the " % (cache[0].scheme,)
+                warn_msg = f"We have {cache[0].scheme} entries in the "
                 warn_msg += "cache file. I do not check if these exist."
                 logger.warning(warn_msg)
                 continue
@@ -922,7 +923,7 @@ def get_segment_summary_times(science_file, segment_name):
                 break
     else:
         raise ValueError(
-            "Cannot find channel %s in segment_definer table." % (segment_name)
+            f"Cannot find channel {segment_name} in segment_definer table."
         )
 
     # Get the segmentlist corresponding to this segment_name in segment_summary
@@ -1004,8 +1005,8 @@ def run_datafind_instance(
         for item, value in cp.items("datafind"):
             df_kwargs[item] = value
     for tag in tags:
-        if cp.has_section("datafind-%s" % (tag)):
-            for item, value in cp.items("datafind-%s" % (tag)):
+        if cp.has_section(f"datafind-{tag}"):
+            for item, value in cp.items(f"datafind-{tag}"):
                 df_kwargs[item] = value
 
     # It is useful to print the corresponding command to the logs
@@ -1047,8 +1048,7 @@ def run_datafind_instance(
         start = str(int(entry.segment[0]))
         duration = str(int(abs(entry.segment)))
         print(
-            "%s %s %s %s %s"
-            % (entry.observatory, entry.description, start, duration, entry.url),
+            f"{entry.observatory} {entry.description} {start} {duration} {entry.url}",
             file=fp,
         )
         entry.segment = segments.segment(int(entry.segment[0]), int(entry.segment[1]))
@@ -1089,7 +1089,7 @@ def log_datafind_command(
         elif name == "on_gaps":
             pass
         else:
-            err_msg = "Unknown datafind kwarg given: %s. " % (name)
+            err_msg = f"Unknown datafind kwarg given: {name}. "
             err_msg += "This argument is stripped in the logged .sh command."
             logger.warning(err_msg)
 

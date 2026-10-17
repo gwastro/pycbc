@@ -223,8 +223,8 @@ class TestWaveform(unittest.TestCase):
                                 self.assertTrue(amp_diff_c < 0.00001)
                                 self.assertTrue(phase_diff_c < 0.00001)
                                 print(
-                                    "..checked m1: %s m2:: %s s1x: %s s1y: %s s1z: %s Inclination: %s"
-                                    % (m1, m2, s1x, s1y, s1z, inclination)
+                                    f"..checked m1: {m1} m2:: {m2} s1x: {s1x} s1y: "
+                                    f"{s1y} s1z: {s1z} Inclination: {inclination}"
                                 )
 
     def test_errors(self):

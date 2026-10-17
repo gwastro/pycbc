@@ -79,16 +79,16 @@ f.attrs["ifos"] = " ".join(sorted(ifos))
 
 # Copy over the segment for coincs and singles
 for key in zdata.seg.keys():
-    f["segments/%s/start" % key] = zdata.seg[key]["start"][:]
-    f["segments/%s/end" % key] = zdata.seg[key]["end"][:]
+    f[f"segments/{key}/start"] = zdata.seg[key]["start"][:]
+    f[f"segments/{key}/end"] = zdata.seg[key]["end"][:]
 
 logger.info("writing zero lag triggers")
 if len(zdata) > 0:
     for key in zdata.data:
-        f["foreground/%s" % key] = zdata.data[key]
+        f[f"foreground/{key}"] = zdata.data[key]
 else:
     for key in zdata.data:
-        f["foreground/%s" % key] = numpy.array([], dtype=zdata.data[key].dtype)
+        f[f"foreground/{key}"] = numpy.array([], dtype=zdata.data[key].dtype)
 
 logger.info("calculating statistics excluding zerolag")
 fb = pycbc.io.HFile(args.full_data_background, "r")

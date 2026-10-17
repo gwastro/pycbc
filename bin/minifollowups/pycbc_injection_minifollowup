@@ -319,7 +319,7 @@ for num_event in range(num_events):
         else:
             ifo_time = -1.0
 
-        ifo_times += " %s:%s " % (ifo, ifo_time)
+        ifo_times += f" {ifo}:{ifo_time} "
         inj_params[ifo + "_end_time"] = ifo_time
     all_times = [inj_params[ifo + "_end_time"] for ifo in args.single_detector_triggers]
     inj_params["mean_time"] = coinc.mean_if_greater_than_zero(all_times)[0]
@@ -510,7 +510,7 @@ for num_event in range(num_events):
         except:
             pass
 
-        curr_tags = ["TMPLT_PARAMS_%s" % (curr_ifo,)]
+        curr_tags = [f"TMPLT_PARAMS_{curr_ifo}"]
         curr_tags += [str(num_event)]
         _, loudest_plot = mini.make_single_template_plots(
             workflow,
@@ -521,7 +521,7 @@ for num_event in range(num_events):
             args.output_dir,
             inj_file=injection_xml_file,
             tags=args.tags + curr_tags,
-            params_str="loudest template in %s" % curr_ifo,
+            params_str=f"loudest template in {curr_ifo}",
         )
         files += loudest_plot
 

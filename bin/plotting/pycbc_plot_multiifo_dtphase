@@ -119,12 +119,12 @@ tdiffs = [
 ][::-1]
 
 # Which IFOs are the differences between?
-ifostrs = ["%s-%s" % (ifo, ref_ifo) for ifo in f.attrs["ifos"] if not ifo == ref_ifo]
+ifostrs = [f"{ifo}-{ref_ifo}" for ifo in f.attrs["ifos"] if not ifo == ref_ifo]
 
 # Set up strings for the legends and axis labels
-tlegs = ["%s time of flight (s)" % ifostr for ifostr in ifostrs]
+tlegs = [f"{ifostr} time of flight (s)" for ifostr in ifostrs]
 legends = [plot_leg[i % 3] for i in range(ndims)]
-tlabs = ["%s time difference (s)" % ifostr for ifostr in ifostrs]
+tlabs = [f"{ifostr} time difference (s)" for ifostr in ifostrs]
 labels = [ifostrs[i // 3] + " " + plot_lab[i % 3] for i in range(ndims)]
 
 # convert the limits on the P/T/A dimensions into limits for each dimension
@@ -327,7 +327,7 @@ leg_ax.legend(loc="lower left")
 logger.info("Saving with metadata")
 
 # Set up metadata
-figure_title = "Corner plot of the %s PTA histogram" % "-".join(ifos)
+figure_title = f"Corner plot of the {'-'.join(ifos)} PTA histogram"
 if args.norm == "pdf":
     norm_statement = "Normalized to be the PDF of the parameter space. "
 elif args.norm == "max":

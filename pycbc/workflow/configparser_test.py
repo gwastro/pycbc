@@ -271,7 +271,7 @@ def add_options_to_section(
     """
     # Sanity checking
     if not cp.has_section(section):
-        raise ValueError("Section %s not present in ConfigParser." % (section,))
+        raise ValueError(f"Section {section} not present in ConfigParser.")
 
     # Deepcopy the cp object if needed
     if preserve_orig_file:
@@ -315,9 +315,9 @@ def check_duplicate_options(cp, section1, section2, raise_error=False):
     """
     # Sanity checking
     if not cp.has_section(section1):
-        raise ValueError("Section %s not present in ConfigParser." % (section1,))
+        raise ValueError(f"Section {section1} not present in ConfigParser.")
     if not cp.has_section(section2):
-        raise ValueError("Section %s not present in ConfigParser." % (section2,))
+        raise ValueError(f"Section {section2} not present in ConfigParser.")
 
     items1 = cp.items(section1)
     items2 = cp.items(section2)
@@ -328,7 +328,7 @@ def check_duplicate_options(cp, section1, section2, raise_error=False):
     if duplicates and raise_error:
         raise ValueError(
             "The following options appear in both section "
-            + "%s and %s: %s" % (section1, section2, duplicates.join(" "))
+            f"{section1} and {section2}: {duplicates.join(' ')}"
         )
 
     return duplicates

@@ -182,7 +182,7 @@ def volume_montecarlo(
             # if no max distance given, use max distance actually injected
             max_distance = max(found_d.max(), missed_d.max())
     else:
-        raise NotImplementedError("%s is not a recognized parameter" % limits_param)
+        raise NotImplementedError(f"{limits_param} is not a recognized parameter")
 
     # volume of sphere
     montecarlo_vtot = (4.0 / 3.0) * numpy.pi * max_distance**3.0
@@ -198,7 +198,7 @@ def volume_montecarlo(
         missed_weights = missed_d**d_power * missed_mchirp**mchirp_power
     else:
         raise NotImplementedError(
-            "%s is not a recognized distance parameter" % distribution_param
+            f"{distribution_param} is not a recognized distance parameter"
         )
 
     all_weights = numpy.concatenate((found_weights, missed_weights))

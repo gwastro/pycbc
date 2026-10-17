@@ -71,15 +71,15 @@ def timestr(s):
     t = ""
     s = int(s)
     d = s / 86400
-    t += "%sd " % d if d else ""
+    t += f"{d}d " if d else ""
     s -= d * 86400
     h = s / 3600
-    t += "%sh " % h if h else ""
+    t += f"{h}h " if h else ""
     s -= h * 3600
     m = s / 60
-    t += "%sm " % m if m else ""
+    t += f"{m}m " if m else ""
     s -= m * 60
-    t += "%ss " % s
+    t += f"{s}s "
     return t
 
 
@@ -170,13 +170,13 @@ for segment_file in opts.segment_files:
                     sub_line_collections += l
 
                     # set HTML table string
-                    label = """<table>
-                             <tr><th>Segment Name</th><td>%s</td></tr>
-                             <tr><th>Start</th><td>%.0f</td></tr>
-                             <tr><th>End</th><td>%.0f</td></tr>
-                             <tr><th>Duration</th><td>%s</td></tr>
+                    label = f"""<table>
+                             <tr><th>Segment Name</th><td>{segment_name}</td></tr>
+                             <tr><th>Start</th><td>{s:.0f}</td></tr>
+                             <tr><th>End</th><td>{e:.0f}</td></tr>
+                             <tr><th>Duration</th><td>{e - s}</td></tr>
                          </table>
-                    """ % (segment_name, s, e, e - s)
+                    """
 
                     # add tooltip for segment
                     if len(line_collections) < 1:

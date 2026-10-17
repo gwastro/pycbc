@@ -143,9 +143,7 @@ headers = [
 ]
 
 # add mathjax header to display latex
-html = results.mathjax_html_header() + "\n%s" % (
-    str(results.static_table(table, headers))
-)
+html = results.mathjax_html_header() + f"\n{results.static_table(table, headers)!s}"
 
 # add extra metadata
 mdatatmplt = "<h4><b>{}:</b> {}</h4>"

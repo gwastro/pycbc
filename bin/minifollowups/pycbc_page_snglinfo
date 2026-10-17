@@ -166,15 +166,15 @@ if args.include_summary_page_link:
 
 # End times
 data[0].append(str(utc))
-data[0].append("%.3f" % time)
+data[0].append(f"{time:.3f}")
 headers.append("UTC")
 headers.append("End&nbsp;time")
 
 # SNR and statistic
 headers.append("&rho;")
-data[0].append("%5.2f" % sngl_file.snr[0])
+data[0].append(f"{sngl_file.snr[0]:5.2f}")
 headers.append("Phase")
-data[0].append("%5.2f" % sngl_file.get_column("coa_phase")[0])
+data[0].append(f"{sngl_file.get_column('coa_phase')[0]:5.2f}")
 # Determine statistic naming
 if args.sngl_ranking == "newsnr":
     sngl_stat_name = "Reweighted SNR"
@@ -196,31 +196,31 @@ else:
     stat_name_long = " with ".join([args.ranking_statistic, args.sngl_ranking])
 
 headers.append(stat_name)
-data[0].append("%5.2f" % stat[0])
+data[0].append(f"{stat[0]:5.2f}")
 
 # Signal-glitch discrimators
-data[0].append("%5.2f" % sngl_file.rchisq[0])
+data[0].append(f"{sngl_file.rchisq[0]:5.2f}")
 data[0].append("%i" % sngl_file.get_column("chisq_dof")[0])
 headers.append("&chi;<sup>2</sup><sub>r</sub>")
 headers.append("&chi;<sup>2</sup>&nbsp;bins")
 try:
-    data[0].append("%5.2f" % sngl_file.sgchisq[0])
+    data[0].append(f"{sngl_file.sgchisq[0]:5.2f}")
     headers.append("sg&chi;<sup>2</sup>")
 except:
     pass
 try:
-    data[0].append("%5.2f" % sngl_file.psd_var_val[0])
+    data[0].append(f"{sngl_file.psd_var_val[0]:5.2f}")
     headers.append("PSD var")
 except:
     pass
 
 # Template parameters
-data[0].append("%5.2f" % sngl_file.mass1[0])
-data[0].append("%5.2f" % sngl_file.mass2[0])
-data[0].append("%5.2f" % sngl_file.mchirp[0])
-data[0].append("%5.2f" % sngl_file.spin1z[0])
-data[0].append("%5.2f" % sngl_file.spin2z[0])
-data[0].append("%5.2f" % sngl_file.template_duration[0])
+data[0].append(f"{sngl_file.mass1[0]:5.2f}")
+data[0].append(f"{sngl_file.mass2[0]:5.2f}")
+data[0].append(f"{sngl_file.mchirp[0]:5.2f}")
+data[0].append(f"{sngl_file.spin1z[0]:5.2f}")
+data[0].append(f"{sngl_file.spin2z[0]:5.2f}")
+data[0].append(f"{sngl_file.template_duration[0]:5.2f}")
 headers.append("m<sub>1</sub>")
 headers.append("m<sub>2</sub>")
 headers.append("M<sub>c</sub>")
@@ -229,8 +229,8 @@ headers.append("s<sub>2z</sub>")
 headers.append("Duration")
 # display eccentricity and relative anomaly if they exist
 try:
-    data[0].append("%5.2f" % sngl_file.eccentricity[0])
-    data[0].append("%5.2f" % sngl_file.rel_anomaly[0])
+    data[0].append(f"{sngl_file.eccentricity[0]:5.2f}")
+    data[0].append(f"{sngl_file.rel_anomaly[0]:5.2f}")
     headers.append("eccentricity")
     headers.append("anomaly")
 except KeyError:
@@ -245,7 +245,7 @@ if args.significance_file and not args.n_loudest:
     if args.trigger_id in trigger_ids:
         trig_idx = numpy.nonzero(trigger_ids == args.trigger_id)[0][0]
         headers.append("Single-detector statistic")
-        data[0].append("%.2f" % sngl_stat[trig_idx])
+        data[0].append(f"{sngl_stat[trig_idx]:.2f}")
         headers.append("Single-detector p_astro")
         pastro_form = "%.3f" if sngl_pastro[trig_idx] >= 0.001 else "%.3e"
         data[0].append(pastro_form % sngl_pastro[trig_idx])
@@ -267,8 +267,9 @@ html = pycbc.results.dq.redirect_javascript + str(
 if args.n_loudest:
     title = "Parameters of single-detector event ranked %s" % (args.n_loudest + 1)
     caption = (
-        "Parameters of the single-detector event ranked number %s by %s. The figures below show the mini-followup data for this event."
-        % (args.n_loudest + 1, stat_name_long)
+        "Parameters of the single-detector event ranked number "
+        f"{args.n_loudest + 1} by {stat_name_long}. The figures below show "
+        "the mini-followup data for this event."
     )
 else:
     title = "Parameters of single-detector event"

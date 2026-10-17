@@ -45,7 +45,7 @@ def update_progress(p, u, n):
     if p > last_progress_update + u:
         f = open(n, "w")
         if f:
-            f.write("%.4f" % p)
+            f.write(f"{p:.4f}")
             f.close()
         last_progress_update = p
 

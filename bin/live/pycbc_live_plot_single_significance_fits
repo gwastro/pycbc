@@ -199,7 +199,7 @@ for ifo in all_ifos:
             cum_fit,
             "--",
             color=bin_colour,
-            label=r"$\alpha = $%.2f" % alphas[ifo][bin_num],
+            label=rf"$\alpha = ${alphas[ifo][bin_num]:.2f}",
         )
     ax.semilogy()
     ax.grid()

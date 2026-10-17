@@ -192,8 +192,8 @@ def get_start_dur(path):
 def in_coinc_time_incl(f, cstring, test_times):
     """Filter to all times where coincs of type given by cstring exist"""
     in_time = np.zeros(len(test_times))
-    starts = np.array(f["segments/%s/start" % cstring][:])
-    ends = np.array(f["segments/%s/end" % cstring][:])
+    starts = np.array(f[f"segments/{cstring}/start"][:])
+    ends = np.array(f[f"segments/{cstring}/end"][:])
     idx_within_segment = events.indices_within_times(test_times, starts, ends)
     in_time[idx_within_segment] = np.ones_like(idx_within_segment)
     return in_time
@@ -296,7 +296,7 @@ class EventRate:
         assert self.lo is not None
         assert self.hi is not None
         if self.args.verbose:
-            print("Cutting on %s between %f - %f" % (self.bin_param, self.lo, self.hi))
+            print(f"Cutting on {self.bin_param} between {self.lo:f} - {self.hi:f}")
         self.tpars = triggers.get_param(self.bin_param, None, *self.massspins)
         self.in_bin = filter_bin_lo_hi(self.tpars, self.lo, self.hi)
 
@@ -316,9 +316,7 @@ class EventRate:
                 np.log10(self.thr) - 0.0001, np.log10(maxval), n_bins + 1
             )
         else:
-            raise RuntimeError(
-                "Can't make bins without a %s bin width option!" % choice
-            )
+            raise RuntimeError(f"Can't make bins without a {choice} bin width option!")
         if self.args.verbose:
             print(str(n_bins) + " " + choice + " stat bins")
         return bins
@@ -504,10 +502,7 @@ class ForegroundEvents(EventRate):
                     # store
                     self.sg_pdf[_idx] = _pdf
                     if self.args.verbose:
-                        print(
-                            "Found sg PDFs for %s coincs in %s time from %s"
-                            % (cty, ct, st)
-                        )
+                        print(f"Found sg PDFs for {cty} coincs in {ct} time from {st}")
 
 
 class BackgroundEventRate(EventRate):
@@ -615,9 +610,7 @@ class BackgroundEventRate(EventRate):
             plt.xlabel("Ranking statistic")
             plt.ylabel("Background PDF")
             plt.savefig(
-                self.args.plot_dir
-                + "%s-bg_pdf-%s" % (chunk_type[1], chunk_type[0])
-                + ".png"
+                self.args.plot_dir + f"{chunk_type[1]}-bg_pdf-{chunk_type[0]}" + ".png"
             )
             plt.close()
 
@@ -696,14 +689,14 @@ class SignalEventRate(EventRate):
                 intime = self.in_coinc_time_excl(HFile(fg_file, "r"), ct, meantimes)
                 _ctime[intime == 1] = ct  # do we need this?
                 if self.args.verbose:
-                    print("Got %i " % (intime == 1).sum() + "inj in %s time" % ct)
+                    print("Got %i " % (intime == 1).sum() + f"inj in {ct} time")
                 # filter by coinc type and add to array
                 for cty in self.coinc_types:
                     if not type_in_time(ct, cty):
                         continue
                     my_vals = _injstat[np.logical_and(_ctype == cty, intime == 1)]
                     if self.args.verbose:
-                        print("%d " % len(my_vals) + "are %s coincs" % cty)
+                        print("%d " % len(my_vals) + f"are {cty} coincs")
                     if (ct, cty) not in self.inj_vals:  # initialize
                         self.inj_vals[(ct, cty)] = np.array([])
                     if len(my_vals) > 0:
@@ -753,7 +746,7 @@ class SignalEventRate(EventRate):
                 )
                 plt.xlabel("Ranking statistic")
                 plt.ylabel("Signal PDF")
-                plt.savefig(self.args.plot_dir + "%s-fg_pdf-%s" % (ct, cty) + ".png")
+                plt.savefig(self.args.plot_dir + f"{ct}-fg_pdf-{cty}" + ".png")
                 plt.close()
 
     def get_norms(self):

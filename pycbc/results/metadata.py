@@ -55,7 +55,7 @@ def save_html_with_metadata(fig, filename, fig_kwds, kwds):
     f = open(filename, "w")
     for key, value in kwds.items():
         value = escape(value, escape_table)
-        line = '<div class=pycbc-meta key="%s" value="%s"></div>' % (str(key), value)
+        line = f'<div class=pycbc-meta key="{key!s}" value="{value}"></div>'
         f.write(line)
 
     f.write(text)
@@ -67,7 +67,7 @@ def load_html_metadata(filename):
     data = open(filename).read()
 
     if "pycbc-meta" in data:
-        print("LOADING HTML FILE %s" % filename)
+        print(f"LOADING HTML FILE {filename}")
     parser.feed(data)
     cp = configparser.ConfigParser(parser.metadata)
     cp.add_section(os.path.basename(filename))
@@ -146,8 +146,8 @@ def save_fig_with_metadata(fig, filename, fig_kwds=None, **kwds):
         _metadata_saver[extension](fig, filename, fig_kwds, kwds)
     except KeyError:
         raise TypeError(
-            "Cannot save file %s with metadata, extension %s not "
-            "supported at this time" % (filename, extension)
+            f"Cannot save file {filename} with metadata, extension {extension} not "
+            "supported at this time"
         )
 
 
@@ -171,6 +171,6 @@ def load_metadata_from_file(filename):
         return _metadata_loader[extension](filename)
     except KeyError:
         raise TypeError(
-            "Cannot read metadata from file %s, extension %s not "
-            "supported at this time" % (filename, extension)
+            f"Cannot read metadata from file {filename}, extension {extension} not "
+            "supported at this time"
         )

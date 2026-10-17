@@ -81,7 +81,7 @@ class Stat:
             if stat in self.files:
                 raise RuntimeError(
                     "We already have one file with stat attr = "
-                    "%s. Can't provide more than one!" % stat
+                    f"{stat}. Can't provide more than one!"
                 )
             logger.info("Found file %s for stat %s", filename, stat)
             self.files[stat] = filename
@@ -541,12 +541,12 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             if param[ifo].dtype == numpy.int8:
                 # Older style, incorrectly sorted histogram file
                 ncol = param[ifo].shape[1]
-                self.pdtype = [("c%s" % i, param[ifo].dtype) for i in range(ncol)]
+                self.pdtype = [(f"c{i}", param[ifo].dtype) for i in range(ncol)]
                 self.param_bin[ifo] = numpy.zeros(
                     len(self.weights[ifo]), dtype=self.pdtype
                 )
                 for i in range(ncol):
-                    self.param_bin[ifo]["c%s" % i] = param[ifo][:, i]
+                    self.param_bin[ifo][f"c{i}"] = param[ifo][:, i]
 
                 lsort = self.param_bin[ifo].argsort()
                 self.param_bin[ifo] = self.param_bin[ifo][lsort]
@@ -1898,7 +1898,7 @@ def get_statistic(stat):
     try:
         return statistic_dict[stat]
     except KeyError:
-        raise RuntimeError("%s is not an available detection statistic" % stat)
+        raise RuntimeError(f"{stat} is not an available detection statistic")
 
 
 def insert_statistic_option_group(parser, default_ranking_statistic=None):

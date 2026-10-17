@@ -251,7 +251,7 @@ def resample_to_delta_t(timeseries, delta_t, method="butterworth"):
         data = fir_zero_filter(filter_coefficients, timeseries)[::factor]
 
     else:
-        raise ValueError("Invalid resampling method: %s" % method)
+        raise ValueError(f"Invalid resampling method: {method}")
 
     ts = TimeSeries(
         data, delta_t=delta_t, dtype=timeseries.dtype, epoch=timeseries._epoch

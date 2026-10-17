@@ -106,7 +106,7 @@ if h_inc_back_num > h_iterations:
     pycbc.results.save_fig_with_metadata(
         fig,
         args.output_file,
-        title="%s bin, Count vs Rank" % f.attrs["name"]
+        title=f"{f.attrs['name']} bin, Count vs Rank"
         if "name" in f.attrs
         else "Count vs Rank",
         caption=output_message,
@@ -134,12 +134,12 @@ if h_inc_back_num == 0:
     )
     dec = f["background/decimation_factor"][:]
 else:
-    bstat = f["background_h%s/stat" % h_inc_back_num][:]
+    bstat = f[f"background_h{h_inc_back_num}/stat"][:]
     fap = 1 - numpy.exp(
-        -conv.sec_to_year(f.attrs["foreground_time_h%s" % h_inc_back_num])
-        / f["background_h%s/ifar" % h_inc_back_num][:]
+        -conv.sec_to_year(f.attrs[f"foreground_time_h{h_inc_back_num}"])
+        / f[f"background_h{h_inc_back_num}/ifar"][:]
     )
-    dec = f["background_h%s/decimation_factor" % h_inc_back_num][:]
+    dec = f[f"background_h{h_inc_back_num}/decimation_factor"][:]
 
 s = bstat.argsort()
 dec, bstat, fap = dec[s], bstat[s], fap[s]
@@ -188,7 +188,7 @@ if not args.closed_box:
     bg_key = (
         "background_time"
         if h_inc_back_num == 0
-        else "background_time_h%s" % h_inc_back_num
+        else f"background_time_h{h_inc_back_num}"
     )
     binweights = dec / conv.sec_to_year(f.attrs[bg_key])
     plt.hist(
@@ -235,7 +235,7 @@ if fstat is not None and not args.closed_box:
         # Or use the foreground time after h-removal
         else:
             count_h_rm = (right_h_rm - left_h_rm) / conv.sec_to_year(
-                f.attrs["foreground_time_h%s" % h_inc_back_num]
+                f.attrs[f"foreground_time_h{h_inc_back_num}"]
             )
 
         plt.errorbar(
@@ -267,7 +267,7 @@ if fstat is not None and not args.closed_box:
         color="#ff6600",
     )
 
-plt.xlabel("Ranking statistic (bin size = %.2f)" % bin_size)
+plt.xlabel(f"Ranking statistic (bin size = {bin_size:.2f})")
 plt.ylabel("Trigger Rate (yr$^{-1})$")
 if args.x_min is not None:
     plt.xlim(xmin=args.x_min)
@@ -305,12 +305,12 @@ if not args.closed_box:
         plt.fill_between(x, ymin, ymax, zorder=-1, color=plt.cm.Blues(next_sig / 8.0))
 
         if next_sig == end:
-            next_sig = "%.1f" % next_sig
+            next_sig = f"{next_sig:.1f}"
 
         plt.text(
             bstat[::-1][x2] - 0.1,
             ymax,
-            r"$%s \sigma$" % next_sig,
+            rf"${next_sig} \sigma$",
             fontsize=10,
             horizontalalignment="center",
             verticalalignment="bottom",
@@ -322,7 +322,7 @@ ax2 = ax1.twinx()
 if h_inc_back_num == 0:
     fac = conv.sec_to_year(f.attrs["foreground_time"])
 else:
-    fac = conv.sec_to_year(f.attrs["foreground_time_h%s" % h_inc_back_num])
+    fac = conv.sec_to_year(f.attrs[f"foreground_time_h{h_inc_back_num}"])
 
 ymin = ax1.get_ylim()[0] * fac
 ymax = ax1.get_ylim()[1] * fac
@@ -332,13 +332,13 @@ ax2.set_yscale("log")
 ax2.set_ylabel("Number per Experiment")
 
 if "name" in f.attrs:
-    title = "%s bin, Count vs Rank" % f.attrs["name"]
+    title = f"{f.attrs['name']} bin, Count vs Rank"
     caption = "Histogram of FAR vs the ranking statistic in the search."
 elif "ifos" in f.attrs:
-    title = "%s coincidences, Count vs Rank" % f.attrs["ifos"]
+    title = f"{f.attrs['ifos']} coincidences, Count vs Rank"
     caption = (
-        "Histogram of the FAR vs the ranking statistic "
-        "for %s coincidences only" % f.attrs["ifos"]
+        "Histogram of the FAR vs the ranking statistic for "
+        f"{f.attrs['ifos']} coincidences only"
     )
 else:
     title = "Count vs Rank"

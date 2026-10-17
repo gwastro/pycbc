@@ -235,7 +235,7 @@ for event in coinc_table:
     time = coinc_inspiral_table_curr[0].end_time
     if not args.force_overwrite and not args.no_upload:
         far = coinc_inspiral_table_curr[0].combined_far
-        query = args.query_string + " %.3f .. %.3f" % (time - 1, time + 1)
+        query = args.query_string + f" {time - 1:.3f} .. {time + 1:.3f}"
         if check_gracedb_for_event(gracedb, query, far):
             continue
 

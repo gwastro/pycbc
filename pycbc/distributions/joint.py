@@ -102,15 +102,16 @@ class JointDistribution:
         missing_params = distparams - varset
         if missing_params:
             raise ValueError(
-                "provided variable_args do not include "
-                "parameters %s" % (",".join(missing_params)) + " which are "
+                "provided variable_args do not include parameters "
+                f"{','.join(missing_params)}"
+                " which are "
                 "required by the provided distributions"
             )
         extra_params = varset - distparams
         if extra_params:
             raise ValueError(
-                "variable_args %s " % (",".join(extra_params))
-                + "are not in any of the provided distributions"
+                f"variable_args {','.join(extra_params)} "
+                "are not in any of the provided distributions"
             )
 
         # if there are constraints then find the renormalization factor

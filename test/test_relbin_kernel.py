@@ -138,7 +138,7 @@ class TestRelbinKernel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.seed = get_seed()
-        print("using PYCBC_VALIDATION_SEED=%s" % cls.seed)
+        print(f"using PYCBC_VALIDATION_SEED={cls.seed}")
         cls.case = make_case(cls.seed)
         # with earth rotation fp, fc and the arrival are per bin
         rng = numpy.random.RandomState(cls.seed + 1)
@@ -176,7 +176,7 @@ class TestRelbinKernel(unittest.TestCase):
             err[j] = (abs(hdv[j] - hd) / abs(hd), abs(hhv[j] - hh) / abs(hh))
         # numpy.max, not the builtin, so a nan does not pass
         worst = err.max()
-        print("%s: worst relative difference from the definition %.2e" % (label, worst))
+        print(f"{label}: worst relative difference from the definition {worst:.2e}")
         self.assertTrue(worst < TOL)
 
     def rotated(self, j):

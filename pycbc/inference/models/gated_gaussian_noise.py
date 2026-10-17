@@ -200,7 +200,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         try:
             p = self.psds[det]
         except KeyError:
-            raise ValueError("No psd set for detector %s" % det)
+            raise ValueError(f"No psd set for detector {det}")
         Rss = self._Rss[det]  # noqa: N806
         cov = scipy.linalg.toeplitz(Rss / 2)  # full covariance matrix
         samples, fit = self.logdet_fit(cov, p)

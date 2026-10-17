@@ -38,9 +38,9 @@ parser.add_argument(
     required=True,
     help=(
         "What approximant to use to generate the "
-        "waveform(s). Options are: TD approximants: %s."
-        % ", ".join(waveform.td_approximants())
-        + ". FD approximants: %s." % ", ".join(waveform.fd_approximants())
+        "waveform(s). Options are: TD approximants: "
+        f"{', '.join(waveform.td_approximants())}."
+        f". FD approximants: {', '.join(waveform.fd_approximants())}."
     ),
     choices=appx_options,
 )
@@ -263,9 +263,9 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
         freq = waveform.frequency_from_polarizations(hplus, hcross).max()
 
     if infile is None:
-        print("f Final: %f Hz" % (freq), file=sys.stdout)
+        print(f"f Final: {freq:f} Hz", file=sys.stdout)
         if not fd_approx:
-            print("Duration: %f s" % (hplus.duration), file=sys.stdout)
+            print(f"Duration: {hplus.duration:f} s", file=sys.stdout)
     else:
         sngl_insp_table[cache_id].f_final = freq
 

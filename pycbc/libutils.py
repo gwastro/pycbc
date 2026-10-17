@@ -60,7 +60,7 @@ def pkg_config(pkg_libraries):
 
     # Check that we have the packages
     for pkg in pkg_libraries:
-        if os.system("pkg-config --exists %s 2>/dev/null" % pkg) == 0:
+        if os.system(f"pkg-config --exists {pkg} 2>/dev/null") == 0:
             pass
         else:
             print(f"Could not find library {pkg}")
@@ -71,8 +71,8 @@ def pkg_config(pkg_libraries):
         # PKG_CONFIG_ALLOW_SYSTEM_CFLAGS explicitly lists system paths.
         # On system-wide LAL installs, this is needed for swig to find lalswig.i
         for token in getoutput(
-            "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s"
-            % " ".join(pkg_libraries)
+            "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags "
+            f"{' '.join(pkg_libraries)}"
         ).split():
             if token.startswith("-l"):
                 libraries.append(token[2:])

@@ -33,7 +33,7 @@ if mask.any():
     print("Pass: %d GW150914-like triggers" % sum(mask))
     print("end_time snr reduced_chi2")
     for t, s, c in zip(end_times[mask], snrs[mask], chi2rs[mask]):
-        print("%.3f %.3f %.3f" % (t, s, c))
+        print(f"{t:.3f} {s:.3f} {c:.3f}")
     sys.exit(0)
 else:
     print("Fail: no GW150914-like triggers")

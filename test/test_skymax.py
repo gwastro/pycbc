@@ -536,7 +536,7 @@ def skymax_test_maker(class_name, idx, jdx):
         idx = idx
         jdx = jdx
 
-    Test.__name__ = "Test %s" % "_".join([str(idx), str(jdx)])
+    Test.__name__ = f"Test {'_'.join([str(idx), str(jdx)])}"
     return Test
 
 

@@ -876,7 +876,7 @@ class CompressedWaveform:
         self.precision = precision
 
     def _get(self, param):
-        val = getattr(self, "_%s" % param)
+        val = getattr(self, f"_{param}")
         if isinstance(val, h5py.Dataset):
             try:
                 val = self._cache[param]
@@ -1020,16 +1020,16 @@ class CompressedWaveform:
         if root is None:
             root = ""
         else:
-            root = "%s/" % (root)
+            root = f"{root}/"
         if precision is None:
             precision = self.precision
         elif precision == "double" and self.precision == "single":
             raise ValueError("cannot cast single precision to double")
         outdtype = _real_dtypes[precision]
-        group = "%scompressed_waveforms/%s" % (root, str(template_hash))
+        group = f"{root}compressed_waveforms/{template_hash!s}"
         for param in ["amplitude", "phase", "sample_points"]:
             fp.create_dataset(
-                "%s/%s" % (group, param),
+                f"{group}/{param}",
                 data=self._get(param).astype(outdtype),
                 compression="gzip",
                 shuffle=True,
@@ -1079,8 +1079,8 @@ class CompressedWaveform:
         if root is None:
             root = ""
         else:
-            root = "%s/" % (root)
-        group = "%scompressed_waveforms/%s" % (root, str(template_hash))
+            root = f"{root}/"
+        group = f"{root}compressed_waveforms/{template_hash!s}"
         fp_group = fp[group]
         sample_points = fp_group["sample_points"]
         amp = fp_group["amplitude"]

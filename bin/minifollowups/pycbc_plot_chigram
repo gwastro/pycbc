@@ -43,9 +43,7 @@ chisq = pycbc.types.load_timeseries(args.single_template_file, group="chisq")
 
 s = None
 for i in range(len(f["chisq_bins"].keys())):
-    ts = pycbc.types.load_timeseries(
-        args.single_template_file, group="chisq_bins/%s" % i
-    )
+    ts = pycbc.types.load_timeseries(args.single_template_file, group=f"chisq_bins/{i}")
 
     delta_t = ts.delta_t
     st = ts.sample_times.numpy()
@@ -64,7 +62,7 @@ plt.ylabel("Frequency (Hz)")
 
 xlabel = "Time (s)"
 if args.central_time:
-    xlabel += " - %.2f" % args.central_time
+    xlabel += f" - {args.central_time:.2f}"
     if args.window:
         plt.xlim(xmin=-args.window, xmax=args.window)
 
@@ -79,7 +77,7 @@ else:
 # Set the frequency label
 fig.canvas.draw()
 labels = [item.get_text() for item in ax.get_yticklabels()]
-ax.set_yticklabels(["%.0f" % y[int(label)] for label in labels])
+ax.set_yticklabels([f"{y[int(label)]:.0f}" for label in labels])
 
 pycbc.results.save_fig_with_metadata(
     fig,

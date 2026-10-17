@@ -45,9 +45,9 @@ for psd_file in args.psd_files:
         inc[ifo] = 0
         start[ifo], end[ifo] = [], []
 
-    for rkey in f["%s/psds" % ifo].keys():
+    for rkey in f[f"{ifo}/psds"].keys():
         int_key = int(rkey)
-        rkey = "%s/psds/%s" % (ifo, rkey)
+        rkey = f"{ifo}/psds/{rkey}"
         psd = pycbc.types.load_frequencyseries(psd_file, group=rkey)
 
         key = ifo + "/psds/" + str(inc[ifo])
@@ -55,8 +55,8 @@ for psd_file in args.psd_files:
             key, data=psd, compression="gzip", compression_opts=9, shuffle=True
         )
 
-        s = f["%s/start_time" % ifo][int_key]
-        e = f["%s/end_time" % ifo][int_key]
+        s = f[f"{ifo}/start_time"][int_key]
+        e = f[f"{ifo}/end_time"][int_key]
 
         outf[key].attrs["epoch"] = int(psd.epoch)
         outf[key].attrs["delta_f"] = float(psd.delta_f)

@@ -163,8 +163,8 @@ class TestPeakLockSearch(unittest.TestCase):
             self.assertLess(
                 abs(searched - exact),
                 50.0,
-                "with a reference %s off, searching gave %s against %s"
-                % (offset, searched, exact),
+                f"with a reference {offset} off, searching gave {searched} against "
+                f"{exact}",
             )
 
     def test_it_matters(self):
@@ -179,8 +179,8 @@ class TestPeakLockSearch(unittest.TestCase):
         self.assertGreater(
             abs(locked - exact),
             100.0,
-            "a reference %s off did not spill out of the region; the test "
-            "proves nothing" % OFFSETS[-1],
+            f"a reference {OFFSETS[-1]} off did not spill out of the region; the test "
+            "proves nothing",
         )
 
     def test_the_region_depends_only_on_the_parameters(self):
@@ -218,8 +218,8 @@ class TestPeakLockSearch(unittest.TestCase):
             self.assertLessEqual(
                 abs(model.tstart[ifo] - before[ifo]) * SAMPLE_RATE,
                 1.0,
-                "a matched reference moved %s by %s samples"
-                % (ifo, (model.tstart[ifo] - before[ifo]) * SAMPLE_RATE),
+                f"a matched reference moved {ifo} by "
+                f"{(model.tstart[ifo] - before[ifo]) * SAMPLE_RATE} samples",
             )
 
     def test_the_region_lands_on_a_sample_of_its_own_grid(self):
@@ -242,7 +242,7 @@ class TestPeakLockSearch(unittest.TestCase):
                 samples,
                 round(samples),
                 places=6,
-                msg="%s moved by %s samples" % (ifo, samples),
+                msg=f"{ifo} moved by {samples} samples",
             )
 
     def test_the_stride_is_shorter_than_the_region(self):
@@ -259,8 +259,8 @@ class TestPeakLockSearch(unittest.TestCase):
             self.assertLessEqual(
                 SEARCH["peak_lock_search_decimate"],
                 model.num_samples[ifo],
-                "stride %s against a region of %s samples in %s"
-                % (SEARCH["peak_lock_search_decimate"], model.num_samples[ifo], ifo),
+                f"stride {SEARCH['peak_lock_search_decimate']} against a region of "
+                f"{model.num_samples[ifo]} samples in {ifo}",
             )
 
     def test_precalculated_points_hold_the_region_still(self):
@@ -329,7 +329,7 @@ class TestPeakLockSearch(unittest.TestCase):
             self.assertGreater(
                 two.num_samples[ifo],
                 0,
-                "%s region is %s samples" % (ifo, two.num_samples[ifo]),
+                f"{ifo} region is {two.num_samples[ifo]} samples",
             )
 
     def test_the_offset_comes_from_the_loudest_detector(self):
@@ -365,7 +365,7 @@ class TestPeakLockSearch(unittest.TestCase):
         )
         two.follow_peak({"H1": None, "L1": None})
         self.assertEqual(
-            asked, ["L1"], "the offset was taken from %s, not the loudest" % asked
+            asked, ["L1"], f"the offset was taken from {asked}, not the loudest"
         )
 
     def test_a_peak_beyond_the_search_says_so(self):

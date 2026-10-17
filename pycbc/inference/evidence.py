@@ -219,7 +219,7 @@ def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
     method_list = ["trapezoid", "trapezoid_corrected", "simpsons"]
 
     if method not in method_list:
-        raise ValueError("Method %s not supported. Expected %s" % (method, method_list))
+        raise ValueError(f"Method {method} not supported. Expected {method_list}")
     # Read in the data and ensure ordering of data.
     # Ascending order sort
     order = numpy.argsort(betas)

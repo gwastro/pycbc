@@ -551,7 +551,7 @@ class PartitionedTmpltbank:
         # These that masses obey the restrictions of mass_range_params
         if self.mass_range_params.is_outside_range(mass1, mass2, spin1z, spin2z):
             err_msg = "Point with masses given by "
-            err_msg += "%f %f %f %f " % (mass1, mass2, spin1z, spin2z)
+            err_msg += f"{mass1:f} {mass2:f} {spin1z:f} {spin2z:f} "
             err_msg += "(mass1, mass2, spin1z, spin2z) is not consistent "
             err_msg += "with the provided command-line restrictions on masses "
             err_msg += "and spins."

@@ -136,7 +136,7 @@ def background_bin_from_string(background_bins, data):
                 )
                 cached_values[bin_type] = vals
             else:
-                raise ValueError("Invalid bin type %s" % bin_type)
+                raise ValueError(f"Invalid bin type {bin_type}")
 
             sub_locs = member_func(vals)
             sub_locs = numpy.where(sub_locs)[0]

@@ -454,7 +454,7 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
                 )
             if len(glitch_times) > 0:
                 logger.info(
-                    "Autogating at %s", ", ".join(["%.3f" % gt for gt in glitch_times])
+                    "Autogating at %s", ", ".join([f"{gt:.3f}" for gt in glitch_times])
                 )
             else:
                 break
@@ -1021,8 +1021,8 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
         action=MultiDetOptionAction,
         metavar="IFO:CHOICE",
         help="Name of model PSD for generating fake "
-        "gaussian noise. Choose from %s or zeroNoise"
-        % ((", ").join(pycbc.psd.get_lalsim_psd_list()),),
+        f"gaussian noise. Choose from {', '.join(pycbc.psd.get_lalsim_psd_list())} or "
+        "zeroNoise",
     )
     data_reading_group_multi.add_argument(
         "--fake-strain-extra-args",
@@ -2547,7 +2547,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 logger.info(
                     "Autogating %s at %s",
                     self.detector,
-                    ", ".join(["%.3f" % gt for gt in glitch_times]),
+                    ", ".join([f"{gt:.3f}" for gt in glitch_times]),
                 )
                 self.gate_params = [
                     (gt, self.autogating_width, self.autogating_taper)

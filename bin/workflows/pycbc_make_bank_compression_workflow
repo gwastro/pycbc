@@ -65,15 +65,16 @@ def finalize(container, workflow, finalize_workflow):
     logging.shutdown()
     with open(wf_log_file.storage_path) as logfile:
         logdata = logfile.read()
-    log_str = """
-    <p>Workflow generation script created workflow in output directory: %s</p>
-    <p>Workflow name is: %s</p>
-    <p>Workflow generation script run on host: %s</p>
-    <pre>%s</pre>
-    """ % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
+    cwd = os.getcwd()
+    log_str = f"""
+    <p>Workflow generation script created workflow in output directory: {cwd}</p>
+    <p>Workflow name is: {args.workflow_name}</p>
+    <p>Workflow generation script run on host: {socket.gethostname()}</p>
+    <pre>{logdata}</pre>
+    """
     kwds = {
         "title": "Workflow Generation Log",
-        "caption": "Log of the workflow script %s" % sys.argv[0],
+        "caption": f"Log of the workflow script {sys.argv[0]}",
         "cmd": " ".join(sys.argv),
     }
     save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)

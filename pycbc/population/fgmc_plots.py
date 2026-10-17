@@ -82,7 +82,7 @@ def finalize_plot(fig, args, extensions, name, pltype, tag):
     for extn in extensions:
         filename = args.pldir + "_".join(name.split()) + "_" + pltype + tag + extn
         if args.verbose:
-            print("writing %s ..." % filename)
+            print(f"writing {filename} ...")
         fig.savefig(filename)
 
 
@@ -111,13 +111,13 @@ def odds_summary(
         gps = times[i] if times is not None else ""
         ifar = ifars[i]
         stat = rankstats[i]
-        mchirpstring = "mchirp %.3F" % mchirps[i] if mchirps is not None else ""
+        mchirpstring = f"mchirp {mchirps[i]:.3F}" if mchirps is not None else ""
         topgps.append(gps)
         topstat.append(stat)
         topifar.append(ifar)
         print("#%d event:" % (n + 1), str(gps), mchirpstring)
-        print("    rankstat = %-8.3f" % stat)
-        print("    IFAR     = %.2f" % ifar)
+        print(f"    rankstat = {stat:<8.3f}")
+        print(f"    IFAR     = {ifar:.2f}")
         print("    odds     = %g" % ((1.0 - p_b[i]) / p_b[i]))
         toppastro.append(1.0 - p_b[i])
 
@@ -133,9 +133,8 @@ def odds_summary(
     if hasattr(args, "json_tag") and args.json_tag is not None:
         # save to catalog-style files
         def dump_json(gps, p_a, p_b):
-            jfile = args.plot_dir + "H1L1V1-PYCBC_%s-%s-1.json" % (
-                args.json_tag,
-                str(int(gps)),
+            jfile = (
+                args.plot_dir + f"H1L1V1-PYCBC_{args.json_tag}-{int(gps)!s}-1.json"
             )  # truncate to integer GPS
             with open(jfile, "w") as jf:
                 json.dump({"Astro": p_a, "Terrestrial": p_b}, jf)
@@ -268,7 +267,7 @@ def dist_summary(
             print(
                 "%g%%" % (cred * 100),
                 "credible interval =",
-                "[%g, %g]" % (lo, hi),
+                f"[{lo:g}, {hi:g}]",
                 unit,
             )
 
@@ -281,7 +280,7 @@ def dist_summary(
                 print(
                     "%g%%" % (cred * 100),
                     "credible interval =",
-                    "[%g, %g]" % (hpdlo, hpdhi),
+                    f"[{hpdlo:g}, {hpdhi:g}]",
                     unit,
                 )
         else:

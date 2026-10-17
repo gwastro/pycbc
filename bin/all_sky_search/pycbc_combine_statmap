@@ -52,13 +52,13 @@ for fi in files:
     for key in fi["segments"]:
         if key.startswith("foreground") or key.startswith("background"):
             continue
-        f["segments/%s/end" % key] = fi["segments/%s/end" % key][:]
-        f["segments/%s/start" % key] = fi["segments/%s/start" % key][:]
+        f[f"segments/{key}/end"] = fi[f"segments/{key}/end"][:]
+        f[f"segments/{key}/start"] = fi[f"segments/{key}/start"][:]
         if "segments/foreground_veto" in fi:
-            f["segments/%s/foreground_veto/end" % key] = fi[
+            f[f"segments/{key}/foreground_veto/end"] = fi[
                 "segments/foreground_veto/end"
             ][:]
-            f["segments/%s/foreground_veto/start" % key] = fi[
+            f[f"segments/{key}/foreground_veto/start"] = fi[
                 "segments/foreground_veto/start"
             ][:]
         for attr_name in fi.attrs:
@@ -145,7 +145,7 @@ ifar_stat = numpy.core.records.fromarrays(
 )
 
 # all_times is a tuple of trigger time arrays
-all_times = (f["foreground/%s/time" % ifo][:] for ifo in all_ifos)
+all_times = (f[f"foreground/{ifo}/time"][:] for ifo in all_ifos)
 
 
 def argmax(v):
@@ -171,15 +171,15 @@ def filter_dataset(h5file, name, idx):
 # multiple files
 for key in f["foreground"].keys():
     if key not in all_ifos:
-        id = filter_dataset(f, "foreground/%s" % key, cidx)
+        id = filter_dataset(f, f"foreground/{key}", cidx)
     else:  # key is an ifo
-        for k in f["foreground/%s" % key].keys():
+        for k in f[f"foreground/{key}"].keys():
             id = filter_dataset(f, f"foreground/{key}/{k}", cidx)
 
 logger.info("Applying trials factor")
 
 # Recalculate event times after clustering for trials factor calculation
-clustered_times = (f["foreground/%s/time" % ifo][:] for ifo in all_ifos)
+clustered_times = (f[f"foreground/{ifo}/time"][:] for ifo in all_ifos)
 
 # Trials factor is how many possible 2+IFO combinations are 'on'
 #  at the time of the coincidence
@@ -192,8 +192,8 @@ test_times = numpy.array(
 for key in f["segments"]:
     if key.startswith("foreground") or key.startswith("background"):
         continue
-    end_times = numpy.array(f["segments/%s/end" % key][:])
-    start_times = numpy.array(f["segments/%s/start" % key][:])
+    end_times = numpy.array(f[f"segments/{key}/end"][:])
+    start_times = numpy.array(f[f"segments/{key}/start"][:])
     idx_within_segment = pycbc.events.indices_within_times(
         test_times, start_times, end_times
     )

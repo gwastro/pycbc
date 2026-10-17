@@ -119,9 +119,7 @@ else:
 headers = ["Parameter", "$D_{{KS}}$", "p-value"]
 
 # add mathjax header to display latex
-html = results.mathjax_html_header() + "\n%s" % (
-    str(results.static_table(table, headers))
-)
+html = results.mathjax_html_header() + f"\n{results.static_table(table, headers)!s}"
 
 # add the number of injections that were used
 mdatatmplt = "<h4><b>{}:</b> {}</h4>"

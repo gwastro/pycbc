@@ -171,7 +171,7 @@ def resolve_url(
     if islocal:
         # check that the file exists
         if not os.path.isfile(u.path):
-            errmsg = "Cannot open file %s from URL %s" % (u.path, url)
+            errmsg = f"Cannot open file {u.path} from URL {url}"
             raise ValueError(errmsg)
         # for regular files, make a direct copy if requested
         if copy_to_cwd:
@@ -213,12 +213,12 @@ def resolve_url(
 
     else:
         # TODO: We could support other schemes as needed
-        errmsg = "Unknown URL scheme: %s\n" % (u.scheme)
+        errmsg = f"Unknown URL scheme: {u.scheme}\n"
         errmsg += "Currently supported are: file, http, and https."
         raise ValueError(errmsg)
 
     if not os.path.isfile(filename):
-        errmsg = "Error trying to create file %s from %s" % (filename, url)
+        errmsg = f"Error trying to create file {filename} from {url}"
         raise ValueError(errmsg)
 
     if permissions:
@@ -228,7 +228,7 @@ def resolve_url(
             # check that the file has at least the permissions requested
             s = os.stat(filename)[stat.ST_MODE]
             if (s & permissions) != permissions:
-                errmsg = "Could not change permissions on %s (read-only)" % url
+                errmsg = f"Could not change permissions on {url} (read-only)"
                 raise ValueError(errmsg)
 
     return filename
@@ -447,8 +447,8 @@ class WorkflowConfigParser(InterpolatingConfigParser):
             if test_list[0] == "which":
                 new_string = which(test_list[1])
                 if not new_string:
-                    errmsg = "Cannot find exe %s in your path " % (test_list[1])
-                    errmsg += "and you specified ${which:%s}." % (test_list[1])
+                    errmsg = f"Cannot find exe {test_list[1]} in your path "
+                    errmsg += f"and you specified ${{which:{test_list[1]}}}."
                     raise ValueError(errmsg)
 
         return new_string

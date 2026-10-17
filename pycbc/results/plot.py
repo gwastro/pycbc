@@ -15,7 +15,7 @@ def hist_overflow(val, val_max, **kwds):
 
     if overflow > 0:
         rect = plt.bar(val_max + 0.05, overflow, 0.5, color=color)[0]
-        plt.text(rect.get_x(), 1.10 * rect.get_height(), "%s+" % val_max)
+        plt.text(rect.get_x(), 1.10 * rect.get_height(), f"{val_max}+")
 
 
 def add_style_opt_to_parser(parser, default=None):

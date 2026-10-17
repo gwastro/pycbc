@@ -175,9 +175,7 @@ class Executable(pegasus_workflow.Executable):
         self.name = name
 
         try:
-            self.installed = cp.getboolean(
-                "pegasus_profile-%s" % name, "pycbc|installed"
-            )
+            self.installed = cp.getboolean(f"pegasus_profile-{name}", "pycbc|installed")
         except:
             self.installed = False
 
@@ -186,14 +184,12 @@ class Executable(pegasus_workflow.Executable):
         self.update_output_directory(out_dir=out_dir)
 
         # Determine the level at which output files should be kept
-        if cp.has_option_tags(
-            "pegasus_profile-%s" % name, "pycbc|retention_level", tags
-        ):
+        if cp.has_option_tags(f"pegasus_profile-{name}", "pycbc|retention_level", tags):
             # Get the retention_level from the config file
             # This method allows us to use the retention levels
             # defined above
             cfg_ret_level = cp.get_opt_tags(
-                "pegasus_profile-%s" % name, "pycbc|retention_level", tags
+                f"pegasus_profile-{name}", "pycbc|retention_level", tags
             )
             self.current_retention_level = getattr(self, cfg_ret_level)
 
@@ -219,8 +215,8 @@ class Executable(pegasus_workflow.Executable):
         #  2) Check is primary_site is set globally.
         #  3) Use condorpool_symlink as a fallback.
         self.exe_pfns = {}
-        if cp.has_option_tags("pegasus_profile-%s" % name, "pycbc|site", tags):
-            exe_site = cp.get_opt_tags("pegasus_profile-%s" % name, "pycbc|site", tags)
+        if cp.has_option_tags(f"pegasus_profile-{name}", "pycbc|site", tags):
+            exe_site = cp.get_opt_tags(f"pegasus_profile-{name}", "pycbc|site", tags)
         elif cp.has_option("pegasus_profile", "pycbc|primary_site"):
             exe_site = cp.get("pegasus_profile", "pycbc|primary_site")
         else:
@@ -228,14 +224,14 @@ class Executable(pegasus_workflow.Executable):
 
         exe_site = exe_site.strip()
 
-        site_sec = 'pegasus_profile-%s' % exe_site
+        site_sec = f'pegasus_profile-{exe_site}'
         if (exe_url.scheme == '' and '/' not in exe_path
                 and cp.has_option(site_sec, 'pycbc|container-bin-dir')):
             # We know this will run in a container, and we know the
             # container's bin dir, so we can construct the path to the
             # executable accordingly.
             bin_dir = cp.get(site_sec, 'pycbc|container-bin-dir').strip()
-            exe_path = '%s/%s' % (bin_dir.rstrip('/'), exe_path)
+            exe_path = f"{bin_dir.rstrip('/')}/{exe_path}"
             # We don't check existence of this file, similar to the
             # singularity case below, because we don't know if the container
             # is available for it on the submit host.
@@ -250,8 +246,7 @@ class Executable(pegasus_workflow.Executable):
             #  on the local site exist
             if os.path.isfile(exe_url.path) is False:
                 raise TypeError(
-                    "Failed to find %s executable "
-                    "at %s on site %s" % (name, exe_path, exe_site)
+                    f"Failed to find {name} executable at {exe_path} on site {exe_site}"
                 )
         elif exe_url.scheme == "singularity":
             # Will use an executable within a singularity container. Don't
@@ -307,7 +302,7 @@ class Executable(pegasus_workflow.Executable):
         if self.ifo_list and len(self.ifo_list) == 1:
             return self.ifo_list[0]
         err_msg = "self.ifoList must contain only one ifo to access the "
-        err_msg += "ifo property. %s." % (str(self.ifo_list),)
+        err_msg += f"ifo property. {self.ifo_list!s}."
         raise TypeError(err_msg)
 
     def get_transformation(self):
@@ -354,7 +349,7 @@ class Executable(pegasus_workflow.Executable):
             if opt in self.all_added_options:
                 if ignore_existing:
                     continue
-                raise ValueError("Option %s has already been added" % opt)
+                raise ValueError(f"Option {opt} has already been added")
             self.all_added_options.add(opt)
 
             value = cp.get(sec, opt).strip()
@@ -1331,7 +1326,7 @@ class File(pegasus_workflow.File):
         if len(self.ifo_list) == 1:
             return self.ifo_list[0]
         err = "self.ifo_list must contain only one ifo to access the "
-        err += "ifo property. %s." % (str(self.ifo_list),)
+        err += f"ifo property. {self.ifo_list!s}."
         raise TypeError(err)
 
     @property
@@ -1343,7 +1338,7 @@ class File(pegasus_workflow.File):
         if len(self.segment_list) == 1:
             return self.segment_list[0]
         err = "self.segment_list must only contain one segment to access"
-        err += " the segment property. %s." % (str(self.segment_list),)
+        err += f" the segment property. {self.segment_list!s}."
         raise TypeError(err)
 
     @property
@@ -1382,7 +1377,7 @@ class File(pegasus_workflow.File):
         duration = str(end - start)
         start = str(start)
 
-        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)
+        return f"{ifo}-{description.upper()}-{start}-{duration}.{extension}"
 
     @classmethod
     def from_path(cls, path, attrs=None, **kwargs):
@@ -1688,7 +1683,7 @@ class FileList(list):
         matching_files = FileList([i for i in self if tag in i.tags])
         if fail_if_not_single_file:
             if not len(matching_files) == 1:
-                err_msg = "More than one file with tag %s was found." % (tag,)
+                err_msg = f"More than one file with tag {tag} was found."
                 raise ValueError(err_msg)
             matching_files = matching_files[0]
         return matching_files
@@ -2130,7 +2125,7 @@ class SegFile(File):
         splt = key.split(":")
         if len(splt) == 2:
             return splt[0], splt[1]
-        err_msg = "Key should be of the format 'ifo:name', got %s." % (key,)
+        err_msg = f"Key should be of the format 'ifo:name', got {key}."
         raise ValueError(err_msg)
 
     def to_segment_xml(self, override_file_if_exists=False):
@@ -2237,7 +2232,7 @@ def make_external_call(
         err_fp = None
         out_fp = None
 
-    msg = "Making external call %s" % (" ".join(cmd_list))
+    msg = f"Making external call {' '.join(cmd_list)}"
     logger.info(msg)
     err_code = subprocess.call(cmd_list, stderr=err_fp, stdout=out_fp, shell=shell)
     if err_fp:
@@ -2276,11 +2271,11 @@ class ModifiedCalledProcessError(Exception):
             self.returncode,
         )
         if self.err_file:
-            msg += "Stderr can be found in %s .\n" % (self.err_file)
+            msg += f"Stderr can be found in {self.err_file} .\n"
         if self.out_file:
-            msg += "Stdout can be found in %s .\n" % (self.out_file)
+            msg += f"Stdout can be found in {self.out_file} .\n"
         if self.cmd_file:
-            msg += "The failed command has been printed in %s ." % (self.cmd_file)
+            msg += f"The failed command has been printed in {self.cmd_file} ."
         return msg
 
 

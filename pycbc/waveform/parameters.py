@@ -70,16 +70,12 @@ class Parameter(str):
         desc_indent = "\n" + prefix + "    "
         indented_desc = self.description.replace("\n", desc_indent)
 
-        outstr = "%s%s : {%s, %s}\n%s    %s" % (
-            prefix,
-            self.name,
-            str(self.default),
-            dtype_str,
-            prefix,
-            indented_desc,
+        outstr = (
+            f"{prefix}{self.name} : {{{self.default!s}, "
+            f"{dtype_str}}}\n{prefix}    {indented_desc}"
         )
         if include_label:
-            outstr += " Label: %s" % (self.label)
+            outstr += f" Label: {self.label}"
         return outstr
 
 

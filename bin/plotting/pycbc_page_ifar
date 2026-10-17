@@ -166,7 +166,7 @@ if h_inc_back_num > h_iterations:
 # get foreground IFAR values and cumulative number for each IFAR value
 if opts.open_box:
     if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
-        fore_ifar = fp["foreground_h%s/ifar" % h_inc_back_num][:]
+        fore_ifar = fp[f"foreground_h{h_inc_back_num}/ifar"][:]
         # Get ifar of hierarchically removed foreground triggers
         supp_fore_ifar = fp["foreground/ifar"][:]
 
@@ -194,8 +194,8 @@ expected_cumnum = conv.sec_to_year(fp.attrs["foreground_time"] / expected_ifar)
 # and test for backwards compatibility and that stage was written.
 if opts.open_box:
     if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
-        back_tsid = fp["background_h%s/timeslide_id" % h_inc_back_num][:]
-        back_ifar = fp["background_h%s/ifar" % h_inc_back_num][:]
+        back_tsid = fp[f"background_h{h_inc_back_num}/timeslide_id"][:]
+        back_ifar = fp[f"background_h{h_inc_back_num}/ifar"][:]
 
     # If the user wants to plot foreground events at h_inc_back_num == 0
     # and h_iterations == 0 then no hierarchical removals were done and

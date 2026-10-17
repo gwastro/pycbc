@@ -1185,7 +1185,6 @@ def load_array(path, group=None):
         return Array(data[:, 0] + 1j * data[:, 1])
 
     raise ValueError(
-        "File has %s dimensions, cannot convert to Array, \
+        f"File has {data.ndim} dimensions, cannot convert to Array, \
                       must be 1 (real) or 2 (complex)"
-        % data.ndim
     )

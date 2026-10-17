@@ -55,9 +55,7 @@ def parse_parameters(parameters):
         elif len(ps) == 2:
             outname, column = ps
         else:
-            raise ValueError(
-                "parameter %s not formatted correctly; " % (p) + "see help"
-            )
+            raise ValueError(f"parameter {p} not formatted correctly; " + "see help")
         outnames.append(outname)
         columns.append(column)
     return outnames, columns
@@ -88,7 +86,7 @@ parser.add_argument(
     "'inclination:alpha3'. Otherwise, the given name "
     "will assumed to be the same as the column name. "
     "Not used with HDF input files. "
-    "Default is '%s'." % (" ".join(default_parameters)),
+    f"Default is '{' '.join(default_parameters)}'.",
 )
 # add the ability to specify the approximant to use
 bank.add_approximant_arg(

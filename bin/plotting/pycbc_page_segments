@@ -29,15 +29,15 @@ def timestr(s):
     t = ""
     s = int(s)
     d = s / 86400
-    t += "%sd " % d if d else ""
+    t += f"{d}d " if d else ""
     s -= d * 86400
     h = s / 3600
-    t += "%sh " % h if h else ""
+    t += f"{h}h " if h else ""
     s -= h * 3600
     m = s / 60
-    t += "%sm " % m if m else ""
+    t += f"{m}m " if m else ""
     s -= m * 60
-    t += "%ss " % s
+    t += f"{s}s "
     return t
 
 
@@ -51,7 +51,7 @@ def get_name(segment_file):
         segment_file, False, contenthandler=LIGOLWContentHandler
     )
     n = ligolw.Table.get_table(indoc, "segment_definer")[0]
-    return "%s:%s:%s" % (n.ifos, n.name, n.version)
+    return f"{n.ifos}:{n.name}:{n.version}"
 
 
 def plot_segs(start, end, color=None, y=0, h=1):
@@ -133,7 +133,7 @@ for i, seg_file in enumerate(sorted(args.segment_files)[::-1]):
             mpld3.plugins.connect(fig, Tooltip(p, [l], css=css))
 
 for name, total, h in names:
-    ax.text(smin, h, "%s: %s" % (name, total))
+    ax.text(smin, h, f"{name}: {total}")
 
 ax.set_ylim(0, h + 0.2)
 ax.set_xlim(smin, smax)
