@@ -310,11 +310,13 @@ for event in coinc_table:
         logger.info("Not uploading event")
     else:
         group_tag = "Test" if args.testing else "CBC"
+        with open(fullpath_xml, "rb") as fp:
+            xml_contents = fp.read()
         r = gracedb.create_event(
             group_tag,
             "pycbc",
             filename_xml,
-            filecontents=open(fullpath_xml, "rb").read(),
+            filecontents=xml_contents,
             search=id_str,
             offline=True,
             kafka=producer,

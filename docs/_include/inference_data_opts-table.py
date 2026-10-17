@@ -264,14 +264,13 @@ formatargs = [maxlen, optlen, metalen, helplen]
 
 # Write the formatted table to file
 filename = "inference_data_opts-table.rst"
-out = open(filename, "w")
-print(minorline.format(*formatargs), file=out)
-# print the header
-print(header.format(*formatargs), file=out)
-print(majorline.format(*formatargs), file=out)
-# print everything else in the table
-for ii in range(1, len(table)):
-    row = table[ii]
-    print(row.format(*formatargs), file=out)
+with open(filename, "w") as out:
     print(minorline.format(*formatargs), file=out)
-out.close()
+    # print the header
+    print(header.format(*formatargs), file=out)
+    print(majorline.format(*formatargs), file=out)
+    # print everything else in the table
+    for ii in range(1, len(table)):
+        row = table[ii]
+        print(row.format(*formatargs), file=out)
+        print(minorline.format(*formatargs), file=out)

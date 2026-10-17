@@ -456,9 +456,8 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             self.assertRaises(TypeError, Array, [1, 2, 3], copy=False)
 
     def test_save(self):
-        with self.context:
-            # make temporary file paths
-            temp_file = tempfile.NamedTemporaryFile()
+        # make temporary file paths
+        with self.context, tempfile.NamedTemporaryFile() as temp_file:
             temp_path_npy = temp_file.name + ".npy"
             temp_path_txt = temp_file.name + ".txt"
             # make a test array

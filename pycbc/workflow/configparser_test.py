@@ -37,9 +37,8 @@ def parse_workflow_ini_file(cp_file, parsed_filepath=None):
 
     # Dump parsed .ini file if needed
     if parsed_filepath:
-        fp = open(parsed_filepath, "w")
-        cp.write(fp)
-        fp.close()
+        with open(parsed_filepath, "w") as fp:
+            cp.write(fp)
 
     return cp
 
@@ -62,9 +61,8 @@ def read_ini_file(cp_file):
     # Initialise ConfigParser class
     cp = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
     # Read the file
-    fp = open(cp_file)
-    cp.read_file(fp)
-    fp.close()
+    with open(cp_file) as fp:
+        cp.read_file(fp)
     return cp
 
 

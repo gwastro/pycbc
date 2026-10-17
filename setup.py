@@ -263,11 +263,14 @@ for name in cythonext:
     )
     ext.append(e)
 
+with open("README.md") as fp:
+    long_description = fp.read()
+
 setup(
     name="PyCBC",
     version=VERSION,
     description="Core library to analyze gravitational-wave data, find signals, and study their parameters.",
-    long_description=open("README.md").read(),
+    long_description=long_description,
     long_description_content_type="text/markdown",
     author="The PyCBC team",
     author_email="alex.nitz@gmail.org",

@@ -201,7 +201,8 @@ def query_flag(
                 int(duration),
             )
             fname = get_file(url, cache=cache, timeout=10)
-            data = json.load(open(fname))
+            with open(fname) as fp:
+                data = json.load(fp)
             if "segments" in data:
                 flag_segments = data["segments"]
 

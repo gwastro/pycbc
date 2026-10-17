@@ -1781,15 +1781,15 @@ class FileList(list):
         """
         Load a FileList from a pickle file
         """
-        f = open(filename)
-        return pickle.load(f)
+        with open(filename) as f:
+            return pickle.load(f)
 
     def dump(self, filename):
         """
         Output this FileList to a pickle file
         """
-        f = open(filename, "w")
-        pickle.dump(self, f)
+        with open(filename, "w") as f:
+            pickle.dump(self, f)
 
     def to_file_object(self, name, out_dir):
         """
@@ -2025,45 +2025,44 @@ class SegFile(File):
 
         """
         # load xmldocument and SegmentDefTable and SegmentTables
-        fp = open(xml_file, "rb")
-        xmldoc = ligolw_utils.load_fileobj(
-            fp, compress="auto", contenthandler=LIGOLWContentHandler
-        )
-
-        seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
-        seg_table = lsctables.SegmentTable.get_table(xmldoc)
-        seg_sum_table = lsctables.SegmentSumTable.get_table(xmldoc)
-
-        segs = segments.segmentlistdict()
-        seg_summ = segments.segmentlistdict()
-
-        seg_id = {}
-        for seg_def in seg_def_table:
-            # Here we want to encode ifo and segment name
-            full_channel_name = ":".join([str(seg_def.ifos), str(seg_def.name)])
-            seg_id[int(seg_def.segment_def_id)] = full_channel_name
-            segs[full_channel_name] = segments.segmentlist()
-            seg_summ[full_channel_name] = segments.segmentlist()
-
-        for seg in seg_table:
-            seg_obj = segments.segment(
-                lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
-                lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns),
+        with open(xml_file, "rb") as fp:
+            xmldoc = ligolw_utils.load_fileobj(
+                fp, compress="auto", contenthandler=LIGOLWContentHandler
             )
-            segs[seg_id[int(seg.segment_def_id)]].append(seg_obj)
 
-        for seg in seg_sum_table:
-            seg_obj = segments.segment(
-                lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
-                lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns),
-            )
-            seg_summ[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+            seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
+            seg_table = lsctables.SegmentTable.get_table(xmldoc)
+            seg_sum_table = lsctables.SegmentSumTable.get_table(xmldoc)
 
-        for seg_name in seg_id.values():
-            segs[seg_name] = segs[seg_name].coalesce()
+            segs = segments.segmentlistdict()
+            seg_summ = segments.segmentlistdict()
 
-        xmldoc.unlink()
-        fp.close()
+            seg_id = {}
+            for seg_def in seg_def_table:
+                # Here we want to encode ifo and segment name
+                full_channel_name = ":".join([str(seg_def.ifos), str(seg_def.name)])
+                seg_id[int(seg_def.segment_def_id)] = full_channel_name
+                segs[full_channel_name] = segments.segmentlist()
+                seg_summ[full_channel_name] = segments.segmentlist()
+
+            for seg in seg_table:
+                seg_obj = segments.segment(
+                    lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                    lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns),
+                )
+                segs[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+
+            for seg in seg_sum_table:
+                seg_obj = segments.segment(
+                    lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                    lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns),
+                )
+                seg_summ[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+
+            for seg_name in seg_id.values():
+                segs[seg_name] = segs[seg_name].coalesce()
+
+            xmldoc.unlink()
         curr_url = urllib.parse.urlunparse(
             ["file", "localhost", xml_file, None, None, None]
         )
@@ -2203,13 +2202,13 @@ def make_external_call(
     if out_dir:
         out_base = os.path.join(out_dir, out_basename)
         err_file = out_base + ".err"
-        err_fp = open(err_file, "w")
+        # These two are closed after the call below
+        err_fp = open(err_file, "w")  # noqa: SIM115
         out_file = out_base + ".out"
-        out_fp = open(out_file, "w")
+        out_fp = open(out_file, "w")  # noqa: SIM115
         cmd_file = out_base + ".sh"
-        cmd_fp = open(cmd_file, "w")
-        cmd_fp.write(" ".join(cmd_list))
-        cmd_fp.close()
+        with open(cmd_file, "w") as cmd_fp:
+            cmd_fp.write(" ".join(cmd_list))
     else:
         err_file = None
         out_file = None

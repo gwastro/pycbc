@@ -54,7 +54,8 @@ def write_config_for_subworkflow(cp, config_path):
     """
     cp = copy.deepcopy(cp)
     cp.set('workflow', 'skip-resolve-input-files', '')
-    cp.write(open(config_path, 'w'))
+    with open(config_path, 'w') as fp:
+        cp.write(fp)
 
 
 def add_wellfile_opt(node, workflow, option_name, out_dir, extra_tags=None):

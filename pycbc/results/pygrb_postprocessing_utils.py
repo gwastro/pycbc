@@ -260,7 +260,8 @@ def _read_seg_files(seg_files):
     keys = ["buffer", "off", "on"]
 
     for key, seg_file in zip(keys, seg_files, strict=True):
-        segs = fromsegwizard(open(seg_file))
+        with open(seg_file) as fp:
+            segs = fromsegwizard(fp)
         if len(segs) > 1:
             err_msg = "More than one segment, an error has occured."
             raise RuntimeError(err_msg)

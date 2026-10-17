@@ -43,10 +43,8 @@ def update_progress(p, u, n):
     """Updates a file 'progress.txt' with a value 0 .. 1.0 when enough (filtering) progress was made"""
     global last_progress_update
     if p > last_progress_update + u:
-        f = open(n, "w")
-        if f:
+        with open(n, "w") as f:
             f.write(f"{p:.4f}")
-            f.close()
         last_progress_update = p
 
 

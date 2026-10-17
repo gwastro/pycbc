@@ -349,7 +349,8 @@ def main(
         log_path = os.path.join(
             tmpdir, f"pycbc_single_template_{file_name_tag}_{ifo}_log.txt"
         )
-        log_file = open(log_path, "w")
+        # Kept open for the process; closed once it has finished, below
+        log_file = open(log_path, "w")  # noqa: SIM115
         log_file.write(" ".join(command) + "\n\n")
         log_file.flush()
 
