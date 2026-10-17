@@ -99,6 +99,12 @@ ignore = [
     # The bin/ scripts are installed by setup.py (`scripts=`), which makes
     # them executable, so their mode in git does not matter.
     "EXE001",
+    # Not planned to be enabled: exception messages written where the
+    # exception is raised (raise ValueError(f"...")) rather than in a custom
+    # exception class. Inline messages on built-in exceptions are clear and
+    # idiomatic, and defining a class for each of ~850 messages would add a
+    # lot of code for little benefit.
+    "TRY003",
 ]
 
 [lint.pydocstyle]
