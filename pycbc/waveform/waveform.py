@@ -982,8 +982,8 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
     # increase in computational cost
     fudge_duration = (max(0, full_duration) + 0.1 + rwrap) * 1.5
     fsamples = int(fudge_duration / nparams["delta_t"])
-    N = pnutils.nearest_larger_binary_number(fsamples)
-    fudge_duration = N * nparams["delta_t"]
+    tlen = pnutils.nearest_larger_binary_number(fsamples)
+    fudge_duration = tlen * nparams["delta_t"]
 
     nparams["delta_f"] = 1.0 / fudge_duration
     tsize = int(1.0 / nparams["delta_t"] / nparams["delta_f"])
@@ -1458,33 +1458,33 @@ def td_waveform_to_fd_waveform(waveform, out=None, length=None, buffer_length=10
     # Figure out lengths and set out if needed
     if out is None:
         if length is None:
-            N = pnutils.nearest_larger_binary_number(len(waveform) + buffer_length)
-            n = int(N // 2) + 1
+            tlen = pnutils.nearest_larger_binary_number(len(waveform) + buffer_length)
+            flen = int(tlen // 2) + 1
         else:
-            n = length
-            N = (n - 1) * 2
-        out = zeros(n, dtype=complex_same_precision_as(waveform))
+            flen = length
+            tlen = (flen - 1) * 2
+        out = zeros(flen, dtype=complex_same_precision_as(waveform))
     else:
-        n = len(out)
-        N = (n - 1) * 2
-    delta_f = 1.0 / (N * waveform.delta_t)
+        flen = len(out)
+        tlen = (flen - 1) * 2
+    delta_f = 1.0 / (tlen * waveform.delta_t)
 
     # total duration of the waveform
     tmplt_length = len(waveform) * waveform.delta_t
-    if len(waveform) > N:
+    if len(waveform) > tlen:
         err_msg = "The time domain template is longer than the intended "
         err_msg += "duration in the frequency domain. This situation is "
         err_msg += "not supported in this function. Please shorten the "
         err_msg += "waveform appropriately before calling this function or "
         err_msg += "increase the allowed waveform length. "
         err_msg += f"Waveform length (in samples): {len(waveform)}"
-        err_msg += f". Intended length: {N}."
+        err_msg += f". Intended length: {tlen}."
         raise ValueError(err_msg)
     # for IMR templates the zero of time is at max amplitude (merger)
     # thus the start time is minus the duration of the template from
     # lower frequency cutoff to merger, i.e. minus the 'chirp time'
     t_chirp = -float(waveform.start_time)  # conversion from LIGOTimeGPS
-    waveform.resize(N)
+    waveform.resize(tlen)
     k_zero = int(waveform.start_time / waveform.delta_t)
     waveform.roll(k_zero)
     htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
@@ -1501,7 +1501,7 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
     components of the waveform, which are needed for searches where h_plus
     and h_cross are not related by a simple phase shift.
     """
-    n = len(outplus)
+    flen = len(outplus)
 
     # If we don't have an inclination column alpha3 might be used
     if not hasattr(template, "inclination") and "inclination" not in kwargs:
@@ -1513,8 +1513,8 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
     if input_params["approximant"] in fd_approximants(_scheme.mgr.state):
         wav_gen = fd_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params["approximant"]](**input_params)
-        hp.resize(n)
-        hc.resize(n)
+        hp.resize(flen)
+        hc.resize(flen)
         outplus[0 : len(hp)] = hp[:]
         hp = FrequencySeries(outplus, delta_f=hp.delta_f, copy=False)
         outcross[0 : len(hc)] = hc[:]
@@ -1525,9 +1525,9 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         hc.length_in_time = hp.length_in_time
         return hp, hc
     if input_params["approximant"] in td_approximants(_scheme.mgr.state):
-        # N: number of time samples required
-        N = (n - 1) * 2
-        delta_f = 1.0 / (N * input_params["delta_t"])
+        # tlen: number of time samples required
+        tlen = (flen - 1) * 2
+        delta_f = 1.0 / (tlen * input_params["delta_t"])
         wav_gen = td_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params["approximant"]](**input_params)
         # taper the time series hp if required
@@ -1551,8 +1551,8 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         # thus the start time is minus the duration of the template from
         # lower frequency cutoff to merger, i.e. minus the 'chirp time'
         t_chirp = -float(hp.start_time)  # conversion from LIGOTimeGPS
-        hp.resize(N)
-        hc.resize(N)
+        hp.resize(tlen)
+        hc.resize(tlen)
         k_zero = int(hp.start_time / hp.delta_t)
         hp.roll(k_zero)
         hc.roll(k_zero)

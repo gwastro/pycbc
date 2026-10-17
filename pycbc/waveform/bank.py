@@ -93,12 +93,12 @@ def sigma_cached(self, psd):
             if not hasattr(self, "sigma_view"):
                 from pycbc.filter.matchedfilter import get_cutoff_indices
 
-                N = (len(self) - 1) * 2
+                tlen = (len(self) - 1) * 2
                 kmin, kmax = get_cutoff_indices(
                     self.min_f_lower or self.f_lower,
                     self.end_frequency,
                     self.delta_f,
-                    N,
+                    tlen,
                 )
                 self.sslice = slice(kmin, kmax)
                 self.sigma_view = self[self.sslice].squared_norm() * 4.0 * self.delta_f

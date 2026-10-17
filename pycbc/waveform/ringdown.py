@@ -771,11 +771,11 @@ def fd_damped_sinusoid(
     if t_0 != 0:
         time_shift = numpy.exp(-1j * two_pi * freqs * t_0)
         norm *= time_shift
-    A1 = 1 + 2j * pi * freqs * tau
-    A2 = two_pi * f_0 * tau
+    a1 = 1 + 2j * pi * freqs * tau
+    a2 = two_pi * f_0 * tau
     # Analytical expression for the Fourier transform of the ringdown
-    hptilde = norm * xp * (A1 * numpy.cos(phi) - A2 * numpy.sin(phi))
-    hctilde = norm * xc * (A1 * numpy.sin(phi) + A2 * numpy.cos(phi))
+    hptilde = norm * xp * (a1 * numpy.cos(phi) - a2 * numpy.sin(phi))
+    hctilde = norm * xc * (a1 * numpy.sin(phi) + a2 * numpy.cos(phi))
     return hptilde, hctilde
 
 

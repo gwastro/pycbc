@@ -91,8 +91,8 @@ def spa_tmplt_engine(
     kmin,
     phase_order,
     delta_f,
-    piM,
-    pfaN,
+    piM,  # noqa: N803
+    pfaN,  # noqa: N803
     pfa2,
     pfa3,
     pfa4,
