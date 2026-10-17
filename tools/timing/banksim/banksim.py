@@ -99,22 +99,22 @@ def generate_detector_strain(template_params, h_plus, h_cross):
     return f_plus * h_plus + f_cross * h_cross
 
 
-def make_padded_frequency_series(vec, filter_N=None):
+def make_padded_frequency_series(vec, filter_tlen=None):
     """
     Pad a TimeSeries with a length of zeros greater than its length, such
     that the total length is the closest power of 2. This prevents the effects
     of wraparound.
     """
-    if filter_N is None:
+    if filter_tlen is None:
         power = ceil(log(len(vec), 2)) + 1
-        N = 2**power
+        tlen = 2**power
     else:
-        N = filter_N
-    n = N / 2 + 1
+        tlen = filter_tlen
+    flen = tlen / 2 + 1
 
     if isinstance(vec, FrequencySeries):
         vectilde = FrequencySeries(
-            zeros(n, dtype=complex_same_precision_as(vec)), delta_f=1.0, copy=False
+            zeros(flen, dtype=complex_same_precision_as(vec)), delta_f=1.0, copy=False
         )
         if len(vectilde) < len(vec):
             cplen = len(vectilde)
@@ -125,12 +125,12 @@ def make_padded_frequency_series(vec, filter_N=None):
 
     if isinstance(vec, TimeSeries):
         vec_pad = TimeSeries(
-            zeros(N), delta_t=vec.delta_t, dtype=real_same_precision_as(vec)
+            zeros(tlen), delta_t=vec.delta_t, dtype=real_same_precision_as(vec)
         )
         vec_pad[0 : len(vec)] = vec
-        delta_f = 1.0 / (vec.delta_t * N)
+        delta_f = 1.0 / (vec.delta_t * tlen)
         vectilde = FrequencySeries(
-            zeros(n), delta_f=1.0, dtype=complex_same_precision_as(vec)
+            zeros(flen), delta_f=1.0, dtype=complex_same_precision_as(vec)
         )
         fft(vec_pad, vectilde)
 
@@ -172,7 +172,7 @@ def get_waveform(
             amplitude_order=amplitude_order,
         )
 
-    htilde = make_padded_frequency_series(hvec, filter_N)
+    htilde = make_padded_frequency_series(hvec, filter_tlen)
 
     return htilde
 
@@ -325,8 +325,8 @@ def outside_mchirp_window(template, signal, w):
     False
 
 
-filter_N = int(options.filter_signal_length * options.filter_sample_rate)
-filter_n = filter_N / 2 + 1
+filter_tlen = int(options.filter_signal_length * options.filter_sample_rate)
+filter_flen = filter_tlen / 2 + 1
 filter_delta_f = 1.0 / float(options.filter_signal_length)
 
 print("Number of Signal Waveforms: ", len(signal_table))
@@ -336,11 +336,14 @@ print("Number of Templates       : ", len(template_table))
 print("Reading and Interpolating PSD")
 if options.asd_file:
     psd = pycbc.psd.read.from_txt(
-        options.asd_file, filter_n, filter_delta_f, options.filter_low_frequency_cutoff
+        options.asd_file,
+        filter_flen,
+        filter_delta_f,
+        options.filter_low_frequency_cutoff,
     )
 elif options.psd:
     psd = pycbc.psd.analytic.from_string(
-        options.psd, filter_n, filter_delta_f, options.filter_low_frequency_cutoff
+        options.psd, filter_flen, filter_delta_f, options.filter_low_frequency_cutoff
     )
 
 psd *= DYN_RANGE_FAC**2
@@ -360,7 +363,7 @@ with ctx:
             signal_params,
             options.signal_start_frequency,
             options.filter_sample_rate,
-            filter_N,
+            filter_tlen,
         )
         s_norm = sigmasq(
             stilde, psd=psd, low_frequency_cutoff=options.filter_low_frequency_cutoff
@@ -392,7 +395,7 @@ with ctx:
                     template_params,
                     options.template_start_frequency,
                     options.filter_sample_rate,
-                    filter_N,
+                    filter_tlen,
                 )
                 h_norm = sigmasq(
                     htilde,
