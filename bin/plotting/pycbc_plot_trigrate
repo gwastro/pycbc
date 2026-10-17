@@ -341,7 +341,7 @@ if args.log_y:
 plt.ylim(minrate, 1.4 * maxrate)
 plt.xlim(0, maxtime)
 plt.grid()
-plt.xlabel("GPS time after %i" % args.gps_start_time, size="large")
+plt.xlabel(f"GPS time after {int(args.gps_start_time)}", size="large")
 if args.rate:
     plt.ylabel(r"Trigger rate (s$^{-1}$)", size="large")
 else:

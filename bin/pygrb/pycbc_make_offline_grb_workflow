@@ -455,9 +455,8 @@ if wflow.cp.has_section("workflow-injections"):
                 if ("BANK" in s and s[-1].isdigit())
             ]
             if len(split_str) != 0:
-                inj_split.tagged_description += "%s_%d" % (
-                    inj_split.tag_str,
-                    int(split_str[0].replace("BANK", "")),
+                inj_split.tagged_description += (
+                    f"{inj_split.tag_str}_{int(split_str[0].replace('BANK', ''))}"
                 )
         all_files.extend(inj_splitbank_files)
     else:

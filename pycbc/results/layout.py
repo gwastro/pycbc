@@ -114,7 +114,7 @@ class SectionNumber:
             sec, subsec = path.split("/")
             subnum = self.count[sec]
             num = self.num[sec]
-            name = "%s/%s.%02d_%s" % (self.name[sec], num + 1, subnum, subsec)
+            name = f"{self.name[sec]}/{num + 1}.{int(subnum):02d}_{subsec}"
             self.count[sec] += 1
             self.name[path] = name
         path = os.path.join(os.getcwd(), self.base, name)

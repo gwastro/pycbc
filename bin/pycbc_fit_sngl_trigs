@@ -407,18 +407,9 @@ for ifo in opt.ifos:
                 opt.fit_function, vals_inbin, alpha, th
             )
             outfile.write(
-                "%s %.2f %.3g %.3g %d %d %.3f %.3f %.3g\n"
-                % (
-                    ifo,
-                    th,
-                    lower,
-                    upper,
-                    numtmpl,
-                    counts[ifo][th][i],
-                    alpha,
-                    sig_alpha,
-                    ks_prob[ifo][th][i],
-                )
+                f"{ifo} {th:.2f} {lower:.3g} {upper:.3g} {numtmpl} "
+                f"{int(counts[ifo][th][i])} {alpha:.3f} {sig_alpha:.3f} "
+                f"{ks_prob[ifo][th][i]:.3g}\n"
             )
 
             # add histogram to plot

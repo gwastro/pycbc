@@ -301,7 +301,7 @@ for cycle_idx in range(num_cycles):
     #########
     # SETUP #
     #########
-    cycle_tag = "cycle%d" % (cycle_idx)
+    cycle_tag = f"cycle{cycle_idx}"
     out_dir = os.path.join(args.output_dir, cycle_tag)
 
     # How many banks to use? This can vary cycle to cycle, or be the same for
@@ -333,7 +333,7 @@ for cycle_idx in range(num_cycles):
 
     main_sbank_files = wf.FileList([])
     for nbank_idx in range(nbanks):
-        nbank_tag = "nbank%d" % (nbank_idx)
+        nbank_tag = f"nbank{nbank_idx}"
         main_sbank_node = main_sbank_exe.create_node(
             workflow.analysis_time,
             seed_bank=seed_file,

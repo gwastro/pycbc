@@ -200,7 +200,7 @@ if opts.verbose and infile is not None:
 for cache_id, tmplt in enumerate(sngl_insp_table):
     if opts.verbose and infile is not None:
         print(
-            "Template %i/%i\r" % (cache_id + 1, len(sngl_insp_table)),
+            f"Template {cache_id + 1}/{len(sngl_insp_table)}\r",
             end=" ",
             file=sys.stdout,
         )
@@ -249,7 +249,7 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
             except:
                 sample_rate *= 2
                 if sample_rate > max_sample_rate:
-                    err_msg = "Unable to generate template %i;" % (cache_id)
+                    err_msg = f"Unable to generate template {cache_id};"
                     err_msg += " try increasing max sample rate"
                     raise ValueError(err_msg)
 

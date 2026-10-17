@@ -170,10 +170,10 @@ def create_command_opts(ifo, rseed, output_file):
     if detector_tag == "ground":
         args_opt = [
             "pycbc_condition_strain",
-            "--fake-strain-seed %d" % rseed,
-            "--sample-rate %d" % (opts.sample_rate),
-            "--gps-start-time %d" % (opts.gps_start_time),
-            "--gps-end-time %d" % (opts.gps_end_time),
+            f"--fake-strain-seed {int(rseed)}",
+            f"--sample-rate {int(opts.sample_rate)}",
+            f"--gps-start-time {opts.gps_start_time}",
+            f"--gps-end-time {opts.gps_end_time}",
             f"--channel-name {ifo}:{opts.channel_name[ifo]}",
             f"--output-strain-file {output_file}",
         ]
@@ -217,10 +217,10 @@ def create_command_opts(ifo, rseed, output_file):
 
         args_opt = [
             "pycbc_condition_strain",
-            "--fake-strain-seed %d" % rseed,
+            f"--fake-strain-seed {int(rseed)}",
             f"--sample-rate {opts.sample_rate:f}",
-            "--gps-start-time %d" % (opts.gps_start_time),
-            "--gps-end-time %d" % (opts.gps_end_time),
+            f"--gps-start-time {opts.gps_start_time}",
+            f"--gps-end-time {opts.gps_end_time}",
             f"--channel-name {ifo}:{opts.channel_name[ifo]}",
             f"--output-strain-file {output_file}",
         ]
@@ -274,19 +274,14 @@ for ifo in opts.ifo_list:
 
     time_duration = opts.gps_end_time - opts.gps_start_time
     if opts.tag is None:
-        output_file = "%s/%s-SIMULATED_STRAIN-%d-%d.gwf" % (
-            opts.output_path,
-            ifo,
-            opts.gps_start_time,
-            time_duration,
+        output_file = (
+            f"{opts.output_path}/{ifo}-SIMULATED_STRAIN-"
+            f"{opts.gps_start_time}-{time_duration}.gwf"
         )
     else:
-        output_file = "%s/%s-SIMULATED_STRAIN-%s-%d-%d.gwf" % (
-            opts.output_path,
-            ifo,
-            opts.tag,
-            opts.gps_start_time,
-            time_duration,
+        output_file = (
+            f"{opts.output_path}/{ifo}-SIMULATED_STRAIN-{opts.tag}-"
+            f"{opts.gps_start_time}-{time_duration}.gwf"
         )
 
     # Get the base command options

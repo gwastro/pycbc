@@ -162,9 +162,9 @@ def welch(
             timeseries = timeseries[start:end]
             num_samples = len(timeseries)
         if data_len > num_samples:
-            err_msg = "I was asked to estimate a PSD on %d " % (data_len)
+            err_msg = f"I was asked to estimate a PSD on {int(data_len)} "
             err_msg += "data samples. However the data provided only contains "
-            err_msg += "%d data samples." % (num_samples)
+            err_msg += f"{num_samples} data samples."
 
     if num_samples != (num_segments - 1) * seg_stride + seg_len:
         raise ValueError("Incorrect choice of segmentation parameters")

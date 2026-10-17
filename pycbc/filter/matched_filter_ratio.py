@@ -90,8 +90,8 @@ class MatchedFilterRatioControl:
         n_filters, n_taps = fir_taps.shape
         if n_taps >= self.tap_fft_len:
             raise ValueError(
-                "FIR Taps (%d) exceed the tap FFT length (%d)"
-                % (n_taps, self.tap_fft_len)
+                f"FIR Taps ({int(n_taps)}) exceed the tap FFT length "
+                f"({int(self.tap_fft_len)})"
             )
 
         # the overlap-save guard works in engine samples, not bank ones

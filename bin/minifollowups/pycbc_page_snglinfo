@@ -200,7 +200,7 @@ data[0].append(f"{stat[0]:5.2f}")
 
 # Signal-glitch discrimators
 data[0].append(f"{sngl_file.rchisq[0]:5.2f}")
-data[0].append("%i" % sngl_file.get_column("chisq_dof")[0])
+data[0].append(f"{int(sngl_file.get_column('chisq_dof')[0])}")
 headers.append("&chi;<sup>2</sup><sub>r</sub>")
 headers.append("&chi;<sup>2</sup>&nbsp;bins")
 try:

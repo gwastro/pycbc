@@ -1460,8 +1460,8 @@ class StrainSegments:
                 min_start_time = int(strain.start_time)
             if trigger_start < min_start_time:
                 err_msg = "Trigger start time must be within analysable "
-                err_msg += "window. Asked to start from %d " % (trigger_start)
-                err_msg += "but can only analyse from %d." % (min_start_time)
+                err_msg += f"window. Asked to start from {int(trigger_start)} "
+                err_msg += f"but can only analyse from {int(min_start_time)}."
                 raise ValueError(err_msg)
 
         if not trigger_end:
@@ -1473,8 +1473,8 @@ class StrainSegments:
                 max_end_time = int(strain.end_time)
             if trigger_end > max_end_time:
                 err_msg = "Trigger end time must be within analysable "
-                err_msg += "window. Asked to end at %d " % (trigger_end)
-                err_msg += "but can only analyse to %d." % (max_end_time)
+                err_msg += f"window. Asked to end at {int(trigger_end)} "
+                err_msg += f"but can only analyse to {int(max_end_time)}."
                 raise ValueError(err_msg)
 
         throwaway_size = seg_start_pad + seg_end_pad

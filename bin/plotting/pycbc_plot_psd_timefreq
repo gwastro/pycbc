@@ -149,17 +149,18 @@ ticklabels = numpy.arange((end.max() - start.min()) / 86400 + 1)
 ax.set_xticks(ticks)
 ax.set_xticklabels(ticklabels)
 
-ax.set_xlabel("Days since GPS %d" % start.min(), fontsize=18)
+ax.set_xlabel(f"Days since GPS {int(start.min())}", fontsize=18)
 ax.set_ylabel("Frequency (Hz)", fontsize=18)
 fig.set_size_inches(18.5, 10.5)
 plt.tight_layout()
 
 title = f"Evolution of the noise spectral density over time in {ifo}"
 caption = (
-    "Variation of the amplitude spectral density over time. The original"
-    "frequency bins are reduced to %d logarithmic frequency bins by taking"
-    "the %s. Each time segment contains %d seconds."
-) % (opts.bins, opts.reduction_method, end[0] - start[0])
+    "Variation of the amplitude spectral density over time. The "
+    f"originalfrequency bins are reduced to {opts.bins} logarithmic "
+    f"frequency bins by takingthe {opts.reduction_method}. Each time segment "
+    f"contains {int(end[0] - start[0])} seconds."
+)
 pycbc.results.save_fig_with_metadata(
     fig,
     opts.output_file,

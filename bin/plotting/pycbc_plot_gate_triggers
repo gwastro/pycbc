@@ -212,20 +212,20 @@ if n_gates > 0:
     plt.grid(True)
     plt.xlabel("Time relative to gate centre (s)")
     plt.ylabel("Number of triggers")
+    chunks_str = (
+        f"IN {len(args.single_trigger_files)} CHUNKS"
+        if len(args.single_trigger_files) > 1
+        else ""
+    )
+    duration_str = (
+        "\n Triggers with template duration "
+        f"{'<' if args.duration_ltgt == 'LT' else '>'} {args.duration_cut!s} s"
+        if args.template_duration
+        else ""
+    )
+    gating_type = str(args.gating_type).upper()
     plt.title(  # Complicated recipe
-        "%s - %i %s GATES %s %s"
-        % (
-            args.ifo_tag,
-            n_gates,
-            str(args.gating_type).upper(),
-            "IN %i CHUNKS" % len(args.single_trigger_files)
-            if len(args.single_trigger_files) > 1
-            else "",
-            "\n Triggers with template duration "
-            f"{'<' if args.duration_ltgt == 'LT' else '>'} {args.duration_cut!s} s"
-            if args.template_duration
-            else "",
-        )
+        f"{args.ifo_tag} - {n_gates} {gating_type} GATES {chunks_str} {duration_str}"
     )
     if args.snr_cut_type:
         plt.legend()

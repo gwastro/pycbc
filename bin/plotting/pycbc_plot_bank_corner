@@ -177,9 +177,9 @@ if args.fits_file is not None:
         for p in _fit_parameters:
             if not fits_f[p].size == banklen:
                 raise RuntimeError(
-                    "Fits parameter %s is not the same size (%d) as the "
-                    "bank (%d), this looks like the fits file does not "
-                    "correspond to this bank" % (p, fits_f[p].size, banklen)
+                    f"Fits parameter {p} is not the same size ({fits_f[p].size}) as "
+                    f"the bank ({banklen}), this looks like the fits file does not "
+                    "correspond to this bank"
                 )
             param = fits_f[p][:].astype(float)
             # We need to check for the cardinal '-1' value which means

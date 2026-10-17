@@ -200,7 +200,7 @@ injections = tabletype.get_table(xmldoc)
 
 for ii, inj in enumerate(injections):
     if opts.verbose:
-        print("Injection %i\r" % (ii + 1), end=" ", file=sys.stdout)
+        print(f"Injection {ii + 1}\r", end=" ", file=sys.stdout)
         sys.stdout.flush()
 
     # calculate the sigmas in each ifo

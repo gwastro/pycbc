@@ -588,8 +588,8 @@ while True:
             for key in sep_fg_data[combo].data:
                 if key.split("/")[0] in all_ifos:
                     bg_grps[combo] += [key]
-                full_fg_key = "foreground_h%d/%s/%s" % (h_iterations, combo, key)
-                comp_fg_key = "foreground_h%d/%s/%s" % (h_iterations - 1, combo, key)
+                full_fg_key = f"foreground_h{h_iterations}/{combo}/{key}"
+                comp_fg_key = f"foreground_h{h_iterations - 1}/{combo}/{key}"
                 if (
                     comp_fg_key in f
                     and sep_fg_data[combo].data[key].size == f[comp_fg_key].size

@@ -79,10 +79,10 @@ class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):
         opts = self.option_strings[option]
         opt_width = self.help_position - self.current_indent - 2
         if len(opts) > opt_width:
-            opts = "%*s%s\n" % (self.current_indent, "", opts)
+            opts = f"{'':{self.current_indent}}{opts}\n"
             indent_first = self.help_position
         else:  # start help on same line as opts
-            opts = "%*s%-*s  " % (self.current_indent, "", opt_width, opts)
+            opts = f"{'':{self.current_indent}}{opts:<{opt_width}}  "
             indent_first = 0
         result.append(opts)
         if option.help:
@@ -92,9 +92,9 @@ class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):
             for para in help_text.split("\n"):
                 help_lines.extend(textwrap.wrap(para, self.help_width))
             # Everything is the same after here
-            result.append("%*s%s\n" % (indent_first, "", help_lines[0]))
+            result.append(f"{'':{indent_first}}{help_lines[0]}\n")
             result.extend(
-                ["%*s%s\n" % (self.help_position, "", line) for line in help_lines[1:]]
+                [f"{'':{self.help_position}}{line}\n" for line in help_lines[1:]]
             )
         elif opts[-1] != "\n":
             result.append("\n")
@@ -375,7 +375,7 @@ class MetricParameters:
     def evals(self, in_evals):
         if self.write_metric:
             for frequency in in_evals.keys():
-                numpy.savetxt("metric_evals_%d.dat" % (frequency), in_evals[frequency])
+                numpy.savetxt(f"metric_evals_{int(frequency)}.dat", in_evals[frequency])
         self._evals = in_evals
 
     @property
@@ -398,7 +398,7 @@ class MetricParameters:
     def evecs(self, in_evecs):
         if self.write_metric:
             for frequency in in_evecs.keys():
-                numpy.savetxt("metric_evecs_%d.dat" % (frequency), in_evecs[frequency])
+                numpy.savetxt(f"metric_evecs_{int(frequency)}.dat", in_evecs[frequency])
         self._evecs = in_evecs
 
     @property
@@ -421,7 +421,7 @@ class MetricParameters:
         if self.write_metric:
             for frequency in in_metric.keys():
                 numpy.savetxt(
-                    "metric_components_%d.dat" % (frequency), in_metric[frequency]
+                    f"metric_components_{int(frequency)}.dat", in_metric[frequency]
                 )
         self._metric = in_metric
 
@@ -446,7 +446,7 @@ class MetricParameters:
         if self.write_metric:
             for frequency in in_metric.keys():
                 numpy.savetxt(
-                    "metric_timeunprojected_%d.dat" % (frequency), in_metric[frequency]
+                    f"metric_timeunprojected_{int(frequency)}.dat", in_metric[frequency]
                 )
         self._time_unprojected_metric = in_metric
 
@@ -471,7 +471,7 @@ class MetricParameters:
         if self.write_metric:
             for frequency in in_evecs.keys():
                 numpy.savetxt(
-                    "covariance_evecs_%d.dat" % (frequency), in_evecs[frequency]
+                    f"covariance_evecs_{int(frequency)}.dat", in_evecs[frequency]
                 )
         self._evecs_cv = in_evecs
 

@@ -433,7 +433,7 @@ def setup_datafind_runtime_cache_multi_calls_perifo(
             "workflow-datafind", f"datafind-{ifo.lower()}-frame-type", tags
         )
         for seg in science_segs_ifo:
-            msg = "Finding data between %d and %d " % (seg[0], seg[1])
+            msg = f"Finding data between {int(seg[0])} and {int(seg[1])} "
             msg += f"for ifo {ifo}"
             logger.info(msg)
             # WARNING: For now the workflow will expect times to be in integer seconds
@@ -1093,11 +1093,8 @@ def log_datafind_command(
             err_msg += "This argument is stripped in the logged .sh command."
             logger.warning(err_msg)
 
-    file_name = "%s-%s-%d-%d.sh" % (
-        observatory,
-        frame_type,
-        start_time,
-        end_time - start_time,
+    file_name = (
+        f"{observatory}-{frame_type}-{int(start_time)}-{int(end_time - start_time)}.sh"
     )
     file_path = os.path.join(output_dir, file_name)
     fp = open(file_path, "w")

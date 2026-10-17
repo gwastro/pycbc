@@ -226,18 +226,13 @@ if len(indices) > 0:
         interesting_trig_rank = None
 
     if max_rank:
-        title = "%s - loudest %d triggers by %s - max %s = %.2f (light blue curve)" % (
-            opts.channel_name,
-            opts.num_loudest,
-            opts.rank,
-            opts.rank,
-            max_rank,
+        title = (
+            f"{opts.channel_name} - loudest {opts.num_loudest} triggers by "
+            f"{opts.rank} - max {opts.rank} = {max_rank:.2f} (light blue curve)"
         )
     else:
-        title = "%s - loudest %d triggers by %s" % (
-            opts.channel_name,
-            opts.num_loudest,
-            opts.rank,
+        title = (
+            f"{opts.channel_name} - loudest {opts.num_loudest} triggers by {opts.rank}"
         )
     if interesting_trig_rank is not None:
         title += (

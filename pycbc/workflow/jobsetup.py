@@ -250,9 +250,10 @@ def sngl_ifo_job_setup(
                     ifo, job_valid_seg, use_split_lists=True
                 )
                 if not curr_parent:
-                    err_string = "No parent jobs found overlapping %d to %d." % (
-                        job_valid_seg[0],
-                        job_valid_seg[1],
+                    err_string = (
+                        "No parent jobs found overlapping "
+                        f"{int(job_valid_seg[0])} to "
+                        f"{int(job_valid_seg[1])}."
                     )
                     err_string += "\nThis is a bad error! Contact a developer."
                     raise ValueError(err_string)
@@ -265,9 +266,9 @@ def sngl_ifo_job_setup(
                     ifo, job_data_seg, use_split_lists=True
                 )
                 if not curr_dfouts:
-                    err_str = "No datafind jobs found overlapping %d to %d." % (
-                        job_data_seg[0],
-                        job_data_seg[1],
+                    err_str = (
+                        "No datafind jobs found overlapping "
+                        f"{int(job_data_seg[0])} to {int(job_data_seg[1])}."
                     )
                     err_str += "\nThis shouldn't happen. Contact a developer."
                     raise ValueError(err_str)
@@ -1067,7 +1068,7 @@ class PycbcSplitInspinjExecutable(Executable):
 
         out_files = FileList([])
         for i in range(self.num_splits):
-            curr_tag = "split%d" % i
+            curr_tag = f"split{i}"
             curr_tags = parent.tags + [curr_tag]
             job_tag = parent.description + "_" + self.name.upper()
             out_file = File(
@@ -1372,7 +1373,7 @@ class PycbcHDFSplitInjExecutable(Executable):
         node.add_input_opt("--input-file", parent)
         out_files = FileList([])
         for i in range(self.num_splits):
-            curr_tag = "split%d" % i
+            curr_tag = f"split{i}"
             curr_tags = parent.tags + [curr_tag]
             job_tag = parent.description + "_" + self.name.upper()
             out_file = File(

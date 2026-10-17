@@ -644,6 +644,6 @@ with open(options.out_file, "w") as fout:
         match_str += " " + options.bank_file
         match_str += " " + str(matches.index(max(matches)))
         match_str += " " + options.sim_file
-        match_str += " %d" % i
+        match_str += f" {i}"
         match_str += f" {s_norm:5.5f}\n"
         fout.write(match_str)

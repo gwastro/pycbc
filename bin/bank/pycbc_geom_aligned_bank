@@ -341,21 +341,21 @@ for i in range(len(new_v1s)):
     if opts.threed_lattice:
         v3s.append(new_v3s[i])
     if not (i + 1) % points_per_job:
-        h5file["split_banks/split_bank_%05d/v1s" % bank_num] = v1s
-        h5file["split_banks/split_bank_%05d/v2s" % bank_num] = v2s
+        h5file[f"split_banks/split_bank_{bank_num:05d}/v1s"] = v1s
+        h5file[f"split_banks/split_bank_{bank_num:05d}/v2s"] = v2s
         v1s = []
         v2s = []
         if opts.threed_lattice:
-            h5file["split_banks/split_bank_%05d/v3s" % bank_num] = v3s
+            h5file[f"split_banks/split_bank_{bank_num:05d}/v3s"] = v3s
             v3s = []
         bank_num = bank_num + 1
 
 if v1s:
     # There are still templates to dump
-    h5file["split_banks/split_bank_%05d/v1s" % bank_num] = v1s
-    h5file["split_banks/split_bank_%05d/v2s" % bank_num] = v2s
+    h5file[f"split_banks/split_bank_{bank_num:05d}/v1s"] = v1s
+    h5file[f"split_banks/split_bank_{bank_num:05d}/v2s"] = v2s
     if opts.threed_lattice:
-        h5file["split_banks/split_bank_%05d/v3s" % bank_num] = v3s
+        h5file[f"split_banks/split_bank_{bank_num:05d}/v3s"] = v3s
 
 logger.info("Adding metric information to HDF file.")
 h5file["cov_evecs"] = metric_params.evecs_cv[metric_params.f_upper]

@@ -90,7 +90,7 @@ if args.special_time:
         histtype="stepfilled",
         stacked=True,
         color=[pycbc.results.ifo_color(ifo), "k"],
-        label=["Other times", "Triggers near %i" % (int(args.special_time))],
+        label=["Other times", f"Triggers near {int(args.special_time)}"],
     )
     pyplot.legend(loc="upper right")
 

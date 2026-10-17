@@ -139,9 +139,10 @@ if h_inc_back_num > h_iterations:
     ax.set_ylim(0, 1)
 
     output_message = (
-        "No more foreground events louder than all background\n"
-        "at this removal level.\nAttempted to show %d "
-        "removal(s),\nbut only %d removal(s) done." % (h_inc_back_num, h_iterations)
+        "No more foreground events louder than all background\nat "
+        "this removal level.\nAttempted to show "
+        f"{int(h_inc_back_num)} removal(s),\nbut only "
+        f"{int(h_iterations)} removal(s) done."
     )
 
     ax.text(
@@ -378,14 +379,13 @@ plt.xlabel("Inverse False Alarm Rate (yr)")
 # save
 caption = (
     "This is a cumulative histogram of triggers. The blue triangles "
-    "represent coincident foreground triggers. The dashed line "
-    "represents the expected background given the analysis time. The "
-    "shaded regions represent counting errors. The gray lines are "
-    "time slides treated as zero lag, here there are %d time slides "
-    "plotted. Gray dots are time slides with only one event. %d of "
-    "the plotted slides have zero events. The green line represents "
-    "all decimated time slides rescaled to the analysis time."
-    % (plotted_slide_count, empty_slide_count)
+    "represent coincident foreground triggers. The dashed line represents "
+    "the expected background given the analysis time. The shaded regions "
+    "represent counting errors. The gray lines are time slides treated as "
+    f"zero lag, here there are {plotted_slide_count} time slides plotted. "
+    f"Gray dots are time slides with only one event. {empty_slide_count} of "
+    "the plotted slides have zero events. The green line represents all "
+    "decimated time slides rescaled to the analysis time."
 )
 
 pycbc.results.save_fig_with_metadata(

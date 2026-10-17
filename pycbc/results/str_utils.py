@@ -211,7 +211,7 @@ def format_value(
     elif conversion_factor == 1.0:
         powfactor = r"\times 10"
     else:
-        powfactor = r"\times 10^{%i}" % (int(conversion_factor))
+        powfactor = f"\\times 10^{{{int(conversion_factor)}}}"
 
     if ndecs is not None:
         decs = value * 10 ** (-ndecs)

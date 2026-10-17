@@ -444,7 +444,7 @@ class ForegroundEvents(EventRate):
                 intime = self.in_coinc_time_excl(f, ct, meantimes)
                 _ctime[intime == 1] = ct
                 if self.args.verbose:
-                    print("Got %i events in %s time" % (len(_ctime[intime == 1]), ct))
+                    print(f"Got {len(_ctime[intime == 1])} events in {ct} time")
             # store
             self.stat = np.append(self.stat, _stats[_keep][in_ctypes])
             try:  # injection analyses only have 'ifar_exc', not 'ifar'
@@ -689,14 +689,14 @@ class SignalEventRate(EventRate):
                 intime = self.in_coinc_time_excl(HFile(fg_file, "r"), ct, meantimes)
                 _ctime[intime == 1] = ct  # do we need this?
                 if self.args.verbose:
-                    print("Got %i " % (intime == 1).sum() + f"inj in {ct} time")
+                    print(f"Got {int((intime == 1).sum())} " + f"inj in {ct} time")
                 # filter by coinc type and add to array
                 for cty in self.coinc_types:
                     if not type_in_time(ct, cty):
                         continue
                     my_vals = _injstat[np.logical_and(_ctype == cty, intime == 1)]
                     if self.args.verbose:
-                        print("%d " % len(my_vals) + f"are {cty} coincs")
+                        print(f"{len(my_vals)} " + f"are {cty} coincs")
                     if (ct, cty) not in self.inj_vals:  # initialize
                         self.inj_vals[(ct, cty)] = np.array([])
                     if len(my_vals) > 0:
@@ -741,9 +741,7 @@ class SignalEventRate(EventRate):
                 # zoom in on the 'interesting' range
                 plt.xlim(xmin=self.thr, xmax=2.0 * self.args.plot_max_stat)
                 plt.ylim(ymin=0.7 * np.exp(logpdf.min()))
-                plt.title(
-                    r"%i injs plotted, \# of bins %i" % (len(samples), len(bins) - 1)
-                )
+                plt.title(f"{len(samples)} injs plotted, \\# of bins {len(bins) - 1}")
                 plt.xlabel("Ranking statistic")
                 plt.ylabel("Signal PDF")
                 plt.savefig(self.args.plot_dir + f"{ct}-fg_pdf-{cty}" + ".png")

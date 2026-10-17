@@ -142,7 +142,7 @@ for ifo, segments in analyzable_segs.items():
 
     # each batch goes into a PSD estimation job
     for job_index, job_segs in enumerate(batches):
-        tag = "PART%.4d" % job_index
+        tag = f"PART{job_index:04d}"
         name = "ANALYZABLE_SPLIT_" + tag
         job_segs_file = pycbc.workflow.SegFile.from_segment_list(
             name,

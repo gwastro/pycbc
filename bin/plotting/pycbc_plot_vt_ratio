@@ -174,7 +174,7 @@ for j in range(len(idxs)):
         fmt="o",
         markersize=7,
         linewidth=5,
-        label="IFAR = %d yr" % plot_ifars[j],
+        label=f"IFAR = {int(plot_ifars[j])} yr",
         capsize=5,
         capthick=2,
         mec="k",

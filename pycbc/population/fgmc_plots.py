@@ -98,7 +98,7 @@ def odds_summary(
     plot_extensions=None,
 ):
 
-    print("\nSummary of Top %i %s" % (ntop, name.title()))
+    print(f"\nSummary of Top {int(ntop)} {name.title()}")
 
     # do sort in reverse order
     statsort = numpy.argsort(1.0 / numpy.array(rankstats))
@@ -115,7 +115,7 @@ def odds_summary(
         topgps.append(gps)
         topstat.append(stat)
         topifar.append(ifar)
-        print("#%d event:" % (n + 1), str(gps), mchirpstring)
+        print(f"#{n + 1} event:", str(gps), mchirpstring)
         print(f"    rankstat = {stat:<8.3f}")
         print(f"    IFAR     = {ifar:.2f}")
         print("    odds     = %g" % ((1.0 - p_b[i]) / p_b[i]))

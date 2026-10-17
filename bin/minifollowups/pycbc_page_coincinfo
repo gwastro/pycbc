@@ -261,7 +261,7 @@ for ifo in files:
     headers.append("Phase")
     # Signal-glitch discrimators
     data[-1].append(f"{rchisq:5.2f}")
-    data[-1].append("%i" % d["chisq_dof"][i])
+    data[-1].append(f"{int(d['chisq_dof'][i])}")
     headers.append("&chi;<sup>2</sup><sub>r</sub>")
     headers.append("&chi;<sup>2</sup>&nbsp;bins")
     try:

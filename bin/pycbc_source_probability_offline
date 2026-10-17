@@ -104,10 +104,6 @@ for event in tqdm.trange(len(ifar)):
     if "Mass Gap" in probs:
         probs.pop("Mass Gap")
     ifo_names = "".join(sorted(ifos_event))
-    out_name = dir_path + "%s-%s-%i-1.json" % (
-        ifo_names,
-        args.search_tag,
-        int(end_time[event]),
-    )
+    out_name = dir_path + f"{ifo_names}-{args.search_tag}-{int(end_time[event])}-1.json"
     with open(out_name, "w") as outfile:
         json.dump(probs, outfile)
