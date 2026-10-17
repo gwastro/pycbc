@@ -169,7 +169,7 @@ def create_process_table(
     return process
 
 
-def legacy_row_id_converter(ContentHandler):
+def legacy_row_id_converter(ContentHandler):  # noqa: N803
     """
     Convert from old-style to new-style row IDs on the fly.
 
@@ -274,7 +274,7 @@ def legacy_row_id_converter(ContentHandler):
 
 
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
-    Attributes = ligolw.sax.xmlreader.AttributesImpl
+    Attributes = ligolw.sax.xmlreader.AttributesImpl  # noqa: N806
     elem = ligolw.LIGO_LW(Attributes({"Name": str(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
@@ -312,7 +312,7 @@ def make_psd_xmldoc(psddict, xmldoc=None):
 
     # the PSDs must be children of a LIGO_LW with name "psd"
     root_name = "psd"
-    Attributes = ligolw.sax.xmlreader.AttributesImpl
+    Attributes = ligolw.sax.xmlreader.AttributesImpl  # noqa: N806
     lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({"Name": root_name})))
 
     for instrument, psd in psddict.items():

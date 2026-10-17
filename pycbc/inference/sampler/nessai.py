@@ -333,7 +333,7 @@ class NessaiModel(nessai.model.Model):
             self.names,
         )
 
-    def new_point(self, N=1):
+    def new_point(self, N=1):  # noqa: N803
         """Draw a new point"""
         return self.to_live_points(self.model.prior_rvs(size=N))
 

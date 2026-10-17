@@ -51,8 +51,8 @@ def isco_solution(chi, incl):
     """
     chi2 = chi * chi
     sgn = np.sign(np.cos(incl))
-    Z1 = 1 + np.cbrt(1 - chi2) * (np.cbrt(1 + chi) + np.cbrt(1 - chi))
-    Z2 = np.sqrt(3 * chi2 + Z1 * Z1)
+    Z1 = 1 + np.cbrt(1 - chi2) * (np.cbrt(1 + chi) + np.cbrt(1 - chi))  # noqa: N806
+    Z2 = np.sqrt(3 * chi2 + Z1 * Z1)  # noqa: N806
     return 3 + Z2 - sgn * np.sqrt((3 - Z1) * (3 + Z1 + 2 * Z2))
 
 
@@ -189,13 +189,13 @@ def pg_isso_eq(r, chi, incl):
     r_minus_2 = r - 2
     sin_incl2 = (np.sin(incl)) ** 2
 
-    X = chi2 * (
+    X = chi2 * (  # noqa: N806
         chi2 * (3 * chi2 + 4 * r * (2 * r - 3)) + r2 * (15 * r * (r - 4) + 28)
     ) - 6 * r4 * (r2 - 4)
-    Y = chi4 * (chi4 + r2 * (7 * r * (three_r - 4) + 36)) + 6 * r * r_minus_2 * (
+    Y = chi4 * (chi4 + r2 * (7 * r * (three_r - 4) + 36)) + 6 * r * r_minus_2 * (  # noqa: N806
         chi4 * chi2 + 2 * r2 * r * (chi2 * (three_r + 2) + 3 * r2 * r_minus_2)
     )
-    Z = (r * (r - 6)) ** 2 - chi2 * (2 * r * (3 * r + 14) - 9 * chi2)
+    Z = (r * (r - 6)) ** 2 - chi2 * (2 * r * (3 * r + 14) - 9 * chi2)  # noqa: N806
 
     return r4 * r4 * Z + chi2 * sin_incl2 * (chi2 * sin_incl2 * Y - 2 * r4 * X)
 
@@ -331,17 +331,17 @@ def solve_pg_isso(chi, incl):
         incl = np.array(incl, copy=False, ndmin=1)
     chi = np.abs(chi)
     # ISCO radius for the given spin magnitude
-    rISCO_limit = isco_solution(chi, incl)
+    r_isco_limit = isco_solution(chi, incl)
     # If the inclination is 0 or pi, just output the ISCO radius
     equatorial = np.isclose(incl, 0) | np.isclose(incl, np.pi)
     if all(equatorial):
-        return rISCO_limit
+        return r_isco_limit
 
     # ISSO radius for an inclination of pi/2
     # Initial guess is based on the extrema of the polar ISSO radius equation,
     # that are: r=6 (chi=1) and r=1+sqrt(3)+sqrt(3+sqrt(12))=5.274... (chi=0)
     initial_guess = [5.27451056440629 if c > 0.5 else 6 for c in chi]
-    rISSO_at_pole_limit = np.array(
+    r_isso_at_pole_limit = np.array(
         [
             root_scalar(
                 isso_eq_at_pole,
@@ -356,11 +356,11 @@ def solve_pg_isso(chi, incl):
     # If the inclination is pi/2, just output the ISSO radius at the pole(s)
     polar = np.isclose(incl, 0.5 * np.pi)
     if all(polar):
-        return rISSO_at_pole_limit
+        return r_isso_at_pole_limit
 
     # Otherwise, find the ISSO radius for a generic inclination
-    initial_hi = np.maximum(rISCO_limit, rISSO_at_pole_limit)
-    initial_lo = np.minimum(rISCO_limit, rISSO_at_pole_limit)
+    initial_hi = np.maximum(r_isco_limit, r_isso_at_pole_limit)
+    initial_lo = np.minimum(r_isco_limit, r_isso_at_pole_limit)
     brackets = [
         (bl, bh)
         if (c != 1 and pg_isso_eq(bl, c, inc) * pg_isso_eq(bh, c, inc) < 0)

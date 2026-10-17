@@ -782,10 +782,10 @@ def estimate_nmcmc(accept_ratio, old_act, maxmcmc, safety=5, tau=None):
         tau = maxmcmc / safety
 
     if accept_ratio == 0.0:
-        Nmcmc_exact = (1 + 1 / tau) * old_act
+        nmcmc_exact = (1 + 1 / tau) * old_act
     else:
-        Nmcmc_exact = (1.0 - 1.0 / tau) * old_act + (safety / tau) * (
+        nmcmc_exact = (1.0 - 1.0 / tau) * old_act + (safety / tau) * (
             2.0 / accept_ratio - 1.0
         )
-        Nmcmc_exact = float(min(Nmcmc_exact, maxmcmc))
-    return max(safety, int(Nmcmc_exact))
+        nmcmc_exact = float(min(nmcmc_exact, maxmcmc))
+    return max(safety, int(nmcmc_exact))
