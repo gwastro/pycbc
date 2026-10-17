@@ -59,7 +59,7 @@ Nfeval = 0
 start_time = time.time()
 
 
-def callback_func(Xi, convergence=0):
+def callback_func(xk, convergence=0):
     global Nfeval
     logger.info("Currently at %d %s", Nfeval, convergence)
     # Time out if the optimization takes longer than 6 minutes

@@ -1080,12 +1080,12 @@ class SingleDetTriggers:
         Read columns while applying the mask
         """
         # Fiducial value that seems to work, not extensively tuned.
-        MFRAC = 0.3
+        mfrac = 0.3
 
         # If the mask accesses few enough elements then directly use it
         # This can be slower than reading in all the elements if most of them
         # will be read.
-        if isinstance(self.mask, list) or self.mask_size < (self.ntriggers * MFRAC):
+        if isinstance(self.mask, list) or self.mask_size < (self.ntriggers * mfrac):
             return self.trigs[cname][self.mask]
 
         # We have a lot of elements to read so we resort to readin the entire

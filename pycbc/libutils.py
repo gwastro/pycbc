@@ -112,9 +112,9 @@ def pkg_config_libdirs(packages):
         return []
 
     # if calling pkg-config failes, don't continue and don't try again.
-    with open(os.devnull, "w") as FNULL:
+    with open(os.devnull, "w") as fnull:
         try:
-            subprocess.check_call(["pkg-config", "--version"], stdout=FNULL)
+            subprocess.check_call(["pkg-config", "--version"], stdout=fnull)
         except:
             print(
                 "PyCBC.libutils: pkg-config call failed, setting NO_PKGCONFIG=1",

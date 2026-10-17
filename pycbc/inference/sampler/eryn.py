@@ -166,7 +166,7 @@ class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         model,
         nwalkers,
         ntemps=None,
-        Tmax=None,
+        Tmax=None,  # noqa: N803
         betas=None,
         adaptive=False,
         moves=None,

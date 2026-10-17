@@ -182,7 +182,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             self._invasds[det] = invp**0.5
             # store the autocorrelation function and covariance matrix for
             # each detector
-            Rss = p.astype(types.complex_same_precision_as(p)).to_timeseries()
+            Rss = p.astype(types.complex_same_precision_as(p)).to_timeseries()  # noqa: N806
             self._Rss[det] = Rss
             # calculate and store the linear regressions to extrapolate
             # determinant values
@@ -201,7 +201,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             p = self.psds[det]
         except KeyError:
             raise ValueError("No psd set for detector %s" % det)
-        Rss = self._Rss[det]
+        Rss = self._Rss[det]  # noqa: N806
         cov = scipy.linalg.toeplitz(Rss / 2)  # full covariance matrix
         samples, fit = self.logdet_fit(cov, p)
         self._cov_samples[det] = samples

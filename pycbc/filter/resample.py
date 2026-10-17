@@ -468,27 +468,27 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side="right")
         A new FrequencySeries that has been interpolated.
 
     """
-    new_n = int((len(series) - 1) * series.delta_f / delta_f + 1)
-    old_N = int((len(series) - 1) * 2)
-    new_N = int((new_n - 1) * 2)
+    new_flen = int((len(series) - 1) * series.delta_f / delta_f + 1)
+    old_tlen = int((len(series) - 1) * 2)
+    new_tlen = int((new_flen - 1) * 2)
     time_series = TimeSeries(
-        zeros(old_N),
-        delta_t=1.0 / (series.delta_f * old_N),
+        zeros(old_tlen),
+        delta_t=1.0 / (series.delta_f * old_tlen),
         dtype=real_same_precision_as(series),
     )
 
     ifft(series, time_series)
 
     time_series.roll(-zeros_offset)
-    time_series.resize(new_N)
+    time_series.resize(new_tlen)
 
     if side == "left":
-        time_series.roll(zeros_offset + new_N - old_N)
+        time_series.roll(zeros_offset + new_tlen - old_tlen)
     elif side == "right":
         time_series.roll(zeros_offset)
 
     out_series = FrequencySeries(
-        zeros(new_n), epoch=series.epoch, delta_f=delta_f, dtype=series.dtype
+        zeros(new_flen), epoch=series.epoch, delta_f=delta_f, dtype=series.dtype
     )
     fft(time_series, out_series)
 
