@@ -79,6 +79,9 @@ ignore = [
     # Type annotations: the codebase predates type hints and adding them is a
     # large job we are not taking on at this stage.
     "ANN",
+    # pathlib: os.path is used throughout. We may move to pathlib in future,
+    # which would mean updating these uses.
+    "PTH",
     # Docstrings: wanted, but deferred until higher-priority issues are fixed.
     # The specific D codes from `extend-select` must be listed too, as an
     # explicitly selected code otherwise takes precedence over ignoring "D".
