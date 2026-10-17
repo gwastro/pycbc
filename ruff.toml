@@ -95,6 +95,10 @@ ignore = [
     # lose their failure details outside pytest, and pytest.raises would make
     # pytest a hard dependency of every test file.
     "PT009", "PT027",
+    # Not planned to be enabled: shebang in a file that is not executable.
+    # The bin/ scripts are installed by setup.py (`scripts=`), which makes
+    # them executable, so their mode in git does not matter.
+    "EXE001",
 ]
 
 [lint.pydocstyle]
