@@ -310,16 +310,16 @@ def create_density_plot(
     if ymax is None:
         ymax = ysamples.max()
     npts = 100
-    X, Y = numpy.mgrid[
+    X, Y = numpy.mgrid[  # noqa: N806
         xmin : xmax : complex(0, npts),  # pylint:disable=invalid-slice-index
         ymin : ymax : complex(0, npts),
     ]  # pylint:disable=invalid-slice-index
     pos = numpy.vstack([X.ravel(), Y.ravel()])
     if use_kombine:
-        Z = numpy.exp(kde(pos.T).reshape(X.shape))
+        Z = numpy.exp(kde(pos.T).reshape(X.shape))  # noqa: N806
         draw = kde.draw
     else:
-        Z = kde(pos).T.reshape(X.shape)
+        Z = kde(pos).T.reshape(X.shape)  # noqa: N806
         draw = kde.resample
 
     if exclude_region is not None:

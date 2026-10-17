@@ -143,7 +143,7 @@ def calculate_ethinca_metric_comps(
     f_max = f_maxes[f_max_idx]
 
     # Set the appropriate moments
-    Js = numpy.zeros([18, 3], dtype=float)
+    Js = numpy.zeros([18, 3], dtype=float)  # noqa: N806
     for i in range(18):
         Js[i, 0] = metric_params.moments["J%d" % (i)][f_max]
         Js[i, 1] = metric_params.moments["log%d" % (i)][f_max]
@@ -166,7 +166,7 @@ def calculate_ethinca_metric_comps(
     alog = numpy.log(4 * v0)  # Log terms are tricky - be careful
 
     # Get the Psi coefficients
-    Psi = [{}, {}]  # Psi = numpy.zeros([2,8,2],dtype=float)
+    Psi = [{}, {}]  # Psi = numpy.zeros([2,8,2],dtype=float)  # noqa: N806
     Psi[0][0, 0] = 3 / 5
     Psi[0][2, 0] = (743 / 756 + 11 * eta / 3) * v0 * v0
     Psi[0][3, 0] = 0.0
@@ -203,7 +203,7 @@ def calculate_ethinca_metric_comps(
     )
 
     # Set the appropriate moments
-    Js = numpy.zeros([18, 3], dtype=float)
+    Js = numpy.zeros([18, 3], dtype=float)  # noqa: N806
     for i in range(18):
         Js[i, 0] = metric_params.moments["J%d" % (i)][f_max]
         Js[i, 1] = metric_params.moments["log%d" % (i)][f_max]

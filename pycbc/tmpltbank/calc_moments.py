@@ -100,7 +100,7 @@ def determine_eigen_directions(
     # We start looping over every item in the list of metrics
     for item in list:
         # Here we convert the moments into a form easier to use here
-        Js = {}
+        Js = {}  # noqa: N806
         for i in range(-7, 18):
             Js[i] = metric_params.moments["J%d" % (i)][item]
 
@@ -234,7 +234,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
 
     # Need I7 first as this is the normalization factor
     funct = lambda x, f0: 1
-    I7 = calculate_moment(
+    I7 = calculate_moment(  # noqa: N806
         new_f,
         new_amp,
         metric_params.f_low,
@@ -456,7 +456,7 @@ def calculate_moment(
     return moment
 
 
-def calculate_metric(Js, log_js, loglog_js, logloglog_js, loglogloglog_js, mapping):
+def calculate_metric(Js, log_js, loglog_js, logloglog_js, loglogloglog_js, mapping):  # noqa: N803
     """
     This function will take the various integrals calculated by get_moments and
     convert this into a metric for the appropriate parameter space.
@@ -516,7 +516,7 @@ def calculate_metric_comp(
     unmax_metric,
     i,
     j,
-    Js,
+    Js,  # noqa: N803
     log_js,
     loglog_js,
     logloglog_js,

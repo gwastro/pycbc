@@ -175,13 +175,13 @@ def bank_chisq_from_filters(
             continue
         bank_norm = sqrt((1 - bank_match * bank_match.conj()).real)
 
-        bank_SNR = bank_snrs[i] * (bank_norms[i] / bank_norm)
-        tmplt_SNR = tmplt_snr * (bank_match.conj() * tmplt_norm / bank_norm)
+        scaled_bank_snr = bank_snrs[i] * (bank_norms[i] / bank_norm)
+        projected_tmplt_snr = tmplt_snr * (bank_match.conj() * tmplt_norm / bank_norm)
 
-        bank_SNR = Array(bank_SNR, copy=False)
-        tmplt_SNR = Array(tmplt_SNR, copy=False)
+        scaled_bank_snr = Array(scaled_bank_snr, copy=False)
+        projected_tmplt_snr = Array(projected_tmplt_snr, copy=False)
 
-        bank_chisq += (bank_SNR - tmplt_SNR).squared_norm()
+        bank_chisq += (scaled_bank_snr - projected_tmplt_snr).squared_norm()
 
     if indices is not None:
         return bank_chisq

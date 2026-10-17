@@ -1,3 +1,6 @@
+# Cosmology notation: V for comoving volumes, J for the Jacobian dD_L/dz.
+# ruff: noqa: N803, N806
+
 import copy
 
 import numpy as np
@@ -9,7 +12,7 @@ from scipy.interpolate import interp1d
 from pycbc.conversions import mchirp_from_mass1_mass2 as m1m2tomch
 from pycbc.io.hdf import HFile
 
-_mch_BNS = 1.4 / 2**0.2
+_MCH_BNS = 1.4 / 2**0.2
 _redshifts, _d_lum, _I = np.arange(0.0, 5.0, 0.01), [], []
 _save_params = [
     "mass1",
@@ -135,11 +138,11 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
         if injections[key]["d_dist"] == "uniform":
             d_min, d_max = min(distance), max(distance)
         elif injections[key]["d_dist"] == "dchirp":
-            d_fid_min = min(distance / (mchirp / _mch_BNS) ** (5 / 6.0))
-            d_fid_max = max(distance / (mchirp / _mch_BNS) ** (5 / 6.0))
+            d_fid_min = min(distance / (mchirp / _MCH_BNS) ** (5 / 6.0))
+            d_fid_max = max(distance / (mchirp / _MCH_BNS) ** (5 / 6.0))
 
-            d_min = d_fid_min * (mch_astro_det / _mch_BNS) ** (5 / 6.0)
-            d_max = d_fid_max * (mch_astro_det / _mch_BNS) ** (5 / 6.0)
+            d_min = d_fid_min * (mch_astro_det / _MCH_BNS) ** (5 / 6.0)
+            d_max = d_fid_max * (mch_astro_det / _MCH_BNS) ** (5 / 6.0)
 
         bound = np.sign((max_mchirp - mch_astro_det) * (mch_astro_det - min_mchirp))
         bound += np.sign((d_max - astro_lum_dist) * (astro_lum_dist - d_min))
@@ -204,8 +207,8 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
                 lomass_2, himass_2 = min(m2_j), max(m2_j)
 
             if dt_j["d_dist"] == "dchirp":
-                l_dist = min(dist_j / (mch_j / _mch_BNS) ** (5 / 6.0))
-                h_dist = max(dist_j / (mch_j / _mch_BNS) ** (5 / 6.0))
+                l_dist = min(dist_j / (mch_j / _MCH_BNS) ** (5 / 6.0))
+                h_dist = max(dist_j / (mch_j / _MCH_BNS) ** (5 / 6.0))
             elif dt_j["d_dist"] == "uniform":
                 l_dist, h_dist = min(dist_j), max(dist_j)
 
@@ -527,7 +530,7 @@ def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp=1):
         # Returns the PDF at a distance when distance is uniformly
         # distributed but scaled by the chirp mass
 
-        weight = (mchirp / _mch_BNS) ** (5.0 / 6)
+        weight = (mchirp / _MCH_BNS) ** (5.0 / 6)
         pdf = np.ones_like(distance) / weight / (high_dist - low_dist)
         bound = np.sign(
             (weight * high_dist - distance) * (distance - weight * low_dist)
