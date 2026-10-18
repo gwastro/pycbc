@@ -116,6 +116,12 @@ ignore = [
     # imports), but a pass through the function-level imports to move the
     # unnecessary ones to the top of the module would be useful.
     "PLC0415",
+    # Not planned to be enabled for now: access to private (_name) members
+    # from outside their class. Some cases are intended and would need a
+    # noqa (e.g. tests checking internal state, the pycbc.types and FFT
+    # internals), but others almost certainly should be fixed (e.g. caches
+    # stored on other objects, and private attributes of other libraries).
+    "SLF001",
 ]
 
 [lint.pydocstyle]
