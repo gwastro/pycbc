@@ -122,6 +122,11 @@ ignore = [
     # internals), but others almost certainly should be fixed (e.g. caches
     # stored on other objects, and private attributes of other libraries).
     "SLF001",
+    # Not planned to be enabled for now: assert statements. Asserts are fine
+    # for internal consistency checks, but some are used to check user input
+    # or configuration and should raise a proper exception with a message
+    # instead (asserts give a bare AssertionError and are removed by python -O).
+    "S101",
 ]
 
 [lint.per-file-ignores]
