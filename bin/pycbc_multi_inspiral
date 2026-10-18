@@ -630,7 +630,7 @@ with ctx:
     logger.info("Full template bank size: %d", n_bank)
     for ifo in args.instruments:
         bank.template_thinning(inj_filter_rejector[ifo])
-    if not len(bank) == n_bank:
+    if len(bank) != n_bank:
         n_bank = len(bank)
         logger.info("Template bank size after thinning: %d", n_bank)
 

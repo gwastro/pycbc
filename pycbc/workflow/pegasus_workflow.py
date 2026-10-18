@@ -137,14 +137,14 @@ class Transformation(dax.Transformation):
             "container",
         ]
         # Check for logical name first
-        if not self.pycbc_name == other.pycbc_name:
+        if self.pycbc_name != other.pycbc_name:
             return False
 
         # Check the properties of the executable
         for val in test_vals:
             sattr = getattr(self, val)
             oattr = getattr(other, val)
-            if not sattr == oattr:
+            if sattr != oattr:
                 return False
         # Some properties are stored in the TransformationSite
         self_site = list(self.sites.values())
@@ -156,7 +156,7 @@ class Transformation(dax.Transformation):
         for val in test_site_vals:
             sattr = getattr(self_site, val)
             oattr = getattr(other_site, val)
-            if not sattr == oattr:
+            if sattr != oattr:
                 return False
 
         # Also check the "profile". This is things like Universe, RAM/disk/CPU

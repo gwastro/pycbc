@@ -326,7 +326,7 @@ for k, v in axis_dict.items():
 for i in range(len(args.parameters)):
     # Get the axes on row i
     # not statement removes diagonals
-    sharey_axes = [v[0] for v in axis_dict.values() if v[1] == i and not v[2] == i]
+    sharey_axes = [v[0] for v in axis_dict.values() if v[1] == i and v[2] != i]
     # Share the axis to the one to the left of it
     # can't call sharey method on the same axes twice for some reason
     if len(sharey_axes) > 1:
@@ -334,7 +334,7 @@ for i in range(len(args.parameters)):
             s0.sharey(s1)
     # Get the axes on column i
     # not statement removes diagonals
-    sharex_axes = [v[0] for v in axis_dict.values() if v[2] == i and not v[1] == i]
+    sharex_axes = [v[0] for v in axis_dict.values() if v[2] == i and v[1] != i]
     # Share the axis to the one to the left of it
     # can't call sharex method on the same axes twice for some reason
     if len(sharex_axes) > 1:

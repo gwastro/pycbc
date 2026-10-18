@@ -482,7 +482,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
 
     def test_multiply_and_add(self):
         with self.context:
-            if not self.kind == self.okind:
+            if self.kind != self.okind:
                 # Currently this is not supported
                 return
 

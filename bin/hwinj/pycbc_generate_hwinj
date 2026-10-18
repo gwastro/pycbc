@@ -450,7 +450,7 @@ sim.numrel_data = opts.numrel_data
 
 # construct waveform string that can be parsed by lalsimulation
 waveform_string = opts.approximant
-if not pn_orders[opts.order] == -1:
+if pn_orders[opts.order] != -1:
     waveform_string += opts.order
 sim.waveform = waveform_string
 name, phase_order = legacy_approximant_name(sim.waveform)

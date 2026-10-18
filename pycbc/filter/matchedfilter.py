@@ -1041,11 +1041,11 @@ class MatchedFilterSkyMaxControl:
 
         # The information on the complex side of this overlap is important
         # we may want to use this in the future.
-        if not id(hplus) == self.cached_hplus_hcross_hplus:
+        if id(hplus) != self.cached_hplus_hcross_hplus:
             self.cached_hplus_hcross_correlation = None
-        if not id(hcross) == self.cached_hplus_hcross_hcross:
+        if id(hcross) != self.cached_hplus_hcross_hcross:
             self.cached_hplus_hcross_correlation = None
-        if not id(psd) == self.cached_hplus_hcross_psd:
+        if id(psd) != self.cached_hplus_hcross_psd:
             self.cached_hplus_hcross_correlation = None
         if self.cached_hplus_hcross_correlation is None:
             hplus_cross_corr = overlap_cplx(
