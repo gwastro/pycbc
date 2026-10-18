@@ -176,7 +176,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 bank_file = HFile(opts.bank_file, "r")
 
 # Check options
-if opts.exclusion_dist_output_file is not None or opts.onsource_output_file is not None:
+if opts.exclusion_dist_output_file is not None or opts.onsource_output_file is not None:  # noqa: SIM102
     if opts.onsource_file is None:
         logger.error(
             "Requesting the --exclusion-dist-output-file or "

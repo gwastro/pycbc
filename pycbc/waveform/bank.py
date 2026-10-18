@@ -399,7 +399,7 @@ class TemplateBank:
                 data[key] = root[key][:]
                 dtype.append((key, data[key].dtype))
 
-            if not fileparams and len(data) == 0:
+            if not fileparams and len(data) == 0:  # noqa: SIM102
                 # It's possible fileparams is empty if the group is empty,
                 # but we should catch it if we expected data.
                 # If we are just initializing an empty bank writer, this might occur,

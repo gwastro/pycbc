@@ -1488,7 +1488,7 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
     flen = len(outplus)
 
     # If we don't have an inclination column alpha3 might be used
-    if not hasattr(template, "inclination") and "inclination" not in kwargs:
+    if not hasattr(template, "inclination") and "inclination" not in kwargs:  # noqa: SIM102
         if hasattr(template, "alpha3"):
             kwargs["inclination"] = template.alpha3
 

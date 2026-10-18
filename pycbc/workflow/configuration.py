@@ -443,13 +443,12 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         test_list = test_string.split(":")
 
         # Maybe we can add a few different possibilities for substitution
-        if len(test_list) == 2:
-            if test_list[0] == "which":
-                new_string = which(test_list[1])
-                if not new_string:
-                    errmsg = f"Cannot find exe {test_list[1]} in your path "
-                    errmsg += f"and you specified ${{which:{test_list[1]}}}."
-                    raise ValueError(errmsg)
+        if len(test_list) == 2 and test_list[0] == "which":
+            new_string = which(test_list[1])
+            if not new_string:
+                errmsg = f"Cannot find exe {test_list[1]} in your path "
+                errmsg += f"and you specified ${{which:{test_list[1]}}}."
+                raise ValueError(errmsg)
 
         return new_string
 
@@ -580,13 +579,12 @@ class WorkflowConfigParser(InterpolatingConfigParser):
 
         test_list = test_string_strip.split(":", 1)
 
-        if len(test_list) == 2:
-            if test_list[0] == "resolve":
-                curr_lfn = os.path.basename(test_list[1])
-                if curr_lfn in self.curr_resolved_files:
-                    return self.curr_resolved_files[curr_lfn]
-                local_url = resolve_url(test_list[1])
-                self.curr_resolved_files[curr_lfn] = local_url
-                return local_url
+        if len(test_list) == 2 and test_list[0] == "resolve":
+            curr_lfn = os.path.basename(test_list[1])
+            if curr_lfn in self.curr_resolved_files:
+                return self.curr_resolved_files[curr_lfn]
+            local_url = resolve_url(test_list[1])
+            self.curr_resolved_files[curr_lfn] = local_url
+            return local_url
 
         return test_string

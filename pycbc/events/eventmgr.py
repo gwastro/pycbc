@@ -471,9 +471,8 @@ class EventManager:
 
     def make_output_dir(self, outname):
         path = os.path.dirname(outname)
-        if path != "":
-            if not os.path.exists(path) and path is not None:
-                os.makedirs(path)
+        if path != "" and not os.path.exists(path) and path is not None:
+            os.makedirs(path)
 
     def save_performance(self, ncores, nfilters, ntemplates, run_time, setup_time):
         """

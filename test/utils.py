@@ -206,10 +206,9 @@ def exit_based_on_results(results):
     not_imp_errors = 0
     for error in results.errors:
         for errormsg in error:
-            if type(errormsg) is str:
-                if "NotImplemented" in errormsg:
-                    not_imp_errors += 1
-                    break
+            if type(errormsg) is str and "NotImplemented" in errormsg:
+                not_imp_errors += 1
+                break
     if results.wasSuccessful():
         _exit(0)
     elif len(results.failures) == 0 and len(results.errors) == not_imp_errors:

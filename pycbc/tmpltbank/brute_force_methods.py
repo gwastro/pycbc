@@ -87,9 +87,8 @@ def get_physical_covaried_masses(
     curr_dist = 100000000000000000
     while 1:
         # If we are a long way away we use larger jumps
-        if count:
-            if curr_dist > 1 and scale_factor == orig_scale_factor:
-                scale_factor = orig_scale_factor * 10
+        if count and curr_dist > 1 and scale_factor == orig_scale_factor:
+            scale_factor = orig_scale_factor * 10
         # Get a set of test points with mass -> xi mappings
         totmass, eta, spin1z, spin2z, mass1, mass2, new_xis = get_mass_distribution(
             [best_chirpmass, best_masses[1], best_masses[2], best_masses[3]],

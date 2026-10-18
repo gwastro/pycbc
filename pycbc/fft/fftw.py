@@ -682,7 +682,7 @@ def verify_fft_options(opt, parser):
             " either of --fftw-input-float-wisdom-file or --fftw-input-double-wisdom-file"
         )
 
-    if opt.fftw_threads_backend is not None:
+    if opt.fftw_threads_backend is not None:  # noqa: SIM102
         if opt.fftw_threads_backend not in ["openmp", "pthreads", "unthreaded"]:
             parser.error(
                 "Invalid threads backend; must be 'openmp', 'pthreads' or 'unthreaded'"

@@ -510,13 +510,12 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         # Check for duplicate options first
         for option, value in items:
-            if not overwrite_options:
-                if option in self.options(section):
-                    raise ValueError(
-                        "Option exists in both original "
-                        f"ConfigParser section [{section}] and "
-                        f"input list: {option}"
-                    )
+            if not overwrite_options and option in self.options(section):
+                raise ValueError(
+                    "Option exists in both original "
+                    f"ConfigParser section [{section}] and "
+                    f"input list: {option}"
+                )
             self.set(section, option, value)
 
     def sanity_check_subsections(self):
@@ -586,7 +585,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         # Is one the sections defaultvalues, but the other is not the
         # top-level section? This is to catch the case where we are
         # comparing section-defaultvalues with section-subsection
-        if section1.endswith("-defaultvalues") or section2.endswith("-defaultvalues"):
+        if section1.endswith("-defaultvalues") or section2.endswith("-defaultvalues"):  # noqa: SIM102
             if not section_and_default:
                 # Override the raise_error variable not to error when
                 # defaultvalues are given and the sections are not
@@ -687,10 +686,10 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             section_list = [f"{section}-{sb}" for sb in sub_section_list]
             err_section_list = []
             for sub in sub_section_list:
-                if self.has_section(f"{section}-{sub}"):
-                    if self.has_option(f"{section}-{sub}", option):
-                        err_section_list.append(f"{section}-{sub}")
-                        return_vals.append(self.get(f"{section}-{sub}", option))
+                # (has_option is False if the section doesn't exist)
+                if self.has_option(f"{section}-{sub}", option):
+                    err_section_list.append(f"{section}-{sub}")
+                    return_vals.append(self.get(f"{section}-{sub}", option))
 
             if has_defaultvalue and len(return_vals) > 1:
                 # option supplied which should overwrite the default;

@@ -438,7 +438,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None, slide_id=N
             else:
                 trigs_dict[path] = dset[above_thresh]
 
-            if "network/slide_id" in trigs:
+            if "network/slide_id" in trigs:  # noqa: SIM102
                 # The slide selection is applied to datasets that contain
                 # properties of surviving triggers. These datasets are
                 # identified knowing that each trigger has a slide id, so

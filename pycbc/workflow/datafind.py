@@ -168,7 +168,7 @@ def setup_datafind_workflow(
         raise ValueError(msg)
 
     using_backup_server = False
-    if (
+    if (  # noqa: SIM102
         datafind_method == "AT_RUNTIME_MULTIPLE_FRAMES"
         or datafind_method == "AT_RUNTIME_SINGLE_FRAMES"
     ):
@@ -918,7 +918,7 @@ def get_segment_summary_times(science_file, segment_name):
     # Get the segment_def_id for the segment_name
     segment_def_table = ligolw.Table.get_table(xmldoc, "segment_definer")
     for entry in segment_def_table:
-        if (entry.ifos == ifo) and (entry.name == channel):
+        if (entry.ifos == ifo) and (entry.name == channel):  # noqa: SIM102
             if len(segment_name) == 2 or (entry.version == version):
                 seg_def_id = entry.segment_def_id
                 break
