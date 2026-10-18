@@ -495,7 +495,6 @@ def inline_cubic_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
 
 
 @schemed("pycbc.waveform.decompress_")
@@ -546,7 +545,6 @@ def inline_quadratic_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
 
 
 @schemed("pycbc.waveform.decompress_")
@@ -597,7 +595,6 @@ def inline_linear_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
 
 
 @schemed("pycbc.waveform.decompress_")
@@ -651,7 +648,6 @@ def inline_quartic_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
 
 
 def fd_decompress(

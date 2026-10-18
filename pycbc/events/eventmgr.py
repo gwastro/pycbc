@@ -48,9 +48,10 @@ logger = logging.getLogger(__name__)
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
     """Return list of values and indices values over threshold in series."""
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed("pycbc.events.threshold_")
@@ -59,9 +60,10 @@ def threshold_only(series, value):
     Return list of values and indices whose values in series are
     larger (in absolute value) than value
     """
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 # FIXME: This should be under schemed, but I don't understand that yet!
@@ -75,16 +77,18 @@ def threshold_real_numpy(series, value):
 @schemed("pycbc.events.threshold_")
 def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series."""
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed("pycbc.events.threshold_")
 def _threshold_cluster_factory(series):
-    err_msg = "This class is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This class is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 class ThresholdCluster:
