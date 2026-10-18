@@ -38,8 +38,6 @@ import numpy
 
 from pycbc.events import coinc_rate, ranking
 
-logger = logging.getLogger(__name__)
-
 
 class Stat:
     """Base class which should be extended to provide a coincident statistic"""
@@ -75,7 +73,7 @@ class Stat:
                     "We already have one file with stat attr ="
                     " %s. Can't provide more than one!" % stat
                 )
-            logger.info("Found file %s for stat %s", filename, stat)
+            logging.info("Found file %s for stat %s", filename, stat)
             self.files[stat] = f
 
         # Provide the dtype of the single detector method's output
@@ -386,12 +384,12 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         if selected is None and len(ifos) > 1:
             raise RuntimeError("Couldn't figure out which stat file to use")
 
-        logger.info("Using signal histogram %s for ifos %s", selected, ifos)
+        logging.info("Using signal histogram %s for ifos %s", selected, ifos)
         histfile = self.files[selected]
         self.hist_ifos = histfile.attrs["ifos"]
         # Patch for pre-hdf5=3.0 histogram files
         try:
-            logger.info("Decoding hist ifos ..")
+            logging.info("Decoding hist ifos ..")
             self.hist_ifos = [i.decode("UTF-8") for i in self.hist_ifos]
         except (UnicodeDecodeError, AttributeError):
             pass
