@@ -128,6 +128,13 @@ ignore = [
 # Frozen copies of older pycbc code, kept only so that the tests can compare
 # the current code against them; they are left exactly as they were.
 "test/validation_code/**" = ["ALL"]
+# Scripts, examples, docs and tests are run directly, not imported as part
+# of a package, so they need no __init__.py.
+"bin/**" = ["INP001"]
+"docs/**" = ["INP001"]
+"examples/**" = ["INP001"]
+"test/**" = ["INP001"]
+"tools/**" = ["INP001"]
 
 [lint.flake8-unused-arguments]
 # Unused *args / **kwargs are normally there to accept a shared call
