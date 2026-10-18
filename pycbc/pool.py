@@ -195,8 +195,7 @@ def use_mpi(require_mpi=False, log=True):
                 logger.info("Running under mpi with size: %s, rank: %s", size, rank)
     except ImportError as e:
         if require_mpi:
-            print(e)
-            raise ValueError("Failed to load mpi, ensure mpi4py is installed")
+            raise ValueError("Failed to load mpi, ensure mpi4py is installed") from e
     if not use_mpi:
         size = rank = 0
     return use_mpi, size, rank

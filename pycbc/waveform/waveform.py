@@ -424,27 +424,27 @@ cuda_fd = dict(
 
 
 def print_td_approximants():
-    print("LalSimulation Approximants")
+    print("LalSimulation Approximants")  # noqa: T201
     for approx in _lalsim_td_approximants:
-        print("  " + approx)
-    print("CUDA Approximants")
+        print("  " + approx)  # noqa: T201
+    print("CUDA Approximants")  # noqa: T201
     for approx in _cuda_td_approximants:
-        print("  " + approx)
+        print("  " + approx)  # noqa: T201
 
 
 def print_fd_approximants():
-    print("LalSimulation Approximants")
+    print("LalSimulation Approximants")  # noqa: T201
     for approx in _lalsim_fd_approximants:
-        print("  " + approx)
-    print("CUDA Approximants")
+        print("  " + approx)  # noqa: T201
+    print("CUDA Approximants")  # noqa: T201
     for approx in _cuda_fd_approximants:
-        print("  " + approx)
+        print("  " + approx)  # noqa: T201
 
 
 def print_sgburst_approximants():
-    print("LalSimulation Approximants")
+    print("LalSimulation Approximants")  # noqa: T201
     for approx in _lalsim_sgburst_approximants:
-        print("  " + approx)
+        print("  " + approx)  # noqa: T201
 
 
 def td_approximants(scheme=_scheme.mgr.state):

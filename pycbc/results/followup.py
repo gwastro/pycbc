@@ -31,6 +31,7 @@ time series.
 # This matches the check that matplotlib does internally, but this *may* be
 # version dependenant. If this is a problem then remove this and control from
 # the executables directly.
+import logging
 import sys
 
 import matplotlib
@@ -44,6 +45,8 @@ import mpld3.plugins
 from igwn_segments import segment
 
 from pycbc.io.hdf import HFile
+
+logger = logging.getLogger(__name__)
 
 
 def columns_from_file_list(file_list, columns, ifo, start, end):
@@ -121,7 +124,7 @@ def trigger_timeseries_plot(file_list, ifos, start, end):
     fig = plt.figure()
     for ifo in ifos:
         trigs = columns_from_file_list(file_list, ["snr", "end_time"], ifo, start, end)
-        print(trigs)
+        logger.debug("%s triggers: %s", ifo, trigs)
         plt.scatter(trigs["end_time"], trigs["snr"], label=ifo, color=ifo_color[ifo])
 
         fmt = ".12g"

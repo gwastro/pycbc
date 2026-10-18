@@ -25,7 +25,6 @@
 
 import argparse
 import logging
-import sys
 
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
@@ -44,10 +43,9 @@ logger = logging.getLogger(__name__)
 
 
 def update_progress(progress):
-    print(f"Progress: {progress}/{100} members processed")
+    logger.info("Progress: %s/100 members processed", progress)
     if progress == 100:
-        print("Done")
-    sys.stdout.flush()
+        logger.info("Done")
 
 
 def get_waveform(

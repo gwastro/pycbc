@@ -1,6 +1,9 @@
 import configparser
 import copy
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 
 def parse_workflow_ini_file(cp_file, parsed_filepath=None):
@@ -22,7 +25,7 @@ def parse_workflow_ini_file(cp_file, parsed_filepath=None):
     """
     # First read the .ini file
     cp = read_ini_file(cp_file)
-    print(cp.sections())
+    logger.debug("Sections: %s", cp.sections())
 
     # Check for any substitutions that can be made
     # FIXME: The python 3 version of ConfigParser can do this automatically
@@ -34,11 +37,11 @@ def parse_workflow_ini_file(cp_file, parsed_filepath=None):
 
     # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
     cp = split_multi_sections(cp)
-    print(cp.sections())
+    logger.debug("Sections: %s", cp.sections())
 
     # Check for duplicate options in sub-sections
     sanity_check_subsections(cp)
-    print(cp.sections())
+    logger.debug("Sections: %s", cp.sections())
 
     # Dump parsed .ini file if needed
     if parsed_filepath:

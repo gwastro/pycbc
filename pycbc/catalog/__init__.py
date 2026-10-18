@@ -131,8 +131,7 @@ class Merger:
                 return (mid, low, high)
             return self.data[name]
         except KeyError as e:
-            print(e)
-            raise RuntimeError(f"Cannot get parameter {name}")
+            raise RuntimeError(f"Cannot get parameter {name}") from e
 
     def strain(self, ifo, duration=32, sample_rate=4096):
         """

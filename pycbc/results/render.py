@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import codecs
+import logging
 import os.path
 import types
 from configparser import ConfigParser
@@ -26,6 +27,8 @@ import pycbc.results
 from pycbc.results import unescape_table
 from pycbc.results.metadata import save_html_with_metadata
 from pycbc.workflow.core import SegFile, makedir
+
+logger = logging.getLogger(__name__)
 
 
 def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
@@ -139,7 +142,7 @@ def render_default(path, cp):
             #        for now I just coalesce.
             wf_file.return_union_seglist()
         except Exception as e:
-            print(f"No segment table found in {path} : {e}")
+            logger.warning("No segment table found in %s : %s", path, e)
 
     # render template
     template_dir = pycbc.results.__path__[0] + "/templates/files"

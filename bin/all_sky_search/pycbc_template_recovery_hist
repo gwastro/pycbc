@@ -126,8 +126,7 @@ else:
     )
     lims = foundparam.min() - 0.02 * extent, foundparam.max() + 0.02 * extent
 n, bins, patches = plt.hist(foundparam, bins=hbins)
-if args.verbose:
-    print(bins, n)
+logger.info("Histogram bins %s, counts %s", bins, n)
 if args.log_x:
     plt.semilogx()
 plt.xlim(lims)

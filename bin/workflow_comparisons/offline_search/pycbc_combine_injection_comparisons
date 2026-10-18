@@ -316,13 +316,13 @@ ncom = len(com_dict["template_hash"])
 ref_pct = 100.0 * float(nref) / float(nboth)
 com_pct = 100.0 * float(ncom) / float(nboth)
 # Now we print out some summary information that is useful
-print(f"Reference run directory path: {same_dict['reference_dir']}")
-print(f"Comparison run directory path: {same_dict['comparison_dir']}")
-print(f"Comparing {nfiles} distinct injection sets between the two searches\n")
-print(f"Number of triggers found in both: {len(rth)}")
-print(f"Number from same template: {same} ({same_pct:.2f} % of found in both)\n")
-print(f"Number found in reference only: {nref} ({ref_pct:.2f} % of found in both)")
-print(f"Number found in comparison only: {ncom} ({com_pct:.2f} % of found in both)")
+print(f"Reference run directory path: {same_dict['reference_dir']}")  # noqa: T201
+print(f"Comparison run directory path: {same_dict['comparison_dir']}")  # noqa: T201
+print(f"Comparing {nfiles} distinct injection sets between the two searches\n")  # noqa: T201
+print(f"Number of triggers found in both: {len(rth)}")  # noqa: T201
+print(f"Number from same template: {same} ({same_pct:.2f} % of found in both)\n")  # noqa: T201
+print(f"Number found in reference only: {nref} ({ref_pct:.2f} % of found in both)")  # noqa: T201
+print(f"Number found in comparison only: {ncom} ({com_pct:.2f} % of found in both)")  # noqa: T201
 
 
 # Write everything and finish

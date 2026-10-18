@@ -284,7 +284,7 @@ allfgbg = fg.sg_pdf - fg.bg_pdf
 
 # make diagnostic plots
 if args.diagnostic_plots:
-    print("ln Bayes factors from", min(allfgbg), max(allfgbg))
+    logger.info("ln Bayes factors from %s %s", min(allfgbg), max(allfgbg))
     col = {"H1L1": "r", "H1L1V1": "b", "H1V1": "m", "L1V1": "g"}
     for cty in col:
         in_type = fg.ctype == cty
@@ -412,8 +412,8 @@ if args.vt_mean:
         logger.warning("NB : no VT error provided, will use 0!")
         args.vt_err = 0.0
     logger.info("Rate in units of %s ...", args.rate_units)
-    print("Rate without VT uncertainty :")
-    print(
+    print("Rate without VT uncertainty :")  # noqa: T201
+    print(  # noqa: T201
         f"{cmed / args.vt_mean:.1f}_{{-{abs(cminus) / args.vt_mean:.1f}}}"
         f"^{{+{cplus / args.vt_mean:.1f}}}"
     )
@@ -430,8 +430,8 @@ if args.vt_mean:
     median, minus, plus = fgmc_plots.dist_summary(
         args, rate_distribution, plot_extensions=None, credible_intervals=[0.9]
     )
-    print("Rate with VT uncertainty via rate_posterior :")
-    print(f"{median:.1f}_{{-{abs(minus):.1f}}}^{{+{plus:.1f}}}")
+    print("Rate with VT uncertainty via rate_posterior :")  # noqa: T201
+    print(f"{median:.1f}_{{-{abs(minus):.1f}}}^{{+{plus:.1f}}}")  # noqa: T201
 elif args.vt_err:
     raise RuntimeError("Can't supply VT error without a VT mean!")
 

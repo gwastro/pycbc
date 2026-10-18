@@ -5,6 +5,7 @@ __prog__ = "pycbc_randr_by_snr"
 __author__ = "Collin Capano <collin.capano@ligo.org>, Miriam Cabero Mueller <miriam.cabero@ligo.org>"
 __description__ = "Resets the distance distribution in a sim_inspiral table based on desired SNR. The SNRs are chosen randomly from a given range."
 
+import logging
 import sys
 import time
 from argparse import ArgumentParser
@@ -16,6 +17,8 @@ from scipy import special, stats
 
 import pycbc
 from pycbc.io.ligolw import LIGOLWContentHandler
+
+logger = logging.getLogger(__name__)
 
 
 def r_uniform_in_volume(r1, r2, n):
@@ -187,8 +190,7 @@ numpy.random.seed(opts.seed)
 
 
 # cycle over the injections, calculating results for each
-if opts.verbose:
-    print("Cycling over injections...", file=sys.stdout)
+logger.info("Cycling over injections...")
 
 # Read in input file
 xmldoc = ligolw_utils.load_filename(
@@ -199,9 +201,7 @@ injections = tabletype.get_table(xmldoc)
 
 
 for ii, inj in enumerate(injections):
-    if opts.verbose:
-        print(f"Injection {ii + 1}\r", end=" ", file=sys.stdout)
-        sys.stdout.flush()
+    logger.debug("Injection %d", ii + 1)
 
     # calculate the sigmas in each ifo
     sigmas = numpy.array([getattr(inj, col) for col in opts.snr_columns]) * inj.distance
@@ -247,11 +247,6 @@ for ii, inj in enumerate(injections):
     for kk in range(nzidx.size):
         setattr(inj, opts.snr_columns[nzidx[kk]], sigmas[kk] / inj.distance)
 
-if opts.verbose:
-    print(file=sys.stdout)
-    sys.stdout.flush()
-
 ligolw_utils.write_filename(xmldoc, opts.output_file, compress="auto")
-if opts.verbose:
-    print("Finished!", file=sys.stdout)
+logger.info("Finished!")
 sys.exit(0)
