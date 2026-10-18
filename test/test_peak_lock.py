@@ -351,7 +351,7 @@ class TestPeakLockSearch(unittest.TestCase):
             data = {"H1": None, "L1": None}
             marginalized_vector_priors = {"tc": Uniform(tc=(TC, TC + span))}
 
-            def coarse_series(self, ifo, wfs, tstart, delta_t, num_samples):
+            def coarse_series(self, ifo, wfs, tstart, delta_t, num_samples):  # noqa: ARG002
                 asked.append(ifo)
                 return numpy.zeros(num_samples)
 
@@ -385,7 +385,7 @@ class TestPeakLockSearch(unittest.TestCase):
             data = {"H1": None}
             marginalized_vector_priors = {"tc": Uniform(tc=(TC, TC + span))}
 
-            def coarse_series(self, ifo, wfs, tstart, delta_t, num_samples):
+            def coarse_series(self, ifo, wfs, tstart, delta_t, num_samples):  # noqa: ARG002
                 return numpy.arange(num_samples, dtype=float)
 
         one = One()

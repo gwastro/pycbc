@@ -216,11 +216,11 @@ def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
     else:
         max_h1 = m2mcm1(mc_max, lim_h1)
         min_h1 = m2mcm1(mc_min, lim_h1)
-        fun_sup = lambda x: lim_h1
+        fun_sup = lambda x: lim_h1  # noqa: ARG005
 
     max_h2 = m2mcm1(mc_max, lim_h2)
     min_h2 = m2mcm1(mc_min, lim_h2)
-    fun_inf = lambda x: lim_h2
+    fun_inf = lambda x: lim_h2  # noqa: ARG005
 
     lim_max1 = np.clip(max_h1, lim_v1, lim_v2)
     lim_max2 = np.clip(max_h2, lim_v1, lim_v2)

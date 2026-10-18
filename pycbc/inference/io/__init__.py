@@ -373,7 +373,7 @@ class PrintFileParams(argparse.Action):
         super().__init__(nargs=nargs, **kwargs)
         self.skip_args = skip_args
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         # get the input file(s)
         input_files = namespace.input_file
         if input_files is None:

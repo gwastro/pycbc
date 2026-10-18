@@ -216,7 +216,8 @@ class UniformRadius(UniformPowerLaw):
 
     name = "uniform_radius"
 
-    def __init__(self, dim=3, **params):
+    # This distribution is always 3D, whatever dim is given
+    def __init__(self, dim=3, **params):  # noqa: ARG002
         super().__init__(dim=3, **params)
 
 

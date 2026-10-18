@@ -118,7 +118,7 @@ def numpy(self):
     return cp.asnumpy(self.data)
 
 
-def _copy(self, self_ref, other_ref):
+def _copy(self, self_ref, other_ref):  # noqa: ARG001
     self_ref[:] = other_ref[:]
 
 

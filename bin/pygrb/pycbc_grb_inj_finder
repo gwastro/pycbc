@@ -76,7 +76,7 @@ def read_segment_files(segfiles):
     return segmentlist(reduce(operator.or_, map(_read, segfiles), segmentlist()))
 
 
-def read_hdf5_triggers(inputfiles, verbose=False):
+def read_hdf5_triggers(inputfiles):
     """
     Merge several HDF5 files into a single file
 

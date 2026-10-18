@@ -272,7 +272,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         """
 
     @staticmethod
-    def extra_args_parser(parser=None, skip_args=None, **kwargs):
+    def extra_args_parser(parser=None, skip_args=None, **kwargs):  # noqa: ARG004
         r"""
         Provides a parser that can be used to parse sampler-specific command
         line options for loading samples.

@@ -385,7 +385,11 @@ class MatchedFilterControl:
         return snr, norm, corr, idx, snrv
 
     def full_matched_filter_thresh_only(
-        self, segnum, template_norm, window=None, epoch=None
+        self,
+        segnum,
+        template_norm,
+        window=None,  # noqa: ARG002
+        epoch=None,
     ):
         """
         Returns the complex snr timeseries, normalization of the complex snr,

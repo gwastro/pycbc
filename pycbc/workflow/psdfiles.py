@@ -37,8 +37,14 @@ from pycbc.workflow.core import FileList, resolve_url_to_file
 logger = logging.getLogger(__name__)
 
 
+# science_segs, datafind_outs and output_dir are unused, but kept so that
+# existing calls keep working
 def setup_psd_workflow(
-    workflow, science_segs, datafind_outs, output_dir=None, tags=None
+    workflow,
+    science_segs,  # noqa: ARG001
+    datafind_outs,  # noqa: ARG001
+    output_dir=None,  # noqa: ARG001
+    tags=None,
 ):
     """
     Setup static psd section of CBC workflow. At present this only supports pregenerated

@@ -790,7 +790,8 @@ class Workflow(pegasus_workflow.Workflow):
     def exec_sites_str(self):
         return ",".join(self.sites)
 
-    def execute_node(self, node, verbatim_exe=False):
+    # verbatim_exe is unused, but kept so that existing calls keep working
+    def execute_node(self, node, verbatim_exe=False):  # noqa: ARG002
         """Execute this node immediately on the local machine"""
         node.executed = True
 

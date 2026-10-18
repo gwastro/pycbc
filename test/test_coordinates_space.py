@@ -209,7 +209,7 @@ class TestParams(unittest.TestCase):
                 return False
 
         def strain_generator(
-            det="D1",
+            det="D1",  # noqa: ARG001
             model="IMRPhenomD",
             fs=4096,
             df=None,
@@ -217,7 +217,7 @@ class TestParams(unittest.TestCase):
             fref=2,
             tc=0,
             params=None,
-            fd_taper=False,
+            fd_taper=False,  # noqa: ARG001
         ):
 
             # Generate a waveform at the detector-frame. Use the same

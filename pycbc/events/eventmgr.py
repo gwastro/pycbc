@@ -292,7 +292,8 @@ class EventManager:
         self._events[:num_keep] = self._events[: self._events_size][indices]
         self._events_size = num_keep
 
-    def chisq_threshold(self, value, num_bins, delta=0):
+    # num_bins is unused, but kept so that existing calls keep working
+    def chisq_threshold(self, value, num_bins, delta=0):  # noqa: ARG002
         keep = numpy.ones(self._events_size, dtype=bool)
         for i, event in enumerate(self.events):
             xi = event["chisq"] / (

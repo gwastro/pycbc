@@ -435,7 +435,7 @@ def decimate_frequency_domain(template, target_df):
     return decimated_template
 
 
-def handle_exit_signal(signum, frame):
+def handle_exit_signal(signum, frame):  # noqa: ARG001
     logger.warning("Signal %s received. Triggering emergency save...", signum)
     save_bank()
     # Force exit so the script doesn't try to resume the loops
@@ -567,7 +567,7 @@ gen = GenUniformWaveform(
 bank = TriangleBank()
 
 
-def silent_child_exit(signum, frame):
+def silent_child_exit(signum, frame):  # noqa: ARG001
     # The child workers execute this branch
     # os._exit(0) ensures they die instantly and quietly
     os._exit(0)

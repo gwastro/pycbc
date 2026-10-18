@@ -232,7 +232,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
     new_f, new_amp = interpolate_psd(psd_f, psd_amp, metric_params.delta_f)
 
     # Need I7 first as this is the normalization factor
-    funct = lambda x, f0: 1
+    funct = lambda x, f0: 1  # noqa: ARG005
     I7 = calculate_moment(  # noqa: N806
         new_f,
         new_amp,
@@ -248,7 +248,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
     moments = {}
     moments["I7"] = I7
     for i in range(-7, 18):
-        funct = lambda x, f0: x ** ((-i + 7) / 3.0)
+        funct = lambda x, f0: x ** ((-i + 7) / 3.0)  # noqa: ARG005
         moments[f"J{i}"] = calculate_moment(
             new_f,
             new_amp,

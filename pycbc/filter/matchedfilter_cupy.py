@@ -49,5 +49,5 @@ class CUPYCorrelator(_BaseCorrelator):
         correlate_kernel(self.x, self.y, self.z)
 
 
-def _correlate_factory(x, y, z):
+def _correlate_factory(x, y, z):  # noqa: ARG001
     return CUPYCorrelator

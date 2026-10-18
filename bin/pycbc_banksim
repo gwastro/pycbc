@@ -357,7 +357,7 @@ if options.total_mass_divide and options.highmass_approximant is None:
 
 if options.mchirp_window is None:
 
-    def outside_mchirp_window(template_mchirp, signal_mchirp):
+    def outside_mchirp_window(template_mchirp, signal_mchirp):  # noqa: ARG001
         return False
 elif "," in options.mchirp_window:
     # asymmetric chirp mass window
@@ -377,7 +377,7 @@ else:
 
 if options.tau0_window is None:
 
-    def outside_tau0_window(template_tau0, signal_tau0, window):
+    def outside_tau0_window(template_tau0, signal_tau0, window):  # noqa: ARG001
         return False
 else:
 

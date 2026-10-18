@@ -187,7 +187,7 @@ xmldoc = ligolw_utils.load_filename(
 
 
 class PSDSegment(segment):
-    def __new__(cls, psd, *args):
+    def __new__(cls, psd, *args):  # noqa: ARG004
         return segment.__new__(cls, *args)
 
     def __init__(self, psd, *args):

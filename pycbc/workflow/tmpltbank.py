@@ -147,8 +147,14 @@ def setup_tmpltbank_workflow(
     return tmplt_banks_return
 
 
+# psd_files is unused; the signature matches the other template bank setup functions
 def setup_tmpltbank_dax_generated(
-    workflow, science_segs, datafind_outs, output_dir, tags=None, psd_files=None
+    workflow,
+    science_segs,
+    datafind_outs,
+    output_dir,
+    tags=None,
+    psd_files=None,  # noqa: ARG001
 ):
     """
     Setup template bank jobs that are generated as part of the CBC workflow.

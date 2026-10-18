@@ -63,7 +63,7 @@ def call(
     If the return code is non-zero, throw GitInvocationError.
     """
     # start external command process
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(command, stdout=stdout, stderr=stderr)
 
     # get outputs
     out, _ = p.communicate()
@@ -81,10 +81,10 @@ def call(
 
 def get_build_name(git_path="git"):
     """Find the username of the current builder"""
-    name, retcode = call(("git", "config", "user.name"), returncode=True)
+    name, retcode = call((git_path, "config", "user.name"), returncode=True)
     if retcode:
         name = "Unknown User"
-    email, retcode = call(("git", "config", "user.email"), returncode=True)
+    email, retcode = call((git_path, "config", "user.email"), returncode=True)
     if retcode:
         email = ""
     return f"{name} <{email}>"

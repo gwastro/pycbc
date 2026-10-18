@@ -468,7 +468,7 @@ class BaseBurnInTests(metaclass=ABCMeta):
                     fp.write_data(name, data, subpath)
 
     @staticmethod
-    def _extra_tests_from_config(cp, section, tag):
+    def _extra_tests_from_config(cp, section, tag):  # noqa: ARG004
         """For loading class-specific tests."""
         # pylint: disable=unused-argument
         return {}
