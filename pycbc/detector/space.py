@@ -737,9 +737,8 @@ class _FLRDetector(AbsSpaceDet):
         # class initialization
         self.tdi_init = None
         self.tdi_chan = "AET"
-        if "tdi_chan" in kwargs:
-            if kwargs["tdi_chan"] is not None and kwargs["tdi_chan"] in "XYZ":
-                self.tdi_chan = "XYZ"
+        if kwargs.get("tdi_chan") is not None and kwargs["tdi_chan"] in "XYZ":
+            self.tdi_chan = "XYZ"
 
     @property
     def sky_coords(self):

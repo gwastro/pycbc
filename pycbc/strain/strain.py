@@ -2263,7 +2263,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         )
 
         # If the new psd is similar to the old one, don't replace it
-        if self.psd and self.psd_recalculate_difference:
+        if self.psd and self.psd_recalculate_difference:  # noqa: SIM102
             if (
                 abs(self.psd.dist - psd.dist) / self.psd.dist
                 < self.psd_recalculate_difference
@@ -2277,7 +2277,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 return True
 
         # If the new psd is *really* different than the old one, return an error
-        if self.psd and self.psd_abort_difference:
+        if self.psd and self.psd_abort_difference:  # noqa: SIM102
             if (
                 abs(self.psd.dist - psd.dist) / self.psd.dist
                 > self.psd_abort_difference

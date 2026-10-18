@@ -1996,9 +1996,8 @@ class LiveBatchMatchedFilter:
         # Find the peaks in our SNR times series from the various templates
         i = 0
         for htilde in tgroup:
-            if hasattr(htilde, "time_offset"):
-                if "time_offset" not in result:
-                    result["time_offset"] = []
+            if hasattr(htilde, "time_offset") and "time_offset" not in result:
+                result["time_offset"] = []
 
             l = htilde.out[seg].abs_arg_max()
 
@@ -2301,14 +2300,14 @@ def compute_followup_snr_series(
         state_start_time = trig_time - duration / 2 - htilde.length_in_time
         state_end_time = trig_time + duration / 2
         state_duration = state_end_time - state_start_time
-        if data_reader.state is not None:
+        if data_reader.state is not None:  # noqa: SIM102
             if not data_reader.state.is_extent_valid(state_start_time, state_duration):
                 return None
 
         # was the data quality ok for the full amount of involved data?
         dq_start_time = state_start_time - data_reader.dq_padding
         dq_duration = state_duration + 2 * data_reader.dq_padding
-        if data_reader.dq is not None:
+        if data_reader.dq is not None:  # noqa: SIM102
             if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
                 return None
 

@@ -89,9 +89,8 @@ def output_sngl_inspiral_table(
 
     # get IFO to put in search summary table
     ifos = []
-    if "channel_name" in opt_dict:
-        if opt_dict["channel_name"] is not None:
-            ifos = [opt_dict["channel_name"][0:2]]
+    if opt_dict.get("channel_name") is not None:
+        ifos = [opt_dict["channel_name"][0:2]]
 
     proc = create_process_table(
         outdoc, program_name=program_name, detectors=ifos, options=opt_dict

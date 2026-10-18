@@ -259,7 +259,7 @@ if not set(opts.ifo_list).issubset(provided_psds.union(provided_files)):
 
 for ifo in opts.ifo_list:
     # Sanity Checks
-    if opts.fake_strain_seed[ifo] is not None:
+    if opts.fake_strain_seed[ifo] is not None:  # noqa: SIM102
         if set(opts.ifo_list) != set(opts.fake_strain_seed.keys()):
             raise ValueError("Fake strain seed for each detector is required")
 

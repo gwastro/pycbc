@@ -539,14 +539,13 @@ class PartitionedTmpltbank:
 
         """
         # Test that masses are the expected way around (ie. mass1 > mass2)
-        if mass2 > mass1:
-            if not self.spin_warning_given:
-                warn_msg = "Am adding a template where mass2 > mass1. The "
-                warn_msg += "convention is that mass1 > mass2. Swapping mass1 "
-                warn_msg += "and mass2 and adding point to bank. This message "
-                warn_msg += "will not be repeated."
-                logger.warning(warn_msg)
-                self.spin_warning_given = True
+        if mass2 > mass1 and not self.spin_warning_given:
+            warn_msg = "Am adding a template where mass2 > mass1. The "
+            warn_msg += "convention is that mass1 > mass2. Swapping mass1 "
+            warn_msg += "and mass2 and adding point to bank. This message "
+            warn_msg += "will not be repeated."
+            logger.warning(warn_msg)
+            self.spin_warning_given = True
 
         # These that masses obey the restrictions of mass_range_params
         if self.mass_range_params.is_outside_range(mass1, mass2, spin1z, spin2z):

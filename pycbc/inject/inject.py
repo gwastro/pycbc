@@ -610,7 +610,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         # There is a case where injections are not added to the data, but
         # still need to be generated for the match threshold option in the
         # InjFilterRejector. User needs to be careful with this though!
-        if inj_filter_rejector is not None:
+        if inj_filter_rejector is not None:  # noqa: SIM102
             if inj_filter_rejector.match_threshold and not generate_injections:
                 warn_msg = (
                     "You have asked to use the match threshold option in "

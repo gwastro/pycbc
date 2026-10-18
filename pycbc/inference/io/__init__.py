@@ -266,7 +266,7 @@ def validate_checkpoint_files(checkpoint_file, backup_file, check_nsamples=True)
     if backup_valid:
         with loadfile(backup_file, "r") as fp:
             backup_valid = fp.validate()
-    if check_nsamples:
+    if check_nsamples:  # noqa: SIM102
         # This check is not required by nested samplers
         # check that the checkpoint and backup have the same number of samples;
         # if not, assume the checkpoint has the correct number

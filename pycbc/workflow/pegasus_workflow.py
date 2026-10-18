@@ -629,9 +629,8 @@ class Workflow:
         olddir = os.getcwd()
         os.chdir(self.out_dir)
         self._adag.write(filename)
-        if not self.in_workflow:
-            if submit_now or plan_now:
-                self.plan_and_submit(submit_now=submit_now)
+        if not self.in_workflow and (submit_now or plan_now):
+            self.plan_and_submit(submit_now=submit_now)
         os.chdir(olddir)
 
     def plan_and_submit(self, submit_now=True):
@@ -864,11 +863,10 @@ class File(dax.File):
         )
         urlparts = urlsplit(path)
         site = "nonlocal"
-        if urlparts.scheme == "" or urlparts.scheme == "file":
-            if os.path.isfile(urlparts.path):
-                path = os.path.abspath(urlparts.path)
-                path = urljoin("file:", pathname2url(path))
-                site = "local"
+        if urlparts.scheme in ("", "file") and os.path.isfile(urlparts.path):
+            path = os.path.abspath(urlparts.path)
+            path = urljoin("file:", pathname2url(path))
+            site = "local"
 
         fil = cls(os.path.basename(path))
         fil.add_pfn(path, site=site)
