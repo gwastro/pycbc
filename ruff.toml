@@ -111,6 +111,11 @@ ignore = [
     # Not planned to be enabled: contextlib.suppress() in place of
     # try/except/pass. Both are clear, and suppress() needs an extra import.
     "SIM105",
+    # Not planned to be enabled for now: imports inside functions. Many are
+    # intended (optional dependencies, import cost, avoiding circular
+    # imports), but a pass through the function-level imports to move the
+    # unnecessary ones to the top of the module would be useful.
+    "PLC0415",
 ]
 
 [lint.pydocstyle]
