@@ -323,7 +323,7 @@ for filename in args.template_fit_file:
     with HFile(filename, "r") as fits:
         if num_templates is None:
             num_templates = fits["template_id"].size
-        elif not num_templates == fits["template_id"].size:
+        elif num_templates != fits["template_id"].size:
             raise RuntimeError(
                 "Input fit files correspond to different banks. "
                 "This situation is not yet supported."
@@ -341,7 +341,7 @@ for filename in args.template_fit_file:
                 # We don't mind if this attribute is different, however the
                 # output attributes will only correspond to the first file's
                 # IFO. Warn if different IFOs are being used.
-                if not attr_dict[k] == fits.attrs[k]:
+                if attr_dict[k] != fits.attrs[k]:
                     logger.warning(
                         "Fit files correspond to different IFOs: %s and %s, "
                         "only %s is being used for output file attributes",
@@ -350,7 +350,7 @@ for filename in args.template_fit_file:
                         attr_dict[k],
                     )
                 continue
-            elif not attr_dict[k] == fits.attrs[k]:
+            elif attr_dict[k] != fits.attrs[k]:
                 # Check that the files are consistent with one another
                 err_msg = f"Input files are not consistent, file {filename} "
                 err_msg += f"has attribute {k} of {fits.attrs[k]}, whereas "
@@ -584,7 +584,7 @@ if args.output_fits_by_template:
 # Add metadata, some is inherited from template level fit
 for k, v in attr_dict.items():
     outfile.attrs[k] = v
-if not analysis_time == 0:
+if analysis_time != 0:
     outfile.attrs["analysis_time"] = analysis_time
 
 # Add a magic file attribute so that coinc_findtrigs can parse it

@@ -772,7 +772,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         slide_indices = net_event_dict[:net_event_size]["slide_id"] == slide
         cvec = net_event_dict[:net_event_size][column][slide_indices]
         tvec = net_event_dict[:net_event_size][tcolumn][slide_indices]
-        if not window_size == 0:
+        if window_size != 0:
             # cluster events over the window
 
             # findchirp_cluster_over_window requires the input to be time
@@ -1111,7 +1111,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
             self.event_index = self.event_index + num_events
 
         if perform_coincidence:
-            if not len(self.ifos) == 2:
+            if len(self.ifos) != 2:
                 err_msg = "Coincidence currently only supported for 2 ifos."
                 raise ValueError(err_msg)
             ifo1 = self.ifos[0]

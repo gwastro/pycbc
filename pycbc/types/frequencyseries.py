@@ -422,7 +422,7 @@ class FrequencySeries(Array):
             # non-zero value < flow.
             data_lal = output.data.data
             first_idx = _numpy.argmax(data_lal > 0)
-            if not first_idx == 0:
+            if first_idx != 0:
                 data_lal[:first_idx] = data_lal[first_idx]
             psddict = {ifo: output}
             utils.write_filename(make_psd_xmldoc(psddict), path, compress="auto")

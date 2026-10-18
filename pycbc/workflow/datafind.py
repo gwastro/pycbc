@@ -858,7 +858,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
         if len(cache) > 0:
             # Don't bother if these are not file:// urls, assume all urls in
             # one cache file must be the same type
-            if not cache[0].scheme == "file":
+            if cache[0].scheme != "file":
                 warn_msg = f"We have {cache[0].scheme} entries in the "
                 warn_msg += "cache file. I do not check if these exist."
                 logger.warning(warn_msg)

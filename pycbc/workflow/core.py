@@ -1665,7 +1665,7 @@ class FileList(list):
         tag = tag.upper()
         matching_files = FileList([i for i in self if tag in i.tags])
         if fail_if_not_single_file:
-            if not len(matching_files) == 1:
+            if len(matching_files) != 1:
                 err_msg = f"More than one file with tag {tag} was found."
                 raise ValueError(err_msg)
             matching_files = matching_files[0]

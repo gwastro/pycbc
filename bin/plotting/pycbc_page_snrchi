@@ -48,7 +48,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose, default_level=1)
 
 
-if args.newsnr_contours is not None and not args.chisq_choice == "traditional":
+if args.newsnr_contours is not None and args.chisq_choice != "traditional":
     parser.error(
         "Newsnr contours are being plotted assuming a traditional "
         "chisquared, but this is not being plotted! We are plotting "

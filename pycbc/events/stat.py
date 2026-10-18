@@ -440,7 +440,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         # Is the histogram needed to be pre-generated?
         hist_needed = pregenerate_hist
-        hist_needed &= not len(ifos) == 1
+        hist_needed &= len(ifos) != 1
         hist_needed &= type(self).__name__ == "PhaseTD" or self.kwargs["phasetd"]
 
         if hist_needed:
@@ -485,7 +485,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         # If there are other phasetd_newsnr files, they aren't needed.
         # So tidy them out of the self.files dictionary
         rejected = [
-            key for key in self.files if "phasetd_newsnr" in key and not key == selected
+            key for key in self.files if "phasetd_newsnr" in key and key != selected
         ]
         for k in rejected:
             del self.files[k]
@@ -626,7 +626,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         If others are used (i.e. this statistic is inherited), they will
         need updated separately
         """
-        if "phasetd_newsnr" in key and not len(self.ifos) == 1:
+        if "phasetd_newsnr" in key and len(self.ifos) != 1:
             if "".join(sorted(self.ifos)) not in key:
                 logger.debug(
                     "%s file is not used for %s statistic", key, "".join(self.ifos)

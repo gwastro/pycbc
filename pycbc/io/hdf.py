@@ -166,7 +166,7 @@ class HFile(HGroup, h5py.File):
         # Apply any pre-masks
         mask = np.ones(size, dtype=bool) if premask is None else premask
 
-        if not mask.dtype == bool:
+        if mask.dtype != bool:
             # mask is an array of indices rather than booleans,
             # make it a bool array
             new_mask = np.zeros(size, dtype=bool)
@@ -286,7 +286,7 @@ class DictArray:
                 d.close()
 
             for k in self.data:
-                if not len(self.data[k]) == 0:
+                if len(self.data[k]) != 0:
                     self.data[k] = np.concatenate(self.data[k])
                 else:
                     self.data[k] = np.array([])
@@ -1127,7 +1127,7 @@ class ForegroundTriggers:
                 "IFOs in statmap file not all represented "
                 "by single-detector trigger files."
             )
-        if not sorted(self.sngl_files.keys()) == sorted(self.ifos):
+        if sorted(self.sngl_files.keys()) != sorted(self.ifos):
             logger.warning(
                 "WARNING: Single-detector trigger files "
                 "given for IFOs not in the statmap file"
