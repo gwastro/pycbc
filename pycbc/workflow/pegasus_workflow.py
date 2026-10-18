@@ -161,14 +161,9 @@ class Transformation(dax.Transformation):
 
         # Also check the "profile". This is things like Universe, RAM/disk/CPU
         # requests, execution site, getenv=True, etc.
-        for profile in self.profiles:
-            if profile not in other.profiles:
-                return False
-        for profile in other.profiles:
-            if profile not in self.profiles:
-                return False
-
-        return True
+        return all(p in other.profiles for p in self.profiles) and all(
+            p in self.profiles for p in other.profiles
+        )
 
 
 class Node(ProfileShortcuts):

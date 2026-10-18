@@ -183,7 +183,7 @@ def imrphenomc_tmplt(**kwds):
     spin1z = float128(kwds["spin1z"])
     spin2z = float128(kwds["spin2z"])
 
-    out = kwds["out"] if "out" in kwds else None
+    out = kwds.get("out")
 
     # Calculate binary parameters
     M = mass1 + mass2

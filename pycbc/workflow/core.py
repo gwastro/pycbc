@@ -1769,12 +1769,10 @@ class FileList(list):
         split lists are still valid.
         """
         # FIXME: Currently very primitive, but needs to be fast
-        if (
-            not (hasattr(self, "_split_lists_set") and (self._split_lists_set))
-            or len(self) != self._split_lists_length
-        ):
-            return False
-        return True
+        return (
+            bool(getattr(self, "_split_lists_set", False))
+            and len(self) == self._split_lists_length
+        )
 
     @classmethod
     def load(cls, filename):

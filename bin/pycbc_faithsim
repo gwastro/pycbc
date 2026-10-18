@@ -266,10 +266,8 @@ with open(options.out_file, "w") as fout:
     s2s = []
     logger.info("Calculating Overlaps")
     with ctx:
-        index = 0
         # Calculate the overlaps
-        for waveform_params in waveform_table:
-            index += 1
+        for index, waveform_params in enumerate(waveform_table, start=1):
             if options.verbose:
                 update_progress(index * 100 / len(waveform_table))
 

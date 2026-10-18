@@ -453,9 +453,7 @@ def clear(self):
 
 
 def _scheme_matches_base_array(array):
-    if isinstance(array, pycuda.gpuarray.GPUArray):
-        return True
-    return False
+    return isinstance(array, pycuda.gpuarray.GPUArray)
 
 
 def _copy_base_array(array):

@@ -337,9 +337,7 @@ with (
     with ctx:
         print("Pregenerating Signals")
         signals = []
-        index = 0
-        for signal_params in signal_table:
-            index += 1
+        for index, signal_params in enumerate(signal_table, start=1):
             update_progress(index / len(signal_table))
             stilde = get_waveform(
                 options.signal_approximant,

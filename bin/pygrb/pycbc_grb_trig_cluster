@@ -72,7 +72,7 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
         }
 
         nsets = sum(
-            isinstance(item, h5py.Dataset) or isinstance(item, h5py.Group)
+            isinstance(item, (h5py.Dataset, h5py.Group))
             for group in h5in.values()
             for item in group.values()
         )

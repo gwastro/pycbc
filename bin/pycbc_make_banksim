@@ -143,9 +143,7 @@ def check_outside_mchirp(bf, sf, w):
     mc_min, mc_max = bf_mchirps[bf]
     mc2_min, mc2_max = sf_mchirps[sf]
 
-    if (mc_min <= mc2_max * (1 + w)) and (mc_max * (1 + w) >= mc2_min):
-        return False
-    return True
+    return not ((mc_min <= mc2_max * (1 + w)) and (mc_max * (1 + w) >= mc2_min))
 
 
 parser = ArgumentParser()

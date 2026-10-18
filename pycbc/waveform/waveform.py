@@ -1553,9 +1553,7 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
 
 
 def waveform_norm_exists(approximant):
-    if approximant in _filter_norms:
-        return True
-    return False
+    return approximant in _filter_norms
 
 
 def get_template_amplitude_norm(template=None, **kwargs):

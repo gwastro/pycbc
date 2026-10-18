@@ -102,9 +102,7 @@ ofd = HFile(opt.output_file, "w")
 ofd.create_group(ifo)
 new_boundaries = []
 old_boundaries = []
-tid_count = 0
-for tid in tids:
-    tid_count += 1
+for tid_count, tid in enumerate(tids, start=1):
     # WHICH TEMPLATE DO WE HAVE
     if not tid_count % 1000:
         logger.info("Processing template %d of %d", tid_count, len(tids))

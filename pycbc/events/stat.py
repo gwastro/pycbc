@@ -1926,7 +1926,7 @@ def insert_statistic_option_group(parser, default_ranking_statistic=None):
         "--ranking-statistic",
         default=default_ranking_statistic,
         choices=statistic_dict.keys(),
-        required=True if default_ranking_statistic is None else False,
+        required=default_ranking_statistic is None,
         help="The coinc ranking statistic to calculate",
     )
 

@@ -134,9 +134,7 @@ def clear(self):
 
 
 def _scheme_matches_base_array(array):
-    if isinstance(array, cp.ndarray):
-        return True
-    return False
+    return isinstance(array, cp.ndarray)
 
 
 def _to_device(array):

@@ -644,7 +644,7 @@ def load_frequencyseries(path, group=None):
         with h5py.File(path, "r") as f:
             data = f[key][:]
             delta_f = f[key].attrs["delta_f"]
-            epoch = f[key].attrs["epoch"] if "epoch" in f[key].attrs else None
+            epoch = f[key].attrs.get("epoch")
             return FrequencySeries(data, delta_f=delta_f, epoch=epoch)
     else:
         raise ValueError("Path must end with .npy, .hdf, or .txt")

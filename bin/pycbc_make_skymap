@@ -270,7 +270,9 @@ def main(
             "--gps-end-time",
             str(gps_end_time),
             "--trigger-time",
-            f"{trig_time[ifo] if ifo in trig_time else mean_trig_time:.6f}",
+            # trig_time is a list, not a dict, when a single approximate
+            # time was given, so .get() can't be used here
+            f"{trig_time[ifo] if ifo in trig_time else mean_trig_time:.6f}",  # noqa: SIM401
             "--window",
             "1",
             "--channel-name",
