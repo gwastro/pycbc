@@ -124,6 +124,16 @@ ignore = [
     "SLF001",
 ]
 
+[lint.per-file-ignores]
+# Frozen copies of older pycbc code, kept only so that the tests can compare
+# the current code against them; they are left exactly as they were.
+"test/validation_code/**" = ["ALL"]
+
+[lint.flake8-unused-arguments]
+# Unused *args / **kwargs are normally there to accept a shared call
+# signature, so only named arguments are reported.
+ignore-variadic-names = true
+
 [lint.pydocstyle]
 convention = "numpy"
 
