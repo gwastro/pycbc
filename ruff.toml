@@ -134,12 +134,13 @@ ignore = [
 # the current code against them; they are left exactly as they were.
 "test/validation_code/**" = ["ALL"]
 # Scripts, examples, docs and tests are run directly, not imported as part
-# of a package, so they need no __init__.py.
+# of a package, so they need no __init__.py (INP001). The examples, docs,
+# tests and tools also print their output directly (T201).
 "bin/**" = ["INP001"]
-"docs/**" = ["INP001"]
-"examples/**" = ["INP001"]
-"test/**" = ["INP001"]
-"tools/**" = ["INP001"]
+"docs/**" = ["INP001", "T201"]
+"examples/**" = ["INP001", "T201"]
+"test/**" = ["INP001", "T201"]
+"tools/**" = ["INP001", "T201"]
 
 [lint.flake8-unused-arguments]
 # Unused *args / **kwargs are normally there to accept a shared call
