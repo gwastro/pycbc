@@ -428,11 +428,7 @@ if args.output_fits_by_template:
     alpha[nabove == 0] = -100
     fbt_dict["fit_coeff"] = alpha
 
-n_required = (
-    _default_total_trigs
-    if "total_trigs" not in kwarg_dict
-    else kwarg_dict["total_trigs"]
-)
+n_required = kwarg_dict.get("total_trigs", _default_total_trigs)
 if args.smoothing_method == "n_closest" and n_required > nabove.sum():
     logger.warning(
         "There are %.2f triggers above threshold, not enough to give a "

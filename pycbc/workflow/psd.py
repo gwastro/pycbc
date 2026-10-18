@@ -42,7 +42,7 @@ def chunks(l, n):
 
 
 def merge_psds(workflow, files, ifo, out_dir, tags=None):
-    tags = [] if not tags else tags
+    tags = tags or []
     node = MergePSDFiles(
         workflow.cp, "merge_psds", ifos=ifo, out_dir=out_dir, tags=tags
     ).create_node()
@@ -55,7 +55,7 @@ def merge_psds(workflow, files, ifo, out_dir, tags=None):
 def setup_psd_calculate(
     workflow, frame_files, ifo, segments, segment_name, out_dir, tags=None
 ):
-    tags = [] if not tags else tags
+    tags = tags or []
     make_analysis_dir(out_dir)
     if workflow.cp.has_option_tags("workflow-psd", "parallelization-factor", tags=tags):
         num_parts = int(
@@ -100,7 +100,7 @@ def setup_psd_calculate(
 def make_psd_file(
     workflow, frame_files, segment_file, segment_name, out_dir, tags=None
 ):
-    tags = [] if not tags else tags
+    tags = tags or []
     exe = CalcPSDExecutable(
         workflow.cp, "calculate_psd", ifos=segment_file.ifo, out_dir=out_dir, tags=tags
     )

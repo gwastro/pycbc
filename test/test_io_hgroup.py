@@ -155,10 +155,9 @@ class TestIOHFile(unittest.TestCase):
             p = os.path.join(td, "bad_dtype.hdf")
             # create a unicode numpy array whose elements are non-numeric
             arr = np.array(["a", "b", "c"], dtype="<U1")
-            with HFile(p, "w") as f:
-                # Attempting to write this array as floats should fail
-                with self.assertRaises((TypeError, ValueError)):
-                    f.create_dataset("bad", data=arr, dtype="f8")
+            # Attempting to write this array as floats should fail
+            with HFile(p, "w") as f, self.assertRaises((TypeError, ValueError)):
+                f.create_dataset("bad", data=arr, dtype="f8")
 
     def test_getitem_wraps_group_and_leaves_dataset(self):
         """

@@ -225,7 +225,6 @@ missed_com = {
 
 # Loop over the files, parsing each one into the appropriate dictionaries
 # initialized above
-i = 0
 read_first = False
 
 same_dict = {
@@ -244,7 +243,7 @@ curr_dict = {
 
 nfiles = len(args.input_files)
 outfp.attrs["nfiles"] = nfiles
-for f in args.input_files:
+for i, f in enumerate(args.input_files):
     fp = File(f, "r")
     curr_dict["detectors"] = [fp.attrs["detector_1"], fp.attrs["detector_2"]]
     for key in [
@@ -289,7 +288,6 @@ for f in args.input_files:
         missed_group = fp["missed_after_vetoes"]
         update_missed(fp, missed_group["missed_only_reference"], i, missed_ref)
         update_missed(fp, missed_group["missed_only_comparison"], i, missed_com)
-    i += 1
     fp.close()
 
 outfp.attrs["detector_1"] = same_dict["detectors"][0]

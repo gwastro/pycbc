@@ -2411,11 +2411,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if not self.state:
             return False
 
-        if not self.state.is_extent_valid(
+        return not self.state.is_extent_valid(
             self.start_time, self.blocksize, pycbc.frame.NO_HWINJ
-        ):
-            return True
-        return False
+        )
 
     def null_advance_strain(self, blocksize):
         """

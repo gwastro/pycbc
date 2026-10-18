@@ -107,10 +107,7 @@ class TimeSeries(Array):
         if (odelta_t - self.delta_t) / self.delta_t > 1e-4:
             return False
 
-        if abs(1 - odelta_t / self.delta_t) * len(self) > 0.5:
-            return False
-
-        return True
+        return not abs(1 - odelta_t / self.delta_t) * len(self) > 0.5
 
     def _return(self, ary):
         return TimeSeries(ary, self._delta_t, epoch=self._epoch, copy=False)

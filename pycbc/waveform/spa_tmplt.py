@@ -219,7 +219,7 @@ def spa_tmplt(**kwds):
     # amplitude_order = int(kwds['amplitude_order'])
     spin_order = int(kwds["spin_order"])
 
-    out = kwds["out"] if "out" in kwds else None
+    out = kwds.get("out")
 
     amp_factor = spa_amplitude_factor(mass1=mass1, mass2=mass2) / distance
 
