@@ -43,10 +43,6 @@ parser.add_argument(
 )
 parser.add_argument("--bank-file", required=True, help="HDF format template bank file")
 parser.add_argument("--output-file")
-# CURRENTLY UNUSED, but may be needed if using foreground censor
-# parser.add_argument('--statmap-file',
-#    help="The HDF format clustered coincident statmap file containing the "
-#         "result triggers.")
 parser.add_argument(
     "--veto-file", help="The veto file to be used if vetoing triggers.  Optional"
 )

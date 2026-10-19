@@ -330,7 +330,7 @@ def spintaylorf2(**kwds):
     # Calculate the spin corrections
     # FIXME should use pycbc's function, but sigma has different expression
     # in Andy's code, double check
-    # pn_beta, pn_sigma, pn_gamma = pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(
+    # pn_beta, pn_sigma, pn_gamma = pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(  # noqa: ERA001
     #                               mass1, mass2, chi*kappa, 0) # FIXME: spin2 is taken to be 0
     pn_beta = (113.0 * mass1 / (12.0 * M) - 19.0 * eta / 6.0) * chi * kappa
     pn_sigma = (

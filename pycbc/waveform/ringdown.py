@@ -108,10 +108,6 @@ def format_lmns(lmns):
     # Cycle over the lmns to ensure that we get back a list of strings that
     # are three digits long, and that nmodes!=0
     for lmn in lmns:
-        # The following line is to be used with Python3 if the lmns are stored
-        # as a list of strings in the HDF files and the workflow converts that
-        # to a string
-        # lmn = lmn.strip(" b'")
         # Try to convert to int and then str, to ensure the right format
         lmn = str(int(lmn))
         if len(lmn) != 3:

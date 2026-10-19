@@ -498,7 +498,7 @@ class TestChisq(unittest.TestCase):
                 ht,
             )
         # FIXME This test fails for me! Check, debug and reenable
-        # self.assertLess(chisq, 1e-3)
+        # self.assertLess(chisq, 1e-3)  # noqa: ERA001
 
         ht = hplus * uvals_prec[0] + hcross
         ht_norm = sigmasq(ht, psd=self.psd, low_frequency_cutoff=self.low_freq_filter)

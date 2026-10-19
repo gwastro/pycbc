@@ -151,9 +151,6 @@ parser.add_argument(
     help="Path to the bank file used to compute the the bank chi-square veto.",
 )
 parser.add_argument("--chisq-bins", default=0)
-# Commenting out unused options: remove if they remain unused
-# parser.add_argument("--chisq-threshold", type=float, default=0)
-# parser.add_argument("--chisq-delta", type=float, default=0)
 parser.add_argument(
     "--autochi-number-points",
     type=int,

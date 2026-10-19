@@ -93,12 +93,6 @@ def generate_mapping(order):
     mapping["Lambda7"] = 7
     if order == "threePointFivePN":
         return mapping
-    # For some as-of-yet unknown reason, the tidal terms are not giving correct
-    # match estimates when enabled. So, for now, this order is commented out.
-    # if order == 'tidalTesting':
-    #    mapping['Lambda10'] = 8
-    #    mapping['Lambda12'] = 9
-    #    return mapping
     raise ValueError(f"Order {order} is not understood.")
 
 
@@ -287,9 +281,6 @@ def get_chirp_params(
         rematch = re.match(logloglambda_str, mapping[idx])
         if rematch:
             raise ValueError("LOGLOG terms are not implemented")
-            # pn_order = int(rematch.groups()[0])
-            # lambdas.append(phasing_vlogvsqs[:,pn_order] * pmf13**(-5+pn_order))
-            # continue
         err_msg = "Failed to parse " + mapping[idx]
         raise ValueError(err_msg)
 

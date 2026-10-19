@@ -44,10 +44,6 @@ parser = argparse.ArgumentParser(description=__doc__)
 
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--match-files", nargs="+", help="Explicit list of match files.")
-# parser.add_argument("--inj-files", nargs='+',
-#                    help="Explicit list of injection files. These must be in "
-#                         "the same order, and match one-to-one with the "
-#                         "match-files.")
 parser.add_argument("-o", "--output-file", required=True, help="Output file name")
 parser.add_argument(
     "--filter-func-file",

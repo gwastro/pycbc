@@ -59,11 +59,7 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 # Plot lines representing deviations based on non-central chi-square
 def plot_deviation(percentile, snr_grid, y, ax, style):
     """Plot deviations based on non-central chi-square"""
-    # ncx2: non-central chi-squared; ppf: percent point function
-    # ax.plot(snr_grid, scipy.stats.ncx2.ppf(percentile, 2, y*y)**0.5, style)
-
-    # Using interpolation to work around "saturation" given by the
-    # original code line (commented out above)
+    # Use interpolation to work around "saturation"
     y_vals = scipy.stats.ncx2.ppf(percentile, 2, y * y) ** 0.5
     y_vals = numpy.unique(y_vals)
     x_vals = snr_grid[0 : len(y_vals)]

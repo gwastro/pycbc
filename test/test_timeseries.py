@@ -203,8 +203,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
                 self.assertEqual(out4.delta_t, 0.1)
                 self.assertEqual(out4.start_time, self.epoch)
 
-            # We should be able to create an array from the wrong dtype, and
-            # it should be cast as float64
+            # We should be able to create an array from the wrong dtype
             in5 = numpy.array([1, 2, 3], dtype=numpy.int32)
             out5 = TimeSeries(in5, 0.1, epoch=self.epoch)
             in5 += 1
@@ -213,12 +212,8 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             self.assertEqual(out5[0], 1)
             self.assertEqual(out5[1], 2)
             self.assertEqual(out5[2], 3)
-            # self.assertTrue(out5.dtype==numpy.float64)
             self.assertEqual(out5.delta_t, 0.1)
             self.assertEqual(out5.start_time, self.epoch)
-
-            # We shouldn't be able to copy it though
-            # self.assertRaises(TypeError,TimeSeries,in5, 0.1, copy=False)
 
             # Finally, just checking a few things specific to timeseries
             inbad = numpy.array([], dtype=float64)
