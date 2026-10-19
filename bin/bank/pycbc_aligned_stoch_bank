@@ -167,7 +167,7 @@ metric_params = tmpltbank.determine_eigen_directions(
 logger.info("Identifying limits of frequency")
 
 # Choose the frequency values to use for metric calculation
-if opts.vary_fupper == False:
+if not opts.vary_fupper:
     ref_freq = metric_params.f_upper
 else:
     # determine upper frequency cutoffs corresponding to the min and max
