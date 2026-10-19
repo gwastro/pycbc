@@ -117,7 +117,7 @@ parser.add_argument("--output-file", help="name of output file")
 
 args = parser.parse_args()
 
-injection_style = args.background_files != None
+injection_style = args.background_files is not None
 
 significance.check_significance_options(args, parser)
 if args.max_hierarchical_removal and injection_style:

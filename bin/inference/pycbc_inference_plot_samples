@@ -63,7 +63,7 @@ fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
 ndim = len(parameters)
 
 # get chain indices
-if opts.chains == ["all"] or opts.chains == None:
+if opts.chains == ["all"] or opts.chains is None:
     chains = range(fp.nchains)
 else:
     chains = list(map(int, opts.chains))
