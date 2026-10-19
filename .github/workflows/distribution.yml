@@ -7,8 +7,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  workflow_defaults:
+    uses: ./.github/workflows/workflow-defaults.yml
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
+    needs: workflow_defaults
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -18,7 +21,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: ${{ needs.workflow_defaults.outputs.python-version }}
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel
       - name: Build wheels
@@ -35,9 +38,8 @@ jobs:
   deploy_pypi:
     name: Package and publish to PyPI
     runs-on: ubuntu-24.04
-    needs: build_wheels
+    needs: [build_wheels, workflow_defaults]
     steps:
-<<<<<<< HEAD
     - uses: actions/checkout@v5
     - name: Set up Python
       uses: actions/setup-python@v6
@@ -59,28 +61,3 @@ jobs:
       uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
       with:
         password: ${{ secrets.pypi_password }}
-=======
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - uses: actions/download-artifact@v4.1.7
-        with:
-          pattern: wheel-*
-          merge-multiple: true
-          path: dist/
-      - name: Build source distribution
-        run: |
-          python -c 'import setuptools ; print("setuptools version", setuptools.__version__)'
-          pip install pip setuptools --upgrade
-          python setup.py sdist
-          ls -lh dist
-      - name: Publish to PyPI
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
-        with:
-          password: ${{ secrets.pypi_password }}
->>>>>>> 648971907 (Make changes to workflo files, add workflow defaults so that there is a single source of truth, and do some syntax cleanup)
