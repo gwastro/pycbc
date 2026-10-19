@@ -342,9 +342,7 @@ def inverse_spectrum_truncation(
         psd_trunc = execute_cached_fft(q, copy_output=False, uid=INVSPECTRUNC_UNIQUE_ID)
     if which_spectrum == "invasd":
         psd_trunc *= psd_trunc.conj()
-    psd_out = 1.0 / abs(psd_trunc)
-
-    return psd_out
+    return 1.0 / abs(psd_trunc)
 
 
 def interpolate(series, delta_f, length=None):

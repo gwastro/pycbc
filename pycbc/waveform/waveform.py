@@ -564,8 +564,7 @@ def props(obj, **kwargs):
     input_params = default_args.copy()
     input_params.update(pr)
     # if mode array present and is a string, convert to a list of tuples
-    input_params = parse_mode_array(input_params)
-    return input_params
+    return parse_mode_array(input_params)
 
 
 def check_args(args, required_args):

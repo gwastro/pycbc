@@ -525,8 +525,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         pos = self[dataset_name].attrs["pos"]
         has_gauss = self[dataset_name].attrs["has_gauss"]
         cached_gauss = self[dataset_name].attrs["cached_gauss"]
-        state = s, arr, pos, has_gauss, cached_gauss
-        return state
+        return s, arr, pos, has_gauss, cached_gauss
 
     def write_strain(self, strain_dict, group=None):
         """
@@ -651,8 +650,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         else:
             group = "/".join([group, self.injections_group])
         injset = InjectionSet(self.filename, hdf_group=group)
-        injections = injset.table.view(FieldArray)
-        return injections
+        return injset.table.view(FieldArray)
 
     def write_command_line(self):
         """

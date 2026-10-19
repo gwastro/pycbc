@@ -719,8 +719,7 @@ class LiveFilterBank(TemplateBank):
 
         """
         inc = self.increment
-        size = np.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
-        return size
+        return np.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
 
     def getslice(self, sindex):
         instance = copy(self)

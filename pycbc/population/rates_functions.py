@@ -225,9 +225,7 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
     maxp = max(plRu)
     idx = np.where(plRu / maxp > rndn)
     log_Rf = lRu[idx]
-    Rfs = np.exp(log_Rf)
-
-    return Rfs
+    return np.exp(log_Rf)
 
 
 # The flat in log and power-law mass distribution models  #
@@ -483,9 +481,7 @@ def mchirp_sampler_lnm(**kwargs):
 
     """
     m1, m2 = draw_lnm_samples(**kwargs)
-    mchirp_astro = mchirp_from_mass1_mass2(m1, m2)
-
-    return mchirp_astro
+    return mchirp_from_mass1_mass2(m1, m2)
 
 
 def mchirp_sampler_imf(**kwargs):
@@ -504,9 +500,7 @@ def mchirp_sampler_imf(**kwargs):
 
     """
     m1, m2 = draw_imf_samples(**kwargs)
-    mchirp_astro = mchirp_from_mass1_mass2(m1, m2)
-
-    return mchirp_astro
+    return mchirp_from_mass1_mass2(m1, m2)
 
 
 def mchirp_sampler_flat(**kwargs):
@@ -525,6 +519,4 @@ def mchirp_sampler_flat(**kwargs):
 
     """
     m1, m2 = draw_flat_samples(**kwargs)
-    mchirp_astro = mchirp_from_mass1_mass2(m1, m2)
-
-    return mchirp_astro
+    return mchirp_from_mass1_mass2(m1, m2)

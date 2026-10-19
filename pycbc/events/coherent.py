@@ -104,8 +104,7 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos, wraparound_dict):
     counts = np.unique(coinc_list, return_counts=True)
     if len(idx_dict) == 1:
         return counts[0]
-    coinc_idx = counts[0][counts[1] > min_nifos - 1]
-    return coinc_idx
+    return counts[0][counts[1] > min_nifos - 1]
 
 
 def get_coinc_triggers(snrs, idx, t_delay_idx):
@@ -132,8 +131,7 @@ def get_coinc_triggers(snrs, idx, t_delay_idx):
     """
     # loops through snrs
     # %len(snrs[ifo]) was included as part of a wrap-around solution
-    coincs = {ifo: snrs[ifo][(idx + t_delay_idx[ifo]) % len(snrs[ifo])] for ifo in snrs}
-    return coincs
+    return {ifo: snrs[ifo][(idx + t_delay_idx[ifo]) % len(snrs[ifo])] for ifo in snrs}
 
 
 def coincident_snr(snr_dict, index, threshold, time_delay_idx):
@@ -324,8 +322,7 @@ def network_chisq(chisq, chisq_dof, snr_dict):
     }
     coinc_snr2 = sum(snr2.values())
     snr2_ratio = {ifo: snr2[ifo] / coinc_snr2 for ifo in ifos}
-    net_chisq = sum([chisq_per_dof[ifo] * snr2_ratio[ifo] for ifo in ifos])
-    return net_chisq
+    return sum([chisq_per_dof[ifo] * snr2_ratio[ifo] for ifo in ifos])
 
 
 def null_snr(
@@ -438,8 +435,7 @@ def reweight_snr_by_null(
         1 + null - (null_min - 1) - (coherent - null_step) * null_grad,
         1 + null - (null_min - 1),
     )
-    rw_snr = np.where(downweight, network_snr / rw_fac, network_snr)
-    return rw_snr
+    return np.where(downweight, network_snr / rw_fac, network_snr)
 
 
 def reweightedsnr_cut(rw_snr, rw_snr_threshold):

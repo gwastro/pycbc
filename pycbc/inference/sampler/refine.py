@@ -142,8 +142,7 @@ class RefineSampler(DummySampler):
         logger.info("checking prior")
         keep = self.model.prior_distribution.contains(params)
         logger.info("done checking")
-        r = numpy.array([params[k][keep] for k in self.vparam])
-        return r
+        return numpy.array([params[k][keep] for k in self.vparam])
 
     @staticmethod
     def compare_kde(kde1, kde2, size=int(1e4)):

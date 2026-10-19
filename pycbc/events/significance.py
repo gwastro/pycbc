@@ -410,9 +410,7 @@ def ifar_opt_to_far_limit(ifar_str):
 
     """
     ifar_float = positive_float(ifar_str)
-    far_hz = 0.0 if (ifar_float == 0.0) else conv.sec_to_year(1.0 / ifar_float)
-
-    return far_hz
+    return 0.0 if (ifar_float == 0.0) else conv.sec_to_year(1.0 / ifar_float)
 
 
 def digest_significance_options(combo_keys, args):

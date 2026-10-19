@@ -42,11 +42,9 @@ def create_full_filt(freqs, filt, plong, srate, psd_duration):
     fweight = norm * fweight
     fwhiten = numpy.sqrt(2.0 / srate) / numpy.sqrt(plong)
     fwhiten[0] = 0.0
-    full_filt = sig.windows.hann(int(psd_duration * srate)) * numpy.roll(
+    return sig.windows.hann(int(psd_duration * srate)) * numpy.roll(
         irfft(fwhiten * fweight), int(psd_duration / 2) * srate
     )
-
-    return full_filt
 
 
 def mean_square(data, delta_t, srate, short_stride, stride):
@@ -217,13 +215,11 @@ def calc_filt_psd_variation(
         psd_var_list.append(numpy.array(variation, dtype=wstrain.dtype))
 
     # Package up the time series to return
-    psd_var = TimeSeries(
+    return TimeSeries(
         numpy.concatenate(psd_var_list),
         delta_t=step,
         epoch=start_time + strain_crop + segment,
     )
-
-    return psd_var
 
 
 def find_trigger_value(psd_var, idx, start, sample_rate):
@@ -259,9 +255,7 @@ def find_trigger_value(psd_var, idx, start, sample_rate):
             fill_value=1.0,
             bounds_error=False,
         )
-    vals = psd_var.cached_psd_var_interpolant(time)
-
-    return vals
+    return psd_var.cached_psd_var_interpolant(time)
 
 
 def live_create_filter(
@@ -314,9 +308,7 @@ def live_create_filter(
     # Extract the psd frequencies to create a representative filter.
     freqs = numpy.array(psd_estimated.sample_frequencies, dtype=numpy.float32)
     plong = psd_estimated.numpy()
-    full_filt = create_full_filt(freqs, filt, plong, sample_rate, psd_duration)
-
-    return full_filt
+    return create_full_filt(freqs, filt, plong, sample_rate, psd_duration)
 
 
 def live_calc_psd_variation(
@@ -386,11 +378,9 @@ def live_calc_psd_variation(
         m_s.append(numpy.mean(short_ms[start:end]))
 
     m_s = numpy.array(m_s, dtype=wstrain.dtype)
-    psd_var = TimeSeries(
+    return TimeSeries(
         m_s, delta_t=1.0, epoch=strain.end_time - increment - (data_trim * 2)
     )
-
-    return psd_var
 
 
 def live_find_var_value(triggers, psd_var_timeseries):
@@ -419,6 +409,4 @@ def live_find_var_value(triggers, psd_var_timeseries):
         bounds_error=False,
     )
     # Evaluate at the trigger times
-    psd_var_vals = interpolator(triggers["end_time"])
-
-    return psd_var_vals
+    return interpolator(triggers["end_time"])

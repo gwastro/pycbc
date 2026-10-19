@@ -691,10 +691,7 @@ class MultiRingBuffer:
 
     def valid_slice(self, buffer_index):
         """Return the valid slice for this buffer index"""
-        ret_slice = slice(
-            self.valid_starts[buffer_index], self.valid_ends[buffer_index]
-        )
-        return ret_slice
+        return slice(self.valid_starts[buffer_index], self.valid_ends[buffer_index])
 
     def expire_vector(self, buffer_index):
         """Return the expiration vector of a given ring buffer"""

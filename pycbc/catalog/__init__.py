@@ -72,8 +72,7 @@ def find_event_in_catalog(name, source=None):
                 cname = data[mname]["commonName"]
                 if cname.upper() == name.upper():
                     name = mname
-                    data = data[name]
-                    return data
+                    return data[name]
     raise ValueError(f"Did not find merger matching name: {name}")
 
 

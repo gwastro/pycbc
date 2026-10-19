@@ -58,12 +58,11 @@ def sfr_grb_2008(z):
     rho_local = 0.02  # Msolar/yr/Mpc^3
     eta = -10
 
-    rho_z = rho_local * (
+    return rho_local * (
         (1 + z) ** (3.4 * eta)
         + ((1 + z) / 5000) ** (-0.3 * eta)
         + ((1 + z) / 9) ** (-3.5 * eta)
     ) ** (1.0 / eta)
-    return rho_z
 
 
 def sfr_madau_dickinson_2014(z, gamma=2.7, kappa=5.6, z_peak=1.9):
@@ -85,8 +84,7 @@ def sfr_madau_dickinson_2014(z, gamma=2.7, kappa=5.6, z_peak=1.9):
          Pease see Eq.(15) in <arXiv:1403.0007> for more details.
 
     """
-    rho_z = 0.015 * (1 + z) ** gamma / (1 + ((1 + z) / (1 + z_peak)) ** kappa)
-    return rho_z
+    return 0.015 * (1 + z) ** gamma / (1 + ((1 + z) / (1 + z_peak)) ** kappa)
 
 
 def sfr_madau_fragos_2017(z, k_imf=0.66, mode="high"):
@@ -126,9 +124,7 @@ def sfr_madau_fragos_2017(z, k_imf=0.66, mode="high"):
         factor_c = 5.35
     else:
         raise ValueError("'mode' must choose from 'high' or 'low'.")
-    rho_z = k_imf * 0.015 * (1 + z) ** factor_a / (1 + ((1 + z) / factor_b) ** factor_c)
-
-    return rho_z
+    return k_imf * 0.015 * (1 + z) ** factor_a / (1 + ((1 + z) / factor_b) ** factor_c)
 
 
 def diff_lookback_time(z, **kwargs):
@@ -161,8 +157,7 @@ def diff_lookback_time(z, **kwargs):
     H0 = (  # noqa: N806
         cosmology.H0.value * (3.0856776e19) ** (-1) / (1 / 24 / 3600 / 365 * 1e-9)
     )  # Gyr^-1
-    dt_dz = 1 / H0 / (1 + z) / sqrt(cosmology.Ode0 + cosmology.Om0 * (1 + z) ** 3)
-    return dt_dz
+    return 1 / H0 / (1 + z) / sqrt(cosmology.Ode0 + cosmology.Om0 * (1 + z) ** 3)
 
 
 def p_tau(tau, td_model="inverse"):
@@ -274,8 +269,7 @@ def convolution_trans(sfr, diff_lookback_t, model_td, **kwargs):
     z = symbols("z")
     z_0 = symbols("z_0")
     tau = integrate(diff_lookback_time_z(z), (z, z_0, z))
-    func = sfr(z) * p_tau(tau, model_td) * diff_lookback_time_z(z)
-    return func
+    return sfr(z) * p_tau(tau, model_td) * diff_lookback_time_z(z)
 
 
 def merger_rate_density(
@@ -342,8 +336,7 @@ def merger_rate_density(
         f_z[i] = scipy_integrate.quad(func_2, z_array[i], np.inf, epsabs=1.49e-3)[0]
 
     f_z = f_z / f_z[0] * rho_local  # Normalize & Rescale
-    rho_z = scipy_interpolate.interp1d(z_array, f_z)
-    return rho_z
+    return scipy_interpolate.interp1d(z_array, f_z)
 
 
 def coalescence_rate(rate_den, maxz=10.0, npoints=10000, z_array=None, **kwargs):
@@ -389,11 +382,7 @@ def coalescence_rate(rate_den, maxz=10.0, npoints=10000, z_array=None, **kwargs)
             (dr * 4 * np.pi * units.sr * rate_den(z) * (units.Mpc) ** (-3)).value
         )
 
-    coalescence_rate_interp = scipy_interpolate.interp1d(
-        z_array, dr_dz, fill_value="extrapolate"
-    )
-
-    return coalescence_rate_interp
+    return scipy_interpolate.interp1d(z_array, dr_dz, fill_value="extrapolate")
 
 
 def total_rate_upto_redshift(z, merger_rate):
@@ -457,8 +446,7 @@ def average_time_between_signals(z_array, merger_rate):
 
     """
     total_rate = total_rate_upto_redshift(z_array[-1], merger_rate)  # yr^-1
-    average_time = 1.0 / total_rate * 365 * 24 * 3600  # s
-    return average_time
+    return 1.0 / total_rate * 365 * 24 * 3600  # s
 
 
 def norm_redshift_distribution(z_array, merger_rate):
@@ -486,8 +474,7 @@ def norm_redshift_distribution(z_array, merger_rate):
 
     """
     lambd = average_time_between_signals(z_array, merger_rate)
-    norm_coalescence_rate = lambd / (365 * 24 * 3600) * merger_rate(z_array)
-    return norm_coalescence_rate
+    return lambd / (365 * 24 * 3600) * merger_rate(z_array)
 
 
 def distance_from_rate(total_rate, merger_rate, maxz=10, npoints=10000, **kwargs):

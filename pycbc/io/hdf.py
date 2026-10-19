@@ -1242,8 +1242,7 @@ class ForegroundTriggers:
 
     def get_end_time(self):
         times_gen = (self.get_coincfile_array(f"{ifo}/time") for ifo in self.ifos)
-        ref_times = np.array([mean_if_greater_than_zero(t)[0] for t in zip(*times_gen)])
-        return ref_times
+        return np.array([mean_if_greater_than_zero(t)[0] for t in zip(*times_gen)])
 
     def get_ifos(self):
         """
@@ -1261,8 +1260,7 @@ class ForegroundTriggers:
         for ifo in self.ifos:
             ifo_trigs = np.where(self.get_coincfile_array(ifo + "/time") < 0, "-", ifo)
             ifo_or_minus.append(ifo_trigs)
-        ifos_list = [list(trig[trig != "-"]) for trig in iter(np.array(ifo_or_minus).T)]
-        return ifos_list
+        return [list(trig[trig != "-"]) for trig in iter(np.array(ifo_or_minus).T)]
 
     def to_coinc_xml_object(self, file_name):
         outdoc = ligolw.Document()
@@ -1657,8 +1655,7 @@ class ReadByTemplate:
         # Calculate the trigger id by adding the relative offset in self.keep
         # to the absolute beginning index of this templates triggers stored
         # in 'template_boundaries'
-        trigger_id = self.keep + self.file[f"{self.ifo}/template_boundaries"][num]
-        return trigger_id
+        return self.keep + self.file[f"{self.ifo}/template_boundaries"][num]
 
     def __getitem__(self, col):
         """
@@ -1682,8 +1679,7 @@ class ReadByTemplate:
                 "template to read data from"
             )
         data = self.get_data(col, self.template_num)
-        data = data[self.keep] if self.valid else data
-        return data
+        return data[self.keep] if self.valid else data
 
 
 chisq_choices = [

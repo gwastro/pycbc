@@ -147,10 +147,9 @@ class UniformPowerLaw(bounded.BoundedDist):
         n = self.dim - 1
         r_l = self._bounds[param][0]
         r_h = self._bounds[param][1]
-        new_value = ((r_h ** (n + 1) - r_l ** (n + 1)) * value + r_l ** (n + 1)) ** (
+        return ((r_h ** (n + 1) - r_l ** (n + 1)) * value + r_l ** (n + 1)) ** (
             1.0 / (n + 1)
         )
-        return new_value
 
     def _pdf(self, **kwargs):
         """

@@ -177,10 +177,9 @@ class UniformF0Tau(uniform.Uniform):
         with numpy.errstate(invalid="ignore"):
             mf = conversions.final_mass_from_f0_tau(f0, tau, l=l, m=m)
             sf = conversions.final_spin_from_f0_tau(f0, tau, l=l, m=m)
-            isin = self.final_mass_bounds.contains(
+            return self.final_mass_bounds.contains(
                 mf
             ) & self.final_spin_bounds.contains(sf)
-        return isin
 
     def rvs(self, size=1):
         """

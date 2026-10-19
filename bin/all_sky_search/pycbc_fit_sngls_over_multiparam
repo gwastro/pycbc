@@ -78,12 +78,11 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx, weights=None):
     ntotal_t_smoothed = numpy.average(ntotal[template_idx], weights=weights)
     invalphan_mean = numpy.average(invalphan[template_idx], weights=weights)
 
-    return_tuple = (
+    return (
         nabove_t_smoothed,
         nabove_t_smoothed / invalphan_mean,
         ntotal_t_smoothed,
     )
-    return return_tuple
 
 
 def smooth_tophat(nabove, invalphan, ntotal, dists):

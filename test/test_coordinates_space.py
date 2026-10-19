@@ -262,9 +262,7 @@ class TestParams(unittest.TestCase):
 
             # Not take the rotation of the earth into account.
             ht_1 = fp_1 * hp + fc_1 * hc
-            ht_list = [ht_1]
-
-            return ht_list
+            return [ht_1]
 
         # Checking if bbhx is installed, if not, then ignore this test
         # and raise a warning.

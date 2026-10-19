@@ -290,8 +290,7 @@ def signal_kde_extra_cpt(signal_kde, frac=None, volume=None):
     # Calculate the constant density value for the additional component
     const_density = 1 / volume
     # Calculate the modified signal density
-    modified_kde = (1 - frac) * signal_kde + frac * const_density
-    return modified_kde
+    return (1 - frac) * signal_kde + frac * const_density
 
 
 # Obtaining signal parameters

@@ -164,8 +164,7 @@ template_dset["mass2"] = np.minimum(mass1, mass2)
 def make_random_spins(n_templates):
     spins = np.random.normal(size=n_templates, scale=0.4)
     spins = np.maximum(spins, -0.998)
-    spins = np.minimum(spins, 0.998)
-    return spins
+    return np.minimum(spins, 0.998)
 
 
 template_dset["spin1z"] = make_random_spins(n_templates)

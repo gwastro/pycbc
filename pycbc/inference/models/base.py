@@ -687,8 +687,7 @@ class BaseModel(metaclass=ABCMeta):
         if self.sampling_transforms is not None:
             params = self.sampling_transforms.apply(params, inverse=True)
         # apply boundary conditions
-        params = self.prior_distribution.apply_boundary_conditions(**params)
-        return params
+        return self.prior_distribution.apply_boundary_conditions(**params)
 
     #
     # Methods for initiating from a config file.

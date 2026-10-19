@@ -43,8 +43,7 @@ base_lvc_url = "https://www.gwosc.org/eventapi/jsonfull/{}/"
 
 def lvk_catalogs():
     _catalog_source = "https://gwosc.org/eventapi/json/"
-    catalog_list = json.load(open(get_file(_catalog_source)))
-    return catalog_list
+    return json.load(open(get_file(_catalog_source)))
 
 
 def populate_catalogs():
