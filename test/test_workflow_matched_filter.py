@@ -21,6 +21,7 @@ import tempfile
 import unittest
 
 import igwn_segments as segments
+import lal
 
 from pycbc.workflow.configuration import WorkflowConfigParser
 from pycbc.workflow.core import File, FileList
@@ -388,6 +389,19 @@ class TestMultiDetectorWorkflowJobSetup(unittest.TestCase):
             min_data_length=720,
             left_pad=8,
             right_pad=8,
+        )
+
+    def test_ligo_time_gps_multi_job_slicing(self):
+        """LIGOTimeGPS segment endpoints split cleanly across multiple jobs."""
+        gps_seg = segments.segment(lal.LIGOTimeGPS(10000), lal.LIGOTimeGPS(20000))
+        science_segs = {
+            "H1": segments.segmentlist([gps_seg]),
+            "L1": segments.segmentlist([gps_seg]),
+        }
+        _, out_indep, _, out_multi = self._run_both_modes(science_segs)
+        self.assertGreater(len(out_multi), 1)
+        self._assert_zero_time_lost_and_valid_segments(
+            science_segs, out_indep, out_multi
         )
 
 
