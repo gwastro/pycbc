@@ -286,6 +286,28 @@ class TestGWOSCHDF(unittest.TestCase):
         ts = pycbc.frame.read_frame(cache_path, "H1:STRAIN")
         numpy.testing.assert_array_equal(ts.numpy(), self.all_strain)
 
+    def test_read_across_files(self):
+        # Reading across the boundaries between files gives the same samples
+        # as reading one file that holds all the data. The second start time
+        # is 1 us after a sample, which a read treats as on the sample, as
+        # lalframe does.
+        one_path = os.path.join(self.tmp.name, "all.hdf5")
+        pycbc.frame.write_frame(
+            one_path,
+            "H1:STRAIN",
+            TimeSeries(self.all_strain, delta_t=1.0 / RATE, epoch=self.start),
+        )
+        for start in [self.start + 10.3 / RATE, self.start + 3 + 1e-6]:
+            end = self.start + 40.5
+            ts = pycbc.frame.read_frame(
+                self.paths, "H1:STRAIN", start_time=start, end_time=end
+            )
+            one = pycbc.frame.read_frame(
+                one_path, "H1:STRAIN", start_time=start, end_time=end
+            )
+            self.assertEqual(ts.start_time, one.start_time)
+            numpy.testing.assert_array_equal(ts.numpy(), one.numpy())
+
     def test_gap(self):
         files = [self.paths[0], self.paths[2]]
         with self.assertRaises(ValueError):
@@ -337,22 +359,33 @@ class TestGWOSCHDF(unittest.TestCase):
 
 class TestGWOSCRealData(unittest.TestCase):
     def test_same_as_gwf(self):
-        """The HDF5 and GWF versions of a GWOSC file give the same data"""
+        """
+        GWOSC data read from an HDF5 file are the same as when read from the
+        GWF file by lalframe. The GWF file is the one test_bhspec also uses,
+        so no new data is downloaded; the HDF5 file is written from it.
+        """
         url = (
             "https://gwosc.org/eventapi/json/GWTC-1-confident/GW150914/v3/"
-            "H-H1_GWOSC_4KHZ_R1-1126259447-32.{}"
+            "H-H1_GWOSC_4KHZ_R1-1126259447-32.gwf"
         )
-        hdf_path = get_file(url.format("hdf5"), cache=True)
-        gwf_path = get_file(url.format("gwf"), cache=True)
-        for start, end in [(None, None), (1126259450.1, 1126259453.4)]:
-            hdf = pycbc.frame.read_frame(
-                hdf_path, "H1:STRAIN", start_time=start, end_time=end
+        gwf_path = get_file(url, cache=True)
+        gwf_channel = "H1:GWOSC-4KHZ_R1_STRAIN"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            hdf_path = os.path.join(tmpdir, "H-H1_GWOSC_4KHZ_R1-1126259447-32.hdf5")
+            pycbc.frame.write_frame(
+                hdf_path, "H1:STRAIN", pycbc.frame.read_frame(gwf_path, gwf_channel)
             )
-            gwf = pycbc.frame.read_frame(
-                gwf_path, "H1:GWOSC-4KHZ_R1_STRAIN", start_time=start, end_time=end
-            )
-            self.assertEqual(hdf.start_time, gwf.start_time)
-            numpy.testing.assert_array_equal(hdf.numpy(), gwf.numpy())
+            for start, end in [(None, None), (1126259450.1, 1126259453.4)]:
+                hdf = pycbc.frame.read_frame(
+                    hdf_path, "H1:STRAIN", start_time=start, end_time=end
+                )
+                gwf = pycbc.frame.read_frame(
+                    gwf_path, gwf_channel, start_time=start, end_time=end
+                )
+                numpy.testing.assert_array_equal(hdf.numpy(), gwf.numpy())
+                # lalframe gives the time of the first sample up to 64 ns
+                # early; one sample is 244 us
+                self.assertLess(abs(float(hdf.start_time - gwf.start_time)), 1e-6)
 
 
 # We take a factory approach so we can test all possible dtypes we support
