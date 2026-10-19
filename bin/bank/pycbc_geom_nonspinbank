@@ -235,12 +235,6 @@ for i in range(99, -1, -1):
         upper_1d_boundary = i + 1
         break
 
-# TESTING CODE: USE THIS TO TURN OFF THE 1D LATTICE, IE DO 2D EVERYWHERE
-# lower_1d_boundary = 0
-# upper_1d_boundary = 100
-# v1s = []
-# v2s = []
-
 # Anything left is covered with a 2D hexagonal array
 if lower_1d_boundary is not None:
     # Need some 2D parts in the bank
@@ -303,12 +297,6 @@ numv2bins = int(math.ceil(v2sdiff / 1.0))
 
 sorted_bins = {}
 
-# for i in range(numv1bins):
-#    print i
-#    sorted_bins[i] = {}
-#    for j in range(numv2bins):
-#        sorted_bins[i][j] = []
-
 logger.info("Sorting guide points")
 
 bin_size = (opts.max_mismatch) ** 0.5 * 6.0
@@ -334,8 +322,6 @@ logger.info("Converting to physical points")
 temp_bank = []
 temp_number = 0
 req_match = 0.0001
-# This can be used for debugging
-# fileP = open('bank_file.dat','w')
 for iter, (v1, v2) in enumerate(zip(v1s, v2s, strict=True)):
     # First check if point is within the physical space
     # and find some example nearby physical points if it is.
@@ -381,10 +367,6 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s, strict=True)):
     # will always be 0.
 
     temp_bank.append([masses[0], masses[1], masses[2], masses[3]])
-
-    # This can be used for debugging
-    # print >>fileP, masses[0],masses[1],masses[2],masses[3],masses[4],\
-    #  masses[5],masses[6],masses[7],masses[8],masses[9],v1,v2
 
 logger.info("Writing output to file %s", opts.output_file)
 

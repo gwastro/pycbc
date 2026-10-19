@@ -291,8 +291,6 @@ def _lalsim_td_waveform(**p):
             return hp, hc
         raise
 
-    # lal.DestroyDict(lal_pars)
-
     hp = TimeSeries(hp1.data.data[:], delta_t=hp1.deltaT, epoch=hp1.epoch)
     hc = TimeSeries(hc1.data.data[:], delta_t=hc1.deltaT, epoch=hc1.epoch)
 
@@ -349,7 +347,6 @@ def _lalsim_fd_waveform(**p):
     hp = FrequencySeries(hp1.data.data[:], delta_f=hp1.deltaF, epoch=hp1.epoch)
 
     hc = FrequencySeries(hc1.data.data[:], delta_f=hc1.deltaF, epoch=hc1.epoch)
-    # lal.DestroyDict(lal_pars)
     return hp, hc
 
 

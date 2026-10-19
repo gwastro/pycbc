@@ -241,7 +241,6 @@ for ifo in files:
     headers.append("UTC&nbsp;End&nbsp;Time")
     headers.append("GPS&nbsp;End&nbsp;time")
 
-    # headers.append("Stat")
     # Determine statistic naming
     if args.sngl_ranking == "newsnr":
         sngl_stat_name = "Reweighted SNR"

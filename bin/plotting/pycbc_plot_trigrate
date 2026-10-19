@@ -210,7 +210,6 @@ del stat
 
 if args.gps_start_time and args.gps_end_time:
     inside = np.logical_and(time >= args.gps_start_time, time < args.gps_end_time)
-    # stat = stat[inside]
     tid = tid[inside]
     time = time[inside]
     if trig_dur:
@@ -222,7 +221,6 @@ for vfile, vsegmentname in zip(args.veto_file, args.veto_segment_name, strict=Tr
     retain, junk = events.veto.indices_outside_segments(
         time, [vfile], ifo=args.ifo, segment_name=vsegmentname
     )
-    # stat = stat[retain]
     tid = tid[retain]
     time = time[retain]
     if trig_dur:
@@ -238,7 +236,6 @@ plottime = time - args.gps_start_time
 if args.thorne_limit:
     m1, m2, s1z, s2z = triggers.get_mass_spin(templatef, tid)
     inside = np.logical_and(abs(s1z) < 0.998, abs(s2z) < 0.998)
-    # stat = stat[inside]
     tid = tid[inside]
     time = time[inside]
     if trig_dur:
@@ -288,7 +285,6 @@ elif args.bin_spacing == "irreg":
     # allow bins in reverse order!
     if args.irregular_bins[1] < args.irregular_bins[0]:
         args.irregular_bins = args.irregular_bins[::-1]
-        # bincolors = bincolors[::-1]
     pbins = bin_utils.IrregularBins(args.irregular_bins)
 
 # list of bin indices

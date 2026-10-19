@@ -859,8 +859,6 @@ class PyCBCInspiralExecutable(Executable):
         #       pad take normal values. When using zero-padding this data will
         #       be used for SNR generation.
 
-        # if self.has_opt('taper-data'):
-        #    pad_data += int(self.get_opt( 'taper-data' ))
         if self.has_opt("allow-zero-padding"):
             self.zero_padding = True
         else:

@@ -78,10 +78,6 @@ keys = f1["data"].keys()
 assert keys == f2["data"].keys(), "keys do not match for the two files"
 
 nkeys = len(keys)
-# if nkeys != 6:
-#   raise RuntimeError("Only prepared for number of chirp mass bins to be six")
-
-# fig, axs = plt.subplots(3, 2, sharex=True, sharey=True)
 nrows = int(ceil(nkeys / 2.0))
 fig, axs = plt.subplots(nrows, 2, sharex=True, sharey=True)
 

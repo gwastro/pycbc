@@ -262,9 +262,6 @@ logger.info("Created log file %s", wf_log_file.storage_path)
 
 # TODO: Pick up inifile, segments plot, GRB time and location, and
 #       report IFO responses
-# Read the configuration file
-# typecast str from command line to File instances
-# cp = configuration.WorkflowConfigParser(opts.pp_config_file)
 
 out_dir = rdir.base
 _workflow.makedir(out_dir)

@@ -359,7 +359,6 @@ class TestWaveformErrors(unittest.TestCase):
             static_params=self.static,
             prior=self.prior,
             fiducial_params={},
-            # fiducial_params = {'mass1': 40.},
             epsilon=0.1,
             ignore_failed_waveforms=True,
         )
