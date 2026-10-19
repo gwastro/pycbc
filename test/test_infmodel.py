@@ -66,8 +66,8 @@ class TestModels(unittest.TestCase):
 
             # Download the gravitational wave data for GW170817
             # Not using dcc.ligo.org because it sometimes hangs in the test
-            # suite. But original URL is commented below
-            # url = "https://dcc.ligo.org/public/0146/P1700349/001/"
+            # suite. The original URL is
+            # https://dcc.ligo.org/public/0146/P1700349/001/
             url = "https://github.com/gwastro/pycbc_data/releases/download/ci-data/"
             url += "{}-{}1_LOSC_CLN_4_V1-1187007040-2048.gwf"
             fname = get_file(url.format(ifo[0], ifo[0]), cache=True)

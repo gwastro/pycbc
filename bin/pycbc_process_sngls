@@ -135,8 +135,8 @@ if args.store_bank_values:
                 n,
             )
             continue
-        # don't repeat things that already came from the trigger file
-        # (e.g. template_duration)
+        # don't repeat things that already came from the trigger file, such
+        # as template_duration
         if n in cnames:
             continue
         outgroup[n] = getattr(sngls, n)[out_idx]

@@ -275,7 +275,7 @@ y_data = {
     "min": found_trigs["sigma_min"],
     "max": found_trigs["sigma_max"],
 }
-# Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
+# Calculate zoom-snr * sqrt(response * sigma) for the mean, min and max sigma
 snr_grid = numpy.arange(0.01, max_snr, 1)
 y_data = {
     key: snr_grid * (found_trigs[opts.ifo + "/f_resp_mean"] * val) ** 0.5

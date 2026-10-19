@@ -219,8 +219,8 @@ class TmpltbankTestClass(unittest.TestCase):
         evals_curr = Array(self.metric_params.evals[self.f_upper])
         evecs_curr = Array(self.metric_params.evecs[self.f_upper])
         # Uncomment these lines to regenerate the data files
-        # numpy.savetxt('newEvals.dat', evals_curr)
-        # numpy.savetxt('newEvecs.dat', evecs_curr)
+        # numpy.savetxt('newEvals.dat', evals_curr)  # noqa: ERA001
+        # numpy.savetxt('newEvecs.dat', evecs_curr)  # noqa: ERA001
         err_msg = "pycbc.tmpltbank.determine_eigen_directions has failed "
         err_msg += "sanity check."
         evals_diff = abs(evals_curr - evals_stock) / max_eval
@@ -470,7 +470,7 @@ class TmpltbankTestClass(unittest.TestCase):
         with gzip.open(apy_fname) as apy_fp:
             stock_grid = numpy.loadtxt(apy_fp)
         # Uncomment this line to regenerate the data file
-        # numpy.savetxt("new_example.dat", arrz)
+        # numpy.savetxt("new_example.dat", arrz)  # noqa: ERA001
         err_msg = "Calculated lattice differs from that expected."
         self.assertTrue(len(arrz) == len(stock_grid), msg=err_msg)
         diff = arrz - stock_grid

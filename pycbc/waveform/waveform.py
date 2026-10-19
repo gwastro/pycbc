@@ -1371,8 +1371,8 @@ def td_fd_waveform_transform(approximant):
         _filter_time_lengths[apx_int] = _filter_time_lengths[approximant]
 
         # We can also make a td version of this
-        # This will override any existing approximants with the same name
-        # (ex. IMRPhenomXX)
+        # This will override any existing approximants with the same name,
+        # such as IMRPhenomXX
         cpu_td[approximant] = get_td_waveform_from_fd
 
 

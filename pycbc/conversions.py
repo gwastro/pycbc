@@ -828,9 +828,9 @@ def ensure_obj1_is_primary(mass1, mass2, *params):
     # Output containter
     output_properties = []
     for i in numpy.arange(0, len(shapes), 2):
-        # primary (p)
+        # p is the primary
         p = copy.copy(input_properties[i])
-        # secondary (s)
+        # s is the secondary
         s = copy.copy(input_properties[i + 1])
         # Swap
         p[mask] = input_properties[i + 1][mask]

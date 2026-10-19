@@ -65,7 +65,7 @@ for bank_template in bank_veto_bank:
 bank_veto = bank_chisq_from_filters(
     snr, norm, bank_snrs, bank_norms, bank_veto_curr_overlaps
 )
-# numpy.savetxt('BV_TEST1.txt',bank_veto)
+# numpy.savetxt('BV_TEST1.txt',bank_veto)  # noqa: ERA001
 
 # TEST 2
 bank_tilde1, _ = get_fd_waveform(
@@ -116,4 +116,4 @@ for bank_template in bank_veto_bank:
 bank_veto = bank_chisq_from_filters(
     snr, norm, bank_snrs, bank_norms, bank_veto_curr_overlaps
 )
-# numpy.savetxt('BV_TEST2.txt',bank_veto)
+# numpy.savetxt('BV_TEST2.txt',bank_veto)  # noqa: ERA001
