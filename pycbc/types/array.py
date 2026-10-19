@@ -43,7 +43,7 @@ BACKEND_PREFIX = "pycbc.types.array_"
 
 _lal = import_optional("lal")
 
-#! FIXME: the uint32 datatype has not been fully tested,
+# FIXME: the uint32 datatype has not been fully tested,
 # we should restrict any functions that do not allow an
 # array of uint32 integers
 _ALLOWED_DTYPES = [
