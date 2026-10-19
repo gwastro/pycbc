@@ -1252,7 +1252,7 @@ class RatioFilterBank(FilterBank):
         self.fir_group = self.filehandler["fir_data"]
         self.num_levels = int(self.fir_group.attrs.get("num_levels", 1))
         self.sample_rate = self.fir_group.attrs.get("sample_rate", None)
-
+        self._opened_pid = os.getpid()
         self.level_groups = {
             lvl: self.fir_group[f"level_{lvl}"] for lvl in range(1, self.num_levels + 1)
         }
@@ -1283,9 +1283,48 @@ class RatioFilterBank(FilterBank):
         for coarse_id in self.level_keys[1]:
             c_group = self.level_groups[1][coarse_id]
             fine_indices = c_group["fine_bank_index"][:]
-            sigmas = c_group["sigmas"][:]
             if len(fine_indices) > 0:
+                sigmas = c_group["sigmas"][:]
                 self.sigma_sigma_rescale[fine_indices] = sigmas[:, 2] / sigmas[:, 0]
+
+    def close_filehandler(self):
+        """Close the underlying HDF5 file handle so forked worker processes can
+        reopen their own independent file handles on demand.
+        """
+        if getattr(self, "filehandler", None) is not None:
+            try:
+                self.filehandler.close()
+            except Exception:
+                pass
+            self.filehandler = None
+            self.fir_group = None
+            self.level_groups = {}
+            self._opened_pid = None
+
+    def _ensure_open(self):
+        pid = os.getpid()
+        fh = getattr(self, "filehandler", None)
+        if (
+            fh is None
+            or not getattr(fh.id, "valid", False)
+            or getattr(self, "_opened_pid", None) != pid
+        ):
+            self.filehandler = h5py.File(self.filename, "r")
+            self.fir_group = self.filehandler["fir_data"]
+            self.level_groups = {
+                lvl: self.fir_group[f"level_{lvl}"]
+                for lvl in range(1, self.num_levels + 1)
+            }
+            self._opened_pid = pid
+
+    def group_template_count(self, coarse_index, level=1):
+        """Return the number of child templates in `coarse_index` at `level`
+        without reading the 2D FIR taps dataset.
+        """
+        self._ensure_open()
+        return int(
+            self.level_groups[level][str(int(coarse_index))]["fine_bank_index"].shape[0]
+        )
 
     @property
     def coarse_keys(self):
@@ -1308,8 +1347,9 @@ class RatioFilterBank(FilterBank):
             or inj_filter_rejector.chirp_time_window is None
         ):
             return
+        self._ensure_open()
 
-        injection_parameters = inj_filter_rejector.injection_params.table
+        inj_table = inj_filter_rejector.injection_params.table
         fref = inj_filter_rejector.f_lower
         threshold = inj_filter_rejector.chirp_time_window
         tau0_temp, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(
@@ -1317,22 +1357,16 @@ class RatioFilterBank(FilterBank):
         )
         sort = tau0_temp.argsort()
         tau0_sorted = tau0_temp[sort]
-
-        matched_fine = []
-        for inj in injection_parameters:
-            tau0_inj, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(
-                inj.mass1, inj.mass2, fref
-            )
-            lid = np.searchsorted(tau0_sorted, tau0_inj - threshold)
-            rid = np.searchsorted(tau0_sorted, tau0_inj + threshold)
-            matched_fine.append(sort[lid:rid])
+        tau0_inj, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(
+            inj_table.mass1, inj_table.mass2, fref
+        )
+        lids = np.searchsorted(tau0_sorted, np.atleast_1d(tau0_inj) - threshold)
+        rids = np.searchsorted(tau0_sorted, np.atleast_1d(tau0_inj) + threshold)
 
         # Propagate active child templates bottom-up through each FIR hierarchy level
-        active = (
-            {int(x) for x in np.unique(np.concatenate(matched_fine))}
-            if matched_fine
-            else set()
-        )
+        active = {
+            int(x) for lid, rid in zip(lids, rids, strict=False) for x in sort[lid:rid]
+        }
         for lvl in range(1, self.num_levels + 1):
             self.level_indices[lvl] = np.array(
                 [
@@ -1363,12 +1397,9 @@ class RatioFilterBank(FilterBank):
         htilde : FrequencySeries
             The decompressed reference waveform.
         """
-        top_group = self.level_groups[self.num_levels]
+        self._ensure_open()
         compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
-            top_group, str(int(coarse_index)), load_now=True
-        )
-        decompression_method = (
-            self.waveform_decompression_method or compressed_waveform.interpolation
+            self.level_groups[self.num_levels], str(int(coarse_index)), load_now=True
         )
         if self.out is None:
             tempout = zeros(self.filter_length, dtype=self.dtype)
@@ -1379,19 +1410,17 @@ class RatioFilterBank(FilterBank):
         decomp_scratch = FrequencySeries(
             tempout[0 : self.filter_length], delta_f=self.delta_f, copy=False
         )
-        min_sample_f = float(compressed_waveform.sample_points[0])
-        if self.f_lower is not None:
-            f_low = max(float(self.f_lower), min_sample_f)
-        elif self.min_f_lower is not None:
-            f_low = max(float(self.min_f_lower), min_sample_f)
-        else:
-            f_low = min_sample_f
-
-        htilde = compressed_waveform.decompress(
-            out=decomp_scratch, f_lower=f_low, interpolation=decompression_method
+        f_low = max(
+            float(self.f_lower or self.min_f_lower or 0.0),
+            float(compressed_waveform.sample_points[0]),
         )
+        htilde = compressed_waveform.decompress(
+            out=decomp_scratch,
+            f_lower=f_low,
+            interpolation=self.waveform_decompression_method
+            or compressed_waveform.interpolation,
+        ).astype(self.dtype)
         f_end = (self.filter_length - 1) * self.delta_f
-        htilde = htilde.astype(self.dtype)
         htilde.f_lower = f_low
         htilde.min_f_lower = self.min_f_lower
         htilde.end_idx = int(f_end / htilde.delta_f)
@@ -1434,6 +1463,7 @@ class RatioFilterBank(FilterBank):
         shifts : np.ndarray, optional
             1D array of integer sample shifts (returned if return_shifts=True).
         """
+        self._ensure_open()
         if level not in self.level_groups:
             msg = f"FIR level {level} not found in bank (num_levels={self.num_levels})."
             raise ValueError(msg)
@@ -1450,7 +1480,7 @@ class RatioFilterBank(FilterBank):
 
         # Sorted by tap count so the engine's batches group similarly-sized
         # filters together (see _execute_blocked_kernel's tap_groups).
-        sort_idx = np.argsort(actual_tap_counts)
+        sort_idx = np.argsort(actual_tap_counts, kind="stable")
         if return_shifts:
             shifts = c_group["sample_shift"][:].astype(np.int64)
             if level == 1:
