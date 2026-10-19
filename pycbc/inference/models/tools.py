@@ -355,7 +355,7 @@ class DistMarg:
         try:
             p = self.current_params
             set_scalar = numpy.isscalar(p["tc"])
-        except:
+        except (AttributeError, KeyError, TypeError, ValueError):
             set_scalar = False
 
         if not set_scalar:

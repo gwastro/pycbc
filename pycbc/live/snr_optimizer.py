@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import pyswarms as ps
-except:
+except ImportError:
     ps = None
 
 # Set a minimum mass for points tried in optimization allowing for

@@ -183,8 +183,7 @@ def compile(source, name):
             cached_hash = int(fp.read())
         if cached_hash == hash(source):
             return lib_file
-        raise ValueError
-    except:
+    except (OSError, ValueError):
         pass
 
     src_file = cache + ".cu"

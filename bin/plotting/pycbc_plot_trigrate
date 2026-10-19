@@ -248,7 +248,7 @@ def get_pars(args, tag, m1, m2, s1z, s2z):
     try:
         # will fail if m1 is a float rather than a sequence
         logger.info("Getting %s values for %i triggers", paramarg, len(m1))
-    except:
+    except TypeError:
         pass
     return triggers.get_param(paramarg, args, m1, m2, s1z, s2z)
 

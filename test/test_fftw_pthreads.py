@@ -48,7 +48,7 @@ import pycbc.fft.fftw
 
 try:
     pycbc.fft.fftw.set_threads_backend("pthreads")
-except:
+except RuntimeError:
     raise unittest.SkipTest(
         "Unable to import pthreads threads backend to FFTW; "
         "skipping pthreads thread tests"

@@ -96,7 +96,7 @@ def get_version_info():
     # If this is a pycbc git repo always populate version information using GIT
     try:
         vinfo = _version_helper.generate_git_version_info()
-    except:
+    except Exception:
         vinfo = VersionDummy()
         vinfo.version = "2.12.dev1"
         vinfo.release = False

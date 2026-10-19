@@ -111,5 +111,5 @@ os.remove(txtfile)
 ret.check_returncode()
 try:
     os.remove("skypost.obj")
-except:
+except OSError:
     pass

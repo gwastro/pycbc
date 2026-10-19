@@ -74,7 +74,7 @@ class FrequencySeries(Array):
         if isinstance(other, FrequencySeries):
             try:
                 _numpy.testing.assert_almost_equal(other._delta_f, self._delta_f)
-            except:
+            except AssertionError:
                 raise ValueError("different delta_f")
             # consistency of _epoch is not required because we may want
             # to combine frequency series estimated at different times
