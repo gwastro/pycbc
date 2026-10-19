@@ -86,11 +86,11 @@ def power_chisq_bin_weights(sigmasq_series, bins):
     the shares are not exactly equal, and a bin that is only a few samples
     wide may contain no power at all. Each such empty bin is merged into the
     bin that follows it (an empty last bin, into the bin before it). Each
-    remaining bin j is then given the weight
+    remaining bin j is then given the weight::
 
         w_j = (total template power) / (template power in bin j).
 
-    The chisq functions use these weights to compute
+    The chisq functions use these weights to compute::
 
         chisq = sum_j w_j |z_j|^2 - |rho|^2,
 
@@ -104,7 +104,7 @@ def power_chisq_bin_weights(sigmasq_series, bins):
     ----------
     sigmasq_series: numpy.ndarray
         The cumulative template power: at each frequency sample, the sum of
-        |h(f)|^2 / S(f) over that sample and all below it, as returned by
+        ``|h(f)|^2 / S(f)`` over that sample and all below it, as returned by
         pycbc.filter.sigmasq_series.
     bins: numpy.ndarray
         The bin edges, as indices into sigmasq_series. Bin j covers the
@@ -233,7 +233,7 @@ def chisq_accum_bin(chisq, q):
 def shift_sum(v1, shifts, bins, weights=None):  # noqa: ARG001
     """
     Calculate the time shifted sum of the FrequencySeries: at each of
-    the given shifts, the sum over bins of w_j |z_j|^2, where z_j is the sum
+    the given shifts, the sum over bins of ``w_j |z_j|^2``, where z_j is the sum
     of v1 over bin j shifted in time. Each w_j is 1 if weights is None.
     """
     err_msg = "This function is a stub that should be overridden using the "
@@ -588,11 +588,11 @@ class SingleDetPowerChisq:
         ):
             psd._chisq_cached_key[id(template.params)] = True
             num_bins = int(self.parse_option(template, self.num_bins))
-            template._bin_cache[key] = _template_bins_and_weights(  # noqa: SLF001
+            template._bin_cache[key] = _template_bins_and_weights(
                 template, num_bins, psd
             )
 
-        return template._bin_cache[key]  # noqa: SLF001
+        return template._bin_cache[key]
 
     def values(self, corr, snrv, snr_norm, psd, indices, template):
         """

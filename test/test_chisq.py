@@ -25,11 +25,8 @@
 These are the unittests for the pycbc.waveform module
 """
 
-<<<<<<< HEAD
 import argparse
-=======
 import types
->>>>>>> 847365f5f (Use the merged bin count everywhere, and simplify the bin weight tests)
 import unittest
 
 import numpy
@@ -50,13 +47,9 @@ from pycbc.vetoes import (
     power_chisq_at_points_from_precomputed,
 )
 from pycbc.vetoes.chisq import (
-<<<<<<< HEAD
-=======
-    power_chisq_from_precomputed,
-    SingleDetPowerChisq,
->>>>>>> 847365f5f (Use the merged bin count everywhere, and simplify the bin weight tests)
     power_chisq_bin_weights,
     power_chisq_bins_and_weights,
+    power_chisq_from_precomputed,
 )
 from pycbc.vetoes.chisq_cpu import chisq_accum_bin_numpy
 from pycbc.waveform import get_fd_waveform
