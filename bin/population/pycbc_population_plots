@@ -28,13 +28,13 @@ __date__ = "31.10.2017"
 import argparse
 
 import numpy as np
+import pycbc.version
 import scipy.stats as ss
 from matplotlib import cm
 from matplotlib import pyplot as plt
 from numpy import expm1, log, logaddexp, newaxis
 
 import pycbc
-import pycbc.version
 from pycbc.io.hdf import HFile
 from pycbc.population import rates_functions as rf
 

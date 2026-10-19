@@ -101,11 +101,10 @@ def coinc_color(coinc):
     Returns
     string : The RGB color for the corresponding coinc
     """
-    if len(coinc) == 1:
-        if coinc in _ifo_color_map:
-            return _ifo_color_map[coinc]
-        raise KeyError(f"Unknown IFO coincidence '{coinc}'")
+    if coinc in _ifo_color_map:
+        return _ifo_color_map[coinc]
     try:
         return _coinc_color_map[coinc]
     except KeyError:
-        raise KeyError(f"Unknown coincidence type '{coinc}'") from None
+        message = f"Unknown coincidence type '{coinc}'"
+        raise KeyError(message) from None
