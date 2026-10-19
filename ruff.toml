@@ -141,6 +141,9 @@ ignore = [
 "examples/**" = ["INP001", "T201"]
 "test/**" = ["INP001", "T201"]
 "tools/**" = ["INP001", "T201"]
+# The commented-out settings in the Sphinx configuration are the defaults,
+# listed by sphinx-quickstart for reference (ERA001).
+"docs/conf.py" = ["ERA001"]
 
 [lint.flake8-unused-arguments]
 # Unused *args / **kwargs are normally there to accept a shared call
