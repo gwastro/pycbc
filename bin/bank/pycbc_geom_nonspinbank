@@ -57,10 +57,10 @@ parser.add_argument(
     type=int,
     default=None,
     help="""Random seed to use when calling numpy.random
-                            functions used in obtaining the principal 
-                            components and when translating points back to 
-                            physical space.  
-                            If given, the code should give the same output 
+                            functions used in obtaining the principal
+                            components and when translating points back to
+                            physical space.
+                            If given, the code should give the same output
                             when run with the same random seed.""",
 )
 

@@ -402,8 +402,8 @@ for row in res:
         indoc = utils.load_filename(eval(row['sim']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
         itables[row['sim']] = Table.get_table(indoc, "sim_inspiral")
-    
-    bt = btables[row['bank']][row['bank_i']]     
+
+    bt = btables[row['bank']][row['bank_i']]
     it = itables[row['sim']][row['sim_i']]
 
     outstr += str(row['match']) + " "

@@ -67,7 +67,7 @@ fig, axes = dyplot.runplot(
 )
 # plt.savefig()
 # save figure with meta-data
-caption = """Set of plots shows evolution of Evidence, nlive points, 
+caption = """Set of plots shows evolution of Evidence, nlive points,
               likelihood values, and importance weight pdf."""
 results.save_fig_with_metadata(
     fig,
