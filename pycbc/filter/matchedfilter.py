@@ -1923,16 +1923,16 @@ class LiveBatchMatchedFilter:
         results["sg_chisq"] = sg_chisq
 
         keep = []
-        for i, (snrv, norm, l, htilde, stilde) in enumerate(veto_info):
+        for i, (snrv, norm, loc, htilde, stilde) in enumerate(veto_info):
             correlate(htilde, stilde, htilde.cout)
             c, d = self.power_chisq.values(
-                htilde.cout, snrv, norm, stilde.psd, [l], htilde
+                htilde.cout, snrv, norm, stilde.psd, [loc], htilde
             )
             chisq[i] = c[0] / d[0]
             dof[i] = d[0]
 
             sgv = self.sg_chisq.values(
-                stilde, htilde, stilde.psd, snrv, norm, c, d, [l]
+                stilde, htilde, stilde.psd, snrv, norm, c, d, [loc]
             )
             if sgv is not None:
                 sg_chisq[i] = sgv[0]
@@ -1999,20 +1999,20 @@ class LiveBatchMatchedFilter:
             if hasattr(htilde, "time_offset") and "time_offset" not in result:
                 result["time_offset"] = []
 
-            l = htilde.out[seg].abs_arg_max()
+            loc = htilde.out[seg].abs_arg_max()
 
             sgm = htilde.sigmasq(psd)
             norm = 4.0 * htilde.delta_f / (sgm**0.5)
 
-            l += valid_start
-            snrv = numpy.array([htilde.out[l]])
+            loc += valid_start
+            snrv = numpy.array([htilde.out[loc]])
 
             # If nothing is above threshold we can exit this template
             s = abs(snrv[0]) * norm
             if s < self.snr_threshold:
                 continue
 
-            time[i] += float(l - valid_start) / self.data.sample_rate
+            time[i] += float(loc - valid_start) / self.data.sample_rate
 
             # We have an SNR so high that we will drop the entire analysis
             # of this chunk of time!
@@ -2023,7 +2023,7 @@ class LiveBatchMatchedFilter:
                 )
                 return False, []
 
-            veto_info.append((snrv, norm, l, htilde, stilde))
+            veto_info.append((snrv, norm, loc, htilde, stilde))
 
             snr[i] = snrv[0] * norm
             sigmasq[i] = sgm

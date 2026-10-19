@@ -775,7 +775,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             rlms = {}
             slms = {}
             for mode in modes:
-                l, m = mode
+                l, m = mode  # noqa: E741
                 ulm, vlm = modes[mode]
 
                 # whiten the waveforms

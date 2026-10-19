@@ -23,8 +23,8 @@ def parse_args(args):
 ifos = ["H1", "L1", "V1"]
 # What combinations of the ifos can we make?
 combos = []
-for l in np.arange(len(ifos)) + 1:
-    combos += ["".join(c) for c in itertools.combinations(ifos, l)]
+for nifos in np.arange(len(ifos)) + 1:
+    combos += ["".join(c) for c in itertools.combinations(ifos, nifos)]
 
 
 class SignificanceParserTest(unittest.TestCase):

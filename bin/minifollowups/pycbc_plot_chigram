@@ -55,7 +55,7 @@ for i in range(len(f["chisq_bins"].keys())):
 
     ts = ts.numpy()
     x = numpy.append(st - delta_t / 2.0, [st[-1] + delta_t / 2.0]) - args.central_time
-    l = y[i : i + 2]
+    y_edges = y[i : i + 2]
     ax.pcolorfast(x, numpy.array([i, i + 1]), ts.reshape(1, len(ts)))
 
 plt.ylabel("Frequency (Hz)")

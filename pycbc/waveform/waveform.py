@@ -195,7 +195,7 @@ def _check_lal_pars(p):
                 "approximant takes no harmonic index n"
             )
         ma = lalsimulation.SimInspiralCreateModeArray()
-        for l, m in p["mode_array"]:
+        for l, m in p["mode_array"]:  # noqa: E741
             lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
         lalsimulation.SimInspiralWaveformParamsInsertModeArray(lal_pars, ma)
     # TestingGR parameters:
@@ -539,9 +539,9 @@ def parse_mode_array(input_params):
             # if ma is a str convert to (int, int) (e.g., '22' -> (2, 2))
             if isinstance(ma, str):
                 if len(ma) == 2:  # format is "22", presumed m is positive
-                    l, m = ma
+                    l, m = ma  # noqa: E741
                 elif len(ma) == 3:  # format is "2+2", "2-2", signed m
-                    l = ma[0]
+                    l = ma[0]  # noqa: E741
                     m = ma[1:]
                 else:
                     raise ValueError(f"Unknown lm mode string format: {ma}")

@@ -367,8 +367,8 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
 
     if opt.normalize_strain:
         logger.info("Dividing strain by constant")
-        l = opt.normalize_strain
-        strain = strain / l
+        normalization = opt.normalize_strain
+        strain = strain / normalization
 
     if opt.strain_high_pass:
         logger.info("Highpass Filtering")

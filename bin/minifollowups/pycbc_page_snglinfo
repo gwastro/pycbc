@@ -133,9 +133,9 @@ stat = rank_method.rank_stat_single((sngl_file.ifo, sds))
 if args.n_loudest is not None:
     # Restrict to only the nth loudest, instead of all triggers up to nth
     # loudest
-    l = stat.argsort()
-    stat = stat[l[0]]
-    sngl_file.apply_mask(l[0])
+    sort_idx = stat.argsort()
+    stat = stat[sort_idx[0]]
+    sngl_file.apply_mask(sort_idx[0])
 
 # make a table for the single detector information ############################
 time = sngl_file.end_time[0]

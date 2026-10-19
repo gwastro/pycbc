@@ -543,11 +543,11 @@ def cluster_over_time(stat, time, window, method="python", argmax=numpy.argmax):
         i = 0
         j = 0
         while i < len(left):
-            l = left[i]
-            r = right[i]
+            start = left[i]
+            end = right[i]
 
             # If there are no other points to compare it is obviously the max
-            if (r - l) == 1:
+            if (end - start) == 1:
                 indices[j] = i
                 j += 1
                 i += 1
@@ -555,12 +555,12 @@ def cluster_over_time(stat, time, window, method="python", argmax=numpy.argmax):
 
             # Find the location of the maximum within the time interval
             # around i
-            max_loc = argmax(stat[l:r]) + l
+            max_loc = argmax(stat[start:end]) + start
 
             # If this point is the max, we can skip to the right boundary
             if max_loc == i:
                 indices[j] = i
-                i = r
+                i = end
                 j += 1
 
             # If the max is later than i, we can skip to it

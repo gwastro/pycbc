@@ -127,7 +127,7 @@ labels = ["$ " + label.split("\\in")[-1] for label in keys]
 x_param = r"$" + next(iter(keys)).split("\\in")[0].strip("$").strip() + r"$"
 
 # read in the positions from the labels
-xpos = np.array([float(l.split("[")[1].split(",")[0]) for l in labels])
+xpos = np.array([float(label.split("[")[1].split(",")[0]) for label in labels])
 
 # offset different ifars by 1/20th of the mean distance between parameters
 try:
