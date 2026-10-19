@@ -1285,7 +1285,7 @@ class RatioFilterBank(FilterBank):
             fine_indices = c_group["fine_bank_index"][:]
             if len(fine_indices) > 0:
                 sigmas = c_group["sigmas"][:]
-                self.sigma_sigma_rescale[fine_indices] = sigmas[:, 2] / sigmas[:, 0]
+                self.sigma_sigma_rescale[fine_indices] = sigmas[:, 1] / sigmas[:, 0]
 
     def close_filehandler(self):
         """Close the underlying HDF5 file handle so forked worker processes can

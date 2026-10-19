@@ -253,7 +253,7 @@ def fit_fir_filter(cand_idx, fine_np, fine_norm_sq, max_taps, binary_search=True
             "n_taps": n_taps,
             "match": overlap,
             "taps": taps,
-            "sigmas": (ref_sigma, ref_sigma, tgt_sigma),
+            "sigmas": (ref_sigma, tgt_sigma),
             "shift": shift,
         }
 
