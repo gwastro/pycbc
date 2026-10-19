@@ -74,7 +74,7 @@ def init_level_state(fine_bank, psd, f_low, cfg):
 
 
 def _get_waveform(index):
-    """Generate template waveform on current level grid with PSD norm^2 and cutoff bin."""
+    """Generate template waveform on current level grid with PSD norm^2 and cutoff."""
     h = g_fine_bank[int(index)].numpy().astype(complex)
     step = (len(h) - 1) // (g_fft_len // 2)
     if step > 1:
@@ -85,7 +85,7 @@ def _get_waveform(index):
 
 
 def _cache_parent_templates(indices):
-    """Cache parent waveforms, PSD norms, and cutoff bins in globals for worker fitting."""
+    """Cache parent waveforms, PSD norms, and cutoff bins in worker globals."""
     global g_coarse_np, g_coarse_norm_sq, g_coarse_tau0  # noqa: PLW0603
     global g_coarse_kmax, g_coarse_fit, g_coarse_map  # noqa: PLW0603
 
@@ -471,9 +471,8 @@ def main():
                 )
             for fine_idx, rec in it:
                 if rec is None:
-                    raise RuntimeError(
-                        f"{label} template {fine_idx} failed min_match {min_match}"
-                    )
+                    msg = f"{label} template {fine_idx} failed min_match {min_match}"
+                    raise RuntimeError(msg)
                 results[fine_idx] = rec
 
             # Prune redundant parent groups

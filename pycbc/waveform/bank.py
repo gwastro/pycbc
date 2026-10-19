@@ -1292,10 +1292,7 @@ class RatioFilterBank(FilterBank):
         reopen their own independent file handles on demand.
         """
         if getattr(self, "filehandler", None) is not None:
-            try:
-                self.filehandler.close()
-            except Exception:
-                pass
+            self.filehandler.close()
             self.filehandler = None
             self.fir_group = None
             self.level_groups = {}
