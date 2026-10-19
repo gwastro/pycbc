@@ -478,7 +478,9 @@ with ctx:
     f["template"] = template.numpy()
     f["template"].attrs["delta_f"] = template.delta_f
     snrs, chisqs = [], []
-    raw_bins = [[] for b in range(chisq_bins)]
+    # Bins that hold no template power are merged away, so the number of
+    # bins actually used is taken from the first segment
+    raw_bins = None
 
     if opt.trig_start_time:
         start_time = opt.trig_start_time
@@ -524,13 +526,18 @@ with ctx:
             low_frequency_cutoff=flow,
             return_bins=True,
         )
-        chisq /= chisq_bins * 2 - 2
+        chisq /= len(raw_bin) * 2 - 2
 
         snrs.append(snr[stilde.analyze])
         chisqs.append(chisq[stilde.analyze])
 
-        for i in range(chisq_bins):
-            raw_bins[i].append(raw_bin[i][stilde.analyze].numpy())
+        if raw_bins is None:
+            raw_bins = [[] for _ in raw_bin]
+        if len(raw_bin) != len(raw_bins):
+            msg = "The number of chisq bins changed between segments"
+            raise ValueError(msg)
+        for i, b in enumerate(raw_bin):
+            raw_bins[i].append(b[stilde.analyze].numpy())
 
     sidx = int((start_time - snrs[0].start_time) / snr.delta_t)
     eidx = int((end_time - start_time) / snr.delta_t) + sidx
@@ -541,7 +548,7 @@ with ctx:
         err_msg += "shout at him. Beer may speed up the fixing process."
         raise ValueError(err_msg)
 
-    for i in range(chisq_bins):
+    for i in range(len(raw_bins)):
         key = f"chisq_bins/{i}"
         f[key] = numpy.concatenate(raw_bins[i])[sidx:eidx]
         f[key].attrs["start_time"] = start_time

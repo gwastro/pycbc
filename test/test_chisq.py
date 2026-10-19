@@ -25,7 +25,11 @@
 These are the unittests for the pycbc.waveform module
 """
 
+<<<<<<< HEAD
 import argparse
+=======
+import types
+>>>>>>> 847365f5f (Use the merged bin count everywhere, and simplify the bin weight tests)
 import unittest
 
 import numpy
@@ -46,6 +50,11 @@ from pycbc.vetoes import (
     power_chisq_at_points_from_precomputed,
 )
 from pycbc.vetoes.chisq import (
+<<<<<<< HEAD
+=======
+    power_chisq_from_precomputed,
+    SingleDetPowerChisq,
+>>>>>>> 847365f5f (Use the merged bin count everywhere, and simplify the bin weight tests)
     power_chisq_bin_weights,
     power_chisq_bins_and_weights,
 )
@@ -124,8 +133,6 @@ class TestChisq(unittest.TestCase):
         chisq_ref = {}
         for ifo in self.ifos:
             nbins = 26
-            dof = nbins * 2 - 2
-
             bins, weights = power_chisq_bins_and_weights(
                 self.hp, nbins, self.psd[ifo], low_frequency_cutoff=20.0
             )
@@ -197,115 +204,124 @@ class TestPowerChisqOptions(unittest.TestCase):
         self.assertIsNone(est.snr_threshold)
 
 
-class Params:
-    # A bank template's params: SingleDetPowerChisq keys its cache of bins
-    # on this object
-    pass
+def bin_snrs(corr, bins, index):
+    """
+    Return z_j, the SNR accumulated over each chisq bin j at the time sample
+    index, by summing the correlation over the bin's frequencies with the
+    phase that shifts it to that time.
+    """
+    n = len(corr)
+    shifted = corr.numpy() * numpy.exp(2j * numpy.pi * numpy.arange(n) * index / n)
+    return numpy.array([shifted[a:b].sum() for a, b in zip(bins[:-1], bins[1:])])
+
+
+def bin_power_fractions(template, psd, bins):
+    """Return the fraction of the template's power, |h|^2 / S, in each bin."""
+    band = slice(bins[0], bins[-1])
+    power = numpy.zeros(len(psd))
+    power[band] = abs(template.numpy()[band]) ** 2 / psd.numpy()[band]
+    frac = numpy.array([power[a:b].sum() for a, b in zip(bins[:-1], bins[1:])])
+    return frac / frac.sum()
 
 
 class TestBinWeights(unittest.TestCase):
+    """
+    Each chisq bin j is weighted by 1 / f_j, where f_j is the fraction of
+    the template's power it holds, so that
+
+        chisq = (sum_j |z_j|^2 / f_j - |rho|^2) * snr_norm^2.
+
+    With bins of equal power every 1 / f_j is the number of bins, which is
+    the standard power chisq.
+    """
+
     def setUp(self):
         self.sr, duration = 2048, 16
         self.n = self.sr * duration
-        self.df = 1.0 / duration
-        self.psd = aLIGOZeroDetHighPower(self.n // 2 + 1, self.df, 15)
+        df = 1.0 / duration
+        self.psd = aLIGOZeroDetHighPower(self.n // 2 + 1, df, 15)
         hp, _ = get_fd_waveform(
-            approximant="IMRPhenomD", mass1=30, mass2=30, f_lower=20, delta_f=self.df
+            approximant="IMRPhenomD", mass1=30, mass2=30, f_lower=20, delta_f=df
         )
         hp.resize(self.n // 2 + 1)
-        hp.params = Params()
-        hp.f_lower = 20.0
         self.template = hp
+        self.index = 8 * self.sr
 
-    def trigger(self, num_bins, amp, seed):
+    def filter(self, snr, seed=0):
         """
-        Inject a signal that exactly matches the template, at SNR amp,
-        into Gaussian noise, and compute the chisq at its time. Returns the
-        chisq, its dof, the chisq with every bin weighted equally (the
-        standard formula), and the bins, correlation, SNR normalization and
-        index used.
+        Return the SNR series, correlation and SNR normalization for Gaussian
+        noise holding a signal that exactly matches the template, at the
+        given SNR and at the time sample self.index.
         """
         data = noise_from_psd(self.n, 1.0 / self.sr, self.psd, seed=seed)
         data = data.to_frequencyseries()
-        norm = amp / sigma(self.template, psd=self.psd, low_frequency_cutoff=20)
-        data = data + (self.template * norm).cyclic_time_shift(8.0)
-        snr, corr, snr_norm = matched_filter_core(
+        amp = snr / sigma(self.template, psd=self.psd, low_frequency_cutoff=20)
+        data += (self.template * amp).cyclic_time_shift(self.index / self.sr)
+        return matched_filter_core(
             self.template, data, psd=self.psd, low_frequency_cutoff=20
         )
-        index = numpy.array([8 * self.sr])
-        # The number of bins is given as text, as from --chisq-bins
-        est = SingleDetPowerChisq(str(num_bins))
-        chi, dof = est.values(
-            corr, snr.numpy()[index], snr_norm, self.psd, index, self.template
-        )
-        bins = est.cached_chisq_bins(self.template, self.psd)
-        equal = power_chisq_at_points_from_precomputed(
-            corr, snr.numpy()[index], snr_norm, bins, index
-        )
-        return chi[0], dof[0], equal[0], bins, corr, snr_norm, index[0]
-
-    def test_unequal_bin_formula(self):
-        # Compute the weighted chisq directly, sum_j |z_j|^2 / f_j - |rho|^2,
-        # where f_j is the fraction of the template's power in bin j and z_j
-        # the SNR accumulated over bin j, and compare. With 256 bins over a
-        # 16 s template each bin is only a few frequency samples wide, so the
-        # f_j differ noticeably from 1 / 256.
-        chi, dof, equal, bins, corr, snr_norm, i = self.trigger(256, 30, 0)
-        # The template's power, |h|^2 / S, over the frequencies the bins cover
-        power = numpy.zeros(len(self.psd))
-        band = slice(bins[0], bins[-1])
-        power[band] = abs(self.template.numpy()[band]) ** 2 / self.psd.numpy()[band]
-        frac = numpy.array([power[a:b].sum() for a, b in zip(bins[:-1], bins[1:])])
-        frac /= frac.sum()
-        shift = numpy.exp(2j * numpy.pi * numpy.arange(len(corr)) * i / self.n)
-        z = numpy.array(
-            [
-                numpy.sum((corr.numpy() * shift)[a:b])
-                for a, b in zip(bins[:-1], bins[1:])
-            ]
-        )
-        expect = (numpy.sum(abs(z) ** 2 / frac) - abs(z.sum()) ** 2) * snr_norm**2
-        # The chisq is accumulated in single precision, so agreement to 1e-4
-        # is expected
-        self.assertLess(abs(chi / expect - 1), 1e-4)
-        # The standard (equal-weight) chisq differs from it by 4e-3 here, so
-        # this tolerance does distinguish the two
-        self.assertGreater(abs(equal / expect - 1), 1e-3)
-        self.assertEqual(dof, 2 * (len(bins) - 1) - 2)
-
-    def test_loud_signal_is_central(self):
-        # For a signal that exactly matches the template, the weighted chisq
-        # divided by its dof (510) has mean 1 and standard deviation 0.063,
-        # so the mean over 3 noise realizations lies within 0.15 (4 standard
-        # deviations) of 1. The standard chisq instead grows with the square
-        # of the SNR when the bins are unequal: here it averages 1.37 x dof
-        # at SNR 200, which the second check confirms.
-        vals = numpy.array([self.trigger(256, 200, s)[:3] for s in range(3)])
-        chi, dof, equal = vals.T
-        self.assertLess(abs(numpy.mean(chi / dof) - 1), 0.15)
-        self.assertGreater(numpy.mean(equal / dof), 1.15)
 
     def test_empty_bins_are_merged(self):
-        # Template power of 1 in each of samples 10-11 and 20-29 and zero
-        # elsewhere, so that the bins 12-15, 15-20 and the last bin, 30-35,
-        # contain no power
-        series = numpy.cumsum(
-            numpy.r_[
-                numpy.zeros(10),
-                numpy.ones(2),
-                numpy.zeros(8),
-                numpy.ones(10),
-                numpy.zeros(5),
-            ]
-        )
+        # Template power of 1 in each of samples 10-11 and 20-29, and zero
+        # elsewhere, so bins 12-15, 15-20 and 30-35 hold no power
+        power = numpy.zeros(35)
+        power[10:12] = 1
+        power[20:30] = 1
         bins = numpy.array([10, 11, 12, 15, 20, 25, 30, 35])
-        merged, weights = power_chisq_bin_weights(series, bins)
-        # Each empty bin is merged into the bin that follows it; the empty
-        # last bin is merged into the one before it
+        merged, weights = power_chisq_bin_weights(numpy.cumsum(power), bins)
+        # Empty bins join the bin after them, and the empty last bin joins
+        # the one before it, leaving bins with 1, 1, 5 and 5 of the 12 units
         numpy.testing.assert_array_equal(merged, [10, 11, 12, 25, 35])
-        # The remaining bins contain 1, 1, 5 and 5 of the 12 units of power,
-        # and each weight is the total power over the bin's power
         numpy.testing.assert_allclose(weights, 12.0 / numpy.array([1, 1, 5, 5]))
+
+    def test_weighted_chisq_formula(self):
+        # Equal-power bins, with every other edge removed in the upper half so
+        # that some bins hold twice the power of others
+        bins, _ = power_chisq_bins_and_weights(
+            self.template, 32, self.psd, low_frequency_cutoff=20
+        )
+        bins = numpy.concatenate([bins[:16], bins[16:-1:2], bins[-1:]])
+        frac = bin_power_fractions(self.template, self.psd, bins)
+        weights = 1.0 / frac
+
+        snr, corr, snr_norm = self.filter(snr=30)
+        z = bin_snrs(corr, bins, self.index)
+        expected = (numpy.sum(abs(z) ** 2 / frac) - abs(z.sum()) ** 2) * snr_norm**2
+
+        index = numpy.array([self.index])
+        at_points = power_chisq_at_points_from_precomputed(
+            corr, snr.numpy()[index], snr_norm, bins, index, weights
+        )[0]
+        by_fft = power_chisq_from_precomputed(
+            corr, snr, snr_norm, bins, weights=weights
+        )[self.index]
+        # The chisq is accumulated in single precision
+        self.assertAlmostEqual(at_points / expected, 1, delta=1e-4)
+        self.assertAlmostEqual(by_fft / expected, 1, delta=1e-4)
+
+        # Weighting every bin equally, as for bins of equal power, gives a
+        # different answer for these bins
+        equal = power_chisq_at_points_from_precomputed(
+            corr, snr.numpy()[index], snr_norm, bins, index
+        )[0]
+        self.assertGreater(abs(equal / expected - 1), 0.1)
+
+    def test_matched_signal_has_chisq_near_dof(self):
+        # For a signal that exactly matches the template, chisq / dof has
+        # mean 1 and, with 256 bins (dof 510), standard deviation 0.063, so
+        # it lies within 0.25 (4 standard deviations) of 1. Weighting the
+        # bins equally gives 1.7 to 2.0 here at SNR 300, which this rejects.
+        # The template is given the attributes a bank template has, as
+        # SingleDetPowerChisq reads them.
+        self.template.params = types.SimpleNamespace()
+        self.template.f_lower = 20.0
+        snr, corr, snr_norm = self.filter(snr=300)
+        index = numpy.array([self.index])
+        # The number of bins is given as text, as from --chisq-bins
+        chisq, dof = SingleDetPowerChisq("256").values(
+            corr, snr.numpy()[index], snr_norm, self.psd, index, self.template
+        )
+        self.assertAlmostEqual(chisq[0] / dof[0], 1, delta=0.25)
 
 
 suite = unittest.TestSuite()

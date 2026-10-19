@@ -230,7 +230,7 @@ def chisq_accum_bin(chisq, q):
 
 
 @schemed(BACKEND_PREFIX)
-def shift_sum(v1, shifts, bins, weights=None):  # noqa: ARG001  # noqa: ARG001
+def shift_sum(v1, shifts, bins, weights=None):  # noqa: ARG001
     """
     Calculate the time shifted sum of the FrequencySeries: at each of
     the given shifts, the sum over bins of w_j |z_j|^2, where z_j is the sum
@@ -565,6 +565,14 @@ class SingleDetPowerChisq:
         return cls(num_bins=args.chisq_bins, snr_threshold=args.chisq_snr_threshold)
 
     def cached_chisq_bins(self, template, psd):
+        """Returns the chisq bin edges for this template and psd."""
+        return self.cached_chisq_bins_and_weights(template, psd)[0]
+
+    def cached_chisq_bins_and_weights(self, template, psd):
+        """
+        Returns the chisq bin edges for this template and psd and the weight
+        of each bin, computing them only once for each pair.
+        """
         from pycbc.opt import LimitedSizeDict
 
         key = id(psd)
@@ -580,11 +588,11 @@ class SingleDetPowerChisq:
         ):
             psd._chisq_cached_key[id(template.params)] = True
             num_bins = int(self.parse_option(template, self.num_bins))
-            template._bin_cache[key] = _template_bins_and_weights(  # noqa: SLF001  # noqa: SLF001
+            template._bin_cache[key] = _template_bins_and_weights(  # noqa: SLF001
                 template, num_bins, psd
             )
 
-        return template._bin_cache[key][0]  # noqa: SLF001  # noqa: SLF001
+        return template._bin_cache[key]  # noqa: SLF001
 
     def values(self, corr, snrv, snr_norm, psd, indices, template):
         """
@@ -616,11 +624,9 @@ class SingleDetPowerChisq:
                 above_snrv = snrv
 
             if num_above > 0:
-                bins = self.cached_chisq_bins(template, psd)
+                bins, weights = self.cached_chisq_bins_and_weights(template, psd)
                 # len(bins) is number of bin edges, num_bins = len(bins) - 1
                 dof = (len(bins) - 1) * 2 - 2
-                # The bin weights are cached with the bins
-                weights = template._bin_cache[id(psd)][1]  # noqa: SLF001  # noqa: SLF001
                 _chisq = power_chisq_at_points_from_precomputed(
                     corr, above_snrv, snr_norm, bins, above_indices, weights
                 )
@@ -653,8 +659,12 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
 
     def calculate_chisq_bins(self, template, psd):
         """Obtain the chisq bins for this template and PSD."""
+        return self.calculate_chisq_bins_and_weights(template, psd)[0]
+
+    def calculate_chisq_bins_and_weights(self, template, psd):
+        """Obtain the chisq bins for this template and PSD, and their weights."""
         num_bins = int(self.parse_option(template, self.num_bins))
-        return _template_bins_and_weights(template, num_bins, psd)[0]
+        return _template_bins_and_weights(template, num_bins, psd)
 
     def values(
         self,
@@ -744,8 +754,7 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
                     )
                     curr_corr_mult_fac = hp_fac
 
-                    num_bins = int(self.parse_option(template, self.num_bins))
-                    bins, weights = _template_bins_and_weights(template, num_bins, psd)
+                    bins, weights = self.calculate_chisq_bins_and_weights(template, psd)
                     dof = (len(bins) - 1) * 2 - 2
                     curr_chisq = power_chisq_at_points_from_precomputed(
                         corr,
