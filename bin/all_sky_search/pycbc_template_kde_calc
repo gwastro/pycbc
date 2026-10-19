@@ -133,7 +133,7 @@ def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth=None, ret_kde=False):
     kde.fit(x)
     y = kde.predict(x_grid)
 
-    if ret_kde == True:
+    if ret_kde:
         return kde, y
     return y
 
