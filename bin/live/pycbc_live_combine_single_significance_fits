@@ -166,7 +166,7 @@ logger.info("Writing results")
 fout = HFile(args.output, "w")
 fout.attrs["conservative_percentile"] = args.conservative_percentile
 fout.attrs["ifos"] = args.ifos
-fout["bins_edges"] = list(bl) + [bu[-1]]
+fout["bins_edges"] = [*list(bl), bu[-1]]
 fout["fits_dates"] = ad + start_time_n
 
 for ifo in args.ifos:

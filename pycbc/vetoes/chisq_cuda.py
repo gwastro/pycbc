@@ -263,7 +263,7 @@ def get_cached_bin_layout(bins):
         else:
             k = list(numpy.arange(s, e, BS / 2))
             kmin += k
-            kmax += k[1:] + [e]
+            kmax += [*k[1:], e]
             bv += [i] * len(k)
     bv = pycuda.gpuarray.to_gpu_async(numpy.array(bv, dtype=numpy.uint32))
     kmin = pycuda.gpuarray.to_gpu_async(numpy.array(kmin, dtype=numpy.uint32))
@@ -282,11 +282,15 @@ def shift_sum_points(num, N, arg_tuple):
         args += [corr.htilde.data.gpudata, corr.stilde.data.gpudata]
     else:
         args += [corr.data.gpudata]
-    args += (
-        [outp.gpudata, N]
-        + phase[0:num]
-        + [kmin.gpudata, kmax.gpudata, bv.gpudata, nbins]
-    )
+    args += [
+        outp.gpudata,
+        N,
+        *phase[0:num],
+        kmin.gpudata,
+        kmax.gpudata,
+        bv.gpudata,
+        nbins,
+    ]
     fn.prepared_call(*args)
     outp = outp[num * nbins :]
     phase = phase[num:]
@@ -306,11 +310,15 @@ def shift_sum_points_pow2(num, arg_tuple):
         args += [corr.htilde.data.gpudata, corr.stilde.data.gpudata]
     else:
         args += [corr.data.gpudata]
-    args += (
-        [outp.gpudata, N]
-        + points[0:num]
-        + [kmin.gpudata, kmax.gpudata, bv.gpudata, nbins]
-    )
+    args += [
+        outp.gpudata,
+        N,
+        *points[0:num],
+        kmin.gpudata,
+        kmax.gpudata,
+        bv.gpudata,
+        nbins,
+    ]
     fn.prepared_call(*args)
     outp = outp[num * nbins :]
     points = points[num:]

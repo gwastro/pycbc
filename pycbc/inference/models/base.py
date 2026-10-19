@@ -463,7 +463,7 @@ class BaseModel(metaclass=ABCMeta):
     @property
     def default_stats(self):
         """The stats that ``get_current_stats`` returns by default."""
-        return ["logjacobian", "logprior", "loglikelihood"] + self._extra_stats
+        return ["logjacobian", "logprior", "loglikelihood", *self._extra_stats]
 
     @property
     def _extra_stats(self):

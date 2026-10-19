@@ -39,7 +39,7 @@ ntemps = args.ntemps
 nwalkers = args.nwalkers
 
 f = loadfile(args.input_file, "r")
-params = list(f.variable_params) + ["loglikelihood"]
+params = [*list(f.variable_params), "loglikelihood"]
 samples = f.read_samples(params)
 nsample = len(samples)
 

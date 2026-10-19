@@ -933,7 +933,7 @@ if found_missed_file is not None:
     format_strings.extend(["##"])
     t_missed = [
         np.concatenate((missed_injs[key], vetoed[key], cut_injs[key]))
-        for key in keys + ["category"]
+        for key in [*keys, "category"]
     ]
     t_missed = list(zip(*t_missed))
     t_missed.sort(key=lambda elem: elem[0])

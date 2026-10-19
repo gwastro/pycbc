@@ -197,7 +197,7 @@ class UltranestSampler(BaseSampler):
             logl = self.result["weighted_samples"]["logl"]
 
         wsamples = numpy.column_stack((wsamples, logl))
-        params = list(self.model.variable_params) + ["loglikelihood"]
+        params = [*list(self.model.variable_params), "loglikelihood"]
         samples = resample_equal(wsamples, weights / weights.sum())
         samples_dict = {p: samples[:, i] for i, p in enumerate(params)}
         return samples_dict

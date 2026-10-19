@@ -295,7 +295,7 @@ def read_raw_samples(
                 continue
             if isinstance(idx, (int, numpy.int_)):
                 # make sure the last dimension corresponds to iteration
-                thisarr = thisarr.reshape(list(thisarr.shape) + [1])
+                thisarr = thisarr.reshape([*list(thisarr.shape), 1])
             # pull out the temperatures we need
             if selecttemps:
                 thisarr = thisarr[temps, ...]

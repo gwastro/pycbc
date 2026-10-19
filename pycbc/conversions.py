@@ -831,7 +831,7 @@ def ensure_obj1_is_primary(mass1, mass2, *params):
     # Check params are 2N
     if len(params) % 2 != 0:
         raise ValueError("params must be 2N floats or arrays")
-    input_properties, input_is_array = ensurearray((mass1, mass2) + params)
+    input_properties, input_is_array = ensurearray((mass1, mass2, *params))
     # Check inputs are all the same length
     shapes = [par.shape for par in input_properties]
     if len(set(shapes)) != 1:

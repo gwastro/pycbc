@@ -740,7 +740,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             ignore = []
         if isinstance(ignore, str):
             ignore = [ignore]
-        ignore = set(ignore + [self.samples_group])
+        ignore = {*ignore, self.samples_group}
         copy_groups = set(self.keys()) - ignore
         for key in copy_groups:
             super().copy(key, other)
@@ -960,7 +960,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
                 group.create_dataset(
                     name,
                     dshape,
-                    maxshape=tuple(list(dshape)[:-1] + [None]),
+                    maxshape=(*list(dshape)[:-1], None),
                     dtype=data.dtype,
                     fletcher32=True,
                 )

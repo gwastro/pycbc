@@ -644,7 +644,7 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument(
         "--fake-strain",
         help="Name of model PSD for generating fake gaussian noise.",
-        choices=pycbc.psd.get_psd_model_list() + ["zeroNoise"],
+        choices=[*pycbc.psd.get_psd_model_list(), "zeroNoise"],
     )
     data_reading_group.add_argument(
         "--fake-strain-extra-args",

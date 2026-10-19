@@ -22,7 +22,7 @@ def make_faithsim_plot(workflow, analysis_time, input_file, out_dir, tags=None):
             "pycbc_faithsim_plots",
             ifos=["X1"],
             out_dir=out_dir,
-            tags=[tag] + tags,
+            tags=[tag, *tags],
         ).create_node()
         node.add_input_opt("--input-file", input_file)
         node.new_output_file_opt(analysis_time, ".png", "--output-plot")

@@ -122,7 +122,7 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir, tags
             "optimal_snr",
             ifos=workflow.ifos,
             out_dir=out_dir,
-            tags=tags + [str(i)],
+            tags=[*tags, str(i)],
         )
         opt_snr_exe.update_current_retention_level(Executable.INTERMEDIATE_PRODUCT)
         node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files, group_str)
@@ -220,7 +220,7 @@ def setup_injection_workflow(
 
     for section in workflow.cp.get_subsections(inj_section_name):
         inj_tag = section.upper()
-        curr_tags = tags + [inj_tag]
+        curr_tags = [*tags, inj_tag]
 
         # Parse for options in ini file
         injection_method = workflow.cp.get_opt_tags(

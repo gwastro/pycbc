@@ -519,7 +519,7 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
         merged_arr = numpy.empty(len(arrays[0]), dtype=[("f0", arrays[0].dtype.descr)])
         merged_arr["f0"] = arrays[0]
         arrays = [merged_arr]
-    merge_list = [input_array] + arrays
+    merge_list = [input_array, *arrays]
     if names is not None:
         names = list(input_array.dtype.names) + names
     # merge into a single array

@@ -56,9 +56,9 @@ _ALLOWED_DTYPES = [
     int,
 ]
 try:
-    _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
+    _ALLOWED_SCALARS = [int, long, float, complex, *_ALLOWED_DTYPES]
 except NameError:
-    _ALLOWED_SCALARS = [int, float, complex] + _ALLOWED_DTYPES
+    _ALLOWED_SCALARS = [int, float, complex, *_ALLOWED_DTYPES]
 
 
 def _convert_to_scheme(ary):

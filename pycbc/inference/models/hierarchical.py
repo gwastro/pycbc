@@ -123,7 +123,7 @@ class HierarchicalModel(BaseModel):
                 map_params(
                     [
                         HierarchicalParam.from_subname(lbl, p)
-                        for p in model._extra_stats + ["loglikelihood"]
+                        for p in [*model._extra_stats, "loglikelihood"]
                     ]
                 )
             )

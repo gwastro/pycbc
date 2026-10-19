@@ -240,7 +240,8 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
 # =============================================================================
 
 # FIXME: not all of these work
-admitted_vars = easy_keys + [
+admitted_vars = [
+    *easy_keys,
     "mtotal",
     "q",
     "mchirp",

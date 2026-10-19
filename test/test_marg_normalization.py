@@ -103,7 +103,7 @@ class TestMargNormalization(unittest.TestCase):
 
     def model(self, cls, bounds, frame="geocentric", **kwargs):
         """A model with a uniform prior over the given bounds."""
-        variable = ["distance", "inclination"] + list(bounds)
+        variable = ["distance", "inclination", *list(bounds)]
         prior = JointDistribution(
             variable,
             SinAngle(inclination=None),
