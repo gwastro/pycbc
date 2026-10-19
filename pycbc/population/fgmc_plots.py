@@ -184,7 +184,10 @@ def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style="lin
     if style == "loglog":
         ax.loglog()
         ylabel = r"$p(" + symb + r")$"
-        space = lambda a, b: numpy.logspace(numpy.log10(a), numpy.log10(b), 100)
+
+        def space(a, b):
+            return numpy.logspace(numpy.log10(a), numpy.log10(b), 100)
+
         func = numpy.vectorize(rv.pdf)
         xmin = a
         ymin = rv.pdf(b)
@@ -192,7 +195,10 @@ def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style="lin
     elif style == "semilogx":
         ax.semilogx()
         ylabel = r"$" + symb + r"\,p(" + symb + r")$"
-        space = lambda a, b: numpy.logspace(numpy.log10(a), numpy.log10(b), 100)
+
+        def space(a, b):
+            return numpy.logspace(numpy.log10(a), numpy.log10(b), 100)
+
         func = numpy.vectorize(lambda x: x * rv.pdf(x))
         xmin = a
         ymin = 0.0
@@ -200,7 +206,10 @@ def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style="lin
     else:  # linear
         ax.yaxis.set_ticklabels([])
         ylabel = r"$p(" + symb + r")$"
-        space = lambda a, b: numpy.linspace(a, b, 100)
+
+        def space(a, b):
+            return numpy.linspace(a, b, 100)
+
         func = numpy.vectorize(rv.pdf)
         xmin = 0.0
         ymin = 0.0

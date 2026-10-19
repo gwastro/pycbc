@@ -84,9 +84,13 @@ def background_bin_from_string(background_bins, data):
 
         for bin_type, boundary in zip(bin_type_list, boundary_list, strict=True):
             if boundary[0:2] == "lt":
-                member_func = lambda vals, bd=boundary: vals < float(bd[2:])
+
+                def member_func(vals, bd=boundary):
+                    return vals < float(bd[2:])
             elif boundary[0:2] == "gt":
-                member_func = lambda vals, bd=boundary: vals > float(bd[2:])
+
+                def member_func(vals, bd=boundary):
+                    return vals > float(bd[2:])
             else:
                 raise RuntimeError(
                     "Can't parse boundary condition! Must begin with 'lt' or 'gt'"
