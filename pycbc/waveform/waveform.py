@@ -50,6 +50,9 @@ from pycbc.types import (
 from pycbc.waveform import parameters
 from pycbc.waveform import utils as wfutils
 
+from .multiband import multiband_fd_waveform
+from .nltides import nonlinear_tidal_spa
+from .premerger import premerger_taylorf2
 from .spa_tmplt import (
     spa_amplitude_factor,
     spa_length_in_time,
@@ -1311,15 +1314,9 @@ apx_name = "SpinTaylorF2_SWAPPER"
 cpu_fd[apx_name] = _spintaylor_aligned_prec_swapper
 _filter_time_lengths[apx_name] = _filter_time_lengths["SpinTaylorF2"]
 
-from .nltides import nonlinear_tidal_spa
-
 cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
 
-from .premerger import premerger_taylorf2
-
 cpu_fd["PreTaylorF2"] = premerger_taylorf2
-
-from .multiband import multiband_fd_waveform
 
 cpu_fd["multiband"] = multiband_fd_waveform
 

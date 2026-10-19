@@ -1,6 +1,3 @@
-from pycbc.fft.fftw import set_measure_level
-
-set_measure_level(0)
 import argparse
 import unittest
 from math import cos, exp, pi, sin
@@ -8,6 +5,7 @@ from math import cos, exp, pi, sin
 import numpy as np
 from utils import parse_args_all_schemes, simple_exit
 
+from pycbc.fft.fftw import set_measure_level
 from pycbc.filter import matched_filter_core
 from pycbc.types import Array, FrequencySeries, TimeSeries
 from pycbc.vetoes import (
@@ -17,6 +15,7 @@ from pycbc.vetoes import (
 )
 from pycbc.waveform import get_td_waveform
 
+set_measure_level(0)
 _scheme, _context = parse_args_all_schemes("Auto Chi-squared Veto")
 
 

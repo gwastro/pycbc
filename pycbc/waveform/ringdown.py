@@ -26,14 +26,14 @@
 
 import numpy
 
+from pycbc.constants import C_SI, G_SI, MSUN_SI, PC_SI
+from pycbc.conversions import get_lm_f0tau_allmodes
 from pycbc.libutils import import_optional
+from pycbc.types import FrequencySeries, TimeSeries, complex128, float64, zeros
+from pycbc.waveform.waveform import get_obj_attrs
 
 pykerr = import_optional("pykerr")
 lal = import_optional("lal")
-from pycbc.constants import C_SI, G_SI, MSUN_SI, PC_SI
-from pycbc.conversions import get_lm_f0tau_allmodes
-from pycbc.types import FrequencySeries, TimeSeries, complex128, float64, zeros
-from pycbc.waveform.waveform import get_obj_attrs
 
 qnm_required_args = ["f_0", "tau", "amp", "phi"]
 mass_spin_required_args = ["final_mass", "final_spin", "lmns", "inclination"]

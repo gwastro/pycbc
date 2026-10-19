@@ -26,8 +26,6 @@
 This modules provides a device independent Array class based on PyCUDA and Numpy.
 """
 
-BACKEND_PREFIX = "pycbc.types.array_"
-
 import os as _os
 from functools import wraps
 
@@ -40,6 +38,8 @@ import pycbc.scheme as _scheme
 from pycbc.libutils import import_optional
 from pycbc.opt import LimitedSizeDict
 from pycbc.scheme import cpuonly, schemed
+
+BACKEND_PREFIX = "pycbc.types.array_"
 
 _lal = import_optional("lal")
 
