@@ -821,7 +821,7 @@ class BaseMCMC(metaclass=ABCMeta):
 
         """
         # flatten samples for evaluating
-        orig_shape = list(samples.values())[0].shape
+        orig_shape = next(iter(samples.values())).shape
         flattened_samples = {p: arr.ravel() for p, arr in list(samples.items())}
         # convert to a list of tuples so we can use map function
         params = list(flattened_samples.keys())

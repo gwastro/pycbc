@@ -58,7 +58,7 @@ def labels_in_files_metadata(labels, rundir, file_paths):
     # Sort the file paths according to labels
     up_labels = [l.upper() for l in labels]
     sorted_file_paths = [
-        list(filter(lambda x: l in x.upper(), file_paths))[0] for l in up_labels
+        next(filter(lambda x: l in x.upper(), file_paths)) for l in up_labels
     ]
 
     # Convert sorted_file_paths to a FileList where each File has its label

@@ -40,7 +40,7 @@ have_gates = False
 for fn in args.input_file:
     logger.info("Reading gates from %s", fn)
     f = HFile(fn, "r")
-    ifo = tuple(f.keys())[0]
+    ifo = next(iter(f.keys()))
     for gate_type in ["file", "auto"]:
         try:
             gate_time = f[ifo + "/gating/" + gate_type + "/time"][:]

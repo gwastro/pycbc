@@ -271,7 +271,7 @@ class DynestySampler(BaseSampler):
 
     @property
     def niterations(self):
-        return len(tuple(self.samples.values())[0])
+        return len(next(iter(self.samples.values())))
 
     @classmethod
     def from_config(

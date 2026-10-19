@@ -171,7 +171,7 @@ class GameSampler(DummySampler):
         logger.info("Retrieving params of parameter space nodes")
         with h5py.File(self.mapfile, "r") as mapfile:
             bparams = {p: mapfile["bank"][p][:] for p in self.variable_params}
-            num_nodes = len(bparams[list(bparams.keys())[0]])
+            num_nodes = len(bparams[next(iter(bparams.keys()))])
             lengths = numpy.array(
                 [len(mapfile["map"][str(x)]) for x in range(num_nodes)]
             )

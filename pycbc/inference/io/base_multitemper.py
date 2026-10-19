@@ -149,7 +149,7 @@ def write_samples(
         something other than inference samples!**
 
     """
-    ntemps, nwalkers, niterations = tuple(samples.values())[0].shape
+    ntemps, nwalkers, niterations = next(iter(samples.values())).shape
     assert all(p.shape == (ntemps, nwalkers, niterations) for p in samples.values()), (
         "all samples must have the same shape"
     )

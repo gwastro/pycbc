@@ -304,7 +304,7 @@ class DictArray:
         return self.__class__(data=data)
 
     def __len__(self):
-        return len(self.data[tuple(self.data.keys())[0]])
+        return len(self.data[next(iter(self.data.keys()))])
 
     def __add__(self, other):
         if self.data == {}:
@@ -1554,7 +1554,7 @@ class ReadByTemplate:
     ):
         self.filename = filename
         self.file = HFile(filename, "r")
-        self.ifo = ifo if ifo is not None else tuple(self.file.keys())[0]
+        self.ifo = ifo if ifo is not None else next(iter(self.file.keys()))
         self.valid = None
         self.bank = HFile(bank, "r") if bank else {}
         self.segment_name = segment_name

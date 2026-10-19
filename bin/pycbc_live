@@ -1517,7 +1517,7 @@ with ctx:
         pr.enable()
 
     # main analysis loop
-    data_end = lambda: data_reader[tuple(data_reader.keys())[0]].end_time
+    data_end = lambda: data_reader[next(iter(data_reader.keys()))].end_time
     last_bg_dump_time = int(data_end())
     psd_count = dict.fromkeys(evnt.ifos, 0)
 

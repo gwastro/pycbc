@@ -354,7 +354,7 @@ class TriangleBank:
         progress=False,
     ):
         num_added = 0
-        total_num = len(tuple(params.values())[0])
+        total_num = len(next(iter(params.values())))
 
         idxs = numpy.arange(0, total_num)
         chunks = numpy.array_split(idxs, max(total_num // args.nprocesses // 4, 1))
@@ -615,7 +615,7 @@ if len(args.input_file) > 0:
                 continue
             params = {k: v[sel] for k, v in params.items()}
 
-            total_raw_templates += len(params[list(params.keys())[0]])
+            total_raw_templates += len(params[next(iter(params.keys()))])
             bank, _ = bank.check_params(
                 gen,
                 params,
@@ -672,15 +672,15 @@ def cdraw(rtype, ts, te):
     from pycbc.conversions import tau0_from_mass1_mass2
 
     p = draw(rtype)
-    if len(p[list(p.keys())[0]]) > 0:
+    if len(p[next(iter(p.keys()))]) > 0:
         t = tau0_from_mass1_mass2(p["mass1"], p["mass2"], args.tau0_cutoff_frequency)
         l = (t < te) & (t > ts)
         p = {k: p[k][l] for k in p}
 
     i = 0
-    while len(p[list(p.keys())[0]]) < size:
+    while len(p[next(iter(p.keys()))]) < size:
         tp = draw(rtype)
-        if len(tp[list(tp.keys())[0]]) > 0:
+        if len(tp[next(iter(tp.keys()))]) > 0:
             t = tau0_from_mass1_mass2(
                 tp["mass1"], tp["mass2"], args.tau0_cutoff_frequency
             )
@@ -693,7 +693,7 @@ def cdraw(rtype, ts, te):
         if i > args.placement_iterations:
             break
 
-    if len(p[list(p.keys())[0]]) == 0:
+    if len(p[next(iter(p.keys()))]) == 0:
         return None
 
     return p
