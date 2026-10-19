@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 def changes(arr):
-    l = numpy.where(arr[:-1] != arr[1:])[0]
-    l = numpy.concatenate(([0], l + 1, [len(arr)]))
-    return numpy.unique(l)
+    edges = numpy.where(arr[:-1] != arr[1:])[0]
+    edges = numpy.concatenate(([0], edges + 1, [len(arr)]))
+    return numpy.unique(edges)
 
 
 def collect(key, files):
@@ -33,8 +33,8 @@ def region(f, key, boundaries, ids):
     dset = f[key]
     refs = []
     for j in range(len(boundaries) - 1):
-        l, r = boundaries[ids[j]], boundaries[ids[j] + 1]
-        refs.append(dset.regionref[l:r])
+        left, right = boundaries[ids[j]], boundaries[ids[j] + 1]
+        refs.append(dset.regionref[left:right])
     f.create_dataset(
         key + "_template", data=refs, dtype=h5py.special_dtype(ref=h5py.RegionReference)
     )

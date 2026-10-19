@@ -195,9 +195,9 @@ class Shrinker:
     def pop(self):
         if len(self.data) == 0:
             return None
-        l = self.data[-1]
+        last = self.data[-1]
         self.data = self.data[:-1]
-        return l
+        return last
 
 
 class TriangleBank:
@@ -479,7 +479,7 @@ class GenUniformWaveform:
             )
             maxlen = args.max_signal_length
             x = numpy.searchsorted(length, maxlen) - 1
-            l = length[x]
+            signal_length = length[x]
             f = flow[x]
         else:
             f = self.f_lower
@@ -655,8 +655,8 @@ def draw(rtype):
             params = transforms.apply_transforms(params, waveform_transforms)
 
     # Filter out stuff (kde method may also generate samples outside boundaries).
-    l = dists_joint.contains(params)
-    params = {k: params[k][l] for k in params}
+    inside = dists_joint.contains(params)
+    params = {k: params[k][inside] for k in params}
     return params
 
 
@@ -666,8 +666,8 @@ def cdraw(rtype, ts, te):
     p = draw(rtype)
     if len(p[next(iter(p.keys()))]) > 0:
         t = tau0_from_mass1_mass2(p["mass1"], p["mass2"], args.tau0_cutoff_frequency)
-        l = (t < te) & (t > ts)
-        p = {k: p[k][l] for k in p}
+        in_range = (t < te) & (t > ts)
+        p = {k: p[k][in_range] for k in p}
 
     i = 0
     while len(p[next(iter(p.keys()))]) < size:
@@ -676,8 +676,8 @@ def cdraw(rtype, ts, te):
             t = tau0_from_mass1_mass2(
                 tp["mass1"], tp["mass2"], args.tau0_cutoff_frequency
             )
-            l = (t < te) & (t > ts)
-            tp = {k: tp[k][l] for k in tp}
+            in_range = (t < te) & (t > ts)
+            tp = {k: tp[k][in_range] for k in tp}
 
         p = {k: numpy.concatenate([p[k], tp[k]]) for k in p}
 

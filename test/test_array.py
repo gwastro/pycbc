@@ -344,9 +344,9 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
                 )
                 v = abs(-6 + 7j)
 
-            m, l = a.abs_max_loc()
-            self.assertAlmostEqual(m, v, places=5)
-            self.assertEqual(l, 5)
+            value, loc = a.abs_max_loc()
+            self.assertAlmostEqual(value, v, places=5)
+            self.assertEqual(loc, 5)
 
     def test_clear(self):
         with self.context:
@@ -367,9 +367,9 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             if self.kind == "real":
                 a = Array([1, 2, 3, 4, 5, 6], dtype=self.dtype)
 
-                m, l = a.max_loc()
-                self.assertEqual(m, 6)
-                self.assertEqual(l, 5)
+                value, loc = a.max_loc()
+                self.assertEqual(value, 6)
+                self.assertEqual(loc, 5)
 
     def test_list_init(self):
         with self.context:

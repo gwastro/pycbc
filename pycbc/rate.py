@@ -233,8 +233,8 @@ def mean_efficiency_volume(found, missed, dbins):
         return numpy.zeros(len(dbins) - 1), numpy.zeros(len(dbins) - 1), 0, 0
 
     # only need distances
-    f_dist = numpy.array([l.distance for l in found])
-    m_dist = numpy.array([l.distance for l in missed])
+    f_dist = numpy.array([inj.distance for inj in found])
+    m_dist = numpy.array([inj.distance for inj in missed])
 
     # compute the efficiency and its variance
     eff, err = compute_efficiency(f_dist, m_dist, dbins)
@@ -260,11 +260,11 @@ def filter_injections_by_mass(injs, mbins, bin_num, bin_type, bin_num2=None):
         m2lo = m2bins[bin_num2]
         m2hi = m2bins[bin_num2 + 1]
         return [
-            l
-            for l in injs
+            inj
+            for inj in injs
             if (
-                (m1lo <= l.mass1 < m1hi and m2lo <= l.mass2 < m2hi)
-                or (m1lo <= l.mass2 < m1hi and m2lo <= l.mass1 < m2hi)
+                (m1lo <= inj.mass1 < m1hi and m2lo <= inj.mass2 < m2hi)
+                or (m1lo <= inj.mass2 < m1hi and m2lo <= inj.mass1 < m2hi)
             )
         ]
 
@@ -272,30 +272,38 @@ def filter_injections_by_mass(injs, mbins, bin_num, bin_type, bin_num2=None):
     mlow = mbins[bin_num]
     mhigh = mbins[bin_num + 1]
     if bin_type == "Chirp_Mass":
-        newinjs = [l for l in injs if (mlow <= l.mchirp < mhigh)]
+        newinjs = [inj for inj in injs if (mlow <= inj.mchirp < mhigh)]
     elif bin_type == "Total_Mass":
-        newinjs = [l for l in injs if (mlow <= l.mass1 + l.mass2 < mhigh)]
+        newinjs = [inj for inj in injs if (mlow <= inj.mass1 + inj.mass2 < mhigh)]
     elif bin_type == "Component_Mass":
         # here it is assumed that m2 is fixed
-        newinjs = [l for l in injs if (mlow <= l.mass1 < mhigh)]
+        newinjs = [inj for inj in injs if (mlow <= inj.mass1 < mhigh)]
     elif bin_type == "BNS_BBH":
         if bin_num in [0, 2]:
             # BNS/BBH case
             newinjs = [
-                l for l in injs if (mlow <= l.mass1 < mhigh and mlow <= l.mass2 < mhigh)
+                inj
+                for inj in injs
+                if (mlow <= inj.mass1 < mhigh and mlow <= inj.mass2 < mhigh)
             ]
         else:
             # NSBH
             newinjs = [
-                l
-                for l in injs
-                if (mbins[0] <= l.mass1 < mbins[1] and mbins[2] <= l.mass2 < mbins[3])
+                inj
+                for inj in injs
+                if (
+                    mbins[0] <= inj.mass1 < mbins[1]
+                    and mbins[2] <= inj.mass2 < mbins[3]
+                )
             ]
             # BHNS
             newinjs += [
-                l
-                for l in injs
-                if (mbins[0] <= l.mass2 < mbins[1] and mbins[2] <= l.mass1 < mbins[3])
+                inj
+                for inj in injs
+                if (
+                    mbins[0] <= inj.mass2 < mbins[1]
+                    and mbins[2] <= inj.mass1 < mbins[3]
+                )
             ]
 
     return newinjs

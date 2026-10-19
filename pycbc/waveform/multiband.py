@@ -53,7 +53,7 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
     flow = p["f_lower"]
 
     bands = [flow, *bands, fmax]
-    dfs = [df] + [1.0 / l for l in lengths]
+    dfs = [df] + [1.0 / length for length in lengths]
 
     dt = 1.0 / (2.0 * fmax)
     tlen = int(1.0 / dt / df)
@@ -104,8 +104,8 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
                 h[kmin : kmin + len(taper) // 2] *= taper[: len(taper) // 2]
 
             if taper_end:
-                l, r = kmax - (len(taper) - len(taper) // 2), kmax
-                h[l:r] *= taper[len(taper) // 2 :]
+                left, right = kmax - (len(taper) - len(taper) // 2), kmax
+                h[left:right] *= taper[len(taper) // 2 :]
 
             # add frequency band to total and use fft to interpolate
             h.resize(flen)

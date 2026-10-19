@@ -407,8 +407,8 @@ if len(args.template_fit_file) > 1:
         # we do not mess things up when nan values are given, so we
         # can't use the special cumsum fast option
         median_sigma = [
-            numpy.nanmean(median_sigma[tidsort[l:r]])
-            for l, r in zip(left, right, strict=True)
+            numpy.nanmean(median_sigma[tidsort[start:end]])
+            for start, end in zip(left, right, strict=True)
         ]
 
 if args.output_fits_by_template:
@@ -528,7 +528,7 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     nabove_sort = nabove[par_sort]
     invalphan_sort = invalphan[par_sort]
     ntotal_sort = ntotal[par_sort]
-    slices = [slice(l, r) for l, r in zip(lefts, rights, strict=True)]
+    slices = [slice(start, end) for start, end in zip(lefts, rights, strict=True)]
     for i in rang:
         report_percentage(i, num_templates)
         slc = slices[i]

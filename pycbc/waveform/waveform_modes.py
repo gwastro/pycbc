@@ -81,7 +81,7 @@ def sum_modes(hlms, inclination, phi):
     """
     out = None
     for mode in hlms:
-        l, m = mode
+        l, m = mode  # noqa: E741
         hlm = hlms[l, m]
         ylm = lal.SpinWeightedSphericalHarmonic(inclination, phi, -2, l, m)
         if out is None:
@@ -99,15 +99,15 @@ def default_modes(approximant):
         # according to arXiv:2004.06503
         ma = [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4)]
         # add the -m modes
-        ma += [(l, -m) for l, m in ma]
+        ma += [(l, -m) for l, m in ma]  # noqa: E741
     elif approximant in ["IMRPhenomPv3HM", "IMRPhenomHM"]:
         # according to arXiv:1911.06050
         ma = [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4), (4, 3)]
         # add the -m modes
-        ma += [(l, -m) for l, m in ma]
+        ma += [(l, -m) for l, m in ma]  # noqa: E741
     elif approximant.startswith("NRSur7dq4"):
         # according to arXiv:1905.09300
-        ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l + 1)]
+        ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l + 1)]  # noqa: E741
     elif approximant.startswith("NRHybSur3dq8"):
         # according to arXiv:1812.07865
         ma = [
@@ -130,7 +130,7 @@ def default_modes(approximant):
     return ma
 
 
-def get_glm(l, m, theta):
+def get_glm(l, m, theta):  # noqa: E741
     r"""
     The maginitude of the :math:`{}_{-2}Y_{\ell m}`.
 
@@ -385,7 +385,7 @@ def get_imrphenomxh_modes(**params):
         # setting to 0 will default to ringdown frequency
         params["f_final"] = 0.0
     hlms = {}
-    for l, m in mode_array:
+    for l, m in mode_array:  # noqa: E741
         params["mode_array"] = [(l, m)]
         laldict = _check_lal_pars(params)
         hlm = lalsimulation.SimIMRPhenomXHMGenerateFDOneMode(

@@ -33,7 +33,7 @@ for mode_select in [
         label = "Full Waveform"
         a = hp.max()
     else:
-        label = "l, m = " + "  ".join([f"{l}, {m}" for l, m in mode_select])
+        label = "l, m = " + "  ".join([f"{l}, {m}" for l, m in mode_select])  # noqa: E741
 
     (hp / a).plot(label=label)
 
