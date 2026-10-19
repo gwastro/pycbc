@@ -506,7 +506,7 @@ def get_single_template_params(curr_idx, times, bank_data, bank_id, fsdt, tids):
         try:
             # Only present for precessing, so may not exist
             params[f"u_vals_{ifo}"] = fsdt[ifo][ifo]["u_vals"][tids[ifo][curr_idx]]
-        except:
+        except KeyError:
             pass
 
     params["mean_time"] = coinc.mean_if_greater_than_zero(
@@ -642,7 +642,7 @@ def make_single_template_files(
             node.add_opt("--inclination", f"{params['inclination']:.6f}")
             try:
                 node.add_opt("--u-val", f"{params['u_vals']:.6f}")
-            except:
+            except KeyError:
                 node.add_opt("--u-val", f"{params[f'u_vals_{ifo}']:.6f}")
         # If this is an eccentricity search
         if "eccentricity" in params:

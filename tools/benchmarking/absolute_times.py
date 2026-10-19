@@ -4,7 +4,7 @@ import sys
 
 try:
     tottime = float(sys.argv[1])
-except:
+except (IndexError, ValueError):
     print(f"usage: {sys.argv[0]} total_time_in_seconds")
     print()
     print("Typical use case is: ")
@@ -23,7 +23,7 @@ for line in sys.stdin:
             try:
                 value = float(token[:-1]) / 100.0
                 token = f"{token} [{value * tottime:.2e}]"
-            except:
+            except ValueError:
                 pass
         elif token[-2:] == "%)":
             value = float(token[1:-2]) / 100.0

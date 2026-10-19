@@ -199,12 +199,12 @@ headers.append("&chi;<sup>2</sup>&nbsp;bins")
 try:
     data[0].append(f"{sngl_file.sgchisq[0]:5.2f}")
     headers.append("sg&chi;<sup>2</sup>")
-except:
+except KeyError:
     pass
 try:
     data[0].append(f"{sngl_file.psd_var_val[0]:5.2f}")
     headers.append("PSD var")
-except:
+except KeyError:
     pass
 
 # Template parameters

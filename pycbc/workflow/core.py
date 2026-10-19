@@ -176,7 +176,7 @@ class Executable(pegasus_workflow.Executable):
 
         try:
             self.installed = cp.getboolean(f"pegasus_profile-{name}", "pycbc|installed")
-        except:
+        except (configparser.Error, ValueError):
             self.installed = False
 
         self.update_current_tags(tags)
@@ -793,7 +793,7 @@ class Workflow(pegasus_workflow.Workflow):
             try:
                 # The pfn may have been marked local...
                 pfn = node.executable.get_pfn()
-            except:
+            except Exception:
                 # or it may have been marked nonlocal.  That's
                 # fine, we'll resolve the URL and make a local
                 # entry.
@@ -1981,7 +1981,7 @@ class SegFile(File):
             else:
                 try:
                     valid_segment = segmentlistdict.extent_all()
-                except:
+                except (AttributeError, ValueError):
                     # Numpty probably didn't supply a
                     # igwn_segments.segmentlistdict
                     segmentlistdict = segments.segmentlistdict(segmentlistdict)

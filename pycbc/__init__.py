@@ -45,7 +45,7 @@ try:
     # before version.py has been generated.
     from .version import PyCBCVersionAction, git_hash
     from .version import version as pycbc_version
-except:
+except ImportError:
     git_hash = "none"
     pycbc_version = "none"
     PyCBCVersionAction = None

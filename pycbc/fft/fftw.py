@@ -130,10 +130,7 @@ def _init_threads(backend):
                 float_threaded_libname, ["fftw3f"], mode=FFTW_RTLD_MODE
             )
             if (_double_threaded_lib is None) or (_float_threaded_lib is None):
-                err_str = "Unable to load threaded libraries"
-                err_str += f"{double_threaded_libname} or "
-                err_str += f"{float_threaded_libname}"
-                raise RuntimeError(err_str)
+                return 1
             dret = _double_threaded_lib.fftw_init_threads()
             fret = _float_threaded_lib.fftwf_init_threads()
             # FFTW for some reason uses *0* to indicate failure.  In C.
@@ -143,7 +140,7 @@ def _init_threads(backend):
             _fftw_threaded_set = True
             _fftw_threaded_lib = backend
             return 0
-        except:
+        except (OSError, AttributeError):
             return 1
     else:
         # We get here when we were given the 'unthreaded' backend

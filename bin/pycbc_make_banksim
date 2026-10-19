@@ -123,7 +123,7 @@ def mc_min_max_from_sorted_file(fname):
     doc = load_filename(fname, False, contenthandler=LIGOLWContentHandler)
     try:
         t = Table.get_table(doc, "sngl_inspiral")
-    except:
+    except ValueError:
         t = Table.get_table(doc, "sim_inspiral")
     mc_max, _ = mass1_mass2_to_mchirp_eta(t[0].mass1, t[0].mass2)
     mc_min, _ = mass1_mass2_to_mchirp_eta(t[-1].mass1, t[-1].mass2)
@@ -182,12 +182,12 @@ try:
     gpu = confs.get("workflow", "use-gpus")
     if gpu is not None:
         gpu = True
-except:
+except configparser.Error:
     pass
 
 try:
     accounting_group = confs.get("workflow", "accounting-group")
-except:
+except configparser.Error:
     accounting_group = None
     logger.warning(
         "Warning: accounting-group not specified, LDG clusters may "

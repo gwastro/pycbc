@@ -35,7 +35,7 @@ import pycbc.scheme
 # different between python 2 and python 3.
 try:
     import skcuda.fft as cu_fft
-except:
+except Exception:
     raise ImportError(
         "Unable to import skcuda.fft; try direct import to get full traceback"
     )

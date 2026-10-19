@@ -270,12 +270,12 @@ for ifo in files:
     try:
         data[-1].append(f"{d['sg_chisq'][i]:5.2f}")
         headers.append("sg&nbsp;&chi;<sup>2</sup>")
-    except:
+    except KeyError:
         pass
     try:
         data[-1].append(f"{d['psd_var_val'][i]:5.2f}")
         headers.append("PSD var")
-    except:
+    except KeyError:
         pass
 
     # Template parameters
@@ -297,7 +297,7 @@ for ifo in files:
         data[-1].append(f"{bank['rel_anomaly'][tid]:5.2f}")
         headers.append("eccentricity")
         headers.append("anomaly")
-    except:
+    except KeyError:
         pass
 
 html += str(

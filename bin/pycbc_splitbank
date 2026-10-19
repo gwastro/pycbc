@@ -129,7 +129,7 @@ indoc = ligolw_utils.load_filename(
 try:
     template_bank_table = lsctables.SnglInspiralTable.get_table(indoc)
     tabletype = lsctables.SnglInspiralTable
-except:
+except ValueError:
     template_bank_table = lsctables.SimInspiralTable.get_table(indoc)
     tabletype = lsctables.SimInspiralTable
 

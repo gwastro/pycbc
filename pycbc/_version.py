@@ -46,9 +46,9 @@ def print_link(library):
             link = subprocess.check_output(
                 ["otool", "-L", library], stderr=subprocess.DEVNULL, text=True
             )
-        except:
+        except (OSError, subprocess.CalledProcessError):
             link = err_msg
-    except:
+    except subprocess.CalledProcessError:
         link = err_msg
     return link
 
