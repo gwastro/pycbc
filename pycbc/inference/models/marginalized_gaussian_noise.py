@@ -313,9 +313,14 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         params = self.current_params
         # A custom waveform is handed in by the brute force total mass
         # marginalization model, which rescales a single reference waveform
-        # instead of regenerating it for each point on the mtotal grid.
+        # instead of regenerating it for each point on the mtotal grid. The
+        # waveforms are whitened in place below, so take a copy: the caller
+        # holds on to them and may ask for more than one evaluation.
         if "custom_waveform" in params:
-            wfs = params["custom_waveform"]
+            wfs = {
+                det: (hp.copy(), hc.copy())
+                for det, (hp, hc) in params["custom_waveform"].items()
+            }
         elif self.all_ifodata_same_rate_length:
             wfs = self.waveform_generator.generate(**params)
         else:
