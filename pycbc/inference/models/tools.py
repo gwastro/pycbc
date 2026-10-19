@@ -8,7 +8,8 @@ from distutils.util import strtobool
 import numpy
 import numpy.random
 import tqdm
-from scipy.interpolate import RectBivariateSpline, interp1d
+from scipy import ndimage
+from scipy.interpolate import interp1d
 from scipy.special import i0e, logsumexp
 
 from pycbc.detector import Detector
@@ -988,16 +989,26 @@ def setup_distance_marg_interpolant(
     shr_min = snr_min**2.0 / smax
     hhr_min = snr_min**2.0 / smax / smax
 
-    shr = numpy.geomspace(shr_min, shr_max, density[0])
-    hhr = numpy.geomspace(hhr_min, hhr_max, density[1])
-    lvals = numpy.zeros((len(shr), len(hhr)))
+    # The table is uniform in log(sh) and log(hh), so where a point falls in
+    # it is arithmetic. The spline is fixed by assuming the table carries on
+    # flat past its edge, an error that falls by a factor of ~4 per cell
+    # inwards, so the table extends this many cells beyond the range.
+    pad = 8
+
+    def axis(vmin, vmax, num):
+        step = numpy.log(vmax / vmin) / (num - 1)
+        return numpy.log(vmin) + step * numpy.arange(-pad, num + pad), step
+
+    log_shr, dlog_shr = axis(shr_min, shr_max, density[0])
+    log_hhr, dlog_hhr = axis(hhr_min, hhr_max, density[1])
+    lvals = numpy.zeros((len(log_shr), len(log_hhr)))
     logging.info("Setup up likelihood interpolator")
-    for i, sh in enumerate(tqdm.tqdm(shr)):
-        for j, hh in enumerate(hhr):
+    for i, sh in enumerate(tqdm.tqdm(numpy.exp(log_shr))):
+        for j, hh in enumerate(numpy.exp(log_hhr)):
             lvals[i, j] = marginalize_likelihood(
                 sh, hh, distance=dist_marg, phase=phase
             )
-    interp = RectBivariateSpline(shr, hhr, lvals)
+    coeffs = ndimage.spline_filter(lvals, order=3, mode="nearest")
 
     # said once, the first time it happens
     warned = [False]
@@ -1014,8 +1025,10 @@ def setup_distance_marg_interpolant(
 
     def interp_wrapper(x, y, bounds_check=True):
         k = None
+        # a zero-dimensional array is a single point but is not a float
+        scalar = numpy.ndim(x) == 0
         if bounds_check:
-            if isinstance(x, float):
+            if scalar:
                 if x > shr_max or x < shr_min or y > hhr_max or y < hhr_min:
                     if not warned[0]:
                         warn_out_of_range()
@@ -1027,9 +1040,20 @@ def setup_distance_marg_interpolant(
                 if not warned[0] and k.any():
                     warn_out_of_range()
 
-        v = interp(x, y, grid=False)
+        # clipped before the log: sh can be negative without phase
+        # marginalization, and the mask does not overwrite a nan
+        index = numpy.empty((2, numpy.size(x)))
+        index[0] = (numpy.log(numpy.clip(x, shr_min, shr_max)) - log_shr[0]) / dlog_shr
+        index[1] = (numpy.log(numpy.clip(y, hhr_min, hhr_max)) - log_hhr[0]) / dlog_hhr
+        v = ndimage.map_coordinates(
+            coeffs, index, order=3, mode="nearest", prefilter=False
+        )
         if k is not None:
             v[k] = -numpy.inf
+        # marginalize_likelihood tells a point from a vector by asking for
+        # a float; a length-one array goes through the weight instead
+        if scalar:
+            return float(v[0])
         return v
 
     return interp_wrapper
