@@ -51,7 +51,8 @@ def start_end_from_segments(segment_file):
 
 def indices_within_times(times, start, end):
     """
-    Return an index array into times that lie within the durations defined by start end arrays
+    Return an index array into times that lie within the durations
+    defined by start end arrays
 
     Parameters
     ----------
@@ -86,7 +87,8 @@ def indices_within_times(times, start, end):
 
 def indices_outside_times(times, start, end):
     """
-    Return an index array into times that like outside the durations defined by start end arrays
+    Return an index array into times that like outside the durations
+    defined by start end arrays
 
     Parameters
     ----------

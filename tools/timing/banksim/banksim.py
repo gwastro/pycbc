@@ -252,7 +252,8 @@ parser.add_option(
 parser.add_option("--filter-sample-rate", help="Filter Sample Rate [Hz]", type=float)
 parser.add_option(
     "--filter-signal-length",
-    help="Length of signal for filtering, shoud be longer than all waveforms and include some padding",
+    help="Length of signal for filtering, shoud be "
+    "longer than all waveforms and include some padding",
     type=int,
 )
 

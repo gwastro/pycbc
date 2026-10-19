@@ -296,7 +296,8 @@ if __name__ == "__main__":
         # Verify segment length against duration one last time in main thread
         if args.segment_length < 2 * duration:
             raise ValueError(
-                f"segment length is < twice the duration ({duration}) of template {tmplt_hash}"
+                "segment length is < twice the duration "
+                f"({duration}) of template {tmplt_hash}"
             )
 
         output["template_duration"][idx] = duration

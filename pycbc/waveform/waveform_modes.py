@@ -125,7 +125,8 @@ def default_modes(approximant):
         ]
     else:
         raise ValueError(
-            f"I don't know what the default modes are for approximant {approximant}, sorry!"
+            "I don't know what the default modes are "
+            f"for approximant {approximant}, sorry!"
         )
     return ma
 

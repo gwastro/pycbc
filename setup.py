@@ -269,7 +269,8 @@ with open("README.md") as fp:
 setup(
     name="PyCBC",
     version=VERSION,
-    description="Core library to analyze gravitational-wave data, find signals, and study their parameters.",
+    description="Core library to analyze gravitational-wave "
+    "data, find signals, and study their parameters.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="The PyCBC team",

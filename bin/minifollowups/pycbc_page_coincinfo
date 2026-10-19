@@ -101,7 +101,8 @@ parser.add_argument(
 parser.add_argument(
     "--max-columns",
     type=int,
-    help="Maximum number of columns allowed in the table (not including detector names)",
+    help="Maximum number of columns allowed in "
+    "the table (not including detector names)",
 )
 pystat.insert_statistic_option_group(
     parser, default_ranking_statistic="single_ranking_only"

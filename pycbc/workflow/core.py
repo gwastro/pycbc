@@ -1149,11 +1149,22 @@ class File(pegasus_workflow.File):
 
     An example of initiating this class:
 
-    >> c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
+    >> c = File(
+    ..     "H1",
+    ..     "INSPIRAL_S6LOWMASS",
+    ..     segments.segment(815901601, 815902001),
+    ..     file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz",
+    .. )
 
     another where the file url is generated from the inputs:
 
-    >> c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
+    >> c = File(
+    ..     "H1",
+    ..     "INSPIRAL_S6LOWMASS",
+    ..     segments.segment(815901601, 815902001),
+    ..     directory="/home/spxiwh",
+    ..     extension="xml.gz",
+    .. )
 
     """
 

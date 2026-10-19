@@ -231,7 +231,7 @@ if __name__ == "__main__":
 
             data = np.append(data, pdata)
         savetxt('result-' + tag + '.dat', data)
-""")
+""")  # noqa: E501
 os.chmod("scripts/pycbc_faithsim_collect_results", 0o0777)
 
 logger.info("Creating submit script")
@@ -430,7 +430,7 @@ for fil in fils:
     v3d = mchirp
     name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
     basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3, vmin=None, vmax=None)
- """)
+ """)  # noqa: E501
 os.chmod("scripts/pycbc_faithsim_plots", 0o0777)
 
 logger.info("Done")

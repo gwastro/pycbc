@@ -626,10 +626,13 @@ def read_calibration_envelop_file(
 
     Output:
       log_nodes: Values of log-frequency for nodal points
-      amplitude_median_nodes: Median values of Amplitude correction at frequency nodal points
-      amplitude_sigma_nodes: Standard deviation values of Amplitude correction at frequency nodal points
+      amplitude_median_nodes: Median values of Amplitude correction at
+      frequency nodal points
+      amplitude_sigma_nodes: Standard deviation values of Amplitude correction at
+      frequency nodal points
       phase_median_nodes: Median values of Phase correction at frequency nodal points
-      phase_sigma_nodes: Standard deviation values of Phase correction at frequency nodal points
+      phase_sigma_nodes: Standard deviation values of Phase correction at
+      frequency nodal points
     """
     calibration_data = np.loadtxt(calibration_file).T
     log_frequency_array = np.log(calibration_data[0])
@@ -701,7 +704,8 @@ def get_calibration_files(ifos, gps_time, calibration_file_path):
     Input:
      ifos: List of detectors in the network
      gps_time: GPS time around which the calibration envelop is required
-     calibration_file_path: Top level directory of locally downloaded calibration envelopes
+     calibration_file_path: Top level directory of locally downloaded
+     calibration envelopes
 
     Output:
      A dictionary of calibration envelop file path for each IFO.

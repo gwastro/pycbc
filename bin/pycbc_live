@@ -1366,9 +1366,8 @@ bank = waveform.LiveFilterBank(
 )
 if bank.min_f_lower < args.low_frequency_cutoff:
     parser.error(
-        f"--low-frequency-cutoff ({args.low_frequency_cutoff} Hz) must not be larger than the "
-        "minimum f_lower across all templates "
-        f"({bank.min_f_lower} Hz)"
+        f"--low-frequency-cutoff ({args.low_frequency_cutoff} Hz) must not be larger "
+        f"than the minimum f_lower across all templates ({bank.min_f_lower} Hz)"
     )
 
 evnt = LiveEventManager(args, bank)

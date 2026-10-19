@@ -812,7 +812,8 @@ class Array:
     @_convert
     @schemed(BACKEND_PREFIX)
     def abs_max_loc(self):
-        """Return the maximum elementwise norm in the array along with the index location"""
+        """Return the maximum elementwise norm in the array along with the index
+        location"""
         raise NotImplementedError(
             "This function is a stub that should be overridden using "
             "the scheme. You shouldn't be seeing this error!"

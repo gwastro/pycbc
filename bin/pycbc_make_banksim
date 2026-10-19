@@ -214,7 +214,8 @@ if confs.has_section("inspinj"):
     os.system(inj_str)
 elif confs.has_section("external_injection"):
     logger.info(
-        "Using external injection file. Please ensure the file is in sim_inspiral table (.xml) format."
+        "Using external injection file. Please ensure "
+        "the file is in sim_inspiral table (.xml) format."
     )
     inj_file_path = confs.get("external_injection", "inj-file")
     if inj_file_path == "inj.xml":
@@ -223,7 +224,8 @@ elif confs.has_section("external_injection"):
         os.system(f"cp {inj_file_path} inj.xml")
 else:
     raise ValueError(
-        "Need to specify the injection method. Either provide [inspinj] section or [external_injection]"
+        "Need to specify the injection method. Either "
+        "provide [inspinj] section or [external_injection]"
     )
 
 logger.info("Splitting template bank")
@@ -362,7 +364,7 @@ for i, j in enumerate(indices):
 
 maxmatch=array(maxmatch, dtype =dtypef)
 savetxt(options.output_file, maxmatch,fmt=('%5.5f', '%s', '%i', '%s', '%i', '%5.5f'), delimiter=' ')
-""")
+""")  # noqa: E501
 os.chmod("scripts/pycbc_banksim_match_combine", 0o0777)
 
 with open("scripts/pycbc_banksim_collect_results", "w") as f:
@@ -436,7 +438,7 @@ for row in res:
     outstr += "\\n"
 
     f.write(outstr)
-""")
+""")  # noqa: E501
 os.chmod("scripts/pycbc_banksim_collect_results", 0o0777)
 
 if gpu:
@@ -634,7 +636,7 @@ mplot(imass1, imass2, (imchirp-tmchirp)/imchirp, "plots/m1-m2-mchirpreldiff.png"
 mplot(q, ispin1z, (imchirp-tmchirp)/imchirp, "plots/q-s1z-mchirpreldiff.png")
 mplot(q, ispin2z, (imchirp-tmchirp)/imchirp, "plots/q-s2z-mchirpreldiff.png")
 
-""")
+""")  # noqa: E501
 os.chmod("scripts/pycbc_banksim_plots", 0o0777)
 
 logger.info("Done")

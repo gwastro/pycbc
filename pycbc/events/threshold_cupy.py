@@ -35,7 +35,9 @@ loc = None
 # https://stackoverflow.com/questions/77798014/cupy-rawkernel-cuda-error-not-found-named-symbol-not-found-cupy
 
 tkernel1 = mako.template.Template("""
-extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int window, float threshold){
+extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv,
+                                                 int* outl, int window,
+                                                 float threshold){
     int s = window * blockIdx.x;
     int e = s + window;
 
@@ -135,7 +137,8 @@ extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* 
 """)
 
 tkernel2 = mako.template.Template("""
-extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl, float threshold, int window){
+extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl,
+                                                  float threshold, int window){
     __shared__ int loc[${blocks}];
     __shared__ float val[${blocks}];
 

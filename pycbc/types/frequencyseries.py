@@ -58,7 +58,8 @@ class FrequencySeries(Array):
                 delta_f = initial_array.delta_f
             except AttributeError:
                 raise TypeError(
-                    "must provide either an initial_array with a delta_f attribute, or a value for delta_f"
+                    "must provide either an initial_array with "
+                    "a delta_f attribute, or a value for delta_f"
                 )
         if not delta_f > 0:
             raise ValueError("delta_f must be a positive number")

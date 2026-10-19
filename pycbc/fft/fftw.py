@@ -107,7 +107,8 @@ def _init_threads(backend):
     global _float_threaded_lib
     if _fftw_threaded_set:
         raise RuntimeError(
-            f"Threading backend for FFTW already set to {_fftw_threaded_lib}; cannot be changed"
+            "Threading backend for FFTW already set to "
+            f"{_fftw_threaded_lib}; cannot be changed"
         )
     try:
         double_threaded_libname = _fftw_threading_libnames[backend]["double"]
@@ -623,7 +624,8 @@ def insert_fft_options(optgroup):
     )
     optgroup.add_argument(
         "--fftw-threads-backend",
-        help="Give 'openmp', 'pthreads' or 'unthreaded' to specify which threaded FFTW to use",
+        help="Give 'openmp', 'pthreads' or 'unthreaded' "
+        "to specify which threaded FFTW to use",
         default=None,
     )
     optgroup.add_argument(
@@ -675,8 +677,8 @@ def verify_fft_options(opt, parser):
         or (opt.fftw_input_double_wisdom_file is not None)
     ):
         parser.error(
-            "If --fftw-import-system-wisdom is given, then you cannot give"
-            " either of --fftw-input-float-wisdom-file or --fftw-input-double-wisdom-file"
+            "If --fftw-import-system-wisdom is given, then you cannot give either "
+            "of --fftw-input-float-wisdom-file or --fftw-input-double-wisdom-file"
         )
 
     if opt.fftw_threads_backend is not None:  # noqa: SIM102

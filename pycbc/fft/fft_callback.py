@@ -110,10 +110,11 @@ fftsrc = Template("""
 
     __constant__ param_t callback_params;
 
-    #define checkCudaErrors(val)  __checkCudaErrors__ ( (val), #val, __FILE__, __LINE__ )
+    #define checkCudaErrors(val) __checkCudaErrors__((val), #val, __FILE__, __LINE__)
 
     template <typename T>
-    inline void __checkCudaErrors__(T code, const char *func, const char *file, int line)
+    inline void __checkCudaErrors__(T code, const char *func, const char *file,
+                                    int line)
     {
         if (code) {
             fprintf(stderr, "CUDA error at %s:%d code=%d \\"%s\\" \\n",
@@ -159,9 +160,11 @@ fftsrc = Template("""
         return plan;
     }
 
-    extern "C" void execute(cufftHandle* plan, cufftComplex* in, cufftComplex* out, param_t* p){
+    extern "C" void execute(cufftHandle* plan, cufftComplex* in, cufftComplex* out,
+                            param_t* p){
          if (p != NULL)
-            checkCudaErrors(cudaMemcpyToSymbolAsync(callback_params, p, sizeof(param_t), 0,  cudaMemcpyHostToDevice, 0));
+            checkCudaErrors(cudaMemcpyToSymbolAsync(callback_params, p, sizeof(param_t),
+                                                    0, cudaMemcpyHostToDevice, 0));
          checkCudaErrors(cufftExecC2C(*plan, in, out, CUFFT_INVERSE));
     }
 """)

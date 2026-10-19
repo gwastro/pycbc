@@ -2035,9 +2035,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         autogating_duration: float, Optional
             Amount of data in seconds to apply autogating on.
         autogating_psd_segment_length: float, Optional
-            The length in seconds of each segment used to estimate the PSD with Welch's method.
+            The length in seconds of each segment used to estimate the PSD
+            with Welch's method.
         autogating_psd_stride: float, Optional
-            The overlap in seconds between each segment used to estimate the PSD with Welch's method.
+            The overlap in seconds between each segment used to estimate the PSD
+            with Welch's method.
         state_channel: {str, None}, Optional
             Channel to use for state information about the strain
         data_quality_channel: {str, None}, Optional
@@ -2141,11 +2143,13 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if idq_channel is not None:
             if idq_state_channel is None:
                 raise ValueError(
-                    "Each detector with an iDQ channel requires an iDQ state channel as well"
+                    "Each detector with an iDQ channel "
+                    "requires an iDQ state channel as well"
                 )
             if idq_threshold is None:
                 raise ValueError(
-                    "If an iDQ channel is provided, a veto threshold must also be provided"
+                    "If an iDQ channel is provided, a "
+                    "veto threshold must also be provided"
                 )
             self.idq = pycbc.frame.IDQBuffer(
                 frame_src,

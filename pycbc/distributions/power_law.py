@@ -117,7 +117,7 @@ class UniformPowerLaw(bounded.BoundedDist):
         The dimension of volume space. In the notation above `dim`
         is :math:`n+1`. For a 3-dimensional sphere this is 3.
 
-    """
+    """  # noqa: E501
 
     name = "uniform_power_law"
 

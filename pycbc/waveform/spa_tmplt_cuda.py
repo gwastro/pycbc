@@ -77,8 +77,10 @@ taylorf2_text = """
 
 taylorf2_kernel = ElementwiseKernel(
     """pycuda::complex<float> *htilde, int kmin, int phase_order,
-                                       float delta_f, float TWOPI, float PI_4, float piM, float pfaN,
-                                       float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
+                                       float delta_f, float TWOPI, float PI_4,
+                                       float piM, float pfaN, float pfa2,
+                                       float pfa3, float pfa4, float pfa5,
+                                       float pfl5,
                                        float pfa6, float pfl6, float pfa7, float amp""",
     taylorf2_text,
     "SPAtmplt",

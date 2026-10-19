@@ -243,9 +243,9 @@ def eccmchirp_from_mass1_mass2_eccentricity(
     mass2 : float or array
         Mass of the secondary object
     eccentricity : float or array
-        Eccentricity of the orbit (For "fit" method, eccentricity must be defined at 10 Hz.
-        For "spa_phase" method, eccentricity can be defined at any frequency, usually the start
-        frequency of the waveform.)
+        Eccentricity of the orbit (For "fit" method, eccentricity must be defined at 10
+        Hz. For "spa_phase" method, eccentricity can be defined at any frequency,
+        usually the start frequency of the waveform.)
     method : str, optiona
         Method to use for the calculation ("spa_phase", "fit").
         See `eccmchirp_from_mchirp_eccentricity` for details.

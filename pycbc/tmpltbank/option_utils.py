@@ -1123,8 +1123,8 @@ class MassRangeParameters:
                 if self.max_mass2 > max_ns_g_mass:
                     err_msg = f"""
                              The maximum NS mass supported by this EOS is
-                             {max_ns_g_mass - 0.0000000001}. Please set --max-mass2 to this value or run
-                             without the --use-eos-max-ns-mass flag.
+                             {max_ns_g_mass - 0.0000000001}. Please set --max-mass2 to
+                             this value or run without the --use-eos-max-ns-mass flag.
                              """
                     raise ValueError(err_msg)
             self.delta_bh_spin = delta_bh_spin or self.default_delta_bh_spin
