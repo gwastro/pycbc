@@ -25,6 +25,7 @@ import logging
 
 import mako.template
 import numpy
+import pycuda.driver as drv
 from pycuda.compiler import SourceModule
 from pycuda.elementwise import ElementwiseKernel
 from pycuda.tools import dtype_to_ctype
@@ -55,8 +56,6 @@ threshold_kernel = ElementwiseKernel(
     threshold_op,
     "getstuff",
 )
-
-import pycuda.driver as drv
 
 
 class T:

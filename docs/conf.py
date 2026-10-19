@@ -15,8 +15,10 @@ import logging
 import os
 import subprocess
 import time
+from unittest.mock import MagicMock
 
 import pycbc
+import pycbc.libutils
 import pycbc.version
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -296,13 +298,9 @@ autodoc_mock_imports = [
     "pytools",
 ]
 
-# Mock ctypes library loading so Sphinx can document modules like pycbc.fft.mkl without raising ImportError
-from unittest.mock import MagicMock
-
-import pycbc.libutils
-
 logger = logging.getLogger(__name__)
 
+# Mock ctypes library loading so Sphinx can document modules like pycbc.fft.mkl without raising ImportError
 pycbc.libutils.get_ctypes_library = MagicMock()
 
 

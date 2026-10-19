@@ -32,11 +32,10 @@ from utils import parse_args_all_schemes, simple_exit
 
 from pycbc.filter import correlate
 from pycbc.filter.matchedfilter import BatchCorrelator, Correlator
+from pycbc.filter.matchedfilter_cpu import correlate_numpy
 from pycbc.types import Array, complex64, zeros
 
 _scheme, _context = parse_args_all_schemes("correlate")
-
-from pycbc.filter.matchedfilter_cpu import correlate_numpy
 
 trusted_correlate = correlate_numpy
 

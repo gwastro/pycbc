@@ -24,11 +24,10 @@ import numpy
 from utils import parse_args_all_schemes, simple_exit
 
 from pycbc.events import threshold
+from pycbc.events.threshold_cpu import threshold_numpy as trusted_threshold
 from pycbc.types import Array, complex64
 
 _scheme, _context = parse_args_all_schemes("Threshold")
-
-from pycbc.events.threshold_cpu import threshold_numpy as trusted_threshold
 
 
 class TestThreshold(unittest.TestCase):
