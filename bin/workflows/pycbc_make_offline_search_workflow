@@ -358,8 +358,9 @@ ifo_ids = {}
 ifo_precedence_list = workflow.cp.get_opt_tags(
     "workflow-coincidence", "timeslide-precedence", ["full_data"]
 )
-for ifo, _ in zip(*insps.categorize_by_attr("ifo")):
-    ifo_ids[ifo] = ifo_precedence_list.index(ifo)
+for ifo in workflow.ifos:
+    if ifo in ifo_precedence_list and len(insps.find_output_with_ifo(ifo)) > 0:
+        ifo_ids[ifo] = ifo_precedence_list.index(ifo)
 
 # Generate the possible detector combinations
 if workflow.cp.has_option_tags("workflow-data_quality", "no-coinc-veto", tags=None):
@@ -420,6 +421,7 @@ for ifo in ifo_ids:
         final_veto_name,
         output_dir,
         tags=ctagsngl,
+        ifo=ifo,
     )
 
 # check to see if workflow should stop at statmap jobs.
@@ -493,7 +495,10 @@ data_analysed_name = "DATA_ANALYSED"
 data_analysed_segs = {}
 insp_files_seg_dict = segments.segmentlistdict()
 
-for ifo, files in zip(*ind_insps.categorize_by_attr("ifo")):
+for ifo in workflow.ifos:
+    files = ind_insps.find_output_with_ifo(ifo)
+    if not files:
+        continue
     trig_generated_segs[ifo] = segments.segmentlist([f.segment for f in files])
     data_analysed_segs[ifo] = segments.segmentlist(
         [f.metadata["data_seg"] for f in files]
@@ -609,8 +614,12 @@ snrchi = wf.make_snrchi_plot(
 layout.group_layout(rdir["single_triggers"], snrchi)
 
 hist_summ = []
-for insp in full_insps:
-    outdir = rdir["single_triggers/%s_binned_triggers" % insp.ifo]
+for ifo in workflow.ifos:
+    ifo_insps = full_insps.find_output_with_ifo(ifo)
+    if not ifo_insps:
+        continue
+    insp = ifo_insps[0]
+    outdir = rdir[f"single_triggers/{ifo}_binned_triggers"]
     singles_plots = wf.make_singles_plot(
         workflow,
         [insp],
@@ -619,11 +628,12 @@ for insp in full_insps:
         "closed_box",
         outdir,
         tags=["full_data"],
+        ifo=ifo,
     )
     layout.group_layout(outdir, singles_plots)
     # make non-summary hists using the bank file
     # currently, none of these are made
-    outdir = rdir["single_triggers/%s_trigger_histograms" % insp.ifo]
+    outdir = rdir[f"single_triggers/{ifo}_trigger_histograms"]
     wf.make_single_hist(
         workflow,
         insp,
@@ -633,11 +643,12 @@ for insp in full_insps:
         bank_file=hdfbank,
         exclude="summ",
         tags=["full_data"],
+        ifo=ifo,
     )
 
     # make summary hists for all templates together
     # currently, 2 per ifo: snr and newsnr
-    outdir = rdir["single_triggers/%s_trigger_histograms" % insp.ifo]
+    outdir = rdir[f"single_triggers/{ifo}_trigger_histograms"]
     allhists = wf.make_single_hist(
         workflow,
         insp,
@@ -646,14 +657,22 @@ for insp in full_insps:
         outdir,
         require="summ",
         tags=["full_data"],
+        ifo=ifo,
     )
     layout.group_layout(outdir, allhists)
 
     # make hists of newsnr split up by parameter
     # currently, 1 per ifo split by template duration
-    outdir = rdir["single_triggers/%s_binned_histograms" % insp.ifo]
+    outdir = rdir[f"single_triggers/{ifo}_binned_histograms"]
     binhists = wf.make_binned_hist(
-        workflow, insp, censored_veto, "closed_box", outdir, hdfbank, tags=["full_data"]
+        workflow,
+        insp,
+        censored_veto,
+        "closed_box",
+        outdir,
+        hdfbank,
+        tags=["full_data"],
+        ifo=ifo,
     )
     layout.group_layout(outdir, binhists)
     # put raw SNR and binned newsnr hist in summary
@@ -674,8 +693,12 @@ for insp_file in full_insps:
     for tag in insp_file.tags:
         excl_subsecs.add(tag)
 
-for insp_file in full_insps:
-    curr_ifo = insp_file.ifo
+for ifo in workflow.ifos:
+    ifo_insps = full_insps.find_output_with_ifo(ifo)
+    if not ifo_insps:
+        continue
+    insp_file = ifo_insps[0]
+    curr_ifo = ifo
     for subsec in workflow.cp.get_subsections("workflow-sngl_minifollowups"):
         if subsec in excl_subsecs:
             continue
@@ -695,6 +718,7 @@ for insp_file in full_insps:
             fg_file=censored_veto,
             fg_name="closed_box",
             tags=insp_file.tags + [subsec],
+            ifo=curr_ifo,
         )
 
 ##################### COINC FULL_DATA plots ###################################
@@ -987,6 +1011,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
             final_veto_name,
             output_dir,
             tags=ctagsngl,
+            ifo=ifo,
         )
 
     combctags = [tag, "injections"]
@@ -1052,13 +1077,13 @@ for inj_file, tag in zip(inj_files, inj_tags):
     )
 
     for ifocomb in ifo_combos(ifo_ids.keys()):
-        inspcomb = wf.select_files_by_ifo_combination(ifocomb, insps)
-        fdinspcmb = wf.select_files_by_ifo_combination(ifocomb, full_insps)
         _, _, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
+        final_bg_file = final_bg_files[ordered_ifo_list]
+        curr_tags = [tag, ordered_ifo_list]
 
-        for inj_insp, trig_insp in zip(inspcomb, fdinspcmb):
-            final_bg_file = final_bg_files[ordered_ifo_list]
-            curr_tags = [tag, ordered_ifo_list]
+        for ifo in ifocomb:
+            inj_insp = insps.find_output_with_ifo(ifo)[0]
+            trig_insp = full_insps.find_output_with_ifo(ifo)[0]
             f += wf.make_coinc_snrchi_plot(
                 workflow,
                 found_inj,
@@ -1067,6 +1092,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                 trig_insp,
                 injdir,
                 tags=curr_tags,
+                ifo=ifo,
             )
 
     # Make pages from plots

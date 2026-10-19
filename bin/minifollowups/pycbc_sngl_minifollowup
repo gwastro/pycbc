@@ -384,6 +384,7 @@ for rank, num_event in enumerate(order):
         args.output_dir,
         data_segments=insp_data_seglists,
         tags=args.tags + [str(rank)],
+        ifo=args.instrument,
     )
 
     files += mini.make_qscan_plot(

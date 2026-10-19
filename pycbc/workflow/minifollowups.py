@@ -214,6 +214,7 @@ def setup_single_det_minifollowups(
     fg_name=None,
     statfiles=None,
     tags=None,
+    ifo=None,
 ):
     """
     Create plots that followup the Nth loudest clustered single detector
@@ -240,6 +241,8 @@ def setup_single_det_minifollowups(
         statistic.
     tags: {None, optional}
         Tags to add to the minifollowups executables
+    ifo: {None, optional}
+        IFO to follow up when single_trig_file contains multiple detectors.
 
     Returns
     -------
@@ -261,7 +264,7 @@ def setup_single_det_minifollowups(
     makedir(dax_output)
 
     # turn the config file into a File class
-    curr_ifo = single_trig_file.ifo
+    curr_ifo = ifo or single_trig_file.ifo
     config_path = os.path.abspath(
         dax_output + "/" + curr_ifo + "_".join(tags) + "singles_minifollowup.ini"
     )
@@ -877,7 +880,7 @@ def make_coinc_info(
     node = PlotExecutable(
         workflow.cp, name, ifos=workflow.ifos, out_dir=out_dir, tags=tags
     ).create_node()
-    node.add_input_list_opt("--single-trigger-files", singles)
+    node.add_input_list_opt("--single-trigger-files", list(dict.fromkeys(singles)))
     node.add_input_opt("--statmap-file", coinc_file)
     node.add_input_opt("--bank-file", bank)
     if sort_order:
@@ -1081,6 +1084,7 @@ def make_singles_timefreq(
     time_window=10,
     data_segments=None,
     tags=None,
+    ifo=None,
 ):
     """
     Generate a singles_timefreq node and add it to workflow.
@@ -1119,13 +1123,16 @@ def make_singles_timefreq(
         trigger. This **must** be coalesced.
     tags: list (optional, default=None)
         List of tags to add to the created nodes, which determine file naming.
+    ifo: str (optional, default=None)
+        Detector to plot when single contains multiple detectors.
 
     """
     tags = [] if tags is None else tags
     name = "plot_singles_timefreq"
 
+    target_ifo = ifo or single.ifo
     curr_exe = SingleTimeFreqExecutable(
-        workflow.cp, name, ifos=[single.ifo], out_dir=out_dir, tags=tags
+        workflow.cp, name, ifos=[target_ifo], out_dir=out_dir, tags=tags
     )
 
     # Determine start/end times, using data segments if needed.
@@ -1153,7 +1160,7 @@ def make_singles_timefreq(
                 if veto_file:
                     node.add_input_opt("--veto-file", veto_file)
 
-                node.add_opt("--detector", single.ifo)
+                node.add_opt("--detector", target_ifo)
                 node.new_output_file_opt(
                     workflow.analysis_time, ".png", "--output-file"
                 )
@@ -1193,7 +1200,7 @@ def make_singles_timefreq(
     if veto_file:
         node.add_input_opt("--veto-file", veto_file)
 
-    node.add_opt("--detector", single.ifo)
+    node.add_opt("--detector", target_ifo)
     node.new_output_file_opt(workflow.analysis_time, ".png", "--output-file")
     workflow += node
     return node.output_files
