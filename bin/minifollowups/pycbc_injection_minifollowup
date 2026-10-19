@@ -83,7 +83,9 @@ def sort_injections(args, inj_group, missed):
 
     if args.distance_type == "decisive_optimal_snr":
         # descending order of decisive (2nd largest) optimal SNR
-        dec_snr = numpy.array([sorted(snrs)[-2] for snrs in zip(*optimal_snrs)])
+        dec_snr = numpy.array(
+            [sorted(snrs)[-2] for snrs in zip(*optimal_snrs, strict=True)]
+        )
         if args.maximum_decisive_snr is not None:
             # By setting to 0, these injections will not be considered
             dec_snr[dec_snr > args.maximum_decisive_snr] = 0

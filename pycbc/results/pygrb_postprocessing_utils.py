@@ -259,7 +259,7 @@ def _read_seg_files(seg_files):
     # Needs to be in this order for consistency with build_segment_filelist
     keys = ["buffer", "off", "on"]
 
-    for key, seg_file in zip(keys, seg_files):
+    for key, seg_file in zip(keys, seg_files, strict=True):
         segs = fromsegwizard(open(seg_file))
         if len(segs) > 1:
             err_msg = "More than one segment, an error has occured."
@@ -571,7 +571,9 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     # Begin by sorting the triggers into each slide
     for slide_id in slide_dict:
         sorted_trigs[slide_id] = []
-    for slide_id, event_id in zip(trigs["network/slide_id"], trigs["network/event_id"]):
+    for slide_id, event_id in zip(
+        trigs["network/slide_id"], trigs["network/event_id"], strict=True
+    ):
         if slide_id in slide_dict:
             sorted_trigs[slide_id].append(event_id)
 

@@ -87,7 +87,7 @@ fig = plt.figure()
 
 # loop over parameters
 stats = []
-for param, label in zip(params, labels):
+for param, label in zip(params, labels, strict=True):
     logger.info("Plotting parameter %s", param)
 
     # get samples for each chain

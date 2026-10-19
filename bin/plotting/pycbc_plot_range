@@ -58,7 +58,7 @@ for psd_file in args.psd_files:
         delta_t = 1.0 / ((len(psd) - 1) * 2 * psd.delta_f)
         out = pycbc.types.zeros(len(psd), dtype=numpy.complex64)
 
-        for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
+        for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant, strict=True):
             htilde = pycbc.waveform.get_waveform_filter(
                 out,
                 mass1=m1,
@@ -80,7 +80,7 @@ for psd_file in args.psd_files:
             else:
                 ranges[wf_key] = [inspiral_range]
 
-    for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
+    for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant, strict=True):
         if len(args.approximant) > 1:
             label = rf"{ifo}: ${m1}M_{{\odot}}-{m2}M_{{\odot}}$ ({apx})"
         else:

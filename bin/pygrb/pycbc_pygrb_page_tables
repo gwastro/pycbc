@@ -442,7 +442,9 @@ logger.info("Background SNR and bestNR of trials calculated.")
 offsource_trigs = []
 sorted_trigs = ppu.sort_trigs(trial_dict, trig_data, slide_dict, segment_dict)
 for slide_id in slide_dict:
-    offsource_trigs.extend(zip(trig_data_av[keys[2]][slide_id], sorted_trigs[slide_id]))
+    offsource_trigs.extend(
+        zip(trig_data_av[keys[2]][slide_id], sorted_trigs[slide_id], strict=True)
+    )
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
 
@@ -534,7 +536,7 @@ if lofft_outfile:
 
     # To ensure desired formatting in the h5 file and html table:
     # 1) "transpose" the data preserving its dtype
-    td = list(zip(*td))
+    td = list(zip(*td, strict=True))
 
     # Write to h5 file
     logger.info("Writing %d loudest offsource triggers to h5 file.", len(td[0]))
@@ -681,7 +683,7 @@ if onsource_file:
         + ["BestNR"]
     )
 
-    td = list(zip(*td))
+    td = list(zip(*td, strict=True))
 
     # Handle the case in which there is no data to be placed in the table
     if not td:
@@ -885,10 +887,10 @@ if found_missed_file is not None:
         if key not in found_after_vetoes:
             found_after_vetoes[key] = np.array([])
     td = [found_after_vetoes[key][nonzero_fap] for key in keys]
-    td = list(zip(*td))
+    td = list(zip(*td, strict=True))
     td.sort(key=lambda elem: elem[0])
     logger.info("Writing %d quiet-found injections to h5 and html files.", len(td))
-    td = list(zip(*td))
+    td = list(zip(*td, strict=True))
 
     # Handle the case in which there is no data to be placed in the table
     if not td:
@@ -935,12 +937,12 @@ if found_missed_file is not None:
         np.concatenate((missed_injs[key], vetoed[key], cut_injs[key]))
         for key in [*keys, "category"]
     ]
-    t_missed = list(zip(*t_missed))
+    t_missed = list(zip(*t_missed, strict=True))
     t_missed.sort(key=lambda elem: elem[0])
     logger.info(
         "Writing %d missed, vetoed, and cut injections to html file.", len(t_missed)
     )
-    t_missed = zip(*t_missed)
+    t_missed = zip(*t_missed, strict=True)
     t_missed = [np.asarray(d) for d in t_missed]
     html_table = pycbc.results.html_table(
         t_missed, th, format_strings=format_strings, page_size=20

@@ -87,7 +87,7 @@ class BaseTransform:
         if isinstance(old_maps, record.FieldArray):
             keys = new_maps.keys()
             values = [new_maps[key] for key in keys]
-            for key, vals in zip(keys, values):
+            for key, vals in zip(keys, values, strict=True):
                 try:
                     old_maps = old_maps.add_fields([vals], [key])
                 except ValueError:

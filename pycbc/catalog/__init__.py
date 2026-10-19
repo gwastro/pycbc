@@ -240,6 +240,6 @@ class Catalog:
             for m in self.mergers
         ]
         if return_errors:
-            value, merror, perror = zip(*v)
+            value, merror, perror = zip(*v, strict=True)
             return numpy.array(value), numpy.array(merror), numpy.array(perror)
         return numpy.array(v)

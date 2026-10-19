@@ -39,7 +39,7 @@ class BankOutputTest(unittest.TestCase):
                             path, contenthandler=LIGOLWContentHandler)
                         bank = lsctables.SnglInspiralTable.get_table(document)
                         self.assertEqual(len(bank), len(templates))
-                        for row, expected in zip(bank, templates):
+                        for row, expected in zip(bank, templates, strict=True):
                             numpy.testing.assert_allclose(
                                 [row.mass1, row.mass2, row.spin1z, row.spin2z],
                                 expected, rtol=1e-6)

@@ -185,7 +185,9 @@ def fermi_core_tail_model(
     scaledsq = sky_err**2 / -2 / np.log(0.32)
     return (
         frac * (1 - np.exp(-0.5 * (rad / np.sqrt(scaledsq + sigma**2)) ** 2))
-        for frac, sigma in zip([core_frac, 1 - core_frac], [core_sigma, tail_sigma])
+        for frac, sigma in zip(
+            [core_frac, 1 - core_frac], [core_sigma, tail_sigma], strict=True
+        )
     )
 
 

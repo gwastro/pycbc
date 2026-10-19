@@ -177,7 +177,7 @@ class CallModel:
             callstat = self.callstat
         if return_all_stats is None:
             return_all_stats = self.return_all_stats
-        params = dict(zip(self.model.sampling_params, param_values))
+        params = dict(zip(self.model.sampling_params, param_values, strict=True))
         self.model.update(**params)
         val = getattr(self.model, callstat)
         if return_all_stats:

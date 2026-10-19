@@ -201,7 +201,7 @@ mass_spin = triggers.get_mass_spin(temp_file, tid)
 f_dest = HFile(args.output_file, "w")
 f_dest.create_dataset("template_id", data=tid)
 template_pars = []
-for param, slog in zip(args.fit_param, args.log_param):
+for param, slog in zip(args.fit_param, args.log_param, strict=True):
     pvals = triggers.get_param(param, args, *mass_spin)
     # Write the KDE param values to output file
     f_dest.create_dataset(param, data=pvals)
@@ -316,7 +316,7 @@ if args.make_signal_kde:
     mass1_sgnl = signal_file["mass1"][idx]
     assert min(mass1_sgnl - mass2_sgnl) > 0
 
-    for param, slog in zip(args.fit_param, args.log_param):
+    for param, slog in zip(args.fit_param, args.log_param, strict=True):
         pvals = signal_file[param][idx]
         if slog in ["False"]:
             logger.info("Using param: %s", param)
@@ -379,7 +379,7 @@ if args.make_injection_kde:
     spin1z = inj_file["events"]["spin1z"][idx]
     spin2z = inj_file["events"]["spin2z"][idx]
 
-    for param, slog in zip(args.fit_param, args.log_param):
+    for param, slog in zip(args.fit_param, args.log_param, strict=True):
         pvals = triggers.get_param(param, args, mass1, mass2, spin1z, spin2z)
         if slog in ["False"]:
             logger.info("Using param: %s", param)

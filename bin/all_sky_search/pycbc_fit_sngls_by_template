@@ -274,7 +274,9 @@ segment_ends = sorted(set(trigf[f"{args.ifo}/search/end_time"][:]))
 all_segments = events.veto.start_end_to_segments(segment_starts, segment_ends)
 
 # now do vetoing
-for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
+for veto_file, veto_segment_name in zip(
+    args.veto_file, args.veto_segment_name, strict=True
+):
     retain, junk = events.veto.indices_outside_segments(
         time, [veto_file], ifo=args.ifo, segment_name=veto_segment_name
     )

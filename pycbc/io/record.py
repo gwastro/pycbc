@@ -470,7 +470,7 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
         ]
         # group together by subarray
         groups = {}
-        for name, arr in zip(subarray_names, subarrays):
+        for name, arr in zip(subarray_names, subarrays, strict=True):
             key = name.split(".")[0]
             subkey = ".".join(name.split(".")[1:])
             try:
@@ -1035,7 +1035,7 @@ class FieldArray(numpy.recarray):
         if isinstance(names, str):
             names = [names]
             methods = [methods]
-        for name, method in zip(names, methods):
+        for name, method in zip(names, methods, strict=True):
             setattr(self, name, types.MethodType(method, self))
 
     def add_properties(self, names, methods):
@@ -1049,7 +1049,7 @@ class FieldArray(numpy.recarray):
         if isinstance(names, str):
             names = [names]
             methods = [methods]
-        for name, method in zip(names, methods):
+        for name, method in zip(names, methods, strict=True):
             setattr(cls, name, property(method))
         return self.view(type=cls)
 
@@ -1092,7 +1092,7 @@ class FieldArray(numpy.recarray):
             raise ValueError(
                 "number of provided names must be same as number of functions"
             )
-        self._functionlib.update(dict(zip(names, functions)))
+        self._functionlib.update(dict(zip(names, functions, strict=True)))
 
     def del_functions(self, names):
         """
@@ -1489,7 +1489,7 @@ class FieldArray(numpy.recarray):
         out = numpy.zeros(self.size, dtype=outdtype)
         mask = numpy.zeros(self.size, dtype=bool)
         leftovers = numpy.ones(self.size, dtype=bool)
-        for ii, (boolarg, val) in enumerate(zip(bool_args, return_vals)):
+        for ii, (boolarg, val) in enumerate(zip(bool_args, return_vals, strict=True)):
             if boolarg is None or boolarg == "" or boolarg.lower() == "else":
                 if ii + 1 != len(bool_args):
                     raise ValueError(
@@ -1584,7 +1584,12 @@ class FieldArray(numpy.recarray):
             possible_fields = [possible_fields]
         possible_fields = list(map(str, possible_fields))
         # we'll just use float as the dtype, as we just need this for names
-        arr = cls(1, dtype=list(zip(possible_fields, len(possible_fields) * [float])))
+        arr = cls(
+            1,
+            dtype=list(
+                zip(possible_fields, len(possible_fields) * [float], strict=True)
+            ),
+        )
         # try to perserve order
         return list(get_needed_fieldnames(arr, parameters))
 
@@ -1616,7 +1621,9 @@ def fields_from_names(fields, names=None):
     if isinstance(names, str):
         names = [names]
     aliases_to_names = aliases_from_fields(fields)
-    names_to_aliases = dict(zip(aliases_to_names.values(), aliases_to_names.keys()))
+    names_to_aliases = dict(
+        zip(aliases_to_names.values(), aliases_to_names.keys(), strict=True)
+    )
     outfields = {}
     for name in names:
         try:

@@ -146,8 +146,8 @@ class TestMargNormalization(unittest.TestCase):
         model = self.model(models.Relative, bounds)
         axes = [grid(*bounds[k], cells[k]) for k in bounds]
         lr = []
-        for values in zip(*[a.ravel() for a in numpy.meshgrid(*axes)]):
-            p = dict(zip(bounds, values))
+        for values in zip(*[a.ravel() for a in numpy.meshgrid(*axes)], strict=True):
+            p = dict(zip(bounds, values, strict=True))
             ra, dec = p.get("ra", RA), p.get("dec", DEC)
             p["tc"] -= frame_delay(frame, ra, dec, p["tc"])
             model.update(**p, **POINT)

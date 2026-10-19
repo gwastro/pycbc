@@ -478,7 +478,9 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
     logger.info("convert single inspiral trigger files to hdf5")
 
     trig_files = FileList()
-    for ifo, insp_group in zip(*xml_trigger_files.categorize_by_attr("ifo")):
+    for ifo, insp_group in zip(
+        *xml_trigger_files.categorize_by_attr("ifo"), strict=True
+    ):
         trig2hdf_exe = PyCBCTrig2HDFExecutable(
             workflow.cp, "trig2hdf", ifos=ifo, out_dir=out_dir, tags=tags
         )

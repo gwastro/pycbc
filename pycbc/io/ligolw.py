@@ -260,7 +260,9 @@ def legacy_row_id_converter(ContentHandler):  # noqa: N803
                         if colname in loadcolumns
                         else None
                     )
-                    for pytype, colname in zip(parent.columnpytypes, parent.columnnames)
+                    for pytype, colname in zip(
+                        parent.columnpytypes, parent.columnnames, strict=True
+                    )
                 ]
             )
         return result

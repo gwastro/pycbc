@@ -361,7 +361,10 @@ n_triggers = f["foreground/stat"].size
 logger.info("Calculating event times to determine which types of coinc are available")
 times_tuple = (f[f"foreground/{ifo}/time"][:] for ifo in all_ifos)
 test_times = np.array(
-    [pycbc.events.mean_if_greater_than_zero(tc)[0] for tc in zip(*times_tuple)]
+    [
+        pycbc.events.mean_if_greater_than_zero(tc)[0]
+        for tc in zip(*times_tuple, strict=True)
+    ]
 )
 
 del times_tuple
@@ -467,7 +470,9 @@ if not injection_style:
     thr = test_times[fg_ifar > args.censor_ifar_threshold]
     vstart = thr - args.veto_window
     vend = thr + args.veto_window
-    vtime = segments.segmentlist([segments.segment(s, e) for s, e in zip(vstart, vend)])
+    vtime = segments.segmentlist(
+        [segments.segment(s, e) for s, e in zip(vstart, vend, strict=True)]
+    )
     logger.info("Censoring %.2f seconds", abs(vtime))
     f.attrs["foreground_time_exc"] -= abs(vtime)
     f["segments/foreground_veto/start"] = vstart
@@ -713,7 +718,10 @@ while True:
     logger.info("Recalculating IFARs")
     times_tuple = tuple(combined_fg_data.data[ifo + "/time"][:] for ifo in all_ifos)
     test_times = np.array(
-        [pycbc.events.mean_if_greater_than_zero(tc)[0] for tc in zip(*times_tuple)]
+        [
+            pycbc.events.mean_if_greater_than_zero(tc)[0]
+            for tc in zip(*times_tuple, strict=True)
+        ]
     )
     for key in all_ifo_combos:
         # In principle, bg time should be adjusted, but is expected to be a

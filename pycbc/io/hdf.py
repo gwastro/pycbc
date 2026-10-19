@@ -226,7 +226,7 @@ class HFile(HGroup, h5py.File):
 
             if return_data:
                 # Store the dataset results that pass the function
-                for arg, part in zip(args, partial):
+                for arg, part in zip(args, partial, strict=True):
                     data[arg].append(part[keep])
 
             i += chunksize
@@ -1242,7 +1242,9 @@ class ForegroundTriggers:
 
     def get_end_time(self):
         times_gen = (self.get_coincfile_array(f"{ifo}/time") for ifo in self.ifos)
-        return np.array([mean_if_greater_than_zero(t)[0] for t in zip(*times_gen)])
+        return np.array(
+            [mean_if_greater_than_zero(t)[0] for t in zip(*times_gen, strict=True)]
+        )
 
     def get_ifos(self):
         """
@@ -1519,7 +1521,8 @@ class ForegroundTriggers:
         ]
         # Combine the ifo letters to make a single string per event
         triggered_detectors = [
-            "".join(triggered).encode("ascii") for triggered in zip(*triggered_matrix)
+            "".join(triggered).encode("ascii")
+            for triggered in zip(*triggered_matrix, strict=True)
         ]
         ofd.create_dataset("trig", data=triggered_detectors, dtype="<S3")
 
@@ -1533,7 +1536,7 @@ class ForegroundTriggers:
         # Combine the ifo letters to make a single string per event
         active_detectors = [
             "".join(active_at_time).encode("ascii")
-            for active_at_time in zip(*active_matrix)
+            for active_at_time in zip(*active_matrix, strict=True)
         ]
         ofd.create_dataset("obs", data=active_detectors, dtype="<S3")
 
@@ -1570,7 +1573,7 @@ class ReadByTemplate:
             segment_name = []
         if veto_files is None:
             veto_files = []
-        for vfile, name in zip(veto_files, segment_name):
+        for vfile, name in zip(veto_files, segment_name, strict=True):
             veto_segs = veto.select_segments_by_definer(
                 vfile, ifo=self.ifo, segment_name=name
             )

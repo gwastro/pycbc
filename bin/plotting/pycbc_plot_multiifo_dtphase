@@ -144,7 +144,8 @@ min_bin = [f[ref_ifo + "/param_bin"][dtn][:].min() for dtn in dtns]
 hist_min = [min_bin[i] * widths[i] for i in range(ndims)]
 hist_max = [(max_bin[i] + 1) * widths[i] for i in range(ndims)]
 hist_range = [
-    (1.1 * mn - 0.1 * mx, 1.1 * mx - 0.1 * mn) for mx, mn in zip(hist_max, hist_min)
+    (1.1 * mn - 0.1 * mx, 1.1 * mx - 0.1 * mn)
+    for mx, mn in zip(hist_max, hist_min, strict=True)
 ]
 
 # Set up a zero-valued array to be filled by histogram values
@@ -152,7 +153,7 @@ arr_size = tuple(max_bin[i] - min_bin[i] + 1 for i in range(ndims))
 hist_vals = np.zeros(arr_size)
 
 logger.info("filling histogram")
-for pb, w in zip(f[ref_ifo]["param_bin"][:], f[ref_ifo]["weights"][:]):
+for pb, w in zip(f[ref_ifo]["param_bin"][:], f[ref_ifo]["weights"][:], strict=True):
     # Index is the difference between stored bin value and the
     # minimum bin value - this keeps RAM manageable
     idx = tuple(pb[i] - min_bin[i] for i, c in enumerate(dtns))

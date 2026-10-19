@@ -235,7 +235,9 @@ if trig_dur:
 logger.info("%i trigs left after thresholding at %f", len(stat), minth)
 
 # now do vetoing
-for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
+for veto_file, veto_segment_name in zip(
+    args.veto_file, args.veto_segment_name, strict=True
+):
     retain, junk = events.veto.indices_outside_segments(
         time, [veto_file], ifo=args.ifo, segment_name=veto_segment_name
     )
@@ -436,7 +438,7 @@ for th in args.stat_threshold:
 
     if args.output_file:
         fig = plt.figure()
-    for i, lower, upper in zip(binind, pbins.lower(), pbins.upper()):
+    for i, lower, upper in zip(binind, pbins.lower(), pbins.upper(), strict=True):
         # determine number of templates generating the triggers involved
         # for hdf5, use the template id; otherwise use masses
         tid_inbin = tid[pind == i]

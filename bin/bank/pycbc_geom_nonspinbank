@@ -336,7 +336,7 @@ temp_number = 0
 req_match = 0.0001
 # This can be used for debugging
 # fileP = open('bank_file.dat','w')
-for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
+for iter, (v1, v2) in enumerate(zip(v1s, v2s, strict=True)):
     # First check if point is within the physical space
     # and find some example nearby physical points if it is.
     v1bin = int((v1 - v1smin) / bin_size)

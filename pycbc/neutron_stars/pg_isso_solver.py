@@ -350,7 +350,7 @@ def solve_pg_isso(chi, incl):
                 fprime2=isso_eq_at_pole_dr2,
                 args=(c),
             ).root
-            for g0, c in zip(initial_guess, chi)
+            for g0, c in zip(initial_guess, chi, strict=True)
         ]
     )
     # If the inclination is pi/2, just output the ISSO radius at the pole(s)
@@ -365,7 +365,7 @@ def solve_pg_isso(chi, incl):
         (bl, bh)
         if (c != 1 and pg_isso_eq(bl, c, inc) * pg_isso_eq(bh, c, inc) < 0)
         else None
-        for bl, bh, c, inc in zip(initial_lo, initial_hi, chi, incl)
+        for bl, bh, c, inc in zip(initial_lo, initial_hi, chi, incl, strict=True)
     ]
     solution = np.array(
         [
@@ -378,7 +378,7 @@ def solve_pg_isso(chi, incl):
                 args=(c, inc),
                 xtol=1e-12,
             ).root
-            for g0, bracket, c, inc in zip(initial_hi, brackets, chi, incl)
+            for g0, bracket, c, inc in zip(initial_hi, brackets, chi, incl, strict=True)
         ]
     )
     oob = (solution < 1) | (solution > 9)
@@ -396,7 +396,7 @@ def solve_pg_isso(chi, incl):
                 if ob
                 else sol
                 for g0, bracket, c, inc, ob, sol in zip(
-                    initial_lo, brackets, chi, incl, oob, solution
+                    initial_lo, brackets, chi, incl, oob, solution, strict=True
                 )
             ]
         )

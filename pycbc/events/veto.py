@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def start_end_to_segments(start, end):
-    return segmentlist([segment(s, e) for s, e in zip(start, end)])
+    return segmentlist([segment(s, e) for s, e in zip(start, end, strict=True)])
 
 
 def segments_to_start_end(segs):
@@ -79,7 +79,9 @@ def indices_within_times(times, start, end):
     if len(left) == 0:
         return numpy.array([], dtype=numpy.uint32)
 
-    return tsort[numpy.hstack([numpy.r_[s:e] for s, e in zip(left, right)])]
+    return tsort[
+        numpy.hstack([numpy.r_[s:e] for s, e in zip(left, right, strict=True)])
+    ]
 
 
 def indices_outside_times(times, start, end):
@@ -137,7 +139,7 @@ def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
     def_ids = seg_def_table.getColumnByName("segment_def_id")
 
     valid_id = []
-    for def_ifo, def_name, def_id in zip(def_ifos, def_names, def_ids):
+    for def_ifo, def_name, def_id in zip(def_ifos, def_names, def_ids, strict=True):
         if ifo and ifo != def_ifo:
             continue
         if segment_name and segment_name != def_name:

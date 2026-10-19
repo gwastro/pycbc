@@ -63,7 +63,7 @@ def labels_in_files_metadata(labels, rundir, file_paths):
 
     # Convert sorted_file_paths to a FileList where each File has its label
     # in the tags
-    labels_paths = zip(up_labels, sorted_file_paths)
+    labels_paths = zip(up_labels, sorted_file_paths, strict=True)
     return _workflow.FileList(
         [
             _workflow.resolve_url_to_file(os.path.join(rundir, p), attrs={"tags": [l]})

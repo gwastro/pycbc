@@ -365,7 +365,7 @@ def create_density_plot(
         # label contours
         if label_contours:
             lbls = [f"{int(p)}%" for p in (100.0 - percentiles)]
-            fmt = dict(zip(ct.levels, lbls))
+            fmt = dict(zip(ct.levels, lbls, strict=True))
             fs = 12
             ax.clabel(ct, ct.levels, inline=True, fmt=fmt, fontsize=fs)
 

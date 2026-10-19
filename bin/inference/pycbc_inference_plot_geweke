@@ -112,7 +112,7 @@ nwalkers = len(walkers)
 fig = plt.figure()
 
 # loop over each parameter
-for param, label in zip(params, labels):
+for param, label in zip(params, labels, strict=True):
     logger.info("Plotting parameter %s", param)
     # loop over walkers
     for j in walkers:
@@ -136,7 +136,7 @@ for param, label in zip(params, labels):
         )
 
         # plot walker
-        for start, end, stat in zip(starts, ends, stats):
+        for start, end, stat in zip(starts, ends, stats, strict=True):
             plt.plot([start, end], [stat, stat], "k")
 
 # format plot

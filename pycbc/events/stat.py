@@ -617,7 +617,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 )
                 self.two_det_weights[ifo][id0, id1, id2] = self.weights[ifo]
 
-        for ifo, sense in zip(self.hist_ifos, relfac):
+        for ifo, sense in zip(self.hist_ifos, relfac, strict=True):
             self.relsense[ifo] = sense
 
         self.has_hist = True
@@ -661,7 +661,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         """
         # Convert time shift vector to dict, as hist ifos and self.ifos may
         # not be in same order
-        to_shift = dict(zip(self.ifos, to_shift))
+        to_shift = dict(zip(self.ifos, to_shift, strict=True))
 
         if not self.has_hist:
             self.get_hist()
@@ -1021,7 +1021,7 @@ class ExpFitStatistic(PhaseTDStatistic):
                 tids = list(tids) + list(bin_tids.astype(int))
                 bin_nums = list(bin_nums) + list([bin_name] * len(bin_tids))
 
-        return dict(zip(tids, bin_nums))
+        return dict(zip(tids, bin_nums, strict=True))
 
     def assign_dq_rates(self, key):
         """

@@ -381,7 +381,7 @@ class HealpixSky:
         non_zero_ind = numpy.flatnonzero(uniform_patch.pix_probs)
         dtype = numpy.dtype([("index", numpy.ndarray), ("prob", numpy.float64)])
         prob = uniform_patch.pix_probs[non_zero_ind]
-        ind_prob = numpy.array(list(zip(non_zero_ind, prob)), dtype=dtype)
+        ind_prob = numpy.array(list(zip(non_zero_ind, prob, strict=True)), dtype=dtype)
         ind_prob_sorted = numpy.sort(ind_prob, order="prob")
         prob = numpy.sort(prob)
         ind_prob_rev_sorted = ind_prob_sorted[::-1]
