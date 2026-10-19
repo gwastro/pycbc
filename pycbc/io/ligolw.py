@@ -157,7 +157,7 @@ def create_process_table(
         for key in key_del:
             opts.pop(key)
 
-    process = document.register_process(
+    return document.register_process(
         program_name,
         opts,
         version=pycbc_version.version,
@@ -166,7 +166,6 @@ def create_process_table(
         instruments=detectors,
         comment=comment,
     )
-    return process
 
 
 def legacy_row_id_converter(ContentHandler):  # noqa: N803

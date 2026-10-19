@@ -56,8 +56,7 @@ def drop_trailing_zeros(num):
     """
     txt = f"{num:f}"
     txt = txt.rstrip("0")
-    txt = txt.removesuffix(".")
-    return txt
+    return txt.removesuffix(".")
 
 
 def get_signum(val, err, max_sig=numpy.inf):

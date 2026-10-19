@@ -522,11 +522,9 @@ class _LDCDetector(AbsSpaceDet):
             self.proj_init.set_strain(self.sample_times, hp, hc)
 
         # project the signal
-        wf_proj = self.proj_init.compute_gw_response(
+        return self.proj_init.compute_gw_response(
             self.sample_times, self.proj_init.LINKS
         )
-
-        return wf_proj
 
     def project_wave(
         self,
@@ -656,10 +654,7 @@ class _LDCDetector(AbsSpaceDet):
             )
 
         # processing
-        tdi_dict = cut_channels(
-            tdi_dict, remove_garbage=self.remove_garbage, t0=self.t0
-        )
-        return tdi_dict
+        return cut_channels(tdi_dict, remove_garbage=self.remove_garbage, t0=self.t0)
 
 
 class _FLRDetector(AbsSpaceDet):
@@ -881,9 +876,7 @@ class _FLRDetector(AbsSpaceDet):
 
         # project the signal
         self.tdi_init.get_projections(wf, lamb, beta, t0=self.t0)
-        wf_proj = self.tdi_init.y_gw
-
-        return wf_proj
+        return self.tdi_init.y_gw
 
     def project_wave(
         self,
@@ -1005,10 +998,7 @@ class _FLRDetector(AbsSpaceDet):
                 tdi_obs[i], delta_t=self.dt, epoch=self.start_time
             )
 
-        tdi_dict = cut_channels(
-            tdi_dict, remove_garbage=self.remove_garbage, t0=self.t0
-        )
-        return tdi_dict
+        return cut_channels(tdi_dict, remove_garbage=self.remove_garbage, t0=self.t0)
 
 
 _backends = {

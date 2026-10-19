@@ -509,5 +509,4 @@ def query_str(
         cache=cache,
     )
 
-    segs = (segs - mseg).coalesce()
-    return segs
+    return (segs - mseg).coalesce()

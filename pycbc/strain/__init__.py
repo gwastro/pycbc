@@ -44,6 +44,4 @@ def read_model_from_config(cp, ifo, section="calibration"):
 
     """
     model = cp.get_opt_tag(section, f"{ifo.lower()}_model", None)
-    recalibrator = models[model].from_config(cp, ifo.lower(), section)
-
-    return recalibrator
+    return models[model].from_config(cp, ifo.lower(), section)

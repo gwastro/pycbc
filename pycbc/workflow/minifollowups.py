@@ -1241,8 +1241,7 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
     node.add_opt("--title", '"Events were skipped"')
     node.new_output_file_opt(workflow.analysis_time, ".html", "--output-file")
     workflow += node
-    files = node.output_files
-    return files
+    return node.output_files
 
 
 def make_upload_files(
@@ -1348,12 +1347,11 @@ def make_upload_files(
     )
     workflow += skymap_plot_node
 
-    all_output_files = (
+    return (
         xml_node.output_files
         + bayestar_node.output_files
         + skymap_plot_node.output_files
     )
-    return all_output_files
 
 
 def setup_upload_prep_minifollowups(

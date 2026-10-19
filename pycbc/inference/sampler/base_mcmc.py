@@ -369,10 +369,9 @@ class BaseMCMC(metaclass=ABCMeta):
         if pos is None:
             return self.p0
         # convert to dict
-        pos = {
+        return {
             param: self._pos[..., k] for (k, param) in enumerate(self.sampling_params)
         }
-        return pos
 
     @property
     def p0(self):
@@ -385,8 +384,9 @@ class BaseMCMC(metaclass=ABCMeta):
         if self._p0 is None:
             raise ValueError("initial positions not set; run set_p0")
         # convert to dict
-        p0 = {param: self._p0[..., k] for (k, param) in enumerate(self.sampling_params)}
-        return p0
+        return {
+            param: self._p0[..., k] for (k, param) in enumerate(self.sampling_params)
+        }
 
     def set_p0(self, samples_file=None, prior=None):
         """

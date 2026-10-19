@@ -42,8 +42,7 @@ def draw_sample(loglr, size=None):
     loglr = loglr - loglr.max()
     cdf = numpy.exp(loglr).cumsum()
     cdf /= cdf[-1]
-    xl = numpy.searchsorted(cdf, x)
-    return xl
+    return numpy.searchsorted(cdf, x)
 
 
 class DistMarg:

@@ -1174,8 +1174,7 @@ def load_array(path, group=None):
     elif ext == ".hdf":
         key = "data" if group is None else group
         with h5py.File(path, "r") as f:
-            array = Array(f[key])
-        return array
+            return Array(f[key])
     else:
         raise ValueError("Path must end with .npy, .hdf, or .txt")
 

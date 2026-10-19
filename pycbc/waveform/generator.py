@@ -158,8 +158,7 @@ class BaseGenerator:
     def _generate_from_current(self):
         """Generates a waveform from the current parameters."""
         try:
-            new_waveform = self.generator(**self.current_params)
-            return new_waveform
+            return self.generator(**self.current_params)
         except RuntimeError as e:
             if self.record_failures:
                 from pycbc.io.hdf import HFile, dump_state

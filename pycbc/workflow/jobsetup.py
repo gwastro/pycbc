@@ -727,8 +727,7 @@ class PyCBCInspiralExecutable(Executable):
         end_pad = int(self.get_opt("segment-end-pad"))
         new_data_start = max(curr_seg[0], job_data_seg[0] - start_pad)
         new_data_end = min(curr_seg[1], job_data_seg[1] + end_pad)
-        new_data_seg = segments.segment([new_data_start, new_data_end])
-        return new_data_seg
+        return segments.segment([new_data_start, new_data_end])
 
 
 # FIXME: This is probably misnamed, this is really GRBInspiralExectuable.

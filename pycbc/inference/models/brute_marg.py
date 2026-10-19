@@ -490,8 +490,7 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
 
     @property
     def _extra_stats(self):
-        stats = self.model._extra_stats
-        return stats
+        return self.model._extra_stats
 
     def _loglr(self):
         params = []

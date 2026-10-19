@@ -457,10 +457,9 @@ def get_variance(params, opts, default=1.0):
 
     """
     varfmt = "var_{}"
-    cov = numpy.array(
+    return numpy.array(
         [float(opts.pop(varfmt.format(param), default)) for param in params]
     )
-    return cov
 
 
 def get_param_boundaries(params, opts):

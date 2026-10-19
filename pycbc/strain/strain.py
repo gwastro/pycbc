@@ -202,9 +202,7 @@ def detect_loud_glitches(
     cluster_idx = pycbc.events.findchirp_cluster_over_window(
         indices, numpy.array(mag[indices]), int(cluster_window * strain.sample_rate)
     )
-    times = [idx * strain.delta_t + strain.start_time for idx in indices[cluster_idx]]
-
-    return times
+    return [idx * strain.delta_t + strain.start_time for idx in indices[cluster_idx]]
 
 
 def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None):
@@ -2400,8 +2398,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             fseries_trimmed.psd = psd
             self.segments[delta_f] = fseries_trimmed
 
-        stilde = self.segments[delta_f]
-        return stilde
+        return self.segments[delta_f]
 
     def near_hwinj(self):
         """

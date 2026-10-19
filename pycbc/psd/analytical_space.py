@@ -63,9 +63,7 @@ def _psd_acc_noise(f, acc_noise_level=None):
     """
     s_acc = acc_noise_level**2 * (1 + (4e-4 / f) ** 2) * (1 + (f / 8e-3) ** 4)
     s_acc_d = s_acc * (2 * np.pi * f) ** (-4)
-    s_acc_nu = (2 * np.pi * f / c.value) ** 2 * s_acc_d
-
-    return s_acc_nu
+    return (2 * np.pi * f / c.value) ** 2 * s_acc_d
 
 
 def psd_lisa_acc_noise(f, acc_noise_level=3e-15):
@@ -89,9 +87,7 @@ def psd_lisa_acc_noise(f, acc_noise_level=3e-15):
         Please see Eq.(11-13) in <LISA-LCST-SGS-TN-001> for more details.
 
     """
-    s_acc_nu = _psd_acc_noise(f, acc_noise_level)
-
-    return s_acc_nu
+    return _psd_acc_noise(f, acc_noise_level)
 
 
 def psd_tianqin_acc_noise(f, acc_noise_level=1e-15):
@@ -117,9 +113,7 @@ def psd_tianqin_acc_noise(f, acc_noise_level=1e-15):
 
     """
     s_acc_d = acc_noise_level**2 * (2 * np.pi * f) ** (-4) * (1 + 1e-4 / f)
-    s_acc_nu = (2 * np.pi * f / c.value) ** 2 * s_acc_d
-
-    return s_acc_nu
+    return (2 * np.pi * f / c.value) ** 2 * s_acc_d
 
 
 def psd_taiji_acc_noise(f, acc_noise_level=3e-15):
@@ -143,9 +137,7 @@ def psd_taiji_acc_noise(f, acc_noise_level=3e-15):
         Please see Eq.(2) in <10.1103/PhysRevD.107.064021> for more details.
 
     """
-    s_acc_nu = _psd_acc_noise(f, acc_noise_level)
-
-    return s_acc_nu
+    return _psd_acc_noise(f, acc_noise_level)
 
 
 def _psd_oms_noise(f, oms_noise_level=None):
@@ -172,9 +164,7 @@ def _psd_oms_noise(f, oms_noise_level=None):
 
     """
     s_oms_d = oms_noise_level**2 * (1 + (2e-3 / f) ** 4)
-    s_oms_nu = s_oms_d * (2 * np.pi * f / c.value) ** 2
-
-    return s_oms_nu
+    return s_oms_d * (2 * np.pi * f / c.value) ** 2
 
 
 def psd_lisa_oms_noise(f, oms_noise_level=15e-12):
@@ -198,9 +188,7 @@ def psd_lisa_oms_noise(f, oms_noise_level=15e-12):
         Please see Eq.(9-10) in <LISA-LCST-SGS-TN-001> for more details.
 
     """
-    s_oms_nu = _psd_oms_noise(f, oms_noise_level)
-
-    return s_oms_nu
+    return _psd_oms_noise(f, oms_noise_level)
 
 
 def psd_tianqin_oms_noise(f, oms_noise_level=1e-12):
@@ -226,9 +214,7 @@ def psd_tianqin_oms_noise(f, oms_noise_level=1e-12):
 
     """
     s_oms_d = oms_noise_level**2
-    s_oms_nu = s_oms_d * (2 * np.pi * f / c.value) ** 2
-
-    return s_oms_nu
+    return s_oms_d * (2 * np.pi * f / c.value) ** 2
 
 
 def psd_taiji_oms_noise(f, oms_noise_level=8e-12):
@@ -252,9 +238,7 @@ def psd_taiji_oms_noise(f, oms_noise_level=8e-12):
         Please see Eq.(1) in <10.1103/PhysRevD.107.064021> for more details.
 
     """
-    s_oms_nu = _psd_oms_noise(f, oms_noise_level)
-
-    return s_oms_nu
+    return _psd_oms_noise(f, oms_noise_level)
 
 
 def lisa_psd_components(f, acc_noise_level=3e-15, oms_noise_level=15e-12):
@@ -356,9 +340,7 @@ def omega_length(f, len_arm=None):
         The value of 2*pi*f*arm_length.
 
     """
-    omega_len = 2 * np.pi * f * len_arm / c.value
-
-    return omega_len
+    return 2 * np.pi * f * len_arm / c.value
 
 
 def _analytical_psd_tdi_XYZ(  # noqa: N802
@@ -407,9 +389,7 @@ def _analytical_psd_tdi_XYZ(  # noqa: N802
     if str(tdi) == "2.0":
         tdi2_factor = 4 * (np.sin(2 * omega_len)) ** 2
         psd *= tdi2_factor
-    fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
 
 def analytical_psd_lisa_tdi_XYZ(  # noqa: N802
@@ -453,11 +433,9 @@ def analytical_psd_lisa_tdi_XYZ(  # noqa: N802
     """
     fr = np.linspace(low_freq_cutoff, (length - 1) * 2 * delta_f, length)
     psd_components = np.array(lisa_psd_components(fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_XYZ(
+    return _analytical_psd_tdi_XYZ(
         length, delta_f, low_freq_cutoff, len_arm, psd_components, tdi
     )
-
-    return fseries
 
 
 def analytical_psd_tianqin_tdi_XYZ(  # noqa: N802
@@ -504,11 +482,9 @@ def analytical_psd_tianqin_tdi_XYZ(  # noqa: N802
     psd_components = np.array(
         tianqin_psd_components(fr, acc_noise_level, oms_noise_level)
     )
-    fseries = _analytical_psd_tdi_XYZ(
+    return _analytical_psd_tdi_XYZ(
         length, delta_f, low_freq_cutoff, len_arm, psd_components, tdi
     )
-
-    return fseries
 
 
 def analytical_psd_taiji_tdi_XYZ(  # noqa: N802
@@ -554,11 +530,9 @@ def analytical_psd_taiji_tdi_XYZ(  # noqa: N802
     psd_components = np.array(
         taiji_psd_components(fr, acc_noise_level, oms_noise_level)
     )
-    fseries = _analytical_psd_tdi_XYZ(
+    return _analytical_psd_tdi_XYZ(
         length, delta_f, low_freq_cutoff, len_arm, psd_components, tdi
     )
-
-    return fseries
 
 
 def _analytical_csd_tdi_XY(  # noqa: N802
@@ -602,9 +576,7 @@ def _analytical_csd_tdi_XY(  # noqa: N802
     if str(tdi) == "2.0":
         tdi2_factor = 4 * (np.sin(2 * omega_len)) ** 2
         csd *= tdi2_factor
-    fseries = from_numpy_arrays(fr, csd, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, csd, length, delta_f, low_freq_cutoff)
 
 
 def analytical_csd_lisa_tdi_XY(  # noqa: N802
@@ -648,11 +620,9 @@ def analytical_csd_lisa_tdi_XY(  # noqa: N802
     """
     fr = np.linspace(low_freq_cutoff, (length - 1) * 2 * delta_f, length)
     psd_components = np.array(lisa_psd_components(fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_csd_tdi_XY(
+    return _analytical_csd_tdi_XY(
         length, delta_f, low_freq_cutoff, len_arm, psd_components, tdi
     )
-
-    return fseries
 
 
 def _analytical_psd_tdi_AE(  # noqa: N802
@@ -703,9 +673,7 @@ def _analytical_psd_tdi_AE(  # noqa: N802
     if str(tdi) == "2.0":
         tdi2_factor = 4 * (np.sin(2 * omega_len)) ** 2
         psd *= tdi2_factor
-    fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
 
 def analytical_psd_lisa_tdi_AE(  # noqa: N802
@@ -749,11 +717,9 @@ def analytical_psd_lisa_tdi_AE(  # noqa: N802
     """
     fr = np.linspace(low_freq_cutoff, (length - 1) * 2 * delta_f, length)
     psd_components = np.array(lisa_psd_components(fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_AE(
+    return _analytical_psd_tdi_AE(
         length, delta_f, low_freq_cutoff, len_arm, psd_components, tdi
     )
-
-    return fseries
 
 
 def analytical_psd_tianqin_tdi_AE(  # noqa: N802
@@ -800,11 +766,9 @@ def analytical_psd_tianqin_tdi_AE(  # noqa: N802
     psd_components = np.array(
         tianqin_psd_components(fr, acc_noise_level, oms_noise_level)
     )
-    fseries = _analytical_psd_tdi_AE(
+    return _analytical_psd_tdi_AE(
         length, delta_f, low_freq_cutoff, len_arm, psd_components, tdi
     )
-
-    return fseries
 
 
 def analytical_psd_taiji_tdi_AE(  # noqa: N802
@@ -850,11 +814,9 @@ def analytical_psd_taiji_tdi_AE(  # noqa: N802
     psd_components = np.array(
         taiji_psd_components(fr, acc_noise_level, oms_noise_level)
     )
-    fseries = _analytical_psd_tdi_AE(
+    return _analytical_psd_tdi_AE(
         length, delta_f, low_freq_cutoff, len_arm, psd_components, tdi
     )
-
-    return fseries
 
 
 def _analytical_psd_tdi_T(  # noqa: N802
@@ -903,9 +865,7 @@ def _analytical_psd_tdi_T(  # noqa: N802
     if str(tdi) == "2.0":
         tdi2_factor = 4 * (np.sin(2 * omega_len)) ** 2
         psd *= tdi2_factor
-    fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
 
 def analytical_psd_lisa_tdi_T(  # noqa: N802
@@ -949,11 +909,9 @@ def analytical_psd_lisa_tdi_T(  # noqa: N802
     """
     fr = np.linspace(low_freq_cutoff, (length - 1) * 2 * delta_f, length)
     psd_components = np.array(lisa_psd_components(fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_T(
+    return _analytical_psd_tdi_T(
         length, delta_f, low_freq_cutoff, len_arm, psd_components, tdi
     )
-
-    return fseries
 
 
 def analytical_psd_tianqin_tdi_T(  # noqa: N802
@@ -1000,11 +958,9 @@ def analytical_psd_tianqin_tdi_T(  # noqa: N802
     psd_components = np.array(
         tianqin_psd_components(fr, acc_noise_level, oms_noise_level)
     )
-    fseries = _analytical_psd_tdi_T(
+    return _analytical_psd_tdi_T(
         length, delta_f, low_freq_cutoff, len_arm, psd_components, tdi
     )
-
-    return fseries
 
 
 def analytical_psd_taiji_tdi_T(  # noqa: N802
@@ -1050,11 +1006,9 @@ def analytical_psd_taiji_tdi_T(  # noqa: N802
     psd_components = np.array(
         taiji_psd_components(fr, acc_noise_level, oms_noise_level)
     )
-    fseries = _analytical_psd_tdi_T(
+    return _analytical_psd_tdi_T(
         length, delta_f, low_freq_cutoff, len_arm, psd_components, tdi
     )
-
-    return fseries
 
 
 def averaged_lisa_fplus_sq_numerical(f, len_arm=2.5e9):
@@ -1091,9 +1045,7 @@ def averaged_lisa_fplus_sq_numerical(f, len_arm=2.5e9):
     freqs = np.append(freqs, 2)
     fp_sq = np.append(fp_sq, 0.0012712348970728724)
     fp_sq_interp = interp1d(freqs, fp_sq, kind="linear", fill_value="extrapolate")
-    fp_sq_numerical = fp_sq_interp(f) / 16
-
-    return fp_sq_numerical
+    return fp_sq_interp(f) / 16
 
 
 def averaged_fplus_sq_approximated(f, len_arm=None):
@@ -1123,9 +1075,7 @@ def averaged_fplus_sq_approximated(f, len_arm=None):
         Please see Eq.(9) in <10.1088/1361-6382/ab1101> for more details.
 
     """
-    fp_sq_approx = (3.0 / 20.0) * (1.0 / (1.0 + 0.6 * omega_length(f, len_arm) ** 2))
-
-    return fp_sq_approx
+    return (3.0 / 20.0) * (1.0 / (1.0 + 0.6 * omega_length(f, len_arm) ** 2))
 
 
 def averaged_tianqin_fplus_sq_numerical(f, len_arm=np.sqrt(3) * 1e8):
@@ -1175,9 +1125,7 @@ def averaged_tianqin_fplus_sq_numerical(f, len_arm=np.sqrt(3) * 1e8):
     high_f_modulation = np.exp(-0.322 * np.sin(2 * omega_len_high_f - 4.712) + 0.078)
     low_f_result = np.multiply(base_low_f, low_f_modulation)
     high_f_result = np.multiply(base_high_f, high_f_modulation)
-    fp_sq_numerical = np.concatenate((low_f_result, high_f_result))
-
-    return fp_sq_numerical
+    return np.concatenate((low_f_result, high_f_result))
 
 
 def averaged_response_lisa_tdi(f, len_arm=2.5e9, tdi=None):
@@ -1328,9 +1276,7 @@ def sensitivity_curve_lisa_semi_analytical(
     sense_curve = (s_oms_nu + s_acc_nu * (3 + np.cos(2 * omega_len))) / (
         omega_len**2 * fp_sq
     )
-    fseries = from_numpy_arrays(fr, sense_curve / 2, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, sense_curve / 2, length, delta_f, low_freq_cutoff)
 
 
 def sensitivity_curve_tianqin_analytical(
@@ -1377,9 +1323,7 @@ def sensitivity_curve_tianqin_analytical(
     sense_curve = (s_oms_nu + s_acc_nu * (3 + np.cos(2 * omega_len))) / (
         omega_len**2 * fp_sq
     )
-    fseries = from_numpy_arrays(fr, sense_curve / 2, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, sense_curve / 2, length, delta_f, low_freq_cutoff)
 
 
 def sensitivity_curve_taiji_analytical(
@@ -1426,9 +1370,7 @@ def sensitivity_curve_taiji_analytical(
     sense_curve = (s_oms_nu + s_acc_nu * (3 + np.cos(2 * omega_len))) / (
         omega_len**2 * fp_sq
     )
-    fseries = from_numpy_arrays(fr, sense_curve / 2, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, sense_curve / 2, length, delta_f, low_freq_cutoff)
 
 
 def sensitivity_curve_lisa_scird(length, delta_f, low_freq_cutoff):
@@ -1461,9 +1403,7 @@ def sensitivity_curve_lisa_scird(length, delta_f, low_freq_cutoff):
     s_II = 3.6e-41  # noqa: N806
     R = 1 + (fr / 2.5e-2) ** 2  # noqa: N806
     sense_curve = 10 / 3 * (s_I / (2 * np.pi * fr) ** 4 + s_II) * R
-    fseries = from_numpy_arrays(fr, sense_curve, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, sense_curve, length, delta_f, low_freq_cutoff)
 
 
 def confusion_fit_lisa(length, delta_f, low_freq_cutoff, duration=1.0):
@@ -1504,9 +1444,7 @@ def confusion_fit_lisa(length, delta_f, low_freq_cutoff, duration=1.0):
         * np.exp(-((fr / f1) ** 1.8))
         * (1.0 + np.tanh((fk - fr) / 0.31e-3))
     )
-    fseries = from_numpy_arrays(fr, sh_confusion, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, sh_confusion, length, delta_f, low_freq_cutoff)
 
 
 def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
@@ -1582,9 +1520,7 @@ def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
     # avoid the jump of values
     sh_confusion[(fr > 3e-4) & (fr < 5e-4)] = sh_confusion[(np.abs(fr - 5e-4)).argmin()]
     sh_confusion[(fr < 3e-4) | (fr > 1e-2)] = 0
-    fseries = from_numpy_arrays(fr, sh_confusion, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, sh_confusion, length, delta_f, low_freq_cutoff)
 
 
 def confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration=1.0):
@@ -1647,9 +1583,7 @@ def confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration=1.0):
         + fit_a5(duration) * np.log(fr * 1e3) ** 5
     )
     sh_confusion[(fr < 1e-4) | (fr > 1e-2)] = 0
-    fseries = from_numpy_arrays(fr, sh_confusion, length, delta_f, low_freq_cutoff)
-
-    return fseries
+    return from_numpy_arrays(fr, sh_confusion, length, delta_f, low_freq_cutoff)
 
 
 def sensitivity_curve_lisa_confusion(
@@ -1707,15 +1641,13 @@ def sensitivity_curve_lisa_confusion(
     if duration < 0 or duration > 10:
         raise ValueError("Must between 0 and 10.")
     fseries_confusion = confusion_fit_lisa(length, delta_f, low_freq_cutoff, duration)
-    fseries = from_numpy_arrays(
+    return from_numpy_arrays(
         base_curve.sample_frequencies,
         base_curve + fseries_confusion,
         length,
         delta_f,
         low_freq_cutoff,
     )
-
-    return fseries
 
 
 def sensitivity_curve_tianqin_confusion(
@@ -1763,15 +1695,13 @@ def sensitivity_curve_tianqin_confusion(
     fseries_confusion = confusion_fit_tianqin(
         length, delta_f, low_freq_cutoff, duration
     )
-    fseries = from_numpy_arrays(
+    return from_numpy_arrays(
         base_curve.sample_frequencies,
         base_curve + fseries_confusion,
         length,
         delta_f,
         low_freq_cutoff,
     )
-
-    return fseries
 
 
 def sensitivity_curve_taiji_confusion(
@@ -1817,15 +1747,13 @@ def sensitivity_curve_taiji_confusion(
     if duration < 0 or duration > 4:
         raise ValueError("Must between 0 and 4.")
     fseries_confusion = confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration)
-    fseries = from_numpy_arrays(
+    return from_numpy_arrays(
         base_curve.sample_frequencies,
         base_curve + fseries_confusion,
         length,
         delta_f,
         low_freq_cutoff,
     )
-
-    return fseries
 
 
 def sh_transformed_psd_lisa_tdi_XYZ(  # noqa: N802
@@ -1894,11 +1822,9 @@ def sh_transformed_psd_lisa_tdi_XYZ(  # noqa: N802
         duration,
     )
     psd = 2 * sh.data * fseries_response.data
-    fseries = from_numpy_arrays(
+    return from_numpy_arrays(
         sh.sample_frequencies, psd, length, delta_f, low_freq_cutoff
     )
-
-    return fseries
 
 
 def semi_analytical_psd_lisa_confusion_noise(
@@ -1940,15 +1866,13 @@ def semi_analytical_psd_lisa_confusion_noise(
     )
     fseries_confusion = confusion_fit_lisa(length, delta_f, low_freq_cutoff, duration)
     psd_confusion = 2 * fseries_confusion.data * fseries_response.data
-    fseries = from_numpy_arrays(
+    return from_numpy_arrays(
         fseries_confusion.sample_frequencies,
         psd_confusion,
         length,
         delta_f,
         low_freq_cutoff,
     )
-
-    return fseries
 
 
 def analytical_psd_tianqin_confusion_noise(
@@ -1992,15 +1916,13 @@ def analytical_psd_tianqin_confusion_noise(
         length, delta_f, low_freq_cutoff, duration
     )
     psd_confusion = 2 * fseries_confusion.data * fseries_response.data
-    fseries = from_numpy_arrays(
+    return from_numpy_arrays(
         fseries_confusion.sample_frequencies,
         psd_confusion,
         length,
         delta_f,
         low_freq_cutoff,
     )
-
-    return fseries
 
 
 def analytical_psd_taiji_confusion_noise(
@@ -2042,15 +1964,13 @@ def analytical_psd_taiji_confusion_noise(
     )
     fseries_confusion = confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration)
     psd_confusion = 2 * fseries_confusion.data * fseries_response.data
-    fseries = from_numpy_arrays(
+    return from_numpy_arrays(
         fseries_confusion.sample_frequencies,
         psd_confusion,
         length,
         delta_f,
         low_freq_cutoff,
     )
-
-    return fseries
 
 
 def analytical_psd_lisa_tdi_AE_confusion(  # noqa: N802
@@ -2102,9 +2022,7 @@ def analytical_psd_lisa_tdi_AE_confusion(  # noqa: N802
     # S_A = S_E = S_X - S_XY, confusion noise's contribution to
     # S_XY is -0.5 * psd_X_confusion, while for S_X is psd_X_confusion.
     # S_T = S_X + 2*S_XY, so S_T keeps the same.
-    fseries = psd_AE + 1.5 * psd_X_confusion
-
-    return fseries
+    return psd_AE + 1.5 * psd_X_confusion
 
 
 def analytical_psd_tianqin_tdi_AE_confusion(  # noqa: N802
@@ -2156,9 +2074,7 @@ def analytical_psd_tianqin_tdi_AE_confusion(  # noqa: N802
     # S_A = S_E = S_X - S_XY, confusion noise's contribution to
     # S_XY is -0.5 * psd_X_confusion, while for S_X is psd_X_confusion.
     # S_T = S_X + 2*S_XY, so S_T keeps the same.
-    fseries = psd_AE + 1.5 * psd_X_confusion
-
-    return fseries
+    return psd_AE + 1.5 * psd_X_confusion
 
 
 def analytical_psd_taiji_tdi_AE_confusion(  # noqa: N802
@@ -2210,6 +2126,4 @@ def analytical_psd_taiji_tdi_AE_confusion(  # noqa: N802
     # S_A = S_E = S_X - S_XY, confusion noise's contribution to
     # S_XY is -0.5 * psd_X_confusion, while for S_X is psd_X_confusion.
     # S_T = S_X + 2*S_XY, so S_T keeps the same.
-    fseries = psd_AE + 1.5 * psd_X_confusion
-
-    return fseries
+    return psd_AE + 1.5 * psd_X_confusion

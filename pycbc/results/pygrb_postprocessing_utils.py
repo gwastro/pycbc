@@ -734,9 +734,7 @@ def load_segment_dict(hdf_file_path):
 
     # Write segment_dict in proper format
     # At the moment of this comment, there is only one segment
-    segment_dict = {slide: seg_list.coalesce() for slide in slide_ids}
-
-    return segment_dict
+    return {slide: seg_list.coalesce() for slide in slide_ids}
 
 
 # =============================================================================

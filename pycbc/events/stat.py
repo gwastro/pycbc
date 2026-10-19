@@ -1021,8 +1021,7 @@ class ExpFitStatistic(PhaseTDStatistic):
                 tids = list(tids) + list(bin_tids.astype(int))
                 bin_nums = list(bin_nums) + list([bin_name] * len(bin_tids))
 
-        bin_dict = dict(zip(tids, bin_nums))
-        return bin_dict
+        return dict(zip(tids, bin_nums))
 
     def assign_dq_rates(self, key):
         """
@@ -1488,9 +1487,7 @@ class ExpFitStatistic(PhaseTDStatistic):
         # determined by the least sensitive ifo
         network_sigmasq = numpy.amin([sngl[1]["sigmasq"] for sngl in sngls], axis=0)
         # Volume \propto sigma^3 or sigmasq^1.5
-        network_logvol = 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
-
-        return network_logvol
+        return 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
 
     def logsignalrate_shared(self, sngls_info):
         """
@@ -2053,8 +2050,6 @@ def get_statistic_from_opts(opts, ifos):
         opts.statistic_keywords,
     )
 
-    stat_class = get_statistic(opts.ranking_statistic)(
+    return get_statistic(opts.ranking_statistic)(
         opts.sngl_ranking, opts.statistic_files, ifos=ifos, **extra_kwargs
     )
-
-    return stat_class

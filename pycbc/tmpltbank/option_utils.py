@@ -54,8 +54,7 @@ class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):
             )
             for bit in bits
         ]
-        result = "\n".join(formatted_bits) + "\n"
-        return result
+        return "\n".join(formatted_bits) + "\n"
 
     def format_option(self, option):
         """

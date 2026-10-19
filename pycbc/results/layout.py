@@ -117,5 +117,4 @@ class SectionNumber:
             name = f"{self.name[sec]}/{num + 1}.{int(subnum):02d}_{subsec}"
             self.count[sec] += 1
             self.name[path] = name
-        path = os.path.join(os.getcwd(), self.base, name)
-        return path
+        return os.path.join(os.getcwd(), self.base, name)

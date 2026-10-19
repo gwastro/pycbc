@@ -341,8 +341,7 @@ def combine_fields(dtypes):
         dtypes = [dtypes]
     # Note: incase any of the dtypes have offsets, we won't include any fields
     # that have no names and are void
-    new_dt = numpy.dtype([dt for dtype in dtypes for dt in get_dtype_descr(dtype)])
-    return new_dt
+    return numpy.dtype([dt for dtype in dtypes for dt in get_dtype_descr(dtype)])
 
 
 def _ensure_array_list(arrays):

@@ -1057,7 +1057,7 @@ def hybrid_energy(v, m1, m2, chi1, chi2, qm1, qm2):
         (1.0 - chi * v3) * (1.0 + chi * v3 - 3.0 * v2 * (1 - chi * v3) ** (1.0 / 3.0))
     )
 
-    h_E = Kerr - (v2 / 2.0) * (  # noqa: N806
+    return Kerr - (v2 / 2.0) * (
         -eta * v2 / 12.0
         - 2 * (chi1 + chi2) * eta * v3 / 3.0
         + (
@@ -1113,8 +1113,6 @@ def hybrid_energy(v, m1, m2, chi1, chi2, qm1, qm2):
         )
         * v7
     )
-
-    return h_E
 
 
 def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
@@ -1283,7 +1281,7 @@ def jframe_to_l0frame(
             phiref,
         )
     )
-    out = {
+    return {
         "inclination": inclination,
         "spin1x": spin1x,
         "spin1y": spin1y,
@@ -1292,7 +1290,6 @@ def jframe_to_l0frame(
         "spin2y": spin2y,
         "spin2z": spin2z,
     }
-    return out
 
 
 def l0frame_to_jframe(
@@ -1385,7 +1382,7 @@ def l0frame_to_jframe(
             phiref,
         )
     )
-    out = {
+    return {
         "thetajn": thetajn,
         "phijl": phijl,
         "spin1_polar": s1pol,
@@ -1394,4 +1391,3 @@ def l0frame_to_jframe(
         "spin1_a": spin1_a,
         "spin2_a": spin2_a,
     }
-    return out

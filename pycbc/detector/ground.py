@@ -53,8 +53,7 @@ logger = logging.getLogger(__name__)
 
 def get_available_detectors():
     """List the available detectors"""
-    dets = list(_ground_detectors.keys())
-    return dets
+    return list(_ground_detectors.keys())
 
 
 def get_available_lal_detectors():
@@ -335,8 +334,7 @@ class Detector:
         if self.gmst_reference is None:
             self.set_gmst_reference()
         dphase = (gps_time - self.reference_time) / self.sday * (2.0 * np.pi)
-        gmst = (self.gmst_reference + dphase) % (2.0 * np.pi)
-        return gmst
+        return (self.gmst_reference + dphase) % (2.0 * np.pi)
 
     def light_travel_time_to_detector(self, det):
         """
@@ -800,8 +798,9 @@ class Detector:
         ).transform_to("icrs")
         loc.representation_type = "cartesian"
         conv = np.float32(((loc.x.unit / units.AU).decompose()).to_string())
-        loc = np.array([np.float32(loc.x), np.float32(loc.y), np.float32(loc.z)]) * conv
-        return loc
+        return (
+            np.array([np.float32(loc.x), np.float32(loc.y), np.float32(loc.z)]) * conv
+        )
 
     def effective_distance(self, distance, ra, dec, pol, time, inclination):
         """

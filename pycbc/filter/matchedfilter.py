@@ -1906,8 +1906,7 @@ class LiveBatchMatchedFilter:
             tmp = veto_info
             veto_info = [tmp[i] for i in sort]
 
-        result = self._process_vetoes(result, veto_info)
-        return result
+        return self._process_vetoes(result, veto_info)
 
     def _process_vetoes(self, results, veto_info):
         """Calculate signal based vetoes"""

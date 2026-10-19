@@ -31,14 +31,12 @@ from .backend_support import get_backend
 
 def _fft_factory(invec, outvec, nbatch=1, size=None):
     backend = get_backend()
-    cls = backend.FFT
-    return cls
+    return backend.FFT
 
 
 def _ifft_factory(invec, outvec, nbatch=1, size=None):
     backend = get_backend()
-    cls = backend.IFFT
-    return cls
+    return backend.IFFT
 
 
 class FFT:

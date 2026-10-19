@@ -223,8 +223,7 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO, BaseSamplerFile):
         """
         all_ratios = self.read_acceptance_ratio(temps, chains)
         # average over the number of iterations
-        all_ratios = all_ratios.mean(axis=-1)
-        return all_ratios
+        return all_ratios.mean(axis=-1)
 
     def read_acceptance_fraction(self, temps=None, walkers=None):
         """Alias for :py:func:`read_acceptance_rate`."""

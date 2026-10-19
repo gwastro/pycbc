@@ -429,10 +429,7 @@ def decimate_frequency_domain(template, target_df):
     decimated_signal = template.data[::decimation_factor]
 
     # Create a new FrequencySeries object with the decimated data and the target delta_f
-    decimated_template = pycbc.types.FrequencySeries(
-        decimated_signal, delta_f=target_df
-    )
-    return decimated_template
+    return pycbc.types.FrequencySeries(decimated_signal, delta_f=target_df)
 
 
 def handle_exit_signal(signum, frame):

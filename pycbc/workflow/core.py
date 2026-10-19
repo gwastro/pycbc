@@ -748,8 +748,7 @@ class Workflow(pegasus_workflow.Workflow):
         else:
             name = "output.map"
 
-        path = os.path.join(self.out_dir, name)
-        return path
+        return os.path.join(self.out_dir, name)
 
     @property
     def sites(self):
@@ -1403,8 +1402,7 @@ class File(pegasus_workflow.File):
         else:
             tags = []
 
-        curr_file = cls(ifos, exe_name, segs, path, tags=tags, **kwargs)
-        return curr_file
+        return cls(ifos, exe_name, segs, path, tags=tags, **kwargs)
 
 
 class FileList(list):
@@ -1561,8 +1559,7 @@ class FileList(list):
         segment_lst = overlap_files[overlap_windows.argmax()].segment_list
 
         # Get all output files with the exact same segment definition
-        output_files = [f for f in overlap_files if f.segment_list == segment_lst]
-        return output_files
+        return [f for f in overlap_files if f.segment_list == segment_lst]
 
     def find_output_in_range(self, ifo, start, end):
         """
@@ -2369,8 +2366,7 @@ def configparser_value_to_file(cp, sec, opt, attrs=None):
 
     """
     path = cp.get(sec, opt)
-    fileobj_from_path = resolve_url_to_file(path, attrs=attrs)
-    return fileobj_from_path
+    return resolve_url_to_file(path, attrs=attrs)
 
 
 def get_full_analysis_chunk(science_segs):
@@ -2396,8 +2392,7 @@ def get_full_analysis_chunk(science_segs):
             min = lo
         if max < hi:
             max = hi
-    full_segment = segments.segment(min, max)
-    return full_segment
+    return segments.segment(min, max)
 
 
 def get_random_label():

@@ -160,10 +160,9 @@ class MultinestSampler(BaseSampler):
         A dict mapping ``variable_params`` to arrays of samples currently
         in memory.
         """
-        samples_dict = {
+        return {
             p: self._samples[:, i] for i, p in enumerate(self.model.variable_params)
         }
-        return samples_dict
 
     @property
     def model_stats(self):
@@ -197,8 +196,7 @@ class MultinestSampler(BaseSampler):
         maxloglike = max(self.get_posterior_samples()[:, -1])
         logz_remain = numpy.exp(maxloglike + numpy.log(current_vol) - self.logz)
         logger.info("Estimate of remaining logZ is %s", logz_remain)
-        done = logz_remain < self._ztol
-        return done
+        return logz_remain < self._ztol
 
     def set_initial_conditions(self, initial_distribution=None, samples_file=None):
         """

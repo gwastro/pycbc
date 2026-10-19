@@ -85,9 +85,7 @@ class Recalibrate(metaclass=ABCMeta):
             }
         )
 
-        strain_adjusted = self.apply_calibration(strain)
-
-        return strain_adjusted
+        return self.apply_calibration(strain)
 
     @classmethod
     def from_config(cls, cp, ifo, section):
@@ -189,14 +187,12 @@ class CubicSpline(Recalibrate):
         phase_spline = UnivariateSpline(self.spline_points, phase_parameters)
         delta_phase = phase_spline(strain.sample_frequencies.numpy())
 
-        strain_adjusted = (
+        return (
             strain
             * (1.0 + delta_amplitude)
             * (2.0 + 1j * delta_phase)
             / (2.0 - 1j * delta_phase)
         )
-
-        return strain_adjusted
 
 
 class PhysicalModel:
@@ -476,11 +472,7 @@ class PhysicalModel:
         k_phase_off = UnivariateSpline(self.freq, k_phase, k=order, s=0)
         freq_even = strain.sample_frequencies.numpy()
         k_even_sample = k_amp_off(freq_even) * np.exp(1.0j * k_phase_off(freq_even))
-        strain_adjusted = FrequencySeries(
-            strain.numpy() * k_even_sample, delta_f=strain.delta_f
-        )
-
-        return strain_adjusted
+        return FrequencySeries(strain.numpy() * k_even_sample, delta_f=strain.delta_f)
 
     @classmethod
     def tf_from_file(cls, path, delimiter=" "):
@@ -605,7 +597,7 @@ class PhysicalModel:
             else:
                 calib_args.append(val)
         # adjust the strain using calibration param values
-        strain_adjusted = self.adjust_strain(
+        return self.adjust_strain(
             strain,
             delta_fs=calib_args[0],
             delta_fc=calib_args[1],
@@ -616,7 +608,6 @@ class PhysicalModel:
             kappa_pu_re=calib_args[6],
             kappa_pu_im=calib_args[7],
         )
-        return strain_adjusted
 
 
 def read_calibration_envelop_file(

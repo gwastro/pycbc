@@ -288,5 +288,4 @@ def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     if not pretransposed:
         invec = fft_transpose(invec)
     first_phase(invec, outvec, N1=N1, N2=N2)
-    out = second_phase(outvec, indices, N1=N1, N2=N2)
-    return out
+    return second_phase(outvec, indices, N1=N1, N2=N2)

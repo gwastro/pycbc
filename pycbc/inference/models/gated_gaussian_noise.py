@@ -705,8 +705,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                     "Setting low frequency cutoff of %s PSD to %s", d, lfs / 2.0
                 )
                 opts.psd_low_frequency_cutoff[d] = lfs / 2.0
-        out = fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
-        return out
+        return fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
 
     def write_metadata(self, fp, group=None):
         """
@@ -1431,10 +1430,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         self._current_stats.maxl_phase = self.phases[maxlidx]
         self._current_stats.maxl_logl = loglr[maxlidx] + lognl + norm
         # get the marginalized log likelihood ratio
-        marglogl = (
-            special.logsumexp(loglr) + lognl + norm - numpy.log(self.phase_samples)
-        )
-        return marglogl
+        return special.logsumexp(loglr) + lognl + norm - numpy.log(self.phase_samples)
 
     @property
     def multi_signal_support(self):
@@ -1824,10 +1820,7 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         self._current_stats.maxl_phase = self.phases[maxlidx]
         self._current_stats.maxl_logl = loglr[maxlidx] + lognl + norm
         # get the marginalized log likelihood ratio
-        marglogl = (
-            special.logsumexp(loglr) + lognl + norm - numpy.log(self.phase_samples)
-        )
-        return marglogl
+        return special.logsumexp(loglr) + lognl + norm - numpy.log(self.phase_samples)
 
     def _nowaveform_handler(self):
         """Sets the extra stats to nan if no waveform was generated."""

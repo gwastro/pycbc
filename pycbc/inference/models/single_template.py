@@ -241,5 +241,4 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
-        loglr = self.marginalize_loglr(sh_total, hh_total)
-        return loglr
+        return self.marginalize_loglr(sh_total, hh_total)

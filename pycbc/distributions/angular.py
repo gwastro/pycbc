@@ -238,8 +238,7 @@ class SinAngle(UniformAngle):
         """Return inverse of cdf for mapping unit interval to parameter bounds."""
         scale = numpy.cos(self._bounds[arg][0]) - numpy.cos(self._bounds[arg][1])
         offset = 1.0 + numpy.cos(self._bounds[arg][1]) / scale
-        new_value = numpy.arccos(-scale * (value - offset))
-        return new_value
+        return numpy.arccos(-scale * (value - offset))
 
     def _pdf(self, **kwargs):
         """
@@ -289,8 +288,7 @@ class CosAngle(SinAngle):
         b = self._bounds[param][1]
         scale = numpy.sin(b) - numpy.sin(a)
         offset = 1.0 - numpy.sin(b) / (numpy.sin(b) - numpy.sin(a))
-        new_value = numpy.arcsin((value - offset) * scale)
-        return new_value
+        return numpy.arcsin((value - offset) * scale)
 
 
 class UniformSolidAngle(bounded.BoundedDist):

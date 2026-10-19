@@ -502,9 +502,7 @@ def build_segment_filelist(seg_dir):
     file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
     seg_files = [os.path.join(seg_dir, fn) for fn in file_names]
     seg_files = [resolve_url_to_file(sf) for sf in seg_files]
-    seg_files = FileList(seg_files)
-
-    return seg_files
+    return FileList(seg_files)
 
 
 def make_pygrb_plot(

@@ -363,8 +363,7 @@ class BaseBurnInTests(metaclass=ABCMeta):
                 thin_interval=1,
                 flatten=False,
             )
-            logposts = samples["loglikelihood"] + samples["logprior"]
-        return logposts
+            return samples["loglikelihood"] + samples["logprior"]
 
     def _getacls(self, filename, start_index):
         """Convenience function for calculating acls for the given filename."""
@@ -837,5 +836,4 @@ def _multitemper_getlogposts(sampler, filename):
         for stat, arr in samples.items():
             _, nwalkers, niterations = arr.shape
             samples[stat] = arr.reshape((nwalkers, niterations))
-        logposts = samples["loglikelihood"] + samples["logprior"]
-    return logposts
+        return samples["loglikelihood"] + samples["logprior"]

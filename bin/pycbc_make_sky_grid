@@ -143,8 +143,7 @@ def make_multi_det_grid(args):
         if num_new_accepted == 0:
             # We reached our convergence criterion
             break
-    sky_grid = SkyGrid(grid[:, 0], grid[:, 1], args.instruments, args.trigger_time)
-    return sky_grid
+    return SkyGrid(grid[:, 0], grid[:, 1], args.instruments, args.trigger_time)
 
 
 parser = argparse.ArgumentParser(description=__doc__)

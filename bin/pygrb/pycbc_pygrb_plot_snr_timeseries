@@ -67,9 +67,7 @@ def get_start_end_times(data_time, central_time):
 # Reset times so that t=0 is corresponds to the given trigger time
 def reset_times(data_time, trig_time):
     """Reset times so that t=0 corresponds to the trigger time provided"""
-    data_time = [t - trig_time for t in data_time]
-
-    return data_time
+    return [t - trig_time for t in data_time]
 
 
 # =============================================================================

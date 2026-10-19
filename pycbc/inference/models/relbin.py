@@ -138,8 +138,7 @@ def setup_bins(
             else:
                 curr_idx = idx_f_full
         fbin_ind[idx_fbin] = curr_idx
-    fbin_ind = numpy.unique(fbin_ind)
-    return fbin_ind
+    return numpy.unique(fbin_ind)
 
 
 class Relative(DistMarg, BaseGaussianNoise):
@@ -909,8 +908,7 @@ class RelativeTime(Relative):
                     )
             filt += filter_i
             norm += norm_i
-        loglr = self.marginalize_loglr(filt, norm)
-        return loglr
+        return self.marginalize_loglr(filt, norm)
 
     def _nowaveform_handler(self):
         """Sets loglr values if no waveform generated."""

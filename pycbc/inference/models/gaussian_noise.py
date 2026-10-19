@@ -1356,7 +1356,7 @@ def create_waveform_generator(
             raise ValueError(
                 "data must all have the same delta_t, delta_f, and start_time"
             )
-    waveform_generator = generator_class(
+    return generator_class(
         gen_function,
         epoch=start_time,
         variable_args=variable_params,
@@ -1367,4 +1367,3 @@ def create_waveform_generator(
         gates=gates,
         **static_params,
     )
-    return waveform_generator
