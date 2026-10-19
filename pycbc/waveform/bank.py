@@ -1242,7 +1242,8 @@ class RatioFilterBank(FilterBank):
 
         if "fir_data" not in self.filehandler:
             raise ValueError(
-                f"File {filename} does not contain 'fir_data' group required for RatioFilterBank."
+                f"File {filename} does not contain 'fir_data' "
+                "group required for RatioFilterBank."
             )
 
         self.fir_group = self.filehandler["fir_data"]

@@ -980,7 +980,8 @@ def run_datafind_instance(
        The glue.lal.Cache representation of the call to the datafind
        server and the returned frame files.
     cacheFile : pycbc.workflow.core.File
-        Cache file listing all of the datafind output files for use later in the pipeline.
+        Cache file listing all of the datafind output files for use
+        later in the pipeline.
 
     """
     from glue import lal

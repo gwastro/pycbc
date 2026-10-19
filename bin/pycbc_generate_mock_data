@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-__description__ = """Generate the mock data frame files for a given network of detectors.
-It contains Gaussian noise, population injections, and glitches.
+__description__ = """Generate the mock data frame files for a given network of
+detectors. It contains Gaussian noise, population injections, and glitches.
 """
 
 import argparse
@@ -95,7 +95,8 @@ parser.add_argument(
 parser.add_argument(
     "--fake-strain-sample-rate",
     type=float,
-    help="Sample rate for the fake strain generation (defaults to sample-rate if not set)",
+    help="Sample rate for the fake strain generation "
+    "(defaults to sample-rate if not set)",
 )
 
 parser.add_argument(
@@ -254,7 +255,8 @@ provided_files = (
 # Check if IFOs are subset of (PSDs U Files)
 if not set(opts.ifo_list).issubset(provided_psds.union(provided_files)):
     raise ValueError(
-        "For each detector, you must provide either a --psd-model or a --fake-strain-from-file."
+        "For each detector, you must provide either "
+        "a --psd-model or a --fake-strain-from-file."
     )
 
 

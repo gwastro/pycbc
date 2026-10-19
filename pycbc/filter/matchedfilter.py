@@ -204,7 +204,8 @@ class MatchedFilterControl:
         self.gpu_callback_method = gpu_callback_method
         if cluster_function not in ["symmetric", "findchirp"]:
             raise ValueError(
-                "MatchedFilter: 'cluster_function' must be either 'symmetric' or 'findchirp'"
+                "MatchedFilter: 'cluster_function' must "
+                "be either 'symmetric' or 'findchirp'"
             )
         self.cluster_function = cluster_function
         self.segments = segment_list

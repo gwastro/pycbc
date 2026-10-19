@@ -441,7 +441,8 @@ for j, tnum in enumerate(trange):
     count_above = len(stat_in_template)
     count_total = count_in_template[tnum]
     if count_above == 0:
-        # default/sentinel value to indicate no data, shouldn't hurt if 1/alpha is averaged
+        # default/sentinel value to indicate no data, shouldn't hurt if 1/alpha is
+        # averaged
         alpha = -100.0
     else:
         alpha, sig_alpha = trstats.fit_above_thresh(

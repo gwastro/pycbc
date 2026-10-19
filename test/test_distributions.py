@@ -218,7 +218,8 @@ class TestDistributions(unittest.TestCase):
                 self.assertEqual(
                     array.shape,
                     (npts,),
-                    f"{dist.name}.{name} returned shape {array.shape} for {npts} points",
+                    f"{dist.name}.{name} returned shape "
+                    f"{array.shape} for {npts} points",
                 )
                 numpy.testing.assert_allclose(
                     array,

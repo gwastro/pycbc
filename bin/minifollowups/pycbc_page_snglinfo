@@ -266,7 +266,10 @@ if args.n_loudest:
     )
 else:
     title = "Parameters of single-detector event"
-    caption = "Parameters of the single-detector event. The figures below show the mini-followup data for this event."
+    caption = (
+        "Parameters of the single-detector event. The figures "
+        "below show the mini-followup data for this event."
+    )
 
 pycbc.results.save_fig_with_metadata(
     html,

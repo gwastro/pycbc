@@ -420,11 +420,11 @@ class TestChisq(unittest.TestCase):
         )
         self.assertEqual(max_idx_cross, expected_results[idx][jdx]["Ic_argmax"])
 
-        # print "expected_results[{}][{}]['Ip_snr'] = {}" .format(idx,jdx,abs(I_plus[IPM]))
-        # print "expected_results[{}][{}]['Ip_angle'] = {}".format(idx,jdx,angle(I_plus[IPM]))
+        # print "expected_results[{}][{}]['Ip_snr'] = {}" .format(idx,jdx,abs(I_plus[IPM]))  # noqa: E501
+        # print "expected_results[{}][{}]['Ip_angle'] = {}".format(idx,jdx,angle(I_plus[IPM]))  # noqa: E501
         # print "expected_results[{}][{}]['Ip_argmax'] = {}".format(idx,jdx, IPM)
-        # print "expected_results[{}][{}]['Ic_snr'] = {}" .format(idx,jdx,abs(I_cross[ICM]))
-        # print "expected_results[{}][{}]['Ic_angle'] = {}".format(idx,jdx,angle(I_cross[ICM]))
+        # print "expected_results[{}][{}]['Ic_snr'] = {}" .format(idx,jdx,abs(I_cross[ICM]))  # noqa: E501
+        # print "expected_results[{}][{}]['Ic_angle'] = {}".format(idx,jdx,angle(I_cross[ICM]))  # noqa: E501
         # print "expected_results[{}][{}]['Ic_argmax'] = {}".format(idx,jdx, ICM)
 
         det_stat_prec = compute_max_snr_over_sky_loc_stat(

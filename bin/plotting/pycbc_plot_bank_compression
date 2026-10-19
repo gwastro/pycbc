@@ -332,10 +332,10 @@ for ax in axes.flatten():
     ax.grid(zorder=-100)
 
 caption = (
-    "Plot showing the a histogram of compression factor (left), a "
-    f"scatter plot of compression factor vs {comp_label} ({args.comparison_parameter}) (middle) "
-    f"and mismatch vs {comp_label} ({args.comparison_parameter}) (right)."
-    "Legend entries indicate the number of templates per approximant. "
+    "Plot showing the a histogram of compression factor (left), a scatter "
+    f"plot of compression factor vs {comp_label} ({args.comparison_parameter}) "
+    f"(middle) and mismatch vs {comp_label} ({args.comparison_parameter}) "
+    "(right).Legend entries indicate the number of templates per approximant. "
 )
 
 if args.histogram_density:

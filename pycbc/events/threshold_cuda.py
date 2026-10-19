@@ -92,7 +92,8 @@ if type(drv).__name__ not in ("MagicMock", "_MockModule"):
 tkernel1 = mako.template.Template("""
 #include <stdio.h>
 
-__global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int window, float threshold){
+__global__ void threshold_and_cluster(float2* in, float2* outv, int* outl,
+                                      int window, float threshold){
     int s = window * blockIdx.x;
     int e = s + window;
 
@@ -193,7 +194,8 @@ __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int w
 
 tkernel2 = mako.template.Template("""
 #include <stdio.h>
-__global__ void threshold_and_cluster2(float2* outv, int* outl, float threshold, int window){
+__global__ void threshold_and_cluster2(float2* outv, int* outl,
+                                       float threshold, int window){
     __shared__ int loc[${blocks}];
     __shared__ float val[${blocks}];
 

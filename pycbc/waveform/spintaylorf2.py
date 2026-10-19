@@ -129,7 +129,8 @@ spintaylorf2_text = """
         gamma0*kappa/(6.*v2) - dtdv2/v - gamma02/(3.*v) +
         gamma02*kappa2/(2.*v) + dtdv5*v2/3. )) - alpha_ref;
 
-    const double beta = acos((1. + kappa*gamma0*v)/sqrt(1. + 2.*kappa*gamma0*v + gamma0*gamma0*v*v));
+    const double beta = acos((1. + kappa*gamma0*v)/
+                             sqrt(1. + 2.*kappa*gamma0*v + gamma0*gamma0*v*v));
 
     const double zeta = prec_fac0*( dtdv3*gamma0*kappa*v + dtdv4*v +
         logfac2 *(-dtdv2*gamma0 - dtdv3*kappa + dtdv5*kappa/(2.*gamma02) -
@@ -236,7 +237,8 @@ spintaylorf2_kernel = ElementwiseKernel(
     """pycuda::complex<double> *htildeP,
                                            pycuda::complex<double> *htildeC,
                                            int kmin, int phase_order,
-                                           int amplitude_order, double delta_f, double PI,
+                                           int amplitude_order, double delta_f,
+                                           double PI,
                                            double piM, double pfaN,
                                            double pfa2, double pfa3,
                                            double pfa4, double pfa5,
@@ -330,8 +332,8 @@ def spintaylorf2(**kwds):
     # Calculate the spin corrections
     # FIXME should use pycbc's function, but sigma has different expression
     # in Andy's code, double check
-    # pn_beta, pn_sigma, pn_gamma = pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(  # noqa: ERA001
-    #                               mass1, mass2, chi*kappa, 0) # FIXME: spin2 is taken to be 0
+    # pn_beta, pn_sigma, pn_gamma = pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(  # noqa: ERA001, E501
+    #                               mass1, mass2, chi*kappa, 0) # FIXME: spin2 is taken to be 0  # noqa: E501
     pn_beta = (113.0 * mass1 / (12.0 * M) - 19.0 * eta / 6.0) * chi * kappa
     pn_sigma = (
         (5.0 * (3.0 * kappa * kappa - 1.0) / 2.0) + (7.0 - kappa * kappa) / 96.0

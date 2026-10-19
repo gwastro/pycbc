@@ -138,14 +138,15 @@ def pkg_config_libdirs(packages):
 
 def get_libpath_from_dirlist(libname, dirs):
     """
-    This function tries to find the architecture-independent library given by libname in the first
-    available directory in the list dirs. 'Architecture-independent' means omitting any prefix such
-    as 'lib' or suffix such as 'so' or 'dylib' or version number.  Within the first directory in which
-    a matching pattern can be found, the lexicographically first such file is returned, as a string
-    giving the full path name.  The only supported OSes at the moment are posix and mac, and this
-    function does not attempt to determine which is being run.  So if for some reason your directory
-    has both '.so' and '.dylib' libraries, who knows what will happen.  If the library cannot be found,
-    None is returned.
+    This function tries to find the architecture-independent library given by libname in
+    the first available directory in the list dirs. 'Architecture-independent' means
+    omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version
+    number. Within the first directory in which a matching pattern can be found, the
+    lexicographically first such file is returned, as a string giving the full path
+    name. The only supported OSes at the moment are posix and mac, and this function
+    does not attempt to determine which is being run. So if for some reason your
+    directory has both '.so' and '.dylib' libraries, who knows what will happen. If the
+    library cannot be found, None is returned.
     """
     dirqueue = deque(dirs)
     while len(dirqueue) > 0:
@@ -174,11 +175,12 @@ def get_libpath_from_dirlist(libname, dirs):
 
 def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
     """
-    This function takes a library name, specified in architecture-independent fashion (i.e.
-    omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version number) and
-    a list of packages that may provide that library, and according first to LD_LIBRARY_PATH,
-    then the results of pkg-config, and falling back to the system search path, will try to
-    return a CDLL ctypes object.  If 'mode' is given it will be used when loading the library.
+    This function takes a library name, specified in architecture-independent fashion
+    (i.e. omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version
+    number) and a list of packages that may provide that library, and according first to
+    LD_LIBRARY_PATH, then the results of pkg-config, and falling back to the system
+    search path, will try to return a CDLL ctypes object. If 'mode' is given it will be
+    used when loading the library.
     """
     libdirs = []
     # First try to get from LD_LIBRARY_PATH

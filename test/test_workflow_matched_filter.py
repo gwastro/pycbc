@@ -308,7 +308,7 @@ class TestMultiDetectorWorkflowJobSetup(unittest.TestCase):
         self.assertEqual(len(out_multi), 6)
 
     def test_detector_dropout_and_short_unanalyzable_segment(self):
-        """A detector dropping out and returning mid-run causes no time loss in other IFOs."""
+        """A detector dropping out and returning mid-run loses no time in other IFOs."""
         science_segs = {
             "H1": segments.segmentlist([segments.segment(10000, 22000)]),
             "L1": segments.segmentlist([segments.segment(10000, 22000)]),

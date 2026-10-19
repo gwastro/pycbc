@@ -588,18 +588,15 @@ if __name__ == "__main__":
         "--trig-time",
         required=True,
         nargs="+",
-        help="GPS time of trigger. Can be a single value, or a list of per-detector times"
-        "using the format H1:123456 L1:123457. In the first case, the given time is only "
-        "an approximate guess of the trigger time, and "
-        "the code will try to find the maximum-SNR peaks "
-        "at each detector on its own. The given time should be within 1 s "
-        "of the peak. This procedure becomes unreliable "
-        "for low-SNR triggers. When times are given at specific detectors, instead, they "
-        "literally indicate which sample of the "
-        "SNR time series should be taken as peak SNR at "
-        "the given detector. Unspecified detectors will "
-        "be considered subthreshold and their time will "
-        "be chosen as the mean of the given times.",
+        help="GPS time of trigger. Can be a single value, or a list of per-detector "
+        "timesusing the format H1:123456 L1:123457. In the first case, the given "
+        "time is only an approximate guess of the trigger time, and the code will "
+        "try to find the maximum-SNR peaks at each detector on its own. The given "
+        "time should be within 1 s of the peak. This procedure becomes unreliable "
+        "for low-SNR triggers. When times are given at specific detectors, instead, "
+        "they literally indicate which sample of the SNR time series should be taken "
+        "as peak SNR at the given detector. Unspecified detectors will be considered "
+        "subthreshold and their time will be chosen as the mean of the given times.",
     )
     parser.add_argument("--mass1", type=float, required=True)
     parser.add_argument("--mass2", type=float, required=True)

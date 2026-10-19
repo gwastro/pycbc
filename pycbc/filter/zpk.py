@@ -71,7 +71,7 @@ def filter_zpk(timeseries, z, p, k):
     to a TimeSeries instance, do:
     >>> filtered_data = zpk_filter(timeseries, [100]*5, [1]*5, 1e-10)
 
-    """
+    """  # noqa: E501
     # sanity check type
     if not isinstance(timeseries, TimeSeries):
         raise TypeError("Can only filter TimeSeries instances.")

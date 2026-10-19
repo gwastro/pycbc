@@ -181,7 +181,12 @@ class CustomTransform(BaseTransform):
     --------
     Create a custom transform that converts mass1, mass2 to mtotal, q:
 
-    >>> t = transforms.CustomTransform(['mass1', 'mass2'], ['mtotal', 'q'], {'mtotal': 'mass1+mass2', 'q': 'mass1/mass2'}, '(mass1 + mass2) / mass2**2')
+    >>> t = transforms.CustomTransform(
+    ...     ['mass1', 'mass2'],
+    ...     ['mtotal', 'q'],
+    ...     {'mtotal': 'mass1+mass2', 'q': 'mass1/mass2'},
+    ...     '(mass1 + mass2) / mass2**2',
+    ... )
 
     Evaluate a pair of masses:
 
@@ -499,7 +504,9 @@ class MchirpQToMass1Mass2(BaseTransform):
         >>> import numpy
         >>> from pycbc import transforms
         >>> t = transforms.MchirpQToMass1Mass2()
-        >>> t.inverse_transform({'mass1': numpy.array([16.4]), 'mass2': numpy.array([8.2])})
+        >>> t.inverse_transform(
+        ...     {'mass1': numpy.array([16.4]), 'mass2': numpy.array([8.2])}
+        ... )
             {'mass1': array([ 16.4]), 'mass2': array([ 8.2]),
              'mchirp': array([ 9.97717521]), 'q': 2.0}
 
@@ -595,7 +602,9 @@ class MchirpEtaToMass1Mass2(BaseTransform):
         >>> import numpy
         >>> from pycbc import transforms
         >>> t = transforms.MchirpQToMass1Mass2()
-        >>> t.inverse_transform({'mass1': numpy.array([8.2]), 'mass2': numpy.array([8.2])})
+        >>> t.inverse_transform(
+        ...     {'mass1': numpy.array([8.2]), 'mass2': numpy.array([8.2])}
+        ... )
             {'mass1': array([ 8.2]), 'mass2': array([ 8.2]),
              'mchirp': array([ 9.97717521]), 'eta': 0.25}
 
@@ -665,7 +674,8 @@ class ChirpDistanceToDistance(BaseTransform):
         >>> from pycbc import transforms
         >>> t = transforms.ChirpDistanceToDistance()
         >>> t.transform({'chirp_distance': np.array([40.]), 'mchirp': np.array([1.2])})
-        {'mchirp': array([ 1.2]), 'chirp_distance': array([ 40.]), 'distance': array([ 39.48595679])}
+        {'mchirp': array([ 1.2]), 'chirp_distance': array([ 40.]),
+         'distance': array([ 39.48595679])}
 
         Returns
         -------
@@ -698,8 +708,11 @@ class ChirpDistanceToDistance(BaseTransform):
         >>> import numpy as np
         >>> from pycbc import transforms
         >>> t = transforms.ChirpDistanceToDistance()
-        >>> t.inverse_transform({'distance': np.array([40.]), 'mchirp': np.array([1.2])})
-        {'distance': array([ 40.]), 'chirp_distance': array([ 40.52073522]), 'mchirp': array([ 1.2])}
+        >>> t.inverse_transform(
+        ...     {'distance': np.array([40.]), 'mchirp': np.array([1.2])}
+        ... )
+        {'distance': array([ 40.]), 'chirp_distance': array([ 40.52073522]),
+         'mchirp': array([ 1.2])}
 
         Returns
         -------
@@ -2546,7 +2559,8 @@ class Logit(BaseTransform):
             b = None
         if (a is None and b is not None) or (b is None and a is not None):
             raise ValueError(
-                f"if providing a min(max)-{inputvar}, must also provide a max(min)-{inputvar}"
+                f"if providing a min(max)-{inputvar}, "
+                f"must also provide a max(min)-{inputvar}"
             )
         if a is not None:
             additional_opts.update({"domain": (float(a), float(b))})
@@ -3035,7 +3049,8 @@ class Logistic(Logit):
             b = None
         if (a is None and b is not None) or (b is None and a is not None):
             raise ValueError(
-                f"if providing a min(max)-{outputvar}, must also provide a max(min)-{outputvar}"
+                f"if providing a min(max)-{outputvar}, "
+                f"must also provide a max(min)-{outputvar}"
             )
         if a is not None:
             additional_opts.update({"codomain": (float(a), float(b))})

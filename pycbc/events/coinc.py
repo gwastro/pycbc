@@ -401,8 +401,9 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
         return numpy.array([])
 
     if numpy.isfinite(slide):
-        # for a time shifted coinc, time1 is greater than time2 by approximately timeslide_id*slide
-        # adding this quantity gives a mean coinc time located around time1
+        # for a time shifted coinc, time1 is greater than time2 by approximately
+        # timeslide_id*slide. Adding this quantity gives a mean coinc time located
+        # around time1
         time = (time1 + time2 + timeslide_id * slide) / 2
     else:
         time = 0.5 * (time2 + time1)

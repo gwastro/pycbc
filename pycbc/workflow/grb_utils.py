@@ -435,7 +435,10 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         for i in range(self.num_trials):
             outfile_types.append(f"OFFTRIAL_{i + 1}")
         for out_type in outfile_types:
-            out_name = f"{ifo_tag}-{user_tag}_{out_type}-{segment[0]}-{segment[1] - segment[0]}.h5"
+            out_name = (
+                f"{ifo_tag}-{user_tag}_{out_type}-"
+                f"{segment[0]}-{segment[1] - segment[0]}.h5"
+            )
             out_file = File(
                 ifo_tag,
                 "trig_combiner",

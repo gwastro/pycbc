@@ -92,8 +92,8 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
         self.type = TimeSeries
         # and the extra keyword arguments the constructors will need:
         self.kwds = {"epoch": self.epoch, "delta_t": self.delta_t}
-        # Now that the kinds are set, we need to call our parent method to set up all the
-        # inputs and answers for our functions
+        # Now that the kinds are set, we need to call our parent method to set up all
+        # the inputs and answers for our functions
         self.set_numbers()
 
         # The above call created instances for all of our inputs and various correct
@@ -222,7 +222,8 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             self.assertRaises(TypeError, TimeSeries, in1, 0.1, epoch=(5, 1))
 
     def test_array_init(self):
-        # this array is made outside the context so we can check that an error is raised when copy = false in a GPU scheme
+        # this array is made outside the context so we can check that an error is raised
+        # when copy = false in a GPU scheme
         cpuarray = Array([1, 2, 3])
         with self.context:
             in1 = Array([5, 3, 1], dtype=self.odtype)
@@ -325,7 +326,8 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             self.assertRaises(ValueError, TimeSeries, inbad, 0.1)
             self.assertRaises(TypeError, TimeSeries, in1, 0.1, epoch=(5, 1))
 
-        # Also checking that a cpu array can't be made out of another scheme without copying
+        # Also checking that a cpu array can't be made out of another scheme without
+        # copying
         if self.scheme != "cpu":
             self.assertRaises(
                 TypeError, TimeSeries, out4, 0.1, copy=False, epoch=self.epoch

@@ -158,7 +158,7 @@ def parse_args_cpu_only(feature_str):
     (_opt_list, _args) = _parser.parse_args()
 
     # In this case, the only reason we parsed the arguments was to exit if we were given
-    # a GPU scheme.  So if we get here we're on the CPU, and should print out our message
+    # a GPU scheme. So if we get here we're on the CPU, and should print out our message
     # and return.
 
     print(72 * "=")
@@ -174,7 +174,8 @@ def simple_exit(results):
 
     Parameters
     ----------
-    results: an instance of unittest.TestResult, returned (for instance) from a call such as
+    results: an instance of unittest.TestResult, returned (for
+    instance) from a call such as
         results = unittest.TextTestRunner(verbosity=2).run(suite)
 
     """
@@ -187,19 +188,21 @@ def simple_exit(results):
 
 def exit_based_on_results(results):
     """
-    A probably-obsolete function to exit from a unit test-script with a status that depends
-    on whether or not the only errors or failures were NotImplemented errors.  Specifically,
-    if the unit-test suite execution encoded in results was:
+    A probably-obsolete function to exit from a unit test-script with a status that
+    depends on whether or not the only errors or failures were NotImplemented errors.
+    Specifically, if the unit-test suite execution encoded in results was:
        All tests successful:                               Exit 0
        All tests successful or only NotImplemented errors: Exit 1
        Some tests either failed or had other errors:       Exit 2
-    The intent was that failures due to missing features be treated differently (especially
-    when that happens on one of the GPU schemes) and that these exit statuses could then be
-    interpreted by NMI or some other automatic build/test system accordingly.
+    The intent was that failures due to missing features be treated differently
+    (especially when that happens on one of the GPU schemes) and that these
+    exit statuses could then be interpreted by NMI or some other automatic
+    build/test system accordingly.
 
     Parameters
     ----------
-    results: an instance of unittest.TestResult, returned (for instance) from a call such as
+    results: an instance of unittest.TestResult, returned (for
+    instance) from a call such as
         results = unittest.TextTestRunner(verbosity=2).run(suite)
 
     """

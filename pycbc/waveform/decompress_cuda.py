@@ -328,7 +328,8 @@ def inline_linear_interp(amps, phases, freqs, output, df, flow, imin, start_inde
     # needed for CPU.
     if output.precision == "double":
         raise NotImplementedError(
-            "Double precision linear interpolation not currently supported on CUDA scheme"
+            "Double precision linear interpolation "
+            "not currently supported on CUDA scheme"
         )
     flow = numpy.float32(flow)
     texlen = numpy.int32(len(freqs))

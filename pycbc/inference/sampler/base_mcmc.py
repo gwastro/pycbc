@@ -413,7 +413,8 @@ class BaseMCMC(metaclass=ABCMeta):
                 samples = samples[..., 0]
                 # make sure we have the same shape
                 assert samples.shape == self.base_shape, (
-                    f"samples in file {samples_file} have shape {samples.shape}, but I have shape {self.base_shape}"
+                    f"samples in file {samples_file} have shape "
+                    f"{samples.shape}, but I have shape {self.base_shape}"
                 )
             # transform to sampling parameter space
             if self.model.sampling_transforms is not None:

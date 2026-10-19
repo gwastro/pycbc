@@ -65,7 +65,8 @@ class PyCBCTrig2HDFExecutable(Executable):
 
 
 class PyCBCFitByTemplateExecutable(Executable):
-    """Calculates values that describe the background distribution template by template"""
+    """Calculates values that describe the background distribution template by
+    template"""
 
     current_retention_level = Executable.MERGED_TRIGGERS
 

@@ -81,8 +81,8 @@ def get_constant(name):
     if _CONSTANTS.lower() == "lal":  # Allow LAL
         if lal is None:
             raise ImportError(
-                "PYCBC_CONSTANT_SOURCE is set to 'lal', but the 'lal' module is not installed. "
-                "Please install the 'lal' package to use LAL constants."
+                "PYCBC_CONSTANT_SOURCE is set to 'lal', but the 'lal' module is not "
+                "installed. Please install the 'lal' package to use LAL constants."
             )
         return getattr(lal, name)
 
