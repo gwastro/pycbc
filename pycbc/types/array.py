@@ -250,7 +250,7 @@ def _icheckother(func):
         """Checks the input to in-place operations"""
         self._typecheck(other)
         if type(other) in _ALLOWED_SCALARS:
-            if self.kind == "real" and type(other) == complex:
+            if self.kind == "real" and type(other) is complex:
                 raise TypeError("dtypes are incompatible")
             other = force_precision_to_match(other, self.precision)
         elif isinstance(other, type(self)) or type(other) is Array:
@@ -522,7 +522,7 @@ class Array:
         """
         # Writing the first test as below allows this method to be safely
         # called from subclasses.
-        if type(self) != type(other):
+        if type(self) is not type(other):
             return False
         if self.dtype != other.dtype:
             return False
@@ -597,7 +597,7 @@ class Array:
         # Check that the meta-data agree; the type check is written in
         # this way so that this method may be safely called from
         # subclasses as well.
-        if type(other) != type(self):
+        if type(other) is not type(self):
             return False
         if self.dtype != other.dtype:
             return False
@@ -663,7 +663,7 @@ class Array:
         # Check that the meta-data agree; the type check is written in
         # this way so that this method may be safely called from
         # subclasses as well.
-        if type(other) != type(self):
+        if type(other) is not type(self):
             return False
         if self.dtype != other.dtype:
             return False

@@ -780,7 +780,7 @@ class SingleDetTriggers:
     @classmethod
     def get_param_names(cls):
         """Returns a list of plottable CBC parameter variables"""
-        return [m[0] for m in inspect.getmembers(cls) if type(m[1]) == property]
+        return [m[0] for m in inspect.getmembers(cls) if type(m[1]) is property]
 
     def apply_mask(self, logic_mask):
         """

@@ -136,7 +136,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
                 # to be sure that it is copied
                 in1 += 1
                 in2 += 1
-                self.assertTrue(type(out1._scheme) == type(self.context))
+                self.assertTrue(type(out1._scheme) is type(self.context))
                 self.assertTrue(type(out1._data) is SchemeArray)
                 self.assertEqual(out1[0], 5)
                 self.assertEqual(out1[1], 3)
@@ -145,7 +145,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
                 self.assertEqual(out1.delta_t, 0.1)
                 self.assertEqual(out1.start_time, self.epoch)
 
-                self.assertTrue(type(out2._scheme) == type(self.context))
+                self.assertTrue(type(out2._scheme) is type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0], 5)
                 self.assertEqual(out2[1], 3)
@@ -160,7 +160,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             # Also, when it is unspecified
             out3 = TimeSeries(in1, 0.1, epoch=self.epoch)
             in1 += 1
-            self.assertTrue(type(out3._scheme) == type(self.context))
+            self.assertTrue(type(out3._scheme) is type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0], 5)
             self.assertEqual(out3[1], 3)
@@ -177,7 +177,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
                 in3 += 1
 
                 self.assertTrue(out4.dtype == self.dtype)
-                self.assertTrue(type(out4._scheme) == type(self.context))
+                self.assertTrue(type(out4._scheme) is type(self.context))
                 self.assertEqual(out4[0], 6)
                 self.assertEqual(out4[1], 4)
                 self.assertEqual(out4[2], 2)
@@ -194,7 +194,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             if self.scheme != "cpu":
                 out4 = TimeSeries(in4, 0.1, copy=False, epoch=self.epoch)
                 in4 += 1
-                self.assertTrue(type(out4._scheme) == type(self.context))
+                self.assertTrue(type(out4._scheme) is type(self.context))
                 self.assertTrue(type(out4._data) is SchemeArray)
                 self.assertEqual(out4[0], 1)
                 self.assertEqual(out4[1], 1)
@@ -207,7 +207,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             in5 = numpy.array([1, 2, 3], dtype=numpy.int32)
             out5 = TimeSeries(in5, 0.1, epoch=self.epoch)
             in5 += 1
-            self.assertTrue(type(out5._scheme) == type(self.context))
+            self.assertTrue(type(out5._scheme) is type(self.context))
             self.assertTrue(type(out5._data) is SchemeArray)
             self.assertEqual(out5[0], 1)
             self.assertEqual(out5[1], 2)
@@ -227,9 +227,9 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
         with self.context:
             in1 = Array([5, 3, 1], dtype=self.odtype)
             in2 = Array([5, 3, 1], dtype=self.other_precision[self.odtype])
-            self.assertTrue(type(in1._scheme) == type(self.context))
+            self.assertTrue(type(in1._scheme) is type(self.context))
             self.assertTrue(type(in1._data) is SchemeArray)
-            self.assertTrue(type(in2._scheme) == type(self.context))
+            self.assertTrue(type(in2._scheme) is type(self.context))
             self.assertTrue(type(in2._data) is SchemeArray)
             # We don't want to cast complex as real
             if not (self.kind == "real" and self.okind == "complex"):
@@ -240,7 +240,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
                 in1 += 1
                 in2 += 1
 
-                self.assertTrue(type(out1._scheme) == type(self.context))
+                self.assertTrue(type(out1._scheme) is type(self.context))
                 self.assertTrue(type(out1._data) is SchemeArray)
                 self.assertEqual(out1[0], 5)
                 self.assertEqual(out1[1], 3)
@@ -262,7 +262,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
                     self.assertTrue(out1.precision == "double")
                     self.assertTrue(out1.kind == "complex")
 
-                self.assertTrue(type(out2._scheme) == type(self.context))
+                self.assertTrue(type(out2._scheme) is type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0], 5)
                 self.assertEqual(out2[1], 3)
@@ -282,7 +282,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             out3 = TimeSeries(in1, 0.1, epoch=self.epoch)
             in1 += 1
 
-            self.assertTrue(type(out3._scheme) == type(self.context))
+            self.assertTrue(type(out3._scheme) is type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0], 5)
             self.assertEqual(out3[1], 3)
@@ -294,7 +294,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             # We should also be able to create from a CPU Array
             out4 = TimeSeries(cpuarray, 0.1, dtype=self.dtype, epoch=self.epoch)
 
-            self.assertTrue(type(out4._scheme) == type(self.context))
+            self.assertTrue(type(out4._scheme) is type(self.context))
             self.assertTrue(type(out4._data) is SchemeArray)
             self.assertEqual(out4[0], 1)
             self.assertEqual(out4[1], 2)
@@ -308,7 +308,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             out5 = TimeSeries(in3, 0.1, copy=False, epoch=self.epoch)
             in3 += 1
 
-            self.assertTrue(type(out5._scheme) == type(self.context))
+            self.assertTrue(type(out5._scheme) is type(self.context))
             self.assertTrue(type(out5._data) is SchemeArray)
             self.assertEqual(out5[0], 6)
             self.assertEqual(out5[1], 4)
@@ -331,7 +331,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
                 TypeError, TimeSeries, out4, 0.1, copy=False, epoch=self.epoch
             )
             out6 = TimeSeries(out4, 0.1, dtype=self.dtype)
-            self.assertTrue(type(out6._scheme) == DefaultScheme)
+            self.assertTrue(type(out6._scheme) is DefaultScheme)
             self.assertTrue(type(out6._data) is CPUArray)
             self.assertEqual(out6[0], 1)
             self.assertEqual(out6[1], 2)
@@ -345,7 +345,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             # When specified
             out1 = TimeSeries([5, 3, 1], 0.1, dtype=self.dtype, epoch=self.epoch)
 
-            self.assertTrue(type(out1._scheme) == type(self.context))
+            self.assertTrue(type(out1._scheme) is type(self.context))
             self.assertTrue(type(out1._data) is SchemeArray)
             self.assertEqual(out1[0], 5)
             self.assertEqual(out1[1], 3)
@@ -372,7 +372,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
                     [5.0 + 0j, 3 + 0j, 1 + 0j], 0.1, dtype=self.dtype, epoch=self.epoch
                 )
 
-                self.assertTrue(type(out2._scheme) == type(self.context))
+                self.assertTrue(type(out2._scheme) is type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0], 5)
                 self.assertEqual(out2[1], 3)
@@ -393,7 +393,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             # Also, when it is unspecified
             out3 = TimeSeries([5.0, 3, 1], 0.1, epoch=self.epoch)
 
-            self.assertTrue(type(out3._scheme) == type(self.context))
+            self.assertTrue(type(out3._scheme) is type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0], 5)
             self.assertEqual(out3[1], 3)
@@ -404,7 +404,7 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
 
             out4 = TimeSeries([5 + 0j, 3 + 0j, 1 + 0j], 0.1, epoch=self.epoch)
 
-            self.assertTrue(type(out4._scheme) == type(self.context))
+            self.assertTrue(type(out4._scheme) is type(self.context))
             self.assertTrue(type(out4._data) is SchemeArray)
             self.assertEqual(out4[0], 5)
             self.assertEqual(out4[1], 3)

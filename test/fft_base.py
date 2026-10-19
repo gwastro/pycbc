@@ -244,7 +244,7 @@ def _test_random(test_case, inarr, outarr, tol):
                     inarr *= outarr._delta_t
                 elif isinstance(outarr, FrequencySeries):
                     inarr *= outarr._delta_f
-            if type(inarr) == Array:
+            if type(inarr) is Array:
                 # An Array FFTed and then IFFTEd will be scaled by its length
                 # Frequency and TimeSeries have no scaling
                 inarr /= len(inarr)
@@ -294,7 +294,7 @@ def _test_random(test_case, inarr, outarr, tol):
                     outarr *= inarr._delta_t
                 elif isinstance(inarr, FrequencySeries):
                     outarr *= inarr._delta_f
-            if type(inarr) == Array:
+            if type(inarr) is Array:
                 # An Array FFTed and then IFFTEd will be scaled by its length
                 # Frequency and TimeSeries have no scaling
                 outarr /= len(inarr)

@@ -47,7 +47,7 @@ class ParseTempsArg(argparse.Action):
 
     def __init__(self, type=str, **kwargs):  # pylint: disable=redefined-builtin
         # check that type is string
-        if type != str:
+        if type is not str:
             raise ValueError("the type for this action must be a string")
         super().__init__(type=type, **kwargs)
 

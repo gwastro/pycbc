@@ -169,7 +169,7 @@ def calculate_acl(data, m=5, dtype=int):
     win = m * cacf <= numpy.arange(len(cacf))
     if win.any():
         acl = cacf[numpy.where(win)[0][0]]
-        if dtype == int:
+        if dtype is int:
             acl = int(numpy.ceil(acl))
     else:
         acl = numpy.inf

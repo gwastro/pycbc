@@ -200,7 +200,7 @@ def cut_channels(tdi_dict, remove_garbage=False, t0=1e4):
                 # zero the edge data
                 tdi_dict[chan][:pad_idx] = 0
                 tdi_dict[chan][-pad_idx:] = 0
-            elif type(remove_garbage) == bool:
+            elif type(remove_garbage) is bool:
                 # cut the edge data
                 slc = slice(pad_idx, -pad_idx)
                 tdi_dict[chan] = tdi_dict[chan][slc]
@@ -368,7 +368,7 @@ class _LDCDetector(AbsSpaceDet):
 
         """
         defaults = ["EqualArmlength", "Keplerian"]
-        assert type(orbits) == str, (
+        assert type(orbits) is str, (
             "Must input either a file path as ",
             'str, "EqualArmlength", or "Keplerian"',
         )

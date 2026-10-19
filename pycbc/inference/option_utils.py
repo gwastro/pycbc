@@ -48,7 +48,7 @@ class ParseLabelArg(argparse.Action):
 
     def __init__(self, type=str, nargs=None, **kwargs):  # pylint: disable=redefined-builtin
         # check that type is string
-        if type != str:
+        if type is not str:
             raise ValueError("the type for this action must be a string")
         if nargs == 0:
             raise ValueError("nargs must not be 0 for this action")
