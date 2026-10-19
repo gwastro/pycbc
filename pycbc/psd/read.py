@@ -189,7 +189,7 @@ def from_xml(
     if ifo_string is not None:
         psd_freq_series = psd_dict[ifo_string]
     elif len(psd_dict.keys()) == 1:
-        psd_freq_series = psd_dict[tuple(psd_dict.keys())[0]]
+        psd_freq_series = psd_dict[next(iter(psd_dict.keys()))]
     else:
         raise ValueError(
             "No ifo string given and input XML file contains not "

@@ -188,7 +188,7 @@ class CommonMCMCMetadataIO:
             group = self.samples_group
         if parameter is None:
             try:
-                parameter = list(self[group].keys())[0]
+                parameter = list(self[group].keys())[0]  # noqa: RUF015
             except (IndexError, KeyError):
                 # nothing has been written yet, just return 0
                 return 0
@@ -629,7 +629,7 @@ def write_samples(
         something other than inference samples!**
 
     """
-    nwalkers, nsamples = list(samples.values())[0].shape
+    nwalkers, nsamples = next(iter(samples.values())).shape
     assert all(p.shape == (nwalkers, nsamples) for p in samples.values()), (
         "all samples must have the same shape"
     )

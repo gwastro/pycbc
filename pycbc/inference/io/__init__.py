@@ -272,10 +272,10 @@ def validate_checkpoint_files(checkpoint_file, backup_file, check_nsamples=True)
         # if not, assume the checkpoint has the correct number
         if checkpoint_valid and backup_valid:
             with loadfile(checkpoint_file, "r") as fp:
-                group = list(fp[fp.samples_group].keys())[0]
+                group = next(iter(fp[fp.samples_group].keys()))
                 nsamples = fp[fp.samples_group][group].size
             with loadfile(backup_file, "r") as fp:
-                group = list(fp[fp.samples_group].keys())[0]
+                group = next(iter(fp[fp.samples_group].keys()))
                 backup_nsamples = fp[fp.samples_group][group].size
             backup_valid = nsamples == backup_nsamples
         # decide what to do based on the files' statuses

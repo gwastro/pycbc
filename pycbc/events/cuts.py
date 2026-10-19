@@ -153,7 +153,7 @@ def check_update_cuts(cut_dict, new_cut):
         dictionary to define the new cut which is being considered to add
 
     """
-    new_cut_key = list(new_cut.keys())[0]
+    new_cut_key = next(iter(new_cut.keys()))
     if new_cut_key in cut_dict:
         # The cut has already been called
         logger.warning(
@@ -164,7 +164,7 @@ def check_update_cuts(cut_dict, new_cut):
         )
         # Extract the function and work out which is strictest
         cut_function = new_cut_key[1]
-        value_new = list(new_cut.values())[0]
+        value_new = next(iter(new_cut.values()))
         value_old = cut_dict[new_cut_key]
         if cut_function(value_new, value_old):
             # The new threshold would survive the cut of the

@@ -42,7 +42,7 @@ class MultinestFile(BaseSamplerFile):
             write all of the keys in the ``samples`` dict.
 
         """
-        niterations = len(tuple(samples.values())[0])
+        niterations = len(next(iter(samples.values())))
         assert all(len(p) == niterations for p in samples.values()), (
             "all samples must have the same shape"
         )

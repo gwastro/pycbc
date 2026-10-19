@@ -109,7 +109,7 @@ class DistMarg:
             old_prior = kwargs["prior"]
 
             dists = [d for d in old_prior.distributions if param not in d.params]
-            dprior = [d for d in old_prior.distributions if param in d.params][0]
+            dprior = next(d for d in old_prior.distributions if param in d.params)
             prior = JointDistribution(variable_params, *dists, **old_prior.kwargs)
             kwargs["prior"] = prior
             return dprior
@@ -201,7 +201,7 @@ class DistMarg:
             if len(wtrans) == 0:
                 wtrans = None
             kwargs["waveform_transforms"] = wtrans
-            dtrans = [d for d in waveform_transforms if "distance" in d.outputs][0]
+            dtrans = next(d for d in waveform_transforms if "distance" in d.outputs)
             v = dprior.rvs(int(1e8))
             d = dtrans.transform({pname: v[pname]})["distance"]
             d.sort()

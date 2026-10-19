@@ -113,7 +113,7 @@ class CPNestSampler(BaseSampler):
 
     @property
     def niterations(self):
-        return len(tuple(self.samples.values())[0])
+        return len(next(iter(self.samples.values())))
 
     @classmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):

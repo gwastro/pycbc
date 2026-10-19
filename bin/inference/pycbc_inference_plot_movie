@@ -344,7 +344,7 @@ for p in parameters:
 
 # set colors:
 # the 1d marginal colors will just be the first color in the style's cycle
-linecolor = list(matplotlib.rcParams["axes.prop_cycle"])[0]["color"]
+linecolor = next(iter(matplotlib.rcParams["axes.prop_cycle"]))["color"]
 # make the hist color black or white, depending on if the
 # dark background is used
 if opts.mpl_style == "dark_background":
@@ -435,7 +435,9 @@ else:
     mfunc = map
 
 logger.info("Making frames")
-aspect_ratio = list(mfunc(make_frame, range(len(indices))))[0]
+# list() makes all the frames (mfunc may be a lazy map); only the first
+# result is needed here
+aspect_ratio = list(mfunc(make_frame, range(len(indices))))[0]  # noqa: RUF015
 
 if opts.movie_file:
     logger.info("Making movie")

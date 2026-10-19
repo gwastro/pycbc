@@ -435,7 +435,7 @@ class _HDFInjectionSet(metaclass=ABCMeta):
         if len(parameters) == 0:
             numinj = 1
         else:
-            numinj = tuple(injvals.values())[0].size
+            numinj = next(iter(injvals.values())).size
         # add any static args in the file
         try:
             # ensure parameter names are string types

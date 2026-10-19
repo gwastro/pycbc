@@ -68,7 +68,7 @@ delta_f = None
 for input_file in args.input_files:
     logger.info("Reading %s", input_file)
     f = HFile(input_file, "r")
-    ifo = tuple(f.keys())[0]
+    ifo = next(iter(f.keys()))
     df = f[ifo + "/psds/0"].attrs["delta_f"]
     if delta_f is None:
         delta_f = df

@@ -46,7 +46,7 @@ plt.grid()
 
 for psd_file in args.psd_files:
     f = HFile(psd_file, "r")
-    ifo = tuple(f.keys())[0]
+    ifo = next(iter(f.keys()))
     flow = f.attrs["low_frequency_cutoff"]
     keys = list(f[ifo + "/psds"].keys())
     start, end = f[ifo + "/start_time"][:], f[ifo + "/end_time"][:]

@@ -234,7 +234,7 @@ class CustomTransform(BaseTransform):
             # we'll get a ValueError if the scratch space isn't the same size
             # as the maps; in that case, re-create the scratch space with the
             # appropriate size and try again
-            invals = maps[list(self.inputs)[0]]
+            invals = maps[next(iter(self.inputs))]
             if isinstance(invals, numpy.ndarray):
                 shape = invals.shape
             else:
@@ -245,7 +245,7 @@ class CustomTransform(BaseTransform):
 
     def _getslice(self, maps):
         """Determines how to slice the scratch for returning values."""
-        invals = maps[list(self.inputs)[0]]
+        invals = maps[next(iter(self.inputs))]
         if not isinstance(invals, (numpy.ndarray, list)):
             getslice = 0
         else:

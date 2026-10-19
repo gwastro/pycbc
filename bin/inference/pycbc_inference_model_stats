@@ -162,7 +162,7 @@ logger.info("Getting samples")
 with loadfile(opts.input_file, "r") as fp:
     # we'll need the shape; all the arrays in the samples group should have the
     # same shape
-    pick = list(fp[fp.samples_group].keys())[0]
+    pick = next(iter(fp[fp.samples_group].keys()))
     shape = fp[fp.samples_group][pick].shape
     samples = {}
     for p in model.variable_params:
