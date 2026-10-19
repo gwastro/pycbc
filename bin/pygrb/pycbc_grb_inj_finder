@@ -227,7 +227,7 @@ with tqdm.tqdm(
     desc="Finding injections",
     disable=not args.verbose,
     unit="files",
-    postfix=dict(found=0, missed=0, excluded=nexcluded),
+    postfix={"found": 0, "missed": 0, "excluded": nexcluded},
     **TQDM_KW,
 ) as bar:
     for injf in bar:

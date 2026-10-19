@@ -220,12 +220,7 @@ fig, axes = plt.subplots(
 
 # Make the histogram and scatter points for each approximant separately
 apx_names, apx_count = np.unique(approximants, return_counts=True)
-apx_colors = {
-    apx_name: col
-    for apx_name, col in zip(
-        apx_names, plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    )
-}
+apx_colors = dict(zip(apx_names, plt.rcParams["axes.prop_cycle"].by_key()["color"]))
 for apx_name, apx_count in zip(apx_names, apx_count):
     # Filter to just this approximant
     this_appx = approximants == apx_name

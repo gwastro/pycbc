@@ -239,7 +239,7 @@ template = env.get_template(input_template)
 
 # find all subdirs and the top-level subdirs
 Directory(opts.plots_dir, opts.plots_dir)
-dirs = [cwd for cwd in Directory.instances]
+dirs = list(Directory.instances)
 dirs_0 = [cwd for cwd in Directory.instances if cwd.path.count("/") == 1]
 
 # sort alphanumerically

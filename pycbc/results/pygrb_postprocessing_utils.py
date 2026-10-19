@@ -662,7 +662,7 @@ def extract_ifos(trig_file, ifo=None):
     hdf_file = HFile(trig_file, "r")
 
     # Extract IFOs
-    ifos = sorted(list(hdf_file.keys()))
+    ifos = sorted(hdf_file.keys())
 
     # Remove unwanted keys from key list to reduce it to the ifos
     for key in ["network", "found", "missed"]:

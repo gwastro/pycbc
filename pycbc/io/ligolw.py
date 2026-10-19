@@ -39,7 +39,7 @@ __all__ = (
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
-IDTypes = set(["ilwd:char", "ilwd:char_u"])
+IDTypes = {"ilwd:char", "ilwd:char_u"}
 
 
 def default_null_value(col_name, col_type):

@@ -328,7 +328,7 @@ for snr_type in timeseries:
     for ifo in ifos_to_loop:
         timeseries_plots = _workflow.FileList([])
         # Plots without and with injections
-        for inj_file in set([None, tuning_inj_file]):
+        for inj_file in {None, tuning_inj_file}:
             # If the tuning injection file is used for the plot, include its
             # tags in assembling the plot name
             inj_tags = inj_file.tags if inj_file else []
@@ -368,7 +368,7 @@ for veto in vetoes:
     ifo_loop = [ifos[0]] if veto == "network" else ifos
     for ifo in ifo_loop:
         # Plot with and without injections
-        for inj_file in set([tuning_inj_file, None]):
+        for inj_file in {tuning_inj_file, None}:
             # If the tuning injection file is used for the plot, include its
             # tags in assembling the plot name
             inj_tags = inj_file.tags if inj_file else []
@@ -401,7 +401,7 @@ files = _workflow.FileList([])
 if wflow.cp.has_section("pygrb_plot_coh_ifosnr"):
     for ifo in ifos:
         # Plots with and without injections
-        for inj_file in set([tuning_inj_file, None]):
+        for inj_file in {tuning_inj_file, None}:
             sngl_snr_plots = _workflow.FileList([])
             for zoom_tag in [["zoomin"], []]:
                 # If the tuning injection file is used for the plot, include
@@ -443,7 +443,7 @@ coinc_files = _workflow.FileList([])
 nstats = wflow.cp.get_subsections("pygrb_plot_null_stats")
 for nstat in nstats:
     # Plots with and without injections, zoomed in and zoomed out
-    for inj_file in set([tuning_inj_file, None]):
+    for inj_file in {tuning_inj_file, None}:
         if nstat == "coincident":
             out_dir = coinc_out_dir
             files = coinc_files

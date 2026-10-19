@@ -277,10 +277,10 @@ y_data = {
 }
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
 snr_grid = numpy.arange(0.01, max_snr, 1)
-y_data = dict(
-    (key, snr_grid * (found_trigs[opts.ifo + "/f_resp_mean"] * val) ** 0.5)
+y_data = {
+    key: snr_grid * (found_trigs[opts.ifo + "/f_resp_mean"] * val) ** 0.5
     for key, val in y_data.items()
-)
+}
 for key in y_data:
     ax.plot(snr_grid, y_data[key], "g-")
 # 2 sigma (0.9545)

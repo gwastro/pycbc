@@ -263,11 +263,11 @@ if __name__ == "__main__":
     else:
         psds = pycbc.psd.from_cli_multi_ifos(
             opts,
-            length_dict=dict((det, flen) for det in detectors),
-            delta_f_dict=dict((det, delta_f) for det in detectors),
-            low_frequency_cutoff_dict=dict((det, f_low) for det in detectors),
+            length_dict=dict.fromkeys(detectors, flen),
+            delta_f_dict=dict.fromkeys(detectors, delta_f),
+            low_frequency_cutoff_dict=dict.fromkeys(detectors, f_low),
             ifos=detectors,
-            strain_dict=dict((det, None) for det in detectors),
+            strain_dict=dict.fromkeys(detectors),
             dyn_range_factor=pycbc.DYN_RANGE_FAC,
         )
         for det in detectors:

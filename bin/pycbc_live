@@ -278,18 +278,16 @@ class LiveEventManager:
 
         # Copy the common fields from the other detector;
         # ignore fields that contain detector-specific data
-        fields_to_ignore = set(
-            [
-                "end_time",
-                "snr",
-                "stat",
-                "coa_phase",
-                "chisq",
-                "chisq_dof",
-                "sg_chisq",
-                "sigmasq",
-            ]
-        )
+        fields_to_ignore = {
+            "end_time",
+            "snr",
+            "stat",
+            "coa_phase",
+            "chisq",
+            "chisq_dof",
+            "sg_chisq",
+            "sigmasq",
+        }
         for key in set(triggers):
             if f"foreground/{coinc_ifo}/" not in key:
                 continue

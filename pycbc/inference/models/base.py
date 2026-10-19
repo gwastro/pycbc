@@ -953,9 +953,9 @@ def check_for_cartesian_spins(
         "not be performed in that case."
     )
     allparams = set(variable_params) | set(static_params.keys())
-    spinparams = set(p for p in allparams if p.startswith(f"spin{which}"))
+    spinparams = {p for p in allparams if p.startswith(f"spin{which}")}
     if any(spinparams):
-        cartspins = set(f"spin{which}{coord}" for coord in ["x", "y", "z"])
+        cartspins = {f"spin{which}{coord}" for coord in ["x", "y", "z"]}
         # add any parameters to all params that will be output by waveform
         # transforms
         allparams = allparams.union(*[t.outputs for t in waveform_transforms])

@@ -29,9 +29,7 @@ def read_options(args):
     """
     logger.info("Reading config file")
     cp = InterpolatingConfigParser(config_files=[args.config_file])
-    config_opts = {
-        section: {k: v for k, v in cp[section].items()} for section in cp.sections()
-    }
+    config_opts = {section: dict(cp[section].items()) for section in cp.sections()}
     del config_opts["environment"]
     return config_opts
 

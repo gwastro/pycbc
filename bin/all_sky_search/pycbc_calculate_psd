@@ -54,7 +54,7 @@ pycbc.strain.StrainSegments.verify_segment_options(args, parser)
 
 def grouper(n, iterable):
     args = [iter(iterable)] * n
-    return list([e for e in t if e != None] for t in zip_longest(*args))
+    return [[e for e in t if e != None] for t in zip_longest(*args)]
 
 
 def get_psd(input_tuple):
