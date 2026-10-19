@@ -86,7 +86,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
@@ -154,7 +154,7 @@ jobs:
           # Export the branch name as a step output so other steps can reference it
           echo "branch_name=${BRANCH}" >> $GITHUB_OUTPUT
       - name: Create Pull Request (github-script)
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
