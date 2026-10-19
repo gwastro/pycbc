@@ -492,7 +492,7 @@ class DistMarg:
                 dtc[ifo] = d[ifo].time_delay_from_earth_center(ra, dec, tcave)
 
             dmap = {}
-            for i, t in enumerate(tqdm.tqdm(zip(*dts))):
+            for i, t in enumerate(tqdm.tqdm(zip(*dts, strict=True))):
                 if t not in dmap:
                     dmap[t] = []
                 dmap[t].append(i)

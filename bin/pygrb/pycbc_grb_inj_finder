@@ -267,7 +267,7 @@ with tqdm.tqdm(
 
         # get indices of found/missed injections and finding trigger
         for i, (l, r) in enumerate(
-            zip(_left, _right),
+            zip(_left, _right, strict=True),
             start=len(allinjections if allinjections is not None else []),
         ):
             if not r - l:

@@ -1407,7 +1407,7 @@ class TimeSeries(Array):
         ends_time = self.start_time + ends * self.delta_t
 
         # Convert to segments
-        for s, e in zip(starts_time, ends_time):
+        for s, e in zip(starts_time, ends_time, strict=True):
             segs.append(segment(s, e))
 
         return segs.coalesce()

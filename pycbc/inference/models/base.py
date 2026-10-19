@@ -107,7 +107,7 @@ class ModelStats:
             A dictionary of the requested stats.
 
         """
-        return dict(zip(names, self.getstats(names, default=default)))
+        return dict(zip(names, self.getstats(names, default=default), strict=True))
 
 
 class SamplingTransforms:

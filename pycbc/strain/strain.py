@@ -1541,7 +1541,7 @@ class StrainSegments:
                 for time in end_times
             ]
 
-        for seg, ana in zip(self.segment_slices, self.analyze_slices):
+        for seg, ana in zip(self.segment_slices, self.analyze_slices, strict=True):
             start = ana.start
             stop = ana.stop
             cum_start = start + seg.start
@@ -1585,7 +1585,9 @@ class StrainSegments:
         """
         if not self._fourier_segments:
             self._fourier_segments = []
-            for seg_slice, ana in zip(self.segment_slices, self.analyze_slices):
+            for seg_slice, ana in zip(
+                self.segment_slices, self.analyze_slices, strict=True
+            ):
                 if seg_slice.start >= 0 and seg_slice.stop <= len(self.strain):
                     freq_seg = make_frequency_series(self.strain[seg_slice])
                 # Assume that we cannot have a case where we both zero-pad on

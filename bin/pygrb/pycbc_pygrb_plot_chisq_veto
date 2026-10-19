@@ -264,7 +264,7 @@ found_injs, *_ = ppu.apply_vetoes_to_found_injs(
 )
 
 # Sanity checks
-for test in zip(keys[0:2], ["x", "y"]):
+for test in zip(keys[0:2], ["x", "y"], strict=True):
     if found_trigs[test[0]] is None and found_injs[test[0]] is None:
         err_msg = "No data to be plotted on the " + test[1] + "-axis was found"
         raise RuntimeError(err_msg)

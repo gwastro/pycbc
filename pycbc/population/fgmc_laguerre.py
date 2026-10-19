@@ -133,7 +133,10 @@ class CountPosterior(AugmentedRvContinuous):
         # abscissas and weights, along with pdf at these abscissas
         self.x, w = ssp.la_roots(laguerre_n, self.alpha)
         self.p = numpy.array(
-            [ww * numpy.prod(1.0 + self.k * xx) for xx, ww in zip(self.x, w)]
+            [
+                ww * numpy.prod(1.0 + self.k * xx)
+                for xx, ww in zip(self.x, w, strict=True)
+            ]
         )
         self.norm = 1.0 / sum(self.p)
         self.p *= self.norm
@@ -169,7 +172,7 @@ class CountPosterior(AugmentedRvContinuous):
 
         """
         # FIXME: not as feature rich as the expect method this overrides
-        return sum(pp * func(xx) for xx, pp in zip(self.x, self.p))
+        return sum(pp * func(xx) for xx, pp in zip(self.x, self.p, strict=True))
 
     def _munp(self, n):
         return self.expect(lambda x: x**n)

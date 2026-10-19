@@ -165,7 +165,7 @@ for segment_file in opts.segment_files:
 
                 # plot segments
                 sub_line_collections = []
-                for s, e in zip(start, end):
+                for s, e in zip(start, end, strict=True):
                     l = ax.plot([s, e], [y, y], "-", lw=120, color=color, alpha=0.3)
                     sub_line_collections += l
 

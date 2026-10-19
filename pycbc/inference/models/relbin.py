@@ -113,7 +113,9 @@ def setup_bins(
     logger.info("Using powerlaw indices: %s", ga)
     dalp = chi * 2.0 * numpy.pi / numpy.absolute((f_lo**ga) - (f_hi**ga))
     dphi = numpy.sum(
-        numpy.array([numpy.sign(g) * d * (f**g) for g, d in zip(ga, dalp)]),
+        numpy.array(
+            [numpy.sign(g) * d * (f**g) for g, d in zip(ga, dalp, strict=True)]
+        ),
         axis=0,
     )
     dphi_diff = dphi - dphi[0]

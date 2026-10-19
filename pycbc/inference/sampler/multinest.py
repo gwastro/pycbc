@@ -169,7 +169,7 @@ class MultinestSampler(BaseSampler):
         """A dict mapping the model's ``default_stats`` to arrays of values."""
         stats = []
         for sample in self._samples:
-            params = dict(zip(self.model.variable_params, sample))
+            params = dict(zip(self.model.variable_params, sample, strict=True))
             if self.model.sampling_transforms is not None:
                 params = self.model.sampling_transforms.apply(params)
             self.model.update(**params)
@@ -223,7 +223,7 @@ class MultinestSampler(BaseSampler):
 
     def loglikelihood(self, cube, *extra_args):
         """Log likelihood evaluator that gets passed to multinest."""
-        params = dict(zip(self.model.variable_params, cube))
+        params = dict(zip(self.model.variable_params, cube, strict=True))
         # apply transforms
         if self.model.sampling_transforms is not None:
             params = self.model.sampling_transforms.apply(params)
@@ -242,7 +242,7 @@ class MultinestSampler(BaseSampler):
         Transforms the unit hypercube that multinest makes its draws
         from, into the prior space defined in the config file.
         """
-        dict_cube = dict(zip(self.model.variable_params, cube))
+        dict_cube = dict(zip(self.model.variable_params, cube, strict=True))
         inv = self.model.prior_distribution.cdfinv(**dict_cube)
         for i, param in enumerate(self.model.variable_params):
             cube[i] = inv[param]
@@ -419,7 +419,7 @@ class MultinestSampler(BaseSampler):
         ]
         optional_kwargs = {
             k: v
-            for k, v in zip(kwarg_names, [ztol, eff, ins, checkpoint])
+            for k, v in zip(kwarg_names, [ztol, eff, ins, checkpoint], strict=True)
             if v is not None
         }
         obj = cls(model, nlivepoints, constraints=constraints, **optional_kwargs)

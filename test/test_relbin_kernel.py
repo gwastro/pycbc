@@ -81,7 +81,7 @@ def make_case(seed):
     # bins as the model lays them down for this band
     index = setup_bins(fine, FLOW, FHIGH)
     edges = fine[index]
-    bins = list(zip(index[:-1], index[1:]))
+    bins = list(zip(index[:-1], index[1:], strict=True))
 
     def waveform(points, mass1, distance=100.0):
         return get_fd_waveform_sequence(

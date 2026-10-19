@@ -591,7 +591,7 @@ class PhysicalModel:
         default_values = [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0]
         # make list of calibration param values
         calib_args = []
-        for arg, val in zip(arg_labels, default_values):
+        for arg, val in zip(arg_labels, default_values, strict=True):
             if arg in params:
                 calib_args.append(params[arg])
             else:

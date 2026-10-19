@@ -205,9 +205,11 @@ else:
 # These are used as the x values in the histogram plot;
 # this will be each bin edge repeated twice in order,
 # except the first and last which will appear once
-bin_comp_step = np.concatenate(tuple(zip(bin_comp_edges[:-1], bin_comp_edges[1:])))
+bin_comp_step = np.concatenate(
+    tuple(zip(bin_comp_edges[:-1], bin_comp_edges[1:], strict=True))
+)
 bin_mmatch_step = np.concatenate(
-    tuple(zip(bin_mmatch_edges[:-1], bin_mmatch_edges[1:]))
+    tuple(zip(bin_mmatch_edges[:-1], bin_mmatch_edges[1:], strict=True))
 )
 
 fig, axes = plt.subplots(
@@ -220,8 +222,11 @@ fig, axes = plt.subplots(
 
 # Make the histogram and scatter points for each approximant separately
 apx_names, apx_count = np.unique(approximants, return_counts=True)
-apx_colors = dict(zip(apx_names, plt.rcParams["axes.prop_cycle"].by_key()["color"]))
-for apx_name, apx_count in zip(apx_names, apx_count):
+# The color cycle is usually longer than the list of approximants
+apx_colors = dict(
+    zip(apx_names, plt.rcParams["axes.prop_cycle"].by_key()["color"], strict=False)
+)
+for apx_name, apx_count in zip(apx_names, apx_count, strict=True):
     # Filter to just this approximant
     this_appx = approximants == apx_name
 

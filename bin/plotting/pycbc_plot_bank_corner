@@ -333,7 +333,7 @@ for i in range(len(args.parameters)):
     # Share the axis to the one to the left of it
     # can't call sharey method on the same axes twice for some reason
     if len(sharey_axes) > 1:
-        for s0, s1 in zip(sharey_axes[:-1], sharey_axes[1:]):
+        for s0, s1 in zip(sharey_axes[:-1], sharey_axes[1:], strict=True):
             s0.sharey(s1)
     # Get the axes on column i
     # not statement removes diagonals
@@ -341,7 +341,7 @@ for i in range(len(args.parameters)):
     # Share the axis to the one to the left of it
     # can't call sharex method on the same axes twice for some reason
     if len(sharex_axes) > 1:
-        for s0, s1 in zip(sharex_axes[:-1], sharex_axes[1:]):
+        for s0, s1 in zip(sharex_axes[:-1], sharex_axes[1:], strict=True):
             s0.sharex(s1)
 
 for (p1, p2), ax in axis_dict.items():

@@ -410,7 +410,7 @@ if do_pp_test:
         )[0]
         inj_recovery_plots.append(injrec_plot)
     # add to the results page
-    pp_files = [(pp_table,), *list(zip(pp_plots, inj_recovery_plots))]
+    pp_files = [(pp_table,), *list(zip(pp_plots, inj_recovery_plots, strict=True))]
     layout.two_column_layout(rdir[pp_section], pp_files)
     # add to the main workflow
     workflow += pp_workflow

@@ -1937,11 +1937,13 @@ class SegFile(File):
 
         """
         seglistdict = segments.segmentlistdict()
-        for name, ifo, segmentlist in zip(names, ifos, segmentlists):
+        for name, ifo, segmentlist in zip(names, ifos, segmentlists, strict=True):
             seglistdict[ifo + ":" + name] = segmentlist
         if seg_summ_lists is not None:
             seg_summ_dict = segments.segmentlistdict()
-            for name, ifo, seg_summ_list in zip(names, ifos, seg_summ_lists):
+            for name, ifo, seg_summ_list in zip(
+                names, ifos, seg_summ_lists, strict=True
+            ):
                 seg_summ_dict[ifo + ":" + name] = seg_summ_list
         else:
             seg_summ_dict = None

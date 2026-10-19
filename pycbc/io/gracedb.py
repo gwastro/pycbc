@@ -592,7 +592,7 @@ class CandidateForGraceDB:
             self.prob_plotf = self.prob_file.replace(".json", ".png")
             # Don't try to plot zero probabilities
             prob_plot = {k: v for (k, v) in self.probabilities.items() if v != 0.0}
-            labels, sizes = zip(*prob_plot.items())
+            labels, sizes = zip(*prob_plot.items(), strict=True)
             colors = [source_color(label) for label in labels]
             fig, ax = plt.subplots()
             ax.pie(

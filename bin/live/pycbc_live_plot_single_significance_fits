@@ -160,7 +160,9 @@ for ifo in all_ifos:
     logger.info("Putting events into bins")
     event_bin = np.array([tbins[d] for d in durations[ifo]])
 
-    for bin_num, lower_upper in enumerate(zip(tbins.lower(), tbins.upper())):
+    for bin_num, lower_upper in enumerate(
+        zip(tbins.lower(), tbins.upper(), strict=True)
+    ):
         lower, upper = lower_upper
         binlabel = f"{lower:.3g} - {upper:.3g}"
 

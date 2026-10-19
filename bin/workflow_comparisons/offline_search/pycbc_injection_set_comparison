@@ -100,7 +100,10 @@ class Injections:
         self.inj_params = self.injgroup.keys()
         self.ninj = len(self.injgroup[self.inj_params[0]][:])
         self.inj_hashes = np.array(
-            [hash(v) for v in zip(*[self.injgroup[p] for p in hash_inj_params])]
+            [
+                hash(v)
+                for v in zip(*[self.injgroup[p] for p in hash_inj_params], strict=True)
+            ]
         )
         if not np.all(self.inj_hashes):
             raise RuntimeError("Not all injection hashes were finite")

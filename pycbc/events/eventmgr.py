@@ -221,7 +221,7 @@ class EventManager:
         self.array_minsize = array_minsize
 
         self.event_dtype = [("template_id", int)]
-        for col, coltype in zip(column, column_types):
+        for col, coltype in zip(column, column_types, strict=True):
             self.event_dtype.append((col, coltype))
 
         self._events = numpy.zeros([self.array_minsize], dtype=self.event_dtype)
@@ -380,7 +380,7 @@ class EventManager:
         # they shouldn't all be None
         assert new_events is not None
         new_events["template_id"] = self.template_index
-        for c, v in zip(columns, vectors):
+        for c, v in zip(columns, vectors, strict=True):
             if v is not None:
                 if isinstance(v, Array):
                     new_events[c] = v.numpy()
@@ -654,7 +654,7 @@ class EventManagerMultiDetBase(EventManager):
             self.ifo_reverse[i] = ifo
 
         self.event_dtype = [("template_id", int), ("event_id", int)]
-        for col, coltype in zip(column, column_types):
+        for col, coltype in zip(column, column_types, strict=True):
             self.event_dtype.append((col, coltype))
 
         self._events = numpy.zeros([self.array_minsize], dtype=self.event_dtype)
@@ -729,7 +729,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.network_event_dtype = [(ifo + "_event_id", int) for ifo in self.ifos]
         self.network_event_dtype.append(("template_id", int))
         self.network_event_dtype.append(("event_id", int))
-        for col, coltype in zip(network_column, network_column_types):
+        for col, coltype in zip(network_column, network_column_types, strict=True):
             self.network_event_dtype.append((col, coltype))
         self.network_events = numpy.zeros(
             [self.array_minsize], dtype=self.network_event_dtype
@@ -805,7 +805,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         # they shouldn't all be None
         assert new_events is not None
         new_events["template_id"] = self.template_index
-        for c, v in zip(columns, vectors):
+        for c, v in zip(columns, vectors, strict=True):
             if v is not None:
                 if isinstance(v, Array):
                     new_events[c] = v.numpy()
@@ -1136,7 +1136,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                     end_times1, end_times2, coinc_window
                 )
                 if len(idx_list1):
-                    for idx1, idx2 in zip(idx_list1, idx_list2):
+                    for idx1, idx2 in zip(idx_list1, idx_list2, strict=True):
                         event1 = curr_tev_dict1[:curr_tev_size1][idx1]
                         event2 = curr_tev_dict2[:curr_tev_size2][idx2]
                         self.coinc_list.append((event1, event2))

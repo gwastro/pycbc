@@ -114,7 +114,7 @@ if (
     if args.parameters is None:
         args.parameters = default_parameters
     outnames, columns = parse_parameters(args.parameters)
-    name_map = dict(zip(columns, outnames))
+    name_map = dict(zip(columns, outnames, strict=True))
 else:
     columns = None
     name_map = None

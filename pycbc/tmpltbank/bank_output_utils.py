@@ -42,7 +42,7 @@ def convert_to_sngl_inspiral_table(params, proc_id):
         tmplt = return_empty_sngl()
 
         tmplt.process_id = proc_id
-        for colname, value in zip(col_names, values):
+        for colname, value in zip(col_names, values, strict=True):
             setattr(tmplt, colname, value)
         tmplt.mtotal, tmplt.eta = pnutils.mass1_mass2_to_mtotal_eta(
             tmplt.mass1, tmplt.mass2
@@ -164,7 +164,7 @@ def output_bank_to_hdf(
 
     """
     bank_dict = {}
-    mass1, mass2, spin1z, spin2z = list(zip(*temp_bank))
+    mass1, mass2, spin1z, spin2z = list(zip(*temp_bank, strict=True))
     bank_dict["mass1"] = mass1
     bank_dict["mass2"] = mass2
     bank_dict["spin1z"] = spin1z

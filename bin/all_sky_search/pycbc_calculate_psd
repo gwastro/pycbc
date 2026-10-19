@@ -144,7 +144,7 @@ logger.info("%d psds to calculate", len(segments))
 
 if len(segments) > 0:
     pool = Pool(args.cores)
-    psds = pool.map_async(get_psd, zip(segments, range(len(segments))))
+    psds = pool.map_async(get_psd, zip(segments, range(len(segments)), strict=True))
     psds = psds.get()
 else:
     psds = []

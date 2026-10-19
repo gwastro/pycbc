@@ -191,7 +191,9 @@ if len(indices) > 0:
     tmplts = bank.table
 
     logger.info("Plotting %d trigs", len(sorted_end_time))
-    for tc, rho, tid in zip(sorted_end_time, sorted_rank, sorted_template_ids):
+    for tc, rho, tid in zip(
+        sorted_end_time, sorted_rank, sorted_template_ids, strict=True
+    ):
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
             tc - center_time,
             tmplts.mass1[tid],
@@ -250,7 +252,7 @@ for gate_type, hatch_style in [("file", "\\"), ("auto", "/")]:
         gate_pad = trigs["gating/" + gate_type + "/pad"][:]
     except KeyError:
         continue
-    gate_unique = list(frozenset(zip(gate_time, gate_width, gate_pad)))
+    gate_unique = list(frozenset(zip(gate_time, gate_width, gate_pad, strict=True)))
     for gt, gw, gp in gate_unique:
         # only plot gates within the plot time window
         if gt + gw < opts.gps_start_time or gt - gw > opts.gps_end_time:

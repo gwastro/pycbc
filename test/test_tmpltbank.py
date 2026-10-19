@@ -225,7 +225,7 @@ class TmpltbankTestClass(unittest.TestCase):
         err_msg += "sanity check."
         evals_diff = abs(evals_curr - evals_stock) / max_eval
         self.assertTrue(not (evals_diff > 1e-5).any(), msg=err_msg)
-        for stock, test in zip(evecs_stock.data, evecs_curr.data):
+        for stock, test in zip(evecs_stock.data, evecs_curr.data, strict=True):
             stock_scaled = stock * evals_curr.data**0.5
             test_scaled = test * evals_curr.data**0.5
             diff = stock_scaled - test_scaled

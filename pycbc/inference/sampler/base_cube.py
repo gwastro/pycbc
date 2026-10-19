@@ -74,7 +74,7 @@ class CubeModel:
         """
         Returns log likelihood function
         """
-        params = dict(zip(self.model.sampling_params, cube))
+        params = dict(zip(self.model.sampling_params, cube, strict=True))
         self.model.update(**params)
         if self.model.logprior == -numpy.inf:
             return -numpy.inf
@@ -90,7 +90,7 @@ class CubeModel:
             cube = cube.copy()
 
         # we preserve the type of cube to whatever we were given
-        dict_cube = dict(zip(self.model.variable_params, cube))
+        dict_cube = dict(zip(self.model.variable_params, cube, strict=True))
         inv = self.model.prior_distribution.cdfinv(**dict_cube)
         for i, param in enumerate(self.model.variable_params):
             cube[i] = inv[param]

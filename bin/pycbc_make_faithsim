@@ -168,7 +168,7 @@ pnode = CondorDAGNode(pjob)
 for inj_num in range(num_banks):
     bn = "bank/bank" + str(inj_num) + ".xml.gz"
 
-    for fsjob, sec in zip(fsjobs, fs_secs):
+    for fsjob, sec in zip(fsjobs, fs_secs, strict=True):
         sec_sub = str(sec[len("faithsim") :])
         mf = "match/match" + sec_sub + "-" + str(inj_num) + ".dat"
         fsnode = FaithsimNode(fsjob, bn, mf, inj_per_job=templates_per_job)

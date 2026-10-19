@@ -59,7 +59,7 @@ samples = [samples] if not isinstance(samples, list) else samples
 logger.info("Getting percentiles of injections")
 measured_percentiles = {}
 ninjections = len(opts.input_file)
-for input_file, input_samples in zip(opts.input_file, samples):
+for input_file, input_samples in zip(opts.input_file, samples, strict=True):
     # load the injections
     opts.input_file = input_file
     inj_parameters = injections_from_cli(opts)

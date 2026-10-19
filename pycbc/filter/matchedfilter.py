@@ -1805,7 +1805,9 @@ class LiveBatchMatchedFilter:
 
         chunks = numpy.array([])
         num = 0
-        for count, grab in zip(counts, grabs):
+        # counts is per unique duration and grabs per unique sample length, so
+        # these need not be the same length
+        for count, grab in zip(counts, grabs, strict=False):
             chunks = numpy.append(chunks, numpy.arange(num, count + num, grab))
             chunks = numpy.append(chunks, [count + num])
             num += count
@@ -1822,8 +1824,8 @@ class LiveBatchMatchedFilter:
         samples = self.chunk_tsamples * self.chunks
 
         # Create workspace memory for correlate and snr
-        mem_ids = [(a, b) for a, b in zip(chunk_durations, self.chunks)]
-        mem_types = set(zip(mem_ids, samples))
+        mem_ids = [(a, b) for a, b in zip(chunk_durations, self.chunks, strict=True)]
+        mem_types = set(zip(mem_ids, samples, strict=True))
 
         # Groups are processed strictly one at a time, so we use one pair
         # of memory buffers for both, sized for the largest and using views

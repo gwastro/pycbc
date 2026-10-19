@@ -875,7 +875,9 @@ for key in final_bg_files:
 
 # DQ log likelihood plots
 
-for dqf, dql in sorted(zip(dqfiles, dqfile_labels), key=lambda dqfl: dqfl[0].ifo):
+for dqf, dql in sorted(
+    zip(dqfiles, dqfile_labels, strict=True), key=lambda dqfl: dqfl[0].ifo
+):
     ifo = dqf.ifo
     dq_dir = rdir[f"data_quality/{dqf.ifo}_DQ_results"]
 
@@ -914,7 +916,7 @@ splitbank_files_inj = wf.setup_splittable_workflow(
 inj_files_base, inj_tags = wf.setup_injection_workflow(workflow, output_dir="inj_files")
 
 inj_files = []
-for inj_file, tag in zip(inj_files_base, inj_tags):
+for inj_file, tag in zip(inj_files_base, inj_tags, strict=True):
     inj_files.append(wf.inj_to_hdf(workflow, inj_file, "inj_files", [tag]))
 
 inj_coincs = wf.FileList()
@@ -923,7 +925,7 @@ found_inj_dict = {}
 insps_dict = {}
 
 files_for_combined_injfind = []
-for inj_file, tag in zip(inj_files, inj_tags):
+for inj_file, tag in zip(inj_files, inj_tags, strict=True):
     ctags = [tag, "injections"]
     output_dir = f"{tag}_coinc"
 
@@ -1052,7 +1054,7 @@ if len(files_for_combined_injfind) > 0:
 
 ############################ Injection plots #################################
 # Per injection run plots
-for inj_file, tag in zip(inj_files, inj_tags):
+for inj_file, tag in zip(inj_files, inj_tags, strict=True):
     found_inj = found_inj_dict[tag]
     insps = insps_dict[tag]
     injdir = rdir[f"injections/{tag}"]

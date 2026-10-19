@@ -78,7 +78,7 @@ samples = [samples] if not isinstance(samples, list) else samples
 logger.info("Plotting")
 measured_percentiles = {}
 
-for input_file, input_samples in zip(opts.input_file, samples):
+for input_file, input_samples in zip(opts.input_file, samples, strict=True):
     # load the injections
     opts.input_file = input_file
     inj_parameters = io.injections_from_cli(opts)
