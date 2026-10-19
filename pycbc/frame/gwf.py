@@ -131,7 +131,7 @@ def read(path, channel, start, end, check_integrity=False):
     Returns
     -------
     data : np.ndarray
-    epoch : float
+    epoch : lal.LIGOTimeGPS
         GPS time of the first sample.
     delta_t : float
         Sample spacing in seconds.
@@ -141,7 +141,7 @@ def read(path, channel, start, end, check_integrity=False):
     channel_type = lalframe.FrStreamGetTimeSeriesType(channel, stream)
     read_func = _fr_type_map[channel_type][0]
     series = read_func(stream, channel, lal.LIGOTimeGPS(start), end - start, 0)
-    return series.data.data, float(series.epoch), series.deltaT
+    return series.data.data, series.epoch, series.deltaT
 
 
 def write(location, channels, timeseries, start_time, duration):

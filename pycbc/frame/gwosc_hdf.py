@@ -29,6 +29,7 @@ import math
 from pathlib import Path
 
 import h5py
+from lal import LIGOTimeGPS
 
 _HDF5_SIGNATURE = b"\x89HDF\r\n\x1a\n"
 
@@ -100,7 +101,7 @@ def read(path, channel, start, end, check_integrity=False):  # noqa: ARG001
     Returns
     -------
     data : numpy.ndarray
-    epoch : float
+    epoch : lal.LIGOTimeGPS
         GPS time of the first sample.
     delta_t : float
         Sample spacing in seconds.
@@ -108,12 +109,12 @@ def read(path, channel, start, end, check_integrity=False):  # noqa: ARG001
     """
     with h5py.File(path, "r") as f:
         dset = _dataset(f, channel)
-        epoch = float(dset.attrs["Xstart"])
+        epoch = LIGOTimeGPS(float(dset.attrs["Xstart"]))
         delta_t = float(dset.attrs["Xspacing"])
         # Choose samples as lalframe does (see LALFrStreamReadTS_source.c):
         # start at the first sample after `start`, or at a sample within
         # _FUZZ of it, and read int((end - start) / delta_t) samples.
-        first = max(0, math.ceil((start - epoch - _FUZZ) / delta_t))
+        first = max(0, math.ceil((start - float(epoch) - _FUZZ) / delta_t))
         count = int((end - start) / delta_t)
         return dset[first : first + count], epoch + first * delta_t, delta_t
 

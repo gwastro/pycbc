@@ -28,6 +28,7 @@ from gwdatafind import find_urls as find_frame_urls
 
 from pycbc.frame import gwf, gwosc_hdf
 from pycbc.frame.cache import file_format, locations_to_cache
+from pycbc.frame.gwosc_hdf import _FUZZ
 from pycbc.types import TimeSeries
 
 logger = logging.getLogger(__name__)
@@ -42,18 +43,28 @@ def _read_channel(cache, channel, start, end, check_integrity=False):
     start = float(start)
     end = None if end is None else float(end)
     pieces = []
+    # Each format reads int((stop - start) / delta_t) samples from the first
+    # sample at or within _FUZZ before `start`, as lalframe does. A file that
+    # is read to its end is asked for _FUZZ more, so that it is read to its
+    # last sample also when `start` is just after a sample. The files after
+    # the first are read up to `stop`, the end of the int((end - start) /
+    # delta_t) samples that one read of the whole span would give.
+    stop = end
     for entry in cache.sieve(start=start, end=end):
+        lo = max(start, entry.start)
+        hi = entry.end + _FUZZ if stop is None else min(stop, entry.end + _FUZZ)
+        if hi <= lo:
+            break
         data, epoch, delta_t = file_format(entry.path).read(
-            entry.path,
-            channel,
-            max(start, entry.start),
-            entry.end if end is None else min(end, entry.end),
-            check_integrity=check_integrity,
+            entry.path, channel, lo, hi, check_integrity=check_integrity
         )
+        if not pieces and end is not None:
+            count = int((end - start) / delta_t)
+            stop = float(epoch) + count * delta_t + _FUZZ
         if pieces:
             prev_data, prev_epoch, prev_delta_t = pieces[-1]
-            expected = prev_epoch + len(prev_data) * prev_delta_t
-            if abs(epoch - expected) > delta_t / 2 or delta_t != prev_delta_t:
+            expected = float(prev_epoch) + len(prev_data) * prev_delta_t
+            if abs(float(epoch) - expected) > delta_t / 2 or delta_t != prev_delta_t:
                 if end is None:
                     break
                 raise ValueError(  # noqa: TRY003
@@ -64,17 +75,15 @@ def _read_channel(cache, channel, start, end, check_integrity=False):
 
     if not pieces:
         raise ValueError(f"No data found for {channel} at GPS time {start}")  # noqa: TRY003
-    data, epoch, delta_t = pieces[0]
-    last_data, last_epoch, _ = pieces[-1]
-    if epoch - start >= delta_t:
+    _, epoch, delta_t = pieces[0]
+    if float(epoch) - start >= delta_t:
         raise ValueError(  # noqa: TRY003
             f"{channel} data starts at {epoch}, after the requested start time {start}"
         )
-    if end is not None and end - (last_epoch + len(last_data) * delta_t) >= delta_t:
+    data = numpy.concatenate([p[0] for p in pieces])
+    if end is not None and len(data) < count:
         raise ValueError(f"{channel} data ends before the requested end time {end}")  # noqa: TRY003
-    return TimeSeries(
-        numpy.concatenate([p[0] for p in pieces]), delta_t=delta_t, epoch=epoch
-    )
+    return TimeSeries(data, delta_t=delta_t, epoch=epoch)
 
 
 def read_frame(
