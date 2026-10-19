@@ -87,7 +87,10 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
     must either be static or marginalized over by the base model.
 
     The marginalization assumes a uniform prior on the total mass evaluated
-    on a uniformly spaced grid.
+    on a uniformly spaced grid. The grid has to be fine enough to resolve the
+    peak of the likelihood, which narrows as the signal gets louder; too
+    coarse a grid biases the marginalized likelihood. Check convergence by
+    increasing ``mtotal_grid_num`` until the likelihood stops moving.
 
     Parameters
     ----------
@@ -133,25 +136,16 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
         from pycbc.inference.models import models
 
         self.marginalize_vector_params = []
-        if 'marginalize_vector_params' in kwds:
-            if isinstance(kwds['marginalize_vector_params'], str) and kwds['marginalize_vector_params']:
-                self.marginalize_vector_params = [p.strip() for p in kwds['marginalize_vector_params'].split(',') if p.strip()]
-            elif isinstance(kwds['marginalize_vector_params'], (list, tuple)):
-                self.marginalize_vector_params = [p.strip() for p in kwds['marginalize_vector_params'] if p.strip()]
+        vector_params = kwds.get('marginalize_vector_params', None)
+        if isinstance(vector_params, str):
+            vector_params = vector_params.split(',')
+        if vector_params:
+            self.marginalize_vector_params = [
+                p.strip() for p in vector_params if p.strip()]
 
-        # --- Save the original mtotal prior distribution and bounds before deletion ---
         self.mtotal_grid = None
-        self.mtotal_prior_dist = None
-        self.mtotal_bounds = None
-        prior = kwds.get('prior', None)
-        if prior and 'mtotal' in prior.bounds:
-            for dist in prior.distributions:
-                if dist.name == 'mtotal':
-                    self.mtotal_prior_dist = dist
-                    break
-            self.mtotal_bounds = (prior.bounds['mtotal'].min, prior.bounds['mtotal'].max)
 
-        # --- Setup bounds for mtotal marginalization using the saved bounds ---
+        # --- Setup bounds for mtotal marginalization from the mtotal prior ---
         if marginalize_mtotal:
             prior = kwds.get('prior', {})
             if prior:
@@ -168,12 +162,17 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
 
             if mtotal_grid is None and min_mtotal is not None and max_mtotal is not None:
                 if mtotal_grid_num is None:
-                    raise ValueError("Must specify mtotal_grid_num if mtotal_grid is not given")
-                self.mtotal_grid = numpy.linspace(min_mtotal, max_mtotal, int(mtotal_grid_num))
+                    raise ValueError("Must specify mtotal_grid_num if "
+                                     "mtotal_grid is not given")
+                self.mtotal_grid = numpy.linspace(
+                    min_mtotal, max_mtotal, int(mtotal_grid_num))
             elif mtotal_grid is not None:
                 self.mtotal_grid = numpy.array([float(m) for m in mtotal_grid])
             else:
-                raise ValueError("Either provide 'mtotal_grid' (a list or array) or specify 'mtotal_grid_num' (the number of points to create a grid over the prior).")
+                raise ValueError(
+                    "Either provide 'mtotal_grid' (a list or array) or "
+                    "specify 'mtotal_grid_num' (the number of points to "
+                    "create a grid over the prior).")
 
         base_model_cls = models[base_model]
         self.model = base_model_cls(variable_params=variable_params, **kwds)
@@ -191,7 +190,8 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
         # ------ Reconstruct the marginalized prior ------
         marginalized_params.extend(self.marginalize_vector_params)
 
-        variable_params = tuple(p for p in variable_params if p not in marginalized_params)
+        variable_params = tuple(
+            p for p in variable_params if p not in marginalized_params)
 
         prior_dists_by_param = {}
         for d in self.model.prior_distribution.distributions:
@@ -208,9 +208,11 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
             if param in current_prior_dists:
                 del current_prior_dists[param]
 
-        variable_params = tuple(p for p in variable_params if p not in marginalized_params)
+        variable_params = tuple(
+            p for p in variable_params if p not in marginalized_params)
 
-        self.model.prior_distribution = JointDistribution(variable_params, *current_prior_dists.values())
+        self.model.prior_distribution = JointDistribution(
+            variable_params, *current_prior_dists.values())
         kwds['prior'] = self.model.prior_distribution
 
         super().__init__(variable_params, **kwds)
