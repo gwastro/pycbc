@@ -22,8 +22,8 @@ OMP_NUM_THREADS=1 pycbc_inference_model_stats \
 
 # Overlay the total mass marginalized run on the one that sampled it directly
 pycbc_inference_plot_posterior \
---input-file demarg_mtotal.hdf demarg_validation.hdf \
---input-file-labels "marginalized_mtotal" "marginalized_time" \
+--input-file demarg_mtotal.hdf:marginalized_mtotal \
+             demarg_validation.hdf:marginalized_time \
 --output-file comparison.png \
 --parameters mtotal q inclination distance \
 --plot-injection-parameters

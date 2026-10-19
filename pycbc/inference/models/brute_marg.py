@@ -485,10 +485,6 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
         vals = list(self.mapfunc(self.call, params))
         loglr = numpy.array([v[0] for v in vals])
 
-        # kept so that reconstruct() can draw a total mass from the grid
-        self._grid_params = params
-        self._grid_loglr = loglr
-
         if self.reconstruct_sky_points:
             return loglr
 
