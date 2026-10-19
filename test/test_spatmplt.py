@@ -211,7 +211,13 @@ class TestChirpTime(unittest.TestCase):
         pnutils.get_inspiral_tf passes spins through to the TaylorF2
         time-frequency track.
         """
-        kwargs = dict(tc=0.0, mass1=15.0, mass2=1.4, f_low=20.0, approximant="TaylorF2")
+        kwargs = {
+            "tc": 0.0,
+            "mass1": 15.0,
+            "mass2": 1.4,
+            "f_low": 20.0,
+            "approximant": "TaylorF2",
+        }
         t_aligned, _ = pnutils.get_inspiral_tf(spin1=0.8, spin2=0.0, **kwargs)
         t_anti, _ = pnutils.get_inspiral_tf(spin1=-0.8, spin2=0.0, **kwargs)
         t_nospin, _ = pnutils.get_inspiral_tf(spin1=0.0, spin2=0.0, **kwargs)

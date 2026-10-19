@@ -225,7 +225,7 @@ class MultinestSampler(BaseSampler):
 
     def loglikelihood(self, cube, *extra_args):
         """Log likelihood evaluator that gets passed to multinest."""
-        params = {p: v for p, v in zip(self.model.variable_params, cube)}
+        params = dict(zip(self.model.variable_params, cube))
         # apply transforms
         if self.model.sampling_transforms is not None:
             params = self.model.sampling_transforms.apply(params)
@@ -233,7 +233,7 @@ class MultinestSampler(BaseSampler):
             params = apply_transforms(params, self.model.waveform_transforms)
         # apply constraints
         if self._constraints is not None and not all(
-            [c(params) for c in self._constraints]
+            c(params) for c in self._constraints
         ):
             return -numpy.inf
         self.model.update(**params)

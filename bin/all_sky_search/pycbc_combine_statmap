@@ -97,7 +97,7 @@ logger.info("Copying foreground non-ifo-specific data")
 # copy and concatenate all the columns in the foreground group
 # from all files /except/ the IFO groups
 for key in key_set:
-    if key.startswith("foreground") and not any([ifo in key for ifo in all_ifos]):
+    if key.startswith("foreground") and not any(ifo in key for ifo in all_ifos):
         pycbc.io.combine_and_copy(f, files, key)
 
 logger.info("Collating triggers into single structure")

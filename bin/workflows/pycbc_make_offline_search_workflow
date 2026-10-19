@@ -459,10 +459,9 @@ for ifocomb in ifo_sets:
         )
 
 # Sort the IFO combinations: longest (most detectors) first, then alphabetical
-final_bg_files = {
-    k: v
-    for k, v in sorted(final_bg_files.items(), key=(lambda kv: (-len(kv[0]), kv[0])))
-}
+final_bg_files = dict(
+    sorted(final_bg_files.items(), key=(lambda kv: (-len(kv[0]), kv[0])))
+)
 
 if len(ifo_sets) == 1:
     combined_bg_file = no_fg_exc_files[ordered_ifo_list]
@@ -685,7 +684,7 @@ if workflow.cp.has_option_tags(
     layout.single_layout(rdir["workflow/throughput"], [throughput_plot])
 
 # Run minifollowups on loudest sngl detector events
-excl_subsecs = set([])
+excl_subsecs = set()
 
 for insp_file in full_insps:
     for tag in insp_file.tags:

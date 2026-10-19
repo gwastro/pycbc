@@ -51,7 +51,7 @@ for fn in args.input_file:
         key = (ifo, gate_type)
         if key not in gate_data:
             gate_data[key] = []
-        gate_data[key] += [g for g in zip(gate_time, gate_width, gate_pad)]
+        gate_data[key] += list(zip(gate_time, gate_width, gate_pad))
         have_gates = have_gates or (len(gate_data[key]) > 0)
 
 mpld3.plugins.DEFAULT_PLUGINS = []

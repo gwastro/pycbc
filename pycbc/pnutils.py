@@ -671,7 +671,7 @@ def get_inspiral_tf(
     params.spin1z = spin1
     params.spin2z = spin2
     try:
-        approximant = eval(approximant, {"__builtins__": None}, dict(params=params))
+        approximant = eval(approximant, {"__builtins__": None}, {"params": params})
     except (NameError, TypeError):
         pass
 

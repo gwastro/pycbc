@@ -2111,11 +2111,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # low latency dq channel
         if data_quality_channel is not None:
-            sb_kwargs = dict(
-                max_buffer=max_buffer,
-                force_update_cache=force_update_cache,
-                increment_update_cache=increment_update_cache,
-            )
+            sb_kwargs = {
+                "max_buffer": max_buffer,
+                "force_update_cache": force_update_cache,
+                "increment_update_cache": increment_update_cache,
+            }
             if (
                 len(self.data_quality_flags) == 1
                 and self.data_quality_flags[0] == "veto_nonzero"

@@ -42,13 +42,13 @@ TC = 1187008882.42
 FLOW, SEGLEN, SRATE = 25.0, 64, 2048
 SAMPLE_RATE = 4096
 VARIABLE = ["distance", "inclination", "tc"]
-POINT = dict(distance=40.0, inclination=0.5)
+POINT = {"distance": 40.0, "inclination": 0.5}
 # how far the reference is put from the signal. The last of these moves the
 # peak by more than the width of a locked region.
 OFFSETS = [0.0, 0.002, 0.005, 0.01]
 # the search has to reach the peak at the last offset, which is 65 ms from
 # where it was locked: search 125 ms either side
-SEARCH = dict(peak_lock_search_samples=1024, peak_lock_search_decimate=8)
+SEARCH = {"peak_lock_search_samples": 1024, "peak_lock_search_decimate": 8}
 
 
 class TestPeakLockSearch(unittest.TestCase):
@@ -75,16 +75,22 @@ class TestPeakLockSearch(unittest.TestCase):
         signal = Detector("H1").project_wave(hp, hc, 1.7, -0.4, 0.3)
         cls.data = {"H1": noise.add_into(signal).to_frequencyseries()}
         cls.psds = {"H1": psd}
-        cls.static = dict(
-            mass1=1.4,
-            mass2=1.35,
-            f_lower=FLOW,
-            approximant="TaylorF2",
-            ra=1.7,
-            dec=-0.4,
-            polarization=0.3,
-        )
-        cls.fiducial = dict(mass1=1.4, tc=TC, ra=1.7, dec=-0.4, polarization=0.3)
+        cls.static = {
+            "mass1": 1.4,
+            "mass2": 1.35,
+            "f_lower": FLOW,
+            "approximant": "TaylorF2",
+            "ra": 1.7,
+            "dec": -0.4,
+            "polarization": 0.3,
+        }
+        cls.fiducial = {
+            "mass1": 1.4,
+            "tc": TC,
+            "ra": 1.7,
+            "dec": -0.4,
+            "polarization": 0.3,
+        }
 
     @classmethod
     def noise(cls, psd):

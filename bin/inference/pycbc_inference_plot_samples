@@ -138,7 +138,7 @@ fp.close()
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters": ", ".join(sorted(list(labels.values()))),
+    "parameters": ", ".join(sorted(labels.values())),
 }
 caption = r"""Parameter samples from the chains whose indices were
 provided as inputs. Each line is a different chain of samples in that

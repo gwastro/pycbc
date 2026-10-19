@@ -34,7 +34,7 @@ class Recalibrate(metaclass=ABCMeta):
 
     def __init__(self, ifo_name):
         self.ifo_name = ifo_name
-        self.params = dict()
+        self.params = {}
 
     @abstractmethod
     def apply_calibration(self, strain):

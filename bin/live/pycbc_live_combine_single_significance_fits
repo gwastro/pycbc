@@ -153,8 +153,8 @@ start_time_n = trigger_file_starts[ad_order[0]]
 ad = trigger_file_ends[ad_order] - start_time_n
 
 # Swap the time and bin dimensions for counts and alphas
-counts_bin = {ifo: [c for c in zip(*counts_all[ifo])] for ifo in args.ifos}
-alphas_bin = {ifo: [a for a in zip(*alphas_all[ifo])] for ifo in args.ifos}
+counts_bin = {ifo: list(zip(*counts_all[ifo])) for ifo in args.ifos}
+alphas_bin = {ifo: list(zip(*alphas_all[ifo])) for ifo in args.ifos}
 
 alphas_out = {ifo: np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
 counts_out = {ifo: np.inf * np.ones(len(counts_bin[ifo])) for ifo in args.ifos}

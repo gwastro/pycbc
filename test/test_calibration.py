@@ -21,16 +21,21 @@ class CalibrateTestBase(unittest.TestCase):
         self.assertRaises(TypeError, Recalibrate, "test")
 
     def test_instantiation(self):
-        params = dict(
-            ifo_name="test", minimum_frequency=10, maximum_frequency=1024, n_points=5
-        )
+        params = {
+            "ifo_name": "test",
+            "minimum_frequency": 10,
+            "maximum_frequency": 1024,
+            "n_points": 5,
+        }
         model = strain.models["cubic_spline"](**params)
         self.assertTrue(model.name == "cubic_spline")
 
     def test_instantiation_from_config(self):
-        parameters = dict(
-            minimum_frequency="10", maximum_frequency="1024", n_points="5"
-        )
+        parameters = {
+            "minimum_frequency": "10",
+            "maximum_frequency": "1024",
+            "n_points": "5",
+        }
 
         cp = WorkflowConfigParser()
         cp.add_section("test")
@@ -54,28 +59,31 @@ class CalibrateTestBase(unittest.TestCase):
         )
 
     def test_update_parameters(self):
-        init_params = dict(
-            ifo_name="test", minimum_frequency=10, maximum_frequency=1024, n_points=5
-        )
-        dict_params = dict(
-            recalib_amplitude_test_0=0.1,
-            recalib_amplitude_test_1=0.1,
-            recalib_amplitude_test_2=0.1,
-            recalib_amplitude_test_3=0.1,
-            recalib_amplitude_test_4=0.1,
-            recalib_phase_test_0=0.1,
-            recalib_phase_test_1=0.1,
-            recalib_phase_test_2=0.1,
-            recalib_phase_test_3=0.1,
-            recalib_phase_test_4=0.1,
-        )
+        init_params = {
+            "ifo_name": "test",
+            "minimum_frequency": 10,
+            "maximum_frequency": 1024,
+            "n_points": 5,
+        }
+        dict_params = {
+            "recalib_amplitude_test_0": 0.1,
+            "recalib_amplitude_test_1": 0.1,
+            "recalib_amplitude_test_2": 0.1,
+            "recalib_amplitude_test_3": 0.1,
+            "recalib_amplitude_test_4": 0.1,
+            "recalib_phase_test_0": 0.1,
+            "recalib_phase_test_1": 0.1,
+            "recalib_phase_test_2": 0.1,
+            "recalib_phase_test_3": 0.1,
+            "recalib_phase_test_4": 0.1,
+        }
         model = strain.models["cubic_spline"](**init_params)
-        dict_params.update(dict(foo="bar"))
+        dict_params.update({"foo": "bar"})
         prefix = "recalib_"
         model.map_to_adjust(strain_array(), prefix=prefix, **dict_params)
         model_keys = [key[len(prefix) :] for key in dict_params if prefix in key]
         self.assertTrue(
-            all([model.params[key] == dict_params[prefix + key] for key in model_keys])
+            all(model.params[key] == dict_params[prefix + key] for key in model_keys)
         )
 
 

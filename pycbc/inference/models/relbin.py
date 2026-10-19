@@ -404,27 +404,27 @@ class Relative(DistMarg, BaseGaussianNoise):
         if self.marginalize_vector_params:
             p = self.current_params
 
-            vmarg = set(
+            vmarg = {
                 k for k in self.marginalize_vector_params if not numpy.isscalar(p[k])
-            )
+            }
 
             if self.earth_rotation:
-                if set(["tc", "polarization"]).issubset(vmarg):
+                if {"tc", "polarization"}.issubset(vmarg):
                     self.lformat = "earth_time_pol"
                     return likelihood_parts_v_pol_time
-                if set(["polarization"]).issubset(vmarg):
+                if {"polarization"}.issubset(vmarg):
                     self.lformat = "earth_pol"
                     return likelihood_parts_v_pol
-                if set(["tc"]).issubset(vmarg):
+                if {"tc"}.issubset(vmarg):
                     self.lformat = "earth_time"
                     return likelihood_parts_v_time
-            elif set(["ra", "dec", "tc"]).issubset(vmarg) or set(
-                ["tc", "polarization"]
-            ).issubset(vmarg):
+            elif {"ra", "dec", "tc"}.issubset(vmarg) or {"tc", "polarization"}.issubset(
+                vmarg
+            ):
                 return likelihood_parts_vector
-            elif set(["tc"]).issubset(vmarg):
+            elif {"tc"}.issubset(vmarg):
                 return likelihood_parts_vectort
-            elif set(["polarization"]).issubset(vmarg):
+            elif {"polarization"}.issubset(vmarg):
                 return likelihood_parts_vectorp
 
         return self.lik

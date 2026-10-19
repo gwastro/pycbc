@@ -260,14 +260,14 @@ def get_needed_fieldnames(arr, names):
         The set of the fields needed to evaluate the names.
 
     """
-    fieldnames = set([])
+    fieldnames = set()
     # we'll need the class that the array is an instance of to evaluate some
     # things
     cls = arr.__class__
     if isinstance(names, str):
         names = [names]
     # parse names for variables, incase some of them are functions of fields
-    parsed_names = set([])
+    parsed_names = set()
     for name in names:
         parsed_names.update(get_fields_from_arg(name))
     # only include things that are in the array's namespace
@@ -824,9 +824,9 @@ class FieldArray(numpy.recarray):
         """Initializes a new empty array."""
         obj = super().__new__(cls, shape, **kwargs).view(type=cls)
         obj.name = name
-        obj.__persistent_attributes__ = [a for a in cls.__persistent_attributes__]
-        obj._functionlib = {f: func for f, func in cls._functionlib.items()}
-        obj._virtualfields = [f for f in cls._virtualfields]
+        obj.__persistent_attributes__ = list(cls.__persistent_attributes__)
+        obj._functionlib = dict(cls._functionlib.items())
+        obj._virtualfields = list(cls._virtualfields)
         # zero out the array if desired
         if zero:
             default = default_empty(1, dtype=obj.dtype)
@@ -1310,7 +1310,7 @@ class FieldArray(numpy.recarray):
     def virtualfields(self):
         """Returns a tuple listing the names of virtual fields in self."""
         if self._virtualfields is None:
-            vfs = tuple()
+            vfs = ()
         else:
             vfs = tuple(self._virtualfields)
         return vfs

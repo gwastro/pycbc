@@ -269,7 +269,7 @@ class UniformF0Tau(uniform.Uniform):
         else:
             damping_time = "tau"
         # check that they match whats in the variable args
-        if not variable_args == set([rdfreq, damping_time]):
+        if not variable_args == {rdfreq, damping_time}:
             raise ValueError("variable args do not match rdfreq and damping_time names")
         # get the final mass and spin values, if provided
         final_mass = bounded.get_param_bounds_from_config(

@@ -152,7 +152,7 @@ def compute_network_snr_core(
         return -numpy.inf, {}
 
     if not hasattr(htilde, "params"):
-        htilde.params = dict(mass1=mass1, mass2=mass2, spin1z=v[2], spin2z=v[3])
+        htilde.params = {"mass1": mass1, "mass2": mass2, "spin1z": v[2], "spin2z": v[3]}
     if not hasattr(htilde, "end_idx"):
         htilde.end_idx = int(f_end / htilde.delta_f)
     htilde.approximant = approximant
@@ -330,7 +330,7 @@ option_dict = {
 def insert_snr_optimizer_options(parser):
     opt_opt_group = parser.add_argument_group("SNR optimizer configuration options.")
     # Option to choose which optimizer to use:
-    optimizer_choices = sorted(list(option_dict.keys()))
+    optimizer_choices = sorted(option_dict.keys())
     opt_opt_group.add_argument(
         "--snr-opt-method",
         default="differential_evolution",

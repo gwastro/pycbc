@@ -3345,7 +3345,7 @@ def order_transforms(transforms):
     # get a set of all inputs and all outputs
     outputs = set().union(*[set(t.outputs) - set(t.inputs) for t in transforms])
     out = []
-    remaining = [t for t in transforms]
+    remaining = list(transforms)
     while remaining:
         # pull out transforms that have no inputs in the set of outputs
         leftover = []

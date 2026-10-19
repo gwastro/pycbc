@@ -651,7 +651,7 @@ def draw(rtype):
         bdata = numpy.array([bank.key(k)[-trail:] for k in p])
         kde = gaussian_kde(bdata)
         points = kde.resample(size=size)
-        params = {k: v for k, v in zip(p, points)}
+        params = dict(zip(p, points))
 
         # Add `static_args` back, some transformations may need them.
         if static_args is not None:

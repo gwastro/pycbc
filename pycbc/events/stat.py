@@ -661,7 +661,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         """
         # Convert time shift vector to dict, as hist ifos and self.ifos may
         # not be in same order
-        to_shift = {ifo: s for ifo, s in zip(self.ifos, to_shift)}
+        to_shift = dict(zip(self.ifos, to_shift))
 
         if not self.has_hist:
             self.get_hist()
@@ -1637,7 +1637,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             ln_noise_rate -= numpy.log(hist_vol)
 
             # What is the signal pdf?
-            stat = {ifo: st for ifo, st in s}
+            stat = dict(s)
             ln_s += self.logsignalrate(stat, slide * step, to_shift)
 
         # Add in the feature-dependent terms to the signal rate

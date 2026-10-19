@@ -1987,7 +1987,7 @@ class SegFile(File):
 
         """
         if ifo_list is None:
-            ifo_set = set([i.split(":")[0] for i in segmentlistdict.keys()])
+            ifo_set = {i.split(":")[0] for i in segmentlistdict.keys()}
             ifo_list = list(ifo_set)
             ifo_list.sort()
         if valid_segment is None:
@@ -2160,7 +2160,7 @@ class SegFile(File):
                 x.add(
                     ligolw_segments.LigolwSegmentList(
                         active=fsegs,
-                        instruments=set([ifo]),
+                        instruments={ifo},
                         name=name,
                         version=1,
                         valid=vsegs,

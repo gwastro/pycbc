@@ -643,7 +643,7 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
         }
         cls.variable = ['q', 'mtotal']
         cls.ifos = ['H1', 'L1']
-        cls.low_frequency_cutoff = {ifo: cls.flow for ifo in cls.ifos}
+        cls.low_frequency_cutoff = dict.fromkeys(cls.ifos, cls.flow)
 
         # noise, with a signal at the injected total mass added in
         hp, _ = get_fd_waveform(
@@ -674,19 +674,19 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
             Uniform(mtotal=(min(cls.mtotal_grid), max(cls.mtotal_grid))))
 
     def _marg_model(self, **kwargs):
-        opts = dict(
-            data=copy.deepcopy(self.data),
-            psds=self.psds,
-            low_frequency_cutoff=self.low_frequency_cutoff,
-            static_params=self.static,
-            prior=self.prior,
-            base_model='marginalized_time',
-            marginalize_mtotal=True,
-            mtotal_grid=self.mtotal_grid,
-            fiducial_mtotal=self.fiducial_mtotal,
-            marginalize_vector_samples=64,
-            cores=1,
-        )
+        opts = {
+            "data": copy.deepcopy(self.data),
+            "psds": self.psds,
+            "low_frequency_cutoff": self.low_frequency_cutoff,
+            "static_params": self.static,
+            "prior": self.prior,
+            "base_model": 'marginalized_time',
+            "marginalize_mtotal": True,
+            "mtotal_grid": self.mtotal_grid,
+            "fiducial_mtotal": self.fiducial_mtotal,
+            "marginalize_vector_samples": 64,
+            "cores": 1,
+        }
         opts.update(kwargs)
         return models.BruteTotalMassMarginalize(self.variable, **opts)
 

@@ -1126,7 +1126,7 @@ class ForegroundTriggers:
                     curr_ifo = curr_dat.group_key
                     self.sngl_files[curr_ifo] = curr_dat
 
-        if not all([ifo in self.sngl_files.keys() for ifo in self.ifos]):
+        if not all(ifo in self.sngl_files.keys() for ifo in self.ifos):
             print(f"sngl_files: {sngl_files}")
             print(f"self.ifos: {self.ifos}")
             raise RuntimeError(
