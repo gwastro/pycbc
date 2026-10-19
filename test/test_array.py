@@ -136,14 +136,14 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
                 # to be sure that it is copied
                 in1 += 1
                 in2 += 1
-                self.assertTrue(type(out1._scheme) == type(self.context))
+                self.assertTrue(type(out1._scheme) is type(self.context))
                 self.assertTrue(type(out1._data) is SchemeArray)
                 self.assertEqual(out1[0], 5)
                 self.assertEqual(out1[1], 3)
                 self.assertEqual(out1[2], 1)
                 self.assertTrue(out1.dtype == self.dtype)
 
-                self.assertTrue(type(out2._scheme) == type(self.context))
+                self.assertTrue(type(out2._scheme) is type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0], 5)
                 self.assertEqual(out2[1], 3)
@@ -156,7 +156,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             # Also, when it is unspecified
             out3 = Array(in1)
             in1 += 1
-            self.assertTrue(type(out3._scheme) == type(self.context))
+            self.assertTrue(type(out3._scheme) is type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0], 5)
             self.assertEqual(out3[1], 3)
@@ -171,7 +171,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
                 in3 += 1
 
                 self.assertTrue(out4.dtype == self.dtype)
-                self.assertTrue(type(out4._scheme) == type(self.context))
+                self.assertTrue(type(out4._scheme) is type(self.context))
                 self.assertEqual(out4[0], 6)
                 self.assertEqual(out4[1], 4)
                 self.assertEqual(out4[2], 2)
@@ -186,7 +186,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             if self.scheme != "cpu":
                 out4 = Array(in4, copy=False)
                 in4 += 1
-                self.assertTrue(type(out4._scheme) == type(self.context))
+                self.assertTrue(type(out4._scheme) is type(self.context))
                 self.assertTrue(type(out4._data) is SchemeArray)
                 self.assertEqual(out4[0], 1)
                 self.assertEqual(out4[1], 1)
@@ -198,7 +198,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             in5 = numpy.array([1, 2, 3], dtype=numpy.int32)
             out5 = Array(in5)
             in5 += 1
-            self.assertTrue(type(out5._scheme) == type(self.context))
+            self.assertTrue(type(out5._scheme) is type(self.context))
             self.assertTrue(type(out5._data) is SchemeArray)
             self.assertEqual(out5[0], 1)
             self.assertEqual(out5[1], 2)
@@ -216,9 +216,9 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
         with self.context:
             in1 = Array([5, 3, 1], dtype=self.odtype)
             in2 = Array([5, 3, 1], dtype=self.other_precision[self.odtype])
-            self.assertTrue(type(in1._scheme) == type(self.context))
+            self.assertTrue(type(in1._scheme) is type(self.context))
             self.assertTrue(type(in1._data) is SchemeArray)
-            self.assertTrue(type(in2._scheme) == type(self.context))
+            self.assertTrue(type(in2._scheme) is type(self.context))
             self.assertTrue(type(in2._data) is SchemeArray)
             # We don't want to cast complex as real
             if not (self.kind == "real" and self.okind == "complex"):
@@ -229,7 +229,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
                 in1 += 1
                 in2 += 1
 
-                self.assertTrue(type(out1._scheme) == type(self.context))
+                self.assertTrue(type(out1._scheme) is type(self.context))
                 self.assertTrue(type(out1._data) is SchemeArray)
                 self.assertEqual(out1[0], 5)
                 self.assertEqual(out1[1], 3)
@@ -249,7 +249,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
                     self.assertTrue(out1.precision == "double")
                     self.assertTrue(out1.kind == "complex")
 
-                self.assertTrue(type(out2._scheme) == type(self.context))
+                self.assertTrue(type(out2._scheme) is type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0], 5)
                 self.assertEqual(out2[1], 3)
@@ -267,7 +267,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             out3 = Array(in1)
             in1 += 1
 
-            self.assertTrue(type(out3._scheme) == type(self.context))
+            self.assertTrue(type(out3._scheme) is type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0], 5)
             self.assertEqual(out3[1], 3)
@@ -277,7 +277,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             # We should also be able to create from a CPU Array
             out4 = Array(cpuarray, dtype=self.dtype)
 
-            self.assertTrue(type(out4._scheme) == type(self.context))
+            self.assertTrue(type(out4._scheme) is type(self.context))
             self.assertTrue(type(out4._data) is SchemeArray)
             self.assertEqual(out4[0], 1)
             self.assertEqual(out4[1], 2)
@@ -289,7 +289,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             out5 = Array(in3, copy=False)
             in3 += 1
 
-            self.assertTrue(type(out5._scheme) == type(self.context))
+            self.assertTrue(type(out5._scheme) is type(self.context))
             self.assertTrue(type(out5._data) is SchemeArray)
             self.assertEqual(out5[0], 6)
             self.assertEqual(out5[1], 4)
@@ -309,7 +309,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
         if self.scheme != "cpu":
             self.assertRaises(TypeError, Array, out4, copy=False)
             out6 = Array(out4, dtype=self.dtype)
-            self.assertTrue(type(out6._scheme) == CPUScheme)
+            self.assertTrue(type(out6._scheme) is CPUScheme)
             self.assertTrue(type(out6._data) is CPUArray)
             self.assertEqual(out6[0], 1)
             self.assertEqual(out6[1], 2)
@@ -376,7 +376,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             # When specified
             out1 = Array([5, 3, 1], dtype=self.dtype)
 
-            self.assertTrue(type(out1._scheme) == type(self.context))
+            self.assertTrue(type(out1._scheme) is type(self.context))
             self.assertTrue(type(out1._data) is SchemeArray)
             self.assertEqual(out1[0], 5)
             self.assertEqual(out1[1], 3)
@@ -399,7 +399,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             if self.kind == "complex":
                 out2 = Array([5 + 0j, 3 + 0j, 1 + 0j], dtype=self.dtype)
 
-                self.assertTrue(type(out2._scheme) == type(self.context))
+                self.assertTrue(type(out2._scheme) is type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0], 5)
                 self.assertEqual(out2[1], 3)
@@ -414,7 +414,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             # Also, when it is unspecified
             out3 = Array([5.0, 3, 1])
 
-            self.assertTrue(type(out3._scheme) == type(self.context))
+            self.assertTrue(type(out3._scheme) is type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0], 5)
             self.assertEqual(out3[1], 3)
@@ -423,7 +423,7 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
 
             out4 = Array([5 + 0j, 3 + 0j, 1 + 0j])
 
-            self.assertTrue(type(out4._scheme) == type(self.context))
+            self.assertTrue(type(out4._scheme) is type(self.context))
             self.assertTrue(type(out4._data) is SchemeArray)
             self.assertEqual(out4[0], 5)
             self.assertEqual(out4[1], 3)
@@ -439,14 +439,14 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
             out5 = zeros(3, dtype=self.dtype)
             out6 = zeros(3)
 
-            self.assertTrue(type(out5._scheme) == type(self.context))
+            self.assertTrue(type(out5._scheme) is type(self.context))
             self.assertTrue(type(out5._data) is SchemeArray)
             self.assertEqual(out5[0], 0)
             self.assertEqual(out5[1], 0)
             self.assertEqual(out5[2], 0)
             self.assertTrue(out5.dtype == self.dtype)
 
-            self.assertTrue(type(out6._scheme) == type(self.context))
+            self.assertTrue(type(out6._scheme) is type(self.context))
             self.assertTrue(type(out6._data) is SchemeArray)
             self.assertEqual(out6[0], 0)
             self.assertEqual(out6[1], 0)

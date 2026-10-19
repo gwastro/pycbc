@@ -332,7 +332,7 @@ def process_template(tnum):
         logger.info("No triggers in at least one ifo for template %i, skipping", tnum)
         return local_data
 
-    if type(rank_method.single_dtype) == list:
+    if type(rank_method.single_dtype) is list:
         entries = [e[0] for e in rank_method.single_dtype]
         if "snr" in entries:
             min_snr = min([numpy.min(sds_full[i]["snr"]) for i in trigs.ifos])
