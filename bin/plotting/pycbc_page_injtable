@@ -68,9 +68,9 @@ else:
         tdiff_format.append("##.##")
     ids = {detector: found[detector + "/trigger_id"][:] for detector in detectors_used}
 
-    found_cols = [found["stat"], found["ifar_exc"]] + tdiff
-    found_names = ["Ranking Stat.", "Exc. IFAR"] + tdiff_str
-    found_formats = ["##.##", "##.##"] + tdiff_format
+    found_cols = [found["stat"], found["ifar_exc"], *tdiff]
+    found_names = ["Ranking Stat.", "Exc. IFAR", *tdiff_str]
+    found_formats = ["##.##", "##.##", *tdiff_format]
 
     if args.single_trigger_files:
         for ifo in args.single_trigger_files:
@@ -116,65 +116,59 @@ m1, m2 = inj["mass1"][:][idx], inj["mass2"][:][idx]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
-columns = (
-    [
-        dec_chirp_dist,
-        inj["tc"][:][idx],
-        m1,
-        m2,
-        mchirp,
-        eta,
-        inj["spin1x"][:][idx],
-        inj["spin1y"][:][idx],
-        inj["spin1z"][:][idx],
-        inj["spin2x"][:][idx],
-        inj["spin2y"][:][idx],
-        inj["spin2z"][:][idx],
-        inj["distance"][:][idx],
-    ]
-    + eff_distance
-    + found_cols
-)
+columns = [
+    dec_chirp_dist,
+    inj["tc"][:][idx],
+    m1,
+    m2,
+    mchirp,
+    eta,
+    inj["spin1x"][:][idx],
+    inj["spin1y"][:][idx],
+    inj["spin1z"][:][idx],
+    inj["spin2x"][:][idx],
+    inj["spin2y"][:][idx],
+    inj["spin2z"][:][idx],
+    inj["distance"][:][idx],
+    *eff_distance,
+    *found_cols,
+]
 
-names = (
-    [
-        "DChirp Dist",
-        "Inj Time",
-        "Mass1",
-        "Mass2",
-        "Mchirp",
-        "Eta",
-        "s1x",
-        "s1y",
-        "s1z",
-        "s2x",
-        "s2y",
-        "s2z",
-        "Dist",
-    ]
-    + eff_dist_str
-    + found_names
-)
+names = [
+    "DChirp Dist",
+    "Inj Time",
+    "Mass1",
+    "Mass2",
+    "Mchirp",
+    "Eta",
+    "s1x",
+    "s1y",
+    "s1z",
+    "s2x",
+    "s2y",
+    "s2z",
+    "Dist",
+    *eff_dist_str,
+    *found_names,
+]
 
-format_strings = (
-    [
-        "##.##",
-        "##.##",
-        "##.##",
-        "##.##",
-        "##.##",
-        "##.##",
-        "##.##",
-        "##.##",
-        "##.##",
-        "##.##",
-        "##.##",
-        "##.##",
-        "##.##",
-    ]
-    + eff_dist_format
-    + found_formats
-)
+format_strings = [
+    "##.##",
+    "##.##",
+    "##.##",
+    "##.##",
+    "##.##",
+    "##.##",
+    "##.##",
+    "##.##",
+    "##.##",
+    "##.##",
+    "##.##",
+    "##.##",
+    "##.##",
+    *eff_dist_format,
+    *found_formats,
+]
 columns = [np.array(col) for col in columns]
 html_table = pycbc.results.html_table(
     columns, names, format_strings=format_strings, page_size=20

@@ -152,8 +152,8 @@ n_templates = 10000
 
 # For one of the tests, we want to use an exact value of mass1,
 # so set it manually
-mass1 = list(np.random.random(n_templates - 1) * 100) + [59]
-mass2 = list(np.random.random(n_templates - 1) * 100) + [10]
+mass1 = [*list(np.random.random(n_templates - 1) * 100), 59]
+mass2 = [*list(np.random.random(n_templates - 1) * 100), 10]
 
 # Assert mass1 > mass2
 template_dset["mass1"] = np.maximum(mass1, mass2)

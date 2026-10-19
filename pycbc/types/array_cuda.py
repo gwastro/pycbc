@@ -121,7 +121,7 @@ class LowerLatencyReductionKernel(ReductionKernel):
             grid_size,
             block_size,
             None,
-            *([result.gpudata] + s1_invocation_args + [seq_count, sz]),
+            *([result.gpudata, *s1_invocation_args, seq_count, sz]),
             shared_size=self.shared_size,
         )
 
@@ -138,9 +138,13 @@ class LowerLatencyReductionKernel(ReductionKernel):
                 block_size,
                 None,
                 *(
-                    [result.gpudata, result2.gpudata]
-                    + s1_invocation_args
-                    + [seq_count, sz]
+                    [
+                        result.gpudata,
+                        result2.gpudata,
+                        *s1_invocation_args,
+                        seq_count,
+                        sz,
+                    ]
                 ),
                 shared_size=self.shared_size,
             )

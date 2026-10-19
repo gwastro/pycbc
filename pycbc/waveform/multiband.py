@@ -52,7 +52,7 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
     fmax = p["f_final"]
     flow = p["f_lower"]
 
-    bands = [flow] + bands + [fmax]
+    bands = [flow, *bands, fmax]
     dfs = [df] + [1.0 / l for l in lengths]
 
     dt = 1.0 / (2.0 * fmax)

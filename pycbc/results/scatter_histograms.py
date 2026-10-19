@@ -604,7 +604,7 @@ def set_marginal_histogram_title(ax, fmt, color, label=None, rotated=False):
                 "va": "bottom",
             },
         )
-        ax.title_boxes = ax.title_boxes + [tbox1]
+        ax.title_boxes = [*ax.title_boxes, tbox1]
 
         # pack text boxes
         ybox = packer_class(children=ax.title_boxes, align="bottom", pad=0, sep=5)

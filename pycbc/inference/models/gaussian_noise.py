@@ -1023,7 +1023,7 @@ class GaussianNoise(BaseGaussianNoise):
         """Calculate a multi-model (signal) likelihood"""
         # Generate the waveforms for each submodel
         wfs = []
-        for m in models + [self]:
+        for m in [*models, self]:
             wfs.append(m.get_waveforms())
 
         # combine into a single waveform

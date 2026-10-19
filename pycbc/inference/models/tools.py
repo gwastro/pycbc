@@ -240,9 +240,10 @@ class DistMarg:
         # Save marginalized parameters' name into one place,
         # coa_phase will be a static param if been marginalized
         if marginalize_distance:
-            self.marginalized_params_name = list(
-                self.marginalize_vector_params.keys()
-            ) + [marginalize_distance_param]
+            self.marginalized_params_name = [
+                *list(self.marginalize_vector_params.keys()),
+                marginalize_distance_param,
+            ]
 
         return variable_params, kwargs
 

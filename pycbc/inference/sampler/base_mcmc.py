@@ -430,7 +430,7 @@ class BaseMCMC(metaclass=ABCMeta):
             )
         # store as ND array with shape [base_shape] x nparams
         ndim = len(self.variable_params)
-        p0 = numpy.ones(list(self.base_shape) + [ndim])
+        p0 = numpy.ones([*list(self.base_shape), ndim])
         for i, param in enumerate(self.sampling_params):
             p0[..., i] = samples[param]
         self._p0 = p0

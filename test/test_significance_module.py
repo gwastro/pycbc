@@ -139,14 +139,16 @@ thresholds = ["H1L1:6", "H1:5.5", "L1:5"]
 ifar_limits = ["H1:1"]
 tests_which_pass.append(
     (
-        ["--far-calculation-method"]
-        + calc_methods
-        + ["--fit-function"]
-        + functions
-        + ["--fit-threshold"]
-        + thresholds
-        + ["--limit-ifar"]
-        + ifar_limits,
+        [
+            "--far-calculation-method",
+            *calc_methods,
+            "--fit-function",
+            *functions,
+            "--fit-threshold",
+            *thresholds,
+            "--limit-ifar",
+            *ifar_limits,
+        ],
         test_dict,
         "different_combos",
     )

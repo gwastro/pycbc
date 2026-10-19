@@ -240,7 +240,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
             n_loudest=curr_idx,
             sort_order=args.sort_order,
             sort_var=args.sort_variable,
-            tags=args.tags + [str(event_count)],
+            tags=[*args.tags, str(event_count)],
         ),
     )
     files += mini.make_trigger_timeseries(
@@ -249,7 +249,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
         ifo_times,
         args.output_dir,
         special_tids=ifo_tids,
-        tags=args.tags + [str(event_count)],
+        tags=[*args.tags, str(event_count)],
     )
 
     params = mini.get_single_template_params(
@@ -264,7 +264,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
         params,
         args.output_dir,
         data_segments=insp_data_seglists,
-        tags=args.tags + [str(event_count)],
+        tags=[*args.tags, str(event_count)],
     )
     files += sngl_tmplt_plots
 
@@ -286,7 +286,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                     time,
                     args.output_dir,
                     data_segments=insp_data_seglists[ifo],
-                    tags=args.tags + [str(event_count)],
+                    tags=[*args.tags, str(event_count)],
                     ifo=ifo,
                 )
                 files += mini.make_qscan_plot(
@@ -295,7 +295,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                     time,
                     args.output_dir,
                     data_segments=insp_data_seglists[ifo],
-                    tags=args.tags + [str(event_count)],
+                    tags=[*args.tags, str(event_count)],
                 )
                 break
         else:

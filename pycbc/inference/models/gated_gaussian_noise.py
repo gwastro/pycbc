@@ -896,7 +896,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         """Calculate a multi-model (signal) likelihood"""
         # Generate the waveforms for each submodel
         wfs = []
-        for m in models + [self]:
+        for m in [*models, self]:
             wf = m.get_waveforms()
             wfs.append(wf)
 
@@ -1193,7 +1193,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         """Calculate a multi-model (signal) likelihood"""
         # Generate the waveforms for each submodel
         wfs = []
-        for m in models + [self]:
+        for m in [*models, self]:
             wf = m.get_waveforms()
             wfs.append(wf)
 
@@ -1449,7 +1449,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         """Calculate a multi-model (signal) likelihood"""
         # Generate the waveforms for each submodel
         wfs = []
-        for m in models + [self]:
+        for m in [*models, self]:
             wf = m.get_waveforms()
             wfs.append(wf)
         # combine into a single waveform
@@ -1850,12 +1850,12 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
     def multi_loglikelihood(self, models):
         """Calculate a multi-model (signal) likelihood"""
         # Generate the waveforms for each submodel
-        if any(m.sample_snrs for m in models + [self]):
+        if any(m.sample_snrs for m in [*models, self]):
             raise NotImplementedError(
                 "multi-signal likelihoods are not supported when sampling SNRs"
             )
         wfs = []
-        for m in models + [self]:
+        for m in [*models, self]:
             wf = m.get_waveforms()
             wfs.append(wf)
         # combine into a single waveform

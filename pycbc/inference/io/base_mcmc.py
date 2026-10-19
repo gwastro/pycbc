@@ -387,7 +387,7 @@ class CommonMCMCMetadataIO:
             # no acts were calculate
             act = None
         if act is not None:
-            act = act.reshape(tuple(list(act.shape) + [1]))
+            act = act.reshape((*list(act.shape), 1))
             self.write_data("act", act, path=path, append=True)
         # write the burn in iteration in the same way
         try:
@@ -396,7 +396,7 @@ class CommonMCMCMetadataIO:
             # no burn in tests were done
             burn_in = None
         if burn_in is not None:
-            burn_in = burn_in.reshape(tuple(list(burn_in.shape) + [1]))
+            burn_in = burn_in.reshape((*list(burn_in.shape), 1))
             self.write_data("burn_in_iteration", burn_in, path=path, append=True)
 
     @staticmethod

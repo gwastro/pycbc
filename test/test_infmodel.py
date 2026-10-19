@@ -109,7 +109,7 @@ class TestModels(unittest.TestCase):
         # set up for marginalized polarization tests
         cls.static2 = cls.static.copy()
         cls.static2.pop("polarization")
-        cls.variable2 = cls.variable + ["polarization"]
+        cls.variable2 = [*cls.variable, "polarization"]
         cls.prior2 = JointDistribution(
             cls.variable2, inclination_prior, distance_prior, pol
         )
@@ -284,7 +284,7 @@ class TestWaveformErrors(unittest.TestCase):
         # set up for marginalized polarization tests
         cls.static2 = cls.static.copy()
         cls.static2.pop("polarization")
-        cls.variable2 = cls.variable + ["polarization"]
+        cls.variable2 = [*cls.variable, "polarization"]
         cls.prior2 = JointDistribution(cls.variable2, spin_prior, flower_prior, pol)
         # set up gated parameters
         staticgate = cls.static.copy()
@@ -448,7 +448,7 @@ class TestMarginalizedPolModels(unittest.TestCase):
             "f_lower": flow,
         }
         cls.marg_variable = ["spin1z"]
-        cls.orig_variable = cls.marg_variable + ["polarization"]
+        cls.orig_variable = [*cls.marg_variable, "polarization"]
         ifos = ["H1", "L1", "V1"]
         seglen = 8
         delta_f = 1.0 / seglen

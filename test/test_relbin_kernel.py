@@ -299,7 +299,7 @@ class TestRelbinKernel(unittest.TestCase):
                 c["b0"],
                 c["b1"],
             ),
-            lambda j: self.rotated(j) + (b["dtc"],),
+            lambda j: (*self.rotated(j), b["dtc"]),
             "likelihood_parts_v_pol",
         )
 
@@ -344,7 +344,7 @@ class TestRelbinKernel(unittest.TestCase):
                 c["b0"],
                 c["b1"],
             ),
-            lambda j: self.rotated(j) + (b["times"] + c["dtc"][j],),
+            lambda j: (*self.rotated(j), b["times"] + c["dtc"][j]),
             "likelihood_parts_v_pol_time",
         )
 

@@ -332,7 +332,7 @@ for snr_type in timeseries:
             # If the tuning injection file is used for the plot, include its
             # tags in assembling the plot name
             inj_tags = inj_file.tags if inj_file else []
-            tags = [snr_type] + inj_tags
+            tags = [snr_type, *inj_tags]
             plot_node, output_files = _workflow.make_pygrb_plot(
                 wflow,
                 "pygrb_plot_snr_timeseries",
@@ -372,7 +372,7 @@ for veto in vetoes:
             # If the tuning injection file is used for the plot, include its
             # tags in assembling the plot name
             inj_tags = inj_file.tags if inj_file else []
-            tags = [veto] + inj_tags
+            tags = [veto, *inj_tags]
             ifo_arg = None if veto == "network" else ifo
             plot_node, output_files = _workflow.make_pygrb_plot(
                 wflow,
@@ -455,7 +455,7 @@ for nstat in nstats:
             # If the tuning injection file is used for the plot, include its
             # tags in assembling the plot name
             inj_tags = inj_file.tags if inj_file else []
-            tags = [nstat] + zoom_tag + inj_tags
+            tags = [nstat, *zoom_tag, *inj_tags]
             plot_node, output_files = _workflow.make_pygrb_plot(
                 wflow,
                 "pygrb_plot_null_stats",
@@ -550,7 +550,7 @@ for inj_set in inj_sets:
     )
     html_nodes.append(html_node)
 
-    inj_layout = list(layout.grouper(files, 2)) + [(mf_table,), (qf_table,)]
+    inj_layout = [*list(layout.grouper(files, 2)), (mf_table,), (qf_table,)]
     layout.two_column_layout(out_dir, inj_layout)
 
     # Follow up of loudest N quiet/missed-found injections:
@@ -570,7 +570,7 @@ for inj_set in inj_sets:
             out_dir,
             seg_files=seg_files,
             veto_file=veto_file,
-            tags=inj_file.tags + ["loudest_quiet_found_injs"],
+            tags=[*inj_file.tags, "loudest_quiet_found_injs"],
         )
         mfu_nodes.append(mfu_node)
         logger.info("Leaving minifollowups")
@@ -605,7 +605,7 @@ html_node, [lofft_table, lofft_h5] = _workflow.make_pygrb_injs_tables(
 )
 html_nodes.append(html_node)
 
-lofft_layout = list(layout.grouper(files, 2)) + [(lofft_table,)]
+lofft_layout = [*list(layout.grouper(files, 2)), (lofft_table,)]
 layout.two_column_layout(out_dir, lofft_layout)
 
 # Follow up N loudest offsource triggers (parent-child)
@@ -647,7 +647,7 @@ bkgd_plots = []
 for inj_set in inj_sets:
     # Retrieve the injections result File for the inj_set label
     inj_file = inj_files.find_output_with_tag(inj_set, fail_if_not_single_file=True)
-    tags = [offtrials[0]] + inj_file.tags
+    tags = [offtrials[0], *inj_file.tags]
     plot_node, output_files = _workflow.make_pygrb_plot(
         wflow,
         "pygrb_efficiency",
@@ -673,7 +673,7 @@ for i, offtrial in enumerate(offtrials):
     for inj_set in inj_sets:
         # Retrieve the injections result File for the inj_set label
         inj_file = inj_files.find_output_with_tag(inj_set, fail_if_not_single_file=True)
-        tags = [offtrial] + inj_file.tags
+        tags = [offtrial, *inj_file.tags]
         plot_node, output_files = _workflow.make_pygrb_plot(
             wflow,
             "pygrb_efficiency",
@@ -788,7 +788,7 @@ for snr_type in ["reweighted", "coherent"]:
     )
     plotting_nodes.append(plot_node)
     timeseries_plots.extend(output_files)
-openbox_layout = [(lont_table,)] + list(layout.grouper(timeseries_plots, 2))
+openbox_layout = [(lont_table,), *list(layout.grouper(timeseries_plots, 2))]
 layout.two_column_layout(out_dir, openbox_layout)
 
 # Loudest on-source trigger follow up
@@ -818,7 +818,7 @@ eff_layout = []
 for inj_set in inj_sets:
     # Retrieve the injections result File corresponding to the inj_set label
     inj_file = inj_files.find_output_with_tag(inj_set, fail_if_not_single_file=True)
-    tags = ["onsource"] + inj_file.tags
+    tags = ["onsource", *inj_file.tags]
     plot_node, output_files = _workflow.make_pygrb_plot(
         wflow,
         "pygrb_efficiency",

@@ -115,7 +115,7 @@ with HFile(args.trigger_fits_file, "r") as trfit_f:
     bu = trfit_f["bins_upper"][:]
     bl = trfit_f["bins_lower"][:]
 
-duration_bin_edges = list(bl) + [bu[-1]]
+duration_bin_edges = [*list(bl), bu[-1]]
 tbins = IrregularBins(duration_bin_edges)
 
 root_logger = logging.getLogger()

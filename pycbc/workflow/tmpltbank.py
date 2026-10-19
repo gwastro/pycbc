@@ -380,7 +380,7 @@ def make_compress_split_banks(workflow, bank_files, out_dir, tags=None):
             "compress",
             ifos=workflow.ifos,
             out_dir=out_dir,
-            tags=tags + [f"bank%0{n_dp}d" % i],
+            tags=[*tags, f"bank%0{n_dp}d" % i],
         ).create_node()
         node.add_input_opt("--bank-file", bank_file)
         node.new_output_file_opt(workflow.analysis_time, ".hdf", "--output")
@@ -406,7 +406,7 @@ def make_combine_split_banks(workflow, bank_files, out_dir, tags=None):
             "combine_banks",
             ifos=workflow.ifos,
             out_dir=out_dir,
-            tags=tags + [f"%0{n_dp}d" % i],
+            tags=[*tags, f"%0{n_dp}d" % i],
         ).create_node()
         start = int(i / n_banks_combined * len(bank_files))
         end = int((i + 1) / n_banks_combined * len(bank_files))

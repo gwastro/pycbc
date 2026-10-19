@@ -498,7 +498,7 @@ for ifo in all_ifos:
     grps += [f"{ifo}/time"]
     grps += [f"{ifo}/trigger_id"]
 
-fg_grps = grps + ["fap", "fap_exc", "ifar_exc"]
+fg_grps = [*grps, "fap", "fap_exc", "ifar_exc"]
 
 combined_bg_data = pycbc.io.DictArray(data={g: f[f"background/{g}"][:] for g in grps})
 combined_fg_data = pycbc.io.DictArray(

@@ -36,7 +36,7 @@ def add_style_opt_to_parser(parser, default=None):
     parser.add_argument(
         "--mpl-style",
         default=default,
-        choices=["default"] + pyplot.style.available + ["xkcd"],
+        choices=["default", *pyplot.style.available, "xkcd"],
         help="Set the matplotlib style to use.",
     )
 

@@ -190,7 +190,7 @@ def setup_foreground_minifollowups(
 
     # determine if a staging site has been specified
     job = SubWorkflow(fil.name, is_planned=False)
-    input_files = [tmpltbank_file, coinc_file, insp_segs] + single_triggers
+    input_files = [tmpltbank_file, coinc_file, insp_segs, *single_triggers]
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(
         map_file, staging_site=workflow.staging_site, cache_file=workflow.cache_file
@@ -774,14 +774,14 @@ def make_single_template_plots(
                 inj_file=inj_file,
                 exclude=exclude,
                 require=require,
-                tags=tags + [tag],
+                tags=[*tags, tag],
                 store_file=False,
                 use_exact_inj_params=use_exact_inj_params,
             )
             hdf_files += data
             # Make the plot for this trigger and detector
             node = PlotExecutable(
-                workflow.cp, name, ifos=[ifo], out_dir=out_dir, tags=[tag] + tags
+                workflow.cp, name, ifos=[ifo], out_dir=out_dir, tags=[tag, *tags]
             ).create_node()
             node.add_input_opt("--single-template-file", data[0])
             node.new_output_file_opt(workflow.analysis_time, ".png", "--output-file")
@@ -819,7 +819,7 @@ def make_plot_waveform_plot(
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(
-            workflow.cp, "plot_waveform", ifos=ifos, out_dir=out_dir, tags=[tag] + tags
+            workflow.cp, "plot_waveform", ifos=ifos, out_dir=out_dir, tags=[tag, *tags]
         ).create_node()
         node.add_opt("--mass1", f"{params['mass1']:.6f}")
         node.add_opt("--mass2", f"{params['mass2']:.6f}")
@@ -953,7 +953,7 @@ def make_trigger_timeseries(
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(
-            workflow.cp, name, ifos=workflow.ifos, out_dir=out_dir, tags=[tag] + tags
+            workflow.cp, name, ifos=workflow.ifos, out_dir=out_dir, tags=[tag, *tags]
         ).create_node()
         node.add_multiifo_input_list_opt("--single-trigger-files", singles)
         node.add_opt("--times", ifo_times)
@@ -1469,11 +1469,14 @@ def setup_upload_prep_minifollowups(
 
     # determine if a staging site has been specified
     job = SubWorkflow(fil.name, is_planned=False)
-    input_files = (
-        [xml_all_file, tmpltbank_file, coinc_file, insp_segs]
-        + single_triggers
-        + psd_files
-    )
+    input_files = [
+        xml_all_file,
+        tmpltbank_file,
+        coinc_file,
+        insp_segs,
+        *single_triggers,
+        *psd_files,
+    ]
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(
         map_file, staging_site=workflow.staging_site, cache_file=workflow.cache_file

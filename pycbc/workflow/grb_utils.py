@@ -579,7 +579,7 @@ def make_pygrb_plot(
                 workflow.analysis_time,
                 ".png",
                 "--background-output-file",
-                tags=extra_tags + ["max_background"],
+                tags=[*extra_tags, "max_background"],
             )
         # Output the exclusion distance plot and table
         else:
@@ -588,7 +588,7 @@ def make_pygrb_plot(
                 workflow.analysis_time,
                 ".png",
                 "--onsource-output-file",
-                tags=["onsource"] + extra_tags,
+                tags=["onsource", *extra_tags],
             )
             node.new_output_file_opt(
                 workflow.analysis_time,
@@ -739,7 +739,7 @@ def make_pygrb_injs_tables(
             workflow.analysis_time,
             ".h5",
             "--quiet-found-injs-h5-output-file",
-            tags=extra_tags + ["QUIET_FOUND"],
+            tags=[*extra_tags, "QUIET_FOUND"],
         )
     # Handle input/output for onsource/offsource
     else:

@@ -499,7 +499,7 @@ class Executable(pegasus_workflow.Executable):
         self.current_retention_level = value
         try:
             global_retention_level = self.cp.get_opt_tags(
-                "workflow", "file-retention-level", self.tags + [self.name]
+                "workflow", "file-retention-level", [*self.tags, self.name]
             )
         except configparser.Error:
             msg = "Cannot find file-retention-level in [workflow] section "
@@ -637,10 +637,10 @@ class Executable(pegasus_workflow.Executable):
         """
         # Determine the output directory
         if self.cp.has_option_tags(
-            "pegasus_profile", "pycbc|stage-out", self.tags + [self.name]
+            "pegasus_profile", "pycbc|stage-out", [*self.tags, self.name]
         ):
             self.out_dir = self.cp.get_opt_tags(
-                "pegasus_profile", "pycbc|stage-out", self.tags + [self.name]
+                "pegasus_profile", "pycbc|stage-out", [*self.tags, self.name]
             )
         elif out_dir is not None:
             self.out_dir = out_dir
@@ -976,7 +976,7 @@ class Node(pegasus_workflow.Node):
         # downloaded by resolve_url
         exe_path = urllib.parse.urlsplit(self.executable.get_pfn()).path
 
-        return [exe_path] + arglist
+        return [exe_path, *arglist]
 
     def new_output_file_opt(
         self,
@@ -1255,7 +1255,7 @@ class File(pegasus_workflow.File):
 
         if len(self.tags):
             self.tag_str = "_".join(tags)
-            tagged_description = "_".join([self.description] + tags)
+            tagged_description = "_".join([self.description, *tags])
         else:
             tagged_description = self.description
 
