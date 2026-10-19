@@ -132,7 +132,7 @@ for ifo in args.single_trigger_files:
 
     if args.special_trigger_ids:
         special_idx = args.special_trigger_ids[ifo]
-        if special_idx == None:  # No special trigger for this ifo
+        if special_idx is None:  # No special trigger for this ifo
             continue
         elif special_idx not in idx:
             logger.info("IDX %d not in kept list", args.special_trigger_ids[ifo])
