@@ -20,7 +20,6 @@ This modules contains functions for reading in data from frame files or caches
 import logging
 import re
 import warnings
-from pathlib import Path
 from urllib.parse import urlparse
 
 import numpy
@@ -34,11 +33,11 @@ from pycbc.types import TimeSeries
 logger = logging.getLogger(__name__)
 
 
-def _read_channel(cache, channel, start, end, check_integrity=False):
+def read_channel(cache, channel, start, end, check_integrity=False):
     """
-    Read one channel from the files in `cache`, which must hold contiguous
-    data from `start` to `end`. If `end` is None, read up to the end of the
-    contiguous data.
+    Read one channel from the files in `cache`, a FrameCache from
+    `locations_to_cache`, which must hold contiguous data from `start` to
+    `end`. If `end` is None, read up to the end of the contiguous data.
     """
     start = float(start)
     end = None if end is None else float(end)
@@ -157,12 +156,12 @@ def read_frame(
 
     if type(channels) is list:
         return [
-            _read_channel(
+            read_channel(
                 cache, channel, start_time, end_time, check_integrity=check_integrity
             )
             for channel in channels
         ]
-    return _read_channel(
+    return read_channel(
         cache, channels, start_time, end_time, check_integrity=check_integrity
     )
 
@@ -338,7 +337,8 @@ def write_frame(location, channels, timeseries):
     Parameters
     ----------
     location : string
-        A frame filename.
+        A frame filename. A name ending in .hdf, .hdf5 or .h5 is written as
+        a GWOSC HDF5 file, and any other as a GWF file.
     channels : string or list of strings
         Either a string that contains the channel name or a list of channel
         name strings.
@@ -348,10 +348,7 @@ def write_frame(location, channels, timeseries):
 
     """
     # check if a single channel or a list of channels
-    if type(channels) is list and type(timeseries) is list:
-        channels = channels
-        timeseries = timeseries
-    else:
+    if not (type(channels) is list and type(timeseries) is list):
         channels = [channels]
         timeseries = [timeseries]
 
@@ -368,9 +365,7 @@ def write_frame(location, channels, timeseries):
     if gps_start_time % 1 or gps_end_time % 1:
         raise ValueError("Start and end times of TimeSeries must be integer seconds.")
 
-    if location.endswith((".hdf", ".hdf5", ".h5")) or (
-        Path(location).exists() and gwosc_hdf.is_format(location)
-    ):
+    if location.endswith((".hdf", ".hdf5", ".h5")):
         gwosc_hdf.write(location, channels, timeseries, gps_start_time, duration)
     else:
         gwf.write(location, channels, timeseries, gps_start_time, duration)

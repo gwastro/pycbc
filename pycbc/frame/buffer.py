@@ -26,7 +26,7 @@ import numpy as np
 import pycbc
 from pycbc.events.veto import indices_outside_times, indices_within_times
 from pycbc.frame.cache import file_format, locations_to_cache
-from pycbc.frame.frame import _read_channel
+from pycbc.frame.frame import read_channel
 from pycbc.types import TimeSeries, zeros
 
 
@@ -134,7 +134,7 @@ class DataBuffer:
 
         """
         try:
-            return _read_channel(
+            return read_channel(
                 self.cache,
                 self.channel_name,
                 self.read_pos,

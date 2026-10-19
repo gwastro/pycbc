@@ -146,61 +146,18 @@ class FrameTestBase(unittest.TestCase):
         )
 
     def test_write_and_read(self):
-        """Test symmetric writing and reading of GWF and GWOSC HDF5 files."""
+        # What write_frame writes, as GWF or as GWOSC HDF5, reads back
+        # unchanged, for one channel and for a list of them
+        channels = ["H1:STRAIN", "H1:INJMASK"]
+        expected = [self.expected_data1, self.expected_data2]
         with tempfile.TemporaryDirectory() as tmpdir:
-            gwf_path = os.path.join(tmpdir, "test.gwf")
-            hdf_path = os.path.join(tmpdir, "test.hdf5")
-
-            # Write single channel
-            pycbc.frame.write_frame(gwf_path, "H1:STRAIN", self.expected_data1)
-            pycbc.frame.write_frame(hdf_path, "H1:STRAIN", self.expected_data1)
-
-            # Read back with read_frame
-            ts_gwf = pycbc.frame.read_frame(gwf_path, "H1:STRAIN")
-            ts_hdf = pycbc.frame.read_frame(hdf_path, "H1:STRAIN")
-
-            self.assertEqual(ts_gwf, self.expected_data1)
-            self.assertEqual(ts_hdf, self.expected_data1)
-            # Cross-format verification: read what was written in both
-            self.assertEqual(ts_gwf, ts_hdf)
-
-            # Write multiple channels
-            gwf_multi = os.path.join(tmpdir, "multi.gwf")
-            hdf_multi = os.path.join(tmpdir, "multi.hdf5")
-            pycbc.frame.write_frame(
-                gwf_multi,
-                ["H1:STRAIN", "H1:INJMASK"],
-                [self.expected_data1, self.expected_data2],
-            )
-            pycbc.frame.write_frame(
-                hdf_multi,
-                ["H1:STRAIN", "H1:INJMASK"],
-                [self.expected_data1, self.expected_data2],
-            )
-
-            ts_gwf_list = pycbc.frame.read_frame(gwf_multi, ["H1:STRAIN", "H1:INJMASK"])
-            ts_hdf_list = pycbc.frame.read_frame(hdf_multi, ["H1:STRAIN", "H1:INJMASK"])
-
-            self.assertEqual(ts_gwf_list[0], self.expected_data1)
-            self.assertEqual(ts_gwf_list[1], self.expected_data2)
-            self.assertEqual(ts_hdf_list[0], self.expected_data1)
-            self.assertEqual(ts_hdf_list[1], self.expected_data2)
-            self.assertEqual(ts_gwf_list[0], ts_hdf_list[0])
-            self.assertEqual(ts_gwf_list[1], ts_hdf_list[1])
-
-            # Writing without IFO prefix must raise ValueError
-            no_ifo_path = os.path.join(tmpdir, "no_ifo.hdf5")
-            with self.assertRaises(ValueError):
-                pycbc.frame.write_frame(no_ifo_path, "STRAIN", self.expected_data1)
-
-            # Writing channels with mismatched IFO must raise ValueError
-            mismatched_path = os.path.join(tmpdir, "mismatched.hdf5")
-            with self.assertRaises(ValueError):
-                pycbc.frame.write_frame(
-                    mismatched_path,
-                    ["H1:STRAIN", "L1:STRAIN"],
-                    [self.expected_data1, self.expected_data2],
-                )
+            for ext in ["gwf", "hdf5"]:
+                path = os.path.join(tmpdir, f"one.{ext}")
+                pycbc.frame.write_frame(path, channels[0], expected[0])
+                self.assertEqual(pycbc.frame.read_frame(path, channels[0]), expected[0])
+                path = os.path.join(tmpdir, f"two.{ext}")
+                pycbc.frame.write_frame(path, channels, expected)
+                self.assertEqual(pycbc.frame.read_frame(path, channels), expected)
 
 
 def write_gwosc_hdf(path, start, duration, ifo="H1", seed=0):
@@ -239,30 +196,19 @@ class TestGWOSCHDF(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def test_whole_file(self):
-        ts = pycbc.frame.read_frame(self.paths[0], "H1:STRAIN")
+    def test_read_each_channel(self):
+        # The file name does not give the start time, so it is read from the
+        # file
+        path = os.path.join(self.tmp.name, "strain.hdf5")
+        strain, dq = write_gwosc_hdf(path, self.start, 16, seed=0)
+        ts = pycbc.frame.read_frame(path, "H1:STRAIN")
         self.assertEqual(ts.start_time, self.start)
         self.assertEqual(ts.delta_t, 1.0 / RATE)
-        numpy.testing.assert_array_equal(ts.numpy(), self.strain[0])
-
-    def test_data_quality(self):
-        ts = pycbc.frame.read_frame(self.paths[0], "H1:DQMASK")
-        self.assertEqual(ts.delta_t, 1.0)
-        numpy.testing.assert_array_equal(ts.numpy(), self.dq[0])
-        ts = pycbc.frame.read_frame(self.paths[0], "H1:INJMASK")
-        numpy.testing.assert_array_equal(ts.numpy(), self.dq[0])
-
-    def test_slice_across_files(self):
-        ts = pycbc.frame.read_frame(
-            self.paths,
-            "H1:STRAIN",
-            start_time=self.start + 10,
-            end_time=self.start + 40,
-        )
-        self.assertEqual(ts.start_time, self.start + 10)
-        numpy.testing.assert_array_equal(
-            ts.numpy(), self.all_strain[10 * RATE : 40 * RATE]
-        )
+        numpy.testing.assert_array_equal(ts.numpy(), strain)
+        for channel in ["H1:DQMASK", "H1:INJMASK"]:
+            ts = pycbc.frame.read_frame(path, channel)
+            self.assertEqual(ts.delta_t, 1.0)
+            numpy.testing.assert_array_equal(ts.numpy(), dq)
 
     def test_start_between_samples(self):
         start = self.start + 1 + 0.3 / RATE
@@ -288,8 +234,8 @@ class TestGWOSCHDF(unittest.TestCase):
 
     def test_read_across_files(self):
         # Reading across the boundaries between files gives the same samples
-        # as reading one file that holds all the data. The second start time
-        # is 1 us after a sample, which a read treats as on the sample, as
+        # as reading one file that holds all the data. The last start time is
+        # 1 us after a sample, which a read treats as on the sample, as
         # lalframe does.
         one_path = os.path.join(self.tmp.name, "all.hdf5")
         pycbc.frame.write_frame(
@@ -297,7 +243,7 @@ class TestGWOSCHDF(unittest.TestCase):
             "H1:STRAIN",
             TimeSeries(self.all_strain, delta_t=1.0 / RATE, epoch=self.start),
         )
-        for start in [self.start + 10.3 / RATE, self.start + 3 + 1e-6]:
+        for start in [self.start + 10, self.start + 10.3 / RATE, self.start + 3 + 1e-6]:
             end = self.start + 40.5
             ts = pycbc.frame.read_frame(
                 self.paths, "H1:STRAIN", start_time=start, end_time=end
@@ -317,17 +263,17 @@ class TestGWOSCHDF(unittest.TestCase):
         ts = pycbc.frame.read_frame(files, "H1:STRAIN")
         numpy.testing.assert_array_equal(ts.numpy(), self.strain[0])
 
+    def test_write_needs_one_detector(self):
+        path = os.path.join(self.tmp.name, "bad.hdf5")
+        ts = TimeSeries(numpy.zeros(RATE), delta_t=1.0 / RATE, epoch=self.start)
+        for channels in [["STRAIN"], ["H1:STRAIN", "L1:STRAIN"]]:
+            with self.assertRaises(ValueError):
+                pycbc.frame.write_frame(path, channels, [ts] * len(channels))
+
     def test_unknown_channel(self):
         for channel in ["L1:STRAIN", "H1:GDS-CALIB_STRAIN", "STRAIN"]:
             with self.assertRaises(ValueError):
                 pycbc.frame.read_frame(self.paths[0], channel)
-
-    def test_nonstandard_file_name(self):
-        path = os.path.join(self.tmp.name, "strain.hdf5")
-        strain, _ = write_gwosc_hdf(path, self.start, 16, seed=0)
-        ts = pycbc.frame.read_frame(path, "H1:STRAIN")
-        self.assertEqual(ts.start_time, self.start)
-        numpy.testing.assert_array_equal(ts.numpy(), strain)
 
     def test_mixed_with_gwf(self):
         gwf_path = os.path.join(self.tmp.name, f"H-H1_TEST-{self.start + 48}-16.gwf")
@@ -346,14 +292,15 @@ class TestGWOSCHDF(unittest.TestCase):
         buf = pycbc.frame.DataBuffer(
             self.paths,
             "H1:STRAIN",
-            self.start + 4,
+            self.start + 12,
             max_buffer=8,
             force_update_cache=False,
         )
-        ts = buf.advance(4)
+        # The block crosses the boundary between the first two files
+        ts = buf.advance(8)
         self.assertEqual(buf.raw_sample_rate, RATE)
         numpy.testing.assert_array_equal(
-            ts.numpy(), self.strain[0][4 * RATE : 8 * RATE]
+            ts.numpy(), self.all_strain[12 * RATE : 20 * RATE]
         )
 
 

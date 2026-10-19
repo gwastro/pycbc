@@ -60,29 +60,26 @@ def span(path):
         return float(f["meta/GPSstart"][()]), float(f["meta/Duration"][()])
 
 
-def _dataset(h5file, channel):
+def _dataset_path(channel, ifo):
     """
-    Return the dataset for `channel`, which is '<IFO>:STRAIN',
-    '<IFO>:DQMASK' or '<IFO>:INJMASK', where <IFO> must be the file's
-    detector.
+    Return the path of the dataset that holds `channel` in a file of the
+    detector `ifo`. The channel must be '<ifo>:STRAIN', '<ifo>:DQMASK' or
+    '<ifo>:INJMASK'.
     """
-    ifo = h5file["meta/Detector"].asstr()[()]
     prefix, _, name = channel.partition(":")
-    if prefix != ifo:
+    if prefix != ifo or name not in _DATASETS:
         known = ", ".join(f"{ifo}:{n}" for n in _DATASETS)
         raise ValueError(  # noqa: TRY003
-            f"Channel {channel} is not in {h5file.filename}; "
-            f"GWOSC HDF5 files contain {known}"
+            f"Channel {channel} is not in GWOSC HDF5 files of {ifo}, "
+            f"which contain {known}"
         )
-    if name in _DATASETS:
-        return h5file[_DATASETS[name]]
-    if f"strain/{name}" in h5file:
-        return h5file[f"strain/{name}"]
-    known = ", ".join(f"{ifo}:{n}" for n in _DATASETS)
-    raise ValueError(  # noqa: TRY003
-        f"Channel {channel} is not in {h5file.filename}; "
-        f"GWOSC HDF5 files contain {known}"
-    )
+    return _DATASETS[name]
+
+
+def _dataset(h5file, channel):
+    """Return the dataset of `channel` in an open file."""
+    ifo = h5file["meta/Detector"].asstr()[()]
+    return h5file[_dataset_path(channel, ifo)]
 
 
 def channel_info(path, channel):
@@ -122,47 +119,16 @@ def read(path, channel, start, end, check_integrity=False):  # noqa: ARG001
 def write(location, channels, timeseries, start_time, duration):
     """
     Write a list of time series to a single GWOSC HDF5 file. See
-    `pycbc.frame.write_frame`.
+    `pycbc.frame.write_frame`. The channels must all be of one detector,
+    which is taken from the first, e.g. 'H1' for 'H1:STRAIN'.
     """
-    if not isinstance(channels, (list, tuple)):
-        channels = [channels]
-    if not isinstance(timeseries, (list, tuple)):
-        timeseries = [timeseries]
-
-    # Determine detector from the first channel prefix
-    ifo = None
-    for channel in channels:
-        prefix, colon, _ = channel.partition(":")
-        if colon and prefix:
-            ifo = prefix
-            break
-    if not ifo:
-        raise ValueError(  # noqa: TRY003
-            "GWOSC HDF5 files require channel names formatted "
-            "as '<IFO>:<CHANNEL>' (e.g. 'H1:STRAIN') to "
-            "determine the detector"
-        )
-
+    ifo = channels[0].partition(":")[0]
+    paths = [_dataset_path(channel, ifo) for channel in channels]
     with h5py.File(location, "w") as f:
         f["meta/Detector"] = ifo
-        f["meta/GPSstart"] = float(start_time)
-        f["meta/Duration"] = float(duration)
-        for channel, series in zip(channels, timeseries, strict=False):
-            prefix, colon, name = channel.partition(":")
-            if prefix != ifo or not colon or not name:
-                raise ValueError(f"Channel {channel} does not match detector {ifo}")  # noqa: TRY003
-            if name not in _DATASETS:
-                known = ", ".join(f"{ifo}:{n}" for n in _DATASETS)
-                raise ValueError(  # noqa: TRY003
-                    f"Channel {channel} cannot be written to "
-                    f"GWOSC HDF5 format; supported channels "
-                    f"are {known}"
-                )
-            dset_path = _DATASETS[name]
-            group_name, _, _ = dset_path.rpartition("/")
-            if group_name and group_name not in f:
-                f.create_group(group_name)
-
-            dset = f.create_dataset(dset_path, data=series.numpy())
-            dset.attrs["Xstart"] = float(series.start_time)
+        f["meta/GPSstart"] = int(start_time)
+        f["meta/Duration"] = int(duration)
+        for path, series in zip(paths, timeseries, strict=True):
+            dset = f.create_dataset(path, data=series.numpy())
+            dset.attrs["Xstart"] = int(series.start_time)
             dset.attrs["Xspacing"] = float(series.delta_t)
