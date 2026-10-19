@@ -7,8 +7,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  workflow_defaults:
+    uses: ./.github/workflows/workflow-defaults.yml
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
+    needs: workflow_defaults
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -18,7 +21,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: ${{ needs.workflow_defaults.outputs.python-version }}
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel
       - name: Build wheels
@@ -35,7 +38,7 @@ jobs:
   deploy_pypi:
     name: Package and publish to PyPI
     runs-on: ubuntu-24.04
-    needs: build_wheels
+    needs: [build_wheels, workflow_defaults]
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python

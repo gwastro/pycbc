@@ -197,8 +197,7 @@ class JointDistribution:
             return True
         if isinstance(params, numpy.ndarray):
             return False
-            params = params.view(type=FieldArray)
-        if isinstance(params, FieldArray):
+        elif isinstance(params, FieldArray):
             return False
         raise ValueError(
             "params must be either dict, FieldArray, record, or structured array"
