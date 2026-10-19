@@ -58,9 +58,7 @@ from .relbin_cpu import (
     snr_predictor,
     snr_predictor_dom,
 )
-from .tools import DistMarg, str_to_bool
-
-logger = logging.getLogger(__name__)
+from .tools import DistMarg
 
 
 def setup_bins(
@@ -183,13 +181,6 @@ class Relative(DistMarg, BaseGaussianNoise):
         Default is False. If True, then vary the fp/fc polarization values
         as a function of frequency bin, using a predetermined PN approximation
         for the time offsets.
-    check_heterodyne_bins : boolean, optional
-        Default is False. A config file gives this as a string, so it is
-        converted; ``False`` there means off, not a non-empty string. If
-        True, measure how much error the bins make in
-        the heterodyne at every likelihood call and log it. This is a
-        debugging aid for choosing ``epsilon``, and it makes each call more
-        expensive.
     \**kwargs :
         All other keyword arguments are passed to
         :py:class:`BaseGaussianNoise`.
@@ -209,7 +200,6 @@ class Relative(DistMarg, BaseGaussianNoise):
         earth_rotation=False,
         earth_rotation_mode=2,
         marginalize_phase=True,
-        check_heterodyne_bins=False,
         **kwargs,
     ):
 
@@ -218,8 +208,6 @@ class Relative(DistMarg, BaseGaussianNoise):
         )
 
         super().__init__(variable_params, data, low_frequency_cutoff, **kwargs)
-
-        self.check_heterodyne_bins = str_to_bool(check_heterodyne_bins)
 
         # If the waveform needs us to apply the detector response,
         # set flag to true (most cases for ground-based observatories).
@@ -460,25 +448,24 @@ class Relative(DistMarg, BaseGaussianNoise):
     def get_waveforms(self, params):
         """Get the waveform polarizations for each ifo"""
         if self.still_needs_det_response:
-            wf_ret = {}
+            wfs = {}
             for ifo in self.data:
-                wf_ret.update(
+                wfs.update(
                     get_fd_det_waveform_sequence(
                         ifos=ifo, sample_points=self.fedges[ifo], **params
                     )
                 )
-        else:
-            wfs = []
-            for edge in self.edge_unique:
-                hp, hc = get_fd_waveform_sequence(sample_points=edge, **params)
-                hp = hp.numpy()
-                hc = hc.numpy()
-                wfs.append((hp, hc))
-            wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
+            return wfs
+
+        wfs = []
+        for edge in self.edge_unique:
+            hp, hc = get_fd_waveform_sequence(sample_points=edge, **params)
+            hp = hp.numpy()
+            hc = hc.numpy()
+            wfs.append((hp, hc))
+        wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
 
         self.wf_ret = wf_ret
-        if self.check_heterodyne_bins:
-            logger.info("heterodyne bin error: %s", self.heterodyne_bin_error())
         return wf_ret
 
     @property
@@ -719,40 +706,17 @@ class Relative(DistMarg, BaseGaussianNoise):
         for p, v in self.fid_params.items():
             attrs[f"{p}_ref"] = v
 
-    def heterodyne_bin_error(self):
+    def max_curvature_from_reference(self):
         """
-        Return the largest error the bins make in the heterodyne,
-        relative to its size.
-
-        The heterodyne, the ratio of the waveform to the fiducial one, is
-        assumed to be linear between bin edges. Each interior edge is
-        predicted from its two neighbours and compared with what it
-        actually is, which uses only the values the likelihood has already
-        evaluated.
-
-        Reaching across two bins rather than one, it reports the error of a
-        binning twice as coarse: about four times the error within a bin,
-        the width entering squared. It is therefore conservative, and it
-        follows the same scaling.
+        Return the maximum change in slope between frequency bins
+        relative to the reference waveform.
         """
-        worst = 0.0
+        dmax = 0
         for ifo in self.data:
-            wfs = self.wf_ret[ifo]
-            edge = wfs if self.still_needs_det_response else wfs[0]
-            edge = numpy.asarray(edge) / self.h00_sparse[ifo]
-            if len(edge) < 3:
-                continue
-
-            f = numpy.asarray(self.fedges[ifo])
-            keep = edge[1:-1] != 0
-            if not keep.any():
-                continue
-
-            w = (f[1:-1] - f[:-2]) / (f[2:] - f[:-2])
-            predicted = edge[:-2] * (1 - w) + edge[2:] * w
-            err = abs(predicted - edge[1:-1])[keep] / abs(edge[1:-1])[keep]
-            worst = max(worst, err.max())
-        return worst
+            r = self.wf_ret[ifo][0] / self.h00_sparse[ifo]
+            d = abs(numpy.diff(r / abs(r).min(), n=2)).max()
+            dmax = max(dmax, d)
+        return dmax
 
     @staticmethod
     def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
