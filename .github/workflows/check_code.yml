@@ -51,6 +51,7 @@ jobs:
                   retention-days: 30
 
     qlty_check:
+        if: github.event_name == 'pull_request'
         runs-on: ubuntu-latest
         permissions:
             contents: read
@@ -59,28 +60,17 @@ jobs:
             - name: Check out repository
               uses: actions/checkout@v5
               with:
+                  # Full history is needed so Qlty can diff against the PR base branch.
                   fetch-depth: 0
 
             - name: Install Qlty CLI
               uses: qltysh/qlty-action/install@v2
 
-            - name: Build file list
-              id: filelist
-              uses: ./.github/actions/code-formatting-files
-              with:
-                  changed-only: ${{ github.event_name == 'pull_request' }}
-                  base-ref: ${{ github.event.pull_request.base.sha }}
-                  head-ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
             - name: Run Qlty check
-              if: steps.filelist.outputs.file-count != '0'
-              env:
-                  FILE_LIST: ${{ steps.filelist.outputs.file-list }}
               run: |
-                mapfile -t files < "$FILE_LIST"
                 set +e
                 qlty check --sarif --no-progress \
-                  -- "${files[@]}" \
+                  --upstream origin/${{ github.event.pull_request.base.ref }} \
                   > qlty-raw.sarif
                 qlty_exit_code=$?
                 set -e
@@ -99,17 +89,8 @@ jobs:
 
                 exit $qlty_exit_code
 
-            - name: Store Qlty reports
-              if: always()
-              uses: actions/upload-artifact@v7
-              with:
-                  name: qlty-reports
-                  path: qlty-*.sarif
-                  if-no-files-found: ignore
-                  retention-days: 30
-
             - name: Upload results to GitHub Code Scanning
-              if: ${{ !cancelled() && hashFiles('qlty-results.sarif') != '' }}
+              if: always()
               uses: github/codeql-action/upload-sarif@v4
               with:
                   sarif_file: qlty-results.sarif
