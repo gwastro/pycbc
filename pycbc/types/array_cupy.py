@@ -87,10 +87,12 @@ def weighted_inner(self, other, weight):
     return cp.sum(self.data.conj() * other / weight, dtype=acum_dtype)
 
 
+# abs_arg_max_complex and inner_real are not implemented for CuPy yet, so
+# complex abs_arg_max and real inner products fail on this scheme
 def abs_arg_max(self):
     if self.dtype == cp.float32 or self.dtype == cp.float64:
         return cp.argmax(abs(self.data))
-    return abs_arg_max_complex(self._data)
+    return abs_arg_max_complex(self._data)  # noqa: F821
 
 
 def inner(self, other):
@@ -98,7 +100,7 @@ def inner(self, other):
     cdtype = common_kind(self.dtype, other.dtype)
     if cdtype.kind == "c":
         return cp.sum(self.data.conj() * other, dtype=complex128)
-    return inner_real(self.data, other)
+    return inner_real(self.data, other)  # noqa: F821
 
 
 def vdot(self, other):
