@@ -72,8 +72,6 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     nfiles = len(inputfiles)
 
     def _scan_dataset(name, obj):
-        global chunk
-
         if isinstance(obj, h5py.Dataset) and "/search/" in name:
             datasets[name] = (obj.shape, obj.dtype)
         elif isinstance(obj, h5py.Dataset):
