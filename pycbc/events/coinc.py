@@ -1120,7 +1120,6 @@ class LiveCoincTimeslideBackgroundEstimator:
             "--background-ifar-limit",
             type=float,
             help="The limit on inverse false alarm rate to calculate "
-<<<<<<< HEAD
             "background in years",
             default=100.0,
         )
