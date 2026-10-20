@@ -133,6 +133,16 @@ ignore = [
     # objects would be an API change, and would change the output for a given
     # seed and the checkpoint format.
     "NPY002",
+    # Not planned to be enabled: assigning to a for-loop variable inside the
+    # loop. Nearly every case normalises the loop value on the first line
+    # (`for value in values: value = value.split(":")`), which is a common
+    # and readable idiom; renaming each loop variable would gain little.
+    "PLW2901",
+    # Not planned to be enabled for now: `global` statements that update
+    # module-level state. They are used on purpose (FFTW threading state, FFT
+    # backend registries, plan and buffer caches, the pool's shared counters),
+    # but whether each one needs to be a global is worth considering.
+    "PLW0603",
 ]
 
 [lint.per-file-ignores]
