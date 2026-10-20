@@ -20,9 +20,8 @@
 An example of how to query science + CAT_X segments and do datafind with pycbc.workflow.
 """
 
-import pycbc.version
-
 import pycbc
+import pycbc.version
 
 __author__ = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
