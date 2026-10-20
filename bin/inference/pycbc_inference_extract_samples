@@ -204,7 +204,8 @@ else:
     if opts.combine_via_sampling:
         warnings.warn(
             "Specified combine_via_sampling with only one input "
-            "file. This option will have no effect."
+            "file. This option will have no effect.",
+            stacklevel=1,
         )
 
 # create the file
@@ -271,7 +272,8 @@ for fp in fps:
                     warnings.warn(
                         "WARNING: remapped_params metadata does not "
                         "match between files; saving metadata from "
-                        "first file"
+                        "first file",
+                        stacklevel=1,
                     )
                 else:
                     raise ValueError(

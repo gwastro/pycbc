@@ -590,7 +590,9 @@ def angle_as_radians(s):
     # if `s` converts to a float then there is no unit, so assume radians
     try:
         value = float(s)
-        warnings.warn(f"Angle units not specified for {value}, assuming radians")
+        warnings.warn(
+            f"Angle units not specified for {value}, assuming radians", stacklevel=1
+        )
         return value
     except ValueError:
         pass

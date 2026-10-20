@@ -259,7 +259,9 @@ def spa_tmplt(**kwds):
         elif "f_upper" in kwds:
             fstop = kwds["f_upper"]
             warnings.warn(
-                "f_upper is deprecated in favour of f_final!", DeprecationWarning
+                "f_upper is deprecated in favour of f_final!",
+                DeprecationWarning,
+                stacklevel=2,
             )
         else:
             # Schwarzschild ISCO frequency

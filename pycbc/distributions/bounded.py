@@ -234,7 +234,8 @@ class BoundedDist:
                 warnings.warn(
                     f"Param {param} has one or more "
                     "reflected boundaries. Reflected boundaries "
-                    "can cause issues when used in an MCMC."
+                    "can cause issues when used in an MCMC.",
+                    stacklevel=1,
                 )
         self._bounds = params
         self._params = sorted(params.keys())

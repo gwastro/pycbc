@@ -629,7 +629,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         if rcond >= 1e16:
             warnings.warn(
                 f"Condition number of inverse covariance matrix is "
-                f"{rcond}; inpainting may be numerically unstable"
+                f"{rcond}; inpainting may be numerically unstable",
+                stacklevel=1,
             )
         return rcond
 
