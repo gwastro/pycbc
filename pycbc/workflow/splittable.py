@@ -35,7 +35,7 @@ import os
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 
-from pycbc.workflow.core import File, FileList, make_analysis_dir
+from pycbc.workflow.core import File, FileList
 from pycbc.workflow.jobsetup import (
     PycbcHDFSplitInjExecutable,
     PycbcSplitBankExecutable,
@@ -110,7 +110,6 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
     if tags is None:
         tags = []
     logger.info("Entering split output files module.")
-    make_analysis_dir(out_dir)
     # Parse for options in .ini file
     splitMethod = workflow.cp.get_opt_tags(
         "workflow-splittable", "splittable-method", tags

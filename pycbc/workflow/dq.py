@@ -24,7 +24,7 @@
 
 import logging
 
-from pycbc.workflow.core import Executable, FileList, Node, make_analysis_dir
+from pycbc.workflow.core import Executable, FileList, Node
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,6 @@ def setup_dq_reranking(
     tags=None,
 ):
     logger.info("Setting up dq reranking")
-    make_analysis_dir(output_dir)
     output_files = FileList()
     output_labels = []
     if tags is None:

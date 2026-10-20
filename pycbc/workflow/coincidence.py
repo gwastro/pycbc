@@ -32,7 +32,7 @@ import os
 
 import igwn_segments as segments
 
-from pycbc.workflow.core import Executable, File, FileList, Node, make_analysis_dir
+from pycbc.workflow.core import Executable, File, FileList, Node
 
 logger = logging.getLogger(__name__)
 
@@ -383,7 +383,6 @@ def merge_single_detector_hdf_files(
 ):
     if tags is None:
         tags = []
-    make_analysis_dir(out_dir)
     out = FileList()
     for ifo in workflow.ifos:
         node = MergeExecutable(
@@ -428,7 +427,6 @@ def find_injections_in_hdf_coinc(
 ):
     if tags is None:
         tags = []
-    make_analysis_dir(out_dir)
     exe = PyCBCHDFInjFindExecutable(
         workflow.cp, "hdfinjfind", ifos=workflow.ifos, out_dir=out_dir, tags=tags
     )
@@ -446,7 +444,6 @@ def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=None):
         raise ValueError("Can only convert a single template bank")
 
     logger.info("convert template bank to HDF")
-    make_analysis_dir(out_dir)
     bank2hdf_exe = PyCBCBank2HDFExecutable(
         workflow.cp, "bank2hdf", ifos=workflow.ifos, out_dir=out_dir, tags=tags
     )
@@ -461,7 +458,6 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
         tags = []
     # FIXME, make me not needed
     logger.info("convert single inspiral trigger files to hdf5")
-    make_analysis_dir(out_dir)
 
     trig_files = FileList()
     for ifo, insp_group in zip(*xml_trigger_files.categorize_by_attr("ifo")):
@@ -547,7 +543,6 @@ def setup_interval_coinc_inj(
     """
     if tags is None:
         tags = []
-    make_analysis_dir(out_dir)
     logger.info("Setting up coincidence for injections")
 
     # Wall time knob and memory knob
@@ -616,7 +611,6 @@ def setup_interval_coinc(
     """
     if tags is None:
         tags = []
-    make_analysis_dir(out_dir)
     logger.info("Setting up coincidence")
 
     ifos, _ = trig_files.categorize_by_attr("ifo")
@@ -788,7 +782,6 @@ def setup_combine_statmap(
     """
     if tags is None:
         tags = []
-    make_analysis_dir(out_dir)
     logger.info("Setting up combine statmap")
 
     cstat_exe_name = os.path.basename(workflow.cp.get("executables", "combine_statmap"))
@@ -823,7 +816,6 @@ def setup_exclude_zerolag(
     """
     if tags is None:
         tags = []
-    make_analysis_dir(out_dir)
     logger.info("Setting up exclude zerolag")
 
     exc_zerolag_exe = PyCBCExcludeZerolag(
@@ -848,7 +840,6 @@ def rerank_coinc_followup(
     if tags is None:
         tags = []
 
-    make_analysis_dir(out_dir)
 
     if not workflow.cp.has_section("workflow-rerank"):
         logger.info("No reranking done in this workflow")
@@ -858,7 +849,6 @@ def rerank_coinc_followup(
     # Generate reduced data files (maybe this could also be used elsewhere?)
     stores = FileList([])
     for ifo in workflow.ifos:
-        make_analysis_dir("strain_files")
         node = Executable(
             workflow.cp,
             "strain_data_reduce",

@@ -51,6 +51,7 @@ KNOWN_SITES = [
     "local",
     "condorpool_symlink",
     "condorpool_copy",
+    "condorpool_container",
     "condorpool_shared",
     "osg",
 ]
@@ -123,9 +124,14 @@ def add_condorpool_symlink_site(sitecat, cp):
     sitecat.add_sites(site)
 
 
-def add_condorpool_copy_site(sitecat, cp):
-    """Add condorpool_copy site to site catalog"""
-    site = Site("condorpool_copy", arch=Arch.X86_64, os_type=OS.LINUX)
+def _build_condorio_site(name, cp):
+    """Build a no-shared-filesystem, Condor I/O site (data.configuration=
+    condorio), without adding it to a site catalog yet.
+
+    Shared by condorpool_copy and condorpool_container. Anything they do
+    not have in common is set by the main setup function.
+    """
+    site = Site(name, arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
@@ -135,7 +141,6 @@ def add_condorpool_copy_site(sitecat, cp):
     )
     # This explicitly disables symlinking
     site.add_profiles(Namespace.PEGASUS, key="nosymlink", value=True)
-    site.add_profiles(Namespace.PEGASUS, key="auxillary.local", value="true")
     site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid", value="False")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files", value="Yes")
     site.add_profiles(
@@ -145,6 +150,29 @@ def add_condorpool_copy_site(sitecat, cp):
     site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN", value='"False"')
     site.add_profiles(Namespace.CONDOR, key="My.flock_local", value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
+    return site
+
+
+def add_condorpool_copy_site(sitecat, cp):
+    """Add condorpool_copy site to site catalog"""
+    site = _build_condorio_site("condorpool_copy", cp)
+    site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
+                      value="true")
+    sitecat.add_sites(site)
+
+
+def add_condorpool_container_site(sitecat, cp):
+    """Add condorpool_container site to site catalog
+
+    Like condorpool_copy (no shared filesystem, data moved via Condor I/O),
+    but with HTCondor's container universe enabled, so the executable is
+    delivered by running it inside a container rather than needing to be
+    visible on the execution site directly. Requirements classads to
+    restrict this to execute nodes advertising container support are not
+    yet set here and should be added once known for the target pool.
+    """
+    site = _build_condorio_site("condorpool_container", cp)
+    site.add_profiles(Namespace.CONDOR, key="universe", value="container")
     sitecat.add_sites(site)
 
 
@@ -281,6 +309,8 @@ def add_site(sitecat, sitename, cp, out_dir=None):
         add_condorpool_symlink_site(sitecat, cp)
     elif sitename == "condorpool_copy":
         add_condorpool_copy_site(sitecat, cp)
+    elif sitename == "condorpool_container":
+        add_condorpool_container_site(sitecat, cp)
     elif sitename == "condorpool_shared":
         add_condorpool_shared_site(sitecat, cp, out_dir, local_url)
     elif sitename == "osg":

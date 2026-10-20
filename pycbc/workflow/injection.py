@@ -36,7 +36,6 @@ from pycbc.workflow.core import (
     Executable,
     FileList,
     Node,
-    make_analysis_dir,
     resolve_url_to_file,
 )
 from pycbc.workflow.jobsetup import (
@@ -49,7 +48,6 @@ logger = logging.getLogger(__name__)
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
-    make_analysis_dir(out_dir)
 
     node = Executable(
         workflow.cp, "strip_injections", ifos=workflow.ifos, out_dir=out_dir, tags=tags
@@ -211,7 +209,6 @@ def setup_injection_workflow(
     if tags is None:
         tags = []
     logger.info("Entering injection module.")
-    make_analysis_dir(output_dir)
 
     # Get full analysis segment for output file naming
     full_segment = workflow.analysis_time

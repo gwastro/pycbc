@@ -1823,11 +1823,17 @@ class LiveBatchMatchedFilter:
         mem_ids = [(a, b) for a, b in zip(chunk_durations, self.chunks)]
         mem_types = set(zip(mem_ids, samples))
 
+        # Groups are processed strictly one at a time, so we use one pair
+        # of memory buffers for both, sized for the largest and using views
+        # for the others.
+        maxsize = int(max(size for _, size in mem_types))
+        self._out_pool = zeros(maxsize, dtype=numpy.complex64)
+        self._cout_pool = zeros(maxsize, dtype=numpy.complex64)
         self.tgroups, self.mids = [], []
         for i, size in mem_types:
             dur, count = i
-            self.out_mem[i] = zeros(size, dtype=numpy.complex64)
-            self.cout_mem[i] = zeros(size, dtype=numpy.complex64)
+            self.out_mem[i] = self._out_pool[0:int(size)]
+            self.cout_mem[i] = self._cout_pool[0:int(size)]
             self.ifts[i] = IFFT(
                 self.cout_mem[i],
                 self.out_mem[i],
@@ -1952,6 +1958,15 @@ class LiveBatchMatchedFilter:
         valid_start = int(valid_end - self.data.blocksize * self.data.sample_rate)
 
         seg = slice(valid_start, valid_end)
+
+        # Zero the tail of each template's slot in cout (the IFFT *input*).
+        # Correlation only fills the first flen = N/2+1 samples, and the
+        # complex IFFT needs the rest to be 0. cout is shared between groups
+        # of different slot sizes (and the veto correlate), so stale data
+        # can be left there. out needs no clearing: the IFFT overwrites it.
+        flen = len(tgroup[0])
+        cmem = self.cout_mem[mid].data.reshape(len(tgroup), psize)
+        cmem[:, flen:] = 0
 
         self.corr[self.block_id].execute(stilde)
         self.ifts[mid].execute()
