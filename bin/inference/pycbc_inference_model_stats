@@ -34,7 +34,7 @@ import pycbc
 from pycbc.inference import models
 from pycbc.inference.io import loadfile
 from pycbc.io import FieldArray
-from pycbc.pool import choose_pool, use_mpi
+from pycbc.pool import choose_pool
 from pycbc.workflow import WorkflowConfigParser
 
 logger = logging.getLogger(__name__)

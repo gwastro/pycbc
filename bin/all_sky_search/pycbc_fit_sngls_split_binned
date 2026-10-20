@@ -27,7 +27,6 @@ import pycbc.version
 from pycbc import bin_utils, events, results
 from pycbc.events import stat as pystat
 from pycbc.events import trigger_fits as trstats
-from pycbc.events import triggers as trigs
 from pycbc.io import HFile, SingleDetTriggers
 from pycbc.tmpltbank import bank_conversions
 from pycbc.types.optparse import MultiDetOptionAction

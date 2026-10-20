@@ -113,10 +113,6 @@ def squared_norm(self):
     return self.data.real**2 + self.data.imag**2
 
 
-def numpy(self):
-    return cp.asnumpy(self.data)
-
-
 def _copy(self, self_ref, other_ref):  # noqa: ARG001
     self_ref[:] = other_ref[:]
 
