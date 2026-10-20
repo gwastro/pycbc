@@ -67,7 +67,7 @@ This will build the documentation in the second repository that you created call
     git commit -a -m "documentation update"
     git push origin gh-pages
 
-The documentation will then be available under your GitHub pages at ``http://username.github.io/pycbc/latest/html/`` where you should replace ``username/`` with your GitHub account name.
+The documentation will then be available under your GitHub pages at ``https://username.github.io/pycbc/latest/html/`` where you should replace ``username/`` with your GitHub account name.
 
 In this example, we checkout the master branch to build the documentation, but you can change the last command above to checkout any other branch that your are developing.
 
