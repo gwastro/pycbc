@@ -497,8 +497,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
         # we'll need the sky location for determining time shifts, unless
         # only using the radiation frame and sampling in geocentric time
         refframe = params.get("tc_ref_frame", "geocentric")
-        if any(det != "RF" for det in self.detectors) or \
-                refframe not in ("geocentric", "RF"):
+        if any(det != "RF" for det in self.detectors) or refframe not in (
+            "geocentric",
+            "RF",
+        ):
             ra = self.current_params["ra"]
             dec = self.current_params["dec"]
         else:
@@ -561,10 +563,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 refdet = self.current_params.get("tc_ref_frame", "geocentric")
                 if refdet not in ("geocentric", "RF"):
                     refdet = Detector(refdet)
-                    rfstart -= refdet.time_delay_from_earth_center(
-                        ra, dec, gatestart)
-                    rfend -= refdet.time_delay_from_earth_center(
-                        ra, dec, gateend)
+                    rfstart -= refdet.time_delay_from_earth_center(ra, dec, gatestart)
+                    rfend -= refdet.time_delay_from_earth_center(ra, dec, gateend)
                 gatetimes[det] = (rfstart, rfend - rfstart)
         return gatetimes
 
@@ -1007,8 +1007,9 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         )
         # the polarization parameters
         self.polarization_samples = polarization_samples
-        self.pol = numpy.linspace(0, 2 * numpy.pi, self.polarization_samples,
-                                  endpoint=False)
+        self.pol = numpy.linspace(
+            0, 2 * numpy.pi, self.polarization_samples, endpoint=False
+        )
         self.dets = {}
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
@@ -1017,16 +1018,18 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             waveform_transforms=self.waveform_transforms,
             recalibration=self.recalibration,
             generator_class=generator.FDomainDetFrameTwoPolGenerator,
-            **self.static_params
-            )
+            **self.static_params,
+        )
         # if sampling *only* in radiation frame, the gated_gaussian_noise model
         # is strictly better; refer the user to that model
         if set(data) == {"RF"}:
-            raise ValueError("The only detector requested is the radiation "
-                             "frame (RF). This is strictly slower and more "
-                             "expensive than using the unmarginalized model. "
-                             "Consider using gated_gaussian_noise or adding "
-                             "additional detectors.")
+            raise ValueError(
+                "The only detector requested is the radiation "
+                "frame (RF). This is strictly slower and more "
+                "expensive than using the unmarginalized model. "
+                "Consider using gated_gaussian_noise or adding "
+                "additional detectors."
+            )
 
     def get_waveforms(self):
         if self._current_wfs is not None:

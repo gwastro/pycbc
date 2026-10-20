@@ -231,9 +231,9 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
                 f = 1.0
             else:
                 dt = self.det[ifo].time_delay_from_earth_center(
-                    p["ra"], p["dec"], p["tc"])
-                fp, fc = self.det[ifo].antenna_pattern(p["ra"], p["dec"],
-                                                       0, p["tc"])
+                    p["ra"], p["dec"], p["tc"]
+                )
+                fp, fc = self.det[ifo].antenna_pattern(p["ra"], p["dec"], 0, p["tc"])
                 f = (fp + 1.0j * fc) * pol_phase
             self.dts[ifo] = p["tc"] + dt
 

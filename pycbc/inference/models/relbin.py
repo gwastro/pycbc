@@ -263,13 +263,14 @@ class Relative(DistMarg, BaseGaussianNoise):
                 curr_wav = wave[ifo]
                 self.ta[ifo] = 0.0
             else:
-                fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
-                                                          **self.fid_params)
+                fid_hp, fid_hc = get_fd_waveform_sequence(
+                    sample_points=fpoints, **self.fid_params
+                )
                 if ifo == "RF":
                     # no detector response; convert to geocentric
                     self.det[ifo] = None
                     self.ta[ifo] = self.fid_params["tc"]
-                    fp, fc = 1., 0.
+                    fp, fc = 1.0, 0.0
                 else:
                     self.det[ifo] = Detector(ifo)
                     dt = self.det[ifo].time_delay_from_earth_center(
@@ -279,10 +280,12 @@ class Relative(DistMarg, BaseGaussianNoise):
                     )
                     self.ta[ifo] = self.fid_params["tc"] + dt
                     fp, fc = self.det[ifo].antenna_pattern(
-                        self.fid_params["ra"], self.fid_params["dec"],
+                        self.fid_params["ra"],
+                        self.fid_params["dec"],
                         self.fid_params["polarization"],
-                        self.fid_params["tc"])
-                curr_wav = (fid_hp * fp + fid_hc * fc)
+                        self.fid_params["tc"],
+                    )
+                curr_wav = fid_hp * fp + fid_hc * fc
 
             # check for zeros at low and high frequencies
             # make sure only nonzero samples are included in bins
@@ -593,7 +596,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         norm = 0.0
         filt = 0j
         self._current_wf_parts = {}
-        pol_phase = numpy.exp(-2.0j * p.get("polarization",  0.))
+        pol_phase = numpy.exp(-2.0j * p.get("polarization", 0.0))
 
         for ifo in self.data:
             freqs = self.fedges[ifo]
@@ -634,17 +637,8 @@ class Relative(DistMarg, BaseGaussianNoise):
                         fp, fc, dt = 1.0, 0.0, 0.0
                     det_pol_phase = numpy.ones_like(pol_phase)
                 else:
-                    fp, fc = det.antenna_pattern(
-                        p["ra"],
-                        p["dec"],
-                        0.0,
-                        times
-                    )
-                    dt = det.time_delay_from_earth_center(
-                        p["ra"],
-                        p["dec"],
-                        times
-                    )
+                    fp, fc = det.antenna_pattern(p["ra"], p["dec"], 0.0, times)
+                    dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                     det_pol_phase = pol_phase
                 dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
@@ -661,7 +655,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                         sdat["a0"],
                         sdat["a1"],
                         sdat["b0"],
-                        sdat["b1"]
+                        sdat["b1"],
                     )
                 else:
                     f = (fp + 1.0j * fc) * det_pol_phase
@@ -860,7 +854,7 @@ class RelativeTime(Relative):
         lik = self.likelihood_function
         norm = 0.0
         filt = 0j
-        pol_phase = numpy.exp(-2.0j * p.get("polarization"), 0.0)
+        pol_phase = numpy.exp(-2.0j * p.get("polarization", 0.0))
 
         self.snr_draw(wfs)
         p = self.current_params
@@ -880,21 +874,12 @@ class RelativeTime(Relative):
                     fp = numpy.ones(times.shape)
                     fc = numpy.zeros(times.shape)
                 else:
-                    fp, fc = 1., 0.
+                    fp, fc = 1.0, 0.0
                 times = numpy.zeros_like(times)
                 det_pol_phase = numpy.ones_like(pol_phase)
             else:
-                fp, fc = det.antenna_pattern(
-                    p["ra"],
-                    p["dec"],
-                    0,
-                    times
-                )
-                times = det.time_delay_from_earth_center(
-                    p["ra"],
-                    p["dec"],
-                    times
-                )
+                fp, fc = det.antenna_pattern(p["ra"], p["dec"], 0, times)
+                times = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                 det_pol_phase = pol_phase
             dtc = p["tc"] - end_time - self.ta[ifo]
 
@@ -912,7 +897,7 @@ class RelativeTime(Relative):
                     sdat["a0"],
                     sdat["a1"],
                     sdat["b0"],
-                    sdat["b1"]
+                    sdat["b1"],
                 )
             else:
                 f = (fp + 1.0j * fc) * det_pol_phase
@@ -998,9 +983,7 @@ class RelativeTimeDom(RelativeTime):
             start = self.tstart[ifo] - delta_t * 2.0
             sh, hh = self.sh_series(ifo, wfs, start, delta_t, self.num_samples[ifo] + 4)
             snr = TimeSeries(
-                abs(sh[2:-2]) / hh**0.5,
-                delta_t=delta_t,
-                epoch=self.tstart[ifo]
+                abs(sh[2:-2]) / hh**0.5, delta_t=delta_t, epoch=self.tstart[ifo]
             )
             self.sh[ifo] = TimeSeries(sh, delta_t=delta_t, epoch=start)
             self.hh[ifo] = hh
@@ -1049,36 +1032,24 @@ class RelativeTimeDom(RelativeTime):
         for ifo in self.sh:
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(ifo)
-                det_pol_phase = numpy.ones_like(pol_phase) if ifo == "RF" \
-                    else pol_phase
+                det_pol_phase = numpy.ones_like(pol_phase) if ifo == "RF" else pol_phase
             elif ifo == "RF":
                 # no detector response; convert times to geocentric
-                dt = 0.
-                fp, fc = 1., 0.
+                dt = 0.0
+                fp, fc = 1.0, 0.0
                 det_pol_phase = numpy.ones_like(pol_phase)
             else:
                 dt = self.det[ifo].time_delay_from_earth_center(
-                    p["ra"],
-                    p["dec"],
-                    p["tc"]
+                    p["ra"], p["dec"], p["tc"]
                 )
-                fp, fc = self.det[ifo].antenna_pattern(
-                    p["ra"],
-                    p["dec"],
-                    0,
-                    p["tc"]
-                )
+                fp, fc = self.det[ifo].antenna_pattern(p["ra"], p["dec"], 0, p["tc"])
                 det_pol_phase = pol_phase
             dts = p["tc"] + dt
             f = (fp + 1.0j * fc) * det_pol_phase
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = f.real * ip + 1.0j * f.imag * ic
-            sh = self.sh[ifo].at_time(
-                dts,
-                interpolate="quadratic",
-                extrapolate=0.0j
-            )
+            sh = self.sh[ifo].at_time(dts, interpolate="quadratic", extrapolate=0.0j)
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 

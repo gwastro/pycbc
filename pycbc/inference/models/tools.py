@@ -373,8 +373,10 @@ class DistMarg:
             ifos = list(snrs.keys())
             if hasattr(self, "keep_ifos"):
                 ifos = self.keep_ifos
-            d = {ifo: None if ifo == "RF" else \
-                 Detector(ifo, reference_time=tcave) for ifo in ifos}
+            d = {
+                ifo: None if ifo == "RF" else Detector(ifo, reference_time=tcave)
+                for ifo in ifos
+            }
             self.tinfo = tcmin, tcmax, tcave, ifos, d
             self.snr_params = ["tc"]
 
@@ -388,8 +390,7 @@ class DistMarg:
         # Determine the common valid time range
         iref = ifos[0]
         dref = d[iref]
-        dt = 0.0 if iref == "RF" else \
-            dref.time_delay_from_earth_center(ra, dec, tcave)
+        dt = 0.0 if iref == "RF" else dref.time_delay_from_earth_center(ra, dec, tcave)
 
         starts = []
         ends = []
@@ -485,8 +486,10 @@ class DistMarg:
             dec = self.marginalized_vector_priors["dec"].rvs(size=size)["dec"]
             tcmin, tcmax = self.marginalized_vector_priors["tc"].bounds["tc"]
             tcave = (tcmax + tcmin) / 2.0
-            d = {ifo: None if ifo == "RF" else \
-                 Detector(ifo, reference_time=tcave) for ifo in self.data}
+            d = {
+                ifo: None if ifo == "RF" else Detector(ifo, reference_time=tcave)
+                for ifo in self.data
+            }
 
             # What data structure to hold times? Dict of offset -> list?
             logging.info("sorting into time delay dict")
@@ -494,15 +497,14 @@ class DistMarg:
             for i in range(len(ifos) - 1):
                 if ifos[0] == "RF":
                     # start ifo is geocenter
-                    dt = -d[ifos[i+1]].time_delay_from_earth_center(
-                        ra, dec, tcave)
-                elif ifos[i+1] == "RF":
+                    dt = -d[ifos[i + 1]].time_delay_from_earth_center(ra, dec, tcave)
+                elif ifos[i + 1] == "RF":
                     # end ifo is geocenter
-                    dt = d[ifos[0]].time_delay_from_earth_center(
-                        ra, dec, tcave)
+                    dt = d[ifos[0]].time_delay_from_earth_center(ra, dec, tcave)
                 else:
-                    dt = d[ifos[0]].time_delay_from_detector(d[ifos[i+1]],
-                                                             ra, dec, tcave)
+                    dt = d[ifos[0]].time_delay_from_detector(
+                        d[ifos[i + 1]], ra, dec, tcave
+                    )
                 dt = numpy.rint(dt / snrs[ifos[0]].delta_t)
                 dts.append(dt)
 
@@ -676,6 +678,7 @@ class DistMarg:
 
         """
         from scipy.constants import c as speed_of_light
+
         self.peak_lock_search_samples = (
             None if peak_lock_search_samples is None else int(peak_lock_search_samples)
         )
@@ -752,8 +755,11 @@ class DistMarg:
                     te2 = ts2 + self.num_samples[ifo2] / sample_rate
                     if "RF" in (ifo, ifo2):
                         # treat radiation frame as geocenter
-                        dt = sum(numpy.linalg.norm(Detector(i).location)
-                                 for i in (ifo, ifo2) if i != "RF")
+                        dt = sum(
+                            numpy.linalg.norm(Detector(i).location)
+                            for i in (ifo, ifo2)
+                            if i != "RF"
+                        )
                         dt /= speed_of_light
                     else:
                         det = Detector(ifo)

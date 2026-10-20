@@ -87,7 +87,7 @@ def set_sim_data(inj, field, data):
 
 
 def projector(detector_name, inj, hp, hc, distance_scale=1):
-    """ Use the injection row to project the polarizations into the
+    """Use the injection row to project the polarizations into the
     detector frame.
 
     If ``detector_name`` is 'RF' (radiation frame), no detector response is
@@ -118,14 +118,10 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     tapermethod, taper_window = wfutils.get_taper_settings(inj)
     try:
         hp_tapered = hp.taper_timeseries(
-            location=inj.taper,
-            tapermethod=tapermethod,
-            taper_window=taper_window
+            location=inj.taper, tapermethod=tapermethod, taper_window=taper_window
         )
         hc_tapered = hc.taper_timeseries(
-            location=inj.taper,
-            tapermethod=tapermethod,
-            taper_window=taper_window
+            location=inj.taper, tapermethod=tapermethod, taper_window=taper_window
         )
     except AttributeError:
         hp_tapered = hp
@@ -146,7 +142,8 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
             dec,
             inj.polarization,
             method=projection_method,
-            reference_time=tc,)
+            reference_time=tc,
+        )
     else:
         # ...unless working in RF, in which case return the plus polarization
         signal = hp_tapered
@@ -288,11 +285,7 @@ class _XMLInjectionSet:
             if end_time < t0 or start_time > t1:
                 continue
             signal = self.make_strain_from_inj_object(
-                inj,
-                delta_t,
-                detector_name,
-                f_lower=f_l,
-                distance_scale=distance_scale
+                inj, delta_t, detector_name, f_lower=f_l, distance_scale=distance_scale
             )
             signal = resample_to_delta_t(signal, strain.delta_t, method="ldas")
             if float(signal.start_time) > t1:
@@ -357,11 +350,7 @@ class _XMLInjectionSet:
             distance=inj.distance,
             **self.extra_args,
         )
-        return projector(detector_name,
-                         inj,
-                         hp,
-                         hc,
-                         distance_scale=distance_scale)
+        return projector(detector_name, inj, hp, hc, distance_scale=distance_scale)
 
     def end_times(self):
         """Return the end times of all injections"""
@@ -524,13 +513,7 @@ class _HDFInjectionSet(metaclass=ABCMeta):
         """Return a list of the supported approximants."""
 
     @classmethod
-    def write(cls,
-              filename,
-              samples,
-              write_params=None,
-              static_args=None,
-              **metadata
-        ):
+    def write(cls, filename, samples, write_params=None, static_args=None, **metadata):
         r"""
         Writes the injection samples to the given hdf file.
 
@@ -702,9 +685,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
                     f_lower=f_l,
                     distance_scale=distance_scale,
                 )
-                signal = resample_to_delta_t(signal,
-                                             strain.delta_t,
-                                             method="ldas")
+                signal = resample_to_delta_t(signal, strain.delta_t, method="ldas")
                 if float(signal.start_time) > t1:
                     continue
                 signal = signal.astype(strain.dtype)
@@ -769,16 +750,14 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
 
         if inj["approximant"] in fd_det:
             if detector_name == "RF":
-                raise ValueError(f"Approximant {inj['approximant']} generates "
-                                 "waveforms in the detector frame. It cannot "
-                                 "be injected in the radiation frame "
-                                 "(detector_name = RF)")
+                raise ValueError(
+                    f"Approximant {inj['approximant']} generates "
+                    "waveforms in the detector frame. It cannot "
+                    "be injected in the radiation frame "
+                    "(detector_name = RF)"
+                )
             strain = get_td_det_waveform_from_fd_det(
-                inj,
-                delta_t=delta_t,
-                f_lower=f_l,
-                ifos=detector_name,
-                **self.extra_args
+                inj, delta_t=delta_t, f_lower=f_l, ifos=detector_name, **self.extra_args
             )[detector_name]
             strain /= distance_scale
         else:
@@ -935,12 +914,7 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         hp, hc = ringdown_td_approximants[inj["approximant"]](
             inj, delta_t=delta_t, **self.extra_args
         )
-        return projector(detector_name,
-                         inj,
-                         hp,
-                         hc,
-                         distance_scale=distance_scale
-        )
+        return projector(detector_name, inj, hp, hc, distance_scale=distance_scale)
 
     def end_times(self):
         """

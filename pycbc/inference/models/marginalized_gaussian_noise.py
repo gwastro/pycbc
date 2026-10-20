@@ -383,9 +383,10 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 else:
                     if refframe not in self.dets:
                         self.dets[refframe] = Detector(refframe)
-                    tc = ref_tc - self.dets[refframe].\
-                        time_delay_from_earth_center(ra, dec, ref_tc)
-                fp, fc = 1., 0.0
+                    tc = ref_tc - self.dets[refframe].time_delay_from_earth_center(
+                        ra, dec, ref_tc
+                    )
+                fp, fc = 1.0, 0.0
             else:
                 if det not in self.dets:
                     self.dets[det] = Detector(det)
@@ -399,8 +400,8 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                     fc = f.imag
                 else:
                     fp, fc = self.dets[det].antenna_pattern(
-                                            ra, dec,
-                                            params["polarization"], tc)
+                        ra, dec, params["polarization"], tc
+                    )
 
             cplx_hd = fp * cplx_hpd[det].at_time(tc, interpolate="quadratic")
             cplx_hd += fc * cplx_hcd[det].at_time(tc, interpolate="quadratic")
@@ -497,11 +498,13 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
         # if sampling *only* in radiation frame, the gaussian_noise model is
         # strictly better; refer the user to that model
         if set(data) == {"RF"}:
-            raise ValueError("The only detector requested is the radiation "
-                             "frame (RF). This is strictly slower and more "
-                             "expensive than using the unmarginalized model. "
-                             "Consider using gaussian_noise or adding "
-                             "additional detectors.")
+            raise ValueError(
+                "The only detector requested is the radiation "
+                "frame (RF). This is strictly slower and more "
+                "expensive than using the unmarginalized model. "
+                "Consider using gaussian_noise or adding "
+                "additional detectors."
+            )
 
     @property
     def _extra_stats(self):
@@ -564,8 +567,9 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
                 if det not in self.dets:
                     self.dets[det] = Detector(det)
                 tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
-                fp, fc = self.dets[det].antenna_pattern(ra, dec,
-                                        params["polarization"], tc)
+                fp, fc = self.dets[det].antenna_pattern(
+                    ra, dec, params["polarization"], tc
+                )
 
             # the kmax of the waveforms may be different than internal kmax
             kmax = min(max(len(hp), len(hc)), self._kmax[det])
