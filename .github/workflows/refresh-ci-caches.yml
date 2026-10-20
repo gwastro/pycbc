@@ -21,61 +21,20 @@ concurrency:
   group: refresh-ci-caches
   cancel-in-progress: true
 
-env:
-  # Point curl and wget at the shared retry/hardening config in tools/.
-  # (Running the example scripts directly, without these set, is fine -
-  # they just fall back to curl/wget defaults.)
-  CURL_HOME: ${{ github.workspace }}/tools
-  WGETRC: ${{ github.workspace }}/tools/.wgetrc
-
 jobs:
   refresh:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Configure CI downloads
+        uses: ./.github/actions/configure-downloads
 
-      # Populated as a side effect of the search test suite, so here we only
-      # read it to keep it from expiring.
-      - name: Touch example GW data cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      - name: Populate shared data caches
+        uses: ./.github/actions/populate-caches
         with:
-          key: example-gw-data
-          path: |
-            docs/_include/*.gwf
-            examples/inference/lisa_smbhb_ldc/*_psd.txt
-            examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
-            examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
-            examples/inference/margtime/*.gwf
-            examples/inference/multisignal/*.gwf
-            examples/inference/relative/*.gwf
-            examples/inference/relmarg/*.gwf
-            examples/inference/single/*.gwf
+          restore-only: 'true'
 
-      - name: Cache LAL auxiliary data files
-        id: cache-lal-aux-data
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      - name: Cache remote test data
+        uses: ./.github/actions/cache-test-data
         with:
-          key: lal-aux-data
-          path: ~/lal_aux_data
-
-      - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
-        name: Download LAL auxiliary data files
-        run: |
-          mkdir ~/lal_aux_data
-          pushd ~/lal_aux_data
-          curl --show-error --silent \
-            --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
-            --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
-          popd
-
-      - name: Cache downloaded test data
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          key: test-data-cache-${{ hashFiles('tools/ci_prefetch_test_data.py') }}
-          restore-keys: |
-            test-data-cache-
-          path: ~/.astropy/cache/download
-
-      - name: Pre-fetch remote test data
-        run: |
-          python3 tools/ci_prefetch_test_data.py
+          best-effort: 'false'

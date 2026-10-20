@@ -2,18 +2,13 @@ name: run small inference workflow using pegasus + condor
 
 on: [push, pull_request]
 
-env:
-  # Point curl and wget at the shared retry/hardening config in tools/.
-  # (Running the example scripts directly, without these set, is fine -
-  # they just fall back to curl/wget defaults.)
-  CURL_HOME: ${{ github.workspace }}/tools
-  WGETRC: ${{ github.workspace }}/tools/.wgetrc
-
 jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v5
+    - name: Configure CI downloads
+      uses: ./.github/actions/configure-downloads
     - name: Load defaults
       id: defaults
       uses: ./.github/actions/defaults
