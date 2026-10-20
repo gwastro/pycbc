@@ -1153,7 +1153,7 @@ class LiveCoincTimeslideBackgroundEstimator:
                 "requires --psd-variation."
             )
 
-    def _filter_loud_coincs(self, cstat, ctime0, ctime1, offsets):
+    def _filter_loud_coincs(self, cstat, ctime0, ctime1, offsets, min_end):
         """
         Remove background coincs that fall in loud chunks.
 
