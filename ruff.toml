@@ -127,6 +127,12 @@ ignore = [
     # or configuration and should raise a proper exception with a message
     # instead (asserts give a bare AssertionError and are removed by python -O).
     "S101",
+    # Not planned to be enabled: the legacy global numpy random generator. It is
+    # used by design: scripts seed it (--seed) and the library draws from it,
+    # and sampler checkpoints store its state. Moving to np.random.Generator
+    # objects would be an API change, and would change the output for a given
+    # seed and the checkpoint format.
+    "NPY002",
 ]
 
 [lint.per-file-ignores]
