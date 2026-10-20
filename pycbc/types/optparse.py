@@ -115,7 +115,7 @@ class MultiDetOptionAction(argparse.Action):
                     err_msg += "cannot also supply values for specific ifos."
                     raise ValueError(err_msg)
                 new_default = self.internal_type(value[0])
-                items.default_factory = lambda: new_default
+                items.default_factory = lambda v=new_default: v
                 items.default_set = True
             else:
                 err_msg += "The character ':' is used to deliminate the "

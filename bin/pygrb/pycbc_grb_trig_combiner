@@ -233,11 +233,11 @@ def bin_events(
             # find which network triggers to keep
             if isinstance(segl, list):
 
-                def _in_bin(t):
+                def _in_bin(t, segl=segl):
                     return t in segl
             else:
 
-                def _in_bin(t):
+                def _in_bin(t, segl=segl):
                     return segl[0] <= t < segl[1]
 
             func = numpy.vectorize(_in_bin, otypes=[bool])

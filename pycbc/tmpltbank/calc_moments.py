@@ -251,7 +251,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
     moments["I7"] = I7
     for i in range(-7, 18):
 
-        def funct(x, f0):  # noqa: ARG001
+        def funct(x, f0, i=i):  # noqa: ARG001
             return x ** ((-i + 7) / 3.0)
 
         moments[f"J{i}"] = calculate_moment(
@@ -269,7 +269,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
     # Do the logx multiplied by some power terms
     for i in range(-1, 18):
 
-        def funct(x, f0):
+        def funct(x, f0, i=i):
             return (numpy.log((x * f0) ** (1.0 / 3.0))) * x ** ((-i + 7) / 3.0)
 
         moments[f"log{i}"] = calculate_moment(
@@ -287,7 +287,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
     # Do the loglog term
     for i in range(-1, 18):
 
-        def funct(x, f0):
+        def funct(x, f0, i=i):
             return (numpy.log((x * f0) ** (1.0 / 3.0))) ** 2 * x ** ((-i + 7) / 3.0)
 
         moments[f"loglog{i}"] = calculate_moment(
@@ -305,7 +305,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
     # Do the logloglog term
     for i in range(-1, 18):
 
-        def funct(x, f0):
+        def funct(x, f0, i=i):
             return (numpy.log((x * f0) ** (1.0 / 3.0))) ** 3 * x ** ((-i + 7) / 3.0)
 
         moments[f"logloglog{i}"] = calculate_moment(
@@ -323,7 +323,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
     # Do the logloglog term
     for i in range(-1, 18):
 
-        def funct(x, f0):
+        def funct(x, f0, i=i):
             return (numpy.log((x * f0) ** (1.0 / 3.0))) ** 4 * x ** ((-i + 7) / 3.0)
 
         moments[f"loglogloglog{i}"] = calculate_moment(
