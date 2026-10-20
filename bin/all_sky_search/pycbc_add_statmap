@@ -10,12 +10,12 @@ import logging
 
 import igwn_segments as segments
 import numpy as np
-import pycbc.version
 
 import pycbc
 import pycbc.conversions as conv
 import pycbc.events
 import pycbc.io
+import pycbc.version
 from pycbc.events import significance
 
 

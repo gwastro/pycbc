@@ -27,11 +27,11 @@ import argparse
 import logging
 import os
 
-import pycbc.version
 from igwn_segments import segmentlist
 
 import pycbc.events
 import pycbc.results.pygrb_postprocessing_utils as ppu
+import pycbc.version
 import pycbc.workflow as wf
 import pycbc.workflow.minifollowups as mini
 from pycbc.io.hdf import HFile
