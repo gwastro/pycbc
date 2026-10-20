@@ -15,24 +15,16 @@ FILES=(
 	"V-V1_LOSC_CLN_4_V1-1186739813-4096.gwf"
 )
 
+# Keep frames alongside this script so CI can save them in its data cache.
+cache_dir=$(dirname "$0")
+
+BASE="https://github.com/gwastro/pycbc_data/releases/download/ci-data"
+
 for f in "${FILES[@]}"; do
-	# If file is already in current working directory, skip
-	if [ -f "./$f" ]; then
-		echo "Found $f in working directory; skipping download."
-		continue
-	fi
-
-	# If file is present in examples/search (i.e. the cache), then copy it
-	if [ -f "examples/search/$f" ]; then
-		echo "Found $f in examples/search (cache); copying."
-		cp "examples/search/$f" ./
-		continue
-	fi
-
-	# Otherwise, download from the DCC
-	echo "Downloading $f from github user content..."
-	wget -nv "https://github.com/gwastro/pycbc_data/releases/download/ci-data/$f"
-	# Copy into the cache folder
-	mkdir -p examples/search
-	cp "$f" examples/search/
+    # Prefer the working copy
+    [ -f "$f" ] && continue
+    # wget -nc leaves existing cache files alone
+    wget -nv -nc -P "$cache_dir" \
+        "${BASE}/$f"
+    cp "$cache_dir/$f" .
 done
