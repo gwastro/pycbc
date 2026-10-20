@@ -817,7 +817,6 @@ class ArrayBase:
     def test_rdiv(self):
         # Make copies to see we don't overwrite
         acopy = type(self.a)(self.a)
-        bcopy = type(self.b)(self.b)
         with self.context:
             # Type with scalar
             c = self.s / self.a
@@ -880,7 +879,6 @@ class ArrayBase:
     def test_rsub(self):
         # Make copies to see we don't overwrite
         acopy = type(self.a)(self.a)
-        bcopy = type(self.b)(self.b)
         with self.context:
             # Type with scalar
             c = self.s - self.a

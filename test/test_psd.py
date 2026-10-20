@@ -140,7 +140,7 @@ class TestPSD(unittest.TestCase):
                         seg_stride=seg_len // 2,
                         avg_method="mean",
                     )
-                    psd_trunc = pycbc.psd.inverse_spectrum_truncation(
+                    pycbc.psd.inverse_spectrum_truncation(
                         psd, max_len, low_frequency_cutoff=self.psd_low_freq_cutoff
                     )
                     freq = psd.sample_frequencies.numpy()

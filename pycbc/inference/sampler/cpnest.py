@@ -105,7 +105,7 @@ class CPNestSampler(BaseSampler):
                 maxmcmc=self.maxmcmc,
                 resume=True,
             )
-        res = self._sampler.run()
+        self._sampler.run()
 
     @property
     def io(self):

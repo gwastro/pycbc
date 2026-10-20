@@ -275,7 +275,6 @@ class Detector:
         """
         self.name = str(detector_name)
 
-        lal_detectors = [pfx for pfx, name in get_available_lal_detectors()]
         if detector_name in _ground_detectors:
             self.info = _ground_detectors[detector_name]
             self.response = self.info["response"]

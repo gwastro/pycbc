@@ -732,7 +732,6 @@ class ChirpDistanceToDistance(BaseTransform):
         Returns the Jacobian for transforming chirp distance to
         luminosity distance, given the chirp mass.
         """
-        ref_mass = 1.4
         mchirp = maps["mchirp"]
         return (2.0 ** (-1.0 / 5) * self.ref_mass / mchirp) ** (-5.0 / 6)
 
@@ -741,7 +740,6 @@ class ChirpDistanceToDistance(BaseTransform):
         Returns the Jacobian for transforming luminosity distance to
         chirp distance, given the chirp mass.
         """
-        ref_mass = 1.4
         mchirp = maps["mchirp"]
         return (2.0 ** (-1.0 / 5) * self.ref_mass / mchirp) ** (5.0 / 6)
 
@@ -1624,7 +1622,6 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
 
     def transform(self, maps):
         """Transforms mass value and eos index into a lambda value"""
-        m = maps[self._mass_param]
         # floor
         eos_index = int(maps["eos"])
         eos = self.get_eos(eos_index)

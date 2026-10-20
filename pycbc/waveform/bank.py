@@ -1020,7 +1020,7 @@ class FilterBank(TemplateBank):
         logger.info("%s: generating %s from %s Hz", index, approximant, f_low)
 
         # Clear the storage memory
-        poke = tempout.data  # pylint:disable=unused-variable
+        _ = tempout.data
         tempout.clear()
 
         # Get the waveform filter
@@ -1159,8 +1159,8 @@ class FilterBankSkyMax(TemplateBank):
         logger.info("%s: generating %s from %s Hz", index, approximant, f_low)
 
         # What does this do???
-        poke1 = tempoutplus.data  # pylint:disable=unused-variable
-        poke2 = tempoutcross.data  # pylint:disable=unused-variable
+        _ = tempoutplus.data
+        _ = tempoutcross.data
 
         # Clear the storage memory
         tempoutplus.clear()

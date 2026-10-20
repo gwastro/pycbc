@@ -95,7 +95,7 @@ class XMLInjectionSet:
                 data[str(key)] = numpy.array([getattr(t, key) for t in self.table])
 
         for k in ["simulation_id", "process_id"]:
-            a = data.pop(k)
+            data.pop(k)
 
         data["approximant"], data["phase_order"] = numpy.array(
             [legacy_approximant_name(wf) for wf in data["waveform"]]

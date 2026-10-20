@@ -62,7 +62,6 @@ class BanksimNode(CondorDAGNode):
 
         if gpu and gpu_postscript:
             self.set_retry(5)
-            mf = match_file + ".$(Process)"
             mf1 = match_file + ".0"
             mf2 = match_file + ".1"
             self.add_file_opt(

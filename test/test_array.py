@@ -105,7 +105,6 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
         self.bad2 = Array([1, 1, 1, 1], dtype=self.dtype)
 
     def test_set(self):
-        c = self.a * 1
         with self.context:
             # First we will check that get works properly for all
             # the different python syntaxes

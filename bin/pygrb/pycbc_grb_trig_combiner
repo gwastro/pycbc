@@ -67,7 +67,6 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     """
     attributes = {}
     datasets = {}
-    chunk = {}
 
     nfiles = len(inputfiles)
 

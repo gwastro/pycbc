@@ -250,7 +250,6 @@ class TestParams(unittest.TestCase):
             ra = params["ra"]
             dec = params["dec"]
             psi = params["polarization"]
-            time = hp.start_time
 
             det_1 = Detector("D1")
             fp_1, fc_1 = det_1.antenna_pattern(
@@ -307,9 +306,6 @@ class TestParams(unittest.TestCase):
             t_lisa = YRSID_SI - params["t_offset"] + fine_tunning
 
             nx = 100
-            longitude_array_high_res = numpy.linspace(
-                0, 2 * numpy.pi, num=nx, endpoint=False
-            )
 
             amp_E3_psi = []  # noqa: N806
             amp_LISA3_psi = []  # noqa: N806
@@ -326,14 +322,6 @@ class TestParams(unittest.TestCase):
                 ) = space.lisa_to_ssb(
                     t_lisa, 0, numpy.pi / 4, polarization_lisa, params["t_offset"]
                 )
-
-                nparams = {
-                    "mass1": params["mass1"],
-                    "mass2": params["mass2"],
-                    "spin1z": params["spin1z"],
-                    "spin2z": params["spin2z"],
-                    "f_lower": params["f_lower"],
-                }
 
                 bbhx_fd = get_fd_det_waveform(
                     ifos=["LISA_A", "LISA_E", "LISA_T"], **params

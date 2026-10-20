@@ -122,7 +122,6 @@ class TestChisq(unittest.TestCase):
     def test_chisq(self):
         chisq_quick = {}
         chisq_full = {}
-        chisq_ref = {}
         for ifo in self.ifos:
             nbins = 26
             bins, weights = power_chisq_bins_and_weights(

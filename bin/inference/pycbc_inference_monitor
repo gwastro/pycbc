@@ -49,7 +49,6 @@ def process_plots(fname, subdir):
     outdir = args.output_dir + "/plots/checkpoints/" + subdir
     wf.makedir(outdir)
     wf.makedir(outdir + "/logs")
-    nodes = []
     for exe in exes:
         secs = c.cp.get_subsections(exe)
         for sec in secs:
