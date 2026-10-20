@@ -139,6 +139,9 @@ ignore = [
 # Frozen copies of older pycbc code, kept only so that the tests can compare
 # the current code against them; they are left exactly as they were.
 "test/validation_code/**" = ["ALL"]
+# Old timing benchmarks, kept for reference but not maintained (they use
+# APIs that have since been removed); not checked.
+"tools/timing/**" = ["ALL"]
 # Scripts, examples, docs and tests are run directly, not imported as part
 # of a package, so they need no __init__.py (INP001). The examples, docs,
 # tests and tools also print their output directly (T201).
