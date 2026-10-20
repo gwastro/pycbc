@@ -117,6 +117,9 @@ class Injections:
             return False
         return False
 
+    # Defining __eq__ makes instances unhashable; make that explicit
+    __hash__ = None
+
 
 class RunInjectionResults:
     def __init__(
@@ -253,6 +256,9 @@ class RunInjectionResults:
         return (set(self.inj_dets) == set(other.inj_dets)) and (
             self.injections == other.injections
         )
+
+    # Defining __eq__ makes instances unhashable; make that explicit
+    __hash__ = None
 
     def write_to_hdf(self, outpath):
         outfp = File(outpath, "w")

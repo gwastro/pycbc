@@ -540,6 +540,9 @@ class Array:
         # of that array of booleans is True.
         return (sary == oary).all()
 
+    # Defining __eq__ makes instances unhashable; make that explicit
+    __hash__ = None
+
     def almost_equal_elem(self, other, tol, relative=True):
         """
         Compare whether two array types are almost equal, element
