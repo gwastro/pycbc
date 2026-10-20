@@ -1,11 +1,18 @@
-name: Flake8 check
-on: [pull_request]
+name: Code quality checks
+on:
+    pull_request:
+    workflow_dispatch:
+defaults:
+    run:
+        shell: bash
 jobs:
     flake8_unused_imports:
         runs-on: ubuntu-latest
         steps:
             - name: Check out repository
               uses: actions/checkout@v5
+              with:
+                  fetch-depth: 0
             - name: Set up Python
               uses: actions/setup-python@v6
               with:
@@ -14,19 +21,34 @@ jobs:
               run: pip install flake8
             - name: Build file list
               id: filelist
-              run: |
-                {
-                  find bin -type f -name 'pycbc_*'
-                  find pycbc -type f -name '*.py' ! -name '__init__.py' ! -name 'version.py'
-                  find test -type f -name '*.py'
-                } | sort > /tmp/pycbc_py_files.txt
-                echo "file_count=$(wc -l < /tmp/pycbc_py_files.txt)" >> "$GITHUB_OUTPUT"
+              uses: ./.github/actions/code-formatting-files
+              with:
+                  changed-only: ${{ github.event_name == 'pull_request' }}
+                  base-ref: ${{ github.event.pull_request.base.sha }}
+                  head-ref: ${{ github.event.pull_request.head.sha || github.sha }}
             - name: Check for unused imports (F401)
+              if: steps.filelist.outputs.file-count != '0'
+              env:
+                  FILE_LIST: ${{ steps.filelist.outputs.file-list }}
               run: |
-                  flake8 --select=F401 $(cat /tmp/pycbc_py_files.txt)
+                  mapfile -t files < "$FILE_LIST"
+                  flake8 --select=F401 "${files[@]}" | tee flake8-F401.txt
             - name: Check for undefined variables / missing imports (F821)
+              if: ${{ !cancelled() && steps.filelist.outputs.file-count != '' && steps.filelist.outputs.file-count != '0' }}
+              env:
+                  FILE_LIST: ${{ steps.filelist.outputs.file-list }}
               run: |
-                  flake8 --select=F821 $(cat /tmp/pycbc_py_files.txt)
+                  mapfile -t files < "$FILE_LIST"
+                  flake8 --select=F821 "${files[@]}" | tee flake8-F821.txt
+
+            - name: Store Flake8 reports
+              if: always()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: flake8-reports
+                  path: flake8-*.txt
+                  if-no-files-found: ignore
+                  retention-days: 30
 
     qlty_check:
         runs-on: ubuntu-latest
@@ -37,17 +59,28 @@ jobs:
             - name: Check out repository
               uses: actions/checkout@v5
               with:
-                  # Full history is needed so Qlty can diff against the PR base branch.
                   fetch-depth: 0
 
             - name: Install Qlty CLI
               uses: qltysh/qlty-action/install@v2
 
+            - name: Build file list
+              id: filelist
+              uses: ./.github/actions/code-formatting-files
+              with:
+                  changed-only: ${{ github.event_name == 'pull_request' }}
+                  base-ref: ${{ github.event.pull_request.base.sha }}
+                  head-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
             - name: Run Qlty check
+              if: steps.filelist.outputs.file-count != '0'
+              env:
+                  FILE_LIST: ${{ steps.filelist.outputs.file-list }}
               run: |
+                mapfile -t files < "$FILE_LIST"
                 set +e
                 qlty check --sarif --no-progress \
-                  --upstream origin/${{ github.event.pull_request.base.ref }} \
+                  -- "${files[@]}" \
                   > qlty-raw.sarif
                 qlty_exit_code=$?
                 set -e
@@ -66,8 +99,17 @@ jobs:
 
                 exit $qlty_exit_code
 
-            - name: Upload results to GitHub Code Scanning
+            - name: Store Qlty reports
               if: always()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: qlty-reports
+                  path: qlty-*.sarif
+                  if-no-files-found: ignore
+                  retention-days: 30
+
+            - name: Upload results to GitHub Code Scanning
+              if: ${{ !cancelled() && hashFiles('qlty-results.sarif') != '' }}
               uses: github/codeql-action/upload-sarif@v4
               with:
                   sarif_file: qlty-results.sarif
