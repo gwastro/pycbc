@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Functions for applying gates to data.
-"""
+"""Functions for applying gates to data."""
 
 from scipy import linalg
+
 from . import strain
 
 
@@ -29,13 +29,14 @@ def _gates_from_cli(opts, gate_opt):
         return gates
     for gate in getattr(opts, gate_opt):
         try:
-            ifo, central_time, half_dur, taper_dur = gate.split(':')
+            ifo, central_time, half_dur, taper_dur = gate.split(":")
             central_time = float(central_time)
             half_dur = float(half_dur)
             taper_dur = float(taper_dur)
         except ValueError:
-            raise ValueError("--gate {} not formatted correctly; ".format(
-                gate) + "see help")
+            raise ValueError(
+                "--gate {} not formatted correctly; ".format(gate) + "see help"
+            )
         try:
             gates[ifo].append((central_time, half_dur, taper_dur))
         except KeyError:
@@ -47,14 +48,14 @@ def gates_from_cli(opts):
     """Parses the --gate option into something understandable by
     `strain.gate_data`.
     """
-    return _gates_from_cli(opts, 'gate')
+    return _gates_from_cli(opts, "gate")
 
 
 def psd_gates_from_cli(opts):
     """Parses the --psd-gate option into something understandable by
     `strain.gate_data`.
     """
-    return _gates_from_cli(opts, 'psd_gate')
+    return _gates_from_cli(opts, "psd_gate")
 
 
 def apply_gates_to_td(strain_dict, gates):
@@ -108,7 +109,7 @@ def apply_gates_to_fd(stilde_dict, gates):
     # create a time-domin strain dictionary to apply the gates to
     strain_dict = dict([[ifo, outdict[ifo].to_timeseries()] for ifo in gates])
     # apply gates and fft back to the frequency domain
-    for ifo,d in apply_gates_to_td(strain_dict, gates).items():
+    for ifo, d in apply_gates_to_td(strain_dict, gates).items():
         outdict[ifo] = d.to_frequencyseries()
     return outdict
 
@@ -123,21 +124,31 @@ def add_gate_option_group(parser):
     """
     gate_group = parser.add_argument_group("Options for gating data")
 
-    gate_group.add_argument("--gate", nargs="+", type=str,
-                            metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
-                            help="Apply one or more gates to the data before "
-                                 "filtering.")
-    gate_group.add_argument("--gate-overwhitened", action="store_true",
-                            help="Overwhiten data first, then apply the "
-                                 "gates specified in --gate. Overwhitening "
-                                 "allows for sharper tapers to be used, "
-                                 "since lines are not blurred.")
-    gate_group.add_argument("--psd-gate", nargs="+", type=str,
-                            metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
-                            help="Apply one or more gates to the data used "
-                                 "for computing the PSD. Gates are applied "
-                                 "prior to FFT-ing the data for PSD "
-                                 "estimation.")
+    gate_group.add_argument(
+        "--gate",
+        nargs="+",
+        type=str,
+        metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
+        help="Apply one or more gates to the data before filtering.",
+    )
+    gate_group.add_argument(
+        "--gate-overwhitened",
+        action="store_true",
+        help="Overwhiten data first, then apply the "
+        "gates specified in --gate. Overwhitening "
+        "allows for sharper tapers to be used, "
+        "since lines are not blurred.",
+    )
+    gate_group.add_argument(
+        "--psd-gate",
+        nargs="+",
+        type=str,
+        metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
+        help="Apply one or more gates to the data used "
+        "for computing the PSD. Gates are applied "
+        "prior to FFT-ing the data for PSD "
+        "estimation.",
+    )
     return gate_group
 
 
@@ -170,14 +181,16 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
         data = data.copy()
     data[lindex:rindex] = 0
     # get the over-whitened gated data
-    tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
+    tdfilter = invpsd.astype("complex").to_timeseries() * invpsd.delta_t
     owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()
 
     # remove the projection into the null space
-    proj = linalg.solve_toeplitz(tdfilter[:(rindex - lindex)],
-                                 owhgated_data[lindex:rindex])
+    proj = linalg.solve_toeplitz(
+        tdfilter[: (rindex - lindex)], owhgated_data[lindex:rindex]
+    )
     data[lindex:rindex] -= proj
     return data
+
 
 def invert_covariance(invpsd, lindex, rindex):
     """Calculate the uninverted covariance matrix.
@@ -196,10 +209,11 @@ def invert_covariance(invpsd, lindex, rindex):
         The uninverted covariance matrix associated with the inverse PSD in the
         time window [lindex, rindex].
     """
-    tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
-    mat = linalg.toeplitz(tdfilter[:(rindex-lindex)])
+    tdfilter = invpsd.astype("complex").to_timeseries() * invpsd.delta_t
+    mat = linalg.toeplitz(tdfilter[: (rindex - lindex)])
     invmat = linalg.inv(mat)
     return invmat
+
 
 def gate_and_paint_matmul(data, lindex, rindex, invpsd, invmat=None, copy=True):
     """Gates and in-paints data using explicit matrix multiplication.
@@ -219,7 +233,7 @@ def gate_and_paint_matmul(data, lindex, rindex, invpsd, invmat=None, copy=True):
     copy : bool, optional
         Copy the data before applying the gate. Otherwise, the gate will
         be applied in-place. Default is True.
-    
+
     Returns
     -------
     TimeSeries :

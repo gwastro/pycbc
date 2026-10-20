@@ -21,19 +21,20 @@
 #
 # =============================================================================
 #
-"""Provides IO for the dynesty sampler.
-"""
+"""Provides IO for the dynesty sampler."""
 
 import argparse
+
 import numpy
-from pycbc.io.hdf import (dump_state, load_state)
+
+from pycbc.io.hdf import dump_state, load_state
 
 from .base_nested_sampler import BaseNestedSamplerFile
-from .posterior import write_samples_to_file, read_raw_samples_from_file
+from .posterior import read_raw_samples_from_file, write_samples_to_file
+
 
 class CommonNestedMetadataIO(object):
-    """Provides functions for reading/writing dynesty metadata to file.
-    """
+    """Provides functions for reading/writing dynesty metadata to file."""
 
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
@@ -64,51 +65,55 @@ class CommonNestedMetadataIO(object):
         if parser is None:
             parser = argparse.ArgumentParser(**kwargs)
         elif kwargs:
-            raise ValueError("No other keyword arguments should be provded if "
-                             "a parser is provided.")
+            raise ValueError(
+                "No other keyword arguments should be provded if a parser is provided."
+            )
         if skip_args is None:
             skip_args = []
         actions = []
 
-        if 'raw_samples' not in skip_args:
+        if "raw_samples" not in skip_args:
             act = parser.add_argument(
-                "--raw-samples", action='store_true', default=False,
+                "--raw-samples",
+                action="store_true",
+                default=False,
                 help="Extract raw samples rather than a posterior. "
-                     "Raw samples are the unweighted samples obtained from "
-                     "the nested sampler. Default value is False, which means "
-                     "raw samples are weighted by the log-weight array "
-                     "obtained from the sampler, giving an estimate of the "
-                     "posterior.")
+                "Raw samples are the unweighted samples obtained from "
+                "the nested sampler. Default value is False, which means "
+                "raw samples are weighted by the log-weight array "
+                "obtained from the sampler, giving an estimate of the "
+                "posterior.",
+            )
             actions.append(act)
-        if 'seed' not in skip_args:
+        if "seed" not in skip_args:
             act = parser.add_argument(
-                "--seed", type=int, default=0,
+                "--seed",
+                type=int,
+                default=0,
                 help="Set the random-number seed used for extracting the "
-                     "posterior samples. This is needed because the "
-                     "unweighted samples are randomly shuffled to produce "
-                     "a posterior. Default is 0. Ignored if raw-samples are "
-                     "extracted instead.")
+                "posterior samples. This is needed because the "
+                "unweighted samples are randomly shuffled to produce "
+                "a posterior. Default is 0. Ignored if raw-samples are "
+                "extracted instead.",
+            )
         return parser, actions
 
     def write_pickled_data_into_checkpoint_file(self, state):
-        """Dump the sampler state into checkpoint file
-        """
-        if 'sampler_info/saved_state' not in self:
-            self.create_group('sampler_info/saved_state')
-        dump_state(state, self, path='sampler_info/saved_state')
+        """Dump the sampler state into checkpoint file"""
+        if "sampler_info/saved_state" not in self:
+            self.create_group("sampler_info/saved_state")
+        dump_state(state, self, path="sampler_info/saved_state")
 
     def read_pickled_data_from_checkpoint_file(self):
-        """Load the sampler state (pickled) from checkpoint file
-        """
-        return load_state(self, path='sampler_info/saved_state')
+        """Load the sampler state (pickled) from checkpoint file"""
+        return load_state(self, path="sampler_info/saved_state")
 
     def write_raw_samples(self, data, parameters=None):
-        """Write the nested samples to the file
-        """
-        if 'samples' not in self:
-            self.create_group('samples')
-        write_samples_to_file(self, data, parameters=parameters,
-                              group='samples')
+        """Write the nested samples to the file"""
+        if "samples" not in self:
+            self.create_group("samples")
+        write_samples_to_file(self, data, parameters=parameters, group="samples")
+
     def validate(self):
         """Runs a validation test.
         This checks that a samples group exist, and that pickeled data can
@@ -120,8 +125,8 @@ class CommonNestedMetadataIO(object):
             Whether or not the file is valid as a checkpoint file.
         """
         try:
-            if 'sampler_info/saved_state' in self:
-                load_state(self, path='sampler_info/saved_state')
+            if "sampler_info/saved_state" in self:
+                load_state(self, path="sampler_info/saved_state")
             checkpoint_valid = True
         except KeyError:
             checkpoint_valid = False
@@ -131,7 +136,7 @@ class CommonNestedMetadataIO(object):
 class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
     """Class to handle file IO for the ``dynesty`` sampler."""
 
-    name = 'dynesty_file'
+    name = "dynesty_file"
 
     def read_raw_samples(self, fields, raw_samples=False, seed=0):
         """Reads samples from a dynesty file and constructs a posterior.
@@ -156,10 +161,11 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
             Dictionary of parameter names -> samples.
         """
         samples = read_raw_samples_from_file(self, fields)
-        logwt = read_raw_samples_from_file(self, ['logwt'])['logwt']
-        loglikelihood = read_raw_samples_from_file(
-            self, ['loglikelihood'])['loglikelihood']
-        logz = self.attrs.get('log_evidence')
+        logwt = read_raw_samples_from_file(self, ["logwt"])["logwt"]
+        loglikelihood = read_raw_samples_from_file(self, ["loglikelihood"])[
+            "loglikelihood"
+        ]
+        logz = self.attrs.get("log_evidence")
         if not raw_samples:
             rng = numpy.random.default_rng(seed)
             weights = numpy.exp(logwt - logz)
@@ -176,7 +182,7 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
                 else:
                     j += 1
             rng.shuffle(idx)
-            post = {'loglikelihood': loglikelihood[idx]}
+            post = {"loglikelihood": loglikelihood[idx]}
             for i, param in enumerate(fields):
                 post[param] = samples[param][idx]
             return post

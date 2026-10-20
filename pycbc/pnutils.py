@@ -28,12 +28,12 @@ between quantities.
 """
 
 import logging
-import numpy
 
+import numpy
 from scipy.optimize import bisect, brentq, minimize
 
 from pycbc import conversions, libutils
-from pycbc.constants import MSUN_SI, PI, MTSUN_SI, PC_SI
+from pycbc.constants import MSUN_SI, MTSUN_SI, PC_SI, PI
 
 logger = logging.getLogger("pycbc.pnutils")
 
@@ -663,8 +663,13 @@ def get_inspiral_tf(
 
         def tof_func(f):
             return findchirp_chirptime(
-                float(mass1), float(mass2), float(f), pn_2order,
-                s1z=float(spin1), s2z=float(spin2))
+                float(mass1),
+                float(mass2),
+                float(f),
+                pn_2order,
+                s1z=float(spin1),
+                s2z=float(spin2),
+            )
     elif approximant.startswith("SEOBNRv"):
         approximant_prefix = approximant[: len("SEOBNRv*")]
         f_high = get_final_freq(approximant_prefix, mass1, mass2, spin1, spin2)

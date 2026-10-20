@@ -14,21 +14,22 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-"""Provides I/O support for emcee_pt.
-"""
-
+"""Provides I/O support for emcee_pt."""
 
 import numpy
 
-from .base_sampler import BaseSamplerFile
 from .base_mcmc import EnsembleMCMCMetadataIO
-from .base_multitemper import (CommonMultiTemperedMetadataIO,
-                               write_samples,
-                               ensemble_read_raw_samples)
+from .base_multitemper import (
+    CommonMultiTemperedMetadataIO,
+    ensemble_read_raw_samples,
+    write_samples,
+)
+from .base_sampler import BaseSamplerFile
 
 
-class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
-                  BaseSamplerFile):
+class EmceePTFile(
+    EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO, BaseSamplerFile
+):
     """Class to handle file IO for the ``emcee_pt`` sampler.
 
     .. note::
@@ -38,7 +39,7 @@ class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
        ``emcee_pt`` files cannot be created.
     """
 
-    name = 'emcee_pt_file'
+    name = "emcee_pt_file"
 
     @property
     def betas(self):
@@ -84,8 +85,7 @@ class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         return ensemble_read_raw_samples(self, fields, **kwargs)
 
     def write_sampler_metadata(self, sampler):
-        """Adds writing betas to MultiTemperedMCMCIO.
-        """
+        """Adds writing betas to MultiTemperedMCMCIO."""
         super(EmceePTFile, self).write_sampler_metadata(sampler)
         self[self.sampler_group].attrs["betas"] = sampler.betas
 
@@ -107,7 +107,7 @@ class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
             Array of acceptance fractions with shape (requested temps,
             requested walkers).
         """
-        group = self.sampler_group + '/acceptance_fraction'
+        group = self.sampler_group + "/acceptance_fraction"
         if walkers is None:
             wmask = numpy.ones(self.nwalkers, dtype=bool)
         else:
@@ -134,8 +134,9 @@ class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         """
         # check
         assert acceptance_fraction.shape == (self.ntemps, self.nwalkers), (
-            "acceptance fraction must have shape ntemps x nwalker")
-        group = self.sampler_group + '/acceptance_fraction'
+            "acceptance fraction must have shape ntemps x nwalker"
+        )
+        group = self.sampler_group + "/acceptance_fraction"
         try:
             self[group][:] = acceptance_fraction
         except KeyError:

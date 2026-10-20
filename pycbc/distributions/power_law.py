@@ -16,12 +16,15 @@
 This modules provides classes for evaluating distributions where the
 probability density function is a power law.
 """
+
 import logging
+
 import numpy
 
 from pycbc.distributions import bounded
 
-logger = logging.getLogger('pycbc.distributions.power_law')
+logger = logging.getLogger("pycbc.distributions.power_law")
+
 
 class UniformPowerLaw(bounded.BoundedDist):
     r"""
@@ -114,16 +117,18 @@ class UniformPowerLaw(bounded.BoundedDist):
         The dimension of volume space. In the notation above `dim`
         is :math:`n+1`. For a 3-dimensional sphere this is 3.
     """
+
     name = "uniform_power_law"
+
     def __init__(self, dim=None, **params):
         super(UniformPowerLaw, self).__init__(**params)
         self.dim = dim
         self._norm = 1.0
         self._lognorm = 0.0
         for p in self._params:
-            self._norm *= self.dim  / \
-                                   (self._bounds[p][1]**(self.dim) -
-                                    self._bounds[p][0]**(self.dim))
+            self._norm *= self.dim / (
+                self._bounds[p][1] ** (self.dim) - self._bounds[p][0] ** (self.dim)
+            )
         self._lognorm = numpy.log(self._norm)
 
     @property
@@ -137,12 +142,13 @@ class UniformPowerLaw(bounded.BoundedDist):
         return self._lognorm
 
     def _cdfinv_param(self, param, value):
-        """Return inverse of cdf to map unit interval to parameter bounds.
-        """
+        """Return inverse of cdf to map unit interval to parameter bounds."""
         n = self.dim - 1
         r_l = self._bounds[param][0]
         r_h = self._bounds[param][1]
-        new_value = ((r_h**(n+1) - r_l**(n+1))*value + r_l**(n+1))**(1./(n+1))
+        new_value = ((r_h ** (n + 1) - r_l ** (n + 1)) * value + r_l ** (n + 1)) ** (
+            1.0 / (n + 1)
+        )
         return new_value
 
     def _pdf(self, **kwargs):
@@ -152,12 +158,11 @@ class UniformPowerLaw(bounded.BoundedDist):
         """
         for p in self._params:
             if p not in kwargs.keys():
-                raise ValueError(
-                            'Missing parameter {} to construct pdf.'.format(p))
+                raise ValueError("Missing parameter {} to construct pdf.".format(p))
         if kwargs in self:
-            pdf = self._norm * \
-                  numpy.prod([(kwargs[p])**(self.dim - 1)
-                              for p in self._params])
+            pdf = self._norm * numpy.prod(
+                [(kwargs[p]) ** (self.dim - 1) for p in self._params]
+            )
             return float(pdf)
         else:
             return 0.0
@@ -169,12 +174,12 @@ class UniformPowerLaw(bounded.BoundedDist):
         """
         for p in self._params:
             if p not in kwargs.keys():
-                raise ValueError(
-                            'Missing parameter {} to construct pdf.'.format(p))
+                raise ValueError("Missing parameter {} to construct pdf.".format(p))
         if kwargs in self:
-            log_pdf = self._lognorm + \
-                      (self.dim - 1) * \
-                      numpy.log([kwargs[p] for p in self._params]).sum()
+            log_pdf = (
+                self._lognorm
+                + (self.dim - 1) * numpy.log([kwargs[p] for p in self._params]).sum()
+            )
             return log_pdf
         else:
             return -numpy.inf
@@ -202,19 +207,22 @@ class UniformPowerLaw(bounded.BoundedDist):
         Uniform
             A distribution instance from the pycbc.inference.prior module.
         """
-        return super(UniformPowerLaw, cls).from_config(cp, section,
-                                                       variable_args,
-                                                       bounds_required=True)
+        return super(UniformPowerLaw, cls).from_config(
+            cp, section, variable_args, bounds_required=True
+        )
 
 
 class UniformRadius(UniformPowerLaw):
-    """ For a uniform distribution in volume using spherical coordinates, this
+    """For a uniform distribution in volume using spherical coordinates, this
     is the distriubtion to use for the radius.
 
     For more details see UniformPowerLaw.
     """
+
     name = "uniform_radius"
+
     def __init__(self, dim=3, **params):
         super(UniformRadius, self).__init__(dim=3, **params)
+
 
 __all__ = ["UniformPowerLaw", "UniformRadius"]

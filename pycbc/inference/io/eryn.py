@@ -23,7 +23,6 @@ stats are stored as ``ntemps x nwalkers x niterations`` arrays, and the
 all of the standard multi-tempered reading/plotting tools work unchanged.
 """
 
-
 from . import base_mcmc
 from .base_mcmc import EnsembleMCMCMetadataIO
 from .base_multitemper import (
@@ -34,11 +33,10 @@ from .base_multitemper import (
 from .base_sampler import BaseSamplerFile
 
 
-class ErynFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
-               BaseSamplerFile):
+class ErynFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO, BaseSamplerFile):
     """Class to handle file IO for the ``eryn`` sampler."""
 
-    name = 'eryn_file'
+    name = "eryn_file"
 
     def write_sampler_metadata(self, sampler):
         """Adds writing eryn-specific metadata to MultiTemperedMCMCIO."""
@@ -61,12 +59,16 @@ class ErynFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         writes the betas as a ``ntemps x niterations`` array to the file.
         """
         # reuse the single-temperature write_samples for the thinning settings
-        base_mcmc.write_samples(self, {'betas': betas},
-                                last_iteration=last_iteration,
-                                samples_group=self.sampler_group)
+        base_mcmc.write_samples(
+            self,
+            {"betas": betas},
+            last_iteration=last_iteration,
+            samples_group=self.sampler_group,
+        )
 
-    def read_betas(self, thin_start=None, thin_interval=None, thin_end=None,
-                   iteration=None):
+    def read_betas(
+        self, thin_start=None, thin_interval=None, thin_end=None, iteration=None
+    ):
         """Reads betas from the file.
 
         Parameters
@@ -88,11 +90,14 @@ class ErynFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         array
             A ntemps x niterations array of the betas.
         """
-        slc = base_mcmc._ensemble_get_index(self, thin_start=thin_start,
-                                            thin_interval=thin_interval,
-                                            thin_end=thin_end,
-                                            iteration=iteration)
-        betas = self[self.sampler_group]['betas'][:]
+        slc = base_mcmc._ensemble_get_index(
+            self,
+            thin_start=thin_start,
+            thin_interval=thin_interval,
+            thin_end=thin_end,
+            iteration=iteration,
+        )
+        betas = self[self.sampler_group]["betas"][:]
         return betas[:, slc]
 
     def write_samples(self, samples, **kwargs):

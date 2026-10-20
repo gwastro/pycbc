@@ -23,8 +23,9 @@
 # `ParameterList.description_dict` when gwastro/pycbc#2125 is merged
 # and released
 
-from pycbc import waveform
 from _dict_to_rst import rst_dict_table
+
+from pycbc import waveform
 
 allparams = (waveform.td_waveform_params +
              waveform.fd_waveform_params +

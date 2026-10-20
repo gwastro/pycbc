@@ -19,27 +19,39 @@ This package provides classes and functions for evaluating Bayesian statistics
 assuming various noise models.
 """
 
-
 import logging
 from importlib.metadata import entry_points
 
+from .analytic import (
+    TestEggbox,
+    TestNormal,
+    TestPosterior,
+    TestPrior,
+    TestRosenbrock,
+    TestVolcano,
+)
 from .base import BaseModel
 from .base_data import BaseDataModel
-from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
-                       TestPrior, TestPosterior)
+from .brute_marg import BruteLISASkyModesMarginalize, BruteParallelGaussianMarginalize
+from .gated_gaussian_noise import (
+    GatedGaussianMargPhase,
+    GatedGaussianMargPol,
+    GatedGaussianNoise,
+)
 from .gaussian_noise import GaussianNoise
-from .marginalized_gaussian_noise import MarginalizedPhaseGaussianNoise
-from .marginalized_gaussian_noise import MarginalizedPolarization
-from .marginalized_gaussian_noise import MarginalizedHMPolPhase
-from .marginalized_gaussian_noise import MarginalizedTime
-from .brute_marg import BruteParallelGaussianMarginalize
-from .brute_marg import BruteLISASkyModesMarginalize
-from .gated_gaussian_noise import (GatedGaussianNoise, GatedGaussianMargPol,
-                                   GatedGaussianMargPhase)
-from .single_template import SingleTemplate
+from .hierarchical import (
+    HierarchicalModel,
+    JointPrimaryMarginalizedModel,
+    MultiSignalModel,
+)
+from .marginalized_gaussian_noise import (
+    MarginalizedHMPolPhase,
+    MarginalizedPhaseGaussianNoise,
+    MarginalizedPolarization,
+    MarginalizedTime,
+)
 from .relbin import Relative, RelativeTime, RelativeTimeDom
-from .hierarchical import (HierarchicalModel, MultiSignalModel,
-                           JointPrimaryMarginalizedModel)
+from .single_template import SingleTemplate
 
 # Used to manage a model instance across multiple cores or MPI
 _global_instance = None
@@ -57,7 +69,7 @@ def _call_global_model_logprior(*args, **kwds):
     like ``ptemcee``.
     """
     # pylint:disable=not-callable
-    return _global_instance(*args, callstat='logprior', **kwds)
+    return _global_instance(*args, callstat="logprior", **kwds)
 
 
 class CallModel(object):
@@ -187,31 +199,34 @@ def read_from_config(cp, **kwargs):
     return get_model(name).from_config(cp, **kwargs)
 
 
-_models = {_cls.name: _cls for _cls in (
-    TestEggbox,
-    TestNormal,
-    TestRosenbrock,
-    TestVolcano,
-    TestPosterior,
-    TestPrior,
-    GaussianNoise,
-    MarginalizedPhaseGaussianNoise,
-    MarginalizedPolarization,
-    MarginalizedHMPolPhase,
-    MarginalizedTime,
-    BruteParallelGaussianMarginalize,
-    BruteLISASkyModesMarginalize,
-    GatedGaussianNoise,
-    GatedGaussianMargPol,
-    GatedGaussianMargPhase,
-    SingleTemplate,
-    Relative,
-    RelativeTime,
-    HierarchicalModel,
-    MultiSignalModel,
-    RelativeTimeDom,
-    JointPrimaryMarginalizedModel,
-)}
+_models = {
+    _cls.name: _cls
+    for _cls in (
+        TestEggbox,
+        TestNormal,
+        TestRosenbrock,
+        TestVolcano,
+        TestPosterior,
+        TestPrior,
+        GaussianNoise,
+        MarginalizedPhaseGaussianNoise,
+        MarginalizedPolarization,
+        MarginalizedHMPolPhase,
+        MarginalizedTime,
+        BruteParallelGaussianMarginalize,
+        BruteLISASkyModesMarginalize,
+        GatedGaussianNoise,
+        GatedGaussianMargPol,
+        GatedGaussianMargPhase,
+        SingleTemplate,
+        Relative,
+        RelativeTime,
+        HierarchicalModel,
+        MultiSignalModel,
+        RelativeTimeDom,
+        JointPrimaryMarginalizedModel,
+    )
+}
 
 
 class _ModelManager(dict):
@@ -220,6 +235,7 @@ class _ModelManager(dict):
     The first time this is called, any plugin models that are available will be
     added to the dictionary before returning.
     """
+
     def __init__(self, *args, **kwargs):
         self.retrieve_plugins = True
         super().__init__(*args, **kwargs)
@@ -232,9 +248,12 @@ class _ModelManager(dict):
         printed in that case.
         """
         if super().__contains__(model.name):
-            logging.warning("Custom model %s will override a model of the "
-                         "same name. If you don't want this, change the "
-                         "model's name attribute and restart.", model.name)
+            logging.warning(
+                "Custom model %s will override a model of the "
+                "same name. If you don't want this, change the "
+                "model's name attribute and restart.",
+                model.name,
+            )
         self[model.name] = model
 
     def add_plugins(self):
@@ -246,7 +265,7 @@ class _ModelManager(dict):
         """
 
         if self.retrieve_plugins:
-            for plugin in entry_points(group='pycbc.inference.models'):
+            for plugin in entry_points(group="pycbc.inference.models"):
                 self.add_model(plugin.load())
             self.retrieve_plugins = False
 

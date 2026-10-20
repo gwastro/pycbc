@@ -15,15 +15,17 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging
+
 import numpy
 
 from pycbc.tmpltbank.lambda_mapping import generate_mapping
 
-logger = logging.getLogger('pycbc.tmpltbank.calc_moments')
+logger = logging.getLogger("pycbc.tmpltbank.calc_moments")
 
 
-def determine_eigen_directions(metricParams, preserveMoments=False,
-                               vary_fmax=False, vary_density=None):
+def determine_eigen_directions(
+    metricParams, preserveMoments=False, vary_fmax=False, vary_density=None
+):
     """
     This function will calculate the coordinate transfomations that are needed
     to rotate from a coordinate system described by the various Lambda
@@ -89,41 +91,41 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
 
     # First step is to get the moments needed to calculate the metric
     if not (metricParams.moments and preserveMoments):
-        get_moments(metricParams, vary_fmax=vary_fmax,
-                    vary_density=vary_density)
+        get_moments(metricParams, vary_fmax=vary_fmax, vary_density=vary_density)
 
     # What values are going to be in the moments
     # J7 is the normalization factor so it *MUST* be present
-    list = metricParams.moments['J7'].keys()
+    list = metricParams.moments["J7"].keys()
 
     # We start looping over every item in the list of metrics
     for item in list:
         # Here we convert the moments into a form easier to use here
         Js = {}
-        for i in range(-7,18):
-            Js[i] = metricParams.moments['J%d'%(i)][item]
+        for i in range(-7, 18):
+            Js[i] = metricParams.moments["J%d" % (i)][item]
 
         logJs = {}
-        for i in range(-1,18):
-            logJs[i] = metricParams.moments['log%d'%(i)][item]
+        for i in range(-1, 18):
+            logJs[i] = metricParams.moments["log%d" % (i)][item]
 
         loglogJs = {}
-        for i in range(-1,18):
-            loglogJs[i] = metricParams.moments['loglog%d'%(i)][item]
+        for i in range(-1, 18):
+            loglogJs[i] = metricParams.moments["loglog%d" % (i)][item]
 
         logloglogJs = {}
-        for i in range(-1,18):
-            logloglogJs[i] = metricParams.moments['logloglog%d'%(i)][item]
+        for i in range(-1, 18):
+            logloglogJs[i] = metricParams.moments["logloglog%d" % (i)][item]
 
         loglogloglogJs = {}
-        for i in range(-1,18):
-            loglogloglogJs[i] = metricParams.moments['loglogloglog%d'%(i)][item]
+        for i in range(-1, 18):
+            loglogloglogJs[i] = metricParams.moments["loglogloglog%d" % (i)][item]
 
         mapping = generate_mapping(metricParams.pnOrder)
 
         # Calculate the metric
-        gs, unmax_metric_curr = calculate_metric(Js, logJs, loglogJs,
-                                          logloglogJs, loglogloglogJs, mapping)
+        gs, unmax_metric_curr = calculate_metric(
+            Js, logJs, loglogJs, logloglogJs, loglogloglogJs, mapping
+        )
         metric[item] = gs
         unmax_metric[item] = unmax_metric_curr
 
@@ -136,12 +138,12 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
                 # Due to numerical imprecision the very small eigenvalues can
                 # be negative. Make these positive.
                 evals[item][i] = -evals[item][i]
-            if evecs[item][i,i] < 0:
+            if evecs[item][i, i] < 0:
                 # We demand a convention that all diagonal terms in the matrix
                 # of eigenvalues are positive.
                 # This is done to help visualization of the spaces (increasing
                 # mchirp always goes the same way)
-                evecs[item][:,i] = - evecs[item][:,i]
+                evecs[item][:, i] = -evecs[item][:, i]
 
     metricParams.evals = evals
     metricParams.evecs = evecs
@@ -149,6 +151,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
     metricParams.time_unprojected_metric = unmax_metric
 
     return metricParams
+
 
 def get_moments(metricParams, vary_fmax=False, vary_density=None):
     """
@@ -229,54 +232,105 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
     new_f, new_amp = interpolate_psd(psd_f, psd_amp, metricParams.deltaF)
 
     # Need I7 first as this is the normalization factor
-    funct = lambda x,f0: 1
-    I7 = calculate_moment(new_f, new_amp, metricParams.fLow, \
-                          metricParams.fUpper, metricParams.f0, funct,\
-                          vary_fmax=vary_fmax, vary_density=vary_density)
+    funct = lambda x, f0: 1
+    I7 = calculate_moment(
+        new_f,
+        new_amp,
+        metricParams.fLow,
+        metricParams.fUpper,
+        metricParams.f0,
+        funct,
+        vary_fmax=vary_fmax,
+        vary_density=vary_density,
+    )
 
     # Do all the J moments
     moments = {}
-    moments['I7'] = I7
-    for i in range(-7,18):
-        funct = lambda x,f0: x**((-i+7)/3.)
-        moments['J%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                metricParams.fLow, metricParams.fUpper, \
-                                metricParams.f0, funct, norm=I7, \
-                                vary_fmax=vary_fmax, vary_density=vary_density)
+    moments["I7"] = I7
+    for i in range(-7, 18):
+        funct = lambda x, f0: x ** ((-i + 7) / 3.0)
+        moments["J%d" % (i)] = calculate_moment(
+            new_f,
+            new_amp,
+            metricParams.fLow,
+            metricParams.fUpper,
+            metricParams.f0,
+            funct,
+            norm=I7,
+            vary_fmax=vary_fmax,
+            vary_density=vary_density,
+        )
 
     # Do the logx multiplied by some power terms
-    for i in range(-1,18):
-        funct = lambda x,f0: (numpy.log((x*f0)**(1./3.))) * x**((-i+7)/3.)
-        moments['log%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                metricParams.fLow, metricParams.fUpper, \
-                                metricParams.f0, funct, norm=I7, \
-                                vary_fmax=vary_fmax, vary_density=vary_density)
+    for i in range(-1, 18):
+        funct = lambda x, f0: (
+            (numpy.log((x * f0) ** (1.0 / 3.0))) * x ** ((-i + 7) / 3.0)
+        )
+        moments["log%d" % (i)] = calculate_moment(
+            new_f,
+            new_amp,
+            metricParams.fLow,
+            metricParams.fUpper,
+            metricParams.f0,
+            funct,
+            norm=I7,
+            vary_fmax=vary_fmax,
+            vary_density=vary_density,
+        )
 
     # Do the loglog term
-    for i in range(-1,18):
-        funct = lambda x,f0: (numpy.log((x*f0)**(1./3.)))**2 * x**((-i+7)/3.)
-        moments['loglog%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                metricParams.fLow, metricParams.fUpper, \
-                                metricParams.f0, funct, norm=I7, \
-                                vary_fmax=vary_fmax, vary_density=vary_density)
+    for i in range(-1, 18):
+        funct = lambda x, f0: (
+            (numpy.log((x * f0) ** (1.0 / 3.0))) ** 2 * x ** ((-i + 7) / 3.0)
+        )
+        moments["loglog%d" % (i)] = calculate_moment(
+            new_f,
+            new_amp,
+            metricParams.fLow,
+            metricParams.fUpper,
+            metricParams.f0,
+            funct,
+            norm=I7,
+            vary_fmax=vary_fmax,
+            vary_density=vary_density,
+        )
 
     # Do the logloglog term
-    for i in range(-1,18):
-        funct = lambda x,f0: (numpy.log((x*f0)**(1./3.)))**3 * x**((-i+7)/3.)
-        moments['logloglog%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                metricParams.fLow, metricParams.fUpper, \
-                                metricParams.f0, funct, norm=I7, \
-                                vary_fmax=vary_fmax, vary_density=vary_density)
+    for i in range(-1, 18):
+        funct = lambda x, f0: (
+            (numpy.log((x * f0) ** (1.0 / 3.0))) ** 3 * x ** ((-i + 7) / 3.0)
+        )
+        moments["logloglog%d" % (i)] = calculate_moment(
+            new_f,
+            new_amp,
+            metricParams.fLow,
+            metricParams.fUpper,
+            metricParams.f0,
+            funct,
+            norm=I7,
+            vary_fmax=vary_fmax,
+            vary_density=vary_density,
+        )
 
     # Do the logloglog term
-    for i in range(-1,18):
-        funct = lambda x,f0: (numpy.log((x*f0)**(1./3.)))**4 * x**((-i+7)/3.)
-        moments['loglogloglog%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                metricParams.fLow, metricParams.fUpper, \
-                                metricParams.f0, funct, norm=I7, \
-                                vary_fmax=vary_fmax, vary_density=vary_density)
+    for i in range(-1, 18):
+        funct = lambda x, f0: (
+            (numpy.log((x * f0) ** (1.0 / 3.0))) ** 4 * x ** ((-i + 7) / 3.0)
+        )
+        moments["loglogloglog%d" % (i)] = calculate_moment(
+            new_f,
+            new_amp,
+            metricParams.fLow,
+            metricParams.fUpper,
+            metricParams.f0,
+            funct,
+            norm=I7,
+            vary_fmax=vary_fmax,
+            vary_density=vary_density,
+        )
 
     metricParams.moments = moments
+
 
 def interpolate_psd(psd_f, psd_amp, deltaF):
     """
@@ -310,10 +364,10 @@ def interpolate_psd(psd_f, psd_amp, deltaF):
 
     for i in range(len(psd_f) - 1):
         f_low = psd_f[i]
-        f_high = psd_f[i+1]
+        f_high = psd_f[i + 1]
         amp_low = psd_amp[i]
-        amp_high = psd_amp[i+1]
-        while(1):
+        amp_high = psd_amp[i + 1]
+        while 1:
             if fcurr > f_high:
                 break
             new_psd_f.append(fcurr)
@@ -324,8 +378,9 @@ def interpolate_psd(psd_f, psd_amp, deltaF):
     return numpy.asarray(new_psd_f), numpy.asarray(new_psd_amp)
 
 
-def calculate_moment(psd_f, psd_amp, fmin, fmax, f0, funct,
-                     norm=None, vary_fmax=False, vary_density=None):
+def calculate_moment(
+    psd_f, psd_amp, fmin, fmax, f0, funct, norm=None, vary_fmax=False, vary_density=None
+):
     r"""
     Function for calculating one of the integrals used to construct a template
     bank placement metric. The integral calculated will be
@@ -384,8 +439,9 @@ def calculate_moment(psd_f, psd_amp, fmin, fmax, f0, funct,
 
     mask = numpy.logical_and(psd_f > fmin, psd_f < fmax)
     psdf_red = psd_f[mask]
-    comps_red = psd_x[mask] ** (-7./3.) * funct(psd_x[mask], f0) * deltax / \
-                psd_amp[mask]
+    comps_red = (
+        psd_x[mask] ** (-7.0 / 3.0) * funct(psd_x[mask], f0) * deltax / psd_amp[mask]
+    )
     moment = {}
     moment[fmax] = comps_red.sum()
     if norm:
@@ -397,8 +453,8 @@ def calculate_moment(psd_f, psd_amp, fmin, fmax, f0, funct,
                 moment[t_fmax] = moment[t_fmax] / norm[t_fmax]
     return moment
 
-def calculate_metric(Js, logJs, loglogJs, logloglogJs, loglogloglogJs, \
-                     mapping):
+
+def calculate_metric(Js, logJs, loglogJs, logloglogJs, loglogloglogJs, mapping):
     """
     This function will take the various integrals calculated by get_moments and
     convert this into a metric for the appropriate parameter space.
@@ -433,106 +489,118 @@ def calculate_metric(Js, logJs, loglogJs, logloglogJs, loglogloglogJs, \
     # How many dimensions in the parameter space?
     maxLen = len(mapping.keys())
 
-    metric = numpy.zeros(shape=(maxLen,maxLen), dtype=float)
-    unmax_metric = numpy.zeros(shape=(maxLen+1,maxLen+1), dtype=float)
+    metric = numpy.zeros(shape=(maxLen, maxLen), dtype=float)
+    unmax_metric = numpy.zeros(shape=(maxLen + 1, maxLen + 1), dtype=float)
 
     for i in range(16):
         for j in range(16):
-            calculate_metric_comp(metric, unmax_metric, i, j, Js,
-                                           logJs, loglogJs, logloglogJs,
-                                           loglogloglogJs, mapping)
+            calculate_metric_comp(
+                metric,
+                unmax_metric,
+                i,
+                j,
+                Js,
+                logJs,
+                loglogJs,
+                logloglogJs,
+                loglogloglogJs,
+                mapping,
+            )
     return metric, unmax_metric
 
 
-def calculate_metric_comp(gs, unmax_metric, i, j, Js, logJs, loglogJs,
-                          logloglogJs, loglogloglogJs, mapping):
+def calculate_metric_comp(
+    gs, unmax_metric, i, j, Js, logJs, loglogJs, logloglogJs, loglogloglogJs, mapping
+):
     """
     Used to compute part of the metric. Only call this from within
     calculate_metric(). Please see the documentation for that function.
     """
     # Time term in unmax_metric. Note that these terms are recomputed a bunch
     # of time, but this cost is insignificant compared to computing the moments
-    unmax_metric[-1,-1] = (Js[1] - Js[4]*Js[4])
+    unmax_metric[-1, -1] = Js[1] - Js[4] * Js[4]
 
     # Normal terms
-    if 'Lambda%d'%i in mapping and 'Lambda%d'%j in mapping:
-        gammaij = Js[17-i-j] - Js[12-i]*Js[12-j]
-        gamma0i = (Js[9-i] - Js[4]*Js[12-i])
-        gamma0j = (Js[9-j] - Js[4] * Js[12-j])
-        gs[mapping['Lambda%d'%i],mapping['Lambda%d'%j]] = \
-            0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
-        unmax_metric[mapping['Lambda%d'%i], -1] = gamma0i
-        unmax_metric[-1, mapping['Lambda%d'%j]] = gamma0j
-        unmax_metric[mapping['Lambda%d'%i],mapping['Lambda%d'%j]] = gammaij
+    if "Lambda%d" % i in mapping and "Lambda%d" % j in mapping:
+        gammaij = Js[17 - i - j] - Js[12 - i] * Js[12 - j]
+        gamma0i = Js[9 - i] - Js[4] * Js[12 - i]
+        gamma0j = Js[9 - j] - Js[4] * Js[12 - j]
+        gs[mapping["Lambda%d" % i], mapping["Lambda%d" % j]] = 0.5 * (
+            gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4])
+        )
+        unmax_metric[mapping["Lambda%d" % i], -1] = gamma0i
+        unmax_metric[-1, mapping["Lambda%d" % j]] = gamma0j
+        unmax_metric[mapping["Lambda%d" % i], mapping["Lambda%d" % j]] = gammaij
     # Normal,log cross terms
-    if 'Lambda%d'%i in mapping and 'LogLambda%d'%j in mapping:
-        gammaij = logJs[17-i-j] - logJs[12-j] * Js[12-i]
-        gamma0i = (Js[9-i] - Js[4] * Js[12-i])
-        gamma0j = logJs[9-j] - logJs[12-j] * Js[4]
-        gs[mapping['Lambda%d'%i],mapping['LogLambda%d'%j]] = \
-            gs[mapping['LogLambda%d'%j],mapping['Lambda%d'%i]] = \
-            0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
-        unmax_metric[mapping['Lambda%d'%i], -1] = gamma0i
-        unmax_metric[-1, mapping['Lambda%d'%i]] = gamma0i
-        unmax_metric[-1, mapping['LogLambda%d'%j]] = gamma0j
-        unmax_metric[mapping['LogLambda%d'%j], -1] = gamma0j
-        unmax_metric[mapping['Lambda%d'%i],mapping['LogLambda%d'%j]] = gammaij
-        unmax_metric[mapping['LogLambda%d'%j],mapping['Lambda%d'%i]] = gammaij
+    if "Lambda%d" % i in mapping and "LogLambda%d" % j in mapping:
+        gammaij = logJs[17 - i - j] - logJs[12 - j] * Js[12 - i]
+        gamma0i = Js[9 - i] - Js[4] * Js[12 - i]
+        gamma0j = logJs[9 - j] - logJs[12 - j] * Js[4]
+        gs[mapping["Lambda%d" % i], mapping["LogLambda%d" % j]] = gs[
+            mapping["LogLambda%d" % j], mapping["Lambda%d" % i]
+        ] = 0.5 * (gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4]))
+        unmax_metric[mapping["Lambda%d" % i], -1] = gamma0i
+        unmax_metric[-1, mapping["Lambda%d" % i]] = gamma0i
+        unmax_metric[-1, mapping["LogLambda%d" % j]] = gamma0j
+        unmax_metric[mapping["LogLambda%d" % j], -1] = gamma0j
+        unmax_metric[mapping["Lambda%d" % i], mapping["LogLambda%d" % j]] = gammaij
+        unmax_metric[mapping["LogLambda%d" % j], mapping["Lambda%d" % i]] = gammaij
     # Log,log terms
-    if 'LogLambda%d'%i in mapping and 'LogLambda%d'%j in mapping:
-        gammaij = loglogJs[17-i-j] - logJs[12-j] * logJs[12-i]
-        gamma0i = (logJs[9-i] - Js[4] * logJs[12-i])
-        gamma0j = logJs[9-j] - logJs[12-j] * Js[4]
-        gs[mapping['LogLambda%d'%i],mapping['LogLambda%d'%j]] = \
-            0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
-        unmax_metric[mapping['LogLambda%d'%i], -1] = gamma0i
-        unmax_metric[-1, mapping['LogLambda%d'%j]] = gamma0j
-        unmax_metric[mapping['LogLambda%d'%i],mapping['LogLambda%d'%j]] =\
-            gammaij
+    if "LogLambda%d" % i in mapping and "LogLambda%d" % j in mapping:
+        gammaij = loglogJs[17 - i - j] - logJs[12 - j] * logJs[12 - i]
+        gamma0i = logJs[9 - i] - Js[4] * logJs[12 - i]
+        gamma0j = logJs[9 - j] - logJs[12 - j] * Js[4]
+        gs[mapping["LogLambda%d" % i], mapping["LogLambda%d" % j]] = 0.5 * (
+            gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4])
+        )
+        unmax_metric[mapping["LogLambda%d" % i], -1] = gamma0i
+        unmax_metric[-1, mapping["LogLambda%d" % j]] = gamma0j
+        unmax_metric[mapping["LogLambda%d" % i], mapping["LogLambda%d" % j]] = gammaij
 
     # Normal,loglog cross terms
-    if 'Lambda%d'%i in mapping and 'LogLogLambda%d'%j in mapping:
-        gammaij = loglogJs[17-i-j] - loglogJs[12-j] * Js[12-i]
-        gamma0i = (Js[9-i] - Js[4] * Js[12-i])
-        gamma0j = loglogJs[9-j] - loglogJs[12-j] * Js[4]
-        gs[mapping['Lambda%d'%i],mapping['LogLogLambda%d'%j]] = \
-            gs[mapping['LogLogLambda%d'%j],mapping['Lambda%d'%i]] = \
-            0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
-        unmax_metric[mapping['Lambda%d'%i], -1] = gamma0i
-        unmax_metric[-1, mapping['Lambda%d'%i]] = gamma0i
-        unmax_metric[-1, mapping['LogLogLambda%d'%j]] = gamma0j
-        unmax_metric[mapping['LogLogLambda%d'%j], -1] = gamma0j
-        unmax_metric[mapping['Lambda%d'%i],mapping['LogLogLambda%d'%j]] = \
-            gammaij
-        unmax_metric[mapping['LogLogLambda%d'%j],mapping['Lambda%d'%i]] = \
-            gammaij
+    if "Lambda%d" % i in mapping and "LogLogLambda%d" % j in mapping:
+        gammaij = loglogJs[17 - i - j] - loglogJs[12 - j] * Js[12 - i]
+        gamma0i = Js[9 - i] - Js[4] * Js[12 - i]
+        gamma0j = loglogJs[9 - j] - loglogJs[12 - j] * Js[4]
+        gs[mapping["Lambda%d" % i], mapping["LogLogLambda%d" % j]] = gs[
+            mapping["LogLogLambda%d" % j], mapping["Lambda%d" % i]
+        ] = 0.5 * (gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4]))
+        unmax_metric[mapping["Lambda%d" % i], -1] = gamma0i
+        unmax_metric[-1, mapping["Lambda%d" % i]] = gamma0i
+        unmax_metric[-1, mapping["LogLogLambda%d" % j]] = gamma0j
+        unmax_metric[mapping["LogLogLambda%d" % j], -1] = gamma0j
+        unmax_metric[mapping["Lambda%d" % i], mapping["LogLogLambda%d" % j]] = gammaij
+        unmax_metric[mapping["LogLogLambda%d" % j], mapping["Lambda%d" % i]] = gammaij
 
     # log,loglog cross terms
-    if 'LogLambda%d'%i in mapping and 'LogLogLambda%d'%j in mapping:
-        gammaij = logloglogJs[17-i-j] - loglogJs[12-j] * logJs[12-i]
-        gamma0i = (logJs[9-i] - Js[4] * logJs[12-i])
-        gamma0j = loglogJs[9-j] - loglogJs[12-j] * Js[4]
-        gs[mapping['LogLambda%d'%i],mapping['LogLogLambda%d'%j]] = \
-            gs[mapping['LogLogLambda%d'%j],mapping['LogLambda%d'%i]] = \
-            0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
-        unmax_metric[mapping['LogLambda%d'%i], -1] = gamma0i
-        unmax_metric[-1, mapping['LogLambda%d'%i]] = gamma0i
-        unmax_metric[-1, mapping['LogLogLambda%d'%j]] = gamma0j
-        unmax_metric[mapping['LogLogLambda%d'%j], -1] = gamma0j
-        unmax_metric[mapping['LogLambda%d'%i],mapping['LogLogLambda%d'%j]] = \
+    if "LogLambda%d" % i in mapping and "LogLogLambda%d" % j in mapping:
+        gammaij = logloglogJs[17 - i - j] - loglogJs[12 - j] * logJs[12 - i]
+        gamma0i = logJs[9 - i] - Js[4] * logJs[12 - i]
+        gamma0j = loglogJs[9 - j] - loglogJs[12 - j] * Js[4]
+        gs[mapping["LogLambda%d" % i], mapping["LogLogLambda%d" % j]] = gs[
+            mapping["LogLogLambda%d" % j], mapping["LogLambda%d" % i]
+        ] = 0.5 * (gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4]))
+        unmax_metric[mapping["LogLambda%d" % i], -1] = gamma0i
+        unmax_metric[-1, mapping["LogLambda%d" % i]] = gamma0i
+        unmax_metric[-1, mapping["LogLogLambda%d" % j]] = gamma0j
+        unmax_metric[mapping["LogLogLambda%d" % j], -1] = gamma0j
+        unmax_metric[mapping["LogLambda%d" % i], mapping["LogLogLambda%d" % j]] = (
             gammaij
-        unmax_metric[mapping['LogLogLambda%d'%j],mapping['LogLambda%d'%i]] = \
+        )
+        unmax_metric[mapping["LogLogLambda%d" % j], mapping["LogLambda%d" % i]] = (
             gammaij
+        )
 
     # Loglog,loglog terms
-    if 'LogLogLambda%d'%i in mapping and 'LogLogLambda%d'%j in mapping:
-        gammaij = loglogloglogJs[17-i-j] - loglogJs[12-j] * loglogJs[12-i]
-        gamma0i = (loglogJs[9-i] - Js[4] * loglogJs[12-i])
-        gamma0j = loglogJs[9-j] - loglogJs[12-j] * Js[4]
-        gs[mapping['LogLogLambda%d'%i],mapping['LogLogLambda%d'%j]] = \
-            0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
-        unmax_metric[mapping['LogLogLambda%d'%i], -1] = gamma0i
-        unmax_metric[-1, mapping['LogLogLambda%d'%j]] = gamma0j
-        unmax_metric[mapping['LogLogLambda%d'%i],mapping['LogLogLambda%d'%j]] =\
+    if "LogLogLambda%d" % i in mapping and "LogLogLambda%d" % j in mapping:
+        gammaij = loglogloglogJs[17 - i - j] - loglogJs[12 - j] * loglogJs[12 - i]
+        gamma0i = loglogJs[9 - i] - Js[4] * loglogJs[12 - i]
+        gamma0j = loglogJs[9 - j] - loglogJs[12 - j] * Js[4]
+        gs[mapping["LogLogLambda%d" % i], mapping["LogLogLambda%d" % j]] = 0.5 * (
+            gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4])
+        )
+        unmax_metric[mapping["LogLogLambda%d" % i], -1] = gamma0i
+        unmax_metric[-1, mapping["LogLogLambda%d" % j]] = gamma0j
+        unmax_metric[mapping["LogLogLambda%d" % i], mapping["LogLogLambda%d" % j]] = (
             gammaij
-
+        )

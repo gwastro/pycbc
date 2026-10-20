@@ -15,54 +15,70 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Runs a sampler to find the posterior distributions.
-"""
+"""Runs a sampler to find the posterior distributions."""
 
-import os
-import sys
 import argparse
 import logging
+import os
+import sys
 
 import numpy
 
 import pycbc
-from pycbc import fft, opt, scheme, pool
-
-from pycbc import inference
+from pycbc import fft, inference, opt, pool, scheme
 from pycbc.inference import models
 from pycbc.inference.io import loadfile
 from pycbc.workflow import configuration
 
 # command line usage
-parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
-                                 description=__doc__)
+parser = argparse.ArgumentParser(usage=__file__ + " [--options]", description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 # output options
-parser.add_argument("--output-file", type=str, required=True,
-                    help="Output file path.")
-parser.add_argument("--force", action="store_true", default=False,
-                    help="If the output-file already exists, overwrite it. "
-                         "Otherwise, an OSError is raised.")
-parser.add_argument("--save-backup", action="store_true",
-                    default=False,
-                    help="Don't delete the backup file after the run has "
-                         "completed.")
+parser.add_argument("--output-file", type=str, required=True, help="Output file path.")
+parser.add_argument(
+    "--force",
+    action="store_true",
+    default=False,
+    help="If the output-file already exists, overwrite it. "
+    "Otherwise, an OSError is raised.",
+)
+parser.add_argument(
+    "--save-backup",
+    action="store_true",
+    default=False,
+    help="Don't delete the backup file after the run has completed.",
+)
 # parallelization options
-parser.add_argument("--nprocesses", type=int, default=1,
-                    help="Number of processes to use. If not given then only "
-                         "a single core will be used.")
-parser.add_argument("--use-mpi", action='store_true', default=False,
-                    help="Use MPI to parallelize the sampler")
-parser.add_argument("--samples-file", default=None,
-                    help="Use an iteration from an InferenceFile as the "
-                         "initial proposal distribution. The same "
-                         "number of walkers and the same [variable_params] "
-                         "section in the configuration file should be used. "
-                         "The priors must allow encompass the initial "
-                         "positions from the InferenceFile being read.")
-parser.add_argument("--seed", type=int, default=0,
-                    help="Seed to use for the random number generator that "
-                         "initially distributes the walkers. Default is 0.")
+parser.add_argument(
+    "--nprocesses",
+    type=int,
+    default=1,
+    help="Number of processes to use. If not given then only "
+    "a single core will be used.",
+)
+parser.add_argument(
+    "--use-mpi",
+    action="store_true",
+    default=False,
+    help="Use MPI to parallelize the sampler",
+)
+parser.add_argument(
+    "--samples-file",
+    default=None,
+    help="Use an iteration from an InferenceFile as the "
+    "initial proposal distribution. The same "
+    "number of walkers and the same [variable_params] "
+    "section in the configuration file should be used. "
+    "The priors must allow encompass the initial "
+    "positions from the InferenceFile being read.",
+)
+parser.add_argument(
+    "--seed",
+    type=int,
+    default=0,
+    help="Seed to use for the random number generator that "
+    "initially distributes the walkers. Default is 0.",
+)
 # add config options
 configuration.add_workflow_command_line_group(parser)
 # add module pre-defined options
@@ -86,8 +102,7 @@ scheme.verify_processing_options(opts, parser)
 
 # check that the output file doesn't already exist
 if os.path.exists(opts.output_file) and not opts.force:
-    raise OSError("output-file already exists; use force if you "
-                  "wish to overwrite it.")
+    raise OSError("output-file already exists; use force if you wish to overwrite it.")
 
 
 # set seed
@@ -96,14 +111,13 @@ logging.info("Using seed %i", opts.seed)
 
 # we'll silence numpy warnings since they are benign and make for confusing
 # logging output
-numpy.seterr(divide='ignore', invalid='ignore')
+numpy.seterr(divide="ignore", invalid="ignore")
 
 # get scheme
 ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
 with ctx:
-
     # read configuration file
     cp_original = configuration.WorkflowConfigParser.from_cli(opts)
     # some models will interally modify original cp for sampling,
@@ -112,13 +126,15 @@ with ctx:
     cp = cp_original.__deepcopy__(cp_original)
 
     # create an empty checkpoint file, if needed
-    condor_ckpt = cp.has_option('sampler', 'checkpoint-signal')
+    condor_ckpt = cp.has_option("sampler", "checkpoint-signal")
     if condor_ckpt:
         logging.info(
             "Sampler will exit with signal {} after checkpointing".format(
-                cp.get('sampler', 'checkpoint-signal')))
+                cp.get("sampler", "checkpoint-signal")
+            )
+        )
         # create an empty output file to keep condor happy
-        open(opts.output_file, 'a').close()
+        open(opts.output_file, "a").close()
 
     logging.info("Setting up model")
 
@@ -132,13 +148,17 @@ with ctx:
     # unless you enjoy angering your cluster admins,
     # NO SAMPLES FILE IO SHOULD BE DONE PRIOR TO THIS POINT!!!
     sampler = inference.sampler.load_from_config(
-        cp, model, output_file=opts.output_file, nprocesses=opts.nprocesses,
-        use_mpi=opts.use_mpi)
+        cp,
+        model,
+        output_file=opts.output_file,
+        nprocesses=opts.nprocesses,
+        use_mpi=opts.use_mpi,
+    )
 
     # store the checkpoint file
     if pool.is_main_process():
         for fn in [sampler.checkpoint_file, sampler.backup_file]:
-            with loadfile(fn, 'a') as fp:
+            with loadfile(fn, "a") as fp:
                 fp.write_config_file(cp_original)
 
     # Run the sampler
@@ -151,11 +171,11 @@ with ctx:
     sampler.finalize()
 
 if condor_ckpt:
-   # unlink the empty output file
-   try:
-       os.unlink(opts.output_file)
-   except:
-       pass
+    # unlink the empty output file
+    try:
+        os.unlink(opts.output_file)
+    except:
+        pass
 
 # rename checkpoint to output and delete backup
 logging.info("Moving checkpoint to output")
@@ -165,12 +185,12 @@ if not opts.save_backup:
     os.remove(sampler.backup_file)
 
 # write the end time
-with sampler.io(opts.output_file, 'a') as fp:
+with sampler.io(opts.output_file, "a") as fp:
     fp.write_run_end_time()
 
 if condor_ckpt:
-   # create an empty checkpoint file
-   open(sampler.checkpoint_file, 'a').close()
+    # create an empty checkpoint file
+    open(sampler.checkpoint_file, "a").close()
 
 # exit
 logging.info("Done")

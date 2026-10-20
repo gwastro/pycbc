@@ -23,9 +23,10 @@
 #
 
 import numpy as np
+from scipy.signal import sosfilt, zpk2sos
 
-from scipy.signal import zpk2sos, sosfilt
 from pycbc.types import TimeSeries
+
 
 def filter_zpk(timeseries, z, p, k):
     """Return a new timeseries that was filtered with a zero-pole-gain filter.
@@ -77,8 +78,10 @@ def filter_zpk(timeseries, z, p, k):
     # sanity check casual filter
     degree = len(p) - len(z)
     if degree < 0:
-        raise TypeError("May not have more zeroes than poles. \
-                         Filter is not casual.")
+        raise TypeError(
+            "May not have more zeroes than poles. \
+                         Filter is not casual."
+        )
 
     # cast zeroes and poles as arrays and gain as a float
     z = np.array(z)
@@ -94,14 +97,14 @@ def filter_zpk(timeseries, z, p, k):
     fs = 2.0 * timeseries.sample_rate
 
     # zeroes in the z-domain
-    z_zd = (1 + z/fs) / (1 - z/fs)
+    z_zd = (1 + z / fs) / (1 - z / fs)
 
     # any zeros that were at infinity are moved to the Nyquist frequency
     z_zd = z_zd[np.isfinite(z_zd)]
     z_zd = np.append(z_zd, -np.ones(degree))
 
     # poles in the z-domain
-    p_zd = (1 + p/fs) / (1 - p/fs)
+    p_zd = (1 + p / fs) / (1 - p / fs)
 
     # gain change in z-domain
     k_zd = k * np.prod(fs - z) / np.prod(fs - p)
@@ -112,6 +115,9 @@ def filter_zpk(timeseries, z, p, k):
     # filter
     filtered_data = sosfilt(sos, timeseries.numpy())
 
-    return TimeSeries(filtered_data, delta_t = timeseries.delta_t,
-                      dtype=timeseries.dtype,
-                      epoch=timeseries._epoch)
+    return TimeSeries(
+        filtered_data,
+        delta_t=timeseries.delta_t,
+        dtype=timeseries.dtype,
+        epoch=timeseries._epoch,
+    )

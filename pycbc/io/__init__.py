@@ -1,15 +1,17 @@
+import hashlib
+import logging
 import os
 import time
-import logging
 from urllib.error import HTTPError
 from urllib.parse import urlparse
-import hashlib
+
 from astropy.utils.data import download_file
+
+from .gracedb import *
 from .hdf import *
 from .record import *
-from .gracedb import *
 
-logger = logging.getLogger('pycbc.io')
+logger = logging.getLogger("pycbc.io")
 
 # Backup locations for the GWOSC data files used by the test suite / examples,
 # in gwastro/pycbc_data.  Binary frame/ROM files are stored as release assets
@@ -55,18 +57,19 @@ def _candidate_urls(url):
     direct request outside Actions is very likely for a file that is not in
     the mirror.
     """
-    if (os.getenv("GITHUB_ACTIONS") == "true"
-            and any(host in url for host in _MIRRORED_HOSTS)):
+    if os.getenv("GITHUB_ACTIONS") == "true" and any(
+        host in url for host in _MIRRORED_HOSTS
+    ):
         basename = os.path.basename(urlparse(url).path)
-        if basename.endswith(('gwf', 'hdf5')):
+        if basename.endswith(("gwf", "hdf5")):
             candidates = [
                 base_lfs_backup_url.format(basename),
                 base_lfs_media_url.format(basename),
                 url,
             ]
         elif any(host in url for host in _JSON_API_HOSTS):
-            hh = hashlib.md5(url.strip().lower().encode('utf-8')).hexdigest()
-            candidates = [base_backup_url.format(hh + '.json'), url]
+            hh = hashlib.md5(url.strip().lower().encode("utf-8")).hexdigest()
+            candidates = [base_backup_url.format(hh + ".json"), url]
         else:
             candidates = [url]
     else:
@@ -112,12 +115,12 @@ def get_file(url, retry=5, backoff_cap=5, **args):
                 if exc.code in _NO_RETRY_HTTP_CODES:
                     logger.warning(
                         "%s returned HTTP %d; not retrying this location",
-                        cand, exc.code
+                        cand,
+                        exc.code,
                     )
                     break
                 logger.warning(
-                    "Failed on attempt %d to download %s (HTTP %d)",
-                    i, cand, exc.code
+                    "Failed on attempt %d to download %s (HTTP %d)", i, cand, exc.code
                 )
             except Exception as exc:
                 # Any other failure (URLError, ContentTooShortError, socket
@@ -125,9 +128,11 @@ def get_file(url, retry=5, backoff_cap=5, **args):
                 last_exc = exc
                 logger.warning(
                     "Failed on attempt %d to download %s (%s)",
-                    i, cand, type(exc).__name__
+                    i,
+                    cand,
+                    type(exc).__name__,
                 )
             if i < retry:
-                time.sleep(min(backoff_cap, 2 ** i))
+                time.sleep(min(backoff_cap, 2**i))
     logger.error("Giving up on %s", url)
     raise last_exc

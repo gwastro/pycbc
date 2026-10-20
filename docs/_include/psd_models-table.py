@@ -20,9 +20,9 @@
 """
 
 
-from pycbc import psd
+from _dict_to_rst import format_function, rst_dict_table
 
-from _dict_to_rst import (rst_dict_table, format_function)
+from pycbc import psd
 
 psds = {p: getattr(psd.analytical, p)
         for p in psd.analytical.get_psd_model_list()}

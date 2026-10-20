@@ -4,11 +4,11 @@ these points is calculating the antenna pattern functions and time delays from
 the Earth center for a network of detectors.
 """
 
-import numpy as np
 import h5py
+import numpy as np
 
-from pycbc.detector import Detector
 from pycbc.conversions import ensurearray
+from pycbc.detector import Detector
 
 
 class SkyGrid:
@@ -35,11 +35,11 @@ class SkyGrid:
         # We store the points in a 2D array internally, first dimension runs
         # over the list of points, second dimension is RA/dec.
         # Question: should we use Astropy sky positions instead?
-        ra, dec, _ = ensurearray(ra,dec)
+        ra, dec, _ = ensurearray(ra, dec)
         if (ra < 0).any() or (ra > 2 * np.pi).any():
-            raise ValueError('RA must be in the range [0,2π]')
-        if (dec < -np.pi/2).any() or (dec > np.pi/2).any():
-            raise ValueError('DEC must be in the range [-π/2, π/2]')
+            raise ValueError("RA must be in the range [0,2π]")
+        if (dec < -np.pi / 2).any() or (dec > np.pi / 2).any():
+            raise ValueError("DEC must be in the range [-π/2, π/2]")
         self.positions = np.vstack([ra, dec]).T
         self.detectors = sorted(detectors)
         self.ref_gps_time = ref_gps_time
@@ -71,8 +71,8 @@ class SkyGrid:
         if cli_args.sky_grid is not None:
             if cli_args.ra is not None or cli_args.dec is not None:
                 cli_parser.error(
-                    'Please provide either a sky grid via --sky-grid or a '
-                    'single sky position via --ra and --dec, not both'
+                    "Please provide either a sky grid via --sky-grid or a "
+                    "single sky position via --ra and --dec, not both"
                 )
             return cls.read_from_file(cli_args.sky_grid)
         if cli_args.ra is not None and cli_args.dec is not None:
@@ -80,33 +80,33 @@ class SkyGrid:
                 [cli_args.ra],
                 [cli_args.dec],
                 cli_args.instruments,
-                cli_args.trigger_time
+                cli_args.trigger_time,
             )
         cli_parser.error(
-            'Please specify a sky grid via --sky-grid or a single sky '
-            'position via --ra and --dec'
+            "Please specify a sky grid via --sky-grid or a single sky "
+            "position via --ra and --dec"
         )
 
     @classmethod
     def read_from_file(cls, path):
         """Initialize a sky grid from a given HDF5 file."""
-        with h5py.File(path, 'r') as hf:
-            ra = hf['ra'][:]
-            dec = hf['dec'][:]
-            detectors = hf.attrs['detectors']
-            ref_gps_time = hf.attrs['ref_gps_time']
+        with h5py.File(path, "r") as hf:
+            ra = hf["ra"][:]
+            dec = hf["dec"][:]
+            detectors = hf.attrs["detectors"]
+            ref_gps_time = hf.attrs["ref_gps_time"]
         return cls(ra, dec, detectors, ref_gps_time)
 
     def write_to_file(self, path, extra_attrs=None, extra_datasets=None):
         """Writes a sky grid to an HDF5 file."""
-        with h5py.File(path, 'w') as hf:
-            hf['ra'] = self.ras
-            hf['dec'] = self.decs
-            hf.attrs['detectors'] = self.detectors
-            hf.attrs['ref_gps_time'] = self.ref_gps_time
-            for attribute in (extra_attrs or {}):
+        with h5py.File(path, "w") as hf:
+            hf["ra"] = self.ras
+            hf["dec"] = self.decs
+            hf.attrs["detectors"] = self.detectors
+            hf.attrs["ref_gps_time"] = self.ref_gps_time
+            for attribute in extra_attrs or {}:
                 hf.attrs[attribute] = extra_attrs[attribute]
-            for dataset in (extra_datasets or {}):
+            for dataset in extra_datasets or {}:
                 hf[dataset] = extra_datasets[dataset]
 
     def calculate_antenna_patterns(self):
@@ -143,4 +143,4 @@ class SkyGrid:
         return result
 
 
-__all__ = ['SkyGrid']
+__all__ = ["SkyGrid"]

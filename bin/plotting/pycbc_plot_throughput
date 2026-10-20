@@ -1,83 +1,88 @@
 #!/usr/bin/env python
 
 import argparse
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import pyplot as plt
 
+import matplotlib
+
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
 from scipy.stats import hmean
 
 import pycbc
-from pycbc.results.color import ifo_color
 from pycbc.io.hdf import HFile
+from pycbc.results.color import ifo_color
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--input-file', nargs='+', required=True,
-                    help='Single-detector inspiral HDF5 files to get '
-                    'templates per core.')
-parser.add_argument('--output-file', required=True,
-                    help='Destination file for the plot.')
-parser.add_argument('--duration-weighted', action="store_true")
+parser.add_argument(
+    "--input-file",
+    nargs="+",
+    required=True,
+    help="Single-detector inspiral HDF5 files to get templates per core.",
+)
+parser.add_argument(
+    "--output-file", required=True, help="Destination file for the plot."
+)
+parser.add_argument("--duration-weighted", action="store_true")
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-fig, (ax1, ax2, ax3) = plt.subplots(3,1,figsize=(10,10))
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 10))
 
 for pa in args.input_file:
-    f = HFile(pa, 'r')
+    f = HFile(pa, "r")
     ifo = tuple(f.keys())[0]
 
-    dur = f['%s/search/end_time' % ifo][:] - f['%s/search/start_time' % ifo][:]
+    dur = f["%s/search/end_time" % ifo][:] - f["%s/search/start_time" % ifo][:]
     dur /= dur.mean()
     if args.duration_weighted:
         w = dur
     else:
         w = None
 
-    if 'templates_per_core' in f['%s/search' % ifo].keys():
-        tpc = f['%s/search/templates_per_core' % ifo][:]
+    if "templates_per_core" in f["%s/search" % ifo].keys():
+        tpc = f["%s/search/templates_per_core" % ifo][:]
     else:
         tpc = None
-    if 'filter_rate_per_core' in f['%s/search' % ifo].keys():
-        fpc = f['%s/search/filter_rate_per_core' % ifo][:]
+    if "filter_rate_per_core" in f["%s/search" % ifo].keys():
+        fpc = f["%s/search/filter_rate_per_core" % ifo][:]
     else:
         fpc = None
-    if 'setup_time_fraction' in f['%s/search' % ifo].keys():
-        stf = f['%s/search/setup_time_fraction' % ifo][:]
+    if "setup_time_fraction" in f["%s/search" % ifo].keys():
+        stf = f["%s/search/setup_time_fraction" % ifo][:]
     else:
         stf = None
 
     if tpc is not None:
-        label = str(ifo) + ': Harmonic mean  - ' + str(hmean(tpc))
+        label = str(ifo) + ": Harmonic mean  - " + str(hmean(tpc))
         if args.duration_weighted:
-            avg_tpc = 1.0 / ( w / tpc).mean()
+            avg_tpc = 1.0 / (w / tpc).mean()
         else:
             avg_tpc = hmean(tpc)
-        label = str(ifo) + ': Harmonic mean  - ' + str(avg_tpc)
-        ax1.hist(tpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label, weights=w)
-        #ax1.set_title('Templates per Core')
-        ax1.set_xlabel('Templates per Core')
-        ax1.legend(loc = 'upper right')
+        label = str(ifo) + ": Harmonic mean  - " + str(avg_tpc)
+        ax1.hist(tpc, 100, color=ifo_color(ifo), alpha=0.65, label=label, weights=w)
+        # ax1.set_title('Templates per Core')
+        ax1.set_xlabel("Templates per Core")
+        ax1.legend(loc="upper right")
         ax1.grid(True)
     if fpc is not None:
         if w is not None:
             fpc *= w
-        label = str(ifo) + ': Mean average - ' + str(fpc.mean())
-        ax2.hist(fpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label, weights=w)
-        #ax2.set_title('Filter rate per core')
-        ax2.set_xlabel('Filter rate per core (# FFTs per second per core)')
-        ax2.legend(loc = 'upper right')
+        label = str(ifo) + ": Mean average - " + str(fpc.mean())
+        ax2.hist(fpc, 100, color=ifo_color(ifo), alpha=0.65, label=label, weights=w)
+        # ax2.set_title('Filter rate per core')
+        ax2.set_xlabel("Filter rate per core (# FFTs per second per core)")
+        ax2.legend(loc="upper right")
         ax2.grid(True)
     if stf is not None:
         if w is not None:
             stf *= w
-        label = str(ifo) + ': Mean average - ' + str(stf.mean())
-        ax3.hist(stf, 100, color=ifo_color(ifo), alpha = 0.65, label = label, weights=w)
-        #ax2.set_title('Filter rate per core')
-        ax3.set_xlabel('Fraction of time doing setup operations')
-        ax3.legend(loc = 'upper right')
+        label = str(ifo) + ": Mean average - " + str(stf.mean())
+        ax3.hist(stf, 100, color=ifo_color(ifo), alpha=0.65, label=label, weights=w)
+        # ax2.set_title('Filter rate per core')
+        ax3.set_xlabel("Fraction of time doing setup operations")
+        ax3.legend(loc="upper right")
         ax3.grid(True)
 
 fig.tight_layout()

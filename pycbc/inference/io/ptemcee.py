@@ -14,31 +14,37 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-"""Provides I/O support for ptemcee.
-"""
+"""Provides I/O support for ptemcee."""
 
-
-from .base_sampler import BaseSamplerFile
 from . import base_mcmc
 from .base_mcmc import EnsembleMCMCMetadataIO
-from .base_multitemper import (CommonMultiTemperedMetadataIO,
-                               write_samples,
-                               ensemble_read_raw_samples)
+from .base_multitemper import (
+    CommonMultiTemperedMetadataIO,
+    ensemble_read_raw_samples,
+    write_samples,
+)
+from .base_sampler import BaseSamplerFile
 
 
-class PTEmceeFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
-                  BaseSamplerFile):
+class PTEmceeFile(
+    EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO, BaseSamplerFile
+):
     """Class to handle file IO for the ``ptemcee`` sampler."""
 
-    name = 'ptemcee_file'
+    name = "ptemcee_file"
 
     # attributes for setting up an ensemble from file
-    _ensemble_attrs = ['jumps_proposed', 'jumps_accepted', 'swaps_proposed',
-                       'swaps_accepted', 'logP', 'logl']
+    _ensemble_attrs = [
+        "jumps_proposed",
+        "jumps_accepted",
+        "swaps_proposed",
+        "swaps_accepted",
+        "logP",
+        "logl",
+    ]
 
     def write_sampler_metadata(self, sampler):
-        """Adds writing ptemcee-specific metadata to MultiTemperedMCMCIO.
-        """
+        """Adds writing ptemcee-specific metadata to MultiTemperedMCMCIO."""
         super(PTEmceeFile, self).write_sampler_metadata(sampler)
         group = self[self.sampler_group]
         group.attrs["starting_betas"] = sampler.starting_betas
@@ -60,12 +66,16 @@ class PTEmceeFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         """
         # we'll use the single temperature write_samples to write the betas,
         # so that we get the thinning settings
-        base_mcmc.write_samples(self, {'betas': betas},
-                                last_iteration=last_iteration,
-                                samples_group=self.sampler_group)
+        base_mcmc.write_samples(
+            self,
+            {"betas": betas},
+            last_iteration=last_iteration,
+            samples_group=self.sampler_group,
+        )
 
-    def read_betas(self, thin_start=None, thin_interval=None, thin_end=None,
-                   iteration=None):
+    def read_betas(
+        self, thin_start=None, thin_interval=None, thin_end=None, iteration=None
+    ):
         """Reads betas from the file.
 
         Parameters
@@ -87,11 +97,14 @@ class PTEmceeFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         array
             A ntemps x niterations array of the betas.
         """
-        slc = base_mcmc._ensemble_get_index(self, thin_start=thin_start,
-                                            thin_interval=thin_interval,
-                                            thin_end=thin_end,
-                                            iteration=iteration)
-        betas = self[self.sampler_group]['betas'][:]
+        slc = base_mcmc._ensemble_get_index(
+            self,
+            thin_start=thin_start,
+            thin_interval=thin_interval,
+            thin_end=thin_end,
+            iteration=iteration,
+        )
+        betas = self[self.sampler_group]["betas"][:]
         return betas[:, slc]
 
     def write_ensemble_attrs(self, ensemble):

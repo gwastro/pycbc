@@ -20,29 +20,28 @@ import logging
 import sys
 
 import numpy
-
 from matplotlib import use
-use('agg')
+
+use("agg")
 from matplotlib import pyplot as plt
 
 import pycbc
 from pycbc import results
 from pycbc.filter import autocorrelation
-
 from pycbc.inference import io
 
 # command line usage
 # turn off thin-interval and temps since they won't be used
-parser = io.ResultsArgumentParser(skip_args=['thin-interval', 'temps'],
-                                  description="Histograms autocorrelation "
-                                              "length per walker from an MCMC "
-                                              "sampler.")
+parser = io.ResultsArgumentParser(
+    skip_args=["thin-interval", "temps"],
+    description="Histograms autocorrelation length per walker from an MCMC sampler.",
+)
 pycbc.add_common_pycbc_options(parser)
 # output plot options
-parser.add_argument("--output-file", type=str, required=True,
-    help="Path to output plot.")
-parser.add_argument("--bins", type=int, default=10,
-    help="Number of bins in histogram.")
+parser.add_argument(
+    "--output-file", type=str, required=True, help="Path to output plot."
+)
+parser.add_argument("--bins", type=int, default=10, help="Number of bins in histogram.")
 
 # parse the command line
 opts = parser.parse_args()
@@ -61,8 +60,13 @@ for param_name in parameters:
     # for each walker
     acls = []
     for i in range(fp.nwalkers):
-        y = fp.read_samples(param_name, walkers=i, thin_start=opts.thin_start,
-                            thin_end=opts.thin_end, thin_interval=1)
+        y = fp.read_samples(
+            param_name,
+            walkers=i,
+            thin_start=opts.thin_start,
+            thin_end=opts.thin_end,
+            thin_interval=1,
+        )
         acl = autocorrelation.calculate_acl(y[param_name], dtype=int)
         if acl == numpy.inf:
             acl = fp.niterations
@@ -74,24 +78,23 @@ for param_name in parameters:
     plt.hist(acls, opts.bins, histtype="step", label=labels[param_name])
 
 plt.xlabel("Autocorrelation time")
-plt.ylabel(r'Number of walkers')
+plt.ylabel(r"Number of walkers")
 
 # plot autocorrelation time saved in hdf file
-plt.axvline(fp.act, linestyle='--')
+plt.axvline(fp.act, linestyle="--")
 plt.legend()
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join(labels),
+    "parameters": ", ".join(labels),
 }
 caption = """ Histograms of the autocorrelation time (ACT) from all
  the walker chains for the parameters. The vertical dashed line is the ACT
 read from the input file."""
 title = "Autocorrelation time for {parameters}".format(**caption_kwargs)
-results.save_fig_with_metadata(fig, opts.output_file,
-                               cmd=" ".join(sys.argv),
-                               title=title,
-                               caption=caption)
+results.save_fig_with_metadata(
+    fig, opts.output_file, cmd=" ".join(sys.argv), title=title, caption=caption
+)
 plt.close()
 
 # exit

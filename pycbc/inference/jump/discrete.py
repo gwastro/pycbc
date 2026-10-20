@@ -17,7 +17,7 @@
 
 from epsie import proposals as epsie_proposals
 
-from .normal import (epsie_from_config, epsie_adaptive_from_config)
+from .normal import epsie_adaptive_from_config, epsie_from_config
 
 
 class EpsieNormalDiscrete(epsie_proposals.NormalDiscrete):
@@ -125,8 +125,9 @@ class EpsieAdaptiveNormalDiscrete(epsie_proposals.AdaptiveNormalDiscrete):
         :py:class:`epsie.proposals.AdaptiveBoundedDiscrete`:
             An adaptive normal proposal for use with ``epsie`` samplers.
         """
-        return epsie_adaptive_from_config(cls, cp, section, tag,
-                                          boundary_arg_name='prior_widths')
+        return epsie_adaptive_from_config(
+            cls, cp, section, tag, boundary_arg_name="prior_widths"
+        )
 
 
 class EpsieAdaptiveBoundedDiscrete(epsie_proposals.AdaptiveBoundedDiscrete):

@@ -27,14 +27,16 @@
 Base coordinate transformations, this module provides transformations between
 cartesian and spherical coordinates.
 """
+
 import logging
+
 import numpy
 
-logger = logging.getLogger('pycbc.coordinates.base')
+logger = logging.getLogger("pycbc.coordinates.base")
 
 
 def cartesian_to_spherical_rho(x, y, z):
-    """ Calculates the magnitude in spherical coordinates from Cartesian
+    """Calculates the magnitude in spherical coordinates from Cartesian
     coordinates.
 
     Parameters
@@ -55,7 +57,7 @@ def cartesian_to_spherical_rho(x, y, z):
 
 
 def cartesian_to_spherical_azimuthal(x, y):
-    """ Calculates the azimuthal angle in spherical coordinates from Cartesian
+    """Calculates the azimuthal angle in spherical coordinates from Cartesian
     coordinates. The azimuthal angle is in [0,2*pi].
 
     Parameters
@@ -76,7 +78,7 @@ def cartesian_to_spherical_azimuthal(x, y):
 
 
 def cartesian_to_spherical_polar(x, y, z):
-    """ Calculates the polar angle in spherical coordinates from Cartesian
+    """Calculates the polar angle in spherical coordinates from Cartesian
     coordinates. The polar angle is in [0,pi].
 
     Parameters
@@ -97,12 +99,13 @@ def cartesian_to_spherical_polar(x, y, z):
     if numpy.isscalar(rho):
         return numpy.arccos(z / rho) if rho else 0.0
     else:
-        return numpy.arccos(numpy.divide(z, rho, out=numpy.ones_like(z),
-                                         where=rho != 0))
+        return numpy.arccos(
+            numpy.divide(z, rho, out=numpy.ones_like(z), where=rho != 0)
+        )
 
 
 def cartesian_to_spherical(x, y, z):
-    """ Maps cartesian coordinates (x,y,z) to spherical coordinates
+    """Maps cartesian coordinates (x,y,z) to spherical coordinates
     (rho,phi,theta) where phi is in [0,2*pi] and theta is in [0,pi].
 
     Parameters
@@ -130,7 +133,7 @@ def cartesian_to_spherical(x, y, z):
 
 
 def spherical_to_cartesian(rho, phi, theta):
-    """ Maps spherical coordinates (rho,phi,theta) to cartesian coordinates
+    """Maps spherical coordinates (rho,phi,theta) to cartesian coordinates
     (x,y,z) where phi is in [0,2*pi] and theta is in [0,pi].
 
     Parameters
@@ -157,7 +160,10 @@ def spherical_to_cartesian(rho, phi, theta):
     return x, y, z
 
 
-__all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
-           'cartesian_to_spherical_polar', 'cartesian_to_spherical',
-           'spherical_to_cartesian',
-           ]
+__all__ = [
+    "cartesian_to_spherical_rho",
+    "cartesian_to_spherical_azimuthal",
+    "cartesian_to_spherical_polar",
+    "cartesian_to_spherical",
+    "spherical_to_cartesian",
+]

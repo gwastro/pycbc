@@ -18,40 +18,60 @@
 
 import argparse
 import logging
+
 from matplotlib import use
-use('agg')
+
+use("agg")
+import sys
+
 import matplotlib.pyplot as plt
+
 import pycbc
 from pycbc import results
 from pycbc.inference import io
-import sys
 
 # add options to command line
 parser = argparse.ArgumentParser(
-            usage="pycbc_inference_plot_acceptance_rate [--options]",
-            description="Plots histogram of the fractions of steps "
-                        "accepted by walkers.")
+    usage="pycbc_inference_plot_acceptance_rate [--options]",
+    description="Plots histogram of the fractions of steps accepted by walkers.",
+)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--input-file", type=str, required=True,
-                    help="Path to input HDF file.")
+parser.add_argument(
+    "--input-file", type=str, required=True, help="Path to input HDF file."
+)
 # output plot options
-parser.add_argument("--output-file", type=str, required=True,
-                    help="Path to output plot.")
+parser.add_argument(
+    "--output-file", type=str, required=True, help="Path to output plot."
+)
 # add walkers to plot
-parser.add_argument("--walkers", type=int, nargs='+', default=None,
-                    help="Specify walkers whose acceptance fraction would "
-                    "be plotted. The acceptance fraction for a walker is the "
-                    "fraction of steps accepted by it. Default is plot for "
-                    "all walkers.")
-parser.add_argument("--temps", type=int, nargs="+", default=None,
-                    help="Specify temperatures whose acceptance fraction "
-                         "would be plotted (if available). [default=None] "
-                         "specifies that all temperatures will be plotted. "
-                         "This will create N histograms on the plot for N "
-                         "temperatures in file.")
+parser.add_argument(
+    "--walkers",
+    type=int,
+    nargs="+",
+    default=None,
+    help="Specify walkers whose acceptance fraction would "
+    "be plotted. The acceptance fraction for a walker is the "
+    "fraction of steps accepted by it. Default is plot for "
+    "all walkers.",
+)
+parser.add_argument(
+    "--temps",
+    type=int,
+    nargs="+",
+    default=None,
+    help="Specify temperatures whose acceptance fraction "
+    "would be plotted (if available). [default=None] "
+    "specifies that all temperatures will be plotted. "
+    "This will create N histograms on the plot for N "
+    "temperatures in file.",
+)
 # add number of bins for histogram
-parser.add_argument("--bins", type=int, default=10,
-                    help="Specify number of bins for the histogram plot.")
+parser.add_argument(
+    "--bins",
+    type=int,
+    default=10,
+    help="Specify number of bins for the histogram plot.",
+)
 
 # parse the command line
 opts = parser.parse_args()
@@ -67,10 +87,11 @@ fp = io.loadfile(opts.input_file, "r")
 # add the temperature arguments if it is specified
 additional_args = {}
 if opts.temps is not None:
-    additional_args['temps'] = opts.temps
+    additional_args["temps"] = opts.temps
 
-acceptance_fraction = fp.read_acceptance_fraction(walkers=opts.walkers,
-                                                  **additional_args)
+acceptance_fraction = fp.read_acceptance_fraction(
+    walkers=opts.walkers, **additional_args
+)
 # Close the file
 fp.close()
 
@@ -87,10 +108,13 @@ plt.xlabel("Mean Acceptance Rate")
 caption = """This plot shows a histogram of the acceptance rate of the
 walkers. The acceptance rate of a walker is the fraction of steps accepted
 by it."""
-results.save_fig_with_metadata(fig, opts.output_file,
-                               cmd=" ".join(sys.argv),
-                               title="Acceptance Rate",
-                               caption=caption)
+results.save_fig_with_metadata(
+    fig,
+    opts.output_file,
+    cmd=" ".join(sys.argv),
+    title="Acceptance Rate",
+    caption=caption,
+)
 plt.close()
 
 # exit

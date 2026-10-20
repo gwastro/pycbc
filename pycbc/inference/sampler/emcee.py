@@ -26,20 +26,24 @@ This modules provides classes and functions for using the emcee sampler
 packages for parameter estimation.
 """
 
-
-import numpy
 import emcee
+import numpy
+
+from pycbc.inference.io import EmceeFile
 from pycbc.pool import choose_pool
 
-from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, EnsembleSupport,
-                        ensemble_compute_acf, ensemble_compute_acl,
-                        raw_samples_to_dict,
-                        blob_data_to_dict, get_optional_arg_from_config)
-from ..burn_in import EnsembleMCMCBurnInTests
-from pycbc.inference.io import EmceeFile
 from .. import models
-
+from ..burn_in import EnsembleMCMCBurnInTests
+from .base import BaseSampler, setup_output
+from .base_mcmc import (
+    BaseMCMC,
+    EnsembleSupport,
+    blob_data_to_dict,
+    ensemble_compute_acf,
+    ensemble_compute_acl,
+    get_optional_arg_from_config,
+    raw_samples_to_dict,
+)
 
 #
 # =============================================================================
@@ -48,6 +52,7 @@ from .. import models
 #
 # =============================================================================
 #
+
 
 class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
     """This class is used to construct an MCMC sampler from the emcee
@@ -64,18 +69,26 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         over multiple sets of arguments and possibly maps them to
         cores/nodes/etc.
     """
+
     name = "emcee"
     _io = EmceeFile
     burn_in_class = EnsembleMCMCBurnInTests
 
-    def __init__(self, model, nwalkers,
-                 checkpoint_interval=None, checkpoint_signal=None,
-                 logpost_function=None, nprocesses=1, use_mpi=False):
+    def __init__(
+        self,
+        model,
+        nwalkers,
+        checkpoint_interval=None,
+        checkpoint_signal=None,
+        logpost_function=None,
+        nprocesses=1,
+        use_mpi=False,
+    ):
 
         self.model = model
         # create a wrapper for calling the model
         if logpost_function is None:
-            logpost_function = 'logposterior'
+            logpost_function = "logposterior"
         model_call = models.CallModel(model, logpost_function)
 
         # these are used to help paralleize over multiple cores / MPI
@@ -86,8 +99,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         # set up emcee
         self.nwalkers = nwalkers
         ndim = len(model.variable_params)
-        self._sampler = emcee.EnsembleSampler(nwalkers, ndim, model_call,
-                                              pool=pool)
+        self._sampler = emcee.EnsembleSampler(nwalkers, ndim, model_call, pool=pool)
         # emcee uses it's own internal random number generator; we'll set it
         # to have the same state as the numpy generator
         rstate = numpy.random.get_state()
@@ -126,8 +138,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         return blob_data_to_dict(stats, self._sampler.get_blobs())
 
     def clear_samples(self):
-        """Clears the samples and stats from memory.
-        """
+        """Clears the samples and stats from memory."""
         # store the iteration that the clear is occuring on
         self._lastclear = self.niterations
         self._itercounter = 0
@@ -135,9 +146,8 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         self._sampler.reset()
 
     def set_state_from_file(self, filename):
-        """Sets the state of the sampler back to the instance saved in a file.
-        """
-        with self.io(filename, 'r') as fp:
+        """Sets the state of the sampler back to the instance saved in a file."""
+        with self.io(filename, "r") as fp:
             rstate = fp.read_random_state()
         # set the numpy random state
         numpy.random.set_state(rstate)
@@ -171,14 +181,15 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
         """
-        with self.io(filename, 'a') as fp:
+        with self.io(filename, "a") as fp:
             # write samples
-            fp.write_samples(self.samples,
-                             parameters=self.model.variable_params,
-                             last_iteration=self.niterations)
+            fp.write_samples(
+                self.samples,
+                parameters=self.model.variable_params,
+                last_iteration=self.niterations,
+            )
             # write stats
-            fp.write_samples(self.model_stats,
-                             last_iteration=self.niterations)
+            fp.write_samples(self.model_stats, last_iteration=self.niterations)
             # write accpetance
             fp.write_acceptance_fraction(self._sampler.acceptance_fraction)
             # write random state
@@ -236,25 +247,29 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         return ensemble_compute_acl(filename, **kwargs)
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1,
-                    use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """Loads the sampler from the given config file."""
         section = "sampler"
         # check name
         assert cp.get(section, "name") == cls.name, (
-            "name in section [sampler] must match mine")
+            "name in section [sampler] must match mine"
+        )
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         # get the logpost function
-        lnpost = get_optional_arg_from_config(cp, section, 'logpost-function')
-        obj = cls(model, nwalkers,
-                  checkpoint_interval=checkpoint_interval,
-                  checkpoint_signal=checkpoint_signal,
-                  logpost_function=lnpost, nprocesses=nprocesses,
-                  use_mpi=use_mpi)
+        lnpost = get_optional_arg_from_config(cp, section, "logpost-function")
+        obj = cls(
+            model,
+            nwalkers,
+            checkpoint_interval=checkpoint_interval,
+            checkpoint_signal=checkpoint_signal,
+            logpost_function=lnpost,
+            nprocesses=nprocesses,
+            use_mpi=use_mpi,
+        )
         # set target
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified

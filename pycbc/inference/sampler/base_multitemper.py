@@ -24,17 +24,18 @@
 """Provides constructor classes provide support for parallel tempered MCMC
 samplers."""
 
-
 import logging
-import numpy
+
 import h5py
+import numpy
+
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import loadfile
 
 
 class MultiTemperedSupport(object):
-    """Provides methods for supporting multi-tempered samplers.
-    """
+    """Provides methods for supporting multi-tempered samplers."""
+
     _ntemps = None
 
     @property
@@ -72,14 +73,15 @@ class MultiTemperedSupport(object):
             The array of betas to use, if a inverse-temperatures-file was
             provided.
         """
-        if cp.has_option(section, "ntemps") and \
-                cp.has_option(section, "inverse-temperatures-file"):
-            raise ValueError("Must specify either ntemps or "
-                             "inverse-temperatures-file, not both.")
+        if cp.has_option(section, "ntemps") and cp.has_option(
+            section, "inverse-temperatures-file"
+        ):
+            raise ValueError(
+                "Must specify either ntemps or inverse-temperatures-file, not both."
+            )
         if cp.has_option(section, "inverse-temperatures-file"):
             # get the path of the file containing inverse temperatures values.
-            inverse_temperatures_file = cp.get(section,
-                                               "inverse-temperatures-file")
+            inverse_temperatures_file = cp.get(section, "inverse-temperatures-file")
             betas = read_betas_from_hdf(inverse_temperatures_file)
             ntemps = betas.shape[0]
         else:
@@ -90,12 +92,11 @@ class MultiTemperedSupport(object):
 
 
 def read_betas_from_hdf(filename):
-    """Loads inverse temperatures from the given file.
-    """
+    """Loads inverse temperatures from the given file."""
     # get the path of the file containing inverse temperatures values.
     with h5py.File(filename, "r") as fp:
         try:
-            betas = numpy.array(fp.attrs['betas'])
+            betas = numpy.array(fp.attrs["betas"])
             # betas must be in decending order
             betas = numpy.sort(betas)[::-1]
         except KeyError:
@@ -132,41 +133,124 @@ def default_beta_ladder(ndim, ntemps=None, Tmax=None):
     array
         The array of inverse temperatures ("betas").
     """
-    tstep = numpy.array([25.2741, 7., 4.47502, 3.5236, 3.0232,
-                         2.71225, 2.49879, 2.34226, 2.22198, 2.12628,
-                         2.04807, 1.98276, 1.92728, 1.87946, 1.83774,
-                         1.80096, 1.76826, 1.73895, 1.7125, 1.68849,
-                         1.66657, 1.64647, 1.62795, 1.61083, 1.59494,
-                         1.58014, 1.56632, 1.55338, 1.54123, 1.5298,
-                         1.51901, 1.50881, 1.49916, 1.49, 1.4813,
-                         1.47302, 1.46512, 1.45759, 1.45039, 1.4435,
-                         1.4369, 1.43056, 1.42448, 1.41864, 1.41302,
-                         1.40761, 1.40239, 1.39736, 1.3925, 1.38781,
-                         1.38327, 1.37888, 1.37463, 1.37051, 1.36652,
-                         1.36265, 1.35889, 1.35524, 1.3517, 1.34825,
-                         1.3449, 1.34164, 1.33847, 1.33538, 1.33236,
-                         1.32943, 1.32656, 1.32377, 1.32104, 1.31838,
-                         1.31578, 1.31325, 1.31076, 1.30834, 1.30596,
-                         1.30364, 1.30137, 1.29915, 1.29697, 1.29484,
-                         1.29275, 1.29071, 1.2887, 1.28673, 1.2848,
-                         1.28291, 1.28106, 1.27923, 1.27745, 1.27569,
-                         1.27397, 1.27227, 1.27061, 1.26898, 1.26737,
-                         1.26579, 1.26424, 1.26271, 1.26121,
-                         1.25973])
+    tstep = numpy.array(
+        [
+            25.2741,
+            7.0,
+            4.47502,
+            3.5236,
+            3.0232,
+            2.71225,
+            2.49879,
+            2.34226,
+            2.22198,
+            2.12628,
+            2.04807,
+            1.98276,
+            1.92728,
+            1.87946,
+            1.83774,
+            1.80096,
+            1.76826,
+            1.73895,
+            1.7125,
+            1.68849,
+            1.66657,
+            1.64647,
+            1.62795,
+            1.61083,
+            1.59494,
+            1.58014,
+            1.56632,
+            1.55338,
+            1.54123,
+            1.5298,
+            1.51901,
+            1.50881,
+            1.49916,
+            1.49,
+            1.4813,
+            1.47302,
+            1.46512,
+            1.45759,
+            1.45039,
+            1.4435,
+            1.4369,
+            1.43056,
+            1.42448,
+            1.41864,
+            1.41302,
+            1.40761,
+            1.40239,
+            1.39736,
+            1.3925,
+            1.38781,
+            1.38327,
+            1.37888,
+            1.37463,
+            1.37051,
+            1.36652,
+            1.36265,
+            1.35889,
+            1.35524,
+            1.3517,
+            1.34825,
+            1.3449,
+            1.34164,
+            1.33847,
+            1.33538,
+            1.33236,
+            1.32943,
+            1.32656,
+            1.32377,
+            1.32104,
+            1.31838,
+            1.31578,
+            1.31325,
+            1.31076,
+            1.30834,
+            1.30596,
+            1.30364,
+            1.30137,
+            1.29915,
+            1.29697,
+            1.29484,
+            1.29275,
+            1.29071,
+            1.2887,
+            1.28673,
+            1.2848,
+            1.28291,
+            1.28106,
+            1.27923,
+            1.27745,
+            1.27569,
+            1.27397,
+            1.27227,
+            1.27061,
+            1.26898,
+            1.26737,
+            1.26579,
+            1.26424,
+            1.26271,
+            1.26121,
+            1.25973,
+        ]
+    )
     dmax = tstep.shape[0]
 
     if ndim > dmax:
         # An approximation to the temperature step at large dimension
-        tstep = 1.0 + 2.0*numpy.sqrt(numpy.log(4.0))/numpy.sqrt(ndim)
+        tstep = 1.0 + 2.0 * numpy.sqrt(numpy.log(4.0)) / numpy.sqrt(ndim)
     else:
-        tstep = tstep[ndim-1]
+        tstep = tstep[ndim - 1]
 
     if ntemps is None and Tmax is None:
-        raise ValueError('must specify one of ``ntemps`` and ``Tmax``')
+        raise ValueError("must specify one of ``ntemps`` and ``Tmax``")
     elif ntemps is None:
-        ntemps = int(numpy.log(Tmax)/numpy.log(tstep)+2)
+        ntemps = int(numpy.log(Tmax) / numpy.log(tstep) + 2)
 
-    return numpy.exp(numpy.linspace(0, -(ntemps-1)*numpy.log(tstep), ntemps))
+    return numpy.exp(numpy.linspace(0, -(ntemps - 1) * numpy.log(tstep), ntemps))
 
 
 #
@@ -178,8 +262,9 @@ def default_beta_ladder(ndim, ntemps=None, Tmax=None):
 #
 
 
-def compute_acf(filename, start_index=None, end_index=None,
-                chains=None, parameters=None, temps=None):
+def compute_acf(
+    filename, start_index=None, end_index=None, chains=None, parameters=None, temps=None
+):
     """Computes the autocorrleation function for independent MCMC chains with
     parallel tempering.
 
@@ -213,7 +298,7 @@ def compute_acf(filename, start_index=None, end_index=None,
         ``ntemps x nchains x niterations``.
     """
     acfs = {}
-    with loadfile(filename, 'r') as fp:
+    with loadfile(filename, "r") as fp:
         if parameters is None:
             parameters = fp.variable_params
         if isinstance(parameters, str):
@@ -227,8 +312,13 @@ def compute_acf(filename, start_index=None, end_index=None,
                 subsubacfs = []
                 for ci in chains:
                     samples = fp.read_raw_samples(
-                        param, thin_start=start_index, thin_interval=1,
-                        thin_end=end_index, chains=ci, temps=tk)[param]
+                        param,
+                        thin_start=start_index,
+                        thin_interval=1,
+                        thin_end=end_index,
+                        chains=ci,
+                        temps=tk,
+                    )[param]
                     thisacf = autocorrelation.calculate_acf(samples).numpy()
                     subsubacfs.append(thisacf)
                 # stack the chains
@@ -238,8 +328,7 @@ def compute_acf(filename, start_index=None, end_index=None,
     return acfs
 
 
-def compute_acl(filename, start_index=None, end_index=None,
-                min_nsamples=10):
+def compute_acl(filename, start_index=None, end_index=None, min_nsamples=10):
     """Computes the autocorrleation length for independent MCMC chains with
     parallel tempering.
 
@@ -267,6 +356,7 @@ def compute_acl(filename, start_index=None, end_index=None,
         A dictionary of ntemps x nchains arrays of the ACLs of each
         parameter.
     """
+
     # following is a convenience function to calculate the acl for each chain
     # defined here so that we can use map for this below
     def _getacl(si):
@@ -279,15 +369,21 @@ def compute_acl(filename, start_index=None, end_index=None,
         if acl <= 0:
             acl = numpy.inf
         return acl
+
     acls = {}
-    with loadfile(filename, 'r') as fp:
+    with loadfile(filename, "r") as fp:
         tidx = numpy.arange(fp.ntemps)
         for param in fp.variable_params:
             these_acls = numpy.zeros((fp.ntemps, fp.nchains))
             for tk in tidx:
                 samples = fp.read_raw_samples(
-                    param, thin_start=start_index, thin_interval=1,
-                    thin_end=end_index, temps=tk, flatten=False)[param]
+                    param,
+                    thin_start=start_index,
+                    thin_interval=1,
+                    thin_end=end_index,
+                    temps=tk,
+                    flatten=False,
+                )[param]
                 # flatten out the temperature
                 samples = samples[0, ...]
                 # samples now has shape nchains x maxiters
@@ -297,12 +393,14 @@ def compute_acl(filename, start_index=None, end_index=None,
                     these_acls[tk, :] = list(map(_getacl, samples))
             acls[param] = these_acls
         # report the mean ACL: take the max over the temps and parameters
-        act = acl_from_raw_acls(acls)*fp.thinned_by
+        act = acl_from_raw_acls(acls) * fp.thinned_by
         finite = act[numpy.isfinite(act)]
-        logging.info("ACTs: min %s, mean (of finite) %s, max %s",
-                     str(act.min()),
-                     str(finite.mean() if finite.size > 0 else numpy.inf),
-                     str(act.max()))
+        logging.info(
+            "ACTs: min %s, mean (of finite) %s, max %s",
+            str(act.min()),
+            str(finite.mean() if finite.size > 0 else numpy.inf),
+            str(act.max()),
+        )
     return acls
 
 
@@ -328,9 +426,15 @@ def acl_from_raw_acls(acls):
     return numpy.array(list(acls.values())).max(axis=0).max(axis=0)
 
 
-def ensemble_compute_acf(filename, start_index=None, end_index=None,
-                         per_walker=False, walkers=None, parameters=None,
-                         temps=None):
+def ensemble_compute_acf(
+    filename,
+    start_index=None,
+    end_index=None,
+    per_walker=False,
+    walkers=None,
+    parameters=None,
+    temps=None,
+):
     """Computes the autocorrleation function for a parallel tempered, ensemble
     MCMC.
 
@@ -373,7 +477,7 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
         will have shape ``ntemps x niterations``.
     """
     acfs = {}
-    with loadfile(filename, 'r') as fp:
+    with loadfile(filename, "r") as fp:
         if parameters is None:
             parameters = fp.variable_params
         if isinstance(parameters, str):
@@ -386,14 +490,18 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
                     # just call myself with a single walker
                     if walkers is None:
                         walkers = numpy.arange(fp.nwalkers)
-                    arrays = [ensemble_compute_acf(filename,
-                                                   start_index=start_index,
-                                                   end_index=end_index,
-                                                   per_walker=False,
-                                                   walkers=ii,
-                                                   parameters=param,
-                                                   temps=tk)[param][0, :]
-                              for ii in walkers]
+                    arrays = [
+                        ensemble_compute_acf(
+                            filename,
+                            start_index=start_index,
+                            end_index=end_index,
+                            per_walker=False,
+                            walkers=ii,
+                            parameters=param,
+                            temps=tk,
+                        )[param][0, :]
+                        for ii in walkers
+                    ]
                     # we'll stack all of the walker arrays to make a single
                     # nwalkers x niterations array; when these are stacked
                     # below, we'll get a ntemps x nwalkers x niterations
@@ -401,22 +509,25 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
                     subacfs.append(numpy.vstack(arrays))
                 else:
                     samples = fp.read_raw_samples(
-                        param, thin_start=start_index,
-                        thin_interval=1, thin_end=end_index,
-                        walkers=walkers, temps=tk, flatten=False)[param]
+                        param,
+                        thin_start=start_index,
+                        thin_interval=1,
+                        thin_end=end_index,
+                        walkers=walkers,
+                        temps=tk,
+                        flatten=False,
+                    )[param]
                     # contract the walker dimension using the mean, and
                     # flatten the (length 1) temp dimension
                     samples = samples.mean(axis=1)[0, :]
-                    thisacf = autocorrelation.calculate_acf(
-                        samples).numpy()
+                    thisacf = autocorrelation.calculate_acf(samples).numpy()
                     subacfs.append(thisacf)
             # stack the temperatures
             acfs[param] = numpy.stack(subacfs)
     return acfs
 
 
-def ensemble_compute_acl(filename, start_index=None, end_index=None,
-                         min_nsamples=10):
+def ensemble_compute_acl(filename, start_index=None, end_index=None, min_nsamples=10):
     """Computes the autocorrleation length for a parallel tempered, ensemble
     MCMC.
 
@@ -445,7 +556,7 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None,
         A dictionary of ntemps-long arrays of the ACLs of each parameter.
     """
     acls = {}
-    with loadfile(filename, 'r') as fp:
+    with loadfile(filename, "r") as fp:
         if end_index is None:
             end_index = fp.niterations
         tidx = numpy.arange(fp.ntemps)
@@ -453,8 +564,13 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None,
             these_acls = numpy.zeros(fp.ntemps)
             for tk in tidx:
                 samples = fp.read_raw_samples(
-                    param, thin_start=start_index, thin_interval=1,
-                    thin_end=end_index, temps=tk, flatten=False)[param]
+                    param,
+                    thin_start=start_index,
+                    thin_interval=1,
+                    thin_end=end_index,
+                    temps=tk,
+                    flatten=False,
+                )[param]
                 # contract the walker dimension using the mean, and flatten
                 # the (length 1) temp dimension
                 samples = samples.mean(axis=1)[0, :]
@@ -467,16 +583,15 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None,
                 these_acls[tk] = acl
             acls[param] = these_acls
         maxacl = numpy.array(list(acls.values())).max()
-        logging.info("ACT: %s", str(maxacl*fp.thinned_by))
+        logging.info("ACT: %s", str(maxacl * fp.thinned_by))
     return acls
 
 
 def _get_temps_idx(fp, temps):
-    """Gets the indices of temperatures to load for computing ACF.
-    """
+    """Gets the indices of temperatures to load for computing ACF."""
     if isinstance(temps, int):
         temps = [temps]
-    elif temps == 'all':
+    elif temps == "all":
         temps = numpy.arange(fp.ntemps)
     elif temps is None:
         temps = [0]

@@ -28,21 +28,21 @@
 """Splits a table in an xml file into multiple pieces."""
 
 import argparse
-from numpy import random, ceil
 
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
+from igwn_ligolw import ligolw, lsctables
 from igwn_ligolw import utils as ligolw_utils
+from numpy import ceil, random
 
 import pycbc
-from pycbc.io.ligolw import (
-    LIGOLWContentHandler, create_process_table, get_table_columns
-)
 from pycbc.conversions import mchirp_from_mass1_mass2
+from pycbc.io.ligolw import (
+    LIGOLWContentHandler,
+    create_process_table,
+    get_table_columns,
+)
 from pycbc.pnutils import frequency_cutoff_from_name
 
-
-__author__  = "Alex Nitz <alex.nitz@ligo.org>"
+__author__ = "Alex Nitz <alex.nitz@ligo.org>"
 __program__ = "pycbc_splitbank"
 
 
@@ -50,46 +50,81 @@ __program__ = "pycbc_splitbank"
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument('--templates-per-bank', metavar='SAMPLES',
-                    help='number of templates in the output banks', type=int)
-group.add_argument('-n', '--number-of-banks', metavar='N',
-                    help='Split template bank into N files', type=int)
-group.add_argument("-O", "--output-filenames", nargs='*', default=None,
-                    action="store",
-                    metavar="OUTPUT_FILENAME", help="""Directly specify the
+group.add_argument(
+    "--templates-per-bank",
+    metavar="SAMPLES",
+    help="number of templates in the output banks",
+    type=int,
+)
+group.add_argument(
+    "-n",
+    "--number-of-banks",
+    metavar="N",
+    help="Split template bank into N files",
+    type=int,
+)
+group.add_argument(
+    "-O",
+    "--output-filenames",
+    nargs="*",
+    default=None,
+    action="store",
+    metavar="OUTPUT_FILENAME",
+    help="""Directly specify the
                     names of the output files. The number of files specified
                     here will dictate how to split the bank. It will be split
-                    equally between all specified files.""")
+                    equally between all specified files.""",
+)
 
-parser.add_argument("-o", "--output-prefix", default=None,
-                    help="Prefix to add to the template bank name (name becomes output#.xml[.gz])" )
+parser.add_argument(
+    "-o",
+    "--output-prefix",
+    default=None,
+    help="Prefix to add to the template bank name (name becomes output#.xml[.gz])",
+)
 
-parser.add_argument("-t", "--bank-file", metavar='INPUT_FILE',
-                    help='Template bank to split', required=True)
-parser.add_argument("--sort-frequency-cutoff",
-                    help="Frequency cutoff to use for sorting the sub banks")
-parser.add_argument("--sort-mchirp", action="store_true", default=False,
-                    help='Sort templates by chirp mass before splitting')
-parser.add_argument("--random-sort", action="store_true", default=False,
-                    help='Sort templates randomly before splitting')
-parser.add_argument("--random-seed", type=int,
-                    help='Random seed to use when sorting randomly')
+parser.add_argument(
+    "-t",
+    "--bank-file",
+    metavar="INPUT_FILE",
+    help="Template bank to split",
+    required=True,
+)
+parser.add_argument(
+    "--sort-frequency-cutoff", help="Frequency cutoff to use for sorting the sub banks"
+)
+parser.add_argument(
+    "--sort-mchirp",
+    action="store_true",
+    default=False,
+    help="Sort templates by chirp mass before splitting",
+)
+parser.add_argument(
+    "--random-sort",
+    action="store_true",
+    default=False,
+    help="Sort templates randomly before splitting",
+)
+parser.add_argument(
+    "--random-seed", type=int, help="Random seed to use when sorting randomly"
+)
 
 args = parser.parse_args()
 
 if args.output_filenames and args.output_prefix:
-    errMsg="Cannot supply --output-filenames with --output-prefix."
+    errMsg = "Cannot supply --output-filenames with --output-prefix."
     parser.error(errMsg)
 
 if args.sort_mchirp and args.random_sort:
-    errMsg="You can't sort by Mchirp *and* randomly, dumbass!"
+    errMsg = "You can't sort by Mchirp *and* randomly, dumbass!"
     parser.error(errMsg)
 
 if args.output_filenames:
     args.number_of_banks = len(args.output_filenames)
 
-indoc = ligolw_utils.load_filename(args.bank_file, verbose=args.verbose,
-                                   contenthandler=LIGOLWContentHandler)
+indoc = ligolw_utils.load_filename(
+    args.bank_file, verbose=args.verbose, contenthandler=LIGOLWContentHandler
+)
 
 try:
     template_bank_table = lsctables.SnglInspiralTable.get_table(indoc)
@@ -106,7 +141,8 @@ tt = template_bank_table
 
 if args.sort_frequency_cutoff:
     sort_key = lambda x: frequency_cutoff_from_name(
-            args.sort_frequency_cutoff, x.mass1, x.mass2, x.spin1z, x.spin2z)
+        args.sort_frequency_cutoff, x.mass1, x.mass2, x.spin1z, x.spin2z
+    )
     tt = sorted(template_bank_table, key=sort_key)
 
 if args.sort_mchirp:
@@ -129,26 +165,24 @@ elif args.templates_per_bank:
     num_per_file = args.templates_per_bank
     num_files = int(ceil(float(length) / num_per_file))
 
-index_list = [int(round(num_per_file*idx)) for idx in range(num_files)]
+index_list = [int(round(num_per_file * idx)) for idx in range(num_files)]
 index_list.append(length)
-assert(index_list[0] == 0)
+assert index_list[0] == 0
 
 for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
-    assert(idx2 > idx1)
+    assert idx2 > idx1
     # create a blank xml document and add the process id
     outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
 
     process = create_process_table(
-        outdoc,
-        program_name=__program__,
-        options=args.__dict__
+        outdoc, program_name=__program__, options=args.__dict__
     )
 
     sngl_inspiral_table = tabletype.new(columns=used_columns)
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
-    for i in range(idx2-idx1):
+    for i in range(idx2 - idx1):
         row = tt.pop()
         row.process_id = process.process_id
         sngl_inspiral_table.append(row)
@@ -160,7 +194,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     if args.output_filenames:
         outname = args.output_filenames[num]
     elif args.output_prefix:
-        outname = args.output_prefix + str(num) + '.xml.gz'
+        outname = args.output_prefix + str(num) + ".xml.gz"
     else:
         errMsg = "Cannot figure out how to set output file names."
         raise ValueError(errMsg)

@@ -16,16 +16,16 @@
 """This modules provides classes for evaluating distributions for mchirp and
 q (i.e., mass ratio) from uniform component mass.
 """
-import logging
-import numpy
 
+import logging
+
+import numpy
 from scipy.interpolate import interp1d
 from scipy.special import hyp2f1
 
-from pycbc.distributions import power_law
-from pycbc.distributions import bounded
+from pycbc.distributions import bounded, power_law
 
-logger = logging.getLogger('pycbc.distributions.mass')
+logger = logging.getLogger("pycbc.distributions.mass")
 
 
 class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
@@ -136,15 +136,16 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
 
     """
 
-    name = 'q_from_uniform_mass1_mass2'
+    name = "q_from_uniform_mass1_mass2"
 
     def __init__(self, **params):
         super(QfromUniformMass1Mass2, self).__init__(**params)
         self._norm = 1.0
         self._lognorm = 0.0
         for p in self._params:
-            self._norm /= self._cdf_param(p, self._bounds[p][1]) - \
-                self._cdf_param(p, self._bounds[p][0])
+            self._norm /= self._cdf_param(p, self._bounds[p][1]) - self._cdf_param(
+                p, self._bounds[p][0]
+            )
         self._lognorm = numpy.log(self._norm)
 
     @property
@@ -164,12 +165,14 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         """
         for p in self._params:
             if p not in kwargs.keys():
-                raise ValueError(
-                    'Missing parameter {} to construct pdf.'.format(p))
+                raise ValueError("Missing parameter {} to construct pdf.".format(p))
         if kwargs in self:
-            pdf = self._norm * \
-                numpy.prod([(1.+kwargs[p])**(2./5)/kwargs[p]**(6./5)
-                            for p in self._params])
+            pdf = self._norm * numpy.prod(
+                [
+                    (1.0 + kwargs[p]) ** (2.0 / 5) / kwargs[p] ** (6.0 / 5)
+                    for p in self._params
+                ]
+            )
             return float(pdf)
         else:
             return 0.0
@@ -181,8 +184,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         """
         for p in self._params:
             if p not in kwargs.keys():
-                raise ValueError(
-                    'Missing parameter {} to construct logpdf.'.format(p))
+                raise ValueError("Missing parameter {} to construct logpdf.".format(p))
         if kwargs in self:
             return numpy.log(self._pdf(**kwargs))
         else:
@@ -199,31 +201,38 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
                            2  1 \   0.8     |        /
         """
         if param in self._params:
-            return -5. * value**(-1./5) * hyp2f1(-2./5, -1./5, 4./5, -value)
+            return (
+                -5.0 * value ** (-1.0 / 5) * hyp2f1(-2.0 / 5, -1.0 / 5, 4.0 / 5, -value)
+            )
         else:
-            raise ValueError('{} is not contructed yet.'.format(param))
+            raise ValueError("{} is not contructed yet.".format(param))
 
     def _cdfinv_param(self, param, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
         Note that value should be uniform in [0,1]."""
         if (numpy.array(value) < 0).any() or (numpy.array(value) > 1).any():
-            raise ValueError(
-                'q_from_uniform_m1_m2 cdfinv requires input in [0,1].')
+            raise ValueError("q_from_uniform_m1_m2 cdfinv requires input in [0,1].")
         if param in self._params:
             lower_bound = self._bounds[param][0]
             upper_bound = self._bounds[param][1]
-            q_array = numpy.linspace(
-                lower_bound, upper_bound, num=1000, endpoint=True)
-            q_invcdf_interp = interp1d(self._cdf_param(param, q_array),
-                                       q_array, kind='cubic',
-                                       bounds_error=True)
+            q_array = numpy.linspace(lower_bound, upper_bound, num=1000, endpoint=True)
+            q_invcdf_interp = interp1d(
+                self._cdf_param(param, q_array),
+                q_array,
+                kind="cubic",
+                bounds_error=True,
+            )
 
             return q_invcdf_interp(
-                (self._cdf_param(param, upper_bound) -
-                 self._cdf_param(param, lower_bound)) * value +
-                self._cdf_param(param, lower_bound))
+                (
+                    self._cdf_param(param, upper_bound)
+                    - self._cdf_param(param, lower_bound)
+                )
+                * value
+                + self._cdf_param(param, lower_bound)
+            )
         else:
-            raise ValueError('{} is not contructed yet.'.format(param))
+            raise ValueError("{} is not contructed yet.".format(param))
 
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from this distribution.
@@ -249,7 +258,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         else:
             dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
-        for (p, _) in dtype:
+        for p, _ in dtype:
             uniformcdfvalue = numpy.random.uniform(0, 1, size=size)
             arr[p] = self._cdfinv_param(p, uniformcdfvalue)
         return arr
@@ -290,7 +299,8 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         module.
         """
         return super(QfromUniformMass1Mass2, cls).from_config(
-            cp, section, variable_args, bounds_required=True)
+            cp, section, variable_args, bounds_required=True
+        )
 
 
 __all__ = ["MchirpfromUniformMass1Mass2", "QfromUniformMass1Mass2"]

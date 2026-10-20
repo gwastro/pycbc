@@ -27,8 +27,10 @@ and length of a data series.
 """
 
 import numpy
+
 from pycbc.filter.matchedfilter import correlate
 from pycbc.types import FrequencySeries, TimeSeries, zeros
+
 
 def calculate_acf(data, delta_t=1.0, unbiased=False):
     r"""Calculates the one-sided autocorrelation function.
@@ -75,7 +77,7 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
     ny_orig = len(y)
 
     npad = 1
-    while npad < 2*ny_orig:
+    while npad < 2 * ny_orig:
         npad = npad << 1
     ypad = numpy.zeros(npad)
     ypad[:ny_orig] = y
@@ -85,8 +87,9 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
 
     # correlate
     # do not need to give the congjugate since correlate function does it
-    cdata = FrequencySeries(zeros(len(fdata), dtype=fdata.dtype),
-                           delta_f=fdata.delta_f, copy=False)
+    cdata = FrequencySeries(
+        zeros(len(fdata), dtype=fdata.dtype), delta_f=fdata.delta_f, copy=False
+    )
     correlate(fdata, fdata, cdata)
 
     # IFFT correlated data to get unnormalized autocovariance time series
@@ -96,7 +99,7 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
     # normalize the autocovariance
     # note that dividing by acf[0] is the same as ( y.var() * len(acf) )
     if unbiased:
-        acf /= ( y.var() * numpy.arange(len(acf), 0, -1) )
+        acf /= y.var() * numpy.arange(len(acf), 0, -1)
     else:
         acf /= acf[0]
 

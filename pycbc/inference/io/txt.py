@@ -12,7 +12,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" This modules defines functions for reading and samples that the
+"""This modules defines functions for reading and samples that the
 inference samplers generate and are stored in an ASCII TXT file.
 """
 
@@ -20,7 +20,7 @@ import numpy
 
 
 class InferenceTXTFile(object):
-    """ A class that has extra functions for handling reading the samples
+    """A class that has extra functions for handling reading the samples
     from posterior-only TXT files.
 
     Parameters
@@ -32,6 +32,7 @@ class InferenceTXTFile(object):
     delimiter : str
         Delimiter to use for TXT file. Default is space-delimited.
     """
+
     name = "txt"
     comments = ""
     delimiter = " "
@@ -46,7 +47,7 @@ class InferenceTXTFile(object):
 
     @classmethod
     def write(cls, output_file, samples, labels, delimiter=None):
-        """ Writes a text file with samples.
+        """Writes a text file with samples.
 
         Parameters
         -----------
@@ -61,6 +62,10 @@ class InferenceTXTFile(object):
         """
         delimiter = delimiter if delimiter is not None else cls.delimiter
         header = delimiter.join(labels)
-        numpy.savetxt(output_file, samples,
-                      comments=cls.comments, header=header,
-                      delimiter=delimiter)
+        numpy.savetxt(
+            output_file,
+            samples,
+            comments=cls.comments,
+            header=header,
+            delimiter=delimiter,
+        )

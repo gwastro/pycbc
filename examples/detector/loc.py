@@ -8,6 +8,4 @@ for abv in get_available_detectors():
     d = Detector(abv)
 
     # Note that units are all in radians
-    print("{} Latitude {} Longitude {}".format(abv,
-                                                  d.latitude,
-                                                  d.longitude))
+    print("{} Latitude {} Longitude {}".format(abv, d.latitude, d.longitude))
