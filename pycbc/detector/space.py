@@ -10,31 +10,26 @@
 This module provides utilities for simulating the GW response of space-based
 observatories.
 """
-
-import logging
 from abc import ABC, abstractmethod
-
-import numpy
-from astropy import constants
-from numpy import cos, sin
-
 from pycbc.coordinates.space import TIME_OFFSET_20_DEGREES
 from pycbc.types import TimeSeries
-
+import numpy
+from numpy import cos, sin
+from astropy import constants
+import logging
 
 def get_available_space_detectors():
     """List the available space detectors"""
     dets = list(_space_detectors.keys())
     aliases = []
     for i in dets:
-        aliases.extend(_space_detectors[i]["aliases"])
+        aliases.extend(_space_detectors[i]['aliases'])
     return dets + aliases
-
 
 def parse_det_name(detector_name):
     """Parse a string into a detector name and TDI channel.
-    The input is assumed to look like '{detector name}_{channel name}.'"""
-    out = detector_name.split("_", 1)
+       The input is assumed to look like '{detector name}_{channel name}.'"""
+    out = detector_name.split('_', 1)
     det = out[0]
     try:
         chan = out[1]
@@ -42,7 +37,6 @@ def parse_det_name(detector_name):
         # detector_name is just the detector, so save channel name as None
         chan = None
     return det, chan
-
 
 def apply_polarization(hp, hc, polarization):
     """
@@ -65,24 +59,16 @@ def apply_polarization(hp, hc, polarization):
         The plus and cross polarizations of the GW rotated by the
         polarization angle.
     """
-    cphi = cos(2 * polarization)
-    sphi = sin(2 * polarization)
+    cphi = cos(2*polarization)
+    sphi = sin(2*polarization)
 
-    hp_ssb = hp * cphi - hc * sphi
-    hc_ssb = hp * sphi + hc * cphi
+    hp_ssb = hp*cphi - hc*sphi
+    hc_ssb = hp*sphi + hc*cphi
 
     return hp_ssb, hc_ssb
 
-
-def check_signal_times(
-    hp,
-    hc,
-    orbit_start_time,
-    orbit_end_time,
-    offset=TIME_OFFSET_20_DEGREES,
-    pad_data=False,
-    t0=1e4,
-):
+def check_signal_times(hp, hc, orbit_start_time, orbit_end_time,
+                       offset=TIME_OFFSET_20_DEGREES, pad_data=False, t0=1e4):
     """
     Ensure that input signal lies within the provided orbital window. This
     assumes that the start times of hp and hc are relative to the detector
@@ -133,7 +119,7 @@ def check_signal_times(
 
     # pad the data with zeros
     if pad_data:
-        pad_idx = int(t0 / dt)
+        pad_idx = int(t0/dt)
         hp.prepend_zeros(pad_idx)
         hp.append_zeros(pad_idx)
         hc.prepend_zeros(pad_idx)
@@ -141,27 +127,22 @@ def check_signal_times(
 
     # make sure signal lies within orbit length
     if hp.duration + hp.start_time > orbit_end_time:
-        logging.warning(
-            "Time of signal end is greater than end of orbital "
-            + f"data. Cutting signal at {orbit_end_time}."
-        )
+        logging.warning('Time of signal end is greater than end of orbital ' +
+                        f'data. Cutting signal at {orbit_end_time}.')
         # cut off data succeeding orbit end time
         end_idx = numpy.argwhere(hp.sample_times.numpy() <= orbit_end_time)[-1][0]
         hp = hp[:end_idx]
         hc = hc[:end_idx]
 
     if hp.start_time < orbit_start_time:
-        logging.warning(
-            "Time of signal start is less than start of orbital "
-            + f"data. Cutting signal at {orbit_start_time}."
-        )
+        logging.warning('Time of signal start is less than start of orbital ' +
+                        f'data. Cutting signal at {orbit_start_time}.')
         # cut off data preceding orbit start time
         start_idx = numpy.argwhere(hp.sample_times.numpy() >= orbit_start_time)[0][0]
         hp = hp[start_idx:]
         hc = hc[start_idx:]
 
     return hp, hc
-
 
 def cut_channels(tdi_dict, remove_garbage=False, t0=1e4):
     """
@@ -186,8 +167,8 @@ def cut_channels(tdi_dict, remove_garbage=False, t0=1e4):
     for chan in tdi_dict.keys():
         if remove_garbage:
             dt = tdi_dict[chan].delta_t
-            pad_idx = int(t0 / dt)
-            if remove_garbage == "zero":
+            pad_idx = int(t0/dt)
+            if remove_garbage == 'zero':
                 # zero the edge data
                 tdi_dict[chan][:pad_idx] = 0
                 tdi_dict[chan][-pad_idx:] = 0
@@ -200,14 +181,11 @@ def cut_channels(tdi_dict, remove_garbage=False, t0=1e4):
 
     return tdi_dict
 
-
-_space_detectors = {
-    "LISA": {
-        "armlength": 2.5e9,
-        "aliases": ["LISA_A", "LISA_E", "LISA_T", "LISA_X", "LISA_Y", "LISA_Z"],
-    },
-}
-
+_space_detectors = {'LISA': {'armlength': 2.5e9,
+                             'aliases': ['LISA_A', 'LISA_E', 'LISA_T',
+                                         'LISA_X', 'LISA_Y', 'LISA_Z'],
+                            },
+                   }
 
 class AbsSpaceDet(ABC):
     """
@@ -218,21 +196,18 @@ class AbsSpaceDet(ABC):
     detector_name : str
         The name of the detector. Accepts any output from
         `get_available_space_detectors`.
-
+    
     reference_time : float (optional)
         The reference time in seconds of the signal in the SSB frame. This is
         defined such that the detector mission start time corresponds to 0.
         Default None.
     """
-
     def __init__(self, detector_name, reference_time=None, **kwargs):
         self.det, self.chan = parse_det_name(detector_name)
         if detector_name not in get_available_space_detectors():
-            raise NotImplementedError(
-                "Unrecognized detector. ",
-                "Currently accepts: ",
-                f"{get_available_space_detectors()}",
-            )
+            raise NotImplementedError('Unrecognized detector. ',
+                                      'Currently accepts: ',
+                                      f'{get_available_space_detectors()}')
         self.reference_time = reference_time
 
     @property
@@ -264,7 +239,7 @@ class _LDC_detector(AbsSpaceDet):
     detector_name : str
         The name of the detector. Accepts any output from
         `get_available_space_detectors`.
-
+    
     reference_time : float (optional)
         The reference time in seconds of the signal in the SSB frame. This is
         defined such that the detector mission start time corresponds to 0.
@@ -278,30 +253,23 @@ class _LDC_detector(AbsSpaceDet):
     offset : float (optional)
         The time in seconds by which to offset the input waveform if
         apply_offset is True. Default 7365189.431698299.
-
+    
     orbits : str (optional)
         The constellation orbital data used for generating projections
         and TDI. See self.orbits_init for accepted inputs. Default
         'EqualArmlength'.
     """
-
-    def __init__(
-        self,
-        detector_name,
-        reference_time=None,
-        apply_offset=False,
-        offset=TIME_OFFSET_20_DEGREES,
-        orbits="EqualArmlength",
-        **kwargs,
-    ):
+    def __init__(self, detector_name, reference_time=None, apply_offset=False,
+                 offset=TIME_OFFSET_20_DEGREES,
+                 orbits='EqualArmlength', **kwargs):
         super().__init__(detector_name, reference_time, **kwargs)
-        assert self.det == "LISA", "LDC backend only works with LISA detector"
+        assert self.det == 'LISA', 'LDC backend only works with LISA detector'
 
         # specify whether to apply offsets to GPS times
         if apply_offset:
             self.offset = offset
         else:
-            self.offset = 0.0
+            self.offset = 0.
 
         # orbits properties
         self.orbits = orbits
@@ -321,13 +289,13 @@ class _LDC_detector(AbsSpaceDet):
         # class initialization
         self.proj_init = None
         self.tdi_init = None
-        self.tdi_chan = "AET"
-        if self.chan is not None and self.chan in "XYZ":
-            self.tdi_chan = "XYZ"
+        self.tdi_chan = 'AET'
+        if self.chan is not None and self.chan in 'XYZ':
+            self.tdi_chan = 'XYZ'
 
     @property
     def sky_coords(self):
-        return "eclipticlongitude", "eclipticlatitude"
+        return 'eclipticlongitude', 'eclipticlatitude'
 
     def orbits_init(self, orbits, size=316, dt=100000.0, t_init=0.0):
         """
@@ -355,41 +323,37 @@ class _LDC_detector(AbsSpaceDet):
             The start time in seconds to use if generating a new orbit file.
             Default 0.
         """
-        defaults = ["EqualArmlength", "Keplerian"]
-        assert type(orbits) == str, (
-            "Must input either a file path as ",
-            'str, "EqualArmlength", or "Keplerian"',
-        )
+        defaults = ['EqualArmlength', 'Keplerian']
+        assert type(orbits) == str, ('Must input either a file path as ',
+                                     'str, "EqualArmlength", or "Keplerian"')
 
         # generate a new file
         if orbits in defaults:
             try:
                 import lisaorbits
             except ImportError:
-                raise ImportError("lisaorbits not found")
-            if orbits == "EqualArmlength":
+                raise ImportError('lisaorbits not found')
+            if orbits == 'EqualArmlength':
                 o = lisaorbits.EqualArmlengthOrbits()
-            if orbits == "Keplerian":
+            if orbits == 'Keplerian':
                 o = lisaorbits.KeplerianOrbits()
-            o.write("orbits.h5", dt=dt, size=size, t0=t_init, mode="w")
-            ofile = "orbits.h5"
+            o.write('orbits.h5', dt=dt, size=size, t0=t_init, mode='w')
+            ofile = 'orbits.h5'
             self.orbits_start_time = t_init
-            self.orbits_end_time = t_init + size * dt
+            self.orbits_end_time = t_init + size*dt
             self.orbits = ofile
 
         # read in from an existing file path
         else:
             import h5py
-
             ofile = orbits
-            with h5py.File(ofile, "r") as f:
-                self.orbits_start_time = f.attrs["t0"]
-                self.orbits_end_time = (
-                    self.orbit_start_time + f.attrs["dt"] * f.attrs["size"]
-                )
+            with h5py.File(ofile, 'r') as f:
+                self.orbits_start_time = f.attrs['t0']
+                self.orbits_end_time = self.orbit_start_time + \
+                                       f.attrs['dt']*f.attrs['size']
 
         # add light travel buffer times
-        lisa_arm = _space_detectors["LISA"]["armlength"]
+        lisa_arm = _space_detectors['LISA']['armlength']
         ltt_au = constants.au.value / constants.c.value
         ltt_arm = lisa_arm / constants.c.value
         self.orbits_start_time += ltt_arm + ltt_au
@@ -418,26 +382,26 @@ class _LDC_detector(AbsSpaceDet):
         try:
             from pytdi import Data
         except ImportError:
-            raise ImportError("pyTDI required for TDI combinations")
+            raise ImportError('pyTDI required for TDI combinations')
 
-        links = ["12", "23", "31", "13", "32", "21"]
+        links = ['12', '23', '31', '13', '32', '21']
 
         # format the measurements from link data
         measurements = {}
         for i, link in enumerate(links):
-            measurements[f"isi_{link}"] = response[:, i]
-            measurements[f"isi_sb_{link}"] = response[:, i]
-            measurements[f"tmi_{link}"] = 0.0
-            measurements[f"rfi_{link}"] = 0.0
-            measurements[f"rfi_sb_{link}"] = 0.0
+            measurements[f'isi_{link}'] = response[:, i]
+            measurements[f'isi_sb_{link}'] = response[:, i]
+            measurements[f'tmi_{link}'] = 0.
+            measurements[f'rfi_{link}'] = 0.
+            measurements[f'rfi_sb_{link}'] = 0.
 
-        df = 1 / self.dt
+        df = 1/self.dt
         t_init = self.orbits_start_time
 
         # call in the orbital data using pyTDI
         if orbits is None:
             orbits = self.orbits
-        return Data.from_orbits(orbits, df, t_init, "tcb/ltt", **measurements)
+        return Data.from_orbits(orbits, df, t_init, 'tcb/ltt', **measurements)
 
     def get_links(self, hp, hc, lamb, beta, polarization):
         """
@@ -469,22 +433,16 @@ class _LDC_detector(AbsSpaceDet):
         try:
             from lisagwresponse import ReadStrain
         except ImportError:
-            raise ImportError("LISA GW Response not found")
+            raise ImportError('LISA GW Response not found')
 
         if self.dt is None:
             self.dt = hp.delta_t
 
         # configure orbits and signal
         self.orbits_init(orbits=self.orbits)
-        hp, hc = check_signal_times(
-            hp,
-            hc,
-            self.orbits_start_time,
-            self.orbits_end_time,
-            offset=self.offset,
-            pad_data=self.pad_data,
-            t0=self.t0,
-        )
+        hp, hc = check_signal_times(hp, hc, self.orbits_start_time,
+                                    self.orbits_end_time, offset=self.offset,
+                                    pad_data=self.pad_data, t0=self.t0)
         self.start_time = hp.start_time - self.offset
         self.sample_times = hp.sample_times.numpy()
 
@@ -493,14 +451,9 @@ class _LDC_detector(AbsSpaceDet):
 
         if self.proj_init is None:
             # initialize the class
-            self.proj_init = ReadStrain(
-                self.sample_times,
-                hp,
-                hc,
-                gw_beta=beta,
-                gw_lambda=lamb,
-                orbits=self.orbits,
-            )
+            self.proj_init = ReadStrain(self.sample_times, hp, hc,
+                                        gw_beta=beta, gw_lambda=lamb,
+                                        orbits=self.orbits)
         else:
             # update params in the initialized class
             self.proj_init.gw_beta = beta
@@ -508,26 +461,14 @@ class _LDC_detector(AbsSpaceDet):
             self.proj_init.set_strain(self.sample_times, hp, hc)
 
         # project the signal
-        wf_proj = self.proj_init.compute_gw_response(
-            self.sample_times, self.proj_init.LINKS
-        )
+        wf_proj = self.proj_init.compute_gw_response(self.sample_times,
+                                                     self.proj_init.LINKS)
 
         return wf_proj
 
-    def project_wave(
-        self,
-        hp,
-        hc,
-        lamb,
-        beta,
-        polarization=0,
-        tdi=1.5,
-        tdi_chan=None,
-        pad_data=False,
-        remove_garbage=False,
-        t0=1e4,
-        **kwargs,
-    ):
+    def project_wave(self, hp, hc, lamb, beta, polarization=0,
+                     tdi=1.5, tdi_chan=None, pad_data=False,
+                     remove_garbage=False, t0=1e4, **kwargs):
         """
         Evaluate the TDI observables.
 
@@ -589,7 +530,7 @@ class _LDC_detector(AbsSpaceDet):
         try:
             from pytdi import michelson
         except ImportError:
-            raise ImportError("pyTDI not found")
+            raise ImportError('pyTDI not found')
 
         # set TDI generation
         if tdi == 1.5:
@@ -597,9 +538,8 @@ class _LDC_detector(AbsSpaceDet):
         elif tdi == 2:
             X, Y, Z = michelson.X2, michelson.Y2, michelson.Z2
         else:
-            raise ValueError(
-                "Unrecognized TDI generation input. " + "Please input either 1 or 2."
-            )
+            raise ValueError('Unrecognized TDI generation input. ' +
+                             'Please input either 1 or 2.')
 
         # set TDI channels
         if tdi_chan is None:
@@ -609,7 +549,8 @@ class _LDC_detector(AbsSpaceDet):
         self.pad_data = pad_data
         self.remove_garbage = remove_garbage
         self.t0 = t0
-        response = self.get_links(hp, hc, lamb, beta, polarization=polarization)
+        response = self.get_links(hp, hc, lamb, beta,
+                                  polarization=polarization)
 
         # load in data using response measurements
         self.tdi_init = self.strain_container(response, self.orbits)
@@ -620,31 +561,30 @@ class _LDC_detector(AbsSpaceDet):
         chanz = Z.build(**self.tdi_init.args)(self.tdi_init.measurements)
 
         # convert to AET if specified
-        if tdi_chan == "XYZ":
-            tdi_dict = {
-                "LISA_X": TimeSeries(chanx, delta_t=self.dt, epoch=self.start_time),
-                "LISA_Y": TimeSeries(chany, delta_t=self.dt, epoch=self.start_time),
-                "LISA_Z": TimeSeries(chanz, delta_t=self.dt, epoch=self.start_time),
-            }
-        elif tdi_chan == "AET":
-            chana = (chanz - chanx) / numpy.sqrt(2)
-            chane = (chanx - 2 * chany + chanz) / numpy.sqrt(6)
-            chant = (chanx + chany + chanz) / numpy.sqrt(3)
-            tdi_dict = {
-                "LISA_A": TimeSeries(chana, delta_t=self.dt, epoch=self.start_time),
-                "LISA_E": TimeSeries(chane, delta_t=self.dt, epoch=self.start_time),
-                "LISA_T": TimeSeries(chant, delta_t=self.dt, epoch=self.start_time),
-            }
+        if tdi_chan == 'XYZ':
+            tdi_dict = {'LISA_X': TimeSeries(chanx, delta_t=self.dt,
+                                             epoch=self.start_time),
+                        'LISA_Y': TimeSeries(chany, delta_t=self.dt,
+                                             epoch=self.start_time),
+                        'LISA_Z': TimeSeries(chanz, delta_t=self.dt,
+                                             epoch=self.start_time)}
+        elif tdi_chan == 'AET':
+            chana = (chanz - chanx)/numpy.sqrt(2)
+            chane = (chanx - 2*chany + chanz)/numpy.sqrt(6)
+            chant = (chanx + chany + chanz)/numpy.sqrt(3)
+            tdi_dict = {'LISA_A': TimeSeries(chana, delta_t=self.dt,
+                                             epoch=self.start_time),
+                        'LISA_E': TimeSeries(chane, delta_t=self.dt,
+                                             epoch=self.start_time),
+                        'LISA_T': TimeSeries(chant, delta_t=self.dt,
+                                             epoch=self.start_time)}
         else:
-            raise ValueError(
-                "Unrecognized TDI channel input. "
-                + 'Please input either "XYZ" or "AET".'
-            )
+            raise ValueError('Unrecognized TDI channel input. ' +
+                             'Please input either "XYZ" or "AET".')
 
         # processing
-        tdi_dict = cut_channels(
-            tdi_dict, remove_garbage=self.remove_garbage, t0=self.t0
-        )
+        tdi_dict = cut_channels(tdi_dict, remove_garbage=self.remove_garbage,
+                                t0=self.t0)
         return tdi_dict
 
 
@@ -660,7 +600,7 @@ class _FLR_detector(AbsSpaceDet):
     detector_name : str
         The name of the detector. Accepts any output from
         `get_available_space_detectors`.
-
+    
     reference_time : float (optional)
         The reference time in seconds of the signal in the SSB frame. This is
         defined such that the detector mission start time corresponds to 0.
@@ -683,31 +623,21 @@ class _FLR_detector(AbsSpaceDet):
         and TDI. See self.orbits_init for accepted inputs. Default
         'EqualArmlength'.
     """
-
-    def __init__(
-        self,
-        detector_name,
-        reference_time=None,
-        apply_offset=False,
-        offset=TIME_OFFSET_20_DEGREES,
-        orbits="EqualArmlength",
-        use_gpu=False,
-        **kwargs,
-    ):
-        logging.warning(
-            "WARNING: FastLISAResponse TDI implementation is a ",
-            "work in progress. Currently unable to reproduce LDC ",
-            "or BBHx waveforms.",
-        )
+    def __init__(self, detector_name, reference_time=None, apply_offset=False,
+                 offset=TIME_OFFSET_20_DEGREES,
+                 orbits='EqualArmlength', use_gpu=False, **kwargs):
+        logging.warning('WARNING: FastLISAResponse TDI implementation is a ',
+                        'work in progress. Currently unable to reproduce LDC ',
+                        'or BBHx waveforms.')
         self.use_gpu = use_gpu
         super().__init__(detector_name, reference_time, **kwargs)
-        assert self.det == "LISA", "FLR backend only works with LISA detector"
+        assert self.det == 'LISA', 'FLR backend only works with LISA detector'
 
         # specify whether to apply offsets to GPS times
         if apply_offset:
             self.offset = offset
         else:
-            self.offset = 0.0
+            self.offset = 0.
 
         # orbits properties
         self.orbits = orbits
@@ -726,14 +656,14 @@ class _FLR_detector(AbsSpaceDet):
 
         # class initialization
         self.tdi_init = None
-        self.tdi_chan = "AET"
-        if "tdi_chan" in kwargs.keys():
-            if kwargs["tdi_chan"] is not None and kwargs["tdi_chan"] in "XYZ":
-                self.tdi_chan = "XYZ"
+        self.tdi_chan = 'AET'
+        if 'tdi_chan' in kwargs.keys():
+            if kwargs['tdi_chan'] is not None and kwargs['tdi_chan'] in 'XYZ':
+                self.tdi_chan = 'XYZ'
 
     @property
     def sky_coords(self):
-        return "eclipticlongitude", "eclipticlatitude"
+        return 'eclipticlongitude', 'eclipticlatitude'
 
     def orbits_init(self, orbits):
         """
@@ -757,20 +687,18 @@ class _FLR_detector(AbsSpaceDet):
             raise ImportError("LISA Analysis Tools required for FLR orbits")
 
         # load an orbit from lisatools
-        defaults = ["EqualArmlength", "ESA"]
+        defaults = ['EqualArmlength', 'ESA']
         if orbits in defaults:
-            if orbits == "EqualArmlength":
+            if orbits == 'EqualArmlength':
                 o = detector.EqualArmlengthOrbits()
-            if orbits == "ESA":
+            if orbits == 'ESA':
                 o = detector.ESAOrbits()
 
         # create a new orbits instance for file input
         else:
-
             class CustomOrbits(detector.Orbits):
                 def __init__(self):
                     super().__init__(orbits)
-
             o = CustomOrbits()
 
         self.orbits = o
@@ -811,25 +739,19 @@ class _FLR_detector(AbsSpaceDet):
         try:
             from fastlisaresponse import pyResponseTDI
         except ImportError:
-            raise ImportError("FastLISAResponse not found")
+            raise ImportError('FastLISAResponse not found')
 
         if self.dt is None:
             self.dt = hp.delta_t
 
         # configure the orbit and signal
         self.orbits_init(orbits=self.orbits)
-        hp, hc = check_signal_times(
-            hp,
-            hc,
-            self.orbits_start_time,
-            self.orbits_end_time,
-            offset=self.offset,
-            pad_data=self.pad_data,
-            t0=self.t0,
-        )
+        hp, hc = check_signal_times(hp, hc, self.orbits_start_time,
+                                    self.orbits_end_time, offset=self.offset,
+                                    pad_data=self.pad_data, t0=self.t0)
         self.start_time = hp.start_time - self.offset
         self.sample_times = hp.sample_times.numpy()
-
+        
         # apply polarization
         hp, hc = apply_polarization(hp, hc, polarization)
 
@@ -839,7 +761,7 @@ class _FLR_detector(AbsSpaceDet):
         # format wf to hp + i*hc
         hp = hp.numpy()
         hc = hc.numpy()
-        wf = hp + 1j * hc
+        wf = hp + 1j*hc
 
         if use_gpu is None:
             use_gpu = self.use_gpu
@@ -847,17 +769,16 @@ class _FLR_detector(AbsSpaceDet):
         # convert to cupy if needed
         if use_gpu:
             import cupy
-
             wf = cupy.asarray(wf)
 
         if self.tdi_init is None:
             # initialize the class
-            self.tdi_init = pyResponseTDI(
-                1 / self.dt, len(wf), orbits=self.orbits, use_gpu=use_gpu
-            )
+            self.tdi_init = pyResponseTDI(1/self.dt, len(wf),
+                                          orbits=self.orbits,
+                                          use_gpu=use_gpu)
         else:
             # update params in the initialized class
-            self.tdi_init.sampling_frequency = 1 / self.dt
+            self.tdi_init.sampling_frequency = 1/self.dt
             self.tdi_init.num_pts = len(wf)
             self.tdi_init.orbits = self.orbits
             self.tdi_init.use_gpu = use_gpu
@@ -868,21 +789,9 @@ class _FLR_detector(AbsSpaceDet):
 
         return wf_proj
 
-    def project_wave(
-        self,
-        hp,
-        hc,
-        lamb,
-        beta,
-        polarization=0,
-        tdi=1.5,
-        tdi_chan=None,
-        use_gpu=None,
-        pad_data=False,
-        remove_garbage=False,
-        t0=1e4,
-        **kwargs,
-    ):
+    def project_wave(self, hp, hc, lamb, beta, polarization=0,
+                     tdi=1.5, tdi_chan=None, use_gpu=None, pad_data=False,
+                     remove_garbage=False, t0=1e4, **kwargs):
         """
         Evaluate the TDI observables.
 
@@ -952,13 +861,14 @@ class _FLR_detector(AbsSpaceDet):
         self.pad_data = pad_data
         self.remove_garbage = remove_garbage
         self.t0 = t0
-        self.get_links(hp, hc, lamb, beta, polarization=polarization, use_gpu=use_gpu)
+        self.get_links(hp, hc, lamb, beta, polarization=polarization,
+                       use_gpu=use_gpu)
 
         # set TDI configuration (let FLR handle if not 1 or 2)
         if tdi == 1.5:
-            tdi_opt = "1st generation"
+            tdi_opt = '1st generation'
         elif tdi == 2:
-            tdi_opt = "2nd generation"
+            tdi_opt = '2nd generation'
         else:
             tdi_opt = tdi
 
@@ -971,10 +881,10 @@ class _FLR_detector(AbsSpaceDet):
         if tdi_chan is None:
             tdi_chan = self.tdi_chan
 
-        if tdi_chan in ["XYZ", "AET", "AE"]:
+        if tdi_chan in ['XYZ', 'AET', 'AE']:
             self.tdi_init.tdi_chan = tdi_chan
         else:
-            raise ValueError("TDI channels must be one of: XYZ, AET, AE")
+            raise ValueError('TDI channels must be one of: XYZ, AET, AE')
 
         # generate the TDI channels
         tdi_obs = self.tdi_init.get_tdi_delays()
@@ -983,23 +893,18 @@ class _FLR_detector(AbsSpaceDet):
         tdi_dict = {}
         for i, chan in enumerate(tdi_chan):
             # save as TimeSeries
-            tdi_dict[f"LISA_{chan}"] = TimeSeries(
-                tdi_obs[i], delta_t=self.dt, epoch=self.start_time
-            )
+            tdi_dict[f'LISA_{chan}'] = TimeSeries(tdi_obs[i], delta_t=self.dt,
+                                           epoch=self.start_time)
 
-        tdi_dict = cut_channels(
-            tdi_dict, remove_garbage=self.remove_garbage, t0=self.t0
-        )
+        tdi_dict = cut_channels(tdi_dict, remove_garbage=self.remove_garbage, 
+                                t0=self.t0)
         return tdi_dict
 
 
-_backends = {
-    "LISA": {
-        "LDC": _LDC_detector,
-        "FLR": _FLR_detector,
-    },
-}
-
+_backends = {'LISA': {'LDC': _LDC_detector,
+                      'FLR': _FLR_detector,
+                     },
+            }
 
 class SpaceDetector(AbsSpaceDet):
     """
@@ -1010,7 +915,7 @@ class SpaceDetector(AbsSpaceDet):
     detector_name : str
         The name of the detector. Accepts any output from
         `get_available_space_detectors`.
-
+    
     reference_time : float (optional)
         The reference time in seconds of the signal in the SSB frame. This is
         defined such that the detector mission start time corresponds to 0.
@@ -1020,17 +925,16 @@ class SpaceDetector(AbsSpaceDet):
         The backend architecture to use for generating TDI. Accepts 'LDC'
         or 'FLR'. Default 'LDC'.
     """
-
-    def __init__(self, detector_name, reference_time=None, backend="LDC", **kwargs):
+    def __init__(self, detector_name, reference_time=None, backend='LDC',
+                 **kwargs):
         super().__init__(detector_name, reference_time, **kwargs)
         if backend in _backends[self.det].keys():
             c = _backends[self.det][backend]
             self.backend = c(detector_name, reference_time, **kwargs)
         else:
-            raise ValueError(
-                f"Detector {self.det} does not support backend ",
-                f"{backend}.This detector accepts: {_backends[self.det].keys()}",
-            )
+            raise ValueError(f'Detector {self.det} does not support backend ',
+                             f'{backend}.This detector accepts: '
+                             f'{_backends[self.det].keys()}')
 
     @property
     def sky_coords(self):
@@ -1043,8 +947,5 @@ class SpaceDetector(AbsSpaceDet):
         return self.backend.project_wave(hp, hc, lamb, beta, *args, **kwargs)
 
 
-__all__ = [
-    "get_available_space_detectors",
-    "SpaceDetector",
-    "_space_detectors",
-]
+__all__ = ['get_available_space_detectors', 'SpaceDetector',
+           '_space_detectors',]

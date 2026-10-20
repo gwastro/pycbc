@@ -23,12 +23,11 @@
 # =============================================================================
 #
 """This module contains the CuPy-specific code for
-convenience utilities for manipulating waveforms
+   convenience utilities for manipulating waveforms
 """
-
+from pycbc.types import FrequencySeries
 import cupy as xp
 
-from pycbc.types import FrequencySeries
 
 
 def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
@@ -40,9 +39,8 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     kmax = len(htilde)
     fstimeshift(out, phi, kmin, kmax)
     if copy:
-        htilde = FrequencySeries(
-            out, delta_f=htilde.delta_f, epoch=htilde.epoch, copy=False
-        )
+        htilde = FrequencySeries(out, delta_f=htilde.delta_f,
+                                 epoch=htilde.epoch, copy=False)
     return htilde
 
 
@@ -52,4 +50,5 @@ def fstimeshift(freqseries, phi, kmin, kmax):
     # FIXME: Convert to ElementwiseKernel and use kmin and max in that.
     idx = xp.arange(len(freqseries))
     phase_shift = xp.exp(phi * idx)
-    freqseries[:] = freqseries[:] * phase_shift
+    freqseries[:] = freqseries[:] * phase_shift 
+

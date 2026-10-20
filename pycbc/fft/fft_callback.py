@@ -1,8 +1,5 @@
 #!/usr/bin/python
-import ctypes
-import os
-import subprocess
-
+import os, subprocess, ctypes
 from mako.template import Template
 
 full_corr = """
@@ -163,13 +160,12 @@ fftsrc = Template("""
     }
 """)
 
-
 def compile(source, name):
-    """Compile the string source code into a shared object linked against
+    """ Compile the string source code into a shared object linked against
     the static version of cufft for callback support.
     """
     # If we start using this again, we should find a better place for the cache
-    cache = os.path.join("/tmp", name)
+    cache = os.path.join('/tmp', name)
     hash_file = cache + ".hash"
     lib_file = cache + ".so"
     obj_file = cache + ".o"
@@ -186,34 +182,15 @@ def compile(source, name):
     fsrc.write(source)
     fsrc.close()
 
-    cmd = [
-        "nvcc",
-        "-ccbin",
-        "g++",
-        "-dc",
-        "-m64",
-        "--compiler-options",
-        "'-fPIC'",
-        "-o",
-        obj_file,
-        "-c",
-        src_file,
-    ]
+    cmd = ["nvcc", "-ccbin", "g++", "-dc", "-m64",
+           "--compiler-options", "'-fPIC'",
+           "-o", obj_file,
+           "-c", src_file]
     print(" ".join(cmd))
     subprocess.check_call(cmd)
 
-    cmd = [
-        "nvcc",
-        "-shared",
-        "-ccbin",
-        "g++",
-        "-m64",
-        "-o",
-        lib_file,
-        obj_file,
-        "-lcufft_static",
-        "-lculibos",
-    ]
+    cmd = ["nvcc", "-shared", "-ccbin", "g++", "-m64",
+       "-o", lib_file, obj_file, "-lcufft_static", "-lculibos"]
     print(" ".join(cmd))
 
     subprocess.check_call(cmd)
@@ -223,14 +200,12 @@ def compile(source, name):
     fhash.write(str(hash(source)))
     return lib_file
 
-
-def get_fn_plan(callback=None, out_callback=None, name="pycbc_cufft", parameters=None):
-    """Get the IFFT execute and plan functions"""
+def get_fn_plan(callback=None, out_callback=None, name='pycbc_cufft', parameters=None):
+    """ Get the IFFT execute and plan functions
+    """
     if parameters is None:
         parameters = []
-    source = fftsrc.render(
-        input_callback=callback, output_callback=out_callback, parameters=parameters
-    )
+    source = fftsrc.render(input_callback=callback, output_callback=out_callback, parameters=parameters)
     path = compile(source, name)
     lib = ctypes.cdll.LoadLibrary(path)
     fn = lib.execute
@@ -240,53 +215,38 @@ def get_fn_plan(callback=None, out_callback=None, name="pycbc_cufft", parameters
     plan.argyptes = [ctypes.c_uint]
     return fn, plan
 
-
 _plans = {}
-
 
 class param(ctypes.Structure):
     _fields_ = [("htilde", ctypes.c_void_p)]
-
-
 hparam = param()
 
-
 def c2c_correlate_ifft(htilde, stilde, outvec):
-    key = "cnf"
+    key = 'cnf'
     if key not in _plans:
-        fn, pfn = get_fn_plan(callback=full_corr, parameters=[("void*", "htilde")])
+        fn, pfn = get_fn_plan(callback=full_corr, parameters = [("void*", "htilde")])
         plan = pfn(len(outvec), int(htilde.data.gpudata))
         _plans[key] = (fn, plan, int(htilde.data.gpudata))
     fn, plan, _ = _plans[key]
     hparam.htilde = htilde.data.gpudata
     fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata), ctypes.pointer(hparam))
 
-
 class param2(ctypes.Structure):
-    _fields_ = [
-        ("htilde", ctypes.c_void_p),
-        ("in_kmax", ctypes.c_uint),
-        ("out_kmin", ctypes.c_uint),
-        ("out_kmax", ctypes.c_uint),
-    ]
-
-
+    _fields_ = [("htilde", ctypes.c_void_p),
+                ("in_kmax", ctypes.c_uint),
+                ("out_kmin", ctypes.c_uint),
+                ("out_kmax", ctypes.c_uint)]
 hparam_zeros = param2()
 
-
 def c2c_half_correlate_ifft(htilde, stilde, outvec):
-    key = "cn"
+    key = 'cn'
     if key not in _plans:
-        fn, pfn = get_fn_plan(
-            callback=zero_corr,
-            parameters=[
-                ("void*", "htilde"),
-                ("unsigned int", "in_kmax"),
-                ("unsigned int", "out_kmin"),
-                ("unsigned int", "out_kmax"),
-            ],
-            out_callback=zero_out,
-        )
+        fn, pfn = get_fn_plan(callback=zero_corr,
+                              parameters = [("void*", "htilde"),
+                                            ("unsigned int", "in_kmax"),
+                                            ("unsigned int", "out_kmin"),
+                                            ("unsigned int", "out_kmax")],
+                              out_callback=zero_out)
         plan = pfn(len(outvec), int(htilde.data.gpudata))
         _plans[key] = (fn, plan, int(htilde.data.gpudata))
     fn, plan, _ = _plans[key]
@@ -294,9 +254,5 @@ def c2c_half_correlate_ifft(htilde, stilde, outvec):
     hparam_zeros.in_kmax = htilde.end_idx
     hparam_zeros.out_kmin = stilde.analyze.start
     hparam_zeros.out_kmax = stilde.analyze.stop
-    fn(
-        plan,
-        int(stilde.data.gpudata),
-        int(outvec.data.gpudata),
-        ctypes.pointer(hparam_zeros),
-    )
+    fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata), ctypes.pointer(hparam_zeros))
+

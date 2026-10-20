@@ -22,11 +22,9 @@
 # =============================================================================
 #
 
-import functools
-
 import cupy as cp
+import functools
 import mako.template
-
 from .eventmgr import _BaseThresholdCluster
 
 val = None
@@ -164,13 +162,10 @@ extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl, float
 }
 """)
 
-
 @functools.lru_cache(maxsize=None)
 def get_tkernel(slen, window):
     if window < 32:
-        raise ValueError(
-            "GPU threshold kernel does not support a window smaller than 32 samples"
-        )
+        raise ValueError("GPU threshold kernel does not support a window smaller than 32 samples")
 
     elif window <= 4096:
         nt = 128
@@ -187,21 +182,24 @@ def get_tkernel(slen, window):
         raise ValueError("More than 1024 blocks not supported yet")
 
     fn = cp.RawKernel(
-        tkernel1.render(chunk=nt), "threshold_and_cluster", backend="nvcc"
+        tkernel1.render(chunk=nt),
+        'threshold_and_cluster',
+        backend='nvcc'
     )
     fn2 = cp.RawKernel(
-        tkernel2.render(blocks=nb), "threshold_and_cluster2", backend="nvcc"
+        tkernel2.render(blocks=nb),
+        'threshold_and_cluster2',
+        backend='nvcc'
     )
     return (fn, fn2), nt, nb
-
 
 def threshold_and_cluster(series, threshold, window):
     global val
     global loc
     if val is None:
-        val = cp.zeros(4096 * 256, dtype=cp.complex64)
+        val = cp.zeros(4096*256, dtype=cp.complex64)
     if loc is None:
-        loc = cp.zeros(4096 * 256, cp.int32)
+        loc = cp.zeros(4096*256, cp.int32)
 
     outl = loc
     outv = val
@@ -216,9 +214,8 @@ def threshold_and_cluster(series, threshold, window):
 
     fn((nb,), (nt,), (series.data, outv, outl, window, threshold))
     fn2((1,), (nb,), (outv, outl, threshold, window))
-    w = cl != -1
+    w = (cl != -1)
     return cv[w], cl[w]
-
 
 class CUDAThresholdCluster(_BaseThresholdCluster):
     def __init__(self, series):
@@ -227,9 +224,9 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         global val
         global loc
         if val is None:
-            val = cp.zeros(4096 * 256, dtype=cp.complex64)
+            val = cp.zeros(4096*256, dtype=cp.complex64)
         if loc is None:
-            loc = cp.zeros(4096 * 256, cp.int32)
+            loc = cp.zeros(4096*256, cp.int32)
 
         self.outl = loc
         self.outv = val
@@ -246,12 +243,16 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         fn(
             (nt, 1, 1),
             (nb, 1),
-            (self.series.data, self.outv, self.outl, window, threshold),
+            (self.series.data, self.outv, self.outl, window, threshold)
         )
-        fn2((nb, 1, 1), (1, 1), (self.outv, self.outl, threshold, window))
-        w = cl != -1
+        fn2(
+            (nb, 1, 1),
+            (1, 1),
+            (self.outv, self.outl, threshold, window)
+        )
+        w = (cl != -1)
         return cp.asnumpy(cv[w]), cp.asnumpy(cl[w])
-
 
 def _threshold_cluster_factory(series):
     return CUDAThresholdCluster
+

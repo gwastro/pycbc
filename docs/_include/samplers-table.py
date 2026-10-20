@@ -19,9 +19,8 @@
 """Prints an RST table of available models from the inference.models
 module.
 """
-from _dict_to_rst import format_class, rst_dict_table
-
 from pycbc.inference.sampler import samplers
+from _dict_to_rst import (rst_dict_table, format_class)
 
 tbl = rst_dict_table(samplers, key_format='``\'{0}\'``'.format,
                      header=('Name', 'Class'),

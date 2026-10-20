@@ -15,7 +15,9 @@
 
 """Jump proposals that use a normal distribution."""
 
+
 import numpy
+
 from epsie import proposals as epsie_proposals
 from epsie.proposals import Boundaries
 
@@ -93,9 +95,8 @@ class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
         :py:class:`epsie.proposals.AdaptiveNormal`:
             An adaptive normal proposal for use with ``epsie`` samplers.
         """
-        return epsie_adaptive_from_config(
-            cls, cp, section, tag, boundary_arg_name="prior_widths"
-        )
+        return epsie_adaptive_from_config(cls, cp, section, tag,
+                                          boundary_arg_name='prior_widths')
 
 
 class EpsieATAdaptiveNormal(epsie_proposals.ATAdaptiveNormal):
@@ -131,9 +132,8 @@ class EpsieATAdaptiveNormal(epsie_proposals.ATAdaptiveNormal):
         :py:class:`epsie.proposals.AdaptiveProposal`:
             An adaptive proposal for use with ``epsie`` samplers.
         """
-        return epsie_at_adaptive_from_config(
-            cls, cp, section, tag, with_boundaries=False
-        )
+        return epsie_at_adaptive_from_config(cls, cp, section, tag,
+                                             with_boundaries=False)
 
 
 def epsie_from_config(cls, cp, section, tag, with_boundaries=False):
@@ -183,34 +183,32 @@ def epsie_from_config(cls, cp, section, tag, with_boundaries=False):
     """
     # check that the name matches
     assert cp.get_opt_tag(section, "name", tag) == cls.name, (
-        "name in specified section must match mine"
-    )
-    params, opts = load_opts(cp, section, tag, skip=["name"])
-    args = {"parameters": params}
+        "name in specified section must match mine")
+    params, opts = load_opts(cp, section, tag, skip=['name'])
+    args = {'parameters': params}
     if with_boundaries:
         boundaries = get_param_boundaries(params, opts)
-        args["boundaries"] = boundaries
-    if "discrete" in cls.name.split("_"):
-        args.update(
-            {"successive": get_epsie_discrete_successive_settings(params, opts)}
-        )
+        args['boundaries'] = boundaries
+    if 'discrete' in cls.name.split('_'):
+        args.update({'successive':
+                     get_epsie_discrete_successive_settings(params, opts)})
     # if there are any options left, assume they are for setting the variance
     if opts:
         cov = get_variance(params, opts)
     elif with_boundaries:
-        cov = numpy.array([abs(boundaries[p]) / 10.0 for p in params]) ** 2.0
+        cov = numpy.array([abs(boundaries[p])/10. for p in params])**2.
     else:
         cov = None
-    args["cov"] = cov
+    args['cov'] = cov
     # no other options should remain
     if opts:
-        raise ValueError("unrecognized options {}".format(", ".join(opts.keys())))
+        raise ValueError("unrecognized options {}"
+                         .format(', '.join(opts.keys())))
     return cls(**args)
 
 
-def epsie_adaptive_from_config(
-    cls, cp, section, tag, with_boundaries=True, boundary_arg_name="boundaries"
-):
+def epsie_adaptive_from_config(cls, cp, section, tag, with_boundaries=True,
+                               boundary_arg_name='boundaries'):
     """Generic function for loading adaptive epsie proposals from a config
     file.
 
@@ -270,35 +268,32 @@ def epsie_adaptive_from_config(
     """
     # check that the name matches
     assert cp.get_opt_tag(section, "name", tag) == cls.name, (
-        "name in specified section must match mine"
-    )
-    params, opts = load_opts(cp, section, tag, skip=["name"])
-    args = {"parameters": params}
+        "name in specified section must match mine")
+    params, opts = load_opts(cp, section, tag, skip=['name'])
+    args = {'parameters': params}
     # get the bounds
     if with_boundaries:
         args[boundary_arg_name] = get_param_boundaries(params, opts)
-    if "discrete" in cls.name.split("_"):
-        args.update(
-            {"successive": get_epsie_discrete_successive_settings(params, opts)}
-        )
+    if 'discrete' in cls.name.split('_'):
+        args.update({'successive':
+                     get_epsie_discrete_successive_settings(params, opts)})
     # get the adaptation parameters
     args.update(get_epsie_adaptation_settings(opts))
     # if there are any other options, assume they are for setting the
     # initial standard deviation
     if opts:
         var = get_variance(params, opts)
-        args["initial_std"] = var**0.5
+        args['initial_std'] = var**0.5
         # at this point, there should be no options left
         if opts:
-            raise ValueError(
-                "unrecognized options {} in section {}".format(
-                    ", ".join(opts.keys()), "-".join([section, tag])
-                )
-            )
+            raise ValueError('unrecognized options {} in section {}'
+                             .format(', '.join(opts.keys()),
+                                     '-'.join([section, tag])))
     return cls(**args)
 
 
-def epsie_at_adaptive_from_config(cls, cp, section, tag, with_boundaries=False):
+def epsie_at_adaptive_from_config(cls, cp, section, tag,
+                                  with_boundaries=False):
     """Generic function for loading AT Adaptive Normal proposals from a config
     file.
 
@@ -354,28 +349,27 @@ def epsie_at_adaptive_from_config(cls, cp, section, tag, with_boundaries=False):
     """
     # check that the name matches
     assert cp.get_opt_tag(section, "name", tag) == cls.name, (
-        "name in specified section must match mine"
-    )
-    params, opts = load_opts(cp, section, tag, skip=["name"])
-    args = {"parameters": params}
+        "name in specified section must match mine")
+    params, opts = load_opts(cp, section, tag, skip=['name'])
+    args = {'parameters': params}
     # get the bounds
     if with_boundaries:
-        args["boundaries"] = get_param_boundaries(params, opts)
-    if "discrete" in cls.name.split("_"):
-        args.update(
-            {"successive": get_epsie_discrete_successive_settings(params, opts)}
-        )
+        args['boundaries'] = get_param_boundaries(params, opts)
+    if 'discrete' in cls.name.split('_'):
+        args.update({'successive':
+                     get_epsie_discrete_successive_settings(params, opts)})
     # get the adaptation parameters
     args.update(get_epsie_adaptation_settings(opts, cls.name))
     # bounded and angular adaptive proposals support diagonal-only
-    diagonal = opts.pop("diagonal", None)
-    if not any(p in cls.name.split("_") for p in ["bounded", "angular"]):
-        args.update({"diagonal": diagonal is not None})
-    componentwise = opts.pop("componentwise", None)
+    diagonal = opts.pop('diagonal', None)
+    if not any(p in cls.name.split('_') for p in ['bounded', 'angular']):
+        args.update({'diagonal': diagonal is not None})
+    componentwise = opts.pop('componentwise', None)
     if componentwise is not None:
-        args.update({"componentwise": True})
+        args.update({'componentwise': True})
     if opts:
-        raise ValueError("unrecognized options {}".format(", ".join(opts.keys())))
+        raise ValueError("unrecognized options {}"
+                         .format(', '.join(opts.keys())))
     return cls(**args)
 
 
@@ -407,16 +401,13 @@ def load_opts(cp, section, tag, skip=None):
         skip = []
     params = tag.split(VARARGS_DELIM)
     # get options
-    readsection = "-".join([section, tag])
-    opts = {
-        opt.replace("-", "_"): cp.get(readsection, opt)
-        for opt in cp.options(readsection)
-        if opt not in skip
-    }
+    readsection = '-'.join([section, tag])
+    opts = {opt.replace('-', '_'): cp.get(readsection, opt)
+            for opt in cp.options(readsection) if opt not in skip}
     return params, opts
 
 
-def get_variance(params, opts, default=1.0):
+def get_variance(params, opts, default=1.):
     """Gets variance for jump proposals from the dictionary of options.
 
     This looks for ``var_{param}`` for every parameter listed in ``params``.
@@ -440,10 +431,9 @@ def get_variance(params, opts, default=1.0):
         Array of variances to use. Order is the same as the parameter names
         given in ``params``.
     """
-    varfmt = "var_{}"
-    cov = numpy.array(
-        [float(opts.pop(varfmt.format(param), default)) for param in params]
-    )
+    varfmt = 'var_{}'
+    cov = numpy.array([float(opts.pop(varfmt.format(param), default))
+                       for param in params])
     return cov
 
 
@@ -473,20 +463,14 @@ def get_param_boundaries(params, opts):
     """
     boundaries = {}
     for param in params:
-        minbound = opts.pop("min_{}".format(param), None)
+        minbound = opts.pop('min_{}'.format(param), None)
         if minbound is None:
-            raise ValueError(
-                "Must provide a minimum bound for {p}.Syntax is min_{p} = val".format(
-                    p=param
-                )
-            )
-        maxbound = opts.pop("max_{}".format(param), None)
+            raise ValueError("Must provide a minimum bound for {p}."
+                             "Syntax is min_{p} = val".format(p=param))
+        maxbound = opts.pop('max_{}'.format(param), None)
         if maxbound is None:
-            raise ValueError(
-                "Must provide a maximum bound for {p}.Syntax is max_{p} = val".format(
-                    p=param
-                )
-            )
+            raise ValueError("Must provide a maximum bound for {p}."
+                             "Syntax is max_{p} = val".format(p=param))
         boundaries[param] = Boundaries((float(minbound), float(maxbound)))
     return boundaries
 
@@ -513,25 +497,25 @@ def get_epsie_adaptation_settings(opts, name=None):
         Dictionary of argument name -> values.
     """
     args = {}
-    adaptation_duration = opts.pop("adaptation_duration", None)
+    adaptation_duration = opts.pop('adaptation_duration', None)
     if adaptation_duration is None:
         if name is not None:
-            if all(p in name.split("_") for p in ["at", "adaptive"]):
-                args.update({"adaptation_duration": None})
+            if all(p in name.split('_') for p in ['at', 'adaptive']):
+                args.update({'adaptation_duration': None})
         else:
             raise ValueError("No adaptation_duration specified")
     else:
-        args.update({"adaptation_duration": int(adaptation_duration)})
+        args.update({'adaptation_duration': int(adaptation_duration)})
     # optional args
-    adaptation_decay = opts.pop("adaptation_decay", None)
+    adaptation_decay = opts.pop('adaptation_decay', None)
     if adaptation_decay is not None:
-        args.update({"adaptation_decay": int(adaptation_decay)})
-    start_iteration = opts.pop("start_iteration", None)
+        args.update({'adaptation_decay': int(adaptation_decay)})
+    start_iteration = opts.pop('start_iteration', None)
     if start_iteration is not None:
-        args.update({"start_iteration": int(start_iteration)})
-    target_rate = opts.pop("target_rate", None)
+        args.update({'start_iteration': int(start_iteration)})
+    target_rate = opts.pop('target_rate', None)
     if target_rate is not None:
-        args.update({"target_rate": float(target_rate)})
+        args.update({'target_rate': float(target_rate)})
     return args
 
 
@@ -566,6 +550,5 @@ def get_epsie_discrete_successive_settings(params, opts):
     successive = {}
     for param in params:
         successive.update(
-            {param: opts.pop("successive_{}".format(param), None) is not None}
-        )
+            {param: opts.pop('successive_{}'.format(param), None) is not None})
     return successive

@@ -19,9 +19,9 @@
 """Prints an RST table of data options for inference models.
 """
 
+from io import StringIO
 import re
 import textwrap
-from io import StringIO
 
 from pycbc.inference.models import data_utils
 
@@ -62,7 +62,7 @@ class Row(object):
     def metavar(self, metavar):
         # text wrap if metavar is more than 34 characters wide
         self._metavar = '\n'.join(metavar_txtwrap.wrap(metavar))
-
+            
     @staticmethod
     def replace_doubledash(str_):
         """Replaces all instances of --arg with ``arg`` in a string."""

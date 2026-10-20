@@ -6,22 +6,20 @@ that compare two approximants and compute the match between them.
 """
 
 import argparse
-
 import matplotlib
-
 matplotlib.use("Agg")
 import matplotlib.cm
-import numpy as np
-from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
+from matplotlib import pyplot as plt
+import numpy as np
 
-from pycbc import add_common_pycbc_options, init_logging
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.conversions import (
-    chi_eff,
-    eta_from_mass1_mass2,
-    mchirp_from_mass1_mass2,
     mtotal_from_mass1_mass2,
     q_from_mass1_mass2,
+    eta_from_mass1_mass2,
+    mchirp_from_mass1_mass2,
+    chi_eff,
 )
 
 
@@ -142,11 +140,11 @@ derived_func_map = {
     "mass_ratio": lambda d: q_from_mass1_mass2(d["mass1"], d["mass2"]),
     "mchirp": lambda d: mchirp_from_mass1_mass2(d["mass1"], d["mass2"]),
     "spin1_magnitude": lambda d: (
-        (d["spin1x"] ** 2 + d["spin1y"] ** 2 + d["spin1z"] ** 2) ** 0.5
-    ),
-    "spin2_magnitude": lambda d: (
-        (d["spin2x"] ** 2 + d["spin2y"] ** 2 + d["spin2z"] ** 2) ** 0.5
-    ),
+        d["spin1x"] ** 2 + d["spin1y"] ** 2 + d["spin1z"] ** 2
+    )
+    ** 0.5,
+    "spin2_magnitude": lambda d: (d["spin2x"] ** 2 + d["spin2y"] ** 2 + d["spin2z"] ** 2)
+    ** 0.5,
     "eta": lambda d: eta_from_mass1_mass2(d["mass1"], d["mass2"]),
     "chi_eff": lambda d: chi_eff(d["mass1"], d["mass2"], d["spin1z"], d["spin2z"]),
     "horizon_distance_1": lambda d: d["sigma1"] / 8,

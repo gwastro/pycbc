@@ -22,43 +22,37 @@ Description of daily_test
 
 import pycbc
 import pycbc.version
-
-__author__ = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
-__date__ = pycbc.version.date
+__date__    = pycbc.version.date
 __program__ = "daily_test"
 
-import argparse
-import logging
 import os
-
+import logging
+import argparse
 import pycbc.workflow as _workflow
 
-logging.basicConfig(
-    format="%(asctime)s:%(levelname)s : %(message)s",
-    level=logging.INFO,
-    datefmt="%I:%M:%S",
-)
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
+                    level=logging.INFO,datefmt='%I:%M:%S')
 logger = logging.getLogger()
 
 # command line options
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
-parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument('--version', action='version', version=__version__)
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
-workflow = _workflow.Workflow(args, "daily_check")
+workflow = _workflow.Workflow(args, 'daily_check')
 currDir = os.getcwd()
-segDir = os.path.join(currDir, "segments")
-dfDirSYR = os.path.join(currDir, "datafindSYR")
-dfDirCIT = os.path.join(currDir, "datafindCIT")
-dfDirLHO = os.path.join(currDir, "datafindLHO")
-dfDirLLO = os.path.join(currDir, "datafindLLO")
-dfDirUWM = os.path.join(currDir, "datafindUWM")
+segDir = os.path.join(currDir,"segments")
+dfDirSYR = os.path.join(currDir,"datafindSYR")
+dfDirCIT = os.path.join(currDir,"datafindCIT")
+dfDirLHO = os.path.join(currDir,"datafindLHO")
+dfDirLLO = os.path.join(currDir,"datafindLLO")
+dfDirUWM = os.path.join(currDir,"datafindUWM")
 
 print("BEGIN BY GENERATING SCIENCE AND CAT_X VETOES")
-
 
 def segment_report(sSegs):
     fullLen = 0
@@ -72,15 +66,12 @@ def segment_report(sSegs):
             fullLen += abs(seg)
             fullNum += 1
             if abs(seg) > 500:
-                shortLen += abs(seg)
-                shortNum += 1
+                shortLen+=abs(seg)
+                shortNum+=1
             if abs(seg) > 2000:
-                longLen += abs(seg)
-                longNum += 1
-        print(
-            "For ifo %s there is %d seconds of data in %d segments, %d seconds (%d unique segments) in segments longer than 500s and %d seconds (%d unique segments) longer than 2000s."
-            % (ifo, fullLen, fullNum, shortLen, shortNum, longLen, longNum)
-        )
+                longLen+=abs(seg)
+                longNum+=1
+        print("For ifo %s there is %d seconds of data in %d segments, %d seconds (%d unique segments) in segments longer than 500s and %d seconds (%d unique segments) longer than 2000s." %(ifo, fullLen, fullNum, shortLen, shortNum, longLen, longNum))
 
 
 scienceSegs, segsList = _workflow.setup_segment_generation(workflow, segDir)
@@ -97,9 +88,8 @@ logger.disabled = True
 scienceSegsS, _ = _workflow.setup_segment_generation(workflow, segDir)
 logger.disabled = False
 print("RUNNING DATAFIND FOR SYR")
-datafinds, scienceSegsS = _workflow.setup_datafind_workflow(
-    workflow, scienceSegsS, dfDirSYR, segsList, tag="SYR"
-)
+datafinds, scienceSegsS = _workflow.setup_datafind_workflow(workflow, scienceSegsS,
+                     dfDirSYR, segsList, tag="SYR")
 
 segment_report(scienceSegsS)
 
@@ -109,9 +99,8 @@ print("RUNNING DATAFIND FOR CIT")
 logger.disabled = True
 scienceSegsC, _ = _workflow.setup_segment_generation(workflow, segDir)
 logger.disabled = False
-datafinds, scienceSegsC = _workflow.setup_datafind_workflow(
-    workflow, scienceSegsC, dfDirCIT, segsList, tag="CIT"
-)
+datafinds, scienceSegsC = _workflow.setup_datafind_workflow(workflow, scienceSegsC,
+                       dfDirCIT, segsList, tag="CIT")
 
 segment_report(scienceSegsC)
 
@@ -119,9 +108,9 @@ print("Frames present a SYR and not at CIT:")
 for ifo in scienceSegsS.keys():
     print("For ifo", ifo)
     if ifo in scienceSegsC.keys():
-        print(scienceSegsS[ifo] - scienceSegsC[ifo])
+       print(scienceSegsS[ifo] - scienceSegsC[ifo])
     else:
-        print("No science segments for ifo %s at CIT" % (ifo))
+       print("No science segments for ifo %s at CIT" %(ifo))
     print()
 
 print("Frames present at CIT and not at SYR:")
@@ -129,9 +118,9 @@ print("Frames present at CIT and not at SYR:")
 for ifo in scienceSegsC.keys():
     print("For ifo", ifo)
     if ifo in scienceSegsS.keys():
-        print(scienceSegsC[ifo] - scienceSegsS[ifo])
+       print(scienceSegsC[ifo] - scienceSegsS[ifo])
     else:
-        print("No science segments for ifo %s at SYR" % (ifo))
+       print("No science segments for ifo %s at SYR" %(ifo))
     print()
 
 # Next do LHO comparison
@@ -141,9 +130,8 @@ print("RUNNING DATAFIND FOR LHO")
 logger.disabled = True
 scienceSegsS, _ = _workflow.setup_segment_generation(workflow, segDir)
 logger.disabled = False
-datafinds, scienceSegsS = _workflow.setup_datafind_workflow(
-    workflow, scienceSegsS, dfDirLHO, segsList, tag="LHO"
-)
+datafinds, scienceSegsS = _workflow.setup_datafind_workflow(workflow, scienceSegsS,
+                       dfDirLHO, segsList, tag="LHO")
 
 segment_report(scienceSegsS)
 
@@ -151,9 +139,9 @@ print("Frames present at LHO and not at CIT:")
 for ifo in scienceSegsS.keys():
     print("For ifo", ifo)
     if ifo in scienceSegsC.keys():
-        print(scienceSegsS[ifo] - scienceSegsC[ifo])
+       print(scienceSegsS[ifo] - scienceSegsC[ifo])
     else:
-        print("No science segments for ifo %s at CIT" % (ifo))
+       print("No science segments for ifo %s at CIT" %(ifo))
     print()
 
 print("Frames present at CIT and not at LHO:")
@@ -161,9 +149,9 @@ print("Frames present at CIT and not at LHO:")
 for ifo in scienceSegsC.keys():
     print("For ifo", ifo)
     if ifo in scienceSegsS.keys():
-        print(scienceSegsC[ifo] - scienceSegsS[ifo])
+       print(scienceSegsC[ifo] - scienceSegsS[ifo])
     else:
-        print("No science segments for ifo %s at LHO" % (ifo))
+       print("No science segments for ifo %s at LHO" %(ifo))
     print()
 
 # Next do LLO comparison
@@ -173,9 +161,8 @@ print("RUNNING DATAFIND FOR LLO")
 logger.disabled = True
 scienceSegsS, _ = _workflow.setup_segment_generation(workflow, segDir)
 logger.disabled = False
-datafinds, scienceSegsS = _workflow.setup_datafind_workflow(
-    workflow, scienceSegsS, dfDirLLO, segsList, tag="LLO"
-)
+datafinds, scienceSegsS = _workflow.setup_datafind_workflow(workflow, scienceSegsS,
+                       dfDirLLO, segsList, tag="LLO")
 
 segment_report(scienceSegsS)
 
@@ -183,9 +170,9 @@ print("Frames present at LLO and not at CIT:")
 for ifo in scienceSegsS.keys():
     print("For ifo", ifo)
     if ifo in scienceSegsC.keys():
-        print(scienceSegsS[ifo] - scienceSegsC[ifo])
+       print(scienceSegsS[ifo] - scienceSegsC[ifo])
     else:
-        print("No science segments for ifo %s at CIT" % (ifo))
+       print("No science segments for ifo %s at CIT" %(ifo))
     print()
 
 print("Frames present at CIT and not at LLO:")
@@ -193,9 +180,9 @@ print("Frames present at CIT and not at LLO:")
 for ifo in scienceSegsC.keys():
     print("For ifo", ifo)
     if ifo in scienceSegsS.keys():
-        print(scienceSegsC[ifo] - scienceSegsS[ifo])
+       print(scienceSegsC[ifo] - scienceSegsS[ifo])
     else:
-        print("No science segments for ifo %s at LLO" % (ifo))
+       print("No science segments for ifo %s at LLO" %(ifo))
     print()
 
 # Next do UWM comparison
@@ -205,9 +192,8 @@ print("RUNNING DATAFIND FOR UWM")
 logger.disabled = True
 scienceSegsS, _ = _workflow.setup_segment_generation(workflow, segDir)
 logger.disabled = False
-datafinds, scienceSegsS = _workflow.setup_datafind_workflow(
-    workflow, scienceSegsS, dfDirUWM, segsList, tag="UWM"
-)
+datafinds, scienceSegsS = _workflow.setup_datafind_workflow(workflow, scienceSegsS,
+                       dfDirUWM, segsList, tag="UWM")
 
 segment_report(scienceSegsS)
 
@@ -215,9 +201,9 @@ print("Frames present at UWM and not at CIT:")
 for ifo in scienceSegsS.keys():
     print("For ifo", ifo)
     if ifo in scienceSegsC.keys():
-        print(scienceSegsS[ifo] - scienceSegsC[ifo])
+       print(scienceSegsS[ifo] - scienceSegsC[ifo])
     else:
-        print("No science segments for ifo %s at CIT" % (ifo))
+       print("No science segments for ifo %s at CIT" %(ifo))
     print()
 
 print("Frames present at CIT and not at UWM:")
@@ -225,7 +211,8 @@ print("Frames present at CIT and not at UWM:")
 for ifo in scienceSegsC.keys():
     print("For ifo", ifo)
     if ifo in scienceSegsS.keys():
-        print(scienceSegsC[ifo] - scienceSegsS[ifo])
+       print(scienceSegsC[ifo] - scienceSegsS[ifo])
     else:
-        print("No science segments for ifo %s at UWM" % (ifo))
+       print("No science segments for ifo %s at UWM" %(ifo))
     print()
+

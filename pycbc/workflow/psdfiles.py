@@ -29,18 +29,17 @@ workflows.
 
 # FIXME: Is this module still relevant for any code? Can it be removed?
 
-import configparser as ConfigParser
 import logging
+import configparser as ConfigParser
 
-from pycbc.workflow.core import FileList, make_analysis_dir, resolve_url_to_file
+from pycbc.workflow.core import FileList
+from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
 
-logger = logging.getLogger("pycbc.workflow.psdfiles")
+logger = logging.getLogger('pycbc.workflow.psdfiles')
 
-
-def setup_psd_workflow(
-    workflow, science_segs, datafind_outs, output_dir=None, tags=None
-):
-    """
+def setup_psd_workflow(workflow, science_segs, datafind_outs,
+                             output_dir=None, tags=None):
+    '''
     Setup static psd section of CBC workflow. At present this only supports pregenerated
     psd files, in the future these could be created within the workflow.
 
@@ -63,7 +62,7 @@ def setup_psd_workflow(
     --------
     psd_files : pycbc.workflow.core.FileList
         The FileList holding the psd files, 0 or 1 per ifo
-    """
+    '''
     if tags is None:
         tags = []
     logger.info("Entering static psd module.")
@@ -72,7 +71,8 @@ def setup_psd_workflow(
 
     # Parse for options in ini file.
     try:
-        psdMethod = cp.get_opt_tags("workflow-psd", "psd-method", tags)
+        psdMethod = cp.get_opt_tags("workflow-psd", "psd-method",
+                                     tags)
     except:
         # Predefined PSD sare optional, just return an empty list if not
         # provided.
@@ -91,7 +91,7 @@ def setup_psd_workflow(
 
 
 def setup_psd_pregenerated(workflow, tags=None):
-    """
+    '''
     Setup CBC workflow to use pregenerated psd files.
     The file given in cp.get('workflow','pregenerated-psd-file-(ifo)') will
     be used as the --psd-file argument to geom_nonspinbank, geom_aligned_bank
@@ -109,29 +109,30 @@ def setup_psd_pregenerated(workflow, tags=None):
     --------
     psd_files : pycbc.workflow.core.FileList
         The FileList holding the gating files
-    """
+    '''
     if tags is None:
         tags = []
     psd_files = FileList([])
 
     cp = workflow.cp
     global_seg = workflow.analysis_time
-    file_attrs = {"segs": global_seg, "tags": tags}
+    file_attrs = {'segs': global_seg, 'tags': tags}
 
     # Check for one psd for all ifos
     try:
-        pre_gen_file = cp.get_opt_tags("workflow-psd", "psd-pregenerated-file", tags)
-        file_attrs["ifos"] = workflow.ifos
+        pre_gen_file = cp.get_opt_tags('workflow-psd',
+                        'psd-pregenerated-file', tags)
+        file_attrs['ifos'] = workflow.ifos
         curr_file = resolve_url_to_file(pre_gen_file, attrs=file_attrs)
         psd_files.append(curr_file)
     except ConfigParser.Error:
         # Check for one psd per ifo
         for ifo in workflow.ifos:
             try:
-                pre_gen_file = cp.get_opt_tags(
-                    "workflow-psd", "psd-pregenerated-file-%s" % ifo.lower(), tags
-                )
-                file_attrs["ifos"] = [ifo]
+                pre_gen_file = cp.get_opt_tags('workflow-psd',
+                                'psd-pregenerated-file-%s' % ifo.lower(),
+                                tags)
+                file_attrs['ifos'] = [ifo]
                 curr_file = resolve_url_to_file(pre_gen_file, attrs=file_attrs)
                 psd_files.append(curr_file)
 
@@ -142,3 +143,4 @@ def setup_psd_pregenerated(workflow, tags=None):
                 pass
 
     return psd_files
+

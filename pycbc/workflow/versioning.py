@@ -25,20 +25,18 @@
 Module to generate/manage the executable used for version information
 in workflows
 """
-
-import logging
 import os
+import logging
 
 from pycbc.workflow.core import Executable
 
-logger = logging.getLogger("pycbc.workflow.versioning")
+logger = logging.getLogger('pycbc.workflow.versioning')
 
 
 class VersioningExecutable(Executable):
     """
     Executable for getting version information
     """
-
     current_retention_level = Executable.FINAL_RESULT
 
 
@@ -48,7 +46,7 @@ def make_versioning_page(workflow, config_parser, out_dir, tags=None):
     """
     vers_exe = VersioningExecutable(
         workflow.cp,
-        "page_versioning",
+        'page_versioning',
         out_dir=out_dir,
         ifos=workflow.ifos,
         tags=tags,
@@ -56,7 +54,7 @@ def make_versioning_page(workflow, config_parser, out_dir, tags=None):
     node = vers_exe.create_node()
     config_names = []
     exes = []
-    for name, path in config_parser.items("executables"):
+    for name, path in config_parser.items('executables'):
         exe_to_test = os.path.basename(path)
         if exe_to_test in exes:
             # executable is already part of the list,
@@ -68,9 +66,9 @@ def make_versioning_page(workflow, config_parser, out_dir, tags=None):
         else:
             config_names.append(name)
             exes.append(exe_to_test)
-    node.add_list_opt("--executables", exes)
-    node.add_list_opt("--executables-names", config_names)
-    node.new_output_file_opt(workflow.analysis_time, ".html", "--output-file")
+    node.add_list_opt('--executables', exes)
+    node.add_list_opt('--executables-names', config_names)
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow.add_node(node)
 
     return node, node.output_files

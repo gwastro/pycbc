@@ -2,9 +2,8 @@
 Module to contain time conversions used in pycbc
 """
 
-from datetime import timezone
-
 from astropy.time import Time
+from datetime import timezone
 
 
 def _ensure_utc_datetime(date):
@@ -32,7 +31,7 @@ def gps_to_utc_datetime(gps):
     -------
     datetime
     """
-    dt = Time(gps, format="gps", scale="utc").to_datetime()
+    dt = Time(gps, format='gps', scale='utc').to_datetime()
     return _ensure_utc_datetime(dt)
 
 
@@ -48,7 +47,7 @@ def datetime_to_str(date, format="%Y-%m-%d %H:%M:%S"):
         The format to use for the string. Default is yyyy-mm-dd HH:MM:SS.
         Supply as a format according to datetime documentation
         https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
-
+    
     Returns
     -------
     str
@@ -105,9 +104,7 @@ def strip_time_from_gps(gps, format="%Y-%m-%d"):
     """
     gps_datetime = gps_to_utc_datetime(gps)
     midnight_datetime = strip_time_from_date(gps_datetime)
-    return utc_datetime_to_gps(midnight_datetime), datetime_to_str(
-        midnight_datetime, format=format
-    )
+    return utc_datetime_to_gps(midnight_datetime), datetime_to_str(midnight_datetime, format=format)
 
 
 def utc_datetime_to_gps(date):
@@ -124,7 +121,7 @@ def utc_datetime_to_gps(date):
     float
     """
     date_utc = _ensure_utc_datetime(date)
-    return float(Time(date_utc, format="datetime", scale="utc").gps)
+    return float(Time(date_utc, format='datetime', scale='utc').gps)
 
 
 def gps_now():
@@ -152,20 +149,16 @@ def gmst_accurate(gps_time):
     -------
     float
     """
-    gmst = (
-        Time(gps_time, format="gps", scale="utc", location=(0, 0))
-        .sidereal_time("mean")
-        .rad
-    )
+    gmst = Time(gps_time, format='gps', scale='utc',
+                location=(0, 0)).sidereal_time('mean').rad
     return gmst
 
-
 __all__ = [
-    "gps_to_utc_datetime",
-    "gps_to_utc_str",
-    "strip_time_from_date",
-    "strip_time_from_gps",
-    "utc_datetime_to_gps",
-    "gps_now",
-    "gmst_accurate",
+    'gps_to_utc_datetime',
+    'gps_to_utc_str',
+    'strip_time_from_date',
+    'strip_time_from_gps',
+    'utc_datetime_to_gps',
+    'gps_now',
+    'gmst_accurate',
 ]

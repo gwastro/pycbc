@@ -17,13 +17,14 @@
 
 from .core import _list_available
 
-_backend_dict = {"fftw": "fftw", "mkl": "mkl", "numpy": "npfft"}
-_backend_list = ["mkl", "fftw", "numpy"]
+_backend_dict = {'fftw' : 'fftw',
+                 'mkl' : 'mkl',
+                 'numpy' : 'npfft'}
+_backend_list = ['mkl', 'fftw', 'numpy']
 
 _alist, _adict = _list_available(_backend_list, _backend_dict)
 
 cpu_backend = None
-
 
 def set_backend(backend_list):
     global cpu_backend
@@ -32,9 +33,8 @@ def set_backend(backend_list):
             cpu_backend = backend
             break
 
-
 def get_backend():
     return _adict[cpu_backend]
 
-
 set_backend(_backend_list)
+

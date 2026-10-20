@@ -15,17 +15,18 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging
-
 import numpy
 
-from pycbc import conversions, pnutils
-from pycbc.neutron_stars import load_ns_sequence
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
+from pycbc import conversions
+from pycbc import pnutils
+from pycbc.neutron_stars import load_ns_sequence
 
-logger = logging.getLogger("pycbc.tmpltbank.coord_utils")
+logger = logging.getLogger('pycbc.tmpltbank.coord_utils')
 
 
-def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper, covary=True):
+def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
+                        covary=True):
     """
     This function will generate a large set of points with random masses and
     spins (using pycbc.tmpltbank.get_random_mass) and translate these points
@@ -65,12 +66,13 @@ def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper, covary
     spin1z = vals_set[2]
     spin2z = vals_set[3]
     if covary:
-        lambdas = get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper)
+        lambdas = get_cov_params(mass1, mass2, spin1z, spin2z, metricParams,
+                                 fUpper)
     else:
-        lambdas = get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper)
+        lambdas = get_conv_params(mass1, mass2, spin1z, spin2z, metricParams,
+                                  fUpper)
 
     return numpy.array(lambdas)
-
 
 def get_random_mass_point_particles(numPoints, massRangeParams):
     """
@@ -101,24 +103,20 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
 
     # First we choose the total masses from a unifrom distribution in mass
     # to the -5/3. power.
-    mass = numpy.random.random(numPoints) * (
-        massRangeParams.minTotMass ** (-5.0 / 3.0)
-        - massRangeParams.maxTotMass ** (-5.0 / 3.0)
-    ) + massRangeParams.maxTotMass ** (-5.0 / 3.0)
-    mass = mass ** (-3.0 / 5.0)
+    mass = numpy.random.random(numPoints) * \
+           (massRangeParams.minTotMass**(-5./3.) \
+            - massRangeParams.maxTotMass**(-5./3.)) \
+           + massRangeParams.maxTotMass**(-5./3.)
+    mass = mass**(-3./5.)
 
     # Next we choose the mass ratios, this will take different limits based on
     # the value of total mass
-    maxmass2 = numpy.minimum(mass / 2.0, massRangeParams.maxMass2)
-    minmass1 = numpy.maximum(massRangeParams.minMass1, mass / 2.0)
-    mineta = numpy.maximum(
-        massRangeParams.minCompMass
-        * (mass - massRangeParams.minCompMass)
-        / (mass * mass),
-        massRangeParams.maxCompMass
-        * (mass - massRangeParams.maxCompMass)
-        / (mass * mass),
-    )
+    maxmass2 = numpy.minimum(mass/2., massRangeParams.maxMass2)
+    minmass1 = numpy.maximum(massRangeParams.minMass1, mass/2.)
+    mineta = numpy.maximum(massRangeParams.minCompMass \
+                            * (mass-massRangeParams.minCompMass)/(mass*mass), \
+                           massRangeParams.maxCompMass \
+                            * (mass-massRangeParams.maxCompMass)/(mass*mass))
     # Note that mineta is a numpy.array because mineta depends on the total
     # mass. Therefore this is not precomputed in the massRangeParams instance
     if massRangeParams.minEta:
@@ -126,17 +124,17 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
     # Eta also restricted by chirp mass restrictions
     if massRangeParams.min_chirp_mass:
         eta_val_at_min_chirp = massRangeParams.min_chirp_mass / mass
-        eta_val_at_min_chirp = eta_val_at_min_chirp ** (5.0 / 3.0)
+        eta_val_at_min_chirp = eta_val_at_min_chirp**(5./3.)
         mineta = numpy.maximum(mineta, eta_val_at_min_chirp)
 
-    maxeta = numpy.minimum(
-        massRangeParams.maxEta, maxmass2 * (mass - maxmass2) / (mass * mass)
-    )
-    maxeta = numpy.minimum(maxeta, minmass1 * (mass - minmass1) / (mass * mass))
+    maxeta = numpy.minimum(massRangeParams.maxEta, maxmass2 \
+                             * (mass - maxmass2) / (mass*mass))
+    maxeta = numpy.minimum(maxeta, minmass1 \
+                             * (mass - minmass1) / (mass*mass))
     # max eta also affected by chirp mass restrictions
     if massRangeParams.max_chirp_mass:
         eta_val_at_max_chirp = massRangeParams.max_chirp_mass / mass
-        eta_val_at_max_chirp = eta_val_at_max_chirp ** (5.0 / 3.0)
+        eta_val_at_max_chirp = eta_val_at_max_chirp**(5./3.)
         maxeta = numpy.minimum(maxeta, eta_val_at_max_chirp)
 
     if (maxeta < mineta).any():
@@ -145,52 +143,49 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
     eta = numpy.random.random(numPoints) * (maxeta - mineta) + mineta
 
     # Also calculate the component masses; mass1 > mass2
-    diff = (mass * mass * (1 - 4 * eta)) ** 0.5
-    mass1 = (mass + diff) / 2.0
-    mass2 = (mass - diff) / 2.0
+    diff = (mass*mass * (1-4*eta))**0.5
+    mass1 = (mass + diff)/2.
+    mass2 = (mass - diff)/2.
     # Check the masses are where we want them to be (allowing some floating
     # point rounding error).
-    if (mass1 > massRangeParams.maxMass1 * 1.001).any() or (
-        mass1 < massRangeParams.minMass1 * 0.999
-    ).any():
+    if (mass1 > massRangeParams.maxMass1*1.001).any() \
+          or (mass1 < massRangeParams.minMass1*0.999).any():
         errMsg = "Mass1 is not within the specified mass range."
         raise ValueError(errMsg)
-    if (mass2 > massRangeParams.maxMass2 * 1.001).any() or (
-        mass2 < massRangeParams.minMass2 * 0.999
-    ).any():
+    if (mass2 > massRangeParams.maxMass2*1.001).any() \
+          or (mass2 < massRangeParams.minMass2*0.999).any():
         errMsg = "Mass2 is not within the specified mass range."
         raise ValueError(errMsg)
 
     # Next up is the spins. First check if we have non-zero spins
     if massRangeParams.maxNSSpinMag == 0 and massRangeParams.maxBHSpinMag == 0:
-        spin1z = numpy.zeros(numPoints, dtype=float)
-        spin2z = numpy.zeros(numPoints, dtype=float)
+        spin1z = numpy.zeros(numPoints,dtype=float)
+        spin2z = numpy.zeros(numPoints,dtype=float)
     elif massRangeParams.nsbhFlag:
         # Spin 1 first
         mspin = numpy.zeros(len(mass1))
         mspin += massRangeParams.maxBHSpinMag
-        spin1z = (2 * numpy.random.random(numPoints) - 1) * mspin
+        spin1z = (2*numpy.random.random(numPoints) - 1) * mspin
         # Then spin2
         mspin = numpy.zeros(len(mass2))
         mspin += massRangeParams.maxNSSpinMag
-        spin2z = (2 * numpy.random.random(numPoints) - 1) * mspin
-    else:
+        spin2z = (2*numpy.random.random(numPoints) - 1) * mspin
+    else:        
         boundary_mass = massRangeParams.ns_bh_boundary_mass
         # Spin 1 first
         mspin = numpy.zeros(len(mass1))
         mspin += massRangeParams.maxNSSpinMag
         mspin[mass1 > boundary_mass] = massRangeParams.maxBHSpinMag
-        spin1z = (2 * numpy.random.random(numPoints) - 1) * mspin
+        spin1z = (2*numpy.random.random(numPoints) - 1) * mspin
         # Then spin 2
         mspin = numpy.zeros(len(mass2))
         mspin += massRangeParams.maxNSSpinMag
         mspin[mass2 > boundary_mass] = massRangeParams.maxBHSpinMag
-        spin2z = (2 * numpy.random.random(numPoints) - 1) * mspin
+        spin2z = (2*numpy.random.random(numPoints) - 1) * mspin
 
     return mass1, mass2, spin1z, spin2z
 
-
-def get_random_mass(numPoints, massRangeParams, eos="2H"):
+def get_random_mass(numPoints, massRangeParams, eos='2H'):
     """
     This function will generate a large set of points within the chosen mass
     and spin space, and with the desired minimum remnant disk mass (this applies
@@ -206,7 +201,7 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
         Instance holding all the details of mass ranges and spin ranges.
     eos : string
         Name of equation of state of neutron star.
-
+        
     Returns
     --------
     mass1 : float
@@ -225,9 +220,8 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
     # a minimum remnant disk mass.  If this is not the case, proceed treating
     # the systems as point particle binaries
     if massRangeParams.remnant_mass_threshold is None:
-        mass1, mass2, spin1z, spin2z = get_random_mass_point_particles(
-            numPoints, massRangeParams
-        )
+        mass1, mass2, spin1z, spin2z = \
+            get_random_mass_point_particles(numPoints, massRangeParams)
     # otherwise, load EOS dependent data, generate the EM constraint
     # (i.e. compute the minimum symmetric mass ratio needed to
     # generate a given remnant disk mass as a function of the NS
@@ -239,10 +233,10 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
         boundary_mass = massRangeParams.ns_bh_boundary_mass
         if max_ns_g_mass < boundary_mass:
             warn_msg = "WARNING: "
-            warn_msg += "Option of ns-bh-boundary-mass is  %s " % (boundary_mass)
+            warn_msg += "Option of ns-bh-boundary-mass is  %s " %(boundary_mass)
             warn_msg += "which is higher than the maximum NS gravitational "
             warn_msg += "mass admitted by the EOS that was prescribed "
-            warn_msg += "(%s). " % (max_ns_g_mass)
+            warn_msg += "(%s). " %(max_ns_g_mass)
             warn_msg += "The code will proceed using the latter value "
             warn_msg += "as the boundary mass."
             logger.warning(warn_msg)
@@ -261,9 +255,9 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
         while numPointsFound < numPoints:
             # Generate the random points within the required mass
             # and spin cuts
-            mass1, mass2, spin1z, spin2z = get_random_mass_point_particles(
-                numPoints - numPointsFound, massRangeParams
-            )
+            mass1, mass2, spin1z, spin2z = \
+                get_random_mass_point_particles(numPoints-numPointsFound,
+                                                massRangeParams)
 
             # Now proceed with cutting out EM dim systems
             # Use a logical mask to track points that do not correspond to
@@ -309,27 +303,23 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
                     spin1x=0.0,
                     spin1y=0.0,
                     spin1z=spin1z_nsbh,
-                    eos=eos,
+                    eos=eos
                 )
-                mask_bright_nsbh[remnant > massRangeParams.remnant_mass_threshold] = (
-                    True
-                )
+                mask_bright_nsbh[remnant
+                                 >
+                                 massRangeParams.remnant_mass_threshold] = True
 
             # Keep only points that correspond to binaries that can produce an
             # EM counterpart (i.e., BNSs and EM-bright NSBHs) and add their
             # properties to the pile of accpeted points to output
-            mass1_out = numpy.concatenate(
-                (mass1_out, mass1_bns, mass1_nsbh[mask_bright_nsbh])
-            )
-            mass2_out = numpy.concatenate(
-                (mass2_out, mass2_bns, mass2_nsbh[mask_bright_nsbh])
-            )
-            spin1z_out = numpy.concatenate(
-                (spin1z_out, spin1z_bns, spin1z_nsbh[mask_bright_nsbh])
-            )
-            spin2z_out = numpy.concatenate(
-                (spin2z_out, spin2z_bns, spin2z_nsbh[mask_bright_nsbh])
-            )
+            mass1_out = numpy.concatenate((mass1_out, mass1_bns,
+                                           mass1_nsbh[mask_bright_nsbh]))
+            mass2_out = numpy.concatenate((mass2_out, mass2_bns,
+                                           mass2_nsbh[mask_bright_nsbh]))
+            spin1z_out = numpy.concatenate((spin1z_out, spin1z_bns,
+                                            spin1z_nsbh[mask_bright_nsbh]))
+            spin2z_out = numpy.concatenate((spin2z_out, spin2z_bns,
+                                            spin2z_nsbh[mask_bright_nsbh]))
 
             # Number of points that survived all cuts
             numPointsFound = len(mass1_out)
@@ -342,19 +332,9 @@ def get_random_mass(numPoints, massRangeParams, eos="2H"):
 
     return mass1, mass2, spin1z, spin2z
 
-
-def get_cov_params(
-    mass1,
-    mass2,
-    spin1z,
-    spin2z,
-    metricParams,
-    fUpper,
-    lambda1=None,
-    lambda2=None,
-    quadparam1=None,
-    quadparam2=None,
-):
+def get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper,
+                   lambda1=None, lambda2=None, quadparam1=None,
+                   quadparam2=None):
     """
     Function to convert between masses and spins and locations in the xi
     parameter space. Xi = Cartesian metric and rotated to principal components.
@@ -387,35 +367,16 @@ def get_cov_params(
     """
 
     # Do this by doing masses - > lambdas -> mus
-    mus = get_conv_params(
-        mass1,
-        mass2,
-        spin1z,
-        spin2z,
-        metricParams,
-        fUpper,
-        lambda1=lambda1,
-        lambda2=lambda2,
-        quadparam1=quadparam1,
-        quadparam2=quadparam2,
-    )
+    mus = get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper,
+                          lambda1=lambda1, lambda2=lambda2,
+                          quadparam1=quadparam1, quadparam2=quadparam2)
     # and then mus -> xis
     xis = get_covaried_params(mus, metricParams.evecsCV[fUpper])
     return xis
 
-
-def get_conv_params(
-    mass1,
-    mass2,
-    spin1z,
-    spin2z,
-    metricParams,
-    fUpper,
-    lambda1=None,
-    lambda2=None,
-    quadparam1=None,
-    quadparam2=None,
-):
+def get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper,
+                    lambda1=None, lambda2=None, quadparam1=None,
+                    quadparam2=None):
     """
     Function to convert between masses and spins and locations in the mu
     parameter space. Mu = Cartesian metric, but not principal components.
@@ -447,22 +408,13 @@ def get_conv_params(
     """
 
     # Do this by masses -> lambdas
-    lambdas = get_chirp_params(
-        mass1,
-        mass2,
-        spin1z,
-        spin2z,
-        metricParams.f0,
-        metricParams.pnOrder,
-        lambda1=lambda1,
-        lambda2=lambda2,
-        quadparam1=quadparam1,
-        quadparam2=quadparam2,
-    )
+    lambdas = get_chirp_params(mass1, mass2, spin1z, spin2z,
+                               metricParams.f0, metricParams.pnOrder,
+                               lambda1=lambda1, lambda2=lambda2,
+                               quadparam1=quadparam1, quadparam2=quadparam2)
     # and lambdas -> mus
     mus = get_mu_params(lambdas, metricParams, fUpper)
     return mus
-
 
 def get_mu_params(lambdas, metricParams, fUpper):
     """
@@ -492,7 +444,7 @@ def get_mu_params(lambdas, metricParams, fUpper):
     # If original inputs were floats we need to make this a 2D array
     if len(lambdas.shape) == 1:
         resize_needed = True
-        lambdas = lambdas[:, None]
+        lambdas = lambdas[:,None]
     else:
         resize_needed = False
 
@@ -502,13 +454,12 @@ def get_mu_params(lambdas, metricParams, fUpper):
     evecs = numpy.asarray(evecs)
 
     mus = ((lambdas.T).dot(evecs)).T
-    mus = mus * numpy.sqrt(evals)[:, None]
+    mus = mus * numpy.sqrt(evals)[:,None]
 
     if resize_needed:
         mus = numpy.ndarray.flatten(mus)
 
     return mus
-
 
 def get_covaried_params(mus, evecsCV):
     """
@@ -532,7 +483,7 @@ def get_covaried_params(mus, evecsCV):
     # If original inputs were floats we need to make this a 2D array
     if len(mus.shape) == 1:
         resize_needed = True
-        mus = mus[:, None]
+        mus = mus[:,None]
     else:
         resize_needed = False
 
@@ -542,7 +493,6 @@ def get_covaried_params(mus, evecsCV):
         xis = numpy.ndarray.flatten(xis)
 
     return xis
-
 
 def rotate_vector(evecs, old_vector, rescale_factor, index):
     """
@@ -569,9 +519,8 @@ def rotate_vector(evecs, old_vector, rescale_factor, index):
     """
     temp = 0
     for i in range(len(evecs)):
-        temp += (evecs[i, index] * rescale_factor) * old_vector[i]
+        temp += (evecs[i,index] * rescale_factor) * old_vector[i]
     return temp
-
 
 def get_point_distance(point1, point2, metricParams, fUpper):
     """
@@ -625,12 +574,11 @@ def get_point_distance(point1, point2, metricParams, fUpper):
 
     bXis = get_cov_params(bMass1, bMass2, bSpin1, bSpin2, metricParams, fUpper)
 
-    dist = (aXis[0] - bXis[0]) ** 2
-    for i in range(1, len(aXis)):
-        dist += (aXis[i] - bXis[i]) ** 2
+    dist = (aXis[0] - bXis[0])**2
+    for i in range(1,len(aXis)):
+        dist += (aXis[i] - bXis[i])**2
 
     return dist, aXis, bXis
-
 
 def calc_point_dist(vsA, entryA):
     r"""
@@ -651,15 +599,14 @@ def calc_point_dist(vsA, entryA):
         The metric distance between the two points.
     """
     chi_diffs = vsA - entryA
-    val = ((chi_diffs) * (chi_diffs)).sum()
-    return val
-
+    val = ((chi_diffs)*(chi_diffs)).sum()
+    return val 
 
 def test_point_dist(point_1_chis, point_2_chis, distance_threshold):
     r"""
     This function tests if the difference between two points in the chi
     parameter space is less than a distance threshold. Returns True if it is
-    and False if it is not.
+    and False if it is not.   
 
     Parameters
     ----------
@@ -714,13 +661,13 @@ def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, norm_map, MMdistA):
     idx = fMap[f_upper]
     vecs1 = mus1[idx]
     vecs2 = mus2[idx]
-    val = ((vecs1 - vecs2) * (vecs1 - vecs2)).sum()
-    if val > MMdistA:
+    val = ((vecs1 - vecs2)*(vecs1 - vecs2)).sum()
+    if (val > MMdistA):
         return False
     # Reduce match to account for normalization.
     norm_fac = norm_map[f_upper] / norm_map[f_other]
-    val = 1 - (1 - val) * norm_fac
-    return val < MMdistA
+    val = 1 - (1 - val)*norm_fac
+    return (val < MMdistA)
 
 
 def find_max_and_min_frequencies(name, mass_range_params, freqs):
@@ -730,17 +677,17 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
 
     cutoff_fns = pnutils.named_frequency_cutoffs
     if name not in cutoff_fns.keys():
-        err_msg = "%s not recognized as a valid cutoff frequency choice." % name
+        err_msg = "%s not recognized as a valid cutoff frequency choice." %name
         err_msg += "Recognized choices: " + " ".join(cutoff_fns.keys())
         raise ValueError(err_msg)
 
     # Can I do this quickly?
     total_mass_approxs = {
         "SchwarzISCO": pnutils.f_SchwarzISCO,
-        "LightRing": pnutils.f_LightRing,
-        "ERD": pnutils.f_ERD,
+        "LightRing"  : pnutils.f_LightRing,
+        "ERD"        : pnutils.f_ERD
     }
-
+    
     if name in total_mass_approxs.keys():
         # This can be done quickly if the cutoff only depends on total mass
         # Assumes that lower total mass = higher cutoff frequency
@@ -749,30 +696,31 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
     else:
         # Do this numerically
         # FIXME: Is 1000000 the right choice? I think so, but just highlighting
-        mass1, mass2, spin1z, spin2z = get_random_mass(1000000, mass_range_params)
+        mass1, mass2, spin1z, spin2z = \
+                get_random_mass(1000000, mass_range_params)
         mass_dict = {}
-        mass_dict["mass1"] = mass1
-        mass_dict["mass2"] = mass2
-        mass_dict["spin1z"] = spin1z
-        mass_dict["spin2z"] = spin2z
+        mass_dict['mass1'] = mass1
+        mass_dict['mass2'] = mass2
+        mass_dict['spin1z'] = spin1z
+        mass_dict['spin2z'] = spin2z
         tmp_freqs = cutoff_fns[name](mass_dict)
         upper_f_cutoff = tmp_freqs.max()
         lower_f_cutoff = tmp_freqs.min()
 
-    cutoffs = numpy.array([lower_f_cutoff, upper_f_cutoff])
+    cutoffs = numpy.array([lower_f_cutoff,upper_f_cutoff])
     if lower_f_cutoff < freqs.min():
         warn_msg = "WARNING: "
-        warn_msg += "Lowest frequency cutoff is %s Hz " % (lower_f_cutoff,)
+        warn_msg += "Lowest frequency cutoff is %s Hz " %(lower_f_cutoff,)
         warn_msg += "which is lower than the lowest frequency calculated "
-        warn_msg += "for the metric: %s Hz. " % (freqs.min())
+        warn_msg += "for the metric: %s Hz. " %(freqs.min())
         warn_msg += "Distances for these waveforms will be calculated at "
         warn_msg += "the lowest available metric frequency."
         logger.warning(warn_msg)
     if upper_f_cutoff > freqs.max():
         warn_msg = "WARNING: "
-        warn_msg += "Highest frequency cutoff is %s Hz " % (upper_f_cutoff,)
+        warn_msg += "Highest frequency cutoff is %s Hz " %(upper_f_cutoff,)
         warn_msg += "which is larger than the highest frequency calculated "
-        warn_msg += "for the metric: %s Hz. " % (freqs.max())
+        warn_msg += "for the metric: %s Hz. " %(freqs.max())
         warn_msg += "Distances for these waveforms will be calculated at "
         warn_msg += "the largest available metric frequency."
         logger.warning(warn_msg)
@@ -805,15 +753,14 @@ def return_nearest_cutoff(name, mass_dict, freqs):
     """
     # A bypass for the redundant case
     if len(freqs) == 1:
-        return numpy.zeros(len(mass_dict["m1"]), dtype=float) + freqs[0]
+        return numpy.zeros(len(mass_dict['m1']), dtype=float) + freqs[0]
     cutoff_fns = pnutils.named_frequency_cutoffs
     if name not in cutoff_fns.keys():
-        err_msg = "%s not recognized as a valid cutoff frequency choice." % name
+        err_msg = "%s not recognized as a valid cutoff frequency choice." %name
         err_msg += "Recognized choices: " + " ".join(cutoff_fns.keys())
         raise ValueError(err_msg)
     f_cutoff = cutoff_fns[name](mass_dict)
     return find_closest_calculated_frequencies(f_cutoff, freqs)
-
 
 def find_closest_calculated_frequencies(input_freqs, metric_freqs):
     """
@@ -835,7 +782,7 @@ def find_closest_calculated_frequencies(input_freqs, metric_freqs):
         computed
     """
     try:
-        refEv = numpy.zeros(len(input_freqs), dtype=float)
+        refEv = numpy.zeros(len(input_freqs),dtype=float)
     except TypeError:
         refEv = numpy.zeros(1, dtype=float)
         input_freqs = numpy.array([input_freqs])
@@ -854,17 +801,17 @@ def find_closest_calculated_frequencies(input_freqs, metric_freqs):
         if i == 0:
             # If frequency is lower than halfway between the first two entries
             # use the first (lowest) value
-            logicArr = input_freqs < ((metric_freqs[0] + metric_freqs[1]) / 2.0)
-        elif i == (len(metric_freqs) - 1):
+            logicArr = input_freqs < ((metric_freqs[0] + metric_freqs[1])/2.)
+        elif i == (len(metric_freqs)-1):
             # If frequency is larger than halfway between the last two entries
             # use the last (highest) value
-            logicArr = input_freqs > ((metric_freqs[-2] + metric_freqs[-1]) / 2.0)
+            logicArr = input_freqs > ((metric_freqs[-2] + metric_freqs[-1])/2.)
         else:
             # For frequencies within the range in freqs, check which points
             # should use the frequency corresponding to index i.
-            logicArrA = input_freqs > ((metric_freqs[i - 1] + metric_freqs[i]) / 2.0)
-            logicArrB = input_freqs < ((metric_freqs[i] + metric_freqs[i + 1]) / 2.0)
-            logicArr = numpy.logical_and(logicArrA, logicArrB)
+            logicArrA = input_freqs > ((metric_freqs[i-1] + metric_freqs[i])/2.)
+            logicArrB = input_freqs < ((metric_freqs[i] + metric_freqs[i+1])/2.)
+            logicArr = numpy.logical_and(logicArrA,logicArrB)
         if logicArr.any():
             refEv[logicArr] = metric_freqs[i]
     return refEv
@@ -878,7 +825,7 @@ def outspiral_loop(N):
     a number of bins, but want to start in the center and work outwards.
     """
     # Create a 2D lattice of all points
-    X, Y = numpy.meshgrid(numpy.arange(-N, N + 1), numpy.arange(-N, N + 1))
+    X,Y = numpy.meshgrid(numpy.arange(-N,N+1), numpy.arange(-N,N+1))
 
     # Flatten it
     X = numpy.ndarray.flatten(X)
@@ -887,14 +834,14 @@ def outspiral_loop(N):
     # Force to an integer
     X = numpy.array(X, dtype=int)
     Y = numpy.array(Y, dtype=int)
-
+   
     # Calculate distances
-    G = numpy.sqrt(X**2 + Y**2)
+    G = numpy.sqrt(X**2+Y**2)
 
     # Combine back into an array
-    out_arr = numpy.array([X, Y, G])
-
+    out_arr = numpy.array([X,Y,G])
+   
     # And order correctly
-    sorted_out_arr = out_arr[:, out_arr[2].argsort()]
+    sorted_out_arr = out_arr[:,out_arr[2].argsort()]
 
-    return sorted_out_arr[:2, :].T
+    return sorted_out_arr[:2,:].T

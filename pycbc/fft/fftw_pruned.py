@@ -11,28 +11,20 @@ http://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
 I use a similar naming convention here, with minor simplifications to the
 twiddle factors.
 """
-
-import ctypes
-import logging
-
-import numpy
-
-import pycbc.types
+import numpy, ctypes, pycbc.types
 from pycbc.libutils import get_ctypes_library
-
+import logging
 from .fftw_pruned_cython import second_phase_cython
 
-logger = logging.getLogger("pycbc.events.fftw_pruned")
+logger = logging.getLogger('pycbc.events.fftw_pruned')
 
-warn_msg = (
-    "The FFTW_pruned module can be used to speed up computing SNR "
-    "timeseries by computing first at a low sample rate and then "
-    "computing at full sample rate only at certain samples. This code "
-    "has not yet been used in production, and has no test case. "
-    "This was also ported to Cython in this state. "
-    "This code would need verification before trusting results. "
-    "Please do contribute test cases."
-)
+warn_msg = ("The FFTW_pruned module can be used to speed up computing SNR "
+            "timeseries by computing first at a low sample rate and then "
+            "computing at full sample rate only at certain samples. This code "
+            "has not yet been used in production, and has no test case. "
+            "This was also ported to Cython in this state. "
+            "This code would need verification before trusting results. "
+            "Please do contribute test cases.")
 
 logger.warning(warn_msg)
 
@@ -42,13 +34,12 @@ FFTW_BACKWARD = 1
 FFTW_MEASURE = 0
 FFTW_PATIENT = 1 << 5
 FFTW_ESTIMATE = 1 << 6
-float_lib = get_ctypes_library("fftw3f", ["fftw3f"], mode=ctypes.RTLD_GLOBAL)
+float_lib = get_ctypes_library('fftw3f', ['fftw3f'],mode=ctypes.RTLD_GLOBAL)
 fexecute = float_lib.fftwf_execute_dft
 fexecute.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
 
 ftexecute = float_lib.fftwf_execute_dft
 ftexecute.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
-
 
 def plan_transpose(N1, N2):
     """
@@ -79,24 +70,17 @@ def plan_transpose(N1, N2):
     iodim[4] = rows
     iodim[5] = 1
 
-    N = N1 * N2
+    N = N1*N2
     vin = pycbc.types.zeros(N, dtype=numpy.complex64)
     vout = pycbc.types.zeros(N, dtype=numpy.complex64)
 
     f = float_lib.fftwf_plan_guru_dft
-    f.argtypes = [
-        ctypes.c_int,
-        ctypes.c_void_p,
-        ctypes.c_int,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_int,
-    ]
+    f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+                  ctypes.c_void_p, ctypes.c_void_p,
+                  ctypes.c_void_p, ctypes.c_void_p,
+                  ctypes.c_int]
     f.restype = ctypes.c_void_p
     return f(0, None, 2, iodim.ctypes.data, vin.ptr, vout.ptr, None, FFTW_MEASURE)
-
 
 def plan_first_phase(N1, N2):
     """
@@ -115,46 +99,22 @@ def plan_first_phase(N1, N2):
     plan : FFTWF plan
         The plan for performing the first phase FFT.
     """
-    N = N1 * N2
+    N = N1*N2
     vin = pycbc.types.zeros(N, dtype=numpy.complex64)
     vout = pycbc.types.zeros(N, dtype=numpy.complex64)
     f = float_lib.fftwf_plan_many_dft
-    f.argtypes = [
-        ctypes.c_int,
-        ctypes.c_void_p,
-        ctypes.c_int,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_int,
-        ctypes.c_int,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_int,
-        ctypes.c_int,
-        ctypes.c_int,
-        ctypes.c_int,
-    ]
+    f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+                  ctypes.c_void_p, ctypes.c_void_p,
+                  ctypes.c_int, ctypes.c_int,
+                  ctypes.c_void_p, ctypes.c_void_p,
+                  ctypes.c_int, ctypes.c_int,
+                  ctypes.c_int, ctypes.c_int]
     f.restype = ctypes.c_void_p
-    return f(
-        1,
-        ctypes.byref(ctypes.c_int(N2)),
-        N1,
-        vin.ptr,
-        None,
-        1,
-        N2,
-        vout.ptr,
-        None,
-        1,
-        N2,
-        FFTW_BACKWARD,
-        FFTW_MEASURE,
-    )
-
+    return f(1, ctypes.byref(ctypes.c_int(N2)), N1,
+             vin.ptr, None, 1, N2,
+             vout.ptr, None, 1, N2, FFTW_BACKWARD, FFTW_MEASURE)
 
 _theplan = None
-
-
 def first_phase(invec, outvec, N1, N2):
     """
     This implements the first phase of the FFT decomposition, using
@@ -175,7 +135,6 @@ def first_phase(invec, outvec, N1, N2):
     if _theplan is None:
         _theplan = plan_first_phase(N1, N2)
     fexecute(_theplan, invec.ptr, outvec.ptr)
-
 
 def second_phase(invec, indices, N1, N2):
     """
@@ -200,7 +159,7 @@ def second_phase(invec, indices, N1, N2):
     out : array of floats
     """
     invec = numpy.array(invec.data, copy=False)
-    NI = len(indices)  # pylint:disable=unused-variable
+    NI = len(indices) # pylint:disable=unused-variable
     N1 = int(N1)
     N2 = int(N2)
     out = numpy.zeros(len(indices), dtype=numpy.complex64)
@@ -211,10 +170,7 @@ def second_phase(invec, indices, N1, N2):
 
     return out
 
-
 _thetransposeplan = None
-
-
 def fft_transpose_fftw(vec):
     """
     Perform an FFT transpose from vec into outvec.
@@ -236,18 +192,16 @@ def fft_transpose_fftw(vec):
         N1, N2 = splay(vec)
         _thetransposeplan = plan_transpose(N1, N2)
     ftexecute(_thetransposeplan, vec.ptr, outvec.ptr)
-    return outvec
-
+    return  outvec
 
 fft_transpose = fft_transpose_fftw
 
-
 def splay(vec):
-    """Determine two lengths to split stride the input vector by"""
-    N2 = 2 ** int(numpy.log2(len(vec)) / 2)
+    """ Determine two lengths to split stride the input vector by
+    """
+    N2 = 2 ** int(numpy.log2( len(vec) ) / 2)
     N1 = len(vec) / N2
     return N1, N2
-
 
 def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     """

@@ -17,48 +17,44 @@
 
 import os
 import sys
-
 import numpy
-from igwn_ligolw import ligolw, lsctables
+from igwn_ligolw import lsctables
+from igwn_ligolw import ligolw
 from igwn_ligolw.ligolw import LIGOLWContentHandler as OrigLIGOLWContentHandler
 from igwn_ligolw.lsctables import TableByName
 from igwn_ligolw.types import FormatFunc, FromPyType, ToPyType
-
 import pycbc.version as pycbc_version
 
+
 __all__ = (
-    "default_null_value",
-    "return_empty_sngl",
-    "return_search_summary",
-    "create_process_table",
-    "legacy_row_id_converter",
-    "get_table_columns",
-    "LIGOLWContentHandler",
+    'default_null_value',
+    'return_empty_sngl',
+    'return_search_summary',
+    'create_process_table',
+    'legacy_row_id_converter',
+    'get_table_columns',
+    'LIGOLWContentHandler'
 )
 
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
-IDTypes = set(["ilwd:char", "ilwd:char_u"])
+IDTypes = set([u"ilwd:char", u"ilwd:char_u"])
 
 
 def default_null_value(col_name, col_type):
     """
     Associate a sensible "null" default value to a given LIGOLW column type.
     """
-    if col_type in ["real_4", "real_8"]:
-        return 0.0
-    if col_type in ["int_4s", "int_8s"]:
+    if col_type in ['real_4', 'real_8']:
+        return 0.
+    if col_type in ['int_4s', 'int_8s']:
         # this case includes row IDs
         return 0
-    if col_type == "lstring":
-        return ""
-    raise NotImplementedError(
-        ("Do not know how to initialize column {} of type {}").format(
-            col_name, col_type
-        )
-    )
-
+    if col_type == 'lstring':
+        return ''
+    raise NotImplementedError(('Do not know how to initialize column '
+                               '{} of type {}').format(col_name, col_type))
 
 def return_empty_sngl(nones=False):
     """
@@ -87,7 +83,6 @@ def return_empty_sngl(nones=False):
         value = None if nones else default_null_value(col_name, cols[entry])
         setattr(sngl, col_name, value)
     return sngl
-
 
 def return_search_summary(start_time=0, end_time=0, nevents=0, ifos=None):
     """
@@ -133,10 +128,8 @@ def return_search_summary(start_time=0, end_time=0, nevents=0, ifos=None):
 
     return search_summary
 
-
-def create_process_table(
-    document, program_name=None, detectors=None, comment=None, options=None
-):
+def create_process_table(document, program_name=None, detectors=None,
+                         comment=None, options=None):
     """Create a LIGOLW process table with sane defaults, add it to a LIGOLW
     document, and return it.
     """
@@ -162,13 +155,12 @@ def create_process_table(
         program_name,
         opts,
         version=pycbc_version.version,
-        cvs_repository="pycbc/" + pycbc_version.git_branch,
+        cvs_repository='pycbc/'+pycbc_version.git_branch,
         cvs_entry_time=cvs_entry_time,
         instruments=detectors,
-        comment=comment,
+        comment=comment
     )
     return process
-
 
 def legacy_row_id_converter(ContentHandler):
     """Convert from old-style to new-style row IDs on the fly.
@@ -182,9 +174,8 @@ def legacy_row_id_converter(ContentHandler):
     or :func:`ligo.lw.table.use_in`.
     """
 
-    def endElementNS(
-        self, uri_localname, qname, __orig_endElementNS=ContentHandler.endElementNS
-    ):
+    def endElementNS(self, uri_localname, qname,
+                     __orig_endElementNS=ContentHandler.endElementNS):
         """Convert values of <Param> elements from ilwdchar to int."""
         if isinstance(self.current, ligolw.Param) and self.current.Type in IDTypes:
             old_type = ToPyType[self.current.Type]
@@ -196,7 +187,8 @@ def legacy_row_id_converter(ContentHandler):
 
     remapped = {}
 
-    def startColumn(self, parent, attrs, __orig_startColumn=ContentHandler.startColumn):
+    def startColumn(self, parent, attrs,
+                    __orig_startColumn=ContentHandler.startColumn):
         """Convert types in <Column> elements from ilwdchar to int.
 
         Notes
@@ -223,16 +215,17 @@ def legacy_row_id_converter(ContentHandler):
             validcolumns = TableByName[parent.Name].validcolumns
             if result.Name not in validcolumns:
                 stripped_column_to_valid_column = {
-                    ligolw.Column.ColumnName(name): name for name in validcolumns
+                    ligolw.Column.ColumnName(name): name
+                    for name in validcolumns
                 }
                 if result.Name in stripped_column_to_valid_column:
                     result.setAttribute(
-                        "Name", stripped_column_to_valid_column[result.Name]
-                    )
+                        'Name', stripped_column_to_valid_column[result.Name])
 
         return result
 
-    def startStream(self, parent, attrs, __orig_startStream=ContentHandler.startStream):
+    def startStream(self, parent, attrs,
+                    __orig_startStream=ContentHandler.startStream):
         """Convert values in table <Stream> elements from ilwdchar to int.
 
         Notes
@@ -248,16 +241,11 @@ def legacy_row_id_converter(ContentHandler):
                 # FIXME:  convert loadcolumns attributes to sets to
                 # avoid the conversion.
                 loadcolumns &= set(parent.loadcolumns)
-            result._tokenizer.set_types(
-                [
-                    (
-                        remapped.pop((id(parent), colname), pytype)
-                        if colname in loadcolumns
-                        else None
-                    )
-                    for pytype, colname in zip(parent.columnpytypes, parent.columnnames)
-                ]
-            )
+            result._tokenizer.set_types([
+                (remapped.pop((id(parent), colname), pytype)
+                 if colname in loadcolumns else None)
+                for pytype, colname
+                in zip(parent.columnpytypes, parent.columnnames)])
         return result
 
     ContentHandler.endElementNS = endElementNS
@@ -266,28 +254,29 @@ def legacy_row_id_converter(ContentHandler):
 
     return ContentHandler
 
-
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
     Attributes = ligolw.sax.xmlreader.AttributesImpl
-    elem = ligolw.LIGO_LW(Attributes({"Name": str(series.__class__.__name__)}))
+    elem = ligolw.LIGO_LW(
+            Attributes({'Name': str(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
-    elem.appendChild(ligolw.Time.from_gps(series.epoch, "epoch"))
-    elem.appendChild(ligolw.Param.from_pyvalue("f0", series.f0, unit="s^-1"))
+    elem.appendChild(ligolw.Time.from_gps(series.epoch, 'epoch'))
+    elem.appendChild(ligolw.Param.from_pyvalue('f0', series.f0, unit='s^-1'))
     delta = getattr(series, delta_name)
     if numpy.iscomplexobj(series.data.data):
-        data = numpy.vstack(
-            (
-                numpy.arange(len(series.data.data)) * delta,
-                series.data.data.real,
-                series.data.data.imag,
-            )
-        )
+        data = numpy.vstack((
+            numpy.arange(len(series.data.data)) * delta,
+            series.data.data.real,
+            series.data.data.imag
+        ))
     else:
-        data = numpy.vstack(
-            (numpy.arange(len(series.data.data)) * delta, series.data.data)
-        )
-    a = ligolw.Array.build(series.name, data, dim_names=dim_names, encoding="base64")
+        data = numpy.vstack((
+            numpy.arange(len(series.data.data)) * delta,
+            series.data.data
+        ))
+    a = ligolw.Array.build(
+        series.name, data, dim_names=dim_names, encoding='base64'
+    )
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
@@ -296,7 +285,6 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     elem.appendChild(a)
     return elem
 
-
 def make_psd_xmldoc(psddict, xmldoc=None):
     """Add a set of PSDs to a LIGOLW XML document. If the document is not
     given, a new one is created first.
@@ -304,33 +292,40 @@ def make_psd_xmldoc(psddict, xmldoc=None):
     xmldoc = ligolw.Document() if xmldoc is None else xmldoc.childNodes[0]
 
     # the PSDs must be children of a LIGO_LW with name "psd"
-    root_name = "psd"
+    root_name = 'psd'
     Attributes = ligolw.sax.xmlreader.AttributesImpl
-    lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({"Name": root_name})))
+    lw = xmldoc.appendChild(
+        ligolw.LIGO_LW(Attributes({'Name': root_name})))
 
     for instrument, psd in psddict.items():
         xmlseries = _build_series(
-            psd, ("Frequency,Real", "Frequency"), None, "deltaF", "s^-1"
+            psd,
+            ('Frequency,Real', 'Frequency'),
+            None,
+            'deltaF',
+            's^-1'
         )
         fs = lw.appendChild(xmlseries)
-        fs.appendChild(ligolw.Param.from_pyvalue("instrument", instrument))
+        fs.appendChild(ligolw.Param.from_pyvalue('instrument', instrument))
     return xmldoc
-
 
 def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     """Save an SNR time series into an XML document, in a format compatible
     with BAYESTAR.
     """
     snr_lal = snr_series.lal()
-    snr_lal.name = "snr"
-    snr_lal.sampleUnits = ""
+    snr_lal.name = 'snr'
+    snr_lal.sampleUnits = ''
     snr_xml = _build_series(
-        snr_lal, ("Time", "Time,Real,Imaginary"), None, "deltaT", "s"
+        snr_lal,
+        ('Time', 'Time,Real,Imaginary'),
+        None,
+        'deltaT',
+        's'
     )
     snr_node = document.childNodes[-1].appendChild(snr_xml)
-    eid_param = ligolw.Param.from_pyvalue("event_id", sngl_inspiral_id)
+    eid_param = ligolw.Param.from_pyvalue('event_id', sngl_inspiral_id)
     snr_node.appendChild(eid_param)
-
 
 def get_table_columns(table):
     """Return a list of columns that are present in the given table, in a
@@ -343,7 +338,7 @@ def get_table_columns(table):
     """
     columns = []
     for col in table.validcolumns:
-        att = col.split(":")[-1]
+        att = col.split(':')[-1]
         if att in table.columnnames:
             columns.append(col)
     return columns

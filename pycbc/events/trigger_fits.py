@@ -49,19 +49,17 @@ ks_stat, ks_pval = KS_test('exponential', snrs, alpha, thresh)
 # Public License for more details.
 
 import logging
-
 import numpy
 from scipy.stats import kstest
 
-logger = logging.getLogger("pycbc.events.trigger_fits")
-
+logger = logging.getLogger('pycbc.events.trigger_fits')
 
 def exponential_fitalpha(vals, thresh, w):
     """
     Maximum likelihood estimator for the fit factor for
     an exponential decrease model
     """
-    return 1.0 / (numpy.average(vals, weights=w) - thresh)
+    return 1. / (numpy.average(vals, weights=w) - thresh)
 
 
 def rayleigh_fitalpha(vals, thresh, w):
@@ -69,7 +67,7 @@ def rayleigh_fitalpha(vals, thresh, w):
     Maximum likelihood estimator for the fit factor for
     a Rayleigh distribution of events
     """
-    return 2.0 / (numpy.average(vals**2.0, weights=w) - thresh**2.0)
+    return 2. / (numpy.average(vals ** 2., weights=w) - thresh ** 2.)
 
 
 def power_fitalpha(vals, thresh, w):
@@ -77,22 +75,21 @@ def power_fitalpha(vals, thresh, w):
     Maximum likelihood estimator for the fit factor for
     a power law model
     """
-    return numpy.average(numpy.log(vals / thresh), weights=w) ** -1.0 + 1.0
+    return numpy.average(numpy.log(vals/thresh), weights=w) ** -1. + 1.
 
 
 fitalpha_dict = {
-    "exponential": exponential_fitalpha,
-    "rayleigh": rayleigh_fitalpha,
-    "power": power_fitalpha,
+    'exponential' : exponential_fitalpha,
+    'rayleigh'    : rayleigh_fitalpha,
+    'power'       : power_fitalpha
 }
 
 # measurement standard deviation = (-d^2 log L/d alpha^2)^(-1/2)
 fitstd_dict = {
-    "exponential": lambda weights, alpha: alpha / sum(weights) ** 0.5,
-    "rayleigh": lambda weights, alpha: alpha / sum(weights) ** 0.5,
-    "power": lambda weights, alpha: (alpha - 1.0) / sum(weights) ** 0.5,
+    'exponential' : lambda weights, alpha : alpha / sum(weights) ** 0.5,
+    'rayleigh'    : lambda weights, alpha : alpha / sum(weights) ** 0.5,
+    'power'       : lambda weights, alpha : (alpha - 1.) / sum(weights) ** 0.5
 }
-
 
 def fit_above_thresh(distr, vals, thresh=None, weights=None):
     """
@@ -132,12 +129,9 @@ def fit_above_thresh(distr, vals, thresh=None, weights=None):
         above_thresh = vals >= thresh
         if numpy.count_nonzero(above_thresh) == 0:
             # Nothing is above threshold - warn and return -1
-            logger.warning(
-                "No values are above the threshold, %.2f, maximum is %.2f.",
-                thresh,
-                vals.max(),
-            )
-            return -1.0, -1.0
+            logger.warning("No values are above the threshold, %.2f, "
+                           "maximum is %.2f.", thresh, vals.max())
+            return -1., -1.
 
         vals = vals[above_thresh]
 
@@ -157,11 +151,11 @@ def fit_above_thresh(distr, vals, thresh=None, weights=None):
 # a: slope parameter of the fit
 # t: lower threshold stat value
 fitfn_dict = {
-    "exponential": lambda x, a, t: a * numpy.exp(-a * (x - t)),
-    "rayleigh": lambda x, a, t: a * x * numpy.exp(-a * (x**2 - t**2) / 2.0),
-    "power": lambda x, a, t: (a - 1.0) * x ** (-a) * t ** (a - 1.0),
+    'exponential' : lambda x, a, t : a * numpy.exp(-a * (x - t)),
+    'rayleigh' : lambda x, a, t : (a * x * \
+                                   numpy.exp(-a * (x ** 2 - t ** 2) / 2.)),
+    'power' : lambda x, a, t : (a - 1.) * x ** (-a) * t ** (a - 1.)
 }
-
 
 def fit_fn(distr, xvals, alpha, thresh):
     """
@@ -186,16 +180,15 @@ def fit_fn(distr, xvals, alpha, thresh):
     xvals = numpy.array(xvals)
     fit = fitfn_dict[distr](xvals, alpha, thresh)
     # set fitted values below threshold to 0
-    numpy.putmask(fit, xvals < thresh, 0.0)
+    numpy.putmask(fit, xvals < thresh, 0.)
     return fit
 
 
 cum_fndict = {
-    "exponential": lambda x, alpha, t: numpy.exp(-alpha * (x - t)),
-    "rayleigh": lambda x, alpha, t: numpy.exp(-alpha * (x**2.0 - t**2.0) / 2.0),
-    "power": lambda x, alpha, t: x ** (1.0 - alpha) * t ** (alpha - 1.0),
+    'exponential' : lambda x, alpha, t : numpy.exp(-alpha * (x - t)),
+    'rayleigh' : lambda x, alpha, t : numpy.exp(-alpha * (x ** 2. - t ** 2.) / 2.),
+    'power' : lambda x, alpha, t : x ** (1. - alpha) * t ** (alpha - 1.)
 }
-
 
 def cum_fit(distr, xvals, alpha, thresh):
     """
@@ -220,15 +213,14 @@ def cum_fit(distr, xvals, alpha, thresh):
     xvals = numpy.array(xvals)
     cum_fit = cum_fndict[distr](xvals, alpha, thresh)
     # set fitted values below threshold to 0
-    numpy.putmask(cum_fit, xvals < thresh, 0.0)
+    numpy.putmask(cum_fit, xvals < thresh, 0.)
     return cum_fit
-
 
 def tail_threshold(vals, N=1000):
     """Determine a threshold above which there are N louder values"""
     vals = numpy.array(vals)
     if len(vals) < N:
-        raise RuntimeError("Not enough input values to determine threshold")
+        raise RuntimeError('Not enough input values to determine threshold')
     vals.sort()
     return min(vals[-N:])
 
@@ -266,10 +258,8 @@ def KS_test(distr, vals, alpha, thresh=None):
         thresh = min(vals)
     else:
         vals = vals[vals >= thresh]
-
     def cdf_fn(x):
         return 1 - cum_fndict[distr](x, alpha, thresh)
-
     return kstest(vals, cdf_fn)
 
 
@@ -298,7 +288,7 @@ def which_bin(par, minpar, maxpar, nbins, log=False):
     binind : int
         Bin index
     """
-    assert par >= minpar and par <= maxpar
+    assert (par >= minpar and par <= maxpar)
     if log:
         par, minpar, maxpar = numpy.log(par), numpy.log(minpar), numpy.log(maxpar)
     # par lies some fraction of the way between min and max
@@ -314,3 +304,4 @@ def which_bin(par, minpar, maxpar, nbins, log=False):
     if par == maxpar:
         binind = nbins - 1
     return binind
+

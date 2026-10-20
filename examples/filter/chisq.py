@@ -4,11 +4,11 @@ chi^2" discriminator.
 """
 
 import matplotlib.pyplot as pp
-
 import pycbc.noise
 import pycbc.psd
-import pycbc.vetoes
 import pycbc.waveform
+import pycbc.vetoes
+
 
 # Generate some noise with an advanced ligo psd
 flow = 30.0
@@ -23,18 +23,19 @@ strain = pycbc.noise.noise_from_psd(tsamples, delta_t, psd, seed=127)
 stilde = strain.to_frequencyseries()
 
 # Calculate the power chisq time series
-hp, hc = pycbc.waveform.get_fd_waveform(
-    approximant="IMRPhenomD", mass1=25, mass2=25, f_lower=flow, delta_f=stilde.delta_f
-)
+hp, hc = pycbc.waveform.get_fd_waveform(approximant='IMRPhenomD',
+                             mass1=25, mass2=25,
+                             f_lower=flow, delta_f=stilde.delta_f)
 
 hp.resize(len(stilde))
 num_bins = 16
-chisq = pycbc.vetoes.power_chisq(hp, stilde, num_bins, psd, low_frequency_cutoff=flow)
+chisq = pycbc.vetoes.power_chisq(hp, stilde, num_bins, psd,
+                                      low_frequency_cutoff=flow)
 
 # convert to a reduced chisq
 chisq /= (num_bins * 2) - 2
 
 pp.plot(chisq.sample_times, chisq)
-pp.ylabel(r"$\chi^2_r$")
-pp.xlabel("time (s)")
+pp.ylabel(r'$\chi^2_r$')
+pp.xlabel('time (s)')
 pp.show()

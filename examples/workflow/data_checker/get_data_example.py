@@ -22,45 +22,39 @@ An example of how to query science + CAT_X segments and do datafind with pycbc.w
 
 import pycbc
 import pycbc.version
-
-__author__ = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
-__date__ = pycbc.version.date
+__date__    = pycbc.version.date
 __program__ = "get_data_example"
 
 
+import os
 import argparse
 import logging
-import os
-
 import pycbc.workflow as _workflow
 
-logging.basicConfig(
-    format="%(asctime)s:%(levelname)s : %(message)s",
-    level=logging.INFO,
-    datefmt="%I:%M:%S",
-)
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+                    level=logging.INFO, datefmt='%I:%M:%S')
 
 # command line options
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
-parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument('--version', action='version', version=__version__)
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
 workflow = _workflow.Workflow(args)
 currDir = os.getcwd()
-segDir = os.path.join(currDir, "segments")
-if not os.path.exists(segDir + "/logs"):
-    os.makedirs(segDir + "/logs")
-dfDir = os.path.join(currDir, "datafind")
-if not os.path.exists(dfDir + "/logs"):
-    os.makedirs(dfDir + "/logs")
+segDir = os.path.join(currDir,"segments")
+if not os.path.exists(segDir+'/logs'):
+    os.makedirs(segDir+'/logs')
+dfDir = os.path.join(currDir,"datafind")
+if not os.path.exists(dfDir+'/logs'):
+    os.makedirs(dfDir+'/logs')
 
 scienceSegs, segsList = _workflow.setup_segment_generation(workflow, segDir)
-datafinds, scienceSegs = _workflow.setup_datafind_workflow(
-    workflow, scienceSegs, dfDir, segsList
-)
+datafinds, scienceSegs = _workflow.setup_datafind_workflow(workflow, scienceSegs,
+                           dfDir, segsList)
 
 # scienceSegs is a ligo.segment.segmentlist of the times you should analyse.
 # It contains science times, that are present on disk, with CAT_1 times

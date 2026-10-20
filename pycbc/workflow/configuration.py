@@ -27,25 +27,25 @@ workflow construction. This module is described in the page here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
 """
 
-import hashlib
-import logging
-import os
 import re
-import shutil
+import os
+import logging
 import stat
+import shutil
 import subprocess
-import urllib.parse
 from shutil import which
+import urllib.parse
+import hashlib
 
 from pycbc.types.config import InterpolatingConfigParser
 
-logger = logging.getLogger("pycbc.workflow.configuration")
+logger = logging.getLogger('pycbc.workflow.configuration')
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
 # We can add schemes explicitly, as below, but be careful with this!
-urllib.parse.uses_relative.append("osdf")
-urllib.parse.uses_netloc.append("osdf")
+urllib.parse.uses_relative.append('osdf')
+urllib.parse.uses_netloc.append('osdf')
 
 
 def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
@@ -76,8 +76,8 @@ def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
     elif chunk_size is None:
         max_chunks = 1
 
-    with open(filename_1, "rb") as f1:
-        with open(filename_2, "rb") as f2:
+    with open(filename_1, 'rb') as f1:
+        with open(filename_2, 'rb') as f2:
             for _ in range(max_chunks):
                 h1 = hashlib.sha1(f1.read(chunk_size)).hexdigest()
                 h2 = hashlib.sha1(f2.read(chunk_size)).hexdigest()
@@ -87,7 +87,8 @@ def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
 
 
 def resolve_url_http(url, u, filename):
-    """Helper function used by `resolve_url()` to handle HTTP and HTTPS URLs."""
+    """Helper function used by `resolve_url()` to handle HTTP and HTTPS URLs.
+    """
 
     # Would like to move ciecplib import to top using import_optional, but
     # it needs to be available when documentation runs in the CI, and I
@@ -96,41 +97,43 @@ def resolve_url_http(url, u, filename):
 
     headers = None
 
-    if u.netloc == "git.ligo.org":
+    if u.netloc == 'git.ligo.org':
         # We need to do two ugly special things to download a file from
         # git.ligo.org. First, we need to pass a per-user GitLab Personal Access
         # Token via the headers. Second, we need to translate the raw-download
         # URL scheme to a different scheme that uses GitLab's REST API.
         re_match = re.match(
-            "https://git.ligo.org/([^ ]+(?<!/-))/(?:-/)?raw/([^ /]+)/(.+)", url
+            'https://git.ligo.org/([^ ]+(?<!/-))/(?:-/)?raw/([^ /]+)/(.+)', url
         )
-        assert re_match, f"Failed to parse URL {url} for git.ligo.org special case"
+        assert re_match, f'Failed to parse URL {url} for git.ligo.org special case'
         project = re_match.group(1)
         ref = re_match.group(2)
         file_path = re_match.group(3)
         logging.info(
-            "Special-case download from git.ligo.org: "
-            "file %s from ref %s of project %s",
+            'Special-case download from git.ligo.org: '
+            'file %s from ref %s of project %s',
             file_path,
             ref,
-            project,
+            project
         )
-        project = urllib.parse.quote(project, safe="")
-        ref = urllib.parse.quote(ref, safe="")
+        project = urllib.parse.quote(project, safe='')
+        ref = urllib.parse.quote(ref, safe='')
         # GitLab's REST API does not seem to like double slashes
         file_path = os.path.normpath(file_path)
-        file_path = urllib.parse.quote(file_path, safe="")
+        file_path = urllib.parse.quote(file_path, safe='')
         # FIXME This code will break once GitLab changes their mind about the
         # URL format. As a different approach, we could rely on the gitlab
         # Python module to (arguably) make this more robust. For now I prefer
         # to avoid adding one more dependency, and stick with ciecplib.
-        url = f"https://git.ligo.org/api/v4/projects/{project}/repository/files/{file_path}/raw?ref={ref}&lfs=true"
+        url = f'https://git.ligo.org/api/v4/projects/{project}/repository/files/{file_path}/raw?ref={ref}&lfs=true'
         # Get the user's Personal Access Token and pass it as a header
-        xdg_config_home = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser(
-            "~/.config"
+        xdg_config_home = (
+            os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
         )
-        with open(f"{xdg_config_home}/pycbc/git-ligo-org.pat", "rb") as pat_fh:
-            headers = {"PRIVATE-TOKEN": pat_fh.read().decode("ascii").strip()}
+        with open(f'{xdg_config_home}/pycbc/git-ligo-org.pat', 'rb') as pat_fh:
+            headers = {
+                'PRIVATE-TOKEN': pat_fh.read().decode('ascii').strip()
+            }
 
     with ciecplib.Session() as s:
         r = s.get(url, allow_redirects=True, headers=headers)
@@ -183,7 +186,7 @@ def resolve_url(
                     u.path,
                     filename,
                     chunk_size=hash_chunk_size,
-                    max_chunks=hash_max_chunks,
+                    max_chunks=hash_max_chunks
                 )
                 if not same_file:
                     shutil.copy(u.path, filename)
@@ -201,14 +204,16 @@ def resolve_url(
             "object",
             "get",
             u.scheme + "://" + u.path,
-            filename,
+            filename
         ]
 
         try:
             subprocess.run(cmd, check=True, capture_output=True)
         except subprocess.CalledProcessError as err:
             # Print information about the failure
-            logging.error("Command %s failed with the following output:", err.cmd)
+            logging.error(
+                'Command %s failed with the following output:', err.cmd
+            )
             logging.error(err.stderr.decode())
             logging.error(err.stdout.decode())
             raise
@@ -277,14 +282,14 @@ def add_workflow_command_line_group(parser):
         The initialized argparse instance to add the workflow option group to.
     """
     workflowArgs = parser.add_argument_group(
-        "Configuration", "Options needed for parsing config file(s)."
+        "Configuration", "Options needed for parsing " "config file(s)."
     )
     workflowArgs.add_argument(
         "--config-files",
         nargs="+",
         action="store",
         metavar="CONFIGFILE",
-        help="List of config files to be used in analysis.",
+        help="List of config files to be used in " "analysis.",
     )
     workflowArgs.add_argument(
         "--config-overrides",
@@ -359,7 +364,8 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         """
         if configFiles is not None:
             configFiles = [
-                resolve_url(cFile, copy_to_cwd=copy_to_cwd) for cFile in configFiles
+                resolve_url(cFile, copy_to_cwd=copy_to_cwd)
+                for cFile in configFiles
             ]
 
         InterpolatingConfigParser.__init__(
@@ -369,7 +375,7 @@ class WorkflowConfigParser(InterpolatingConfigParser):
             parsedFilePath,
             deleteTuples,
             skip_extended=True,
-            delete_sharedoptions_sections=False,
+            delete_sharedoptions_sections=False
         )
         # expand executable which statements
         self.perform_exe_expansion()
@@ -480,7 +486,9 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         """
         if skip_opts is None:
             skip_opts = []
-        read_opts = [opt for opt in self.options(section) if opt not in skip_opts]
+        read_opts = [
+            opt for opt in self.options(section) if opt not in skip_opts
+        ]
         opts = []
         for opt in read_opts:
             opts.append("--{}".format(opt))
@@ -533,9 +541,9 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         for section in self.sections():
             for option, value in self.items(section):
                 # Check the value
-                value_l = value.split(" ")
+                value_l = value.split(' ')
                 new_str_l = [self.resolve_file_url(val) for val in value_l]
-                new_str = " ".join(new_str_l)
+                new_str = ' '.join(new_str_l)
                 if new_str is not None and new_str != value:
                     self.set(section, option, new_str)
 

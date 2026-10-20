@@ -1,6 +1,5 @@
 # Creates RST for the sampler inheritance diagrams
 import inspect
-
 from pycbc.inference.io import filetypes
 
 fname = 'inference_io_inheritance_diagrams.rst'

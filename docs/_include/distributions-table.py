@@ -19,9 +19,8 @@
 """Prints an RST table of available distributions from the distributions
 module.
 """
-from _dict_to_rst import format_class, rst_dict_table
-
 from pycbc.distributions import distribs
+from _dict_to_rst import (rst_dict_table, format_class)
 
 tbl = rst_dict_table(distribs, key_format='``\'{0}\'``'.format,
                      header=('Name', 'Class'),

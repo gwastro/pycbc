@@ -21,23 +21,19 @@
 #
 # =============================================================================
 #
-"""Provides IO for the emcee sampler."""
-
+"""Provides IO for the emcee sampler.
+"""
 import numpy
 
-from .base_mcmc import (
-    CommonMCMCMetadataIO,
-    EnsembleMCMCMetadataIO,
-    ensemble_read_raw_samples,
-    write_samples,
-)
 from .base_sampler import BaseSamplerFile
+from .base_mcmc import (EnsembleMCMCMetadataIO, CommonMCMCMetadataIO,
+                        write_samples, ensemble_read_raw_samples)
 
 
 class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
     """Class to handle file IO for the ``emcee`` sampler."""
 
-    name = "emcee_file"
+    name = 'emcee_file'
 
     def write_samples(self, samples, **kwargs):
         r"""Writes samples to the given file.
@@ -91,7 +87,7 @@ class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
         array
             Array of acceptance fractions with shape (requested walkers,).
         """
-        group = self.sampler_group + "/acceptance_fraction"
+        group = self.sampler_group + '/acceptance_fraction'
         if walkers is None:
             wmask = numpy.ones(self.nwalkers, dtype=bool)
         else:
@@ -108,7 +104,7 @@ class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
         acceptance_fraction : numpy.ndarray
             Array of acceptance fractions to write.
         """
-        group = self.sampler_group + "/acceptance_fraction"
+        group = self.sampler_group + '/acceptance_fraction'
         try:
             self[group][:] = acceptance_fraction
         except KeyError:

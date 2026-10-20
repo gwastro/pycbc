@@ -28,21 +28,18 @@ implementations within PyCBC.
 
 from .backend_support import get_backend
 
-
 def _fft_factory(invec, outvec, nbatch=1, size=None):
     backend = get_backend()
-    cls = backend.FFT
+    cls = getattr(backend, 'FFT')
     return cls
-
 
 def _ifft_factory(invec, outvec, nbatch=1, size=None):
     backend = get_backend()
-    cls = backend.IFFT
+    cls = getattr(backend, 'IFFT')
     return cls
 
-
 class FFT(object):
-    """Create a forward FFT  engine
+    """ Create a forward FFT  engine
 
     Parameters
     ----------
@@ -62,14 +59,12 @@ class FFT(object):
     The addresses in memory of both vectors should be divisible by
     pycbc.PYCBC_ALIGNMENT.
     """
-
     def __new__(cls, *args, **kwargs):
         real_cls = _fft_factory(*args, **kwargs)
         return real_cls(*args, **kwargs)
 
-
 class IFFT(object):
-    """Create a reverse FFT  engine
+    """ Create a reverse FFT  engine
 
     Parameters
     ----------
@@ -89,7 +84,7 @@ class IFFT(object):
     The addresses in memory of both vectors should be divisible by
     pycbc.PYCBC_ALIGNMENT.
     """
-
     def __new__(cls, *args, **kwargs):
         real_cls = _ifft_factory(*args, **kwargs)
         return real_cls(*args, **kwargs)
+

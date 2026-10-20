@@ -14,19 +14,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """Provides custom jump proposals for samplers."""
 
-from .angular import EpsieAdaptiveAngular, EpsieAngular, EpsieATAdaptiveAngular
-from .bounded_normal import (
-    EpsieAdaptiveBoundedNormal,
-    EpsieATAdaptiveBoundedNormal,
-    EpsieBoundedNormal,
-)
-from .discrete import (
-    EpsieAdaptiveBoundedDiscrete,
-    EpsieAdaptiveNormalDiscrete,
-    EpsieBoundedDiscrete,
-    EpsieNormalDiscrete,
-)
-from .normal import EpsieAdaptiveNormal, EpsieATAdaptiveNormal, EpsieNormal
+from .normal import (EpsieNormal, EpsieAdaptiveNormal, EpsieATAdaptiveNormal)
+from .bounded_normal import (EpsieBoundedNormal, EpsieAdaptiveBoundedNormal,
+                             EpsieATAdaptiveBoundedNormal)
+from .angular import (EpsieAngular, EpsieAdaptiveAngular,
+                      EpsieATAdaptiveAngular)
+from .discrete import (EpsieNormalDiscrete, EpsieBoundedDiscrete,
+                       EpsieAdaptiveNormalDiscrete,
+                       EpsieAdaptiveBoundedDiscrete)
+
 
 epsie_proposals = {
     EpsieNormal.name: EpsieNormal,
@@ -45,7 +41,7 @@ epsie_proposals = {
 }
 
 
-def epsie_proposals_from_config(cp, section="jump_proposal"):
+def epsie_proposals_from_config(cp, section='jump_proposal'):
     """Loads epsie jump proposals from the given config file.
 
     This loads jump proposals from sub-sections starting with ``section``

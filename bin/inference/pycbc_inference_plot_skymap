@@ -26,41 +26,39 @@ pycbc_inference_create_fits.
 
 This requires ligo.skymap to be installed, which requires python 3.
 """
-
 import argparse
-import subprocess
 import sys
-
+import subprocess
 from PIL import Image, PngImagePlugin
 
 from pycbc import add_common_pycbc_options, init_logging
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
-parser.add_argument("--input-file", required=True, help='Input fits file"')
-parser.add_argument("--output-file", required=True, help='Output png file."')
-parser.add_argument("--colormap", help="Specify the colormap to use.")
+parser.add_argument('--input-file', required=True,
+                    help='Input fits file"')
+parser.add_argument('--output-file', required=True,
+                    help='Output png file."')
+parser.add_argument('--colormap',
+                    help='Specify the colormap to use.')
 
 opts = parser.parse_args()
 
 init_logging(opts.verbose)
 
-cmd = "ligo-skymap-plot {} -o {} --annotate --contour 50 90".format(
-    opts.input_file, opts.output_file
-)
+cmd = 'ligo-skymap-plot {} -o {} --annotate --contour 50 90'.format(
+    opts.input_file, opts.output_file)
 if opts.colormap is not None:
-    cmd += " --colormap {}".format(opts.colormap)
+    cmd += ' --colormap {}'.format(opts.colormap)
 ret = subprocess.run(cmd.split())
 ret.check_returncode()
 
 im = Image.open(opts.output_file)
 meta = PngImagePlugin.PngInfo()
 
-kwds = {
-    "cmd": " ".join(sys.argv),
-    "title": "Sky map",
-    "caption": "Sky location posterior probability.",
-}
+kwds = {'cmd': " ".join(sys.argv),
+        'title': "Sky map",
+        'caption': "Sky location posterior probability."}
 for key in kwds:
     meta.add_text(str(key), str(kwds[key]))
 im.save(opts.output_file, "png", pnginfo=meta)

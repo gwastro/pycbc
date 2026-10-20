@@ -16,7 +16,6 @@
 This modules provides functions for estimating the marginal
 likelihood or evidence of a model.
 """
-
 import numpy
 from scipy import integrate
 
@@ -48,7 +47,7 @@ def arithmetic_mean_estimator(log_likelihood):
     num_samples = len(log_likelihood)
     logl_max = numpy.max(log_likelihood)
 
-    log_evidence = 0.0
+    log_evidence = 0.
     for i, _ in enumerate(log_likelihood):
         log_evidence += numpy.exp(log_likelihood[i] - logl_max)
 
@@ -79,13 +78,13 @@ def harmonic_mean_estimator(log_likelihood):
         Estimation of the log of the evidence.
     """
     num_samples = len(log_likelihood)
-    logl_max = numpy.max(-1.0 * log_likelihood)
+    logl_max = numpy.max(-1.0*log_likelihood)
 
-    log_evidence = 0.0
+    log_evidence = 0.
     for i, _ in enumerate(log_likelihood):
-        log_evidence += numpy.exp(-1.0 * log_likelihood[i] + logl_max)
+        log_evidence += numpy.exp(-1.0*log_likelihood[i] + logl_max)
 
-    log_evidence = -1.0 * numpy.log(log_evidence)
+    log_evidence = -1.0*numpy.log(log_evidence)
     log_evidence += logl_max
     log_evidence += numpy.log(num_samples)
 
@@ -153,7 +152,8 @@ def ladder_thermodynamic_integration(betas, logls):
         the posterior has been sampled.
     """
     if len(betas) != len(logls):
-        raise ValueError("Need the same number of log(L) values as temperatures.")
+        raise ValueError("Need the same number of log(L) values as "
+                         "temperatures.")
     order = numpy.argsort(betas)[::-1]
     betas = betas[order]
     logls = logls[order]
@@ -171,7 +171,8 @@ def ladder_thermodynamic_integration(betas, logls):
     return logZ, numpy.abs(logZ - logZ2)
 
 
-def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
+def thermodynamic_integration(log_likelihood, betas,
+                              method="simpsons"):
     """Returns the log evidence of the model via thermodynamic integration.
     Also returns an estimated standard deviation for the log evidence.
 
@@ -209,7 +210,8 @@ def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
     method_list = ["trapezoid", "trapezoid_corrected", "simpsons"]
 
     if method not in method_list:
-        raise ValueError("Method %s not supported. Expected %s" % (method, method_list))
+        raise ValueError("Method %s not supported. Expected %s"
+                         % (method, method_list))
     # Read in the data and ensure ordering of data.
     # Ascending order sort
     order = numpy.argsort(betas)
@@ -218,9 +220,9 @@ def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
 
     # Assume log likelihood is given in shape of beta, walker,
     # and iteration.
-    log_likelihood = numpy.reshape(
-        log_likelihood, (len(betas), len(log_likelihood[0].flatten()))
-    )
+    log_likelihood = numpy.reshape(log_likelihood,
+                                   (len(betas),
+                                    len(log_likelihood[0].flatten())))
 
     average_logl = numpy.average(log_likelihood, axis=1)
 
@@ -233,9 +235,9 @@ def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
         # https://link.springer.com/article/10.1007/s11222-013-9397-1
         var_correction = 0
         for i in range(len(betas) - 1):
-            delta_beta = betas[i + 1] - betas[i]
-            pre_fac_var = (1.0 / 12.0) * (delta_beta**2.0)
-            var_diff = numpy.var(log_likelihood[i + 1])
+            delta_beta = betas[i+1] - betas[i]
+            pre_fac_var = (1. / 12.) * (delta_beta ** 2.0)
+            var_diff = numpy.var(log_likelihood[i+1])
             var_diff -= numpy.var(log_likelihood[i])
             var_correction -= pre_fac_var * var_diff
 
@@ -248,7 +250,8 @@ def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
         # so we can sacrifice precision there, rather than near
         # beta -> 1. Option even="last" puts trapezoid rule at
         # first few points.
-        log_evidence = integrate.simps(average_logl, betas, even="last")
+        log_evidence = integrate.simps(average_logl, betas,
+                                       even="last")
 
     # Estimate the Monte Carlo variance of the evidence calculation
     # See (Evans, Annis, 2019.)
@@ -266,7 +269,8 @@ def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
 
     elif method == "simpsons":
         for i, _ in enumerate(log_likelihood[0]):
-            ti_vec[i] = integrate.simps(logl_per_samp[i], betas, even="last")
+            ti_vec[i] = integrate.simps(logl_per_samp[i], betas,
+                                        even="last")
 
     # Standard error is sample std / sqrt(number of samples)
     mcmc_std = numpy.std(ti_vec) / numpy.sqrt(float(len(log_likelihood[0])))
@@ -303,17 +307,17 @@ def stepping_stone_algorithm(log_likelihood, betas):
 
     # Assume log likelihood is given in shape of beta,
     # walker, iteration.
-    log_likelihood = numpy.reshape(
-        log_likelihood, (len(betas), len(log_likelihood[0].flatten()))
-    )
+    log_likelihood = numpy.reshape(log_likelihood,
+                                   (len(betas),
+                                    len(log_likelihood[0].flatten())))
 
     log_rk_pb = numpy.zeros(len(betas) - 1)
     for i in range(len(betas) - 1):
-        delta_beta = betas[i] - betas[i + 1]
+        delta_beta = betas[i] - betas[i+1]
         # Max log likelihood for beta [i+1]
-        max_logl_pb = numpy.max(log_likelihood[i + 1])
+        max_logl_pb = numpy.max(log_likelihood[i+1])
         val_1 = delta_beta * max_logl_pb
-        val_2 = delta_beta * (log_likelihood[i + 1] - max_logl_pb)
+        val_2 = delta_beta * (log_likelihood[i+1] - max_logl_pb)
         val_2 = numpy.log(numpy.average(numpy.exp(val_2)))
         log_rk_pb[i] = val_1 + val_2
 
@@ -323,10 +327,10 @@ def stepping_stone_algorithm(log_likelihood, betas):
     # Calculate the Monte Carlo variation
     mcmc_std = 0
     for i in range(len(betas) - 1):
-        delta_beta = betas[i] - betas[i + 1]
-        pre_fact = (delta_beta * log_likelihood[i + 1]) - log_rk_pb[i]
+        delta_beta = betas[i] - betas[i+1]
+        pre_fact = (delta_beta * log_likelihood[i+1]) - log_rk_pb[i]
         pre_fact = numpy.exp(pre_fact) - 1.0
-        val = numpy.sum(pre_fact**2)
+        val = numpy.sum(pre_fact ** 2)
 
         mcmc_std += val
 

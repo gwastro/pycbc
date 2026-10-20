@@ -2,31 +2,35 @@
 Convenience classes for accessing hdf5 trigger files
 """
 
-import inspect
-import logging
-import pickle
-from io import BytesIO
-from itertools import chain
-
 import h5py
 import numpy as np
-from igwn_ligolw import ligolw, lsctables
-from igwn_ligolw import utils as ligolw_utils
+import logging
+import inspect
+import pickle
+
+from itertools import chain
+from io import BytesIO
 from lal import LIGOTimeGPS
 
-from pycbc import conversions, events, pnutils
-from pycbc.events import mean_if_greater_than_zero, ranking, veto
-from pycbc.io.ligolw import (
-    create_process_table,
-    return_empty_sngl,
-    return_search_summary,
-)
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 
-logger = logging.getLogger("pycbc.io.hdf")
+from pycbc.io.ligolw import (
+    return_search_summary,
+    return_empty_sngl,
+    create_process_table
+)
+from pycbc import events, conversions, pnutils
+from pycbc.events import ranking, veto
+from pycbc.events import mean_if_greater_than_zero
+
+logger = logging.getLogger('pycbc.io.hdf')
 
 
 class HGroup(h5py.Group):
-    """Low level extensions to the h5py group object"""
+    """ Low level extensions to the h5py group object
+    """
 
     def create_group(self, *args, **kwargs):
         """
@@ -40,16 +44,18 @@ class HGroup(h5py.Group):
         Wrapper around h5py's create_dataset so that checksums are used
         """
         # Do not allow callers to override including fletcher32
-        if "fletcher32" in kwds:
-            del kwds["fletcher32"]
+        if 'fletcher32' in kwds:
+            del kwds['fletcher32']
 
         try:
             return super().create_dataset(name, *args, **kwds, fletcher32=True)
         except (ValueError, TypeError):
             logging.debug(
-                "Could not create a dataset with fletcher32, falling back to default"
+                "Could not create a dataset with fletcher32, falling back "
+                "to default"
             )
             return super().create_dataset(name, *args, **kwds)
+
 
     def __getitem__(self, name):
         """
@@ -64,7 +70,7 @@ class HGroup(h5py.Group):
         # Only wrap group-like objects. Datasets and other non-group
         # objects should be returned unchanged. Use presence of
         # mapping-like API (keys) as a quick proxy for group-like.
-        if isinstance(obj, h5py.Group) and hasattr(obj, "keys"):
+        if isinstance(obj, h5py.Group) and hasattr(obj, 'keys'):
             return HGroup(obj.id)
         return obj
 
@@ -78,19 +84,11 @@ class HGroup(h5py.Group):
 
 
 class HFile(HGroup, h5py.File):
-    """Low level extensions to the capabilities of reading an hdf5 File"""
-
-    def select(
-        self,
-        fcn,
-        *args,
-        chunksize=10**6,
-        derived=None,
-        group="",
-        return_data=True,
-        premask=None,
-    ):
-        """Return arrays from an hdf5 file that satisfy the given function
+    """ Low level extensions to the capabilities of reading an hdf5 File
+    """
+    def select(self, fcn, *args, chunksize=10**6, derived=None, group='',
+               return_data=True, premask=None):
+        """ Return arrays from an hdf5 file that satisfy the given function
 
         Parameters
         ----------
@@ -154,13 +152,11 @@ class HFile(HGroup, h5py.File):
         refs = {}
         size = None
         for ds in dsets:
-            refs[ds] = self[group + "/" + ds]
+            refs[ds] = self[group + '/' + ds]
             if (size is not None) and (refs[ds].size != size):
-                raise RuntimeError(
-                    f"Dataset {ds} is {self[ds].size} "
-                    "entries long, which does not match "
-                    f"previous input datasets ({size})."
-                )
+                raise RuntimeError(f"Dataset {ds} is {self[ds].size} "
+                                   "entries long, which does not match "
+                                   f"previous input datasets ({size}).")
             size = refs[ds].size
 
         # Apply any pre-masks
@@ -179,10 +175,8 @@ class HFile(HGroup, h5py.File):
         if not mask.size == size:
             # You get here if you are using a boolean premask which
             # isn't the same size as the arrays
-            raise RuntimeError(
-                f"Using premask of size {mask.size} which "
-                f"does not match the input datasets ({size})."
-            )
+            raise RuntimeError(f"Using premask of size {mask.size} which "
+                               f"does not match the input datasets ({size}).")
 
         # datasets being returned (possibly)
         data = {}
@@ -207,7 +201,8 @@ class HFile(HGroup, h5py.File):
                 submask = np.flatnonzero(mask[i:r])
 
             # Read each chunk's worth of data
-            partial_data = {arg: refs[arg][i:r][mask[i:r]] for arg in dsets}
+            partial_data = {arg: refs[arg][i:r][mask[i:r]]
+                            for arg in dsets}
             partial = []
             for a in args:
                 if a in derived.keys():
@@ -232,7 +227,8 @@ class HFile(HGroup, h5py.File):
             i += chunksize
 
         if return_data:
-            return_tuple = tuple(np.concatenate(data[arg]) for arg in args)
+            return_tuple = tuple(np.concatenate(data[arg])
+                                 for arg in args)
         else:
             return_tuple = None
 
@@ -240,16 +236,15 @@ class HFile(HGroup, h5py.File):
 
 
 class DictArray(object):
-    """Utility for organizing sets of arrays of equal length.
+    """ Utility for organizing sets of arrays of equal length.
 
     Manages a dictionary of arrays of equal length. This can also
     be instantiated with a set of hdf5 files and the key values. The full
     data is always in memory and all operations create new instances of the
     DictArray.
     """
-
     def __init__(self, data=None, files=None, groups=None):
-        """Create a DictArray
+        """ Create a DictArray
 
         Parameters
         ----------
@@ -262,17 +257,14 @@ class DictArray(object):
         """
         # Check that input fits with how the DictArray is set up
         if data and files:
-            raise RuntimeError(
-                "DictArray can only have data or files as input, not both."
-            )
+            raise RuntimeError('DictArray can only have data or files as '
+                               'input, not both.')
         if data is None and files is None:
-            raise RuntimeError(
-                "DictArray needs either data or files at"
-                "initialization. To set up an empty instance"
-                "use DictArray(data={})"
-            )
+            raise RuntimeError('DictArray needs either data or files at'
+                               'initialization. To set up an empty instance'
+                               'use DictArray(data={})')
         if files and not groups:
-            raise RuntimeError("If files are given then need groups.")
+            raise RuntimeError('If files are given then need groups.')
 
         self.data = data
         self.groups = groups
@@ -303,10 +295,8 @@ class DictArray(object):
 
     def __add__(self, other):
         if self.data == {}:
-            logger.debug(
-                "Adding data to a DictArray instance which "
-                "was initialized with an empty dict"
-            )
+            logger.debug('Adding data to a DictArray instance which '
+                         'was initialized with an empty dict')
             return self._return(data=other)
 
         data = {}
@@ -314,11 +304,12 @@ class DictArray(object):
             try:
                 data[k] = np.concatenate([self.data[k], other.data[k]])
             except KeyError:
-                logger.info("%s does not exist in other data", k)
+                logger.info('%s does not exist in other data', k)
         return self._return(data=data)
 
     def select(self, idx):
-        """Return a new DictArray containing only the indexed values"""
+        """ Return a new DictArray containing only the indexed values
+        """
         data = {}
         for k in self.data:
             # Make sure each entry is an array (not a scalar)
@@ -326,7 +317,8 @@ class DictArray(object):
         return self._return(data=data)
 
     def remove(self, idx):
-        """Return a new DictArray that does not contain the indexed values"""
+        """ Return a new DictArray that does not contain the indexed values
+        """
         data = {}
         for k in self.data:
             data[k] = np.delete(self.data[k], np.array(idx, dtype=int))
@@ -338,108 +330,87 @@ class DictArray(object):
             f.attrs[k] = self.attrs[k]
 
         for k in self.data:
-            f.create_dataset(
-                k,
-                data=self.data[k],
-                compression="gzip",
-                compression_opts=9,
-                shuffle=True,
-            )
+            f.create_dataset(k, data=self.data[k],
+                      compression='gzip',
+                      compression_opts=9,
+                      shuffle=True)
         f.close()
 
 
 class StatmapData(DictArray):
-    def __init__(
-        self,
-        data=None,
-        seg=None,
-        attrs=None,
-        files=None,
-        groups=(
-            "stat",
-            "time1",
-            "time2",
-            "trigger_id1",
-            "trigger_id2",
-            "template_id",
-            "decimation_factor",
-            "timeslide_id",
-        ),
-    ):
-        super(StatmapData, self).__init__(data=data, files=files, groups=groups)
+    def __init__(self, data=None, seg=None, attrs=None, files=None,
+                 groups=('stat', 'time1', 'time2', 'trigger_id1',
+                         'trigger_id2', 'template_id', 'decimation_factor',
+                         'timeslide_id')):
+        super(StatmapData, self).__init__(data=data, files=files,
+                                          groups=groups)
 
         if data:
-            self.seg = seg
-            self.attrs = attrs
+            self.seg=seg
+            self.attrs=attrs
         elif files:
             f = HFile(files[0], "r")
-            self.seg = f["segments"]
+            self.seg = f['segments']
             self.attrs = f.attrs
 
     def _return(self, data):
         return self.__class__(data=data, attrs=self.attrs, seg=self.seg)
 
     def cluster(self, window):
-        """Cluster the dict array, assuming it has the relevant Coinc colums,
+        """ Cluster the dict array, assuming it has the relevant Coinc colums,
         time1, time2, stat, and timeslide_id
         """
         # If no events, do nothing
         if len(self.time1) == 0 or len(self.time2) == 0:
             return self
         from pycbc.events import cluster_coincs
-
-        interval = self.attrs["timeslide_interval"]
-        cid = cluster_coincs(
-            self.stat, self.time1, self.time2, self.timeslide_id, interval, window
-        )
+        interval = self.attrs['timeslide_interval']
+        cid = cluster_coincs(self.stat, self.time1, self.time2,
+                                 self.timeslide_id, interval, window)
         return self.select(cid)
 
     def save(self, outname):
         super(StatmapData, self).save(outname)
         with HFile(outname, "w") as f:
             for key in self.seg.keys():
-                f["segments/%s/start" % key] = self.seg[key]["start"][:]
-                f["segments/%s/end" % key] = self.seg[key]["end"][:]
+                f['segments/%s/start' % key] = self.seg[key]['start'][:]
+                f['segments/%s/end' % key] = self.seg[key]['end'][:]
 
 
 class MultiifoStatmapData(StatmapData):
-    def __init__(self, data=None, seg=None, attrs=None, files=None, ifos=None):
-        groups = ["decimation_factor", "stat", "template_id", "timeslide_id"]
+    def __init__(self, data=None, seg=None, attrs=None,
+                       files=None, ifos=None):
+        groups = ['decimation_factor', 'stat', 'template_id', 'timeslide_id']
         for ifo in ifos:
-            groups += ["%s/time" % ifo]
-            groups += ["%s/trigger_id" % ifo]
+            groups += ['%s/time' % ifo]
+            groups += ['%s/trigger_id' % ifo]
 
-        super(MultiifoStatmapData, self).__init__(
-            data=data, files=files, groups=groups, attrs=attrs, seg=seg
-        )
+        super(MultiifoStatmapData, self).__init__(data=data, files=files,
+                                                  groups=groups, attrs=attrs,
+                                                  seg=seg)
 
     def _return(self, data):
-        ifolist = self.attrs["ifos"].split(" ")
-        return self.__class__(data=data, attrs=self.attrs, seg=self.seg, ifos=ifolist)
+        ifolist = self.attrs['ifos'].split(' ')
+        return self.__class__(data=data, attrs=self.attrs, seg=self.seg,
+                              ifos=ifolist)
 
     def cluster(self, window):
-        """Cluster the dict array, assuming it has the relevant Coinc colums,
+        """ Cluster the dict array, assuming it has the relevant Coinc colums,
         time1, time2, stat, and timeslide_id
         """
         # If no events, do nothing
-        pivot_ifo = self.attrs["pivot"]
-        fixed_ifo = self.attrs["fixed"]
-        if (
-            len(self.data["%s/time" % pivot_ifo]) == 0
-            or len(self.data["%s/time" % fixed_ifo]) == 0
-        ):
+        pivot_ifo = self.attrs['pivot']
+        fixed_ifo = self.attrs['fixed']
+        if len(self.data['%s/time' % pivot_ifo]) == 0 or len(self.data['%s/time' % fixed_ifo]) == 0:
             return self
         from pycbc.events import cluster_coincs
-
-        interval = self.attrs["timeslide_interval"]
-        cid = cluster_coincs(
-            self.stat,
-            self.data["%s/time" % pivot_ifo],
-            self.data["%s/time" % fixed_ifo],
-            self.timeslide_id,
-            interval,
-            window,
-        )
+        interval = self.attrs['timeslide_interval']
+        cid = cluster_coincs(self.stat,
+                             self.data['%s/time' % pivot_ifo],
+                             self.data['%s/time' % fixed_ifo],
+                             self.timeslide_id,
+                             interval,
+                             window)
         return self.select(cid)
 
 
@@ -456,19 +427,19 @@ class FileData(object):
             String should evaluate to a Boolean expression using attributes
             of the class instance derived from columns: ex. 'self.snr < 6.5'
         """
-        if not fname:
-            raise RuntimeError("Didn't get a file!")
+        if not fname: raise RuntimeError("Didn't get a file!")
 
         self.fname = fname
         self.h5file = HFile(fname, "r")
         if group is None:
             if len(self.h5file.keys()) == 1:
-                (group,) = self.h5file.keys()
+                group, = self.h5file.keys()
             else:
                 raise RuntimeError("Didn't get a group!")
         self.group_key = group
         self.group = self.h5file[group]
-        self.columns = columnlist if columnlist is not None else list(self.group.keys())
+        self.columns = columnlist if columnlist is not None \
+                       else list(self.group.keys())
         self.filter_func = filter_func
         self._mask = None
 
@@ -523,6 +494,7 @@ class FileData(object):
 
 
 class DataFromFiles(object):
+
     def __init__(self, filelist, group=None, columnlist=None, filter_func=None):
         self.files = filelist
         self.group = group
@@ -544,20 +516,16 @@ class DataFromFiles(object):
             Values from the dataset, filtered if requested and
             concatenated in order of file list
         """
-        logger.info("getting %s", col)
+        logger.info('getting %s', col)
         vals = []
         for f in self.files:
-            d = FileData(
-                f,
-                group=self.group,
-                columnlist=self.columns,
-                filter_func=self.filter_func,
-            )
+            d = FileData(f, group=self.group, columnlist=self.columns,
+                         filter_func=self.filter_func)
             vals.append(d.get_column(col))
             # Close each file since h5py has an upper limit on the number of
             # open file objects (approx. 1000)
             d.close()
-        logger.info("- got %i values", sum(len(v) for v in vals))
+        logger.info('- got %i values', sum(len(v) for v in vals))
         return np.concatenate(vals)
 
 
@@ -565,20 +533,9 @@ class SingleDetTriggers(object):
     """
     Provides easy access to the parameters of single-detector CBC triggers.
     """
-
-    def __init__(
-        self,
-        trig_file,
-        detector,
-        bank_file=None,
-        veto_file=None,
-        segment_name=None,
-        premask=None,
-        filter_rank=None,
-        filter_threshold=None,
-        chunksize=10**6,
-        filter_func=None,
-    ):
+    def __init__(self, trig_file, detector, bank_file=None, veto_file=None,
+                 segment_name=None, premask=None, filter_rank=None,
+                 filter_threshold=None, chunksize=10**6, filter_func=None):
         """
         Create a SingleDetTriggers instance
 
@@ -613,15 +570,15 @@ class SingleDetTriggers(object):
         chunksize : int , default 10**6
             Size of chunks to read in for the filter_rank / threshold.
         """
-        logger.info("Loading triggers")
-        self.trigs_f = HFile(trig_file, "r")
+        logger.info('Loading triggers')
+        self.trigs_f = HFile(trig_file, 'r')
         self.trigs = self.trigs_f[detector]
-        self.ntriggers = self.trigs["end_time"].size
+        self.ntriggers = self.trigs['end_time'].size
         self.ifo = detector  # convenience attributes
         self.detector = detector
         if bank_file:
-            logger.info("Loading bank")
-            self.bank = HFile(bank_file, "r")
+            logger.info('Loading bank')
+            self.bank = HFile(bank_file, 'r')
         else:
             # empty dict in place of non-existent hdf file
             self.bank = {}
@@ -638,21 +595,18 @@ class SingleDetTriggers(object):
 
         if filter_rank:
             assert filter_threshold is not None
-            logger.info(
-                "Applying threshold of %.3f on %s", filter_threshold, filter_rank
-            )
-            fcn_dsets = (
-                ranking.sngls_ranking_function_dict[filter_rank],
-                ranking.reqd_datasets[filter_rank],
-            )
+            logger.info("Applying threshold of %.3f on %s",
+                        filter_threshold, filter_rank)
+            fcn_dsets = (ranking.sngls_ranking_function_dict[filter_rank],
+                         ranking.reqd_datasets[filter_rank])
             idx, _ = self.trigs_f.select(
-                lambda rank: rank > filter_threshold,
-                filter_rank,
-                derived={filter_rank: fcn_dsets},
-                return_data=False,
-                premask=self.mask,
-                group=detector,
-                chunksize=chunksize,
+                 lambda rank: rank > filter_threshold,
+                 filter_rank,
+                 derived={filter_rank: fcn_dsets},
+                 return_data=False,
+                 premask=self.mask,
+                 group=detector,
+                 chunksize=chunksize,
             )
             logger.info("%d triggers remain", idx.size)
             # If self.mask already has values, need to take these into account:
@@ -661,49 +615,42 @@ class SingleDetTriggers(object):
         if filter_func:
             # Apply a filter on the triggers which is _not_ a ranking statistic
             for rank_str in ranking.sngls_ranking_function_dict.keys():
-                if f"self.{rank_str}" in filter_func:
-                    logger.warning(
-                        "Supplying the ranking (%s) in "
-                        "filter_func is inefficient, suggest to "
-                        "use filter_rank instead.",
-                        rank_str,
-                    )
-            logger.info("Setting up filter function")
+                if f'self.{rank_str}' in filter_func:
+                    logger.warning('Supplying the ranking (%s) in '
+                                   'filter_func is inefficient, suggest to '
+                                   'use filter_rank instead.', rank_str)
+            logger.info('Setting up filter function')
             for c in self.trigs.keys():
                 if c in filter_func:
-                    setattr(self, "_" + c, self.trigs[c][:])
+                    setattr(self, '_'+c, self.trigs[c][:])
             for c in self.bank.keys():
                 if c in filter_func:
                     # get template parameters corresponding to triggers
-                    setattr(
-                        self,
-                        "_" + c,
-                        np.array(self.bank[c])[self.trigs["template_id"][:]],
-                    )
+                    setattr(self, '_'+c,
+                        np.array(self.bank[c])[self.trigs['template_id'][:]])
 
-            filter_mask = eval(filter_func.replace("self.", "self._"))
+            filter_mask = eval(filter_func.replace('self.', 'self._'))
             # remove the dummy attributes
             for c in chain(self.trigs.keys(), self.bank.keys()):
-                if c in filter_func:
-                    delattr(self, "_" + c)
+                if c in filter_func: delattr(self, '_'+c)
 
             self.apply_mask(filter_mask)
-            logger.info(
-                "%i triggers remain after cut on %s", sum(self.mask), filter_func
-            )
+            logger.info('%i triggers remain after cut on %s',
+                        sum(self.mask), filter_func)
 
         if veto_file:
-            logger.info("Applying veto segments")
+            logger.info('Applying veto segments')
             # veto_mask is an array of indices into the trigger arrays
             # giving the surviving triggers
-            logger.info("%i triggers before vetoes", self.mask_size)
+            logger.info('%i triggers before vetoes', self.mask_size)
             veto_mask, _ = events.veto.indices_outside_segments(
-                self.end_time, [veto_file], ifo=detector, segment_name=segment_name
-            )
+                self.end_time, [veto_file],
+                ifo=detector, segment_name=segment_name)
 
             # Update mask accordingly
             self.apply_mask(veto_mask)
-            logger.info("%i triggers remain after vetoes", self.mask_size)
+            logger.info('%i triggers remain after vetoes',
+                        self.mask_size)
 
     def __getitem__(self, key):
         # Is key in the TRIGGER_MERGE file?
@@ -722,24 +669,26 @@ class SingleDetTriggers(object):
 
     def checkbank(self, param):
         if self.bank == {}:
-            return RuntimeError("Can't get %s values without a bank file" % param)
+            return RuntimeError("Can't get %s values without a bank file"
+                                                                       % param)
 
     def trig_dict(self):
         """Returns dict of the masked trigger values"""
         mtrigs = {}
         for k in self.trigs:
-            if len(self.trigs[k]) == len(self.trigs["end_time"]):
+            if len(self.trigs[k]) == len(self.trigs['end_time']):
                 if self.mask is not None:
                     mtrigs[k] = self.trigs[k][self.mask]
                 else:
                     mtrigs[k] = self.trigs[k][:]
-        mtrigs["ifo"] = self.ifo
+        mtrigs['ifo'] = self.ifo
         return mtrigs
 
     @classmethod
     def get_param_names(cls):
         """Returns a list of plottable CBC parameter variables"""
-        return [m[0] for m in inspect.getmembers(cls) if type(m[1]) == property]
+        return [m[0] for m in inspect.getmembers(cls) \
+            if type(m[1]) == property]
 
     def apply_mask(self, logic_mask):
         """Apply a mask over the top of the current mask
@@ -751,8 +700,8 @@ class SingleDetTriggers(object):
         if self.mask is None:
             self.mask = np.zeros(self.ntriggers, dtype=bool)
             self.mask[logic_mask] = True
-        elif hasattr(self.mask, "dtype") and (self.mask.dtype == "bool"):
-            if hasattr(logic_mask, "dtype") and (logic_mask.dtype == "bool"):
+        elif hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
+            if hasattr(logic_mask, 'dtype') and (logic_mask.dtype == 'bool'):
                 # So both new and old masks are boolean, numpy slice assignment
                 # can be used directly, with no additional memory.
                 self.mask[self.mask] = logic_mask
@@ -779,12 +728,12 @@ class SingleDetTriggers(object):
             return
 
         # Use intersection of the indices of True values in the masks
-        if hasattr(logic_mask, "dtype") and (logic_mask.dtype == "bool"):
+        if hasattr(logic_mask, 'dtype') and (logic_mask.dtype == 'bool'):
             new_indices = np.flatnonzero(logic_mask)
         else:
             new_indices = np.array(logic_mask)
 
-        if hasattr(self.mask, "dtype") and (self.mask.dtype == "bool"):
+        if hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
             orig_indices = np.flatnonzero(self.mask)
         else:
             orig_indices = np.array(self.mask)
@@ -793,13 +742,11 @@ class SingleDetTriggers(object):
         and_indices = np.intersect1d(new_indices, orig_indices)
         self.mask[and_indices.astype(np.uint64)] = True
 
-    def mask_to_n_loudest_clustered_events(
-        self,
-        rank_method,
-        statistic_threshold=None,
-        n_loudest=10,
-        cluster_window=10,
-    ):
+    def mask_to_n_loudest_clustered_events(self, rank_method,
+                                           statistic_threshold=None,
+                                           n_loudest=10,
+                                           cluster_window=10,
+                                           ):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic.
 
@@ -867,72 +814,72 @@ class SingleDetTriggers(object):
 
     @property
     def template_id(self):
-        return self.get_column("template_id").astype(int)
+        return self.get_column('template_id').astype(int)
 
     @property
     def mass1(self):
-        self.checkbank("mass1")
-        return self.bank["mass1"][:][self.template_id]
+        self.checkbank('mass1')
+        return self.bank['mass1'][:][self.template_id]
 
     @property
     def mass2(self):
-        self.checkbank("mass2")
-        return self.bank["mass2"][:][self.template_id]
+        self.checkbank('mass2')
+        return self.bank['mass2'][:][self.template_id]
 
     @property
     def spin1z(self):
-        self.checkbank("spin1z")
-        return self.bank["spin1z"][:][self.template_id]
+        self.checkbank('spin1z')
+        return self.bank['spin1z'][:][self.template_id]
 
     @property
     def spin2z(self):
-        self.checkbank("spin2z")
-        return self.bank["spin2z"][:][self.template_id]
+        self.checkbank('spin2z')
+        return self.bank['spin2z'][:][self.template_id]
 
     @property
     def spin2x(self):
-        self.checkbank("spin2x")
-        return self.bank["spin2x"][:][self.template_id]
+        self.checkbank('spin2x')
+        return self.bank['spin2x'][:][self.template_id]
 
     @property
     def spin2y(self):
-        self.checkbank("spin2y")
-        return self.bank["spin2y"][:][self.template_id]
+        self.checkbank('spin2y')
+        return self.bank['spin2y'][:][self.template_id]
 
     @property
     def spin1x(self):
-        self.checkbank("spin1x")
-        return self.bank["spin1x"][:][self.template_id]
+        self.checkbank('spin1x')
+        return self.bank['spin1x'][:][self.template_id]
 
     @property
     def spin1y(self):
-        self.checkbank("spin1y")
-        return self.bank["spin1y"][:][self.template_id]
+        self.checkbank('spin1y')
+        return self.bank['spin1y'][:][self.template_id]
 
     @property
     def inclination(self):
-        self.checkbank("inclination")
-        return self.bank["inclination"][:][self.template_id]
+        self.checkbank('inclination')
+        return self.bank['inclination'][:][self.template_id]
 
     @property
     def eccentricity(self):
-        self.checkbank("eccentricity")
-        return self.bank["eccentricity"][:][self.template_id]
+        self.checkbank('eccentricity')
+        return self.bank['eccentricity'][:][self.template_id]
 
     @property
     def rel_anomaly(self):
-        self.checkbank("rel_anomaly")
-        return self.bank["rel_anomaly"][:][self.template_id]
+        self.checkbank('rel_anomaly')
+        return self.bank['rel_anomaly'][:][self.template_id]
 
     @property
     def f_lower(self):
-        self.checkbank("f_lower")
-        return self.bank["f_lower"][:][self.template_id]
+        self.checkbank('f_lower')
+        return self.bank['f_lower'][:][self.template_id]
 
     @property
     def approximant(self):
-        self.checkbank("approximant")
-        return self.bank["approximant"][:][self.template_id]
+        self.checkbank('approximant')
+        return self.bank['approximant'][:][self.template_id]
 
     @property
     def mtotal(self):
@@ -949,50 +896,50 @@ class SingleDetTriggers(object):
     @property
     def effective_spin(self):
         # FIXME assumes aligned spins
-        return conversions.chi_eff(self.mass1, self.mass2, self.spin1z, self.spin2z)
+        return conversions.chi_eff(self.mass1, self.mass2,
+                                   self.spin1z, self.spin2z)
 
     # IMPROVEME: would like to have a way to access all get_freq and/or
     # other pnutils.* names rather than hard-coding each one
     # - eg make this part of a fancy interface to the bank file ?
     @property
     def f_seobnrv2_peak(self):
-        return pnutils.get_freq(
-            "fSEOBNRv2Peak", self.mass1, self.mass2, self.spin1z, self.spin2z
-        )
+        return pnutils.get_freq('fSEOBNRv2Peak', self.mass1, self.mass2,
+                                self.spin1z, self.spin2z)
 
     @property
     def f_seobnrv4_peak(self):
-        return pnutils.get_freq(
-            "fSEOBNRv4Peak", self.mass1, self.mass2, self.spin1z, self.spin2z
-        )
+        return pnutils.get_freq('fSEOBNRv4Peak', self.mass1, self.mass2,
+                                self.spin1z, self.spin2z)
 
     @property
     def end_time(self):
-        return self.get_column("end_time")
+        return self.get_column('end_time')
 
     @property
     def template_duration(self):
-        return self.get_column("template_duration")
+        return self.get_column('template_duration')
 
     @property
     def snr(self):
-        return self.get_column("snr")
+        return self.get_column('snr')
 
     @property
     def sgchisq(self):
-        return self.get_column("sg_chisq")
+        return self.get_column('sg_chisq')
 
     @property
     def u_vals(self):
-        return self.get_column("u_vals")
+        return self.get_column('u_vals')
 
     @property
     def rchisq(self):
-        return self.get_column("chisq") / (self.get_column("chisq_dof") * 2 - 2)
+        return self.get_column('chisq') \
+            / (self.get_column('chisq_dof') * 2 - 2)
 
     @property
     def psd_var_val(self):
-        return self.get_column("psd_var_val")
+        return self.get_column('psd_var_val')
 
     @property
     def newsnr(self):
@@ -1004,15 +951,13 @@ class SingleDetTriggers(object):
 
     @property
     def newsnr_sgveto_psdvar(self):
-        return ranking.newsnr_sgveto_psdvar(
-            self.snr, self.rchisq, self.sgchisq, self.psd_var_val
-        )
+        return ranking.newsnr_sgveto_psdvar(self.snr, self.rchisq,
+                                           self.sgchisq, self.psd_var_val)
 
     @property
     def newsnr_sgveto_psdvar_threshold(self):
-        return ranking.newsnr_sgveto_psdvar_threshold(
-            self.snr, self.rchisq, self.sgchisq, self.psd_var_val
-        )
+        return ranking.newsnr_sgveto_psdvar_threshold(self.snr, self.rchisq,
+                                           self.sgchisq, self.psd_var_val)
 
     def get_ranking(self, rank_name, **kwargs):
         return ranking.get_sngls_ranking_from_trigs(self, rank_name, **kwargs)
@@ -1027,7 +972,8 @@ class SingleDetTriggers(object):
         # If the mask accesses few enough elements then directly use it
         # This can be slower than reading in all the elements if most of them
         # will be read.
-        if isinstance(self.mask, list) or self.mask_size < (self.ntriggers * MFRAC):
+        if isinstance(self.mask, list) or \
+                self.mask_size < (self.ntriggers * MFRAC):
             return self.trigs[cname][self.mask]
 
         # We have a lot of elements to read so we resort to readin the entire
@@ -1039,22 +985,17 @@ class SingleDetTriggers(object):
 
 
 class ForegroundTriggers(object):
+
     # Injection files are expected to only have 'exclusive' IFAR/FAP values,
     # should use has_inc=False for these.
-    def __init__(
-        self,
-        coinc_file,
-        bank_file,
-        sngl_files=None,
-        n_loudest=None,
-        group="foreground",
-        has_inc=True,
-    ):
+    def __init__(self, coinc_file, bank_file, sngl_files=None, n_loudest=None,
+                 group='foreground', has_inc=True):
         self.coinc_file = FileData(coinc_file, group=group)
-        if "ifos" in self.coinc_file.h5file.attrs:
-            self.ifos = self.coinc_file.h5file.attrs["ifos"].split(" ")
+        if 'ifos' in self.coinc_file.h5file.attrs:
+            self.ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
         else:
-            raise ValueError("File doesn't have an 'ifos' attribute!", coinc_file)
+            raise ValueError("File doesn't have an 'ifos' attribute!",
+                             coinc_file)
         self.sngl_files = {}
         if sngl_files is not None:
             for sngl_file in sngl_files:
@@ -1065,15 +1006,11 @@ class ForegroundTriggers(object):
         if not all([ifo in self.sngl_files.keys() for ifo in self.ifos]):
             print("sngl_files: {}".format(sngl_files))
             print("self.ifos: {}".format(self.ifos))
-            raise RuntimeError(
-                "IFOs in statmap file not all represented "
-                "by single-detector trigger files."
-            )
+            raise RuntimeError("IFOs in statmap file not all represented "
+                               "by single-detector trigger files.")
         if not sorted(self.sngl_files.keys()) == sorted(self.ifos):
-            logger.warning(
-                "WARNING: Single-detector trigger files "
-                "given for IFOs not in the statmap file"
-            )
+            logger.warning("WARNING: Single-detector trigger files "
+                           "given for IFOs not in the statmap file")
 
         self.bank_file = HFile(bank_file, "r")
         self.n_loudest = n_loudest
@@ -1089,26 +1026,24 @@ class ForegroundTriggers(object):
         if self._sort_arr is None:
             if self._inclusive:
                 try:
-                    ifar = self.coinc_file.get_column("ifar")
+                    ifar = self.coinc_file.get_column('ifar')
                 except KeyError:
-                    logger.warning(
-                        "WARNING: Can't find inclusive IFAR!"
-                        "Using exclusive IFAR instead ..."
-                    )
-                    ifar = self.coinc_file.get_column("ifar_exc")
+                    logger.warning("WARNING: Can't find inclusive IFAR!"
+                                   "Using exclusive IFAR instead ...")
+                    ifar = self.coinc_file.get_column('ifar_exc')
                     self._inclusive = False
             else:
-                ifar = self.coinc_file.get_column("ifar_exc")
+                ifar = self.coinc_file.get_column('ifar_exc')
             sorting = ifar.argsort()[::-1]
             if self.n_loudest:
-                sorting = sorting[: self.n_loudest]
+                sorting = sorting[:self.n_loudest]
             self._sort_arr = sorting
         return self._sort_arr
 
     @property
     def template_id(self):
         if self._template_id is None:
-            template_id = self.get_coincfile_array("template_id")
+            template_id = self.get_coincfile_array('template_id')
             self._template_id = template_id.astype(int)
         return self._template_id
 
@@ -1119,7 +1054,7 @@ class ForegroundTriggers(object):
 
         self._trig_ids = {}
         for ifo in self.ifos:
-            self._trig_ids[ifo] = self.get_coincfile_array(ifo + "/trigger_id")
+            self._trig_ids[ifo] = self.get_coincfile_array(ifo + '/trigger_id')
         return self._trig_ids
 
     def get_coincfile_array(self, variable):
@@ -1155,7 +1090,10 @@ class ForegroundTriggers(object):
                 needed_data = dataset[mask]
                 # Get order and duplicate information back that was lost in
                 # the boolean mask assignment
-                _, order_duplicate_index = np.unique(tid, return_inverse=True)
+                _, order_duplicate_index = np.unique(
+                    tid,
+                    return_inverse=True
+                )
                 curr = needed_data[order_duplicate_index]
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
@@ -1169,15 +1107,16 @@ class ForegroundTriggers(object):
     def get_active_segments(self):
         self.active_segments = {}
         for ifo in self.ifos:
-            starts = self.sngl_files[ifo].get_column("search/start_time")
-            ends = self.sngl_files[ifo].get_column("search/end_time")
-            self.active_segments[ifo] = veto.start_end_to_segments(starts, ends)
+            starts = self.sngl_files[ifo].get_column('search/start_time')
+            ends = self.sngl_files[ifo].get_column('search/end_time')
+            self.active_segments[ifo] = veto.start_end_to_segments(starts,
+                                                                   ends)
 
     def get_end_time(self):
-        times_gen = (
-            self.get_coincfile_array("{}/time".format(ifo)) for ifo in self.ifos
-        )
-        ref_times = np.array([mean_if_greater_than_zero(t)[0] for t in zip(*times_gen)])
+        times_gen = (self.get_coincfile_array('{}/time'.format(ifo))
+                     for ifo in self.ifos)
+        ref_times = np.array([mean_if_greater_than_zero(t)[0]
+                              for t in zip(*times_gen)])
         return ref_times
 
     def get_ifos(self):
@@ -1193,9 +1132,11 @@ class ForegroundTriggers(object):
         # to_coinc_hdf_object method
         ifo_or_minus = []
         for ifo in self.ifos:
-            ifo_trigs = np.where(self.get_coincfile_array(ifo + "/time") < 0, "-", ifo)
+            ifo_trigs = np.where(self.get_coincfile_array(ifo + '/time') < 0,
+                                 '-', ifo)
             ifo_or_minus.append(ifo_trigs)
-        ifos_list = [list(trig[trig != "-"]) for trig in iter(np.array(ifo_or_minus).T)]
+        ifos_list = [list(trig[trig != '-'])
+                     for trig in iter(np.array(ifo_or_minus).T)]
         return ifos_list
 
     def to_coinc_xml_object(self, file_name):
@@ -1203,27 +1144,32 @@ class ForegroundTriggers(object):
         outdoc.appendChild(ligolw.LIGO_LW())
 
         ifos = sorted(self.sngl_files)
-        proc_table = create_process_table(outdoc, program_name="pycbc", detectors=ifos)
+        proc_table = create_process_table(
+            outdoc,
+            program_name='pycbc',
+            detectors=ifos
+        )
         proc_id = proc_table.process_id
 
         search_summ_table = lsctables.SearchSummaryTable.new()
         coinc_h5file = self.coinc_file.h5file
         try:
-            start_time = coinc_h5file["segments"]["coinc"]["start"][:].min()
-            end_time = coinc_h5file["segments"]["coinc"]["end"][:].max()
+            start_time = coinc_h5file['segments']['coinc']['start'][:].min()
+            end_time = coinc_h5file['segments']['coinc']['end'][:].max()
         except KeyError:
             start_times = []
             end_times = []
-            for ifo_comb in coinc_h5file["segments"]:
-                if ifo_comb == "foreground_veto":
+            for ifo_comb in coinc_h5file['segments']:
+                if ifo_comb == 'foreground_veto':
                     continue
-                seg_group = coinc_h5file["segments"][ifo_comb]
-                start_times.append(seg_group["start"][:].min())
-                end_times.append(seg_group["end"][:].max())
+                seg_group = coinc_h5file['segments'][ifo_comb]
+                start_times.append(seg_group['start'][:].min())
+                end_times.append(seg_group['end'][:].max())
             start_time = min(start_times)
             end_time = max(end_times)
         num_trigs = len(self.sort_arr)
-        search_summary = return_search_summary(start_time, end_time, num_trigs, ifos)
+        search_summary = return_search_summary(start_time, end_time,
+                                               num_trigs, ifos)
         search_summ_table.append(search_summary)
         outdoc.childNodes[0].appendChild(search_summ_table)
 
@@ -1248,37 +1194,29 @@ class ForegroundTriggers(object):
         coinc_def_id = lsctables.CoincDefID(0)
         coinc_def_row = lsctables.CoincDef()
         coinc_def_row.search = "inspiral"
-        coinc_def_row.description = "sngl_inspiral<-->sngl_inspiral coincidences"
+        coinc_def_row.description = \
+            "sngl_inspiral<-->sngl_inspiral coincidences"
         coinc_def_row.coinc_def_id = coinc_def_id
         coinc_def_row.search_coinc_type = 0
         coinc_def_table.append(coinc_def_row)
 
-        bank_col_names = ["mass1", "mass2", "spin1z", "spin2z"]
+        bank_col_names = ['mass1', 'mass2', 'spin1z', 'spin2z']
         bank_col_vals = {}
         for name in bank_col_names:
             bank_col_vals[name] = self.get_bankfile_array(name)
 
-        coinc_event_names = ["ifar", "time", "fap", "stat"]
+        coinc_event_names = ['ifar', 'time', 'fap', 'stat']
         coinc_event_vals = {}
         for name in coinc_event_names:
-            if name == "time":
+            if name == 'time':
                 coinc_event_vals[name] = self.get_end_time()
             else:
                 coinc_event_vals[name] = self.get_coincfile_array(name)
 
-        sngl_col_names = [
-            "snr",
-            "chisq",
-            "chisq_dof",
-            "bank_chisq",
-            "bank_chisq_dof",
-            "cont_chisq",
-            "cont_chisq_dof",
-            "end_time",
-            "template_duration",
-            "coa_phase",
-            "sigmasq",
-        ]
+        sngl_col_names = ['snr', 'chisq', 'chisq_dof', 'bank_chisq',
+                          'bank_chisq_dof', 'cont_chisq', 'cont_chisq_dof',
+                          'end_time', 'template_duration', 'coa_phase',
+                          'sigmasq']
         sngl_col_vals = {}
         for name in sngl_col_names:
             sngl_col_vals[name] = self.get_snglfile_array_dict(name)
@@ -1296,7 +1234,7 @@ class ForegroundTriggers(object):
             for ifo in ifos:
                 # If this ifo is not participating in this coincidence then
                 # ignore it and move on.
-                if not sngl_col_vals["snr"][ifo][1][idx]:
+                if not sngl_col_vals['snr'][ifo][1][idx]:
                     continue
                 triggered_ifos += [ifo]
                 event_id = lsctables.SnglInspiralID(sngl_event_count)
@@ -1304,14 +1242,14 @@ class ForegroundTriggers(object):
                 sngl = return_empty_sngl()
                 sngl.event_id = event_id
                 sngl.ifo = ifo
-                net_snrsq += sngl_col_vals["snr"][ifo][0][idx] ** 2
+                net_snrsq += sngl_col_vals['snr'][ifo][0][idx]**2
                 for name in sngl_col_names:
                     val = sngl_col_vals[name][ifo][0][idx]
-                    if name == "end_time":
+                    if name == 'end_time':
                         sngl.end = LIGOTimeGPS(val)
-                    elif name == "chisq":
+                    elif name == 'chisq':
                         # Use reduced chisquared to be consistent with Live
-                        dof = 2.0 * sngl_col_vals["chisq_dof"][ifo][0][idx] - 2.0
+                        dof = 2. * sngl_col_vals['chisq_dof'][ifo][0][idx] - 2.
                         sngl.chisq = val / dof
                     else:
                         setattr(sngl, name, val)
@@ -1319,12 +1257,10 @@ class ForegroundTriggers(object):
                     val = bank_col_vals[name][idx]
                     setattr(sngl, name, val)
                 sngl.mtotal, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(
-                    sngl.mass1, sngl.mass2
-                )
+                        sngl.mass1, sngl.mass2)
                 sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
-                    sngl.mass1, sngl.mass2
-                )
-                sngl.eff_distance = (sngl.sigmasq) ** 0.5 / sngl.snr
+                        sngl.mass1, sngl.mass2)
+                sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
                 # If exact match is not used, get masses from single triggers
                 sngl_mchirps += [sngl.mchirp]
                 sngl_mtots += [sngl.mtotal]
@@ -1333,7 +1269,7 @@ class ForegroundTriggers(object):
 
                 # Set up coinc_map entry
                 coinc_map_row = lsctables.CoincMap()
-                coinc_map_row.table_name = "sngl_inspiral"
+                coinc_map_row.table_name = 'sngl_inspiral'
                 coinc_map_row.coinc_event_id = coinc_id
                 coinc_map_row.event_id = event_id
                 coinc_event_map_table.append(coinc_map_row)
@@ -1349,7 +1285,7 @@ class ForegroundTriggers(object):
             coinc_event_row.nevents = len(triggered_ifos)
             # NB, `coinc_event_row.instruments = triggered_ifos does not give a
             # correct result with ligo.lw 1.7.1
-            coinc_event_row.instruments = ",".join(sorted(triggered_ifos))
+            coinc_event_row.instruments = ','.join(sorted(triggered_ifos))
             coinc_inspiral_row.instruments = triggered_ifos
             coinc_event_row.time_slide_id = time_slide_id
             coinc_event_row.process_id = proc_id
@@ -1357,16 +1293,15 @@ class ForegroundTriggers(object):
             coinc_inspiral_row.coinc_event_id = coinc_id
             coinc_inspiral_row.mchirp = sngl_combined_mchirp
             coinc_inspiral_row.mass = sngl_combined_mtot
-            coinc_inspiral_row.end = LIGOTimeGPS(coinc_event_vals["time"][idx])
+            coinc_inspiral_row.end = LIGOTimeGPS(coinc_event_vals['time'][idx])
             coinc_inspiral_row.snr = net_snrsq**0.5
-            coinc_inspiral_row.false_alarm_rate = coinc_event_vals["fap"][idx]
-            coinc_inspiral_row.combined_far = 1.0 / coinc_event_vals["ifar"][idx]
+            coinc_inspiral_row.false_alarm_rate = coinc_event_vals['fap'][idx]
+            coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]
             # Transform to Hz
-            coinc_inspiral_row.combined_far = conversions.sec_to_year(
-                coinc_inspiral_row.combined_far
-            )
-            coinc_event_row.likelihood = coinc_event_vals["stat"][idx]
-            coinc_inspiral_row.minimum_duration = 0.0
+            coinc_inspiral_row.combined_far = \
+                conversions.sec_to_year(coinc_inspiral_row.combined_far)
+            coinc_event_row.likelihood = coinc_event_vals['stat'][idx]
+            coinc_inspiral_row.minimum_duration = 0.
             coinc_event_table.append(coinc_event_row)
             coinc_inspiral_table.append(coinc_inspiral_row)
 
@@ -1380,53 +1315,55 @@ class ForegroundTriggers(object):
         ligolw_utils.write_filename(outdoc, file_name)
 
     def to_coinc_hdf_object(self, file_name):
-        ofd = HFile(file_name, "w")
+        ofd = HFile(file_name,'w')
 
         # Some fields are special cases
         logger.info("Outputting search results")
         time = self.get_end_time()
         # time will be used later to determine active ifos
-        ofd["time"] = time
+        ofd['time'] = time
 
         if self._inclusive:
-            ofd["ifar"] = self.get_coincfile_array("ifar")
-            ofd["p_value"] = self.get_coincfile_array("fap")
+            ofd['ifar'] = self.get_coincfile_array('ifar')
+            ofd['p_value'] = self.get_coincfile_array('fap')
 
-        ofd["ifar_exclusive"] = self.get_coincfile_array("ifar_exc")
-        ofd["p_value_exclusive"] = self.get_coincfile_array("fap_exc")
+        ofd['ifar_exclusive'] = self.get_coincfile_array('ifar_exc')
+        ofd['p_value_exclusive'] = self.get_coincfile_array('fap_exc')
 
         # Coinc fields
-        for field in ["stat"]:
+        for field in ['stat']:
             ofd[field] = self.get_coincfile_array(field)
 
         logger.info("Outputting template information")
         # Bank fields
-        for field in ["mass1", "mass2", "spin1z", "spin2z"]:
+        for field in ['mass1','mass2','spin1z','spin2z']:
             ofd[field] = self.get_bankfile_array(field)
 
-        mass1 = self.get_bankfile_array("mass1")
-        mass2 = self.get_bankfile_array("mass2")
-        ofd["chirp_mass"], _ = pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)
+        mass1 = self.get_bankfile_array('mass1')
+        mass2 = self.get_bankfile_array('mass2')
+        ofd['chirp_mass'], _ = pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)
 
         logger.info("Outputting single-trigger information")
         logger.info("reduced chisquared")
-        chisq_vals_valid = self.get_snglfile_array_dict("chisq")
-        chisq_dof_vals_valid = self.get_snglfile_array_dict("chisq_dof")
+        chisq_vals_valid = self.get_snglfile_array_dict('chisq')
+        chisq_dof_vals_valid = self.get_snglfile_array_dict('chisq_dof')
         for ifo in self.ifos:
             chisq_vals = chisq_vals_valid[ifo][0]
             chisq_valid = chisq_vals_valid[ifo][1]
             chisq_dof_vals = chisq_dof_vals_valid[ifo][0]
-            rchisq = chisq_vals / (2.0 * chisq_dof_vals - 2.0)
-            rchisq[np.logical_not(chisq_valid)] = -1.0
-            ofd[ifo + "_chisq"] = rchisq
+            rchisq = chisq_vals / (2. * chisq_dof_vals - 2.)
+            rchisq[np.logical_not(chisq_valid)] = -1.
+            ofd[ifo + '_chisq'] = rchisq
 
         # Single-detector fields
-        for field in ["sg_chisq", "end_time", "sigmasq", "psd_var_val"]:
+        for field in ['sg_chisq', 'end_time', 'sigmasq',
+                      'psd_var_val']:
             logger.info(field)
             try:
                 vals_valid = self.get_snglfile_array_dict(field)
             except KeyError:
-                logger.info("%s is not present in the single-detector files", field)
+                logger.info("%s is not present in the "
+                            "single-detector files", field)
 
             for ifo in self.ifos:
                 # Some of the values will not be valid for all IFOs,
@@ -1434,96 +1371,87 @@ class ForegroundTriggers(object):
                 # tells us this, and we set the values to -1
                 vals = vals_valid[ifo][0]
                 valid = vals_valid[ifo][1]
-                vals[np.logical_not(valid)] = -1.0
-                ofd[f"{ifo}_{field}"] = vals
+                vals[np.logical_not(valid)] = -1.
+                ofd[f'{ifo}_{field}'] = vals
 
-        snr_vals_valid = self.get_snglfile_array_dict("snr")
+        snr_vals_valid = self.get_snglfile_array_dict('snr')
         network_snr_sq = np.zeros_like(snr_vals_valid[self.ifos[0]][0])
         for ifo in self.ifos:
             vals = snr_vals_valid[ifo][0]
             valid = snr_vals_valid[ifo][1]
-            vals[np.logical_not(valid)] = -1.0
-            ofd[ifo + "_snr"] = vals
+            vals[np.logical_not(valid)] = -1.
+            ofd[ifo + '_snr'] = vals
             network_snr_sq[valid] += vals[valid] ** 2.0
-        ofd["network_snr"] = np.sqrt(network_snr_sq)
+        ofd['network_snr'] = np.sqrt(network_snr_sq)
 
         logger.info("Triggered detectors")
         # Create a n_ifos by n_events matrix, with the ifo letter if the
         # event contains a trigger from the ifo, empty string if not
-        triggered_matrix = [
-            [ifo[0] if v else "" for v in snr_vals_valid[ifo][1]] for ifo in self.ifos
-        ]
+        triggered_matrix = [[ifo[0] if v else ''
+                             for v in snr_vals_valid[ifo][1]]
+                            for ifo in self.ifos]
         # Combine the ifo letters to make a single string per event
-        triggered_detectors = [
-            "".join(triggered).encode("ascii") for triggered in zip(*triggered_matrix)
-        ]
-        ofd.create_dataset("trig", data=triggered_detectors, dtype="<S3")
+        triggered_detectors = [''.join(triggered).encode('ascii')
+                               for triggered in zip(*triggered_matrix)]
+        ofd.create_dataset('trig', data=triggered_detectors,
+                           dtype='<S3')
 
         logger.info("active detectors")
         # Create a n_ifos by n_events matrix, with the ifo letter if the
         # ifo was active at the event time, empty string if not
-        active_matrix = [
-            [ifo[0] if t in self.active_segments[ifo] else "" for t in time]
-            for ifo in self.ifos
-        ]
+        active_matrix = [[ifo[0] if t in self.active_segments[ifo]
+                          else '' for t in time]
+                         for ifo in self.ifos]
         # Combine the ifo letters to make a single string per event
-        active_detectors = [
-            "".join(active_at_time).encode("ascii")
-            for active_at_time in zip(*active_matrix)
-        ]
-        ofd.create_dataset("obs", data=active_detectors, dtype="<S3")
+        active_detectors = [''.join(active_at_time).encode('ascii')
+                            for active_at_time in zip(*active_matrix)]
+        ofd.create_dataset('obs', data=active_detectors,
+                           dtype='<S3')
 
         ofd.close()
 
 
 class ReadByTemplate(object):
     # Default assignment to {} is OK for a variable used only in __init__
-    def __init__(
-        self,
-        filename,
-        bank=None,
-        segment_name=None,
-        veto_files=None,
-        gating_veto_windows={},
-    ):
+    def __init__(self, filename, bank=None, segment_name=None, veto_files=None,
+                 gating_veto_windows={}):
         self.filename = filename
-        self.file = HFile(filename, "r")
+        self.file = HFile(filename, 'r')
         self.ifo = tuple(self.file.keys())[0]
         self.valid = None
-        self.bank = HFile(bank, "r") if bank else {}
+        self.bank = HFile(bank, 'r') if bank else {}
 
         # Determine the segments which define the boundaries of valid times
         # to use triggers
-        key = "%s/search/" % self.ifo
-        s, e = self.file[key + "start_time"][:], self.file[key + "end_time"][:]
+        key = '%s/search/' % self.ifo
+        s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()
         if segment_name is None:
             segment_name = []
         if veto_files is None:
             veto_files = []
         for vfile, name in zip(veto_files, segment_name):
-            veto_segs = veto.select_segments_by_definer(
-                vfile, ifo=self.ifo, segment_name=name
-            )
+            veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
+                                                        segment_name=name)
             self.segs = (self.segs - veto_segs).coalesce()
         if self.ifo in gating_veto_windows:
-            gating_veto = gating_veto_windows[self.ifo].split(",")
+            gating_veto = gating_veto_windows[self.ifo].split(',')
             gveto_before = float(gating_veto[0])
             gveto_after = float(gating_veto[1])
             if gveto_before > 0 or gveto_after < 0:
-                raise ValueError(
-                    "Gating veto window values must be negative "
-                    "before gates and positive after gates."
-                )
+                raise ValueError("Gating veto window values must be negative "
+                                 "before gates and positive after gates.")
             if not (gveto_before == 0 and gveto_after == 0):
-                autogate_times = np.unique(self.file[self.ifo + "/gating/auto/time"][:])
-                if self.ifo + "/gating/file" in self.file:
-                    detgate_times = self.file[self.ifo + "/gating/file/time"][:]
+                autogate_times = np.unique(
+                        self.file[self.ifo + '/gating/auto/time'][:])
+                if self.ifo + '/gating/file' in self.file:
+                    detgate_times = self.file[self.ifo + '/gating/file/time'][:]
                 else:
                     detgate_times = []
                 gate_times = np.concatenate((autogate_times, detgate_times))
                 gating_veto_segs = veto.start_end_to_segments(
-                    gate_times + gveto_before, gate_times + gveto_after
+                        gate_times + gveto_before,
+                        gate_times + gveto_after
                 ).coalesce()
                 self.segs = (self.segs - gating_veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
@@ -1543,8 +1471,8 @@ class ReadByTemplate(object):
         data: numpy.ndarray
             The requested column of data
         """
-        ref = self.file["%s/%s_template" % (self.ifo, col)][num]
-        return self.file["%s/%s" % (self.ifo, col)][ref]
+        ref = self.file['%s/%s_template' % (self.ifo, col)][num]
+        return self.file['%s/%s' % (self.ifo, col)][ref]
 
     def set_template(self, num):
         """Set the active template to read from.
@@ -1560,20 +1488,21 @@ class ReadByTemplate(object):
             The indices of this templates triggers.
         """
         self.template_num = num
-        times = self.get_data("end_time", num)
+        times = self.get_data('end_time', num)
 
         # Determine which of these template's triggers are kept after
         # applying vetoes
         if self.valid:
-            self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1])
-        #            logger.info('applying vetoes')
+            self.keep = veto.indices_within_times(times, self.valid[0],
+                                                  self.valid[1])
+#            logger.info('applying vetoes')
         else:
             self.keep = np.arange(0, len(times))
 
         if self.bank != {}:
             self.param = {}
-            if "parameters" in self.bank.attrs:
-                for col in self.bank.attrs["parameters"]:
+            if 'parameters' in self.bank.attrs:
+                for col in self.bank.attrs['parameters']:
                     self.param[col] = self.bank[col][self.template_num]
             else:
                 for col in self.bank:
@@ -1582,11 +1511,12 @@ class ReadByTemplate(object):
         # Calculate the trigger id by adding the relative offset in self.keep
         # to the absolute beginning index of this templates triggers stored
         # in 'template_boundaries'
-        trigger_id = self.keep + self.file["%s/template_boundaries" % self.ifo][num]
+        trigger_id = self.keep + \
+                         self.file['%s/template_boundaries' % self.ifo][num]
         return trigger_id
 
     def __getitem__(self, col):
-        """Return the column of data for current active template after
+        """ Return the column of data for current active template after
         applying vetoes
 
         Parameters
@@ -1600,26 +1530,15 @@ class ReadByTemplate(object):
             The requested column of data
         """
         if self.template_num is None:
-            raise ValueError(
-                "You must call set_template to first pick the "
-                "template to read data from"
-            )
+            raise ValueError('You must call set_template to first pick the '
+                             'template to read data from')
         data = self.get_data(col, self.template_num)
         data = data[self.keep] if self.valid else data
         return data
 
 
-chisq_choices = [
-    "traditional",
-    "cont",
-    "bank",
-    "max_cont_trad",
-    "sg",
-    "max_bank_cont",
-    "max_bank_trad",
-    "max_bank_cont_trad",
-]
-
+chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',
+                 'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']
 
 def get_chisq_from_file_choice(hdfile, chisq_choice):
     """
@@ -1627,10 +1546,10 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
 
     Parameters
     ----------
-    hdfile: HDF file object, or dictionary, or ReadByTemplate object
+    hdfile: HDF file object, or dictionary, or ReadByTemplate object 
             or SingleDetTriggers object
         The object to retrieve the chi-squared values from.
-    chisq_choice: str
+    chisq_choice: str 
         The choice of chi-squared values to retrieve.
 
     Returns
@@ -1639,48 +1558,45 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         The reduced chi-squared values based on the specified choice.
     """
     # Get the reduced chi-squared values
-    if chisq_choice in [
-        "traditional",
-        "max_cont_trad",
-        "max_bank_trad",
-        "max_bank_cont_trad",
-    ]:
-        trad_chisq = hdfile["chisq"][:]
+    if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad',
+                             'max_bank_cont_trad']:
+        trad_chisq = hdfile['chisq'][:]
         # We now need to handle the case where chisq is not actually calculated
         # 0 is used as a sentinel value
-        trad_chisq_dof = hdfile["chisq_dof"][:]
+        trad_chisq_dof = hdfile['chisq_dof'][:]
         red_trad_chisq = trad_chisq / (trad_chisq_dof * 2 - 2)
-    if chisq_choice in ["cont", "max_cont_trad", "max_bank_cont", "max_bank_cont_trad"]:
-        cont_chisq = hdfile["cont_chisq"][:]
-        cont_chisq_dof = hdfile["cont_chisq_dof"][:]
+    if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont',
+                             'max_bank_cont_trad']:
+        cont_chisq = hdfile['cont_chisq'][:]
+        cont_chisq_dof = hdfile['cont_chisq_dof'][:]
         red_cont_chisq = cont_chisq / cont_chisq_dof
-    if chisq_choice in ["bank", "max_bank_cont", "max_bank_trad", "max_bank_cont_trad"]:
-        bank_chisq = hdfile["bank_chisq"][:]
-        bank_chisq_dof = hdfile["bank_chisq_dof"][:]
+    if chisq_choice in ['bank', 'max_bank_cont', 'max_bank_trad',
+                             'max_bank_cont_trad']:
+        bank_chisq = hdfile['bank_chisq'][:]
+        bank_chisq_dof = hdfile['bank_chisq_dof'][:]
         red_bank_chisq = bank_chisq / bank_chisq_dof
 
     # return the corresponding reduced chi-squared values depending on the choice
-    if chisq_choice == "sg":
-        chisq = hdfile["sg_chisq"][:]
-    elif chisq_choice == "traditional":
+    if chisq_choice == 'sg':
+        chisq = hdfile['sg_chisq'][:]
+    elif chisq_choice == 'traditional':
         chisq = red_trad_chisq
-    elif chisq_choice == "cont":
+    elif chisq_choice == 'cont':
         chisq = red_cont_chisq
-    elif chisq_choice == "bank":
+    elif chisq_choice == 'bank':
         chisq = red_bank_chisq
-    elif chisq_choice == "max_cont_trad":
+    elif chisq_choice == 'max_cont_trad':
         chisq = np.maximum(red_trad_chisq, red_cont_chisq)
-    elif chisq_choice == "max_bank_cont":
+    elif chisq_choice == 'max_bank_cont':
         chisq = np.maximum(red_bank_chisq, red_cont_chisq)
-    elif chisq_choice == "max_bank_trad":
+    elif chisq_choice == 'max_bank_trad':
         chisq = np.maximum(red_bank_chisq, red_trad_chisq)
-    elif chisq_choice == "max_bank_cont_trad":
+    elif chisq_choice == 'max_bank_cont_trad':
         chisq = np.maximum(np.maximum(red_bank_chisq, red_cont_chisq), red_trad_chisq)
     else:
         err_msg = "Do not recognize --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq
-
 
 def save_dict_to_hdf5(dic, filename):
     """
@@ -1691,9 +1607,8 @@ def save_dict_to_hdf5(dic, filename):
     filename:
         desired name of hdf5 file
     """
-    with HFile(filename, "w") as h5file:
-        recursively_save_dict_contents_to_group(h5file, "/", dic)
-
+    with HFile(filename, 'w') as h5file:
+        recursively_save_dict_contents_to_group(h5file, '/', dic)
 
 def recursively_save_dict_contents_to_group(h5file, path, dic):
     """
@@ -1707,16 +1622,13 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
         python dictionary to be converted to hdf5 format
     """
     for key, item in dic.items():
-        if isinstance(
-            item,
-            (np.ndarray, np.int64, np.float64, str, int, float, bytes, tuple, list),
-        ):
+        if isinstance(item, (np.ndarray, np.int64, np.float64, str, int, float,
+                             bytes, tuple, list)):
             h5file[path + str(key)] = item
         elif isinstance(item, dict):
-            recursively_save_dict_contents_to_group(h5file, path + key + "/", item)
+            recursively_save_dict_contents_to_group(h5file, path + key + '/', item)
         else:
-            raise ValueError("Cannot save %s type" % type(item))
-
+            raise ValueError('Cannot save %s type' % type(item))
 
 def load_hdf5_to_dict(h5file, path):
     """
@@ -1737,45 +1649,40 @@ def load_hdf5_to_dict(h5file, path):
         if isinstance(item, h5py.Dataset):
             dic[key] = item[()]
         elif isinstance(item, h5py.Group):
-            dic[key] = load_hdf5_to_dict(h5file, path + key + "/")
+            dic[key] = load_hdf5_to_dict(h5file, path + key + '/')
         else:
-            raise ValueError("Cannot load %s type" % type(item))
+            raise ValueError('Cannot load %s type' % type(item))
     return dic
 
-
 def combine_and_copy(f, files, group):
-    """Combine the same column from multiple files and save to a third"""
+    """ Combine the same column from multiple files and save to a third"""
     # ensure that the files input is stable for iteration order
     assert isinstance(files, (list, tuple))
-    f[group] = np.concatenate(
-        [fi[group][:] if group in fi else np.array([], dtype=np.uint32) for fi in files]
-    )
-
+    f[group] = np.concatenate([fi[group][:] if group in fi else \
+                                   np.array([], dtype=np.uint32) for fi in files])
 
 def name_all_datasets(files):
     assert isinstance(files, (list, tuple))
     datasets = []
     for fi in files:
-        datasets += get_all_subkeys(fi, "/")
+        datasets += get_all_subkeys(fi, '/')
     return set(datasets)
-
 
 def get_all_subkeys(grp, key):
     subkey_list = []
     subkey_start = key
-    if key == "":
+    if key == '':
         grpk = grp
     else:
         grpk = grp[key]
     for sk in grpk.keys():
-        path = subkey_start + "/" + sk
+        path = subkey_start + '/' + sk
         if isinstance(grp[path], h5py.Dataset):
-            subkey_list.append(path.lstrip("/"))
+            subkey_list.append(path.lstrip('/'))
         else:
             subkey_list += get_all_subkeys(grp, path)
     # returns an empty list if there is no dataset or subgroup within the group
     return subkey_list
-
 
 #
 # =============================================================================
@@ -1786,9 +1693,8 @@ def get_all_subkeys(grp, key):
 #
 
 
-def dump_state(
-    state, fp, path=None, dsetname="state", protocol=pickle.HIGHEST_PROTOCOL
-):
+def dump_state(state, fp, path=None, dsetname='state',
+               protocol=pickle.HIGHEST_PROTOCOL):
     """Dumps the given state to an hdf5 file handler.
 
     The state is stored as a raw binary array to ``{path}/{dsetname}`` in the
@@ -1819,7 +1725,7 @@ def dump_state(
     dump_pickle_to_hdf(memfp, fp, path=path, dsetname=dsetname)
 
 
-def dump_pickle_to_hdf(memfp, fp, path=None, dsetname="state"):
+def dump_pickle_to_hdf(memfp, fp, path=None, dsetname='state'):
     """Dumps pickled data to an hdf5 file object.
 
     Parameters
@@ -1836,19 +1742,18 @@ def dump_pickle_to_hdf(memfp, fp, path=None, dsetname="state"):
         ``state``.
     """
     memfp.seek(0)
-    bdata = np.frombuffer(memfp.read(), dtype="S1")
+    bdata = np.frombuffer(memfp.read(), dtype='S1')
     if path is not None:
-        dsetname = path + "/" + dsetname
+        dsetname = path + '/' + dsetname
     if dsetname not in fp:
-        fp.create_dataset(
-            dsetname, shape=bdata.shape, maxshape=(None,), dtype=bdata.dtype
-        )
+        fp.create_dataset(dsetname, shape=bdata.shape, maxshape=(None,),
+                          dtype=bdata.dtype)
     elif bdata.size != fp[dsetname].shape[0]:
         fp[dsetname].resize((bdata.size,))
     fp[dsetname][:] = bdata
 
 
-def load_state(fp, path=None, dsetname="state"):
+def load_state(fp, path=None, dsetname='state'):
     """Loads a sampler state from the given hdf5 file object.
 
     The sampler state is expected to be stored as a raw bytes array which can
@@ -1871,25 +1776,10 @@ def load_state(fp, path=None, dsetname="state"):
     return pickle.load(BytesIO(bdata))
 
 
-__all__ = (
-    "HFile",
-    "DictArray",
-    "StatmapData",
-    "MultiifoStatmapData",
-    "FileData",
-    "DataFromFiles",
-    "SingleDetTriggers",
-    "ForegroundTriggers",
-    "ReadByTemplate",
-    "chisq_choices",
-    "get_chisq_from_file_choice",
-    "save_dict_to_hdf5",
-    "recursively_save_dict_contents_to_group",
-    "load_hdf5_to_dict",
-    "combine_and_copy",
-    "name_all_datasets",
-    "get_all_subkeys",
-    "dump_state",
-    "dump_pickle_to_hdf",
-    "load_state",
-)
+__all__ = ('HFile', 'DictArray', 'StatmapData', 'MultiifoStatmapData',
+           'FileData', 'DataFromFiles', 'SingleDetTriggers',
+           'ForegroundTriggers', 'ReadByTemplate', 'chisq_choices',
+           'get_chisq_from_file_choice', 'save_dict_to_hdf5',
+           'recursively_save_dict_contents_to_group', 'load_hdf5_to_dict',
+           'combine_and_copy', 'name_all_datasets', 'get_all_subkeys',
+           'dump_state', 'dump_pickle_to_hdf', 'load_state')

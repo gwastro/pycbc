@@ -25,7 +25,6 @@
 Common utilities for samplers that rely on transforming between a unit cube
 and the prior space. This is typical of many nested sampling algorithms.
 """
-
 import numpy
 
 from .. import models
@@ -40,8 +39,10 @@ def call_global_logprior(cube):
 
 
 def setup_calls(model, loglikelihood_function=None, copy_prior=False):
-    """Configure calls for MPI support"""
-    model_call = CubeModel(model, loglikelihood_function, copy_prior=copy_prior)
+    """ Configure calls for MPI support
+    """
+    model_call = CubeModel(model, loglikelihood_function,
+                           copy_prior=copy_prior)
 
     # these are used to help paralleize over multiple cores / MPI
     models._global_instance = model_call
@@ -51,7 +52,7 @@ def setup_calls(model, loglikelihood_function=None, copy_prior=False):
 
 
 class CubeModel(object):
-    """Class for making PyCBC Inference 'model class'
+    """ Class for making PyCBC Inference 'model class'
 
     Parameters
     ----------
@@ -64,7 +65,7 @@ class CubeModel(object):
             raise ValueError("Ultranest or dynesty do not support sampling transforms")
         self.model = model
         if loglikelihood_function is None:
-            loglikelihood_function = "loglikelihood"
+            loglikelihood_function = 'loglikelihood'
         self.loglikelihood_function = loglikelihood_function
         self.copy_prior = copy_prior
 

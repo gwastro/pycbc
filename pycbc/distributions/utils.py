@@ -25,18 +25,17 @@
 This module provides functions for drawing samples from a standalone .ini file
 in a Python script, rather than in the command line.
 """
-
 import logging
-
 import numpy as np
 
-from pycbc import distributions, transforms
 from pycbc.types.config import InterpolatingConfigParser
+from pycbc import transforms
+from pycbc import distributions
 
-logger = logging.getLogger("pycbc.distributions.utils")
+logger = logging.getLogger('pycbc.distributions.utils')
 
 
-def prior_from_config(cp, prior_section="prior"):
+def prior_from_config(cp, prior_section='prior'):
     """Loads a prior distribution from the given config file.
 
     Parameters
@@ -55,37 +54,31 @@ def prior_from_config(cp, prior_section="prior"):
 
     # Read variable and static parameters from the config file
     variable_params, static_params = distributions.read_params_from_config(
-        cp,
-        prior_section=prior_section,
-        vargs_section="variable_params",
-        sargs_section="static_params",
-    )
+        cp, prior_section=prior_section, vargs_section='variable_params',
+        sargs_section='static_params')
 
     # Read waveform_transforms to apply to priors from the config file
-    if any(cp.get_subsections("waveform_transforms")):
+    if any(cp.get_subsections('waveform_transforms')):
         waveform_transforms = transforms.read_transforms_from_config(
-            cp, "waveform_transforms"
-        )
+                cp, 'waveform_transforms')
     else:
         waveform_transforms = None
 
     # Read constraints to apply to priors from the config file
     constraints = distributions.read_constraints_from_config(
-        cp, transforms=waveform_transforms, static_args=static_params
-    )
+        cp, transforms=waveform_transforms, static_args=static_params)
 
     # Get PyCBC distribution instances for each variable parameter in the
     # config file
     dists = distributions.read_distributions_from_config(cp, prior_section)
 
     # construct class that will return draws from the prior
-    return distributions.JointDistribution(
-        variable_params, *dists, **{"constraints": constraints}
-    )
+    return distributions.JointDistribution(variable_params, *dists,
+                                           **{"constraints": constraints})
 
 
 def draw_samples_from_config(path, num=1, seed=150914):
-    r"""Generate sampling points from a standalone .ini file.
+    r""" Generate sampling points from a standalone .ini file.
 
     Parameters
     ----------
@@ -126,7 +119,7 @@ def draw_samples_from_config(path, num=1, seed=150914):
     # Initialise InterpolatingConfigParser class.
     config_parser = InterpolatingConfigParser()
     # Read the file
-    file = open(path, "r")
+    file = open(path, 'r')
     config_parser.read_file(file)
     file.close()
 
@@ -136,10 +129,9 @@ def draw_samples_from_config(path, num=1, seed=150914):
     samples = prior_dists.rvs(size=int(num))
 
     # Apply parameter transformation.
-    if any(config_parser.get_subsections("waveform_transforms")):
+    if any(config_parser.get_subsections('waveform_transforms')):
         waveform_transforms = transforms.read_transforms_from_config(
-            config_parser, "waveform_transforms"
-        )
+                config_parser, 'waveform_transforms')
         samples = transforms.apply_transforms(samples, waveform_transforms)
 
     return samples

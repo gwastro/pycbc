@@ -9,6 +9,7 @@ import logging
 
 import pycbc.strain
 
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--output-file", required=True, help="Output plot")

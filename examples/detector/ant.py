@@ -20,15 +20,9 @@ print("fp={}, fc={}".format(fp, fc))
 # observe
 
 ## Generate a waveform
-hp, hc = get_td_waveform(
-    approximant="IMRPhenomD",
-    mass1=10,
-    mass2=10,
-    f_lower=30,
-    delta_t=1.0 / 4096,
-    inclination=inc,
-    distance=400,
-)
+hp, hc = get_td_waveform(approximant="IMRPhenomD", mass1=10, mass2=10,
+                         f_lower=30, delta_t=1.0/4096, inclination=inc,
+                         distance=400)
 
 ## Apply the factors to get the detector frame strain
 ht = fp * hp + fc * hc

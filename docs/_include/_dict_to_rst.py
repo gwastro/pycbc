@@ -74,7 +74,7 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
     divider = "{}  {}".format('='*nckey, '='*ncval)
 
     def row(key, val):
-        fmt = '{{0:{0}s}}  {{1}}'.format(nckey, )
+        fmt = '{{0:{0}s}}  {{1}}'.format(nckey, ncval)
         return fmt.format(key, val)
 
     # build table of lines
@@ -82,12 +82,12 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
     if header:
         lines.extend((row(*header), divider))
     params = zip(keys, values)
-
+    
     if sort:
         params = sorted(params)
-
+        
     for key, val in params:
-        fmt = '{{0:{0}s}}  {{1}}'.format(nckey, )
+        fmt = '{{0:{0}s}}  {{1}}'.format(nckey, ncval)
         lines.append(fmt.format(key, val))
     lines.append(divider)
 

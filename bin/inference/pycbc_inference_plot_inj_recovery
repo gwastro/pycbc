@@ -3,35 +3,25 @@
 of injections.
 """
 
-import logging
 import sys
-
-import matplotlib as mpl
-
-mpl.use("Agg")
+import logging
+import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.colorbar as cbar
 import matplotlib.pyplot as plt
 import numpy
-from matplotlib import cm
-
 import pycbc
-from pycbc.inference import io, option_utils
+from matplotlib import cm
+from pycbc.inference import (option_utils, io)
 from pycbc.results import save_fig_with_metadata
 
 # parse command line
 parser = io.ResultsArgumentParser(description=__doc__)
 
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument(
-    "--output-file", required=True, type=str, help="Path to save output plot."
-)
-parser.add_argument(
-    "--percentiles",
-    nargs=2,
-    type=float,
-    default=[5, 95],
-    help="Percentiles to use as limits.",
-)
+parser.add_argument("--output-file", required=True, type=str,
+                    help="Path to save output plot.")
+parser.add_argument("--percentiles", nargs=2, type=float, default=[5, 95],
+                    help="Percentiles to use as limits.")
 option_utils.add_scatter_option_group(parser)
 option_utils.add_injsamples_map_opt(parser)
 opts = parser.parse_args()
@@ -44,11 +34,11 @@ fps, parameters, labels, samples = io.results_from_cli(opts)
 
 # only plot one parameter
 assert len(parameters) == 1
-parameter = parameters[0]
-label = labels[parameters[0]]
+parameter = parameters[0] 
+label = labels[parameters[0]] 
 
 # create figure
-fig = plt.figure(figsize=(6, 6))
+fig = plt.figure(figsize=(6,6))
 ax = fig.add_subplot(111)
 
 # typecast to list for iteratation
@@ -82,16 +72,14 @@ if opts.z_arg is not None:
 
 # loop over input files and its samples
 logging.info("Plotting")
-for i, (input_file, input_fp, input_samples) in enumerate(
-    zip(opts.input_file, fps, samples)
-):
+for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
+                                                              fps, samples)):
     # get paramter values
     sampled_vals = input_samples[parameter]
     injected_vals = injs[parameter][i]
     # compute percentiles of sampled results
-    percentiles = numpy.array(
-        [numpy.percentile(sampled_vals, p) for p in opts.percentiles]
-    )
+    percentiles = numpy.array([numpy.percentile(sampled_vals, p)
+                             for p in opts.percentiles])
 
     # get median and lowest and highest quntiles for plotting
     med = numpy.median(sampled_vals)
@@ -105,14 +93,10 @@ for i, (input_file, input_fp, input_samples) in enumerate(
         color = "black"
 
     # plot a point for each injection
-    ax.errorbar(
-        [injected_vals],
-        [med - injected_vals],
-        yerr=[[(med - low)], [(high - med)]],
-        ecolor=color,
-        linestyle="None",
-        zorder=10,
-    )
+    ax.errorbar([injected_vals],
+                [med - injected_vals],
+                yerr=[[(med - low)], [(high - med)]],
+                ecolor=color, linestyle="None", zorder=10)
 
 # create a colorbar
 if opts.z_arg:
@@ -131,18 +115,15 @@ ax.grid()
 ax.axhline(0, linestyle="dashed", color="gray", zorder=9)
 
 # save plot
-caption = (
-    "Difference in recovered value vs injected value vs injected "
-    "value. The vertical lines show the width of the {} to {} "
-    "percentile credible interval.".format(opts.percentiles[0], opts.percentiles[1])
-)
-save_fig_with_metadata(
-    fig,
-    opts.output_file,
-    caption=caption,
-    cmd=" ".join(sys.argv),
-    fig_kwds={"bbox_inches": "tight"},
-)
+caption = ('Difference in recovered value vs injected value vs injected '
+           'value. The vertical lines show the width of the {} to {} '
+           'percentile credible interval.'
+           .format(opts.percentiles[0], opts.percentiles[1]))
+save_fig_with_metadata(fig, opts.output_file,
+                       caption=caption,
+                       cmd=' '.join(sys.argv),
+                       fig_kwds={'bbox_inches': 'tight'})
 
 # done
 logging.info("Done")
+

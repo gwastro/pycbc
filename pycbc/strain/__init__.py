@@ -1,26 +1,18 @@
-from .gate import (
-    add_gate_option_group,
-    apply_gates_to_fd,
-    apply_gates_to_td,
-    gates_from_cli,
-    psd_gates_from_cli,
-)
 from .recalibrate import CubicSpline, PhysicalModel
-from .strain import (
-    StrainBuffer,
-    StrainSegments,
-    detect_loud_glitches,
-    from_cli,
-    from_cli_multi_ifos,
-    from_cli_single_ifo,
-    gate_data,
-    insert_strain_option_group,
-    insert_strain_option_group_multi_ifo,
-    verify_strain_options,
-    verify_strain_options_multi_ifo,
-)
 
-models = {CubicSpline.name: CubicSpline, PhysicalModel.name: PhysicalModel}
+from .strain import detect_loud_glitches
+from .strain import from_cli, from_cli_single_ifo, from_cli_multi_ifos
+from .strain import insert_strain_option_group, insert_strain_option_group_multi_ifo
+from .strain import verify_strain_options, verify_strain_options_multi_ifo
+from .strain import gate_data, StrainSegments, StrainBuffer
+
+from .gate import add_gate_option_group, gates_from_cli
+from .gate import apply_gates_to_td, apply_gates_to_fd, psd_gates_from_cli
+
+models = {
+    CubicSpline.name: CubicSpline,
+    PhysicalModel.name: PhysicalModel
+}
 
 
 def read_model_from_config(cp, ifo, section="calibration"):

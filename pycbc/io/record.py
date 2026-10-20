@@ -28,22 +28,15 @@ useful for storing and retrieving data created by a search for gravitationa
 waves.
 """
 
-import copy
-import inspect
-import re
-import types
-
-import numpy
+import types, re, copy, numpy, inspect
 from igwn_ligolw import types as ligolw_types
-
-from pycbc import conversions, coordinates, cosmology
+from pycbc import coordinates, conversions, cosmology
 from pycbc.population import population_models
 from pycbc.waveform import parameters
 
 # what functions are given to the eval in FieldArray's __getitem__:
-_numpy_function_lib = {
-    _x: _y for _x, _y in numpy.__dict__.items() if isinstance(_y, (numpy.ufunc, float))
-}
+_numpy_function_lib = {_x: _y for _x,_y in numpy.__dict__.items()
+                       if isinstance(_y, (numpy.ufunc, float))}
 
 #
 # =============================================================================
@@ -54,13 +47,9 @@ _numpy_function_lib = {
 #
 # add ligolw_types to numpy sctypeDict
 # but don't include bindings that numpy already defines
-numpy.sctypeDict.update(
-    {
-        _k: _val
-        for (_k, _val) in ligolw_types.ToNumPyType.items()
-        if _k not in numpy.sctypeDict
-    }
-)
+numpy.sctypeDict.update({_k: _val
+                         for (_k, _val) in ligolw_types.ToNumPyType.items()
+                         if _k not in numpy.sctypeDict})
 
 # Annoyingly, numpy has no way to store NaNs in an integer field to indicate
 # the equivalent of None. This can be problematic for fields that store ids:
@@ -69,22 +58,20 @@ numpy.sctypeDict.update(
 # we define here an integer to indicate 'id not set'.
 ID_NOT_SET = -1
 EMPTY_OBJECT = None
-VIRTUALFIELD_DTYPE = "VIRTUAL"
-
+VIRTUALFIELD_DTYPE = 'VIRTUAL'
 
 def set_default_empty(array):
     if array.dtype.names is None:
         # scalar dtype, just set
-        if array.dtype.str[1] == "i":
+        if array.dtype.str[1] == 'i':
             # integer, set to ID_NOT_SET
             array[:] = ID_NOT_SET
-        elif array.dtype.str[1] == "O":
+        elif array.dtype.str[1] == 'O':
             # object, set to EMPTY_OBJECT
             array[:] = EMPTY_OBJECT
     else:
         for name in array.dtype.names:
             set_default_empty(array[name])
-
 
 def default_empty(shape, dtype):
     """Numpy's empty array can have random values in it. To prevent that, we
@@ -95,14 +82,12 @@ def default_empty(shape, dtype):
     set_default_empty(default)
     return default
 
-
 # set default data types
 _default_types_status = {
-    "default_strlen": 50,
-    "ilwd_as_int": True,
-    "lstring_as_obj": False,
+    'default_strlen': 50,
+    'ilwd_as_int': True,
+    'lstring_as_obj': False
 }
-
 
 def lstring_as_obj(true_or_false=None):
     """Toggles whether lstrings should be treated as strings or as objects.
@@ -136,39 +121,34 @@ def lstring_as_obj(true_or_false=None):
           dtype=[('foo', 'S50')])
     """
     if true_or_false is not None:
-        _default_types_status["lstring_as_obj"] = true_or_false
+        _default_types_status['lstring_as_obj'] = true_or_false
         # update the sctypeDict
-        numpy.sctypeDict["lstring"] = (
-            numpy.object_
-            if _default_types_status["lstring_as_obj"]
-            else "S%i" % _default_types_status["default_strlen"]
-        )
-    return _default_types_status["lstring_as_obj"]
-
+        numpy.sctypeDict[u'lstring'] = numpy.object_ \
+            if _default_types_status['lstring_as_obj'] \
+            else 'S%i' % _default_types_status['default_strlen']
+    return _default_types_status['lstring_as_obj']
 
 def ilwd_as_int(true_or_false=None):
     """Similar to lstring_as_obj, sets whether or not ilwd:chars should be
     treated as strings or as ints. Default is True.
     """
     if true_or_false is not None:
-        _default_types_status["ilwd_as_int"] = true_or_false
-        numpy.sctypeDict["ilwd:char"] = (
-            int if _default_types_status["ilwd_as_int"] else "S%i" % default_strlen
-        )
-    return _default_types_status["ilwd_as_int"]
-
+        _default_types_status['ilwd_as_int'] = true_or_false
+        numpy.sctypeDict[u'ilwd:char'] = int \
+            if _default_types_status['ilwd_as_int'] \
+            else 'S%i' % default_strlen
+    return _default_types_status['ilwd_as_int']
 
 def default_strlen(strlen=None):
     """Sets the default string length for lstring and ilwd:char, if they are
     treated as strings. Default is 50.
     """
     if strlen is not None:
-        _default_types_status["default_strlen"] = strlen
+        _default_types_status['default_strlen'] = strlen
         # update the sctypeDicts as needed
-        lstring_as_obj(_default_types_status["lstring_as_obj"])
-        ilwd_as_int(_default_types_status["ilwd_as_int"])
-    return _default_types_status["default_strlen"]
-
+        lstring_as_obj(_default_types_status['lstring_as_obj'])
+        ilwd_as_int(_default_types_status['ilwd_as_int'])
+    return _default_types_status['default_strlen']
 
 # set the defaults
 lstring_as_obj(True)
@@ -189,19 +169,16 @@ ilwd_as_int(True)
 #
 # this parser will pull out sufields as separate identifiers from their parent
 # field; e.g., foo.bar --> ['foo', 'bar']
-_pyparser = re.compile(r"(?P<identifier>[\w_][\w\d_]*)")
+_pyparser = re.compile(r'(?P<identifier>[\w_][\w\d_]*)')
 # this parser treats subfields as one identifier with their parent field;
 # e.g., foo.bar --> ['foo.bar']
-_fieldparser = re.compile(r"(?P<identifier>[\w_][.\w\d_]*)")
-
-
+_fieldparser = re.compile(r'(?P<identifier>[\w_][.\w\d_]*)')
 def get_vars_from_arg(arg):
     """Given a python string, gets the names of any identifiers use in it.
     For example, if ``arg = '3*narf/foo.bar'``, this will return
     ``set(['narf', 'foo', 'bar'])``.
     """
     return set(_pyparser.findall(arg))
-
 
 def get_fields_from_arg(arg):
     """Given a python string, gets FieldArray field names used in it. This
@@ -211,23 +188,18 @@ def get_fields_from_arg(arg):
     """
     return set(_fieldparser.findall(arg))
 
-
 # this parser looks for fields inside a class method function. This is done by
 # looking for variables that start with self.{x} or self["{x}"]; e.g.,
 # self.a.b*3 + self.c, self['a.b']*3 + self.c, self.a.b*3 + self["c"], all
 # return set('a.b', 'c').
 _instfieldparser = re.compile(
-    r"""self(?:\.|(?:\[['"]))(?P<identifier>[\w_][.\w\d_]*)"""
-)
-
-
+    r'''self(?:\.|(?:\[['"]))(?P<identifier>[\w_][.\w\d_]*)''')
 def get_instance_fields_from_arg(arg):
     """Given a python string definining a method function on an instance of an
     FieldArray, returns the field names used in it. This differs from
     get_fields_from_arg in that it looks for variables that start with 'self'.
     """
     return set(_instfieldparser.findall(arg))
-
 
 def get_needed_fieldnames(arr, names):
     """Given a FieldArray-like array and a list of names, determines what
@@ -300,7 +272,7 @@ def get_dtype_descr(dtype):
     """
     dts = []
     for dt in dtype.descr:
-        if dt[0] == "" and dt[1][1] == "V":
+        if (dt[0] == '' and dt[1][1] == 'V'):
             continue
 
         # Downstream codes (numpy, etc) can't handle metadata in dtype
@@ -328,7 +300,8 @@ def combine_fields(dtypes):
         dtypes = [dtypes]
     # Note: incase any of the dtypes have offsets, we won't include any fields
     # that have no names and are void
-    new_dt = numpy.dtype([dt for dtype in dtypes for dt in get_dtype_descr(dtype)])
+    new_dt = numpy.dtype([dt for dtype in dtypes \
+        for dt in get_dtype_descr(dtype)])
     return new_dt
 
 
@@ -336,10 +309,8 @@ def _ensure_array_list(arrays):
     """Ensures that every element in a list is an instance of a numpy array."""
     # Note: the isinstance test is needed below so that instances of FieldArray
     # are not converted to numpy arrays
-    return [
-        numpy.array(arr, ndmin=1) if not isinstance(arr, numpy.ndarray) else arr
-        for arr in arrays
-    ]
+    return [numpy.array(arr, ndmin=1) if not isinstance(arr, numpy.ndarray)
+            else arr for arr in arrays]
 
 
 def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
@@ -377,15 +348,13 @@ def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
     # make sure everything in merge_list is an array
     merge_list = _ensure_array_list(merge_list)
     if not all(merge_list[0].shape == arr.shape for arr in merge_list):
-        raise ValueError(
-            "all of the arrays in merge_list must have the " + "same shape"
-        )
+        raise ValueError("all of the arrays in merge_list must have the " +
+            "same shape")
     if flatten:
         new_dt = combine_fields([arr.dtype for arr in merge_list])
     else:
-        new_dt = numpy.dtype(
-            [("f%i" % ii, arr.dtype.descr) for ii, arr in enumerate(merge_list)]
-        )
+        new_dt = numpy.dtype([('f%i' %ii, arr.dtype.descr) \
+            for ii,arr in enumerate(merge_list)])
     new_arr = merge_list[0].__class__(merge_list[0].shape, dtype=new_dt)
     # ii is a counter to keep track of which fields from the new array
     # go with which arrays in merge list
@@ -405,7 +374,6 @@ def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
     if outtype is not None:
         new_arr = new_arr.view(type=outtype)
     return new_arr
-
 
 def add_fields(input_array, arrays, names=None, assubarray=False):
     """Adds the given array(s) as new field(s) to the given input array.
@@ -445,18 +413,17 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
             names = [names]
         # check if any names are subarray names; if so, we have to add them
         # separately
-        subarray_names = [name for name in names if len(name.split(".")) > 1]
+        subarray_names = [name for name in names if len(name.split('.')) > 1]
     else:
         subarray_names = []
     if any(subarray_names):
-        subarrays = [
-            arrays[ii] for ii, name in enumerate(names) if name in subarray_names
-        ]
+        subarrays = [arrays[ii] for ii,name in enumerate(names) \
+            if name in subarray_names]
         # group together by subarray
         groups = {}
-        for name, arr in zip(subarray_names, subarrays):
-            key = name.split(".")[0]
-            subkey = ".".join(name.split(".")[1:])
+        for name,arr in zip(subarray_names, subarrays):
+            key = name.split('.')[0]
+            subkey = '.'.join(name.split('.')[1:])
             try:
                 groups[key].append((subkey, arr))
             except KeyError:
@@ -473,21 +440,20 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
                 # get the data
                 new_subarray = input_array[group_name]
                 # add the new fields to the subarray
-                new_subarray = add_fields(
-                    new_subarray, thisdict.values(), thisdict.keys()
-                )
+                new_subarray = add_fields(new_subarray, thisdict.values(),
+                    thisdict.keys())
                 # remove the original from the input array
                 input_array = input_array.without_fields(group_name)
             else:
                 new_subarray = thisdict.values()
             # add the new subarray to input_array as a subarray
-            input_array = add_fields(
-                input_array, new_subarray, names=group_name, assubarray=True
-            )
+            input_array = add_fields(input_array, new_subarray,
+                names=group_name, assubarray=True)
             # set the subarray names
             input_array[group_name].dtype.names = thisdict.keys()
         # remove the subarray names from names
-        keep_idx = [ii for ii, name in enumerate(names) if name not in subarray_names]
+        keep_idx = [ii for ii,name in enumerate(names) \
+            if name not in subarray_names]
         names = [names[ii] for ii in keep_idx]
         # if there's nothing left, just return
         if names == []:
@@ -499,16 +465,16 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
         if len(arrays) > 1:
             arrays = [merge_arrays(arrays, flatten=True)]
         # now merge all the fields as a single subarray
-        merged_arr = numpy.empty(len(arrays[0]), dtype=[("f0", arrays[0].dtype.descr)])
-        merged_arr["f0"] = arrays[0]
+        merged_arr = numpy.empty(len(arrays[0]),
+            dtype=[('f0', arrays[0].dtype.descr)])
+        merged_arr['f0'] = arrays[0]
         arrays = [merged_arr]
     merge_list = [input_array] + arrays
     if names is not None:
         names = list(input_array.dtype.names) + names
     # merge into a single array
-    return merge_arrays(
-        merge_list, names=names, flatten=True, outtype=type(input_array)
-    )
+    return merge_arrays(merge_list, names=names, flatten=True,
+        outtype=type(input_array))
 
 
 #
@@ -521,13 +487,11 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
 
 # We'll include functions in various pycbc modules in FieldArray's function
 # library. All modules used must have an __all__ list defined.
-_modules_for_functionlib = [conversions, coordinates, cosmology, population_models]
-_fieldarray_functionlib = {
-    _funcname: getattr(_mod, _funcname)
-    for _mod in _modules_for_functionlib
-    for _funcname in _mod.__all__
-}
-
+_modules_for_functionlib = [conversions, coordinates, cosmology,
+                            population_models]
+_fieldarray_functionlib = {_funcname : getattr(_mod, _funcname)
+                              for _mod in _modules_for_functionlib
+                              for _funcname in getattr(_mod, '__all__')}
 
 class FieldArray(numpy.recarray):
     """
@@ -798,17 +762,19 @@ class FieldArray(numpy.recarray):
     arrays.
 
     """
-
     _virtualfields = []
     _functionlib = _fieldarray_functionlib
-    __persistent_attributes__ = ["name", "_virtualfields", "_functionlib"]
+    __persistent_attributes__ = ['name', '_virtualfields', '_functionlib']
 
     def __new__(cls, shape, name=None, zero=True, **kwargs):
-        """Initializes a new empty array."""
-        obj = super(FieldArray, cls).__new__(cls, shape, **kwargs).view(type=cls)
+        """Initializes a new empty array.
+        """
+        obj = super(FieldArray, cls).__new__(cls, shape, **kwargs).view(
+            type=cls)
         obj.name = name
-        obj.__persistent_attributes__ = [a for a in cls.__persistent_attributes__]
-        obj._functionlib = {f: func for f, func in cls._functionlib.items()}
+        obj.__persistent_attributes__ = [a
+            for a in cls.__persistent_attributes__]
+        obj._functionlib = {f: func for f,func in cls._functionlib.items()}
         obj._virtualfields = [f for f in cls._virtualfields]
         # zero out the array if desired
         if zero:
@@ -834,20 +800,19 @@ class FieldArray(numpy.recarray):
         """Copies the values of all of the attributes listed in
         `self.__persistent_attributes__` to other.
         """
-        [
-            setattr(other, attr, copy.deepcopy(getattr(self, attr, default)))
-            for attr in self.__persistent_attributes__
-        ]
+        [setattr(other, attr, copy.deepcopy(getattr(self, attr, default))) \
+            for attr in self.__persistent_attributes__]
 
     def __getattribute__(self, attr, no_fallback=False):
-        """Allows fields to be accessed as attributes."""
+        """Allows fields to be accessed as attributes.
+        """
         # first try to get the attribute
         try:
             return numpy.ndarray.__getattribute__(self, attr)
         except AttributeError as e:
             # don't try getitem, which might get back here
             if no_fallback:
-                raise (e)
+                raise(e)
 
             # might be a field, try to retrive it using getitem
             if attr in self.fields:
@@ -867,7 +832,7 @@ class FieldArray(numpy.recarray):
         except ValueError:
             # we'll get a ValueError if a subarray is being referenced using
             # '.'; so we'll try to parse it out here
-            fields = item.split(".")
+            fields = item.split('.')
             if len(fields) > 1:
                 for field in fields[:-1]:
                     self = self[field]
@@ -876,7 +841,8 @@ class FieldArray(numpy.recarray):
             return super(FieldArray, self).__setitem__(item, values)
 
     def __getbaseitem__(self, item):
-        """Gets an item assuming item is either an index or a fieldname."""
+        """Gets an item assuming item is either an index or a fieldname.
+        """
         # We cast to a ndarray to avoid calling array_finalize, which can be
         # slow
         out = self.view(numpy.ndarray)[item]
@@ -892,15 +858,15 @@ class FieldArray(numpy.recarray):
             return out.view(type(self))
 
     def __getsubitem__(self, item):
-        """Gets a subfield using `field.subfield` notation."""
+        """Gets a subfield using `field.subfield` notation.
+        """
         try:
             return self.__getbaseitem__(item)
         except ValueError as err:
-            subitems = item.split(".")
+            subitems = item.split('.')
             if len(subitems) > 1:
-                return self.__getbaseitem__(subitems[0]).__getsubitem__(
-                    ".".join(subitems[1:])
-                )
+                return self.__getbaseitem__(subitems[0]
+                    ).__getsubitem__('.'.join(subitems[1:]))
             else:
                 raise ValueError(err)
 
@@ -915,11 +881,11 @@ class FieldArray(numpy.recarray):
             #
             #   arg isn't a simple argument of row, so we'll have to eval it
             #
-            if not hasattr(self, "_code_cache"):
+            if not hasattr(self, '_code_cache'):
                 self._code_cache = {}
 
             if item not in self._code_cache:
-                code = compile(item, "<string>", "eval")
+                code = compile(item, '<string>', 'eval')
 
                 # get the function library
                 item_dict = dict(_numpy_function_lib.items())
@@ -968,7 +934,7 @@ class FieldArray(numpy.recarray):
         """Returns True if the given field name is in self's fields."""
         return field in self.fields
 
-    def sort(self, axis=-1, kind="quicksort", order=None):
+    def sort(self, axis=-1, kind='quicksort', order=None):
         """Sort an array, in-place.
 
         This function extends the standard numpy record array in-place sort
@@ -1012,7 +978,7 @@ class FieldArray(numpy.recarray):
         if isinstance(names, str):
             names = [names]
             methods = [methods]
-        for name, method in zip(names, methods):
+        for name,method in zip(names, methods):
             setattr(self, name, types.MethodType(method, self))
 
     def add_properties(self, names, methods):
@@ -1025,7 +991,7 @@ class FieldArray(numpy.recarray):
         if isinstance(names, str):
             names = [names]
             methods = [methods]
-        for name, method in zip(names, methods):
+        for name,method in zip(names, methods):
             setattr(cls, name, property(method))
         return self.view(type=cls)
 
@@ -1062,9 +1028,8 @@ class FieldArray(numpy.recarray):
             names = [names]
             functions = [functions]
         if len(functions) != len(names):
-            raise ValueError(
-                "number of provided names must be same as number of functions"
-            )
+            raise ValueError("number of provided names must be same as number "
+                             "of functions")
         self._functionlib.update(dict(zip(names, functions)))
 
     def del_functions(self, names):
@@ -1136,7 +1101,8 @@ class FieldArray(numpy.recarray):
             An array that is an instance of this class in which the field
             data is from the given record(s).
         """
-        obj = numpy.rec.fromrecords(records, **kwargs).view(type=cls)
+        obj = numpy.rec.fromrecords(records, **kwargs).view(
+            type=cls)
         obj.name = name
         return obj
 
@@ -1165,7 +1131,7 @@ class FieldArray(numpy.recarray):
         """
         arrays = []
         names = []
-        for p, vals in kwargs.items():
+        for p,vals in kwargs.items():
             if not isinstance(vals, numpy.ndarray):
                 if not isinstance(vals, list):
                     vals = [vals]
@@ -1173,6 +1139,7 @@ class FieldArray(numpy.recarray):
             arrays.append(vals)
             names.append(p)
         return cls.from_arrays(arrays, names=names)
+
 
     @classmethod
     def from_ligolw_table(cls, table, columns=None, cast_to_dtypes=None):
@@ -1199,7 +1166,7 @@ class FieldArray(numpy.recarray):
         array : FieldArray
             The input table as an FieldArray.
         """
-        name = table.tableName.split(":")[0]
+        name = table.tableName.split(':')[0]
         if columns is None:
             # get all the columns
             columns = table.validcolumns
@@ -1215,22 +1182,20 @@ class FieldArray(numpy.recarray):
         else:
             dtype = list(columns.items())
         # get the values
-        if _default_types_status["ilwd_as_int"]:
+        if _default_types_status['ilwd_as_int']:
             # columns like `process:process_id` have corresponding attributes
             # with names that are only the part after the colon, so we split
-            input_array = [
-                tuple(
-                    getattr(row, col.split(":")[-1])
-                    if dt != "ilwd:char"
-                    else int(getattr(row, col))
-                    for col, dt in columns.items()
-                )
-                for row in table
-            ]
+            input_array = \
+                [tuple(getattr(row, col.split(':')[-1]) if dt != 'ilwd:char'
+                       else int(getattr(row, col))
+                       for col,dt in columns.items())
+                 for row in table]
         else:
-            input_array = [tuple(getattr(row, col) for col in columns) for row in table]
+            input_array = \
+                [tuple(getattr(row, col) for col in columns) for row in table]
         # return the values as an instance of cls
-        return cls.from_records(input_array, dtype=dtype, name=name)
+        return cls.from_records(input_array, dtype=dtype,
+            name=name)
 
     def to_array(self, fields=None, axis=0):
         """Returns an `numpy.ndarray` of self in which the fields are included
@@ -1268,7 +1233,8 @@ class FieldArray(numpy.recarray):
 
     @property
     def virtualfields(self):
-        """Returns a tuple listing the names of virtual fields in self."""
+        """Returns a tuple listing the names of virtual fields in self.
+        """
         if self._virtualfields is None:
             vfs = tuple()
         else:
@@ -1443,12 +1409,11 @@ class FieldArray(numpy.recarray):
         out = numpy.zeros(self.size, dtype=outdtype)
         mask = numpy.zeros(self.size, dtype=bool)
         leftovers = numpy.ones(self.size, dtype=bool)
-        for ii, (boolarg, val) in enumerate(zip(bool_args, return_vals)):
-            if boolarg is None or boolarg == "" or boolarg.lower() == "else":
-                if ii + 1 != len(bool_args):
-                    raise ValueError(
-                        "only the last item may not provide any boolean arguments"
-                    )
+        for ii,(boolarg,val) in enumerate(zip(bool_args, return_vals)):
+            if boolarg is None or boolarg == '' or boolarg.lower() == 'else':
+                if ii+1 != len(bool_args):
+                    raise ValueError("only the last item may not provide "
+                        "any boolean arguments")
                 mask = leftovers
             else:
                 mask = leftovers & self[boolarg]
@@ -1489,15 +1454,13 @@ class FieldArray(numpy.recarray):
             # see if the dtype error was due to string fields having different
             # lengths; if so, we'll make the joint field the larger of the
             # two
-            str_fields = [
-                name for name in self.fieldnames if _isstring(self.dtype[name])
-            ]
+            str_fields = [name for name in self.fieldnames
+                          if _isstring(self.dtype[name])]
             # get the larger of the two
             new_strlens = dict(
-                [
-                    [name, max(self.dtype[name].itemsize, other.dtype[name].itemsize)]
-                    for name in str_fields
-                ]
+                [[name,
+                  max(self.dtype[name].itemsize, other.dtype[name].itemsize)]
+                 for name in str_fields]
             )
             # cast both to the new string lengths
             new_dt = []
@@ -1507,9 +1470,10 @@ class FieldArray(numpy.recarray):
                     dt = (name, self.dtype[name].type, new_strlens[name])
                 new_dt.append(dt)
             new_dt = numpy.dtype(new_dt)
-            return numpy.append(self.astype(new_dt), other.astype(new_dt)).view(
-                type=self.__class__
-            )
+            return numpy.append(
+                self.astype(new_dt),
+                other.astype(new_dt)
+                ).view(type=self.__class__)
 
     @classmethod
     def parse_parameters(cls, parameters, possible_fields):
@@ -1534,10 +1498,10 @@ class FieldArray(numpy.recarray):
             possible_fields = [possible_fields]
         possible_fields = list(map(str, possible_fields))
         # we'll just use float as the dtype, as we just need this for names
-        arr = cls(1, dtype=list(zip(possible_fields, len(possible_fields) * [float])))
+        arr = cls(1, dtype=list(zip(possible_fields,
+                                len(possible_fields)*[float])))
         # try to perserve order
         return list(get_needed_fieldnames(arr, parameters))
-
 
 def _isstring(dtype):
     """Given a numpy dtype, determines whether it is a string. Returns True
@@ -1564,7 +1528,8 @@ def fields_from_names(fields, names=None):
     if isinstance(names, str):
         names = [names]
     aliases_to_names = aliases_from_fields(fields)
-    names_to_aliases = dict(zip(aliases_to_names.values(), aliases_to_names.keys()))
+    names_to_aliases = dict(zip(aliases_to_names.values(),
+        aliases_to_names.keys()))
     outfields = {}
     for name in names:
         try:
@@ -1575,7 +1540,7 @@ def fields_from_names(fields, names=None):
             elif name in names_to_aliases:
                 key = (names_to_aliases[name], name)
             else:
-                raise KeyError("default fields has no field %s" % name)
+                raise KeyError('default fields has no field %s' % name)
             outfields[key] = fields[key]
     return outfields
 
@@ -1587,7 +1552,6 @@ def fields_from_names(fields, names=None):
 #
 # =============================================================================
 #
-
 
 class _FieldArrayWithDefaults(FieldArray):
     """
@@ -1629,7 +1593,6 @@ class _FieldArrayWithDefaults(FieldArray):
     """
 
     _staticfields = {}
-
     @classmethod
     def default_fields(cls, include_virtual=True, **kwargs):
         """The default fields and their dtypes. By default, this returns
@@ -1642,23 +1605,24 @@ class _FieldArrayWithDefaults(FieldArray):
         """
         output = cls._staticfields.copy()
         if include_virtual:
-            output.update({name: VIRTUALFIELD_DTYPE for name in cls._virtualfields})
+            output.update({name: VIRTUALFIELD_DTYPE
+                           for name in cls._virtualfields})
         return output
 
-    def __new__(
-        cls, shape, name=None, additional_fields=None, field_kwargs=None, **kwargs
-    ):
+    def __new__(cls, shape, name=None, additional_fields=None,
+                field_kwargs=None, **kwargs):
         """The ``additional_fields`` should be specified in the same way as
         ``dtype`` is normally given to FieldArray. The ``field_kwargs`` are
         passed to the class's default_fields method as keyword arguments.
         """
         if field_kwargs is None:
             field_kwargs = {}
-        if "names" in kwargs and "dtype" in kwargs:
+        if 'names' in kwargs and 'dtype' in kwargs:
             raise ValueError("Please provide names or dtype, not both")
-        default_fields = cls.default_fields(include_virtual=False, **field_kwargs)
-        if "names" in kwargs:
-            names = kwargs.pop("names")
+        default_fields = cls.default_fields(include_virtual=False,
+            **field_kwargs)
+        if 'names' in kwargs:
+            names = kwargs.pop('names')
             if isinstance(names, str):
                 names = [names]
             # evaluate the names to figure out what base fields are needed
@@ -1667,23 +1631,23 @@ class _FieldArrayWithDefaults(FieldArray):
             # block of code is skipped)
             arr = cls(1, field_kwargs=field_kwargs)
             # try to perserve order
-            sortdict = dict([[nm, ii] for ii, nm in enumerate(names)])
+            sortdict = dict([[nm, ii] for ii,nm in enumerate(names)])
             names = list(get_needed_fieldnames(arr, names))
-            names.sort(key=lambda x: sortdict[x] if x in sortdict else len(names))
+            names.sort(key=lambda x: sortdict[x] if x in sortdict
+                else len(names))
             # add the fields as the dtype argument for initializing
-            kwargs["dtype"] = [(fld, default_fields[fld]) for fld in names]
-        if "dtype" not in kwargs:
-            kwargs["dtype"] = list(default_fields.items())
+            kwargs['dtype'] = [(fld, default_fields[fld]) for fld in names]
+        if 'dtype' not in kwargs:
+            kwargs['dtype'] = list(default_fields.items())
         # add the additional fields
         if additional_fields is not None:
             if not isinstance(additional_fields, list):
                 additional_fields = [additional_fields]
-            if not isinstance(kwargs["dtype"], list):
-                kwargs["dtype"] = [kwargs["dtype"]]
-            kwargs["dtype"] += additional_fields
-        return super(_FieldArrayWithDefaults, cls).__new__(
-            cls, shape, name=name, **kwargs
-        )
+            if not isinstance(kwargs['dtype'], list):
+                kwargs['dtype'] = [kwargs['dtype']]
+            kwargs['dtype'] += additional_fields
+        return super(_FieldArrayWithDefaults, cls).__new__(cls, shape,
+            name=name, **kwargs)
 
     def add_default_fields(self, names, **kwargs):
         """
@@ -1708,13 +1672,14 @@ class _FieldArrayWithDefaults(FieldArray):
         # parse out any virtual fields
         arr = self.__class__(1, field_kwargs=kwargs)
         # try to perserve order
-        sortdict = dict([[nm, ii] for ii, nm in enumerate(names)])
+        sortdict = dict([[nm, ii] for ii,nm in enumerate(names)])
         names = list(get_needed_fieldnames(arr, names))
-        names.sort(key=lambda x: sortdict[x] if x in sortdict else len(names))
+        names.sort(key=lambda x: sortdict[x] if x in sortdict
+            else len(names))
         fields = [(name, default_fields[name]) for name in names]
         arrays = []
         names = []
-        for name, dt in fields:
+        for name,dt in fields:
             arrays.append(default_empty(self.size, dtype=[(name, dt)]))
             names.append(name)
         return self.add_fields(arrays, names)
@@ -1742,14 +1707,12 @@ class _FieldArrayWithDefaults(FieldArray):
         """
         if possible_fields is not None:
             # make sure field names are strings and not unicode
-            possible_fields = dict([[f, dt] for f, dt in possible_fields.items()])
-
+            possible_fields = dict([[f, dt]
+                for f,dt in possible_fields.items()])
             class ModifiedArray(cls):
                 _staticfields = possible_fields
-
             cls = ModifiedArray
         return cls(1, names=parameters).fieldnames
-
 
 #
 # =============================================================================
@@ -1758,7 +1721,6 @@ class _FieldArrayWithDefaults(FieldArray):
 #
 # =============================================================================
 #
-
 
 class WaveformArray(_FieldArrayWithDefaults):
     """
@@ -1833,33 +1795,18 @@ class WaveformArray(_FieldArrayWithDefaults):
             '$d_L$ (Mpc)'
 
     """
-
-    _staticfields = (
-        parameters.cbc_intrinsic_params + parameters.extrinsic_params
-    ).dtype_dict
+    _staticfields = (parameters.cbc_intrinsic_params +
+                     parameters.extrinsic_params).dtype_dict
 
     _virtualfields = [
-        parameters.mchirp,
-        parameters.eta,
-        parameters.mtotal,
-        parameters.q,
-        parameters.primary_mass,
-        parameters.secondary_mass,
+        parameters.mchirp, parameters.eta, parameters.mtotal,
+        parameters.q, parameters.primary_mass, parameters.secondary_mass,
         parameters.chi_eff,
-        parameters.spin_px,
-        parameters.spin_py,
-        parameters.spin_pz,
-        parameters.spin_sx,
-        parameters.spin_sy,
-        parameters.spin_sz,
-        parameters.spin1_a,
-        parameters.spin1_azimuthal,
-        parameters.spin1_polar,
-        parameters.spin2_a,
-        parameters.spin2_azimuthal,
-        parameters.spin2_polar,
-        parameters.remnant_mass,
-    ]
+        parameters.spin_px, parameters.spin_py, parameters.spin_pz,
+        parameters.spin_sx, parameters.spin_sy, parameters.spin_sz,
+        parameters.spin1_a, parameters.spin1_azimuthal, parameters.spin1_polar,
+        parameters.spin2_a, parameters.spin2_azimuthal, parameters.spin2_polar,
+        parameters.remnant_mass]
 
     @property
     def primary_mass(self):
@@ -1894,98 +1841,89 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def chi_eff(self):
         """Returns the effective spin."""
-        return conversions.chi_eff(self.mass1, self.mass2, self.spin1z, self.spin2z)
+        return conversions.chi_eff(self.mass1, self.mass2, self.spin1z,
+                                   self.spin2z)
 
     @property
     def spin_px(self):
         """Returns the x-component of the spin of the primary mass."""
-        return conversions.primary_spin(
-            self.mass1, self.mass2, self.spin1x, self.spin2x
-        )
+        return conversions.primary_spin(self.mass1, self.mass2, self.spin1x,
+                                        self.spin2x)
 
     @property
     def spin_py(self):
         """Returns the y-component of the spin of the primary mass."""
-        return conversions.primary_spin(
-            self.mass1, self.mass2, self.spin1y, self.spin2y
-        )
+        return conversions.primary_spin(self.mass1, self.mass2, self.spin1y,
+                                        self.spin2y)
 
     @property
     def spin_pz(self):
         """Returns the z-component of the spin of the primary mass."""
-        return conversions.primary_spin(
-            self.mass1, self.mass2, self.spin1z, self.spin2z
-        )
+        return conversions.primary_spin(self.mass1, self.mass2, self.spin1z,
+                                        self.spin2z)
 
     @property
     def spin_sx(self):
         """Returns the x-component of the spin of the secondary mass."""
-        return conversions.secondary_spin(
-            self.mass1, self.mass2, self.spin1x, self.spin2x
-        )
+        return conversions.secondary_spin(self.mass1, self.mass2, self.spin1x,
+                                        self.spin2x)
 
     @property
     def spin_sy(self):
         """Returns the y-component of the spin of the secondary mass."""
-        return conversions.secondary_spin(
-            self.mass1, self.mass2, self.spin1y, self.spin2y
-        )
+        return conversions.secondary_spin(self.mass1, self.mass2, self.spin1y,
+                                        self.spin2y)
 
     @property
     def spin_sz(self):
         """Returns the z-component of the spin of the secondary mass."""
-        return conversions.secondary_spin(
-            self.mass1, self.mass2, self.spin1z, self.spin2z
-        )
+        return conversions.secondary_spin(self.mass1, self.mass2, self.spin1z,
+                                        self.spin2z)
 
     @property
     def spin1_a(self):
         """Returns the dimensionless spin magnitude of mass 1."""
         return coordinates.cartesian_to_spherical_rho(
-            self.spin1x, self.spin1y, self.spin1z
-        )
+                                    self.spin1x, self.spin1y, self.spin1z)
 
     @property
     def spin1_azimuthal(self):
         """Returns the azimuthal spin angle of mass 1."""
-        return coordinates.cartesian_to_spherical_azimuthal(self.spin1x, self.spin1y)
+        return coordinates.cartesian_to_spherical_azimuthal(
+                                     self.spin1x, self.spin1y)
 
     @property
     def spin1_polar(self):
         """Returns the polar spin angle of mass 1."""
         return coordinates.cartesian_to_spherical_polar(
-            self.spin1x, self.spin1y, self.spin1z
-        )
+                                     self.spin1x, self.spin1y, self.spin1z)
 
     @property
     def spin2_a(self):
         """Returns the dimensionless spin magnitude of mass 2."""
         return coordinates.cartesian_to_spherical_rho(
-            self.spin1x, self.spin1y, self.spin1z
-        )
+                                    self.spin1x, self.spin1y, self.spin1z)
 
     @property
     def spin2_azimuthal(self):
         """Returns the azimuthal spin angle of mass 2."""
-        return coordinates.cartesian_to_spherical_azimuthal(self.spin2x, self.spin2y)
+        return coordinates.cartesian_to_spherical_azimuthal(
+                                     self.spin2x, self.spin2y)
 
     @property
     def spin2_polar(self):
         """Returns the polar spin angle of mass 2."""
         return coordinates.cartesian_to_spherical_polar(
-            self.spin2x, self.spin2y, self.spin2z
-        )
+                                     self.spin2x, self.spin2y, self.spin2z)
 
     @property
     def remnant_mass(self):
         """Returns the remnant mass for an NS-BH binary."""
         return conversions.remnant_mass_from_mass1_mass2_cartesian_spin_eos(
-            self.mass1,
-            self.mass2,
-            spin1x=self.spin1x,
-            spin1y=self.spin1y,
-            spin1z=self.spin1z,
-        )
+                                     self.mass1, self.mass2,
+                                     spin1x=self.spin1x,
+                                     spin1y=self.spin1y,
+                                     spin1z=self.spin1z)
 
 
-__all__ = ["FieldArray", "WaveformArray"]
+__all__ = ['FieldArray', 'WaveformArray']
