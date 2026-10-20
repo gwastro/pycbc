@@ -75,7 +75,7 @@ def get_waveform(
 
     # NOTE: for now only hplus is used! For precessing faithsims one would want
     #       to also specify a polarization phase, or "u_val".
-    hplus, hcross = get_two_pol_waveform_filter(
+    hplus, _ = get_two_pol_waveform_filter(
         vecplus,
         veccross,
         template_params,

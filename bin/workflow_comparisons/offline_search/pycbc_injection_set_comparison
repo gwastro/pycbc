@@ -308,7 +308,7 @@ def compare_found_injs(reference_run, comparison_run, outfp):
             "Calculating indices of found/missed injections between"
             " reference and comparison runs"
         )
-        both, ref_both_idx, com_both_idx = np.intersect1d(
+        _, ref_both_idx, com_both_idx = np.intersect1d(
             ref_injs, com_injs, return_indices=True
         )
         # Now we want to find the indices of those injections found in one

@@ -173,7 +173,7 @@ class TestInjection(unittest.TestCase):
                     dtype=numpy.float64,
                 )
                 injections.apply(ts, det.name)
-                max_amp, max_loc = ts.abs_max_loc()
+                max_amp, _ = ts.abs_max_loc()
                 self.assertEqual(max_amp, 0)
 
     def test_injection_taper(self):

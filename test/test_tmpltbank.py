@@ -615,7 +615,7 @@ class TmpltbankTestClass(unittest.TestCase):
     def test_point_distance(self):
         masses1 = [2, 2, 0.4, 0.6]
         masses2 = [2.02, 1.97, 0.41, 0.59]
-        dist, xis1, xis2 = pycbc.tmpltbank.get_point_distance(
+        dist, _, _ = pycbc.tmpltbank.get_point_distance(
             masses1, masses2, self.metric_params, self.f_upper
         )
         diff = abs((dist - 23.3681922039) / dist)

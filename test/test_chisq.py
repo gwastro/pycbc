@@ -146,7 +146,7 @@ class TestChisq(unittest.TestCase):
         nbins = 16
         sl = slice(27400, 27500)
         # 1. Full return_bins (user-side slicing)
-        chisq_full, bins_full = power_chisq(
+        _, bins_full = power_chisq(
             self.hp,
             self.data[ifo],
             nbins,
@@ -155,7 +155,7 @@ class TestChisq(unittest.TestCase):
             return_bins=True,
         )
         # 2. Optimized internal return_bins_slice
-        chisq_sl, bins_sl = power_chisq(
+        _, bins_sl = power_chisq(
             self.hp,
             self.data[ifo],
             nbins,

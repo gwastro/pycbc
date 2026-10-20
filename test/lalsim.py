@@ -168,24 +168,24 @@ class TestLALSimulation(unittest.TestCase):
 
         f = plt.figure()
         plt.axes([0.1, 0.2, 0.8, 0.70])
-        hp_ref, hc_ref = get_waveform(self.p, coa_phase=0)
+        hp_ref, _ = get_waveform(self.p, coa_phase=0)
         plt.plot(getattr(hp_ref, sample_attr), hp_ref.real(), label="phiref")
 
-        hp, hc = get_waveform(self.p, coa_phase=PI / 4)
-        m, i = match(hp_ref, hp)
+        hp, _ = get_waveform(self.p, coa_phase=PI / 4)
+        m, _ = match(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=2)
         o = overlap(hp_ref, hp)
         plt.plot(getattr(hp, sample_attr), hp.real(), label=r"$phiref \pi/4$")
 
-        hp, hc = get_waveform(self.p, coa_phase=PI / 2)
-        m, i = match(hp_ref, hp)
+        hp, _ = get_waveform(self.p, coa_phase=PI / 2)
+        m, _ = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(-1, o, places=7)
         plt.plot(getattr(hp, sample_attr), hp.real(), label=r"$phiref \pi/2$")
 
-        hp, hc = get_waveform(self.p, coa_phase=PI)
-        m, i = match(hp_ref, hp)
+        hp, _ = get_waveform(self.p, coa_phase=PI)
+        m, _ = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(1, o, places=7)
@@ -220,10 +220,10 @@ class TestLALSimulation(unittest.TestCase):
         tolerance = 1e-5
         fac = 10
 
-        hpc, hcc = get_waveform(self.p, distance=distance)
-        hpm, hcm = get_waveform(self.p, distance=distance * fac)
-        hpf, hcf = get_waveform(self.p, distance=distance * fac * fac)
-        hpn, hcn = get_waveform(self.p, distance=distance / fac)
+        hpc, _ = get_waveform(self.p, distance=distance)
+        hpm, _ = get_waveform(self.p, distance=distance * fac)
+        hpf, _ = get_waveform(self.p, distance=distance * fac * fac)
+        hpn, _ = get_waveform(self.p, distance=distance / fac)
 
         f = plt.figure()
         plt.axes([0.1, 0.2, 0.8, 0.70])
@@ -284,11 +284,11 @@ class TestLALSimulation(unittest.TestCase):
             nearby_params.coa_phase *= uniform(low=1 - tol, high=1 + tol)
             return nearby_params
 
-        hp, hc = get_waveform(self.p)
+        hp, _ = get_waveform(self.p)
 
         for i in range(10):
             p_near = nearby(self.p)
-            hpn, hcn = get_waveform(p_near)
+            hpn, _ = get_waveform(p_near)
 
             maxlen = max(len(hpn), len(hp))
             hp.resize(maxlen)
@@ -321,7 +321,7 @@ class TestLALSimulation(unittest.TestCase):
 
         for i in range(10):
             p_near = nearby(self.p)
-            hpn, hcn = get_waveform(p_near)
+            get_waveform(p_near)
 
     def test_varying_inclination(self):
         # """ Test that the waveform is consistent for changes in inclination
@@ -332,7 +332,7 @@ class TestLALSimulation(unittest.TestCase):
         for inc in incs:
             # WARNING: This does not properly handle the case of SpinTaylor*
             # where the spin orientation is not relative to the inclination
-            hp, hc = get_waveform(self.p, inclination=inc)
+            hp, _ = get_waveform(self.p, inclination=inc)
             s = sigma(hp, low_frequency_cutoff=self.p.f_lower)
             sigmas.append(s)
 

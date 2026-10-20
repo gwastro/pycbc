@@ -87,7 +87,7 @@ class MatchedFilterRatioControl:
         """
         Prepare frequency-domain filters for a batch of taps.
         """
-        n_filters, n_taps = fir_taps.shape
+        _, n_taps = fir_taps.shape
         if n_taps >= self.tap_fft_len:
             raise ValueError(
                 f"FIR Taps ({int(n_taps)}) exceed the tap FFT length "

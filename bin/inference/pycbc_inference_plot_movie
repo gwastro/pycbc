@@ -377,7 +377,7 @@ def _make_frame(frame):
     iter_num = iter_num.zfill(len(str(max_iter_num)))
     output = opts.output_prefix + f"-{iter_num}.png"
 
-    fig, axis_dict = create_multidim_plot(
+    fig, _ = create_multidim_plot(
         parameters,
         plotargs,
         labels=labels,

@@ -125,8 +125,8 @@ def mc_min_max_from_sorted_file(fname):
         t = Table.get_table(doc, "sngl_inspiral")
     except:
         t = Table.get_table(doc, "sim_inspiral")
-    mc_max, et = mass1_mass2_to_mchirp_eta(t[0].mass1, t[0].mass2)
-    mc_min, et = mass1_mass2_to_mchirp_eta(t[-1].mass1, t[-1].mass2)
+    mc_max, _ = mass1_mass2_to_mchirp_eta(t[0].mass1, t[0].mass2)
+    mc_min, _ = mass1_mass2_to_mchirp_eta(t[-1].mass1, t[-1].mass2)
     return mc_min, mc_max
 
 
