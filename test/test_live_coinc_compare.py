@@ -21,7 +21,7 @@ OriginalCoincer = old_coinc.LiveCoincTimeslideBackgroundEstimator
 
 # This seed is chosen because the impelentations agree here.
 # They should only differ due to different numerical precission
-SEED = int(os.environ.get("PYCBC_LIVE_COINC_SEED", 0))
+SEED = int(os.environ.get("PYCBC_LIVE_COINC_SEED", "0"))
 START_TIME = 1187008882
 
 
