@@ -336,7 +336,7 @@ class TestWaveformErrors(unittest.TestCase):
             model.ignore_failed_waveforms = False
             model.update(**self.fail_params)
             with self.assertRaises((FailedWaveformError, RuntimeError)):
-                model.loglr
+                _ = model.loglr
 
     def test_base_phase_marg(self):
         model = models.MarginalizedPhaseGaussianNoise(
@@ -828,7 +828,7 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
         q = self.injected_q
 
         model.update(q=q, mtotal=self.fiducial_mtotal)
-        model.loglr
+        _ = model.loglr
 
         logls = self._regenerated_loglrs(base, q)
         expected = self.mtotal_grid[int(numpy.argmax(logls))]

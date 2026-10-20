@@ -173,7 +173,8 @@ class MultinestSampler(BaseSampler):
             if self.model.sampling_transforms is not None:
                 params = self.model.sampling_transforms.apply(params)
             self.model.update(**params)
-            self.model.logposterior
+            # evaluate the posterior so that the current stats are set
+            _ = self.model.logposterior
             stats.append(self.model.get_current_stats())
         stats = numpy.array(stats)
         return {s: stats[:, i] for i, s in enumerate(self.model.default_stats)}
