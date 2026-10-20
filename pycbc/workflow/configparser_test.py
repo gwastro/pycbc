@@ -274,8 +274,7 @@ def add_options_to_section(
     for option, value in items:
         if not overwrite_options and option in cp.options(section):
             raise ValueError(
-                "Option %s exists in both original"
-                + "ConfigParser and input list" % (option,)
+                f"Option {option} exists in both original ConfigParser and input list"
             )
         cp.set(section, option, value)
 
