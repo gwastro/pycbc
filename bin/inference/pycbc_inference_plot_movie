@@ -426,7 +426,6 @@ def _make_frame(frame):
 
 # create the pool
 if opts.nprocesses is None or opts.nprocesses > 1:
-    global make_frame
     make_frame = _make_frame
     pool = Pool(opts.nprocesses)
     mfunc = pool.map
