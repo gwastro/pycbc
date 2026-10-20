@@ -9,7 +9,6 @@ import numpy
 from utils import parse_args_cpu_only, simple_exit
 
 from pycbc.detector import Detector
-from pycbc.inference.models.gated_gaussian_noise import BaseGatedGaussian
 from pycbc.waveform import generator
 
 parse_args_cpu_only("Detector-frame generators")
