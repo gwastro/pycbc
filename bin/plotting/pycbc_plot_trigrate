@@ -173,7 +173,7 @@ if (args.gps_start_time or args.gps_end_time) and not (
 ):
     raise RuntimeError("I need both gps start time and end time!")
 
-pycbc.init_logging(opts.verbose)
+pycbc.init_logging(args.verbose)
 
 statname = (
     "reweighted SNR"

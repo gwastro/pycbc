@@ -31,6 +31,7 @@ import numpy
 from numpy import cos, sin, sqrt
 from utils import parse_args_all_schemes, simple_exit
 
+from pycbc.filter import overlap
 from pycbc.scheme import CPUScheme
 from pycbc.types import Array, complex64, zeros
 from pycbc.waveform import (

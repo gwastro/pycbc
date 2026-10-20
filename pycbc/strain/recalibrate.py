@@ -665,18 +665,18 @@ def read_calibration_envelop_file(
             maximum_frequency = calibration_data[0][-1]
         else:
             raise ValueError(
-                "Maximum frequency (=%d) for tc=%s is more than"
-                "maximum frequency in calibration envelop (=%.3g)"
-                % (maximum_frequency, gps_time, calibration_data[0][-1])
+                "Maximum frequency (=%d) is more than the maximum frequency in "
+                "calibration envelop file %s (=%.3g)"
+                % (maximum_frequency, calibration_file, calibration_data[0][-1])
             )
     else:
         pass
 
     if calibration_data[0][0] > minimum_frequency:
         raise ValueError(
-            "Minimum frequency (=%d) for tc=%s is less than"
-            "minimum frequency in calibration envelop (=%.3g)"
-            % (minimum_frequency, gps_time, calibration_data[0][0])
+            "Minimum frequency (=%d) is less than the minimum frequency in "
+            "calibration envelop file %s (=%.3g)"
+            % (minimum_frequency, calibration_file, calibration_data[0][0])
         )
 
     amplitude_median_nodes = InterpolatedUnivariateSpline(

@@ -313,7 +313,7 @@ def cpuonly(func):
     def _cpuonly(*args, **kwds):
         if not issubclass(type(mgr.state), CPUScheme):
             raise TypeError(
-                fn.__name__ + " can only be called from a CPU processing scheme."
+                func.__name__ + " can only be called from a CPU processing scheme."
             )
         return func(*args, **kwds)
 
