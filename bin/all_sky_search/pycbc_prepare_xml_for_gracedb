@@ -46,6 +46,8 @@ from pycbc.psd import interpolate
 from pycbc.results import generate_asd_plot, generate_snr_plot
 from pycbc.types import FrequencySeries, MultiDetOptionAction, load_timeseries
 
+logger = logging.getLogger("pycbc_prepare_xml_for_gracedb")
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -114,7 +116,7 @@ class psd_segment(segment):
 
 
 def read_psds(psd_files):
-    logging.info("Reading PSDs")
+    logger.info("Reading PSDs")
     psds = {}
 
     for psd_file in psd_files:
@@ -134,7 +136,7 @@ def read_snr_timeseries(snr_timeseries_files):
     """
     Get information from the single_template snr timeseries files
     """
-    logging.info("Reading SNR timeseries")
+    logger.info("Reading SNR timeseries")
     snr_timeseries = {}
     for snr_filename in snr_timeseries_files:
         with HFile(snr_filename, "r") as snr_f:
@@ -225,13 +227,14 @@ sngl_inspiral_table_curr.extend(
 template = sngl_inspiral_table_curr[0]
 triggered_ifos = {sngl.ifo for sngl in sngl_inspiral_table_curr}
 next_event_id = max(int(sngl.event_id) for sngl in sngl_inspiral_table) + 1
-template_columns = (
-    "mass1 mass2 spin1x spin1y spin1z spin2x spin2y spin2z "
-    "mtotal mchirp eta f_final template_duration"
-).split()
+template_columns = [
+    "mass1", "mass2", "spin1x", "spin1y", "spin1z",
+    "spin2x", "spin2y", "spin2z", "mtotal", "mchirp",
+    "eta", "f_final", "template_duration",
+]
 
 for ifo in sorted(set(snr_ts) - triggered_ifos):
-    logging.debug("Adding follow-up-only detector %s to localization XML", ifo)
+    logger.debug("Adding follow-up-only detector %s to localization XML", ifo)
     sngl = return_empty_sngl(nones=True)
     for column in template_columns:
         setattr(sngl, column, getattr(template, column))
@@ -295,10 +298,10 @@ xmldoc.childNodes[-1].appendChild(sngl_inspiral_table_curr)
 lal.series.make_psd_xmldoc(lal_psddict, xmldoc.childNodes[-1])
 
 ligolw_utils.write_filename(xmldoc, args.output_file)
-logging.info("Saved XML file %s", args.output_file)
+logger.info("Saved XML file %s", args.output_file)
 
 if args.psd_plot:
-    logging.info("Saving ASD plot %s", args.psd_plot)
+    logger.info("Saving ASD plot %s", args.psd_plot)
     generate_asd_plot(psddict, args.psd_plot)
 
 if args.snr_timeseries_plot:
@@ -308,7 +311,7 @@ if args.snr_timeseries_plot:
         if sngl.snr is not None
     }
     base_time = int(np.floor(time))
-    logging.info("Saving SNR plot %s", args.snr_timeseries_plot)
+    logger.info("Saving SNR plot %s", args.snr_timeseries_plot)
     generate_snr_plot(snr_ts, args.snr_timeseries_plot, triggers, base_time)
 
-logging.info("Done!")
+logger.info("Done!")
