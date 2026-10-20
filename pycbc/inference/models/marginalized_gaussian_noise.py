@@ -393,7 +393,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
 
                 if self.precalc_antenna_factors:
-                    fp, fc, dt = self.get_precalc_antenna_factors(det)
+                    fp, fc, _ = self.get_precalc_antenna_factors(det)
                     pol_phase = numpy.exp(-2.0j * params["polarization"])
                     f = (fp + 1.0j * fc) * pol_phase
                     fp = f.real

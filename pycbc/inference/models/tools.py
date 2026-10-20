@@ -9,6 +9,7 @@ import numpy
 import numpy.random
 import tqdm
 from scipy import ndimage
+from scipy.constants import c as speed_of_light
 from scipy.interpolate import interp1d
 from scipy.special import i0e, logsumexp
 
@@ -677,8 +678,6 @@ class DistMarg:
             peak inside the region, so it must be no wider than one.
 
         """
-        from scipy.constants import c as speed_of_light
-
         self.peak_lock_search_samples = (
             None if peak_lock_search_samples is None else int(peak_lock_search_samples)
         )
