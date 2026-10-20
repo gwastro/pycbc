@@ -200,7 +200,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
 
             # Get probability density for injections in mass-distance space
             if dt_j["m_dist"] == "totalMass":
-                lomass, himass = min(min(m1_j), min(m2_j), max(max(m1_j), max(m2_j)))
+                lomass, himass = min(min(m1_j), min(m2_j)), max(max(m1_j), max(m2_j))
                 lomass_2, himass_2 = lomass, himass
             elif dt_j["m_dist"] == "componentMass" or dt_j["m_dist"] == "log":
                 lomass, himass = min(m1_j), max(m1_j)
