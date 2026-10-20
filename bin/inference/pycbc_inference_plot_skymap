@@ -49,8 +49,7 @@ init_logging(opts.verbose)
 cmd = f"ligo-skymap-plot {opts.input_file} -o {opts.output_file} --annotate --contour 50 90"
 if opts.colormap is not None:
     cmd += f" --colormap {opts.colormap}"
-ret = subprocess.run(cmd.split())
-ret.check_returncode()
+subprocess.run(cmd.split(), check=True)
 
 im = Image.open(opts.output_file)
 meta = PngImagePlugin.PngInfo()
