@@ -55,9 +55,11 @@ logger = logging.getLogger(__name__)
 
 sim = libutils.import_optional("lalsimulation")
 
+# The lambdas look up the functions only when called: if lalsimulation is not
+# installed, sim is a stub that raises ImportError on any attribute access.
 injection_func_map = {
-    np.dtype(float32): lambda *args: sim.SimAddInjectionREAL4TimeSeries(*args),
-    np.dtype(float64): lambda *args: sim.SimAddInjectionREAL8TimeSeries(*args),
+    np.dtype(float32): lambda *args: sim.SimAddInjectionREAL4TimeSeries(*args),  # noqa: PLW0108
+    np.dtype(float64): lambda *args: sim.SimAddInjectionREAL8TimeSeries(*args),  # noqa: PLW0108
 }
 
 # Map parameter names used in pycbc to names used in the sim_inspiral
