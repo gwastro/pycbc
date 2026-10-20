@@ -24,8 +24,7 @@ import logging
 import os
 import signal
 
-import numpy
-import numpy.random
+import numpy as np
 import tqdm
 from scipy.stats import gaussian_kde
 
@@ -123,7 +122,7 @@ parser.add_argument(
     "--max-connections",
     type=int,
     help="Maximum number of matches to store with each template",
-    default=numpy.inf,
+    default=np.inf,
 )
 pycbc.psd.insert_psd_option_group(parser)
 parser.add_argument(
@@ -139,7 +138,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
-numpy.random.seed(args.seed)
+np.random.seed(args.seed)
 
 config_parser = pycbc.types.config.InterpolatingConfigParser([args.input_config])
 variable_args, static_args = read_params_from_config(
@@ -236,24 +235,24 @@ class TriangleBank:
         return self.waveforms[0].params.keys()
 
     def key(self, k):
-        return numpy.array([p.params[k] for p in self.waveforms])
+        return np.array([p.params[k] for p in self.waveforms])
 
     def sigma_match_bound(self, sig):
         if not hasattr(self, "sigma"):
             self.sigma = None
         if self.sigma is None or len(self.sigma) != len(self):
-            self.sigma = numpy.array([h.s for h in bank.waveforms])
-        return numpy.minimum(sig / self.sigma, self.sigma / sig)
+            self.sigma = np.array([h.s for h in bank.waveforms])
+        return np.minimum(sig / self.sigma, self.sigma / sig)
 
     def range(self):
         if not hasattr(self, "r"):
             self.r = None
         if self.r is None or len(self.r) != len(self):
-            self.r = numpy.arange(0, len(self))
+            self.r = np.arange(0, len(self))
         return self.r
 
     def culltau0(self, threshold):
-        cull = numpy.where(self.tau0() < threshold)[0]
+        cull = np.where(self.tau0() < threshold)[0]
 
         class dumb:
             pass
@@ -269,7 +268,7 @@ class TriangleBank:
         if not hasattr(self, "t0"):
             self.t0 = None
         if self.t0 is None or len(self.t0) != len(self):
-            self.t0 = numpy.array([h.tau0 for h in self])
+            self.t0 = np.array([h.tau0 for h in self])
         return self.t0
 
     def __contains__(self, hp):
@@ -280,7 +279,7 @@ class TriangleBank:
             matches = self.sigma_match_bound(hp.s)
             r = self.range()[matches > hp.threshold]
         else:
-            matches = numpy.ones(len(self))
+            matches = np.ones(len(self))
             r = self.range()
 
         msig = len(r)
@@ -292,10 +291,7 @@ class TriangleBank:
             )
             hp.tbin = int(hp.tau0 / args.tau0_threshold)
 
-            if hp.tbin in self.tbins:
-                r = numpy.array(self.tbins[hp.tbin])
-            else:
-                r = r[:0]
+            r = np.array(self.tbins[hp.tbin]) if hp.tbin in self.tbins else r[:0]
 
         mtau = len(r)
 
@@ -308,9 +304,8 @@ class TriangleBank:
 
                 msorted = matches[r][msort]
                 rsorted = r[msort]
-                keep = numpy.ones(len(msorted), dtype=bool)
+                keep = np.ones(len(msorted), dtype=bool)
                 if args.max_connections < len(keep):
-                    # keep[args.max_connections//2: -args.max_connections//2] = False
                     keep[args.max_connections :] = False
 
                 hp.matches = msorted[keep].copy()
@@ -335,7 +330,7 @@ class TriangleBank:
 
             # Update bounding match values, apply triangle inequality
             maxmatches = hc.matches - m + 1.10
-            update = numpy.where(maxmatches < matches[hc.indices])[0]
+            update = np.where(maxmatches < matches[hc.indices])[0]
             matches[hc.indices[update]] = maxmatches[update]
 
             # Update where to calculate matches
@@ -345,6 +340,7 @@ class TriangleBank:
             if m > hp.threshold:
                 return True
             mmax = max(mmax, m)
+        return None
 
     def check_params(
         self,
@@ -358,8 +354,8 @@ class TriangleBank:
         num_added = 0
         total_num = len(tuple(params.values())[0])
 
-        idxs = numpy.arange(0, total_num)
-        chunks = numpy.array_split(idxs, max(total_num // args.nprocesses // 4, 1))
+        idxs = np.arange(0, total_num)
+        chunks = np.array_split(idxs, max(total_num // args.nprocesses // 4, 1))
 
         for chunk in chunks:
             waveform_cache = []
@@ -448,12 +444,12 @@ def save_bank():  # Use a local name
     logger.info("Saving current bank to %s", args.output_file)
     with HFile(args.output_file, "w") as o:
         o.attrs["minimal_match"] = args.minimal_match
-        for k in bank.keys():
+        for k in bank:
             val = bank.key(k)
             if val.dtype.char == "U":
                 val = val.astype("bytes")
             o[k] = val
-        o["max_matches"] = numpy.array(bank.max_matches)
+        o["max_matches"] = np.array(bank.max_matches)
     logger.info("Save complete.")
 
 
@@ -465,14 +461,14 @@ class GenUniformWaveform:
         self.flen = tlen // 2 + 1
         psd = pycbc.psd.from_cli(args, self.flen, self.delta_f, self.f_lower)
         self.kmin = int(f_lower * buffer_length)
-        self.w = ((1.0 / psd[self.kmin : -1]) ** 0.5).astype(numpy.float32)
-        qtilde = pycbc.types.zeros(tlen, numpy.complex64)
-        q = pycbc.types.zeros(tlen, numpy.complex64)
+        self.w = ((1.0 / psd[self.kmin : -1]) ** 0.5).astype(np.float32)
+        qtilde = pycbc.types.zeros(tlen, np.complex64)
+        q = pycbc.types.zeros(tlen, np.complex64)
         self.qtilde_view = qtilde[self.kmin : self.flen - 1]
         self.ifft = pycbc.fft.IFFT(qtilde, q)
 
         self.md = q
-        self.md2 = numpy.zeros(20)
+        self.md2 = np.zeros(20)
 
         if args.use_trimmed_buffer:
             self.md = q._data[-100:]
@@ -480,13 +476,13 @@ class GenUniformWaveform:
 
     def generate(self, **kwds):
         if args.max_signal_length is not None:
-            flow = numpy.arange(self.f_lower, 100, 0.1)[::-1]
+            flow = np.arange(self.f_lower, 100, 0.1)[::-1]
             length = spa_length_in_time(
                 mass1=kwds["mass1"], mass2=kwds["mass2"], f_lower=flow, phase_order=-1
             )
             maxlen = args.max_signal_length
-            x = numpy.searchsorted(length, maxlen) - 1
-            l = length[x]
+            x = np.searchsorted(length, maxlen) - 1
+            length[x]
             f = flow[x]
         else:
             f = self.f_lower
@@ -526,7 +522,7 @@ class GenUniformWaveform:
             dt = 1.0 / args.sample_rate
             hp = pycbc.waveform.get_waveform_filter(
                 pycbc.types.zeros(
-                    buff_len * args.sample_rate // 2 + 1, dtype=numpy.complex64
+                    buff_len * args.sample_rate // 2 + 1, dtype=np.complex64
                 ),
                 delta_f=1.0 / buff_len,
                 delta_t=dt,
@@ -538,7 +534,7 @@ class GenUniformWaveform:
             hp = decimate_frequency_domain(hp, self.delta_f)
 
         hp.resize(self.flen)
-        hp = hp.astype(numpy.complex64)
+        hp = hp.astype(np.complex64)
 
         hp[self.kmin : -1] *= self.w
         s = float(1.0 / pycbc.filter.sigmasq(hp, low_frequency_cutoff=f) ** 0.5)
@@ -599,7 +595,7 @@ if len(args.input_file) > 0:
     for input_file in args.input_file:
         logger.info("Loading: %s", input_file)
         with HFile(input_file, "r") as f:
-            params = {k: f[k][:] for k in f.keys() if k not in ["max_matches"]}
+            params = {k: f[k][:] for k in f if k != "max_matches"}
 
             # Keep only templates inside [tau0_start, tau0_end]
             tau0_in = pycbc.conversions.tau0_from_mass1_mass2(
@@ -617,7 +613,7 @@ if len(args.input_file) > 0:
                 continue
             params = {k: v[sel] for k, v in params.items()}
 
-            total_raw_templates += len(params[list(params.keys())[0]])
+            total_raw_templates += len(params[next(iter(params.keys()))])
             bank, _ = bank.check_params(
                 gen,
                 params,
@@ -639,19 +635,19 @@ if len(args.input_file) > 0:
 def draw(rtype):
     if rtype == "uniform":
         # `draw_samples_from_config` has its own fixed seed, so must overwrite it.
-        random_seed = numpy.random.randint(low=0, high=2**32 - 1)
+        random_seed = np.random.randint(low=0, high=2**32 - 1)
         samples = draw_samples_from_config(args.input_config, size, random_seed)
         params = {name: samples[name] for name in samples.fieldnames}
         # Add `static_args` back.
         if static_args is not None:
-            for k in static_args.keys():
-                params[k] = numpy.array([static_args[k]] * size)
+            for k in static_args:
+                params[k] = np.array([static_args[k]] * size)
 
     elif rtype == "kde":
         trail = 300
         trail = min(trail, len(bank))
         p = variable_args
-        bdata = numpy.array([bank.key(k)[-trail:] for k in p])
+        bdata = np.array([bank.key(k)[-trail:] for k in p])
         kde = gaussian_kde(bdata)
         points = kde.resample(size=size)
         params = {k: v for k, v in zip(p, points)}
@@ -659,7 +655,7 @@ def draw(rtype):
         # Add `static_args` back, some transformations may need them.
         if static_args is not None:
             for k in static_args.keys():
-                params[k] = numpy.array([static_args[k]] * size)
+                params[k] = np.array([static_args[k]] * size)
 
         # Apply `waveform_transforms` defined in the .ini file to samples.
         if waveform_transforms is not None:
@@ -675,7 +671,7 @@ def cdraw(rtype, ts, te):
     from pycbc.conversions import tau0_from_mass1_mass2
 
     p = draw(rtype)
-    if len(p[list(p.keys())[0]]) > 0:
+    if len(p[next(iter(p.keys()))]) > 0:
         t = tau0_from_mass1_mass2(p["mass1"], p["mass2"], args.tau0_cutoff_frequency)
         l = (t < te) & (t > ts)
         p = {k: p[k][l] for k in p}
@@ -683,14 +679,14 @@ def cdraw(rtype, ts, te):
     i = 0
     while len(p[list(p.keys())[0]]) < size:
         tp = draw(rtype)
-        if len(tp[list(tp.keys())[0]]) > 0:
+        if len(tp[next(iter(tp.keys()))]) > 0:
             t = tau0_from_mass1_mass2(
                 tp["mass1"], tp["mass2"], args.tau0_cutoff_frequency
             )
             l = (t < te) & (t > ts)
             tp = {k: tp[k][l] for k in tp}
 
-        p = {k: numpy.concatenate([p[k], tp[k]]) for k in p}
+        p = {k: np.concatenate([p[k], tp[k]]) for k in p}
 
         i += 1
         if i > args.placement_iterations:
@@ -750,10 +746,10 @@ while tau0s < args.tau0_end:
                 gen, params, args.minimal_match, parallel_check=args.parallel_check
             )
 
-            trail_matches = numpy.array(
+            trail_matches = np.array(
                 bank.max_matches[int(len(bank.max_matches) * 0.9) :]
             )
-            ave = numpy.mean(trail_matches)
+            ave = np.mean(trail_matches)
             logger.info(
                 "%s: Round (K) (%s): %s Size: %s conv: %0.4f added: %s Trail Ave: %0.4f Trail Min: %0.4f",
                 region,
