@@ -91,15 +91,17 @@ def source_color(source):
 
 
 def coinc_color(coinc):
-    """Return a color for the coincidence type
+    """Return a color for the coincidence type.
 
     Parameters
-    coinc : string
-        A string for the IFOs in the coincidence.
-        This will be in alphabetical order, i.e. H1L1V1.
+    ----------
+    coinc : str
+        IFO names in alphabetical order, for example ``H1L1V1``.
 
     Returns
-    string : The RGB color for the corresponding coinc
+    -------
+    str
+        The RGB color for the corresponding coincidence.
     """
     if coinc in _ifo_color_map:
         return _ifo_color_map[coinc]
