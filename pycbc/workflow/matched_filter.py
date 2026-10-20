@@ -38,7 +38,7 @@ from pycbc.workflow.jobsetup import (
     sngl_ifo_job_setup,
 )
 
-logger = logging.getLogger("pycbc.workflow.matched_filter")
+logger = logging.getLogger(__name__)
 
 
 def setup_matchedfltr_workflow(

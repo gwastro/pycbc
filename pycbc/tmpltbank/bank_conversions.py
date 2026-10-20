@@ -33,7 +33,7 @@ import numpy as np
 from pycbc import conversions as conv
 from pycbc import pnutils
 
-logger = logging.getLogger("pycbc.tmpltbank.bank_conversions")
+logger = logging.getLogger(__name__)
 
 # Convert from parameter name to helper function
 # some multiple names are used for the same function

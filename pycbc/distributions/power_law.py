@@ -23,7 +23,7 @@ import numpy
 
 from pycbc.distributions import bounded
 
-logger = logging.getLogger("pycbc.distributions.power_law")
+logger = logging.getLogger(__name__)
 
 
 class UniformPowerLaw(bounded.BoundedDist):

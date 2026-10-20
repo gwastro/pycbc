@@ -27,6 +27,8 @@ from pycbc.events import trigger_fits as trstats
 from pycbc.io import HFile
 from pycbc.types.optparse import MultiDetOptionAction
 
+logger = logging.getLogger(__name__)
+
 #### DEFINITIONS AND FUNCTIONS ####
 
 
@@ -221,14 +223,14 @@ if (args.prune_param or args.prune_bins or args.prune_number) and not (
         "nonzero number to prune in each bin!"
     )
 
-logging.info("Fitting above threshold %f" % args.stat_threshold)
+logger.info("Fitting above threshold %f", args.stat_threshold)
 
-logging.info("Opening trigger file: %s" % args.trigger_file)
+logger.info("Opening trigger file: %s", args.trigger_file)
 trigf = HFile(args.trigger_file, "r")
-logging.info("Opening template file: %s" % args.bank_file)
+logger.info("Opening template file: %s", args.bank_file)
 templatef = HFile(args.bank_file, "r")
 
-logging.info("Counting number of triggers in each template")
+logger.info("Counting number of triggers in each template")
 # template boundaries dataset is in order of template_id
 tb = trigf[args.ifo + "/template_boundaries"][:]
 tid = np.arange(len(tb))
@@ -249,9 +251,9 @@ tid_sort = np.argsort(tid_hashorder)
 count_in_template = count_in_template_hashorder[tid_sort]
 
 # get the stat values
-logging.info("Calculating stat values")
+logger.info("Calculating stat values")
 abovethresh, stat = get_stat(args, trigf[args.ifo], args.stat_threshold)
-logging.info("%i trigs left after thresholding" % len(stat))
+logger.info("%i trigs left after thresholding", len(stat))
 
 tid = trigf[args.ifo + "/template_id"][abovethresh]
 time = trigf[args.ifo + "/end_time"][abovethresh]
@@ -282,7 +284,7 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     stat = stat[retain]
     tid = tid[retain]
     time = time[retain]
-    logging.info("%i trigs left after vetoing with %s" % (len(stat), veto_file))
+    logger.info("%i trigs left after vetoing with %s", len(stat), veto_file)
 # Include gating vetoes
 if args.gating_veto_windows:
     gating_veto = args.gating_veto_windows[args.ifo].split(",")
@@ -310,13 +312,13 @@ if args.gating_veto_windows:
         stat = stat[gveto_retain_idx]
         tid = tid[gveto_retain_idx]
         time = time[gveto_retain_idx]
-        logging.info("%i trigs left after vetoing triggers near gates" % len(stat))
+        logger.info("%i trigs left after vetoing triggers near gates", len(stat))
 
 total_time = abs(all_segments)
 
 # do pruning (removal of trigs at N loudest times defined over param bins)
 if args.prune_param:
-    logging.info("Getting min and max param values")
+    logger.info("Getting min and max param values")
     pars = triggers.get_param(
         args.prune_param,
         args,
@@ -328,7 +330,7 @@ if args.prune_param:
     minpar = min(pars)
     maxpar = max(pars)
     del pars
-    logging.info("%f %f" % (minpar, maxpar))
+    logger.info("%f %f", minpar, maxpar)
 
     # hard-coded time window of 0.1s
     args.prune_window = 0.1
@@ -348,11 +350,11 @@ if args.prune_param:
         # are all the bins full already?
         numpruned = sum([len(prunedtimes[i]) for i in range(args.prune_bins)])
         if numpruned == args.prune_bins * args.prune_number:
-            logging.info("Finished pruning!")
+            logger.info("Finished pruning!")
             break
         if numpruned > args.prune_bins * args.prune_number:
-            logging.error(
-                "Uh-oh, we pruned too many things .. %i, to be precise" % numpruned
+            logger.error(
+                "Uh-oh, we pruned too many things .. %i, to be precise", numpruned
             )
             raise RuntimeError
         loudest = np.argmax(statpruneall)
@@ -369,9 +371,12 @@ if args.prune_param:
         )
         # is the bin where the loudest trigger lives full already?
         if len(prunedtimes[lbin]) == args.prune_number:
-            logging.info(
-                "%i - Bin %i full, not pruning event with stat %f at "
-                "time %.3f" % (j, lbin, lstat, ltime)
+            logger.info(
+                "%i - Bin %i full, not pruning event with stat %f at time %.3f",
+                j,
+                lbin,
+                lstat,
+                ltime,
             )
             # prune the reference trigger array
             retain = abs(timepruneall - ltime) > args.prune_window
@@ -381,15 +386,14 @@ if args.prune_param:
             del retain
             continue
         else:
-            logging.info(
-                "Pruning event with stat %f at time %.3f in bin %i"
-                % (lstat, ltime, lbin)
+            logger.info(
+                "Pruning event with stat %f at time %.3f in bin %i", lstat, ltime, lbin
             )
             # now do the pruning
             retain = abs(time - ltime) > args.prune_window
-            logging.info("%i trigs before pruning" % len(stat))
+            logger.info("%i trigs before pruning", len(stat))
             stat = stat[retain]
-            logging.info("%i trigs remain" % len(stat))
+            logger.info("%i trigs remain", len(stat))
             tid = tid[retain]
             time = time[retain]
             # also for the reference trig arrays
@@ -403,7 +407,7 @@ if args.prune_param:
     del statpruneall
     del tidpruneall
     del timepruneall
-    logging.info("%i trigs remain after pruning loop" % len(stat))
+    logger.info("%i trigs remain after pruning loop", len(stat))
 
 # parse template range
 num_templates = len(templatef["template_hash"])
@@ -429,7 +433,7 @@ stat = stat[tsort]
 left = np.searchsorted(tid, trange, side="left")
 right = np.searchsorted(tid, trange, side="right")
 
-logging.info("Fitting ...")
+logger.info("Fitting ...")
 for j, tnum in enumerate(trange):
     stat_in_template = stat[left[j] : right[j]]
     count_above = len(stat_in_template)
@@ -448,9 +452,9 @@ for j, tnum in enumerate(trange):
     if args.save_trig_param:
         tpars.append(tparam[tnum])
     if tnum % 1000 == 0:
-        logging.info("Fitted template %i / %i" % (tnum - tmin, tmax - tmin))
+        logger.info("Fitted template %i / %i", tnum - tmin, tmax - tmin)
 
-logging.info("Calculating median sigma for each template")
+logger.info("Calculating median sigma for each template")
 sigma_regions = trigf[args.ifo + "/sigmasq_template"][:]
 median_sigma = []
 for reg in sigma_regions:
@@ -478,4 +482,4 @@ outfile.attrs.create("stat_threshold", data=args.stat_threshold)
 outfile.attrs.create("analysis_time", data=total_time)
 
 outfile.close()
-logging.info("Done!")
+logger.info("Done!")

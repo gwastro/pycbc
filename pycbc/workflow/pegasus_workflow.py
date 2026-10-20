@@ -40,7 +40,7 @@ from urllib.request import pathname2url
 import Pegasus.api as dax
 from packaging import version
 
-logger = logging.getLogger("pycbc.workflow.pegasus_workflow")
+logger = logging.getLogger(__name__)
 
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), "pegasus_files")
 
@@ -775,7 +775,7 @@ class SubWorkflow(dax.SubWorkflow):
             if version.parse(sproc_out) >= version.parse("5.0.4"):
                 output_map_file.for_planning = True
         except:
-            logging.warning("Could not execute pegasus-version, assuming >= 5.0.4")
+            logger.warning("Could not execute pegasus-version, assuming >= 5.0.4")
             output_map_file.for_planning = True
         self.add_inputs(output_map_file)
 

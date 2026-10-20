@@ -15,6 +15,8 @@ from validation_code import old_coinc
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.io import get_file
 
+logger = logging.getLogger(__name__)
+
 OriginalCoincer = old_coinc.LiveCoincTimeslideBackgroundEstimator
 
 # This seed is chosen because the impelentations agree here.
@@ -244,7 +246,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                         self.assertEqual(a, b)
 
         for i in range(self.num_iterations):
-            logging.info("Iteration %d", i)
+            logger.info("Iteration %d", i)
             single_det_trigs = self.new_trigs[i]
             cres = self.new_coincer.add_singles(single_det_trigs)
             ocres = self.old_coincer.add_singles(single_det_trigs)

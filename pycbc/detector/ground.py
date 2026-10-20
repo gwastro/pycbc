@@ -45,7 +45,7 @@ from pycbc.time import gmst_accurate
 from pycbc.types import TimeSeries
 from pycbc.types.config import InterpolatingConfigParser
 
-logger = logging.getLogger("pycbc.detector")
+logger = logging.getLogger(__name__)
 
 # Response functions are modelled after those in lalsuite and as also
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf

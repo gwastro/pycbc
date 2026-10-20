@@ -36,6 +36,8 @@ from pycbc.pool import use_mpi
 from .base import BaseSampler, setup_output
 from .base_cube import setup_calls
 
+logger = logging.getLogger(__name__)
+
 #
 # =============================================================================
 #
@@ -122,7 +124,7 @@ class SnowlineSampler(BaseSampler):
         """There is currently no checkpointing implemented"""
 
     def finalize(self):
-        logging.info("Writing samples to files")
+        logger.info("Writing samples to files")
         for fn in [self.checkpoint_file, self.backup_file]:
             self.write_results(fn)
 

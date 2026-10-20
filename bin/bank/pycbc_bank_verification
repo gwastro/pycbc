@@ -38,6 +38,8 @@ from pycbc import psd, strain, tmpltbank
 from pycbc.io.hdf import HFile
 from pycbc.io.ligolw import LIGOLWContentHandler
 
+logger = logging.getLogger(__name__)
+
 __author__ = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
@@ -172,13 +174,13 @@ if opts.random_seed is not None:
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
-    logging.info("Obtaining h(t) for PSD generation")
+    logger.info("Obtaining h(t) for PSD generation")
     strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 else:
     strain = None
 
 # Get the PSD using the pycbc interface
-logging.info("Obtaining PSD")
+logger.info("Obtaining PSD")
 # Want the number of samples to be a binary number and Nyquist must be above
 # opts.f_upper. All this assumes that 1 / deltaF is a binary number
 nyquistFreq = 2 ** numpy.ceil(numpy.log2(opts.f_upper))
@@ -194,7 +196,7 @@ psd = pycbc.psd.from_cli(
 metricParams.psd = psd
 
 # Begin by calculating a metric
-logging.info("Calculating metric")
+logger.info("Calculating metric")
 metricParams = tmpltbank.determine_eigen_directions(
     metricParams, vary_fmax=opts.vary_fupper, vary_density=opts.bank_fupper_step
 )
@@ -214,7 +216,7 @@ else:
     fs = fs[fs >= lowEve]
     fs = fs[fs <= highEve]
 
-logging.info("Calculating covariance matrix")
+logger.info("Calculating covariance matrix")
 
 vals = tmpltbank.estimate_mass_range(
     1000000, massRangeParams, metricParams, refFreq, covary=False
@@ -225,7 +227,7 @@ metricParams.evecsCV = {}
 metricParams.evecsCV[refFreq] = evecsCV
 
 # Initialize the class for generating the partitioned bank
-logging.info("Initialize the PartitionedTmpltbank class")
+logger.info("Initialize the PartitionedTmpltbank class")
 
 partitioned_bank_object = tmpltbank.PartitionedTmpltbank(
     massRangeParams, metricParams, refFreq, (opts.bin_spacing) ** 0.5, bin_range_check=1
@@ -238,7 +240,7 @@ if opts.vary_fupper:
     )
 
 # Reading in the template bank
-logging.info("Reading template bank.")
+logger.info("Reading template bank.")
 
 
 if opts.input_bank.endswith((".xml", ".xml.gz", ".xmlgz")):
@@ -260,7 +262,7 @@ else:
     err_msg = f"Don't know how to read extension {opts.input_bank}."
     raise NotImplementedError(err_msg)
 
-logging.info("Bank read in and sorted")
+logger.info("Bank read in and sorted")
 # Okay, now lets test a bunch of matches
 points_mass1 = []
 points_mass2 = []
@@ -330,7 +332,7 @@ points_spin1z = numpy.array(points_spin1z)
 points_spin2z = numpy.array(points_spin2z)
 points_fittingfactor = numpy.array(points_fittingfactor)
 
-logging.info("Distances calculated.")
+logger.info("Distances calculated.")
 
 if opts.histogram_output_file:
     plt.hist(points_fittingfactor, 100)

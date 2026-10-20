@@ -16,6 +16,8 @@ from pycbc import mchirp_area
 from pycbc.io import hdf
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--trigger-file", required=True)
@@ -45,7 +47,7 @@ TRIGGER_FILE = args.trigger_file.split("/")[-1]
 GPS_START_TIME = TRIGGER_FILE.split("-")[2]
 GPS_START_TIME_NS = TRIGGER_FILE.split("-")[3].split(".")[0]
 
-logging.info(
+logger.info(
     "Using files: %s, %s, %s",
     TRIGGER_FILE,
     args.bank_file.split("/")[-1],
@@ -57,7 +59,7 @@ dir_path = "source_probability_results/CHUNK_%s-%s/" % (
     GPS_START_TIME_NS,
 )
 pycbc.makedir(dir_path)
-logging.info("Saving results in %s", dir_path)
+logger.info("Saving results in %s", dir_path)
 
 fortrigs = hdf.ForegroundTriggers(
     args.trigger_file, args.bank_file, sngl_files=args.single_detector_triggers
@@ -69,9 +71,11 @@ N_original = len(ifar)
 if args.ifar_threshold:
     idx = ifar > args.ifar_threshold
     ifar = ifar[idx]
-    logging.info(
-        "%i triggers out of %i with IFAR > %s"
-        % (len(ifar), N_original, str(args.ifar_threshold))
+    logger.info(
+        "%i triggers out of %i with IFAR > %s",
+        len(ifar),
+        N_original,
+        str(args.ifar_threshold),
     )
 else:
     idx = np.full(N_original, True)

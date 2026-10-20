@@ -42,7 +42,7 @@ from pycbc.types import Array
 from . import coinc, ranking
 from .eventmgr_cython import findchirp_cluster_over_window_cython
 
-logger = logging.getLogger("pycbc.events.eventmgr")
+logger = logging.getLogger(__name__)
 
 
 @schemed("pycbc.events.threshold_")

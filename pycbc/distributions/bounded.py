@@ -24,7 +24,7 @@ import numpy
 
 from pycbc import VARARGS_DELIM, boundaries
 
-logger = logging.getLogger("pycbc.distributions.bounded")
+logger = logging.getLogger(__name__)
 
 
 #

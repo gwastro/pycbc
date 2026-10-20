@@ -24,7 +24,7 @@ import numpy
 from pycbc import VARARGS_DELIM, boundaries
 from pycbc.distributions import bounded, uniform
 
-logger = logging.getLogger("pycbc.distributions.angular")
+logger = logging.getLogger(__name__)
 
 
 class UniformAngle(uniform.Uniform):

@@ -41,7 +41,7 @@ from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.workflow.plotting import PlotExecutable
 
-logger = logging.getLogger("pycbc.workflow.grb_utils")
+logger = logging.getLogger(__name__)
 
 
 def _select_grb_pp_class(wflow, curr_exe):
@@ -805,13 +805,13 @@ def setup_pygrb_minifollowups(
         Tags to add to the minifollowups executables
 
     """
-    logging.info("Entering minifollowups module")
+    logger.info("Entering minifollowups module")
 
     if not workflow.cp.has_section("workflow-minifollowups"):
         msg = "There is no [workflow-minifollowups] section in "
         msg += "the configuration file"
-        logging.info(msg)
-        logging.info("Leaving minifollowups")
+        logger.info(msg)
+        logger.info("Leaving minifollowups")
         return None
 
     tags = [] if tags is None else tags
@@ -870,7 +870,7 @@ def setup_pygrb_minifollowups(
         map_file, staging_site=workflow.staging_site, cache_file=workflow.cache_file
     )
     job.add_into_workflow(workflow)
-    logging.info("Leaving minifollowups module")
+    logger.info("Leaving minifollowups module")
 
     return job
 

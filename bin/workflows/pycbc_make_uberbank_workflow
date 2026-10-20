@@ -41,6 +41,8 @@ import pycbc.version
 import pycbc.workflow as wf
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 
+logger = logging.getLogger(__name__)
+
 # Boiler-plate stuff
 __author__ = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -179,7 +181,7 @@ wf.makedir("daxes")
 ##############################################
 # Run the geom_bank workflow the first time  #
 ##############################################
-logging.info("Setting up the round of geometric bank jobs.")
+logger.info("Setting up the round of geometric bank jobs.")
 
 config_path = os.path.abspath("daxes" + "/" + "geom_workflow.ini")
 workflow.cp.write(open(config_path, "w"))
@@ -244,7 +246,7 @@ config_file = wf.resolve_url_to_file(config_path)
 # a PyGRB uberbank covers only potentially EM-bright systems and therfore
 # skips this step.
 if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
-    logging.info("Setting up the (optional) first round of sbank jobs.")
+    logger.info("Setting up the (optional) first round of sbank jobs.")
     sbank_out_file_bbh = wf.File(
         sbank_exe.ifo_list,
         sbank_exe.name,
@@ -283,7 +285,7 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
 # Run the sbank workflow for the second time  #
 ###############################################
 
-logging.info("Setting up the final round of sbank jobs.")
+logger.info("Setting up the final round of sbank jobs.")
 sbank_out_file_final = wf.File(
     sbank_exe.ifo_list,
     sbank_exe.name,

@@ -7,7 +7,7 @@ import numpy
 
 from pycbc.time import gps_to_utc_datetime
 
-logger = logging.getLogger("pycbc.io.live")
+logger = logging.getLogger(__name__)
 
 
 def maximum_string(numbers):

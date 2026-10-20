@@ -24,7 +24,7 @@ import logging
 from pycbc.frame import read_frame
 from pycbc.io import get_file
 
-logger = logging.getLogger("pycbc.frame.gwosc")
+logger = logging.getLogger(__name__)
 
 _GWOSC_URL = "https://www.gwosc.org/archive/links/%s/%s/%s/%s/json/"
 

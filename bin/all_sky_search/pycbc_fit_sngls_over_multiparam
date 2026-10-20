@@ -24,6 +24,8 @@ from pycbc import init_logging
 from pycbc.events import triggers
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 
 def dist(i1, i2, parvals, smoothing_width):
     """
@@ -111,7 +113,7 @@ def smooth_n_closest(
     # starting at closest
     ntcs = nabove[dist_sort].cumsum()
     templates_required = numpy.searchsorted(ntcs, total_trigs) + 1
-    logging.debug(
+    logger.debug(
         "%d template(s) required to obtain %d(>%d) triggers",
         templates_required,
         ntcs[templates_required - 1],
@@ -181,7 +183,7 @@ def report_percentage(i, length):
     pc = int(numpy.floor(i / length * 100))
     pc_last = int(numpy.floor((i - 1) / length * 100))
     if not pc % 10 and pc_last % 10:
-        logging.info(f"Template {i} out of {length} ({pc:.0f}%)")
+        logger.info("Template %s out of %s (%.0f%%)", i, length, pc)
 
 
 parser = argparse.ArgumentParser(
@@ -316,7 +318,7 @@ ntotal = numpy.array([], dtype=int)
 alpha = numpy.array([], dtype=float)
 median_sigma = numpy.array([], dtype=float)
 
-logging.info("Loading input template fits")
+logger.info("Loading input template fits")
 
 # Check on fit files having the same number of templates, as expected if
 # they use the same bank
@@ -344,7 +346,7 @@ for filename in args.template_fit_file:
                 # output attributes will only correspond to the first file's
                 # IFO. Warn if different IFOs are being used.
                 if not attr_dict[k] == fits.attrs[k]:
-                    logging.warning(
+                    logger.warning(
                         "Fit files correspond to different IFOs: %s and %s, "
                         "only %s is being used for output file attributes",
                         attr_dict[k],
@@ -367,7 +369,7 @@ for filename in args.template_fit_file:
         try:
             median_sigma = numpy.concatenate((median_sigma, fits["median_sigma"][:]))
         except KeyError:
-            logging.info("Median_sigma dataset not present in input file")
+            logger.info("Median_sigma dataset not present in input file")
             median_sigma = None
 
 # For an exponential fit 1/alpha is linear in the trigger statistic values
@@ -384,7 +386,7 @@ if len(args.template_fit_file) > 1:
 
     # The linearity of the average means that we can do this in two steps
     # without biasing the final result.
-    logging.info("Averaging within the same template for multiple files")
+    logger.info("Averaging within the same template for multiple files")
     tid_unique = numpy.unique(tid)
 
     # sort into template_id order
@@ -435,14 +437,14 @@ n_required = (
     else kwarg_dict["total_trigs"]
 )
 if args.smoothing_method == "n_closest" and n_required > nabove.sum():
-    logging.warning(
+    logger.warning(
         "There are %.2f triggers above threshold, not enough to give a "
         "total of %d for smoothing",
         nabove.sum(),
         n_required,
     )
 
-logging.info("Calculating template parameter values")
+logger.info("Calculating template parameter values")
 bank = HFile(args.bank_file, "r")
 m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
 
@@ -452,11 +454,11 @@ parnames = []
 for param, slog in zip(args.fit_param, args.log_param):
     data = triggers.get_param(param, args, m1, m2, s1z, s2z)
     if slog in ["false", "False", "FALSE"]:
-        logging.info("Using param: %s", param)
+        logger.info("Using param: %s", param)
         parvals.append(data)
         parnames.append(param)
     elif slog in ["true", "True", "TRUE"]:
-        logging.info("Using log param: %s", param)
+        logger.info("Using log param: %s", param)
         parvals.append(numpy.log(data))
         parnames.append(f"log({param})")
     else:
@@ -474,7 +476,7 @@ smoothed_vals = numpy.zeros((num_templates, 3))
 # Handle the one-dimensional case of tophat smoothing separately
 # as it is easier to optimize computational performance.
 if len(parvals) == 1 and args.smoothing_method == "smooth_tophat":
-    logging.info("Using efficient 1D tophat smoothing")
+    logger.info("Using efficient 1D tophat smoothing")
     sort = parvals[0].argsort()
     parvals_0 = parvals[0][sort]
     ntotal = ntotal[sort]
@@ -494,7 +496,7 @@ if len(parvals) == 1 and args.smoothing_method == "smooth_tophat":
     ntsum = ntotal.cumsum()
     num = right - left
 
-    logging.info("Smoothing ...")
+    logger.info("Smoothing ...")
     smoothed_vals[:, 0] = (nasum[right] - nasum[left]) / num
     invmean = (invsum[right] - invsum[left]) / num
     smoothed_vals[:, 1] = smoothed_vals[:, 0] / invmean
@@ -507,7 +509,7 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     sort_dim = numpy.argmax(
         [(v.max() - v.min()) / c for v, c in zip(parvals, cut_lengths)]
     )
-    logging.info("Sorting / Cutting on dimension %s", parnames[sort_dim])
+    logger.info("Sorting / Cutting on dimension %s", parnames[sort_dim])
 
     # Sort parvals by the sort dimension
     par_sort = numpy.argsort(parvals[sort_dim])
@@ -522,14 +524,14 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
         parvals[sort_dim], parvals[sort_dim] + cut_lengths[sort_dim]
     )
     n_removed = num_templates - rights + lefts
-    logging.info(
+    logger.info(
         "Cutting between %d and %d templates for each smoothing",
         n_removed.min(),
         n_removed.max(),
     )
 
     # Sort the values to be smoothed by parameter value
-    logging.info("Smoothing ...")
+    logger.info("Smoothing ...")
     nabove_sort = nabove[par_sort]
     invalphan_sort = invalphan[par_sort]
     ntotal_sort = ntotal[par_sort]
@@ -554,7 +556,7 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     smoothed_vals = smoothed_vals[unsort, :]
 
 else:
-    logging.info("Smoothing ...")
+    logger.info("Smoothing ...")
     for i in rang:
         report_percentage(i, num_templates)
         d = dist(i, rang, parvals, args.smoothing_width)
@@ -562,7 +564,7 @@ else:
             nabove, invalphan, ntotal, d, args.smoothing_method, **kwarg_dict
         )
 
-logging.info("Writing output")
+logger.info("Writing output")
 outfile = HFile(args.output, "w")
 outfile["template_id"] = tid
 outfile["count_above_thresh"] = smoothed_vals[:, 0]
@@ -590,4 +592,4 @@ if not analysis_time == 0:
 
 # Add a magic file attribute so that coinc_findtrigs can parse it
 outfile.attrs["stat"] = attr_dict["ifo"] + "-fit_coeffs"
-logging.info("Done!")
+logger.info("Done!")

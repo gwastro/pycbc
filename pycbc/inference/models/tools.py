@@ -1,8 +1,6 @@
 """Common utility functions for calculation of likelihoods"""
 
 import logging
-
-logger = logging.getLogger(__name__)
 from distutils.util import strtobool
 
 import numpy
@@ -14,6 +12,8 @@ from scipy.special import i0e, logsumexp
 
 from pycbc.detector import Detector
 from pycbc.distributions import JointDistribution
+
+logger = logging.getLogger(__name__)
 
 # Earth radius in seconds
 EARTH_RADIUS = 0.031
@@ -132,7 +132,7 @@ class DistMarg:
         )
 
         for param in str_to_tuple(marginalize_vector_params, str):
-            logging.info(
+            logger.info(
                 "Marginalizing over %s, %s points from prior", param, self.vsamples
             )
             self.marginalized_vector_priors[param] = pop_prior(param)
@@ -168,7 +168,7 @@ class DistMarg:
                 marginalize_distance_density, int
             )
 
-        logging.info("Marginalizing over distance")
+        logger.info("Marginalizing over distance")
 
         # Take distance out of the variable params since we'll handle it
         # manually now
@@ -183,7 +183,7 @@ class DistMarg:
 
         # (1) prior is using distance
         if dprior.params[0] == "distance":
-            logging.info(
+            logger.info(
                 "Prior is directly on distance, setting up %s grid weights",
                 marginalize_distance_samples,
             )
@@ -196,7 +196,7 @@ class DistMarg:
         elif marginalize_distance_param != "distance":
             waveform_transforms = kwargs["waveform_transforms"]
             pname = dprior.params[0]
-            logging.info("Settings up transform,  prior is in terms of %s", pname)
+            logger.info("Settings up transform,  prior is in terms of %s", pname)
             wtrans = [d for d in waveform_transforms if "distance" not in d.outputs]
             if len(wtrans) == 0:
                 wtrans = None
@@ -208,7 +208,7 @@ class DistMarg:
             cdf = numpy.arange(1, len(d) + 1) / len(d)
             i = interp1d(d, cdf)
             dmin, dmax = d.min(), d.max()
-            logging.info("Distance range %s-%s", dmin, dmax)
+            logger.info("Distance range %s-%s", dmin, dmax)
             x = numpy.linspace(dmin, dmax, int(marginalize_distance_samples) + 1)
             xl, xr = x[:-1], x[1:]
             dist_locs = 0.5 * (xr + xl)
@@ -471,7 +471,7 @@ class DistMarg:
         def make_init():
             self.snr_params = ["tc", "ra", "dec"]
             size = self.marginalize_sky_initial_samples
-            logging.info("drawing samples: %s", size)
+            logger.info("drawing samples: %s", size)
             ra = self.marginalized_vector_priors["ra"].rvs(size=size)["ra"]
             dec = self.marginalized_vector_priors["dec"].rvs(size=size)["dec"]
             tcmin, tcmax = self.marginalized_vector_priors["tc"].bounds["tc"]
@@ -479,7 +479,7 @@ class DistMarg:
             d = {ifo: Detector(ifo, reference_time=tcave) for ifo in self.data}
 
             # What data structure to hold times? Dict of offset -> list?
-            logging.info("sorting into time delay dict")
+            logger.info("sorting into time delay dict")
             dts = []
             for i in range(len(ifos) - 1):
                 dt = d[ifos[0]].time_delay_from_detector(d[ifos[i + 1]], ra, dec, tcave)
@@ -509,7 +509,7 @@ class DistMarg:
             self.tinfo = {}
 
         if ikey not in self.tinfo:
-            logging.info("pregenerating sky pointings")
+            logger.info("pregenerating sky pointings")
             self.tinfo[ikey] = make_init()
 
         dmap, tcmin, tcmax, fp, fc, ra, dec, dtc, bin_prior = self.tinfo[ikey]
@@ -697,7 +697,7 @@ class DistMarg:
                 times = z.sample_times
                 peak_time = times[imax]
 
-                logging.info(
+                logger.info(
                     "%s: Max Ref SNR Peak of %s at %s", ifo, peak_snr, peak_time
                 )
                 self.peak_lock_peak[ifo] = float(peak_time)
@@ -746,7 +746,7 @@ class DistMarg:
 
                 self.tstart[ifo] = ts
                 self.num_samples[ifo] = int((te - ts) * sample_rate) + 1
-                logging.info(
+                logger.info(
                     "%s: use region %s-%s, %s points",
                     ifo,
                     ts,
@@ -862,7 +862,7 @@ class DistMarg:
             psnrs.append(psnr)
 
         if log:
-            logging.info(
+            logger.info(
                 "Ifos used for SNR based draws: %s, snrs: %s, peak_snr_threshold=%s",
                 keep_ifos,
                 psnrs,
@@ -916,7 +916,7 @@ class DistMarg:
             get_loglr = set_loglr
 
         if self.marginalize_vector_params:
-            logging.debug("Reconstruct vector")
+            logger.debug("Reconstruct vector")
             self.reconstruct_vector = True
             self.reset_vector_params()
             loglr = get_loglr()
@@ -926,7 +926,7 @@ class DistMarg:
             self.reconstruct_vector = False
 
         if self.distance_marginalization:
-            logging.debug("Reconstruct distance")
+            logger.debug("Reconstruct distance")
             # call likelihood to get vector output
             self.reconstruct_distance = True
             _, weights = self.distance_marginalization
@@ -936,7 +936,7 @@ class DistMarg:
             self.reconstruct_distance = False
 
         if self.marginalize_phase:
-            logging.debug("Reconstruct phase")
+            logger.debug("Reconstruct phase")
             self.reconstruct_phase = True
             s, h = get_loglr()
             phasev = numpy.linspace(0, numpy.pi * 2.0, int(1e4), endpoint=False)
@@ -976,8 +976,8 @@ def setup_distance_marg_interpolant(
 
     """
     dist_rescale, _ = dist_marg
-    logging.info("Interpolator valid for SNRs in %s", snr_range)
-    logging.info("Interpolator using grid %s", density)
+    logger.info("Interpolator valid for SNRs in %s", snr_range)
+    logger.info("Interpolator using grid %s", density)
     # approximate maximum shr and hhr values, assuming the true SNR is
     # within the indicated range (and neglecting noise fluctuations)
     snr_min, snr_max = snr_range
@@ -1002,7 +1002,7 @@ def setup_distance_marg_interpolant(
     log_shr, dlog_shr = axis(shr_min, shr_max, density[0])
     log_hhr, dlog_hhr = axis(hhr_min, hhr_max, density[1])
     lvals = numpy.zeros((len(log_shr), len(log_hhr)))
-    logging.info("Setup up likelihood interpolator")
+    logger.info("Setup up likelihood interpolator")
     for i, sh in enumerate(tqdm.tqdm(numpy.exp(log_shr))):
         for j, hh in enumerate(numpy.exp(log_hhr)):
             lvals[i, j] = marginalize_likelihood(
@@ -1169,7 +1169,7 @@ def marginalize_likelihood(
             # the number drawn means it rests on a handful of them
             lw = vloglr + logw
             w = numpy.exp(lw - lw.max())
-            logging.info(
+            logger.info(
                 "vector marginalization: %.0f effective of %d",
                 w.sum() ** 2.0 / numpy.vdot(w, w),
                 len(w),

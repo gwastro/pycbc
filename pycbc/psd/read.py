@@ -22,7 +22,7 @@ import scipy.interpolate
 
 from pycbc.types import FrequencySeries
 
-logger = logging.getLogger("pycbc.psd.read")
+logger = logging.getLogger(__name__)
 
 
 def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):

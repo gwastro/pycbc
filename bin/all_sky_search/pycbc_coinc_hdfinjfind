@@ -22,6 +22,8 @@ from pycbc.io import HFile
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.types import MultiDetOptionAction
 
+logger = logging.getLogger(__name__)
+
 
 def hdf_append(f, key, value):
     if key in f:
@@ -105,7 +107,7 @@ fo = HFile(args.output_file, "w")
 
 injection_index = 0
 for trigger_file, injection_file in zip(args.trigger_files, args.injection_files):
-    logging.info("Read in the coinc data: %s" % trigger_file)
+    logger.info("Read in the coinc data: %s", trigger_file)
     f = HFile(trigger_file, "r")
 
     # Get list of groups which contain subgroup 'time'
@@ -128,7 +130,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
         ifar = f["foreground/ifar"][:]
         fap = f["foreground/fap"][:]
     except KeyError:
-        logging.info("No inclusive ifar/fap. Proceeding anyway")
+        logger.info("No inclusive ifar/fap. Proceeding anyway")
         ifar = None
         fap = None
     # using multi-ifo-style trigger file input
@@ -157,7 +159,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
 
     time_sorting = time.argsort()
 
-    logging.info("Read in the injection file")
+    logger.info("Read in the injection file")
     if ".xml" in injection_file or ".xml.gz" in injection_file:
         indoc = ligolw_utils.load_filename(
             injection_file, False, contenthandler=LIGOLWContentHandler
@@ -173,7 +175,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
         inj_data = inj_file.table
         inj_time = inj_data["tc"][:]
 
-    logging.info("Determined the found injections by time")
+    logger.info("Determined the found injections by time")
     left = numpy.searchsorted(
         time[time_sorting], inj_time - args.injection_window, side="left"
     )
@@ -184,26 +186,25 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     missed = numpy.where((right - left) == 0)[0]
     ambiguous = numpy.where((right - left) > 1)[0]
     missed = numpy.concatenate([missed, ambiguous])
-    logging.info(
-        "Found: %s, Missed: %s Ambiguous: %s"
-        % (len(found), len(missed), len(ambiguous))
+    logger.info(
+        "Found: %s, Missed: %s Ambiguous: %s", len(found), len(missed), len(ambiguous)
     )
 
     if len(ambiguous) > 0:
-        logging.warning("More than one coinc trigger found associated with injection")
+        logger.warning("More than one coinc trigger found associated with injection")
         am = numpy.arange(0, len(inj_time), 1)[left[ambiguous]]
         bm = numpy.arange(0, len(inj_time), 1)[right[ambiguous]]
 
-    logging.info("Removing injections outside of analyzed time")
+    logger.info("Removing injections outside of analyzed time")
     ki = keep_ind(inj_time, ana_start, ana_end)
     found_within_time = numpy.intersect1d(ki, found)
     missed_within_time = numpy.intersect1d(ki, missed)
-    logging.info(
-        "Found: %s, Missed: %s" % (len(found_within_time), len(missed_within_time))
+    logger.info(
+        "Found: %s, Missed: %s", len(found_within_time), len(missed_within_time)
     )
 
     if args.veto_file:
-        logging.info("Removing injections in vetoed time")
+        logger.info("Removing injections in vetoed time")
 
         # Put individual detector vetoes into list of all vetoed indices, if an
         # injection is vetoed in N ifos then its index will appear N times
@@ -231,9 +232,8 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
         missed_after_vetoes = numpy.array(
             [i for i in missed_within_time if i not in vetoed_all]
         ).astype(int)
-        logging.info(
-            "Found: %s, Missed: %s"
-            % (len(found_after_vetoes), len(missed_after_vetoes))
+        logger.info(
+            "Found: %s, Missed: %s", len(found_after_vetoes), len(missed_after_vetoes)
         )
     else:
         veto_dict = {ifo: [] for ifo in ifo_list}
@@ -243,7 +243,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     found_fore = numpy.arange(0, len(stat), 1)[left[found]]
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
 
-    logging.info("Saving injection information")
+    logger.info("Saving injection information")
     if ".xml" in injection_file or ".xml.gz" in injection_file:
         ninj = len(sim_table)
         columns = [

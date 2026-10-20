@@ -36,6 +36,8 @@ import pycbc
 import pycbc.results
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--psd-file", required=True, help="HDF file containing the PSDs.")
@@ -65,7 +67,7 @@ pycbc.init_logging(opts.verbose)
 fig = plt.figure()
 ax = fig.gca()
 
-logging.info("Reading %s", opts.psd_file)
+logger.info("Reading %s", opts.psd_file)
 
 f = HFile(opts.psd_file, "r")
 ifo = tuple(f.keys())[0]
@@ -80,7 +82,7 @@ fac = 1.0 / pycbc.DYN_RANGE_FAC
 freqs = numpy.arange(0, len(psds[0]))[kmin:] * df
 start, end = f[ifo + "/start_time"][:], f[ifo + "/end_time"][:]
 
-logging.info("Starting the plot PSD over time")
+logger.info("Starting the plot PSD over time")
 
 reduction_function = {
     "min": numpy.min,
@@ -98,7 +100,7 @@ else:
     asdmax = 1e-20
 
 for psd_segment in range(len(psds)):
-    logging.info("Plotting PSD segment number %d", psd_segment)
+    logger.info("Plotting PSD segment number %d", psd_segment)
     time = numpy.array([start[psd_segment], end[psd_segment]])
     if opts.normalize:
         asd = psds[psd_segment][kmin:] ** 0.5 * fac / asd_median
@@ -126,7 +128,7 @@ for psd_segment in range(len(psds)):
         X, Y, numpy.array([asdless]), norm=LogNorm(vmin=asdmin, vmax=asdmax)
     )
 
-logging.info("Saving results")
+logger.info("Saving results")
 
 cb = fig.colorbar(im)
 if opts.normalize:

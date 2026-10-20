@@ -27,7 +27,7 @@ import re
 import subprocess
 import time
 
-logger = logging.getLogger("pycbc._version_helper")
+logger = logging.getLogger(__name__)
 
 
 class GitInfo:

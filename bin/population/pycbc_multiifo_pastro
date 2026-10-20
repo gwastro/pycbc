@@ -24,6 +24,8 @@ from pycbc.population import fgmc_functions as utils
 from pycbc.population import fgmc_laguerre as fgmcl
 from pycbc.population import fgmc_plots
 
+logger = logging.getLogger(__name__)
+
 rcParams.update(
     {
         "axes.labelsize": 12,
@@ -214,24 +216,24 @@ if len(args.bank_files) != nchunks:
 tot_exp_bg = 0
 zl_inputs = zip(args.full_data_files, args.bank_files)
 
-logging.info("Setting up zerolag")
+logger.info("Setting up zerolag")
 fg = utils.ForegroundEvents(
     args, args.coinc_times, bin_lo=args.min_mchirp, bin_hi=args.max_mchirp
 )
 
-logging.info("Setting up background")
+logger.info("Setting up background")
 bg = utils.BackgroundEventRate(
     args, args.coinc_times, bin_lo=args.min_mchirp, bin_hi=args.max_mchirp
 )
 
 for fd, b in zl_inputs:
-    logging.info("Adding bank info from " + b)
+    logger.info("Adding bank info from %s", b)
     fg.add_bank(b)
     fg.filter_templates()
     bg.add_bank(b)
     bg.filter_templates()
 
-    logging.info("Adding event info from " + fd)
+    logger.info("Adding event info from %s", fd)
     fg.add_zerolag(fd)
     bg.add_background(fd)
 
@@ -252,8 +254,8 @@ if args.plot_bg_hist:
 
 # normalize and count expected bg events
 bg.get_norms()
-logging.info("Total expected bg count " + str(bg.norm))
-logging.info("Actual zerolag event count " + str(len(fg.stat)))
+logger.info("Total expected bg count %s", bg.norm)
+logger.info("Actual zerolag event count %s", len(fg.stat))
 
 # Read signal (injection) data
 inj_inputs = zip(args.injection_files, args.bank_files, args.full_data_files)
@@ -262,7 +264,7 @@ sg = utils.SignalEventRate(
 )
 
 for jf, b, fd in inj_inputs:
-    logging.info("Adding inj info from" + jf)
+    logger.info("Adding inj info from %s", jf)
     sg.add_bank(b)
     sg.filter_templates()
     sg.add_injections(jf, fd)
@@ -271,7 +273,7 @@ if args.plot_inj_hist:
     sg.plot_inj()
 
 sg.get_norms()
-logging.info("Total number of inj used " + str(sg.norm))
+logger.info("Total number of inj used %s", sg.norm)
 
 fg.get_bg_pdf(bg)
 fg.get_sg_pdf(sg)
@@ -356,7 +358,7 @@ if args.diagnostic_plots:
 
 # add in prior event info
 if args.prior_event_info:
-    logging.warning("Adding events from", args.prior_event_info)
+    logger.warning("Adding events from %s", args.prior_event_info)
     prior_info = np.genfromtxt(args.prior_event_info, names=True)
     allfgbg = np.append(allfgbg, prior_info["ln_bayes_factor"])
 else:  # no prior events!
@@ -377,8 +379,9 @@ foreground_count_dist = fgmcl.count_posterior(
 )
 
 # Roulet et al. argue that information on rate scales with sum (p_astro^2)
-logging.info(
-    "sum of p_astro^2", ((1 - foreground_count_dist.p_bg(allfgbg)) ** 2.0).sum()
+logger.info(
+    "sum of p_astro^2 %s",
+    ((1 - foreground_count_dist.p_bg(allfgbg)) ** 2.0).sum(),
 )
 
 fgmc_plots.odds_summary(
@@ -404,9 +407,9 @@ cmed, cminus, cplus = fgmc_plots.dist_summary(
 # if VT and error are provided, convert signal PDF to rate PDF
 if args.vt_mean:
     if args.vt_err is None:
-        logging.warning("NB : no VT error provided, will use 0!")
+        logger.warning("NB : no VT error provided, will use 0!")
         args.vt_err = 0.0
-    logging.info("Rate in units of " + args.rate_units + " ...")
+    logger.info("Rate in units of %s ...", args.rate_units)
     print("Rate without VT uncertainty :")
     print(
         "%.1f_{-%.1f}^{+%.1f}"
@@ -446,11 +449,11 @@ if args.rank_injections:
         assert len(args.rank_injections) == len(args.bank_files)
         banks = args.bank_files
     for i, b in zip(args.rank_injections, banks):
-        logging.info("Adding bank info from " + b)
+        logger.info("Adding bank info from %s", b)
         inj.add_bank(b)
         inj.filter_templates()
 
-        logging.info("Adding event info from " + i)
+        logger.info("Adding event info from %s", i)
         inj.add_zerolag(i)
 
     # get densities for injections as if zerolag
@@ -538,4 +541,4 @@ if args.rank_injections:
         plt.savefig(args.plot_dir + "injection_events_odds.png")
         plt.close()
 
-logging.info("Done!")
+logger.info("Done!")

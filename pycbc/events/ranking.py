@@ -7,7 +7,7 @@ import logging
 
 import numpy
 
-logger = logging.getLogger("pycbc.events.ranking")
+logger = logging.getLogger(__name__)
 
 
 def effsnr(snr, reduced_x2, fac=250.0, **kwargs):  # pylint:disable=unused-argument

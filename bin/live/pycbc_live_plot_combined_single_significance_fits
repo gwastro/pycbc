@@ -27,6 +27,8 @@ import pycbc
 from pycbc.io.hdf import HFile
 from pycbc.time import strip_time_from_gps
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -90,14 +92,14 @@ separate_starts = {}
 separate_ends = {}
 separate_times = {}
 
-logging.info("Loading Data")
+logger.info("Loading Data")
 with HFile(args.combined_fits_file, "r") as cff:
     ifos = args.ifos or cff.attrs["ifos"]
     bins_edges = cff["bins_edges"][:]
     conservative_percentile = cff.attrs["conservative_percentile"]
     n_bins = len(bins_edges) - 1
     for ifo in ifos:
-        logging.info(ifo)
+        logger.info(ifo)
         live_total[ifo] = cff[ifo].attrs["live_time"]
         mean_count[ifo] = cff[ifo]["mean"]["counts"][:]
         mean_alpha[ifo] = cff[ifo]["mean"]["fit_coeff"][:]
@@ -137,10 +139,10 @@ while t < max_end + 86400:
     xtix.append(time_midnight)
     t += 86400
 
-logging.info("Plotting fits information")
+logger.info("Plotting fits information")
 
 for ifo in ifos:
-    logging.info(ifo)
+    logger.info(ifo)
 
     # Some things for the plots
     fig_alpha, ax_alpha = plt.subplots(1, figsize=(12, 7.5))
@@ -160,7 +162,7 @@ for ifo in ifos:
         alphas[np.logical_not(valid)] = np.inf
 
         if not any(valid):
-            logging.warning("No valid fit coefficients for %s", ifo)
+            logger.warning("No valid fit coefficients for %s", ifo)
             continue
 
         l_times = separate_times[ifo]
@@ -259,4 +261,4 @@ for ifo in ifos:
     fig_alpha.tight_layout()
     fig_alpha.savefig(args.output_plot_name_format.format(ifo=ifo, type="fit_coeffs"))
 
-logging.info("Done")
+logger.info("Done")

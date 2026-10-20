@@ -20,12 +20,14 @@ from pycbc.live import supervision as sv
 from pycbc.time import gps_to_utc_datetime, utc_datetime_to_gps
 from pycbc.types.config import InterpolatingConfigParser as icp
 
+logger = logging.getLogger(__name__)
+
 
 def read_options(args):
     """
     Read the options into a dictionary
     """
-    logging.info("Reading config file")
+    logger.info("Reading config file")
     cp = icp(configFiles=[args.config_file])
     config_opts = {
         section: {k: v for k, v in cp[section].items()} for section in cp.sections()
@@ -62,7 +64,7 @@ def trigger_collation(
     """
     Perform the trigger collation as specified
     """
-    logging.info("Performing trigger collation")
+    logger.info("Performing trigger collation")
     collate_args = [
         "pycbc_live_collate_triggers",
     ]
@@ -98,7 +100,7 @@ def get_active_ifos(trigger_file):
     """
     with HFile(trigger_file, "r") as f:
         ifos = [ifo for ifo in f.keys() if "snr" in f[ifo].keys()]
-    logging.info("Interferometers with data: %s", " ".join(ifos))
+    logger.info("Interferometers with data: %s", " ".join(ifos))
     return ifos
 
 
@@ -114,7 +116,7 @@ def fit_by_template(
     """
     Supervise the running of pycbc_fit_sngls_by_template on live triggers
     """
-    logging.info("Performing daily fit_by_template")
+    logger.info("Performing daily fit_by_template")
     fbt_out_fname = fbt_control_options["fit-by-template-format"].format(
         date=day_str,
         ifo=ifo,
@@ -138,7 +140,7 @@ def find_daily_files(
     log_str = f"Finding files in {daily_files_dir} with format {daily_fname_format}"
     if ifo is not None:
         log_str += f" in detector {ifo}"
-    logging.info(log_str)
+    logger.info(log_str)
     combined_days = int(combined_control_options["combined-days"])
 
     current_date = get_true_date(day_dt, combined_control_options)
@@ -165,7 +167,7 @@ def find_daily_files(
         # Check that the file exists:
         if not os.path.exists(daily_full):
             missed_files += 1
-            logging.info("File %s does not exist - skipping", daily_full)
+            logger.info("File %s does not exist - skipping", daily_full)
             continue
         if not daily_files:
             end_date = date_out
@@ -183,9 +185,10 @@ def find_daily_files(
         # If more than a set maximum days between files, something
         # is wrong with the analysis. Warn about this and use fewer
         # files
-        logging.warning(
-            f"More than {max_nmissed} days between files, only using "
-            f"{found_files} files!"
+        logger.warning(
+            "More than %s days between files, only using %s files!",
+            max_nmissed,
+            found_files,
         )
 
     return daily_files, first_date, end_date
@@ -202,7 +205,7 @@ def fit_over_multiparam(fit_over_controls, fit_over_options, ifo, output_dir, co
         controls["output-directory"],
         ifo=ifo,
     )
-    logging.info(
+    logger.info(
         "Smoothing fits using fit_over_multiparam with %d files and "
         "specified parameters",
         len(daily_files),
@@ -231,7 +234,7 @@ def plot_fits(
 ):
     """Plotting for fit_by files, and linking to the public directory"""
     fits_plot_output = fits_file[:-3] + "png"
-    logging.info("Plotting template fits %s to %s", fits_file, fits_plot_output)
+    logger.info("Plotting template fits %s to %s", fits_file, fits_plot_output)
     fits_plot_arguments = [
         "pycbc_plot_bank_corner",
         "--fits-file",
@@ -296,7 +299,7 @@ def plot_single_significance_fits(daily_output, daily_plot_options, controls):
         daily_output[:-4].replace("".join(sorted(controls["ifos"].split())), "{ifo}")
         + ".png"
     )
-    logging.info(
+    logger.info(
         "Plotting daily significance fits from %s to %s",
         daily_output,
         daily_plot_output,
@@ -316,7 +319,7 @@ def plot_single_significance_fits(daily_output, daily_plot_options, controls):
         daily_plot_outputs = [
             daily_plot_output.format(ifo=ifo) for ifo in controls["ifos"].split()
         ]
-        logging.info("Linking daily fits plots")
+        logger.info("Linking daily fits plots")
         for dpo in daily_plot_outputs:
             public_dir = os.path.abspath(
                 os.path.join(controls["public-dir"], *day_str.split("_"))
@@ -341,7 +344,7 @@ def combine_significance_fits(
         ),
         controls["output-directory"],
     )
-    logging.info("Smoothing significance fits over %d files", len(daily_files))
+    logger.info("Smoothing significance fits over %d files", len(daily_files))
     date_range = f"{first_date}-{end_date}"
     outfile_name = combined_fit_controls["outfile-format"].format(
         date=day_str,
@@ -356,7 +359,7 @@ def combine_significance_fits(
     sv.run_and_error(combined_fit_args, controls)
 
     if "variable-significance-fits" in combined_fit_controls:
-        logging.info("Linking to variable significance fits file")
+        logger.info("Linking to variable significance fits file")
         shutil.copyfile(
             combined_fit_options["output"],
             combined_fit_controls["variable-significance-fits"],
@@ -401,7 +404,7 @@ def plot_combined_significance_fits(
     ]
 
     if "public-dir" in controls:
-        logging.info("Linking combined fits to public dir")
+        logger.info("Linking combined fits to public dir")
         public_dir = os.path.abspath(
             os.path.join(controls["public-dir"], *day_str.split("_"))
         )
@@ -424,7 +427,7 @@ def daily_dq_trigger_rates(
     in each dq bin, total triggers in each dq bin, the amount
     of time flagged by idq and the total observing time.
     """
-    logging.info(f"Calculating daily dq trigger rates for {ifo}")
+    logger.info("Calculating daily dq trigger rates for %s", ifo)
     fname_format = daily_dq_controls["daily-dq-format"]
     ddtr_out_fname = fname_format.format(date=day_str, ifo=ifo)
 
@@ -469,9 +472,11 @@ def combine_dq_trigger_rates(
         dates=date_range,
     )
 
-    logging.info(
-        f"Combining {ifo} dq trigger rates over {len(daily_files)} files "
-        f"from {date_range}"
+    logger.info(
+        "Combining %s dq trigger rates over %s files from %s",
+        ifo,
+        len(daily_files),
+        date_range,
     )
 
     combined_dq_options["output"] = os.path.join(output_dir, outfile_name)
@@ -484,7 +489,7 @@ def combine_dq_trigger_rates(
     sv.run_and_error(combine_dq_args, controls)
 
     if "variable-dq-trigger-rates" in combined_dq_controls:
-        logging.info("Linking to variable significance fits file")
+        logger.info("Linking to variable significance fits file")
 
         shutil.copyfile(
             combined_dq_options["output"],
@@ -499,7 +504,7 @@ def plot_dq_trigger_rates(dq_file, ifo, date_str, plot_dq_options, controls):
     Plotting for dq trigger rate files, and linking to the public directory
     """
     dq_plot_output = dq_file[:-3] + "png"
-    logging.info("Plotting dq trigger rates %s to %s", dq_file, dq_plot_output)
+    logger.info("Plotting dq trigger rates %s to %s", dq_file, dq_plot_output)
     dq_plot_arguments = [
         "pycbc_plot_dq_flag_likelihood",
         "--dq-file",
@@ -554,15 +559,15 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
     sv.ensure_directories(controls, day_str)
 
     output_dir = os.path.join(controls["output-directory"], day_str)
-    logging.info("Outputs to %s", output_dir)
+    logger.info("Outputs to %s", output_dir)
     if "public_dir" in controls:
         public_dir = os.path.abspath(
             os.path.join(controls["public-dir"], *day_str.split("_"))
         )
-        logging.info("Outputs to be linked to % ", public_dir)
+        logger.info("Outputs to be linked to %s", public_dir)
 
     if args.collated_trigger_file is not None:
-        logging.info("Using collated trigger file %s", args.collated_trigger_file)
+        logger.info("Using collated trigger file %s", args.collated_trigger_file)
         merged_triggers = args.collated_trigger_file
     else:
         merged_triggers = trigger_collation(
@@ -736,11 +741,11 @@ if args.run_daily_at is not None:
     # keep running and repeat the fitting every day at the given hour
     if not re.match("[0-9][0-9]:[0-9][0-9]:[0-9][0-9]", args.run_daily_at):
         parser.error("--run-daily-at takes a UTC time in the format HH:MM:SS")
-    logging.info("Starting in daily run mode")
+    logger.info("Starting in daily run mode")
     while True:
         sv.wait_for_utc_time(args.run_daily_at)
         day_dt, day_str = get_yesterday_date()
-        logging.info("==== Time to update the single fits, waking up ====")
+        logger.info("==== Time to update the single fits, waking up ====")
         supervise_collation_fits_dq(args, day_dt, day_str)
 else:
     # run just once

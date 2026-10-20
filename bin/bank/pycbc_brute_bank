@@ -42,6 +42,8 @@ from pycbc.distributions.utils import draw_samples_from_config, prior_from_confi
 from pycbc.io import HFile
 from pycbc.waveform.spa_tmplt import spa_length_in_time
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -314,10 +316,13 @@ class TriangleBank:
                 hp.matches = msorted[keep].copy()
                 hp.indices = rsorted[keep].copy()
 
-                logging.info(
-                    "TADD MaxMatch:%0.3f Size:%i "
-                    "AfterSigma:%i AfterTau0:%i Matches:%i"
-                    % (mmax, len(self), msig, mtau, mnum)
+                logger.info(
+                    "TADD MaxMatch:%0.3f Size:%i AfterSigma:%i AfterTau0:%i Matches:%i",
+                    mmax,
+                    len(self),
+                    msig,
+                    mtau,
+                    mnum,
                 )
                 hp.max_match = mmax
                 return False
@@ -386,7 +391,7 @@ class TriangleBank:
                         num_added += 1
                         self.insert(hp)
                 else:
-                    logging.info("Waveform generation failed!")
+                    logger.info("Waveform generation failed!")
                     continue
 
             pool.close_pool()
@@ -433,14 +438,14 @@ def decimate_frequency_domain(template, target_df):
 
 
 def handle_exit_signal(signum, frame):
-    logging.warning(f"Signal {signum} received. Triggering emergency save...")
+    logger.warning("Signal %s received. Triggering emergency save...", signum)
     save_bank()
     # Force exit so the script doesn't try to resume the loops
     os._exit(1)
 
 
 def save_bank():  # Use a local name
-    logging.info("Saving current bank to %s", args.output_file)
+    logger.info("Saving current bank to %s", args.output_file)
     with HFile(args.output_file, "w") as o:
         o.attrs["minimal_match"] = args.minimal_match
         for k in bank.keys():
@@ -449,7 +454,7 @@ def save_bank():  # Use a local name
                 val = val.astype("bytes")
             o[k] = val
         o["max_matches"] = numpy.array(bank.max_matches)
-    logging.info("Save complete.")
+    logger.info("Save complete.")
 
 
 class GenUniformWaveform:
@@ -592,7 +597,7 @@ def wf_wrapper(args):
 if len(args.input_file) > 0:
     total_raw_templates = 0
     for input_file in args.input_file:
-        logging.info("Loading: %s", input_file)
+        logger.info("Loading: %s", input_file)
         with HFile(input_file, "r") as f:
             params = {k: f[k][:] for k in f.keys() if k not in ["max_matches"]}
             total_raw_templates += len(params[list(params.keys())[0]])
@@ -605,7 +610,7 @@ if len(args.input_file) > 0:
                 progress=True,
             )
             reduction = total_raw_templates - len(bank)
-            logging.info(
+            logger.info(
                 "Combined Size: %i (Naive Total: %i, Removed: %i)",
                 len(bank),
                 total_raw_templates,
@@ -706,7 +711,7 @@ while tau0s < args.tau0_end:
         bank, uconv = bank.check_params(
             gen, params, args.minimal_match, parallel_check=args.parallel_check
         )
-        logging.info(
+        logger.info(
             "%s: Round (U): %s Size: %s conv: %s added: %s",
             region,
             r,
@@ -731,7 +736,7 @@ while tau0s < args.tau0_end:
                 bank.max_matches[int(len(bank.max_matches) * 0.9) :]
             )
             ave = numpy.mean(trail_matches)
-            logging.info(
+            logger.info(
                 "%s: Round (K) (%s): %s Size: %s conv: %0.4f added: %s Trail Ave: %0.4f Trail Min: %0.4f",
                 region,
                 kloop,
@@ -744,8 +749,8 @@ while tau0s < args.tau0_end:
             )
 
             if uconv:
-                logging.info("Ratio of convergences: %2.3f" % (kconv / (uconv)))
-                logging.info(f"Progress: {tau0e / args.tau0_end:.0%} completed")
+                logger.info("Ratio of convergences: %2.3f", kconv / (uconv))
+                logger.info("Progress: %.0f%% completed", 100 * tau0e / args.tau0_end)
 
             if kloop == 1:
                 okconv = kconv
@@ -755,7 +760,7 @@ while tau0s < args.tau0_end:
                 break
 
     bank.culltau0(tau0s - args.tau0_threshold * 2.0)
-    logging.info("Region Done %3.1f-%3.1f, %s stored", tau0s, tau0e, bank.activelen())
+    logger.info("Region Done %3.1f-%3.1f, %s stored", tau0s, tau0e, bank.activelen())
     region += 1
     tau0s += args.tau0_crawl / 2
     tau0e += args.tau0_crawl / 2

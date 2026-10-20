@@ -11,6 +11,8 @@ import numpy
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 
 def changes(arr):
     l = numpy.where(arr[:-1] != arr[1:])[0]
@@ -55,13 +57,13 @@ init_logging(args.verbose)
 
 f = HFile(args.output_file, "w")
 
-logging.info("getting the list of columns from a representative file")
+logger.info("getting the list of columns from a representative file")
 trigger_columns = []
 for fname in args.trigger_files:
     try:
         f2 = HFile(fname, "r")
     except OSError as e:
-        logging.exception("Cannot open %s" % fname)
+        logger.exception("Cannot open %s", fname)
         raise e
     ifo = tuple(f2.keys())[0]
     if len(f2[ifo].keys()) > 0:
@@ -79,9 +81,9 @@ for fname in args.trigger_files:
     f2.close()
 
 for col in trigger_columns:
-    logging.info("trigger column: %s", col)
+    logger.info("trigger column: %s", col)
 
-logging.info("reading the metadata from the files")
+logger.info("reading the metadata from the files")
 
 tpc = numpy.array([], dtype=numpy.float64)
 frpc = numpy.array([], dtype=numpy.float64)
@@ -95,7 +97,7 @@ for filename in args.trigger_files:
     try:
         data = HFile(filename, "r")
     except OSError as e:
-        logging.exception("Cannot open %s", filename)
+        logger.exception("Cannot open %s", filename)
         raise e
     ifo_data = data[ifo]
 
@@ -142,7 +144,7 @@ if len(rtime) > 0:
 for gk, gv in gating.items():
     f[ifo + "/gating/" + gk] = gv
 
-logging.info("set up sorting of triggers and template ids")
+logger.info("set up sorting of triggers and template ids")
 # For fast lookup we need the templates in hash order
 hashes = HFile(args.bank_file, "r")["template_hash"][:]
 bank_tids = hashes.argsort()
@@ -173,12 +175,12 @@ f.create_dataset(
 )
 f["%s/template_boundaries" % ifo] = full_boundaries[unsort]
 
-logging.info("reading the trigger columns from the input files")
+logger.info("reading the trigger columns from the input files")
 for col in trigger_columns:
     key = "%s/%s" % (ifo, col)
-    logging.info("reading %s", col)
+    logger.info("reading %s", col)
     data = collect(key, args.trigger_files)[trigger_sort]
-    logging.info("writing %s to file", col)
+    logger.info("writing %s to file", col)
     dset = f.create_dataset(
         key,
         data=data,
@@ -189,4 +191,4 @@ for col in trigger_columns:
     del data
     region(f, key, full_boundaries, unsort)
 f.close()
-logging.info("done")
+logger.info("done")

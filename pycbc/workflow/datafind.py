@@ -48,7 +48,7 @@ from pycbc.workflow.core import File, FileList, SegFile, make_analysis_dir
 urllib.parse.uses_relative.append("osdf")
 urllib.parse.uses_netloc.append("osdf")
 
-logger = logging.getLogger("pycbc.workflow.datafind")
+logger = logging.getLogger(__name__)
 
 
 def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tags=None):

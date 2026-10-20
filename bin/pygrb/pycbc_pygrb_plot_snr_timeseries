@@ -38,6 +38,8 @@ from pycbc.events.coherent import reweightedsnr_cut
 from pycbc.results import pygrb_plotting_utils as plu
 from pycbc.results import pygrb_postprocessing_utils as ppu
 
+logger = logging.getLogger(__name__)
+
 plt.switch_backend("Agg")
 rc("font", size=14)
 
@@ -124,7 +126,7 @@ if snr_type == "single":
         err_msg = "The single IFO SNR plot is possible only for slide-id=0."
         parser.error(err_msg)
 
-logging.info("Imported and ready to go.")
+logger.info("Imported and ready to go.")
 
 # Set output directories
 outdir = os.path.split(os.path.abspath(opts.output_file))[0]
@@ -223,7 +225,7 @@ if inj_file:
     inj_data_time = reset_times(inj_data_time, central_time)
 
 # Generate plots
-logging.info("Plotting...")
+logger.info("Plotting...")
 
 # Complete the horizontal axis label
 x_label += f" time since {central_time:.3f} (s)"

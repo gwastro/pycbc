@@ -48,6 +48,8 @@ from pycbc.waveform import (
 )
 from pycbc.waveform.utils import get_taper_settings
 
+logger = logging.getLogger(__name__)
+
 ## Remove the need for these functions ########################################
 
 
@@ -385,7 +387,7 @@ else:
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if options.psd_estimation:
-    logging.info("Obtaining h(t) for PSD generation")
+    logger.info("Obtaining h(t) for PSD generation")
     strain = pycbc.strain.from_cli(options, pycbc.DYN_RANGE_FAC)
 else:
     strain = None
@@ -401,12 +403,12 @@ else:
 
 ctx = pycbc.scheme.from_cli(options)
 
-logging.info("Reading template bank")
+logger.info("Reading template bank")
 temp_bank = TemplateBank(options.bank_file)
 template_table = temp_bank.table
-logging.info("  %d templates", len(template_table))
+logger.info("  %d templates", len(template_table))
 
-logging.info("Reading simulation list")
+logger.info("Reading simulation list")
 indoc = ligolw_utils.load_filename(
     options.sim_file, False, contenthandler=LIGOLWContentHandler
 )
@@ -414,15 +416,15 @@ try:
     signal_table = lsctables.SimInspiralTable.get_table(indoc)
 except ValueError:
     signal_table = lsctables.SnglInspiralTable.get_table(indoc)
-logging.info("  %d signal waveforms", len(signal_table))
+logger.info("  %d signal waveforms", len(signal_table))
 
-logging.info("Matches will be written to %s", options.out_file)
+logger.info("Matches will be written to %s", options.out_file)
 
 filter_N = int(options.filter_signal_length * options.filter_sample_rate)
 filter_n = filter_N // 2 + 1
 filter_delta_f = 1.0 / float(options.filter_signal_length)
 
-logging.info("Reading and Interpolating PSD")
+logger.info("Reading and Interpolating PSD")
 psd = pycbc.psd.from_cli(
     options,
     filter_n,
@@ -436,7 +438,7 @@ psd = pycbc.psd.from_cli(
 with ctx:
     pycbc.fft.from_cli(options)
 
-    logging.info("Pregenerating Signals")
+    logger.info("Pregenerating Signals")
 
     signals = []
     # Used for getting mchirp/tau0 later
@@ -474,7 +476,7 @@ with ctx:
     )
     sig_mchirp, _ = mass1_mass2_to_mchirp_eta(sig_m1, sig_m2)
 
-    logging.info("Calculating Mchirp and Tau0")
+    logger.info("Calculating Mchirp and Tau0")
     template_m1 = array([tp.mass1 for tp in template_table])
     template_m2 = array([tp.mass2 for tp in template_table])
     template_tau0, _ = mass1_mass2_to_tau0_tau3(
@@ -482,7 +484,7 @@ with ctx:
     )
     template_mchirp, _ = mass1_mass2_to_mchirp_eta(template_m1, template_m2)
 
-    logging.info("Calculating Overlaps")
+    logger.info("Calculating Overlaps")
 
     flow_warned = False
     prog = tqdm(total=len(template_table), disable=(not options.verbose))
@@ -495,7 +497,7 @@ with ctx:
         if f_lower < options.filter_low_frequency_cutoff:
             # Not entirely clear what to do here?
             if not flow_warned:
-                logging.warning(
+                logger.warning(
                     "Template's flower is smaller than "
                     "--filter-low-frequency-cutoff. Raising "
                     "flower of template to match."
@@ -558,7 +560,7 @@ with ctx:
             matches.append(o)
     prog.close()
 
-logging.info("Determining maximum overlaps and outputting results")
+logger.info("Determining maximum overlaps and outputting results")
 
 # Find the maximum overlap in the bank and output to a file
 with open(options.out_file, "w") as fout:

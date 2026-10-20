@@ -27,7 +27,7 @@ import os
 import subprocess
 import sys
 
-logger = logging.getLogger("pycbc._version")
+logger = logging.getLogger(__name__)
 
 
 def print_link(library):

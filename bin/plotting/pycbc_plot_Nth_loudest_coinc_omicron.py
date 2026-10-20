@@ -24,6 +24,8 @@ from pycbc.waveform import (
     get_td_waveform,
 )
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -94,13 +96,13 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-logging.info("Reading HDF files")
+logger.info("Reading HDF files")
 
 coinc_trig_file = HFile(args.coinc_file, "r")
 single_trig_file = HFile(args.single_ifo_trigs, "r")
 template_file = HFile(args.tmpltbank_file, "r")
 
-logging.info("Parsing HDF files")
+logger.info("Parsing HDF files")
 
 coinc_newsnr = coinc_trig_file[args.analysis_level]["stat"][:]
 Nth_loudest_idx = np.argsort(coinc_newsnr)[-args.loudest_event_number]
@@ -128,7 +130,7 @@ s2z = template_file["spin2z"][template_id]
 omicron_start_time = cbc_end_time - args.plot_window
 omicron_end_time = cbc_end_time + args.plot_window
 
-logging.info("Fetching omicron triggers")
+logger.info("Fetching omicron triggers")
 
 # Generate list of directories to search over
 gps_era_start = str(omicron_start_time)[:5]
@@ -199,7 +201,7 @@ f = f[:stop_idx]
 freq = np.array(f.data)
 times = np.array(f.sample_times) + cbc_end_time
 
-logging.info("Plotting")
+logger.info("Plotting")
 
 plt.figure(0)
 cm = plt.cm.get_cmap("Reds")
@@ -230,4 +232,4 @@ plt.hold(True)
 plt.plot(times, freq)
 plt.savefig(args.output_file)
 
-logging.info("Done! Exiting script.")
+logger.info("Done! Exiting script.")

@@ -22,7 +22,7 @@ import numpy
 
 from pycbc.distributions import bounded
 
-logger = logging.getLogger("pycbc.distributions.uniform")
+logger = logging.getLogger(__name__)
 
 
 class Uniform(bounded.BoundedDist):

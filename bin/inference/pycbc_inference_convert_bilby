@@ -18,6 +18,8 @@ import h5py
 import pycbc
 from pycbc.inference.io import PosteriorFile, loadfile
 
+logger = logging.getLogger(__name__)
+
 # bilby name -> PyCBC name
 BILBY_TO_PYCBC = {
     "chirp_mass": "mchirp",
@@ -87,7 +89,7 @@ with h5py.File(opts.input_file, "r") as fp:
         "f_ref": meta["f_ref"][0],
     }
 
-logging.info("Converting %d samples from %s", len(samples), label)
+logger.info("Converting %d samples from %s", len(samples), label)
 names = {p: BILBY_TO_PYCBC.get(p, p) for p in samples.dtype.names}
 
 with loadfile(opts.output_file, "w", filetype=PosteriorFile.name) as out:
@@ -101,4 +103,4 @@ with loadfile(opts.output_file, "w", filetype=PosteriorFile.name) as out:
         if p in BILBY_TO_PYCBC and not p.startswith("log")
     ]
 
-logging.info("Done")
+logger.info("Done")

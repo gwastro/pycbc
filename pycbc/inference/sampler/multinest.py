@@ -39,6 +39,8 @@ from pycbc.transforms import apply_transforms
 from .base import BaseSampler, setup_output
 from .base_mcmc import get_optional_arg_from_config
 
+logger = logging.getLogger(__name__)
+
 #
 # =============================================================================
 #
@@ -194,7 +196,7 @@ class MultinestSampler(BaseSampler):
         current_vol, _, _ = numpy.loadtxt(resume_file, skiprows=6, unpack=True)
         maxloglike = max(self.get_posterior_samples()[:, -1])
         logz_remain = numpy.exp(maxloglike + numpy.log(current_vol) - self.logz)
-        logging.info("Estimate of remaining logZ is %s", logz_remain)
+        logger.info("Estimate of remaining logZ is %s", logz_remain)
         done = logz_remain < self._ztol
         return done
 
@@ -264,7 +266,7 @@ class MultinestSampler(BaseSampler):
         iterinterval = self.checkpoint_interval
         done = False
         while not done:
-            logging.info(
+            logger.info(
                 "Running sampler for %s to %s iterations",
                 self.niterations,
                 self.niterations + iterinterval,
@@ -297,7 +299,7 @@ class MultinestSampler(BaseSampler):
                     "nested importance sampling global log-evidence error"
                 ]
             self._samples = self.get_posterior_samples()[:, :-1]
-            logging.info("Have %s posterior samples", self._samples.shape[0])
+            logger.info("Have %s posterior samples", self._samples.shape[0])
             # update the itercounter
             self._itercount += iterinterval
             # make sure there's at least 1 posterior sample
@@ -337,12 +339,12 @@ class MultinestSampler(BaseSampler):
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""
-        logging.info("Writing samples to files")
+        logger.info("Writing samples to files")
         for f_n in [self.checkpoint_file, self.backup_file]:
             self.write_results(f_n)
             with self.io(f_n, "a") as f_p:
                 f_p.write_niterations(self.niterations)
-        logging.info("Validating checkpoint and backup files")
+        logger.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
             self.checkpoint_file, self.backup_file, check_nsamples=False
         )

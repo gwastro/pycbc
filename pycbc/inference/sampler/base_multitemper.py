@@ -34,6 +34,8 @@ import numpy
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import loadfile
 
+logger = logging.getLogger(__name__)
+
 
 class MultiTemperedSupport:
     """Provides methods for supporting multi-tempered samplers."""
@@ -405,7 +407,7 @@ def compute_acl(filename, start_index=None, end_index=None, min_nsamples=10):
         # report the mean ACL: take the max over the temps and parameters
         act = acl_from_raw_acls(acls) * fp.thinned_by
         finite = act[numpy.isfinite(act)]
-        logging.info(
+        logger.info(
             "ACTs: min %s, mean (of finite) %s, max %s",
             str(act.min()),
             str(finite.mean() if finite.size > 0 else numpy.inf),
@@ -599,7 +601,7 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None, min_nsample
                 these_acls[tk] = acl
             acls[param] = these_acls
         maxacl = numpy.array(list(acls.values())).max()
-        logging.info("ACT: %s", str(maxacl * fp.thinned_by))
+        logger.info("ACT: %s", str(maxacl * fp.thinned_by))
     return acls
 
 

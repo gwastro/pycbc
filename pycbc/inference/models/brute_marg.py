@@ -29,6 +29,8 @@ from pycbc.pool import BroadcastPool as Pool
 from .gaussian_noise import BaseGaussianNoise
 from .tools import draw_sample
 
+logger = logging.getLogger(__name__)
+
 _model = None
 
 
@@ -210,11 +212,11 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
             numpy.random.seed(seed)
         rec = {}
 
-        logging.info("Reconstruct LISA sky mode symmetry")
+        logger.info("Reconstruct LISA sky mode symmetry")
         self.reconstruct_sky_points = True
         loglr = self.loglr
         xl = draw_sample(loglr)
-        logging.info("Found point %d", xl)
+        logger.info("Found point %d", xl)
         # Undo rotations
         pref = self.current_params.copy()
         self._apply_sky_point_rotation(pref, xl)

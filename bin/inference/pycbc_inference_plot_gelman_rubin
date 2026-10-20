@@ -28,6 +28,8 @@ import matplotlib.pyplot as plt
 from pycbc import add_common_pycbc_options, init_logging, results
 from pycbc.inference import gelman_rubin, io
 
+logger = logging.getLogger(__name__)
+
 # add options to command line
 parser = io.ResultsArgumentParser(skip_args=["walkers"])
 
@@ -86,7 +88,7 @@ fig = plt.figure()
 # loop over parameters
 stats = []
 for param, label in zip(params, labels):
-    logging.info("Plotting parameter %s", param)
+    logger.info("Plotting parameter %s", param)
 
     # get samples for each chain
     chains = [
@@ -132,4 +134,4 @@ plt.close()
 
 # exit
 fp.close()
-logging.info("Done")
+logger.info("Done")

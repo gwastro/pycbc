@@ -33,7 +33,7 @@ import os
 import re
 from io import StringIO
 
-logger = logging.getLogger("pycbc.types.config")
+logger = logging.getLogger(__name__)
 
 
 class DeepCopyableConfigParser(ConfigParser.ConfigParser):

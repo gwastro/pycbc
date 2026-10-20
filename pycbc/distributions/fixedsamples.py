@@ -24,7 +24,7 @@ import numpy.random
 
 from pycbc import VARARGS_DELIM
 
-logger = logging.getLogger("pycbc.distributions.fixedsamples")
+logger = logging.getLogger(__name__)
 
 
 class FixedSamples:

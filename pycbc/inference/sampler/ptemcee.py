@@ -47,6 +47,8 @@ from .base_multitemper import (
     read_betas_from_hdf,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
     """
@@ -635,7 +637,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         """
         if self.model.sampling_transforms is not None:
             # fix the lobjacobian values stored on disk
-            logging.info("Correcting logjacobian values on disk")
+            logger.info("Correcting logjacobian values on disk")
             with self.io(self.checkpoint_file, "r") as fp:
                 samples = fp.read_raw_samples(
                     self.variable_params,
@@ -650,7 +652,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
                     fp[fp.samples_group]["logjacobian"][()] = logjacobian
-        logging.info("Calculating log evidence")
+        logger.info("Calculating log evidence")
         # get the thinning settings
         with self.io(self.checkpoint_file, "r") as fp:
             thin_start = fp.thin_start
@@ -663,7 +665,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             thin_end=thin_end,
             thin_interval=thin_interval,
         )
-        logging.info(f"log Z, dlog Z: {logz}, {dlogz}")
+        logger.info("log Z, dlog Z: %s, %s", logz, dlogz)
         # write to both the checkpoint and backup
         for fn in [self.checkpoint_file, self.backup_file]:
             with self.io(fn, "a") as fp:

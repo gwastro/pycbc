@@ -46,6 +46,8 @@ from pycbc.waveform.utils import (
 from . import ringdown, supernovae, waveform, waveform_modes
 from .waveform import FailedWaveformError
 
+logger = logging.getLogger(__name__)
+
 # utility functions/class
 failed_counter = 0
 
@@ -209,7 +211,7 @@ class BaseCBCGenerator(BaseGenerator):
         all_args = all_args - calib_args
         unused_args = all_args - self.possible_args
         if len(unused_args):
-            logging.warning(
+            logger.warning(
                 "WARNING: The following parameters are generally "
                 "not used by CBC waveform generators: %s. If you "
                 "have provided a transform that converted these "

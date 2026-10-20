@@ -58,7 +58,7 @@ from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import make_catalog
 
-logger = logging.getLogger("pycbc.workflow.core")
+logger = logging.getLogger(__name__)
 
 
 def make_analysis_dir(path):

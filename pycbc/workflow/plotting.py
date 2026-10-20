@@ -32,7 +32,7 @@ from urllib.request import pathname2url
 
 from pycbc.workflow.core import Executable, File, FileList
 
-logger = logging.getLogger("pycbc.workflow.plotting")
+logger = logging.getLogger(__name__)
 
 
 def excludestr(tags, substr):

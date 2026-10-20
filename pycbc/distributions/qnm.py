@@ -23,7 +23,7 @@ from pycbc import boundaries, conversions
 
 from . import bounded, uniform
 
-logger = logging.getLogger("pycbc.distributions.qnm")
+logger = logging.getLogger(__name__)
 
 
 class UniformF0Tau(uniform.Uniform):

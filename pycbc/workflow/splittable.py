@@ -43,7 +43,7 @@ from pycbc.workflow.jobsetup import (
     PycbcSplitInspinjExecutable,
 )
 
-logger = logging.getLogger("pycbc.workflow.splittable")
+logger = logging.getLogger(__name__)
 
 
 def select_splitfilejob_instance(curr_exe):

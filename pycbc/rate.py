@@ -5,7 +5,7 @@ import numpy
 
 from . import bin_utils
 
-logger = logging.getLogger("pycbc.rate")
+logger = logging.getLogger(__name__)
 
 
 def integral_element(mu, pdf):

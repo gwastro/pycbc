@@ -19,6 +19,8 @@ from pycbc.io import HFile
 from pycbc.pool import BroadcastPool as Pool
 from pycbc.workflow import resolve_td_option
 
+logger = logging.getLogger(__name__)
+
 ensure_fftw_planning_off()
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -63,7 +65,7 @@ def get_psd(input_tuple):
     seg = input_tuple[0]
     i = input_tuple[1]
 
-    logging.info(
+    logger.info(
         "%d: getting strain for %.1f-%.1f (%.1f s)", i, seg[0], seg[1], abs(seg)
     )
     argstmp = copy.deepcopy(args)
@@ -91,14 +93,14 @@ def get_psd(input_tuple):
             if i == (args.num_data_retries - 1):
                 raise
 
-    logging.info("%d: determining strain segmentation", i)
+    logger.info("%d: determining strain segmentation", i)
     strain_segments = pycbc.strain.StrainSegments.from_cli(args, gwstrain)
 
     flow = args.low_frequency_cutoff
     flen = strain_segments.freq_len
     delta_f = strain_segments.delta_f
 
-    logging.info("%d: calculating psd", i)
+    logger.info("%d: calculating psd", i)
     analysis_segments = [
         (seg.start, seg.stop, seg.start + ana.start, seg.start + ana.stop)
         for seg, ana in zip(
@@ -138,7 +140,7 @@ segments = pycbc.events.select_segments_by_definer(
 segments = segmentlist(frozenset(segments))
 
 # Calculate the PSDs
-logging.info("%d psds to calculate", len(segments))
+logger.info("%d psds to calculate", len(segments))
 
 if len(segments) > 0:
     pool = Pool(args.cores)
@@ -153,7 +155,7 @@ psd_group = f.create_group(ifo + "/psds")
 inc, start, end = 0, [], []
 for gpsd in psds:
     for psd_numpy, psd_delta_f, s, e in gpsd:
-        logging.info("writing psd %d", inc)
+        logger.info("writing psd %d", inc)
         key = str(inc)
         start.append(int(s))
         end.append(int(e))
@@ -169,4 +171,4 @@ f[ifo + "/end_time"] = numpy.array(end, dtype=numpy.uint32)
 f.attrs["low_frequency_cutoff"] = args.low_frequency_cutoff
 f.attrs["dynamic_range_factor"] = pycbc.DYN_RANGE_FAC
 
-logging.info("Done!")
+logger.info("Done!")

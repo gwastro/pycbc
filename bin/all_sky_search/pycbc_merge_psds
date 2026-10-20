@@ -25,6 +25,8 @@ import numpy
 import pycbc.types
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--psd-files", nargs="+")
@@ -69,4 +71,4 @@ for ifo in start:
 
 outf.attrs["low_frequency_cutoff"] = f.attrs["low_frequency_cutoff"]
 outf.attrs["dynamic_range_factor"] = pycbc.DYN_RANGE_FAC
-logging.info("Done!")
+logger.info("Done!")

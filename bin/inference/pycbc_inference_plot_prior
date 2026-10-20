@@ -34,6 +34,8 @@ from pycbc.inference.option_utils import ParseParametersArg
 from pycbc.results.scatter_histograms import create_multidim_plot
 from pycbc.workflow import WorkflowConfigParser
 
+logger = logging.getLogger(__name__)
+
 
 def cartesian(arrays):
     """Returns a cartesian product from a list of iterables."""
@@ -98,12 +100,12 @@ opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
 
 # read configuration file
-logging.info("Reading configuration files")
+logger.info("Reading configuration files")
 cp = WorkflowConfigParser(opts.config_files)
 
-logging.info("Loading prior")
+logger.info("Loading prior")
 prior = prior_from_config(cp, prior_section=opts.prior_section)
-logging.info("Drawing samples from prior")
+logger.info("Drawing samples from prior")
 samples = prior.rvs(opts.nsamples)
 
 # figure out what parameters to plot
@@ -120,7 +122,7 @@ else:
     parameters = opts.parameters
     labels = opts.parameters_labels
 
-logging.info("Plotting")
+logger.info("Plotting")
 fig, axis_dict = create_multidim_plot(
     parameters,
     samples,
@@ -147,4 +149,4 @@ results.save_fig_with_metadata(
 plt.close()
 
 # exit
-logging.info("Done")
+logger.info("Done")

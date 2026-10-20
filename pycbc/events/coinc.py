@@ -48,7 +48,7 @@ from .eventmgr_cython import (
     timecoincidence_getslideint,
 )
 
-logger = logging.getLogger("pycbc.events.coinc")
+logger = logging.getLogger(__name__)
 
 
 def background_bin_from_string(background_bins, data):
@@ -346,9 +346,9 @@ def time_multi_coincidence(times, slide_step=0, slop=0.003, pivot="H1", fixed="L
                 #  jobs. For these, arbitrarily keep the first trigger and
                 #  discard the second (and any subsequent ones).
                 logger.warning(
-                    "Triggers in %s are closer than coincidence "
-                    "window, 1 or more coincs will be discarded. "
-                    "This is a warning, not an error." % ifo1
+                    "Triggers in %s are closer than coincidence window, 1 or more "
+                    "coincs will be discarded. This is a warning, not an error.",
+                    ifo1,
                 )
             # identify indices of times in ifo1 that form coincs with ifo2
             dep_ids = left[nz]

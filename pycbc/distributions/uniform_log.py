@@ -23,7 +23,7 @@ import numpy
 
 from pycbc.distributions import uniform
 
-logger = logging.getLogger("pycbc.distributions.uniform_log")
+logger = logging.getLogger(__name__)
 
 
 class UniformLog10(uniform.Uniform):

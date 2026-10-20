@@ -33,7 +33,7 @@ import pycbc.scheme
 
 from .eventmgr import _BaseThresholdCluster
 
-logger = logging.getLogger("pycbc.events.threshold_cuda")
+logger = logging.getLogger(__name__)
 
 threshold_op = """
     if (i == 0)

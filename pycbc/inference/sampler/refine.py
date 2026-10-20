@@ -15,6 +15,8 @@ from pycbc.pool import choose_pool
 from .base import initial_dist_from_config, setup_output
 from .dummy import DummySampler
 
+logger = logging.getLogger(__name__)
+
 
 def call_model(params):
     models._global_instance.update(**params)
@@ -125,7 +127,7 @@ class RefineSampler(DummySampler):
 
     def draw_samples(self, size, update_params=None):
         """Draw new samples within the model priors"""
-        logging.info("getting from kde")
+        logger.info("getting from kde")
 
         params = {}
         ksamples = self.kde.resample(size=size)
@@ -137,9 +139,9 @@ class RefineSampler(DummySampler):
                 params[k] = ksamples[j, :]
                 j += 1
 
-        logging.info("checking prior")
+        logger.info("checking prior")
         keep = self.model.prior_distribution.contains(params)
-        logging.info("done checking")
+        logger.info("done checking")
         r = numpy.array([params[k][keep] for k in self.vparam])
         return r
 
@@ -151,7 +153,7 @@ class RefineSampler(DummySampler):
 
     def converged(self, step, kde_new, factor, logp):
         """Check that kde is converged by comparing to previous iteration"""
-        logging.info("checking convergence")
+        logger.info("checking convergence")
         if not hasattr(self, "old_logz"):
             self.old_logz = numpy.inf
 
@@ -176,7 +178,7 @@ class RefineSampler(DummySampler):
         # check fraction that are significant deviation from peak
         frac_offbase = (logp < logp.max() - 5.0).sum() / len(logp)
 
-        logging.info(
+        logger.info(
             "%s: dlogz_iter=%.4f,dlogz_half=%.4f, entropy=%.4f offbase fraction=%.4f",
             step,
             dlogz,
@@ -207,7 +209,7 @@ class RefineSampler(DummySampler):
         num_samples = self.iterative_kde_samples
         if cp.has_option("sampler", "start-file"):
             start_file = cp.get("sampler", "start-file")
-            logging.info("Using file %s for initial positions", start_file)
+            logger.info("Using file %s for initial positions", start_file)
             f = loadfile(start_file, "r")
             fsamples = f.read_samples(f["samples"].keys())
             num_samples = len(fsamples)
@@ -233,14 +235,14 @@ class RefineSampler(DummySampler):
     def run_samples(self, ksamples, update_params=None, iteration=False):
         """Calculate the likelihoods and weights for a set of samples"""
         # Calculate likelihood for each sample
-        logging.info("calculating likelihoods...")
+        logger.info("calculating likelihoods...")
         args = []
         for i in range(len(ksamples[0])):
             param = {k: ksamples[j][i] for j, k in enumerate(self.vparam)}
             args.append(param)
 
         result = self.pool.map(call_model, args)
-        logging.info("..done with likelihood")
+        logger.info("..done with likelihood")
 
         logp = numpy.array([r[0] for r in result])
         logl = numpy.array([r[1] for r in result])
@@ -292,7 +294,7 @@ class RefineSampler(DummySampler):
             self.kde = gaussian_kde(numpy.array(gsample))
             self.fixed_samples = self.group_kde.resample(1)
 
-            logging.info("updating: %s", param_group)
+            logger.info("updating: %s", param_group)
             for r in range(self.max_refinement_steps):
                 ksamples = self.draw_samples(
                     self.iterative_kde_samples, update_params=param_group
@@ -312,7 +314,7 @@ class RefineSampler(DummySampler):
                     total_logw = logw
                     total_logl = logl
 
-                logging.info("setting up next kde iteration..")
+                logger.info("setting up next kde iteration..")
                 ntotal_logw = total_logw - logsumexp(total_logw)
                 kde_new = gaussian_kde(total_samples, weights=numpy.exp(ntotal_logw))
 
@@ -333,12 +335,12 @@ class RefineSampler(DummySampler):
 
             self.group_kde = gaussian_kde(numpy.array(full_samples))
 
-        logging.info("Drawing final samples")
+        logger.info("Drawing final samples")
         ksamples = self.draw_samples(self.num_samples)
-        logging.info("Calculating final likelihoods")
+        logger.info("Calculating final likelihoods")
         ksamples, logp, logl, logw = self.run_samples(ksamples)
         self._samples = {k: ksamples[j, :] for j, k in enumerate(self.vparam)}
         self._samples["loglikelihood"] = logl
-        logging.info("Reweighting to equal samples")
+        logger.info("Reweighting to equal samples")
 
         self._samples = resample_equal(self._samples, logw)

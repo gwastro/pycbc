@@ -31,6 +31,8 @@ from numpy import random
 import pycbc
 from pycbc.waveform import bank
 
+logger = logging.getLogger(__name__)
+
 __author__ = "Soumi De <soumi.de@ligo.org>"
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -99,7 +101,7 @@ if args.output_filenames is None and args.output_prefix is None:
 if args.output_filenames and args.output_prefix:
     parser.error("Can't specify both output filenames and a prefix")
 
-logging.info("Loading bank")
+logger.info("Loading bank")
 
 tmplt_bank = bank.TemplateBank(args.bank_file)
 
@@ -139,7 +141,7 @@ if num_per_file < 1:
 
 # Generate sub-banks
 
-logging.info("Generating the output sub-banks")
+logger.info("Generating the output sub-banks")
 start_idx = 0
 for ii in range(num_files):
     if ii == (num_files - 1):
@@ -167,4 +169,4 @@ for ii in range(num_files):
 
     start_idx = end_idx
 
-logging.info("finished")
+logger.info("finished")

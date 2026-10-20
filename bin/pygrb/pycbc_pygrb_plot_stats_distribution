@@ -37,6 +37,8 @@ from pycbc import init_logging
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results import save_fig_with_metadata
 
+logger = logging.getLogger(__name__)
+
 plt.switch_backend("Agg")
 rc("image", cmap="cividis_r")
 
@@ -76,7 +78,7 @@ trig_file = opts.trig_file
 stat = opts.x_variable
 
 # Set output directory
-logging.info("Setting output directory.")
+logger.info("Setting output directory.")
 outdir = os.path.split(os.path.abspath(opts.output_file))[0]
 if not os.path.isdir(outdir):
     os.makedirs(outdir)
@@ -162,7 +164,7 @@ if full_time_veto_max_bestnr[0] != 0.0:
     )
     full_time_veto_max_bestnr = np.concatenate(([0.0], full_time_veto_max_bestnr))
 
-logging.info("SNR and bestNR maxima calculated.")
+logger.info("SNR and bestNR maxima calculated.")
 
 
 # =========
@@ -237,4 +239,4 @@ save_fig_with_metadata(
 )
 plt.close()
 
-logging.info("Plots complete.")
+logger.info("Plots complete.")

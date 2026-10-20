@@ -23,7 +23,7 @@ from pycbc.results import layout
 from pycbc.workflow.core import Executable
 from pycbc.workflow.plotting import PlotExecutable
 
-logger = logging.getLogger("pycbc.workflow.inference_followups")
+logger = logging.getLogger(__name__)
 
 
 def make_inference_plot(

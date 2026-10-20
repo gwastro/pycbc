@@ -31,7 +31,7 @@ import logging
 
 import numpy
 
-logger = logging.getLogger("pycbc.boundaries")
+logger = logging.getLogger(__name__)
 
 
 class _Bound(float):

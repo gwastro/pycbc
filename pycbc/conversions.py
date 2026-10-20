@@ -48,7 +48,7 @@ from .coordinates import (
 pykerr = pycbc.libutils.import_optional("pykerr")
 lalsim = pycbc.libutils.import_optional("lalsimulation")
 
-logger = logging.getLogger("pycbc.conversions")
+logger = logging.getLogger(__name__)
 
 
 #

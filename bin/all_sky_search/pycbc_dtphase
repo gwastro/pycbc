@@ -24,6 +24,8 @@ from scipy.stats import norm
 import pycbc.detector
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--ifos", nargs="+", help="The ifos to generate a histogram for")
@@ -200,7 +202,7 @@ if max_td < 0.0425:
 # of error uncertainties.
 f = HFile(args.output_file, "w")
 for ifo0 in args.ifos:
-    logging.info("Storing results using %s as a reference", ifo0)
+    logger.info("Storing results using %s as a reference", ifo0)
     other_ifos = deepcopy(args.ifos)
     other_ifos.remove(ifo0)
 
@@ -209,7 +211,7 @@ for ifo0 in args.ifos:
     weights = {}
     for k in range(chunks):
         nsamples += size
-        logging.info("generating %s samples", size)
+        logger.info("generating %s samples", size)
 
         # Choose random sky location and polarizations from
         # an isotropic population
@@ -260,28 +262,28 @@ for ifo0 in args.ifos:
 
         ol = l
         l = len(weights.values())
-        logging.info(
+        logger.info(
             "%s, %s, %s, %s", l, l - ol, (l - ol) / float(size), l / float(nsamples)
         )
 
-    logging.info("applying smoothing")
+    logger.info("applying smoothing")
     # apply smoothing iteratively
     pwrap = (2 * np.pi) / pwidth
     for i in range(len(args.ifos) - 1):
-        logging.info("%s-phase", len(weights))
+        logger.info("%s-phase", len(weights))
         weights = smooth_param(weights, i * 3 + 1, wrapped=pwrap)
-        logging.info("%s-time", len(weights))
+        logger.info("%s-time", len(weights))
         weights = smooth_param(weights, i * 3 + 0)
-        logging.info("%s-amp", len(weights))
+        logger.info("%s-amp", len(weights))
         weights = smooth_param(weights, i * 3 + 2)
-    logging.info("smoothing done: %s", len(weights))
+    logger.info("smoothing done: %s", len(weights))
 
-    logging.info("converting to numpy arrays and normalizing")
+    logger.info("converting to numpy arrays and normalizing")
     keys = np.array(list(weights.keys()))
     values = np.array(list(weights.values()))
     values /= values.max()
 
-    logging.info("Removing bins outside of SNR ratio limits")
+    logger.info("Removing bins outside of SNR ratio limits")
     n_precut = len(keys)
     keep = None
     for i in range(len(args.ifos) - 1):
@@ -292,15 +294,15 @@ for ifo0 in args.ifos:
             keep = keep & (srbin <= srbmax) & (srbin >= srbmin)
     keys = keys[keep]
     values = values[keep]
-    logging.info("Removed %s bins", n_precut - len(keys))
+    logger.info("Removed %s bins", n_precut - len(keys))
 
-    logging.info("discarding bins below threshold to limit storage")
+    logger.info("discarding bins below threshold to limit storage")
     l = values > args.weight_threshold
     keys = keys[l].astype(bin_dtype)
     values = values[l].astype(np.float32)
-    logging.info("Final length: %s", len(keys))
+    logger.info("Final length: %s", len(keys))
 
-    logging.info("Presorting by keys for downstream use")
+    logger.info("Presorting by keys for downstream use")
     ncol = keys.shape[1]
     pdtype = [("c%s" % i, bin_dtype) for i in range(ncol)]
     keys_bin = np.zeros(len(values), dtype=pdtype)
@@ -310,7 +312,7 @@ for ifo0 in args.ifos:
     keys_bin = keys_bin[lsort]
     values = values[lsort]
 
-    logging.info("Writing results to file")
+    logger.info("Writing results to file")
     f.create_dataset(
         "%s/param_bin" % ifo0, data=keys_bin, compression="gzip", compression_opts=7
     )
@@ -327,4 +329,4 @@ f.attrs["swidth"] = swidth
 f.attrs["ifos"] = args.ifos
 f.attrs["stat"] = "phasetd_newsnr_%s" % "".join(args.ifos)
 
-logging.info("Done")
+logger.info("Done")

@@ -47,6 +47,8 @@ from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.types import FrequencySeries, zeros
 
+logger = logging.getLogger(__name__)
+
 
 def sigma_cached(self, psd):
     """Cache sigma calculate for use in tandem with the FilterBank class"""
@@ -369,11 +371,10 @@ class TemplateBank:
                 for k in root.keys():
                     if isinstance(root.get(k), h5py.Dataset):
                         fileparams.append(k)
-                logging.info(
+                logger.info(
                     "WARNING: no parameters attribute found. "
-                    "Assuming that %s "
-                    % (", ".join(fileparams))
-                    + "are the parameters."
+                    "Assuming that %s are the parameters.",
+                    (", ".join(fileparams)),
                 )
 
             tmp_params = []
@@ -803,7 +804,7 @@ class LiveFilterBank(TemplateBank):
         if f_end is None or f_end >= (flen * delta_f):
             f_end = (flen - 1) * delta_f
 
-        logging.info(
+        logger.info(
             "Generating %s, duration %s s, index %i, starting from %s Hz",
             approximant,
             1.0 / delta_f,
@@ -925,7 +926,7 @@ class FilterBank(TemplateBank):
             decompression_method = self.waveform_decompression_method
         else:
             decompression_method = compressed_waveform.interpolation
-        logging.info("Decompressing waveform using %s", decompression_method)
+        logger.info("Decompressing waveform using %s", decompression_method)
 
         if df is not None:
             delta_f = df
@@ -1021,7 +1022,7 @@ class FilterBank(TemplateBank):
         f_low = find_variable_start_frequency(
             approximant, self.table[index], self.f_lower, self.max_template_length
         )
-        logging.info("%s: generating %s from %s Hz" % (index, approximant, f_low))
+        logger.info("%s: generating %s from %s Hz", index, approximant, f_low)
 
         # Clear the storage memory
         poke = tempout.data  # pylint:disable=unused-variable
@@ -1160,7 +1161,7 @@ class FilterBankSkyMax(TemplateBank):
         f_low = find_variable_start_frequency(
             approximant, self.table[index], self.f_lower, self.max_template_length
         )
-        logging.info("%s: generating %s from %s Hz", index, approximant, f_low)
+        logger.info("%s: generating %s from %s Hz", index, approximant, f_low)
 
         # What does this do???
         poke1 = tempoutplus.data  # pylint:disable=unused-variable

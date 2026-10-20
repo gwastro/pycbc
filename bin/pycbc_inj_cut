@@ -37,6 +37,8 @@ import pycbc
 import pycbc.inject
 from pycbc.types import MultiDetOptionAction
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -107,20 +109,20 @@ for i, inj in enumerate(injections.table):
     else:
         out_sim_inspiral_inject.append(inj)
 
-logging.info(
+logger.info(
     "Found %d/%d (potentially) found injections. Storing them to %s.",
     len(out_sim_inspiral_inject),
     len(injections.table),
     output_inject,
 )
 
-logging.info(
+logger.info(
     "Found %d/%d missed injections.",
     len(out_sim_inspiral_missed),
     len(injections.table),
 )
 
-logging.info("Writing output")
+logger.info("Writing output")
 llw_doc = injections.indoc
 llw_root = llw_doc.childNodes[0]
 llw_root.removeChild(injections.table)
@@ -134,8 +136,8 @@ if opts.output_missed:
             output_missed = output_missed + ".gz"
     llw_root.removeChild(out_sim_inspiral_inject)
     llw_root.appendChild(out_sim_inspiral_missed)
-    logging.info("Storing them to %s.", output_missed)
+    logger.info("Storing them to %s.", output_missed)
 
     ligolw_utils.write_filename(llw_doc, output_missed, compress="auto")
 
-logging.info("Done")
+logger.info("Done")

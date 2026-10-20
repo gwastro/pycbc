@@ -26,7 +26,7 @@ import logging
 
 from pycbc.workflow.core import Executable, FileList, Node
 
-logger = logging.getLogger("pycbc.workflow.dq")
+logger = logging.getLogger(__name__)
 
 
 class PyCBCBinTemplatesDQExecutable(Executable):

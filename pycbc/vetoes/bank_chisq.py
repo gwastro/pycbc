@@ -30,6 +30,8 @@ from pycbc.filter import matched_filter_core, overlap_cplx
 from pycbc.types import Array, TimeSeries, real_same_precision_as, zeros
 from pycbc.waveform import FilterBank
 
+logger = logging.getLogger(__name__)
+
 
 def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
     """
@@ -114,7 +116,7 @@ def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
                 bank_template.params.mass2,
             )
             errMsg += "Overlap: %e" % (abs(overlaps[-1]))
-            logging.info(errMsg)
+            logger.info(errMsg)
     return overlaps
 
 
@@ -213,7 +215,7 @@ class SingleDetBankVeto:
             self.seg_len_freq = flen
             self.seg_len_time = (self.seg_len_freq - 1) * 2
 
-            logging.info("Read in bank veto template bank")
+            logger.info("Read in bank veto template bank")
             bank_veto_bank = FilterBank(
                 bank_file,
                 self.seg_len_freq,
@@ -235,7 +237,7 @@ class SingleDetBankVeto:
     def cache_segment_snrs(self, stilde, psd):
         key = (id(stilde), id(psd))
         if key not in self._segment_snrs_cache:
-            logging.debug("Precalculate the bank veto template snrs")
+            logger.debug("Precalculate the bank veto template snrs")
             data = segment_snrs(self.filters, stilde, psd, self.f_low)
             self._segment_snrs_cache[key] = data
         return self._segment_snrs_cache[key]
@@ -243,7 +245,7 @@ class SingleDetBankVeto:
     def cache_overlaps(self, template, psd):
         key = (id(template.params), id(psd))
         if key not in self._overlaps_cache:
-            logging.debug("...Calculate bank veto overlaps")
+            logger.debug("...Calculate bank veto overlaps")
             o = template_overlaps(self.filters, template, psd, self.f_low)
             self._overlaps_cache[key] = o
         return self._overlaps_cache[key]
@@ -261,7 +263,7 @@ class SingleDetBankVeto:
         """
         if not self.do:
             return None, None
-        logging.debug("...Doing bank veto")
+        logger.debug("...Doing bank veto")
         overlaps = self.cache_overlaps(template, psd)
         bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
         chisq = bank_chisq_from_filters(

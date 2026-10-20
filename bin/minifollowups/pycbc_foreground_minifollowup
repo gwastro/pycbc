@@ -30,6 +30,8 @@ from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.workflow.core import resolve_url_to_file
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__[1:])
 add_common_pycbc_options(parser)
 parser.add_argument("--bank-file", help="HDF format template bank file")
@@ -288,9 +290,10 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                 )
                 break
         else:
-            logging.info(
-                f"Trigger time {time} is not valid in "
-                f"{single.ifo}, skipping singles plots"
+            logger.info(
+                "Trigger time %s is not valid in %s, skipping singles plots",
+                time,
+                single.ifo,
             )
 
     layouts += list(layout.grouper(files, 2))

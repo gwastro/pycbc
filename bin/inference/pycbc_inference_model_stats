@@ -37,6 +37,8 @@ from pycbc.io import FieldArray
 from pycbc.pool import choose_pool, use_mpi
 from pycbc.workflow import WorkflowConfigParser
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -100,7 +102,7 @@ if use_mpi:
 pycbc.init_logging(opts.verbose)
 
 # load the config file to get the model
-logging.info("Loading config file")
+logger.info("Loading config file")
 if opts.config_file is None:
     # try to load the config file from the input file
     try:
@@ -117,10 +119,10 @@ else:
 # the seed has to be set before the model is created; marginalized models
 # draw their marginalization points at construction
 numpy.random.seed(opts.seed)
-logging.info("Using seed %i", opts.seed)
+logger.info("Using seed %i", opts.seed)
 
 # now load the model
-logging.info("Loading model")
+logger.info("Loading model")
 model = models.read_from_config(cp)
 # turn off any sampling transforms as we'll be passing in parameters directly
 # from the variable parameter space
@@ -156,7 +158,7 @@ model_call = models._call_global_model
 
 pool = choose_pool(processes=opts.nprocesses)
 
-logging.info("Getting samples")
+logger.info("Getting samples")
 with loadfile(opts.input_file, "r") as fp:
     # we'll need the shape; all the arrays in the samples group should have the
     # same shape
@@ -168,19 +170,19 @@ with loadfile(opts.input_file, "r") as fp:
 
 # convert the samples array to a FieldArray for easy iteration over
 samples = FieldArray.from_kwargs(**samples)
-logging.info("Loaded %i samples", samples.size)
+logger.info("Loaded %i samples", samples.size)
 
 # get the stats
-logging.info("Calculating stats")
+logger.info("Calculating stats")
 data = list(tqdm.tqdm(pool.imap(model_call, enumerate(samples)), total=len(samples)))
 stats = [x[0] for x in data]
 rec = [x[1] for x in data]
 
 # write to the output file
-logging.info("Copying input to output")
+logger.info("Copying input to output")
 shutil.copy(opts.input_file, opts.output_file)
 
-logging.info("Writing stats to output")
+logger.info("Writing stats to output")
 out = loadfile(opts.output_file, "a")
 idx = range(len(stats))
 for pi, p in enumerate(model.default_stats):
@@ -188,10 +190,10 @@ for pi, p in enumerate(model.default_stats):
     out.write_data(p, vals, path=fp.samples_group, append=False)
 
 if opts.reconstruct_parameters:
-    logging.info("Writing reconstructed parameters")
+    logger.info("Writing reconstructed parameters")
     for p in rec[0].keys():
         vals = numpy.array([r[p] for r in rec]).reshape(shape)
         out.write_data(p, vals, path=fp.samples_group, append=False)
 
 out.close()
-logging.info("Done")
+logger.info("Done")

@@ -34,7 +34,7 @@ from Pegasus.api import (
 
 from pycbc.version import last_release, release, version
 
-logger = logging.getLogger("pycbc.workflow.pegasus_sites")
+logger = logging.getLogger(__name__)
 
 if release:
     sing_version = version

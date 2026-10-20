@@ -45,7 +45,7 @@ from pycbc.types import (
     zeros,
 )
 
-logger = logging.getLogger("pycbc.filter.matchedfilter")
+logger = logging.getLogger(__name__)
 
 BACKEND_PREFIX = "pycbc.filter.matchedfilter_"
 
@@ -2159,14 +2159,14 @@ def followup_event_significance(
         # samples
         min_required_lookback = 2 * max(onsource_end - onsource_start, duration)
         if new_lookback > min_required_lookback:
-            logging.warning(
+            logger.warning(
                 "Strain buffer too short for a lookback time of %f s, "
                 "reducing lookback to %f s",
                 lookback,
                 new_lookback,
             )
         else:
-            logging.error(
+            logger.error(
                 "Strain buffer too short to compute the followup SNR time "
                 "series for template %d, will not use %s for followup. "
                 "Either use shorter templates, or raise --max-length.",
@@ -2184,7 +2184,7 @@ def followup_event_significance(
             - buffer_duration
         )
         if not data_reader.state.is_extent_valid(state_start_time, buffer_duration):
-            logging.info(
+            logger.info(
                 "%s strain buffer contains invalid data during lookback, "
                 "will not use for followup",
                 ifo,
@@ -2197,7 +2197,7 @@ def followup_event_significance(
         dq_start_time = onsource_start - duration / 2.0
         dq_duration = onsource_end - onsource_start + duration
         if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
-            logging.info(
+            logger.info(
                 "%s DQ buffer indicates invalid data during onsource window, "
                 "will not use for followup",
                 ifo,

@@ -21,7 +21,7 @@ import numpy
 
 from pycbc.tmpltbank import coord_utils
 
-logger = logging.getLogger("pycbc.tmpltbank.partitioned_bank")
+logger = logging.getLogger(__name__)
 
 
 class PartitionedTmpltbank:

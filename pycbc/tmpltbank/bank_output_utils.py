@@ -15,7 +15,7 @@ from pycbc.io.ligolw import (
 from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
 from pycbc.waveform import get_waveform_filter_length_in_time as gwflit
 
-logger = logging.getLogger("pycbc.tmpltbank.bank_output_utils")
+logger = logging.getLogger(__name__)
 
 
 def convert_to_sngl_inspiral_table(params, proc_id):
