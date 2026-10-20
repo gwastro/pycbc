@@ -24,7 +24,9 @@ jobs:
       with:
         python_version: ${{ steps.defaults.outputs.python_version }}
     - name: Install condor & pegasus
-      uses: ./.github/actions/install-htcondor-pegasus
+      run: |
+        bash tools/ci_install_htcondor_pegasus.sh
+        bash tools/ci_start_condor.sh
     - name: installing system packages
       uses: ./.github/actions/install-system-deps
     - name: Install pycbc
