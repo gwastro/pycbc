@@ -4,6 +4,10 @@
 # configuration (not `pyproject.toml`), so rule selection lives here rather
 # than in pyproject.toml.
 
+# The oldest Python we support (python_requires in setup.py). Without this,
+# ruff assumes an older version and applies rules meant for it.
+target-version = "py311"
+
 [lint]
 select = [
     # pycodestyle / Pyflakes / isort baseline
