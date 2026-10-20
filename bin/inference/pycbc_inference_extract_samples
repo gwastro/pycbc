@@ -39,16 +39,21 @@ across combined files.
 """
 
 import os
-import numpy
-import pycbc
-from pycbc.inference.io import (ResultsArgumentParser,
-                                results_from_cli,
-                                PosteriorFile,
-                                loadfile)
-from pycbc.inference.io.base_hdf import format_attr
 import re
-from scipy.special import logsumexp
 import warnings
+
+import numpy
+from scipy.special import logsumexp
+
+import pycbc
+from pycbc.inference.io import (
+    PosteriorFile,
+    ResultsArgumentParser,
+    loadfile,
+    results_from_cli,
+)
+from pycbc.inference.io.base_hdf import format_attr
+
 
 def isthesame(current_val, val):
     """Checks that attrs values from two hdf files are the same (or nearly so)."""
@@ -70,6 +75,7 @@ def isthesame(current_val, val):
         issame = issame.all()
     # we didn't have an array, assume it was a single value
     return issame
+
 
 parser = ResultsArgumentParser(
     defaultparams="all", autoparamlabels=False, description=__doc__
@@ -280,8 +286,9 @@ if not cat_params:
     # this preserves lineage to original sampled params when extracting
     # multiple times
     if "remapped_params" in fps[0].attrs:
-        input_funcs = {format_attr(p): format_attr(f)
-                       for f, p in fps[0].attrs["remapped_params"]}
+        input_funcs = {
+            format_attr(p): format_attr(f) for f, p in fps[0].attrs["remapped_params"]
+        }
 
         def to_input_func(match):
             name = match.group()
@@ -292,7 +299,8 @@ if not cat_params:
         # exponents (e.g., 'bar' in 'foo.bar' or 'e5' in '1e5')
         remapped_params = [
             (re.sub(r"(?<![\w.])[A-Za-z_]\w*", to_input_func, func), param)
-            for func, param in remapped_params]
+            for func, param in remapped_params
+        ]
     out.attrs["remapped_params"] = remapped_params
 
 # write combined evidence and dlog evidence if combining via sampling

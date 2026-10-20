@@ -21,13 +21,14 @@ import logging
 import os
 import shutil
 import textwrap
-import numpy
+
 import h5py as _h5py
-from pycbc.io.hdf import (dump_state, load_state)
-from pycbc.io.record import (FieldArray, _numpy_function_lib,
-                             get_vars_from_arg)
+import numpy
+
 from pycbc import waveform as _waveform
 from pycbc.inference.option_utils import ParseLabelArg, ParseParametersArg
+from pycbc.io.hdf import dump_state, load_state
+from pycbc.io.record import FieldArray, _numpy_function_lib, get_vars_from_arg
 
 from .cpnest import CPNestFile
 from .dynesty import DynestyFile
@@ -588,8 +589,9 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         opts, extra_opts = super().parse_known_args(args, opts)
         # populate the parameters option if it wasn't specified
         if opts.parameters is None or opts.parameters == ["*"]:
-            parameters = get_common_parameters(opts.input_file,
-                                               collection=self.defaultparams)
+            parameters = get_common_parameters(
+                opts.input_file, collection=self.defaultparams
+            )
             # now call parse parameters action to re-populate the namespace
             self.actions["parameters"](self, opts, parameters)
         # check if we're being greedy or not

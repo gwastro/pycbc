@@ -25,10 +25,10 @@
 # =============================================================================
 #
 
+import argparse
 import itertools
 import logging
 import sys
-import argparse
 
 import matplotlib
 import numpy
@@ -68,8 +68,8 @@ parser.add_argument(
     nargs="+",
     type=str,
     help="For multiple runs, provide colours to be used for successively. "
-         "Default setting is to use the successive colours specified "
-         "in matplotlib color cycle.",
+    "Default setting is to use the successive colours specified "
+    "in matplotlib color cycle.",
 )
 parser.add_argument(
     "--fill-hist",
@@ -151,12 +151,14 @@ if opts.plot_maxl:
 else:
     add_logl = False
 
+
 # parse legend bbox
 def parse_tuple(value):
     try:
         return tuple(map(float, value.strip("()").split(",")))
     except Exception as e:
         raise argparse.ArgumentTypeError(f"Invalid tuple format: {value}") from e
+
 
 opts.legend_bbox_to_anchor = parse_tuple(opts.legend_bbox_to_anchor)
 
