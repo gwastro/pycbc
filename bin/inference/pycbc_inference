@@ -48,6 +48,15 @@ parser.add_argument(
     "Otherwise, an OSError is raised.",
 )
 parser.add_argument(
+    "--no-model-stats",
+    action="store_true",
+    default=False,
+    help="Leave the model's stats out of the output. "
+    "They are otherwise filled in at the end, which "
+    "costs one likelihood evaluation for every point "
+    "the sampler did not keep stats for.",
+)
+parser.add_argument(
     "--save-backup",
     action="store_true",
     default=False,
@@ -174,6 +183,9 @@ with ctx:
 
     # Finalize the output
     sampler.finalize()
+
+    if not opts.no_model_stats:
+        sampler.write_cached_stats()
 
 if condor_ckpt:
     # unlink the empty output file
