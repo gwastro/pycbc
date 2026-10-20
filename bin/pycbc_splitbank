@@ -188,7 +188,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:], strict=T
     sngl_inspiral_table = tabletype.new(columns=used_columns)
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
-    for i in range(idx2 - idx1):
+    for _ in range(idx2 - idx1):
         row = tt.pop()
         row.process_id = process.process_id
         sngl_inspiral_table.append(row)

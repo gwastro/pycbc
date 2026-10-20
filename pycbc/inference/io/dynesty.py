@@ -189,7 +189,7 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
                     j += 1
             rng.shuffle(idx)
             post = {"loglikelihood": loglikelihood[idx]}
-            for i, param in enumerate(fields):
+            for param in fields:
                 post[param] = samples[param][idx]
             return post
         return samples

@@ -208,7 +208,7 @@ def load_detector_config(config_files):
 
 
 # prepopulate using detectors hardcoded into lalsuite
-for pref, name in get_available_lal_detectors():
+for pref, _ in get_available_lal_detectors():
     lalsim = pycbc.libutils.import_optional("lalsimulation")
     lal_det = lalsim.DetectorPrefixToLALDetector(pref).frDetector
     add_detector_on_earth(

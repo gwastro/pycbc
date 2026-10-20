@@ -1746,7 +1746,7 @@ class FileList(list):
 
         # Set up storage
         self._split_lists = []
-        for idx in range(num_sub_lists):
+        for _ in range(num_sub_lists):
             self._split_lists.append(FileList([]))
 
         # Sort the files

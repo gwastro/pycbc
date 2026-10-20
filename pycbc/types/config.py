@@ -479,7 +479,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         """
         if not self.has_section("sharedoptions"):
             return
-        for key, value in self.items("sharedoptions"):
+        for key, _ in self.items("sharedoptions"):
             self.remove_section(f"sharedoptions-{key}")
         self.remove_section("sharedoptions")
 

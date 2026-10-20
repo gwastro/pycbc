@@ -1069,7 +1069,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         gatetimes = {}
         # for now only calculating time from plus polarization; should be all
         # that's necessary
-        for det, (hp, hc) in wfs.items():
+        for det, (hp, _) in wfs.items():
             invpsd = self._invpsds[det]
             hp.resize(len(invpsd))
             ht = hp.to_timeseries()

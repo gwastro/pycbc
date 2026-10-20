@@ -262,7 +262,7 @@ for num_event in range(num_events):
     # Handle off/on-source loudest triggers follow-up
     # They are data that may be slid so detector time is used
     else:
-        for i_ifo, ifo in enumerate(ifos):
+        for ifo in ifos:
             ifo_time = fp[ifo + " GPS time (s)"][num_event]
             ifo_time = ifo_time.astype(float)
             files += make_timeseries_plot(

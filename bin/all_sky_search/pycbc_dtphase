@@ -143,7 +143,7 @@ def smooth_param(data, index, wrapped=None):
 
     # This is massively redundant as many points may be
     # recalculated, but it's straightforward.
-    for i, key in enumerate(data):
+    for key in data:
         if data[key] / mref < args.weight_threshold:
             continue
 
@@ -209,7 +209,7 @@ for ifo0 in args.ifos:
     nbins = 0
     nsamples = 0
     weights = {}
-    for k in range(chunks):
+    for _ in range(chunks):
         nsamples += size
         logger.info("generating %s samples", size)
 
