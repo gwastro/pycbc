@@ -20,8 +20,9 @@
 Description of daily_test
 """
 
-import pycbc
 import pycbc.version
+
+import pycbc
 
 __author__ = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
