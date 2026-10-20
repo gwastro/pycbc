@@ -564,7 +564,7 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
         public_dir = os.path.abspath(
             os.path.join(controls["public-dir"], *day_str.split("_"))
         )
-        logger.info("Outputs to be linked to % ", public_dir)
+        logger.info("Outputs to be linked to %s", public_dir)
 
     if args.collated_trigger_file is not None:
         logger.info("Using collated trigger file %s", args.collated_trigger_file)

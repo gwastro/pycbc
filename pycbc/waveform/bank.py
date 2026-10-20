@@ -372,9 +372,9 @@ class TemplateBank:
                     if isinstance(root.get(k), h5py.Dataset):
                         fileparams.append(k)
                 logger.info(
-                    "%sare the parameters.",
                     "WARNING: no parameters attribute found. "
-                    "Assuming that %s " % (", ".join(fileparams)),
+                    "Assuming that %s are the parameters.",
+                    (", ".join(fileparams)),
                 )
 
             tmp_params = []

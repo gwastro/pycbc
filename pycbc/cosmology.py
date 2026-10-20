@@ -191,7 +191,8 @@ def z_at_value(func, fval, unit, zmax=1000.0, **kwargs):
                 logger.warning(
                     "One or more values correspond to a redshift > %.1e. The "
                     "redshift for these have been set to inf. If you would like "
-                    "better precision, call God.",
+                    "better precision, contact the deity of "
+                    "your choice.",
                     zmax,
                 )
                 break

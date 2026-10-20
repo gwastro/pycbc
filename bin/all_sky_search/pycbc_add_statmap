@@ -639,7 +639,7 @@ while True:
     logger.info("Maximum IFAR values per combination:")
     for k in max_ifars:
         logger.info("%s: %.3g", k, max_ifars[k])
-    if args.verbose:  # Debug statements
+    if args.verbose:  # Logging statements
         max_combd = combined_fg_data.data[ifar_key].argmax()
         max_combd_ifar = combined_fg_data.data[ifar_key][max_combd]
         logger.info("combined: %.3g", max_combd_ifar)

@@ -266,7 +266,7 @@ class TestPSDSegmentPlacement(unittest.TestCase):
         # --psd-num-segments omitted and data too short for the stride -> the
         # segment count is clamped to 1, so the estimation stretch is never
         # shorter than one Welch segment, and a warning is emitted. (Patch
-        # logging.warning rather than use assertLogs: another test module
+        # logger.warning rather than use assertLogs: another test module
         # calls logging.disable().)
         noise = self._white_noise(4096)
         opt = SimpleNamespace(

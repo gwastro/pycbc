@@ -621,7 +621,7 @@ class BaseMCMC(metaclass=ABCMeta):
             raise OSError("error writing to checkpoint file")
         if self.checkpoint_signal:
             # kill myself with the specified signal
-            logger.info("Exiting with SIG%s", self.checkpoint_signal)
+            logger.info("Exiting with SIG %s", self.checkpoint_signal)
             kill_cmd = f"os.kill(os.getpid(), signal.SIG{self.checkpoint_signal})"
             exec(kill_cmd)
         # clear the in-memory chain to save memory

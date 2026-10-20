@@ -264,7 +264,7 @@ sg = utils.SignalEventRate(
 )
 
 for jf, b, fd in inj_inputs:
-    logger.info("Adding inj info from%s", jf)
+    logger.info("Adding inj info from %s", jf)
     sg.add_bank(b)
     sg.filter_templates()
     sg.add_injections(jf, fd)

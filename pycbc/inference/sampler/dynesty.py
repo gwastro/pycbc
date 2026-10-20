@@ -200,7 +200,7 @@ class DynestySampler(BaseSampler):
             )
             self.run_with_checkpoint = False
             logger.info(
-                "Checkpointing not currently supported withDYNAMIC nested sampler"
+                "Checkpointing not currently supported with DYNAMIC nested sampler"
             )
             # the dynamic sampler suffixes its baseline-run stopping criteria
             for karg in ("dlogz", "logl_max"):
