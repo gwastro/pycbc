@@ -370,12 +370,10 @@ class Executable(pegasus_workflow.Executable):
                     split_path = path.split(":", 1)
                     if len(split_path) == 1:
                         ifo = None
-                        path = path
                     # Have I split a URL or not?
                     elif split_path[1].startswith("//"):
                         # URL
                         ifo = None
-                        path = path
                     else:
                         # IFO:path or IFO:URL
                         ifo = split_path[0]
