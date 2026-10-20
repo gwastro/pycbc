@@ -722,6 +722,8 @@ while tau0s < args.tau0_end:
         if r > 10:
             conv = uconv
         kloop = 0
+        # Set in the loop; the first pass (kloop == 0) does not use them
+        kconv = okconv = None
 
         while ((kloop == 0) or (kconv / okconv) > 0.5) and len(bank) > 10:
             r += 1
