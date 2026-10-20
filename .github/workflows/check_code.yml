@@ -27,6 +27,7 @@ jobs:
                 flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
 
     qlty_check:
+        if: github.event_name == 'pull_request'
         runs-on: ubuntu-latest
         permissions:
             contents: read
