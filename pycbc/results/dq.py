@@ -82,7 +82,7 @@ def get_summary_page_link(ifo, utc_time):
         raise TypeError(
             "utc_time must be a datetime/date or a sequence (year, month, day); "
             f"got {utc_time} (type {type(utc_time).__name__}) - original error: {e}"
-        )
+        ) from e
 
     # alog format is day-month-year
     alog_utc = f"{day:02d}-{month:02d}-{year:4d}"

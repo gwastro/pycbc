@@ -358,7 +358,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                 curr_file = resolve_url_to_file(pre_gen_bank, attrs=file_attrs)
                 tmplt_banks.append(curr_file)
 
-            except configparser.Error:
+            except configparser.Error as err:
                 err_msg = "Cannot find pregerated template bank in section "
                 err_msg += "[workflow-tmpltbank] or any tagged sections. "
                 if tags:
@@ -368,7 +368,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                     err_msg += f"Tagged sections are {tagged_secs}. "
                 err_msg += "I looked for 'tmpltbank-pregenerated-bank' option "
                 err_msg += f"and 'tmpltbank-pregenerated-bank-{ifo}'."
-                raise configparser.Error(err_msg)
+                raise configparser.Error(err_msg) from err
 
     return tmplt_banks
 

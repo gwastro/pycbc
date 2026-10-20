@@ -169,11 +169,11 @@ if len(opts.input_file) > 1:
             # get evidence from each file if possible
             try:
                 logz, dlogz = fp.log_evidence
-            except KeyError:
+            except KeyError as err:
                 raise ValueError(
                     f"Cannot combine evidences; file {file} "
                     "does not have a log_evidence attr"
-                )
+                ) from err
             logz_list.append(logz)
             dlogz_list.append(dlogz)
             # get samples from each file

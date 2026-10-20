@@ -128,11 +128,11 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, mindist
     try:
         import lal
         import lalpulsar
-    except ImportError:
+    except ImportError as err:
         raise ImportError(
             "A SWIG-wrapped install of lalpulsar is needed to use "
             "the anstar tiling functionality."
-        )
+        ) from err
 
     tiling = lalpulsar.CreateLatticeTiling(3)
     lalpulsar.SetLatticeTilingConstantBound(tiling, 0, minv1, maxv1)

@@ -65,11 +65,11 @@ class TimeSeries(Array):
         if delta_t is None:
             try:
                 delta_t = initial_array.delta_t
-            except AttributeError:
+            except AttributeError as err:
                 raise TypeError(
                     "must provide either an initial_array with "
                     "a delta_t attribute, or a value for delta_t"
-                )
+                ) from err
         if not delta_t > 0:
             raise ValueError("delta_t must be a positive number")
 

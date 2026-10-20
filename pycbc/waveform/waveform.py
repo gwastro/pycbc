@@ -1267,8 +1267,8 @@ def get_hm_length_in_time(lor_approx, maxm_default, **kwargs):
         maxm = maxm_default
     try:
         flow = kwargs["f_lower"]
-    except KeyError:
-        raise ValueError("must provide a f_lower")
+    except KeyError as err:
+        raise ValueError("must provide a f_lower") from err
     kwargs["f_lower"] = flow * 2.0 / maxm
     return get_imr_length(lor_approx, **kwargs)
 

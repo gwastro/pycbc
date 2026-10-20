@@ -1331,8 +1331,8 @@ def create_waveform_generator(
     # figure out what generator to use based on the approximant
     try:
         approximant = static_params["approximant"]
-    except KeyError:
-        raise ValueError("no approximant provided in the static args")
+    except KeyError as err:
+        raise ValueError("no approximant provided in the static args") from err
 
     dm = static_params.get("preferred_domain")
     if isinstance(dm, str) and dm.lower() == "none":

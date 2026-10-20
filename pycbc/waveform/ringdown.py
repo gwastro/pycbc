@@ -161,10 +161,10 @@ def lm_amps_phases(**kwargs):
         try:
             ref_amp = kwargs.pop(ref_amp)
             amps[ref_mode] = ref_amp
-        except KeyError:
+        except KeyError as err:
             raise ValueError(
                 f"Must provide an amplitude for the reference mode {ref_amp}"
-            )
+            ) from err
     else:
         ref_mode = None
     # Get amplitudes and phases of the modes
@@ -175,12 +175,12 @@ def lm_amps_phases(**kwargs):
             if mode != ref_mode:
                 try:
                     amps[mode] = kwargs["amp" + mode] * ref_amp
-                except KeyError:
-                    raise ValueError(f"amp{mode} is required")
+                except KeyError as err:
+                    raise ValueError(f"amp{mode} is required") from err
             try:
                 phis[mode] = kwargs["phi" + mode]
-            except KeyError:
-                raise ValueError(f"phi{mode} is required")
+            except KeyError as err:
+                raise ValueError(f"phi{mode} is required") from err
             dphis[mode] = kwargs.pop("dphi" + mode, ref_dphi)
             dbetas[mode] = kwargs.pop("dbeta" + mode, ref_dbeta)
     return amps, phis, dbetas, dphis
@@ -199,12 +199,12 @@ def lm_freqs_taus(**kwargs):
         for mode in overtones:
             try:
                 freqs[mode] = kwargs["f_" + mode]
-            except KeyError:
-                raise ValueError(f"f_{mode} is required")
+            except KeyError as err:
+                raise ValueError(f"f_{mode} is required") from err
             try:
                 taus[mode] = kwargs["tau_" + mode]
-            except KeyError:
-                raise ValueError(f"tau_{mode} is required")
+            except KeyError as err:
+                raise ValueError(f"tau_{mode} is required") from err
     return freqs, taus
 
 

@@ -108,11 +108,11 @@ if opts.config_file is None:
     try:
         with loadfile(opts.input_file, "r") as fp:
             cp = fp.read_config_file()
-    except ValueError:
+    except ValueError as err:
         raise ValueError(
             f"no config file found in {opts.input_file}; please provide one "
             "using the --config-file"
-        )
+        ) from err
 else:
     cp = WorkflowConfigParser(opts.config_file)
 

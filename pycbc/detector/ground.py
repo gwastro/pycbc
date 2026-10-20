@@ -192,16 +192,18 @@ def load_detector_config(config_files):
         kwds = dict(conf.items(f"detector-{det}"))
         try:
             method, arg_names = methods[kwds.pop("method")]
-        except KeyError:
-            raise ValueError(f"Missing or unkown method, options are {methods.keys()}")
+        except KeyError as err:
+            raise ValueError(
+                f"Missing or unkown method, options are {methods.keys()}"
+            ) from err
         for k in kwds:
             kwds[k] = float(kwds[k])
         try:
             args = [kwds.pop(arg) for arg in arg_names]
-        except KeyError:
+        except KeyError as err:
             raise ValueError(
                 f"missing required detector argument {arg_names} are required"
-            )
+            ) from err
         method(det.upper(), *args, **kwds)
 
 

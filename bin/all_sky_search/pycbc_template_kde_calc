@@ -229,8 +229,8 @@ if args.make_template_kde:
         f_dest.attrs["mchirp_downsample_power"] = args.mchirp_downsample_power
         try:
             mchirp_index = args.fit_param.index("mchirp")
-        except ValueError:
-            raise ValueError("mchirp does not exist in args.fit_param")
+        except ValueError as err:
+            raise ValueError("mchirp does not exist in args.fit_param") from err
 
         mc_vals = template_pars[mchirp_index]
         if args.log_param[mchirp_index]:

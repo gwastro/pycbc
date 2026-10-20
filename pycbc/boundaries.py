@@ -310,12 +310,12 @@ class Bounds:
         # store bounds
         try:
             self._min = boundary_types[btype_min](min_bound)
-        except KeyError:
-            raise ValueError(f"unrecognized btype_min {btype_min}")
+        except KeyError as err:
+            raise ValueError(f"unrecognized btype_min {btype_min}") from err
         try:
             self._max = boundary_types[btype_max](max_bound)
-        except KeyError:
-            raise ValueError(f"unrecognized btype_max {btype_max}")
+        except KeyError as err:
+            raise ValueError(f"unrecognized btype_max {btype_max}") from err
         # store cyclic conditions
         self._cyclic = bool(cyclic)
         # store reflection conditions; we'll vectorize them here so that they

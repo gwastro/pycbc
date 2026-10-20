@@ -509,8 +509,8 @@ def _positive_type(s, dtype=None):
     err_msg = f"Input must be a positive {dtype}, not {s}"
     try:
         value = dtype(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(err_msg)
+    except ValueError as err:
+        raise argparse.ArgumentTypeError(err_msg) from err
     if value <= 0:
         raise argparse.ArgumentTypeError(err_msg)
     return value
@@ -526,8 +526,8 @@ def _nonnegative_type(s, dtype=None):
     err_msg = f"Input must be either a positive or zero {dtype}, not {s}"
     try:
         value = dtype(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(err_msg)
+    except ValueError as err:
+        raise argparse.ArgumentTypeError(err_msg) from err
     if value < 0:
         raise argparse.ArgumentTypeError(err_msg)
     return value

@@ -35,10 +35,10 @@ import pycbc.scheme
 # different between python 2 and python 3.
 try:
     import skcuda.fft as cu_fft
-except Exception:
+except Exception as err:
     raise ImportError(
         "Unable to import skcuda.fft; try direct import to get full traceback"
-    )
+    ) from err
 from .core import _BaseFFT, _BaseIFFT
 
 _forward_plans = {}

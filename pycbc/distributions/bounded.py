@@ -259,8 +259,10 @@ class BoundedDist:
         try:
             for p in self._params:
                 isin = isin & self._bounds[p].contains_conditioned(params[p])
-        except KeyError:
-            raise ValueError(f"must provide all parameters [{', '.join(self._params)}]")
+        except KeyError as err:
+            raise ValueError(
+                f"must provide all parameters [{', '.join(self._params)}]"
+            ) from err
         return isin
 
     __contains__ = contains

@@ -148,11 +148,11 @@ def save_fig_with_metadata(fig, filename, fig_kwds=None, **kwds):
         extension = os.path.splitext(filename)[1]
         kwds["version"] = pycbc.version.git_verbose_msg
         _metadata_saver[extension](fig, filename, fig_kwds, kwds)
-    except KeyError:
+    except KeyError as err:
         raise TypeError(
             f"Cannot save file {filename} with metadata, extension {extension} not "
             "supported at this time"
-        )
+        ) from err
 
 
 def load_metadata_from_file(filename):
@@ -173,8 +173,8 @@ def load_metadata_from_file(filename):
     try:
         extension = os.path.splitext(filename)[1]
         return _metadata_loader[extension](filename)
-    except KeyError:
+    except KeyError as err:
         raise TypeError(
             f"Cannot read metadata from file {filename}, extension {extension} not "
             "supported at this time"
-        )
+        ) from err

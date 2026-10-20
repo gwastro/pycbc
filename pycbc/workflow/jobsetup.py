@@ -75,10 +75,10 @@ def select_tmpltbank_class(curr_exe):
     }
     try:
         return exe_to_class_map[curr_exe]
-    except KeyError:
+    except KeyError as err:
         raise NotImplementedError(
             f"No job class exists for executable {curr_exe}, exiting"
-        )
+        ) from err
 
 
 def select_matchedfilter_class(curr_exe):
@@ -109,11 +109,11 @@ def select_matchedfilter_class(curr_exe):
     }
     try:
         return exe_to_class_map[curr_exe]
-    except KeyError:
+    except KeyError as err:
         # also conceivable to introduce a default class??
         raise NotImplementedError(
             f"No job class exists for executable {curr_exe}, exiting"
-        )
+        ) from err
 
 
 def select_generic_executable(workflow, exe_tag):
@@ -150,11 +150,11 @@ def select_generic_executable(workflow, exe_tag):
     }
     try:
         return exe_to_class_map[exe_name]
-    except KeyError:
+    except KeyError as err:
         # Should we try some sort of default class??
         raise NotImplementedError(
             f"No job class exists for executable {exe_name}, exiting"
-        )
+        ) from err
 
 
 def sngl_ifo_job_setup(

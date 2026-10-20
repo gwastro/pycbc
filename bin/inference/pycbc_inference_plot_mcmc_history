@@ -93,8 +93,8 @@ if opts.plot_checkpoint_dt:
 if opts.plot_act:
     try:
         raw_acts = history["act"][()]
-    except KeyError:
-        raise ValueError("ACT history was not saved")
+    except KeyError as err:
+        raise ValueError("ACT history was not saved") from err
     if raw_acts.ndim == 2:
         # separate acts for each chain, calculate mean (of finite at each point)
         acts = numpy.full(raw_acts.shape[1], numpy.inf)
@@ -112,8 +112,8 @@ if opts.plot_effective_nsamples:
 if opts.plot_nchains_burned_in:
     try:
         burn_in_iter = history["burn_in_iteration"][()]
-    except KeyError:
-        raise ValueError("Burn-in history not saved")
+    except KeyError as err:
+        raise ValueError("Burn-in history not saved") from err
     nchains_burned_in = numpy.zeros(iterations.size, dtype=int)
     nchains = fp.nchains
     for ii in range(nchains_burned_in.size):

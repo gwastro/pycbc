@@ -244,12 +244,12 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
                     )
                 # success break
                 success = True
-            except Exception:
+            except Exception as err:
                 sample_rate *= 2
                 if sample_rate > max_sample_rate:
                     err_msg = f"Unable to generate template {cache_id};"
                     err_msg += " try increasing max sample rate"
-                    raise ValueError(err_msg)
+                    raise ValueError(err_msg) from err
 
         # Remove possible zero padding at the end of the waveforms
         amp = hplus**2 + hcross**2

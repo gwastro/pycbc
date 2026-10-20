@@ -85,8 +85,8 @@ class MultinestSampler(BaseSampler):
             self.run_multinest = run
             self.analyzer = Analyzer
             logging.getLogger().setLevel(loglevel)
-        except ImportError:
-            raise ImportError("pymultinest is not installed.")
+        except ImportError as err:
+            raise ImportError("pymultinest is not installed.") from err
 
         super().__init__(model)
 
