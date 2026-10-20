@@ -227,13 +227,14 @@ sngl_inspiral_table_curr.extend(
 template = sngl_inspiral_table_curr[0]
 triggered_ifos = {sngl.ifo for sngl in sngl_inspiral_table_curr}
 next_event_id = max(int(sngl.event_id) for sngl in sngl_inspiral_table) + 1
-template_columns = (
-    "mass1 mass2 spin1x spin1y spin1z spin2x spin2y spin2z "
-    "mtotal mchirp eta f_final template_duration"
-).split()
+template_columns = [
+    "mass1", "mass2", "spin1x", "spin1y", "spin1z",
+    "spin2x", "spin2y", "spin2z", "mtotal", "mchirp",
+    "eta", "f_final", "template_duration",
+]
 
 for ifo in sorted(set(snr_ts) - triggered_ifos):
-    logging.debug("Adding follow-up-only detector %s to localization XML", ifo)
+    logger.debug("Adding follow-up-only detector %s to localization XML", ifo)
     sngl = return_empty_sngl(nones=True)
     for column in template_columns:
         setattr(sngl, column, getattr(template, column))
