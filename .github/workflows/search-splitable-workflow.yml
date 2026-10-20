@@ -19,7 +19,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
-        python-version: '3.11'
+        python_version: '3.11'
     - name: Install HTCondor and Pegasus
       uses: ./.github/actions/install-htcondor-pegasus
     - name: Install system dependencies
