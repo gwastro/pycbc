@@ -4,6 +4,7 @@ on:
         branches:
             - master
     pull_request:
+        types: [opened, synchronize, reopened, labeled]
 
 jobs:
     flake8_unused_imports:
