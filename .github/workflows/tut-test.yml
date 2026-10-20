@@ -21,7 +21,7 @@ jobs:
     - name: Set up Python ${{ matrix.python_version }}
       uses: actions/setup-python@v6
       with:
-        python-version: ${{ matrix.python_version }}
+        python_version: ${{ matrix.python_version }}
 
     - name: Install system dependencies
       uses: ./.github/actions/install-system-deps

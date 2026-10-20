@@ -24,7 +24,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
-        python-version: ${{ steps.defaults.outputs.python_version }}
+        python_version: ${{ steps.defaults.outputs.python_version }}
     - name: Install condor & pegasus
       uses: ./.github/actions/install-htcondor-pegasus
     - name: Install system dependencies
