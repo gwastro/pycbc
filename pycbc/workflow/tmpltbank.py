@@ -35,7 +35,7 @@ import math
 import configparser as ConfigParser
 import pycbc
 from pycbc.workflow.core import FileList, Executable
-from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
+from pycbc.workflow.core import resolve_url_to_file
 from pycbc.workflow.jobsetup import select_tmpltbank_class, sngl_ifo_job_setup
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
@@ -71,7 +71,6 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     if tags is None:
         tags = []
     logging.info("Entering template bank generation module.")
-    make_analysis_dir(output_dir)
     cp = workflow.cp
 
     # Parse for options in ini file

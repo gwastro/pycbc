@@ -5,8 +5,8 @@ import matplotlib; matplotlib.use('Agg');
 import h5py, numpy, argparse, pylab, sys
 import pycbc.results, pycbc.types, pycbc.version, pycbc.waveform, pycbc.filter
 
-from pycbc.fft.fftw import set_measure_level
-set_measure_level(0)
+from pycbc.fft import ensure_fftw_planning_off
+ensure_fftw_planning_off()
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action='version', version=pycbc.version.git_verbose_msg)
