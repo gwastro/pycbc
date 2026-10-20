@@ -44,28 +44,28 @@ from pycbc.distributions.sky_location import (
     UniformSky,
 )
 from pycbc.distributions.spins import IndependentChiPChiEff
-from pycbc.distributions.uniform import Uniform, Trapezoid
+from pycbc.distributions.uniform import Trapezoid, Uniform
 from pycbc.distributions.uniform_log import UniformLog10
 from pycbc.distributions.utils import draw_samples_from_config
 
 # a dict of all available distributions
 distribs = {
-    IndependentChiPChiEff.name : IndependentChiPChiEff,
-    Arbitrary.name : Arbitrary,
-    FromFile.name : FromFile,
-    Gaussian.name : Gaussian,
-    UniformPowerLaw.name : UniformPowerLaw,
-    UniformRadius.name : UniformRadius,
-    Uniform.name : Uniform,
-    UniformAngle.name : UniformAngle,
-    Trapezoid.name : Trapezoid,
-    CosAngle.name : CosAngle,
-    SinAngle.name : SinAngle,
-    UniformSolidAngle.name : UniformSolidAngle,
-    UniformSky.name : UniformSky,
-    UniformDiskSky.name : UniformDiskSky,
-    UniformLog10.name : UniformLog10,
-    UniformF0Tau.name : UniformF0Tau,
+    IndependentChiPChiEff.name: IndependentChiPChiEff,
+    Arbitrary.name: Arbitrary,
+    FromFile.name: FromFile,
+    Gaussian.name: Gaussian,
+    UniformPowerLaw.name: UniformPowerLaw,
+    UniformRadius.name: UniformRadius,
+    Uniform.name: Uniform,
+    UniformAngle.name: UniformAngle,
+    Trapezoid.name: Trapezoid,
+    CosAngle.name: CosAngle,
+    SinAngle.name: SinAngle,
+    UniformSolidAngle.name: UniformSolidAngle,
+    UniformSky.name: UniformSky,
+    UniformDiskSky.name: UniformDiskSky,
+    UniformLog10.name: UniformLog10,
+    UniformF0Tau.name: UniformF0Tau,
     External.name: External,
     DistributionFunctionFromFile.name: DistributionFunctionFromFile,
     FixedSamples.name: FixedSamples,
