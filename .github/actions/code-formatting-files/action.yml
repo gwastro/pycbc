@@ -1,0 +1,48 @@
+name: Build code formatting file list
+description: List Python scripts and modules checked by code formatting workflows.
+inputs:
+  changed-only:
+    description: Select only eligible files changed since the merge base.
+    default: 'false'
+  base-ref:
+    description: Git base ref required for changed-only selection.
+    default: ''
+  head-ref:
+    description: Git head ref for changed-only selection.
+    default: HEAD
+outputs:
+  file-list:
+    description: Path to the sorted file list.
+    value: ${{ steps.filelist.outputs.file-list }}
+  file-count:
+    description: Number of files in the list.
+    value: ${{ steps.filelist.outputs.file-count }}
+runs:
+  using: composite
+  steps:
+    - name: Build file list
+      id: filelist
+      shell: bash
+      env:
+        CHANGED_ONLY: ${{ inputs.changed-only }}
+        BASE_REF: ${{ inputs.base-ref }}
+        HEAD_REF: ${{ inputs.head-ref }}
+      run: |
+        file_list="$RUNNER_TEMP/pycbc_py_files.txt"
+        export LC_ALL=C
+        # Include executables and tests, excluding generated and package initializer modules.
+        {
+          find bin -type f -name 'pycbc_*'
+          find pycbc -type f -name '*.py' ! -name '__init__.py' ! -name 'version.py'
+          find test -type f -name '*.py'
+        } | sort > "$file_list"
+        if [ "$CHANGED_ONLY" = true ]; then
+          : "${BASE_REF:?base-ref is required for changed-only selection}"
+          git diff --name-only --diff-filter=ACMR "$BASE_REF...$HEAD_REF" \
+            | sort > "$RUNNER_TEMP/pycbc_changed_files.txt"
+          comm -12 "$file_list" "$RUNNER_TEMP/pycbc_changed_files.txt" \
+            > "$RUNNER_TEMP/pycbc_selected_files.txt"
+          mv "$RUNNER_TEMP/pycbc_selected_files.txt" "$file_list"
+        fi
+        echo "file-list=$file_list" >> "$GITHUB_OUTPUT"
+        echo "file-count=$(wc -l < "$file_list" | tr -d ' ')" >> "$GITHUB_OUTPUT"
