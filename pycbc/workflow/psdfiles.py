@@ -32,7 +32,7 @@ workflows.
 import configparser as ConfigParser
 import logging
 
-from pycbc.workflow.core import FileList, make_analysis_dir, resolve_url_to_file
+from pycbc.workflow.core import FileList, resolve_url_to_file
 
 logger = logging.getLogger("pycbc.workflow.psdfiles")
 
@@ -68,7 +68,6 @@ def setup_psd_workflow(
     if tags is None:
         tags = []
     logger.info("Entering static psd module.")
-    make_analysis_dir(output_dir)
     cp = workflow.cp
 
     # Parse for options in ini file.
