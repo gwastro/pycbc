@@ -444,8 +444,8 @@ for entry in temp_bank:
             curr_vec4_depth = curr_vec4_max - curr_vec4_min
             # Then loop over necessary templates in 4th direction
             num_v4_temps = int(round(curr_vec4_depth // vec3_depth_val)) + 1
-            for ite in range(num_v4_temps):
-                xi4_des = curr_vec4_min + (curr_vec4_depth) * (2 * ite + 1) / (
+            for ite4 in range(num_v4_temps):
+                xi4_des = curr_vec4_min + (curr_vec4_depth) * (2 * ite4 + 1) / (
                     2.0 * (num_v4_temps)
                 )
                 dist = (

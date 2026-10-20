@@ -125,15 +125,15 @@ for i, bank_fname in enumerate(args.bank_files):
         )
 
         logger.debug("Getting compression factors and mismatches")
-        for i, thash in enumerate(thashes):
+        for j, thash in enumerate(thashes):
             try:
                 this_grp = compressed_grp[str(thash)]
             except KeyError:
                 continue
 
-            compression_thisbank[i] = this_grp.attrs["compression_factor"]
-            mismatch_thisbank[i] = this_grp.attrs["mismatch"]
-            valid_idx[i] = True
+            compression_thisbank[j] = this_grp.attrs["compression_factor"]
+            mismatch_thisbank[j] = this_grp.attrs["mismatch"]
+            valid_idx[j] = True
 
         logger.info(
             "%d out of %d compressed waveforms in %s",
