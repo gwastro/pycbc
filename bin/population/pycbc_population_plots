@@ -120,7 +120,7 @@ for fpost, model, lbl in mods:
     )
     plt.plot(
         np.exp(xs),
-        ss.skewnorm.pdf(xs, post_alpha, post_m, post_sigma),
+        ss.skewnorm.pdf(xs, post_alpha, post_mu, post_sigma),
         label=lbl + " Posterior",
         color=c,
     )

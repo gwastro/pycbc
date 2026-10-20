@@ -30,7 +30,7 @@ import igwn_segments as _segments
 
 import pycbc
 import pycbc.workflow
-from pycbc.results import save_fig_with_metadata, two_column_layout
+from pycbc.results import layout, save_fig_with_metadata, two_column_layout
 from pycbc.time import gps_to_utc_str
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,11 @@ finalize_workflow = pycbc.workflow.Workflow(
 pycbc.workflow.makedir(args.output_dir)
 os.chdir(args.output_dir)
 
+# The results pages go in rdir.base, with the workflow information in a section
+rdir = layout.SectionNumber("plots", ["workflow"])
+pycbc.workflow.makedir(rdir.base)
+pycbc.workflow.makedir(rdir["workflow"])
+
 # layout list
 result_plots = []
 
@@ -67,9 +72,12 @@ time_str = (
     % (s, e, s_utc, e_utc, float(e - s) / 86400.0)
 )
 time_file = pycbc.workflow.File(
-    workflow.ifos, "time", workflow.analysis_time, extension=".html", directory="plots"
+    workflow.ifos,
+    "time",
+    workflow.analysis_time,
+    extension=".html",
+    directory=rdir.base,
 )
-pycbc.workflow.makedir("plots")
 kwds = {
     "title": "Search Workflow Duration (Wall Clock Time)",
     "caption": "Wall clock start and end times for this invocation of the workflow. "
@@ -178,13 +186,13 @@ pycbc.workflow.make_average_psd(
     workflow, merged_psd_files, "psds", output_fmt=".xml.gz"
 )
 
-s = pycbc.workflow.make_spectrum_plot(workflow, merged_psd_files, "plots")
+s = pycbc.workflow.make_spectrum_plot(workflow, merged_psd_files, rdir.base)
 result_plots += [(s,)]
 
 pycbc.workflow.make_segments_plot(
     workflow,
     pycbc.workflow.FileList([science_seg_file]),
-    "plots",
+    rdir.base,
     tags=["SCIENCE_MINUS_CAT1"],
 )
 
@@ -216,26 +224,27 @@ seg_summ_table = pycbc.workflow.make_seg_table(
     workflow,
     [seg_summ_file],
     seg_summ_names,
-    "plots",
+    rdir.base,
     ["SUMMARY"],
     title_text="Input and output time",
     description="This shows the total amount of input data, analyzable data, and the time for which PSDs are produced.",
 )
 result_plots += [(seg_summ_table,)]
 
-two_column_layout("plots", result_plots)
+two_column_layout(rdir.base, result_plots)
 
 
 # Create versioning information
-pycbc.workflow.make_versioning_page(
+_, version_page = pycbc.workflow.make_versioning_page(
     workflow,
     container.cp,
     rdir["workflow/version"],
 )
+layout.single_layout(rdir["workflow/version"], version_page)
 
 
 pycbc.workflow.make_results_web_page(
-    finalize_workflow, os.path.join(os.getcwd(), "plots")
+    finalize_workflow, os.path.join(os.getcwd(), rdir.base)
 )
 
 container += workflow
