@@ -147,6 +147,11 @@ ignore = [
     # backend registries, plan and buffer caches, the pool's shared counters),
     # but whether each one needs to be a global is worth considering.
     "PLW0603",
+    # Not planned to be enabled: mutable class attributes. They are class-level
+    # constants (parameter and option name lists, sets of location arguments)
+    # or registries shared on purpose; marking each with typing.ClassVar would
+    # add annotations to a codebase that otherwise has almost none.
+    "RUF012",
 ]
 
 [lint.per-file-ignores]
