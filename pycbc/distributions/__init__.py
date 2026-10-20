@@ -17,54 +17,65 @@
 This modules provides classes and functions for drawing and calculating the
 probability density function of distributions.
 """
+
 # imports needed for functions below
 import configparser as _ConfigParser
-from pycbc.distributions import constraints
+
 from pycbc import VARARGS_DELIM as _VARARGS_DELIM
+from pycbc.distributions import constraints
+from pycbc.distributions.angular import (
+    CosAngle,
+    SinAngle,
+    UniformAngle,
+    UniformSolidAngle,
+)
+from pycbc.distributions.arbitrary import Arbitrary, FromFile
+from pycbc.distributions.external import DistributionFunctionFromFile, External
+from pycbc.distributions.fixedsamples import FixedSamples
+from pycbc.distributions.gaussian import Gaussian
+from pycbc.distributions.joint import JointDistribution
+from pycbc.distributions.mass import MchirpfromUniformMass1Mass2, QfromUniformMass1Mass2
+from pycbc.distributions.power_law import UniformPowerLaw, UniformRadius
+from pycbc.distributions.qnm import UniformF0Tau
+from pycbc.distributions.sky_location import (
+    FisherSky,
+    HealpixSky,
+    UniformDiskSky,
+    UniformSky,
+)
+from pycbc.distributions.spins import IndependentChiPChiEff
+from pycbc.distributions.uniform import Uniform
+from pycbc.distributions.uniform_log import UniformLog10
 
 # Promote some classes/functions to the distributions name space
 from pycbc.distributions.utils import draw_samples_from_config
-from pycbc.distributions.angular import UniformAngle, SinAngle, CosAngle, \
-                                        UniformSolidAngle
-from pycbc.distributions.arbitrary import Arbitrary, FromFile
-from pycbc.distributions.gaussian import Gaussian
-from pycbc.distributions.power_law import UniformPowerLaw, UniformRadius
-from pycbc.distributions.sky_location import UniformSky, UniformDiskSky, FisherSky, HealpixSky
-from pycbc.distributions.uniform import Uniform
-from pycbc.distributions.uniform_log import UniformLog10
-from pycbc.distributions.spins import IndependentChiPChiEff
-from pycbc.distributions.qnm import UniformF0Tau
-from pycbc.distributions.joint import JointDistribution
-from pycbc.distributions.external import External, DistributionFunctionFromFile
-from pycbc.distributions.fixedsamples import FixedSamples
-from pycbc.distributions.mass import MchirpfromUniformMass1Mass2, \
-                                     QfromUniformMass1Mass2
 
 # a dict of all available distributions
 distribs = {
-    IndependentChiPChiEff.name : IndependentChiPChiEff,
-    Arbitrary.name : Arbitrary,
-    FromFile.name : FromFile,
-    Gaussian.name : Gaussian,
-    UniformPowerLaw.name : UniformPowerLaw,
-    UniformRadius.name : UniformRadius,
-    Uniform.name : Uniform,
-    UniformAngle.name : UniformAngle,
-    CosAngle.name : CosAngle,
-    SinAngle.name : SinAngle,
-    UniformSolidAngle.name : UniformSolidAngle,
-    UniformSky.name : UniformSky,
-    UniformDiskSky.name : UniformDiskSky,
-    UniformLog10.name : UniformLog10,
-    UniformF0Tau.name : UniformF0Tau,
+    IndependentChiPChiEff.name: IndependentChiPChiEff,
+    Arbitrary.name: Arbitrary,
+    FromFile.name: FromFile,
+    Gaussian.name: Gaussian,
+    UniformPowerLaw.name: UniformPowerLaw,
+    UniformRadius.name: UniformRadius,
+    Uniform.name: Uniform,
+    UniformAngle.name: UniformAngle,
+    CosAngle.name: CosAngle,
+    SinAngle.name: SinAngle,
+    UniformSolidAngle.name: UniformSolidAngle,
+    UniformSky.name: UniformSky,
+    UniformDiskSky.name: UniformDiskSky,
+    UniformLog10.name: UniformLog10,
+    UniformF0Tau.name: UniformF0Tau,
     External.name: External,
     DistributionFunctionFromFile.name: DistributionFunctionFromFile,
     FixedSamples.name: FixedSamples,
     MchirpfromUniformMass1Mass2.name: MchirpfromUniformMass1Mass2,
     QfromUniformMass1Mass2.name: QfromUniformMass1Mass2,
     FisherSky.name: FisherSky,
-    HealpixSky.name: HealpixSky
+    HealpixSky.name: HealpixSky,
 }
+
 
 def read_distributions_from_config(cp, section="prior"):
     """Returns a list of PyCBC distribution instances for a section in the
@@ -105,15 +116,20 @@ def _convert_liststring_to_list(lstring):
     the argument does not start and end with '[' and ']', the argument will
     just be returned as is.
     """
-    if lstring[0]=='[' and lstring[-1]==']':
-        lstring = [str(lstring[1:-1].split(',')[n].strip().strip("'"))
-                      for n in range(len(lstring[1:-1].split(',')))]
+    if lstring[0] == "[" and lstring[-1] == "]":
+        lstring = [
+            str(lstring[1:-1].split(",")[n].strip().strip("'"))
+            for n in range(len(lstring[1:-1].split(",")))
+        ]
     return lstring
 
 
-def read_params_from_config(cp, prior_section='prior',
-                            vargs_section='variable_params',
-                            sargs_section='static_params'):
+def read_params_from_config(
+    cp,
+    prior_section="prior",
+    vargs_section="variable_params",
+    sargs_section="static_params",
+):
     """Loads static and variable parameters from a configuration file.
 
     Parameters
@@ -139,30 +155,39 @@ def read_params_from_config(cp, prior_section='prior',
     # sanity check that each parameter in [variable_params] has a prior section
     variable_args = cp.options(vargs_section)
     subsections = cp.get_subsections(prior_section)
-    tags = set([p for tag in subsections for p in tag.split('+')])
+    tags = set([p for tag in subsections for p in tag.split("+")])
     missing_prior = set(variable_args) - tags
     if any(missing_prior):
-        raise KeyError("You are missing a priors section in the config file "
-                       "for parameter(s): {}".format(', '.join(missing_prior)))
+        raise KeyError(
+            "You are missing a priors section in the config file "
+            "for parameter(s): {}".format(", ".join(missing_prior))
+        )
     # sanity check that each parameter with a priors section is in
     # [variable_args]
     missing_variable = tags - set(variable_args)
     if any(missing_variable):
-        raise KeyError("Prior section found for parameter(s) {} but not "
-                       "listed as variable parameter(s)."
-                       .format(', '.join(missing_variable)))
+        raise KeyError(
+            "Prior section found for parameter(s) {} but not "
+            "listed as variable parameter(s).".format(", ".join(missing_variable))
+        )
     # get static args
     try:
-        static_args = dict([(key, cp.get_opt_tags(sargs_section, key, []))
-                           for key in cp.options(sargs_section)])
+        static_args = dict(
+            [
+                (key, cp.get_opt_tags(sargs_section, key, []))
+                for key in cp.options(sargs_section)
+            ]
+        )
     except _ConfigParser.NoSectionError:
         static_args = {}
     # sanity check that each parameter in [variable_args]
     # is not repeated in [static_args]
     for arg in variable_args:
         if arg in static_args:
-            raise KeyError("Parameter {} found both in static_args and in "
-                           "variable_args sections.".format(arg))
+            raise KeyError(
+                "Parameter {} found both in static_args and in "
+                "variable_args sections.".format(arg)
+            )
     # try converting values to float
     for key in static_args:
         val = static_args[key]
@@ -177,8 +202,9 @@ def read_params_from_config(cp, prior_section='prior',
     return variable_args, static_args
 
 
-def read_constraints_from_config(cp, transforms=None, static_args=None,
-                                 constraint_section='constraint'):
+def read_constraints_from_config(
+    cp, transforms=None, static_args=None, constraint_section="constraint"
+):
     """Loads parameter constraints from a configuration file.
 
     Parameters
@@ -202,12 +228,14 @@ def read_constraints_from_config(cp, transforms=None, static_args=None,
     for subsection in cp.get_subsections(constraint_section):
         name = cp.get_opt_tag(constraint_section, "name", subsection)
         constraint_arg = cp.get_opt_tag(
-            constraint_section, "constraint_arg", subsection)
+            constraint_section, "constraint_arg", subsection
+        )
         # get any other keyword arguments
         kwargs = {}
         section = constraint_section + "-" + subsection
-        extra_opts = [key for key in cp.options(section)
-                      if key not in ["name", "constraint_arg"]]
+        extra_opts = [
+            key for key in cp.options(section) if key not in ["name", "constraint_arg"]
+        ]
         for key in extra_opts:
             val = cp.get(section, key)
             if key == "required_parameters":
@@ -218,8 +246,10 @@ def read_constraints_from_config(cp, transforms=None, static_args=None,
                 except ValueError:
                     pass
             kwargs[key] = val
-        cons.append(constraints.constraints[name](
-            constraint_arg, static_args=static_args, transforms=transforms,
-            **kwargs))
+        cons.append(
+            constraints.constraints[name](
+                constraint_arg, static_args=static_args, transforms=transforms, **kwargs
+            )
+        )
 
     return cons

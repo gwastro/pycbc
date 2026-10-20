@@ -15,6 +15,7 @@
 
 import numpy
 
+
 def correlate(x, y, z):
     z.data[:] = numpy.conjugate(x.data)[:]
     z *= y

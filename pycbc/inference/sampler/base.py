@@ -25,10 +25,9 @@
 Defines the base sampler class to be inherited by all samplers.
 """
 
-
-from abc import ABCMeta, abstractmethod, abstractproperty
-import shutil
 import logging
+import shutil
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 from six import add_metaclass
 
@@ -56,6 +55,7 @@ class BaseSampler(object):
     model : Model
         An instance of a model from ``pycbc.inference.models``.
     """
+
     name = None
 
     def __init__(self, model):
@@ -67,28 +67,23 @@ class BaseSampler(object):
 
     # @classmethod <--uncomment when we move to python 3.3
     @abstractmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1,
-                    use_mpi=False):
-        """This should initialize the sampler given a config file.
-        """
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+        """This should initialize the sampler given a config file."""
         pass
 
     @property
     def variable_params(self):
-        """Returns the parameters varied in the model.
-        """
+        """Returns the parameters varied in the model."""
         return self.model.variable_params
 
     @property
     def sampling_params(self):
-        """Returns the sampling params used by the model.
-        """
+        """Returns the sampling params used by the model."""
         return self.model.sampling_params
 
     @property
     def static_params(self):
-        """Returns the model's fixed parameters.
-        """
+        """Returns the model's fixed parameters."""
         return self.model.static_params
 
     @abstractproperty
@@ -141,9 +136,9 @@ class BaseSampler(object):
 
     @abstractmethod
     def resume_from_checkpoint(self):
-        """Resume the sampler from the output file.
-        """
+        """Resume the sampler from the output file."""
         pass
+
 
 #
 # =============================================================================
@@ -169,15 +164,15 @@ def setup_output(sampler, output_file, check_nsamples=True, validate=True):
         Name of the output file.
     """
     # check for backup file(s)
-    checkpoint_file = output_file + '.checkpoint'
-    backup_file = output_file + '.bkup'
+    checkpoint_file = output_file + ".checkpoint"
+    backup_file = output_file + ".bkup"
     # check if we have a good checkpoint and/or backup file
     logging.info("Looking for checkpoint file")
     checkpoint_valid = False
     if validate:
-        checkpoint_valid = validate_checkpoint_files(checkpoint_file,
-                                                     backup_file,
-                                                     check_nsamples)
+        checkpoint_valid = validate_checkpoint_files(
+            checkpoint_file, backup_file, check_nsamples
+        )
     # Create a new file if the checkpoint doesn't exist, or if it is
     # corrupted
     sampler.new_checkpoint = False  # keeps track if this is a new file or not
@@ -245,16 +240,18 @@ def initial_dist_from_config(cp, variable_params, static_params=None):
         config file, will just return None.
     """
     if len(cp.get_subsections("initial")):
-        logging.info("Using a different distribution for the starting points "
-                     "than the prior.")
+        logging.info(
+            "Using a different distribution for the starting points than the prior."
+        )
         initial_dists = distributions.read_distributions_from_config(
-            cp, section="initial")
+            cp, section="initial"
+        )
         constraints = distributions.read_constraints_from_config(
-            cp, constraint_section="initial_constraint",
-            static_args=static_params)
+            cp, constraint_section="initial_constraint", static_args=static_params
+        )
         init_dist = distributions.JointDistribution(
-            variable_params, *initial_dists,
-            **{"constraints": constraints})
+            variable_params, *initial_dists, **{"constraints": constraints}
+        )
     else:
         init_dist = None
     return init_dist

@@ -28,12 +28,12 @@ between quantities.
 """
 
 import logging
-import numpy
 
+import numpy
 from scipy.optimize import bisect, brentq, minimize
 
 from pycbc import conversions, libutils
-from pycbc.constants import MSUN_SI, PI, MTSUN_SI, PC_SI
+from pycbc.constants import MSUN_SI, MTSUN_SI, PC_SI, PI
 
 logger = logging.getLogger("pycbc.pnutils")
 

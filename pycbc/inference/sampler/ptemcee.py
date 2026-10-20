@@ -19,22 +19,29 @@ This module provides classes and functions for using the ptemcee sampler
 packages for parameter estimation.
 """
 
-
+import logging
 import shlex
+
 import numpy
 import ptemcee
-import logging
+
+from pycbc.inference.io import PTEmceeFile
 from pycbc.pool import choose_pool
 
-from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, EnsembleSupport, raw_samples_to_dict,
-                        get_optional_arg_from_config)
-from .base_multitemper import (read_betas_from_hdf,
-                               ensemble_compute_acf, ensemble_compute_acl)
-from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
-from pycbc.inference.io import PTEmceeFile
 from .. import models
-
+from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
+from .base import BaseSampler, setup_output
+from .base_mcmc import (
+    BaseMCMC,
+    EnsembleSupport,
+    get_optional_arg_from_config,
+    raw_samples_to_dict,
+)
+from .base_multitemper import (
+    ensemble_compute_acf,
+    ensemble_compute_acl,
+    read_betas_from_hdf,
+)
 
 # numpy.trapz was renamed to numpy.trapezoid in numpy 2.0 (and removed as
 # numpy.trapz in later 2.x releases). Pick whichever is available so that the
@@ -68,8 +75,7 @@ def _thermodynamic_integration_log_evidence(betas, logls):
         the posterior has been sampled.
     """
     if len(betas) != len(logls):
-        raise ValueError("Need the same number of log(L) values as "
-                         "temperatures.")
+        raise ValueError("Need the same number of log(L) values as temperatures.")
 
     order = numpy.argsort(betas)[::-1]
     betas = betas[order]
@@ -134,16 +140,28 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         Use MPI for parallelization. Default (False) will use python's
         multiprocessing.
     """
+
     name = "ptemcee"
     _io = PTEmceeFile
     burn_in_class = EnsembleMultiTemperedMCMCBurnInTests
 
-    def __init__(self, model, nwalkers, ntemps=None, Tmax=None, betas=None,
-                 adaptive=False, adaptation_lag=None, adaptation_time=None,
-                 scale_factor=None,
-                 loglikelihood_function=None,
-                 checkpoint_interval=None, checkpoint_signal=None,
-                 nprocesses=1, use_mpi=False):
+    def __init__(
+        self,
+        model,
+        nwalkers,
+        ntemps=None,
+        Tmax=None,
+        betas=None,
+        adaptive=False,
+        adaptation_lag=None,
+        adaptation_time=None,
+        scale_factor=None,
+        loglikelihood_function=None,
+        checkpoint_interval=None,
+        checkpoint_signal=None,
+        nprocesses=1,
+        use_mpi=False,
+    ):
 
         self.model = model
         ndim = len(model.variable_params)
@@ -155,30 +173,36 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         # construct the keyword arguments to pass; if a kwarg is None, we
         # won't pass it, resulting in ptemcee's defaults being used
         kwargs = {}
-        kwargs['adaptive'] = adaptive
-        kwargs['betas'] = betas
+        kwargs["adaptive"] = adaptive
+        kwargs["betas"] = betas
         if adaptation_lag is not None:
-            kwargs['adaptation_lag'] = adaptation_lag
+            kwargs["adaptation_lag"] = adaptation_lag
         if adaptation_time is not None:
-            kwargs['adaptation_time'] = adaptation_time
+            kwargs["adaptation_time"] = adaptation_time
         if scale_factor is not None:
-            kwargs['scale_factor'] = scale_factor
+            kwargs["scale_factor"] = scale_factor
         # create a wrapper for calling the model
         if loglikelihood_function is None:
-            loglikelihood_function = 'loglikelihood'
+            loglikelihood_function = "loglikelihood"
         # frustratingly, ptemcee does not support blob data, so we have to
         # turn it off
-        model_call = models.CallModel(model, loglikelihood_function,
-                                      return_all_stats=False)
+        model_call = models.CallModel(
+            model, loglikelihood_function, return_all_stats=False
+        )
         # these are used to help paralleize over multiple cores / MPI
         models._global_instance = model_call
         model_call = models._call_global_model
         prior_call = models._call_global_model_logprior
         self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         # construct the sampler
-        self._sampler = ptemcee.Sampler(nwalkers=nwalkers, ndim=ndim,
-                                        logl=model_call, logp=prior_call,
-                                        mapper=self.pool.map, **kwargs)
+        self._sampler = ptemcee.Sampler(
+            nwalkers=nwalkers,
+            ndim=ndim,
+            logl=model_call,
+            logp=prior_call,
+            mapper=self.pool.map,
+            **kwargs,
+        )
         self.nwalkers = nwalkers
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
@@ -198,7 +222,10 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
     @property
     def base_shape(self):
-        return (self.ntemps, self.nwalkers,)
+        return (
+            self.ntemps,
+            self.nwalkers,
+        )
 
     @property
     def betas(self):
@@ -273,8 +300,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         return self._chain
 
     def clear_samples(self):
-        """Clears the chain and blobs from memory.
-        """
+        """Clears the chain and blobs from memory."""
         # store the iteration that the clear is occuring on
         self._lastclear = self.niterations
         self._itercounter = 0
@@ -319,13 +345,11 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         logl = self._chain.logl.transpose((1, 2, 0))
         logp = self._chain.logP.transpose((1, 2, 0))
         logjacobian = numpy.zeros(logp.shape)
-        return {'loglikelihood': logl, 'logprior': logp,
-                'logjacobian': logjacobian}
+        return {"loglikelihood": logl, "logprior": logp, "logjacobian": logjacobian}
 
     def set_state_from_file(self, filename):
-        """Sets the state of the sampler back to the instance saved in a file.
-        """
-        with self.io(filename, 'r') as fp:
+        """Sets the state of the sampler back to the instance saved in a file."""
+        with self.io(filename, "r") as fp:
             rstate = fp.read_random_state()
             # set the numpy random state
             numpy.random.set_state(rstate)
@@ -347,8 +371,9 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         self.chain.run(niterations)
 
     @classmethod
-    def calculate_logevidence(cls, filename, thin_start=None, thin_end=None,
-                              thin_interval=None):
+    def calculate_logevidence(
+        cls, filename, thin_start=None, thin_end=None, thin_interval=None
+    ):
         """Calculates the log evidence from the given file.
         This uses ``ptemcee``'s thermodynamic integration.
 
@@ -376,17 +401,20 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         dlnZ : float
             The error on the estimate.
         """
-        with cls._io(filename, 'r') as fp:
-            logls = fp.read_raw_samples(['loglikelihood'],
-                                        thin_start=thin_start,
-                                        thin_interval=thin_interval,
-                                        thin_end=thin_end,
-                                        temps='all', flatten=False)
-            logls = logls['loglikelihood']
+        with cls._io(filename, "r") as fp:
+            logls = fp.read_raw_samples(
+                ["loglikelihood"],
+                thin_start=thin_start,
+                thin_interval=thin_interval,
+                thin_end=thin_end,
+                temps="all",
+                flatten=False,
+            )
+            logls = logls["loglikelihood"]
             # we need the betas that were used
-            betas = fp.read_betas(thin_start=thin_start,
-                                  thin_interval=thin_interval,
-                                  thin_end=thin_end)
+            betas = fp.read_betas(
+                thin_start=thin_start, thin_interval=thin_interval, thin_end=thin_end
+            )
             # we'll separate betas out by their unique temperatures
             # there's probably a faster way to do this...
             mean_logls = []
@@ -403,7 +431,8 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
                     mean_logls.append(loglsti[:, getiters].mean())
                     unique_betas.append(ubti[ii])
         return _thermodynamic_integration_log_evidence(
-            numpy.array(unique_betas), numpy.array(mean_logls))
+            numpy.array(unique_betas), numpy.array(mean_logls)
+        )
 
     @staticmethod
     def compute_acf(filename, **kwargs):
@@ -453,8 +482,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         return ensemble_compute_acl(filename, **kwargs)
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1,
-                    use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """Loads the sampler from the given config file.
 
         The following options are retrieved in the ``[sampler]`` section:
@@ -542,7 +570,8 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         section = "sampler"
         # check name
         assert cp.get(section, "name") == cls.name, (
-            "name in section [sampler] must match mine")
+            "name in section [sampler] must match mine"
+        )
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
         # get the checkpoint interval, if it's specified
@@ -550,51 +579,56 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         optargs = {}
         # get the temperature level settings
-        ntemps = get_optional_arg_from_config(cp, section, 'ntemps', int)
+        ntemps = get_optional_arg_from_config(cp, section, "ntemps", int)
         if ntemps is not None:
-            optargs['ntemps'] = ntemps
-        tmax = get_optional_arg_from_config(cp, section, 'tmax', float)
+            optargs["ntemps"] = ntemps
+        tmax = get_optional_arg_from_config(cp, section, "tmax", float)
         if tmax is not None:
-            optargs['Tmax'] = tmax
-        betas = get_optional_arg_from_config(cp, section, 'betas')
+            optargs["Tmax"] = tmax
+        betas = get_optional_arg_from_config(cp, section, "betas")
         if betas is not None:
             # convert to list sorted in descencding order
             betas = numpy.sort(list(map(float, shlex.split(betas))))[::-1]
-            optargs['betas'] = betas
-        betas_file = get_optional_arg_from_config(cp, section, 'betas-file')
+            optargs["betas"] = betas
+        betas_file = get_optional_arg_from_config(cp, section, "betas-file")
         if betas_file is not None:
-            optargs['betas'] = read_betas_from_hdf(betas_file)
+            optargs["betas"] = read_betas_from_hdf(betas_file)
         # check for consistency
         if betas is not None and betas_file is not None:
             raise ValueError("provide either betas or betas-file, not both")
-        if 'betas' in optargs and (ntemps is not None or tmax is not None):
-            raise ValueError("provide either ntemps/tmax or betas/betas-file, "
-                             "not both")
+        if "betas" in optargs and (ntemps is not None or tmax is not None):
+            raise ValueError("provide either ntemps/tmax or betas/betas-file, not both")
         # adaptation parameters
-        adaptive = get_optional_arg_from_config(cp, section, 'adaptive')
+        adaptive = get_optional_arg_from_config(cp, section, "adaptive")
         if adaptive is not None:
-            optargs['adaptive'] = True
+            optargs["adaptive"] = True
         else:
-            optargs['adaptive'] = False
-        adaptation_lag = get_optional_arg_from_config(cp, section,
-                                                      'adaptation-lag', int)
+            optargs["adaptive"] = False
+        adaptation_lag = get_optional_arg_from_config(
+            cp, section, "adaptation-lag", int
+        )
         if adaptation_lag is not None:
-            optargs['adaptation_lag'] = adaptation_lag
-        adaptation_time = get_optional_arg_from_config(cp, section,
-                                                       'adaptation-time', int)
+            optargs["adaptation_lag"] = adaptation_lag
+        adaptation_time = get_optional_arg_from_config(
+            cp, section, "adaptation-time", int
+        )
         if adaptation_time is not None:
-            optargs['adaptation_time'] = adaptation_time
-        scale_factor = get_optional_arg_from_config(cp, section,
-                                                    'scale-factor', float)
+            optargs["adaptation_time"] = adaptation_time
+        scale_factor = get_optional_arg_from_config(cp, section, "scale-factor", float)
         if scale_factor is not None:
-            optargs['scale_factor'] = scale_factor
+            optargs["scale_factor"] = scale_factor
         # get the loglikelihood function
-        logl = get_optional_arg_from_config(cp, section, 'logl-function')
-        obj = cls(model, nwalkers,
-                  checkpoint_interval=checkpoint_interval,
-                  checkpoint_signal=checkpoint_signal,
-                  loglikelihood_function=logl, nprocesses=nprocesses,
-                  use_mpi=use_mpi, **optargs)
+        logl = get_optional_arg_from_config(cp, section, "logl-function")
+        obj = cls(
+            model,
+            nwalkers,
+            checkpoint_interval=checkpoint_interval,
+            checkpoint_signal=checkpoint_signal,
+            loglikelihood_function=logl,
+            nprocesses=nprocesses,
+            use_mpi=use_mpi,
+            **optargs,
+        )
         # set target
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
@@ -619,11 +653,13 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
         """
-        with self.io(filename, 'a') as fp:
+        with self.io(filename, "a") as fp:
             # write samples
-            fp.write_samples(self.samples,
-                             parameters=self.model.variable_params,
-                             last_iteration=self.niterations)
+            fp.write_samples(
+                self.samples,
+                parameters=self.model.variable_params,
+                last_iteration=self.niterations,
+            )
             # write stats
             fp.write_samples(self.model_stats, last_iteration=self.niterations)
             # write random state
@@ -645,8 +681,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         """
         # flatten samples for evaluating
         orig_shape = list(samples.values())[0].shape
-        flattened_samples = {p: arr.ravel()
-                             for p, arr in list(samples.items())}
+        flattened_samples = {p: arr.ravel() for p, arr in list(samples.items())}
         # convert to a list of tuples so we can use map function
         params = list(flattened_samples.keys())
         size = flattened_samples[params[0]].size
@@ -670,26 +705,33 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         if self.model.sampling_transforms is not None:
             # fix the lobjacobian values stored on disk
             logging.info("Correcting logjacobian values on disk")
-            with self.io(self.checkpoint_file, 'r') as fp:
-                samples = fp.read_raw_samples(self.variable_params,
-                                              thin_start=0,
-                                              thin_interval=1, thin_end=None,
-                                              temps='all', flatten=False)
+            with self.io(self.checkpoint_file, "r") as fp:
+                samples = fp.read_raw_samples(
+                    self.variable_params,
+                    thin_start=0,
+                    thin_interval=1,
+                    thin_end=None,
+                    temps="all",
+                    flatten=False,
+                )
             logjacobian = self._correctjacobian(samples)
             # write them back out
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
-                    fp[fp.samples_group]['logjacobian'][()] = logjacobian
+                    fp[fp.samples_group]["logjacobian"][()] = logjacobian
         logging.info("Calculating log evidence")
         # get the thinning settings
-        with self.io(self.checkpoint_file, 'r') as fp:
+        with self.io(self.checkpoint_file, "r") as fp:
             thin_start = fp.thin_start
             thin_interval = fp.thin_interval
             thin_end = fp.thin_end
         # calculate
         logz, dlogz = self.calculate_logevidence(
-            self.checkpoint_file, thin_start=thin_start, thin_end=thin_end,
-            thin_interval=thin_interval)
+            self.checkpoint_file,
+            thin_start=thin_start,
+            thin_end=thin_end,
+            thin_interval=thin_interval,
+        )
         logging.info("log Z, dlog Z: {}, {}".format(logz, dlogz))
         # write to both the checkpoint and backup
         for fn in [self.checkpoint_file, self.backup_file]:

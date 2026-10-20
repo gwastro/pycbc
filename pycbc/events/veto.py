@@ -1,20 +1,25 @@
-""" This module contains utilities to manipulate trigger lists based on
+"""This module contains utilities to manipulate trigger lists based on
 segment.
 """
-import logging
-import numpy
-from igwn_segments import segment, segmentlist
-from igwn_ligolw import ligolw, lsctables, utils as ligolw_utils
 
-logger = logging.getLogger('pycbc.events.veto')
+import logging
+
+import numpy
+from igwn_ligolw import ligolw, lsctables
+from igwn_ligolw import utils as ligolw_utils
+from igwn_segments import segment, segmentlist
+
+logger = logging.getLogger("pycbc.events.veto")
+
 
 def start_end_to_segments(start, end):
     return segmentlist([segment(s, e) for s, e in zip(start, end)])
 
+
 def segments_to_start_end(segs):
     segs.coalesce()
-    return (numpy.array([s[0] for s in segs]),
-            numpy.array([s[1] for s in segs]))
+    return (numpy.array([s[0] for s in segs]), numpy.array([s[1] for s in segs]))
+
 
 def start_end_from_segments(segment_file):
     """
@@ -32,11 +37,11 @@ def start_end_from_segments(segment_file):
     from pycbc.io.ligolw import LIGOLWContentHandler as h
 
     indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=h)
-    segment_table  = lsctables.SegmentTable.get_table(indoc)
-    start = numpy.array(segment_table.getColumnByName('start_time'))
-    start_ns = numpy.array(segment_table.getColumnByName('start_time_ns'))
-    end = numpy.array(segment_table.getColumnByName('end_time'))
-    end_ns = numpy.array(segment_table.getColumnByName('end_time_ns'))
+    segment_table = lsctables.SegmentTable.get_table(indoc)
+    start = numpy.array(segment_table.getColumnByName("start_time"))
+    start_ns = numpy.array(segment_table.getColumnByName("start_time_ns"))
+    end = numpy.array(segment_table.getColumnByName("end_time"))
+    end_ns = numpy.array(segment_table.getColumnByName("end_time_ns"))
     return start + start_ns * 1e-9, end + end_ns * 1e-9
 
 
@@ -71,6 +76,7 @@ def indices_within_times(times, start, end):
 
     return tsort[numpy.hstack([numpy.r_[s:e] for s, e in zip(left, right)])]
 
+
 def indices_outside_times(times, start, end):
     """
     Return an index array into times that like outside the durations defined by start end arrays
@@ -93,8 +99,9 @@ def indices_outside_times(times, start, end):
     indices = numpy.arange(0, len(times))
     return numpy.delete(indices, exclude)
 
+
 def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
-    """ Return the list of segments that match the segment name
+    """Return the list of segments that match the segment name
 
     Parameters
     ----------
@@ -112,12 +119,12 @@ def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
     from pycbc.io.ligolw import LIGOLWContentHandler as h
 
     indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=h)
-    segment_table  = ligolw.Table.get_table(indoc, 'segment')
+    segment_table = ligolw.Table.get_table(indoc, "segment")
 
-    seg_def_table = ligolw.Table.get_table(indoc, 'segment_definer')
-    def_ifos = seg_def_table.getColumnByName('ifos')
-    def_names = seg_def_table.getColumnByName('name')
-    def_ids = seg_def_table.getColumnByName('segment_def_id')
+    seg_def_table = ligolw.Table.get_table(indoc, "segment_definer")
+    def_ifos = seg_def_table.getColumnByName("ifos")
+    def_names = seg_def_table.getColumnByName("name")
+    def_ids = seg_def_table.getColumnByName("segment_def_id")
 
     valid_id = []
     for def_ifo, def_name, def_id in zip(def_ifos, def_names, def_ids):
@@ -127,12 +134,12 @@ def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
             continue
         valid_id += [def_id]
 
-    start = numpy.array(segment_table.getColumnByName('start_time'))
-    start_ns = numpy.array(segment_table.getColumnByName('start_time_ns'))
-    end = numpy.array(segment_table.getColumnByName('end_time'))
-    end_ns = numpy.array(segment_table.getColumnByName('end_time_ns'))
+    start = numpy.array(segment_table.getColumnByName("start_time"))
+    start_ns = numpy.array(segment_table.getColumnByName("start_time_ns"))
+    end = numpy.array(segment_table.getColumnByName("end_time"))
+    end_ns = numpy.array(segment_table.getColumnByName("end_time_ns"))
     start, end = start + 1e-9 * start_ns, end + 1e-9 * end_ns
-    did = segment_table.getColumnByName('segment_def_id')
+    did = segment_table.getColumnByName("segment_def_id")
 
     keep = numpy.array([d in valid_id for d in did])
     if sum(keep) > 0:
@@ -140,8 +147,9 @@ def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
     else:
         return segmentlist([])
 
+
 def indices_within_segments(times, segment_files, ifo=None, segment_name=None):
-    """ Return the list of indices that should be vetoed by the segments in the
+    """Return the list of indices that should be vetoed by the segments in the
     list of veto_files.
 
     Parameters
@@ -175,8 +183,9 @@ def indices_within_segments(times, segment_files, ifo=None, segment_name=None):
 
     return indices, veto_segs.coalesce()
 
+
 def indices_outside_segments(times, segment_files, ifo=None, segment_name=None):
-    """ Return the list of indices that are outside the segments in the
+    """Return the list of indices that are outside the segments in the
     list of segment files.
 
     Parameters
@@ -197,10 +206,12 @@ def indices_outside_segments(times, segment_files, ifo=None, segment_name=None):
     segmentlist:
         The segment list corresponding to the selected time.
     """
-    exclude, segs = indices_within_segments(times, segment_files,
-                                         ifo=ifo, segment_name=segment_name)
+    exclude, segs = indices_within_segments(
+        times, segment_files, ifo=ifo, segment_name=segment_name
+    )
     indices = numpy.arange(0, len(times))
     return numpy.delete(indices, exclude), segs
+
 
 def get_segment_definer_comments(xml_file, include_version=True):
     """Returns a dict with the comment column as the value for each segment"""
@@ -208,21 +219,18 @@ def get_segment_definer_comments(xml_file, include_version=True):
     from pycbc.io.ligolw import LIGOLWContentHandler as h
 
     # read segment definer table
-    xmldoc = ligolw_utils.load_fileobj(xml_file,
-                                       compress='auto',
-                                       contenthandler=h)
+    xmldoc = ligolw_utils.load_fileobj(xml_file, compress="auto", contenthandler=h)
     seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
 
     # put comment column into a dict
     comment_dict = {}
     for seg_def in seg_def_table:
         if include_version:
-            full_channel_name = ':'.join([str(seg_def.ifos),
-                                          str(seg_def.name),
-                                          str(seg_def.version)])
+            full_channel_name = ":".join(
+                [str(seg_def.ifos), str(seg_def.name), str(seg_def.version)]
+            )
         else:
-            full_channel_name = ':'.join([str(seg_def.ifos),
-                                          str(seg_def.name)])
+            full_channel_name = ":".join([str(seg_def.ifos), str(seg_def.name)])
 
         comment_dict[full_channel_name] = seg_def.comment
 

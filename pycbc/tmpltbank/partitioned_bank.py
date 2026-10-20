@@ -15,12 +15,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import copy
-import numpy
 import logging
+
+import numpy
 
 from pycbc.tmpltbank import coord_utils
 
-logger = logging.getLogger('pycbc.tmpltbank.partitioned_bank')
+logger = logging.getLogger("pycbc.tmpltbank.partitioned_bank")
+
 
 class PartitionedTmpltbank(object):
     """
@@ -29,8 +31,10 @@ class PartitionedTmpltbank(object):
     principal components. It can also be used to hold intermediary
     products used while constructing (e.g.) a stochastic template bank.
     """
-    def __init__(self, mass_range_params, metric_params, ref_freq,
-                 bin_spacing, bin_range_check=1):
+
+    def __init__(
+        self, mass_range_params, metric_params, ref_freq, bin_spacing, bin_range_check=1
+    ):
         """
         Set up the partitioned template bank class. The combination of the
         reference frequency, the bin spacing and the metric dictates how the
@@ -77,8 +81,9 @@ class PartitionedTmpltbank(object):
         self.bin_spacing = bin_spacing
 
         # Get parameter space extent
-        vals = coord_utils.estimate_mass_range(1000000, mass_range_params,
-                                          metric_params, ref_freq, covary=True)
+        vals = coord_utils.estimate_mass_range(
+            1000000, mass_range_params, metric_params, ref_freq, covary=True
+        )
         chi1_max = vals[0].max()
         chi1_min = vals[0].min()
         chi1_diff = chi1_max - chi1_min
@@ -87,10 +92,10 @@ class PartitionedTmpltbank(object):
         chi2_diff = chi2_max - chi2_min
         # Add a little bit extra as we may not have reached the edges.
         # FIXME: Maybe better to use the numerical code to find maxima here?
-        chi1_min = chi1_min - 0.1*chi1_diff
-        chi1_max = chi1_max + 0.1*chi1_diff
-        chi2_min = chi2_min - 0.1*chi2_diff
-        chi2_max = chi2_max + 0.1*chi2_diff
+        chi1_min = chi1_min - 0.1 * chi1_diff
+        chi1_max = chi1_max + 0.1 * chi1_diff
+        chi2_min = chi2_min - 0.1 * chi2_diff
+        chi2_max = chi2_max + 0.1 * chi2_diff
 
         massbank = {}
         bank = {}
@@ -101,7 +106,7 @@ class PartitionedTmpltbank(object):
             for j in range(-2, int((chi2_max - chi2_min) // bin_spacing + 2)):
                 bank[i][j] = []
                 massbank[i][j] = {}
-                massbank[i][j]['mass1s'] = numpy.array([])
+                massbank[i][j]["mass1s"] = numpy.array([])
 
         self.massbank = massbank
         self.bank = bank
@@ -145,14 +150,13 @@ class PartitionedTmpltbank(object):
         spin2z : float
             Spin of lighter body.
         """
-        mass1 = self.massbank[chi1_bin][chi2_bin]['mass1s'][idx]
-        mass2 = self.massbank[chi1_bin][chi2_bin]['mass2s'][idx]
-        spin1z = self.massbank[chi1_bin][chi2_bin]['spin1s'][idx]
-        spin2z = self.massbank[chi1_bin][chi2_bin]['spin2s'][idx]
+        mass1 = self.massbank[chi1_bin][chi2_bin]["mass1s"][idx]
+        mass2 = self.massbank[chi1_bin][chi2_bin]["mass2s"][idx]
+        spin1z = self.massbank[chi1_bin][chi2_bin]["spin1s"][idx]
+        spin2z = self.massbank[chi1_bin][chi2_bin]["spin2s"][idx]
         return mass1, mass2, spin1z, spin2z
 
-    def get_freq_map_and_normalizations(self, frequency_list,
-                                        upper_freq_formula):
+    def get_freq_map_and_normalizations(self, frequency_list, upper_freq_formula):
         """
         If using the --vary-fupper capability we need to store the mapping
         between index and frequencies in the list. We also precalculate the
@@ -174,8 +178,9 @@ class PartitionedTmpltbank(object):
 
         for idx, frequency in enumerate(frequency_list):
             self.frequency_map[frequency] = idx
-            self.normalization_map[frequency] = \
-                             (self.metric_params.moments['I7'][frequency])**0.5
+            self.normalization_map[frequency] = (
+                (self.metric_params.moments["I7"][frequency]) ** 0.5
+            )
 
     def find_point_bin(self, chi_coords):
         """
@@ -201,7 +206,6 @@ class PartitionedTmpltbank(object):
         self.check_bin_existence(chi1_bin, chi2_bin)
         return chi1_bin, chi2_bin
 
-
     def check_bin_existence(self, chi1_bin, chi2_bin):
         """
         Given indices for bins in chi1 and chi2 space check that the bin
@@ -217,21 +221,24 @@ class PartitionedTmpltbank(object):
         """
         bin_range_check = self.bin_range_check
         # Check if this bin actually exists. If not add it
-        if ( (chi1_bin < self.min_chi1_bin+bin_range_check) or
-             (chi1_bin > self.max_chi1_bin-bin_range_check) or
-             (chi2_bin < self.min_chi2_bin+bin_range_check) or
-             (chi2_bin > self.max_chi2_bin-bin_range_check) ):
-            for temp_chi1 in range(chi1_bin-bin_range_check,
-                                                   chi1_bin+bin_range_check+1):
+        if (
+            (chi1_bin < self.min_chi1_bin + bin_range_check)
+            or (chi1_bin > self.max_chi1_bin - bin_range_check)
+            or (chi2_bin < self.min_chi2_bin + bin_range_check)
+            or (chi2_bin > self.max_chi2_bin - bin_range_check)
+        ):
+            for temp_chi1 in range(
+                chi1_bin - bin_range_check, chi1_bin + bin_range_check + 1
+            ):
                 if temp_chi1 not in self.massbank:
                     self.massbank[temp_chi1] = {}
                     self.bank[temp_chi1] = {}
-                for temp_chi2 in range(chi2_bin-bin_range_check,
-                                                   chi2_bin+bin_range_check+1):
+                for temp_chi2 in range(
+                    chi2_bin - bin_range_check, chi2_bin + bin_range_check + 1
+                ):
                     if temp_chi2 not in self.massbank[temp_chi1]:
                         self.massbank[temp_chi1][temp_chi2] = {}
-                        self.massbank[temp_chi1][temp_chi2]['mass1s'] =\
-                                                                numpy.array([])
+                        self.massbank[temp_chi1][temp_chi2]["mass1s"] = numpy.array([])
                         self.bank[temp_chi1][temp_chi2] = []
 
     def calc_point_distance(self, chi_coords):
@@ -258,8 +265,7 @@ class PartitionedTmpltbank(object):
         for chi1_bin_offset, chi2_bin_offset in self.bin_loop_order:
             curr_chi1_bin = chi1_bin + chi1_bin_offset
             curr_chi2_bin = chi2_bin + chi2_bin_offset
-            for idx, bank_chis in \
-                            enumerate(self.bank[curr_chi1_bin][curr_chi2_bin]):
+            for idx, bank_chis in enumerate(self.bank[curr_chi1_bin][curr_chi2_bin]):
                 dist = coord_utils.calc_point_dist(chi_coords, bank_chis)
                 if dist < min_dist:
                     min_dist = dist
@@ -332,30 +338,28 @@ class PartitionedTmpltbank(object):
             curr_chi2_bin = chi2_bin + chi2_bin_offset
             # No points = Next iteration
             curr_bank = self.massbank[curr_chi1_bin][curr_chi2_bin]
-            if not curr_bank['mass1s'].size:
+            if not curr_bank["mass1s"].size:
                 continue
 
             # *NOT* the same of .min and .max
-            f_upper = numpy.minimum(point_fupper, curr_bank['freqcuts'])
-            f_other = numpy.maximum(point_fupper, curr_bank['freqcuts'])
+            f_upper = numpy.minimum(point_fupper, curr_bank["freqcuts"])
+            f_other = numpy.maximum(point_fupper, curr_bank["freqcuts"])
             # NOTE: freq_idxes is a vector!
             freq_idxes = numpy.array([self.frequency_map[f] for f in f_upper])
             # vecs1 gives a 2x2 vector: idx0 = stored index, idx1 = mu index
             vecs1 = mus[freq_idxes, :]
             # vecs2 gives a 2x2 vector: idx0 = stored index, idx1 = mu index
             range_idxes = numpy.arange(len(freq_idxes))
-            vecs2 = curr_bank['mus'][range_idxes, freq_idxes, :]
+            vecs2 = curr_bank["mus"][range_idxes, freq_idxes, :]
 
             # Now do the sums
-            dists = (vecs1 - vecs2)*(vecs1 - vecs2)
+            dists = (vecs1 - vecs2) * (vecs1 - vecs2)
             # This reduces to 1D: idx = stored index
             dists = numpy.sum(dists, axis=1)
-            norm_upper = numpy.array([self.normalization_map[f] \
-                                      for f in f_upper])
-            norm_other = numpy.array([self.normalization_map[f] \
-                                      for f in f_other])
+            norm_upper = numpy.array([self.normalization_map[f] for f in f_upper])
+            norm_other = numpy.array([self.normalization_map[f] for f in f_other])
             norm_fac = norm_upper / norm_other
-            renormed_dists = 1 - (1 - dists)*norm_fac
+            renormed_dists = 1 - (1 - dists) * norm_fac
             curr_min_dist = renormed_dists.min()
             if curr_min_dist < min_dist:
                 min_dist = curr_min_dist
@@ -363,8 +367,9 @@ class PartitionedTmpltbank(object):
 
         return min_dist, indexes
 
-    def test_point_distance_vary(self, chi_coords, point_fupper, mus,
-                                 distance_threshold):
+    def test_point_distance_vary(
+        self, chi_coords, point_fupper, mus, distance_threshold
+    ):
         """
         Test if distance between point and the bank is greater than distance
         threshold while allowing the metric to
@@ -399,41 +404,40 @@ class PartitionedTmpltbank(object):
             curr_chi2_bin = chi2_bin + chi2_bin_offset
             # No points = Next iteration
             curr_bank = self.massbank[curr_chi1_bin][curr_chi2_bin]
-            if not curr_bank['mass1s'].size:
+            if not curr_bank["mass1s"].size:
                 continue
 
             # *NOT* the same of .min and .max
-            f_upper = numpy.minimum(point_fupper, curr_bank['freqcuts'])
-            f_other = numpy.maximum(point_fupper, curr_bank['freqcuts'])
+            f_upper = numpy.minimum(point_fupper, curr_bank["freqcuts"])
+            f_other = numpy.maximum(point_fupper, curr_bank["freqcuts"])
             # NOTE: freq_idxes is a vector!
             freq_idxes = numpy.array([self.frequency_map[f] for f in f_upper])
             # vecs1 gives a 2x2 vector: idx0 = stored index, idx1 = mu index
             vecs1 = mus[freq_idxes, :]
             # vecs2 gives a 2x2 vector: idx0 = stored index, idx1 = mu index
             range_idxes = numpy.arange(len(freq_idxes))
-            vecs2 = curr_bank['mus'][range_idxes,freq_idxes,:]
+            vecs2 = curr_bank["mus"][range_idxes, freq_idxes, :]
 
             # Now do the sums
-            dists = (vecs1 - vecs2)*(vecs1 - vecs2)
+            dists = (vecs1 - vecs2) * (vecs1 - vecs2)
             # This reduces to 1D: idx = stored index
             dists = numpy.sum(dists, axis=1)
             # I wonder if this line actually speeds things up?
             if (dists > distance_threshold).all():
                 continue
             # This is only needed for close templates, should we prune?
-            norm_upper = numpy.array([self.normalization_map[f] \
-                                      for f in f_upper])
-            norm_other = numpy.array([self.normalization_map[f] \
-                                      for f in f_other])
+            norm_upper = numpy.array([self.normalization_map[f] for f in f_upper])
+            norm_other = numpy.array([self.normalization_map[f] for f in f_other])
             norm_fac = norm_upper / norm_other
-            renormed_dists = 1 - (1 - dists)*norm_fac
+            renormed_dists = 1 - (1 - dists) * norm_fac
             if (renormed_dists < distance_threshold).any():
                 return True
         else:
             return False
 
-    def add_point_by_chi_coords(self, chi_coords, mass1, mass2, spin1z, spin2z,
-                          point_fupper=None, mus=None):
+    def add_point_by_chi_coords(
+        self, chi_coords, mass1, mass2, spin1z, spin2z, point_fupper=None, mus=None
+    ):
         """
         Add a point to the partitioned template bank. The point_fupper and mus
         kwargs must be provided for all templates if the vary fupper capability
@@ -465,40 +469,45 @@ class PartitionedTmpltbank(object):
         self.bank[chi1_bin][chi2_bin].append(copy.deepcopy(chi_coords))
         curr_bank = self.massbank[chi1_bin][chi2_bin]
 
-        if curr_bank['mass1s'].size:
-            curr_bank['mass1s'] = numpy.append(curr_bank['mass1s'],
-                                               numpy.array([mass1]))
-            curr_bank['mass2s'] = numpy.append(curr_bank['mass2s'],
-                                               numpy.array([mass2]))
-            curr_bank['spin1s'] = numpy.append(curr_bank['spin1s'],
-                                               numpy.array([spin1z]))
-            curr_bank['spin2s'] = numpy.append(curr_bank['spin2s'],
-                                               numpy.array([spin2z]))
+        if curr_bank["mass1s"].size:
+            curr_bank["mass1s"] = numpy.append(
+                curr_bank["mass1s"], numpy.array([mass1])
+            )
+            curr_bank["mass2s"] = numpy.append(
+                curr_bank["mass2s"], numpy.array([mass2])
+            )
+            curr_bank["spin1s"] = numpy.append(
+                curr_bank["spin1s"], numpy.array([spin1z])
+            )
+            curr_bank["spin2s"] = numpy.append(
+                curr_bank["spin2s"], numpy.array([spin2z])
+            )
             if point_fupper is not None:
-                curr_bank['freqcuts'] = numpy.append(curr_bank['freqcuts'],
-                                                 numpy.array([point_fupper]))
+                curr_bank["freqcuts"] = numpy.append(
+                    curr_bank["freqcuts"], numpy.array([point_fupper])
+                )
             # Mus needs to append onto axis 0. See below for contents of
             # the mus variable
             if mus is not None:
-                curr_bank['mus'] = numpy.append(curr_bank['mus'],
-                                            numpy.array([mus[:,:]]), axis=0)
+                curr_bank["mus"] = numpy.append(
+                    curr_bank["mus"], numpy.array([mus[:, :]]), axis=0
+                )
         else:
-            curr_bank['mass1s'] = numpy.array([mass1])
-            curr_bank['mass2s'] = numpy.array([mass2])
-            curr_bank['spin1s'] = numpy.array([spin1z])
-            curr_bank['spin2s'] = numpy.array([spin2z])
+            curr_bank["mass1s"] = numpy.array([mass1])
+            curr_bank["mass2s"] = numpy.array([mass2])
+            curr_bank["spin1s"] = numpy.array([spin1z])
+            curr_bank["spin2s"] = numpy.array([spin2z])
             if point_fupper is not None:
-                curr_bank['freqcuts'] = numpy.array([point_fupper])
+                curr_bank["freqcuts"] = numpy.array([point_fupper])
             # curr_bank['mus'] is a 3D array
             # NOTE: mu relates to the non-covaried Cartesian coordinate system
             # Axis 0: Template index
             # Axis 1: Frequency cutoff index
             # Axis 2: Mu coordinate index
             if mus is not None:
-                curr_bank['mus'] = numpy.array([mus[:,:]])
+                curr_bank["mus"] = numpy.array([mus[:, :]])
 
-    def add_point_by_masses(self, mass1, mass2, spin1z, spin2z,
-                            vary_fupper=False):
+    def add_point_by_masses(self, mass1, mass2, spin1z, spin2z, vary_fupper=False):
         """
         Add a point to the template bank. This differs from add point to bank
         as it assumes that the chi coordinates and the products needed to use
@@ -531,46 +540,50 @@ class PartitionedTmpltbank(object):
                 self.spin_warning_given = True
 
         # These that masses obey the restrictions of mass_range_params
-        if self.mass_range_params.is_outside_range(mass1, mass2, spin1z,
-                                                                       spin2z):
+        if self.mass_range_params.is_outside_range(mass1, mass2, spin1z, spin2z):
             err_msg = "Point with masses given by "
-            err_msg += "%f %f %f %f " %(mass1, mass2, spin1z, spin2z)
+            err_msg += "%f %f %f %f " % (mass1, mass2, spin1z, spin2z)
             err_msg += "(mass1, mass2, spin1z, spin2z) is not consistent "
             err_msg += "with the provided command-line restrictions on masses "
             err_msg += "and spins."
             raise ValueError(err_msg)
 
         # Get chi coordinates
-        chi_coords = coord_utils.get_cov_params(mass1, mass2, spin1z, spin2z,
-                                                self.metric_params,
-                                                self.ref_freq)
+        chi_coords = coord_utils.get_cov_params(
+            mass1, mass2, spin1z, spin2z, self.metric_params, self.ref_freq
+        )
 
         # Get mus and best fupper for this point, if needed
         if vary_fupper:
             mass_dict = {}
-            mass_dict['m1'] = numpy.array([mass1])
-            mass_dict['m2'] = numpy.array([mass2])
-            mass_dict['s1z'] = numpy.array([spin1z])
-            mass_dict['s2z'] = numpy.array([spin2z])
+            mass_dict["m1"] = numpy.array([mass1])
+            mass_dict["m2"] = numpy.array([mass2])
+            mass_dict["s1z"] = numpy.array([spin1z])
+            mass_dict["s2z"] = numpy.array([spin2z])
             freqs = numpy.array(list(self.frequency_map.keys()), dtype=float)
-            freq_cutoff = coord_utils.return_nearest_cutoff(\
-                                     self.upper_freq_formula, mass_dict, freqs)
+            freq_cutoff = coord_utils.return_nearest_cutoff(
+                self.upper_freq_formula, mass_dict, freqs
+            )
             freq_cutoff = freq_cutoff[0]
-            lambdas = coord_utils.get_chirp_params\
-                (mass1, mass2, spin1z, spin2z, self.metric_params.f0,
-                 self.metric_params.pnOrder)
+            lambdas = coord_utils.get_chirp_params(
+                mass1,
+                mass2,
+                spin1z,
+                spin2z,
+                self.metric_params.f0,
+                self.metric_params.pnOrder,
+            )
             mus = []
             for freq in self.frequency_map:
-                mus.append(coord_utils.get_mu_params(lambdas,
-                                                    self.metric_params, freq) )
+                mus.append(coord_utils.get_mu_params(lambdas, self.metric_params, freq))
             mus = numpy.array(mus)
         else:
-            freq_cutoff=None
-            mus=None
+            freq_cutoff = None
+            mus = None
 
-        self.add_point_by_chi_coords(chi_coords, mass1, mass2, spin1z, spin2z,
-                               point_fupper=freq_cutoff, mus=mus)
-
+        self.add_point_by_chi_coords(
+            chi_coords, mass1, mass2, spin1z, spin2z, point_fupper=freq_cutoff, mus=mus
+        )
 
     def add_tmpltbank_from_xml_table(self, sngl_table, vary_fupper=False):
         """
@@ -586,8 +599,13 @@ class PartitionedTmpltbank(object):
             distances with a varying upper frequency cutoff.
         """
         for sngl in sngl_table:
-            self.add_point_by_masses(sngl.mass1, sngl.mass2, sngl.spin1z,
-                                     sngl.spin2z, vary_fupper=vary_fupper)
+            self.add_point_by_masses(
+                sngl.mass1,
+                sngl.mass2,
+                sngl.spin1z,
+                sngl.spin2z,
+                vary_fupper=vary_fupper,
+            )
 
     def add_tmpltbank_from_hdf_file(self, hdf_fp, vary_fupper=False):
         """
@@ -603,13 +621,18 @@ class PartitionedTmpltbank(object):
             If given also include the additional information needed to compute
             distances with a varying upper frequency cutoff.
         """
-        mass1s = hdf_fp['mass1'][:]
-        mass2s = hdf_fp['mass2'][:]
-        spin1zs = hdf_fp['spin1z'][:]
-        spin2zs = hdf_fp['spin2z'][:]
+        mass1s = hdf_fp["mass1"][:]
+        mass2s = hdf_fp["mass2"][:]
+        spin1zs = hdf_fp["spin1z"][:]
+        spin2zs = hdf_fp["spin2z"][:]
         for idx in range(len(mass1s)):
-            self.add_point_by_masses(mass1s[idx], mass2s[idx], spin1zs[idx],
-                                     spin2zs[idx], vary_fupper=vary_fupper)
+            self.add_point_by_masses(
+                mass1s[idx],
+                mass2s[idx],
+                spin1zs[idx],
+                spin2zs[idx],
+                vary_fupper=vary_fupper,
+            )
 
     def output_all_points(self):
         """Return all points in the bank.
@@ -633,11 +656,11 @@ class PartitionedTmpltbank(object):
         spin2z = []
         for i in self.massbank.keys():
             for j in self.massbank[i].keys():
-                for k in range(len(self.massbank[i][j]['mass1s'])):
+                for k in range(len(self.massbank[i][j]["mass1s"])):
                     curr_bank = self.massbank[i][j]
-                    mass1.append(curr_bank['mass1s'][k])
-                    mass2.append(curr_bank['mass2s'][k])
-                    spin1z.append(curr_bank['spin1s'][k])
-                    spin2z.append(curr_bank['spin2s'][k])
+                    mass1.append(curr_bank["mass1s"][k])
+                    mass2.append(curr_bank["mass2s"][k])
+                    spin1z.append(curr_bank["spin1s"][k])
+                    spin2z.append(curr_bank["spin2s"][k])
 
         return mass1, mass2, spin1z, spin2z

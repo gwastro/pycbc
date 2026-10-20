@@ -1,43 +1,44 @@
 #!/bin/env python
-""" Make histograms of single detector triggers
-"""
+"""Make histograms of single detector triggers"""
 
-import numpy
 import argparse
 import sys
 from itertools import cycle
+
+import numpy
 from matplotlib import use
-use('Agg')
+
+use("Agg")
 from matplotlib import pyplot
 
 import pycbc
-import pycbc.results
 import pycbc.io
+import pycbc.results
 from pycbc.events import background_bin_from_string, ranking
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--trigger-file', required=True,
-                    help="Combined single detector hdf trigger file")
-parser.add_argument('--veto-file',
-                    help="segment xml file, indicates which triggers to ignore")
-parser.add_argument('--segment-name',
-                    help="name of segment list in the veto file")
-parser.add_argument('--x-var',
-                    help="name of value to histogram")
-parser.add_argument('--output-file')
-parser.add_argument('--bank-file', default="",
-                    help='template bank hdf file')
-parser.add_argument('--background-bins', nargs='+',
-                    help='list of background bin format strings')
-parser.add_argument('--bins', default=100, type=int,
-                    help="number of bins in histogram")
-parser.add_argument('--x-max', type=float)
-parser.add_argument('--x-min', type=float, default=6,
-                    help="Minimum x-value. Default 6")
-parser.add_argument('--special-time', type=float,
-                    help="plot triggers within +-1s of a given time in a "
-                         "different color (black)")
+parser.add_argument(
+    "--trigger-file", required=True, help="Combined single detector hdf trigger file"
+)
+parser.add_argument(
+    "--veto-file", help="segment xml file, indicates which triggers to ignore"
+)
+parser.add_argument("--segment-name", help="name of segment list in the veto file")
+parser.add_argument("--x-var", help="name of value to histogram")
+parser.add_argument("--output-file")
+parser.add_argument("--bank-file", default="", help="template bank hdf file")
+parser.add_argument(
+    "--background-bins", nargs="+", help="list of background bin format strings"
+)
+parser.add_argument("--bins", default=100, type=int, help="number of bins in histogram")
+parser.add_argument("--x-max", type=float)
+parser.add_argument("--x-min", type=float, default=6, help="Minimum x-value. Default 6")
+parser.add_argument(
+    "--special-time",
+    type=float,
+    help="plot triggers within +-1s of a given time in a different color (black)",
+)
 args = parser.parse_args()
 
 # sanity check command line options
@@ -48,7 +49,7 @@ if args.special_time and args.background_bins:
 pycbc.init_logging(args.verbose)
 
 # read trigger file to determine IFO
-f = pycbc.io.HFile(args.trigger_file, 'r')
+f = pycbc.io.HFile(args.trigger_file, "r")
 ifo = tuple(f.keys())[0]
 
 # Apply presort if we can; if we can't, load everything but it may be
@@ -69,75 +70,91 @@ trigs = pycbc.io.SingleDetTriggers(
 
 # get x values and find the maximum x value
 val = getattr(trigs, args.x_var)
-x_max = args.x_max if args.x_max else val.max() * 1.1
+x_max = args.x_max or val.max() * 1.1
 
 # create a figure to add a histogram
 fig = pyplot.figure(0)
 
 # command line says to plot triggers around a certain time
 if args.special_time:
-    time = getattr(trigs, 'end_time')
-    val_special = val[abs(time-args.special_time) < 1]
-    val_boring = val[abs(time-args.special_time) >= 1]
+    time = trigs.end_time
+    val_special = val[abs(time - args.special_time) < 1]
+    val_boring = val[abs(time - args.special_time) >= 1]
     binvals = numpy.linspace(args.x_min, x_max, args.bins, endpoint=True)
-    pyplot.hist([val_boring, val_special], bins=binvals, histtype='stepfilled',
-               stacked=True, color=[pycbc.results.ifo_color(ifo), 'k'],
-          label=['Other times', 'Triggers near %i' % (int(args.special_time))])
-    pyplot.legend(loc='upper right')
+    pyplot.hist(
+        [val_boring, val_special],
+        bins=binvals,
+        histtype="stepfilled",
+        stacked=True,
+        color=[pycbc.results.ifo_color(ifo), "k"],
+        label=["Other times", "Triggers near %i" % (int(args.special_time))],
+    )
+    pyplot.legend(loc="upper right")
 
 # command line says to plot triggers in each background bin
 elif args.background_bins:
-
     # get a dict where key is each bin's name and value is a list of indexes
     # for the triggers in that bin
-    bank_data = {'mass1' : trigs.mass1,
-                 'mass2' : trigs.mass2,
-                 'spin1z' : trigs.spin1z,
-                 'spin2z' : trigs.spin2z,
+    bank_data = {
+        "mass1": trigs.mass1,
+        "mass2": trigs.mass2,
+        "spin1z": trigs.spin1z,
+        "spin2z": trigs.spin2z,
     }
     locs_dict = background_bin_from_string(args.background_bins, bank_data)
- 
+
     # get a list of bin names and a corresponding list for x values
     loc_bin_keys = [key for key in locs_dict.keys()]
     loc_bin_vals = [val[locs_dict[key]] for key in loc_bin_keys]
 
     # assign a color for each bin
-    color_cycle = cycle(['red', 'green', 'blue', 'black', 'magenta', 'cyan'])
+    color_cycle = cycle(["red", "green", "blue", "black", "magenta", "cyan"])
     loc_bin_colors = [next(color_cycle) for key in loc_bin_keys]
 
     # get number of overflows for each background bin
-    loc_bin_overflows = [len(vals[vals>=x_max]) for vals in loc_bin_vals]
+    loc_bin_overflows = [len(vals[vals >= x_max]) for vals in loc_bin_vals]
     num_bins = len(loc_bin_overflows)
 
     # remove overflow triggers from plotting
-    loc_bin_vals = [vals[vals<x_max] for vals in loc_bin_vals]
+    loc_bin_vals = [vals[vals < x_max] for vals in loc_bin_vals]
 
     # plot histograms
-    pyplot.hist(loc_bin_vals, bins=args.bins, histtype='step',
-                stacked=False, label=loc_bin_keys, color=loc_bin_colors)
-    pyplot.legend(loc='upper right')
+    pyplot.hist(
+        loc_bin_vals,
+        bins=args.bins,
+        histtype="step",
+        stacked=False,
+        label=loc_bin_keys,
+        color=loc_bin_colors,
+    )
+    pyplot.legend(loc="upper right")
 
     # plot overflow bin
-    rects = pyplot.bar(num_bins*[x_max+0.05],
-                      loc_bin_overflows, .5,
-                      facecolor='None', edgecolor=loc_bin_colors)
+    rects = pyplot.bar(
+        num_bins * [x_max + 0.05],
+        loc_bin_overflows,
+        0.5,
+        facecolor="None",
+        edgecolor=loc_bin_colors,
+    )
 
     # write text for overflow bin
     text_left = rects[0].get_x()
     text_height = 1.10 * max([rect.get_height() for rect in rects])
-    pyplot.text(text_left, text_height, '%s+'%x_max)
+    pyplot.text(text_left, text_height, "%s+" % x_max)
 
 # plot all triggers in a single label
 else:
-    pycbc.results.hist_overflow(val, x_max, bins=args.bins,
-                                  color=pycbc.results.ifo_color(ifo))
+    pycbc.results.hist_overflow(
+        val, x_max, bins=args.bins, color=pycbc.results.ifo_color(ifo)
+    )
 
 # format plot
 ax = pyplot.gca()
-ax.set_yscale('log')
-pyplot.ylabel('Number of triggers')
+ax.set_yscale("log")
+pyplot.ylabel("Number of triggers")
 pyplot.xlabel(args.x_var)
-pyplot.ylim(ymin=.1)
+pyplot.ylim(ymin=0.1)
 
 # set x lower limit on plot
 if args.x_min:
@@ -156,8 +173,10 @@ if args.x_max:
 pyplot.grid()
 
 # add meta data and save figure
-pycbc.results.save_fig_with_metadata(fig, args.output_file,
-                title = '%s: %s histogram of single detector triggers' % (ifo, args.x_var),
-                caption = 'Histogram of single detector triggers',
-                cmd = ' '.join(sys.argv))
-
+pycbc.results.save_fig_with_metadata(
+    fig,
+    args.output_file,
+    title="%s: %s histogram of single detector triggers" % (ifo, args.x_var),
+    caption="Histogram of single detector triggers",
+    cmd=" ".join(sys.argv),
+)

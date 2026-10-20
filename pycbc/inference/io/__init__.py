@@ -14,33 +14,33 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""I/O utilities for pycbc inference
-"""
+"""I/O utilities for pycbc inference"""
 
-
-import os
 import argparse
+import logging
+import os
 import shutil
 import textwrap
-import numpy
-import logging
-import h5py as _h5py
-from pycbc.io.record import (FieldArray, _numpy_function_lib)
-from pycbc import waveform as _waveform
-from pycbc.io.hdf import (dump_state, load_state)
 
-from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
+import h5py as _h5py
+import numpy
+
+from pycbc import waveform as _waveform
+from pycbc.inference.option_utils import ParseLabelArg, ParseParametersArg
+from pycbc.io.hdf import dump_state, load_state
+from pycbc.io.record import FieldArray, _numpy_function_lib
+
+from .cpnest import CPNestFile
+from .dynesty import DynestyFile
 from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
-from .ptemcee import PTEmceeFile
-from .cpnest import CPNestFile
 from .multinest import MultinestFile
-from .dynesty import DynestyFile
-from .ultranest import UltranestFile
-from .snowline import SnowlineFile
 from .nessai import NessaiFile
 from .posterior import PosteriorFile
+from .ptemcee import PTEmceeFile
+from .snowline import SnowlineFile
 from .txt import InferenceTXTFile
+from .ultranest import UltranestFile
 
 filetypes = {
     EmceeFile.name: EmceeFile,
@@ -57,13 +57,14 @@ filetypes = {
 
 try:
     from .epsie import EpsieFile
+
     filetypes[EpsieFile.name] = EpsieFile
 except ImportError:
     pass
 
 
 def get_file_type(filename):
-    """ Returns I/O object to use for file.
+    """Returns I/O object to use for file.
 
     Parameters
     ----------
@@ -79,8 +80,8 @@ def get_file_type(filename):
     hdf_extensions = [".hdf", ".h5", ".bkup", ".checkpoint"]
     for ext in hdf_extensions:
         if filename.endswith(ext):
-            with _h5py.File(filename, 'r') as fp:
-                filetype = fp.attrs['filetype']
+            with _h5py.File(filename, "r") as fp:
+                filetype = fp.attrs["filetype"]
                 try:
                     filetype = str(filetype.decode())
                 except AttributeError:
@@ -123,8 +124,10 @@ def loadfile(path, mode=None, filetype=None, **kwargs):
             fileclass = get_file_type(path)
         except IOError:
             # file doesn't exist, filetype must be provided
-            raise IOError("The file appears not to exist. In this case, "
-                          "filetype must be provided.")
+            raise IOError(
+                "The file appears not to exist. In this case, "
+                "filetype must be provided."
+            )
     else:
         fileclass = filetypes[filetype]
     return fileclass(path, mode=mode, **kwargs)
@@ -170,28 +173,29 @@ def check_integrity(filename):
         raise ValueError("file {} does not exist".format(filename))
     # if the file is corrupted such that it cannot be opened, the next line
     # will raise an IOError
-    with loadfile(filename, 'r') as fp:
+    with loadfile(filename, "r") as fp:
         # check that all datasets in samples have the same shape
         parameters = list(fp[fp.samples_group].keys())
         # but only do the check if parameters have been written
         if len(parameters) > 0:
-            group = fp.samples_group + '/{}'
+            group = fp.samples_group + "/{}"
             # use the first parameter as a reference shape
             ref_shape = fp[group.format(parameters[0])].shape
-            if not all(fp[group.format(param)].shape == ref_shape
-                       for param in parameters):
-                raise IOError("not all datasets in the samples group have "
-                              "the same shape")
+            if not all(
+                fp[group.format(param)].shape == ref_shape for param in parameters
+            ):
+                raise IOError(
+                    "not all datasets in the samples group have the same shape"
+                )
             # check that we can read the first/last sample
-            firstidx = tuple([0]*len(ref_shape))
-            lastidx = tuple([-1]*len(ref_shape))
+            firstidx = tuple([0] * len(ref_shape))
+            lastidx = tuple([-1] * len(ref_shape))
         for param in parameters:
             _ = fp[group.format(param)][firstidx]
             _ = fp[group.format(param)][lastidx]
 
 
-def validate_checkpoint_files(checkpoint_file, backup_file,
-                              check_nsamples=True):
+def validate_checkpoint_files(checkpoint_file, backup_file, check_nsamples=True):
     """Checks if the given checkpoint and/or backup files are valid.
 
     The checkpoint file is considered valid if:
@@ -238,20 +242,20 @@ def validate_checkpoint_files(checkpoint_file, backup_file,
 
     # since we can open the file, run self diagnostics
     if checkpoint_valid:
-        with loadfile(checkpoint_file, 'r') as fp:
+        with loadfile(checkpoint_file, "r") as fp:
             checkpoint_valid = fp.validate()
     if backup_valid:
-        with loadfile(backup_file, 'r') as fp:
+        with loadfile(backup_file, "r") as fp:
             backup_valid = fp.validate()
     if check_nsamples:
         # This check is not required by nested samplers
         # check that the checkpoint and backup have the same number of samples;
         # if not, assume the checkpoint has the correct number
         if checkpoint_valid and backup_valid:
-            with loadfile(checkpoint_file, 'r') as fp:
+            with loadfile(checkpoint_file, "r") as fp:
                 group = list(fp[fp.samples_group].keys())[0]
                 nsamples = fp[fp.samples_group][group].size
-            with loadfile(backup_file, 'r') as fp:
+            with loadfile(backup_file, "r") as fp:
                 group = list(fp[fp.samples_group].keys())[0]
                 backup_nsamples = fp[fp.samples_group][group].size
             backup_valid = nsamples == backup_nsamples
@@ -300,8 +304,8 @@ def get_common_parameters(input_files, collection=None):
         collection = "all"
     parameters = []
     for fn in input_files:
-        fp = loadfile(fn, 'r')
-        if collection == 'all':
+        fp = loadfile(fn, "r")
+        if collection == "all":
             ps = fp[fp.samples_group].keys()
         else:
             ps = fp.attrs[collection]
@@ -309,8 +313,11 @@ def get_common_parameters(input_files, collection=None):
         fp.close()
     parameters = list(set.intersection(*parameters))
     if parameters == []:
-        raise ValueError("no common parameters found for collection {} in "
-                         "files {}".format(collection, ', '.join(input_files)))
+        raise ValueError(
+            "no common parameters found for collection {} in files {}".format(
+                collection, ", ".join(input_files)
+            )
+        )
     # if using python 3 to read a file created in python 2, need to convert
     # parameters to strs
     try:
@@ -323,6 +330,7 @@ def get_common_parameters(input_files, collection=None):
 class NoInputFileError(Exception):
     """Raised in custom argparse Actions by arguments needing input-files when
     no file(s) were provided."""
+
     pass
 
 
@@ -336,6 +344,7 @@ class PrintFileParams(argparse.Action):
         The ``input_file`` attribute must be set in the parser namespace before
         this action is called. Otherwise, a ``NoInputFileError`` is raised.
     """
+
     def __init__(self, skip_args=None, nargs=0, **kwargs):
         if nargs != 0:
             raise ValueError("nargs for this action must be 0")
@@ -359,51 +368,70 @@ class PrintFileParams(argparse.Action):
         filesbytype = {}
         fileparsers = {}
         for fn in input_files:
-            fp = loadfile(fn, 'r')
+            fp = loadfile(fn, "r")
             try:
                 filesbytype[fp.name].append(fn)
             except KeyError:
                 filesbytype[fp.name] = [fn]
                 # get any extra options
                 fileparsers[fp.name], _ = fp.extra_args_parser(
-                    skip_args=self.skip_args, add_help=False)
+                    skip_args=self.skip_args, add_help=False
+                )
             fp.close()
         # now print information about the intersection of all parameters
-        parameters = get_common_parameters(input_files, collection='all')
-        print("\n"+textwrap.fill("Parameters available with this (these) "
-                                 "input file(s):"), end="\n\n")
-        print(textwrap.fill(' '.join(sorted(parameters))),
-              end="\n\n")
+        parameters = get_common_parameters(input_files, collection="all")
+        print(
+            "\n"
+            + textwrap.fill("Parameters available with this (these) input file(s):"),
+            end="\n\n",
+        )
+        print(textwrap.fill(" ".join(sorted(parameters))), end="\n\n")
         # information about the pycbc functions
         pfuncs = sorted(FieldArray.functionlib.fget(FieldArray).keys())
-        print(textwrap.fill("Available pycbc functions (see "
-                            "http://pycbc.org/pycbc/latest/html for "
-                            "more details):"), end="\n\n")
-        print(textwrap.fill(', '.join(pfuncs)), end="\n\n")
+        print(
+            textwrap.fill(
+                "Available pycbc functions (see "
+                "http://pycbc.org/pycbc/latest/html for "
+                "more details):"
+            ),
+            end="\n\n",
+        )
+        print(textwrap.fill(", ".join(pfuncs)), end="\n\n")
         # numpy funcs
-        npfuncs = sorted([name for (name, obj) in _numpy_function_lib.items()
-                          if isinstance(obj, numpy.ufunc)])
-        print(textwrap.fill("Available numpy functions:"),
-              end="\n\n")
-        print(textwrap.fill(', '.join(npfuncs)), end="\n\n")
+        npfuncs = sorted(
+            [
+                name
+                for (name, obj) in _numpy_function_lib.items()
+                if isinstance(obj, numpy.ufunc)
+            ]
+        )
+        print(textwrap.fill("Available numpy functions:"), end="\n\n")
+        print(textwrap.fill(", ".join(npfuncs)), end="\n\n")
         # misc
         consts = "e euler_gamma inf nan pi"
-        print(textwrap.fill("Recognized constants:"),
-              end="\n\n")
+        print(textwrap.fill("Recognized constants:"), end="\n\n")
         print(consts, end="\n\n")
-        print(textwrap.fill("Python arthimetic (+ - * / // ** %), "
-                            "binary (&, |, etc.), and comparison (>, <, >=, "
-                            "etc.) operators may also be used."), end="\n\n")
+        print(
+            textwrap.fill(
+                "Python arthimetic (+ - * / // ** %), "
+                "binary (&, |, etc.), and comparison (>, <, >=, "
+                "etc.) operators may also be used."
+            ),
+            end="\n\n",
+        )
         # print out the extra arguments that may be used
-        outstr = textwrap.fill("The following are additional command-line "
-                               "options that may be provided, along with the "
-                               "input files that understand them:")
-        print("\n"+outstr, end="\n\n")
+        outstr = textwrap.fill(
+            "The following are additional command-line "
+            "options that may be provided, along with the "
+            "input files that understand them:"
+        )
+        print("\n" + outstr, end="\n\n")
         for ftype, fparser in fileparsers.items():
-            fnames = ', '.join(filesbytype[ftype])
+            fnames = ", ".join(filesbytype[ftype])
             if fparser is None:
                 outstr = textwrap.fill(
-                    "File(s) {} use no additional options.".format(fnames))
+                    "File(s) {} use no additional options.".format(fnames)
+                )
                 print(outstr, end="\n\n")
             else:
                 fparser.usage = fnames
@@ -456,8 +484,10 @@ class ResultsArgumentParser(argparse.ArgumentParser):
     \**kwargs :
         All other keyword arguments are passed to ``argparse.ArgumentParser``.
     """
-    def __init__(self, skip_args=None, defaultparams=None,
-                 autoparamlabels=True, **kwargs):
+
+    def __init__(
+        self, skip_args=None, defaultparams=None, autoparamlabels=True, **kwargs
+    ):
         super(ResultsArgumentParser, self).__init__(**kwargs)
         # add attribute to communicate to arguments what to do when there is
         # no input files
@@ -466,7 +496,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
             skip_args = []
         self.skip_args = skip_args
         if defaultparams is None:
-            defaultparams = 'variable_params'
+            defaultparams = "variable_params"
         self.defaultparams = defaultparams
         # add the results option grup
         self.add_results_option_group(autoparamlabels=autoparamlabels)
@@ -480,15 +510,13 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         return {act.dest: act for act in self._actions}
 
     def _unset_required(self):
-        """Convenience function to turn off required arguments for first parse.
-        """
+        """Convenience function to turn off required arguments for first parse."""
         self._required_args = [act for act in self._actions if act.required]
         for act in self._required_args:
             act.required = False
 
     def _reset_required(self):
-        """Convenience function to turn required arguments back on.
-        """
+        """Convenience function to turn required arguments back on."""
         for act in self._required_args:
             act.required = True
 
@@ -500,29 +528,32 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         self.no_input_file_err = True
         self._unset_required()
         opts, extra_opts = super(ResultsArgumentParser, self).parse_known_args(
-            args, namespace)
+            args, namespace
+        )
         # now do it again
         self.no_input_file_err = False
         self._reset_required()
         opts, extra_opts = super(ResultsArgumentParser, self).parse_known_args(
-            args, opts)
+            args, opts
+        )
         # populate the parameters option if it wasn't specified
-        if opts.parameters is None or opts.parameters == ['*']:
-            parameters = get_common_parameters(opts.input_file,
-                                               collection=self.defaultparams)
+        if opts.parameters is None or opts.parameters == ["*"]:
+            parameters = get_common_parameters(
+                opts.input_file, collection=self.defaultparams
+            )
             # now call parse parameters action to re-populate the namespace
-            self.actions['parameters'](self, opts, parameters)
+            self.actions["parameters"](self, opts, parameters)
         # check if we're being greedy or not
-        elif '*' in opts.parameters:
+        elif "*" in opts.parameters:
             # remove the * from the parameters and the labels
-            opts.parameters = [p for p in opts.parameters if p != '*']
-            opts.parameters_labels.pop('*', None)
+            opts.parameters = [p for p in opts.parameters if p != "*"]
+            opts.parameters_labels.pop("*", None)
             # add the rest of the parameters not used
-            all_params = get_common_parameters(opts.input_file,
-                                               collection=self.defaultparams)
+            all_params = get_common_parameters(
+                opts.input_file, collection=self.defaultparams
+            )
             # extract the used parameters from the parameters option
-            used_params = FieldArray.parse_parameters(opts.parameters,
-                                                      all_params)
+            used_params = FieldArray.parse_parameters(opts.parameters, all_params)
             add_params = set(all_params) - set(used_params)
             # repopulate the name space with the additional parameters
             if add_params:
@@ -532,11 +563,12 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         # parse the sampler-specific options and check for any unknowns
         unknown = []
         for fn in opts.input_file:
-            fp = loadfile(fn, 'r')
+            fp = loadfile(fn, "r")
             sampler_parser, _ = fp.extra_args_parser(skip_args=self.skip_args)
             if sampler_parser is not None:
                 opts, still_unknown = sampler_parser.parse_known_args(
-                    extra_opts, namespace=opts)
+                    extra_opts, namespace=opts
+                )
                 unknown.append(set(still_unknown))
         # the intersection of the unknowns are options not understood by
         # any of the files
@@ -566,76 +598,94 @@ class ResultsArgumentParser(argparse.ArgumentParser):
             title="Arguments for loading results",
             description="Additional, file-specific arguments may also be "
             "provided, depending on what input-files are given. See "
-            "--file-help for details.")
+            "--file-help for details.",
+        )
         results_reading_group.add_argument(
-            "--input-file", type=str, required=True, nargs="+",
-            action=ParseLabelArg, metavar='FILE[:LABEL]',
+            "--input-file",
+            type=str,
+            required=True,
+            nargs="+",
+            action=ParseLabelArg,
+            metavar="FILE[:LABEL]",
             help="Path to input HDF file(s). A label may be specified for "
-                 "each input file to use for plots when multiple files are "
-                 "specified.")
+            "each input file to use for plots when multiple files are "
+            "specified.",
+        )
         # advanced help
         results_reading_group.add_argument(
-            "-H", "--file-help",
-            action=PrintFileParams, skip_args=self.skip_args,
+            "-H",
+            "--file-help",
+            action=PrintFileParams,
+            skip_args=self.skip_args,
             help="Based on the provided input-file(s), print all available "
-                 "parameters that may be retrieved and all possible functions "
-                 "on those parameters. Also print available additional "
-                 "arguments that may be passed. This option is like an "
-                 "advanced --help: if run, the program will just print the "
-                 "information to screen, then exit.")
+            "parameters that may be retrieved and all possible functions "
+            "on those parameters. Also print available additional "
+            "arguments that may be passed. This option is like an "
+            "advanced --help: if run, the program will just print the "
+            "information to screen, then exit.",
+        )
         if autoparamlabels:
             paramparser = ParseParametersArg
             lblhelp = (
                 "If LABEL is the same as a parameter in "
                 "pycbc.waveform.parameters, the label "
                 "property of that parameter will be used (e.g., if LABEL "
-                "were 'mchirp' then {} would be used). "
-                .format(_waveform.parameters.mchirp.label))
+                "were 'mchirp' then {} would be used). ".format(
+                    _waveform.parameters.mchirp.label
+                )
+            )
         else:
             paramparser = ParseLabelArg
-            lblhelp = ''
+            lblhelp = ""
         results_reading_group.add_argument(
-            "--parameters", type=str, nargs="+", metavar="PARAM[:LABEL]",
+            "--parameters",
+            type=str,
+            nargs="+",
+            metavar="PARAM[:LABEL]",
             action=paramparser,
             help="Name of parameters to load; default is to load all. The "
-                 "parameters can be any of the model params or posterior "
-                 "stats (loglikelihood, logprior, etc.) in the input file(s), "
-                 "derived parameters from them, or any function of them. If "
-                 "multiple files are provided, any parameter common to all "
-                 "files may be used. Syntax for functions is python; any math "
-                 "functions in the numpy libary may be used. Can optionally "
-                 "also specify a LABEL for each parameter. If no LABEL is "
-                 "provided, PARAM will used as the LABEL. {}"
-                 "To see all possible parameters that may be used with the "
-                 "given input file(s), as well as all avaiable functions, "
-                 "run --file-help, along with one or more input files. "
-                 "If '*' is provided in addition to other parameters names, "
-                 "then parameters will be loaded in a greedy fashion; i.e., "
-                 "all other parameters that exist in the file(s) that are not "
-                 "explicitly mentioned will also be loaded. For example, "
-                 "if the input-file(s) contains 'srcmass1', "
-                 "'srcmass2', and 'distance', and  "
-                 "\"'primary_mass(srcmass1, srcmass2):mass1' '*'\", is given "
-                 "then 'mass1' and 'distance' will be loaded. Otherwise, "
-                 "without the '*', only 'mass1' would be loaded. "
-                 "Note that any parameter that is used in a function "
-                 "will not automatically be added. Tip: enclose "
-                 "arguments in single quotes, or else special characters will "
-                 "be interpreted as shell commands. For example, the "
-                 "wildcard should be given as either '*' or \\*, otherwise "
-                 "bash will expand the * into the names of all the files in "
-                 "the current directory."
-                 .format(lblhelp))
+            "parameters can be any of the model params or posterior "
+            "stats (loglikelihood, logprior, etc.) in the input file(s), "
+            "derived parameters from them, or any function of them. If "
+            "multiple files are provided, any parameter common to all "
+            "files may be used. Syntax for functions is python; any math "
+            "functions in the numpy libary may be used. Can optionally "
+            "also specify a LABEL for each parameter. If no LABEL is "
+            "provided, PARAM will used as the LABEL. {}"
+            "To see all possible parameters that may be used with the "
+            "given input file(s), as well as all avaiable functions, "
+            "run --file-help, along with one or more input files. "
+            "If '*' is provided in addition to other parameters names, "
+            "then parameters will be loaded in a greedy fashion; i.e., "
+            "all other parameters that exist in the file(s) that are not "
+            "explicitly mentioned will also be loaded. For example, "
+            "if the input-file(s) contains 'srcmass1', "
+            "'srcmass2', and 'distance', and  "
+            "\"'primary_mass(srcmass1, srcmass2):mass1' '*'\", is given "
+            "then 'mass1' and 'distance' will be loaded. Otherwise, "
+            "without the '*', only 'mass1' would be loaded. "
+            "Note that any parameter that is used in a function "
+            "will not automatically be added. Tip: enclose "
+            "arguments in single quotes, or else special characters will "
+            "be interpreted as shell commands. For example, the "
+            "wildcard should be given as either '*' or \\*, otherwise "
+            "bash will expand the * into the names of all the files in "
+            "the current directory.".format(lblhelp),
+        )
         results_reading_group.add_argument(
-            "--constraint", type=str, nargs="+", metavar="CONSTRAINT[:FILE]",
+            "--constraint",
+            type=str,
+            nargs="+",
+            metavar="CONSTRAINT[:FILE]",
             help="Apply a constraint to the samples. If a file is provided "
-                 "after the constraint, it will only be applied to the given "
-                 "file. Otherwise, the constraint will be applied to all "
-                 "files. Only one constraint may be applied to a file. "
-                 "Samples that violate the constraint will be removed. Syntax "
-                 "is python; any parameter or function of parameter can be "
-                 "used, similar to the parameters argument. Multiple "
-                 "constraints may be combined by using '&' and '|'.")
+            "after the constraint, it will only be applied to the given "
+            "file. Otherwise, the constraint will be applied to all "
+            "files. Only one constraint may be applied to a file. "
+            "Samples that violate the constraint will be removed. Syntax "
+            "is python; any parameter or function of parameter can be "
+            "used, similar to the parameters argument. Multiple "
+            "constraints may be combined by using '&' and '|'.",
+        )
         return results_reading_group
 
 
@@ -679,13 +729,15 @@ def results_from_cli(opts, load_samples=True, **kwargs):
     constraints = {}
     if opts.constraint is not None:
         for constraint in opts.constraint:
-            if len(constraint.split(':')) == 2:
-                constraint, fn = constraint.split(':')
+            if len(constraint.split(":")) == 2:
+                constraint, fn = constraint.split(":")
                 constraints[fn] = constraint
             # no file provided, make sure there's only one constraint
             elif len(opts.constraint) > 1:
-                raise ValueError("must provide a file to apply constraints "
-                                 "to if providing more than one constraint")
+                raise ValueError(
+                    "must provide a file to apply constraints "
+                    "to if providing more than one constraint"
+                )
             else:
                 # this means no file, only one constraint, apply to all
                 # files
@@ -703,8 +755,7 @@ def results_from_cli(opts, load_samples=True, **kwargs):
             logging.info("Loading samples")
 
             # read samples from file
-            samples = fp.samples_from_cli(opts, parameters=opts.parameters,
-                                          **kwargs)
+            samples = fp.samples_from_cli(opts, parameters=opts.parameters, **kwargs)
             logging.info("Loaded {} samples".format(samples.size))
 
             if input_file in constraints:
@@ -712,10 +763,12 @@ def results_from_cli(opts, load_samples=True, **kwargs):
                 mask = samples[constraints[input_file]]
                 samples = samples[mask]
                 if samples.size == 0:
-                    raise ValueError("No samples remain after constraint {} "
-                                     "applied".format(constraints[input_file]))
+                    raise ValueError(
+                        "No samples remain after constraint {} applied".format(
+                            constraints[input_file]
+                        )
+                    )
                 logging.info("{} samples remain".format(samples.size))
-
 
         # else do not read samples
         else:
@@ -754,8 +807,8 @@ def injections_from_cli(opts):
         by ``opts.input_file``.
     """
     # see if a mapping was provided
-    if hasattr(opts, 'injection_samples_map') and opts.injection_samples_map:
-        param_map = [opt.split(':') for opt in opts.injection_samples_map]
+    if hasattr(opts, "injection_samples_map") and opts.injection_samples_map:
+        param_map = [opt.split(":") for opt in opts.injection_samples_map]
     else:
         param_map = []
     input_files = opts.input_file
@@ -764,7 +817,7 @@ def injections_from_cli(opts):
     injections = None
     # loop over all input files getting the injection files
     for input_file in input_files:
-        fp = loadfile(input_file, 'r')
+        fp = loadfile(input_file, "r")
         these_injs = fp.read_injections()
         # apply mapping if it was provided
         if param_map:
@@ -776,8 +829,7 @@ def injections_from_cli(opts):
                 these_injs[param] = mapvals.pop(param)
             # add the rest as new fields
             ps = list(mapvals.keys())
-            these_injs = these_injs.add_fields([mapvals[p] for p in ps],
-                                               names=ps)
+            these_injs = these_injs.add_fields([mapvals[p] for p in ps], names=ps)
         if injections is None:
             injections = these_injs
         else:

@@ -15,16 +15,16 @@
 """
 This modules provides classes for evaluating angular distributions.
 """
+
 import logging
 from configparser import Error
+
 import numpy
 
-from pycbc import VARARGS_DELIM
-from pycbc import boundaries
-from pycbc.distributions import bounded
-from pycbc.distributions import uniform
+from pycbc import VARARGS_DELIM, boundaries
+from pycbc.distributions import bounded, uniform
 
-logger = logging.getLogger('pycbc.distributions.angular')
+logger = logging.getLogger("pycbc.distributions.angular")
 
 
 class UniformAngle(uniform.Uniform):
@@ -54,18 +54,20 @@ class UniformAngle(uniform.Uniform):
     ------
     For more information, see Uniform.
     """
-    name = 'uniform_angle'
 
-    _domainbounds = (0, 2*numpy.pi)
+    name = "uniform_angle"
+
+    _domainbounds = (0, 2 * numpy.pi)
 
     def __init__(self, cyclic_domain=False, **params):
         # _domain is a bounds instance used to apply cyclic conditions; this is
         # applied first, before any bounds specified in the initialization
         # are used
-        self._domain = boundaries.Bounds(self._domainbounds[0],
-            self._domainbounds[1], cyclic=cyclic_domain)
+        self._domain = boundaries.Bounds(
+            self._domainbounds[0], self._domainbounds[1], cyclic=cyclic_domain
+        )
 
-        for p,bnds in params.items():
+        for p, bnds in params.items():
             if bnds is None:
                 bnds = self._domain
             elif isinstance(bnds, boundaries.Bounds):
@@ -77,10 +79,11 @@ class UniformAngle(uniform.Uniform):
                 bnds = boundaries.Bounds(bnds[0], bnds[1])
             # check that the bounds are in the domain
             if bnds.min < self._domain.min or bnds.max > self._domain.max:
-                raise ValueError("bounds must be in [{x},{y}); "
-                    "got [{a},{b})".format(x=self._domain.min,
-                    y=self._domain.max, a=bnds.min,
-                    b=bnds.max))
+                raise ValueError(
+                    "bounds must be in [{x},{y}); got [{a},{b})".format(
+                        x=self._domain.min, y=self._domain.max, a=bnds.min, b=bnds.max
+                    )
+                )
 
             # update
             params[p] = bnds
@@ -108,8 +111,13 @@ class UniformAngle(uniform.Uniform):
             A dictionary of the parameter names and the conditioned values.
         """
         # map values to be within the domain
-        kwargs = dict([[p, self._domain.apply_conditions(val)]
-                      for p,val in kwargs.items() if p in self._bounds])
+        kwargs = dict(
+            [
+                [p, self._domain.apply_conditions(val)]
+                for p, val in kwargs.items()
+                if p in self._bounds
+            ]
+        )
         # now apply additional conditions
         return super(UniformAngle, self).apply_boundary_conditions(**kwargs)
 
@@ -159,11 +167,17 @@ class UniformAngle(uniform.Uniform):
             A distribution instance from the pycbc.inference.prior module.
         """
         # we'll retrieve the setting for cyclic_domain directly
-        additional_opts = {'cyclic_domain': cp.has_option_tag(section,
-                                            'cyclic_domain', variable_args)}
-        return bounded.bounded_from_config(cls, cp, section, variable_args,
-                                           bounds_required=False,
-                                           additional_opts=additional_opts)
+        additional_opts = {
+            "cyclic_domain": cp.has_option_tag(section, "cyclic_domain", variable_args)
+        }
+        return bounded.bounded_from_config(
+            cls,
+            cp,
+            section,
+            variable_args,
+            bounds_required=False,
+            additional_opts=additional_opts,
+        )
 
 
 class SinAngle(UniformAngle):
@@ -189,7 +203,8 @@ class SinAngle(UniformAngle):
         in [0,PI]. These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
     """
-    name = 'sin_angle'
+
+    name = "sin_angle"
     _func = numpy.cos
     _dfunc = numpy.sin
     _arcfunc = numpy.arccos
@@ -198,20 +213,25 @@ class SinAngle(UniformAngle):
     def __init__(self, **params):
         super(SinAngle, self).__init__(**params)
         # replace the domain
-        self._domain = boundaries.Bounds(self._domainbounds[0],
-            self._domainbounds[1], btype_min='closed', btype_max='closed',
-            cyclic=False)
-        self._lognorm = -sum([numpy.log(
-            abs(self._func(bnd[1]) - self._func(bnd[0]))) \
-            for bnd in self._bounds.values()])
+        self._domain = boundaries.Bounds(
+            self._domainbounds[0],
+            self._domainbounds[1],
+            btype_min="closed",
+            btype_max="closed",
+            cyclic=False,
+        )
+        self._lognorm = -sum(
+            [
+                numpy.log(abs(self._func(bnd[1]) - self._func(bnd[0])))
+                for bnd in self._bounds.values()
+            ]
+        )
         self._norm = numpy.exp(self._lognorm)
 
     def _cdfinv_param(self, arg, value):
-        """Return inverse of cdf for mapping unit interval to parameter bounds.
-        """
-        scale = (numpy.cos(self._bounds[arg][0])
-                 - numpy.cos(self._bounds[arg][1]))
-        offset = 1. + numpy.cos(self._bounds[arg][1]) / scale
+        """Return inverse of cdf for mapping unit interval to parameter bounds."""
+        scale = numpy.cos(self._bounds[arg][0]) - numpy.cos(self._bounds[arg][1])
+        offset = 1.0 + numpy.cos(self._bounds[arg][1]) / scale
         new_value = numpy.arccos(-scale * (value - offset))
         return new_value
 
@@ -221,10 +241,11 @@ class SinAngle(UniformAngle):
         ignored.
         """
         if kwargs not in self:
-            return 0.
-        return self._norm * \
-            self._dfunc(numpy.array([kwargs[p] for p in self._params])).prod()
-
+            return 0.0
+        return (
+            self._norm
+            * self._dfunc(numpy.array([kwargs[p] for p in self._params])).prod()
+        )
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
@@ -233,9 +254,12 @@ class SinAngle(UniformAngle):
         """
         if kwargs not in self:
             return -numpy.inf
-        return self._lognorm + \
-            numpy.log(self._dfunc(
-                numpy.array([kwargs[p] for p in self._params]))).sum()
+        return (
+            self._lognorm
+            + numpy.log(
+                self._dfunc(numpy.array([kwargs[p] for p in self._params]))
+            ).sum()
+        )
 
 
 class CosAngle(SinAngle):
@@ -251,17 +275,18 @@ class CosAngle(SinAngle):
         `boundaries.Bounds` instances or tuples. The bounds must be
         in [-PI/2, PI/2].
     """
-    name = 'cos_angle'
+
+    name = "cos_angle"
     _func = numpy.sin
     _dfunc = numpy.cos
     _arcfunc = numpy.arcsin
-    _domainbounds = (-numpy.pi/2, numpy.pi/2)
+    _domainbounds = (-numpy.pi / 2, numpy.pi / 2)
 
     def _cdfinv_param(self, param, value):
         a = self._bounds[param][0]
         b = self._bounds[param][1]
         scale = numpy.sin(b) - numpy.sin(a)
-        offset = 1. - numpy.sin(b)/(numpy.sin(b) - numpy.sin(a))
+        offset = 1.0 - numpy.sin(b) / (numpy.sin(b) - numpy.sin(a))
         new_value = numpy.arcsin((value - offset) * scale)
         return new_value
 
@@ -293,24 +318,32 @@ class UniformSolidAngle(bounded.BoundedDist):
         to applying any other boundary conditions and prior to evaluating the
         pdf. Default is False.
     """
-    name = 'uniform_solidangle'
+
+    name = "uniform_solidangle"
     _polardistcls = SinAngle
     _azimuthaldistcls = UniformAngle
-    _default_polar_angle = 'theta'
-    _default_azimuthal_angle = 'phi'
+    _default_polar_angle = "theta"
+    _default_azimuthal_angle = "phi"
 
-    def __init__(self, polar_angle=None, azimuthal_angle=None,
-                 polar_bounds=None, azimuthal_bounds=None,
-                 azimuthal_cyclic_domain=False):
+    def __init__(
+        self,
+        polar_angle=None,
+        azimuthal_angle=None,
+        polar_bounds=None,
+        azimuthal_bounds=None,
+        azimuthal_cyclic_domain=False,
+    ):
         if polar_angle is None:
             polar_angle = self._default_polar_angle
         if azimuthal_angle is None:
             azimuthal_angle = self._default_azimuthal_angle
-        self._polardist = self._polardistcls(**{
-            polar_angle: polar_bounds})
-        self._azimuthaldist = self._azimuthaldistcls(**{
-            azimuthal_angle: azimuthal_bounds,
-            'cyclic_domain': azimuthal_cyclic_domain})
+        self._polardist = self._polardistcls(**{polar_angle: polar_bounds})
+        self._azimuthaldist = self._azimuthaldistcls(
+            **{
+                azimuthal_angle: azimuthal_bounds,
+                "cyclic_domain": azimuthal_cyclic_domain,
+            }
+        )
         self._polar_angle = polar_angle
         self._azimuthal_angle = azimuthal_angle
         self._bounds = self._polardist.bounds.copy()
@@ -337,7 +370,7 @@ class UniformSolidAngle(bounded.BoundedDist):
         return self._azimuthal_angle
 
     def _cdfinv_param(self, param, value):
-        """ Return the cdfinv for a single given parameter """
+        """Return the cdfinv for a single given parameter"""
         if param == self.polar_angle:
             return self._polardist._cdfinv_param(param, value)
         elif param == self.azimuthal_angle:
@@ -370,7 +403,6 @@ class UniformSolidAngle(bounded.BoundedDist):
         azval = self._bounds[self._azimuthal_angle].apply_conditions(azval)
         return {self._polar_angle: polarval, self._azimuthal_angle: azval}
 
-
     def _pdf(self, **kwargs):
         r"""
         Returns the pdf at the given angles.
@@ -387,9 +419,7 @@ class UniformSolidAngle(bounded.BoundedDist):
         float
             The value of the pdf at the given values.
         """
-        return self._polardist._pdf(**kwargs) * \
-            self._azimuthaldist._pdf(**kwargs)
-
+        return self._polardist._pdf(**kwargs) * self._azimuthaldist._pdf(**kwargs)
 
     def _logpdf(self, **kwargs):
         r"""
@@ -407,8 +437,7 @@ class UniformSolidAngle(bounded.BoundedDist):
         float
             The value of the pdf at the given values.
         """
-        return self._polardist._logpdf(**kwargs) +\
-            self._azimuthaldist._logpdf(**kwargs)
+        return self._polardist._logpdf(**kwargs) + self._azimuthaldist._logpdf(**kwargs)
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
@@ -475,37 +504,46 @@ class UniformSolidAngle(bounded.BoundedDist):
 
         # get the variables that correspond to the polar/azimuthal angles
         try:
-            polar_angle = cp.get_opt_tag(section, 'polar-angle', tag)
+            polar_angle = cp.get_opt_tag(section, "polar-angle", tag)
         except Error:
             polar_angle = cls._default_polar_angle
         try:
-            azimuthal_angle = cp.get_opt_tag(section, 'azimuthal-angle', tag)
+            azimuthal_angle = cp.get_opt_tag(section, "azimuthal-angle", tag)
         except Error:
             azimuthal_angle = cls._default_azimuthal_angle
 
         if polar_angle not in variable_args:
-            raise Error("polar-angle %s is not one of the variable args (%s)"%(
-                polar_angle, ', '.join(variable_args)))
+            raise Error(
+                "polar-angle %s is not one of the variable args (%s)"
+                % (polar_angle, ", ".join(variable_args))
+            )
         if azimuthal_angle not in variable_args:
-            raise Error("azimuthal-angle %s is not one of the variable args "%(
-                azimuthal_angle) + "(%s)"%(', '.join(variable_args)))
+            raise Error(
+                "azimuthal-angle %s is not one of the variable args "
+                % (azimuthal_angle)
+                + "(%s)" % (", ".join(variable_args))
+            )
 
         # get the bounds, if provided
         polar_bounds = bounded.get_param_bounds_from_config(
-                                                   cp, section, tag,
-                                                   polar_angle)
+            cp, section, tag, polar_angle
+        )
         azimuthal_bounds = bounded.get_param_bounds_from_config(
-                                                   cp, section, tag,
-                                                   azimuthal_angle)
+            cp, section, tag, azimuthal_angle
+        )
 
         # see if the a cyclic domain is desired for the azimuthal angle
-        azimuthal_cyclic_domain = cp.has_option_tag(section,
-            'azimuthal_cyclic_domain', tag)
+        azimuthal_cyclic_domain = cp.has_option_tag(
+            section, "azimuthal_cyclic_domain", tag
+        )
 
-        return cls(polar_angle=polar_angle, azimuthal_angle=azimuthal_angle,
-                   polar_bounds=polar_bounds,
-                   azimuthal_bounds=azimuthal_bounds,
-                   azimuthal_cyclic_domain=azimuthal_cyclic_domain)
+        return cls(
+            polar_angle=polar_angle,
+            azimuthal_angle=azimuthal_angle,
+            polar_bounds=polar_bounds,
+            azimuthal_bounds=azimuthal_bounds,
+            azimuthal_cyclic_domain=azimuthal_cyclic_domain,
+        )
 
 
-__all__ = ['UniformAngle', 'SinAngle', 'CosAngle', 'UniformSolidAngle']
+__all__ = ["UniformAngle", "SinAngle", "CosAngle", "UniformSolidAngle"]

@@ -26,17 +26,17 @@ This modules provides classes and functions for using the cpnest sampler
 packages for parameter estimation.
 """
 
-
+import array
 import logging
 import os
-import array
+
 import cpnest
 import cpnest.model as cpm
-from pycbc.inference.io import (CPNestFile, validate_checkpoint_files)
-from .base import (BaseSampler, setup_output)
+
+from pycbc.inference.io import CPNestFile, validate_checkpoint_files
+
+from .base import BaseSampler, setup_output
 from .base_mcmc import get_optional_arg_from_config
-
-
 
 #
 # =============================================================================
@@ -45,6 +45,7 @@ from .base_mcmc import get_optional_arg_from_config
 #
 # =============================================================================
 #
+
 
 class CPNestSampler(BaseSampler):
     """This class is used to construct an CPNest sampler from the cpnest
@@ -61,11 +62,19 @@ class CPNestSampler(BaseSampler):
         over multiple sets of arguments and possibly maps them to
         cores/nodes/etc.
     """
+
     name = "cpnest"
     _io = CPNestFile
 
-    def __init__(self, model, nlive, maxmcmc=1000, nthreads=1, verbose=1,
-                 loglikelihood_function=None):
+    def __init__(
+        self,
+        model,
+        nlive,
+        maxmcmc=1000,
+        nthreads=1,
+        verbose=1,
+        loglikelihood_function=None,
+    ):
         self.model = model
         self.nlive = nlive
         self.maxmcmc = maxmcmc
@@ -83,11 +92,15 @@ class CPNestSampler(BaseSampler):
     def run(self):
         out_dir = os.path.dirname(os.path.abspath(self.checkpoint_file))
         if self._sampler is None:
-            self._sampler = cpnest.CPNest(self.model_call, verbose=1,
-                                          output=out_dir,
-                                          nthreads=self.nthreads,
-                                          nlive=self.nlive,
-                                          maxmcmc=self.maxmcmc, resume=True)
+            self._sampler = cpnest.CPNest(
+                self.model_call,
+                verbose=1,
+                output=out_dir,
+                nthreads=self.nthreads,
+                nlive=self.nlive,
+                maxmcmc=self.maxmcmc,
+                resume=True,
+            )
         res = self._sampler.run()
 
     @property
@@ -99,25 +112,31 @@ class CPNestSampler(BaseSampler):
         return len(tuple(self.samples.values())[0])
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1,
-                    use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """
         Loads the sampler from the given config file.
         """
         section = "sampler"
         # check name
         assert cp.get(section, "name") == cls.name, (
-            "name in section [sampler] must match mine")
+            "name in section [sampler] must match mine"
+        )
         # get the number of live points to use
         nlive = int(cp.get(section, "nlive"))
         maxmcmc = int(cp.get(section, "maxmcmc"))
         nthreads = int(cp.get(section, "nthreads"))
         verbose = int(cp.get(section, "verbose"))
-        loglikelihood_function = \
-            get_optional_arg_from_config(cp, section, 'loglikelihood-function')
-        obj = cls(model, nlive=nlive, maxmcmc=maxmcmc, nthreads=nthreads,
-                  verbose=verbose,
-                  loglikelihood_function=loglikelihood_function)
+        loglikelihood_function = get_optional_arg_from_config(
+            cp, section, "loglikelihood-function"
+        )
+        obj = cls(
+            model,
+            nlive=nlive,
+            maxmcmc=maxmcmc,
+            nthreads=nthreads,
+            verbose=verbose,
+            loglikelihood_function=loglikelihood_function,
+        )
 
         setup_output(obj, output_file, check_nsamples=False)
         if not obj.new_checkpoint:
@@ -139,24 +158,26 @@ class CPNestSampler(BaseSampler):
             self.write_results(fn)
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
-            self.checkpoint_file, self.backup_file, check_nsamples=False)
+            self.checkpoint_file, self.backup_file, check_nsamples=False
+        )
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
 
     @property
     def model_stats(self):
-        logl = self._sampler.posterior_samples['logL']
-        logp = self._sampler.posterior_samples['logPrior']
-        return {'loglikelihood': logl, 'logprior': logp}
+        logl = self._sampler.posterior_samples["logL"]
+        logp = self._sampler.posterior_samples["logPrior"]
+        return {"loglikelihood": logl, "logprior": logp}
 
     @property
     def samples(self):
-        samples_dict = {p: self._sampler.posterior_samples[p] for p in
-                        self.posterior_samples.dtype.names}
+        samples_dict = {
+            p: self._sampler.posterior_samples[p]
+            for p in self.posterior_samples.dtype.names
+        }
         return samples_dict
 
-    def set_initial_conditions(self, initial_distribution=None,
-                               samples_file=None):
+    def set_initial_conditions(self, initial_distribution=None, samples_file=None):
         """Sets up the starting point for the sampler.
 
         Should also set the sampler's random state.
@@ -176,7 +197,7 @@ class CPNestSampler(BaseSampler):
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
         """
-        with self.io(filename, 'a') as fp:
+        with self.io(filename, "a") as fp:
             # write samples
             fp.write_samples(self.samples, self.model.variable_params)
             # write stats
@@ -211,6 +232,7 @@ class CPNestModel(cpm.Model):
     model : inference.BaseModel instance
              A model instance from pycbc.
     """
+
     def __init__(self, model, loglikelihood_function=None):
         if model.sampling_transforms is not None:
             raise ValueError("CPNest does not support sampling transforms")
@@ -218,7 +240,7 @@ class CPNestModel(cpm.Model):
         self.names = list(model.sampling_params)
         # set up lohlikelihood_function
         if loglikelihood_function is None:
-            loglikelihood_function = 'loglikelihood'
+            loglikelihood_function = "loglikelihood"
         self.loglikelihood_function = loglikelihood_function
         bounds = {}
         for dist in model.prior_distribution.distributions:
@@ -227,10 +249,12 @@ class CPNestModel(cpm.Model):
 
     def new_point(self):
         point = self.model.prior_rvs()
-        return cpm.LivePoint(list(self.model.sampling_params),
-                             array.array('d', [point[p][0] for p in self.model.sampling_params]))
+        return cpm.LivePoint(
+            list(self.model.sampling_params),
+            array.array("d", [point[p][0] for p in self.model.sampling_params]),
+        )
 
-    def log_prior(self,xx):
+    def log_prior(self, xx):
         self.model.update(**xx)
         return self.model.logprior
 

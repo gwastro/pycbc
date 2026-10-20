@@ -27,10 +27,11 @@ classes are offered that will map values to a specified domain using either
 cyclic boundaries or reflected boundaries.
 """
 
-import numpy
 import logging
 
-logger = logging.getLogger('pycbc.boundaries')
+import numpy
+
+logger = logging.getLogger("pycbc.boundaries")
 
 
 class _Bound(float):
@@ -56,7 +57,7 @@ class _Bound(float):
 class OpenBound(_Bound):
     """Sets larger and smaller functions to be `>` and `<`, respectively."""
 
-    name = 'open'
+    name = "open"
 
     def larger(self, other):
         """Returns True if `other` is `>`, False otherwise"""
@@ -70,7 +71,7 @@ class OpenBound(_Bound):
 class ClosedBound(_Bound):
     """Sets larger and smaller functions to be `>=` and `<=`, respectively."""
 
-    name = 'closed'
+    name = "closed"
 
     def larger(self, other):
         return self >= other
@@ -82,10 +83,10 @@ class ClosedBound(_Bound):
 class ReflectedBound(ClosedBound):
     """Inherits from `ClosedBound`, adding reflection functions."""
 
-    name = 'reflected'
+    name = "reflected"
 
     def reflect(self, value):
-        return 2*self - value
+        return 2 * self - value
 
     def reflect_left(self, value):
         """Only reflects the value if is > self."""
@@ -103,13 +104,14 @@ class ReflectedBound(ClosedBound):
 boundary_types = {
     OpenBound.name: OpenBound,
     ClosedBound.name: ClosedBound,
-    ReflectedBound.name: ReflectedBound
+    ReflectedBound.name: ReflectedBound,
 }
 
 
 #
 #   Helper functions for applying conditions to boundaries
 #
+
 
 def apply_cyclic(value, bounds):
     """Given a value, applies cyclic boundary conditions between the minimum
@@ -127,7 +129,8 @@ def apply_cyclic(value, bounds):
     float
         The value after the cyclic bounds are applied.
     """
-    return (value - bounds._min) %(bounds._max - bounds._min) + bounds._min
+    return (value - bounds._min) % (bounds._max - bounds._min) + bounds._min
+
 
 def reflect_well(value, bounds):
     """Given some boundaries, reflects the value until it falls within both
@@ -162,6 +165,7 @@ def _pass(value):
 #
 #   Bounds class
 #
+
 
 class Bounds(object):
     """Creates and stores bounds using the given values.
@@ -282,15 +286,19 @@ class Bounds(object):
     >>> fig.show()
     """
 
-    def __init__(self, min_bound=-numpy.inf, max_bound=numpy.inf,
-            btype_min='closed', btype_max='open', cyclic=False):
+    def __init__(
+        self,
+        min_bound=-numpy.inf,
+        max_bound=numpy.inf,
+        btype_min="closed",
+        btype_max="open",
+        cyclic=False,
+    ):
         # check boundary values
         if min_bound >= max_bound:
             raise ValueError("min_bound must be < max_bound")
-        if cyclic and not (
-                numpy.isfinite(min_bound) and numpy.isfinite(max_bound)):
-            raise ValueError("if using cyclic, min and max bounds must both "
-                "be finite")
+        if cyclic and not (numpy.isfinite(min_bound) and numpy.isfinite(max_bound)):
+            raise ValueError("if using cyclic, min and max bounds must both be finite")
         # store bounds
         try:
             self._min = boundary_types[btype_min](min_bound)
@@ -304,38 +312,42 @@ class Bounds(object):
         self._cyclic = bool(cyclic)
         # store reflection conditions; we'll vectorize them here so that they
         # can be used with arrays
-        if self._min.name == 'reflected' and self._max.name == 'reflected':
+        if self._min.name == "reflected" and self._max.name == "reflected":
             self._reflect = numpy.vectorize(self._reflect_well)
-            self.reflected = 'well'
-        elif self._min.name == 'reflected':
+            self.reflected = "well"
+        elif self._min.name == "reflected":
             self._reflect = numpy.vectorize(self._min.reflect_right)
-            self.reflected = 'min'
-        elif self._max.name == 'reflected':
+            self.reflected = "min"
+        elif self._max.name == "reflected":
             self._reflect = numpy.vectorize(self._max.reflect_left)
-            self.reflected = 'max'
+            self.reflected = "max"
         else:
             self._reflect = _pass
             self.reflected = False
 
     def __repr__(self):
-        return str(self.__class__)[:-1] + " " + " ".join(
-                   map(str, ["min", self._min, "max", self._max,
-                             "cyclic", self._cyclic])) + ">"
+        return (
+            str(self.__class__)[:-1]
+            + " "
+            + " ".join(
+                map(str, ["min", self._min, "max", self._max, "cyclic", self._cyclic])
+            )
+            + ">"
+        )
 
     @property
     def min(self):
-        """_bounds instance: The minimum bound """
+        """_bounds instance: The minimum bound"""
         return self._min
 
     @property
     def max(self):
-        """_bounds instance: The maximum bound """
+        """_bounds instance: The maximum bound"""
         return self._max
 
     @property
     def cyclic(self):
-        """bool: Whether the bounds are cyclic or not.
-        """
+        """bool: Whether the bounds are cyclic or not."""
         return self._cyclic
 
     def __getitem__(self, ii):
@@ -353,13 +365,11 @@ class Bounds(object):
         return self._min.smaller(value) & self._max.larger(value)
 
     def _reflect_well(self, value):
-        """Thin wrapper around `reflect_well` that passes self as the `bounds`.
-        """
+        """Thin wrapper around `reflect_well` that passes self as the `bounds`."""
         return reflect_well(value, self)
 
     def _apply_cyclic(self, value):
-        """Thin wrapper around `apply_cyclic` that passes self as the `bounds`.
-        """
+        """Thin wrapper around `apply_cyclic` that passes self as the `bounds`."""
         return apply_cyclic(value, self)
 
     def apply_conditions(self, value):

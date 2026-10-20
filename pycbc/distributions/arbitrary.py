@@ -16,15 +16,18 @@
 This modules provides classes for evaluating arbitrary distributions from
 a file.
 """
+
 import logging
+
 import numpy
 import scipy.stats
 
-from pycbc.distributions import bounded
 import pycbc.transforms
+from pycbc.distributions import bounded
 from pycbc.io.hdf import HFile
 
-logger = logging.getLogger('pycbc.distributions.arbitrary')
+logger = logging.getLogger("pycbc.distributions.arbitrary")
+
 
 class Arbitrary(bounded.BoundedDist):
     r"""A distribution constructed from a set of parameter values using a kde.
@@ -44,7 +47,8 @@ class Arbitrary(bounded.BoundedDist):
         a single kde will be produced with dimension equal to the number of
         parameters.
     """
-    name = 'arbitrary'
+
+    name = "arbitrary"
 
     def __init__(self, bounds=None, bandwidth="scott", **kwargs):
         # initialize the bounds
@@ -54,15 +58,16 @@ class Arbitrary(bounded.BoundedDist):
         super(Arbitrary, self).__init__(**bounds)
         # check that all parameters specified in bounds have samples
         if set(self.params) != set(kwargs.keys()):
-            raise ValueError("Must provide samples for all parameters given "
-                             "in the bounds dictionary")
+            raise ValueError(
+                "Must provide samples for all parameters given in the bounds dictionary"
+            )
         # if bounds are provided use logit transform to move the points
         # to +/- inifinity
         self._transforms = {}
         self._tparams = {}
-        for param,bnds in self.bounds.items():
+        for param, bnds in self.bounds.items():
             if numpy.isfinite(bnds[1] - bnds[0]):
-                tparam = 'logit'+param
+                tparam = "logit" + param
                 samples = kwargs[param]
                 t = pycbc.transforms.Logit(param, tparam, domain=bnds)
                 self._transforms[tparam] = t
@@ -74,8 +79,7 @@ class Arbitrary(bounded.BoundedDist):
                 # transform the sample points
                 kwargs[param] = t.transform({param: samples})[tparam]
             elif not (~numpy.isfinite(bnds[0]) and ~numpy.isfinite(bnds[1])):
-                raise ValueError("if specifying bounds, both bounds must "
-                                 "be finite")
+                raise ValueError("if specifying bounds, both bounds must be finite")
         # build the kde
         self._kde = self.get_kde_from_arrays(*[kwargs[p] for p in self.params])
         self.set_bandwidth(bandwidth)
@@ -95,11 +99,10 @@ class Arbitrary(bounded.BoundedDist):
         """
         for p in self._params:
             if p not in kwargs.keys():
-                raise ValueError('Missing parameter {} to construct pdf.'
-                                 .format(p))
+                raise ValueError("Missing parameter {} to construct pdf.".format(p))
         if kwargs in self:
             # transform into the kde space
-            jacobian = 1.
+            jacobian = 1.0
             for param, tparam in self._tparams.items():
                 t = self._transforms[tparam]
                 try:
@@ -108,7 +111,7 @@ class Arbitrary(bounded.BoundedDist):
                     # can get a value error if the value is exactly == to
                     # the bounds, in which case, just return 0.
                     if kwargs[param] in self.bounds[param]:
-                        return 0.
+                        return 0.0
                     else:
                         raise ValueError(e)
                 kwargs[param] = samples[tparam]
@@ -118,14 +121,13 @@ class Arbitrary(bounded.BoundedDist):
                 # p = J * p', where J is the Jacobian of going from p to p'
                 jacobian *= t.jacobian(samples)
             # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
-            this_pdf = jacobian * self._kde.evaluate([kwargs[p]
-                                                      for p in self._params])
+            this_pdf = jacobian * self._kde.evaluate([kwargs[p] for p in self._params])
             if len(this_pdf) == 1:
                 return float(this_pdf)
             else:
                 return this_pdf
         else:
-            return 0.
+            return 0.0
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
@@ -166,14 +168,13 @@ class Arbitrary(bounded.BoundedDist):
         size = int(size)
         arr = numpy.zeros(size, dtype=dtype)
         draws = self._kde.resample(size)
-        draws = {param: draws[ii,:] for ii,param in enumerate(self.params)}
-        for (param,_) in dtype:
+        draws = {param: draws[ii, :] for ii, param in enumerate(self.params)}
+        for param, _ in dtype:
             try:
                 # transform back to param space
                 tparam = self._tparams[param]
                 tdraws = {tparam: draws[param]}
-                draws[param] = self._transforms[tparam].inverse_transform(
-                    tdraws)[param]
+                draws[param] = self._transforms[tparam].inverse_transform(tdraws)[param]
             except KeyError:
                 pass
             arr[param] = draws[param]
@@ -195,8 +196,10 @@ class Arbitrary(bounded.BoundedDist):
         """Raises a NotImplementedError; to load from a config file, use
         `FromFile`.
         """
-        raise NotImplementedError("This class does not support loading from a "
-                                  "config file. Use `FromFile` instead.")
+        raise NotImplementedError(
+            "This class does not support loading from a "
+            "config file. Use `FromFile` instead."
+        )
 
 
 class FromFile(Arbitrary):
@@ -233,10 +236,12 @@ class FromFile(Arbitrary):
     kde :
         The kde obtained from the values in the file.
     """
-    name = 'fromfile'
+
+    name = "fromfile"
+
     def __init__(self, filename=None, datagroup=None, **params):
         if filename is None:
-            raise ValueError('A file must be specified for this distribution.')
+            raise ValueError("A file must be specified for this distribution.")
         self._filename = filename
         self.datagroup = datagroup
         # Get the parameter names to pass to get_kde_from_file
@@ -245,13 +250,11 @@ class FromFile(Arbitrary):
         else:
             ps = list(params.keys())
         param_vals, bw = self.get_arrays_from_file(filename, params=ps)
-        super(FromFile, self).__init__(bounds=params, bandwidth=bw,
-                                       **param_vals)
+        super(FromFile, self).__init__(bounds=params, bandwidth=bw, **param_vals)
 
     @property
     def filename(self):
-        """str: The path to the file containing values for the parameter(s).
-        """
+        """str: The path to the file containing values for the parameter(s)."""
         return self._filename
 
     def get_arrays_from_file(self, params_file, params=None):
@@ -271,9 +274,9 @@ class FromFile(Arbitrary):
             A dictionary of the parameters mapping `param_name -> array`.
         """
         try:
-            f = HFile(params_file, 'r')
+            f = HFile(params_file, "r")
         except:
-            raise ValueError('File not found.')
+            raise ValueError("File not found.")
         if self.datagroup is not None:
             get = f[self.datagroup]
         else:
@@ -283,8 +286,7 @@ class FromFile(Arbitrary):
                 params = [params]
             for p in params:
                 if p not in get.keys():
-                    raise ValueError('Parameter {} is not in {}'
-                                     .format(p, params_file))
+                    raise ValueError("Parameter {} is not in {}".format(p, params_file))
         else:
             params = [str(k) for k in get.keys()]
         params_values = {p: get[p][()] for p in params}
@@ -333,7 +335,9 @@ class FromFile(Arbitrary):
         BoundedDist
             A distribution instance from the pycbc.inference.prior module.
         """
-        return bounded.bounded_from_config(cls, cp, section, variable_args,
-                                           bounds_required=False)
+        return bounded.bounded_from_config(
+            cls, cp, section, variable_args, bounds_required=False
+        )
 
-__all__ = ['Arbitrary', 'FromFile']
+
+__all__ = ["Arbitrary", "FromFile"]

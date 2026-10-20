@@ -1,25 +1,27 @@
 from bisect import bisect_right
+
 try:
-    from fpconst import PosInf, NegInf
+    from fpconst import NegInf, PosInf
 except ImportError:
     # fpconst is not part of the standard library and might not be available
     PosInf = float("+inf")
     NegInf = float("-inf")
-import numpy
-import math
 import logging
+import math
 
-logger = logging.getLogger('pycbc.bin_utils')
+import numpy
+
+logger = logging.getLogger("pycbc.bin_utils")
 
 
 class Bins(object):
-
     """
     Parent class for 1-dimensional binnings.
 
     Not intended to be used directly, but to be subclassed for use in real
     bins classes.
     """
+
     def __init__(self, minv, maxv, n):
         """
         Initialize a Bins instance.  The three arguments are the
@@ -58,9 +60,10 @@ class Bins(object):
         if isinstance(x, slice):
             if x.step is not None:
                 raise NotImplementedError("step not supported: %s" % repr(x))
-            return slice(self[x.start] if x.start is not None
-                         else 0, self[x.stop] + 1 if x.stop is not None
-                         else len(self))
+            return slice(
+                self[x.start] if x.start is not None else 0,
+                self[x.stop] + 1 if x.stop is not None else len(self),
+            )
         raise NotImplementedError
 
     def __iter__(self):
@@ -94,7 +97,6 @@ class Bins(object):
 
 
 class IrregularBins(Bins):
-
     """
     Bins with arbitrary, irregular spacing.  We only require strict
     monotonicity of the bin boundaries.  N boundaries define N-1 bins.
@@ -122,6 +124,7 @@ class IrregularBins(Bins):
     >>> x == y
     True
     """
+
     def __init__(self, boundaries):
         """
         Initialize a set of custom bins with the bin boundaries.
@@ -162,7 +165,6 @@ class IrregularBins(Bins):
 
 
 class LinearBins(Bins):
-
     """
     Linearly-spaced bins.  There are n bins of equal size, the first
     bin starts on the lower bound and the last bin ends on the upper
@@ -200,6 +202,7 @@ class LinearBins(Bins):
     >>> x[10:]
     slice(1, 3, None)
     """
+
     def __init__(self, minv, maxv, n):
         super(LinearBins, self).__init__(minv, maxv, n)
         self.delta = float(maxv - minv) / n
@@ -218,15 +221,15 @@ class LinearBins(Bins):
         return numpy.linspace(self.minv, self.maxv - self.delta, len(self))
 
     def centres(self):
-        return numpy.linspace(self.minv + self.delta / 2.,
-                              self.maxv - self.delta / 2., len(self))
+        return numpy.linspace(
+            self.minv + self.delta / 2.0, self.maxv - self.delta / 2.0, len(self)
+        )
 
     def upper(self):
         return numpy.linspace(self.minv + self.delta, self.maxv, len(self))
 
 
 class LinearPlusOverflowBins(Bins):
-
     """
     Linearly-spaced bins with overflow at the edges.
 
@@ -265,6 +268,7 @@ class LinearPlusOverflowBins(Bins):
     >>> x[9:float("+inf")]
     slice(2, 5, None)
     """
+
     def __init__(self, minv, maxv, n):
         if n < 3:
             raise ValueError("n must be >= 3")
@@ -286,28 +290,33 @@ class LinearPlusOverflowBins(Bins):
 
     def lower(self):
         return numpy.concatenate(
-            (numpy.array([NegInf]),
-             self.minv + self.delta * numpy.arange(len(self) - 2),
-             numpy.array([self.maxv]))
+            (
+                numpy.array([NegInf]),
+                self.minv + self.delta * numpy.arange(len(self) - 2),
+                numpy.array([self.maxv]),
+            )
         )
 
     def centres(self):
         return numpy.concatenate(
-            (numpy.array([NegInf]),
-             self.minv + self.delta * (numpy.arange(len(self) - 2) + 0.5),
-             numpy.array([PosInf]))
+            (
+                numpy.array([NegInf]),
+                self.minv + self.delta * (numpy.arange(len(self) - 2) + 0.5),
+                numpy.array([PosInf]),
+            )
         )
 
     def upper(self):
         return numpy.concatenate(
-            (numpy.array([self.minv]),
-             self.minv + self.delta * (numpy.arange(len(self) - 2) + 1),
-             numpy.array([PosInf]))
+            (
+                numpy.array([self.minv]),
+                self.minv + self.delta * (numpy.arange(len(self) - 2) + 1),
+                numpy.array([PosInf]),
+            )
         )
 
 
 class LogarithmicBins(Bins):
-
     """
     Logarithmically-spaced bins.
 
@@ -325,6 +334,7 @@ class LogarithmicBins(Bins):
     >>> x[25]
     2
     """
+
     def __init__(self, minv, maxv, n):
         super(LogarithmicBins, self).__init__(minv, maxv, n)
         self.delta = (math.log(maxv) - math.log(minv)) / n
@@ -333,8 +343,7 @@ class LogarithmicBins(Bins):
         if isinstance(x, slice):
             return super(LogarithmicBins, self).__getitem__(x)
         if self.minv <= x < self.maxv:
-            return int(math.floor((math.log(x) - math.log(self.minv)) /
-                                  self.delta))
+            return int(math.floor((math.log(x) - math.log(self.minv)) / self.delta))
         if x == self.maxv:
             # special "measure zero" corner case
             return len(self) - 1
@@ -342,25 +351,28 @@ class LogarithmicBins(Bins):
 
     def lower(self):
         return numpy.exp(
-            numpy.linspace(math.log(self.minv), math.log(self.maxv) -
-                           self.delta, len(self))
+            numpy.linspace(
+                math.log(self.minv), math.log(self.maxv) - self.delta, len(self)
+            )
         )
 
     def centres(self):
         return numpy.exp(
-            numpy.linspace(math.log(self.minv), math.log(self.maxv) -
-                           self.delta, len(self)) + self.delta / 2.
+            numpy.linspace(
+                math.log(self.minv), math.log(self.maxv) - self.delta, len(self)
+            )
+            + self.delta / 2.0
         )
 
     def upper(self):
         return numpy.exp(
-            numpy.linspace(math.log(self.minv) + self.delta,
-                           math.log(self.maxv), len(self))
+            numpy.linspace(
+                math.log(self.minv) + self.delta, math.log(self.maxv), len(self)
+            )
         )
 
 
 class LogarithmicPlusOverflowBins(Bins):
-
     """
     Logarithmically-spaced bins plus one bin at each end that goes to
     zero and positive infinity respectively.  There are n-2 bins each
@@ -392,6 +404,7 @@ class LogarithmicPlusOverflowBins(Bins):
     >>> x.centres()
     array([ 0.   ,  1.70997595,  5.        , 14.62008869,       inf])
     """
+
     def __init__(self, minv, maxv, n):
         if n < 3:
             raise ValueError("n must be >= 3")
@@ -402,8 +415,7 @@ class LogarithmicPlusOverflowBins(Bins):
         if isinstance(x, slice):
             return super(LogarithmicPlusOverflowBins, self).__getitem__(x)
         if self.minv <= x < self.maxv:
-            return 1 + int(math.floor((math.log(x) - math.log(self.minv)) /
-                                      self.delta))
+            return 1 + int(math.floor((math.log(x) - math.log(self.minv)) / self.delta))
         if x >= self.maxv:
             # infinity overflow bin
             return len(self) - 1
@@ -414,32 +426,46 @@ class LogarithmicPlusOverflowBins(Bins):
 
     def lower(self):
         return numpy.concatenate(
-            (numpy.array([0.]),
-             numpy.exp(numpy.linspace(math.log(self.minv), math.log(self.maxv),
-                                      len(self) - 1))
-             )
+            (
+                numpy.array([0.0]),
+                numpy.exp(
+                    numpy.linspace(
+                        math.log(self.minv), math.log(self.maxv), len(self) - 1
+                    )
+                ),
+            )
         )
 
     def centres(self):
         return numpy.concatenate(
-            (numpy.array([0.]),
-             numpy.exp(numpy.linspace(math.log(self.minv), math.log(self.maxv) -
-                       self.delta, len(self) - 2) + self.delta / 2.),
-             numpy.array([PosInf])
-             )
+            (
+                numpy.array([0.0]),
+                numpy.exp(
+                    numpy.linspace(
+                        math.log(self.minv),
+                        math.log(self.maxv) - self.delta,
+                        len(self) - 2,
+                    )
+                    + self.delta / 2.0
+                ),
+                numpy.array([PosInf]),
+            )
         )
 
     def upper(self):
         return numpy.concatenate(
-            (numpy.exp(numpy.linspace(math.log(self.minv), math.log(self.maxv),
-                       len(self) - 1)),
-             numpy.array([PosInf])
-             )
+            (
+                numpy.exp(
+                    numpy.linspace(
+                        math.log(self.minv), math.log(self.maxv), len(self) - 1
+                    )
+                ),
+                numpy.array([PosInf]),
+            )
         )
 
 
 class NDBins(tuple):
-
     """
     Multi-dimensional co-ordinate binning.  An instance of this object
     is used to convert a tuple of co-ordinates into a tuple of bin
@@ -471,6 +497,7 @@ class NDBins(tuple):
     Note that the co-ordinates to be converted must be a tuple, even if
     it is only a 1-dimensional co-ordinate.
     """
+
     def __new__(cls, *args):
         new = tuple.__new__(cls, *args)
         new.minv = tuple(b.minv for b in new)
@@ -533,7 +560,6 @@ class NDBins(tuple):
 
 
 class BinnedArray(object):
-
     """
     A convenience wrapper, using the NDBins class to provide access to
     the elements of an array object.  Technical reasons preclude
@@ -581,14 +607,14 @@ class BinnedArray(object):
     >>> x.argmax()
     (1.0, 1.0)
     """
+
     def __init__(self, bins, array=None, dtype="double"):
         self.bins = bins
         if array is None:
             self.array = numpy.zeros(bins.shape, dtype=dtype)
         else:
             if array.shape != bins.shape:
-                raise ValueError("input array and input bins must have the "
-                                 "same shape")
+                raise ValueError("input array and input bins must have the same shape")
             self.array = array
 
     def __getitem__(self, coords):
@@ -620,9 +646,13 @@ class BinnedArray(object):
         minimum value.  Same as numpy.argmin(), converting the
         indexes to bin co-ordinates.
         """
-        return tuple(centres[index] for centres, index in
-                     zip(self.centres(), numpy.unravel_index(self.array.argmin(),
-                                                             self.array.shape)))
+        return tuple(
+            centres[index]
+            for centres, index in zip(
+                self.centres(),
+                numpy.unravel_index(self.array.argmin(), self.array.shape),
+            )
+        )
 
     def argmax(self):
         """
@@ -630,9 +660,13 @@ class BinnedArray(object):
         maximum value.  Same as numpy.argmax(), converting the
         indexes to bin co-ordinates.
         """
-        return tuple(centres[index] for centres, index in
-                     zip(self.centres(), numpy.unravel_index(self.array.argmax(),
-                                                             self.array.shape)))
+        return tuple(
+            centres[index]
+            for centres, index in zip(
+                self.centres(),
+                numpy.unravel_index(self.array.argmax(), self.array.shape),
+            )
+        )
 
     def logregularize(self, epsilon=2**-1074):
         """
@@ -645,7 +679,6 @@ class BinnedArray(object):
 
 
 class BinnedRatios(object):
-
     """
     Like BinnedArray, but provides a numerator array and a denominator
     array.  The incnumerator() method increments a bin in the numerator
@@ -655,6 +688,7 @@ class BinnedRatios(object):
     accessible as the numerator and denominator attributes, which are
     both BinnedArray objects.
     """
+
     def __init__(self, bins, dtype="double"):
         self.numerator = BinnedArray(bins, dtype=dtype)
         self.denominator = BinnedArray(bins, dtype=dtype)

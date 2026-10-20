@@ -6,27 +6,29 @@ Split sets are organized to maximize time between injections.
 """
 
 import argparse
+
 import numpy as np
 
 import pycbc
 from pycbc.inject import InjectionSet
 from pycbc.io.hdf import HFile
 
-
 # Parse command line
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("-f", "--output-files", nargs='*', required=True,
-                    help="Names of output files")
-parser.add_argument("-i", "--input-file", required=True,
-                    help="Injection file to be split")
+parser.add_argument(
+    "-f", "--output-files", nargs="*", required=True, help="Names of output files"
+)
+parser.add_argument(
+    "-i", "--input-file", required=True, help="Injection file to be split"
+)
 
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
 # Read in input file as both an hdf file and an InjectionSet object
-inj_file = HFile(args.input_file, 'r')
+inj_file = HFile(args.input_file, "r")
 inj_set = InjectionSet(args.input_file)
 
 # Define table of injection info
@@ -35,12 +37,12 @@ inj_table = inj_set.table
 # InjectionSet.write() requires static params as a dictionary,
 # so get that from file object.
 # Ignore the "static_params" copy.
-static_params = {key : inj_file.attrs[key] for key in inj_file.attrs
-                 if key != 'static_args'}
+static_params = {
+    key: inj_file.attrs[key] for key in inj_file.attrs if key != "static_args"
+}
 
 # Also get the names of variable params as write_args
-write_args = [arg for arg in inj_table.fieldnames
-              if arg not in static_params]
+write_args = [arg for arg in inj_table.fieldnames if arg not in static_params]
 
 num_injs = len(inj_table)
 num_splits = len(args.output_files)
@@ -60,14 +62,15 @@ if remainder > 0:
 assert sum(injs_per_split) == num_injs, "Not all injections were accounted for!"
 
 # Sort injections by time
-inj_table.sort(order='tc')
+inj_table.sort(order="tc")
 
 # Split injections into a list of smaller sets
 for i in range(num_splits):
     # Number of injections in this split
     injs_in_split = injs_per_split[i]
     # Spread injections by time so they don't overlap
-    injs_to_get = [i+(num_splits*j) for j in range(injs_in_split)]
+    injs_to_get = [i + (num_splits * j) for j in range(injs_in_split)]
     # Write to file
-    InjectionSet.write(args.output_files[i], inj_table[injs_to_get],
-                       write_args, static_params)
+    InjectionSet.write(
+        args.output_files[i], inj_table[injs_to_get], write_args, static_params
+    )

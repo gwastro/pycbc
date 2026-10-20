@@ -16,19 +16,20 @@
 #  MA  02111-1307  USA
 
 import pycbc
+
 from .core import _list_available
 
-_backend_dict = {'cuda' : 'cufft',
-                 'pyfft' : 'cuda_pyfft'}
-_backend_list = ['cuda','pyfft']
+_backend_dict = {"cuda": "cufft", "pyfft": "cuda_pyfft"}
+_backend_list = ["cuda", "pyfft"]
 
 _alist = []
 _adict = {}
 
 if pycbc.HAVE_CUDA:
-    _alist, _adict = _list_available(_backend_list,_backend_dict)
+    _alist, _adict = _list_available(_backend_list, _backend_dict)
 
 cuda_backend = None
+
 
 def set_backend(backend_list):
     global cuda_backend
@@ -37,7 +38,9 @@ def set_backend(backend_list):
             cuda_backend = backend
             break
 
+
 def get_backend():
     return _adict[cuda_backend]
+
 
 set_backend(_backend_list)

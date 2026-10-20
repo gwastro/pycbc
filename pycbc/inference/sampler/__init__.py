@@ -20,56 +20,65 @@ This module provides a list of implemented samplers for parameter estimation.
 import logging
 
 # pylint: disable=unused-import
-from .base import (initial_dist_from_config, create_new_output_file)
-from .multinest import MultinestSampler
-from .ultranest import UltranestSampler
+from .base import create_new_output_file, initial_dist_from_config
 from .dummy import DummySampler
+from .games import GameSampler
+from .multinest import MultinestSampler
 from .refine import RefineSampler
 from .snowline import SnowlineSampler
-from .games import GameSampler
+from .ultranest import UltranestSampler
 
 # list of available samplers
-samplers = {cls.name: cls for cls in (
-    MultinestSampler,
-    UltranestSampler,
-    DummySampler,
-    RefineSampler,
-    SnowlineSampler,
-    GameSampler,
-)}
+samplers = {
+    cls.name: cls
+    for cls in (
+        MultinestSampler,
+        UltranestSampler,
+        DummySampler,
+        RefineSampler,
+        SnowlineSampler,
+        GameSampler,
+    )
+}
 
 try:
     from .emcee import EmceeEnsembleSampler
+
     samplers[EmceeEnsembleSampler.name] = EmceeEnsembleSampler
 except ImportError:
     pass
 
 try:
     from .epsie import EpsieSampler
+
     samplers[EpsieSampler.name] = EpsieSampler
 except ImportError:
     pass
 
 try:
     from .ptemcee import PTEmceeSampler
+
     samplers[PTEmceeSampler.name] = PTEmceeSampler
 except ImportError:
     pass
 
 try:
     from .cpnest import CPNestSampler
+
     samplers[CPNestSampler.name] = CPNestSampler
 except ImportError:
     pass
 
 try:
     from .dynesty import DynestySampler
+
     samplers[DynestySampler.name] = DynestySampler
 except ImportError:
     pass
 
 try:
     from .nessai import NessaiSampler
+
     samplers[NessaiSampler.name] = NessaiSampler
 except ImportError:
     pass
@@ -97,10 +106,10 @@ def load_from_config(cp, model, **kwargs):
         The initialized sampler.
     """
     if len(model.variable_params) == 0:
-        logging.info('No variable params, so assuming Dummy Sampler')
+        logging.info("No variable params, so assuming Dummy Sampler")
         return DummySampler.from_config(cp, model, **kwargs)
 
-    name = cp.get('sampler', 'name')
+    name = cp.get("sampler", "name")
     try:
         return samplers[name].from_config(cp, model, **kwargs)
     except KeyError:

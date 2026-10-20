@@ -16,44 +16,73 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Recalculates log likelihood and prior for points in a given inference or
+"""
+Recalculates log likelihood and prior for points in a given inference or
 posterior file and writes them to a new file. Also records auxillary model
 stats that may have been ignored by the sampler.
 """
 
-import os
 import argparse
-import shutil
 import logging
+import os
+import shutil
+
 import numpy
 import tqdm
 
 import pycbc
-from pycbc.pool import (use_mpi, choose_pool)
-from pycbc.io import FieldArray
-from pycbc.inference.io import loadfile
 from pycbc.inference import models
+from pycbc.inference.io import loadfile
+from pycbc.io import FieldArray
+from pycbc.pool import choose_pool, use_mpi
 from pycbc.workflow import WorkflowConfigParser
-
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--input-file", type=str, required=True,
-                    help="Input HDF file to read. Can be either an inference "
-                         "file or a posterior file.")
-parser.add_argument("--output-file", type=str, required=True,
-                    help="Output file to create.")
-parser.add_argument("--force", action="store_true", default=False,
-                    help="If the output-file already exists, overwrite it. "
-                         "Otherwise, an OSError is raised.")
-parser.add_argument("--nprocesses", type=int, default=1,
-                    help="Number of processes to use. If not given then only "
-                         "a single core will be used.")
-parser.add_argument("--config-file", nargs="+", type=str, default=None,
-                    help="Override the config file stored in the input file "
-                          "with the given file(s).")
-parser.add_argument('--reconstruct-parameters', action="store_true",
-                    help="Reconstruct marginalized parameters")
+parser.add_argument(
+    "--input-file",
+    type=str,
+    required=True,
+    help="Input HDF file to read. Can be either an inference file or a posterior file.",
+)
+parser.add_argument(
+    "--output-file", type=str, required=True, help="Output file to create."
+)
+parser.add_argument(
+    "--force",
+    action="store_true",
+    default=False,
+    help="If the output-file already exists, overwrite it. "
+    "Otherwise, an OSError is raised.",
+)
+parser.add_argument(
+    "--nprocesses",
+    type=int,
+    default=1,
+    help="Number of processes to use. If not given then only "
+    "a single core will be used.",
+)
+parser.add_argument(
+    "--config-file",
+    nargs="+",
+    type=str,
+    default=None,
+    help="Override the config file stored in the input file with the given file(s).",
+)
+parser.add_argument(
+    "--reconstruct-parameters",
+    action="store_true",
+    help="Reconstruct marginalized parameters",
+)
+parser.add_argument(
+    "--seed",
+    type=int,
+    default=0,
+    help="Seed to use for the random number generator that "
+    "initializes the model and draws the reconstructed "
+    "(demarginalized) parameters. Runs that use the same "
+    "seed and the same input give identical output.",
+)
 
 
 # parse command line
@@ -61,8 +90,7 @@ opts = parser.parse_args()
 
 # check that the output file doesn't already exist
 if os.path.exists(opts.output_file) and not opts.force:
-    raise OSError("output-file already exists; use force if you "
-                  "wish to overwrite it.")
+    raise OSError("output-file already exists; use force if you wish to overwrite it.")
 
 # setup log
 # If we're running in MPI mode, only allow the parent to print
@@ -76,13 +104,20 @@ logging.info("Loading config file")
 if opts.config_file is None:
     # try to load the config file from the input file
     try:
-        with loadfile(opts.input_file, 'r') as fp:
+        with loadfile(opts.input_file, "r") as fp:
             cp = fp.read_config_file()
     except ValueError:
-        raise ValueError("no config file found in {}; please provide one "
-                         "using the --config-file".format(opts.input_file))
+        raise ValueError(
+            f"no config file found in {opts.input_file}; please provide one "
+            "using the --config-file"
+        )
 else:
     cp = WorkflowConfigParser(opts.config_file)
+
+# the seed has to be set before the model is created; marginalized models
+# draw their marginalization points at construction
+numpy.random.seed(opts.seed)
+logging.info("Using seed %i", opts.seed)
 
 # now load the model
 logging.info("Loading model")
@@ -91,9 +126,15 @@ model = models.read_from_config(cp)
 # from the variable parameter space
 model.sampling_transforms = None
 
+
 # create function for calling the model to get the stats
 def callmodel(arg):
     iteration, paramvals = arg
+
+    # derive a unique seed for each sample from the global one, so that the
+    # result does not depend on which process picks up which sample
+    seed = opts.seed + iteration
+    numpy.random.seed(seed)
     # calculate the logposterior to get all stats populated
     model.update(**{p: paramvals[p] for p in model.variable_params})
     _ = model.logposterior
@@ -102,9 +143,12 @@ def callmodel(arg):
     rec = {}
     if opts.reconstruct_parameters:
         model.update(**{p: paramvals[p] for p in model.variable_params})
-        # Ensure unique random seed for each reconstruction
-        rec = model.reconstruct(seed=iteration)
+        # Ensure a unique random seed for each reconstruction; when a global
+        # seed is given it is derived from that, so that it is independent of
+        # the order in which the pool hands out the samples
+        rec = model.reconstruct(seed=seed)
     return stats, rec
+
 
 # these help for parallelization for MPI
 models._global_instance = callmodel
@@ -112,8 +156,8 @@ model_call = models._call_global_model
 
 pool = choose_pool(processes=opts.nprocesses)
 
-logging.info('Getting samples')
-with loadfile(opts.input_file, 'r') as fp:
+logging.info("Getting samples")
+with loadfile(opts.input_file, "r") as fp:
     # we'll need the shape; all the arrays in the samples group should have the
     # same shape
     pick = list(fp[fp.samples_group].keys())[0]
@@ -128,8 +172,7 @@ logging.info("Loaded %i samples", samples.size)
 
 # get the stats
 logging.info("Calculating stats")
-data = list(tqdm.tqdm(pool.imap(model_call, enumerate(samples)),
-            total=len(samples)))
+data = list(tqdm.tqdm(pool.imap(model_call, enumerate(samples)), total=len(samples)))
 stats = [x[0] for x in data]
 rec = [x[1] for x in data]
 
@@ -138,7 +181,7 @@ logging.info("Copying input to output")
 shutil.copy(opts.input_file, opts.output_file)
 
 logging.info("Writing stats to output")
-out = loadfile(opts.output_file, 'a')
+out = loadfile(opts.output_file, "a")
 idx = range(len(stats))
 for pi, p in enumerate(model.default_stats):
     vals = numpy.array([stats[ii][pi] for ii in idx]).reshape(shape)

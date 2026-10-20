@@ -15,52 +15,58 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-""" Merge hdf psd files
-"""
-import logging, argparse, numpy, pycbc.types
+"""Merge hdf psd files"""
+
+import argparse
+import logging
+
+import numpy
+
+import pycbc.types
 from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--psd-files', nargs='+')
+parser.add_argument("--psd-files", nargs="+")
 parser.add_argument("--output-file", required=True)
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
-outf = HFile(args.output_file, 'w')
+outf = HFile(args.output_file, "w")
 inc = {}
 start, end = {}, {}
 for psd_file in args.psd_files:
-    f = HFile(psd_file, 'r')
+    f = HFile(psd_file, "r")
     ifo = tuple(f.keys())[0]
     if ifo not in inc:
         inc[ifo] = 0
         start[ifo], end[ifo] = [], []
-    
-    for rkey in f['%s/psds' % ifo].keys():
+
+    for rkey in f["%s/psds" % ifo].keys():
         int_key = int(rkey)
-        rkey = '%s/psds/%s' % (ifo, rkey)
+        rkey = "%s/psds/%s" % (ifo, rkey)
         psd = pycbc.types.load_frequencyseries(psd_file, group=rkey)
-    
-        key = ifo + '/psds/' + str(inc[ifo])
-        outf.create_dataset(key, data=psd,
-                         compression='gzip', compression_opts=9, shuffle=True)
-                         
-        s = f['%s/start_time' % ifo][int_key]
-        e = f['%s/end_time' % ifo][int_key]
-                         
-        outf[key].attrs['epoch'] = int(psd.epoch)
-        outf[key].attrs['delta_f'] = float(psd.delta_f)
+
+        key = ifo + "/psds/" + str(inc[ifo])
+        outf.create_dataset(
+            key, data=psd, compression="gzip", compression_opts=9, shuffle=True
+        )
+
+        s = f["%s/start_time" % ifo][int_key]
+        e = f["%s/end_time" % ifo][int_key]
+
+        outf[key].attrs["epoch"] = int(psd.epoch)
+        outf[key].attrs["delta_f"] = float(psd.delta_f)
         start[ifo].append(s)
         end[ifo].append(e)
-        
+
         inc[ifo] += 1
 
-for ifo in start:    
-    outf[ifo + '/start_time'] = numpy.array(start[ifo], dtype=numpy.uint32)
-    outf[ifo + '/end_time'] = numpy.array(end[ifo], dtype=numpy.uint32)
+for ifo in start:
+    outf[ifo + "/start_time"] = numpy.array(start[ifo], dtype=numpy.uint32)
+    outf[ifo + "/end_time"] = numpy.array(end[ifo], dtype=numpy.uint32)
 
-outf.attrs['low_frequency_cutoff'] = f.attrs['low_frequency_cutoff']
-outf.attrs['dynamic_range_factor'] = pycbc.DYN_RANGE_FAC
-logging.info('Done!')
+outf.attrs["low_frequency_cutoff"] = f.attrs["low_frequency_cutoff"]
+outf.attrs["dynamic_range_factor"] = pycbc.DYN_RANGE_FAC
+logging.info("Done!")

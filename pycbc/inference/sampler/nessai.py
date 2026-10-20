@@ -4,22 +4,23 @@ estimation.
 
 Documentation for nessai: https://nessai.readthedocs.io/en/latest/
 """
+
 import ast
 import logging
 import os
 
 import nessai.flowsampler
-import nessai.model
 import nessai.livepoint
+import nessai.model
 import nessai.utils.multiprocessing
 import nessai.utils.settings
 import numpy
 import numpy.lib.recfunctions as rfn
 
+from ...pool import choose_pool
+from ..io import NessaiFile, loadfile
 from .base import BaseSampler, setup_output
 from .base_mcmc import get_optional_arg_from_config
-from ..io import NessaiFile, loadfile
-from ...pool import choose_pool
 
 
 class NessaiSampler(BaseSampler):
@@ -105,12 +106,8 @@ class NessaiSampler(BaseSampler):
 
         if kwargs is not None:
             logging.info("Updating keyword arguments with %s", kwargs)
-            extra_kwds.update(
-                {k: v for k, v in kwargs.items() if k in default_kwds}
-            )
-            run_kwds.update(
-                {k: v for k, v in kwargs.items() if k in default_run_kwds}
-            )
+            extra_kwds.update({k: v for k, v in kwargs.items() if k in default_kwds})
+            run_kwds.update({k: v for k, v in kwargs.items() if k in default_run_kwds})
 
         if self._sampler is None:
             logging.info("Initialising nessai FlowSampler")
@@ -145,17 +142,15 @@ class NessaiSampler(BaseSampler):
         )
 
     @classmethod
-    def from_config(
-        cls, cp, model, output_file=None, nprocesses=1, use_mpi=False
-    ):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """
         Loads the sampler from the given config file.
         """
         section = "sampler"
         # check name
-        assert (
-            cp.get(section, "name") == cls.name
-        ), "name in section [sampler] must match mine"
+        assert cp.get(section, "name") == cls.name, (
+            "name in section [sampler] must match mine"
+        )
 
         if cp.has_option(section, "importance_nested_sampler"):
             importance_nested_sampler = cp.get(
@@ -171,9 +166,7 @@ class NessaiSampler(BaseSampler):
                 "Importance nested sampler is not currently supported"
             )
 
-        default_kwds, default_run_kwds = cls.get_default_kwds(
-            importance_nested_sampler
-        )
+        default_kwds, default_run_kwds = cls.get_default_kwds(importance_nested_sampler)
 
         # Keyword arguments the user cannot configure via the config
         remove_kwds = [
@@ -210,15 +203,11 @@ class NessaiSampler(BaseSampler):
         # Specified kwds
         ignore_kwds = {"nlive", "name"}
         invalid_kwds = (
-            cp[section].keys()
-            - set().union(kwds.keys(), run_kwds.keys())
-            - ignore_kwds
+            cp[section].keys() - set().union(kwds.keys(), run_kwds.keys()) - ignore_kwds
         )
 
         if invalid_kwds:
-            raise RuntimeError(
-                f"Config contains unknown options: {invalid_kwds}"
-            )
+            raise RuntimeError(f"Config contains unknown options: {invalid_kwds}")
         logging.info("nessai keyword arguments: %s", kwds)
         logging.info("nessai run keyword arguments: %s", run_kwds)
 
@@ -270,9 +259,7 @@ class NessaiSampler(BaseSampler):
         try:
             with loadfile(self.checkpoint_file, "r") as fp:
                 self.resume_data = fp.read_pickled_data_from_checkpoint_file()
-            logging.info(
-                "Found valid checkpoint file: %s", self.checkpoint_file
-            )
+            logging.info("Found valid checkpoint file: %s", self.checkpoint_file)
         except Exception as e:
             logging.info("Failed to load checkpoint file with error: %s", e)
 
@@ -320,11 +307,7 @@ class NessaiModel(nessai.model.Model):
         bounds = {}
         for dist in model.prior_distribution.distributions:
             bounds.update(
-                **{
-                    k: [v.min, v.max]
-                    for k, v in dist.bounds.items()
-                    if k in self.names
-                }
+                **{k: [v.min, v.max] for k, v in dist.bounds.items() if k in self.names}
             )
         self.bounds = bounds
         # Prior and likelihood are not vectorised

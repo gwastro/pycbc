@@ -15,14 +15,17 @@
 """
 This modules provides classes for evaluating Gaussian distributions.
 """
+
 import logging
+
 import numpy
-from scipy.special import erf, erfinv
 import scipy.stats
+from scipy.special import erf, erfinv
 
 from pycbc.distributions import bounded
 
-logger = logging.getLogger('pycbc.distributions.gaussian')
+logger = logging.getLogger("pycbc.distributions.gaussian")
+
 
 class Gaussian(bounded.BoundedDist):
     r"""A Gaussian distribution on the given parameters; the parameters are
@@ -78,6 +81,7 @@ class Gaussian(bounded.BoundedDist):
     cyclic boundary conditions:
     >>> dist = distributions.Gaussian(mass1=Bounds(1,10, cyclic=True), mass1_mean=3, mass1_var=2)
     """
+
     name = "gaussian"
 
     def __init__(self, **params):
@@ -92,8 +96,8 @@ class Gaussian(bounded.BoundedDist):
         self._lognorm = {}
         self._expnorm = {}
         # pull out specified means, variance
-        mean_args = [p for p in params if p.endswith('_mean')]
-        var_args = [p for p in params if p.endswith('_var')]
+        mean_args = [p for p in params if p.endswith("_mean")]
+        var_args = [p for p in params if p.endswith("_var")]
         self._mean = dict([[p[:-5], params.pop(p)] for p in mean_args])
         self._var = dict([[p[:-4], params.pop(p)] for p in var_args])
         # initialize the bounds
@@ -102,35 +106,34 @@ class Gaussian(bounded.BoundedDist):
         # check that there are no params in mean/var that are not in params
         missing = set(self._mean.keys()) - set(params.keys())
         if any(missing):
-            raise ValueError("means provided for unknow params {}".format(
-                ', '.join(missing)))
+            raise ValueError(
+                "means provided for unknow params {}".format(", ".join(missing))
+            )
         missing = set(self._var.keys()) - set(params.keys())
         if any(missing):
-            raise ValueError("vars provided for unknow params {}".format(
-                ', '.join(missing)))
+            raise ValueError(
+                "vars provided for unknow params {}".format(", ".join(missing))
+            )
         # set default mean/var for params not specified
-        self._mean.update(dict([[p, 0.]
-            for p in params if p not in self._mean]))
-        self._var.update(dict([[p, 1.]
-            for p in params if p not in self._var]))
+        self._mean.update(dict([[p, 0.0] for p in params if p not in self._mean]))
+        self._var.update(dict([[p, 1.0] for p in params if p not in self._var]))
 
         # compute norms
-        for p,bnds in self._bounds.items():
+        for p, bnds in self._bounds.items():
             sigmasq = self._var[p]
             mu = self._mean[p]
-            a,b = bnds
-            invnorm = scipy.stats.norm.cdf(b, loc=mu, scale=sigmasq**0.5) \
-                    - scipy.stats.norm.cdf(a, loc=mu, scale=sigmasq**0.5)
-            invnorm *= numpy.sqrt(2*numpy.pi*sigmasq)
-            self._norm[p] = 1./invnorm
+            a, b = bnds
+            invnorm = scipy.stats.norm.cdf(
+                b, loc=mu, scale=sigmasq**0.5
+            ) - scipy.stats.norm.cdf(a, loc=mu, scale=sigmasq**0.5)
+            invnorm *= numpy.sqrt(2 * numpy.pi * sigmasq)
+            self._norm[p] = 1.0 / invnorm
             self._lognorm[p] = numpy.log(self._norm[p])
-            self._expnorm[p] = -1./(2*sigmasq)
-
+            self._expnorm[p] = -1.0 / (2 * sigmasq)
 
     @property
     def mean(self):
         return self._mean
-
 
     @property
     def var(self):
@@ -140,7 +143,7 @@ class Gaussian(bounded.BoundedDist):
         """The CDF of the normal distribution, without bounds."""
         mu = self._mean[param]
         var = self._var[param]
-        return 0.5*(1. + erf((value - mu)/(2*var)**0.5))
+        return 0.5 * (1.0 + erf((value - mu) / (2 * var) ** 0.5))
 
     def cdf(self, param, value):
         """Returns the CDF of the given parameter value."""
@@ -148,32 +151,31 @@ class Gaussian(bounded.BoundedDist):
         if a != -numpy.inf:
             phi_a = self._normalcdf(param, a)
         else:
-            phi_a = 0.
+            phi_a = 0.0
         if b != numpy.inf:
             phi_b = self._normalcdf(param, b)
         else:
-            phi_b = 1.
+            phi_b = 1.0
         phi_x = self._normalcdf(param, value)
-        return (phi_x - phi_a)/(phi_b - phi_a)
+        return (phi_x - phi_a) / (phi_b - phi_a)
 
     def _normalcdfinv(self, param, p):
         """The inverse CDF of the normal distribution, without bounds."""
         mu = self._mean[param]
         var = self._var[param]
-        return mu + (2*var)**0.5 * erfinv(2*p - 1.)
+        return mu + (2 * var) ** 0.5 * erfinv(2 * p - 1.0)
 
     def _cdfinv_param(self, param, p):
-        """Return inverse of the CDF.
-        """
+        """Return inverse of the CDF."""
         a, b = self._bounds[param]
         if a != -numpy.inf:
             phi_a = self._normalcdf(param, a)
         else:
-            phi_a = 0.
+            phi_a = 0.0
         if b != numpy.inf:
             phi_b = self._normalcdf(param, b)
         else:
-            phi_b = 1.
+            phi_b = 1.0
         adjusted_p = phi_a + p * (phi_b - phi_a)
         return self._normalcdfinv(param, adjusted_p)
 
@@ -184,16 +186,19 @@ class Gaussian(bounded.BoundedDist):
         """
         return numpy.exp(self._logpdf(**kwargs))
 
-
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
         if kwargs in self:
-            return sum([self._lognorm[p] +
-                        self._expnorm[p]*(kwargs[p]-self._mean[p])**2.
-                        for p in self._params])
+            return sum(
+                [
+                    self._lognorm[p]
+                    + self._expnorm[p] * (kwargs[p] - self._mean[p]) ** 2.0
+                    for p in self._params
+                ]
+            )
         else:
             return -numpy.inf
 
@@ -236,8 +241,9 @@ class Gaussian(bounded.BoundedDist):
         Gaussian
             A distribution instance from the pycbc.inference.prior module.
         """
-        return bounded.bounded_from_config(cls, cp, section, variable_args,
-                                                  bounds_required=False)
+        return bounded.bounded_from_config(
+            cls, cp, section, variable_args, bounds_required=False
+        )
 
 
-__all__ = ['Gaussian']
+__all__ = ["Gaussian"]

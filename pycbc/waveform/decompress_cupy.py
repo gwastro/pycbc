@@ -236,6 +236,8 @@ extern "C" __global__ void linear_interp(
 """)
 
 dckernel_cache = {}
+
+
 def get_dckernel(slen):
     # Right now, hardcoding the number of threads per block
     nt = 1024
@@ -251,6 +253,7 @@ def get_dckernel(slen):
         dckernel_cache[nb] = (fn1, fn2, nt, nb)
 
     return dckernel_cache[nb]
+
 
 class CUPYLinearInterpolate(object):
     def __init__(self, output):
@@ -268,27 +271,43 @@ class CUPYLinearInterpolate(object):
     def interpolate(self, flow, freqs, amps, phases):
         flow = np.float32(flow)
         texlen = np.int32(len(freqs))
-        fmax = np.float32(freqs[texlen-1])
+        fmax = np.float32(freqs[texlen - 1])
         freqs_gpu = cp.asarray(freqs)
         amps_gpu = cp.asarray(amps)
         phases_gpu = cp.asarray(phases)
         self.fn1(
-            (1,) , (self.nb,),
-            (self.lower, self.upper, texlen, self.df, flow, freqs_gpu))
+            (1,), (self.nb,), (self.lower, self.upper, texlen, self.df, flow, freqs_gpu)
+        )
         self.fn2(
-            (self.nb,), (self.nt,),
-            (self.output, self.df, self.hlen, flow, fmax, texlen, freqs_gpu, amps_gpu, phases_gpu, self.lower, self.upper)
+            (self.nb,),
+            (self.nt,),
+            (
+                self.output,
+                self.df,
+                self.hlen,
+                flow,
+                fmax,
+                texlen,
+                freqs_gpu,
+                amps_gpu,
+                phases_gpu,
+                self.lower,
+                self.upper,
+            ),
         )
         return
+
 
 def inline_linear_interp(amps, phases, freqs, output, df, flow, imin, start_index):
     # Note that imin and start_index are ignored in the GPU code; they are only
     # needed for CPU.
-    if output.precision == 'double':
-        raise NotImplementedError("Double precision linear interpolation not currently supported on CUDA scheme")
+    if output.precision == "double":
+        raise NotImplementedError(
+            "Double precision linear interpolation not currently supported on CUDA scheme"
+        )
     flow = np.float32(flow)
     texlen = np.int32(len(freqs))
-    fmax = np.float32(freqs[texlen-1])
+    fmax = np.float32(freqs[texlen - 1])
     hlen = np.int32(len(output))
     (fn1, fn2, nt, nb) = get_dckernel(hlen)
 
@@ -300,12 +319,22 @@ def inline_linear_interp(amps, phases, freqs, output, df, flow, imin, start_inde
     g_out = output.data
     lower = cp.zeros(nb, dtype=np.int32)
     upper = cp.zeros(nb, dtype=np.int32)
-    fn1(
-        (1,), (nb,),
-        (lower, upper, texlen, df, flow, freqs_gpu)
-    )
+    fn1((1,), (nb,), (lower, upper, texlen, df, flow, freqs_gpu))
     fn2(
-        (nb,), (nt,),
-        (g_out, df, hlen, flow, fmax, texlen, freqs_gpu, amps_gpu, phases_gpu, lower, upper)
+        (nb,),
+        (nt,),
+        (
+            g_out,
+            df,
+            hlen,
+            flow,
+            fmax,
+            texlen,
+            freqs_gpu,
+            amps_gpu,
+            phases_gpu,
+            lower,
+            upper,
+        ),
     )
     return output

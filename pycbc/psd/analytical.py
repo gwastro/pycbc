@@ -20,31 +20,45 @@ More information about how to use these ground-based detectors' PSD can be
 found in the guide about :ref:`Analytic PSDs from lalsimulation`. For
 space-borne ones, see `pycbc.psd.analytical_space` module.
 """
+
 import numbers
-from pycbc.types import FrequencySeries
-from pycbc.psd.analytical_space import (
-    analytical_psd_lisa_tdi_XYZ, analytical_psd_lisa_tdi_AE,
-    analytical_psd_lisa_tdi_T, sh_transformed_psd_lisa_tdi_XYZ,
-    analytical_psd_lisa_tdi_AE_confusion,
-    analytical_psd_tianqin_tdi_XYZ, analytical_psd_tianqin_tdi_AE,
-    analytical_psd_tianqin_tdi_T, analytical_psd_tianqin_tdi_AE_confusion,
-    analytical_psd_taiji_tdi_XYZ, analytical_psd_taiji_tdi_AE,
-    analytical_psd_taiji_tdi_T, analytical_psd_taiji_tdi_AE_confusion,
-    )
+
 import lal
 import numpy
 
+from pycbc.psd.analytical_space import (
+    analytical_psd_lisa_tdi_AE,
+    analytical_psd_lisa_tdi_AE_confusion,
+    analytical_psd_lisa_tdi_T,
+    analytical_psd_lisa_tdi_XYZ,
+    analytical_psd_taiji_tdi_AE,
+    analytical_psd_taiji_tdi_AE_confusion,
+    analytical_psd_taiji_tdi_T,
+    analytical_psd_taiji_tdi_XYZ,
+    analytical_psd_tianqin_tdi_AE,
+    analytical_psd_tianqin_tdi_AE_confusion,
+    analytical_psd_tianqin_tdi_T,
+    analytical_psd_tianqin_tdi_XYZ,
+    sh_transformed_psd_lisa_tdi_XYZ,
+)
+from pycbc.types import FrequencySeries
+
 # build a list of usable PSD functions from lalsimulation
-_name_prefix = 'SimNoisePSD'
-_name_suffix = 'Ptr'
-_name_blacklist = ('FromFile', 'MirrorTherm', 'Quantum', 'Seismic', 'Shot', 'SuspTherm')
+_name_prefix = "SimNoisePSD"
+_name_suffix = "Ptr"
+_name_blacklist = ("FromFile", "MirrorTherm", "Quantum", "Seismic", "Shot", "SuspTherm")
 _psd_list = []
 
 try:
     import lalsimulation
+
     for _name in lalsimulation.__dict__:
-        if _name != _name_prefix and _name.startswith(_name_prefix) and not _name.endswith(_name_suffix):
-            _name = _name[len(_name_prefix):]
+        if (
+            _name != _name_prefix
+            and _name.startswith(_name_prefix)
+            and not _name.endswith(_name_suffix)
+        ):
+            _name = _name[len(_name_prefix) :]
             if _name not in _name_blacklist:
                 _psd_list.append(_name)
 except ImportError:
@@ -54,15 +68,19 @@ _psd_list = sorted(_psd_list)
 
 # add functions wrapping lalsimulation PSDs
 for _name in _psd_list:
-    exec("""
+    exec(
+        """
 def %s(length, delta_f, low_freq_cutoff):
     \"\"\"Return a FrequencySeries containing the %s PSD from LALSimulation.
     \"\"\"
     return from_string("%s", length, delta_f, low_freq_cutoff)
-""" % (_name, _name, _name))
+"""
+        % (_name, _name, _name)
+    )
+
 
 def get_psd_model_list():
-    """ Returns a list of available reference PSD functions.
+    """Returns a list of available reference PSD functions.
 
     Returns
     -------
@@ -71,13 +89,14 @@ def get_psd_model_list():
     """
     return get_lalsim_psd_list() + get_pycbc_psd_list()
 
+
 def get_lalsim_psd_list():
-    """Return a list of available reference PSD functions from LALSimulation.
-    """
+    """Return a list of available reference PSD functions from LALSimulation."""
     return _psd_list
 
+
 def get_pycbc_psd_list():
-    """ Return a list of available reference PSD functions coded in PyCBC.
+    """Return a list of available reference PSD functions coded in PyCBC.
 
     Returns
     -------
@@ -87,6 +106,7 @@ def get_pycbc_psd_list():
     pycbc_analytical_psd_list = pycbc_analytical_psds.keys()
     pycbc_analytical_psd_list = sorted(pycbc_analytical_psd_list)
     return pycbc_analytical_psd_list
+
 
 def from_string(psd_name, length, delta_f, low_freq_cutoff, **kwargs):
     """Generate a frequency series containing a LALSimulation or
@@ -114,22 +134,20 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff, **kwargs):
 
     # check if valid PSD model
     if psd_name not in get_psd_model_list():
-        raise ValueError(
-            psd_name + ' not found among analytical PSD functions.'
-        )
+        raise ValueError(psd_name + " not found among analytical PSD functions.")
 
     # make sure length has the right type for CreateREAL8FrequencySeries
     if not isinstance(length, numbers.Integral) or length <= 0:
-        raise TypeError('length must be a positive integer')
+        raise TypeError("length must be a positive integer")
     length = int(length)
 
     # if PSD model is in LALSimulation
     if psd_name in get_lalsim_psd_list():
         lalseries = lal.CreateREAL8FrequencySeries(
-            '', lal.LIGOTimeGPS(0), 0, delta_f, lal.DimensionlessUnit, length)
+            "", lal.LIGOTimeGPS(0), 0, delta_f, lal.DimensionlessUnit, length
+        )
         try:
-            func = lalsimulation.__dict__[
-                                        _name_prefix + psd_name + _name_suffix]
+            func = lalsimulation.__dict__[_name_prefix + psd_name + _name_suffix]
         except KeyError:
             func = lalsimulation.__dict__[_name_prefix + psd_name]
             func(lalseries, low_freq_cutoff)
@@ -148,8 +166,9 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff, **kwargs):
 
     return psd
 
+
 def flat_unity(length, delta_f, low_freq_cutoff):
-    """ Returns a FrequencySeries of ones above the low_frequency_cutoff.
+    """Returns a FrequencySeries of ones above the low_frequency_cutoff.
 
     Parameters
     ----------
@@ -170,23 +189,21 @@ def flat_unity(length, delta_f, low_freq_cutoff):
     fseries.data[:kmin] = 0
     return fseries
 
+
 # dict of analytical PSDs coded in PyCBC
 pycbc_analytical_psds = {
-    'flat_unity' : flat_unity,
-
-    'analytical_psd_lisa_tdi_XYZ' : analytical_psd_lisa_tdi_XYZ,
-    'analytical_psd_lisa_tdi_AE' : analytical_psd_lisa_tdi_AE,
-    'analytical_psd_lisa_tdi_T' : analytical_psd_lisa_tdi_T,
-    'sh_transformed_psd_lisa_tdi_XYZ' : sh_transformed_psd_lisa_tdi_XYZ,
-    'analytical_psd_lisa_tdi_AE_confusion' : analytical_psd_lisa_tdi_AE_confusion,
-
-    'analytical_psd_tianqin_tdi_XYZ' : analytical_psd_tianqin_tdi_XYZ,
-    'analytical_psd_tianqin_tdi_AE' : analytical_psd_tianqin_tdi_AE,
-    'analytical_psd_tianqin_tdi_T' : analytical_psd_tianqin_tdi_T,
-    'analytical_psd_tianqin_tdi_AE_confusion' : analytical_psd_tianqin_tdi_AE_confusion,
-
-    'analytical_psd_taiji_tdi_XYZ' : analytical_psd_taiji_tdi_XYZ,
-    'analytical_psd_taiji_tdi_AE' : analytical_psd_taiji_tdi_AE,
-    'analytical_psd_taiji_tdi_T' : analytical_psd_taiji_tdi_T,
-    'analytical_psd_taiji_tdi_AE_confusion' : analytical_psd_taiji_tdi_AE_confusion,
+    "flat_unity": flat_unity,
+    "analytical_psd_lisa_tdi_XYZ": analytical_psd_lisa_tdi_XYZ,
+    "analytical_psd_lisa_tdi_AE": analytical_psd_lisa_tdi_AE,
+    "analytical_psd_lisa_tdi_T": analytical_psd_lisa_tdi_T,
+    "sh_transformed_psd_lisa_tdi_XYZ": sh_transformed_psd_lisa_tdi_XYZ,
+    "analytical_psd_lisa_tdi_AE_confusion": analytical_psd_lisa_tdi_AE_confusion,
+    "analytical_psd_tianqin_tdi_XYZ": analytical_psd_tianqin_tdi_XYZ,
+    "analytical_psd_tianqin_tdi_AE": analytical_psd_tianqin_tdi_AE,
+    "analytical_psd_tianqin_tdi_T": analytical_psd_tianqin_tdi_T,
+    "analytical_psd_tianqin_tdi_AE_confusion": analytical_psd_tianqin_tdi_AE_confusion,
+    "analytical_psd_taiji_tdi_XYZ": analytical_psd_taiji_tdi_XYZ,
+    "analytical_psd_taiji_tdi_AE": analytical_psd_taiji_tdi_AE,
+    "analytical_psd_taiji_tdi_T": analytical_psd_taiji_tdi_T,
+    "analytical_psd_taiji_tdi_AE_confusion": analytical_psd_taiji_tdi_AE_confusion,
 }

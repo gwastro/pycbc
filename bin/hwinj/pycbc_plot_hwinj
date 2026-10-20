@@ -15,43 +15,45 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Plots a single-column ASCII file data.
-"""
+"""Plots a single-column ASCII file data."""
 
 import argparse
 import logging
-import matplotlib as mpl; mpl.use("Agg")
+
+import matplotlib as mpl
+
+mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy
 
 from pycbc import add_common_pycbc_options, init_logging
 
 # command line usage
-parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
-                                 description=__doc__)
+parser = argparse.ArgumentParser(usage=__file__ + " [--options]", description=__doc__)
 add_common_pycbc_options(parser)
 
 # I/O options
-parser.add_argument("--input-file", required=True,
-                    help="Path to single column ASCII file.")
-parser.add_argument("--output-file", required=True,
-                    help="Path to output plot.")
+parser.add_argument(
+    "--input-file", required=True, help="Path to single column ASCII file."
+)
+parser.add_argument("--output-file", required=True, help="Path to output plot.")
 
 # plotting options
-parser.add_argument("--x-min", type=float, default=None,
-                    help="Minimum x-value to plot.")
-parser.add_argument("--x-max", type=float, default=None,
-                    help="Maximum x-value to plot.")
-parser.add_argument("--y-min", type=float, default=None,
-                    help="Minimum y-value to plot.")
-parser.add_argument("--y-max", type=float, default=None,
-                    help="Maximum y-value to plot.")
-parser.add_argument("--x-label", default="Samples",
-                    help="Label for x-axis.")
-parser.add_argument("--y-label", default="Counts",
-                    help="Label for y-axis.")
-parser.add_argument("--title", default="",
-                    help="Title shown above plot.")
+parser.add_argument(
+    "--x-min", type=float, default=None, help="Minimum x-value to plot."
+)
+parser.add_argument(
+    "--x-max", type=float, default=None, help="Maximum x-value to plot."
+)
+parser.add_argument(
+    "--y-min", type=float, default=None, help="Minimum y-value to plot."
+)
+parser.add_argument(
+    "--y-max", type=float, default=None, help="Maximum y-value to plot."
+)
+parser.add_argument("--x-label", default="Samples", help="Label for x-axis.")
+parser.add_argument("--y-label", default="Counts", help="Label for y-axis.")
+parser.add_argument("--title", default="", help="Title shown above plot.")
 
 # parse command line
 opts = parser.parse_args()

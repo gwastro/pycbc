@@ -15,12 +15,14 @@
 """
 This modules provides classes for evaluating uniform distributions.
 """
+
 import logging
+
 import numpy
 
 from pycbc.distributions import bounded
 
-logger = logging.getLogger('pycbc.distributions.uniform')
+logger = logging.getLogger("pycbc.distributions.uniform")
 
 
 class Uniform(bounded.BoundedDist):
@@ -79,14 +81,17 @@ class Uniform(bounded.BoundedDist):
     >>> dist.pdf(phi=60.)
         0.025
     """
-    name = 'uniform'
+
+    name = "uniform"
+
     def __init__(self, **params):
         super(Uniform, self).__init__(**params)
         # compute the norm and save
         # temporarily suppress numpy divide by 0 warning
         with numpy.errstate(divide="ignore"):
-            self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
-                                  for bnd in self._bounds.values()])
+            self._lognorm = -sum(
+                [numpy.log(abs(bnd[1] - bnd[0])) for bnd in self._bounds.values()]
+            )
             self._norm = numpy.exp(self._lognorm)
 
     @property
@@ -100,8 +105,7 @@ class Uniform(bounded.BoundedDist):
         return self._lognorm
 
     def _cdfinv_param(self, param, value):
-        """Return the inverse cdf to map the unit interval to parameter bounds.
-        """
+        """Return the inverse cdf to map the unit interval to parameter bounds."""
         lower_bound = self._bounds[param][0]
         upper_bound = self._bounds[param][1]
         return (upper_bound - lower_bound) * value + lower_bound
@@ -114,7 +118,7 @@ class Uniform(bounded.BoundedDist):
         if kwargs in self:
             return self._norm
         else:
-            return 0.
+            return 0.0
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
@@ -149,8 +153,9 @@ class Uniform(bounded.BoundedDist):
         Uniform
             A distribution instance from the pycbc.inference.prior module.
         """
-        return super(Uniform, cls).from_config(cp, section, variable_args,
-                     bounds_required=True)
+        return super(Uniform, cls).from_config(
+            cp, section, variable_args, bounds_required=True
+        )
 
 
-__all__ = ['Uniform']
+__all__ = ["Uniform"]

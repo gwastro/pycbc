@@ -22,16 +22,16 @@
 # =============================================================================
 #
 
-"""Base class for models.
-"""
+"""Base class for models."""
+
+import logging
+from abc import ABCMeta, abstractmethod
+from configparser import NoSectionError
 
 import numpy
-import logging
-from abc import (ABCMeta, abstractmethod)
-from configparser import NoSectionError
-from pycbc import (transforms, distributions)
-from pycbc.io import FieldArray
 
+from pycbc import distributions, transforms
+from pycbc.io import FieldArray
 
 #
 # =============================================================================
@@ -43,14 +43,14 @@ from pycbc.io import FieldArray
 
 
 class _NoPrior(object):
-    """Dummy class to just return 0 if no prior is given to a model.
-    """
+    """Dummy class to just return 0 if no prior is given to a model."""
+
     @staticmethod
     def apply_boundary_conditions(**params):
         return params
 
     def __call__(self, **params):
-        return 0.
+        return 0.0
 
 
 class ModelStats(object):
@@ -109,14 +109,17 @@ class SamplingTransforms(object):
     model parameter space.
     """
 
-    def __init__(self, variable_params, sampling_params,
-                 replace_parameters, sampling_transforms):
+    def __init__(
+        self, variable_params, sampling_params, replace_parameters, sampling_transforms
+    ):
         assert len(replace_parameters) == len(sampling_params), (
             "number of sampling parameters must be the "
-            "same as the number of replace parameters")
+            "same as the number of replace parameters"
+        )
         # pull out the replaced parameters
-        self.sampling_params = [arg for arg in variable_params
-                                if arg not in replace_parameters]
+        self.sampling_params = [
+            arg for arg in variable_params if arg not in replace_parameters
+        ]
         # add the sampling parameters
         self.sampling_params += sampling_params
         # sort to make sure we have a consistent order
@@ -161,8 +164,13 @@ class SamplingTransforms(object):
         float :
             The value of the jacobian.
         """
-        return numpy.log(abs(transforms.compute_jacobian(
-            params, self.sampling_transforms, inverse=True)))
+        return numpy.log(
+            abs(
+                transforms.compute_jacobian(
+                    params, self.sampling_transforms, inverse=True
+                )
+            )
+        )
 
     def apply(self, samples, inverse=False):
         """Applies the sampling transforms to the given samples.
@@ -180,8 +188,9 @@ class SamplingTransforms(object):
         dict or FieldArray
             The transformed samples, along with the original samples.
         """
-        return transforms.apply_transforms(samples, self.sampling_transforms,
-                                           inverse=inverse)
+        return transforms.apply_transforms(
+            samples, self.sampling_transforms, inverse=inverse
+        )
 
     @classmethod
     def from_config(cls, cp, variable_params):
@@ -209,22 +218,25 @@ class SamplingTransforms(object):
         """
         # Check if a sampling_params section is provided
         try:
-            sampling_params, replace_parameters = \
-                read_sampling_params_from_config(cp)
+            sampling_params, replace_parameters = read_sampling_params_from_config(cp)
         except NoSectionError as e:
             logging.warning("No sampling_params section read from config file")
             raise e
         # get sampling transformations
         sampling_transforms = transforms.read_transforms_from_config(
-            cp, 'sampling_transforms')
-        logging.info("Sampling in {} in place of {}".format(
-            ', '.join(sampling_params), ', '.join(replace_parameters)))
-        return cls(variable_params, sampling_params,
-                   replace_parameters, sampling_transforms)
+            cp, "sampling_transforms"
+        )
+        logging.info(
+            "Sampling in {} in place of {}".format(
+                ", ".join(sampling_params), ", ".join(replace_parameters)
+            )
+        )
+        return cls(
+            variable_params, sampling_params, replace_parameters, sampling_transforms
+        )
 
 
-def read_sampling_params_from_config(cp, section_group=None,
-                                     section='sampling_params'):
+def read_sampling_params_from_config(cp, section_group=None, section="sampling_params"):
     """Reads sampling parameters from the given config file.
 
     Parameters are read from the `[({section_group}_){section}]` section.
@@ -263,16 +275,16 @@ def read_sampling_params_from_config(cp, section_group=None,
         The list of variable args to replace in the sampler.
     """
     if section_group is not None:
-        section_prefix = '{}_'.format(section_group)
+        section_prefix = "{}_".format(section_group)
     else:
-        section_prefix = ''
+        section_prefix = ""
     section = section_prefix + section
     replaced_params = set()
     sampling_params = set()
     for args in cp.options(section):
         map_args = cp.get(section, args)
-        sampling_params.update(set(map(str.strip, map_args.split(','))))
-        replaced_params.update(set(map(str.strip, args.split(','))))
+        sampling_params.update(set(map(str.strip, map_args.split(","))))
+        replaced_params.update(set(map(str.strip, args.split(","))))
     return sorted(sampling_params), sorted(replaced_params)
 
 
@@ -342,10 +354,18 @@ class BaseModel(metaclass=ABCMeta):
         for converting parameters, and not for rescaling the parameter space,
         a Jacobian is not required for these transforms.
     """
+
     name = None
 
-    def __init__(self, variable_params, static_params=None, prior=None,
-                 sampling_transforms=None, waveform_transforms=None, **kwargs):
+    def __init__(
+        self,
+        variable_params,
+        static_params=None,
+        prior=None,
+        sampling_transforms=None,
+        waveform_transforms=None,
+        **kwargs,
+    ):
         # store variable and static args
         self.variable_params = variable_params
         self.static_params = static_params
@@ -353,8 +373,7 @@ class BaseModel(metaclass=ABCMeta):
         if prior is None:
             self.prior_distribution = _NoPrior()
         elif set(prior.variable_args) != set(variable_params):
-            raise ValueError("variable params of prior and model must be the "
-                             "same")
+            raise ValueError("variable params of prior and model must be the same")
         else:
             self.prior_distribution = prior
         # store transforms
@@ -417,14 +436,15 @@ class BaseModel(metaclass=ABCMeta):
     @property
     def current_params(self):
         if self._current_params is None:
-            raise ValueError("no parameters values currently stored; "
-                             "run update to add some")
+            raise ValueError(
+                "no parameters values currently stored; run update to add some"
+            )
         return self._current_params
 
     @property
     def default_stats(self):
         """The stats that ``get_current_stats`` returns by default."""
-        return ['logjacobian', 'logprior', 'loglikelihood'] + self._extra_stats
+        return ["logjacobian", "logprior", "loglikelihood"] + self._extra_stats
 
     @property
     def _extra_stats(self):
@@ -504,8 +524,8 @@ class BaseModel(metaclass=ABCMeta):
             # apply waveform transforms if requested
             if apply_transforms and self.waveform_transforms is not None:
                 self._current_params = transforms.apply_transforms(
-                    self._current_params, self.waveform_transforms,
-                    inverse=False)
+                    self._current_params, self.waveform_transforms, inverse=False
+                )
             val = fallback(**kwargs)
             setattr(self._current_stats, statname, val)
             return val
@@ -518,8 +538,9 @@ class BaseModel(metaclass=ABCMeta):
         If that raises an ``AttributeError``, will call `_loglikelihood`` to
         calculate it and store it to ``current_stats``.
         """
-        return self._trytoget('loglikelihood', self._loglikelihood,
-                              apply_transforms=True)
+        return self._trytoget(
+            "loglikelihood", self._loglikelihood, apply_transforms=True
+        )
 
     @abstractmethod
     def _loglikelihood(self):
@@ -544,21 +565,20 @@ class BaseModel(metaclass=ABCMeta):
         float :
             The value of the jacobian.
         """
-        return self._trytoget('logjacobian', self._logjacobian)
+        return self._trytoget("logjacobian", self._logjacobian)
 
     def _logjacobian(self):
         """Calculates the logjacobian of the current parameters."""
         if self.sampling_transforms is None:
-            logj = 0.
+            logj = 0.0
         else:
-            logj = self.sampling_transforms.logjacobian(
-                **self.current_params)
+            logj = self.sampling_transforms.logjacobian(**self.current_params)
         return logj
 
     @property
     def logprior(self):
         """Returns the log prior at the current parameters."""
-        return self._trytoget('logprior', self._logprior)
+        return self._trytoget("logprior", self._logprior)
 
     def _logprior(self):
         """Calculates the log prior at the current parameters."""
@@ -609,9 +629,10 @@ class BaseModel(metaclass=ABCMeta):
         if self.sampling_transforms is not None:
             ptrans = self.sampling_transforms.apply(p0)
             # pull out the sampling args
-            p0 = FieldArray.from_arrays([ptrans[arg]
-                                         for arg in self.sampling_params],
-                                        names=self.sampling_params)
+            p0 = FieldArray.from_arrays(
+                [ptrans[arg] for arg in self.sampling_params],
+                names=self.sampling_params,
+            )
         return p0
 
     def _transform_params(self, **params):
@@ -666,8 +687,7 @@ class BaseModel(metaclass=ABCMeta):
             dtypes = {}
         if skip_args is None:
             skip_args = []
-        read_args = [opt for opt in cp.options(section)
-                     if opt not in skip_args]
+        read_args = [opt for opt in cp.options(section) if opt not in skip_args]
         for opt in read_args:
             val = cp.get(section, opt)
             # try to cast the value if a datatype was specified for this opt
@@ -679,8 +699,9 @@ class BaseModel(metaclass=ABCMeta):
         return kwargs
 
     @staticmethod
-    def prior_from_config(cp, variable_params, static_params, prior_section,
-                          constraint_section):
+    def prior_from_config(
+        cp, variable_params, static_params, prior_section, constraint_section
+    ):
         """Gets arguments and keyword arguments from a config file.
 
         Parameters
@@ -705,9 +726,11 @@ class BaseModel(metaclass=ABCMeta):
         logging.info("Setting up priors for each parameter")
         dists = distributions.read_distributions_from_config(cp, prior_section)
         constraints = distributions.read_constraints_from_config(
-            cp, constraint_section, static_args=static_params)
-        return distributions.JointDistribution(variable_params, *dists,
-                                               constraints=constraints)
+            cp, constraint_section, static_args=static_params
+        )
+        return distributions.JointDistribution(
+            variable_params, *dists, constraints=constraints
+        )
 
     @classmethod
     def _init_args_from_config(cls, cp):
@@ -732,47 +755,55 @@ class BaseModel(metaclass=ABCMeta):
         """
         section = "model"
         prior_section = "prior"
-        vparams_section = 'variable_params'
-        sparams_section = 'static_params'
-        constraint_section = 'constraint'
+        vparams_section = "variable_params"
+        sparams_section = "static_params"
+        constraint_section = "constraint"
         # check that the name exists and matches
-        name = cp.get(section, 'name')
+        name = cp.get(section, "name")
         if name != cls.name:
-            raise ValueError("section's {} name does not match mine {}".format(
-                             name, cls.name))
+            raise ValueError(
+                "section's {} name does not match mine {}".format(name, cls.name)
+            )
         # get model parameters
         variable_params, static_params = distributions.read_params_from_config(
-            cp, prior_section=prior_section, vargs_section=vparams_section,
-            sargs_section=sparams_section)
+            cp,
+            prior_section=prior_section,
+            vargs_section=vparams_section,
+            sargs_section=sparams_section,
+        )
         # get prior
         prior = cls.prior_from_config(
-            cp, variable_params, static_params, prior_section,
-            constraint_section)
-        args = {'variable_params': variable_params,
-                'static_params': static_params,
-                'prior': prior}
+            cp, variable_params, static_params, prior_section, constraint_section
+        )
+        args = {
+            "variable_params": variable_params,
+            "static_params": static_params,
+            "prior": prior,
+        }
         # try to load sampling transforms
         try:
-            sampling_transforms = SamplingTransforms.from_config(
-                cp, variable_params)
+            sampling_transforms = SamplingTransforms.from_config(cp, variable_params)
         except NoSectionError:
             sampling_transforms = None
-        args['sampling_transforms'] = sampling_transforms
+        args["sampling_transforms"] = sampling_transforms
         # get any waveform transforms
-        if any(cp.get_subsections('waveform_transforms')):
+        if any(cp.get_subsections("waveform_transforms")):
             logging.info("Loading waveform transforms")
             waveform_transforms = transforms.read_transforms_from_config(
-                cp, 'waveform_transforms')
-            args['waveform_transforms'] = waveform_transforms
+                cp, "waveform_transforms"
+            )
+            args["waveform_transforms"] = waveform_transforms
         else:
             waveform_transforms = []
         # safety check for spins
         # we won't do this if the following exists in the config file
         ignore = "no_err_on_missing_cartesian_spins"
-        check_for_cartesian_spins(1, variable_params, static_params,
-                                  waveform_transforms, cp, ignore)
-        check_for_cartesian_spins(2, variable_params, static_params,
-                                  waveform_transforms, cp, ignore)
+        check_for_cartesian_spins(
+            1, variable_params, static_params, waveform_transforms, cp, ignore
+        )
+        check_for_cartesian_spins(
+            2, variable_params, static_params, waveform_transforms, cp, ignore
+        )
         return args
 
     @classmethod
@@ -789,8 +820,7 @@ class BaseModel(metaclass=ABCMeta):
         """
         args = cls._init_args_from_config(cp)
         # get any other keyword arguments provided in the model section
-        args.update(cls.extra_args_from_config(cp, "model",
-                                               skip_args=['name']))
+        args.update(cls.extra_args_from_config(cp, "model", skip_args=["name"]))
         args.update(kwargs)
         return cls(**args)
 
@@ -807,14 +837,15 @@ class BaseModel(metaclass=ABCMeta):
             written to the top-level attrs (``fp.attrs``).
         """
         attrs = fp.getattrs(group=group)
-        attrs['model'] = self.name
-        attrs['variable_params'] = list(map(str, self.variable_params))
-        attrs['sampling_params'] = list(map(str, self.sampling_params))
+        attrs["model"] = self.name
+        attrs["variable_params"] = list(map(str, self.variable_params))
+        attrs["sampling_params"] = list(map(str, self.sampling_params))
         fp.write_kwargs_to_attrs(attrs, static_params=self.static_params)
 
 
-def check_for_cartesian_spins(which, variable_params, static_params,
-                              waveform_transforms, cp, ignore):
+def check_for_cartesian_spins(
+    which, variable_params, static_params, waveform_transforms, cp, ignore
+):
     """Checks that if any spin parameters exist, cartesian spins also exist.
 
     This looks for parameters starting with ``spinN`` in the variable and
@@ -845,8 +876,10 @@ def check_for_cartesian_spins(which, variable_params, static_params,
     """
     # don't do this check if the config file has the ignore section
     if cp.has_section(ignore):
-        logging.info("[{}] found in config file; not performing check for "
-                     "cartesian spin{} parameters".format(ignore, which))
+        logging.info(
+            "[{}] found in config file; not performing check for "
+            "cartesian spin{} parameters".format(ignore, which)
+        )
         return
     errmsg = (
         "Spin parameters {sp} found in variable/static "
@@ -871,17 +904,21 @@ def check_for_cartesian_spins(which, variable_params, static_params,
         "(e.g., you are using a custom waveform or model) add\n\n"
         "[{ignore}]\n\n"
         "to your config file as an empty section and rerun. This check will "
-        "not be performed in that case.")
+        "not be performed in that case."
+    )
     allparams = set(variable_params) | set(static_params.keys())
-    spinparams = set(p for p in allparams
-                     if p.startswith('spin{}'.format(which)))
+    spinparams = set(p for p in allparams if p.startswith("spin{}".format(which)))
     if any(spinparams):
-        cartspins = set('spin{}{}'.format(which, coord)
-                        for coord in ['x', 'y', 'z'])
+        cartspins = set("spin{}{}".format(which, coord) for coord in ["x", "y", "z"])
         # add any parameters to all params that will be output by waveform
         # transforms
         allparams = allparams.union(*[t.outputs for t in waveform_transforms])
         if not any(allparams & cartspins):
-            raise ValueError(errmsg.format(sp=', '.join(spinparams),
-                                           cp=', '.join(cartspins),
-                                           n=which, ignore=ignore))
+            raise ValueError(
+                errmsg.format(
+                    sp=", ".join(spinparams),
+                    cp=", ".join(cartspins),
+                    n=which,
+                    ignore=ignore,
+                )
+            )
