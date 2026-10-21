@@ -419,7 +419,9 @@ class HierarchicalModel(BaseModel):
         return super().from_config(cp, submodels=submodels)
 
 
-class HierarchicalParam(str):
+# No __slots__: the docstring documents the attributes, and Sphinx would
+# document slot attributes a second time
+class HierarchicalParam(str):  # noqa: SLOT000
     """
     Sub-class of str for hierarchical parameter names.
 

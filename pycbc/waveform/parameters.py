@@ -46,6 +46,8 @@ class Parameter(str):
     sub-classing string, adding additional attributes.
     """
 
+    __slots__ = ("default", "description", "dtype", "label", "name")
+
     def __new__(
         cls, name, dtype=None, default=None, label=None, description="No description."
     ):

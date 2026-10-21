@@ -465,7 +465,7 @@ class LogarithmicPlusOverflowBins(Bins):
         )
 
 
-class NDBins(tuple):
+class NDBins(tuple):  # noqa: SLOT001
     """
     Multi-dimensional co-ordinate binning.  An instance of this object
     is used to convert a tuple of co-ordinates into a tuple of bin
