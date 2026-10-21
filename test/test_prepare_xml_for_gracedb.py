@@ -1,8 +1,15 @@
-"""Exercise offline localization XML with and without follow-up-only detectors."""
+"""Exercise offline localization XML with and without follow-up-only detectors.
+
+PYCBC_SKYMAP_TEST_MODE selects minimal (default) or exhaustive coverage.
+PYCBC_SKYMAP_TEST_IFOS selects the exhaustive network (default: H1 L1 V1 K1).
+"""
+import itertools
+import os
 import pathlib
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 import h5py
@@ -23,19 +30,20 @@ SCRIPT = pathlib.Path(__file__).resolve().parents[1] / 'bin/all_sky_search/pycbc
 
 
 class TestOfflineLocalizationXML(unittest.TestCase):
-    def run_case(self, ifos):
+    def run_case(self, triggering, subthreshold):
+        ifos = triggering + subthreshold
         with tempfile.TemporaryDirectory() as dirname:
             root = pathlib.Path(dirname)
             doc = ligolw.Document()
             doc.appendChild(ligolw.LIGO_LW())
-            proc = create_process_table(doc, program_name='pycbc', detectors=['H1', 'L1'])
+            proc = create_process_table(doc, program_name='pycbc', detectors=triggering)
             tables = {}
             for cls in (lsctables.SnglInspiralTable, lsctables.CoincTable,
                         lsctables.CoincInspiralTable, lsctables.CoincMapTable,
                         lsctables.TimeSlideTable):
                 tables[cls] = table = cls.new()
                 doc.childNodes[0].appendChild(table)
-            for index, ifo in enumerate(['H1', 'L1']):
+            for index, ifo in enumerate(triggering):
                 single = return_empty_sngl()
                 single.event_id = index
                 single.process_id = proc.process_id
@@ -59,8 +67,8 @@ class TestOfflineLocalizationXML(unittest.TestCase):
             event = lsctables.Coinc()
             event.coinc_event_id = event.coinc_def_id = event.time_slide_id = 0
             event.process_id = proc.process_id
-            event.nevents = 2
-            event.instruments = 'H1,L1'
+            event.nevents = len(triggering)
+            event.instruments = ','.join(triggering)
             event.likelihood = 12
             tables[lsctables.CoincTable].append(event)
             inspiral = lsctables.CoincInspiral()
@@ -68,7 +76,7 @@ class TestOfflineLocalizationXML(unittest.TestCase):
                 setattr(inspiral, ligolw.Column.ColumnName(column), None)
             inspiral.coinc_event_id = 0
             inspiral.end = lal.LIGOTimeGPS(100)
-            inspiral.instruments = ['H1', 'L1']
+            inspiral.instruments = triggering
             inspiral.snr = 12
             inspiral.combined_far = 1e-8
             tables[lsctables.CoincInspiralTable].append(inspiral)
@@ -95,12 +103,13 @@ class TestOfflineLocalizationXML(unittest.TestCase):
                     psd.attrs['epoch'] = 99
                 snr_files.append(str(snr_file))
                 psd_files.append(str(psd_file))
-            subprocess.run([sys.executable, str(SCRIPT), '--input-file', str(source),
+            completed = subprocess.run([sys.executable, str(SCRIPT), '--input-file', str(source),
                             '--output-file', str(output), '--event-id', '0',
                             '--snr-timeseries', *snr_files, '--psd-files', *psd_files,
                             '--channel-name', *[ifo + ':STRAIN' for ifo in ifos],
                             '--snr-timeseries-plot', str(root / 'snr.png')],
-                           check=True, capture_output=True, text=True)
+                           capture_output=True, text=True)
+            self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
             result = utils.load_filename(str(output), contenthandler=LIGOLWContentHandler)
             singles = lsctables.SnglInspiralTable.get_table(result)
             self.assertEqual({row.ifo for row in singles}, set(ifos))
@@ -116,19 +125,55 @@ class TestOfflineLocalizationXML(unittest.TestCase):
                 self.assertIsNotNone(single.snr_series)
                 self.assertGreater(len(single.psd.data.data), 0)
                 self.assertEqual(single.time, 100.)
-                if single.detector == 'V1':
+                if single.detector in subthreshold:
                     self.assertIsNone(single.snr)
                     self.assertIsNone(single.phase)
-            self.assertEqual([row.snr for row in singles if row.ifo in ('H1', 'L1')], [8, 9])
+            self.assertEqual(
+                {row.ifo: row.snr for row in singles if row.ifo in triggering},
+                {ifo: 8 + index for index, ifo in enumerate(triggering)},
+            )
             # Exercise the same detector and time-series preparation as localization.
             conditioned = condition(parsed, waveform='TaylorF2', f_low=20)
             self.assertEqual(conditioned[3].shape[0], len(ifos))
 
-    def test_two_triggered_detectors(self):
-        self.run_case(['H1', 'L1'])
-
-    def test_subthreshold_detector(self):
-        self.run_case(['H1', 'L1', 'V1'])
+    def test_detector_combinations(self):
+        mode = os.environ.get('PYCBC_SKYMAP_TEST_MODE', 'minimal')
+        self.assertIn(mode, ('minimal', 'exhaustive'))
+        if mode == 'minimal':
+            network = ('H1', 'L1', 'V1', 'K1')
+            cases = [
+                (network[:triggered], network[triggered:triggered + extra])
+                for triggered in range(1, len(network) + 1)
+                for extra in range(len(network) - triggered + 1)
+            ]
+            self.assertEqual(len(cases), 10)
+        else:
+            # Each detector is triggering, follow-up-only, or absent.
+            network = tuple(os.environ.get(
+                'PYCBC_SKYMAP_TEST_IFOS', 'H1 L1 V1 K1'
+            ).split())
+            self.assertTrue(network)
+            self.assertEqual(len(network), len(set(network)))
+            cases = []
+            for count in range(1, len(network) + 1):
+                for triggering in itertools.combinations(network, count):
+                    remaining = tuple(
+                        ifo for ifo in network if ifo not in triggering
+                    )
+                    for extra_count in range(len(remaining) + 1):
+                        cases.extend(
+                            (triggering, subthreshold)
+                            for subthreshold in itertools.combinations(
+                                remaining, extra_count
+                            )
+                        )
+            self.assertEqual(len(cases), 3**len(network) - 2**len(network))
+        started = time.perf_counter()
+        for triggering, subthreshold in cases:
+            with self.subTest(triggering=triggering, subthreshold=subthreshold):
+                self.run_case(triggering, subthreshold)
+        print(f'\n{mode}: {len(cases)} cases in '
+              f'{time.perf_counter() - started:.2f} seconds', flush=True)
 
 
 if __name__ == '__main__':
