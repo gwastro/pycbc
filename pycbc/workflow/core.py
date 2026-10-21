@@ -40,7 +40,6 @@ import subprocess
 import urllib
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
-from pathlib import Path
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 
@@ -505,7 +504,7 @@ class Executable(pegasus_workflow.Executable):
         self.current_retention_level = value
         try:
             global_retention_level = self.cp.get_opt_tags(
-                "workflow", "file-retention-level", [*self.tags, self.name]
+                "workflow", "file-retention-level", self.tags + [self.name]
             )
         except ConfigParser.Error:
             msg = "Cannot find file-retention-level in [workflow] section "
@@ -643,10 +642,10 @@ class Executable(pegasus_workflow.Executable):
         """
         # Determine the output directory
         if self.cp.has_option_tags(
-            "pegasus_profile", "pycbc|stage-out", [*self.tags, self.name]
+            "pegasus_profile", "pycbc|stage-out", self.tags + [self.name]
         ):
             self.out_dir = self.cp.get_opt_tags(
-                "pegasus_profile", "pycbc|stage-out", [*self.tags, self.name]
+                "pegasus_profile", "pycbc|stage-out", self.tags + [self.name]
             )
         elif out_dir is not None:
             self.out_dir = out_dir
@@ -655,9 +654,8 @@ class Executable(pegasus_workflow.Executable):
         else:
             self.out_dir = self.tagged_name + "_output"
 
-        if "://" not in self.out_dir:
-            if not Path(self.out_dir).is_absolute():
-                self.out_dir = str(Path.cwd() / self.out_dir)
+        if "://" not in self.out_dir and not os.path.isabs(self.out_dir):
+            self.out_dir = os.path.join(os.getcwd(), self.out_dir)
 
     def _set_pegasus_profile_options(self):
         """
@@ -1282,13 +1280,12 @@ class File(pegasus_workflow.File):
                 extension,
                 self.segment_list.extent(),
             )
-            file_url = (
-                f"{directory.rstrip('/')}/{filename}"
-                if "://" in directory
-                else str(Path(directory) / filename)
-            )
-            if "://" not in file_url and not Path(file_url).is_absolute():
-                file_url = str(Path.cwd() / file_url)
+            if "://" in directory:
+                file_url = f"{directory.rstrip('/')}/{filename}"
+            else:
+                file_url = os.path.join(directory, filename)
+                if not os.path.isabs(file_url):
+                    file_url = os.path.join(os.getcwd(), file_url)
 
         if file_url.startswith("file://"):
             file_url = urllib.parse.urlsplit(file_url).path
