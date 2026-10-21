@@ -34,6 +34,7 @@ g_coarse_np, g_coarse_norm_sq, g_coarse_tau0 = None, None, None
 g_coarse_kmax, g_coarse_fit, g_coarse_map = None, None, None
 g_fine_bank, g_fine_tau0, g_cfg = None, None, None
 g_inv_psd, g_delta_f, g_fft_len, g_valid_band = None, None, None, None
+g_seed_of = None
 
 
 def _set_bank_grid(bank, fft_len, sample_rate, min_f_low=None):
@@ -298,6 +299,17 @@ def process_template(task):
         ]
     k_ests = [estimate_fir_taps(g_coarse_np[c], fine_np) for c in allowed]
     candidates = allowed[np.argsort(k_ests)[:8]]
+    # The seed that absorbed this template during seeding is known to fit it,
+    # so it is always tried, even if the cuts above dropped it
+    seed_slot = (
+        g_coarse_map.get(g_seed_of.get(int(fine_idx), -1)) if g_seed_of else None
+    )
+    if (
+        seed_slot is not None
+        and seed_slot not in candidates
+        and (not excluded or seed_slot not in excluded)
+    ):
+        candidates = np.append(candidates, seed_slot)
 
     best = None
     for cand_idx in candidates:
@@ -309,15 +321,19 @@ def process_template(task):
 
 
 def _seed_worker(indices):
-    """Select greedy dispersion-clustered seeds within a tau0-sorted chunk."""
+    """Select greedy dispersion-clustered seeds within a tau0-sorted chunk.
+
+    Returns the seeds, and a map from each template to the seed that
+    absorbed it (a seed absorbs itself).
+    """
     _cache_parent_templates(indices)
     max_taps = min(g_cfg["max_taps"], g_fft_len - 1)
     unassigned = list(np.argsort(-g_coarse_kmax, kind="stable"))
-    seeds = []
+    seeds, seed_of = [], {}
     while unassigned:
         seed = unassigned[0]
         seed_np = g_coarse_np[seed]
-        unassigned = [
+        remaining = [
             c
             for c in unassigned[1:]
             if estimate_fir_taps(seed_np, g_coarse_np[c]) > max_taps
@@ -330,8 +346,11 @@ def _seed_worker(indices):
             )
             is None
         ]
+        for c in set(unassigned) - set(remaining):
+            seed_of[int(indices[c])] = int(indices[seed])
+        unassigned = remaining
         seeds.append(int(indices[seed]))
-    return seeds
+    return seeds, seed_of
 
 
 def main():
@@ -408,6 +427,8 @@ def main():
     n_procs = args.n_processes
     level_links = []
 
+    # Index in the input bank of each template the current level fits
+    orig_index = np.arange(len(fine_bank))
     for level in range(1, num_levels + 1):
         is_lowest = level == 1
         label = f"level_{level}"
@@ -444,9 +465,10 @@ def main():
         init_level_state(fine_bank, psd, min_f_low, cfg)
         order = np.lexsort((g_fine_tau0, np.asarray(fine_bank.table["f_lower"], float)))
         chunks = [c for c in np.array_split(order, max(1, n_procs)) if len(c)]
-        seeds = []
+        global g_seed_of
+        seeds, g_seed_of = [], {}
         with mp.Pool(processes=max(1, min(n_procs, len(chunks)))) as pool:
-            for chunk_seeds in tqdm(
+            for chunk_seeds, chunk_seed_of in tqdm(
                 pool.imap_unordered(_seed_worker, chunks),
                 total=len(chunks),
                 desc=f"Seeding {label}",
@@ -454,6 +476,7 @@ def main():
                 file=sys.stderr,
             ):
                 seeds.extend(chunk_seeds)
+                g_seed_of.update(chunk_seed_of)
         seed_local = np.array(sorted(seeds), dtype=int)
         _cache_parent_templates(seed_local)
 
@@ -471,7 +494,10 @@ def main():
                 )
             for fine_idx, rec in it:
                 if rec is None:
-                    msg = f"{label} template {fine_idx} failed min_match {min_match}"
+                    msg = (
+                        f"{label} template {fine_idx} (input bank index "
+                        f"{orig_index[fine_idx]}) failed min_match {min_match}"
+                    )
                     raise RuntimeError(msg)
                 results[fine_idx] = rec
 
@@ -521,6 +547,7 @@ def main():
 
         used_pos = np.array(sorted(p for p, ch in groups.items() if ch), dtype=int)
         fine_bank.table = fine_bank.table[seed_local[used_pos]]
+        orig_index = orig_index[seed_local[used_pos]]
 
         # Write level datasets to HDF5
         lvl_group = fir_group.require_group(label)
@@ -593,6 +620,15 @@ def main():
             "single",
             psd=None,
         )
+        if hc.mismatch > comp_tol:
+            logger.warning(
+                "Top-level reference %d (input bank index %d) compressed with "
+                "mismatch %.2e, above the tolerance %.1e",
+                i,
+                orig_index[i],
+                hc.mismatch,
+                comp_tol,
+            )
         hc.write_to_hdf(top_lvl_group, str(i))
         top_decomp[i] = (
             hc.decompress(
