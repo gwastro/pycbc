@@ -506,7 +506,7 @@ class DynestySampler(BaseSampler):
 
             self.set_state_from_file(self.checkpoint_file)
             logger.info("Found valid checkpoint file: %s", self.checkpoint_file)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.info("Failed to load checkpoint file: %s", e)
 
     def set_state_from_file(self, filename):

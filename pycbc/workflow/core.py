@@ -793,7 +793,7 @@ class Workflow(pegasus_workflow.Workflow):
             try:
                 # The pfn may have been marked local...
                 pfn = node.executable.get_pfn()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 # or it may have been marked nonlocal.  That's
                 # fine, we'll resolve the URL and make a local
                 # entry.

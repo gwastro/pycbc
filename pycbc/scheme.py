@@ -204,7 +204,7 @@ class CPUScheme(Scheme):
             self._libgomp = get_ctypes_library(
                 "gomp", ["gomp"], mode=ctypes.RTLD_GLOBAL
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Should we fail or give a warning if we cannot import
             # libgomp? Seems to work even for MKL scheme, but
             # not entirely sure why...

@@ -587,7 +587,7 @@ def wf_wrapper(args):
             hp.checked = hp not in bank
             hp.gen = None
         return hp
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning("Waveform generation failed: %s", e)
         return None
 

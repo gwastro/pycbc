@@ -150,7 +150,7 @@ def render_default(path, cp):
             # FIXME: This is a dictionary, but the code wants a segmentlist
             #        for now I just coalesce.
             wf_file.return_union_seglist()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("No segment table found in %s : %s", path, e)
 
     # render template
