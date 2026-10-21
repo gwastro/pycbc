@@ -6,13 +6,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  # Point curl and wget at the shared retry/hardening config in tools/.
-  # (Running the example scripts directly, without these set, is fine -
-  # they just fall back to curl/wget defaults.)
-  CURL_HOME: ${{ github.workspace }}/tools
-  WGETRC: ${{ github.workspace }}/tools/.wgetrc
-
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -20,10 +13,12 @@ jobs:
       max-parallel: 60
       matrix:
         os: [ubuntu-24.04]
-        python-version: ['3.11', '3.12', '3.13', '3.14']
+        python_version: ['3.11', '3.12', '3.13', '3.14']
         test-type: [unittest, search, docs]
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+    - name: Configure CI downloads
+      uses: ./.github/actions/configure-downloads
 
     - name: Setup Pixi
       uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
@@ -33,53 +28,17 @@ jobs:
 
     - name: Inject Python Version
       run: |
-        pixi add python="${{ matrix.python-version }}.*"
+        pixi add python="${{ matrix.python_version }}.*"
 
-    - name: Cache LAL auxiliary data files
-      id: cache-lal-aux-data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: lal-aux-data
-        path: ~/lal_aux_data
+    - name: Populate caches (LAL aux + example GW data)
+      id: populate
+      uses: ./.github/actions/populate-caches
 
-    - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
-      name: Download LAL auxiliary data files
-      run: |
-        mkdir ~/lal_aux_data
-        pushd ~/lal_aux_data
-        curl --show-error --silent \
-          --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
-          --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
-        popd
+    - name: Expose LAL_DATA_PATH to subsequent steps
+      run: echo "LAL_DATA_PATH=${{ steps.populate.outputs.lal_data_path }}" >> $GITHUB_ENV
 
-    - name: Cache example GW data
-      id: cache-example-gw-data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: example-gw-data
-        path: |
-          docs/_include/*.gwf
-          examples/inference/lisa_smbhb_ldc/*_psd.txt
-          examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
-          examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
-          examples/inference/margtime/*.gwf
-          examples/inference/multisignal/*.gwf
-          examples/inference/relative/*.gwf
-          examples/inference/relmarg/*.gwf
-          examples/inference/single/*.gwf
-
-    - name: Cache downloaded test data
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        key: test-data-cache-${{ hashFiles('tools/ci_prefetch_test_data.py') }}
-        restore-keys: |
-          test-data-cache-
-        path: ~/.astropy/cache/download
-
-    - name: Pre-fetch remote test data
-      continue-on-error: true
-      run: |
-        python3 tools/ci_prefetch_test_data.py
+    - name: Cache remote test data
+      uses: ./.github/actions/cache-test-data
 
     - name: run pycbc test suite
       run: |
@@ -99,7 +58,7 @@ jobs:
         pixi run -e inference test-inference
 
     - name: store documentation page
-      if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
+      if: matrix.test-type == 'docs' && matrix.python_version == '3.12'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: documentation-page
