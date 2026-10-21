@@ -25,7 +25,7 @@ import logging
 import os
 import subprocess
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 from dateutil.relativedelta import relativedelta
 
@@ -115,7 +115,7 @@ def run_and_error(command_arguments, controls):
 def wait_for_utc_time(target_str):
     """Wait until the UTC time is as given by `target_str`, in HH:MM:SS format."""
     target_hour, target_minute, target_second = map(int, target_str.split(":"))
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     # for today's target, take now and replace the time
     target_today = now + relativedelta(
         hour=target_hour, minute=target_minute, second=target_second
