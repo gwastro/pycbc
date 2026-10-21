@@ -143,7 +143,7 @@ def render_default(path, cp):
     # initializations
     content = None
 
-    if path.endswith(".xml") or path.endswith(".xml.gz"):
+    if path.endswith((".xml", ".xml.gz")):
         # segment or veto file return a segmentslistdict instance
         try:
             wf_file = SegFile.from_segment_xml(path)
