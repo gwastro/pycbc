@@ -120,13 +120,9 @@ def compute_batch_chisq(
 
             local_id = ids_local[idx]
 
-            rescale = bank.snr_rescale(
-                target_global_id, method=args.template_normalization_method
-            )
-
             # chisq_estimator.values() takes arrays; this computes chisq at
             # just this one trigger's SNR and time.
-            snrvs = np.array([snrv], ndmin=1) / rescale
+            snrvs = np.array([snrv], ndmin=1)
             tids = np.array([t_idx], ndmin=1)
 
             # Reconstruct the template, decimated.
@@ -151,7 +147,9 @@ def compute_batch_chisq(
             )
             template2[:] = abs(template2) / args.sample_rate
             template2.params = bank.table[target_global_id]
-            template2.f_lower = ref_template.f_lower
+            template2.f_lower = max(
+                ref_template.f_lower, float(bank.table[target_global_id].f_lower)
+            )
 
             psd2 = FrequencySeries(np.ones(len(ratio), dtype=np.float32), delta_f=dfr)
 
@@ -159,11 +157,7 @@ def compute_batch_chisq(
             ref = engine.ref_snr[tstart : tstart + args.fir_length]
             ref_f = zeros(len(ref), dtype=complex64)
             pycbc.fft.FFT(Array(ref, dtype=complex64), ref_f).execute()
-            corr2 = (
-                FrequencySeries(ratio * ref_f.numpy(), delta_f=df)
-                / rescale
-                / args.fir_length
-            )
+            corr2 = FrequencySeries(ratio * ref_f.numpy(), delta_f=df) / args.fir_length
             corr2 = corr2.to_timeseries().to_frequencyseries(delta_f=dfr) / refine
 
             tids2 = tids - tstart
@@ -323,13 +317,6 @@ def get_args():
         choices=pycbc.events.ranking.sngls_ranking_function_dict.keys(),
         help="Statistic used to determine loudest to keep",
     )
-    parser.add_argument(
-        "--template-normalization-method",
-        help="Method to normalize fine templates relative to"
-        " their reference coarse template",
-        choices=("precalculated_sigma", "mchirp"),
-        default="mchirp",
-    )
 
     return parser, parser.parse_args()
 
@@ -477,7 +464,9 @@ def main():
 
         for i, coarse_idx in enumerate(bank.coarse_indices):
             ref_template = bank.get_coarse_template(coarse_idx)
-            taps, counts, fine_indices = bank.get_firs(coarse_idx)
+            taps, counts, fine_indices, shifts = bank.get_firs(
+                coarse_idx, return_shifts=True
+            )
             filters_f, n_taps = engine.prepare_filters(taps, counts)
             logger.info(
                 "  Ratio Batch %s/%s, %s FIR templates", i + 1, n_coarse, len(taps)
@@ -513,7 +502,11 @@ def main():
                         args,
                     )
 
-                    t_idxs += -stilde.analyze.start + stilde.cumulative_index
+                    t_idxs += (
+                        -stilde.analyze.start
+                        + stilde.cumulative_index
+                        - shifts[ids_local]
+                    )
                     seg_ids_local.append(ids_local)
                     seg_t_idxs.append(t_idxs)
                     seg_snr_sqs.append(snrs)
@@ -571,16 +564,9 @@ def main():
             out_vals = out_vals_ref.copy()
             out_vals["time_index"] = np.array(time_list)
 
-            # Renorm snr
-            snr_rescale = bank.snr_rescale(
-                global_id, method=args.template_normalization_method
-            )
-            sigmasq_rescale = (
-                bank.sigma_rescale(global_id, method=args.template_normalization_method)
-                ** 2.0
-            )
+            sigmasq_rescale = bank.sigma_rescale(global_id) ** 2.0
 
-            out_vals["snr"] = np.array(snr) / snr_rescale
+            out_vals["snr"] = np.array(snr)
             out_vals["sigmasq"] = np.ones(len(time_list)) * norm * sigmasq_rescale
             out_vals["chisq"] = chi
             out_vals["chisq_dof"] = chi_dof
