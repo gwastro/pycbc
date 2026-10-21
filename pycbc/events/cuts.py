@@ -73,9 +73,13 @@ def insert_cuts_option_group(parser):
     """
     parser.add_argument('--trigger-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE:LIMIT, where, PARAMETER is the "
-                             "parameter to be cut, VALUE is the value at "
-                             "which it is cut, and LIMIT is one of '"
+                             "PARAMETER:VALUE:LIMIT or as "
+                             "PARAMETER:VALUE:LIMIT:ANOTHER_VALUE:ANOTHER_LIMIT,"
+                             "where, PARAMETER is the parameter to be cut, "
+                             "VALUE and ANOTHER_VALUE (if provided) are the "
+                             "values at which it is cut, and LIMIT and "
+                             "ANOTHER_LIMIT (when provided with ANOTHER_VALUE, "
+                             "must be opposite in nature to LIMIT) are one of '"
                              + "', '".join(ineq_choices) +
                              "' to indicate the inequality needed. "
                              "PARAMETER is one of:'"
@@ -98,21 +102,20 @@ def convert_inputstr(inputstr, choices):
     the float to compare to.
     Do input checks
     """
-    try:
-        cut_param, cut_value_str, cut_limit = inputstr.split(':')
-    except ValueError as value_e:
-        try:
-            cut_param, cut_value_str, cut_limit, ano_value_str, ano_limit = inputstr.split(':')
-            if not (('lower' in cut_limit and 'upper' in ano_limit) or ('upper' in cut_limit and 'lower' in ano_limit)):
-                raise NotImplementedError("Multiple cut limits should be opposite in nature from the supported types")
-            else:
-                if 'upper' in cut_limit and 'lower' in ano_limit:
-                    cut_limit, ano_limit = ano_limit, cut_limit
-                    cut_value_str, ano_value_str = ano_value_str, cut_value_str
-        except:
-            print("ERROR: Cut string format not correct, please "
-                           "supply as PARAMETER:VALUE:LIMIT or as PARAMETER:VALUE:LIMIT:ANOTHER_VALUE:ANOTHER_LIMIT")
-            raise value_e
+    splitstr = inputstr.split(':')
+    if len(splitstr) == 3:
+        cut_param, cut_value_str, cut_limit = splitstr
+    elif len(splitstr) == 5:
+        cut_param, cut_value_str, cut_limit, ano_value_str, ano_limit = splitstr
+        if not (('lower' in cut_limit and 'upper' in ano_limit) or ('upper' in cut_limit and 'lower' in ano_limit)):
+            raise NotImplementedError("Multiple cut limits should be opposite in nature from the supported types")
+        else:
+            if 'upper' in cut_limit and 'lower' in ano_limit:
+                cut_limit, ano_limit = ano_limit, cut_limit
+                cut_value_str, ano_value_str = ano_value_str, cut_value_str
+    else:
+        raise ValueError("ERROR: Cut string format not correct, please "
+                       "supply as PARAMETER:VALUE:LIMIT or as PARAMETER:VALUE:LIMIT:ANOTHER_VALUE:ANOTHER_LIMIT")
 
     if cut_param.lower() not in choices:
         raise NotImplementedError("Cut parameter " + cut_param.lower() + " "
