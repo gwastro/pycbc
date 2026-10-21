@@ -4,6 +4,10 @@
 # configuration (not `pyproject.toml`), so rule selection lives here rather
 # than in pyproject.toml.
 
+# The oldest Python we support (python_requires in setup.py). Without this,
+# ruff assumes an older version and applies rules meant for it.
+target-version = "py311"
+
 [lint]
 select = [
     # pycodestyle / Pyflakes / isort baseline
@@ -79,6 +83,9 @@ ignore = [
     # Type annotations: the codebase predates type hints and adding them is a
     # large job we are not taking on at this stage.
     "ANN",
+    # pathlib: os.path is used throughout. We may move to pathlib in future,
+    # which would mean updating these uses.
+    "PTH",
     # Docstrings: wanted, but deferred until higher-priority issues are fixed.
     # The specific D codes from `extend-select` must be listed too, as an
     # explicitly selected code otherwise takes precedence over ignoring "D".
@@ -89,7 +96,112 @@ ignore = [
     # comparison with a named constant (magic values) hurts readability in
     # numerical code.
     "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR2004",
+    # Not planned to be enabled: unittest-style assertions (assertEqual,
+    # assertRaises, ...). The tests are unittest.TestCase classes run both by
+    # pytest and as scripts (with --scheme for cpu/cuda); plain asserts would
+    # lose their failure details outside pytest, and pytest.raises would make
+    # pytest a hard dependency of every test file.
+    "PT009", "PT027",
+    # Not planned to be enabled: shebang in a file that is not executable.
+    # The bin/ scripts are installed by setup.py (`scripts=`), which makes
+    # them executable, so their mode in git does not matter.
+    "EXE001",
+    # Not planned to be enabled: exception messages written where the
+    # exception is raised (raise ValueError(f"...")) rather than in a custom
+    # exception class. Inline messages on built-in exceptions are clear and
+    # idiomatic, and defining a class for each of ~850 messages would add a
+    # lot of code for little benefit.
+    "TRY003",
+    # Not planned to be enabled: contextlib.suppress() in place of
+    # try/except/pass. Both are clear, and suppress() needs an extra import.
+    "SIM105",
+    # Not planned to be enabled for now: imports inside functions. Many are
+    # intended (optional dependencies, import cost, avoiding circular
+    # imports), but a pass through the function-level imports to move the
+    # unnecessary ones to the top of the module would be useful.
+    "PLC0415",
+    # Not planned to be enabled for now: access to private (_name) members
+    # from outside their class. Some cases are intended and would need a
+    # noqa (e.g. tests checking internal state, the pycbc.types and FFT
+    # internals), but others almost certainly should be fixed (e.g. caches
+    # stored on other objects, and private attributes of other libraries).
+    "SLF001",
+    # Not planned to be enabled for now: assert statements. Asserts are fine
+    # for internal consistency checks, but some are used to check user input
+    # or configuration and should raise a proper exception with a message
+    # instead (asserts give a bare AssertionError and are removed by python -O).
+    "S101",
+    # Not planned to be enabled: the legacy global numpy random generator. It is
+    # used by design: scripts seed it (--seed) and the library draws from it,
+    # and sampler checkpoints store its state. Moving to np.random.Generator
+    # objects would be an API change, and would change the output for a given
+    # seed and the checkpoint format.
+    "NPY002",
+    # Not planned to be enabled: assigning to a for-loop variable inside the
+    # loop. Nearly every case normalises the loop value on the first line
+    # (`for value in values: value = value.split(":")`), which is a common
+    # and readable idiom; renaming each loop variable would gain little.
+    "PLW2901",
+    # Not planned to be enabled for now: `global` statements that update
+    # module-level state. They are used on purpose (FFTW threading state, FFT
+    # backend registries, plan and buffer caches, the pool's shared counters),
+    # but whether each one needs to be a global is worth considering.
+    "PLW0603",
+    # Not planned to be enabled: mutable class attributes. They are class-level
+    # constants (parameter and option name lists, sets of location arguments)
+    # or registries shared on purpose; marking each with typing.ClassVar would
+    # add annotations to a codebase that otherwise has almost none.
+    "RUF012",
+    # Not planned to be enabled: subprocess calls with non-literal arguments
+    # (S603) or programs found on PATH (S607). Running external tools named in
+    # the user's configuration (lalapps_inspinj, ligo-skymap-from-samples,
+    # pegasus-*, git, pkg-config, ...) is the point of a workflow package, and
+    # their location is up to the user's environment.
+    "S603", "S607",
+    # Not planned to be enabled: template autoescaping (S701 Jinja2, S702 Mako).
+    # Most Mako templates generate CUDA/CuPy kernel source, and the HTML
+    # templates render PyCBC's own results, some of which are HTML on purpose.
+    "S701", "S702",
+    # Not planned to be enabled: the random module (S311) and pickle (S301).
+    # random is used for IDs and test values, not security, and pickle only
+    # reads files that PyCBC itself wrote.
+    "S301", "S311",
+    # Not planned to be enabled: os.chmod modes (S103). Scripts and Pegasus
+    # submit directories are made executable with 0o755, which the rule flags
+    # too; nothing is made world-writable.
+    "S103",
 ]
+
+[lint.per-file-ignores]
+# Frozen copies of older pycbc code, kept only so that the tests can compare
+# the current code against them; they are left exactly as they were.
+"test/validation_code/**" = ["ALL"]
+# Old timing benchmarks, kept for reference but not maintained (they use
+# APIs that have since been removed); not checked.
+"tools/timing/**" = ["ALL"]
+# Scripts, examples, docs and tests are run directly, not imported as part
+# of a package, so they need no __init__.py (INP001). The examples, docs,
+# tests and tools also print their output directly (T201).
+"bin/**" = ["INP001"]
+"docs/**" = ["INP001", "T201"]
+"examples/**" = ["INP001", "T201"]
+"test/**" = ["INP001", "T201"]
+"tools/**" = ["INP001", "T201"]
+# The commented-out settings in the Sphinx configuration are the defaults,
+# listed by sphinx-quickstart for reference (ERA001).
+"docs/conf.py" = ["ERA001"]
+
+[lint.flake8-unused-arguments]
+# Unused *args / **kwargs are normally there to accept a shared call
+# signature, so only named arguments are reported.
+ignore-variadic-names = true
 
 [lint.pydocstyle]
 convention = "numpy"
+
+[lint.isort]
+# Declare pycbc explicitly as first-party. Otherwise ruff decides per module
+# by looking for the file, and pycbc/version.py only exists after a build, so
+# `import pycbc.version` would be sorted differently in a fresh checkout (such
+# as CI) than in a built one.
+known-first-party = ["pycbc"]

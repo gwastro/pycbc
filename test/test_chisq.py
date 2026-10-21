@@ -34,8 +34,6 @@ from pycbc.types import Array, complex64, float32, zeros
 
 _scheme, _context = parse_args_all_schemes("correlate")
 
-from pycbc.vetoes.chisq_cpu import chisq_accum_bin_numpy
-
 from pycbc.catalog import Merger
 from pycbc.filter import matched_filter_core, resample_to_delta_t
 from pycbc.psd import interpolate, inverse_spectrum_truncation
@@ -45,6 +43,7 @@ from pycbc.vetoes import (
     power_chisq_at_points_from_precomputed,
     power_chisq_bins,
 )
+from pycbc.vetoes.chisq_cpu import chisq_accum_bin_numpy
 from pycbc.waveform import get_fd_waveform
 
 trusted_accum = chisq_accum_bin_numpy

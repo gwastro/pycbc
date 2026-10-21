@@ -33,9 +33,9 @@ import numpy
 
 # eryn 1.2.6 uses numpy aliases removed in numpy 2.0; restore them.
 if not hasattr(numpy, "in1d"):
-    numpy.in1d = numpy.isin
+    numpy.in1d = numpy.isin  # noqa: NPY201
 if not hasattr(numpy, "trapz"):
-    numpy.trapz = numpy.trapezoid
+    numpy.trapz = numpy.trapezoid  # noqa: NPY201
 
 import eryn.moves as eryn_moves
 from eryn.ensemble import EnsembleSampler
