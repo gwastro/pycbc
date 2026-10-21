@@ -9,6 +9,7 @@ the final (level 1) taps are complex (complex64) and the taps above them real (f
 """
 
 import argparse
+import atexit
 import logging
 import multiprocessing as mp
 import sys
@@ -418,6 +419,8 @@ def main():
     out_file = fine_bank.write_to_hdf(
         args.output_file, force=True, write_compressed_waveforms=True
     )
+    # Remove a half-written bank if the run does not reach the end
+    remove_partial = atexit.register(Path(args.output_file).unlink, missing_ok=True)
 
     fir_group = out_file.require_group("fir_data")
     fir_group.attrs["num_levels"] = int(num_levels)
@@ -702,6 +705,7 @@ def main():
     )
 
     out_file.close()
+    atexit.unregister(remove_partial)
     logger.info("Done. Saved to %s", args.output_file)
 
 
