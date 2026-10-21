@@ -152,6 +152,24 @@ ignore = [
     # or registries shared on purpose; marking each with typing.ClassVar would
     # add annotations to a codebase that otherwise has almost none.
     "RUF012",
+    # Not planned to be enabled: subprocess calls with non-literal arguments
+    # (S603) or programs found on PATH (S607). Running external tools named in
+    # the user's configuration (lalapps_inspinj, ligo-skymap-from-samples,
+    # pegasus-*, git, pkg-config, ...) is the point of a workflow package, and
+    # their location is up to the user's environment.
+    "S603", "S607",
+    # Not planned to be enabled: template autoescaping (S701 Jinja2, S702 Mako).
+    # Most Mako templates generate CUDA/CuPy kernel source, and the HTML
+    # templates render PyCBC's own results, some of which are HTML on purpose.
+    "S701", "S702",
+    # Not planned to be enabled: the random module (S311) and pickle (S301).
+    # random is used for IDs and test values, not security, and pickle only
+    # reads files that PyCBC itself wrote.
+    "S301", "S311",
+    # Not planned to be enabled: os.chmod modes (S103). Scripts and Pegasus
+    # submit directories are made executable with 0o755, which the rule flags
+    # too; nothing is made world-writable.
+    "S103",
 ]
 
 [lint.per-file-ignores]
