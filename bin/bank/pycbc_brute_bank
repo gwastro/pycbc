@@ -600,6 +600,23 @@ if len(args.input_file) > 0:
         logger.info("Loading: %s", input_file)
         with HFile(input_file, "r") as f:
             params = {k: f[k][:] for k in f.keys() if k not in ["max_matches"]}
+
+            # Keep only templates inside [tau0_start, tau0_end]
+            tau0_in = pycbc.conversions.tau0_from_mass1_mass2(
+                params["mass1"], params["mass2"], args.tau0_cutoff_frequency
+            )
+            sel = (tau0_in >= args.tau0_start) & (tau0_in <= args.tau0_end)
+            logger.info(
+                "Input tau0 selection [%.2f, %.2f]: keeping %i / %i templates",
+                args.tau0_start,
+                args.tau0_end,
+                sel.sum(),
+                len(sel),
+            )
+            if not sel.any():
+                continue
+            params = {k: v[sel] for k, v in params.items()}
+
             total_raw_templates += len(params[list(params.keys())[0]])
             bank, _ = bank.check_params(
                 gen,
