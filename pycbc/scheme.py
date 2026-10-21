@@ -440,3 +440,4 @@ class ChooseBySchemeDict(dict):
                 break
             except KeyError:
                 pass
+        return None

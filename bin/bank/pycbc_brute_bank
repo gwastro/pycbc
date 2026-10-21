@@ -346,6 +346,7 @@ class TriangleBank:
             if m > hp.threshold:
                 return True
             mmax = max(mmax, m)
+        return None
 
     def check_params(
         self,

@@ -45,6 +45,7 @@ def _noint(init, *args):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     if init is not None:
         return init(*args)
+    return None
 
 
 _process_lock = None
@@ -62,6 +63,7 @@ def _lockstep_fcn(values):
     while 1:
         if _numdone.value == numrequired:
             return fcn(args)
+    return None
 
 
 def _shutdown_pool(p):

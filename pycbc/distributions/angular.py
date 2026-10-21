@@ -380,6 +380,7 @@ class UniformSolidAngle(bounded.BoundedDist):
             return self._polardist._cdfinv_param(param, value)
         if param == self.azimuthal_angle:
             return self._azimuthaldist._cdfinv_param(param, value)
+        return None
 
     def apply_boundary_conditions(self, **kwargs):
         r"""

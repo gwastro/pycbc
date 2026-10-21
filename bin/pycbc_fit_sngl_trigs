@@ -54,6 +54,7 @@ def get_bins(opt, pmin, pmax):
         return bin_utils.LogarithmicBins(pmin, pmax, opt.num_bins)
     if opt.bin_spacing == "irregular":
         return bin_utils.IrregularBins(opt.bin_edges)
+    return None
 
 
 #### MAIN ####
