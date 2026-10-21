@@ -41,15 +41,8 @@ class likelihood_wrapper:
 
     def __call__(self, params):
         global _model
-
         _model.update(**params)
-
         loglr = _model.loglr
-        lognl = _model.lognl
-        loglikelihood = lognl + loglr
-        logjacobian = _model.logjacobian
-        logprior = _model.logprior
-
         return loglr, _model.current_stats
 
 
@@ -125,54 +118,69 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
 
     name = "marginalized_mtotal"
 
-    def __init__(self, variable_params,
-                 cores=1,
-                 base_model=None,
-                 marginalize_mtotal=None,
-                 mtotal_grid=None,
-                 mtotal_grid_num=None,
-                 fiducial_mtotal=None,
-                 **kwds):
+    def __init__(
+        self,
+        variable_params,
+        cores=1,
+        base_model=None,
+        marginalize_mtotal=None,
+        mtotal_grid=None,
+        mtotal_grid_num=None,
+        fiducial_mtotal=None,
+        **kwds,
+    ):
         from pycbc.inference.models import models
 
         self.marginalize_vector_params = []
-        vector_params = kwds.get('marginalize_vector_params', None)
+        vector_params = kwds.get("marginalize_vector_params")
         if isinstance(vector_params, str):
-            vector_params = vector_params.split(',')
+            vector_params = vector_params.split(",")
         if vector_params:
             self.marginalize_vector_params = [
-                p.strip() for p in vector_params if p.strip()]
+                p.strip() for p in vector_params if p.strip()
+            ]
 
         self.mtotal_grid = None
 
         # --- Setup bounds for mtotal marginalization from the mtotal prior ---
         if marginalize_mtotal:
-            prior = kwds.get('prior', {})
+            prior = kwds.get("prior", {})
             if prior:
                 prior_bounds = prior.bounds
-                min_mtotal = prior_bounds['mtotal'].min
-                max_mtotal = prior_bounds['mtotal'].max
+                min_mtotal = prior_bounds["mtotal"].min
+                max_mtotal = prior_bounds["mtotal"].max
             else:
                 min_mtotal = max_mtotal = None
 
-            if fiducial_mtotal is None and min_mtotal is not None and max_mtotal is not None:
+            if (
+                fiducial_mtotal is None
+                and min_mtotal is not None
+                and max_mtotal is not None
+            ):
                 fiducial_mtotal = 0.5 * (min_mtotal + max_mtotal)
             else:
                 fiducial_mtotal = float(fiducial_mtotal) if fiducial_mtotal else None
 
-            if mtotal_grid is None and min_mtotal is not None and max_mtotal is not None:
+            if (
+                mtotal_grid is None
+                and min_mtotal is not None
+                and max_mtotal is not None
+            ):
                 if mtotal_grid_num is None:
-                    raise ValueError("Must specify mtotal_grid_num if "
-                                     "mtotal_grid is not given")
+                    raise ValueError(
+                        "Must specify mtotal_grid_num if mtotal_grid is not given"
+                    )
                 self.mtotal_grid = numpy.linspace(
-                    min_mtotal, max_mtotal, int(mtotal_grid_num))
+                    min_mtotal, max_mtotal, int(mtotal_grid_num)
+                )
             elif mtotal_grid is not None:
                 self.mtotal_grid = numpy.array([float(m) for m in mtotal_grid])
             else:
                 raise ValueError(
                     "Either provide 'mtotal_grid' (a list or array) or "
                     "specify 'mtotal_grid_num' (the number of points to "
-                    "create a grid over the prior).")
+                    "create a grid over the prior)."
+                )
 
         base_model_cls = models[base_model]
         self.model = base_model_cls(variable_params=variable_params, **kwds)
@@ -181,27 +189,33 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
         marginalized_params = []
 
         if marginalize_mtotal:
-            marginalized_params.append('mtotal')
-        if 'marginalize_phase' in kwds and kwds['marginalize_phase']:
-            marginalized_params.append('coa_phase')
-        if 'marginalize_distance' in kwds and kwds['marginalize_distance']:
-            marginalized_params.append(kwds.get('marginalize_distance_param', 'distance'))
+            marginalized_params.append("mtotal")
+        if kwds.get("marginalize_phase"):
+            marginalized_params.append("coa_phase")
+        if kwds.get("marginalize_distance"):
+            marginalized_params.append(
+                kwds.get("marginalize_distance_param", "distance")
+            )
 
         # ------ Reconstruct the marginalized prior ------
         marginalized_params.extend(self.marginalize_vector_params)
 
         variable_params = tuple(
-            p for p in variable_params if p not in marginalized_params)
+            p for p in variable_params if p not in marginalized_params
+        )
 
         prior_dists_by_param = {}
         for d in self.model.prior_distribution.distributions:
-            if hasattr(d, 'params') and isinstance(d.params, (list, tuple)) and len(d.params) > 0:
+            if (
+                hasattr(d, "params")
+                and isinstance(d.params, (list, tuple))
+                and len(d.params) > 0
+            ):
                 for p_name in d.params:
                     if isinstance(p_name, str):
                         prior_dists_by_param[p_name] = d
-            else:
-                if isinstance(d.name, str) and d.name in variable_params:
-                    prior_dists_by_param[d.name] = d
+            elif isinstance(d.name, str) and d.name in variable_params:
+                prior_dists_by_param[d.name] = d
 
         current_prior_dists = prior_dists_by_param.copy()
         for param in marginalized_params:
@@ -209,11 +223,13 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
                 del current_prior_dists[param]
 
         variable_params = tuple(
-            p for p in variable_params if p not in marginalized_params)
+            p for p in variable_params if p not in marginalized_params
+        )
 
         self.model.prior_distribution = JointDistribution(
-            variable_params, *current_prior_dists.values())
-        kwds['prior'] = self.model.prior_distribution
+            variable_params, *current_prior_dists.values()
+        )
+        kwds["prior"] = self.model.prior_distribution
 
         super().__init__(variable_params, **kwds)
 
@@ -231,9 +247,9 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
     @property
     def _extra_stats(self):
         stats = self.model._extra_stats
-        stats.append('maxl_mtotal')
-        if 'maxl_loglr' not in stats:
-            stats.append('maxl_loglr')
+        stats.append("maxl_mtotal")
+        if "maxl_loglr" not in stats:
+            stats.append("maxl_loglr")
         return stats
 
     @staticmethod
@@ -257,7 +273,7 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
         kmin, kmax = nonzero[0], nonzero[-1]
 
         f = numpy.arange(kmin, kmax + 1) * htilde.delta_f
-        band = data[kmin:kmax + 1]
+        band = data[kmin : kmax + 1]
         amp = numpy.abs(band)
 
         phase = numpy.angle(band)
@@ -268,7 +284,7 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
 
         target = kappa * numpy.arange(len(out)) * htilde.delta_f
         inband = (target >= f[0]) & (target <= f[-1])
-        out.data[inband] = kappa ** 2 * (
+        out.data[inband] = kappa**2 * (
             numpy.interp(target[inband], f, amp)
             * numpy.exp(1j * numpy.interp(target[inband], f, phase))
         )
@@ -280,8 +296,10 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
         See the class documentation for the scaling relation used.
         """
         kappa = mtotal_new / mtotal_ref
-        return (self._rescale_frequencyseries(h_plus_ref, kappa),
-                self._rescale_frequencyseries(h_cross_ref, kappa))
+        return (
+            self._rescale_frequencyseries(h_plus_ref, kappa),
+            self._rescale_frequencyseries(h_cross_ref, kappa),
+        )
 
     def _loglr(self):
         if self.mtotal_grid is None:
@@ -290,13 +308,11 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
 
         ref_params = self.current_params.copy()
         # These are applied by the base model, not by the waveform generator.
-        for key in ['ra', 'dec', 'tc', 'polarization', 'distance', 'mtotal']:
+        for key in ["ra", "dec", "tc", "polarization", "distance", "mtotal"]:
             ref_params.pop(key, None)
         ref_params["mtotal"] = self.fiducial_mtotal
-        ref_params["mass1"] = mass1_from_mtotal_q(ref_params["mtotal"],
-                                                  ref_params["q"])
-        ref_params["mass2"] = mass2_from_mtotal_q(ref_params["mtotal"],
-                                                  ref_params["q"])
+        ref_params["mass1"] = mass1_from_mtotal_q(ref_params["mtotal"], ref_params["q"])
+        ref_params["mass2"] = mass2_from_mtotal_q(ref_params["mtotal"], ref_params["q"])
 
         # Rescaling maps f -> kappa * f, so the reference waveform has to
         # start low enough that the lightest grid point still covers the
@@ -313,7 +329,8 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
             scaled_waveform = {}
             for det, (hp, hc) in wfs.items():
                 scaled_waveform[det] = self.scale_waveform(
-                    hp, hc, self.fiducial_mtotal, mtotal)
+                    hp, hc, self.fiducial_mtotal, mtotal
+                )
             self.scaled_waveforms[mtotal] = scaled_waveform
 
             pmod = ref_params.copy()
@@ -335,8 +352,7 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
         # alone: the base model is only ever asked for its loglr, so its
         # remaining stats are unset, and copying them over would mask the
         # values this model computes for itself.
-        reserved = ('loglikelihood', 'logjacobian', 'logprior', 'loglr',
-                    'lognl')
+        reserved = ("loglikelihood", "logjacobian", "logprior", "loglr", "lognl")
         maxidx = loglr.argmax()
         for stat, value in vals[maxidx][1].items():
             if stat not in reserved:
@@ -362,9 +378,9 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
             rec.update(self.model.reconstruct())
             return rec
 
-        # evaluate the grid at the current parameters if that has not already
-        # happened, then draw a total mass from it
-        self.loglr
+        # Evaluating the likelihood is what fills in _grid_loglr for the
+        # parameters currently set; draw a total mass from that grid.
+        _ = self.loglr
         xl = draw_sample(self._grid_loglr)
         rec["mtotal"] = self.mtotal_grid[xl]
 
