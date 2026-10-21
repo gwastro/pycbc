@@ -287,7 +287,7 @@ class _ModelManager(dict):
 
     def __len__(self):
         self.add_plugins()
-        super().__len__()
+        return super().__len__()
 
     def __contains__(self, key):
         self.add_plugins()
