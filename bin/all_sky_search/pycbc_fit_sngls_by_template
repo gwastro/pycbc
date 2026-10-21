@@ -189,12 +189,9 @@ all_segments = events.veto.start_end_to_segments(segment_starts, segment_ends)
 for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     retain, junk = events.veto.indices_outside_segments(time, [veto_file],
                                  ifo=args.ifo, segment_name=veto_segment_name)
-    veto_segments = events.veto.select_segments_by_definer(veto_file,
+    all_segments -= events.veto.select_segments_by_definer(veto_file,
                                                            ifo=args.ifo,
                                                            segment_name=veto_segment_name)
-    if not veto_segments.intersects(all_segments):
-        logging.warning(f'No veto-segment was found within any of the analyzed segments for {veto_segment_name}')
-    all_segments -= veto_segments
     stat = stat[retain]
     tid = tid[retain]
     time = time[retain]
