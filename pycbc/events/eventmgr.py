@@ -639,15 +639,11 @@ class EventManager:
 
 
 class EventManagerMultiDetBase(EventManager):
-    def __init__(
-        self, opt, ifos, column, column_types, psd=None, array_minsize=10000, **kwargs
-    ):
+    def __init__(self, opt, ifos, column, column_types, array_minsize=10000, **kwargs):
         self.opt = opt
         self.ifos = ifos
         self.global_params = kwargs
         self.array_minsize = array_minsize
-        if psd is not None:
-            self.global_params["psd"] = psd[ifos[0]]
 
         # The events array does not like holding the ifo as string,
         # so create a mapping dict and hold as an int
@@ -726,10 +722,9 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         network_column_types,
         segments,
         time_slides,
-        psd=None,
         **kwargs,
     ):
-        super().__init__(opt, ifos, column, column_types, psd=None, **kwargs)
+        super().__init__(opt, ifos, column, column_types, **kwargs)
         self.network_event_dtype = [(ifo + "_event_id", int) for ifo in self.ifos]
         self.network_event_dtype.append(("template_id", int))
         self.network_event_dtype.append(("event_id", int))
@@ -1073,8 +1068,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
 
 
 class EventManagerMultiDet(EventManagerMultiDetBase):
-    def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
-        super().__init__(opt, ifos, column, column_types, psd=None, **kwargs)
+    def __init__(self, opt, ifos, column, column_types, **kwargs):
+        super().__init__(opt, ifos, column, column_types, **kwargs)
         self.event_index = 0
 
     def cluster_template_events_single_ifo(self, tcolumn, column, window_size, ifo):

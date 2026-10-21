@@ -96,7 +96,7 @@ def columns_from_file_list(file_list, columns, ifo, start, end):
 ifo_color = {"H1": "blue", "L1": "red", "V1": "green"}
 
 
-def coinc_timeseries_plot(coinc_file, start, end):
+def coinc_timeseries_plot(coinc_file):
     fig = plt.figure()
     f = HFile(coinc_file, "r")
 

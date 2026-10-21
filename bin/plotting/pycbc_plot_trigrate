@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 #### DEFINITIONS AND FUNCTIONS ####
 
 
-def get_stat(statchoice, trigs):
+def get_stat(statchoice, trigs):  # noqa: ARG001
     # For now this is using the single detector ranking. If we want, this
     # could use the Stat classes in stat.py using similar code as in hdf/io.py
     # This requires additional options, so only change this if it's useful!
