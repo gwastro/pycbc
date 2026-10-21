@@ -90,8 +90,10 @@ def insert_cuts_option_group(parser):
                              "SNR < 6 and SNR > 4")
     parser.add_argument('--template-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE:LIMIT. Format is the same as in "
-                             "--trigger-cuts. PARAMETER can be one of '"
+                             "PARAMETER:VALUE:LIMIT or as "
+                             "PARAMETER:VALUE:LIMIT:ANOTHER_VALUE:ANOTHER_LIMIT."
+                             " Format is the same as in --trigger-cuts. "
+                             "PARAMETER can be one of '"
                              + "', '".join(template_param_choices) + "'.")
 
 
