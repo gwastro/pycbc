@@ -18,7 +18,7 @@
 
 import logging
 from argparse import ArgumentParser
-from math import ceil, log
+from math import ceil, log2
 
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
@@ -79,7 +79,7 @@ def make_padded_frequency_series(vec, filter_tlen=None, delta_f=None):
     shorter than the waveform length then wraparound *will* be allowed.
     """
     if filter_tlen is None:
-        power = ceil(log(len(vec), 2)) + 1
+        power = ceil(log2(len(vec))) + 1
         tlen = 2**power
     else:
         tlen = filter_tlen
