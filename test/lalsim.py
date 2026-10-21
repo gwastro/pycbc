@@ -476,7 +476,7 @@ for apx in apxs:
         # These waveforms segfault and prints debugging to screen
         # Only test this is specifically told to do so
         continue
-    if apx in ["NR_hdf5"]:
+    if apx == "NR_hdf5":
         # We'll need an example file for this. Also it will need a special
         # set of tests.
         continue

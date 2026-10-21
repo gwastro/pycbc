@@ -596,7 +596,7 @@ if len(args.input_file) > 0:
     for input_file in args.input_file:
         logger.info("Loading: %s", input_file)
         with HFile(input_file, "r") as f:
-            params = {k: f[k][:] for k in f if k not in ["max_matches"]}
+            params = {k: f[k][:] for k in f if k != "max_matches"}
 
             # Keep only templates inside [tau0_start, tau0_end]
             tau0_in = pycbc.conversions.tau0_from_mass1_mass2(
