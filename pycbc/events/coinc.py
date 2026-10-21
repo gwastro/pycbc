@@ -894,18 +894,25 @@ def chunk_indices_with_boundary(times, analysis_block, boundary_window):
 class LiveCoincTimeslideBackgroundEstimator:
     """Rolling buffer background estimation."""
 
-    def __init__(self, num_templates, analysis_block, background_statistic,
-                 sngl_ranking, stat_files, ifos,
-                 ifar_limit=100,
-                 timeslide_interval=.035,
-                 coinc_window_pad=.002,
-                 statistic_refresh_rate=None,
-                 return_background=False,
-                 return_background_info=False,
-                 ifar_remove_threshold=None,
-                 injection_veto_chunks=None,
-                 boundary_veto_window=0.1,
-                 **kwargs):
+    def __init__(
+        self,
+        num_templates,
+        analysis_block,
+        background_statistic,
+        sngl_ranking,
+        stat_files,
+        ifos,
+        ifar_limit=100,
+        timeslide_interval=0.035,
+        coinc_window_pad=0.002,
+        statistic_refresh_rate=None,
+        return_background=False,
+        return_background_info=False,
+        ifar_remove_threshold=None,
+        injection_veto_chunks=None,
+        boundary_veto_window=0.1,
+        **kwargs,
+    ):
         """
         Parameters
         ----------
@@ -1087,26 +1094,29 @@ class LiveCoincTimeslideBackgroundEstimator:
         )
 
         injection_veto_chunks = None
-        veto_file = getattr(args, 'veto_injection_time_file', None)
+        veto_file = getattr(args, "veto_injection_time_file", None)
         if veto_file:
             times = numpy.atleast_1d(numpy.loadtxt(veto_file))
             injection_veto_chunks = (
-                (times // analysis_chunk).astype(numpy.int64).tolist()
+                numpy.floor(times / analysis_chunk).astype(numpy.int64).tolist()
             )
 
-        return cls(num_templates, analysis_chunk,
-                   args.ranking_statistic,
-                   args.sngl_ranking,
-                   stat_files,
-                   return_background=args.store_background,
-                   ifar_limit=args.background_ifar_limit,
-                   timeslide_interval=args.timeslide_interval,
-                   ifos=ifos,
-                   coinc_window_pad=args.coinc_window_pad,
-                   statistic_refresh_rate=args.statistic_refresh_rate,
-                   ifar_remove_threshold=args.ifar_remove_threshold,
-                   injection_veto_chunks=injection_veto_chunks,
-                   **kwargs)
+        return cls(
+            num_templates,
+            analysis_chunk,
+            args.ranking_statistic,
+            args.sngl_ranking,
+            stat_files,
+            return_background=args.store_background,
+            ifar_limit=args.background_ifar_limit,
+            timeslide_interval=args.timeslide_interval,
+            ifos=ifos,
+            coinc_window_pad=args.coinc_window_pad,
+            statistic_refresh_rate=args.statistic_refresh_rate,
+            ifar_remove_threshold=args.ifar_remove_threshold,
+            injection_veto_chunks=injection_veto_chunks,
+            **kwargs,
+        )
 
     @staticmethod
     def insert_args(parser):
@@ -1585,11 +1595,11 @@ class LiveCoincTimeslideBackgroundEstimator:
             if self.return_background_info and num_background > 0:
                 bkg_cidx = cidx[bkg_idx]
                 _bkg_info = {
-                    'stat':        cstat[bkg_cidx],
-                    'end_time_0':  ctime0[bkg_cidx],
-                    'end_time_1':  ctime1[bkg_cidx],
-                    'template_id': template_ids[bkg_cidx].astype(numpy.int32),
-                    'offset':      offsets[bkg_idx],
+                    "stat": cstat[bkg_cidx],
+                    "end_time_0": ctime0[bkg_cidx],
+                    "end_time_1": ctime1[bkg_cidx],
+                    "template_id": template_ids[bkg_cidx].astype(numpy.int32),
+                    "offset": offsets[bkg_idx],
                 }
         elif len(valid_ifos) > 0:
             self.coincs.increment(valid_ifos)
@@ -1627,17 +1637,17 @@ class LiveCoincTimeslideBackgroundEstimator:
         # Per-coinc metadata (end times, template id, offset) for this
         # update's background triggers; only when return_background_info=True.
         if _bkg_info is not None:
-            coinc_results['background_coincs/stat'] = _bkg_info['stat']
-            coinc_results[f'background_coincs/{self.ifos[0]}/end_time'] = (
-                _bkg_info['end_time_0']
+            coinc_results["background_coincs/stat"] = _bkg_info["stat"]
+            coinc_results[f"background_coincs/{self.ifos[0]}/end_time"] = (
+                _bkg_info["end_time_0"]
             )
-            coinc_results[f'background_coincs/{self.ifos[1]}/end_time'] = (
-                _bkg_info['end_time_1']
+            coinc_results[f"background_coincs/{self.ifos[1]}/end_time"] = (
+                _bkg_info["end_time_1"]
             )
-            coinc_results['background_coincs/template_id'] = (
-                _bkg_info['template_id']
+            coinc_results["background_coincs/template_id"] = (
+                _bkg_info["template_id"]
             )
-            coinc_results['background_coincs/offset'] = _bkg_info['offset']
+            coinc_results["background_coincs/offset"] = _bkg_info["offset"]
 
         return num_background, coinc_results
 
