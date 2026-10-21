@@ -304,7 +304,8 @@ def which_bin(par, minpar, maxpar, nbins, log=False):
         Bin index
 
     """
-    assert par >= minpar and par <= maxpar
+    assert par >= minpar
+    assert par <= maxpar
     if log:
         par, minpar, maxpar = numpy.log(par), numpy.log(minpar), numpy.log(maxpar)
     # par lies some fraction of the way between min and max
