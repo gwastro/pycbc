@@ -511,8 +511,8 @@ class EventManager:
                 f["u_vals"] = self.events["u_vals"]
                 f["coa_phase"] = self.events["coa_phase"]
                 f["hplus_cross_corr"] = self.events["hplus_cross_corr"]
-            except Exception:
-                # Not precessing
+            except (KeyError, ValueError):
+                # Not precessing: no such field in the events
                 f["coa_phase"] = numpy.angle(self.events["snr"])
             f["chisq"] = self.events["chisq"]
             f["bank_chisq"] = self.events["bank_chisq"]
@@ -539,8 +539,8 @@ class EventManager:
                 #        need information from the plus and cross correlation
                 #        (both real and imaginary(?)) to get this.
                 f["sigmasq"] = template_sigmasq_plus[tid]
-            except Exception:
-                # Not precessing
+            except (KeyError, ValueError):
+                # Not precessing: no sigmasq_plus in the template parameters
                 f["sigmasq"] = self.events["sigmasq"]
 
             # Template durations should ideally be stored in the bank file.
@@ -873,7 +873,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     f["u_vals"] = ifo_events["u_vals"]
                     f["coa_phase"] = ifo_events["coa_phase"]
                     f["hplus_cross_corr"] = ifo_events["hplus_cross_corr"]
-                except Exception:
+                except (KeyError, ValueError):
+                    # Not precessing: no such field in the events
                     f["coa_phase"] = numpy.angle(ifo_events["snr"])
                 f["chisq"] = ifo_events["chisq"]
                 f["bank_chisq"] = ifo_events["bank_chisq"]
@@ -903,8 +904,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     #      need information from the plus and cross correlation
                     #      (both real and imaginary(?)) to get this.
                     f["sigmasq"] = template_sigmasq_plus[tid]
-                except Exception:
-                    # Not precessing
+                except (KeyError, ValueError):
+                    # Not precessing: no sigmasq_plus in the template parameters
                     template_sigmasq = numpy.array(
                         [t["sigmasq"][ifo] for t in self.template_params],
                         dtype=numpy.float32,
@@ -1165,7 +1166,8 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                     f["u_vals"] = ifo_events["u_vals"]
                     f["coa_phase"] = ifo_events["coa_phase"]
                     f["hplus_cross_corr"] = ifo_events["hplus_cross_corr"]
-                except Exception:
+                except (KeyError, ValueError):
+                    # Not precessing: no such field in the events
                     f["coa_phase"] = numpy.angle(ifo_events["snr"])
                 f["chisq"] = ifo_events["chisq"]
                 f["bank_chisq"] = ifo_events["bank_chisq"]
@@ -1192,8 +1194,8 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                     #      need information from the plus and cross correlation
                     #      (both real and imaginary(?)) to get this.
                     f["sigmasq"] = template_sigmasq_plus[tid]
-                except Exception:
-                    # Not precessing
+                except (KeyError, ValueError):
+                    # Not precessing: no sigmasq_plus in the template parameters
                     template_sigmasq = numpy.array(
                         [t["sigmasq"][ifo] for t in self.template_params],
                         dtype=numpy.float32,

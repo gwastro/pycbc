@@ -16,6 +16,7 @@
 This modules provides classes and functions for transforming parameters.
 """
 
+import configparser
 import logging
 import os
 
@@ -407,7 +408,7 @@ class CustomTransformMultiOutputs(CustomTransform):
             # check if option can be cast as a float
             try:
                 func = cp.get_opt_tag(section, var, tag)
-            except Exception:
+            except configparser.Error:
                 func = cp.get_opt_tag(section, all_vars, tag)
                 output_index = slice(outputs.index(var), outputs.index(var) + 1)
             transform_functions[var] = [func, output_index]
