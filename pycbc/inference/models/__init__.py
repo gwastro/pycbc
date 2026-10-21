@@ -32,7 +32,11 @@ from .analytic import (
 )
 from .base import BaseModel
 from .base_data import BaseDataModel
-from .brute_marg import BruteLISASkyModesMarginalize, BruteParallelGaussianMarginalize
+from .brute_marg import (
+    BruteLISASkyModesMarginalize,
+    BruteParallelGaussianMarginalize,
+    BruteTotalMassMarginalize,
+)
 from .gated_gaussian_noise import (
     GatedGaussianMargPhase,
     GatedGaussianMargPol,
@@ -219,6 +223,7 @@ _models = {
         MarginalizedPolarization,
         MarginalizedHMPolPhase,
         MarginalizedTime,
+        BruteTotalMassMarginalize,
         BruteParallelGaussianMarginalize,
         BruteLISASkyModesMarginalize,
         GatedGaussianNoise,
