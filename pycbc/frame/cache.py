@@ -157,5 +157,8 @@ def locations_to_cache(locations, latest=False):
                 new = [CacheEntry.from_file(file_path)]
             else:
                 raise TypeError("Invalid location name")  # noqa: TRY003
-            entries.update((e.path, e) for e in new)
+            # Copies of one file in different directories hold the same data,
+            # so only the first copy found is used
+            for e in new:
+                entries.setdefault(Path(e.path).name, e)
     return FrameCache(sorted(entries.values(), key=lambda e: (e.start, e.path)))

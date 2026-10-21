@@ -27,6 +27,7 @@ for GWF and GWOSC HDF5 files.
 """
 
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -253,6 +254,21 @@ class TestGWOSCHDF(unittest.TestCase):
             )
             self.assertEqual(ts.start_time, one.start_time)
             numpy.testing.assert_array_equal(ts.numpy(), one.numpy())
+
+    def test_copies_in_two_directories(self):
+        # A file listed twice, from two directories, is read once
+        copy_dir = os.path.join(self.tmp.name, "copy")
+        os.mkdir(copy_dir)
+        copy = shutil.copy(self.paths[1], copy_dir)
+        ts = pycbc.frame.read_frame(
+            [*self.paths, copy],
+            "H1:STRAIN",
+            start_time=self.start + 10,
+            end_time=self.start + 40,
+        )
+        numpy.testing.assert_array_equal(
+            ts.numpy(), self.all_strain[10 * RATE : 40 * RATE]
+        )
 
     def test_gap(self):
         files = [self.paths[0], self.paths[2]]
