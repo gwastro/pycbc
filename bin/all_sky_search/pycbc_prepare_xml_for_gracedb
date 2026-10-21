@@ -46,7 +46,7 @@ from pycbc.psd import interpolate
 from pycbc.results import generate_asd_plot, generate_snr_plot
 from pycbc.types import FrequencySeries, MultiDetOptionAction, load_timeseries
 
-logger = logging.getLogger("pycbc_prepare_xml_for_gracedb")
+logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
