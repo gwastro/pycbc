@@ -114,7 +114,8 @@ def sort_injections(args, inj_group, missed):
                 inj_group["inclination"][:][missed],
             )
             eff_dists.append(eff_dist)
-        dec_eff_dist = sorted(eff_dists)[-2]
+        # decisive distance: the 2nd smallest effective distance of each injection
+        dec_eff_dist = np.sort(np.vstack(eff_dists), axis=0)[1]
         mchirp = mchirp_from_mass1_mass2(
             inj_group["mass1"][:][missed], inj_group["mass2"][:][missed]
         )
