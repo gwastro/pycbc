@@ -8,15 +8,6 @@ PyCBC template bank generation documentation (``pycbc.tmpltbank``)
 Introduction
 ===================
 
-.. note::
-
-    Bank creation no longer accepts ``--calculate-ethinca-metric``,
-    ``--calculate-time-metric-components``, ``--ethinca-pn-order``,
-    ``--ethinca-frequency-step``, or ``--filter-cutoff``. Remove these
-    options from existing commands and configurations. Variable upper
-    cutoffs for stochastic placement still use ``--vary-fupper``,
-    ``--bank-fupper-step``, and ``--bank-fupper-formula``.
-
 This page gives details on how to use the various bank generation codes
 and bank generation workflows
 available in pyCBC and specifically the pyCBC.tmpltbank module.
