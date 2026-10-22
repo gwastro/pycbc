@@ -110,7 +110,7 @@ def read_betas_from_hdf(filename):
     return betas
 
 
-def default_beta_ladder(ndim, ntemps=None, Tmax=None):
+def default_beta_ladder(ndim, ntemps=None, Tmax=None):  # noqa: N803
     r"""
     Returns a ladder of :math:`\beta \equiv 1/T`.
 

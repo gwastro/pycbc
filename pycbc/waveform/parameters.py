@@ -900,7 +900,7 @@ extrinsic_params = orientation_params + location_params
 
 
 # testing GR parameters
-testingGR_params = ParameterList(
+testing_gr_params = ParameterList(
     [
         dchi0,
         dchi1,
@@ -949,7 +949,7 @@ cbc_intrinsic_params = (
             octufmode2,
         ]
     )
-    + testingGR_params
+    + testing_gr_params
 )
 
 # the parameters of a cbc in the radiation frame

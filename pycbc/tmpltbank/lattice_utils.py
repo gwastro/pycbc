@@ -56,35 +56,35 @@ def generate_hexagonal_lattice(maxv1, minv1, maxv2, minv2, mindist):
     # Place first point
     v1s = [minv1]
     v2s = [minv2]
-    initPoint = [minv1, minv2]
+    init_point = [minv1, minv2]
     # Place first line
-    initLine = [initPoint]
+    init_line = [init_point]
     tmpv1 = minv1
     while tmpv1 < maxv1:
         tmpv1 = tmpv1 + (3 * mindist) ** (0.5)
-        initLine.append([tmpv1, minv2])
+        init_line.append([tmpv1, minv2])
         v1s.append(tmpv1)
         v2s.append(minv2)
-    initLine = numpy.array(initLine)
-    initLine2 = copy.deepcopy(initLine)
-    initLine2[:, 0] += 0.5 * (3 * mindist) ** 0.5
-    initLine2[:, 1] += 1.5 * (mindist) ** 0.5
-    for i in range(len(initLine2)):
-        v1s.append(initLine2[i, 0])
-        v2s.append(initLine2[i, 1])
-    tmpv2_1 = initLine[0, 1]
-    tmpv2_2 = initLine2[0, 1]
+    init_line = numpy.array(init_line)
+    init_line2 = copy.deepcopy(init_line)
+    init_line2[:, 0] += 0.5 * (3 * mindist) ** 0.5
+    init_line2[:, 1] += 1.5 * (mindist) ** 0.5
+    for i in range(len(init_line2)):
+        v1s.append(init_line2[i, 0])
+        v2s.append(init_line2[i, 1])
+    tmpv2_1 = init_line[0, 1]
+    tmpv2_2 = init_line2[0, 1]
     while tmpv2_1 < maxv2 and tmpv2_2 < maxv2:
         tmpv2_1 = tmpv2_1 + 3.0 * (mindist) ** 0.5
         tmpv2_2 = tmpv2_2 + 3.0 * (mindist) ** 0.5
-        initLine[:, 1] = tmpv2_1
-        initLine2[:, 1] = tmpv2_2
-        for i in range(len(initLine)):
-            v1s.append(initLine[i, 0])
-            v2s.append(initLine[i, 1])
-        for i in range(len(initLine2)):
-            v1s.append(initLine2[i, 0])
-            v2s.append(initLine2[i, 1])
+        init_line[:, 1] = tmpv2_1
+        init_line2[:, 1] = tmpv2_2
+        for i in range(len(init_line)):
+            v1s.append(init_line[i, 0])
+            v2s.append(init_line[i, 1])
+        for i in range(len(init_line2)):
+            v1s.append(init_line2[i, 0])
+            v2s.append(init_line2[i, 1])
     v1s = numpy.array(v1s)
     v2s = numpy.array(v2s)
     return v1s, v2s

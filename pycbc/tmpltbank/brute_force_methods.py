@@ -9,13 +9,13 @@ logger = logging.getLogger(__name__)
 
 def get_physical_covaried_masses(
     xis,
-    bestMasses,
-    bestXis,
+    best_masses,
+    best_xis,
     req_match,
-    massRangeParams,
-    metricParams,
-    fUpper,
-    giveUpThresh=5000,
+    mass_range_params,
+    metric_params,
+    f_upper,
+    give_up_thresh=5000,
 ):
     """
     This function takes the position of a point in the xi parameter space and
@@ -28,30 +28,30 @@ def get_physical_covaried_masses(
         Desired position of the point in the xi space. If only N values are
         provided and the xi space's dimension is larger then it is assumed that
         *any* value in the remaining xi coordinates is acceptable.
-    bestMasses : list
-        Contains [totalMass, eta, spin1z, spin2z]. Is a physical position
-        mapped to xi coordinates in bestXis that is close to the desired point.
+    best_masses : list
+        Contains [total_mass, eta, spin1z, spin2z]. Is a physical position
+        mapped to xi coordinates in best_xis that is close to the desired point.
         This is aimed to give the code a starting point.
-    bestXis : list
-        Contains the position of bestMasses in the xi coordinate system.
+    best_xis : list
+        Contains the position of best_masses in the xi coordinate system.
     req_match : float
         Desired maximum mismatch between xis and the obtained point. If a point
         is found with mismatch < req_match immediately stop and return that
         point. A point with this mismatch will not always be found.
-    massRangeParams : massRangeParameters instance
+    mass_range_params : MassRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    fUpper : float
-        The value of fUpper that was used when obtaining the xi_i
+    f_upper : float
+        The value of f_upper that was used when obtaining the xi_i
         coordinates. This lets us know how to rotate potential physical points
-        into the correct xi_i space. This must be a key in metricParams.evals,
-        metricParams.evecs and metricParams.evecsCV
+        into the correct xi_i space. This must be a key in metric_params.evals,
+        metric_params.evecs and metric_params.evecs_cv
         (ie. we must know how to do the transformation for
-        the given value of fUpper)
-    giveUpThresh : int, optional (default = 5000)
+        the given value of f_upper)
+    give_up_thresh : int, optional (default = 5000)
         The program will try this many iterations. If no close matching point
         has been found after this it will give up.
 
@@ -75,34 +75,34 @@ def get_physical_covaried_masses(
     """
     # TUNABLE PARAMETERS GO HERE!
     # This states how far apart to scatter test points in the first proposal
-    origScaleFactor = 1
+    orig_scale_factor = 1
 
     # Set up
     xi_size = len(xis)
-    scaleFactor = origScaleFactor
-    bestChirpmass = bestMasses[0] * (bestMasses[1]) ** (3.0 / 5.0)
+    scale_factor = orig_scale_factor
+    best_chirpmass = best_masses[0] * (best_masses[1]) ** (3.0 / 5.0)
     count = 0
-    unFixedCount = 0
-    currDist = 100000000000000000
+    un_fixed_count = 0
+    curr_dist = 100000000000000000
     while 1:
         # If we are a long way away we use larger jumps
         if count:
-            if currDist > 1 and scaleFactor == origScaleFactor:
-                scaleFactor = origScaleFactor * 10
+            if curr_dist > 1 and scale_factor == orig_scale_factor:
+                scale_factor = orig_scale_factor * 10
         # Get a set of test points with mass -> xi mappings
         totmass, eta, spin1z, spin2z, mass1, mass2, new_xis = get_mass_distribution(
-            [bestChirpmass, bestMasses[1], bestMasses[2], bestMasses[3]],
-            scaleFactor,
-            massRangeParams,
-            metricParams,
-            fUpper,
+            [best_chirpmass, best_masses[1], best_masses[2], best_masses[3]],
+            scale_factor,
+            mass_range_params,
+            metric_params,
+            f_upper,
         )
-        cDist = (new_xis[0] - xis[0]) ** 2
+        c_dist = (new_xis[0] - xis[0]) ** 2
         for j in range(1, xi_size):
-            cDist += (new_xis[j] - xis[j]) ** 2
-        if cDist.min() < req_match:
-            idx = cDist.argmin()
-            scaleFactor = origScaleFactor
+            c_dist += (new_xis[j] - xis[j]) ** 2
+        if c_dist.min() < req_match:
+            idx = c_dist.argmin()
+            scale_factor = orig_scale_factor
             new_xis_list = [new_xis[ldx][idx] for ldx in range(len(new_xis))]
             return (
                 mass1[idx],
@@ -110,55 +110,55 @@ def get_physical_covaried_masses(
                 spin1z[idx],
                 spin2z[idx],
                 count,
-                cDist.min(),
+                c_dist.min(),
                 new_xis_list,
             )
-        if cDist.min() < currDist:
-            idx = cDist.argmin()
-            bestMasses[0] = totmass[idx]
-            bestMasses[1] = eta[idx]
-            bestMasses[2] = spin1z[idx]
-            bestMasses[3] = spin2z[idx]
-            bestChirpmass = bestMasses[0] * (bestMasses[1]) ** (3.0 / 5.0)
-            currDist = cDist.min()
-            unFixedCount = 0
-            scaleFactor = origScaleFactor
+        if c_dist.min() < curr_dist:
+            idx = c_dist.argmin()
+            best_masses[0] = totmass[idx]
+            best_masses[1] = eta[idx]
+            best_masses[2] = spin1z[idx]
+            best_masses[3] = spin2z[idx]
+            best_chirpmass = best_masses[0] * (best_masses[1]) ** (3.0 / 5.0)
+            curr_dist = c_dist.min()
+            un_fixed_count = 0
+            scale_factor = orig_scale_factor
         count += 1
-        unFixedCount += 1
-        if unFixedCount > giveUpThresh:
+        un_fixed_count += 1
+        if un_fixed_count > give_up_thresh:
             # Stop at this point
-            diff = (bestMasses[0] * bestMasses[0] * (1 - 4 * bestMasses[1])) ** 0.5
-            mass1 = (bestMasses[0] + diff) / 2.0
-            mass2 = (bestMasses[0] - diff) / 2.0
+            diff = (best_masses[0] * best_masses[0] * (1 - 4 * best_masses[1])) ** 0.5
+            mass1 = (best_masses[0] + diff) / 2.0
+            mass2 = (best_masses[0] - diff) / 2.0
             new_xis_list = [new_xis[ldx][0] for ldx in range(len(new_xis))]
             return (
                 mass1,
                 mass2,
-                bestMasses[2],
-                bestMasses[3],
+                best_masses[2],
+                best_masses[3],
                 count,
-                currDist,
+                curr_dist,
                 new_xis_list,
             )
-        if not unFixedCount % 100:
-            scaleFactor *= 2
-        if scaleFactor > 64:
-            scaleFactor = 1
+        if not un_fixed_count % 100:
+            scale_factor *= 2
+        if scale_factor > 64:
+            scale_factor = 1
     # Shouldn't be here!
     raise RuntimeError
 
 
 def get_mass_distribution(
-    bestMasses,
-    scaleFactor,
-    massRangeParams,
-    metricParams,
-    fUpper,
-    numJumpPoints=100,
-    chirpMassJumpFac=0.0001,
-    etaJumpFac=0.01,
-    spin1zJumpFac=0.01,
-    spin2zJumpFac=0.01,
+    best_masses,
+    scale_factor,
+    mass_range_params,
+    metric_params,
+    f_upper,
+    num_jump_points=100,
+    chirp_mass_jump_fac=0.0001,
+    eta_jump_fac=0.01,
+    spin1z_jump_fac=0.01,
+    spin2z_jump_fac=0.01,
 ):
     """
     Given a set of masses, this function will create a set of points nearby
@@ -166,39 +166,39 @@ def get_mass_distribution(
 
     Parameters
     ----------
-    bestMasses : list
+    best_masses : list
         Contains [ChirpMass, eta, spin1z, spin2z]. Points will be placed around
         tjos
-    scaleFactor : float
-        This parameter describes the radius away from bestMasses that points
+    scale_factor : float
+        This parameter describes the radius away from best_masses that points
         will be placed in.
-    massRangeParams : massRangeParameters instance
+    mass_range_params : MassRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    fUpper : float
-        The value of fUpper that was used when obtaining the xi_i
+    f_upper : float
+        The value of f_upper that was used when obtaining the xi_i
         coordinates. This lets us know how to rotate potential physical points
-        into the correct xi_i space. This must be a key in metricParams.evals,
-        metricParams.evecs and metricParams.evecsCV
+        into the correct xi_i space. This must be a key in metric_params.evals,
+        metric_params.evecs and metric_params.evecs_cv
         (ie. we must know how to do the transformation for
-        the given value of fUpper)
-    numJumpPoints : int, optional (default = 100)
+        the given value of f_upper)
+    num_jump_points : int, optional (default = 100)
         The number of points that will be generated every iteration
-    chirpMassJumpFac : float, optional (default=0.0001)
+    chirp_mass_jump_fac : float, optional (default=0.0001)
         The jump points will be chosen with fractional variation in chirpMass
-        up to this multiplied by scaleFactor.
-    etaJumpFac : float, optional (default=0.01)
+        up to this multiplied by scale_factor.
+    eta_jump_fac : float, optional (default=0.01)
         The jump points will be chosen with fractional variation in eta
-        up to this multiplied by scaleFactor.
-    spin1zJumpFac : float, optional (default=0.01)
+        up to this multiplied by scale_factor.
+    spin1z_jump_fac : float, optional (default=0.01)
         The jump points will be chosen with absolute variation in spin1z up to
-        this multiplied by scaleFactor.
-    spin2zJumpFac : float, optional (default=0.01)
+        this multiplied by scale_factor.
+    spin2z_jump_fac : float, optional (default=0.01)
         The jump points will be chosen with absolute variation in spin2z up to
-        this multiplied by scaleFactor.
+        this multiplied by scale_factor.
 
     Returns
     -------
@@ -223,82 +223,89 @@ def get_mass_distribution(
     # FIXME: It would be better if rejected values could be drawn from the
     # full possible mass/spin distribution. However speed in this function is
     # a major factor and must be considered.
-    bestChirpmass = bestMasses[0]
-    bestEta = bestMasses[1]
-    bestSpin1z = bestMasses[2]
-    bestSpin2z = bestMasses[3]
+    best_chirpmass = best_masses[0]
+    best_eta = best_masses[1]
+    best_spin1z = best_masses[2]
+    best_spin2z = best_masses[3]
 
     # Firstly choose a set of values for masses and spins
-    chirpmass = bestChirpmass * (
-        1 - (numpy.random.random(numJumpPoints) - 0.5) * chirpMassJumpFac * scaleFactor
+    chirpmass = best_chirpmass * (
+        1
+        - (numpy.random.random(num_jump_points) - 0.5)
+        * chirp_mass_jump_fac
+        * scale_factor
     )
-    etaRange = massRangeParams.maxEta - massRangeParams.minEta
-    currJumpFac = etaJumpFac * scaleFactor
-    currJumpFac = min(currJumpFac, etaRange)
-    eta = bestEta * (1 - (numpy.random.random(numJumpPoints) - 0.5) * currJumpFac)
+    eta_range = mass_range_params.max_eta - mass_range_params.min_eta
+    curr_jump_fac = eta_jump_fac * scale_factor
+    curr_jump_fac = min(curr_jump_fac, eta_range)
+    eta = best_eta * (1 - (numpy.random.random(num_jump_points) - 0.5) * curr_jump_fac)
 
-    maxSpinMag = max(massRangeParams.maxNSSpinMag, massRangeParams.maxBHSpinMag)
-    minSpinMag = min(massRangeParams.maxNSSpinMag, massRangeParams.maxBHSpinMag)
+    max_spin_mag = max(
+        mass_range_params.max_ns_spin_mag, mass_range_params.max_bh_spin_mag
+    )
+    min_spin_mag = min(
+        mass_range_params.max_ns_spin_mag, mass_range_params.max_bh_spin_mag
+    )
     # Note that these two are cranged by spinxzFac, *not* spinxzFac/spinxz
-    currJumpFac = spin1zJumpFac * scaleFactor
-    currJumpFac = min(currJumpFac, maxSpinMag)
+    curr_jump_fac = spin1z_jump_fac * scale_factor
+    curr_jump_fac = min(curr_jump_fac, max_spin_mag)
 
     # Actually set the new spin trial points
-    if massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
-        curr_spin_1z_jump_fac = currJumpFac
-        curr_spin_2z_jump_fac = currJumpFac
+    if mass_range_params.nsbh_flag or (max_spin_mag == min_spin_mag):
+        curr_spin_1z_jump_fac = curr_jump_fac
+        curr_spin_2z_jump_fac = curr_jump_fac
         # Check spins aren't going to be unphysical
-        if currJumpFac > massRangeParams.maxBHSpinMag:
-            curr_spin_1z_jump_fac = massRangeParams.maxBHSpinMag
-        if currJumpFac > massRangeParams.maxNSSpinMag:
-            curr_spin_2z_jump_fac = massRangeParams.maxNSSpinMag
-        spin1z = bestSpin1z + (
-            (numpy.random.random(numJumpPoints) - 0.5) * curr_spin_1z_jump_fac
+        if curr_jump_fac > mass_range_params.max_bh_spin_mag:
+            curr_spin_1z_jump_fac = mass_range_params.max_bh_spin_mag
+        if curr_jump_fac > mass_range_params.max_ns_spin_mag:
+            curr_spin_2z_jump_fac = mass_range_params.max_ns_spin_mag
+        spin1z = best_spin1z + (
+            (numpy.random.random(num_jump_points) - 0.5) * curr_spin_1z_jump_fac
         )
-        spin2z = bestSpin2z + (
-            (numpy.random.random(numJumpPoints) - 0.5) * curr_spin_2z_jump_fac
+        spin2z = best_spin2z + (
+            (numpy.random.random(num_jump_points) - 0.5) * curr_spin_2z_jump_fac
         )
     else:
-        # If maxNSSpinMag is very low (0) and maxBHSpinMag is high we can
+        # If max_ns_spin_mag is very low (0) and max_bh_spin_mag is high we can
         # find it hard to place any points. So mix these when
         # masses are swapping between the NS and BH.
-        curr_spin_bh_jump_fac = currJumpFac
-        curr_spin_ns_jump_fac = currJumpFac
+        curr_spin_bh_jump_fac = curr_jump_fac
+        curr_spin_ns_jump_fac = curr_jump_fac
         # Check spins aren't going to be unphysical
-        if currJumpFac > massRangeParams.maxBHSpinMag:
-            curr_spin_bh_jump_fac = massRangeParams.maxBHSpinMag
-        if currJumpFac > massRangeParams.maxNSSpinMag:
-            curr_spin_ns_jump_fac = massRangeParams.maxNSSpinMag
-        spin1z = numpy.zeros(numJumpPoints, dtype=float)
-        spin2z = numpy.zeros(numJumpPoints, dtype=float)
-        split_point = int(numJumpPoints / 2)
+        if curr_jump_fac > mass_range_params.max_bh_spin_mag:
+            curr_spin_bh_jump_fac = mass_range_params.max_bh_spin_mag
+        if curr_jump_fac > mass_range_params.max_ns_spin_mag:
+            curr_spin_ns_jump_fac = mass_range_params.max_ns_spin_mag
+        spin1z = numpy.zeros(num_jump_points, dtype=float)
+        spin2z = numpy.zeros(num_jump_points, dtype=float)
+        split_point = int(num_jump_points / 2)
         # So set the first half to be at least within the BH range and the
         # second half to be at least within the NS range
-        spin1z[:split_point] = bestSpin1z + (
+        spin1z[:split_point] = best_spin1z + (
             (numpy.random.random(split_point) - 0.5) * curr_spin_bh_jump_fac
         )
-        spin1z[split_point:] = bestSpin1z + (
-            (numpy.random.random(numJumpPoints - split_point) - 0.5)
+        spin1z[split_point:] = best_spin1z + (
+            (numpy.random.random(num_jump_points - split_point) - 0.5)
             * curr_spin_ns_jump_fac
         )
-        spin2z[:split_point] = bestSpin2z + (
+        spin2z[:split_point] = best_spin2z + (
             (numpy.random.random(split_point) - 0.5) * curr_spin_bh_jump_fac
         )
-        spin2z[split_point:] = bestSpin2z + (
-            (numpy.random.random(numJumpPoints - split_point) - 0.5)
+        spin2z[split_point:] = best_spin2z + (
+            (numpy.random.random(num_jump_points - split_point) - 0.5)
             * curr_spin_ns_jump_fac
         )
 
     # Point[0] is always set to the original point
-    chirpmass[0] = bestChirpmass
-    eta[0] = bestEta
-    spin1z[0] = bestSpin1z
-    spin2z[0] = bestSpin2z
+    chirpmass[0] = best_chirpmass
+    eta[0] = best_eta
+    spin1z[0] = best_spin1z
+    spin2z[0] = best_spin2z
 
     # Remove points where eta becomes unphysical
-    eta[eta > massRangeParams.maxEta] = massRangeParams.maxEta
-    if massRangeParams.minEta:
-        eta[eta < massRangeParams.minEta] = massRangeParams.minEta
+    eta[eta > mass_range_params.max_eta] = mass_range_params.max_eta
+    if mass_range_params.min_eta:
+        eta[eta < mass_range_params.min_eta] = mass_range_params.min_eta
     else:
         eta[eta < 0.0001] = 0.0001
 
@@ -311,21 +318,21 @@ def get_mass_distribution(
     # Check the validity of the spin values
     # Do the first spin
 
-    if maxSpinMag == 0:
+    if max_spin_mag == 0:
         # Shortcut if non-spinning
         pass
-    elif massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
+    elif mass_range_params.nsbh_flag or (max_spin_mag == min_spin_mag):
         # Simple case where I don't have to worry about correlation with mass
-        numploga = abs(spin1z) > massRangeParams.maxBHSpinMag
+        numploga = abs(spin1z) > mass_range_params.max_bh_spin_mag
         spin1z[numploga] = 0
     else:
         # Do have to consider masses
-        boundary_mass = massRangeParams.ns_bh_boundary_mass
+        boundary_mass = mass_range_params.ns_bh_boundary_mass
         numploga1 = numpy.logical_and(
-            mass1 >= boundary_mass, abs(spin1z) <= massRangeParams.maxBHSpinMag
+            mass1 >= boundary_mass, abs(spin1z) <= mass_range_params.max_bh_spin_mag
         )
         numploga2 = numpy.logical_and(
-            mass1 < boundary_mass, abs(spin1z) <= massRangeParams.maxNSSpinMag
+            mass1 < boundary_mass, abs(spin1z) <= mass_range_params.max_ns_spin_mag
         )
         numploga = numpy.logical_or(numploga1, numploga2)
         numploga = numpy.logical_not(numploga)
@@ -333,26 +340,26 @@ def get_mass_distribution(
 
     # Same for the second spin
 
-    if maxSpinMag == 0:
+    if max_spin_mag == 0:
         # Shortcut if non-spinning
         pass
-    elif massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
-        numplogb = abs(spin2z) > massRangeParams.maxNSSpinMag
+    elif mass_range_params.nsbh_flag or (max_spin_mag == min_spin_mag):
+        numplogb = abs(spin2z) > mass_range_params.max_ns_spin_mag
         spin2z[numplogb] = 0
     else:
         # Do have to consider masses
-        boundary_mass = massRangeParams.ns_bh_boundary_mass
+        boundary_mass = mass_range_params.ns_bh_boundary_mass
         numplogb1 = numpy.logical_and(
-            mass2 >= boundary_mass, abs(spin2z) <= massRangeParams.maxBHSpinMag
+            mass2 >= boundary_mass, abs(spin2z) <= mass_range_params.max_bh_spin_mag
         )
         numplogb2 = numpy.logical_and(
-            mass2 < boundary_mass, abs(spin2z) <= massRangeParams.maxNSSpinMag
+            mass2 < boundary_mass, abs(spin2z) <= mass_range_params.max_ns_spin_mag
         )
         numplogb = numpy.logical_or(numplogb1, numplogb2)
         numplogb = numpy.logical_not(numplogb)
         spin2z[numplogb] = 0
 
-    if (maxSpinMag) and (numploga[0] or numplogb[0]):
+    if (max_spin_mag) and (numploga[0] or numplogb[0]):
         raise ValueError("Cannot remove the guide point!")
 
     # And remove points where the individual masses are outside of the physical
@@ -361,20 +368,20 @@ def get_mass_distribution(
     # larger than any thresholds used in the functions in brute_force_utils.py
     # and will always be rejected. An unphysical value cannot be used as it
     # would result in unphysical metric distances and cause failures.
-    totmass[mass1 < massRangeParams.minMass1 * 0.9999] = 0.0001
-    totmass[mass1 > massRangeParams.maxMass1 * 1.0001] = 0.0001
-    totmass[mass2 < massRangeParams.minMass2 * 0.9999] = 0.0001
-    totmass[mass2 > massRangeParams.maxMass2 * 1.0001] = 0.0001
+    totmass[mass1 < mass_range_params.min_mass1 * 0.9999] = 0.0001
+    totmass[mass1 > mass_range_params.max_mass1 * 1.0001] = 0.0001
+    totmass[mass2 < mass_range_params.min_mass2 * 0.9999] = 0.0001
+    totmass[mass2 > mass_range_params.max_mass2 * 1.0001] = 0.0001
     # There is some numerical error which can push this a bit higher. We do
     # *not* want to reject the initial guide point. This error comes from
     # Masses -> totmass, eta -> masses conversion, we will have points pushing
     # onto the boudaries of the space.
-    totmass[totmass > massRangeParams.maxTotMass * 1.0001] = 0.0001
-    totmass[totmass < massRangeParams.minTotMass * 0.9999] = 0.0001
-    if massRangeParams.max_chirp_mass:
-        totmass[chirpmass > massRangeParams.max_chirp_mass * 1.0001] = 0.0001
-    if massRangeParams.min_chirp_mass:
-        totmass[chirpmass < massRangeParams.min_chirp_mass * 0.9999] = 0.0001
+    totmass[totmass > mass_range_params.max_tot_mass * 1.0001] = 0.0001
+    totmass[totmass < mass_range_params.min_tot_mass * 0.9999] = 0.0001
+    if mass_range_params.max_chirp_mass:
+        totmass[chirpmass > mass_range_params.max_chirp_mass * 1.0001] = 0.0001
+    if mass_range_params.min_chirp_mass:
+        totmass[chirpmass < mass_range_params.min_chirp_mass * 0.9999] = 0.0001
 
     if totmass[0] < 0.00011:
         raise ValueError("Cannot remove the guide point!")
@@ -383,21 +390,21 @@ def get_mass_distribution(
     mass2[totmass < 0.00011] = 0.0001
 
     # Then map to xis
-    new_xis = get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper)
+    new_xis = get_cov_params(mass1, mass2, spin1z, spin2z, metric_params, f_upper)
     return totmass, eta, spin1z, spin2z, mass1, mass2, new_xis
 
 
 def stack_xi_direction_brute(
     xis,
-    bestMasses,
-    bestXis,
+    best_masses,
+    best_xis,
     direction_num,
     req_match,
-    massRangeParams,
-    metricParams,
-    fUpper,
-    scaleFactor=0.8,
-    numIterations=3000,
+    mass_range_params,
+    metric_params,
+    f_upper,
+    scale_factor=0.8,
+    num_iterations=3000,
 ):
     """
     This function is used to assess the depth of the xi_space in a specified
@@ -409,34 +416,34 @@ def stack_xi_direction_brute(
     xis : list or array
         Position in the xi space at which to assess the depth. This can be only
         a subset of the higher dimensions than that being sampled.
-    bestMasses : list
-        Contains [totalMass, eta, spin1z, spin2z]. Is a physical position
-        mapped to xi coordinates in bestXis that is close to the xis point.
+    best_masses : list
+        Contains [total_mass, eta, spin1z, spin2z]. Is a physical position
+        mapped to xi coordinates in best_xis that is close to the xis point.
         This is aimed to give the code a starting point.
-    bestXis : list
-        Contains the position of bestMasses in the xi coordinate system.
+    best_xis : list
+        Contains the position of best_masses in the xi coordinate system.
     direction_num : int
         The dimension that you want to assess the depth of (0 = 1, 1 = 2 ...)
     req_match : float
         When considering points to assess the depth with, only consider points
         with a mismatch that is smaller than this with xis.
-    massRangeParams : massRangeParameters instance
+    mass_range_params : MassRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    fUpper : float
-        The value of fUpper that was used when obtaining the xi_i
+    f_upper : float
+        The value of f_upper that was used when obtaining the xi_i
         coordinates. This lets us know how to rotate potential physical points
-        into the correct xi_i space. This must be a key in metricParams.evals,
-        metricParams.evecs and metricParams.evecsCV
+        into the correct xi_i space. This must be a key in metric_params.evals,
+        metric_params.evecs and metric_params.evecs_cv
         (ie. we must know how to do the transformation for
-        the given value of fUpper)
-    scaleFactor : float, optional (default = 0.8)
+        the given value of f_upper)
+    scale_factor : float, optional (default = 0.8)
         The value of the scale factor that is used when calling
         pycbc.tmpltbank.get_mass_distribution.
-    numIterations : int, optional (default = 3000)
+    num_iterations : int, optional (default = 3000)
         The number of times to make calls to get_mass_distribution when
         assessing the maximum/minimum of this parameter space. Making this
         smaller makes the code faster, but at the cost of accuracy.
@@ -454,31 +461,31 @@ def stack_xi_direction_brute(
     # Find minimum
     ximin = find_xi_extrema_brute(
         xis,
-        bestMasses,
-        bestXis,
+        best_masses,
+        best_xis,
         direction_num,
         req_match,
-        massRangeParams,
-        metricParams,
-        fUpper,
+        mass_range_params,
+        metric_params,
+        f_upper,
         find_minimum=True,
-        scaleFactor=scaleFactor,
-        numIterations=numIterations,
+        scale_factor=scale_factor,
+        num_iterations=num_iterations,
     )
 
     # Find maximum
     ximax = find_xi_extrema_brute(
         xis,
-        bestMasses,
-        bestXis,
+        best_masses,
+        best_xis,
         direction_num,
         req_match,
-        massRangeParams,
-        metricParams,
-        fUpper,
+        mass_range_params,
+        metric_params,
+        f_upper,
         find_minimum=False,
-        scaleFactor=scaleFactor,
-        numIterations=numIterations,
+        scale_factor=scale_factor,
+        num_iterations=num_iterations,
     )
 
     return ximin, ximax
@@ -486,16 +493,16 @@ def stack_xi_direction_brute(
 
 def find_xi_extrema_brute(
     xis,
-    bestMasses,
-    bestXis,
+    best_masses,
+    best_xis,
     direction_num,
     req_match,
-    massRangeParams,
-    metricParams,
-    fUpper,
+    mass_range_params,
+    metric_params,
+    f_upper,
     find_minimum=False,
-    scaleFactor=0.8,
-    numIterations=3000,
+    scale_factor=0.8,
+    num_iterations=3000,
 ):
     """
     This function is used to find the largest or smallest value of the xi
@@ -508,37 +515,37 @@ def find_xi_extrema_brute(
     xis : list or array
         Position in the xi space at which to assess the depth. This can be only
         a subset of the higher dimensions than that being sampled.
-    bestMasses : list
-        Contains [totalMass, eta, spin1z, spin2z]. Is a physical position
-        mapped to xi coordinates in bestXis that is close to the xis point.
+    best_masses : list
+        Contains [total_mass, eta, spin1z, spin2z]. Is a physical position
+        mapped to xi coordinates in best_xis that is close to the xis point.
         This is aimed to give the code a starting point.
-    bestXis : list
-        Contains the position of bestMasses in the xi coordinate system.
+    best_xis : list
+        Contains the position of best_masses in the xi coordinate system.
     direction_num : int
         The dimension that you want to assess the depth of (0 = 1, 1 = 2 ...)
     req_match : float
         When considering points to assess the depth with, only consider points
         with a mismatch that is smaller than this with xis.
-    massRangeParams : massRangeParameters instance
+    mass_range_params : MassRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
-    metricParams : metricParameters instance
+    metric_params : MetricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    fUpper : float
-        The value of fUpper that was used when obtaining the xi_i
+    f_upper : float
+        The value of f_upper that was used when obtaining the xi_i
         coordinates. This lets us know how to rotate potential physical points
-        into the correct xi_i space. This must be a key in metricParams.evals,
-        metricParams.evecs and metricParams.evecsCV
+        into the correct xi_i space. This must be a key in metric_params.evals,
+        metric_params.evecs and metric_params.evecs_cv
         (ie. we must know how to do the transformation for
-        the given value of fUpper)
+        the given value of f_upper)
     find_minimum : boolean, optional (default = False)
         If True, find the minimum value of the xi direction. If False find the
         maximum value.
-    scaleFactor : float, optional (default = 0.8)
+    scale_factor : float, optional (default = 0.8)
         The value of the scale factor that is used when calling
         pycbc.tmpltbank.get_mass_distribution.
-    numIterations : int, optional (default = 3000)
+    num_iterations : int, optional (default = 3000)
         The number of times to make calls to get_mass_distribution when
         assessing the maximum/minimum of this parameter space. Making this
         smaller makes the code faster, but at the cost of accuracy.
@@ -552,41 +559,41 @@ def find_xi_extrema_brute(
     """
     # Setup
     xi_size = len(xis)
-    bestChirpmass = bestMasses[0] * (bestMasses[1]) ** (3.0 / 5.0)
+    best_chirpmass = best_masses[0] * (best_masses[1]) ** (3.0 / 5.0)
     if find_minimum:
         xiextrema = 10000000000
     else:
         xiextrema = -100000000000
 
-    for _ in range(numIterations):
+    for _ in range(num_iterations):
         # Evaluate extrema of the xi direction specified
         totmass, eta, spin1z, spin2z, _, _, new_xis = get_mass_distribution(
-            [bestChirpmass, bestMasses[1], bestMasses[2], bestMasses[3]],
-            scaleFactor,
-            massRangeParams,
-            metricParams,
-            fUpper,
+            [best_chirpmass, best_masses[1], best_masses[2], best_masses[3]],
+            scale_factor,
+            mass_range_params,
+            metric_params,
+            f_upper,
         )
-        cDist = (new_xis[0] - xis[0]) ** 2
+        c_dist = (new_xis[0] - xis[0]) ** 2
         for j in range(1, xi_size):
-            cDist += (new_xis[j] - xis[j]) ** 2
-        redCDist = cDist[cDist < req_match]
-        if len(redCDist):
+            c_dist += (new_xis[j] - xis[j]) ** 2
+        red_c_dist = c_dist[c_dist < req_match]
+        if len(red_c_dist):
             if not find_minimum:
-                new_xis[direction_num][cDist > req_match] = -10000000
-                currXiExtrema = (new_xis[direction_num]).max()
+                new_xis[direction_num][c_dist > req_match] = -10000000
+                curr_xi_extrema = (new_xis[direction_num]).max()
                 idx = (new_xis[direction_num]).argmax()
             else:
-                new_xis[direction_num][cDist > req_match] = 10000000
-                currXiExtrema = (new_xis[direction_num]).min()
+                new_xis[direction_num][c_dist > req_match] = 10000000
+                curr_xi_extrema = (new_xis[direction_num]).min()
                 idx = (new_xis[direction_num]).argmin()
-            if ((not find_minimum) and (currXiExtrema > xiextrema)) or (
-                find_minimum and (currXiExtrema < xiextrema)
+            if ((not find_minimum) and (curr_xi_extrema > xiextrema)) or (
+                find_minimum and (curr_xi_extrema < xiextrema)
             ):
-                xiextrema = currXiExtrema
-                bestMasses[0] = totmass[idx]
-                bestMasses[1] = eta[idx]
-                bestMasses[2] = spin1z[idx]
-                bestMasses[3] = spin2z[idx]
-                bestChirpmass = bestMasses[0] * (bestMasses[1]) ** (3.0 / 5.0)
+                xiextrema = curr_xi_extrema
+                best_masses[0] = totmass[idx]
+                best_masses[1] = eta[idx]
+                best_masses[2] = spin1z[idx]
+                best_masses[3] = spin2z[idx]
+                best_chirpmass = best_masses[0] * (best_masses[1]) ** (3.0 / 5.0)
     return xiextrema

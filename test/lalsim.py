@@ -28,6 +28,7 @@ These are simple unit tests for lalsimulation
 import copy
 import optparse
 import unittest
+from types import SimpleNamespace
 
 import lalsimulation
 import numpy
@@ -140,10 +141,7 @@ class TestLALSimulation(unittest.TestCase):
         self.show_plots = opt.show_plots
         self.plot_dir = "."
 
-        class params:
-            pass
-
-        self.p = params()
+        self.p = SimpleNamespace()
 
         # Overide my parameters with the program input arguments
         self.p.__dict__.update(vars(opt))
@@ -399,8 +397,8 @@ class TestLALSimulation(unittest.TestCase):
             hpdec[idx] = hp.data[2 * idx]
             hcdec[idx] = hc.data[2 * idx]
 
-        hpTS = TimeSeries(hpdec, delta_t=self.p.delta_t * 2.0, epoch=hp.start_time)
-        hcTS = TimeSeries(hcdec, delta_t=self.p.delta_t * 2.0, epoch=hc.start_time)
+        hp_ts = TimeSeries(hpdec, delta_t=self.p.delta_t * 2.0, epoch=hp.start_time)
+        hc_ts = TimeSeries(hcdec, delta_t=self.p.delta_t * 2.0, epoch=hc.start_time)
 
         f = plt.figure()
         plt.plot(
@@ -431,9 +429,9 @@ class TestLALSimulation(unittest.TestCase):
         else:
             plt.close(f)
 
-        op = overlap(hpTS, hp2dec)
+        op = overlap(hp_ts, hp2dec)
         self.assertAlmostEqual(1.0, op, places=2)
-        oc = overlap(hcTS, hc2dec)
+        oc = overlap(hc_ts, hc2dec)
         self.assertAlmostEqual(1.0, oc, places=2)
 
 

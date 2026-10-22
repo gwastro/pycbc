@@ -200,16 +200,16 @@ def exit_based_on_results(results):
         results = unittest.TextTestRunner(verbosity=2).run(suite)
 
     """
-    NotImpErrors = 0
+    not_imp_errors = 0
     for error in results.errors:
         for errormsg in error:
             if type(errormsg) is str:
                 if "NotImplemented" in errormsg:
-                    NotImpErrors += 1
+                    not_imp_errors += 1
                     break
     if results.wasSuccessful():
         _exit(0)
-    elif len(results.failures) == 0 and len(results.errors) == NotImpErrors:
+    elif len(results.failures) == 0 and len(results.errors) == not_imp_errors:
         _exit(1)
     else:
         _exit(2)
@@ -231,8 +231,8 @@ _real_dtype_dict = {
 }
 
 
-class array_base:
-    def setNumbers(self):
+class ArrayBase:
+    def set_numbers(self):
         # We create instances of our types, and need to know the generic answer
         # type so that we can convert the many basic lists into the appropriate
         # precision and kind.  This logic essentially implements (for our limited
@@ -249,7 +249,7 @@ class array_base:
         self.rdtype = _real_dtype_dict[self.dtype]
 
         # The child class (testing one of Array, TimeSeries, or FrequencySeries)
-        # should set the following in its setUp method before this method (setNumbers)
+        # should set the following in its setUp method before this method (set_numbers)
         # is called:
         #    self.type = one of [Array,TimeSeries,FrequencySeries]
         #    self.kwds = dict for other kwd args beyond 'dtype'; normally an

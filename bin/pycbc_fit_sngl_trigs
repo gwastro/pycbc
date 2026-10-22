@@ -260,9 +260,9 @@ for ifo in opt.ifos:
     # FIXME: Would like a uniform input interface from trigger files
     # to the 'get_column' syntax used by SnglInspiralUtils
     if trigformat == "xml":
-        from pylal import SnglInspiralUtils as sniuls
+        from pylal import SnglInspiralUtils
 
-        sngls = sniuls.ReadSnglInspiralFromFiles(
+        sngls = SnglInspiralUtils.ReadSnglInspiralFromFiles(
             opt.inputs,
             filterFunc=lambda s: s.snr > opt.snr_threshold,
             verbose=opt.verbose,
@@ -393,7 +393,7 @@ for ifo in opt.ifos:
                 continue
             # FIXME: Also allow to use dynamically determined threshold
             # calculated via Nth loudest trig
-            # thresh = trstats.tail_threshold(vals_inbin, N=nmax)
+            # thresh = trstats.tail_threshold(vals_inbin, n=nmax)
             # counts[ifo][th][i] = nmax
             # do the fit
             alpha, sig_alpha = trstats.fit_above_thresh(
@@ -403,7 +403,7 @@ for ifo in opt.ifos:
             #                             opt.fit_function, vals_inbin, thresh)
             fits[ifo][th][i] = alpha
             stdev[ifo][th][i] = sig_alpha
-            _, ks_prob[ifo][th][i] = trstats.KS_test(
+            _, ks_prob[ifo][th][i] = trstats.ks_test(
                 opt.fit_function, vals_inbin, alpha, th
             )
             outfile.write(

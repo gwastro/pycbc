@@ -715,13 +715,13 @@ def get_calibration_files(ifos, gps_time, calibration_file_path):
     Output:
      A dictionary of calibration envelop file path for each IFO.
     """
-    RUN_NAME = get_run(gps_time).split("_")[0]
+    run_name = get_run(gps_time).split("_")[0]
     get_run(gps_time)
     dict_calibration_file = {}
     for ifo in ifos:
-        if RUN_NAME == "O4a":
+        if run_name == "O4a":
             all_calibration_files = glob.glob(
-                "%s/%s_%s/*.txt" % (calibration_file_path, ifo, RUN_NAME)
+                "%s/%s_%s/*.txt" % (calibration_file_path, ifo, run_name)
             )
         else:
             all_calibration_files = glob.glob(
@@ -730,7 +730,7 @@ def get_calibration_files(ifos, gps_time, calibration_file_path):
         if ifo != "V1":
             # H1 and L1 detector files are treated seperately compared to V1 detector
             # This list of GPS times can be coded in a better way!!!
-            if RUN_NAME == "O4a":
+            if run_name == "O4a":
                 list_gpstimes = np.array(
                     [
                         int(item.split("_")[-1].split(".")[0])
@@ -743,17 +743,17 @@ def get_calibration_files(ifos, gps_time, calibration_file_path):
                 )
             dt_list = abs(list_gpstimes - gps_time)
             ifo_calibration_file = all_calibration_files[dt_list.argmin()]
-        elif RUN_NAME == "O2":
+        elif run_name == "O2":
             ifo_calibration_file = (
                 "%s/calibration_envelops/V1/V_calibrationUncertaintyEnvelope_magnitude5p1percent_phase40mraddeg20microsecond.txt"
                 % os.getcwd()
             )
-        elif RUN_NAME == "O3a":
+        elif run_name == "O3a":
             ifo_calibration_file = (
                 "%s/calibration_envelops/V1/V_O3a_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt"
                 % os.getcwd()
             )
-        elif RUN_NAME == "O3b":
+        elif run_name == "O3b":
             ifo_calibration_file = (
                 "%s/calibration_envelops/V1/V_O3b_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt"
                 % os.getcwd()
@@ -761,11 +761,11 @@ def get_calibration_files(ifos, gps_time, calibration_file_path):
         else:
             raise ValueError("Virgo GPS time is not in valid range")
 
-        if RUN_NAME == "O4a":
+        if run_name == "O4a":
             dict_calibration_file[ifo] = "%s/%s_%s/%s" % (
                 calibration_file_path,
                 ifo,
-                RUN_NAME,
+                run_name,
                 ifo_calibration_file.split("/")[-1],
             )
         else:

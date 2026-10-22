@@ -44,11 +44,11 @@ class TestDetector(unittest.TestCase):
         self.d = [det.Detector(ifo) for ifo in det.get_available_detectors()]
 
         # not distributed sanely, but should provide some good coverage
-        N = 1000
-        self.ra = uniform(0, numpy.pi * 2, size=N)
-        self.dec = uniform(-numpy.pi, numpy.pi, size=N)
-        self.pol = uniform(0, numpy.pi * 2, size=N)
-        self.time = uniform(1126000000.0, 1336096017.0, size=N)
+        n = 1000
+        self.ra = uniform(0, numpy.pi * 2, size=n)
+        self.dec = uniform(-numpy.pi, numpy.pi, size=n)
+        self.pol = uniform(0, numpy.pi * 2, size=n)
+        self.time = uniform(1126000000.0, 1336096017.0, size=n)
 
     def test_light_time(self):
         for d1 in self.d:

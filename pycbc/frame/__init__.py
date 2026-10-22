@@ -1,4 +1,4 @@
-from .buffer import DataBuffer, StatusBuffer, iDQBuffer  # noqa: F401
+from .buffer import DataBuffer, IDQBuffer, StatusBuffer  # noqa: F401
 from .frame import (
     frame_paths,
     locations_to_cache,

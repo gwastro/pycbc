@@ -96,12 +96,12 @@ def setup_matchedfltr_workflow(
     cp = workflow.cp
 
     # Parse for options in .ini file
-    mfltrMethod = cp.get_opt_tags(
+    mfltr_method = cp.get_opt_tags(
         "workflow-matchedfilter", "matchedfilter-method", tags
     )
 
     # Could have a number of choices here
-    if mfltrMethod == "WORKFLOW_INDEPENDENT_IFOS":
+    if mfltr_method == "WORKFLOW_INDEPENDENT_IFOS":
         logger.info("Adding matched-filter jobs to workflow.")
         inspiral_outs = setup_matchedfltr_dax_generated(
             workflow,
@@ -112,7 +112,7 @@ def setup_matchedfltr_workflow(
             injection_file=injection_file,
             tags=tags,
         )
-    elif mfltrMethod == "WORKFLOW_MULTIPLE_IFOS":
+    elif mfltr_method == "WORKFLOW_MULTIPLE_IFOS":
         logger.info("Adding matched-filter jobs to workflow.")
         inspiral_outs = setup_matchedfltr_dax_generated_multi(
             workflow,
@@ -124,9 +124,9 @@ def setup_matchedfltr_workflow(
             tags=tags,
         )
     else:
-        errMsg = "Matched filter method not recognized. Must be one of "
-        errMsg += "WORKFLOW_INDEPENDENT_IFOS or WORKFLOW_MULTIPLE_IFOS."
-        raise ValueError(errMsg)
+        err_msg = "Matched filter method not recognized. Must be one of "
+        err_msg += "WORKFLOW_INDEPENDENT_IFOS or WORKFLOW_MULTIPLE_IFOS."
+        raise ValueError(err_msg)
 
     logger.info("Leaving matched-filtering setup module.")
     return inspiral_outs
