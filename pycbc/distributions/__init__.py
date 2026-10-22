@@ -44,10 +44,8 @@ from pycbc.distributions.sky_location import (
     UniformSky,
 )
 from pycbc.distributions.spins import IndependentChiPChiEff
-from pycbc.distributions.uniform import Uniform
+from pycbc.distributions.uniform import Trapezoid, Uniform
 from pycbc.distributions.uniform_log import UniformLog10
-
-# Promote some classes/functions to the distributions name space
 from pycbc.distributions.utils import draw_samples_from_config
 
 # a dict of all available distributions
@@ -60,6 +58,7 @@ distribs = {
     UniformRadius.name: UniformRadius,
     Uniform.name: Uniform,
     UniformAngle.name: UniformAngle,
+    Trapezoid.name: Trapezoid,
     CosAngle.name: CosAngle,
     SinAngle.name: SinAngle,
     UniformSolidAngle.name: UniformSolidAngle,
