@@ -73,19 +73,27 @@ def insert_cuts_option_group(parser):
     """
     parser.add_argument('--trigger-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE:LIMIT, where, PARAMETER is the "
-                             "parameter to be cut, VALUE is the value at "
-                             "which it is cut, and LIMIT is one of '"
+                             "PARAMETER:VALUE:LIMIT or as "
+                             "PARAMETER:VALUE:LIMIT:ANOTHER_VALUE:ANOTHER_LIMIT,"
+                             "where, PARAMETER is the parameter to be cut, "
+                             "VALUE and ANOTHER_VALUE (if provided) are the "
+                             "values at which it is cut, and LIMIT and "
+                             "ANOTHER_LIMIT (when provided with ANOTHER_VALUE, "
+                             "must be opposite in nature to LIMIT) are one of '"
                              + "', '".join(ineq_choices) +
                              "' to indicate the inequality needed. "
                              "PARAMETER is one of:'"
                              + "', '".join(trigger_param_choices) +
                              "'. For example snr:6:LOWER removes triggers "
-                             "with matched filter SNR < 6")
+                             "with matched filter SNR < 6 or "
+                             "snr:6:LOWER:4:UPPER removes triggers with "
+                             "SNR < 6 and SNR > 4")
     parser.add_argument('--template-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE:LIMIT. Format is the same as in "
-                             "--trigger-cuts. PARAMETER can be one of '"
+                             "PARAMETER:VALUE:LIMIT or as "
+                             "PARAMETER:VALUE:LIMIT:ANOTHER_VALUE:ANOTHER_LIMIT."
+                             " Format is the same as in --trigger-cuts. "
+                             "PARAMETER can be one of '"
                              + "', '".join(template_param_choices) + "'.")
 
 
@@ -96,12 +104,20 @@ def convert_inputstr(inputstr, choices):
     the float to compare to.
     Do input checks
     """
-    try:
-        cut_param, cut_value_str, cut_limit = inputstr.split(':')
-    except ValueError as value_e:
-        logger.warning("ERROR: Cut string format not correct, please "
-                       "supply as PARAMETER:VALUE:LIMIT")
-        raise value_e
+    splitstr = inputstr.split(':')
+    if len(splitstr) == 3:
+        cut_param, cut_value_str, cut_limit = splitstr
+    elif len(splitstr) == 5:
+        cut_param, cut_value_str, cut_limit, ano_value_str, ano_limit = splitstr
+        if not (('lower' in cut_limit and 'upper' in ano_limit) or ('upper' in cut_limit and 'lower' in ano_limit)):
+            raise NotImplementedError("Multiple cut limits should be opposite in nature from the supported types")
+        else:
+            if 'upper' in cut_limit and 'lower' in ano_limit:
+                cut_limit, ano_limit = ano_limit, cut_limit
+                cut_value_str, ano_value_str = ano_value_str, cut_value_str
+    else:
+        raise ValueError("ERROR: Cut string format not correct, please "
+                       "supply as PARAMETER:VALUE:LIMIT or as PARAMETER:VALUE:LIMIT:ANOTHER_VALUE:ANOTHER_LIMIT")
 
     if cut_param.lower() not in choices:
         raise NotImplementedError("Cut parameter " + cut_param.lower() + " "
@@ -118,6 +134,20 @@ def convert_inputstr(inputstr, choices):
         logger.warning("ERROR: Cut value must be convertible into a float, "
                        "got '%s'.", cut_value_str)
         raise value_e
+
+    if 'ano_limit' in locals():
+        if ano_limit.lower() not in ineq_choices:
+            raise NotImplementedError("Cut inequality " + ano_limit.lower() + " "
+                                      "not recognised, choose from "
+                                      + ", ".join(ineq_choices))
+        try:
+            ano_value = float(ano_value_str)
+        except ValueError as value_e:
+            print("ERROR: Another cut value must be convertible into a float, "
+                           "got '%s'.", ano_value_str)
+            raise value_e
+
+        return {(cut_param, ineq_functions[cut_limit], ineq_functions[ano_limit]): (cut_value, ano_value)}
 
     return {(cut_param, ineq_functions[cut_limit]): cut_value}
 
@@ -434,20 +464,43 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
     # Loop through the different cuts, and apply them
     for parameter_cut_function, cut_thresh in template_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
-        parameter, cut_function = parameter_cut_function
+        if len(parameter_cut_function) == 2 and isinstance(cut_thresh, float):
+            parameter, cut_function = parameter_cut_function
+        elif len(parameter_cut_function) == 3 and len(cut_thresh) == 2:
+            parameter, cut_function, ano_function = parameter_cut_function
+            ano_thresh = cut_thresh[1]
+            cut_thresh = cut_thresh[0]
 
         if parameter in bank_conv.conversion_options:
             # Calculate the parameter values using the bank property helper
             values = bank_conv.get_bank_property(parameter, bank, tids_out)
             # Only keep templates which pass this cut
             tids_out = tids_out[cut_function(values, cut_thresh)]
+            if 'ano_function' in locals():
+                if cut_thresh > ano_thresh:
+                    tids_out = np.union1d(tids_out, tids_out[ano_function(values, ano_thresh)])
+                else:
+                    tids_out = np.intersect1d(tids_out, tids_out[ano_function(values, ano_thresh)])
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
                                                   ifos,
-                                                  parameter_cut_function,
+                                                  (parameter, cut_function),
                                                   cut_thresh,
                                                   tids_out)
+                if 'ano_function' in locals():
+                    if cut_thresh > ano_thresh:
+                        tids_out = np.union1d(tids_out, apply_template_fit_cut(statistic,
+                                                        ifos,
+                                                        (parameter, ano_function),
+                                                        ano_thresh,
+                                                        tids_out))
+                    else:
+                        tids_out = np.intersect1d(tids_out, apply_template_fit_cut(statistic,
+                                                        ifos,
+                                                        (parameter, ano_function),
+                                                        ano_thresh,
+                                                        tids_out))
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
