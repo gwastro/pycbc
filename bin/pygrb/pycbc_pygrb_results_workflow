@@ -30,8 +30,9 @@ import os
 import socket
 import sys
 
-import pycbc
 import pycbc.version
+
+import pycbc
 import pycbc.workflow as _workflow
 from pycbc.results import layout, save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos
