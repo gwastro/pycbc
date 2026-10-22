@@ -264,6 +264,10 @@ def add_clusterlink_site(sitecat, cp):
     add_site_pegasus_profile(site, cp)
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration", value="condorio")
+    site.add_profiles(
+        Namespace.PEGASUS, key="transfer.bypass.input.staging", value="true"
+    )
+    site.add_profiles(Namespace.PEGASUS, key="auxillary.local", value="true")
     # Clusterlink always executes jobs inside its generated container image,
     # where the Pegasus worker package is installed at /opt/clusterlink/pegasus.
     # Setting PEGASUS_HOME on this site also instructs Pegasus not to transfer
@@ -273,6 +277,9 @@ def add_clusterlink_site(sitecat, cp):
     )
     site.add_profiles(Namespace.CONDOR, key="universe", value="vanilla")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files", value="Yes")
+    site.add_profiles(
+        Namespace.CONDOR, key="when_to_transfer_output", value="ON_SUCCESS"
+    )
     site.add_profiles(Namespace.CONDOR, key="My.ClusterlinkEligible", value="True")
     sitecat.add_sites(site)
 
