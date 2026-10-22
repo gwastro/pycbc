@@ -478,9 +478,9 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
             tids_out = tids_out[cut_function(values, cut_thresh)]
             if 'ano_function' in locals():
                 if cut_thresh > ano_thresh:
-                    tids_out = tids_out | tids_out[ano_function(values, ano_thresh)]
+                    tids_out = np.union1d(tids_out, tids_out[ano_function(values, ano_thresh)])
                 else:
-                    tids_out = tids_out & tids_out[ano_function(values, ano_thresh)]
+                    tids_out = np.intersect1d(tids_out, tids_out[ano_function(values, ano_thresh)])
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
@@ -490,17 +490,17 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
                                                   tids_out)
                 if 'ano_function' in locals():
                     if cut_thresh > ano_thresh:
-                        tids_out = tids_out | apply_template_fit_cut(statistic,
+                        tids_out = np.union1d(tids_out, apply_template_fit_cut(statistic,
                                                         ifos,
                                                         (parameter, ano_function),
                                                         ano_thresh,
-                                                        tids_out)
+                                                        tids_out))
                     else:
-                        tids_out = tids_out & apply_template_fit_cut(statistic,
+                        tids_out = np.intersect1d(tids_out, apply_template_fit_cut(statistic,
                                                         ifos,
                                                         (parameter, ano_function),
                                                         ano_thresh,
-                                                        tids_out)
+                                                        tids_out))
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
