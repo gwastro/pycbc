@@ -142,45 +142,6 @@ generate_inverse_mapping.__doc__ = generate_inverse_mapping.__doc__.format(
 )
 
 
-def get_ethinca_orders():
-    """
-    Returns the dictionary mapping TaylorF2 PN order names to twice-PN
-    orders (powers of v/c)
-    """
-    ethinca_orders = {
-        "zeroPN": 0,
-        "onePN": 2,
-        "onePointFivePN": 3,
-        "twoPN": 4,
-        "twoPointFivePN": 5,
-        "threePN": 6,
-        "threePointFivePN": 7,
-    }
-    return ethinca_orders
-
-
-def ethinca_order_from_string(order):
-    """
-    Returns the integer giving twice the post-Newtonian order
-    used by the ethinca calculation. Currently valid only for TaylorF2 metric
-
-    Parameters
-    ----------
-    order : string
-
-    Returns
-    -------
-    int
-
-    """
-    if order in get_ethinca_orders().keys():
-        return get_ethinca_orders()[order]
-    raise ValueError(
-        "Order " + str(order) + " is not valid for ethinca"
-        "calculation! Valid orders: " + str(get_ethinca_orders().keys())
-    )
-
-
 def get_chirp_params(
     mass1,
     mass2,
@@ -211,8 +172,7 @@ def get_chirp_params(
     f0 : float
         This is an arbitrary scaling factor introduced to avoid the potential
         for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
+        value (70) is safe here.
         This value must also be used consistently (ie. don't change its value
         when calling different functions!).
     order : string

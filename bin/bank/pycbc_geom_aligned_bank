@@ -143,9 +143,6 @@ psd_opts = pycbc.psd.insert_psd_option_group(parser)
 # Insert the data reading options
 data_opts = pycbc.strain.insert_strain_option_group(parser)
 
-# Add the ethinca calculation options - applied in the combiner
-ethinca_opts = pycbc.tmpltbank.insert_ethinca_metric_options(parser)
-
 # Workflow options
 
 
@@ -170,15 +167,6 @@ massRangeParams = pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
-pycbc.tmpltbank.verify_ethinca_metric_options(opts, parser)
-ethincaParams = pycbc.tmpltbank.ethincaParameters.from_argparse(opts)
-# Ensure consistency of ethinca and bank metric parameters
-pycbc.tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
-# Ethinca calculation should currently only be done for non-spin templates
-if ethincaParams.full_ethinca and (
-    massRangeParams.maxNSSpinMag > 0.0 or massRangeParams.maxBHSpinMag > 0.0
-):
-    parser.error("Ethinca metric calculation is currently not valid for nonzero spins!")
 
 # Set random seed if needed
 if opts.random_seed is not None:

@@ -132,11 +132,6 @@ class TmpltbankTestClass(unittest.TestCase):
         # Sanity check these
         pycbc.tmpltbank.verify_mass_range_options(self, parser=parser)
 
-        # Need to use F2 metric for ethinca
-        self.ethincaOrder = "threePointFivePN"
-        self.ethincaCutoff = "SchwarzISCO"
-        self.ethincaFreqStep = 10.0
-
         self.segLen = 1.0 / self.deltaF
         self.psdSize = int(self.segLen * self.sampleRate / 2.0) + 1
 
@@ -207,14 +202,6 @@ class TmpltbankTestClass(unittest.TestCase):
         self.metricParams = metricParams
         self.massRangeParams = massRangeParams
         self.massRangeParams2 = massRangeParams2
-        self.ethincaParams = pycbc.tmpltbank.ethincaParameters(
-            self.ethincaOrder,
-            self.ethincaCutoff,
-            self.ethincaFreqStep,
-            full_ethinca=False,
-            time_ethinca=False,
-        )
-
         self.xis = vals
 
     def test_eigen_directions(self):
@@ -640,20 +627,6 @@ class TmpltbankTestClass(unittest.TestCase):
         # Just run the function, no checking output
         masses1 = [(2, 2, 0.4, 0.3), (4.01, 0.249, 0.41, 0.29)]
         llw_output.convert_to_sngl_inspiral_table(masses1, "a")
-
-    def test_ethinca_calc(self):
-        # Just run the function, no checking output
-        m1 = 2.0
-        m2 = 2.0
-        s1z = 0.0
-        s2z = 0.0
-        # ethinca calc breaks unless f0 = fLow
-        self.metricParams.f0 = self.metricParams.fLow
-        output = llw_output.calculate_ethinca_metric_comps(
-            self.metricParams, self.ethincaParams, m1, m2, s1z, s2z
-        )
-        # restore initial f0 value
-        self.metricParams.f0 = self.f0
 
     def tearDown(self):
         pass

@@ -68,9 +68,7 @@ parser.add_argument(
 #                    "out the bank.  OPTIONAL.")
 # parser.add_argument("--bank-fupper-step", type=float, default=10.,
 #                    help="Size of discrete frequency steps used when varying "
-#                    "the fupper. If --calculate-ethinca-metric and "
-#                    "--ethinca-freq-step are also given, the code will use "
-#                    "the smaller of the two step values. OPTIONAL. Units=Hz")
+#                    "the fupper. OPTIONAL. Units=Hz")
 # parser.add_argument("--bank-fupper-formula", default="SchwarzISCO",
 #                    choices=["SchwarzISCO","LightRing","ERD"],
 #                    help="Frequency cutoff formula for varying fupper. "
