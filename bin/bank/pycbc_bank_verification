@@ -85,9 +85,7 @@ parser.add_argument(
     type=float,
     default=10.0,
     help="Size of discrete frequency steps used when varying "
-    "the fupper. If --calculate-ethinca-metric and "
-    "--ethinca-freq-step are also given, the code will use "
-    "the smaller of the two step values. This option will do "
+    "the fupper. This option will do "
     "nothing if the --vary-fupper flag is not given. "
     "OPTIONAL, default=10. Units=Hz",
 )

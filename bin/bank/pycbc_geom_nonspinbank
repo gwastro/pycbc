@@ -78,9 +78,6 @@ pycbc.psd.insert_psd_option_group(parser)
 # Insert the data reading options
 pycbc.strain.insert_strain_option_group(parser)
 
-# Add the ethinca calculation options
-tmpltbank.insert_ethinca_metric_options(parser)
-
 opts = parser.parse_args()
 
 pycbc.init_logging(opts.verbose)
@@ -93,11 +90,6 @@ massRangeParams = tmpltbank.massRangeParameters.from_argparse(opts, nonSpin=True
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
-tmpltbank.verify_ethinca_metric_options(opts, parser)
-ethincaParams = tmpltbank.ethincaParameters.from_argparse(opts)
-
-# Ensure consistency of ethinca and bank metric parameters
-tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
 
 # Set random seed if needed
 if opts.random_seed is not None:
@@ -131,9 +123,7 @@ metricParams.psd = psd
 logger.info("Calculating metric")
 
 # Begin by calculating a metric
-metricParams = tmpltbank.determine_eigen_directions(
-    metricParams, vary_fmax=ethincaParams.doEthinca, vary_density=ethincaParams.freqStep
-)
+metricParams = tmpltbank.determine_eigen_directions(metricParams)
 
 # This is used to calculate evalsCV and evecsCV with describe the rotations
 # needed to move into the principal component directions. evalsCV will be 1s.

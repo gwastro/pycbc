@@ -77,9 +77,7 @@ parser.add_argument(
     "construction. IE. instead of integrating F(f) we "
     "integrate F(f/f0) and then remove f0 after the fact."
     "The default option should be fine here for most "
-    "applications. OPTIONAL"
-    "WARNING: If using ethinca calculation this must be "
-    "equal to f-low. UNITS=Hz",
+    "applications. OPTIONAL. UNITS=Hz",
 )
 parser.add_argument(
     "-I",
@@ -158,10 +156,7 @@ if opts.random_seed is not None:
     numpy.random.seed(opts.random_seed)
 
 
-# FIXME: Note that a bunch of the options to set this are not passed to this
-# function and are not used. f0 is used in place of fUpper, but this is only
-# used as a key so doesn't matter. We have, however, removed information
-# that might be needed for something like ethinca. Maybe restore this?
+# f0 supplies the frequency dictionary key; no PSD integrals are needed here.
 metricParams = pycbc.tmpltbank.metricParameters(
     opts.pn_order, 0, opts.f0, 0, f0=opts.f0
 )

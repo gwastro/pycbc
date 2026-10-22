@@ -23,10 +23,7 @@ import numpy
 
 from pycbc import pnutils
 from pycbc.neutron_stars import load_ns_sequence
-from pycbc.tmpltbank.lambda_mapping import (
-    get_ethinca_orders,
-    pycbcValidOrdersHelpDescriptions,
-)
+from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions
 from pycbc.types import nonnegative_float, positive_float
 
 logger = logging.getLogger(__name__)
@@ -190,8 +187,7 @@ def insert_metric_calculation_options(parser):
         "I.e. instead of integrating F(f) we integrate F(f/f0) "
         "then rescale by powers of f0.  The default value 70Hz "
         "should be fine for most applications.  OPTIONAL. "
-        "UNITS=Hz. **WARNING: If the ethinca metric is to be "
-        "calculated, f0 must be set equal to f-low**",
+        "UNITS=Hz",
     )
     metricOpts.add_argument(
         "--f-low",
@@ -315,8 +311,8 @@ class metricParameters:
         """
         Moments structure
         This contains the result of all the integrals used in computing the
-        metrics above. It can be used for the ethinca components calculation,
-        or other similar calculations. This is composed of two compound
+        metrics above. It can be used for additional metric calculations.
+        This is composed of two compound
         dictionaries. The first entry indicates which moment is being
         calculated and the second entry indicates the upper frequency cutoff
         that was used.
@@ -1259,201 +1255,3 @@ class massRangeParameters:
             return 1
 
         return 0
-
-
-class ethincaParameters:
-    """
-    This class holds all of the options that are parsed in the function
-    insert_ethinca_metric_options
-    and all products produced using these options. It can also be initialized
-    from the __init__ function, providing directly the options normally
-    provided on the command line
-    """
-
-    def __init__(
-        self,
-        pnOrder,
-        cutoff,
-        freqStep,
-        fLow=None,
-        full_ethinca=False,
-        time_ethinca=False,
-    ):
-        """
-        Initialize an instance of ethincaParameters by providing all
-        options directly.  See the insert_ethinca_metric_options() function
-        for explanation or e.g. run pycbc_geom_nonspinbank --help
-        """
-        self.full_ethinca = full_ethinca
-        self.time_ethinca = time_ethinca
-        self.doEthinca = self.full_ethinca or self.time_ethinca
-        self.pnOrder = pnOrder
-        self.cutoff = cutoff
-        self.freqStep = freqStep
-        # independent fLow for ethinca metric is currently not used
-        self.fLow = fLow
-        # check that ethinca options make sense
-        if self.full_ethinca and self.time_ethinca:
-            err_msg = "It does not make sense to ask me to do the time "
-            err_msg += "restricted ethinca and also the full ethinca."
-            raise ValueError(err_msg)
-        if self.doEthinca and cutoff not in pnutils.named_frequency_cutoffs.keys():
-            raise ValueError(
-                "Need a valid cutoff formula to calculate "
-                "ethinca! Possible values are "
-                + str(tuple(pnutils.named_frequency_cutoffs.keys()))
-            )
-        if self.doEthinca and not freqStep:
-            raise ValueError(
-                "Need to specify a cutoff frequency step to "
-                "calculate ethinca! (ethincaFreqStep)"
-            )
-
-    @classmethod
-    def from_argparse(cls, opts):
-        """
-        Initialize an instance of the ethincaParameters class from an
-        argparse.OptionParser instance. This assumes that
-        insert_ethinca_metric_options
-        and
-        verify_ethinca_metric_options
-        have already been called before initializing the class.
-        """
-        return cls(
-            opts.ethinca_pn_order,
-            opts.filter_cutoff,
-            opts.ethinca_frequency_step,
-            fLow=None,
-            full_ethinca=opts.calculate_ethinca_metric,
-            time_ethinca=opts.calculate_time_metric_components,
-        )
-
-
-def insert_ethinca_metric_options(parser):
-    """
-    Adds the options used to calculate the ethinca metric, if required.
-
-    Parameters
-    ----------
-    parser : object
-        OptionParser instance.
-
-    """
-    ethincaGroup = parser.add_argument_group(
-        "Ethinca metric options",
-        "Options used in the calculation of Gamma metric "
-        "components for the ethinca coincidence test and for "
-        "assigning high-frequency cutoffs to templates.",
-    )
-    ethinca_methods = ethincaGroup.add_mutually_exclusive_group()
-    ethinca_methods.add_argument(
-        "--calculate-time-metric-components",
-        action="store_true",
-        default=False,
-        help="If given, the ethinca metric will be calculated "
-        "for only the time component, and stored in the Gamma0 "
-        "entry of the sngl_inspiral table. OPTIONAL, default=False",
-    )
-    ethinca_methods.add_argument(
-        "--calculate-ethinca-metric",
-        action="store_true",
-        default=False,
-        help="If given, the ethinca metric will be calculated "
-        "and stored in the Gamma entries of the sngl_inspiral "
-        "table. OPTIONAL, default=False",
-    )
-    ethincaGroup.add_argument(
-        "--ethinca-pn-order",
-        default=None,
-        choices=get_ethinca_orders(),
-        help="Specify a PN order to be used in calculating the "
-        "ethinca metric. OPTIONAL: if not specified, the same "
-        "order will be used as for the bank metric.",
-    )
-    ethincaGroup.add_argument(
-        "--filter-cutoff",
-        default=None,
-        choices=tuple(pnutils.named_frequency_cutoffs.keys()),
-        help="Specify an upper frequency cutoff formula for the "
-        "ethinca metric calculation, and for the values of f_final"
-        " assigned to the templates.  REQUIRED if the "
-        "calculate-ethinca-metric option is given.",
-    )
-    ethincaGroup.add_argument(
-        "--ethinca-frequency-step",
-        action="store",
-        type=float,
-        default=10.0,
-        help="Control the precision of the upper frequency cutoff."
-        " For speed, the metric is calculated only for discrete "
-        "f_max values with a spacing given by this option. Each "
-        "template is assigned the metric for the f_max closest to "
-        "its analytical cutoff formula. OPTIONAL, default=10. "
-        "UNITS=Hz",
-    )
-
-    return ethincaGroup
-
-
-def verify_ethinca_metric_options(opts, parser):
-    """
-    Checks that the necessary options are given for the ethinca metric
-    calculation.
-
-    Parameters
-    ----------
-    opts : argparse.Values instance
-        Result of parsing the input options with OptionParser
-    parser : object
-        The OptionParser instance.
-
-    """
-    if (
-        opts.filter_cutoff is not None
-        and opts.filter_cutoff not in pnutils.named_frequency_cutoffs.keys()
-    ):
-        parser.error(
-            "Need a valid cutoff formula to calculate ethinca or "
-            "assign filter f_final values! Possible values are "
-            + str(tuple(pnutils.named_frequency_cutoffs.keys()))
-        )
-    if (
-        opts.calculate_ethinca_metric or opts.calculate_time_metric_components
-    ) and not opts.ethinca_frequency_step:
-        parser.error("Need to specify a cutoff frequency step to calculate ethinca!")
-    if (
-        not (opts.calculate_ethinca_metric or opts.calculate_time_metric_components)
-        and opts.ethinca_pn_order
-    ):
-        parser.error(
-            "Can't specify an ethinca PN order if not calculating ethinca metric!"
-        )
-
-
-def check_ethinca_against_bank_params(ethincaParams, metricParams):
-    """
-    Cross-check the ethinca and bank layout metric calculation parameters
-    and set the ethinca metric PN order equal to the bank PN order if not
-    previously set.
-
-    Parameters
-    ----------
-    ethincaParams: instance of ethincaParameters
-    metricParams: instance of metricParameters
-
-    """
-    if ethincaParams.doEthinca:
-        if metricParams.f0 != metricParams.fLow:
-            raise ValueError(
-                "If calculating ethinca metric, f0 and f-low must be equal!"
-            )
-        if ethincaParams.fLow is not None and (ethincaParams.fLow != metricParams.fLow):
-            raise ValueError(
-                "Ethinca metric calculation does not currently "
-                "support a f-low value different from the bank "
-                "metric!"
-            )
-        if ethincaParams.pnOrder is None:
-            ethincaParams.pnOrder = metricParams.pnOrder
-    else:
-        pass

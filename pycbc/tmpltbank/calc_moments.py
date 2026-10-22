@@ -80,8 +80,7 @@ def determine_eigen_directions(
     metricParams.moments : Moments structure
         See the structure documentation for a description of this. This
         contains the result of all the integrals used in computing the metrics
-        above. It can be used for the ethinca components calculation, or other
-        similar calculations.
+        above. It can be used for additional metric calculations.
 
     """
     evals = {}
@@ -182,8 +181,8 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
         The following will be **added** to the metricParams structure
     metricParams.moments : Moments structure
         This contains the result of all the integrals used in computing the
-        metrics above. It can be used for the ethinca components calculation,
-        or other similar calculations. This is composed of two compound
+        metrics above. It can be used for additional metric calculations.
+        This is composed of two compound
         dictionaries. The first entry indicates which moment is being
         calculated and the second entry indicates the upper frequency cutoff
         that was used.
@@ -410,8 +409,7 @@ def calculate_moment(
     f0 : float
         This is an arbitrary scaling factor introduced to avoid the potential
         for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
+        value (70) is safe here.
     funct : Lambda function
         The function to use when computing the integral as described above.
     norm : Dictionary of floats
