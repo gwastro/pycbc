@@ -84,7 +84,7 @@ pycbc.init_logging(opts.verbose)
 
 opts.max_mismatch = 1 - opts.min_match
 tmpltbank.verify_metric_calculation_options(opts, parser)
-metricParams = tmpltbank.metricParameters.from_argparse(opts)
+metric_params = tmpltbank.metricParameters.from_argparse(opts)
 tmpltbank.verify_mass_range_options(opts, parser, nonSpin=True)
 massRangeParams = tmpltbank.massRangeParameters.from_argparse(opts, nonSpin=True)
 pycbc.psd.verify_psd_options(opts, parser)
@@ -118,32 +118,32 @@ psd = pycbc.psd.from_cli(
     strain=strain,
     dyn_range_factor=pycbc.DYN_RANGE_FAC,
 )
-metricParams.psd = psd
+metric_params.psd = psd
 
 logger.info("Calculating metric")
 
 # Begin by calculating a metric
-metricParams = tmpltbank.determine_eigen_directions(metricParams)
+metric_params = tmpltbank.determine_eigen_directions(metric_params)
 
 # This is used to calculate evalsCV and evecsCV with describe the rotations
 # needed to move into the principal component directions. evalsCV will be 1s.
 logger.info("Calculating covariance matrix")
 
 vals = tmpltbank.estimate_mass_range(
-    1000000, massRangeParams, metricParams, metricParams.fUpper, covary=False
+    1000000, massRangeParams, metric_params, metric_params.fUpper, covary=False
 )
 cov = numpy.cov(vals)
 evalsCV, evecsCV = numpy.linalg.eig(cov)
 evecsCVdict = {}
-evecsCVdict[metricParams.fUpper] = evecsCV
-metricParams.evecsCV = evecsCVdict
+evecsCVdict[metric_params.fUpper] = evecsCV
+metric_params.evecsCV = evecsCVdict
 
 
 logger.info("Estimating extent of parameter space")
 
 # This is to get an estimate of the largest values of \chi1 and \chi2
 vals = tmpltbank.estimate_mass_range(
-    5000000, massRangeParams, metricParams, metricParams.fUpper, covary=True
+    5000000, massRangeParams, metric_params, metric_params.fUpper, covary=True
 )
 
 chi1Max = vals[0].max()
@@ -282,7 +282,7 @@ rMass1, rMass2, rSpin1z, rSpin2z = tmpltbank.get_random_mass(2000000, massRangeP
 rTotmass, rEta = pnutils.mass1_mass2_to_mtotal_eta(rMass1, rMass2)
 # Here we have a set of m1s,m2s and mapped to Xis below
 rXis = tmpltbank.get_cov_params(
-    rMass1, rMass2, rSpin1z, rSpin2z, metricParams, metricParams.fUpper
+    rMass1, rMass2, rSpin1z, rSpin2z, metric_params, metric_params.fUpper
 )
 
 xis = (numpy.array(rXis)).T
@@ -366,8 +366,8 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
         copy.deepcopy(bestXis),
         req_match,
         massRangeParams,
-        metricParams,
-        metricParams.fUpper,
+        metric_params,
+        metric_params.fUpper,
         giveUpThresh=20,
     )
 
