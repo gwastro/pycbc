@@ -4,6 +4,7 @@ import unittest
 from types import SimpleNamespace
 import numpy as np
 import logging
+import os
 from pycbc.io import get_file
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from utils import simple_exit
