@@ -122,7 +122,7 @@ if not opts.vary_fupper:
     opts.bank_fupper_formula = None
 opts.max_mismatch = 1 - opts.min_match
 tmpltbank.verify_metric_calculation_options(opts, parser)
-metric_params = tmpltbank.metricParameters.from_argparse(opts)
+metricParams = tmpltbank.metricParameters.from_argparse(opts)
 tmpltbank.verify_mass_range_options(opts, parser)
 massRangeParams = tmpltbank.massRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
@@ -154,12 +154,12 @@ psd = pycbc.psd.from_cli(
     strain=strain,
     dyn_range_factor=pycbc.DYN_RANGE_FAC,
 )
-metric_params.psd = psd
+metricParams.psd = psd
 
 # Begin by calculating a metric
 logger.info("Calculating metric")
-metric_params = tmpltbank.determine_eigen_directions(
-    metric_params,
+metricParams = tmpltbank.determine_eigen_directions(
+    metricParams,
     vary_fmax=opts.vary_fupper,
     vary_density=opts.bank_fupper_step if opts.vary_fupper else None,
 )
@@ -168,34 +168,34 @@ logger.info("Identifying limits of frequency")
 
 # Choose the frequency values to use for metric calculation
 if opts.vary_fupper == False:
-    ref_freq = metric_params.fUpper
+    refFreq = metricParams.fUpper
 else:
     # determine upper frequency cutoffs corresponding to the min and max
     # total masses
-    fs = numpy.array(list(metric_params.evals.keys()), dtype=float)
+    fs = numpy.array(list(metricParams.evals.keys()), dtype=float)
     fs.sort()
     lowEve, highEve = tmpltbank.find_max_and_min_frequencies(
         opts.bank_fupper_formula, massRangeParams, fs
     )
-    ref_freq = lowEve
+    refFreq = lowEve
     fs = fs[fs >= lowEve]
     fs = fs[fs <= highEve]
 
 logger.info("Calculating covariance matrix")
 
 vals = tmpltbank.estimate_mass_range(
-    1000000, massRangeParams, metric_params, ref_freq, covary=False
+    1000000, massRangeParams, metricParams, refFreq, covary=False
 )
 cov = numpy.cov(vals)
 evalsCV, evecsCV = numpy.linalg.eig(cov)
 evecsCVdict = {}
-evecsCVdict[ref_freq] = evecsCV
-metric_params.evecsCV = evecsCVdict
+evecsCVdict[refFreq] = evecsCV
+metricParams.evecsCV = evecsCVdict
 
 logger.info("Initialize the PartitionedTmpltbank class")
 
 partitioned_bank_object = tmpltbank.PartitionedTmpltbank(
-    massRangeParams, metric_params, ref_freq, opts.max_mismatch**0.5, bin_range_check=1
+    massRangeParams, metricParams, refFreq, opts.max_mismatch**0.5, bin_range_check=1
 )
 
 # Initialise counters
@@ -229,17 +229,16 @@ while True:
                 opts.bank_fupper_formula, mass_dict, fs
             )
             lambdas = tmpltbank.get_chirp_params(
-                rMass1, rMass2, rSpin1z, rSpin2z,
-                metric_params.f0, metric_params.pnOrder,
+                rMass1, rMass2, rSpin1z, rSpin2z, metricParams.f0, metricParams.pnOrder
             )
             mus = []
             idx = 0
             for freq in fs:
-                mus.append(tmpltbank.get_mu_params(lambdas, metric_params, freq))
+                mus.append(tmpltbank.get_mu_params(lambdas, metricParams, freq))
                 idx += 1
             mus = numpy.array(mus)
         vecs = tmpltbank.get_cov_params(
-            rMass1, rMass2, rSpin1z, rSpin2z, metric_params, ref_freq
+            rMass1, rMass2, rSpin1z, rSpin2z, metricParams, refFreq
         )
         vecs = numpy.array(vecs)
         Ns = 0
