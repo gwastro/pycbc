@@ -480,7 +480,7 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
                 if cut_thresh > ano_thresh:
                     tids_out = tids_out | tids_out[ano_function(values, ano_thresh)]
                 else:
-                    tids_out = cuts_out & anos_out
+                    tids_out = tids_out & tids_out[ano_function(values, ano_thresh)]
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
