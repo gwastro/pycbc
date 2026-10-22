@@ -28,8 +28,8 @@ These are the unittests for the pycbc.tmpltbank module
 import math
 import gzip
 import numpy
-from astropy.utils.data import download_file
 from astropy.utils.data import conf
+from pycbc.io import get_file
 import pycbc.tmpltbank
 # Old LigoLW output functions are not imported at tmpltbank level
 import pycbc.tmpltbank.bank_output_utils as llw_output
@@ -135,7 +135,7 @@ class TmpltbankTestClass(unittest.TestCase):
         self.segLen = 1./self.deltaF
         self.psdSize = int(self.segLen * self.sampleRate / 2.) + 1
 
-        apy_fname = download_file(
+        apy_fname = get_file(
             DATA_FILE_URL.format('ZERO_DET_high_P.txt.gz'),
             cache=True
         )
@@ -201,12 +201,12 @@ class TmpltbankTestClass(unittest.TestCase):
 
     def test_eigen_directions(self):
         fname='stockEvals.dat.gz'
-        apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
+        apy_fname = get_file(DATA_FILE_URL.format(fname), cache=True)
         with gzip.open(apy_fname) as apy_fp:
             evalsStock = Array(numpy.loadtxt(apy_fp))
 
         fname='stockEvecs.dat.gz'
-        apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
+        apy_fname = get_file(DATA_FILE_URL.format(fname), cache=True)
         with gzip.open(apy_fname) as apy_fp:
             evecsStock = Array(numpy.loadtxt(apy_fp))
 
@@ -419,7 +419,7 @@ class TmpltbankTestClass(unittest.TestCase):
         chirps=pycbc.tmpltbank.get_chirp_params(2.2, 1.8, 0.2, 0.3,
                               self.metricParams.f0, self.metricParams.pnOrder)
         fname = 'stockChirps.dat.gz'
-        apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
+        apy_fname = get_file(DATA_FILE_URL.format(fname), cache=True)
         with gzip.open(apy_fname) as apy_fp:
             stockChirps = numpy.loadtxt(apy_fp)
         diff = (chirps - stockChirps) / stockChirps
@@ -430,7 +430,7 @@ class TmpltbankTestClass(unittest.TestCase):
         arrz = pycbc.tmpltbank.generate_hexagonal_lattice(10, 0, 10, 0, 0.03)
         arrz = numpy.array(arrz)
         fname = 'stockHexagonal.dat.gz'
-        apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
+        apy_fname = get_file(DATA_FILE_URL.format(fname), cache=True)
         with gzip.open(apy_fname) as apy_fp:
             stockGrid = numpy.loadtxt(apy_fp)
         diff = arrz - stockGrid
@@ -442,7 +442,7 @@ class TmpltbankTestClass(unittest.TestCase):
                                                           10, 0.03)
         arrz = numpy.array(arrz)
         fname = 'stockAnstar3D.dat.gz'
-        apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
+        apy_fname = get_file(DATA_FILE_URL.format(fname), cache=True)
         with gzip.open(apy_fname) as apy_fp:
             stockGrid = numpy.loadtxt(apy_fp)
         # Uncomment this line to regenerate the data file
