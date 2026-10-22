@@ -485,21 +485,21 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
                                                   ifos,
-                                                  parameter_cut_function,
+                                                  (parameter, cut_function),
                                                   cut_thresh,
                                                   tids_out)
                 if 'ano_function' in locals():
                     if cut_thresh > ano_thresh:
                         tids_out = tids_out | apply_template_fit_cut(statistic,
                                                         ifos,
-                                                        parameter_cut_function,
-                                                        cut_thresh,
+                                                        (parameter, ano_function),
+                                                        ano_thresh,
                                                         tids_out)
                     else:
                         tids_out = tids_out & apply_template_fit_cut(statistic,
                                                         ifos,
-                                                        parameter_cut_function,
-                                                        cut_thresh,
+                                                        (parameter, ano_function),
+                                                        ano_thresh,
                                                         tids_out)
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
