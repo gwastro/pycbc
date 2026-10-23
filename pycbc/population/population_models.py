@@ -26,7 +26,6 @@ This module provides functions for star formation rate models, time delay
 models, merger rate density, and population models of BBH/BNS/NSBH.
 """
 
-#from functools import partial
 import numpy as np
 import scipy.integrate as scipy_integrate
 import scipy.interpolate as scipy_interpolate
@@ -158,7 +157,6 @@ def merger_rate_density(sfr_func, td_model, rho_local, maxz=10.0,
          Pease see Eq.(A1), Eq.(A2) in <arXiv:2011.02717v3> for more details.
 
     """
-    #from sympy import symbols, lambdify
 
     if z_array is None:
         z_array = np.linspace(0, maxz, npoints)
@@ -180,14 +178,14 @@ def merger_rate_density(sfr_func, td_model, rho_local, maxz=10.0,
 
     from .redshift_models import SFRTimeDelayRedshift
     model = SFRTimeDelayRedshift(
-        sfr_model=sfr_func, td_model=td_model, 
+        sfr_model=sfr_func, td_model=td_model,
         zmax=maxz, num_zbins=1000, cosmology=cosmology, **td_kwargs
     )
 
     f_z = model.psi_z(z_array)
     if f_z[0] != 0:
         f_z = f_z / f_z[0] * rho_local  # Normalize & Rescale
-    
+
     rho_z = scipy_interpolate.interp1d(z_array, f_z)
     return rho_z
 
