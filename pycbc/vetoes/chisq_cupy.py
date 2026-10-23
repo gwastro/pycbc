@@ -306,7 +306,7 @@ def get_cached_pow2(N):
     return not (N & (N - 1))
 
 
-def shift_sum(corr, points, bins):
+def shift_sum(corr, points, bins, weights=None):
     kmin, kmax, bv = get_cached_bin_layout(bins)
     nb = len(kmin)
     N = numpy.uint32(len(corr))
@@ -343,4 +343,7 @@ def shift_sum(corr, points, bins):
             elif np == 1:
                 outp, phase, np = shift_sum_points(1, cargs)  # pylint:disable=no-value-for-parameter
 
-    return cp.asnumpy((outc.conj() * outc).sum(axis=1).real)
+    power = (outc.conj() * outc).real
+    if weights is not None:
+        power = power * cp.asarray(weights, dtype=power.dtype)
+    return cp.asnumpy(power.sum(axis=1))
