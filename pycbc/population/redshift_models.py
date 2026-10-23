@@ -243,6 +243,32 @@ class BaseRedshiftEvolution(ABC):
 
         return dvc[0] if is_scalar else dvc
 
+    def fullsky_differential_spacetime_volume(self, redshift):
+        r"""
+        Differential comoving 4-volume per unit redshift.
+
+        This is the full-sky differential comoving volume: dVc/dz = 4 \pi 1/(1+z) dVc/dz/d_\Omega.
+
+        Parameters
+        ----------
+        redshift : array_like
+            Dimensionless redshift(s).
+
+        Returns
+        -------
+        astropy.units.Quantity
+            Differential comoving volume in Gpc^3.
+
+        """
+
+        zz, is_scalar = self._to_1d_array(redshift)
+
+        dvc = (
+            self.fullsky_differential_comoving_volume(zz)/(1 + zz)
+        )
+
+        return dvc[0] if is_scalar else dvc
+
     def comoving_volume(self, redshift):
         """
         Comoving volume enclosed within a given redshift.
@@ -261,6 +287,30 @@ class BaseRedshiftEvolution(ABC):
         vol = self.cosmology.comoving_volume(z).to(u.Gpc**3)
 
         return vol[0] if is_scalar else vol
+
+    def comoving_spacetime_volume(self, redshift):
+        """
+        Comoving spacetime volume up to a given redshift
+
+        Parameters
+        ----------
+        redshift : array_like
+
+        Returns
+        -------
+        astropy.units.Quantity
+            Comoving spacetime volume in Gpc^3 Yr.
+        """
+
+        z, is_scalar = self._to_1d_array(redshift)
+
+        integrand = (
+            self._dvc_dz_grid
+            / (1.0 + self._z_grid)
+        )
+
+        return np.trapz(integrand.value, self._z_grid) * u.Gpc**3 *u.Yr
+
 
     # ------------------------------------------------------------------
     # Redshift evolution model
