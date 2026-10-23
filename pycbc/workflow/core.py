@@ -590,7 +590,7 @@ class Executable(pegasus_workflow.Executable):
         sections = [self.name]
         if self.ifo_list is not None:
             if len(self.ifo_list) > 1:
-                sec_tags = tags + self.ifo_list + [self.ifo_string]
+                sec_tags = [*tags, self.ifo_string]
             else:
                 sec_tags = tags + self.ifo_list
         else:
