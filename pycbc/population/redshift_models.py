@@ -22,11 +22,15 @@
 # =============================================================================
 #
 
-import numpy as np
 import warnings
-import astropy.units as u
-from pycbc.cosmology import get_cosmology
 from abc import ABC, abstractmethod
+
+import astropy.units as u
+import numpy as np
+import scipy.integrate as scipy_integrate
+from pycbc.cosmology import get_cosmology
+from scipy.interpolate import CubicSpline
+
 
 class BaseRedshiftEvolution(ABC):
     """
@@ -345,63 +349,6 @@ class BaseRedshiftEvolution(ABC):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-
-    def time_delay_prob(self, tau, td_model):
-        """
-         Compute the probability density of a time delay tau.
-
-        This method supports several standard time delay models used in astrophysics.
-
-        Parameters
-        ----------
-        tau : array_like
-            Time delay(s) in Gyr.
-        td_model : str
-            Name of the time delay model. Must be one of:
-            - 'log_normal': Log-normal distribution
-            - 'gaussian': Gaussian distribution
-            - 'power_law': Power-law distribution
-            - 'inverse': Inverse power-law with bounded support
-
-        Returns
-        -------
-        numpy.ndarray
-            Probability density at tau (dimensionless).
-
-        Raises
-        ------
-        ValueError
-            If td_model is not one of the supported types.
-
-        Notes
-        -----
-        - For 'power_law' and 'inverse', normalization is approximate and may require
-          careful handling near zero.
-        - 'inverse' model uses a bounded support from td_min to td_max.
-        """
-        tau = np.asarray(tau, dtype=float)
-        p_t = np.zeros_like(tau)
-
-        if td_model == "log_normal":
-            t_ln = 2.9  # Gyr
-            sigma_ln = 0.2
-            p_t = np.exp(-(np.log(tau)-np.log(t_ln))**2/(2*sigma_ln**2)) / (np.sqrt(2*np.pi)*sigma_ln)
-        elif td_model == "gaussian":
-            t_g = 2  # Gyr
-            sigma_g = 0.3
-            p_t = np.exp(-(tau-t_g)**2/(2*sigma_g**2)) / (np.sqrt(2*np.pi)*sigma_g)
-        elif td_model == "power_law":
-            alpha_t = 0.81
-            valid = (tau > 0)
-            p_t[valid] = tau[valid]**(-alpha_t)
-        elif td_model == "inverse":
-            norm_const = 1/np.log(self.td_max/self.td_min)
-            valid = (tau >= self.td_min) & (tau <= self.td_max)
-            p_t[valid] = norm_const * tau[valid]**(-0.999)
-        else:
-            raise ValueError(f"Currently, 'td_model' must choose from: "
-                             f"['log_normal', 'gaussian', 'power_law', 'inverse'].")
-        return p_t
 
     def _cache_dvc_dz(self, redshift):
         """
@@ -794,28 +741,32 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
     name = "sfr_time_delay"
     param_names = ()
 
-    def __init__(self, sfr_model, td_model, z_max=10.0, num_zbins=1000,
-                 cosmology=None, z_grid=None, z_formation_max=20.0, **kwargs):
+    def __init__(
+        self,
+        sfr_model,
+        delay_model,
+        z_max=10.0,
+        num_zbins=1000,
+        cosmology=None,
+        z_grid=None,
+        z_formation_max=20.0,# Gyr (20 Myr)
+        td_min=0.02,
+        td_max=None,
+    ):
         super().__init__(z_max, num_zbins, cosmology, z_grid)
         self.sfr_model = sfr_model
         self.td_model = td_model
+
+        # Validate z_formation_max
+        if z_formation_max <= z_max:
+            raise ValueError(
+                "z_formation_max must be greater than z_max"
+            )
         self.z_formation_max = z_formation_max
 
-        #from astropy.cosmology import Planck18
-        #import astropy.units as u
-        #self.cosmology = cosmology if cosmology is not None else Planck18
-
         # Define boundaries for time delay
-        self.td_min = kwargs.get('td_min', 0.02)  # Gyr (20 Myr)
-        self.td_max = kwargs.get('td_max', self.cosmology.lookback_time(self.z_formation_max).to(u.Gyr).value)
-
-        #from astropy.cosmology import Planck18
-        #import astropy.units as u
-        #self.cosmology = cosmology if cosmology is not None else Planck18
-
-        # Define boundaries for time delay
-        self.td_min = kwargs.get('td_min', 0.02)  # Gyr (20 Myr)
-        self.td_max = kwargs.get('td_max', self.cosmology.lookback_time(self.z_formation_max).to(u.Gyr).value)
+        self.td_min = td_min
+        self.td_max = td_max
 
         # Precompute lookback times for formation redshift grid
         # 5000 points is enough because adaptive quad handles sharp features perfectly
@@ -831,6 +782,63 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
 
         self._update_psi_z_grid()
 
+    def time_delay_prob(self, tau, td_model):
+        """
+         Compute the probability density of a time delay tau.
+
+        This method supports several standard time delay models used in astrophysics.
+
+        Parameters
+        ----------
+        tau : array_like
+            Time delay(s) in Gyr.
+        td_model : str
+            Name of the time delay model. Must be one of:
+            - 'log_normal': Log-normal distribution
+            - 'gaussian': Gaussian distribution
+            - 'power_law': Power-law distribution
+            - 'inverse': Inverse power-law with bounded support
+
+        Returns
+        -------
+        numpy.ndarray
+            Probability density at tau (dimensionless).
+
+        Raises
+        ------
+        ValueError
+            If td_model is not one of the supported types.
+
+        Notes
+        -----
+        - For 'power_law' and 'inverse', normalization is approximate and may require
+          careful handling near zero.
+        - 'inverse' model uses a bounded support from td_min to td_max.
+        """
+        tau = np.asarray(tau, dtype=float)
+        p_t = np.zeros_like(tau)
+
+        if td_model == "log_normal":
+            t_ln = 2.9  # Gyr
+            sigma_ln = 0.2
+            p_t = np.exp(-(np.log(tau)-np.log(t_ln))**2/(2*sigma_ln**2)) / (np.sqrt(2*np.pi)*sigma_ln)
+        elif td_model == "gaussian":
+            t_g = 2  # Gyr
+            sigma_g = 0.3
+            p_t = np.exp(-(tau-t_g)**2/(2*sigma_g**2)) / (np.sqrt(2*np.pi)*sigma_g)
+        elif td_model == "power_law":
+            alpha_t = 0.81
+            valid = (tau > 0)
+            p_t[valid] = tau[valid]**(-alpha_t)
+        elif td_model == "inverse":
+            norm_const = 1/np.log(self.td_max/self.td_min)
+            valid = (tau >= self.td_min) & (tau <= self.td_max)
+            p_t[valid] = norm_const * tau[valid]**(-0.999)
+        else:
+            raise ValueError(f"Currently, 'td_model' must choose from: "
+                             f"['log_normal', 'gaussian', 'power_law', 'inverse'].")
+        return p_t
+
     def _update_psi_z_grid(self):
         """
         Evaluate and cache the convolution over the redshift grid.
@@ -843,10 +851,6 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         tm_grid = self.cosmology.lookback_time(self._z_grid).to(u.Gyr).value
 
         if self.td_model in ["power_law", "inverse"]:
-            import scipy.integrate as scipy_integrate
-            from scipy.interpolate import CubicSpline
-            import warnings
-
             # Use CubicSpline to ensure C2 continuous derivatives for quad convergence
             sfr_spline = CubicSpline(self._zf_grid, self._sfr_f, extrapolate=True)
             dt_dz_spline = CubicSpline(self._zf_grid, self._dt_dz_f, extrapolate=True)
