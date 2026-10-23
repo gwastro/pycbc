@@ -111,13 +111,13 @@ class BaseRedshiftEvolution(ABC):
         self.num_zbins = int(num_zbins)
 
         # Validate z_max, num_bin, and cosmology
-        if z_max <= 0:
+        if self.z_max <= 0:
             raise ValueError("z_max must be positive")
-        self.z_max = float(z_max)
+        #self.z_max = float(z_max)
 
-        if num_zbins < 2:
+        if self.num_zbins < 2:
             raise ValueError("num_zbins must be at least 2")
-        self.num_zbins = int(num_zbins)
+        #self.num_zbins = int(num_zbins)
 
         if cosmology is not None:
             self.cosmology = cosmology
@@ -129,7 +129,7 @@ class BaseRedshiftEvolution(ABC):
             #self._z_grid = np.linspace(1e-3, self.z_max, num_zbins)
             self._z_grid = np.linspace(0.0, self.z_max, num_zbins)
         else:
-            self._z_grid = np.asarray(z_grid)
+            self._z_grid = np.asarray(z_grid, dtype=float)
             if self._z_grid.ndim != 1:
                 raise ValueError("z_grid must be one-dimensional")
 
@@ -139,6 +139,8 @@ class BaseRedshiftEvolution(ABC):
             if np.any(np.diff(self._z_grid) <= 0):
                 raise ValueError("z_grid must be strictly increasing")
 
+            # Consider using np.isclose for numerical closeness
+            # for these two validations
             if self._z_grid[0] != 0:
                 raise ValueError("z_grid should start at z=0")
 
@@ -197,9 +199,12 @@ class BaseRedshiftEvolution(ABC):
             z = np.asarray(redshift, dtype=float).ravel()
             is_scalar = False
 
-        # Validate for positive redshift values
+        # Validate for positive and finite redshift values
         if np.any(z < 0):
             raise ValueError("Redshift must be non-negative")
+
+        if not np.all(np.isfinite(z)):
+            raise ValueError("Redshift must contain only finite values")
 
         return z, is_scalar
 
