@@ -1,6 +1,7 @@
 from pycbc.fft.fftw import set_measure_level
 
 set_measure_level(0)
+import argparse
 import unittest
 from math import cos, exp, pi, sin
 
@@ -9,7 +10,11 @@ from utils import parse_args_all_schemes, simple_exit
 
 from pycbc.filter import matched_filter_core
 from pycbc.types import Array, FrequencySeries, TimeSeries
-from pycbc.vetoes import autochisq_from_precomputed, make_frequency_series
+from pycbc.vetoes import (
+    SingleDetAutoChisq,
+    autochisq_from_precomputed,
+    make_frequency_series,
+)
 from pycbc.waveform import get_td_waveform
 
 _scheme, _context = parse_args_all_schemes("Auto Chi-squared Veto")
@@ -214,8 +219,46 @@ class TestAutochisquare(unittest.TestCase):
     #   self.assertTrue(achi_list[i,2] > 2.e3)
 
 
+class TestAutochisqOptions(unittest.TestCase):
+    def parse(self, args):
+        parser = argparse.ArgumentParser()
+        SingleDetAutoChisq.insert_option_group(parser)
+        return SingleDetAutoChisq.from_cli(parser.parse_args(args))
+
+    def test_options_reach_the_estimator(self):
+        # Each option has a value different from its default and from the
+        # other numerical options, so that a missing or swapped option fails
+        est = self.parse(
+            [
+                "--autochi-stride",
+                "2",
+                "--autochi-number-points",
+                "7",
+                "--autochi-onesided",
+                "left",
+                "--autochi-two-phase",
+                "--autochi-reverse-template",
+                "--autochi-max-valued",
+                "--autochi-max-valued-dof",
+                "9",
+            ]
+        )
+        self.assertTrue(est.do)
+        self.assertEqual(est.stride, 2)
+        self.assertEqual(est.num_points, 7)
+        self.assertEqual(est.one_sided, "left")
+        self.assertTrue(est.two_phase)
+        self.assertTrue(est.reverse_template)
+        self.assertTrue(est.take_maximum_value)
+        self.assertEqual(est.dof, 9)
+
+    def test_off_by_default(self):
+        self.assertFalse(self.parse([]).do)
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestAutochisquare))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestAutochisqOptions))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)

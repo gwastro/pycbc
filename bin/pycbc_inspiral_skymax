@@ -112,85 +112,8 @@ parser.add_argument(
     help="Maximize triggers over the template bank (ms)",
 )
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
-parser.add_argument(
-    "--chisq-snr-threshold", type=float, help="Minimum SNR to calculate the power chisq"
-)
-parser.add_argument(
-    "--chisq-bins",
-    default=0,
-    help="Number of frequency bins to use for power chisq. Specify"
-    " an integer for a constant number of bins, or a function "
-    "of template attributes.  Math functions are "
-    "allowed, ex. "
-    "'10./math.sqrt((params.mass1+params.mass2)/100.)'. "
-    "Non-integer values will be rounded down.",
-)
 parser.add_argument("--chisq-threshold", type=float, default=0, help="FIXME: ADD")
 parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
-parser.add_argument(
-    "--autochi-number-points",
-    type=int,
-    default=0,
-    help="The number of points to use, in both directions if"
-    "doing a two-sided auto-chisq, to calculate the"
-    "auto-chisq statistic.",
-)
-parser.add_argument(
-    "--autochi-stride",
-    type=int,
-    default=0,
-    help="The gap, in sample points, between the points at"
-    "which to calculate auto-chisq.",
-)
-parser.add_argument(
-    "--autochi-two-phase",
-    action="store_true",
-    default=False,
-    help="If given auto-chisq will be calculated by testing "
-    "against both phases of the SNR time-series. "
-    "If not given, only the phase matching the trigger "
-    "will be used.",
-)
-parser.add_argument(
-    "--autochi-onesided",
-    action="store",
-    default=None,
-    choices=["left", "right"],
-    help="Decide whether to calculate auto-chisq using"
-    "points on both sides of the trigger or only on one"
-    "side. If not given points on both sides will be"
-    "used. If given, with either 'left' or 'right',"
-    "only points on that side (right = forward in time,"
-    "left = back in time) will be used.",
-)
-parser.add_argument(
-    "--autochi-reverse-template",
-    action="store_true",
-    default=False,
-    help="If given, time-reverse the template before"
-    "calculating the auto-chisq statistic. This will"
-    "come at additional computational cost as the SNR"
-    "time-series will need recomputing for the time-"
-    "reversed template.",
-)
-parser.add_argument(
-    "--autochi-max-valued",
-    action="store_true",
-    default=False,
-    help="If given, store only the maximum value of the auto-"
-    "chisq over all points tested. A disadvantage of this "
-    "is that the mean value will not be known "
-    "analytically.",
-)
-parser.add_argument(
-    "--autochi-max-valued-dof",
-    action="store",
-    metavar="INT",
-    type=int,
-    help="If using --autochi-max-valued this value denotes "
-    "the pre-calculated mean value that will be stored "
-    "as the auto-chisq degrees-of-freedom value.",
-)
 parser.add_argument(
     "--downsample-factor",
     type=int,
@@ -267,6 +190,8 @@ strain.StrainSegments.insert_segment_option_group(parser)
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 pycbc.opt.insert_optimization_option_group(parser)
+vetoes.SingleDetSkyMaxPowerChisq.insert_option_group(parser)
+vetoes.SingleDetSkyMaxAutoChisq.insert_option_group(parser)
 SingleDetSGChisq.insert_option_group(parser)
 
 opt = parser.parse_args()
@@ -372,19 +297,9 @@ with ctx:
         approximant=opt.approximant,
     )
 
-    power_chisq = vetoes.SingleDetSkyMaxPowerChisq(
-        num_bins=opt.chisq_bins, snr_threshold=opt.chisq_snr_threshold
-    )
+    power_chisq = vetoes.SingleDetSkyMaxPowerChisq.from_cli(opt)
 
-    autochisq = vetoes.SingleDetSkyMaxAutoChisq(
-        opt.autochi_stride,
-        opt.autochi_number_points,
-        onesided=opt.autochi_onesided,
-        twophase=opt.autochi_two_phase,
-        reverse_template=opt.autochi_reverse_template,
-        take_maximum_value=opt.autochi_max_valued,
-        maximal_value_dof=opt.autochi_max_valued_dof,
-    )
+    autochisq = vetoes.SingleDetSkyMaxAutoChisq.from_cli(opt)
 
     logger.info("Overwhitening frequency-domain data segments")
     for seg in segments:
