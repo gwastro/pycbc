@@ -213,7 +213,7 @@ class BaseRedshiftEvolution(ABC):
     # ------------------------------------------------------------------
 
     def dVc_dz(self, redshift):
-        """
+        r"""
         Differential comoving 3-volume per unit redshift.
 
         This is the full-sky differential comoving volume: dVc/dz = 4 \pi dVc/dz/d_\Omega.
@@ -707,7 +707,7 @@ sfr_madau_fragos_2017_redshift = MadauFragos2017SFR()
 
 
 class SFRTimeDelayRedshift(BaseRedshiftEvolution):
-    """ 
+    r""" 
     Redshift evolution from convolving a star formation rate (SFR) with a time delay distribution.
 
     This model accounts for the fact that events (e.g., compact binary mergers) occur after
