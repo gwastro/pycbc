@@ -39,6 +39,7 @@ import pycbc
 from pycbc.io import HFile
 from pycbc.io.ligolw import (
     LIGOLWContentHandler,
+    return_empty_sngl,
     snr_series_to_xml,
 )
 from pycbc.psd import interpolate
@@ -220,10 +221,54 @@ for ifo in snr_ts:
 lal_psddict = {}
 sample_freqs = {}
 
-for sngl in sngl_inspiral_table:
-    if sngl.event_id not in sngl_ids:
-        continue
+sngl_inspiral_table_curr.extend(
+    sngl for sngl in sngl_inspiral_table if sngl.event_id in sngl_ids
+)
+template = sngl_inspiral_table_curr[0]
+triggered_ifos = {sngl.ifo for sngl in sngl_inspiral_table_curr}
+next_event_id = max(int(sngl.event_id) for sngl in sngl_inspiral_table) + 1
+template_columns = [
+    "mass1", "mass2", "spin1x", "spin1y", "spin1z",
+    "spin2x", "spin2y", "spin2z", "mtotal", "mchirp",
+    "eta", "f_final", "template_duration",
+]
+
+for ifo in sorted(set(snr_ts) - triggered_ifos):
+    logger.debug("Adding follow-up-only detector %s to localization XML", ifo)
+    sngl = return_empty_sngl(nones=True)
+    for column in template_columns:
+        setattr(sngl, column, getattr(template, column))
+    sngl.event_id = lsctables.SnglInspiralID(next_event_id)
+    next_event_id += 1
+    sngl.process_id = template.process_id
+    sngl.ifo = ifo
+    # BAYESTAR requires the reference time at the center of the SNR series.
+    series = snr_ts[ifo]
+    sngl.end = series.start_time + (len(series) - 1) * series.delta_t / 2
     sngl_inspiral_table_curr.append(sngl)
+
+    coinc_map = lsctables.CoincMap()
+    coinc_map.coinc_event_id = event.coinc_event_id
+    coinc_map.table_name = "sngl_inspiral"
+    coinc_map.event_id = sngl.event_id
+    coinc_event_map_table_curr.append(coinc_map)
+
+    # Zero-lag follow-up detectors have no time offset.
+    slide_table = lsctables.TimeSlideTable.get_table(xmldoc)
+    if not any(row.time_slide_id == event.time_slide_id
+               and row.instrument == ifo for row in slide_table):
+        slide = lsctables.TimeSlide()
+        slide.process_id = template.process_id
+        slide.time_slide_id = event.time_slide_id
+        slide.instrument = ifo
+        slide.offset = 0
+        slide_table.append(slide)
+
+event.nevents = len(sngl_inspiral_table_curr)
+event.instruments = ",".join(sorted(snr_ts))
+coinc_inspiral_table_curr[0].instruments = sorted(snr_ts)
+
+for sngl in sngl_inspiral_table_curr:
     sngl.channel = args.channel_name[sngl.ifo]
 
     # Two versions of the PSD dictionary have useful info here
@@ -263,6 +308,7 @@ if args.snr_timeseries_plot:
     triggers = {
         sngl.ifo: (sngl.end_time + sngl.end_time_ns * 1e-9, sngl.snr)
         for sngl in sngl_inspiral_table_curr
+        if sngl.snr is not None
     }
     base_time = int(np.floor(time))
     logger.info("Saving SNR plot %s", args.snr_timeseries_plot)
