@@ -34,11 +34,13 @@ from scipy.interpolate import CubicSpline
 
 class BaseRedshiftEvolution(ABC):
     """
-    Abstract Base class for redshift evolution models with Astropy unit support.
+    Abstract Base class for redshift evolution models with Astropy unit
+    support.
 
-    This class provides a framework for modeling the redshift dependence of astrophysical
-    event rates, including differential comoving volume, spacetime volume, and redshift
-    probability distributions. It supports various cosmological models and integrates
+    This class provides a framework for modeling the redshift dependence of
+    astrophysical event rates, including differential comoving volume, 
+    spacetime volume, and redshift probability distributions. It supports 
+    various cosmological models and integrates
     with time delay distributions.
 
     The core functionality includes:
@@ -60,11 +62,14 @@ class BaseRedshiftEvolution(ABC):
     z_max : float, optional
         Maximum redshift for integration and normalization. Default is 2.0.
     num_zbins : int, optional
-        Number of redshift bins for numerical integration. Must be at least 2. Default is 1000.
+        Number of redshift bins for numerical integration. Must be at least 2.
+        Default is 1000.
     cosmology : astropy.cosmology.Cosmology, optional
-        Cosmological model to use. If None, defaults to `pycbc.cosmology.get_cosmology()`.
+        Cosmological model to use. If None, defaults to 
+        `pycbc.cosmology.get_cosmology()`.
     z_grid : array_like, optional
-        Custom redshift grid (must be strictly increasing, start at 0, end at z_max).
+        Custom redshift grid (must be strictly increasing, start at 0,
+                              end at z_max).
         If None, a uniform grid from 0 to z_max is used.
 
     Attributes
@@ -91,7 +96,8 @@ class BaseRedshiftEvolution(ABC):
     See Also
     --------
     PowerLawRedshift, GRB2008SFR, MadauDickinson2014SFR, MadauFragos2017SFR,
-    SFRTimeDelayRedshift : Concrete implementations of redshift evolution models.
+    SFRTimeDelayRedshift : Concrete implementations of redshift evolution 
+        models.
     """
 
     def __init__(self, z_max: float = 2.0, num_zbins: int = 1000,
@@ -102,13 +108,16 @@ class BaseRedshiftEvolution(ABC):
         Parameters
         ----------
         z_max : float
-            Maximum redshift for normalization and integration. Must be positive.
+            Maximum redshift for normalization and integration. 
+            Must be positive.
         num_zbins : int
-            Number of redshift bins for numerical integration. Must be at least 2.
+            Number of redshift bins for numerical integration. 
+            Must be at least 2.
         cosmology : astropy.cosmology.Cosmology, optional
             Cosmological model to use. If None, defaults to `get_cosmology()`.
         z_grid : array_like, optional
-            Custom redshift grid (must be strictly increasing, start at 0, end at z_max).
+            Custom redshift grid 
+            (must be strictly increasing, start at 0, end at z_max).
             If None, a uniform grid from 0 to z_max is used.
         """
         self.z_max = float(z_max)
@@ -222,7 +231,8 @@ class BaseRedshiftEvolution(ABC):
         r"""
         Differential comoving 3-volume per unit redshift.
 
-        This is the full-sky differential comoving volume: dVc/dz = 4 \pi dVc/dz/d_\Omega.
+        This is the full-sky differential comoving volume: 
+            dVc/dz = 4 \pi dVc/dz/d_\Omega.
 
         Parameters
         ----------
@@ -251,7 +261,8 @@ class BaseRedshiftEvolution(ABC):
         r"""
         Differential comoving 4-volume per unit redshift.
 
-        This is the full-sky differential comoving volume: dVc/dz = 4 \pi 1/(1+z) dVc/dz/d_\Omega.
+        This is the full-sky differential comoving volume: 
+            dVc/dz = 4 \pi 1/(1+z) dVc/dz/d_\Omega.
 
         Parameters
         ----------
@@ -325,7 +336,8 @@ class BaseRedshiftEvolution(ABC):
         """
         Redshift evolution function psi(z).
 
-        This function defines the intrinsic redshift dependence of the event rate.
+        This function defines the intrinsic redshift dependence of the event 
+        rate.
 
         Parameters
         ----------
@@ -352,9 +364,11 @@ class BaseRedshiftEvolution(ABC):
 
     def _cache_dvc_dz(self, redshift):
         """
-        Cache interpolated differential comoving volume for faster repeated evaluation.
+        Cache interpolated differential comoving volume for faster repeated
+        evaluation.
 
-        This method caches the interpolated dVc/dz values on a given redshift grid.
+        This method caches the interpolated dVc/dz values on a given redshift
+        grid.
 
         Parameters
         ----------
@@ -369,7 +383,8 @@ class BaseRedshiftEvolution(ABC):
         Notes
         -----
         - Uses linear interpolation with zero padding at boundaries.
-        - The cache is updated only if the input redshift differs from the cached one.
+        - The cache is updated only if the input redshift differs from the 
+        cached one.
         """
         redshift = np.asarray(redshift)
         self._cached_z = redshift
@@ -393,8 +408,8 @@ class BaseRedshiftEvolution(ABC):
         Defined as:
             dVT/dz = psi(z) / (1 + z) * dVc/dz
 
-        PThis represents the effective rate of events per unit redshift, accounting for
-        cosmological volume and redshift evolution.
+        This represents the effective rate of events per unit redshift, 
+        accounting for cosmological volume and redshift evolution.
 
         Parameters
         ----------
@@ -469,7 +484,8 @@ class BaseRedshiftEvolution(ABC):
         """
         Total spacetime volume over an observation time.
 
-        This is the product of the normalization constant and the observation time.
+        This is the product of the normalization constant and the observation
+        time.
 
         Parameters
         ----------
@@ -530,7 +546,8 @@ class BaseRedshiftEvolution(ABC):
         # Only valid redshifts contribute
         valid = z <= self.z_max
         norm = self.normalize(**parameters)
-        pdf[valid] = (self.dVT_dz(z[valid], **parameters) / norm).decompose().value
+        pdf[valid] = \
+                (self.dVT_dz(z[valid], **parameters) / norm).decompose().value
         return pdf[0] if is_scalar else pdf
 
 
@@ -592,13 +609,16 @@ power_law_redshift = PowerLawRedshift()
 
 class GRB2008SFR(BaseRedshiftEvolution):
     """
-    Star formation rate (SFR) calibrated by high-redshift gamma-ray bursts (GRBs).
+    Star formation rate (SFR) calibrated by high-redshift gamma-ray bursts 
+    (GRBs).
 
-    Based on the model from GRB 2008 data, this model captures the observed SFR evolution
-    with a flexible functional form.
+    Based on the model from GRB 2008 data, this model captures the observed
+    SFR evolution with a flexible functional form.
 
     The SFR is modeled as:
-        psi(z) = rho_local * [ (1+z)^(3.4*eta) + ((1+z)/5000)^(-0.3*eta) + ((1+z)/9)^(-3.5*eta) ]^(1/eta)
+        psi(z) = 
+        rho_local * 
+        [(1+z)^(3.4*eta)+((1+z)/5000)^(-0.3*eta)+((1+z)/9)^(-3.5*eta)]^(1/eta)
 
     with eta = -10 and rho_local = 0.02 Msun/yr/Mpc^3.
 
@@ -623,8 +643,11 @@ class GRB2008SFR(BaseRedshiftEvolution):
         redshift = np.asarray(redshift)
         rho_local = 0.02  # Msolar/yr/Mpc^3
         eta = -10
-        return rho_local*((1+redshift)**(3.4*eta) + ((1+redshift)/5000)**(-0.3*eta) +
-                       ((1+redshift)/9)**(-3.5*eta))**(1./eta)
+        psiz = ((1+redshift)**(3.4*eta) + ((1+redshift)/5000)**(-0.3*eta) +\
+                ((1+redshift)/9)**(-3.5*eta))**(1./eta)
+        psiz *= rho_local
+        return psiz
+
 
 sfr_grb_2008_redshift = GRB2008SFR()
 
@@ -707,10 +730,11 @@ sfr_madau_fragos_2017_redshift = MadauFragos2017SFR()
 
 class SFRTimeDelayRedshift(BaseRedshiftEvolution):
     r"""
-    Redshift evolution from convolving a star formation rate (SFR) with a time delay distribution.
+    Redshift evolution from convolving a star formation rate (SFR) with a time 
+    delay distribution.
 
-    This model accounts for the fact that events (e.g., compact binary mergers) occur after
-    star formation, with a time delay distribution.
+    This model accounts for the fact that events (e.g., compact binary mergers)
+    occur after star formation, with a time delay distribution.
 
     The evolution is computed as:
         psi(z) = \int_{z}^{z_max} SFR(z_f) * p(t_d) * dt_f/dz_f dz_f
@@ -769,7 +793,8 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         self.td_max = td_max
 
         # Precompute lookback times for formation redshift grid
-        # 5000 points is enough because adaptive quad handles sharp features perfectly
+        # 5000 points is enough because adaptive quad handles sharp features 
+        # perfectly
         self._zf_grid = np.linspace(0, self.z_formation_max, 5000)
         self._tf_grid = self.cosmology.lookback_time(self._zf_grid).to(u.Gyr).value
 
@@ -786,7 +811,8 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         """
          Compute the probability density of a time delay tau.
 
-        This method supports several standard time delay models used in astrophysics.
+        This method supports several standard time delay models used in 
+        astrophysics.
 
         Parameters
         ----------
@@ -811,8 +837,8 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
 
         Notes
         -----
-        - For 'power_law' and 'inverse', normalization is approximate and may require
-          careful handling near zero.
+        - For 'power_law' and 'inverse', normalization is approximate and may 
+          require careful handling near zero.
         - 'inverse' model uses a bounded support from td_min to td_max.
         """
         tau = np.asarray(tau, dtype=float)
