@@ -22,6 +22,9 @@ parser.add_argument(
     "--trigger-file", required=True, help="Combined single detector hdf trigger file"
 )
 parser.add_argument(
+    "--ifo", default=None, help="IFO to plot from multi-detector trigger file"
+)
+parser.add_argument(
     "--veto-file", help="segment xml file, indicates which triggers to ignore"
 )
 parser.add_argument("--segment-name", help="name of segment list in the veto file")
@@ -50,7 +53,7 @@ pycbc.init_logging(args.verbose)
 
 # read trigger file to determine IFO
 f = pycbc.io.HFile(args.trigger_file, "r")
-ifo = tuple(f.keys())[0]
+ifo = args.ifo if args.ifo is not None else next(iter(f.keys()))
 
 # Apply presort if we can; if we can't, load everything but it may be
 # inefficient
