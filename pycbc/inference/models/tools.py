@@ -438,7 +438,8 @@ class DistMarg:
 
         # Update the current proposed times and the marginalization values
         # assumes uniform prior!
-        logw = -logweight[tci] + numpy.log(1.0 / len(logweight))
+        logw = -logweight[tci] + numpy.log(snr.delta_t / (tcmax - tcmin))
+        logw[(tc < tcmin) | (tc > tcmax)] = -numpy.inf
         self.marginalize_vector_params["tc"] = tc
         self.marginalize_vector_params["logw_partial"] = logw
 
@@ -891,8 +892,16 @@ class DistMarg:
         for k in self.marginalize_vector_params:
             if k not in params:
                 params[k] = self.marginalize_vector_params[k]
-        self.marginalize_vector_weights = -numpy.log(self.vsamples)
         return params
+
+    def update(self, **params):
+        """Move to a new point, resetting the marginalization weights.
+
+        The weights start out equal and each draw adds to them. They are
+        reset here, once per point.
+        """
+        super().update(**params)
+        self.marginalize_vector_weights = -numpy.log(self.vsamples)
 
     def reconstruct(self, rec=None, seed=None, set_loglr=None):
         """
