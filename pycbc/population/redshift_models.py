@@ -142,11 +142,11 @@ class BaseRedshiftEvolution(ABC):
             # Consider using np.isclose for numerical closeness
             # for these two validations
             #if self._z_grid[0] != 0:
-            if not np.isclose(self._z_grid[0], 0)
+            if not np.isclose(self._z_grid[0], 0):
                 raise ValueError("z_grid should start at z=0")
 
             #if self._z_grid[-1] != self.z_max:
-            if not np.isclose(self._z_grid[-1], self.z_max)
+            if not np.isclose(self._z_grid[-1], self.z_max):
                 raise ValueError("z_grid must end at z_max")
 
         # Differential comoving volume on grid
