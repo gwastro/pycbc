@@ -324,7 +324,7 @@ class BaseRedshiftEvolution(ABC):
             / (1.0 + self._z_grid)
         )
 
-        return np.trapz(integrand.value, self._z_grid) * u.Gpc**3 *u.Yr
+        return np.trapz(integrand.value, self._z_grid) * u.Gpc**3 *u.year
 
 
     # ------------------------------------------------------------------
