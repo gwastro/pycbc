@@ -707,7 +707,7 @@ sfr_madau_fragos_2017_redshift = MadauFragos2017SFR()
 
 
 class SFRTimeDelayRedshift(BaseRedshiftEvolution):
-    """
+    """ 
     Redshift evolution from convolving a star formation rate (SFR) with a time delay distribution.
 
     This model accounts for the fact that events (e.g., compact binary mergers) occur after
@@ -753,7 +753,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         #import astropy.units as u
         #self.cosmology = cosmology if cosmology is not None else Planck18
 
-        # Define boundaries for time delay
+        # Define boundaries for time delay 
         self.td_min = kwargs.get('td_min', 0.02)  # Gyr (20 Myr)
         self.td_max = kwargs.get('td_max', self.cosmology.lookback_time(self.z_formation_max).to(u.Gyr).value)
 
