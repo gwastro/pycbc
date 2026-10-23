@@ -141,10 +141,12 @@ class BaseRedshiftEvolution(ABC):
 
             # Consider using np.isclose for numerical closeness
             # for these two validations
-            if self._z_grid[0] != 0:
+            #if self._z_grid[0] != 0:
+            if not np.isclose(self._z_grid[0], 0)
                 raise ValueError("z_grid should start at z=0")
 
-            if self._z_grid[-1] != self.z_max:
+            #if self._z_grid[-1] != self.z_max:
+            if not np.isclose(self._z_grid[-1], self.z_max)
                 raise ValueError("z_grid must end at z_max")
 
         # Differential comoving volume on grid
@@ -212,7 +214,7 @@ class BaseRedshiftEvolution(ABC):
     # Cosmology utilities
     # ------------------------------------------------------------------
 
-    def dVc_dz(self, redshift):
+    def fullsky_differential_comoving_volume(self, redshift):
         r"""
         Differential comoving 3-volume per unit redshift.
 
@@ -241,7 +243,7 @@ class BaseRedshiftEvolution(ABC):
 
         return dvc[0] if is_scalar else dvc
 
-    def comoving_3volume(self, redshift):
+    def comoving_volume(self, redshift):
         """
         Comoving volume enclosed within a given redshift.
 
@@ -707,7 +709,7 @@ sfr_madau_fragos_2017_redshift = MadauFragos2017SFR()
 
 
 class SFRTimeDelayRedshift(BaseRedshiftEvolution):
-    r""" 
+    r"""
     Redshift evolution from convolving a star formation rate (SFR) with a time delay distribution.
 
     This model accounts for the fact that events (e.g., compact binary mergers) occur after
@@ -753,7 +755,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         #import astropy.units as u
         #self.cosmology = cosmology if cosmology is not None else Planck18
 
-        # Define boundaries for time delay 
+        # Define boundaries for time delay
         self.td_min = kwargs.get('td_min', 0.02)  # Gyr (20 Myr)
         self.td_max = kwargs.get('td_max', self.cosmology.lookback_time(self.z_formation_max).to(u.Gyr).value)
 
