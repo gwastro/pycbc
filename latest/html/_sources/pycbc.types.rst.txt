@@ -1,0 +1,93 @@
+pycbc.types package
+===================
+
+Submodules
+----------
+
+pycbc.types.aligned module
+--------------------------
+
+.. automodule:: pycbc.types.aligned
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.types.array module
+------------------------
+
+.. automodule:: pycbc.types.array
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.types.array\_cpu module
+-----------------------------
+
+.. automodule:: pycbc.types.array_cpu
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.types.array\_cuda module
+------------------------------
+
+.. automodule:: pycbc.types.array_cuda
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.types.array\_cupy module
+------------------------------
+
+.. automodule:: pycbc.types.array_cupy
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.types.config module
+-------------------------
+
+.. automodule:: pycbc.types.config
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.types.frequencyseries module
+----------------------------------
+
+.. automodule:: pycbc.types.frequencyseries
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.types.optparse module
+---------------------------
+
+.. automodule:: pycbc.types.optparse
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.types.timeseries module
+-----------------------------
+
+.. automodule:: pycbc.types.timeseries
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.types.utils module
+------------------------
+
+.. automodule:: pycbc.types.utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.types
+   :members:
+   :show-inheritance:
+   :undoc-members:
