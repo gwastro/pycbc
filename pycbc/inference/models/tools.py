@@ -436,6 +436,8 @@ class DistMarg:
         tct = numpy.random.uniform(-snr.delta_t / 2.0, snr.delta_t / 2.0, size=vsamples)
         tc = tct + tci * snr.delta_t + float(snr.start_time) - dt
 
+        # Update the current proposed times and the marginalization values
+        # assumes uniform prior!
         logw = -logweight[tci] + numpy.log(snr.delta_t / (tcmax - tcmin))
         logw[(tc < tcmin) | (tc > tcmax)] = -numpy.inf
         self.marginalize_vector_params["tc"] = tc
