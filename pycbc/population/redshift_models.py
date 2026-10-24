@@ -100,8 +100,15 @@ class BaseRedshiftEvolution(ABC):
         models.
     """
 
-    def __init__(self, z_max: float = 2.0, num_zbins: int = 1000,
-                 cosmology=None, z_grid = None):
+    def __init__(
+        self, 
+        z_max: float = 2.0,
+        z_max_cosmo: float = 50.0,
+        num_zbins: int = 1000,
+        cosmology=None,
+        z_grid = None,
+        z_grid_cosmo = None,
+        ):
         """
         Initialize the redshift evolution model.
 
@@ -119,8 +126,13 @@ class BaseRedshiftEvolution(ABC):
             Custom redshift grid
             (must be strictly increasing, start at 0, end at z_max).
             If None, a uniform grid from 0 to z_max is used.
+        z_grid_cosmo : array_like, optional
+            Custom redshift grid for cosmological functions
+            (must be strictly increasing, start at 0, end at z_max).
+            If None, a uniform grid from 0 to z_max is used.
         """
         self.z_max = float(z_max)
+        self.z_max_cosmo = float(z_max)
         self.num_zbins = int(num_zbins)
 
         # Validate z_max, num_bin, and cosmology
@@ -163,6 +175,21 @@ class BaseRedshiftEvolution(ABC):
             4.0
             * np.pi
             * self.cosmology.differential_comoving_volume(self._z_grid)
+            .to(u.Gpc**3 / u.sr)
+        )*u.sr
+
+        # Cache for interpolated values
+        self._cached_z = None
+        self._cached_dvc_dz = None
+
+        # An additional grid for the cosmological quantities 
+        # that need not depend on the z_max and normalization
+        # is not needed.
+        self._z_grid_cosmo = np.linspace(0.0, self.z_max_cosmo, int(10*self.num_zbins))
+        self._dvc_dz_grid_cosmo = (
+            4.0
+            * np.pi
+            * self.cosmology.differential_comoving_volume(self._z_grid_cosmo)
             .to(u.Gpc**3 / u.sr)
         )*u.sr
 
@@ -292,12 +319,12 @@ class BaseRedshiftEvolution(ABC):
             Comoving volume in Gpc^3.
         """
 
-        z, is_scalar = self._to_1d_array(redshift)
-        vol = self.cosmology.comoving_volume(z).to(u.Gpc**3)
+        zz, is_scalar = self._to_1d_array(redshift)
+        vol = self.cosmology.comoving_volume(zz).to(u.Gpc**3)
 
         return vol[0] if is_scalar else vol
 
-
+    
     def comoving_spacetime_volume(self, redshift):
         """
         Cumulative full-sky comoving volume-time factor up to redshift z.
@@ -326,14 +353,14 @@ class BaseRedshiftEvolution(ABC):
         z, is_scalar = self._to_1d_array(redshift)
 
         # Full-sky dVc/dz in Gpc^3
-        dvc_dz = self._dvc_dz_grid.to_value(u.Gpc**3)
+        dvc_dz = self._dvc_dz_grid_cosmo.to_value(u.Gpc**3)
 
         # Observer-frame time-dilation factor
         integrand = dvc_dz / (1.0 + self._z_grid)
 
         # Cumulative integral from z = 0 to each grid point
         cumulative_volume = np.zeros_like(self._z_grid, dtype=float)
-        dz = np.diff(self._z_grid)
+        dz = np.diff(self._z_grid_cosmo)
 
         cumulative_volume[1:] = np.cumsum(
             0.5 * (integrand[1:] + integrand[:-1]) * dz
@@ -343,7 +370,7 @@ class BaseRedshiftEvolution(ABC):
         # Below zero: zero; above z_max: saturate at the final value.
         result = np.interp(
             z,
-            self._z_grid,
+            self._z_grid_cosmo,
             cumulative_volume,
             left=0.0,
             right=cumulative_volume[-1],
@@ -734,19 +761,19 @@ class MadauFragos2017SFR(BaseRedshiftEvolution):
     name = "sfr_madau_fragos_2017"
     param_names = ("k_imf", "mode")
 
+    _MODE_PARAMETERS = {
+        "low": (2.6, 3.2, 6.2),
+        "high": (2.7, 3.0, 5.35),
+        }
+
     def __call__(self, redshift, **parameters):
         return self.prob_redshift(redshift, **parameters)
 
     def psi_z(self, redshift, *, k_imf=0.66, mode="high"):
         redshift = np.asarray(redshift)
-        if mode == "low":
-            factor_a = 2.6
-            factor_b = 3.2
-            factor_c = 6.2
-        elif mode == "high":
-            factor_a = 2.7
-            factor_b = 3.0
-            factor_c = 5.35
+        
+        if mode in ["low", "high"]:
+            factor_a, factor_b, factor_c = _MODE_PARAMETERS[mode]
         else:
             raise ValueError("'mode' must choose from 'high' or 'low'.")
         return k_imf * 0.015 * (1+redshift)**factor_a / (1 + ((1+redshift)/factor_b)**factor_c)
