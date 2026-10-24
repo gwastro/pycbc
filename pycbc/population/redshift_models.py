@@ -126,11 +126,9 @@ class BaseRedshiftEvolution(ABC):
         # Validate z_max, num_bin, and cosmology
         if self.z_max <= 0:
             raise ValueError("z_max must be positive")
-        #self.z_max = float(z_max)
 
         if self.num_zbins < 2:
             raise ValueError("num_zbins must be at least 2")
-        #self.num_zbins = int(num_zbins)
 
         if cosmology is not None:
             self.cosmology = cosmology
@@ -152,13 +150,10 @@ class BaseRedshiftEvolution(ABC):
             if np.any(np.diff(self._z_grid) <= 0):
                 raise ValueError("z_grid must be strictly increasing")
 
-            # Consider using np.isclose for numerical closeness
-            # for these two validations
-            #if self._z_grid[0] != 0:
+            # Validation of end points on the grid
             if not np.isclose(self._z_grid[0], 0):
                 raise ValueError("z_grid should start at z=0")
 
-            #if self._z_grid[-1] != self.z_max:
             if not np.isclose(self._z_grid[-1], self.z_max):
                 raise ValueError("z_grid must end at z_max")
 
@@ -169,15 +164,11 @@ class BaseRedshiftEvolution(ABC):
             * np.pi
             * self.cosmology.differential_comoving_volume(self._z_grid)
             .to(u.Gpc**3 / u.sr)
-        )
+        )*u.sr
 
         # Cache for interpolated values
         self._cached_z = None
         self._cached_dvc_dz = None
-
-        # Time delay boundaries (in Gyr)
-        self.td_max = self.cosmology.age(0).to(u.Gyr).value
-        self.td_min = 0.02
 
     # ------------------------------------------------------------------
     # Utilities; it makes it compatible with scalar/numpy.arrays
@@ -253,7 +244,7 @@ class BaseRedshiftEvolution(ABC):
             * np.pi
             * self.cosmology.differential_comoving_volume(zz)
             .to(u.Gpc**3 / u.sr)
-        )
+        )*u.sr
 
         return dvc[0] if is_scalar else dvc
 
@@ -279,8 +270,11 @@ class BaseRedshiftEvolution(ABC):
         zz, is_scalar = self._to_1d_array(redshift)
 
         dvc = (
-            self.fullsky_differential_comoving_volume(zz)/(1 + zz)
-        )
+            4.0
+            * np.pi/(1 + zz)
+            * self.cosmology.differential_comoving_volume(zz)
+            .to(u.Gpc**3 / u.sr)
+        )*u.sr
 
         return dvc[0] if is_scalar else dvc
 
