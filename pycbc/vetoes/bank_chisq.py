@@ -26,14 +26,14 @@ from math import sqrt
 
 import numpy
 
-from pycbc.filter import matched_filter_core, overlap_cplx
+from pycbc.filter import matched_filter_core, overlap_cplx, sigmasq
 from pycbc.types import Array, TimeSeries, real_same_precision_as, zeros
 from pycbc.waveform import FilterBank
 
 logger = logging.getLogger(__name__)
 
 
-def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
+def segment_snrs(filters, stilde, psd, low_frequency_cutoff, overwhitened=True):
     """
     This functions calculates the snr of each bank veto template against
     the segment
@@ -46,6 +46,8 @@ def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
         The current segment of data.
     psd: FrequencySeries
     low_frequency_cutoff: float
+    overwhitened: bool, optional
+        Whether stilde is already divided by the PSD.
 
     Returns
     -------
@@ -58,11 +60,14 @@ def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
 
     for bank_template in filters:
         # For every template compute the snr against the stilde segment
+        h_norm = sigmasq(
+            bank_template, psd=psd, low_frequency_cutoff=low_frequency_cutoff
+        )
         snr, _, norm = matched_filter_core(
             bank_template,
             stilde,
-            h_norm=bank_template.sigmasq(psd),
-            psd=None,
+            h_norm=h_norm,
+            psd=None if overwhitened else psd,
             low_frequency_cutoff=low_frequency_cutoff,
         )
         # SNR time series stored here
@@ -92,6 +97,9 @@ def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
     """
     overlaps = []
     template_ow = template / psd
+    template_norm = sigmasq(
+        template, psd=psd, low_frequency_cutoff=low_frequency_cutoff
+    )
     for bank_template in bank_filters:
         overlap = overlap_cplx(
             template_ow,
@@ -99,7 +107,10 @@ def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
             low_frequency_cutoff=low_frequency_cutoff,
             normalized=False,
         )
-        norm = sqrt(1 / template.sigmasq(psd) / bank_template.sigmasq(psd))
+        bank_norm = sigmasq(
+            bank_template, psd=psd, low_frequency_cutoff=low_frequency_cutoff
+        )
+        norm = sqrt(1 / template_norm / bank_norm)
         overlaps.append(overlap * norm)
         if abs(overlaps[-1]) > 0.99:
             err_msg = "Overlap > 0.99 between bank template and filter. "
@@ -201,7 +212,14 @@ class SingleDetBankVeto:
     """
 
     def __init__(
-        self, bank_file, flen, delta_f, f_low, cdtype, approximant=None, **kwds
+        self,
+        bank_file,
+        flen=None,
+        delta_f=None,
+        f_low=None,
+        cdtype=None,
+        approximant=None,
+        **kwds,
     ):
         if bank_file is not None:
             self.do = True
@@ -209,36 +227,49 @@ class SingleDetBankVeto:
             self.column_name = "bank_chisq"
             self.table_dof_name = "bank_chisq_dof"
 
+            self.bank_file = bank_file
+            self.seg_len_freq = flen
             self.cdtype = cdtype
             self.delta_f = delta_f
             self.f_low = f_low
-            self.seg_len_freq = flen
-            self.seg_len_time = (self.seg_len_freq - 1) * 2
-
-            logger.info("Read in bank veto template bank")
-            bank_veto_bank = FilterBank(
-                bank_file,
-                self.seg_len_freq,
-                self.delta_f,
-                self.cdtype,
-                low_frequency_cutoff=f_low,
-                approximant=approximant,
-                **kwds,
-            )
-
-            self.filters = list(bank_veto_bank)
-            self.dof = len(bank_veto_bank) * 2
+            self.approximant = approximant
+            self.kwds = kwds
+            self.filters = None
+            self.dof = 0
 
             self._overlaps_cache = {}
             self._segment_snrs_cache = {}
         else:
             self.do = False
 
-    def cache_segment_snrs(self, stilde, psd):
+    @staticmethod
+    def insert_option_group(parser):
+        group = parser.add_argument_group("Bank Veto")
+        group.add_argument(
+            "--bank-veto-bank-file",
+            type=str,
+            help="Template bank file used to compute the bank chi-square veto.",
+        )
+
+    @classmethod
+    def from_cli(cls, args):
+        kwds = {}
+        if getattr(args, "order", None) is not None:
+            kwds["phase_order"] = args.order
+        return cls(
+            args.bank_veto_bank_file,
+            f_low=getattr(args, "low_frequency_cutoff", None),
+            approximant=getattr(args, "approximant", None),
+            **kwds,
+        )
+
+    def cache_segment_snrs(self, stilde, psd, overwhitened=True):
         key = (id(stilde), id(psd))
         if key not in self._segment_snrs_cache:
             logger.debug("Precalculate the bank veto template snrs")
-            data = segment_snrs(self.filters, stilde, psd, self.f_low)
+            data = segment_snrs(
+                self.filters, stilde, psd, self.f_low, overwhitened=overwhitened
+            )
             self._segment_snrs_cache[key] = data
         return self._segment_snrs_cache[key]
 
@@ -250,7 +281,16 @@ class SingleDetBankVeto:
             self._overlaps_cache[key] = o
         return self._overlaps_cache[key]
 
-    def values(self, template, psd, stilde, snrv, norm, indices):
+    def values(
+        self,
+        template,
+        psd,
+        stilde,
+        snrv,
+        norm,
+        indices,
+        overwhitened=True,
+    ):
         """
         Returns
         -------
@@ -264,8 +304,29 @@ class SingleDetBankVeto:
         if not self.do:
             return None, None
         logger.debug("...Doing bank veto")
+        if self.f_low is None:
+            self.f_low = template.f_lower
+        if self.filters is None:
+            self.seg_len_freq = self.seg_len_freq or len(stilde)
+            self.seg_len_time = (self.seg_len_freq - 1) * 2
+            self.delta_f = self.delta_f or stilde.delta_f
+            self.cdtype = self.cdtype or stilde.dtype
+            logger.info("Read in bank veto template bank")
+            bank_veto_bank = FilterBank(
+                self.bank_file,
+                self.seg_len_freq,
+                self.delta_f,
+                self.cdtype,
+                low_frequency_cutoff=self.f_low,
+                approximant=self.approximant,
+                **self.kwds,
+            )
+            self.filters = list(bank_veto_bank)
+            self.dof = len(bank_veto_bank) * 2
         overlaps = self.cache_overlaps(template, psd)
-        bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
+        bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(
+            stilde, psd, overwhitened=overwhitened
+        )
         chisq = bank_chisq_from_filters(
             snrv, norm, bank_veto_snrs, bank_veto_norms, overlaps, indices
         )
