@@ -297,7 +297,7 @@ class BaseRedshiftEvolution(ABC):
 
         return vol[0] if is_scalar else vol
 
-    
+
     def comoving_spacetime_volume(self, redshift):
         """
         Cumulative full-sky comoving volume-time factor up to redshift z.
@@ -737,13 +737,13 @@ class MadauFragos2017SFR(BaseRedshiftEvolution):
     def __call__(self, redshift, **parameters):
         return self.prob_redshift(redshift, **parameters)
 
-    def psi_z(self, redshift, *, k_imf=0.66, mode='high'):
+    def psi_z(self, redshift, *, k_imf=0.66, mode="high"):
         redshift = np.asarray(redshift)
-        if mode == 'low':
+        if mode == "low":
             factor_a = 2.6
             factor_b = 3.2
             factor_c = 6.2
-        elif mode == 'high':
+        elif mode == "high":
             factor_a = 2.7
             factor_b = 3.0
             factor_c = 5.35
@@ -846,7 +846,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
 
         self._update_psi_z_grid()
 
-    def time_delay_prob(self, tau, time_delay_model):
+    def time_delay_prob(self, tau):
         """
          Compute the probability density of a time delay tau.
 
@@ -883,19 +883,19 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         tau = np.asarray(tau, dtype=float)
         p_t = np.zeros_like(tau)
 
-        if time_delay_model == "log_normal":
+        if self.time_delay_model == "log_normal":
             t_ln = 2.9  # Gyr
             sigma_ln = 0.2
             p_t = np.exp(-(np.log(tau)-np.log(t_ln))**2/(2*sigma_ln**2)) / (np.sqrt(2*np.pi)*sigma_ln)
-        elif time_delay_model == "gaussian":
+        elif self.time_delay_model == "gaussian":
             t_g = 2  # Gyr
             sigma_g = 0.3
             p_t = np.exp(-(tau-t_g)**2/(2*sigma_g**2)) / (np.sqrt(2*np.pi)*sigma_g)
-        elif time_delay_model == "power_law":
+        elif self.time_delay_model == "power_law":
             alpha_t = 0.81
             valid = (tau > 0)
             p_t[valid] = tau[valid]**(-alpha_t)
-        elif time_delay_model == "inverse":
+        elif self.time_delay_model == "inverse":
             norm_const = 1/np.log(self.td_max/self.td_min)
             valid = (tau >= self.td_min) & (tau <= self.td_max)
             p_t[valid] = norm_const * tau[valid]**(-0.999)
