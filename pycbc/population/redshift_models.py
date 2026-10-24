@@ -101,7 +101,7 @@ class BaseRedshiftEvolution(ABC):
     """
 
     def __init__(
-        self, 
+        self,
         z_max: float = 2.0,
         z_max_cosmo: float = 50.0,
         num_zbins: int = 1000,
@@ -182,7 +182,7 @@ class BaseRedshiftEvolution(ABC):
         self._cached_z = None
         self._cached_dvc_dz = None
 
-        # An additional grid for the cosmological quantities 
+        # An additional grid for the cosmological quantities
         # that need not depend on the z_max and normalization
         # is not needed.
         self._z_grid_cosmo = np.linspace(0.0, self.z_max_cosmo, int(10*self.num_zbins))
@@ -324,7 +324,7 @@ class BaseRedshiftEvolution(ABC):
 
         return vol[0] if is_scalar else vol
 
-    
+
     def comoving_spacetime_volume(self, redshift):
         """
         Cumulative full-sky comoving volume-time factor up to redshift z.
@@ -771,7 +771,7 @@ class MadauFragos2017SFR(BaseRedshiftEvolution):
 
     def psi_z(self, redshift, *, k_imf=0.66, mode="high"):
         redshift = np.asarray(redshift)
-        
+
         if mode in ["low", "high"]:
             factor_a, factor_b, factor_c = _MODE_PARAMETERS[mode]
         else:
