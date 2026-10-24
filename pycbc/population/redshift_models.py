@@ -38,8 +38,8 @@ class BaseRedshiftEvolution(ABC):
     support.
 
     This class provides a framework for modeling the redshift dependence of
-    astrophysical event rates, including differential comoving volume, 
-    spacetime volume, and redshift probability distributions. It supports 
+    astrophysical event rates, including differential comoving volume,
+    spacetime volume, and redshift probability distributions. It supports
     various cosmological models and integrates
     with time delay distributions.
 
@@ -65,7 +65,7 @@ class BaseRedshiftEvolution(ABC):
         Number of redshift bins for numerical integration. Must be at least 2.
         Default is 1000.
     cosmology : astropy.cosmology.Cosmology, optional
-        Cosmological model to use. If None, defaults to 
+        Cosmological model to use. If None, defaults to
         `pycbc.cosmology.get_cosmology()`.
     z_grid : array_like, optional
         Custom redshift grid (must be strictly increasing, start at 0,
@@ -96,7 +96,7 @@ class BaseRedshiftEvolution(ABC):
     See Also
     --------
     PowerLawRedshift, GRB2008SFR, MadauDickinson2014SFR, MadauFragos2017SFR,
-    SFRTimeDelayRedshift : Concrete implementations of redshift evolution 
+    SFRTimeDelayRedshift : Concrete implementations of redshift evolution
         models.
     """
 
@@ -108,15 +108,15 @@ class BaseRedshiftEvolution(ABC):
         Parameters
         ----------
         z_max : float
-            Maximum redshift for normalization and integration. 
+            Maximum redshift for normalization and integration.
             Must be positive.
         num_zbins : int
-            Number of redshift bins for numerical integration. 
+            Number of redshift bins for numerical integration.
             Must be at least 2.
         cosmology : astropy.cosmology.Cosmology, optional
             Cosmological model to use. If None, defaults to `get_cosmology()`.
         z_grid : array_like, optional
-            Custom redshift grid 
+            Custom redshift grid
             (must be strictly increasing, start at 0, end at z_max).
             If None, a uniform grid from 0 to z_max is used.
         """
@@ -231,7 +231,7 @@ class BaseRedshiftEvolution(ABC):
         r"""
         Differential comoving 3-volume per unit redshift.
 
-        This is the full-sky differential comoving volume: 
+        This is the full-sky differential comoving volume:
             dVc/dz = 4 \pi dVc/dz/d_\Omega.
 
         Parameters
@@ -261,7 +261,7 @@ class BaseRedshiftEvolution(ABC):
         r"""
         Differential comoving 4-volume per unit redshift.
 
-        This is the full-sky differential comoving volume: 
+        This is the full-sky differential comoving volume:
             dVc/dz = 4 \pi 1/(1+z) dVc/dz/d_\Omega.
 
         Parameters
@@ -303,28 +303,60 @@ class BaseRedshiftEvolution(ABC):
 
         return vol[0] if is_scalar else vol
 
+    
     def comoving_spacetime_volume(self, redshift):
         """
-        Comoving spacetime volume up to a given redshift
+        Cumulative full-sky comoving volume-time factor up to redshift z.
+
+        Computes:
+            V_ct(z) = integral_0^z [dVc/dz' / (1 + z')] dz'
 
         Parameters
         ----------
-        redshift : array_like
+        redshift : float or array_like
+            Redshift value(s). Must be finite and non-negative.
 
         Returns
         -------
         astropy.units.Quantity
-            Comoving spacetime volume in Gpc^3 Yr.
-        """
+            Cumulative volume-time factor in Gpc^3 yr.
+            Returns a scalar Quantity for scalar input and an array
+            of Quantities for array-like input.
 
+        Notes
+        -----
+        Redshifts above self.z_max are assigned zero. Values within
+        [0, self.z_max] are evaluated by interpolation of the cumulative
+        integral on the internal redshift grid.
+        """
         z, is_scalar = self._to_1d_array(redshift)
 
-        integrand = (
-            self._dvc_dz_grid
-            / (1.0 + self._z_grid)
+        # Full-sky dVc/dz in Gpc^3
+        dvc_dz = self._dvc_dz_grid.to_value(u.Gpc**3)
+
+        # Observer-frame time-dilation factor
+        integrand = dvc_dz / (1.0 + self._z_grid)
+
+        # Cumulative integral from z = 0 to each grid point
+        cumulative_volume = np.zeros_like(self._z_grid, dtype=float)
+        dz = np.diff(self._z_grid)
+
+        cumulative_volume[1:] = np.cumsum(
+            0.5 * (integrand[1:] + integrand[:-1]) * dz
         )
 
-        return np.trapz(integrand.value, self._z_grid) * u.Gpc**3 *u.year
+        # Interpolate to requested redshifts.
+        # Below zero: zero; above z_max: saturate at the final value.
+        result = np.interp(
+            z,
+            self._z_grid,
+            cumulative_volume,
+            left=0.0,
+            right=cumulative_volume[-1],
+        ) * u.Gpc**3 * u.yr
+
+        return result[0] if is_scalar else result
+
 
 
     # ------------------------------------------------------------------
@@ -336,7 +368,7 @@ class BaseRedshiftEvolution(ABC):
         """
         Redshift evolution function psi(z).
 
-        This function defines the intrinsic redshift dependence of the event 
+        This function defines the intrinsic redshift dependence of the event
         rate.
 
         Parameters
@@ -383,7 +415,7 @@ class BaseRedshiftEvolution(ABC):
         Notes
         -----
         - Uses linear interpolation with zero padding at boundaries.
-        - The cache is updated only if the input redshift differs from the 
+        - The cache is updated only if the input redshift differs from the
         cached one.
         """
         redshift = np.asarray(redshift)
@@ -408,7 +440,7 @@ class BaseRedshiftEvolution(ABC):
         Defined as:
             dVT/dz = psi(z) / (1 + z) * dVc/dz
 
-        This represents the effective rate of events per unit redshift, 
+        This represents the effective rate of events per unit redshift,
         accounting for cosmological volume and redshift evolution.
 
         Parameters
@@ -609,15 +641,15 @@ power_law_redshift = PowerLawRedshift()
 
 class GRB2008SFR(BaseRedshiftEvolution):
     """
-    Star formation rate (SFR) calibrated by high-redshift gamma-ray bursts 
+    Star formation rate (SFR) calibrated by high-redshift gamma-ray bursts
     (GRBs).
 
     Based on the model from GRB 2008 data, this model captures the observed
     SFR evolution with a flexible functional form.
 
     The SFR is modeled as:
-        psi(z) = 
-        rho_local * 
+        psi(z) =
+        rho_local *
         [(1+z)^(3.4*eta)+((1+z)/5000)^(-0.3*eta)+((1+z)/9)^(-3.5*eta)]^(1/eta)
 
     with eta = -10 and rho_local = 0.02 Msun/yr/Mpc^3.
@@ -730,7 +762,7 @@ sfr_madau_fragos_2017_redshift = MadauFragos2017SFR()
 
 class SFRTimeDelayRedshift(BaseRedshiftEvolution):
     r"""
-    Redshift evolution from convolving a star formation rate (SFR) with a time 
+    Redshift evolution from convolving a star formation rate (SFR) with a time
     delay distribution.
 
     This model accounts for the fact that events (e.g., compact binary mergers)
@@ -745,7 +777,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
     ----------
     sfr_model : BaseRedshiftEvolution
         SFR model (e.g., MadauDickinson2014SFR).
-    td_model : str
+    time_delay_model : str
         Time delay model: 'log_normal', 'gaussian', 'power_law', 'inverse'.
     z_max : float, optional
         Maximum redshift for integration. Default is 10.0.
@@ -768,7 +800,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
     def __init__(
         self,
         sfr_model,
-        delay_model,
+        time_delay_model,
         z_max=10.0,
         num_zbins=1000,
         cosmology=None,
@@ -779,7 +811,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
     ):
         super().__init__(z_max, num_zbins, cosmology, z_grid)
         self.sfr_model = sfr_model
-        self.td_model = td_model
+        self.time_delay_model = time_delay_model
 
         # Validate z_formation_max
         if z_formation_max <= z_max:
@@ -789,11 +821,24 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         self.z_formation_max = z_formation_max
 
         # Define boundaries for time delay
-        self.td_min = td_min
-        self.td_max = td_max
+        self.td_min = float(td_min)
+
+        # By default, maximum time-delay should be the lookback time
+        # at the redshift of formation of first stars
+        self.td_max = (
+            self.cosmology.lookback_time(self.z_formation_max).to_value(u.Gyr)
+            if td_max is None
+            else float(td_max)
+        )
+
+        if not np.isfinite(self.td_min) or self.td_min <= 0:
+            raise ValueError("td_min must be finite and positive")
+
+        if not np.isfinite(self.td_max) or self.td_max <= self.td_min:
+            raise ValueError("td_max must be finite and greater than td_min")
 
         # Precompute lookback times for formation redshift grid
-        # 5000 points is enough because adaptive quad handles sharp features 
+        # 5000 points is enough because adaptive quad handles sharp features
         # perfectly
         self._zf_grid = np.linspace(0, self.z_formation_max, 5000)
         self._tf_grid = self.cosmology.lookback_time(self._zf_grid).to(u.Gyr).value
@@ -807,18 +852,18 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
 
         self._update_psi_z_grid()
 
-    def time_delay_prob(self, tau, td_model):
+    def time_delay_prob(self, tau, time_delay_model):
         """
          Compute the probability density of a time delay tau.
 
-        This method supports several standard time delay models used in 
+        This method supports several standard time delay models used in
         astrophysics.
 
         Parameters
         ----------
         tau : array_like
             Time delay(s) in Gyr.
-        td_model : str
+        time_delay_model : str
             Name of the time delay model. Must be one of:
             - 'log_normal': Log-normal distribution
             - 'gaussian': Gaussian distribution
@@ -833,35 +878,35 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         Raises
         ------
         ValueError
-            If td_model is not one of the supported types.
+            If time_delay_model is not one of the supported types.
 
         Notes
         -----
-        - For 'power_law' and 'inverse', normalization is approximate and may 
+        - For 'power_law' and 'inverse', normalization is approximate and may
           require careful handling near zero.
         - 'inverse' model uses a bounded support from td_min to td_max.
         """
         tau = np.asarray(tau, dtype=float)
         p_t = np.zeros_like(tau)
 
-        if td_model == "log_normal":
+        if time_delay_model == "log_normal":
             t_ln = 2.9  # Gyr
             sigma_ln = 0.2
             p_t = np.exp(-(np.log(tau)-np.log(t_ln))**2/(2*sigma_ln**2)) / (np.sqrt(2*np.pi)*sigma_ln)
-        elif td_model == "gaussian":
+        elif time_delay_model == "gaussian":
             t_g = 2  # Gyr
             sigma_g = 0.3
             p_t = np.exp(-(tau-t_g)**2/(2*sigma_g**2)) / (np.sqrt(2*np.pi)*sigma_g)
-        elif td_model == "power_law":
+        elif time_delay_model == "power_law":
             alpha_t = 0.81
             valid = (tau > 0)
             p_t[valid] = tau[valid]**(-alpha_t)
-        elif td_model == "inverse":
+        elif time_delay_model == "inverse":
             norm_const = 1/np.log(self.td_max/self.td_min)
             valid = (tau >= self.td_min) & (tau <= self.td_max)
             p_t[valid] = norm_const * tau[valid]**(-0.999)
         else:
-            raise ValueError(f"Currently, 'td_model' must choose from: "
+            raise ValueError(f"Currently, 'time_delay_model' must choose from: "
                              f"['log_normal', 'gaussian', 'power_law', 'inverse'].")
         return p_t
 
@@ -876,13 +921,13 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         # Pre-compute time grid for z_grid to vectorize delay calculation
         tm_grid = self.cosmology.lookback_time(self._z_grid).to(u.Gyr).value
 
-        if self.td_model in ["power_law", "inverse"]:
+        if self.time_delay_model in ["power_law", "inverse"]:
             # Use CubicSpline to ensure C2 continuous derivatives for quad convergence
             sfr_spline = CubicSpline(self._zf_grid, self._sfr_f, extrapolate=True)
             dt_dz_spline = CubicSpline(self._zf_grid, self._dt_dz_f, extrapolate=True)
             tf_spline = CubicSpline(self._zf_grid, self._tf_grid, extrapolate=True)
 
-            if self.td_model == "inverse":
+            if self.time_delay_model == "inverse":
                 # Ensure strictly monotonic for inverse mapping
                 valid_idx = np.argsort(self._tf_grid)
                 z_of_t_spline = CubicSpline(self._tf_grid[valid_idx], self._zf_grid[valid_idx], extrapolate=True)
@@ -892,7 +937,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
                 tm_local = tf_spline(zm)
 
                 z_start = zm
-                if self.td_model == "inverse":
+                if self.time_delay_model == "inverse":
                     t_start = tm_local + self.td_min
                     if t_start >= self._tf_grid[-1]:
                         self._psi_z_grid[i] = 0.0
@@ -903,7 +948,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
                     td = tf_spline(zf) - tm_local
                     if td <= 0:
                         return 0.0
-                    p_td = float(self.time_delay_prob(td, self.td_model))
+                    p_td = float(self.time_delay_prob(td, self.time_delay_model))
                     return sfr_spline(zf) * p_td * dt_dz_spline(zf)
 
                 # Guide quad to densely sample the incredibly narrow peak near z_start
@@ -924,7 +969,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
                 tf_valid = self._tf_grid[valid]
                 td = tf_valid - tm
 
-                p_td = self.time_delay_prob(td, self.td_model)
+                p_td = self.time_delay_prob(td, self.time_delay_model)
                 integrand = self._sfr_f[valid] * p_td * self._dt_dz_f[valid]
                 self._psi_z_grid[i] = np.trapz(integrand, zf_valid)
 
