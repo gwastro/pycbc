@@ -356,10 +356,10 @@ class BaseRedshiftEvolution(ABC):
         dvc_dz = self._dvc_dz_grid_cosmo.to_value(u.Gpc**3)
 
         # Observer-frame time-dilation factor
-        integrand = dvc_dz / (1.0 + self._z_grid)
+        integrand = dvc_dz / (1.0 + self._z_grid_cosmo)
 
         # Cumulative integral from z = 0 to each grid point
-        cumulative_volume = np.zeros_like(self._z_grid, dtype=float)
+        cumulative_volume = np.zeros_like(self._z_grid_cosmo, dtype=float)
         dz = np.diff(self._z_grid_cosmo)
 
         cumulative_volume[1:] = np.cumsum(
@@ -773,7 +773,7 @@ class MadauFragos2017SFR(BaseRedshiftEvolution):
         redshift = np.asarray(redshift)
 
         if mode in ["low", "high"]:
-            factor_a, factor_b, factor_c = _MODE_PARAMETERS[mode]
+            factor_a, factor_b, factor_c = self._MODE_PARAMETERS[mode]
         else:
             raise ValueError("'mode' must choose from 'high' or 'low'.")
         return k_imf * 0.015 * (1+redshift)**factor_a / (1 + ((1+redshift)/factor_b)**factor_c)
