@@ -63,9 +63,18 @@ parser.add_argument(
     required=True,
     help="Draw parameters from the given configure file.",
 )
-parser.add_argument("--minimal-match", default=0.97, type=float)
 parser.add_argument(
-    "--buffer-length", default=2, type=float, help="size of waveform buffer in seconds"
+    "--minimal-match",
+    default=0.97,
+    type=float,
+    help="Minimal match of the bank. A proposed template is rejected if its match "
+    "with any existing template is above this value. Must be between 0 and 1.",
+)
+parser.add_argument(
+    "--buffer-length",
+    default=2,
+    type=float,
+    help="Size of the waveform buffer. UNITS=seconds.",
 )
 parser.add_argument(
     "--use-td-waveform",
@@ -81,16 +90,35 @@ parser.add_argument(
 parser.add_argument(
     "--max-signal-length",
     type=float,
-    help="When specified, it cuts the maximum length of the waveform model to the lengh provided",
+    help="Maximum waveform duration. If given, the starting frequency of each "
+    "waveform is raised until the signal is no longer than this. UNITS=seconds.",
 )
 parser.add_argument(
-    "--sample-rate", default=2048, type=float, help="sample rate in seconds"
+    "--sample-rate",
+    default=2048,
+    type=float,
+    help="Sample rate used for waveform generation. UNITS=Hz.",
 )
-parser.add_argument("--low-frequency-cutoff", default=20.0, type=float)
-parser.add_argument("--enable-sigma-bound", action="store_true")
-parser.add_argument("--tau0-threshold", type=float)
 parser.add_argument(
-    "--permissive", action="store_true", help="Allow waveform generator to fail."
+    "--low-frequency-cutoff",
+    default=20.0,
+    type=float,
+    help="Low frequency cutoff used for waveform generation, the PSD, and match "
+    "calculations. UNITS=Hz.",
+)
+parser.add_argument(
+    "--enable-sigma-bound",
+    action="store_true",
+    help="Speed-up: use the ratio of template normalisations (sigma) as an upper "
+    "bound on the match, and skip templates that cannot exceed --minimal-match.",
+)
+parser.add_argument(
+    "--tau0-threshold",
+    type=float,
+    required=True,
+    help="Width of the tau0 bins. A proposed template is only compared to existing "
+    "templates in the same or adjacent tau0 bin. Also sets when old templates "
+    "are dropped from memory. UNITS=seconds.",
 )
 parser.add_argument(
     "--placement-iterations",
@@ -98,14 +126,53 @@ parser.add_argument(
     type=int,
     help="Specify the number of attempts the bank should make when placing points. Use this option if the bank fails to place any points.",
 )
-parser.add_argument("--seed", type=int, default=0)
-parser.add_argument("--tolerance", type=float)
-parser.add_argument("--use-cross", action="store_true")
-parser.add_argument("--max-q", type=float)
-parser.add_argument("--tau0-crawl", type=float)
-parser.add_argument("--tau0-start", type=float)
-parser.add_argument("--tau0-end", type=float)
-parser.add_argument("--tau0-cutoff-frequency", type=float, default=15.0)
+parser.add_argument(
+    "--seed",
+    type=int,
+    default=0,
+    help="Seed for the random number generator. Runs with the same seed and inputs "
+    "produce the same bank.",
+)
+parser.add_argument(
+    "--tolerance",
+    type=float,
+    help="Convergence threshold. Placement in a tau0 region stops when the "
+    "fraction of proposed templates that are accepted falls below this value. "
+    "Also sets the number of proposals per round (1/tolerance). If not given, "
+    "(1 - minimal-match) / 10 is used.",
+)
+parser.add_argument(
+    "--use-cross",
+    action="store_true",
+    help="Use the cross (hc) polarisation instead of the plus (hp) polarisation. "
+    "Only applies to frequency-domain approximants.",
+)
+parser.add_argument(
+    "--tau0-crawl",
+    type=float,
+    required=True,
+    help="Width of the tau0 window filled at one time. The window advances by half "
+    "this width each step, so neighbouring windows overlap. UNITS=seconds.",
+)
+parser.add_argument(
+    "--tau0-start",
+    type=float,
+    required=True,
+    help="Starting tau0 value for template placement. UNITS=seconds.",
+)
+parser.add_argument(
+    "--tau0-end",
+    type=float,
+    required=True,
+    help="Ending tau0 value for template placement. UNITS=seconds.",
+)
+parser.add_argument(
+    "--tau0-cutoff-frequency",
+    type=float,
+    default=15.0,
+    help="Reference frequency used to calculate tau0 from the component masses. "
+    "Separate from --low-frequency-cutoff. UNITS=Hz.",
+)
 parser.add_argument(
     "--nprocesses",
     type=int,
