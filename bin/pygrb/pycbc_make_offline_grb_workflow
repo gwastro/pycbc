@@ -545,6 +545,7 @@ if wflow.cp.has_section("workflow-injections"):
 
 # MAIN MATCHED FILTERING
 insp_dir = os.path.join(curr_dir, "inspiral")
+os.makedirs(insp_dir, exist_ok=True)
 inspiral_files = _workflow.setup_matchedfltr_workflow(
     wflow,
     sci_segs,
