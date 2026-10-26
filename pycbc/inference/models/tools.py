@@ -317,9 +317,10 @@ class DistMarg:
         self._current_params.update(self.marginalize_vector_params)
         self.sample_idx = self.premarg["sample_idx"][choice]
 
-        # Update the importance weights for each vector sample
-        logw = self.marginalize_vector_weights + logw[choice]
-        self.marginalize_vector_weights = logw - logsumexp(logw)
+        # Update the importance weights for each vector sample. They are
+        # not renormalized to sum to one: that would make the integral over
+        # the marginalized parameters an average over them instead.
+        self.marginalize_vector_weights = self.marginalize_vector_weights + logw[choice]
         return self.marginalize_vector_params
 
     def snr_draw(self, wfs=None, snrs=None, size=None):
@@ -535,6 +536,10 @@ class DistMarg:
 
             w = snr.squared_norm().numpy() / 2.0
             i = draw_sample(w, size=vsamples)
+            # the times are drawn from this detector's series in proportion
+            # to its likelihood, so normalizing over that series gives the
+            # probability they were drawn with
+            w -= logsumexp(w)
 
             if sref is not None:
                 mcweight += w[i]
@@ -547,7 +552,6 @@ class DistMarg:
                 mcweight = w[i]
 
             idx.append(i)
-        mcweight -= logsumexp(mcweight)
 
         # check if delay is in dict, if not, throw out
         ti = []
@@ -587,10 +591,22 @@ class DistMarg:
 
         tc = tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc[ifos[0]]
 
-        # Update the current proposed times and the marginalization values
-        # There's an overall normalization here which may introduce a constant
-        # factor at the moment.
-        logw_sky = -mcweight[ti] + numpy.log(wi) - numpy.log(resize_factor)
+        # Update the current proposed times and the marginalization values.
+        # The points are drawn from the incoherent likelihood, not from the
+        # prior, so each carries the ratio of the two. mcweight is a
+        # probability per time sample per sky bin: the sample spacing and
+        # the bin's share of the sky prior turn it into a density the tc
+        # prior can be divided by. Refilling to vsamples after dropping the
+        # draws that fell in an empty bin makes the sum an average over the
+        # ones kept, so the fraction kept multiplies back in. Assumes a
+        # uniform tc prior.
+        logw_sky = (
+            -mcweight[ti]
+            + numpy.log(wi)
+            + numpy.log(sref.delta_t / (tcmax - tcmin))
+            + numpy.log(resize_factor)
+        )
+        logw_sky[(tc < tcmin) | (tc > tcmax)] = -numpy.inf
 
         self.marginalize_vector_params["tc"] = tc
         self.marginalize_vector_params["ra"] = ra
