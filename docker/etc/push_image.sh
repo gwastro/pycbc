@@ -1,5 +1,10 @@
-SOURCE_TAG=`git show-ref | grep ${GITHUB_SHA} | grep -E -o "refs/tags.{0,100}" | cut -c11-`
-MASTER_HASH=`git rev-parse origin/master`
+# Find tag (if any) corresponding to the commit being tested
+SOURCE_TAG=`git tag --points-at ${GITHUB_SHA}`
+echo "Source tag: ${SOURCE_TAG}"
+
+# Find latest hash of upstream master branch
+MASTER_HASH=`git ls-remote origin master | cut -f 1`
+echo "Master hash: ${MASTER_HASH}"
 
 if [ "x${SOURCE_TAG}" == "x" ] ; then
     if [ "x${MASTER_HASH}" != "x${GITHUB_SHA}" ] ; then
