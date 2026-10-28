@@ -1,7 +1,6 @@
 # cython: profile=True
 import numpy
 cimport numpy
-from libc.stdlib cimport malloc, free
 from libc.math cimport cos, sin # This imports c's sin and cos function from the math library
 from cython import wraparound, boundscheck, cdivision
 from pycbc.types import real_same_precision_as
@@ -33,27 +32,37 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
                      int blen):
     # Do I need to declare UINT vs INT??
     cdef int num_parallel_regions, bstart, bend, i, j, k, r, start, end
-    cdef REALTYPE *outr
-    cdef REALTYPE *outi
-    cdef REALTYPE *pr
-    cdef REALTYPE *pi
-    cdef REALTYPE *vsr
-    cdef REALTYPE *vsi
-    cdef REALTYPE *outr_tmp
-    cdef REALTYPE *outi_tmp
+    cdef numpy.ndarray[numpy.float64_t, ndim=2, mode="c"] workspace
+    cdef double *power
+    cdef double *outr
+    cdef double *outi
+    cdef double *pr
+    cdef double *pi
+    cdef double *vsr
+    cdef double *vsi
+    cdef double *outr_tmp
+    cdef double *outi_tmp
     cdef COMPLEXTYPE v
-    cdef REALTYPE vr, vi, t1, t2, k1, k2, k3, vs, va
+    cdef double vr, vi, t1, t2, k1, k2, k3, vs, va
 
     num_parallel_regions = 1
 
-    outr = <REALTYPE *> malloc(n * sizeof(REALTYPE))
-    outi = <REALTYPE *> malloc(n * sizeof(REALTYPE))
-    pr = <REALTYPE *> malloc(n * sizeof(REALTYPE))
-    pi = <REALTYPE *> malloc(n * sizeof(REALTYPE))
-    vsr = <REALTYPE *> malloc(n * sizeof(REALTYPE))
-    vsi = <REALTYPE *> malloc(n * sizeof(REALTYPE))
-    outr_tmp = <REALTYPE *> malloc(n * sizeof(REALTYPE))
-    outi_tmp = <REALTYPE *> malloc(n * sizeof(REALTYPE))
+    workspace = numpy.empty((9, max(n, 1)), dtype=numpy.float64)
+
+    power = &workspace[0, 0]
+    outr = &workspace[1, 0]
+    outi = &workspace[2, 0]
+    pr = &workspace[3, 0]
+    pi = &workspace[4, 0]
+    vsr = &workspace[5, 0]
+    vsi = &workspace[6, 0]
+    outr_tmp = &workspace[7, 0]
+    outi_tmp = &workspace[8, 0]
+
+    # Keep input/output storage unchanged, but avoid rounding every rotation,
+    # term and addition to float32 when the correlation is complex64.
+    for i in range(n):
+        power[i] = chisq[i]
 
     for r in range(blen):
         bstart = bins[r] # int
@@ -118,16 +127,11 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
 
 
         for i in range(n):
-            chisq[i] += outr[i]*outr[i] + outi[i]*outi[i]
+            power[i] += outr[i]*outr[i] + outi[i]*outi[i]
 
-    free(outr)
-    free(outi)
-    free(pr)
-    free(pi)
-    free(vsr)
-    free(vsi)
-    free(outr_tmp)
-    free(outi_tmp)
+    # Round only once when storing the final sum of bin powers.
+    for i in range(n):
+        chisq[i] = power[i]
 
 def chisq_accum_bin_numpy(chisq, q):
     chisq += q.squared_norm()
@@ -154,4 +158,3 @@ def shift_sum(v1, shifts, bins):
     point_chisq_code(chisq, v1, n, slen, shifts, bins, blen)
 
     return  chisq
-
