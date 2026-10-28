@@ -131,6 +131,7 @@ def convert_inputstr(inputstr, choices):
     try:
         if 'cut_value_str' in locals():
             cut_value = float(cut_value_str)
+            return {(cut_param, ineq_functions[cut_limit]): cut_value}
         else:
             cut_value1 = float(cut_value1_str)
     except ValueError as value_e:
@@ -138,21 +139,26 @@ def convert_inputstr(inputstr, choices):
                        "got '%s'.", cut_value_str if 'cut_value_str' in locals() else cut_value1_str)
         raise value_e
 
+    if 'cut_limit2' in locals() and cut_limit2.lower() not in ineq_choices:
+        raise NotImplementedError("Cut inequality " + cut_limit2.lower() + " "
+                                  "not recognised, choose from "
+                                  + ", ".join(ineq_choices))
     if 'cut_limit2' in locals():
-        if cut_limit2.lower() not in ineq_choices:
-            raise NotImplementedError("Cut inequality " + cut_limit2.lower() + " "
-                                      "not recognised, choose from "
-                                      + ", ".join(ineq_choices))
         try:
             cut_value2 = float(cut_value2_str)
+            if cut_value2 < cut_value1:
+                return {(cut_param, ineq_functions[cut_limit1], ineq_functions[cut_limit2]): (cut_value1, cut_value2)}
+            else:
+                raise NotImplementedError("When two limits are provided, the threshold VALUE for the "
+                                          "upper* limit must be less than that of "
+                                          "the lower* limit; the provided values: "
+                                          + str(cut_value2) + " >= " + str(cut_value1))
         except ValueError as value_e:
-            print("ERROR: Another cut value must be convertible into a float, "
+            print("ERROR: The second cut value must be convertible into a float, "
                            "got '%s'.", cut_value2_str)
             raise value_e
 
-        return {(cut_param, ineq_functions[cut_limit1], ineq_functions[cut_limit2]): (cut_value1, cut_value2)}
 
-    return {(cut_param, ineq_functions[cut_limit]): cut_value}
 
 
 def check_update_cuts(cut_dict, new_cut):
@@ -471,19 +477,17 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
             parameter, cut_function = parameter_cut_function
         elif len(parameter_cut_function) == 3 and len(cut_thresh) == 2:
             parameter, cut_function1, cut_function2 = parameter_cut_function
-            cut_thresh1 = cut_thresh[1]
-            cut_thresh2 = cut_thresh[0]
 
         if parameter in bank_conv.conversion_options:
             # Calculate the parameter values using the bank property helper
             values = bank_conv.get_bank_property(parameter, bank, tids_out)
             # Only keep templates which pass this cut
-            tids_out = tids_out[cut_function(values, cut_thresh)] if 'cut_function' in locals() else tids_out = tids_out[cut_function1(values, cut_thresh1)]
+            if 'cut_function' in locals():
+                tids_out = tids_out[cut_function(values, cut_thresh)]
+            else:
+                tids_out = tids_out[cut_function1(values, cut_thresh[0])]
             if 'cut_function2' in locals():
-                if cut_thresh1 > cut_thresh2:
-                    tids_out = np.union1d(tids_out, tids_out[cut_function2(values, cut_thresh2)])
-                else:
-                    tids_out = np.intersect1d(tids_out, tids_out[cut_function2(values, cut_thresh2)])
+                tids_out = np.union1d(tids_out, tids_out[cut_function2(values, cut_thresh[1])])
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
@@ -492,18 +496,11 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
                                                   cut_thresh,
                                                   tids_out)
                 if 'cut_function2' in locals():
-                    if cut_thresh1 > cut_thresh2:
-                        tids_out = np.union1d(tids_out, apply_template_fit_cut(statistic,
-                                                        ifos,
-                                                        (parameter, cut_function2),
-                                                        cut_thresh2,
-                                                        tids_out))
-                    else:
-                        tids_out = np.intersect1d(tids_out, apply_template_fit_cut(statistic,
-                                                        ifos,
-                                                        (parameter, cut_function2),
-                                                        cut_thresh2,
-                                                        tids_out))
+                    tids_out = np.union1d(tids_out, apply_template_fit_cut(statistic,
+                                                    ifos,
+                                                    (parameter, cut_function2),
+                                                    cut_thresh[1],
+                                                    tids_out))
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
