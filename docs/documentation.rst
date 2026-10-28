@@ -11,7 +11,7 @@ Sphinx
 
 PyCBC uses the `sphinx` documentation system to produce automatic documentation from all modules and functions, with a layer on top to describe the code appropriately.
 
-The `sphinx website <http://sphinx-doc.org>`_ has a `nice tutorial <http://sphinx-doc.org/rest.html#rst-primer>`_ on the reStructuredText format used for documentation.
+The `sphinx website <https://sphinx-doc.org>`_ has a `nice tutorial <https://sphinx-doc.org/rest.html#rst-primer>`_ on the reStructuredText format used for documentation.
 
 Documenting the PyCBC package
 =============================
