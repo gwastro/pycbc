@@ -15,7 +15,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
-        python_-ersion: ${{ steps.defaults.outputs.python_version }}
+        python-version: ${{ steps.defaults.outputs.python_version }}
     - name: install condor and pegasus
       run: |
         bash tools/ci_install_htcondor_pegasus.sh

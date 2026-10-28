@@ -7,13 +7,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  defaults:
+    uses: ./.github/workflows/ci-defaults.yml
+
   build:
+    needs: defaults
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 60
       matrix:
         os: [ubuntu-24.04]
-        python_version: ['3.11', '3.12', '3.13']
+        python_version: ${{ fromJSON(needs.defaults.outputs.python_versions_matrix) }}
     steps:
     - uses: actions/checkout@v5
     - name: Configure CI downloads

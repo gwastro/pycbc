@@ -7,15 +7,24 @@ inputs:
     required: false
     default: '3.11'
 
+  python_versions_matrix:
+    description: "Python versions for test matrices (JSON array)"
+    required: false
+    default: '["3.11", "3.12", "3.13", "3.14"]'
+
 runs:
   using: composite
   steps:
     - id: set
       run: |
         echo "python_version=${{ inputs.python_version }}" >> $GITHUB_OUTPUT
+        echo "python_versions_matrix=${{ inputs.python_versions_matrix }}" >> $GITHUB_OUTPUT
       shell: bash
 
 outputs:
   python_version:
     description: "Python version string"
     value: ${{ steps.set.outputs.python_version }}
+  python_versions_matrix:
+    description: "Python test matrix as a JSON array"
+    value: ${{ steps.set.outputs.python_versions_matrix }}

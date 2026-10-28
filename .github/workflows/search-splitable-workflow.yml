@@ -16,10 +16,13 @@ jobs:
     - uses: actions/checkout@v5
     - name: Configure CI downloads
       uses: ./.github/actions/configure-downloads
+    - name: Load defaults
+      id: defaults
+      uses: ./.github/actions/defaults
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
-        python-version: '3.11'
+        python-version: ${{ steps.defaults.outputs.python_version }}
     - name: Install HTCondor and Pegasus
       run: |
         bash tools/ci_install_htcondor_pegasus.sh
