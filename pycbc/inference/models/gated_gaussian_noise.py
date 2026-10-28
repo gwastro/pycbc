@@ -89,6 +89,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
         if paint_method is None:
             paint_method = kwargs.get("paint-method", "toeplitz")
         self.paint_method = paint_method
+        paint_ridge = kwargs.get("paint_ridge")
+        if paint_ridge is None:
+            paint_ridge = kwargs.get("paint-ridge", 1e-10)
+        self.paint_ridge = float(paint_ridge)
         self._cov_matrices = {}
         # cache samples and linear regression for determinant extrapolation
         self._cov_samples = {}
@@ -362,8 +366,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         detector, store to cache; future calls of this function will pull from
         that cache instead.
         """
-        # don't bother with covariance matrix if we're using toeplitz solver
-        if self.paint_method == "toeplitz":
+        # don't bother with covariance matrix if we're using toeplitz or cholesky solver
+        if self.paint_method in ("toeplitz", "cholesky"):
             return None
         # check if there are cache results for this gate length
         lindex, rindex = self.gate_indices(det)
@@ -377,7 +381,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         except KeyError:
             invpsd = self._invpsds[det]
             # construct and invert covariance matrix
-            invmat = invert_covariance(invpsd, lindex, rindex)
+            invmat = invert_covariance(invpsd, lindex, rindex, ridge=self.paint_ridge)
             cov_matrices[det] = invmat
             # cache results
             self._cov_matrices[int(rindex - lindex)] = cov_matrices
@@ -440,15 +444,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
         out = {}
         for det, d in self.td_data.items():
             # make sure the cache at least has the detectors in it
-            try:
-                cache = self._gated_data[det]
-            except KeyError:
-                cache = self._gated_data[det] = {}
+            cache = self._gated_data.setdefault(det, {})
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
-            try:
+            if (gatestartdelay, dgatedelay) in cache:
                 dtilde = cache[gatestartdelay, dgatedelay]
-            except KeyError:
+            else:
                 # doesn't exist yet, or the gate times changed
                 cache.clear()
                 invmat = self.invert_covariance(det)
@@ -460,6 +461,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                     method="paint",
                     paint_method=self.paint_method,
                     paint_invmat=invmat,
+                    paint_ridge=self.paint_ridge,
                 )
                 dtilde = d.to_frequencyseries()
                 # save for next time
@@ -662,6 +664,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 method="paint",
                 paint_method=self.paint_method,
                 paint_invmat=invmat,
+                paint_ridge=self.paint_ridge,
             )
             # convert to the frequency series
             gated_d = gated_dt.to_frequencyseries()
@@ -858,6 +861,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
                 method="paint",
                 paint_method=self.paint_method,
                 paint_invmat=invmat,
+                paint_ridge=self.paint_ridge,
             )
             gated_rtilde = gated_res.to_frequencyseries()
             # overwhiten
@@ -945,6 +949,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
                 method="paint",
                 paint_method=self.paint_method,
                 paint_invmat=invmat,
+                paint_ridge=self.paint_ridge,
             )
             h = ht.to_frequencyseries()
             out[det] = h
@@ -1043,6 +1048,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                     method="paint",
                     paint_method=self.paint_method,
                     paint_invmat=invmat,
+                    paint_ridge=self.paint_ridge,
                 )
                 h = ht.to_frequencyseries()
                 pols.append(h)
@@ -1347,6 +1353,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                 method="paint",
                 paint_method=self.paint_method,
                 paint_invmat=invmat,
+                paint_ridge=self.paint_ridge,
             )
             hst = hst.gate(
                 gatestartdelay + dgatedelay / 2,
@@ -1356,6 +1363,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                 method="paint",
                 paint_method=self.paint_method,
                 paint_invmat=invmat,
+                paint_ridge=self.paint_ridge,
             )
             hc = hct.to_frequencyseries()
             hs = hst.to_frequencyseries()

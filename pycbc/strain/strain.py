@@ -415,6 +415,8 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
         gate_params = numpy.loadtxt(opt.gating_file)
         if len(gate_params.shape) == 1:
             gate_params = [gate_params]
+        paint_m = getattr(opt, "paint_method", "cholesky")
+        paint_r = getattr(opt, "paint_ridge", 1e-10)
         for gate_time, gate_window, gate_taper in gate_params:
             strain = strain.gate(
                 gate_time,
@@ -422,6 +424,8 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
                 method=opt.gating_method,
                 copy=False,
                 taper_width=gate_taper,
+                paint_method=paint_m,
+                paint_ridge=paint_r,
             )
         gating_info["file"] = [
             gp
@@ -431,6 +435,8 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
         ]
 
     if opt.autogating_threshold is not None:
+        paint_m = getattr(opt, "paint_method", "cholesky")
+        paint_r = getattr(opt, "paint_ridge", 1e-10)
         gating_info["auto"] = []
         for _ in range(opt.autogating_max_iterations):
             glitch_times = detect_loud_glitches(
@@ -451,6 +457,8 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
                     method=opt.gating_method,
                     copy=False,
                     taper_width=gate_taper,
+                    paint_method=paint_m,
+                    paint_ridge=paint_r,
                 )
             if len(glitch_times) > 0:
                 logger.info(
@@ -818,6 +826,19 @@ def insert_strain_option_group(parser, gps_times=True):
         default="taper",
         help="Choose the method for gating. Default: `taper`",
         choices=["hard", "taper", "paint"],
+    )
+    data_reading_group.add_argument(
+        "--paint-method",
+        type=str,
+        default="cholesky",
+        choices=["cholesky", "toeplitz", "matmul"],
+        help="Solver method for inpainting. Default: `cholesky`",
+    )
+    data_reading_group.add_argument(
+        "--paint-ridge",
+        type=float,
+        default=1e-10,
+        help="Diagonal regularization ridge parameter for inpainting. Default: 1e-10",
     )
     # Optional
     data_reading_group.add_argument(
@@ -1245,6 +1266,23 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
         default="taper",
         help="Choose the method for gating. Default: `taper`",
         choices=["hard", "taper", "paint"],
+    )
+    data_reading_group_multi.add_argument(
+        "--paint-method",
+        type=str,
+        nargs="+",
+        action=MultiDetOptionAction,
+        default="cholesky",
+        choices=["cholesky", "toeplitz", "matmul"],
+        help="Solver method for inpainting. Default: `cholesky`",
+    )
+    data_reading_group_multi.add_argument(
+        "--paint-ridge",
+        type=float,
+        nargs="+",
+        action=MultiDetOptionAction,
+        default=1e-10,
+        help="Diagonal regularization ridge parameter for inpainting. Default: 1e-10",
     )
 
     # Optional
