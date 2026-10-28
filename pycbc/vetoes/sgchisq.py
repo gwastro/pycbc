@@ -111,6 +111,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         bchisq_dof=None,
         indices=None,
         overwhitened=True,
+        subtract_signal=True,
     ):
         """
         Calculate sine-Gaussian chisq
@@ -136,6 +137,8 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             The indices of the snr peaks.
         overwhitened: bool, optional
             Whether stilde is already divided by the PSD.
+        subtract_signal: bool, optional
+            Whether to subtract the expected signal overlap from each tile.
 
         Returns
         -------
@@ -150,18 +153,20 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         if template.params.template_hash not in self.params:
             return chisq
 
+        snrs = numpy.array(snrv) * snr_norm
         if bchisq is not None and self.snr_threshold is not None:
             # Skip if newsnr too low
-            snr = abs(numpy.array(snrv) * snr_norm)
             rchisq = numpy.array(bchisq) / numpy.array(bchisq_dof)
-            nsnr = ranking.newsnr(snr, rchisq)
+            nsnr = ranking.newsnr(abs(snrs), rchisq)
             above = numpy.flatnonzero(nsnr >= self.snr_threshold)
             if not len(above):
                 return chisq
         else:
             above = range(len(snrv))
 
-        tiles = self.cached_tiles(stilde, psd, template)
+        tiles = self.cached_tiles(
+            stilde, psd, template, subtract_signal=subtract_signal
+        )
         if tiles is None:
             return chisq
 
@@ -177,11 +182,15 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             stilde_shift = apply_fseries_time_shift(band, -time, kmin=klo)
             chisq[i] = 0
             # Calculate the sum of SNR^2 for the sine-Gaussians specified
-            for gtem, kmin, kmax, gsigma in tiles:
+            for gtem, kmin, kmax, gsigma, overlap in tiles:
                 # Calculate the SNR of the tile
                 gsnr = (gtem[kmin:kmax] * stilde_shift[kmin:kmax]).sum()
                 gsnr *= 4.0 * gtem.delta_f / gsigma
-                chisq[i] += abs(gsnr) ** 2.0
+                if subtract_signal:
+                    gsnr -= snrs[i] * overlap
+                    chisq[i] += abs(gsnr) ** 2.0 / (1.0 - abs(overlap) ** 2.0)
+                else:
+                    chisq[i] += abs(gsnr) ** 2.0
             chisq[i] /= 2 * len(tiles)
         return chisq
 
@@ -195,7 +204,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         fstep = bins[-2] - bins[-3]
         return float((bins[-2] + fstep) * template.delta_f)
 
-    def cached_tiles(self, stilde, psd, template):
+    def cached_tiles(self, stilde, psd, template, subtract_signal=True):
         template_hash = template.params.template_hash
         fpeak = self.peak_frequency(template, psd)
         key = (
@@ -205,6 +214,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             template.f_lower,
             len(stilde),
             stilde.delta_f,
+            subtract_signal,
         )
         if key not in self._tile_cache:
             # Only apply the sine-Gaussian in a +-50 Hz range around the
@@ -216,6 +226,12 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             fstop = len(stilde) * stilde.delta_f * 0.9
             delta_f = stilde.delta_f
             fmin = int(template.f_lower / psd.delta_f) * delta_f
+            if subtract_signal:
+                step = round(template.delta_f / delta_f)
+                t_psd = getattr(template, "psd", psd[::step][: len(template)])
+                hsigma = sigma(
+                    template, psd=t_psd, low_frequency_cutoff=template.f_lower
+                )
             tiles = []
             for descr in self.params[template_hash].split(","):
                 # Get the q and frequency offset from the descriptor
@@ -241,6 +257,14 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                     low_frequency_cutoff=flow,
                     high_frequency_cutoff=fhigh,
                 )
-                tiles.append((gtem, kmin, kmax, gsigma))
+                if subtract_signal:
+                    kl, kh = kmin // step, kmax // step
+                    overlap = (
+                        gtem[::step][kl:kh] * template[kl:kh] / t_psd[kl:kh]
+                    ).sum()
+                    overlap *= 4.0 * template.delta_f / (gsigma * hsigma)
+                else:
+                    overlap = 0.0
+                tiles.append((gtem, kmin, kmax, gsigma, overlap))
             self._tile_cache[key] = tiles
         return self._tile_cache[key]
