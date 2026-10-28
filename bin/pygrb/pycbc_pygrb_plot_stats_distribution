@@ -30,9 +30,9 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pycbc.version
 from matplotlib import rc
 
-import pycbc.version
 from pycbc import init_logging
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results import save_fig_with_metadata
