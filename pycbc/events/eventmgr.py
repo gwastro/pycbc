@@ -425,7 +425,7 @@ class EventManager:
 
     def consolidate_events(self, opt, gwstrain=None):
         logger.info("We currently have %d triggers", len(self.events))
-        if opt.chisq_threshold and opt.chisq_bins:
+        if getattr(opt, "chisq_threshold", None) and opt.chisq_bins:
             logger.info("Removing triggers with poor chisq")
             self.chisq_threshold(opt.chisq_threshold, opt.chisq_bins, opt.chisq_delta)
             logger.info("%d remaining triggers", len(self.events))
@@ -514,6 +514,7 @@ class EventManager:
             f["bank_chisq"] = self.events["bank_chisq"]
             f["bank_chisq_dof"] = self.events["bank_chisq_dof"]
             f["cont_chisq"] = self.events["cont_chisq"]
+            f["cont_chisq_dof"] = self.events["cont_chisq_dof"]
             f["end_time"] = (
                 self.events["time_index"] / float(self.opt.sample_rate)
                 + self.opt.gps_start_time
@@ -549,16 +550,6 @@ class EventManager:
             f["template_duration"] = numpy.array(
                 template_durations, dtype=numpy.float32
             )[tid]
-
-            # FIXME: Can we get this value from the autochisq instance?
-            cont_dof = self.opt.autochi_number_points
-            if self.opt.autochi_onesided is None:
-                cont_dof = cont_dof * 2
-            if self.opt.autochi_two_phase:
-                cont_dof = cont_dof * 2
-            if self.opt.autochi_max_valued_dof:
-                cont_dof = self.opt.autochi_max_valued_dof
-            f["cont_chisq_dof"] = numpy.repeat(cont_dof, len(self.events))
 
             if "chisq_dof" in self.events.dtype.names:
                 f["chisq_dof"] = self.events["chisq_dof"] / 2 + 1

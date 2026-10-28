@@ -20,6 +20,9 @@ class SingleDetSGChisq(SingleDetPowerChisq):
     running the sine-Gaussian chisq
     """
 
+    name = "sg"
+    columns = {"sg_chisq": numpy.float32}
+    default_values = {"sg_chisq": 1}
     returns = {"sg_chisq": numpy.float32}
 
     def __init__(self, bank, num_bins=0, snr_threshold=None, chisq_locations=None):
@@ -77,10 +80,25 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         )
 
     @classmethod
-    def from_cli(cls, args, bank=None, chisq_bins=None):
+    def from_cli(cls, args, bank=None, chisq_bins=None, **kwargs):
         if chisq_bins is None:
             chisq_bins = str(args.chisq_bins)
         return cls(bank, chisq_bins, args.sgchisq_snr_threshold, args.sgchisq_locations)
+
+    def evaluate_batch(self, batch, j):
+        """Evaluate sine-Gaussian chisq for trigger j in a batch."""
+        stilde = batch.stilde
+        template = batch.template(j)
+        val = self.values(
+            stilde,
+            template,
+            stilde.psd,
+            numpy.array([batch.snr[j]]),
+            1,
+            indices=numpy.array([batch.time_index[j]]),
+            overwhitened=False,
+        )
+        return {"sg_chisq": val[0]}
 
     def values(
         self,
@@ -173,7 +191,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         last 2 chisq bins. We cannot use the final chisq bin edge as it
         does not have to be where the waveform terminates.
         """
-        bins = self.cached_chisq_bins(template, psd)
+        bins = self.cached_chisq_bins(template, getattr(template, "psd", psd))
         fstep = bins[-2] - bins[-3]
         return float((bins[-2] + fstep) * template.delta_f)
 

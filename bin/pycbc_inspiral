@@ -341,7 +341,7 @@ def template_triggers(t_num):
             idx + stilde.analyze.start,
         )
 
-        out_vals["cont_chisq"], _ = autochisq.values(
+        out_vals["cont_chisq"], out_vals["cont_chisq_dof"] = autochisq.values(
             snr,
             idx + stilde.analyze.start,
             template,
@@ -414,6 +414,7 @@ with ctx:
         "bank_chisq": float32,
         "bank_chisq_dof": int,
         "cont_chisq": float32,
+        "cont_chisq_dof": int,
         "psd_var_val": float32,
         "sigmasq": float32,
     }
