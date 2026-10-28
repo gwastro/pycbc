@@ -116,9 +116,10 @@ parser.add_argument(
     "--tau0-threshold",
     type=float,
     required=True,
-    help="Width of the tau0 bins. A proposed template is only compared to existing "
-    "templates in the same or adjacent tau0 bin. Also sets when old templates "
-    "are dropped from memory. UNITS=seconds.",
+    help="Tau0 spacing used to limit match comparisons. A proposed template is only "
+    "compared to existing templates whose tau0 falls in the same or an adjacent "
+    "interval of this width. This is separate from the placement regions set by "
+    "--tau0-start, --tau0-end and --tau0-crawl. UNITS=seconds.",
 )
 parser.add_argument(
     "--placement-iterations",
