@@ -16,9 +16,12 @@ runs:
   using: composite
   steps:
     - id: set
+      env:
+        PYTHON_VERSION: ${{ inputs.python_version }}
+        PYTHON_VERSIONS_MATRIX: ${{ inputs.python_versions_matrix }}
       run: |
-        echo "python_version=${{ inputs.python_version }}" >> $GITHUB_OUTPUT
-        echo "python_versions_matrix=${{ inputs.python_versions_matrix }}" >> $GITHUB_OUTPUT
+        echo "python_version=$PYTHON_VERSION" >> "$GITHUB_OUTPUT"
+        echo "python_versions_matrix=$PYTHON_VERSIONS_MATRIX" >> "$GITHUB_OUTPUT"
       shell: bash
 
 outputs:
