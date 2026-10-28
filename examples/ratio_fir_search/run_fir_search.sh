@@ -11,8 +11,6 @@ set -e
 export OMP_NUM_THREADS=1
 
 pycbc_inspiral_fir \
-    --fir-length 4096 \
-    --batch-size 64 \
     --pad-data 8 \
     --strain-high-pass 15 \
     --sample-rate 2048 \
@@ -26,14 +24,8 @@ pycbc_inspiral_fir \
     --psd-segment-stride 8 \
     --psd-inverse-length 16 \
     --psd-num-segments 63 \
-    --psdvar-segment 8 \
-    --psdvar-short-segment 0.25 \
-    --psdvar-long-segment 512 \
-    --psdvar-psd-duration 8 \
-    --psdvar-psd-stride 4 \
-    --psdvar-low-freq 20 \
-    --psdvar-high-freq 480 \
     --low-frequency-cutoff 20 \
+    --high-frequency-cutoff 900 \
     --snr-threshold 5.0 \
     --cluster-window 1 \
     --chisq-bins 64 \

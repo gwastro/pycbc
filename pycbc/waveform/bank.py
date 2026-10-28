@@ -44,9 +44,13 @@ import pycbc.waveform
 import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.libutils import import_optional
 from pycbc.types import FrequencySeries, zeros
 
 logger = logging.getLogger(__name__)
+
+mf = import_optional("matchedfilter")
+mf_search = import_optional("matchedfilter.search")
 
 
 def sigma_cached(self, psd):
@@ -1265,8 +1269,10 @@ class RatioFilterBank(FilterBank):
             for lvl, keys in self.level_keys.items()
         }
 
-        # Cumulative sample shifts from higher FIR levels (level_num_levels .. level_2)
+        # Cumulative sample shifts and sigma rescalings from higher FIR levels
+        # (level_num_levels .. level_2)
         self.parent_shift_map = {}
+        parent_sigma_rescale = {}
         for lvl in range(self.num_levels, 1, -1):
             self.parent_shift_map = {
                 int(c): self.parent_shift_map.get(int(k), 0) + int(s)
@@ -1277,15 +1283,30 @@ class RatioFilterBank(FilterBank):
                     strict=False,
                 )
             }
+            parent_sigma_rescale = {
+                int(c): parent_sigma_rescale.get(int(k), 1.0) * float(sig[1] / sig[0])
+                for k in self.level_keys[lvl]
+                for c, sig in zip(
+                    self.level_groups[lvl][k]["fine_bank_index"][:],
+                    self.level_groups[lvl][k]["sigmas"][:],
+                    strict=False,
+                )
+            }
 
-        # Precompute fine-to-parent sigma rescaling factors from level-1 FIR groups
+        # Precompute fine-to-top sigma rescaling factors from level-1 FIR groups
         self.sigma_sigma_rescale = np.ones(len(self.table))
         for coarse_id in self.level_keys[1]:
             c_group = self.level_groups[1][coarse_id]
             fine_indices = c_group["fine_bank_index"][:]
             if len(fine_indices) > 0:
                 sigmas = c_group["sigmas"][:]
-                self.sigma_sigma_rescale[fine_indices] = sigmas[:, 1] / sigmas[:, 0]
+                p_sigma = parent_sigma_rescale.get(int(coarse_id), 1.0)
+                self.sigma_sigma_rescale[fine_indices] = p_sigma * (
+                    sigmas[:, 1] / sigmas[:, 0]
+                )
+        self._groups = {}
+        self._parent_specs = {}
+        self._fine_templates = {}
 
     def close_filehandler(self):
         """Close the underlying HDF5 file handle so forked worker processes can
@@ -1336,6 +1357,20 @@ class RatioFilterBank(FilterBank):
     @coarse_indices.setter
     def coarse_indices(self, value):
         self.level_indices[1] = np.asarray(value, dtype=int)
+
+    @property
+    def top_keys(self):
+        """Keys in the highest FIR group."""
+        return self.level_keys[self.num_levels]
+
+    @property
+    def top_indices(self):
+        """Active template indices in the highest FIR group."""
+        return self.level_indices[self.num_levels]
+
+    @top_indices.setter
+    def top_indices(self, value):
+        self.level_indices[self.num_levels] = np.asarray(value, dtype=int)
 
     def template_thinning(self, inj_filter_rejector):
         """Remove templates from bank that are far from all injections."""
@@ -1489,6 +1524,154 @@ class RatioFilterBank(FilterBank):
                 shifts[sort_idx],
             )
         return taps[sort_idx], actual_tap_counts[sort_idx], fine_indices[sort_idx]
+
+    def build_children(self, top_index):
+        """
+        Construct the ``Inner`` and ``Leaf`` hierarchy nodes below ``top_index``.
+
+        Parameters
+        ----------
+        top_index : int
+            The index of the top-level reference waveform in ``level_{num_levels}``.
+
+        Returns
+        -------
+        children : list
+            List of ``Inner`` or ``Leaf`` child nodes below ``top_index``.
+        groups : dict
+            Mapping from each active level-1 ``coarse_index`` to
+            ``(fine_indices, shifts, ancestors)``.
+        """
+        coarse_keep = (
+            {int(x) for x in self.coarse_indices}
+            if len(self.coarse_indices) < len(self.coarse_keys)
+            else None
+        )
+        self._groups = {}
+        self._parent_specs = {}
+        self._fine_templates = {}
+
+        def _build(level, parent_index, ancestors=()):
+            if level == 1:
+                coarse_index = int(parent_index)
+                if coarse_keep is not None and coarse_index not in coarse_keep:
+                    return []
+                taps, counts, fine_indices, shifts = self.get_firs(
+                    coarse_index, level=1, return_shifts=True
+                )
+                if len(fine_indices) == 0:
+                    return []
+                self._groups[coarse_index] = (fine_indices, shifts, ancestors)
+                return [mf_search.Leaf(taps, counts, lags=shifts, node_id=coarse_index)]
+
+            taps_u, counts_u, child_indices = self.get_firs(parent_index, level=level)
+            nodes = []
+            for row, child_index in enumerate(child_indices):
+                child_index = int(child_index)
+                tap_count = int(counts_u[row])
+                row_taps = np.asarray(taps_u[row], dtype=np.float32)
+                children = _build(
+                    level - 1,
+                    child_index,
+                    (*ancestors, (row_taps, tap_count)),
+                )
+                if children:
+                    nodes.append(
+                        mf_search.Inner(
+                            row_taps,
+                            count=tap_count,
+                            children=children,
+                            node_id=child_index,
+                        )
+                    )
+            return nodes
+
+        return _build(self.num_levels, int(top_index)), self._groups
+
+    def _parent_spectrum(self, top_template, coarse_index, block_length, step):
+        """
+        Return the frequency-domain spectrum of a leaf group's parent node
+        decimated onto a ``block_length``-sample FFT grid.
+
+        Parameters
+        ----------
+        top_template : FrequencySeries
+            The top-level reference waveform.
+        coarse_index : int
+            The level-1 leaf group index.
+        block_length : int
+            The time-domain FFT block length in samples.
+        step : int
+            Frequency-bin decimation factor from ``top_template`` to the leaf
+            FFT block grid.
+
+        Returns
+        -------
+        spectrum : np.ndarray
+            One-sided complex frequency spectrum of the leaf's parent node.
+        """
+        key = (coarse_index, block_length)
+        if key not in self._parent_specs:
+            freq_length = block_length // 2 + 1
+            spec = top_template[::step][:freq_length].numpy().copy()
+            _, _, ancestors = self._groups[coarse_index]
+            for ancestor_taps, tap_count in ancestors:
+                n_fft = max(block_length, 1 << tap_count.bit_length())
+                ancestor_filt, _ = mf.template_spectra(
+                    ancestor_taps[:tap_count], [tap_count], n_fft
+                )
+                spec = spec * np.conj(
+                    ancestor_filt[0, :: n_fft // block_length][:freq_length]
+                )
+            self._parent_specs[key] = spec
+        return self._parent_specs[key]
+
+    def reconstruct_fine_template(
+        self, top_template, coarse_index, filter_index, leaf_bank
+    ):
+        """
+        Reconstruct and cache the frequency-domain template for a leaf filter
+        on its FFT block grid.
+
+        Parameters
+        ----------
+        top_template : FrequencySeries
+            The top-level reference waveform.
+        coarse_index : int
+            The level-1 leaf group index.
+        filter_index : int
+            The index of the filter within ``leaf_bank``.
+        leaf_bank : matchedfilter.TimeDomainFilterBank
+            The leaf filter bank containing the FIR filter spectra and block
+            lengths.
+
+        Returns
+        -------
+        tmplt : FrequencySeries
+            The reconstructed fine-bank template on the leaf FFT block grid.
+        """
+        filter_index = int(filter_index)
+        key = (coarse_index, filter_index)
+        if key not in self._fine_templates:
+            block_length = leaf_bank.get_block_length(filter_index)
+            freq_length = block_length // 2 + 1
+            sample_rate = float(leaf_bank.data_sample_rate)
+            delta_f = sample_rate / block_length
+            step = round(delta_f / top_template.delta_f)
+            filt_f = leaf_bank.get_filter_f(filter_index)
+            parent_spec = self._parent_spectrum(
+                top_template, coarse_index, block_length, step
+            )
+            fine_indices, _, _ = self._groups[coarse_index]
+            tmplt = FrequencySeries(
+                np.conj(filt_f[:freq_length]) * parent_spec / sample_rate,
+                delta_f=delta_f,
+                dtype=self.dtype,
+            )
+            tmplt.params = self.table[int(fine_indices[filter_index])]
+            tmplt.f_lower = top_template.f_lower
+            self._fine_templates[key] = tmplt
+        return self._fine_templates[key]
 
 
 __all__ = (

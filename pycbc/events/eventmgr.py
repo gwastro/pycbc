@@ -451,7 +451,7 @@ class EventManager:
             )
             logger.info("%d remaining triggers", len(self.events))
 
-        if opt.injection_window and hasattr(gwstrain, "injections"):
+        if getattr(opt, "injection_window", None) and hasattr(gwstrain, "injections"):
             logger.info(
                 "Keeping triggers within %s seconds of injection", opt.injection_window
             )
@@ -621,6 +621,10 @@ class EventManager:
                     f["gating/" + gate_type + "/pad"] = numpy.array(
                         [g[2] for g in gating_info[gate_type]]
                     )
+        if hasattr(self, "non_threshold_time") and self.non_threshold_time is not None:
+            f["search/non_threshold_time"] = numpy.array(
+                [float(self.non_threshold_time)]
+            )
 
         f.f.close()
 
