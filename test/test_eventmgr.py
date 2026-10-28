@@ -118,6 +118,7 @@ class TestEventManager(unittest.TestCase):
             "sigmasq": np.array([45.0], dtype=np.float32),
             "template_hash": np.array([l1_hash]),
         }
+        mgr_l1.non_threshold_time = 4.0
         mgr_l1.add_template_events(self.columns, [l1_events[c] for c in self.columns])
         mgr_l1.finalize_template_events()
         mgr_l1.write_events(self.h5_path, mode="a")
@@ -169,6 +170,8 @@ class TestEventManager(unittest.TestCase):
                 hf["L1/template_hash"][:], l1_events["template_hash"]
             )
             self.assertIn("L1/search/start_time", hf)
+            self.assertIn("L1/search/non_threshold_time", hf)
+            np.testing.assert_allclose(hf["L1/search/non_threshold_time"][:], [4.0])
 
             # Check V1 datasets
             self.assertIn("V1/snr", hf)

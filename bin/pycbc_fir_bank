@@ -387,11 +387,6 @@ def main():
         "--max-taps", nargs="+", type=int, default=[301], help="Max taps per level."
     )
     parser.add_argument(
-        "--complex-taps",
-        action="store_true",
-        help="Use complex FIR taps at level 1 to allow phase interpolation.",
-    )
-    parser.add_argument(
         "--full-resolution",
         action="store_true",
         help="Generate waveforms at full segment-length resolution before "
@@ -453,7 +448,7 @@ def main():
             "max_taps": max_taps,
             "min_match": min_match,
             "reg": 1e-2 if is_lowest else 1e-6,
-            "complex_taps": is_lowest and args.complex_taps,
+            "complex_taps": is_lowest,
             "scale_by_sr": not is_lowest,
         }
         psd = pycbc.psd.from_cli(

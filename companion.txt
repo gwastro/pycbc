@@ -28,3 +28,6 @@ sympy>=1.9
 # Needed for KDE trigger statistics
 awkde @ git+https://github.com/mennthor/awkde.git@5b601fe4d92229d5deb8737fd121dce193bac552
 scikit-learn
+
+# Needed for hierarchical FIR/ratio matched filtering
+matchedfilter==0.1.0a9
