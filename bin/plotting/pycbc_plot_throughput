@@ -30,60 +30,55 @@ pycbc.init_logging(args.verbose)
 
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 10))
 
-for pa in args.input_file:
+for pa in dict.fromkeys(args.input_file):
     f = HFile(pa, "r")
-    ifo = tuple(f.keys())[0]
+    for ifo in f:
+        if "search" not in f[ifo]:
+            continue
+        dur = f[f"{ifo}/search/end_time"][:] - f[f"{ifo}/search/start_time"][:]
+        dur /= dur.mean()
+        w = dur if args.duration_weighted else None
 
-    dur = f["%s/search/end_time" % ifo][:] - f["%s/search/start_time" % ifo][:]
-    dur /= dur.mean()
-    if args.duration_weighted:
-        w = dur
-    else:
-        w = None
+        search_grp = f[f"{ifo}/search"]
+        tpc = (
+            f[f"{ifo}/search/templates_per_core"][:]
+            if "templates_per_core" in search_grp
+            else None
+        )
+        fpc = (
+            f[f"{ifo}/search/filter_rate_per_core"][:]
+            if "filter_rate_per_core" in search_grp
+            else None
+        )
+        stf = (
+            f[f"{ifo}/search/setup_time_fraction"][:]
+            if "setup_time_fraction" in search_grp
+            else None
+        )
 
-    if "templates_per_core" in f["%s/search" % ifo].keys():
-        tpc = f["%s/search/templates_per_core" % ifo][:]
-    else:
-        tpc = None
-    if "filter_rate_per_core" in f["%s/search" % ifo].keys():
-        fpc = f["%s/search/filter_rate_per_core" % ifo][:]
-    else:
-        fpc = None
-    if "setup_time_fraction" in f["%s/search" % ifo].keys():
-        stf = f["%s/search/setup_time_fraction" % ifo][:]
-    else:
-        stf = None
-
-    if tpc is not None:
-        label = str(ifo) + ": Harmonic mean  - " + str(hmean(tpc))
-        if args.duration_weighted:
-            avg_tpc = 1.0 / (w / tpc).mean()
-        else:
-            avg_tpc = hmean(tpc)
-        label = str(ifo) + ": Harmonic mean  - " + str(avg_tpc)
-        ax1.hist(tpc, 100, color=ifo_color(ifo), alpha=0.65, label=label, weights=w)
-        # ax1.set_title('Templates per Core')
-        ax1.set_xlabel("Templates per Core")
-        ax1.legend(loc="upper right")
-        ax1.grid(True)
-    if fpc is not None:
-        if w is not None:
-            fpc *= w
-        label = str(ifo) + ": Mean average - " + str(fpc.mean())
-        ax2.hist(fpc, 100, color=ifo_color(ifo), alpha=0.65, label=label, weights=w)
-        # ax2.set_title('Filter rate per core')
-        ax2.set_xlabel("Filter rate per core (# FFTs per second per core)")
-        ax2.legend(loc="upper right")
-        ax2.grid(True)
-    if stf is not None:
-        if w is not None:
-            stf *= w
-        label = str(ifo) + ": Mean average - " + str(stf.mean())
-        ax3.hist(stf, 100, color=ifo_color(ifo), alpha=0.65, label=label, weights=w)
-        # ax2.set_title('Filter rate per core')
-        ax3.set_xlabel("Fraction of time doing setup operations")
-        ax3.legend(loc="upper right")
-        ax3.grid(True)
+        if tpc is not None:
+            avg_tpc = 1.0 / (w / tpc).mean() if args.duration_weighted else hmean(tpc)
+            label = str(ifo) + ": Harmonic mean  - " + str(avg_tpc)
+            ax1.hist(tpc, 100, color=ifo_color(ifo), alpha=0.65, label=label, weights=w)
+            ax1.set_xlabel("Templates per Core")
+            ax1.legend(loc="upper right")
+            ax1.grid(True)
+        if fpc is not None:
+            if w is not None:
+                fpc *= w
+            label = str(ifo) + ": Mean average - " + str(fpc.mean())
+            ax2.hist(fpc, 100, color=ifo_color(ifo), alpha=0.65, label=label, weights=w)
+            ax2.set_xlabel("Filter rate per core (# FFTs per second per core)")
+            ax2.legend(loc="upper right")
+            ax2.grid(True)
+        if stf is not None:
+            if w is not None:
+                stf *= w
+            label = str(ifo) + ": Mean average - " + str(stf.mean())
+            ax3.hist(stf, 100, color=ifo_color(ifo), alpha=0.65, label=label, weights=w)
+            ax3.set_xlabel("Fraction of time doing setup operations")
+            ax3.legend(loc="upper right")
+            ax3.grid(True)
 
 fig.tight_layout()
 fig.savefig(str(args.output_file))

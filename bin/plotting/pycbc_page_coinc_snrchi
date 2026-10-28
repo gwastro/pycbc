@@ -75,13 +75,16 @@ parser.add_argument(
     default="traditional",
     help="Which chisquared to plot. Default=traditional",
 )
+parser.add_argument(
+    "--ifo", default=None, help="IFO to plot from multi-detector trigger file"
+)
 parser.add_argument("--output-file", required=True)
 args = parser.parse_args()
 
 init_logging(args.verbose)
 # First - check the IFO being used
 with HFile(args.single_trigger_file, "r") as stf:
-    ifo = tuple(stf.keys())[0]
+    ifo = args.ifo if args.ifo is not None else next(iter(stf.keys()))
 
 # Add the background triggers
 with HFile(args.coinc_statistic_file, "r") as csf:

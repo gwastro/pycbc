@@ -18,6 +18,9 @@ parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--trigger-file", help="Single ifo trigger file")
 parser.add_argument(
+    "--ifo", default=None, help="IFO to plot from multi-detector trigger file"
+)
+parser.add_argument(
     "--veto-file", help="Optional, file of veto segments to remove triggers"
 )
 parser.add_argument(
@@ -56,7 +59,7 @@ args.newsnr_contours = args.newsnr_contours if args.newsnr_contours is not None 
 
 # First - get the IFO from the file
 with HFile(args.trigger_file, "r") as f:
-    ifo = tuple(f.keys())[0]
+    ifo = args.ifo if args.ifo is not None else next(iter(f.keys()))
     n_triggers = f[ifo]["snr"].size
 
 logger.info("Plotting SNR vs %s chisq for %s triggers", args.chisq_choice, ifo)

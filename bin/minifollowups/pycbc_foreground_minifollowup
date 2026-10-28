@@ -101,13 +101,20 @@ coinc_file = resolve_url_to_file(os.path.abspath(args.statmap_file))
 insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
 
 single_triggers = []
+single_triggers_by_ifo = {}
 fsdt = {}
 insp_data_seglists = {}
 insp_analysed_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
+    shared_ifos = [
+        det for det, path in args.single_detector_triggers.items() if path == fname
+    ]
     strig_file = resolve_url_to_file(os.path.abspath(fname), attrs={"ifos": ifo})
-    single_triggers.append(strig_file)
+    strig_file.ifo_list = sorted(shared_ifos)
+    if strig_file not in single_triggers:
+        single_triggers.append(strig_file)
+    single_triggers_by_ifo[ifo] = strig_file
     fsdt[ifo] = HFile(args.single_detector_triggers[ifo], "r")
     insp_data_seglists[ifo] = select_segments_by_definer(
         args.inspiral_segments, segment_name=args.inspiral_data_read_name, ifo=ifo
@@ -261,15 +268,16 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
     )
     files += sngl_tmplt_plots
 
-    for single in single_triggers:
-        time = times[single.ifo][curr_idx]
+    for ifo in times:
+        single = single_triggers_by_ifo[ifo]
+        time = times[ifo][curr_idx]
         if time == -1:
             # If this detector did not trigger, still make the plot, but use
             # the average time of detectors which did trigger
-            time = coinc.mean_if_greater_than_zero(
-                [times[sngl.ifo][curr_idx] for sngl in single_triggers]
-            )[0]
-        for seg in insp_analysed_seglists[single.ifo]:
+            time = coinc.mean_if_greater_than_zero([times[k][curr_idx] for k in times])[
+                0
+            ]
+        for seg in insp_analysed_seglists[ifo]:
             if time in seg:
                 files += mini.make_singles_timefreq(
                     workflow,
@@ -277,15 +285,16 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                     tmpltbank_file,
                     time,
                     args.output_dir,
-                    data_segments=insp_data_seglists[single.ifo],
+                    data_segments=insp_data_seglists[ifo],
                     tags=args.tags + [str(event_count)],
+                    ifo=ifo,
                 )
                 files += mini.make_qscan_plot(
                     workflow,
-                    single.ifo,
+                    ifo,
                     time,
                     args.output_dir,
-                    data_segments=insp_data_seglists[single.ifo],
+                    data_segments=insp_data_seglists[ifo],
                     tags=args.tags + [str(event_count)],
                 )
                 break
@@ -293,7 +302,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
             logger.info(
                 "Trigger time %s is not valid in %s, skipping singles plots",
                 time,
-                single.ifo,
+                ifo,
             )
 
     layouts += list(layout.grouper(files, 2))
