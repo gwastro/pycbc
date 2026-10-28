@@ -157,34 +157,34 @@ def kfcv_awkde(sample, bwchoice, alphachoice, k=2):
 
 def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
     npoints, ndim = sampleval.shape
-    FOM = {}
+    fom = {}
     for gbw in bwgrid:
         for alphavals in alphagrid:
-            FOM[(gbw, alphavals)] = kfcv_awkde(sampleval, gbw, alphavals, k=nfold)
-    optval = max(FOM.items(), key=operator.itemgetter(1))[0]
+            fom[(gbw, alphavals)] = kfcv_awkde(sampleval, gbw, alphavals, k=nfold)
+    optval = max(fom.items(), key=operator.itemgetter(1))[0]
     optbw, optalpha = optval[0], optval[1]
-    maxFOM = FOM[(optbw, optalpha)]
+    max_fom = fom[(optbw, optalpha)]
 
-    # Plotting FOM parameters
+    # Plotting fom parameters
     if args.fom_plot:
         import matplotlib.pyplot as plt
 
         fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(111)
         for bw in bwgrid:
-            FOMlist = [FOM[(bw, al)] for al in alphagrid]
-            ax.plot(alphagrid, FOMlist, label=f"{bw:.3f}")
+            fom_list = [fom[(bw, al)] for al in alphagrid]
+            ax.plot(alphagrid, fom_list, label=f"{bw:.3f}")
         ax.plot(
             optalpha,
-            maxFOM,
+            max_fom,
             "ko",
             linewidth=10,
             label=rf"$\alpha={optalpha:.3f},bw={optbw:.3f}$",
         )
         ax.set_xlabel(r"$\alpha$", fontsize=15)
         ax.set_ylabel(r"$FOM$", fontsize=15)
-        # Guess at a suitable range of FOM values to plot
-        ax.set_ylim(maxFOM - 0.5 * npoints, maxFOM + 0.2 * npoints)
+        # Guess at a suitable range of fom values to plot
+        ax.set_ylim(max_fom - 0.5 * npoints, max_fom + 0.2 * npoints)
         ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.135), ncol=8)
         plt.savefig(args.fom_plot)
         plt.close()

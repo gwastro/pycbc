@@ -132,12 +132,12 @@ logger.info("Saving results")
 
 cb = fig.colorbar(im)
 if opts.normalize:
-    cbLabel = "Amplitude relative to median"
+    cb_label = "Amplitude relative to median"
     cb.set_ticks([0.5, 1, 2])
     cb.ax.set_yticklabels(["0.5", "1", "2"])
 else:
-    cbLabel = "Amplitude Spectral Density (Strain / $\\sqrt{\\rm Hz}$)"
-cb.set_label(cbLabel, fontsize=20)
+    cb_label = "Amplitude Spectral Density (Strain / $\\sqrt{\\rm Hz}$)"
+cb.set_label(cb_label, fontsize=20)
 ax.set_yscale("log")
 ax.set_xlim(start.min() - 5000, end.max() + 5000)
 ax.set_ylim(numpy.min(freqs), numpy.max(freqs))

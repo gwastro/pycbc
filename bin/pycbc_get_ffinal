@@ -163,8 +163,8 @@ else:
 if fd_approx and opts.segment_length is None:
     raise ValueError("FD approximants require a segment-length")
 seg_length = opts.segment_length
-wFmin = opts.f_min
-if not fd_approx and wFmin >= min_sample_rate / 2.0:
+f_min = opts.f_min
+if not fd_approx and f_min >= min_sample_rate / 2.0:
     raise ValueError("f-min must be < half the sample-rate")
 phi0 = 0.0
 
@@ -211,7 +211,7 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
             hplus, hcross = waveform.get_fd_waveform(
                 approximant=opts.approximant,
                 delta_f=1.0 / seg_length,
-                f_lower=wFmin,
+                f_lower=f_min,
                 **tmplt,
             )
         else:
@@ -219,7 +219,7 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
                 template=tmplt,
                 approximant=opts.approximant,
                 delta_f=1.0 / seg_length,
-                f_lower=wFmin,
+                f_lower=f_min,
             )
 
         freq = hplus.delta_f * numpy.nonzero(abs(hplus.data))[0][-1]
@@ -234,7 +234,7 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
                     hplus, hcross = waveform.get_td_waveform(
                         approximant=opts.approximant,
                         delta_t=1.0 / sample_rate,
-                        f_lower=wFmin,
+                        f_lower=f_min,
                         **tmplt,
                     )
                 else:
@@ -242,7 +242,7 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
                         template=tmplt,
                         approximant=opts.approximant,
                         delta_t=1.0 / sample_rate,
-                        f_lower=wFmin,
+                        f_lower=f_min,
                     )
                 # success break
                 success = True

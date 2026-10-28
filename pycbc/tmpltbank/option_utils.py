@@ -23,7 +23,7 @@ import numpy
 
 from pycbc import pnutils
 from pycbc.neutron_stars import load_ns_sequence
-from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions
+from pycbc.tmpltbank.lambda_mapping import pycbc_valid_orders_help_descriptions
 from pycbc.types import nonnegative_float, positive_float
 
 logger = logging.getLogger(__name__)
@@ -164,10 +164,10 @@ def insert_metric_calculation_options(parser):
     argparser as an OptionGroup. This should be used if you want to use these
     options in your code.
     """
-    metricOpts = parser.add_argument_group(
+    metric_opts = parser.add_argument_group(
         "Options related to calculating the parameter space metric"
     )
-    metricOpts.add_argument(
+    metric_opts.add_argument(
         "--pn-order",
         action="store",
         type=str,
@@ -175,9 +175,9 @@ def insert_metric_calculation_options(parser):
         help="Determines the PN order to use.  For a bank of "
         "non-spinning templates, spin-related terms in the "
         "metric will be zero.  REQUIRED. "
-        "Choices: %s" % (pycbcValidOrdersHelpDescriptions),
+        "Choices: %s" % (pycbc_valid_orders_help_descriptions),
     )
-    metricOpts.add_argument(
+    metric_opts.add_argument(
         "--f0",
         action="store",
         type=positive_float,
@@ -189,7 +189,7 @@ def insert_metric_calculation_options(parser):
         "should be fine for most applications.  OPTIONAL. "
         "UNITS=Hz",
     )
-    metricOpts.add_argument(
+    metric_opts.add_argument(
         "--f-low",
         action="store",
         type=positive_float,
@@ -197,7 +197,7 @@ def insert_metric_calculation_options(parser):
         help="Lower frequency cutoff used in computing the "
         "parameter space metric.  REQUIRED. UNITS=Hz",
     )
-    metricOpts.add_argument(
+    metric_opts.add_argument(
         "--f-upper",
         action="store",
         type=positive_float,
@@ -205,7 +205,7 @@ def insert_metric_calculation_options(parser):
         help="Upper frequency cutoff used in computing the "
         "parameter space metric.  REQUIRED. UNITS=Hz",
     )
-    metricOpts.add_argument(
+    metric_opts.add_argument(
         "--delta-f",
         action="store",
         type=positive_float,
@@ -215,13 +215,13 @@ def insert_metric_calculation_options(parser):
         r"are approximated as \sum F(f) delta_f.  REQUIRED. "
         "UNITS=Hz",
     )
-    metricOpts.add_argument(
+    metric_opts.add_argument(
         "--write-metric",
         action="store_true",
         default=False,
         help="If given write the metric components to disk as they are calculated.",
     )
-    return metricOpts
+    return metric_opts
 
 
 def verify_metric_calculation_options(opts, parser):
@@ -241,7 +241,7 @@ def verify_metric_calculation_options(opts, parser):
         parser.error("Must supply --pn-order")
 
 
-class metricParameters:
+class MetricParameters:
     """
     This class holds all of the options that are parsed in the function
     insert_metric_calculation_options
@@ -254,19 +254,19 @@ class metricParameters:
     _metric = None
     _evals = None
     _evecs = None
-    _evecsCV = None
+    _evecs_cv = None
 
-    def __init__(self, pnOrder, fLow, fUpper, deltaF, f0=70, write_metric=False):
+    def __init__(self, pn_order, f_low, f_upper, delta_f, f0=70, write_metric=False):
         """
-        Initialize an instance of the metricParameters by providing all
+        Initialize an instance of the MetricParameters by providing all
         options directly. See the help message associated with any code
         that uses the metric options for more details of how to set each of
         these, e.g. pycbc_aligned_stoch_bank --help
         """
-        self.pnOrder = pnOrder
-        self.fLow = fLow
-        self.fUpper = fUpper
-        self.deltaF = deltaF
+        self.pn_order = pn_order
+        self.f_low = f_low
+        self.f_upper = f_upper
+        self.delta_f = delta_f
         self.f0 = f0
         self._moments = None
         self.write_metric = write_metric
@@ -274,7 +274,7 @@ class metricParameters:
     @classmethod
     def from_argparse(cls, opts):
         """
-        Initialize an instance of the metricParameters class from an
+        Initialize an instance of the MetricParameters class from an
         argparse.OptionParser instance. This assumes that
         insert_metric_calculation_options
         and
@@ -297,14 +297,14 @@ class metricParameters:
         Return the PSD used in the metric calculation.
         """
         if not self._psd:
-            errMsg = "The PSD has not been set in the metricParameters "
-            errMsg += "instance."
-            raise ValueError(errMsg)
+            err_msg = "The PSD has not been set in the MetricParameters "
+            err_msg += "instance."
+            raise ValueError(err_msg)
         return self._psd
 
     @psd.setter
-    def psd(self, inPsd):
-        self._psd = inPsd
+    def psd(self, in_psd):
+        self._psd = in_psd
 
     @property
     def moments(self):
@@ -347,8 +347,8 @@ class metricParameters:
         return self._moments
 
     @moments.setter
-    def moments(self, inMoments):
-        self._moments = inMoments
+    def moments(self, in_moments):
+        self._moments = in_moments
 
     @property
     def evals(self):
@@ -366,17 +366,17 @@ class metricParameters:
         coordinate system to one in which the metric is the identity matrix.
         """
         if self._evals is None:
-            errMsg = "The metric eigenvalues have not been set in the "
-            errMsg += "metricParameters instance."
-            raise ValueError(errMsg)
+            err_msg = "The metric eigenvalues have not been set in the "
+            err_msg += "MetricParameters instance."
+            raise ValueError(err_msg)
         return self._evals
 
     @evals.setter
-    def evals(self, inEvals):
+    def evals(self, in_evals):
         if self.write_metric:
-            for frequency in inEvals.keys():
-                numpy.savetxt("metric_evals_%d.dat" % (frequency), inEvals[frequency])
-        self._evals = inEvals
+            for frequency in in_evals.keys():
+                numpy.savetxt("metric_evals_%d.dat" % (frequency), in_evals[frequency])
+        self._evals = in_evals
 
     @property
     def evecs(self):
@@ -389,17 +389,17 @@ class metricParameters:
         coordinate system to one in which the metric is the identity matrix.
         """
         if self._evecs is None:
-            errMsg = "The metric eigenvectors have not been set in the "
-            errMsg += "metricParameters instance."
-            raise ValueError(errMsg)
+            err_msg = "The metric eigenvectors have not been set in the "
+            err_msg += "MetricParameters instance."
+            raise ValueError(err_msg)
         return self._evecs
 
     @evecs.setter
-    def evecs(self, inEvecs):
+    def evecs(self, in_evecs):
         if self.write_metric:
-            for frequency in inEvecs.keys():
-                numpy.savetxt("metric_evecs_%d.dat" % (frequency), inEvecs[frequency])
-        self._evecs = inEvecs
+            for frequency in in_evecs.keys():
+                numpy.savetxt("metric_evecs_%d.dat" % (frequency), in_evecs[frequency])
+        self._evecs = in_evecs
 
     @property
     def metric(self):
@@ -411,19 +411,19 @@ class metricParameters:
         Lambda_i coordinate system.
         """
         if self._metric is None:
-            errMsg = "The metric eigenvectors have not been set in the "
-            errMsg += "metricParameters instance."
-            raise ValueError(errMsg)
+            err_msg = "The metric eigenvectors have not been set in the "
+            err_msg += "MetricParameters instance."
+            raise ValueError(err_msg)
         return self._metric
 
     @metric.setter
-    def metric(self, inMetric):
+    def metric(self, in_metric):
         if self.write_metric:
-            for frequency in inMetric.keys():
+            for frequency in in_metric.keys():
                 numpy.savetxt(
-                    "metric_components_%d.dat" % (frequency), inMetric[frequency]
+                    "metric_components_%d.dat" % (frequency), in_metric[frequency]
                 )
-        self._metric = inMetric
+        self._metric = in_metric
 
     @property
     def time_unprojected_metric(self):
@@ -437,21 +437,21 @@ class metricParameters:
         """
         if self._time_unprojected_metric is None:
             err_msg = "The time unprojected metric has not been set in the "
-            err_msg += "metricParameters instance."
+            err_msg += "MetricParameters instance."
             raise ValueError(err_msg)
         return self._time_unprojected_metric
 
     @time_unprojected_metric.setter
-    def time_unprojected_metric(self, inMetric):
+    def time_unprojected_metric(self, in_metric):
         if self.write_metric:
-            for frequency in inMetric.keys():
+            for frequency in in_metric.keys():
                 numpy.savetxt(
-                    "metric_timeunprojected_%d.dat" % (frequency), inMetric[frequency]
+                    "metric_timeunprojected_%d.dat" % (frequency), in_metric[frequency]
                 )
-        self._time_unprojected_metric = inMetric
+        self._time_unprojected_metric = in_metric
 
     @property
-    def evecsCV(self):
+    def evecs_cv(self):
         """
         The eigenvectors of the principal directions of the mu space.
         This is a Dictionary of numpy.matrix
@@ -460,23 +460,23 @@ class metricParameters:
         in evals, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix.
         """
-        if self._evecsCV is None:
-            errMsg = "The covariance eigenvectors have not been set in the "
-            errMsg += "metricParameters instance."
-            raise ValueError(errMsg)
-        return self._evecsCV
+        if self._evecs_cv is None:
+            err_msg = "The covariance eigenvectors have not been set in the "
+            err_msg += "MetricParameters instance."
+            raise ValueError(err_msg)
+        return self._evecs_cv
 
-    @evecsCV.setter
-    def evecsCV(self, inEvecs):
+    @evecs_cv.setter
+    def evecs_cv(self, in_evecs):
         if self.write_metric:
-            for frequency in inEvecs.keys():
+            for frequency in in_evecs.keys():
                 numpy.savetxt(
-                    "covariance_evecs_%d.dat" % (frequency), inEvecs[frequency]
+                    "covariance_evecs_%d.dat" % (frequency), in_evecs[frequency]
                 )
-        self._evecsCV = inEvecs
+        self._evecs_cv = in_evecs
 
 
-def insert_mass_range_option_group(parser, nonSpin=False):
+def insert_mass_range_option_group(parser, non_spin=False):
     """
     Adds the options used to specify mass ranges in the bank generation codes
     to an argparser as an OptionGroup. This should be used if you
@@ -486,42 +486,42 @@ def insert_mass_range_option_group(parser, nonSpin=False):
     ----------
     parser : object
         OptionParser instance.
-    nonSpin : boolean, optional (default=False)
+    non_spin : boolean, optional (default=False)
         If this is provided the spin-related options will not be added.
 
     """
-    massOpts = parser.add_argument_group(
+    mass_opts = parser.add_argument_group(
         "Options related to mass and spin limits for bank generation"
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--min-mass1",
         action="store",
         type=positive_float,
         required=True,
         help="Minimum mass1: must be >= min-mass2. REQUIRED. UNITS=Solar mass",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--max-mass1",
         action="store",
         type=positive_float,
         required=True,
         help="Maximum mass1: must be >= max-mass2. REQUIRED. UNITS=Solar mass",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--min-mass2",
         action="store",
         type=positive_float,
         required=True,
         help="Minimum mass2. REQUIRED. UNITS=Solar mass",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--max-mass2",
         action="store",
         type=positive_float,
         required=True,
         help="Maximum mass2. REQUIRED. UNITS=Solar mass",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--max-total-mass",
         action="store",
         type=positive_float,
@@ -530,7 +530,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "the max total mass is determined by the component "
         "masses. UNITS=Solar mass",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--min-total-mass",
         action="store",
         type=positive_float,
@@ -539,7 +539,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "min total mass is determined by the component masses."
         " UNITS=Solar mass",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--max-chirp-mass",
         action="store",
         type=positive_float,
@@ -548,7 +548,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "max chirp mass is determined by the component masses."
         " UNITS=Solar mass",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--min-chirp-mass",
         action="store",
         type=positive_float,
@@ -557,7 +557,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "min chirp mass is determined by the component masses."
         " UNITS=Solar mass",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--max-eta",
         action="store",
         type=positive_float,
@@ -566,7 +566,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         " on eta will be imposed if not provided. "
         "UNITS=Solar mass.",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--min-eta",
         action="store",
         type=nonnegative_float,
@@ -575,7 +575,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         " on eta will be imposed if not provided. "
         "UNITS=Solar mass.",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--ns-eos",
         action="store",
         default=None,
@@ -583,7 +583,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "the remnant disk mass. Only 2H is currently supported. "
         "OPTIONAL",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--remnant-mass-threshold",
         action="store",
         type=nonnegative_float,
@@ -594,7 +594,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "When it is set to None (default value) the EM dim "
         "filter is not activated. OPTIONAL",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--use-eos-max-ns-mass",
         action="store_true",
         default=False,
@@ -602,7 +602,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "mass allowed by EOS. "
         "OPTIONAL",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--delta-bh-spin",
         action="store",
         type=positive_float,
@@ -614,7 +614,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "specificed in --remnant-mass-threshold. "
         "OPTIONAL (0.1 by default) ",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--delta-ns-mass",
         action="store",
         type=positive_float,
@@ -626,11 +626,11 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "in --remnant-mass-threshold. "
         "OPTIONAL (0.1 by default) ",
     )
-    if nonSpin:
-        parser.add_argument_group(massOpts)
-        return massOpts
+    if non_spin:
+        parser.add_argument_group(mass_opts)
+        return mass_opts
 
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--max-ns-spin-mag",
         action="store",
         type=nonnegative_float,
@@ -640,7 +640,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "boundary (3 Msun by default). REQUIRED if min-mass2 "
         "< ns-bh-boundary-mass",
     )
-    massOpts.add_argument(
+    mass_opts.add_argument(
         "--max-bh-spin-mag",
         action="store",
         type=nonnegative_float,
@@ -653,7 +653,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
     # Mutually exclusive group prevents both options being set on command line
     # If --nsbh-flag is True then spinning bank generation must ignore the
     # default value of ns-bh-boundary-mass.
-    action = massOpts.add_mutually_exclusive_group(required=False)
+    action = mass_opts.add_mutually_exclusive_group(required=False)
     action.add_argument(
         "--ns-bh-boundary-mass",
         action="store",
@@ -663,7 +663,7 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "stars and are subject to the neutron star spin limits. "
         "Components at/above are subject to the black hole spin "
         "limits.  OPTIONAL, default=%f.  UNITS=Solar mass"
-        % massRangeParameters.default_nsbh_boundary_mass,
+        % MassRangeParameters.default_nsbh_boundary_mass,
     )
     action.add_argument(
         "--nsbh-flag",
@@ -677,10 +677,10 @@ def insert_mass_range_option_group(parser, nonSpin=False):
         "mass.  OPTIONAL.  If set, the value of "
         "--ns-bh-boundary-mass will be ignored.",
     )
-    return massOpts
+    return mass_opts
 
 
-def verify_mass_range_options(opts, parser, nonSpin=False):
+def verify_mass_range_options(opts, parser, non_spin=False):
     """
     Parses the metric calculation options given and verifies that they are
     correct.
@@ -691,7 +691,7 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         Result of parsing the input options with OptionParser
     parser : object
         The OptionParser instance.
-    nonSpin : boolean, optional (default=False)
+    non_spin : boolean, optional (default=False)
         If this is provided the spin-related options will not be checked.
 
     """
@@ -995,7 +995,7 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
 
     if opts.max_eta and opts.min_eta and (opts.max_eta < opts.min_eta):
         parser.error("--max-eta must be larger than --min-eta.")
-    if nonSpin:
+    if non_spin:
         return
 
     if opts.max_ns_spin_mag is None:
@@ -1003,7 +1003,7 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
             parser.error("Must supply --max_ns_spin_mag with --nsbh-flag")
         # Can ignore this if no NSs will be generated
         elif opts.min_mass2 < (
-            opts.ns_bh_boundary_mass or massRangeParameters.default_nsbh_boundary_mass
+            opts.ns_bh_boundary_mass or MassRangeParameters.default_nsbh_boundary_mass
         ):
             parser.error(
                 "Must supply --max-ns-spin-mag for the chosen value of --min_mass2"
@@ -1015,7 +1015,7 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
             parser.error("Must supply --max_bh_spin_mag with --nsbh-flag")
         # Can ignore this if no BHs will be generated
         if opts.max_mass1 >= (
-            opts.ns_bh_boundary_mass or massRangeParameters.default_nsbh_boundary_mass
+            opts.ns_bh_boundary_mass or MassRangeParameters.default_nsbh_boundary_mass
         ):
             parser.error(
                 "Must supply --max-bh-spin-mag for the chosen value of --max_mass1"
@@ -1024,7 +1024,7 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
             opts.max_bh_spin_mag = opts.max_ns_spin_mag
 
 
-class massRangeParameters:
+class MassRangeParameters:
     """
     This class holds all of the options that are parsed in the function
     insert_mass_range_option_group
@@ -1040,20 +1040,20 @@ class massRangeParameters:
 
     def __init__(
         self,
-        minMass1,
-        maxMass1,
-        minMass2,
-        maxMass2,
-        maxNSSpinMag=0,
-        maxBHSpinMag=0,
-        maxTotMass=None,
-        minTotMass=None,
-        maxEta=None,
-        minEta=0,
+        min_mass1,
+        max_mass1,
+        min_mass2,
+        max_mass2,
+        max_ns_spin_mag=0,
+        max_bh_spin_mag=0,
+        max_tot_mass=None,
+        min_tot_mass=None,
+        max_eta=None,
+        min_eta=0,
         max_chirp_mass=None,
         min_chirp_mass=None,
         ns_bh_boundary_mass=None,
-        nsbhFlag=False,
+        nsbh_flag=False,
         remnant_mass_threshold=None,
         ns_eos=None,
         use_eos_max_ns_mass=False,
@@ -1061,36 +1061,36 @@ class massRangeParameters:
         delta_ns_mass=None,
     ):
         """
-        Initialize an instance of the massRangeParameters by providing all
+        Initialize an instance of the MassRangeParameters by providing all
         options directly. See the help message associated with any code
         that uses the metric options for more details of how to set each of
         these. For e.g. pycbc_aligned_stoch_bank --help
         """
-        self.minMass1 = minMass1
-        self.maxMass1 = maxMass1
-        self.minMass2 = minMass2
-        self.maxMass2 = maxMass2
-        self.maxNSSpinMag = maxNSSpinMag
-        self.maxBHSpinMag = maxBHSpinMag
-        self.minTotMass = minMass1 + minMass2
-        if minTotMass and (minTotMass > self.minTotMass):
-            self.minTotMass = minTotMass
-        self.maxTotMass = maxMass1 + maxMass2
-        if maxTotMass and (maxTotMass < self.maxTotMass):
-            self.maxTotMass = maxTotMass
-        self.maxTotMass = maxTotMass
-        self.minTotMass = minTotMass
-        if maxEta:
-            self.maxEta = maxEta
+        self.min_mass1 = min_mass1
+        self.max_mass1 = max_mass1
+        self.min_mass2 = min_mass2
+        self.max_mass2 = max_mass2
+        self.max_ns_spin_mag = max_ns_spin_mag
+        self.max_bh_spin_mag = max_bh_spin_mag
+        self.min_tot_mass = min_mass1 + min_mass2
+        if min_tot_mass and (min_tot_mass > self.min_tot_mass):
+            self.min_tot_mass = min_tot_mass
+        self.max_tot_mass = max_mass1 + max_mass2
+        if max_tot_mass and (max_tot_mass < self.max_tot_mass):
+            self.max_tot_mass = max_tot_mass
+        self.max_tot_mass = max_tot_mass
+        self.min_tot_mass = min_tot_mass
+        if max_eta:
+            self.max_eta = max_eta
         else:
-            self.maxEta = 0.25
+            self.max_eta = 0.25
         self.max_chirp_mass = max_chirp_mass
         self.min_chirp_mass = min_chirp_mass
-        self.minEta = minEta
+        self.min_eta = min_eta
         self.ns_bh_boundary_mass = (
             ns_bh_boundary_mass or self.default_nsbh_boundary_mass
         )
-        self.nsbhFlag = nsbhFlag
+        self.nsbh_flag = nsbh_flag
         self.remnant_mass_threshold = remnant_mass_threshold
         self.ns_eos = ns_eos or self.default_ns_eos
         self.delta_bh_spin = delta_bh_spin or self.default_delta_bh_spin
@@ -1098,62 +1098,62 @@ class massRangeParameters:
         self.use_eos_max_ns_mass = use_eos_max_ns_mass
         if self.remnant_mass_threshold is not None:
             if self.ns_eos != "2H":
-                errMsg = """
+                err_msg = """
                          By setting a value for --remnant-mass-threshold
                          you have asked to filter out EM dim NS-BH templates.
                          The EOS you chose is not supported currently: please
                          remove the --ns-eos option from your command line or
                          set it to '2H'.
                          """
-                raise ValueError(errMsg)
+                raise ValueError(err_msg)
             if use_eos_max_ns_mass:
                 _, max_ns_g_mass = load_ns_sequence(self.ns_eos)
-                if self.maxMass2 > max_ns_g_mass:
-                    errMsg = f"""
+                if self.max_mass2 > max_ns_g_mass:
+                    err_msg = f"""
                              The maximum NS mass supported by this EOS is
                              {max_ns_g_mass - 0.0000000001}. Please set --max-mass2 to this value or run
                              without the --use-eos-max-ns-mass flag.
                              """
-                    raise ValueError(errMsg)
+                    raise ValueError(err_msg)
             self.delta_bh_spin = delta_bh_spin or self.default_delta_bh_spin
             self.delta_ns_mass = delta_ns_mass or self.default_delta_ns_mass
 
         # FIXME: This may be inaccurate if Eta limits are given
         # This will not cause any problems, but maybe could be fixed.
-        self.minCompMass = self.minMass2
-        self.maxCompMass = self.maxMass1
+        self.min_comp_mass = self.min_mass2
+        self.max_comp_mass = self.max_mass1
 
         # WARNING: We expect mass1 > mass2 ALWAYS
         # Check input:
-        if (minMass2 > minMass1) or (maxMass2 > maxMass1):
-            errMsg = "Mass1 must be larger than mass2. Check input options."
-            raise ValueError(errMsg)
+        if (min_mass2 > min_mass1) or (max_mass2 > max_mass1):
+            err_msg = "Mass1 must be larger than mass2. Check input options."
+            raise ValueError(err_msg)
 
-        if (minMass2 > maxMass2) or (minMass1 > maxMass1):
-            errMsg = "Minimum masses cannot be larger than maximum masses."
-            errMsg += "Check input options."
-            raise ValueError(errMsg)
+        if (min_mass2 > max_mass2) or (min_mass1 > max_mass1):
+            err_msg = "Minimum masses cannot be larger than maximum masses."
+            err_msg += "Check input options."
+            raise ValueError(err_msg)
 
     @classmethod
-    def from_argparse(cls, opts, nonSpin=False):
+    def from_argparse(cls, opts, non_spin=False):
         """
-        Initialize an instance of the massRangeParameters class from an
+        Initialize an instance of the MassRangeParameters class from an
         argparse.OptionParser instance. This assumes that
         insert_mass_range_option_group
         and
         verify_mass_range_options
         have already been called before initializing the class.
         """
-        if nonSpin:
+        if non_spin:
             return cls(
                 opts.min_mass1,
                 opts.max_mass1,
                 opts.min_mass2,
                 opts.max_mass2,
-                maxTotMass=opts.max_total_mass,
-                minTotMass=opts.min_total_mass,
-                maxEta=opts.max_eta,
-                minEta=opts.min_eta,
+                max_tot_mass=opts.max_total_mass,
+                min_tot_mass=opts.min_total_mass,
+                max_eta=opts.max_eta,
+                min_eta=opts.min_eta,
                 max_chirp_mass=opts.max_chirp_mass,
                 min_chirp_mass=opts.min_chirp_mass,
                 remnant_mass_threshold=opts.remnant_mass_threshold,
@@ -1167,13 +1167,13 @@ class massRangeParameters:
             opts.max_mass1,
             opts.min_mass2,
             opts.max_mass2,
-            maxTotMass=opts.max_total_mass,
-            minTotMass=opts.min_total_mass,
-            maxEta=opts.max_eta,
-            minEta=opts.min_eta,
-            maxNSSpinMag=opts.max_ns_spin_mag,
-            maxBHSpinMag=opts.max_bh_spin_mag,
-            nsbhFlag=opts.nsbh_flag,
+            max_tot_mass=opts.max_total_mass,
+            min_tot_mass=opts.min_total_mass,
+            max_eta=opts.max_eta,
+            min_eta=opts.min_eta,
+            max_ns_spin_mag=opts.max_ns_spin_mag,
+            max_bh_spin_mag=opts.max_bh_spin_mag,
+            nsbh_flag=opts.nsbh_flag,
             max_chirp_mass=opts.max_chirp_mass,
             min_chirp_mass=opts.min_chirp_mass,
             ns_bh_boundary_mass=opts.ns_bh_boundary_mass,
@@ -1190,65 +1190,65 @@ class massRangeParameters:
         range of parameters allowed by the massParams object.
         """
         # Mass1 test
-        if mass1 * 1.001 < self.minMass1:
+        if mass1 * 1.001 < self.min_mass1:
             return 1
-        if mass1 > self.maxMass1 * 1.001:
+        if mass1 > self.max_mass1 * 1.001:
             return 1
         # Mass2 test
-        if mass2 * 1.001 < self.minMass2:
+        if mass2 * 1.001 < self.min_mass2:
             return 1
-        if mass2 > self.maxMass2 * 1.001:
+        if mass2 > self.max_mass2 * 1.001:
             return 1
         # Spin1 test
-        if self.nsbhFlag:
-            if abs(spin1z) > self.maxBHSpinMag * 1.001:
+        if self.nsbh_flag:
+            if abs(spin1z) > self.max_bh_spin_mag * 1.001:
                 return 1
         else:
-            spin1zM = abs(spin1z)
+            spin1z_mag = abs(spin1z)
             if not (
                 (
                     mass1 * 1.001 > self.ns_bh_boundary_mass
-                    and spin1zM <= self.maxBHSpinMag * 1.001
+                    and spin1z_mag <= self.max_bh_spin_mag * 1.001
                 )
                 or (
                     mass1 < self.ns_bh_boundary_mass * 1.001
-                    and spin1zM <= self.maxNSSpinMag * 1.001
+                    and spin1z_mag <= self.max_ns_spin_mag * 1.001
                 )
             ):
                 return 1
         # Spin2 test
-        if self.nsbhFlag:
-            if abs(spin2z) > self.maxNSSpinMag * 1.001:
+        if self.nsbh_flag:
+            if abs(spin2z) > self.max_ns_spin_mag * 1.001:
                 return 1
         else:
-            spin2zM = abs(spin2z)
+            spin2z_mag = abs(spin2z)
             if not (
                 (
                     mass2 * 1.001 > self.ns_bh_boundary_mass
-                    and spin2zM <= self.maxBHSpinMag * 1.001
+                    and spin2z_mag <= self.max_bh_spin_mag * 1.001
                 )
                 or (
                     mass2 < self.ns_bh_boundary_mass * 1.001
-                    and spin2zM <= self.maxNSSpinMag * 1.001
+                    and spin2z_mag <= self.max_ns_spin_mag * 1.001
                 )
             ):
                 return 1
         # Total mass test
-        mTot = mass1 + mass2
-        if mTot > self.maxTotMass * 1.001:
+        m_tot = mass1 + mass2
+        if m_tot > self.max_tot_mass * 1.001:
             return 1
-        if mTot * 1.001 < self.minTotMass:
+        if m_tot * 1.001 < self.min_tot_mass:
             return 1
 
         # Eta test
-        eta = mass1 * mass2 / (mTot * mTot)
-        if eta > self.maxEta * 1.001:
+        eta = mass1 * mass2 / (m_tot * m_tot)
+        if eta > self.max_eta * 1.001:
             return 1
-        if eta * 1.001 < self.minEta:
+        if eta * 1.001 < self.min_eta:
             return 1
 
         # Chirp mass test
-        chirp_mass = mTot * eta ** (3.0 / 5.0)
+        chirp_mass = m_tot * eta ** (3.0 / 5.0)
         if self.min_chirp_mass is not None and chirp_mass * 1.001 < self.min_chirp_mass:
             return 1
         if self.max_chirp_mass is not None and chirp_mass > self.max_chirp_mass * 1.001:

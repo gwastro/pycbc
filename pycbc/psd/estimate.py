@@ -280,7 +280,7 @@ def inverse_spectrum_truncation(
     ):
         raise ValueError("low_frequency_cutoff must be within the bandwidth of the PSD")
 
-    N = (len(psd) - 1) * 2
+    tlen = (len(psd) - 1) * 2
 
     inv_spectrum = FrequencySeries(
         zeros(len(psd)), delta_f=psd.delta_f, dtype=complex_same_precision_as(psd)
@@ -296,11 +296,11 @@ def inverse_spectrum_truncation(
             low_frequency_fill_value = 1.0 / psd[kmin]
         inv_spectrum[:kmin] = float(low_frequency_fill_value)
 
-    inv_spectrum[kmin : N // 2] = 1.0 / psd[kmin : N // 2]
+    inv_spectrum[kmin : tlen // 2] = 1.0 / psd[kmin : tlen // 2]
 
     # if truncating asd, take sqrt
     if which_spectrum == "invasd":
-        inv_spectrum[: N // 2] = inv_spectrum[: N // 2] ** 0.5
+        inv_spectrum[: tlen // 2] = inv_spectrum[: tlen // 2] ** 0.5
     elif which_spectrum != "invpsd":
         raise ValueError(
             f"Invalid which_spectrum input {which_spectrum}; "
@@ -309,7 +309,9 @@ def inverse_spectrum_truncation(
 
     if not USE_CACHING_FOR_INV_SPEC_TRUNC:
         q = TimeSeries(
-            numpy.zeros(N), delta_t=(N / psd.delta_f), dtype=real_same_precision_as(psd)
+            numpy.zeros(tlen),
+            delta_t=(tlen / psd.delta_f),
+            dtype=real_same_precision_as(psd),
         )
         ifft(inv_spectrum, q)
     else:
@@ -318,14 +320,14 @@ def inverse_spectrum_truncation(
         )
 
     trunc_start = max_filter_len // 2
-    trunc_end = N - max_filter_len // 2
+    trunc_end = tlen - max_filter_len // 2
     if trunc_end < trunc_start:
         raise ValueError("Invalid value in inverse_spectrum_truncation")
 
     if trunc_method == "hann":
         trunc_window = Array(numpy.hanning(max_filter_len), dtype=q.dtype)
         q[0:trunc_start] *= trunc_window[-trunc_start:]
-        q[trunc_end:N] *= trunc_window[0 : max_filter_len // 2]
+        q[trunc_end:tlen] *= trunc_window[0 : max_filter_len // 2]
 
     if trunc_start < trunc_end:
         q[trunc_start:trunc_end] = 0
@@ -401,25 +403,27 @@ def bandlimited_interpolate(series, delta_f):
         series, dtype=complex_same_precision_as(series), delta_f=series.delta_f
     )
 
-    N = (len(series) - 1) * 2
-    delta_t = 1.0 / series.delta_f / N
+    tlen = (len(series) - 1) * 2
+    delta_t = 1.0 / series.delta_f / tlen
 
-    new_N = int(1.0 / (delta_t * delta_f))
-    new_n = new_N // 2 + 1
+    new_tlen = int(1.0 / (delta_t * delta_f))
+    new_flen = new_tlen // 2 + 1
 
     series_in_time = TimeSeries(
-        zeros(N), dtype=real_same_precision_as(series), delta_t=delta_t
+        zeros(tlen), dtype=real_same_precision_as(series), delta_t=delta_t
     )
     ifft(series, series_in_time)
 
     padded_series_in_time = TimeSeries(
-        zeros(new_N), dtype=series_in_time.dtype, delta_t=delta_t
+        zeros(new_tlen), dtype=series_in_time.dtype, delta_t=delta_t
     )
-    padded_series_in_time[0 : N // 2] = series_in_time[0 : N // 2]
-    padded_series_in_time[new_N - N // 2 : new_N] = series_in_time[N // 2 : N]
+    padded_series_in_time[0 : tlen // 2] = series_in_time[0 : tlen // 2]
+    padded_series_in_time[new_tlen - tlen // 2 : new_tlen] = series_in_time[
+        tlen // 2 : tlen
+    ]
 
     interpolated_series = FrequencySeries(
-        zeros(new_n), dtype=series.dtype, delta_f=delta_f
+        zeros(new_flen), dtype=series.dtype, delta_f=delta_f
     )
     fft(padded_series_in_time, interpolated_series)
 

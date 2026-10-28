@@ -246,9 +246,11 @@ elif args.vetoed_time_only and vetoed_idx.size == 0:
     logger.warning("No triggers exist inside vetoed times")
 
 if args.non_coinc_time_only:
-    from pycbc.io.ligolw import LIGOLWContentHandler as h
+    from pycbc.io.ligolw import LIGOLWContentHandler
 
-    segs_doc = ligolw_utils.load_filename(args.inspiral_segments, contenthandler=h)
+    segs_doc = ligolw_utils.load_filename(
+        args.inspiral_segments, contenthandler=LIGOLWContentHandler
+    )
     seg_def_table = ligolw.Table.get_table(segs_doc, "segment_definer")
     def_ifos = seg_def_table.getColumnByName("ifos")
     def_ifos = [str(ifo) for ifo in def_ifos]

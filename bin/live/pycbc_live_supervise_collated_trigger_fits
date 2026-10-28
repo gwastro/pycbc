@@ -18,7 +18,7 @@ import pycbc
 from pycbc.io import HFile
 from pycbc.live import supervision as sv
 from pycbc.time import gps_to_utc_datetime, utc_datetime_to_gps
-from pycbc.types.config import InterpolatingConfigParser as icp
+from pycbc.types.config import InterpolatingConfigParser
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def read_options(args):
     Read the options into a dictionary
     """
     logger.info("Reading config file")
-    cp = icp(configFiles=[args.config_file])
+    cp = InterpolatingConfigParser(config_files=[args.config_file])
     config_opts = {
         section: {k: v for k, v in cp[section].items()} for section in cp.sections()
     }

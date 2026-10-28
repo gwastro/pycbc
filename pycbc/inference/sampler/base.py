@@ -69,7 +69,7 @@ class BaseSampler:
         self.checkpoint_valid = None
         self.new_checkpoint = None
 
-    # @classmethod <--uncomment when we move to python 3.3
+    @classmethod
     @abstractmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """This should initialize the sampler given a config file."""

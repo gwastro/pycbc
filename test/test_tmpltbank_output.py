@@ -22,7 +22,7 @@ class BankOutputTest(unittest.TestCase):
             for suffix in ['xml', 'xml.gz', 'hdf']:
                 with self.subTest(suffix=suffix):
                     path = str(Path(directory) / ('bank.' + suffix))
-                    output_bank_to_file(path, templates, optDict=options)
+                    output_bank_to_file(path, templates, opt_dict=options)
                     if suffix == 'hdf':
                         with h5py.File(path, 'r') as bank:
                             for i, column in enumerate(

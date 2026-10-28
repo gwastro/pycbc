@@ -55,8 +55,8 @@ def icumsum(vec):
 
 @context_dependent_memoize
 def call_prepare(self, sz, allocator):
-    MAX_BLOCK_COUNT = 1024
-    SMALL_SEQ_COUNT = 4
+    MAX_BLOCK_COUNT = 1024  # noqa: N806
+    SMALL_SEQ_COUNT = 4  # noqa: N806
 
     if sz <= self.block_size * SMALL_SEQ_COUNT * MAX_BLOCK_COUNT:
         total_block_size = SMALL_SEQ_COUNT * self.block_size

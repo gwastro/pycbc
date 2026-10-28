@@ -15,6 +15,8 @@
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
+# Physics notation throughout; this module is expected to be removed soon.
+# ruff: noqa: N802, N803, N806, N816
 
 import numpy
 from numpy import log, sqrt

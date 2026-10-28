@@ -210,7 +210,7 @@ class MatchedFilterRatioControl:
         n_samples = len(data)
         n_filters = len(filters_f)
 
-        N_FFT = self.fir_fft_len
+        n_fft = self.fir_fft_len
 
         all_f_idxs = []
         all_t_idxs = []
@@ -230,7 +230,7 @@ class MatchedFilterRatioControl:
             actual_batch_size = f_end - f_start
 
             ifft_plan, current_mult_view, current_corr_view = self._get_ifft_plan(
-                actual_batch_size, N_FFT
+                actual_batch_size, n_fft
             )
 
             # Overlap-save: valid output samples per block.
@@ -238,24 +238,24 @@ class MatchedFilterRatioControl:
             i = np.searchsorted(nsizes, n_taps_max)
             n_taps_max = nsizes[i]
 
-            N_VALID = N_FFT - n_taps_max + 1
-            STEP = N_VALID
+            n_valid = n_fft - n_taps_max + 1
+            step = n_valid
             bad_start = n_taps_max // 2
 
-            first_block_idx = (v_start - bad_start) // STEP
-            loop_start = first_block_idx * STEP
+            first_block_idx = (v_start - bad_start) // step
+            loop_start = first_block_idx * step
 
-            for t_start in range(loop_start, n_samples, STEP):
+            for t_start in range(loop_start, n_samples, step):
                 block_valid_t0 = t_start + bad_start
 
                 if block_valid_t0 >= v_stop:
                     break
 
-                if block_valid_t0 + N_VALID <= v_start:
+                if block_valid_t0 + n_valid <= v_start:
                     continue
 
                 roi_start = max(v_start, block_valid_t0)
-                roi_stop = min(v_stop, block_valid_t0 + N_VALID)
+                roi_stop = min(v_stop, block_valid_t0 + n_valid)
 
                 roi_len = roi_stop - roi_start
 
@@ -264,7 +264,7 @@ class MatchedFilterRatioControl:
 
                 buf_slice_start = roi_start - t_start
 
-                t_end = min(t_start + N_FFT, n_samples)
+                t_end = min(t_start + n_fft, n_samples)
                 if t_start not in block_f_cache:
                     block_f_cache[t_start] = self._forward_block_fft(
                         data[t_start:t_end]

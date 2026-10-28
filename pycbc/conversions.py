@@ -159,20 +159,20 @@ def hypertriangle(*params, bounds=(0, 1)):
 
     # hypertriangulate
     try:
-        K, num_pts = scaled_params.shape
+        ndim, num_pts = scaled_params.shape
     except ValueError:
-        K = numpy.size(scaled_params)
+        ndim = numpy.size(scaled_params)
         num_pts = 1
-    idx = numpy.repeat(numpy.arange(K), repeats=num_pts)
-    scaled_params.resize(K, num_pts)
-    idx.resize(K, num_pts)
-    fac = numpy.power(1 - scaled_params, 1 / (K - idx))
+    idx = numpy.repeat(numpy.arange(ndim), repeats=num_pts)
+    scaled_params.resize(ndim, num_pts)
+    idx.resize(ndim, num_pts)
+    fac = numpy.power(1 - scaled_params, 1 / (ndim - idx))
     out_scaled_params = 1 - numpy.cumprod(fac, axis=0)
 
     # rescale to prior bounds
     out_params = (out_scaled_params * (bounds[1] - bounds[0])) + bounds[0]
     if num_pts == 1:
-        out_params = [out_params[i][0] for i in range(K)]
+        out_params = [out_params[i][0] for i in range(ndim)]
     return out_params
 
 
@@ -572,20 +572,20 @@ def eccmchirp_from_mchirp_eccentricity(mchirp, eccentricity, method="spa_phase")
     e2 = eccentricity * eccentricity
 
     if method == "spa_phase":
-        Emchirp = mchirp / (1.0 - 157.0 / 24.0 * e2) ** (3.0 / 5.0)
+        eccmchirp = mchirp / (1.0 - 157.0 / 24.0 * e2) ** (3.0 / 5.0)
 
     elif method == "fit":
         # Constants from Table 1 of https://arxiv.org/abs/2107.14736
         xi = 0.06110974175360381
         delta = -0.4193723077257345
 
-        Xi_beta = 0.00801015132110059
-        Delta_beta = -2.14807199936756e-5
+        Xi_beta = 0.00801015132110059  # noqa: N806
+        Delta_beta = -2.14807199936756e-5  # noqa: N806
         kappa_beta = 1.12702400406416e-8
         zeta_beta = -1.9753003183066e-12
 
-        Xi_gamma = 0.024204222771565382
-        Delta_gamma = -6.261945897154536e-6
+        Xi_gamma = 0.024204222771565382  # noqa: N806
+        Delta_gamma = -6.261945897154536e-6  # noqa: N806
         kappa_gamma = 1.1175104924576945e-8
         zeta_gamma = -3.681726165703978e-12
 
@@ -602,8 +602,8 @@ def eccmchirp_from_mchirp_eccentricity(mchirp, eccentricity, method="spa_phase")
             Xi_gamma
             + mchirp2 * (Delta_gamma + mchirp2 * (kappa_gamma + mchirp2 * zeta_gamma))
         )
-        Emchirp = mchirp * (1 + e2 * (alpha + e2 * (beta + e2 * gamma)))
-    return formatreturn(Emchirp, input_is_array)
+        eccmchirp = mchirp * (1 + e2 * (alpha + e2 * (beta + e2 * gamma)))
+    return formatreturn(eccmchirp, input_is_array)
 
 
 def mchirp_from_eccmchirp_eccentricity(eccmchirp, eccentricity, method="spa_phase"):
@@ -651,21 +651,21 @@ def mchirp_from_eccmchirp_eccentricity(eccmchirp, eccentricity, method="spa_phas
         # Constants from Table 1 of https://arxiv.org/abs/2107.14736
         xi = 0.06110974175360381
         delta = -0.4193723077257345
-        Xi_beta = 0.00801015132110059
-        Delta_beta = -2.14807199936756e-5
+        Xi_beta = 0.00801015132110059  # noqa: N806
+        Delta_beta = -2.14807199936756e-5  # noqa: N806
         kappa_beta = 1.12702400406416e-8
         zeta_beta = -1.9753003183066e-12
-        Xi_gamma = 0.024204222771565382
-        Delta_gamma = -6.261945897154536e-6
+        Xi_gamma = 0.024204222771565382  # noqa: N806
+        Delta_gamma = -6.261945897154536e-6  # noqa: N806
         kappa_gamma = 1.1175104924576945e-8
         zeta_gamma = -3.681726165703978e-12
 
         # Use Newton's method to solve the equation for mchirp
         # Initial guess using the quadratic approximation
-        A = xi * e2
-        B = 1 + delta * e2
-        C = -eccmchirp
-        m = numpy.where(A > 0, (-B + numpy.sqrt(B**2 - 4 * A * C)) / (2 * A), eccmchirp)
+        a = xi * e2
+        b = 1 + delta * e2
+        c = -eccmchirp
+        m = numpy.where(a > 0, (-b + numpy.sqrt(b**2 - 4 * a * c)) / (2 * a), eccmchirp)
 
         for _ in range(5):
             m2 = m * m
@@ -1651,7 +1651,7 @@ def final_spin_from_f0_tau(f0, tau, l=2, m=2):
     tau = tau.ravel()
     spins = numpy.zeros(f0.size)
     for ii in range(spins.size):
-        Q = f0[ii] * tau[ii] * numpy.pi
+        Q = f0[ii] * tau[ii] * numpy.pi  # noqa: N806
         try:
             s = 1.0 - ((Q - a) / b) ** (1.0 / c)
         except ValueError:
@@ -2036,7 +2036,7 @@ def final_spin_from_initial(
 #
 
 
-def velocity_to_frequency(v, M):
+def velocity_to_frequency(v, mtotal):
     """
     Calculate the gravitational-wave frequency from the
     total mass and invariant velocity.
@@ -2045,7 +2045,7 @@ def velocity_to_frequency(v, M):
     ----------
     v : float
         Invariant velocity
-    M : float
+    mtotal : float
         Binary total mass
 
     Returns
@@ -2054,10 +2054,10 @@ def velocity_to_frequency(v, M):
         Gravitational-wave frequency
 
     """
-    return v ** (3.0) / (M * MTSUN_SI * PI)
+    return v ** (3.0) / (mtotal * MTSUN_SI * PI)
 
 
-def frequency_to_velocity(f, M):
+def frequency_to_velocity(f, mtotal):
     """
     Calculate the invariant velocity from the total
     mass and gravitational-wave frequency.
@@ -2066,7 +2066,7 @@ def frequency_to_velocity(f, M):
     ----------
     f: float
         Gravitational-wave frequency
-    M: float
+    mtotal : float
         Binary total mass
 
     Returns
@@ -2075,17 +2075,17 @@ def frequency_to_velocity(f, M):
         Invariant velocity
 
     """
-    return (PI * M * MTSUN_SI * f) ** (1.0 / 3.0)
+    return (PI * mtotal * MTSUN_SI * f) ** (1.0 / 3.0)
 
 
-def f_schwarzchild_isco(M):
+def f_schwarzchild_isco(mtotal):
     """
     Innermost stable circular orbit (ISCO) for a test particle
     orbiting a Schwarzschild black hole
 
     Parameters
     ----------
-    M : float or numpy.array
+    mtotal : float or numpy.array
         Total mass in solar mass units
 
     Returns
@@ -2094,7 +2094,7 @@ def f_schwarzchild_isco(M):
         Frequency in Hz
 
     """
-    return velocity_to_frequency((1.0 / 6.0) ** (0.5), M)
+    return velocity_to_frequency((1.0 / 6.0) ** (0.5), mtotal)
 
 
 #

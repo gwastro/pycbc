@@ -109,7 +109,7 @@ for fpost, model, lbl in mods:
     prior_alpha, prior_mu, prior_sigma = rf.fit(Rfpr)
     post_alpha, post_mu, post_sigma = rf.fit(Rfpo)
 
-    log_R = np.log(Rfpr)
+    log_R = np.log(Rfpr)  # noqa: N816
     xs = np.linspace(min(log_R), max(log_R), 200)
     plt.plot(
         np.exp(xs),

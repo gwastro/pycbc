@@ -1384,8 +1384,8 @@ def gate_data(data, gate_params):
 
     """
 
-    def inverted_tukey(M, n_pad):
-        midlen = M - 2 * n_pad
+    def inverted_tukey(length, n_pad):
+        midlen = length - 2 * n_pad
         if midlen < 0:
             raise ValueError("No zeros left after applying padding.")
         padarr = 0.5 * (1.0 + numpy.cos(numpy.pi * numpy.arange(n_pad) / n_pad))
@@ -2146,7 +2146,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 raise ValueError(
                     "If an iDQ channel is provided, a veto threshold must also be provided"
                 )
-            self.idq = pycbc.frame.iDQBuffer(
+            self.idq = pycbc.frame.IDQBuffer(
                 frame_src,
                 idq_channel,
                 idq_state_channel,

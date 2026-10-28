@@ -69,10 +69,7 @@ import pycbc
 import pycbc.fft
 import pycbc.scheme
 from pycbc.fft.backend_support import set_backend
-from pycbc.types import Array as ar
-from pycbc.types import FrequencySeries as fs
-from pycbc.types import TimeSeries as ts
-from pycbc.types import zeros
+from pycbc.types import Array, FrequencySeries, TimeSeries, zeros
 
 # Because we run many similar tests where we only vary dtypes, precisions,
 # or Array/TimeSeries/FrequencySeries, it is helpful to define the following
@@ -137,9 +134,9 @@ def _test_fft(test_case, inarr, expec, tol):
             else:
                 fft_class = pycbc.fft.FFT(inarr, outarr)
                 fft_class.execute()
-                if isinstance(inarr, ts):
+                if isinstance(inarr, TimeSeries):
                     outarr *= inarr._delta_t
-                elif isinstance(inarr, fs):
+                elif isinstance(inarr, FrequencySeries):
                     outarr *= inarr._delta_f
 
             # First, verify that the input hasn't been overwritten
@@ -148,7 +145,7 @@ def _test_fft(test_case, inarr, expec, tol):
             # Next, check that the output is correct to within tolerance.
             # That will require exact equality of all other meta-data
             emsg = f"FFT output differs by more than a factor of {tol} from expected"
-            if isinstance(outarr, ts) or isinstance(outarr, fs):
+            if isinstance(outarr, TimeSeries) or isinstance(outarr, FrequencySeries):
                 tc.assertTrue(
                     outarr.almost_equal_norm(expec, tol=tol, dtol=tol), msg=emsg
                 )
@@ -183,9 +180,9 @@ def _test_ifft(test_case, inarr, expec, tol):
             else:
                 ifft_class = pycbc.fft.IFFT(inarr, outarr)
                 ifft_class.execute()
-                if isinstance(inarr, ts):
+                if isinstance(inarr, TimeSeries):
                     outarr *= inarr._delta_t
-                elif isinstance(inarr, fs):
+                elif isinstance(inarr, FrequencySeries):
                     outarr *= inarr._delta_f
 
             # First, verify that the input hasn't been overwritten
@@ -197,7 +194,7 @@ def _test_ifft(test_case, inarr, expec, tol):
                 "Inverse FFT output differs by more than a factor "
                 f"of {tol} from expected"
             )
-            if isinstance(outarr, ts) or isinstance(outarr, fs):
+            if isinstance(outarr, TimeSeries) or isinstance(outarr, FrequencySeries):
                 tc.assertTrue(
                     outarr.almost_equal_norm(expec, tol=tol, dtol=tol), msg=emsg
                 )
@@ -237,17 +234,17 @@ def _test_random(test_case, inarr, outarr, tol):
             else:
                 fft_class = pycbc.fft.FFT(inarr, outarr)
                 fft_class.execute()
-                if isinstance(inarr, ts):
+                if isinstance(inarr, TimeSeries):
                     outarr *= inarr._delta_t
-                elif isinstance(inarr, fs):
+                elif isinstance(inarr, FrequencySeries):
                     outarr *= inarr._delta_f
                 ifft_class = pycbc.fft.IFFT(outarr, inarr)
                 ifft_class.execute()
-                if isinstance(outarr, ts):
+                if isinstance(outarr, TimeSeries):
                     inarr *= outarr._delta_t
-                elif isinstance(outarr, fs):
+                elif isinstance(outarr, FrequencySeries):
                     inarr *= outarr._delta_f
-            if type(inarr) == ar:
+            if type(inarr) == Array:
                 # An Array FFTed and then IFFTEd will be scaled by its length
                 # Frequency and TimeSeries have no scaling
                 inarr /= len(inarr)
@@ -256,7 +253,7 @@ def _test_random(test_case, inarr, outarr, tol):
                 "IFFT(FFT(random)) did not reproduce original array to "
                 f"within tolerance {tol}"
             )
-            if isinstance(incopy, ts) or isinstance(incopy, fs):
+            if isinstance(incopy, TimeSeries) or isinstance(incopy, FrequencySeries):
                 tc.assertTrue(
                     incopy.almost_equal_norm(inarr, tol=tol, dtol=tol), msg=emsg
                 )
@@ -287,17 +284,17 @@ def _test_random(test_case, inarr, outarr, tol):
             else:
                 ifft_class = pycbc.fft.IFFT(outarr, inarr)
                 ifft_class.execute()
-                if isinstance(outarr, ts):
+                if isinstance(outarr, TimeSeries):
                     inarr *= outarr._delta_t
-                elif isinstance(outarr, fs):
+                elif isinstance(outarr, FrequencySeries):
                     inarr *= outarr._delta_f
                 fft_class = pycbc.fft.FFT(inarr, outarr)
                 fft_class.execute()
-                if isinstance(inarr, ts):
+                if isinstance(inarr, TimeSeries):
                     outarr *= inarr._delta_t
-                elif isinstance(inarr, fs):
+                elif isinstance(inarr, FrequencySeries):
                     outarr *= inarr._delta_f
-            if type(inarr) == ar:
+            if type(inarr) == Array:
                 # An Array FFTed and then IFFTEd will be scaled by its length
                 # Frequency and TimeSeries have no scaling
                 outarr /= len(inarr)
@@ -306,7 +303,7 @@ def _test_random(test_case, inarr, outarr, tol):
                 "FFT(IFFT(random)) did not reproduce original array to "
                 f"within tolerance {tol}"
             )
-            if isinstance(outcopy, ts) or isinstance(outcopy, fs):
+            if isinstance(outcopy, TimeSeries) or isinstance(outcopy, FrequencySeries):
                 tc.assertTrue(
                     outcopy.almost_equal_norm(outarr, tol=tol, dtol=tol), msg=emsg
                 )
@@ -485,16 +482,16 @@ class _BaseTestFFTClass(unittest.TestCase):
     def test_fwd_real_arr(self):
         for fwd_dtype in [float32, float64]:
             # Even input
-            inarr = ar(self.in_r2c_e, dtype=fwd_dtype)
-            outexp = ar(self.out_r2c_e, dtype=_other_kind[fwd_dtype])
+            inarr = Array(self.in_r2c_e, dtype=fwd_dtype)
+            outexp = Array(self.out_r2c_e, dtype=_other_kind[fwd_dtype])
             _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Odd input
-            inarr = ar(self.in_r2c_o, dtype=fwd_dtype)
-            outexp = ar(self.out_r2c_o, dtype=_other_kind[fwd_dtype])
+            inarr = Array(self.in_r2c_o, dtype=fwd_dtype)
+            outexp = Array(self.out_r2c_o, dtype=_other_kind[fwd_dtype])
             _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = ar(zeros(self.rand_len_r, dtype=fwd_dtype))
-            rand_outarr = ar(zeros(self.rand_len_c, dtype=_other_kind[fwd_dtype]))
+            rand_inarr = Array(zeros(self.rand_len_r, dtype=fwd_dtype))
+            rand_outarr = Array(zeros(self.rand_len_c, dtype=_other_kind[fwd_dtype]))
             _test_random(self, rand_inarr, rand_outarr, self.tdict[fwd_dtype])
             # Clean these up since they could be big:
             del rand_inarr
@@ -508,11 +505,11 @@ class _BaseTestFFTClass(unittest.TestCase):
         for fwd_dtype in [float32, float64]:
             delta_t = self.delta
             # Even input
-            inarr = ts(
+            inarr = TimeSeries(
                 self.in_r2c_e, dtype=fwd_dtype, delta_t=delta_t, epoch=self.epoch
             )
             delta_f = 1.0 / (inarr.delta_t * len(inarr))
-            outexp = fs(
+            outexp = FrequencySeries(
                 self.out_r2c_e,
                 dtype=_other_kind[fwd_dtype],
                 delta_f=delta_f,
@@ -521,11 +518,11 @@ class _BaseTestFFTClass(unittest.TestCase):
             outexp *= delta_t
             _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Odd input
-            inarr = ts(
+            inarr = TimeSeries(
                 self.in_r2c_o, dtype=fwd_dtype, delta_t=delta_t, epoch=self.epoch
             )
             delta_f = 1.0 / (inarr.delta_t * len(inarr))
-            outexp = fs(
+            outexp = FrequencySeries(
                 self.out_r2c_o,
                 dtype=_other_kind[fwd_dtype],
                 delta_f=delta_f,
@@ -534,13 +531,13 @@ class _BaseTestFFTClass(unittest.TestCase):
             outexp *= delta_t
             _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = ts(
+            rand_inarr = TimeSeries(
                 zeros(self.rand_len_r, dtype=fwd_dtype),
                 epoch=self.epoch,
                 delta_t=delta_t,
             )
             delta_f = 1.0 / (rand_inarr.delta_t * len(rand_inarr))
-            rand_outarr = fs(
+            rand_outarr = FrequencySeries(
                 zeros(self.rand_len_c, dtype=_other_kind[fwd_dtype]),
                 epoch=self.epoch,
                 delta_f=delta_f,
@@ -561,11 +558,11 @@ class _BaseTestFFTClass(unittest.TestCase):
         for fwd_dtype in [float32, float64]:
             delta_f = self.delta
             # Even input
-            inarr = fs(
+            inarr = FrequencySeries(
                 self.in_r2c_e, dtype=fwd_dtype, delta_f=delta_f, epoch=self.epoch
             )
             delta_t = 1.0 / (inarr.delta_f * len(inarr))
-            outexp = ts(
+            outexp = TimeSeries(
                 self.out_r2c_e,
                 dtype=_other_kind[fwd_dtype],
                 delta_t=delta_t,
@@ -574,11 +571,11 @@ class _BaseTestFFTClass(unittest.TestCase):
             outexp *= delta_f
             _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Odd input
-            inarr = fs(
+            inarr = FrequencySeries(
                 self.in_r2c_o, dtype=fwd_dtype, delta_f=delta_f, epoch=self.epoch
             )
             delta_t = 1.0 / (inarr.delta_f * len(inarr))
-            outexp = ts(
+            outexp = TimeSeries(
                 self.out_r2c_o,
                 dtype=_other_kind[fwd_dtype],
                 delta_t=delta_t,
@@ -587,13 +584,13 @@ class _BaseTestFFTClass(unittest.TestCase):
             outexp *= delta_f
             _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = fs(
+            rand_inarr = FrequencySeries(
                 zeros(self.rand_len_r, dtype=fwd_dtype),
                 epoch=self.epoch,
                 delta_f=delta_f,
             )
             delta_t = 1.0 / (rand_inarr.delta_f * len(rand_inarr))
-            rand_outarr = ts(
+            rand_outarr = TimeSeries(
                 zeros(self.rand_len_c, dtype=_other_kind[fwd_dtype]),
                 epoch=self.epoch,
                 delta_t=delta_t,
@@ -612,12 +609,12 @@ class _BaseTestFFTClass(unittest.TestCase):
     def test_rev_real_arr(self):
         for rev_dtype in [float32, float64]:
             # Even input
-            inarr = ar(self.in_c2r_e, dtype=_other_kind[rev_dtype])
-            outexp = ar(self.out_c2r_e, dtype=rev_dtype)
+            inarr = Array(self.in_c2r_e, dtype=_other_kind[rev_dtype])
+            outexp = Array(self.out_c2r_e, dtype=rev_dtype)
             _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Odd input
-            inarr = ar(self.in_c2r_o, dtype=_other_kind[rev_dtype])
-            outexp = ar(self.out_c2r_o, dtype=rev_dtype)
+            inarr = Array(self.in_c2r_o, dtype=_other_kind[rev_dtype])
+            outexp = Array(self.out_c2r_o, dtype=rev_dtype)
             _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
@@ -632,27 +629,27 @@ class _BaseTestFFTClass(unittest.TestCase):
         for rev_dtype in [float32, float64]:
             delta_t = self.delta
             # Even input
-            inarr = ts(
+            inarr = TimeSeries(
                 self.in_c2r_e,
                 dtype=_other_kind[rev_dtype],
                 delta_t=delta_t,
                 epoch=self.epoch,
             )
             delta_f = 1.0 / (delta_t * len(self.out_c2r_e))
-            outexp = fs(
+            outexp = FrequencySeries(
                 self.out_c2r_e, dtype=rev_dtype, delta_f=delta_f, epoch=self.epoch
             )
             outexp *= delta_t
             _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Odd input
-            inarr = ts(
+            inarr = TimeSeries(
                 self.in_c2r_o,
                 dtype=_other_kind[rev_dtype],
                 delta_t=delta_t,
                 epoch=self.epoch,
             )
             delta_f = 1.0 / (delta_t * len(self.out_c2r_o))
-            outexp = fs(
+            outexp = FrequencySeries(
                 self.out_c2r_o, dtype=rev_dtype, delta_f=delta_f, epoch=self.epoch
             )
             outexp *= delta_t
@@ -674,27 +671,27 @@ class _BaseTestFFTClass(unittest.TestCase):
         for rev_dtype in [float32, float64]:
             delta_f = self.delta
             # Even input
-            inarr = fs(
+            inarr = FrequencySeries(
                 self.in_c2r_e,
                 dtype=_other_kind[rev_dtype],
                 delta_f=delta_f,
                 epoch=self.epoch,
             )
             delta_t = 1.0 / (delta_f * len(self.out_c2r_e))
-            outexp = ts(
+            outexp = TimeSeries(
                 self.out_c2r_e, dtype=rev_dtype, delta_t=delta_t, epoch=self.epoch
             )
             outexp *= delta_f
             _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Odd input
-            inarr = fs(
+            inarr = FrequencySeries(
                 self.in_c2r_o,
                 dtype=_other_kind[rev_dtype],
                 delta_f=delta_f,
                 epoch=self.epoch,
             )
             delta_t = 1.0 / (delta_f * len(self.out_c2r_o))
-            outexp = ts(
+            outexp = TimeSeries(
                 self.out_c2r_o, dtype=rev_dtype, delta_t=delta_t, epoch=self.epoch
             )
             outexp *= delta_f
@@ -708,12 +705,12 @@ class _BaseTestFFTClass(unittest.TestCase):
     def test_fwd_complex_arr(self):
         for fwd_dtype in [complex64, complex128]:
             # Don't do separate even/odd tests for complex
-            inarr = ar(self.in_c2c_fwd, dtype=fwd_dtype)
-            outexp = ar(self.out_c2c_fwd, dtype=fwd_dtype)
+            inarr = Array(self.in_c2c_fwd, dtype=fwd_dtype)
+            outexp = Array(self.out_c2c_fwd, dtype=fwd_dtype)
             _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = ar(zeros(self.rand_len_c, dtype=fwd_dtype))
-            rand_outarr = ar(zeros(self.rand_len_c, dtype=fwd_dtype))
+            rand_inarr = Array(zeros(self.rand_len_c, dtype=fwd_dtype))
+            rand_outarr = Array(zeros(self.rand_len_c, dtype=fwd_dtype))
             _test_random(self, rand_inarr, rand_outarr, self.tdict[fwd_dtype])
             # Clean these up since they could be big:
             del rand_inarr
@@ -727,23 +724,23 @@ class _BaseTestFFTClass(unittest.TestCase):
         for fwd_dtype in [complex64, complex128]:
             delta_t = self.delta
             # Don't do separate even/odd tests for complex
-            inarr = ts(
+            inarr = TimeSeries(
                 self.in_c2c_fwd, dtype=fwd_dtype, delta_t=delta_t, epoch=self.epoch
             )
             delta_f = 1.0 / (delta_t * len(inarr))
-            outexp = fs(
+            outexp = FrequencySeries(
                 self.out_c2c_fwd, dtype=fwd_dtype, delta_f=delta_f, epoch=self.epoch
             )
             outexp *= delta_t
             _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = ts(
+            rand_inarr = TimeSeries(
                 zeros(self.rand_len_c, dtype=fwd_dtype),
                 delta_t=delta_t,
                 epoch=self.epoch,
             )
             delta_f = 1.0 / (delta_t * len(rand_inarr))
-            rand_outarr = fs(
+            rand_outarr = FrequencySeries(
                 zeros(self.rand_len_c, dtype=fwd_dtype),
                 delta_f=delta_f,
                 epoch=self.epoch,
@@ -767,23 +764,23 @@ class _BaseTestFFTClass(unittest.TestCase):
         for fwd_dtype in [complex64, complex128]:
             delta_f = self.delta
             # Don't do separate even/odd tests for complex
-            inarr = fs(
+            inarr = FrequencySeries(
                 self.in_c2c_fwd, dtype=fwd_dtype, delta_f=delta_f, epoch=self.epoch
             )
             delta_t = 1.0 / (delta_f * len(inarr))
-            outexp = ts(
+            outexp = TimeSeries(
                 self.out_c2c_fwd, dtype=fwd_dtype, delta_t=delta_t, epoch=self.epoch
             )
             outexp *= delta_f
             _test_fft(self, inarr, outexp, self.tdict[fwd_dtype])
             # Random
-            rand_inarr = fs(
+            rand_inarr = FrequencySeries(
                 zeros(self.rand_len_c, dtype=fwd_dtype),
                 delta_f=delta_f,
                 epoch=self.epoch,
             )
             delta_t = 1.0 / (delta_t * len(rand_inarr))
-            rand_outarr = ts(
+            rand_outarr = TimeSeries(
                 zeros(self.rand_len_c, dtype=fwd_dtype),
                 delta_t=delta_t,
                 epoch=self.epoch,
@@ -802,8 +799,8 @@ class _BaseTestFFTClass(unittest.TestCase):
     def test_rev_complex_arr(self):
         for rev_dtype in [complex64, complex128]:
             # Don't do separate even/odd tests for complex
-            inarr = ar(self.in_c2c_rev, dtype=rev_dtype)
-            outexp = ar(self.out_c2c_rev, dtype=rev_dtype)
+            inarr = Array(self.in_c2c_rev, dtype=rev_dtype)
+            outexp = Array(self.out_c2c_rev, dtype=rev_dtype)
             _test_ifft(self, inarr, outexp, self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
@@ -818,11 +815,11 @@ class _BaseTestFFTClass(unittest.TestCase):
         for rev_dtype in [complex64, complex128]:
             delta_t = self.delta
             # Don't do separate even/odd tests for complex
-            inarr = ts(
+            inarr = TimeSeries(
                 self.in_c2c_rev, dtype=rev_dtype, delta_t=delta_t, epoch=self.epoch
             )
             delta_f = 1.0 / (delta_t * len(self.out_c2c_rev))
-            outexp = fs(
+            outexp = FrequencySeries(
                 self.out_c2c_rev, dtype=rev_dtype, delta_f=delta_f, epoch=self.epoch
             )
             outexp *= delta_t
@@ -844,11 +841,11 @@ class _BaseTestFFTClass(unittest.TestCase):
         for rev_dtype in [complex64, complex128]:
             delta_f = self.delta
             # Don't do separate even/odd tests for complex
-            inarr = fs(
+            inarr = FrequencySeries(
                 self.in_c2c_rev, dtype=rev_dtype, delta_f=delta_f, epoch=self.epoch
             )
             delta_t = 1.0 / (delta_f * len(self.out_c2c_rev))
-            outexp = ts(
+            outexp = TimeSeries(
                 self.out_c2c_rev, dtype=rev_dtype, delta_t=delta_t, epoch=self.epoch
             )
             outexp *= delta_f
@@ -884,19 +881,21 @@ class _BaseTestFFTClass(unittest.TestCase):
 
         with self.context:
             set_backend(self.backends)
-            rows = [ar(randn(size) + 1j * randn(size), dtype=dt) for _ in range(nbatch)]
+            rows = [
+                Array(randn(size) + 1j * randn(size), dtype=dt) for _ in range(nbatch)
+            ]
 
             # Each row of a batched FFT should match that row's own
             # unbatched FFT.
-            batch_in = ar(zeros(nbatch * size, dtype=dt))
-            batch_out = ar(zeros(nbatch * size, dtype=dt))
+            batch_in = Array(zeros(nbatch * size, dtype=dt))
+            batch_out = Array(zeros(nbatch * size, dtype=dt))
             for i, row in enumerate(rows):
                 batch_in[i * size : (i + 1) * size] = row
             pycbc.fft.FFT(batch_in, batch_out, nbatch=nbatch, size=size).execute()
 
             for i, row in enumerate(rows):
-                row_out = ar(zeros(size, dtype=dt))
-                pycbc.fft.FFT(ar(row), row_out).execute()
+                row_out = Array(zeros(size, dtype=dt))
+                pycbc.fft.FFT(Array(row), row_out).execute()
                 got = batch_out[i * size : (i + 1) * size]
                 self.assertTrue(
                     row_out.almost_equal_norm(got, tol=tol),
@@ -905,15 +904,15 @@ class _BaseTestFFTClass(unittest.TestCase):
                 )
 
             # Same check for IFFT.
-            batch_in2 = ar(zeros(nbatch * size, dtype=dt))
-            batch_out2 = ar(zeros(nbatch * size, dtype=dt))
+            batch_in2 = Array(zeros(nbatch * size, dtype=dt))
+            batch_out2 = Array(zeros(nbatch * size, dtype=dt))
             for i, row in enumerate(rows):
                 batch_in2[i * size : (i + 1) * size] = row
             pycbc.fft.IFFT(batch_in2, batch_out2, nbatch=nbatch, size=size).execute()
 
             for i, row in enumerate(rows):
-                row_out = ar(zeros(size, dtype=dt))
-                pycbc.fft.IFFT(ar(row), row_out).execute()
+                row_out = Array(zeros(size, dtype=dt))
+                pycbc.fft.IFFT(Array(row), row_out).execute()
                 got = batch_out2[i * size : (i + 1) * size]
                 self.assertTrue(
                     row_out.almost_equal_norm(got, tol=tol),

@@ -254,27 +254,27 @@ class MatchedFilterControl:
             self.upsample_method = upsample_method
             self.upsample_threshold = upsample_threshold
 
-            N_full = self.tlen
-            N_red = N_full / downsample_factor
+            tlen_full = self.tlen
+            tlen_red = tlen_full / downsample_factor
             self.kmin_full, self.kmax_full = get_cutoff_indices(
-                self.flow, self.fhigh, self.delta_f, N_full
+                self.flow, self.fhigh, self.delta_f, tlen_full
             )
 
             self.kmin_red, _ = get_cutoff_indices(
-                self.flow, self.fhigh, self.delta_f, N_red
+                self.flow, self.fhigh, self.delta_f, tlen_red
             )
 
-            if self.kmax_full < N_red:
+            if self.kmax_full < tlen_red:
                 self.kmax_red = self.kmax_full
             else:
-                self.kmax_red = N_red - 1
+                self.kmax_red = tlen_red - 1
 
-            self.snr_mem = zeros(N_red, dtype=self.dtype)
+            self.snr_mem = zeros(tlen_red, dtype=self.dtype)
             self.corr_mem_full = FrequencySeries(
-                zeros(N_full, dtype=self.dtype), delta_f=self.delta_f
+                zeros(tlen_full, dtype=self.dtype), delta_f=self.delta_f
             )
-            self.corr_mem = Array(self.corr_mem_full[0:N_red], copy=False)
-            self.inter_vec = zeros(N_full, dtype=self.dtype)
+            self.corr_mem = Array(self.corr_mem_full[0:tlen_red], copy=False)
+            self.inter_vec = zeros(tlen_full, dtype=self.dtype)
 
         else:
             raise ValueError("Invalid downsample factor")
@@ -1013,7 +1013,7 @@ class MatchedFilterSkyMaxControl:
             The snr values at the trigger locations.
 
         """
-        I_plus, Iplus_corr, Iplus_norm = matched_filter_core(
+        snr_plus, corr_plus, norm_plus = matched_filter_core(
             hplus,
             stilde,
             h_norm=hplus_norm,
@@ -1023,7 +1023,7 @@ class MatchedFilterSkyMaxControl:
             corr_out=self.corr_plus_mem,
         )
 
-        I_cross, Icross_corr, Icross_norm = matched_filter_core(
+        snr_cross, corr_cross, norm_cross = matched_filter_core(
             hcross,
             stilde,
             h_norm=hcross_norm,
@@ -1060,11 +1060,11 @@ class MatchedFilterSkyMaxControl:
             hplus_cross_corr = self.cached_hplus_hcross_correlation
 
         snr = self._maximized_snr(
-            I_plus,
-            I_cross,
+            snr_plus,
+            snr_cross,
             hplus_cross_corr,
-            hpnorm=Iplus_norm,
-            hcnorm=Icross_norm,
+            hpnorm=norm_plus,
+            hcnorm=norm_cross,
             out=self.snr_mem,
             thresh=self.snr_threshold,
             analyse_slice=stilde.analyze,
@@ -1085,25 +1085,25 @@ class MatchedFilterSkyMaxControl:
         logger.info("%d clustered points", len(idx))
         # erased self.
         u_vals, coa_phase = self._maximized_extrinsic_params(
-            I_plus.data,
-            I_cross.data,
+            snr_plus.data,
+            snr_cross.data,
             hplus_cross_corr,
             indices=idx + stilde.analyze.start,
-            hpnorm=Iplus_norm,
-            hcnorm=Icross_norm,
+            hpnorm=norm_plus,
+            hcnorm=norm_cross,
         )
 
         return (
             snr,
-            Iplus_corr,
-            Icross_corr,
+            corr_plus,
+            corr_cross,
             idx,
             snrv,
             u_vals,
             coa_phase,
             hplus_cross_corr,
-            Iplus_norm,
-            Icross_norm,
+            norm_plus,
+            norm_cross,
         )
 
     def _maximized_snr(self, hplus, hcross, hphccorr, **kwargs):
@@ -1148,11 +1148,13 @@ def make_frequency_series(vec):
     if isinstance(vec, FrequencySeries):
         return vec
     if isinstance(vec, TimeSeries):
-        N = len(vec)
-        n = N // 2 + 1
-        delta_f = 1.0 / N / vec.delta_t
+        tlen = len(vec)
+        flen = tlen // 2 + 1
+        delta_f = 1.0 / tlen / vec.delta_t
         vectilde = FrequencySeries(
-            zeros(n, dtype=complex_same_precision_as(vec)), delta_f=delta_f, copy=False
+            zeros(flen, dtype=complex_same_precision_as(vec)),
+            delta_f=delta_f,
+            copy=False,
         )
         fft(vec, vectilde)
         return vectilde
@@ -1188,10 +1190,10 @@ def sigmasq_series(
 
     """
     htilde = make_frequency_series(htilde)
-    N = (len(htilde) - 1) * 2
+    tlen = (len(htilde) - 1) * 2
     norm = 4.0 * htilde.delta_f
     kmin, kmax = get_cutoff_indices(
-        low_frequency_cutoff, high_frequency_cutoff, htilde.delta_f, N
+        low_frequency_cutoff, high_frequency_cutoff, htilde.delta_f, tlen
     )
 
     sigma_vec = FrequencySeries(
@@ -1234,10 +1236,10 @@ def sigmasq(htilde, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=N
 
     """
     htilde = make_frequency_series(htilde)
-    N = (len(htilde) - 1) * 2
+    tlen = (len(htilde) - 1) * 2
     norm = 4.0 * htilde.delta_f
     kmin, kmax = get_cutoff_indices(
-        low_frequency_cutoff, high_frequency_cutoff, htilde.delta_f, N
+        low_frequency_cutoff, high_frequency_cutoff, htilde.delta_f, tlen
     )
     ht = htilde[kmin:kmax]
 
@@ -1278,7 +1280,7 @@ def sigma(htilde, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=Non
     return sqrt(sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff))
 
 
-def get_cutoff_indices(flow, fhigh, df, N):
+def get_cutoff_indices(flow, fhigh, df, tlen):
     """
     Gets the indices of a frequency series at which to stop an overlap
     calculation.
@@ -1291,7 +1293,7 @@ def get_cutoff_indices(flow, fhigh, df, N):
         The frequency (in Hz) of the upper index.
     df: float
         The frequency step (in Hz) of the frequency series.
-    N: int
+    tlen: int
         The number of points in the **time** series. Can be odd
         or even.
 
@@ -1311,11 +1313,11 @@ def get_cutoff_indices(flow, fhigh, df, N):
         kmin = 1
     if fhigh:
         kmax = int(fhigh / df)
-        kmax = min(kmax, int((N + 1) / 2.0))
+        kmax = min(kmax, int((tlen + 1) / 2.0))
     else:
         # int() truncates towards 0, so this is
         # equivalent to the floor of the float
-        kmax = int((N + 1) / 2.0)
+        kmax = int((tlen + 1) / 2.0)
 
     if kmax <= kmin:
         err_msg = "Kmax cannot be less than or equal to kmin. "
@@ -1384,19 +1386,19 @@ def matched_filter_core(
     if len(htilde) != len(stilde):
         raise ValueError("Length of template and data must match")
 
-    N = (len(stilde) - 1) * 2
+    tlen = (len(stilde) - 1) * 2
     kmin, kmax = get_cutoff_indices(
-        low_frequency_cutoff, high_frequency_cutoff, stilde.delta_f, N
+        low_frequency_cutoff, high_frequency_cutoff, stilde.delta_f, tlen
     )
 
     if corr_out is not None:
         qtilde = corr_out
     else:
-        qtilde = zeros(N, dtype=complex_same_precision_as(data))
+        qtilde = zeros(tlen, dtype=complex_same_precision_as(data))
 
     if out is None:
-        _q = zeros(N, dtype=complex_same_precision_as(data))
-    elif (len(out) == N) and type(out) is Array and out.kind == "complex":
+        _q = zeros(tlen, dtype=complex_same_precision_as(data))
+    elif (len(out) == tlen) and type(out) is Array and out.kind == "complex":
         _q = out
     else:
         raise TypeError("Invalid Output Vector: wrong length or dtype")
@@ -1569,11 +1571,11 @@ def match(
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
 
-    N = (len(htilde) - 1) * 2
+    tlen = (len(htilde) - 1) * 2
 
     global _snr
-    if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != N:
-        _snr = zeros(N, dtype=complex_same_precision_as(vec1))
+    if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != tlen:
+        _snr = zeros(tlen, dtype=complex_same_precision_as(vec1))
     snr, _, snr_norm = matched_filter_core(
         htilde,
         stilde,
@@ -2408,9 +2410,9 @@ def optimized_match(
     waveform_1 = htilde.numpy()
     waveform_2 = stilde.numpy()
 
-    N = (len(stilde) - 1) * 2
+    tlen = (len(stilde) - 1) * 2
     kmin, kmax = get_cutoff_indices(
-        low_frequency_cutoff, high_frequency_cutoff, delta_f, N
+        low_frequency_cutoff, high_frequency_cutoff, delta_f, tlen
     )
     mask = slice(kmin, kmax)
 

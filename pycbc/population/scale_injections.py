@@ -1,7 +1,10 @@
+# Cosmology notation: V for comoving volumes, J for the Jacobian dD_L/dz.
+# ruff: noqa: N803, N806
+
 import copy
 
 import numpy as np
-from astropy.cosmology import WMAP9 as cosmo
+from astropy.cosmology import WMAP9
 from numpy import log
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
@@ -9,7 +12,7 @@ from scipy.interpolate import interp1d
 from pycbc.conversions import mchirp_from_mass1_mass2 as m1m2tomch
 from pycbc.io.hdf import HFile
 
-_mch_BNS = 1.4 / 2**0.2
+_MCH_BNS = 1.4 / 2**0.2
 _redshifts, _d_lum, _I = np.arange(0.0, 5.0, 0.01), [], []
 _save_params = [
     "mass1",
@@ -25,7 +28,7 @@ _save_params = [
 ]
 
 for zz in _redshifts:
-    _d_lum.append(cosmo.luminosity_distance(zz).value)
+    _d_lum.append(WMAP9.luminosity_distance(zz).value)
 _dlum_interp = interp1d(_d_lum, _redshifts)
 
 
@@ -114,10 +117,10 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
     nsamples = 1000000  # Used to calculate injected astro volume
     injections = copy.deepcopy(injections)
     min_z, max_z = injections["z_range"]
-    V = quad(contracted_dVdc, 0.0, max_z)[0]
+    V = quad(contracted_dvdc, 0.0, max_z)[0]
 
     z_astro = astro_redshifts(min_z, max_z, nsamples)
-    astro_lum_dist = cosmo.luminosity_distance(z_astro).value
+    astro_lum_dist = WMAP9.luminosity_distance(z_astro).value
 
     mch_astro = np.array(mchirp_sampler(nsamples=nsamples, **kwargs))
     mch_astro_det = mch_astro * (1.0 + z_astro)
@@ -135,11 +138,11 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
         if injections[key]["d_dist"] == "uniform":
             d_min, d_max = min(distance), max(distance)
         elif injections[key]["d_dist"] == "dchirp":
-            d_fid_min = min(distance / (mchirp / _mch_BNS) ** (5 / 6.0))
-            d_fid_max = max(distance / (mchirp / _mch_BNS) ** (5 / 6.0))
+            d_fid_min = min(distance / (mchirp / _MCH_BNS) ** (5 / 6.0))
+            d_fid_max = max(distance / (mchirp / _MCH_BNS) ** (5 / 6.0))
 
-            d_min = d_fid_min * (mch_astro_det / _mch_BNS) ** (5 / 6.0)
-            d_max = d_fid_max * (mch_astro_det / _mch_BNS) ** (5 / 6.0)
+            d_min = d_fid_min * (mch_astro_det / _MCH_BNS) ** (5 / 6.0)
+            d_max = d_fid_max * (mch_astro_det / _MCH_BNS) ** (5 / 6.0)
 
         bound = np.sign((max_mchirp - mch_astro_det) * (mch_astro_det - min_mchirp))
         bound += np.sign((d_max - astro_lum_dist) * (astro_lum_dist - d_min))
@@ -152,8 +155,8 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
 
     # Estimate the sensitive volume
     z_range = injections["z_range"]
-    V_min = quad(contracted_dVdc, 0.0, z_range[0])[0]
-    V_max = quad(contracted_dVdc, 0.0, z_range[1])[0]
+    V_min = quad(contracted_dvdc, 0.0, z_range[0])[0]
+    V_max = quad(contracted_dvdc, 0.0, z_range[1])[0]
 
     thr_falloff, i_inj, i_det, i_det_sq = [], 0, 0, 0
     gps_min, gps_max = 1e15, 0
@@ -176,8 +179,8 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
         p_out *= pdf_z_astro(z_inj, V_min, V_max)
 
         p_in = 0
-        J = cosmo.luminosity_distance(z_inj + 0.0005).value
-        J -= cosmo.luminosity_distance(z_inj - 0.0005).value
+        J = WMAP9.luminosity_distance(z_inj + 0.0005).value
+        J -= WMAP9.luminosity_distance(z_inj - 0.0005).value
         J = abs(J) / 0.001  # A quick way to get dD_l/dz
 
         # Sum probability of injections from j-th set for all the strategies
@@ -204,8 +207,8 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
                 lomass_2, himass_2 = min(m2_j), max(m2_j)
 
             if dt_j["d_dist"] == "dchirp":
-                l_dist = min(dist_j / (mch_j / _mch_BNS) ** (5 / 6.0))
-                h_dist = max(dist_j / (mch_j / _mch_BNS) ** (5 / 6.0))
+                l_dist = min(dist_j / (mch_j / _MCH_BNS) ** (5 / 6.0))
+                h_dist = max(dist_j / (mch_j / _MCH_BNS) ** (5 / 6.0))
             elif dt_j["d_dist"] == "uniform":
                 l_dist, h_dist = min(dist_j), max(dist_j)
 
@@ -325,10 +328,10 @@ def astro_redshifts(min_z, max_z, nsamples):
     """
     dz, fac = 0.001, 3.0
     # use interpolation instead of directly estimating all the pdfz for rndz
-    V = quad(contracted_dVdc, 0.0, max_z)[0]
+    V = quad(contracted_dvdc, 0.0, max_z)[0]
     zbins = np.arange(min_z, max_z + dz / 2.0, dz)
     zcenter = (zbins[:-1] + zbins[1:]) / 2
-    pdfz = cosmo.differential_comoving_volume(zcenter).value / (1 + zcenter) / V
+    pdfz = WMAP9.differential_comoving_volume(zcenter).value / (1 + zcenter) / V
 
     int_pdf = interp1d(zcenter, pdfz, bounds_error=False, fill_value=0)
 
@@ -351,12 +354,12 @@ def pdf_z_astro(z, V_min, V_max):
     Get the probability density for the rate of events
     at a redshift assuming standard cosmology
     """
-    return contracted_dVdc(z) / (V_max - V_min)
+    return contracted_dvdc(z) / (V_max - V_min)
 
 
-def contracted_dVdc(z):
+def contracted_dvdc(z):
     # Return the time-dilated differential comoving volume
-    return cosmo.differential_comoving_volume(z).value / (1 + z)
+    return WMAP9.differential_comoving_volume(z).value / (1 + z)
 
 
 ##### Defining current standard strategies used for making injections #####
@@ -527,7 +530,7 @@ def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp=1):
         # Returns the PDF at a distance when distance is uniformly
         # distributed but scaled by the chirp mass
 
-        weight = (mchirp / _mch_BNS) ** (5.0 / 6)
+        weight = (mchirp / _MCH_BNS) ** (5.0 / 6)
         pdf = np.ones_like(distance) / weight / (high_dist - low_dist)
         bound = np.sign(
             (weight * high_dist - distance) * (distance - weight * low_dist)

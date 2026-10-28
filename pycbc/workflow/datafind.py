@@ -51,7 +51,9 @@ urllib.parse.uses_netloc.append("osdf")
 logger = logging.getLogger(__name__)
 
 
-def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tags=None):
+def setup_datafind_workflow(
+    workflow, science_segs, output_dir, seg_file=None, tags=None
+):
     """
     Setup datafind section of the workflow. This section is responsible for
     generating, or setting up the workflow to generate, a list of files that
@@ -69,9 +71,9 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tag
     ----------
     workflow: pycbc.workflow.core.Workflow
         The workflow class that stores the jobs that will be run.
-    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
+    science_segs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
-    outputDir : path
+    output_dir : path
         All output files written by datafind processes will be written to this
         directory.
     seg_file : SegFile, optional (default=None)
@@ -95,7 +97,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tag
         SegFile containing the analysable time after checks in the datafind
         module are applied to the input segment list. For production runs this
         is expected to be equal to the input segment list.
-    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
+    science_segs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse. If
         the updateSegmentTimes kwarg is given this will be updated to reflect
         any instances of missing data.
@@ -107,54 +109,54 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tag
     if tags is None:
         tags = []
     logger.info("Entering datafind module")
-    make_analysis_dir(outputDir)
+    make_analysis_dir(output_dir)
     cp = workflow.cp
 
     # Parse for options in ini file
     datafind_method = cp.get_opt_tags("workflow-datafind", "datafind-method", tags)
 
     if cp.has_option_tags("workflow-datafind", "datafind-check-segment-gaps", tags):
-        checkSegmentGaps = cp.get_opt_tags(
+        check_segment_gaps = cp.get_opt_tags(
             "workflow-datafind", "datafind-check-segment-gaps", tags
         )
     else:
-        checkSegmentGaps = "no_test"
+        check_segment_gaps = "no_test"
     if cp.has_option_tags("workflow-datafind", "datafind-check-frames-exist", tags):
-        checkFramesExist = cp.get_opt_tags(
+        check_frames_exist = cp.get_opt_tags(
             "workflow-datafind", "datafind-check-frames-exist", tags
         )
     else:
-        checkFramesExist = "no_test"
+        check_frames_exist = "no_test"
     if cp.has_option_tags("workflow-datafind", "datafind-check-segment-summary", tags):
-        checkSegmentSummary = cp.get_opt_tags(
+        check_segment_summary = cp.get_opt_tags(
             "workflow-datafind", "datafind-check-segment-summary", tags
         )
     else:
-        checkSegmentSummary = "no_test"
+        check_segment_summary = "no_test"
 
     logger.info("Starting datafind with setup_datafind_runtime_generated")
     if datafind_method == "AT_RUNTIME_MULTIPLE_CACHES":
         datafindcaches, datafindouts = setup_datafind_runtime_cache_multi_calls_perifo(
-            cp, scienceSegs, outputDir, tags=tags
+            cp, science_segs, output_dir, tags=tags
         )
     elif datafind_method == "AT_RUNTIME_SINGLE_CACHES":
         datafindcaches, datafindouts = setup_datafind_runtime_cache_single_call_perifo(
-            cp, scienceSegs, outputDir, tags=tags
+            cp, science_segs, output_dir, tags=tags
         )
     elif datafind_method == "AT_RUNTIME_MULTIPLE_FRAMES":
         datafindcaches, datafindouts = setup_datafind_runtime_frames_multi_calls_perifo(
-            cp, scienceSegs, outputDir, tags=tags
+            cp, science_segs, output_dir, tags=tags
         )
     elif datafind_method == "AT_RUNTIME_SINGLE_FRAMES":
         datafindcaches, datafindouts = setup_datafind_runtime_frames_single_call_perifo(
-            cp, scienceSegs, outputDir, tags=tags
+            cp, science_segs, output_dir, tags=tags
         )
     elif datafind_method == "AT_RUNTIME_FAKE_DATA":
         pass
     elif datafind_method == "FROM_PREGENERATED_LCF_FILES":
-        ifos = scienceSegs.keys()
+        ifos = science_segs.keys()
         datafindcaches, datafindouts = setup_datafind_from_pregenerated_lcf_files(
-            cp, ifos, outputDir, tags=tags
+            cp, ifos, output_dir, tags=tags
         )
     else:
         msg = """Entry datafind-method in [workflow-datafind] does not have "
@@ -184,7 +186,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tag
             cp_new.set("datafind", "urltype", "gsiftp")
             backup_datafindcaches, backup_datafindouts = (
                 setup_datafind_runtime_frames_single_call_perifo(
-                    cp_new, scienceSegs, outputDir, tags=tags
+                    cp_new, science_segs, output_dir, tags=tags
                 )
             )
             backup_datafindouts = datafind_keep_unique_backups(
@@ -196,59 +198,59 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tag
     logger.info("setup_datafind_runtime_generated completed")
     # If we don't have frame files covering all times we can update the science
     # segments.
-    if checkSegmentGaps in ["warn", "update_times", "raise_error"]:
+    if check_segment_gaps in ["warn", "update_times", "raise_error"]:
         logger.info("Checking science segments against datafind output....")
-        newScienceSegs = get_science_segs_from_datafind_outs(datafindcaches)
+        new_science_segs = get_science_segs_from_datafind_outs(datafindcaches)
         logger.info("New segments calculated from data find output.....")
-        missingData = False
-        for ifo in scienceSegs.keys():
+        missing_data = False
+        for ifo in science_segs.keys():
             # If no science segments in input then do nothing
-            if not scienceSegs[ifo]:
+            if not science_segs[ifo]:
                 msg = "No science segments are present for ifo %s, " % (ifo)
                 msg += "the segment metadata indicates there is no analyzable"
                 msg += " strain data between the selected GPS start and end "
                 msg += "times."
                 logger.warning(msg)
                 continue
-            if ifo not in newScienceSegs:
+            if ifo not in new_science_segs:
                 msg = "No data frames were found corresponding to the science "
                 msg += "segments for ifo %s" % (ifo)
                 logger.error(msg)
-                missingData = True
-                if checkSegmentGaps == "update_times":
-                    scienceSegs[ifo] = segments.segmentlist()
+                missing_data = True
+                if check_segment_gaps == "update_times":
+                    science_segs[ifo] = segments.segmentlist()
                 continue
-            missing = scienceSegs[ifo] - newScienceSegs[ifo]
+            missing = science_segs[ifo] - new_science_segs[ifo]
             if abs(missing):
                 msg = "From ifo %s we are missing frames covering:" % (ifo)
                 msg += "\n%s" % "\n".join(map(str, missing))
-                missingData = True
+                missing_data = True
                 logger.error(msg)
-                if checkSegmentGaps == "update_times":
+                if check_segment_gaps == "update_times":
                     # Remove missing time, so that we can carry on if desired
                     logger.info("Updating science segments for ifo %s.", ifo)
-                    scienceSegs[ifo] = scienceSegs[ifo] - missing
+                    science_segs[ifo] = science_segs[ifo] - missing
 
-        if checkSegmentGaps == "raise_error" and missingData:
+        if check_segment_gaps == "raise_error" and missing_data:
             raise ValueError("Workflow cannot find needed data, exiting.")
         logger.info("Done checking, any discrepancies are reported above.")
-    elif checkSegmentGaps == "no_test":
+    elif check_segment_gaps == "no_test":
         pass
     else:
-        errMsg = "checkSegmentGaps kwarg must take a value from 'no_test', "
-        errMsg += "'warn', 'update_times' or 'raise_error'."
-        raise ValueError(errMsg)
+        err_msg = "check_segment_gaps kwarg must take a value from 'no_test', "
+        err_msg += "'warn', 'update_times' or 'raise_error'."
+        raise ValueError(err_msg)
 
     # Do all of the frame files that were returned actually exist?
-    if checkFramesExist in ["warn", "update_times", "raise_error"]:
+    if check_frames_exist in ["warn", "update_times", "raise_error"]:
         logger.info("Verifying that all frames exist on disk.")
-        missingFrSegs, missingFrames = get_missing_segs_from_frame_file_cache(
+        missing_fr_segs, missing_frames = get_missing_segs_from_frame_file_cache(
             datafindcaches
         )
-        missingFlag = False
-        for ifo in missingFrames.keys():
+        missing_flag = False
+        for ifo in missing_frames.keys():
             # If no data in the input then do nothing
-            if not scienceSegs[ifo]:
+            if not science_segs[ifo]:
                 continue
             # If using a backup server, does the frame exist remotely?
             if using_backup_server:
@@ -256,7 +258,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tag
                 #          for too many frames. This could be optimized if
                 #          it becomes necessary.
                 new_list = []
-                for frame in missingFrames[ifo]:
+                for frame in missing_frames[ifo]:
                     for dfout in datafindouts:
                         dfout_pfns = list(dfout.pfns)
                         dfout_urls = [a.url for a in dfout_pfns]
@@ -274,33 +276,33 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tag
                             break
                     else:
                         new_list.append(frame)
-                missingFrames[ifo] = new_list
-            if missingFrames[ifo]:
+                missing_frames[ifo] = new_list
+            if missing_frames[ifo]:
                 msg = "From ifo %s we are missing the following frames:" % (ifo)
-                msg += "\n".join([a.url for a in missingFrames[ifo]])
-                missingFlag = True
+                msg += "\n".join([a.url for a in missing_frames[ifo]])
+                missing_flag = True
                 logger.error(msg)
-            if checkFramesExist == "update_times":
+            if check_frames_exist == "update_times":
                 # Remove missing times, so that we can carry on if desired
                 logger.info("Updating science times for ifo %s.", ifo)
-                scienceSegs[ifo] = scienceSegs[ifo] - missingFrSegs[ifo]
+                science_segs[ifo] = science_segs[ifo] - missing_fr_segs[ifo]
 
-        if checkFramesExist == "raise_error" and missingFlag:
+        if check_frames_exist == "raise_error" and missing_flag:
             raise ValueError("Workflow cannot find all frames, exiting.")
         logger.info("Finished checking frames.")
-    elif checkFramesExist == "no_test":
+    elif check_frames_exist == "no_test":
         pass
     else:
-        errMsg = "checkFramesExist kwarg must take a value from 'no_test', "
-        errMsg += "'warn', 'update_times' or 'raise_error'."
-        raise ValueError(errMsg)
+        err_msg = "check_frames_exist kwarg must take a value from 'no_test', "
+        err_msg += "'warn', 'update_times' or 'raise_error'."
+        raise ValueError(err_msg)
 
     # Check if there are cases where frames exist, but no entry in the segment
     # summary table are present.
-    if checkSegmentSummary in ["warn", "raise_error"]:
+    if check_segment_summary in ["warn", "raise_error"]:
         logger.info("Checking the segment summary table against frames.")
-        dfScienceSegs = get_science_segs_from_datafind_outs(datafindcaches)
-        missingFlag = False
+        df_science_segs = get_science_segs_from_datafind_outs(datafindcaches)
+        missing_flag = False
         # NOTE: Should this be overrideable in the config file?
         sci_seg_name = "SCIENCE"
         if seg_file is None:
@@ -313,15 +315,15 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tag
             err_msg += "datafind-check-segment-summary option."
             raise ValueError(err_msg)
         seg_summary_times = seg_file.seg_summ_dict
-        for ifo in dfScienceSegs.keys():
+        for ifo in df_science_segs.keys():
             curr_seg_summ_times = seg_summary_times[ifo + ":" + sci_seg_name]
-            missing = dfScienceSegs[ifo] & seg_file.valid_segments
+            missing = df_science_segs[ifo] & seg_file.valid_segments
             missing.coalesce()
             missing = missing - curr_seg_summ_times
             missing.coalesce()
-            scienceButNotFrame = scienceSegs[ifo] - dfScienceSegs[ifo]
-            scienceButNotFrame.coalesce()
-            missing2 = scienceSegs[ifo] - scienceButNotFrame
+            science_but_not_frame = science_segs[ifo] - df_science_segs[ifo]
+            science_but_not_frame.coalesce()
+            missing2 = science_segs[ifo] - science_but_not_frame
             missing2.coalesce()
             missing2 = missing2 - curr_seg_summ_times
             missing2.coalesce()
@@ -330,39 +332,39 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tag
                 msg += "but are not covered in the segment summary table."
                 msg += "\n%s" % "\n".join(map(str, missing))
                 logger.error(msg)
-                missingFlag = True
+                missing_flag = True
             if abs(missing2):
                 msg = "From ifo %s the following times have frames, " % (ifo)
                 msg += "are science, and are not covered in the segment "
                 msg += "summary table."
                 msg += "\n%s" % "\n".join(map(str, missing2))
                 logger.error(msg)
-                missingFlag = True
-        if checkSegmentSummary == "raise_error" and missingFlag:
-            errMsg = "Segment_summary discrepancy detected, exiting."
-            raise ValueError(errMsg)
-    elif checkSegmentSummary == "no_test":
+                missing_flag = True
+        if check_segment_summary == "raise_error" and missing_flag:
+            err_msg = "Segment_summary discrepancy detected, exiting."
+            raise ValueError(err_msg)
+    elif check_segment_summary == "no_test":
         pass
     else:
-        errMsg = "checkSegmentSummary kwarg must take a value from 'no_test', "
-        errMsg += "'warn', or 'raise_error'."
-        raise ValueError(errMsg)
+        err_msg = "check_segment_summary kwarg must take a value from 'no_test', "
+        err_msg += "'warn', or 'raise_error'."
+        raise ValueError(err_msg)
 
     # Now need to create the file for SCIENCE_AVAILABLE
     sci_avlble_dict = segments.segmentlistdict()
     # NOTE: Should this be overrideable in the config file?
     sci_avlble_name = "SCIENCE_AVAILABLE"
-    for ifo in scienceSegs.keys():
-        sci_avlble_dict[ifo + ":" + sci_avlble_name] = scienceSegs[ifo]
+    for ifo in science_segs.keys():
+        sci_avlble_dict[ifo + ":" + sci_avlble_name] = science_segs[ifo]
 
     sci_avlble_file = SegFile.from_segment_list_dict(
         "SCIENCE_AVAILABLE",
         sci_avlble_dict,
-        ifo_list=scienceSegs.keys(),
+        ifo_list=science_segs.keys(),
         valid_segment=workflow.analysis_time,
         extension=".xml",
         tags=tags,
-        directory=outputDir,
+        directory=output_dir,
     )
 
     logger.info("Leaving datafind module")
@@ -371,16 +373,16 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None, tag
     else:
         datafindouts = FileList(datafindouts)
 
-    return datafindouts, sci_avlble_file, scienceSegs, sci_avlble_name
+    return datafindouts, sci_avlble_file, science_segs, sci_avlble_name
 
 
 def setup_datafind_runtime_cache_multi_calls_perifo(
-    cp, scienceSegs, outputDir, tags=None
+    cp, science_segs, output_dir, tags=None
 ):
     """
     This function uses the `gwdatafind` library to obtain the location of all
     the frame files that will be needed to cover the analysis of the data
-    given in scienceSegs. This function will not check if the returned frames
+    given in science_segs. This function will not check if the returned frames
     cover the whole time requested, such sanity checks are done in the
     pycbc.workflow.setup_datafind_workflow entry function. As opposed to
     setup_datafind_runtime_single_call_perifo this call will one call to the
@@ -395,9 +397,9 @@ def setup_datafind_runtime_cache_multi_calls_perifo(
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
+    science_segs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
-    outputDir : path
+    output_dir : path
         All output files written by datafind processes will be written to this
         directory.
     tags : list of strings, optional (default=None)
@@ -424,39 +426,39 @@ def setup_datafind_runtime_cache_multi_calls_perifo(
     datafindouts = []
     datafindcaches = []
     logger.info("Querying datafind server for all science segments.")
-    for ifo, scienceSegsIfo in scienceSegs.items():
+    for ifo, science_segs_ifo in science_segs.items():
         observatory = ifo[0].upper()
-        frameType = cp.get_opt_tags(
+        frame_type = cp.get_opt_tags(
             "workflow-datafind", "datafind-%s-frame-type" % (ifo.lower()), tags
         )
-        for seg in scienceSegsIfo:
+        for seg in science_segs_ifo:
             msg = "Finding data between %d and %d " % (seg[0], seg[1])
             msg += "for ifo %s" % (ifo)
             logger.info(msg)
             # WARNING: For now the workflow will expect times to be in integer seconds
-            startTime = int(seg[0])
-            endTime = int(seg[1])
+            start_time = int(seg[0])
+            end_time = int(seg[1])
 
             # Sometimes the connection can drop, so try a backup here
             try:
                 cache, cache_file = run_datafind_instance(
                     cp,
-                    outputDir,
+                    output_dir,
                     observatory,
-                    frameType,
-                    startTime,
-                    endTime,
+                    frame_type,
+                    start_time,
+                    end_time,
                     ifo,
                     tags=tags,
                 )
             except:
                 cache, cache_file = run_datafind_instance(
                     cp,
-                    outputDir,
+                    output_dir,
                     observatory,
-                    frameType,
-                    startTime,
-                    endTime,
+                    frame_type,
+                    start_time,
+                    end_time,
                     ifo,
                     tags=tags,
                 )
@@ -466,12 +468,12 @@ def setup_datafind_runtime_cache_multi_calls_perifo(
 
 
 def setup_datafind_runtime_cache_single_call_perifo(
-    cp, scienceSegs, outputDir, tags=None
+    cp, science_segs, output_dir, tags=None
 ):
     """
     This function uses the `gwdatafind` library to obtain the location of all
     the frame files that will be needed to cover the analysis of the data
-    given in scienceSegs. This function will not check if the returned frames
+    given in science_segs. This function will not check if the returned frames
     cover the whole time requested, such sanity checks are done in the
     pycbc.workflow.setup_datafind_workflow entry function. As opposed to
     setup_datafind_runtime_generated this call will only run one call to
@@ -486,9 +488,9 @@ def setup_datafind_runtime_cache_single_call_perifo(
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
+    science_segs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
-    outputDir : path
+    output_dir : path
         All output files written by datafind processes will be written to this
         directory.
     tags : list of strings, optional (default=None)
@@ -520,7 +522,7 @@ def setup_datafind_runtime_cache_single_call_perifo(
     datafindouts = []
     datafindcaches = []
     logger.info("Querying datafind server for all science segments.")
-    for ifo, scienceSegsIfo in scienceSegs.items():
+    for ifo, science_segs_ifo in science_segs.items():
         observatory = ifo[0].upper()
         checked_times = segments.segmentlist([])
         frame_types = cp.get_opt_tags(
@@ -531,8 +533,8 @@ def setup_datafind_runtime_cache_single_call_perifo(
         for ftype in frame_types:
             # Check the times, default to full time initially
             # This REQUIRES a coalesced segment list to work
-            start = int(scienceSegsIfo[0][0])
-            end = int(scienceSegsIfo[-1][1])
+            start = int(science_segs_ifo[0][0])
+            end = int(science_segs_ifo[-1][1])
             # Then check for limits. We're expecting something like:
             # value[start:end], so need to extract value, start and end
             if "[" in ftype:
@@ -557,11 +559,11 @@ def setup_datafind_runtime_cache_single_call_perifo(
             # Ask datafind where the frames are
             try:
                 cache, cache_file = run_datafind_instance(
-                    cp, outputDir, observatory, ftype, start, end, ifo, tags=tags
+                    cp, output_dir, observatory, ftype, start, end, ifo, tags=tags
                 )
             except:
                 cache, cache_file = run_datafind_instance(
-                    cp, outputDir, observatory, ftype, start, end, ifo, tags=tags
+                    cp, output_dir, observatory, ftype, start, end, ifo, tags=tags
                 )
 
             datafindouts.append(cache_file)
@@ -570,12 +572,12 @@ def setup_datafind_runtime_cache_single_call_perifo(
 
 
 def setup_datafind_runtime_frames_single_call_perifo(
-    cp, scienceSegs, outputDir, tags=None
+    cp, science_segs, output_dir, tags=None
 ):
     """
     This function uses the `gwdatafind` library to obtain the location of all
     the frame files that will be needed to cover the analysis of the data
-    given in scienceSegs. This function will not check if the returned frames
+    given in science_segs. This function will not check if the returned frames
     cover the whole time requested, such sanity checks are done in the
     pycbc.workflow.setup_datafind_workflow entry function. As opposed to
     setup_datafind_runtime_generated this call will only run one call to
@@ -590,9 +592,9 @@ def setup_datafind_runtime_frames_single_call_perifo(
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
+    science_segs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
-    outputDir : path
+    output_dir : path
         All output files written by datafind processes will be written to this
         directory.
     tags : list of strings, optional (default=None)
@@ -613,7 +615,7 @@ def setup_datafind_runtime_frames_single_call_perifo(
 
     """
     datafindcaches, _ = setup_datafind_runtime_cache_single_call_perifo(
-        cp, scienceSegs, outputDir, tags=tags
+        cp, science_segs, output_dir, tags=tags
     )
 
     datafindouts = convert_cachelist_to_filelist(datafindcaches)
@@ -622,12 +624,12 @@ def setup_datafind_runtime_frames_single_call_perifo(
 
 
 def setup_datafind_runtime_frames_multi_calls_perifo(
-    cp, scienceSegs, outputDir, tags=None
+    cp, science_segs, output_dir, tags=None
 ):
     """
     This function uses the `gwdatafind` library to obtain the location of all
     the frame files that will be needed to cover the analysis of the data
-    given in scienceSegs. This function will not check if the returned frames
+    given in science_segs. This function will not check if the returned frames
     cover the whole time requested, such sanity checks are done in the
     pycbc.workflow.setup_datafind_workflow entry function. As opposed to
     setup_datafind_runtime_single_call_perifo this call will one call to the
@@ -642,9 +644,9 @@ def setup_datafind_runtime_frames_multi_calls_perifo(
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
+    science_segs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
-    outputDir : path
+    output_dir : path
         All output files written by datafind processes will be written to this
         directory.
     tags : list of strings, optional (default=None)
@@ -665,7 +667,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(
 
     """
     datafindcaches, _ = setup_datafind_runtime_cache_multi_calls_perifo(
-        cp, scienceSegs, outputDir, tags=tags
+        cp, science_segs, output_dir, tags=tags
     )
 
     datafindouts = convert_cachelist_to_filelist(datafindcaches)
@@ -673,7 +675,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(
     return datafindcaches, datafindouts
 
 
-def setup_datafind_from_pregenerated_lcf_files(cp, ifos, outputDir, tags=None):
+def setup_datafind_from_pregenerated_lcf_files(cp, ifos, output_dir, tags=None):
     """
     This function is used if you want to run with pregenerated lcf frame
     cache files.
@@ -685,7 +687,7 @@ def setup_datafind_from_pregenerated_lcf_files(cp, ifos, outputDir, tags=None):
         workflow configuration files
     ifos : list of ifo strings
         List of ifos to get pregenerated files for.
-    outputDir : path
+    output_dir : path
         All output files written by datafind processes will be written to this
         directory. Currently this sub-module writes no output.
     tags : list of strings, optional (default=None)
@@ -765,33 +767,33 @@ def convert_cachelist_to_filelist(datafindcache_list):
                 this_name = os.path.basename(frame.url)
 
             if (prev_file is None) or (prev_name != this_name):
-                currFile = File(
+                curr_file = File(
                     curr_ifo,
                     frame.description,
                     frame.segment,
                     file_url=frame.url,
                     use_tmp_subdirs=True,
                 )
-                datafind_filelist.append(currFile)
-                prev_file = currFile
+                datafind_filelist.append(curr_file)
+                prev_file = curr_file
 
             # Populate the PFNs for the File() we just created
             cvmfs_urls = ("file:///cvmfs/", "osdf://")
             if frame.url.startswith(cvmfs_urls):
                 # Frame is on CVMFS/OSDF, so let all sites read it directly.
-                currFile.add_pfn(frame.url, site="all")
+                curr_file.add_pfn(frame.url, site="all")
             elif frame.url.startswith("file://"):
                 # Frame not on CVMFS, so may need transferring.
                 # Be careful here! If all your frames files are on site
                 # = local and you try to run on OSG, it will likely
                 # overwhelm the condor file transfer process!
                 for site in ["local", "condorpool_shared"]:
-                    currFile.add_pfn(frame.url, site=site)
+                    curr_file.add_pfn(frame.url, site=site)
             else:
                 # Frame is at some unknown URL. Pegasus will decide how to deal
                 # with this, but will likely transfer to local site first, and
                 # from there transfer to remote sites as needed.
-                currFile.add_pfn(frame.url, site="notlocal")
+                curr_file.add_pfn(frame.url, site="notlocal")
 
     return datafind_filelist
 
@@ -810,21 +812,21 @@ def get_science_segs_from_datafind_outs(datafindcaches):
 
     Returns
     -------
-    newScienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
+    new_science_segs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         The times covered by the frames found in datafindOuts.
 
     """
-    newScienceSegs = {}
+    new_science_segs = {}
     for cache in datafindcaches:
         if len(cache) > 0:
-            groupSegs = segments.segmentlist(e.segment for e in cache).coalesce()
+            group_segs = segments.segmentlist(e.segment for e in cache).coalesce()
             ifo = cache.ifo
-            if ifo not in newScienceSegs:
-                newScienceSegs[ifo] = groupSegs
+            if ifo not in new_science_segs:
+                new_science_segs[ifo] = group_segs
             else:
-                newScienceSegs[ifo].extend(groupSegs)
-                newScienceSegs[ifo].coalesce()
-    return newScienceSegs
+                new_science_segs[ifo].extend(group_segs)
+                new_science_segs[ifo].coalesce()
+    return new_science_segs
 
 
 def get_missing_segs_from_frame_file_cache(datafindcaches):
@@ -840,16 +842,16 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
 
     Returns
     -------
-    missingFrameSegs : Dict. of ifo keyed igwn_segments.segmentlist instances
+    missing_frame_segs : Dict. of ifo keyed igwn_segments.segmentlist instances
         The times corresponding to missing frames found in datafindOuts.
-    missingFrames: Dict. of ifo keyed lal.Cache instances
+    missing_frames: Dict. of ifo keyed lal.Cache instances
         The list of missing frames
 
     """
     from glue import lal
 
-    missingFrameSegs = {}
-    missingFrames = {}
+    missing_frame_segs = {}
+    missing_frames = {}
     for cache in datafindcaches:
         if len(cache) > 0:
             # Don't bother if these are not file:// urls, assume all urls in
@@ -859,84 +861,84 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
                 warn_msg += "cache file. I do not check if these exist."
                 logger.warning(warn_msg)
                 continue
-            _, currMissingFrames = cache.checkfilesexist(on_missing="warn")
-            missingSegs = segments.segmentlist(
-                e.segment for e in currMissingFrames
+            _, curr_missing_frames = cache.checkfilesexist(on_missing="warn")
+            missing_segs = segments.segmentlist(
+                e.segment for e in curr_missing_frames
             ).coalesce()
             ifo = cache.ifo
-            if ifo not in missingFrameSegs:
-                missingFrameSegs[ifo] = missingSegs
-                missingFrames[ifo] = lal.Cache(currMissingFrames)
+            if ifo not in missing_frame_segs:
+                missing_frame_segs[ifo] = missing_segs
+                missing_frames[ifo] = lal.Cache(curr_missing_frames)
             else:
-                missingFrameSegs[ifo].extend(missingSegs)
+                missing_frame_segs[ifo].extend(missing_segs)
                 # NOTE: This .coalesce probably isn't needed as the segments
                 # should be disjoint. If speed becomes an issue maybe remove it?
-                missingFrameSegs[ifo].coalesce()
-                missingFrames[ifo].extend(currMissingFrames)
-    return missingFrameSegs, missingFrames
+                missing_frame_segs[ifo].coalesce()
+                missing_frames[ifo].extend(curr_missing_frames)
+    return missing_frame_segs, missing_frames
 
 
-def get_segment_summary_times(scienceFile, segmentName):
+def get_segment_summary_times(science_file, segment_name):
     """
     This function will find the times for which the segment_summary is set
-    for the flag given by segmentName.
+    for the flag given by segment_name.
 
     Parameters
     ----------
-    scienceFile : SegFile
+    science_file : SegFile
         The segment file that we want to use to determine this.
-    segmentName : string
+    segment_name : string
         The DQ flag to search for times in the segment_summary table.
 
     Returns
     -------
-    summSegList : igwn_segments.segmentlist
+    summ_seg_list : igwn_segments.segmentlist
         The times that are covered in the segment summary table.
 
     """
-    # Parse the segmentName
-    segmentName = segmentName.split(":")
-    if len(segmentName) not in [2, 3]:
-        raise ValueError(f"Invalid channel name {segmentName}.")
-    ifo = segmentName[0]
-    channel = segmentName[1]
+    # Parse the segment_name
+    segment_name = segment_name.split(":")
+    if len(segment_name) not in [2, 3]:
+        raise ValueError(f"Invalid channel name {segment_name}.")
+    ifo = segment_name[0]
+    channel = segment_name[1]
     version = ""
-    if len(segmentName) == 3:
-        version = int(segmentName[2])
+    if len(segment_name) == 3:
+        version = int(segment_name[2])
 
     # Load the filename
     xmldoc = utils.load_filename(
-        scienceFile.cache_entry.path,
+        science_file.cache_entry.path,
         compress="auto",
         contenthandler=LIGOLWContentHandler,
     )
 
-    # Get the segment_def_id for the segmentName
-    segmentDefTable = ligolw.Table.get_table(xmldoc, "segment_definer")
-    for entry in segmentDefTable:
+    # Get the segment_def_id for the segment_name
+    segment_def_table = ligolw.Table.get_table(xmldoc, "segment_definer")
+    for entry in segment_def_table:
         if (entry.ifos == ifo) and (entry.name == channel):
-            if len(segmentName) == 2 or (entry.version == version):
-                segDefID = entry.segment_def_id
+            if len(segment_name) == 2 or (entry.version == version):
+                seg_def_id = entry.segment_def_id
                 break
     else:
         raise ValueError(
-            "Cannot find channel %s in segment_definer table." % (segmentName)
+            "Cannot find channel %s in segment_definer table." % (segment_name)
         )
 
-    # Get the segmentlist corresponding to this segmentName in segment_summary
-    segmentSummTable = ligolw.Table.get_table(xmldoc, "segment_summary")
-    summSegList = segments.segmentlist([])
-    for entry in segmentSummTable:
-        if entry.segment_def_id == segDefID:
+    # Get the segmentlist corresponding to this segment_name in segment_summary
+    segment_summ_table = ligolw.Table.get_table(xmldoc, "segment_summary")
+    summ_seg_list = segments.segmentlist([])
+    for entry in segment_summ_table:
+        if entry.segment_def_id == seg_def_id:
             segment = segments.segment(entry.start_time, entry.end_time)
-            summSegList.append(segment)
-    summSegList.coalesce()
+            summ_seg_list.append(segment)
+    summ_seg_list.coalesce()
 
-    return summSegList
+    return summ_seg_list
 
 
 def run_datafind_instance(
-    cp, outputDir, observatory, frameType, startTime, endTime, ifo, tags=None
+    cp, output_dir, observatory, frame_type, start_time, end_time, ifo, tags=None
 ):
     """
     This function will query the datafind server once to find frames between
@@ -946,17 +948,17 @@ def run_datafind_instance(
     ----------
     cp : ConfigParser instance
         Source for any kwargs that should be sent to the datafind module
-    outputDir : Output cache files will be written here. We also write the
+    output_dir : Output cache files will be written here. We also write the
         commands for reproducing what is done in this function to this
         directory.
     observatory : string
         The observatory to query frames for. Ex. 'H', 'L' or 'V'.  NB: not
         'H1', 'L1', 'V1' which denote interferometers.
-    frameType : string
+    frame_type : string
         The frame type to query for.
-    startTime : int
+    start_time : int
         Integer start time to query the datafind server for frames.
-    endTime : int
+    end_time : int
         Integer end time to query the datafind server for frames.
     ifo : string
         The interferometer to use for naming output. Ex. 'H1', 'L1', 'V1'.
@@ -972,7 +974,7 @@ def run_datafind_instance(
 
     Returns
     -------
-    dfCache : glue.lal.Cache instance
+    df_cache : glue.lal.Cache instance
        The glue.lal.Cache representation of the call to the datafind
        server and the returned frame files.
     cacheFile : pycbc.workflow.core.File
@@ -992,66 +994,71 @@ def run_datafind_instance(
     else:
         datafind_server = None
 
-    seg = segments.segment([startTime, endTime])
+    seg = segments.segment([start_time, end_time])
     # Take the datafind kwargs from config (usually urltype=file is
     # given).
-    dfKwargs = {}
+    df_kwargs = {}
     # By default ignore missing frames, this case is dealt with outside of here
-    dfKwargs["on_gaps"] = "ignore"
+    df_kwargs["on_gaps"] = "ignore"
     if cp.has_section("datafind"):
         for item, value in cp.items("datafind"):
-            dfKwargs[item] = value
+            df_kwargs[item] = value
     for tag in tags:
         if cp.has_section("datafind-%s" % (tag)):
             for item, value in cp.items("datafind-%s" % (tag)):
-                dfKwargs[item] = value
+                df_kwargs[item] = value
 
     # It is useful to print the corresponding command to the logs
     # directory to check if this was expected.
     log_datafind_command(
         observatory,
-        frameType,
-        startTime,
-        endTime,
-        os.path.join(outputDir, "logs"),
-        **dfKwargs,
+        frame_type,
+        start_time,
+        end_time,
+        os.path.join(output_dir, "logs"),
+        **df_kwargs,
     )
     logger.debug("Asking datafind server for frames.")
-    dfCache = lal.Cache.from_urls(
+    df_cache = lal.Cache.from_urls(
         find_frame_urls(
-            observatory, frameType, startTime, endTime, host=datafind_server, **dfKwargs
+            observatory,
+            frame_type,
+            start_time,
+            end_time,
+            host=datafind_server,
+            **df_kwargs,
         ),
     )
     logger.debug("Frames returned")
     # workflow format output file
     cache_file = File(
-        ifo, "DATAFIND", seg, extension="lcf", directory=outputDir, tags=tags
+        ifo, "DATAFIND", seg, extension="lcf", directory=output_dir, tags=tags
     )
     cache_file.add_pfn(cache_file.cache_entry.path, site="local")
 
-    dfCache.ifo = ifo
+    df_cache.ifo = ifo
     # Dump output to file
-    fP = open(cache_file.storage_path, "w")
-    # FIXME: CANNOT use dfCache.tofile because it will print 815901601.00000
+    fp = open(cache_file.storage_path, "w")
+    # FIXME: CANNOT use df_cache.tofile because it will print 815901601.00000
     #        as a gps time which is incompatible with the lal cache format
     #        (and the C codes) which demand an integer.
-    # dfCache.tofile(fP)
-    for entry in dfCache:
+    # df_cache.tofile(fp)
+    for entry in df_cache:
         start = str(int(entry.segment[0]))
         duration = str(int(abs(entry.segment)))
         print(
             "%s %s %s %s %s"
             % (entry.observatory, entry.description, start, duration, entry.url),
-            file=fP,
+            file=fp,
         )
         entry.segment = segments.segment(int(entry.segment[0]), int(entry.segment[1]))
 
-    fP.close()
-    return dfCache, cache_file
+    fp.close()
+    return df_cache, cache_file
 
 
 def log_datafind_command(
-    observatory, frameType, startTime, endTime, outputDir, **dfKwargs
+    observatory, frame_type, start_time, end_time, output_dir, **df_kwargs
 ):
     """
     This command will print an equivalent gw_data_find command to disk that
@@ -1065,14 +1072,14 @@ def log_datafind_command(
         "--observatory",
         observatory,
         "--type",
-        frameType,
+        frame_type,
         "--gps-start-time",
-        str(startTime),
+        str(start_time),
         "--gps-end-time",
-        str(endTime),
+        str(end_time),
     ]
 
-    for name, value in dfKwargs.items():
+    for name, value in df_kwargs.items():
         if name == "match":
             gw_command.append("--match")
             gw_command.append(str(value))
@@ -1082,20 +1089,20 @@ def log_datafind_command(
         elif name == "on_gaps":
             pass
         else:
-            errMsg = "Unknown datafind kwarg given: %s. " % (name)
-            errMsg += "This argument is stripped in the logged .sh command."
-            logger.warning(errMsg)
+            err_msg = "Unknown datafind kwarg given: %s. " % (name)
+            err_msg += "This argument is stripped in the logged .sh command."
+            logger.warning(err_msg)
 
-    fileName = "%s-%s-%d-%d.sh" % (
+    file_name = "%s-%s-%d-%d.sh" % (
         observatory,
-        frameType,
-        startTime,
-        endTime - startTime,
+        frame_type,
+        start_time,
+        end_time - start_time,
     )
-    filePath = os.path.join(outputDir, fileName)
-    fP = open(filePath, "w")
-    fP.write(" ".join(gw_command))
-    fP.close()
+    file_path = os.path.join(output_dir, file_name)
+    fp = open(file_path, "w")
+    fp.write(" ".join(gw_command))
+    fp.close()
 
 
 def datafind_keep_unique_backups(backup_outs, orig_outs):

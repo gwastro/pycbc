@@ -26,7 +26,7 @@ def call_likelihood(params):
     return models._global_instance.loglikelihood
 
 
-class OutOfSamples(Exception):
+class OutOfSamplesError(Exception):
     """Exception if we ran out of samples"""
 
 
@@ -87,7 +87,7 @@ class GameSampler(DummySampler):
             self.draw[i] = numpy.arange(0, len(self.dmap[i]))
 
         if size > len(self.draw[i]):
-            raise OutOfSamples
+            raise OutOfSamplesError
 
         numpy.random.shuffle(self.draw[i])
         selected = self.draw[i][:size]
@@ -216,7 +216,7 @@ class GameSampler(DummySampler):
                 psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(
                     weight / weight.sum(), passed, lengths[passed]
                 )
-            except OutOfSamples:
+            except OutOfSamplesError:
                 logger.info("No more samples to draw from")
                 break
 

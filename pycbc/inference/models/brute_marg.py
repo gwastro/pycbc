@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 _model = None
 
 
-class likelihood_wrapper:
+class LikelihoodWrapper:
     def __init__(self, model):
         global _model
         _model = model
@@ -186,7 +186,7 @@ class BruteTotalMassMarginalize(BaseGaussianNoise, DistMarg):
 
         base_model_cls = models[base_model]
         self.model = base_model_cls(variable_params=variable_params, **kwds)
-        self.call = likelihood_wrapper(self.model)
+        self.call = LikelihoodWrapper(self.model)
 
         marginalized_params = []
 
@@ -405,7 +405,7 @@ class BruteParallelGaussianMarginalize(BaseGaussianNoise):
 
         self.model = models[base_model](variable_params, **kwds)
 
-        self.call = likelihood_wrapper(self.model)
+        self.call = LikelihoodWrapper(self.model)
 
         # size of pool for each likelihood call
         self.pool = Pool(int(cores))
@@ -468,7 +468,7 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
 
         self.model = models[base_model](variable_params, **kwds)
 
-        self.call = likelihood_wrapper(self.model)
+        self.call = LikelihoodWrapper(self.model)
 
         # size of pool for each likelihood call
         if cores > 1:

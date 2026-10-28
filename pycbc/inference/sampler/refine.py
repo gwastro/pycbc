@@ -28,14 +28,14 @@ def call_model(params):
 
 def resample_equal(samples, logwt, seed=0):
     weights = numpy.exp(logwt - logsumexp(logwt))
-    N = len(weights)
-    positions = (numpy.random.random() + numpy.arange(N)) / N
-    idx = numpy.zeros(N, dtype=int)
+    n = len(weights)
+    positions = (numpy.random.random() + numpy.arange(n)) / n
+    idx = numpy.zeros(n, dtype=int)
     cumulative_sum = numpy.cumsum(weights)
     cumulative_sum /= cumulative_sum[-1]
 
     i, j = 0, 0
-    while i < N:
+    while i < n:
         if positions[i] < cumulative_sum[j]:
             idx[i] = j
             i += 1

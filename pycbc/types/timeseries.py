@@ -951,7 +951,7 @@ class TimeSeries(Array):
             The two dimensional interpolated qtransform of this time series.
 
         """
-        from scipy.interpolate import RectBivariateSpline as interp2d
+        from scipy.interpolate import RectBivariateSpline
 
         from pycbc.filter.qtransform import qplane, qtiling
 
@@ -968,10 +968,12 @@ class TimeSeries(Array):
         # Interpolate if requested
         if delta_f or delta_t or logfsteps:
             if return_complex:
-                interp_amp = interp2d(freqs, times, abs(q_plane), kx=1, ky=1)
-                interp_phase = interp2d(freqs, times, _numpy.angle(q_plane), kx=1, ky=1)
+                interp_amp = RectBivariateSpline(freqs, times, abs(q_plane), kx=1, ky=1)
+                interp_phase = RectBivariateSpline(
+                    freqs, times, _numpy.angle(q_plane), kx=1, ky=1
+                )
             else:
-                interp = interp2d(freqs, times, q_plane, kx=1, ky=1)
+                interp = RectBivariateSpline(freqs, times, q_plane, kx=1, ky=1)
 
         if delta_t:
             times = _numpy.arange(float(self.start_time), float(self.end_time), delta_t)

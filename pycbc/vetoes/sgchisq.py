@@ -128,8 +128,8 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             if nsnr < self.snr_threshold:
                 continue
 
-            N = (len(template) - 1) * 2
-            dt = 1.0 / (N * template.delta_f)
+            tlen = (len(template) - 1) * 2
+            dt = 1.0 / (tlen * template.delta_f)
             kmin = int(template.f_lower / psd.delta_f)
             time = float(template.epoch) + dt * indices[i]
             # Shift the time of interest to be centered on 0

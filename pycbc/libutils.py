@@ -112,9 +112,9 @@ def pkg_config_libdirs(packages):
         return []
 
     # if calling pkg-config failes, don't continue and don't try again.
-    with open(os.devnull, "w") as FNULL:
+    with open(os.devnull, "w") as fnull:
         try:
-            subprocess.check_call(["pkg-config", "--version"], stdout=FNULL)
+            subprocess.check_call(["pkg-config", "--version"], stdout=fnull)
         except:
             print(
                 "PyCBC.libutils: pkg-config call failed, setting NO_PKGCONFIG=1",
@@ -237,7 +237,7 @@ def import_optional(library_name):
     except ImportError:
         # module wasn't found so let's return a stub instead to inform
         # the user what has happened when they try to use related functions
-        class no_module:
+        class NoModule:
             def __init__(self, library):
                 self.library = library
 
@@ -258,4 +258,4 @@ def import_optional(library_name):
                       """
                 raise ImportError(inspect.cleandoc(msg))
 
-        return no_module(library_name)
+        return NoModule(library_name)

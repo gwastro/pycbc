@@ -19,7 +19,7 @@ import scipy.special as ssp
 import scipy.stats as sst
 
 
-class augmented_rv_continuous(sst.rv_continuous):
+class AugmentedRvContinuous(sst.rv_continuous):
     def __init__(
         self,
         unit="dimensionless",
@@ -81,7 +81,7 @@ class augmented_rv_continuous(sst.rv_continuous):
         return a, b
 
 
-class count_posterior(augmented_rv_continuous):
+class CountPosterior(AugmentedRvContinuous):
     """
     Count posterior distribution.
     """
@@ -90,7 +90,7 @@ class count_posterior(augmented_rv_continuous):
         self,
         logbf,
         laguerre_n,
-        Lambda0,
+        Lambda0,  # noqa: N803
         prior=-0.5,
         name="count posterior",
         unit="signals/experiment",
@@ -106,9 +106,9 @@ class count_posterior(augmented_rv_continuous):
             degree of generalized Laguerre polynomial for quadrature formula
         Lambda0 : float
             background rate (default=len(bayesfac))
-        prior : float or count_posterior, optional
+        prior : float or CountPosterior, optional
             prior distribution power law of improper prior if float
-            or count posterior distribution if count_posterior
+            or count posterior distribution if CountPosterior
             (default=-0.5: Jeffreys prior)
 
         """
@@ -140,9 +140,9 @@ class count_posterior(augmented_rv_continuous):
 
     def _pdf(self, x):
         # discourage underflows by evaluating ln L and using ln(1+x) function
-        logL = -x + numpy.sum(numpy.log1p(self.k * x))
-        P = numpy.exp(logL) * self.prior(x)
-        return self.norm * P
+        log_like = -x + numpy.sum(numpy.log1p(self.k * x))
+        pdf = numpy.exp(log_like) * self.prior(x)
+        return self.norm * pdf
 
     def _cdf(self, x):
         return sig.quad(self._pdf, 0.0, x)
@@ -187,13 +187,13 @@ class count_posterior(augmented_rv_continuous):
         # get weighted bayes factor
         k = numpy.exp(numpy.asarray(logbf)) / self.Lambda0
 
-        P0 = numpy.dot(1.0 / (1.0 + numpy.outer(k, self.x)), self.p)
+        p0 = numpy.dot(1.0 / (1.0 + numpy.outer(k, self.x)), self.p)
         if isinstance(k, (float, int, numpy.number)):
-            return P0.item()
+            return p0.item()
         if isinstance(k, numpy.ndarray) and k.ndim == 0:
-            return P0.item()
+            return p0.item()
         # except in special cases above, return array of values
-        return P0
+        return p0
 
 
-__all__ = ["augmented_rv_continuous", "count_posterior"]
+__all__ = ["AugmentedRvContinuous", "CountPosterior"]

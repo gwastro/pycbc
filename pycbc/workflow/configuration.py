@@ -275,17 +275,17 @@ def add_workflow_command_line_group(parser):
         The initialized argparse instance to add the workflow option group to.
 
     """
-    workflowArgs = parser.add_argument_group(
+    workflow_args = parser.add_argument_group(
         "Configuration", "Options needed for parsing config file(s)."
     )
-    workflowArgs.add_argument(
+    workflow_args.add_argument(
         "--config-files",
         nargs="+",
         action="store",
         metavar="CONFIGFILE",
         help="List of config files to be used in analysis.",
     )
-    workflowArgs.add_argument(
+    workflow_args.add_argument(
         "--config-overrides",
         nargs="*",
         action="store",
@@ -298,7 +298,7 @@ def add_workflow_command_line_group(parser):
         "SECTION:OPTION: both of which indicate that the "
         "corresponding value is left blank.",
     )
-    workflowArgs.add_argument(
+    workflow_args.add_argument(
         "--config-delete",
         nargs="*",
         action="store",
@@ -320,10 +320,10 @@ class WorkflowConfigParser(InterpolatingConfigParser):
 
     def __init__(
         self,
-        configFiles=None,
-        overrideTuples=None,
-        parsedFilePath=None,
-        deleteTuples=None,
+        config_files=None,
+        override_tuples=None,
+        parsed_file_path=None,
+        delete_tuples=None,
         copy_to_cwd=False,
     ):
         """
@@ -333,15 +333,15 @@ class WorkflowConfigParser(InterpolatingConfigParser):
 
         Parameters
         ----------
-        configFiles : Path to .ini file, or list of paths
+        config_files : Path to .ini file, or list of paths
             The file(s) to be read in and parsed.
-        overrideTuples : List of (section, option, value) tuples
+        override_tuples : List of (section, option, value) tuples
             Add the (section, option, value) triplets provided
             in this list to the provided .ini file(s). If the section, option
             pair is already present, it will be overwritten.
-        parsedFilePath : Path, optional (default=None)
+        parsed_file_path : Path, optional (default=None)
             If given, write the parsed .ini file back to disk at this location.
-        deleteTuples : List of (section, option) tuples
+        delete_tuples : List of (section, option) tuples
             Delete the (section, option) pairs provided
             in this list from provided .ini file(s). If the section only
             is provided, the entire section will be deleted.
@@ -357,17 +357,17 @@ class WorkflowConfigParser(InterpolatingConfigParser):
             Initialized WorkflowConfigParser instance.
 
         """
-        if configFiles is not None:
-            configFiles = [
-                resolve_url(cFile, copy_to_cwd=copy_to_cwd) for cFile in configFiles
+        if config_files is not None:
+            config_files = [
+                resolve_url(cFile, copy_to_cwd=copy_to_cwd) for cFile in config_files
             ]
 
         InterpolatingConfigParser.__init__(
             self,
-            configFiles,
-            overrideTuples,
-            parsedFilePath,
-            deleteTuples,
+            config_files,
+            override_tuples,
+            parsed_file_path,
+            delete_tuples,
             skip_extended=True,
             delete_sharedoptions_sections=False,
         )
@@ -401,13 +401,13 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         if self.has_section("executables"):
             for option, value in self.items("executables"):
                 # Check the value
-                newStr = self.interpolate_exe(value)
-                if newStr != value:
-                    self.set("executables", option, newStr)
+                new_str = self.interpolate_exe(value)
+                if new_str != value:
+                    self.set("executables", option, new_str)
 
-    def interpolate_exe(self, testString):
+    def interpolate_exe(self, test_string):
         """
-        Replace testString with a path to an executable based on the format.
+        Replace test_string with a path to an executable based on the format.
 
         If this looks like
 
@@ -419,39 +419,39 @@ class WorkflowConfigParser(InterpolatingConfigParser):
 
         Parameters
         ----------
-        testString : string
+        test_string : string
             The input string
 
         Returns
         -------
-        newString : string
+        new_string : string
             The output string.
 
         """
         # First check if any interpolation is needed and abort if not
-        testString = testString.strip()
-        if not (testString.startswith("${") and testString.endswith("}")):
-            return testString
+        test_string = test_string.strip()
+        if not (test_string.startswith("${") and test_string.endswith("}")):
+            return test_string
 
         # This may not be an exe interpolation, so even if it has ${ ... } form
         # I may not have to do anything
-        newString = testString
+        new_string = test_string
 
         # Strip the ${ and }
-        testString = testString[2:-1]
+        test_string = test_string[2:-1]
 
-        testList = testString.split(":")
+        test_list = test_string.split(":")
 
         # Maybe we can add a few different possibilities for substitution
-        if len(testList) == 2:
-            if testList[0] == "which":
-                newString = which(testList[1])
-                if not newString:
-                    errmsg = "Cannot find exe %s in your path " % (testList[1])
-                    errmsg += "and you specified ${which:%s}." % (testList[1])
+        if len(test_list) == 2:
+            if test_list[0] == "which":
+                new_string = which(test_list[1])
+                if not new_string:
+                    errmsg = "Cannot find exe %s in your path " % (test_list[1])
+                    errmsg += "and you specified ${which:%s}." % (test_list[1])
                     raise ValueError(errmsg)
 
-        return newString
+        return new_string
 
     def section_to_cli(self, section, skip_opts=None):
         """
