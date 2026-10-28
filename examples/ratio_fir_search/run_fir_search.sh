@@ -36,11 +36,11 @@ pycbc_inspiral_fir \
     --low-frequency-cutoff 20 \
     --snr-threshold 5.0 \
     --cluster-window 1 \
-    --chisq-snr-threshold 6 \
     --chisq-bins 64 \
-    --chisq-threshold 10.0 \
-    --sgchisq-snr-threshold 6.0 \
+    --autochi-stride 2 \
+    --autochi-number-points 20 \
     --sgchisq-locations "mtotal>30:20-15,20-30,20-45,20-60,20-75,20-90,20-105,20-120" \
+    --signal-consistency-chain snr:6:lower:skip power traditional:10:upper:remove newsnr:6:lower_inc:skip auto sg \
     --channel-name L1:FAKE-STRAIN \
     --gps-start-time 1000000000 \
     --gps-end-time 1000005000 \
