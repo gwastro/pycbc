@@ -15,8 +15,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
-Plots various parameters against one
-another for pycbc banks in an hdf file.
+Plots various parameters against one another for PyCBC template banks or
+injections in an HDF file.
 """
 
 import argparse
@@ -53,7 +53,7 @@ parser = argparse.ArgumentParser(
 )
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
-    "--bank-file", required=True, help="The bank file to read in and plot"
+    "--bank-file", required=True, help="The bank file to read in and plot."
 )
 parser.add_argument("--output-plot-file", required=True, help="Name of the output file")
 parser.add_argument(
@@ -80,7 +80,7 @@ parser.add_argument(
     nargs="+",
     default=[],
     help="Which parameters are to be plotted on a log scale? "
-    "Must be also given in parameters",
+    "Must be also given in parameters.",
 )
 parser.add_argument(
     "--plot-histogram",
@@ -129,7 +129,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--fits-file",
-    help="Provide a fits file to plot parameters from. Required if any of , ".join(
+    help="Provide a fits file to plot parameters from. Required if any of " + ", ".join(
         _fit_parameters
     )
     + " are given as parameters.",
@@ -137,7 +137,7 @@ parser.add_argument(
 parser.add_argument(
     "--title",
     help="A title for the plot. If not given, the files supplied "
-    "and the number of templates will be used",
+    "and the number of templates will be used.",
 )
 parser.add_argument(
     "--no-suptitle", action="store_true", help="If true no suptitle is shown."
@@ -312,7 +312,7 @@ fig, axis_dict = create_multidim_plot(
 title_text = f"{os.path.basename(args.bank_file)}"
 if args.fits_file is not None:
     title_text += f", {os.path.basename(args.fits_file)}"
-title_text += f" - {banklen}\u00a0templates"
+title_text += f" - {banklen} templates"
 title_text = "\n".join(wrap(args.title if args.title is not None else title_text, 60))
 if not args.no_suptitle:
     fig.suptitle(title_text)
