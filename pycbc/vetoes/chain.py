@@ -37,10 +37,29 @@ class SignalConsistencyChain:
     Run single-detector signal-consistency tests and intermediate thresholds
     in a configurable sequence.
 
-    Each step is either a test name ('power', 'bank', 'auto', 'sg') or a
-    threshold 'PARAMETER:VALUE:LIMIT:ACTION' where ACTION is 'remove' (drop
-    failing triggers from output) or 'skip' (keep failing triggers with
-    default values for later tests).
+    Each step is either a test name (``'power'``, ``'bank'``, ``'auto'``,
+    ``'sg'``) or a threshold ``'PARAMETER:VALUE:LIMIT:ACTION'`` where
+    ``ACTION`` is ``'remove'`` (drop failing primary triggers from output;
+    treated as ``'skip'`` on secondary follow-up triggers) or ``'skip'``
+    (keep failing triggers with default values for later tests).
+
+    Parameters
+    ----------
+    *estimators : object
+        Active signal-consistency test instances.
+    steps : list of str, optional
+        Ordered sequence of stage names and threshold specifications.
+    window : int, optional
+        Sample window within which triggers of the same template share a
+        chi-square evaluation (default: 0).
+    max_iterations : int, optional
+        Maximum chi-square evaluations per stage per batch (default: None).
+    input_columns : iterable of str, optional
+        Pre-existing trigger columns available to threshold steps.
+    defaults : dict, optional
+        Override default column fill values for skipped triggers.
+    **named_estimators : object
+        Additional signal-consistency test instances passed by keyword.
     """
 
     TESTS = (
@@ -135,17 +154,38 @@ class SignalConsistencyChain:
         correlation,
         stilde=None,
         columns=None,
+        is_followup=False,
     ):
         """
         Evaluate the chain on a batch of triggers from one data segment.
 
-        Constructs a batch namespace holding trigger arrays (snr, time_index,
-        template_id), lazy callbacks template(j) and correlation(j, reach),
-        the segment stilde, and any pre-existing columns, and passes it to
-        each active stage's evaluate_batch(batch, j).
+        Parameters
+        ----------
+        snr : array_like
+            Complex SNR values for each trigger in the batch.
+        time_index : array_like
+            Sample indices for each trigger in the batch.
+        template_id : array_like
+            Template indices for each trigger in the batch.
+        template : callable
+            Callback ``template(j)`` returning the frequency-domain template.
+        correlation : callable
+            Callback ``correlation(j, reach)`` returning ``(corr, index)``.
+        stilde : FrequencySeries, optional
+            Segment frequency series with attached ``.psd``.
+        columns : dict, optional
+            Mapping of pre-existing trigger column arrays.
+        is_followup : bool, optional
+            If True, ``'remove'`` threshold steps skip remaining stages
+            without dropping the sub-threshold follow-up triggers (default:
+            False).
 
-        Returns (keep, vals) where keep is a boolean mask of retained triggers
-        and vals is a dict of output column arrays.
+        Returns
+        -------
+        keep : numpy.ndarray
+            Boolean mask of retained triggers.
+        vals : dict of str to numpy.ndarray
+            Evaluated signal-consistency output column arrays.
         """
         batch = types.SimpleNamespace(
             snr=np.asarray(snr),
@@ -173,14 +213,15 @@ class SignalConsistencyChain:
                 idx = np.flatnonzero(alive)
                 failed = idx[~self._threshold(step, batch, vals, idx)]
                 alive[failed] = False
-                if step[3] == "remove":
+                remove = step[3] == "remove" and not is_followup
+                if remove:
                     keep[failed] = False
                 logger.debug(
                     "%s: %d of %d triggers %s",
                     step[4],
                     len(failed),
                     len(idx),
-                    "removed" if step[3] == "remove" else "skipped",
+                    "removed" if remove else "skipped",
                 )
             else:
                 self._run_stage(step, batch, vals, alive)
@@ -263,9 +304,11 @@ class SignalConsistencyChain:
             "--signal-consistency-chain",
             nargs="+",
             metavar="STEP",
-            help=f"Ordered steps of the chain: test names ({names}) or "
-            "thresholds PARAMETER:VALUE:LIMIT:ACTION with ACTION 'remove' or "
-            "'skip' (e.g. 'snr:6:lower:skip power newsnr:5:lower:remove sg').",
+            help=f"Optional ordered steps of the chain: test names ({names}) "
+            "or thresholds PARAMETER:VALUE:LIMIT:ACTION with ACTION 'remove' "
+            "(drop failing primary triggers; treated as 'skip' on secondary "
+            "follow-up triggers) or 'skip' (e.g. "
+            "'snr:5.25:lower:skip power newsnr:5:lower:remove sg').",
         )
         for test_cls in cls.TESTS:
             test_cls.insert_option_group(parser)

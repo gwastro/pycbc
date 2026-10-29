@@ -56,12 +56,6 @@ def get_args():
         "--bank-file", type=str, required=True, help="Path to the HDF5 Ratio Bank file."
     )
     parser.add_argument(
-        "--newsnr-threshold",
-        type=float,
-        metavar="THRESHOLD",
-        help="Cut triggers with NewSNR less than THRESHOLD",
-    )
-    parser.add_argument(
         "--low-frequency-cutoff",
         type=float,
         help="The low frequency cutoff to use for filtering (Hz)",
@@ -203,9 +197,7 @@ def main():
         for ifo in instruments:
             mgr = event_mgr[ifo]
             mgr.non_threshold_time = (
-                float(args.followup_num_bins * args.followup_bin_width)
-                if has_followup[ifo]
-                else 0.0
+                engine.followup_window if has_followup[ifo] else 0.0
             )
             data = triggers[ifo]
             if not data or len(data.get("template_id", ())) == 0:
