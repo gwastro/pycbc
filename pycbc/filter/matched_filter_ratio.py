@@ -18,6 +18,7 @@
 import collections
 import logging
 import multiprocessing as mp
+import time
 
 import numpy as np
 
@@ -36,7 +37,17 @@ _WORKER_CONTROL = None
 
 
 def _run_top_worker(top_idx):
-    return _WORKER_CONTROL.run_top(top_idx, veto_callback=_WORKER_CONTROL.veto_callback)
+    t0 = time.perf_counter()
+    triggers, followup = _WORKER_CONTROL.run_top(
+        top_idx, veto_callback=_WORKER_CONTROL.veto_callback
+    )
+    return (
+        int(top_idx),
+        _WORKER_CONTROL._last_template_count,
+        time.perf_counter() - t0,
+        triggers,
+        followup,
+    )
 
 
 class MatchedFilterRatioControl:
@@ -123,6 +134,12 @@ class MatchedFilterRatioControl:
         )
         self.cores = max(1, int(cores or 1))
         self.veto_callback = None
+        self.detector_time = sum(
+            (st.analyze.stop - st.analyze.start) / self.sample_rate
+            for ifo in self.seg_ifos
+            for st in self.segments[ifo]
+        )
+        self._last_template_count = 0
 
         # Verify that the bank's FIR tap sample rate is an integer multiple of data rate
         exact_dec = float(bank.sample_rate) / self.sample_rate
@@ -229,9 +246,29 @@ class MatchedFilterRatioControl:
             cores=args.cores,
         )
 
-    def run(self, veto_callback=None, top_indices=None):
-        """Run the hierarchical FIR search across ``top_indices`` (defaults to
-        ``self.bank.top_indices``) and return ``(triggers, has_followup)``.
+    def run(self, veto_callback=None, top_indices=None, start_time=None):
+        """
+        Run the hierarchical FIR search across ``top_indices`` and return
+        ``(triggers, has_followup)``.
+
+        Parameters
+        ----------
+        veto_callback : callable, optional
+            Signal-consistency callback evaluated on candidate batches.
+        top_indices : sequence of int, optional
+            Top-level reference indices to filter (defaults to
+            ``self.bank.top_indices``).
+        start_time : float, optional
+            Program start ``time.time()`` timestamp used to report cumulative
+            throughput from the start of the program (defaults to the start of
+            ``run()``).
+
+        Returns
+        -------
+        triggers : dict of dict of np.ndarray
+            Per-detector trigger column arrays.
+        has_followup : dict of int
+            Per-detector count of follow-up batches evaluated.
         """
         triggers = {ifo: collections.defaultdict(list) for ifo in self.instruments}
         has_followup = dict.fromkeys(self.instruments, 0)
@@ -243,20 +280,57 @@ class MatchedFilterRatioControl:
         else:
             top_indices = [int(x) for x in top_indices]
 
+        if start_time is None:
+            start_time = time.time()
+        num_tops = len(top_indices)
+        n_workers = min(self.cores, max(1, num_tops))
+        cores_per_worker = float(self.cores) / n_workers
+        completed_templates = 0
+
         def _collect(results_iter):
-            for worker_trigs, worker_followup in results_iter:
+            nonlocal completed_templates
+            for step, (
+                top_idx,
+                num_templates,
+                round_elapsed,
+                worker_trigs,
+                worker_followup,
+            ) in enumerate(results_iter, start=1):
+                completed_templates += num_templates
+                program_elapsed = max(time.time() - start_time, 1e-9)
+                round_rate = (num_templates * self.detector_time) / (
+                    cores_per_worker * max(round_elapsed, 1e-9)
+                )
+                program_rate = (completed_templates * self.detector_time) / (
+                    self.cores * program_elapsed
+                )
+                logger.info(
+                    "Top template %d/%d (id=%d, %d templates) in %.2f s | "
+                    "round throughput: %.0f templates/core | "
+                    "program throughput: %.0f templates/core (elapsed %.2f s)",
+                    step,
+                    num_tops,
+                    top_idx,
+                    num_templates,
+                    round_elapsed,
+                    round_rate,
+                    program_rate,
+                    program_elapsed,
+                )
                 for ifo in self.instruments:
                     for col, arr in worker_trigs[ifo].items():
                         if len(arr) > 0:
                             triggers[ifo][col].append(arr)
                     has_followup[ifo] += worker_followup[ifo]
 
-        n_workers = min(self.cores, max(1, len(top_indices)))
         if n_workers > 1:
             global _WORKER_CONTROL
             logger.info(
-                "Filtering %d top templates across %d cores...",
-                len(top_indices),
+                "Filtering %d top templates across %d detector(s) "
+                "(%.1f s detector data, %d cores)...",
+                num_tops,
+                len(self.seg_ifos),
+                self.detector_time,
                 n_workers,
             )
             self.veto_callback = veto_callback
@@ -269,10 +343,29 @@ class MatchedFilterRatioControl:
                 _WORKER_CONTROL = None
                 self.veto_callback = None
         else:
-            logger.info("Filtering %d top templates...", len(top_indices))
-            _collect(
-                self.run_top(idx, veto_callback=veto_callback) for idx in top_indices
+            logger.info(
+                "Filtering %d top templates across %d detector(s) "
+                "(%.1f s detector data)...",
+                num_tops,
+                len(self.seg_ifos),
+                self.detector_time,
             )
+
+            def _serial_results():
+                for idx in top_indices:
+                    t0 = time.perf_counter()
+                    worker_trigs, worker_followup = self.run_top(
+                        idx, veto_callback=veto_callback
+                    )
+                    yield (
+                        idx,
+                        self._last_template_count,
+                        time.perf_counter() - t0,
+                        worker_trigs,
+                        worker_followup,
+                    )
+
+            _collect(_serial_results())
 
         collapsed = {
             ifo: {
@@ -295,6 +388,9 @@ class MatchedFilterRatioControl:
 
         # Build the Inner/Leaf filter tree below this top-level reference template
         children, self._groups = self.bank.build_children(int(top_idx))
+        self._last_template_count = sum(
+            len(fine_indices) for fine_indices, _, _ in self._groups.values()
+        )
         if not self._groups:
             return {ifo: {} for ifo in self.instruments}, self._followup
 
