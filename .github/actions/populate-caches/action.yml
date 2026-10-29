@@ -1,0 +1,73 @@
+name: Populate caches (LAL aux + example GW data)
+description: Restore data caches and download missing LAL auxiliary files.
+inputs:
+  restore-only:
+    description: Only restore example data; do not save a new example cache.
+    default: 'false'
+outputs:
+  lal_data_path:
+    description: Path to cached LAL auxiliary data.
+    value: ${{ steps.set_paths.outputs.lal_data_path }}
+  example_gw_cache_key:
+    description: Cache key for example GW data.
+    value: example-gw-data
+runs:
+  using: composite
+  steps:
+    - name: Cache LAL auxiliary data files
+      id: cache-lal-aux-data
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        key: lal-aux-data
+        path: ~/lal_aux_data
+
+    - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
+      name: Download LAL auxiliary data files
+      shell: bash
+      run: |
+        mkdir -p ~/lal_aux_data
+        pushd ~/lal_aux_data
+        curl --show-error --silent \
+          --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
+          --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
+        popd
+
+    - name: Cache example GW data
+      if: inputs.restore-only != 'true'
+      id: cache-example-gw-data
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        key: example-gw-data
+        path: |
+          docs/_include/*.gwf
+          examples/inference/lisa_smbhb_ldc/*_psd.txt
+          examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
+          examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
+          examples/inference/margtime/*.gwf
+          examples/inference/multisignal/*.gwf
+          examples/inference/relative/*.gwf
+          examples/inference/relmarg/*.gwf
+          examples/inference/single/*.gwf
+          examples/search/*.gwf
+
+    - name: Restore example GW data
+      if: inputs.restore-only == 'true'
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        key: example-gw-data
+        path: |
+          docs/_include/*.gwf
+          examples/inference/lisa_smbhb_ldc/*_psd.txt
+          examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
+          examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
+          examples/inference/margtime/*.gwf
+          examples/inference/multisignal/*.gwf
+          examples/inference/relative/*.gwf
+          examples/inference/relmarg/*.gwf
+          examples/inference/single/*.gwf
+          examples/search/*.gwf
+
+    - name: Set path outputs for cached data
+      id: set_paths
+      shell: bash
+      run: echo "lal_data_path=$HOME/lal_aux_data" >> $GITHUB_OUTPUT
