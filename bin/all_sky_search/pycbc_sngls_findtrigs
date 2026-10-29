@@ -22,6 +22,12 @@ parser.add_argument(
     help="File containing single-detector triggers",
 )
 parser.add_argument(
+    "--ifo",
+    type=str,
+    default=None,
+    help="Specify the IFO to analyze from the trigger file",
+)
+parser.add_argument(
     "--template-bank", required=True, help="Template bank file in HDF format"
 )
 parser.add_argument(
@@ -103,7 +109,7 @@ trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 logger.info("Opening trigger file: %s", trigger_file)
 trigf = io.HFile(trigger_file, "r")
-ifo = list(trigf.keys())[0]
+ifo = args.ifo if args.ifo is not None else next(iter(trigf.keys()))
 
 # Set up to only load triggers from the templates of interest
 
@@ -138,6 +144,7 @@ trigs = ReadByTemplate(
     args.segment_name,
     args.veto_files,
     args.gating_veto_windows,
+    ifo=ifo,
 )
 logger.info("%d triggers in file", trigf[ifo + "/snr"].size)
 
@@ -274,8 +281,8 @@ data = {
     "decimation_factor": dec_facs,
     "timeslide_id": np.zeros_like(stat_all),
     "template_id": template_ids_all,
-    "%s/time" % ifo: trigger_times_all,
-    "%s/trigger_id" % ifo: trigger_ids_all,
+    f"{ifo}/time": trigger_times_all,
+    f"{ifo}/trigger_id": trigger_ids_all,
 }
 
 logger.info("saving triggers")
@@ -285,7 +292,7 @@ for key in data:
         key, data=data[key], compression="gzip", compression_opts=9, shuffle=True
     )
 # Store segments
-f["segments/%s/start" % ifo], f["segments/%s/end" % ifo] = trigs.valid
+f[f"segments/{ifo}/start"], f[f"segments/{ifo}/end"] = trigs.valid
 fg_segs = veto.start_end_to_segments(*trigs.valid)
 fg_time = abs(fg_segs)
 f.attrs["foreground_time"] = fg_time

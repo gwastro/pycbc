@@ -49,14 +49,9 @@ threshold_op = """
 """
 
 threshold_kernel = ElementwiseKernel(
-    " %(tp_in)s *in, %(tp_out1)s *outv, %(tp_out2)s *outl, %(tp_th)s threshold, %(tp_n)s *bn"
-    % {
-        "tp_in": dtype_to_ctype(numpy.complex64),
-        "tp_out1": dtype_to_ctype(numpy.complex64),
-        "tp_out2": dtype_to_ctype(numpy.uint32),
-        "tp_th": dtype_to_ctype(numpy.float32),
-        "tp_n": dtype_to_ctype(numpy.uint32),
-    },
+    f" {dtype_to_ctype(numpy.complex64)} *in, {dtype_to_ctype(numpy.complex64)} *outv, "
+    f"{dtype_to_ctype(numpy.uint32)} *outl, {dtype_to_ctype(numpy.float32)} threshold, "
+    f"{dtype_to_ctype(numpy.uint32)} *bn",
     threshold_op,
     "getstuff",
 )

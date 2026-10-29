@@ -74,7 +74,7 @@ def setup_psd_calculate(
     psd_files = FileList([])
     for i, segs in enumerate(segment_lists):
         seg_file = SegFile.from_segment_list(
-            "%s_%s" % (segment_name, i),
+            f"{segment_name}_{i}",
             segmentlist(segs),
             segment_name,
             ifo,
@@ -90,7 +90,7 @@ def setup_psd_calculate(
                 seg_file,
                 segment_name,
                 out_dir,
-                tags=tags + ["PART%s" % i],
+                tags=tags + [f"PART{i}"],
             )
         ]
 

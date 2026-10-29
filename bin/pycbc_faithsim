@@ -63,8 +63,8 @@ def get_waveform(
 ):
 
     delta_f = sample_rate / length
-    vecplus = FrequencySeries(zeros(filter_n), delta_f=delta_f, dtype=complex64)
-    veccross = FrequencySeries(zeros(filter_n), delta_f=delta_f, dtype=complex64)
+    vecplus = FrequencySeries(zeros(filter_flen), delta_f=delta_f, dtype=complex64)
+    veccross = FrequencySeries(zeros(filter_flen), delta_f=delta_f, dtype=complex64)
 
     if tapering is not None:
         curr_taper = tapering
@@ -240,9 +240,9 @@ except ValueError:
 fout = open(options.out_file, "w")
 logger.info("Writing matches to %s", options.out_file)
 
-filter_N = options.filter_waveform_length * options.filter_sample_rate
-filter_n = int(filter_N / 2) + 1
-delta_f = float(options.filter_sample_rate) / filter_N
+filter_tlen = options.filter_waveform_length * options.filter_sample_rate
+filter_flen = int(filter_tlen / 2) + 1
+delta_f = float(options.filter_sample_rate) / filter_tlen
 
 logger.info("Number of Waveforms      : %d", len(waveform_table))
 
@@ -256,7 +256,7 @@ else:
 
 psd = pycbc.psd.from_cli(
     options,
-    length=filter_n,
+    length=filter_flen,
     delta_f=delta_f,
     low_frequency_cutoff=options.filter_low_frequency_cutoff,
     strain=strain,
@@ -288,7 +288,7 @@ with ctx:
                 waveform_params,
                 options.waveform1_start_frequency,
                 options.filter_sample_rate,
-                filter_N,
+                filter_tlen,
             )
 
             htilde2 = get_waveform(
@@ -300,7 +300,7 @@ with ctx:
                 waveform_params,
                 options.waveform2_start_frequency,
                 options.filter_sample_rate,
-                filter_N,
+                filter_tlen,
             )
 
             m, i = match(
@@ -333,8 +333,8 @@ with ctx:
             )
             matches.append(m)
             overlaps.append(o)
-            if i > filter_n:
-                i = i - filter_N
+            if i > filter_flen:
+                i = i - filter_tlen
             time_offsets.append(i * 1.0 / options.filter_sample_rate)
             s1s.append(s1)
             s2s.append(s2)
@@ -349,5 +349,5 @@ with ctx:
 
 # Output the overlaps to  a file
 for m, o, i, s1, s2 in zip(matches, overlaps, time_offsets, s1s, s2s):
-    match_str = "%5.5f %5.5f %5.5f %5.5f %5.5f\n" % (m, o, i, s1, s2)
+    match_str = f"{m:5.5f} {o:5.5f} {i:5.5f} {s1:5.5f} {s2:5.5f}\n"
     fout.write(match_str)

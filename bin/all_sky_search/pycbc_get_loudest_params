@@ -104,11 +104,11 @@ s2z = template_file["spin2z"][tid]
 mchirp, eta = mass1_mass2_to_mchirp_eta(m1, m2)
 
 
-data = {"%s/snr" % args.ifo: [snr[idx]]}
-data["%s/chisq" % args.ifo] = [chisq[idx]]
-data["%s/newsnr" % args.ifo] = [newsnr[idx]]
-data["%s/template_id" % args.ifo] = [tid]
-data["%s/end_time" % args.ifo] = [cbc_end_time]
+data = {f"{args.ifo}/snr": [snr[idx]]}
+data[f"{args.ifo}/chisq"] = [chisq[idx]]
+data[f"{args.ifo}/newsnr"] = [newsnr[idx]]
+data[f"{args.ifo}/template_id"] = [tid]
+data[f"{args.ifo}/end_time"] = [cbc_end_time]
 data["template/mass1"] = [m1]
 data["template/mass2"] = [m2]
 data["template/mchirp"] = [mchirp]

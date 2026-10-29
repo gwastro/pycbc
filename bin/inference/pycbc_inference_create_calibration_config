@@ -171,12 +171,10 @@ logger.debug("Calibration files dictionary: %s", calibration_files_dict)
 input_dict = {}
 for ii in range(len(opts.ifos)):
     ifo = str(opts.ifos[ii])
-    input_dict["min_freq_%s" % ifo] = min_freq_list[ifo]
-    input_dict["max_freq_%s" % ifo] = max_freq_list[ifo]
-    input_dict["correction_type_%s" % ifo] = correction_type_list[ifo]
-    input_dict["calibration_envelop_file_%s" % ifo] = calibration_files_dict[
-        ifo.upper()
-    ]
+    input_dict[f"min_freq_{ifo}"] = min_freq_list[ifo]
+    input_dict[f"max_freq_{ifo}"] = max_freq_list[ifo]
+    input_dict[f"correction_type_{ifo}"] = correction_type_list[ifo]
+    input_dict[f"calibration_envelop_file_{ifo}"] = calibration_files_dict[ifo.upper()]
 logger.debug("Input dictionary: %s", input_dict)
 # Upper and Lower indices of detectors seems unnecessary
 # but they are there to make sure the correct convention
@@ -185,10 +183,10 @@ logger.debug("Input dictionary: %s", input_dict)
 prior_dict = {}
 for ifo in opts.ifos:
     # ifo = ifo.lower()
-    min_freq = input_dict["min_freq_%s" % ifo]
-    max_freq = input_dict["max_freq_%s" % ifo]
-    correction_type = input_dict["correction_type_%s" % ifo]
-    calib_env_file = input_dict["calibration_envelop_file_%s" % ifo]
+    min_freq = input_dict[f"min_freq_{ifo}"]
+    max_freq = input_dict[f"max_freq_{ifo}"]
+    correction_type = input_dict[f"correction_type_{ifo}"]
+    calib_env_file = input_dict[f"calibration_envelop_file_{ifo}"]
     (
         log_nodes,
         amplitude_median_nodes,
@@ -198,60 +196,58 @@ for ifo in opts.ifos:
     ) = read_calibration_envelop_file(
         calib_env_file, correction_type, min_freq, max_freq, n_nodes
     )
-    prior_dict["log_nodes_%s" % ifo] = log_nodes
-    prior_dict["amplitude_median_nodes_%s" % ifo] = amplitude_median_nodes
-    prior_dict["amplitude_sigma_nodes_%s" % ifo] = amplitude_sigma_nodes
-    prior_dict["phase_median_nodes_%s" % ifo] = phase_median_nodes
-    prior_dict["phase_sigma_nodes_%s" % ifo] = phase_sigma_nodes
+    prior_dict[f"log_nodes_{ifo}"] = log_nodes
+    prior_dict[f"amplitude_median_nodes_{ifo}"] = amplitude_median_nodes
+    prior_dict[f"amplitude_sigma_nodes_{ifo}"] = amplitude_sigma_nodes
+    prior_dict[f"phase_median_nodes_{ifo}"] = phase_median_nodes
+    prior_dict[f"phase_sigma_nodes_{ifo}"] = phase_sigma_nodes
     logger.info("Done for detector %s", ifo)
 
 
-calibration_filename = "%s/calibration-%s.ini" % (output_dir, tag)
+calibration_filename = f"{output_dir}/calibration-{tag}.ini"
 if os.path.isfile(calibration_filename) != True:
     text_file = open(calibration_filename, "w")
     text_file.write("[calibration] \n")
     for ifo in opts.ifos:
-        min_freq = input_dict["min_freq_%s" % ifo]
-        max_freq = input_dict["max_freq_%s" % ifo]
-        text_file.write("%s_model = cubic_spline \n" % ifo.lower())
-        text_file.write("%s_minimum_frequency = %d \n" % (ifo.lower(), min_freq))
-        text_file.write("%s_maximum_frequency = %d \n" % (ifo.lower(), max_freq))
-        text_file.write("%s_n_points = %d \n" % (ifo.lower(), n_nodes))
+        min_freq = input_dict[f"min_freq_{ifo}"]
+        max_freq = input_dict[f"max_freq_{ifo}"]
+        text_file.write(f"{ifo.lower()}_model = cubic_spline \n")
+        text_file.write(f"{ifo.lower()}_minimum_frequency = {int(min_freq)} \n")
+        text_file.write(f"{ifo.lower()}_maximum_frequency = {int(max_freq)} \n")
+        text_file.write(f"{ifo.lower()}_n_points = {n_nodes} \n")
     text_file.write(" \n")
     text_file.write("[variable_params] \n")
     for ifo in opts.ifos:
         for ii in range(n_nodes):
-            text_file.write("recalib_amplitude_%s_%d = \n" % (ifo.lower(), ii))
-            text_file.write("recalib_phase_%s_%d = \n" % (ifo.lower(), ii))
+            text_file.write(f"recalib_amplitude_{ifo.lower()}_{ii} = \n")
+            text_file.write(f"recalib_phase_{ifo.lower()}_{ii} = \n")
     text_file.write(" \n")
     for ifo in opts.ifos:
         for ii in range(n_nodes):
-            amplitude_median_nodes = prior_dict["amplitude_median_nodes_%s" % ifo][ii]
-            amplitude_sigma_nodes = prior_dict["amplitude_sigma_nodes_%s" % ifo][ii]
-            text_file.write("[prior-recalib_amplitude_%s_%d] \n" % (ifo.lower(), ii))
+            amplitude_median_nodes = prior_dict[f"amplitude_median_nodes_{ifo}"][ii]
+            amplitude_sigma_nodes = prior_dict[f"amplitude_sigma_nodes_{ifo}"][ii]
+            text_file.write(f"[prior-recalib_amplitude_{ifo.lower()}_{ii}] \n")
             text_file.write("name = gaussian \n")
             text_file.write(
-                "recalib_amplitude_%s_%d_mean = %.3g \n"
-                % (ifo.lower(), ii, amplitude_median_nodes)
+                f"recalib_amplitude_{ifo.lower()}_{ii}_mean = "
+                f"{amplitude_median_nodes:.3g} \n"
             )
             text_file.write(
-                "recalib_amplitude_%s_%d_var = %.3g \n"
-                % (ifo.lower(), ii, amplitude_sigma_nodes**2)
+                f"recalib_amplitude_{ifo.lower()}_{ii}_var = "
+                f"{amplitude_sigma_nodes**2:.3g} \n"
             )
             text_file.write(" \n")
     for ifo in opts.ifos:
         for ii in range(n_nodes):
-            phase_median_nodes = prior_dict["phase_median_nodes_%s" % ifo][ii]
-            phase_sigma_nodes = prior_dict["phase_sigma_nodes_%s" % ifo][ii]
-            text_file.write("[prior-recalib_phase_%s_%d] \n" % (ifo.lower(), ii))
+            phase_median_nodes = prior_dict[f"phase_median_nodes_{ifo}"][ii]
+            phase_sigma_nodes = prior_dict[f"phase_sigma_nodes_{ifo}"][ii]
+            text_file.write(f"[prior-recalib_phase_{ifo.lower()}_{ii}] \n")
             text_file.write("name = gaussian \n")
             text_file.write(
-                "recalib_phase_%s_%d_mean = %.3g \n"
-                % (ifo.lower(), ii, phase_median_nodes)
+                f"recalib_phase_{ifo.lower()}_{ii}_mean = {phase_median_nodes:.3g} \n"
             )
             text_file.write(
-                "recalib_phase_%s_%d_var = %.3g \n"
-                % (ifo.lower(), ii, phase_sigma_nodes**2)
+                f"recalib_phase_{ifo.lower()}_{ii}_var = {phase_sigma_nodes**2:.3g} \n"
             )
             text_file.write(" \n")
     text_file.write(" \n")
@@ -265,16 +261,16 @@ else:
     )
 
 # Sanity check plots
-plots_dir = "%s/plots" % output_dir
-os.system("mkdir -p %s" % plots_dir)
+plots_dir = f"{output_dir}/plots"
+os.system(f"mkdir -p {plots_dir}")
 if opts.plot_sanity_checks:
     for ifo in opts.ifos:
-        calib_env_path = input_dict["calibration_envelop_file_%s" % ifo]
-        min_freq = input_dict["min_freq_%s" % ifo]
-        max_freq = input_dict["max_freq_%s" % ifo]
-        log_nodes = prior_dict["log_nodes_%s" % ifo]
-        amp_median_nodes = prior_dict["amplitude_median_nodes_%s" % ifo]
-        amp_sigma_nodes = prior_dict["amplitude_sigma_nodes_%s" % ifo]
+        calib_env_path = input_dict[f"calibration_envelop_file_{ifo}"]
+        min_freq = input_dict[f"min_freq_{ifo}"]
+        max_freq = input_dict[f"max_freq_{ifo}"]
+        log_nodes = prior_dict[f"log_nodes_{ifo}"]
+        amp_median_nodes = prior_dict[f"amplitude_median_nodes_{ifo}"]
+        amp_sigma_nodes = prior_dict[f"amplitude_sigma_nodes_{ifo}"]
         d1 = numpy.loadtxt(calib_env_path)
         plt.figure(figsize=(8, 5))
         plt.plot(d1[:, 0], d1[:, 1], label=r"$\mu$")
@@ -296,15 +292,13 @@ if opts.plot_sanity_checks:
         plt.xscale("log")
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude")
-        plt.title("Calibration envelop (Amplitude) for %s" % ifo)
+        plt.title(f"Calibration envelop (Amplitude) for {ifo}")
         plt.legend()
-        plt.savefig(
-            "%s/calibration_envelop_amplitude_%s_%s.png" % (plots_dir, tag, ifo)
-        )
+        plt.savefig(f"{plots_dir}/calibration_envelop_amplitude_{tag}_{ifo}.png")
         plt.clf()
 
-        phase_median_nodes = prior_dict["phase_median_nodes_%s" % ifo]
-        phase_sigma_nodes = prior_dict["phase_sigma_nodes_%s" % ifo]
+        phase_median_nodes = prior_dict[f"phase_median_nodes_{ifo}"]
+        phase_sigma_nodes = prior_dict[f"phase_sigma_nodes_{ifo}"]
         plt.figure(figsize=(8, 5))
         plt.plot(d1[:, 0], d1[:, 2], label=r"$\mu$")
         plt.plot(d1[:, 0], d1[:, 4], label=r"$\mu-\sigma$")
@@ -325,7 +319,7 @@ if opts.plot_sanity_checks:
         plt.xscale("log")
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("Phase")
-        plt.title("Calibration envelop (Phase) for %s" % ifo)
+        plt.title(f"Calibration envelop (Phase) for {ifo}")
         plt.legend()
-        plt.savefig("%s/calibration_envelop_phase_%s_%s.png" % (plots_dir, tag, ifo))
+        plt.savefig(f"{plots_dir}/calibration_envelop_phase_{tag}_{ifo}.png")
         plt.clf()

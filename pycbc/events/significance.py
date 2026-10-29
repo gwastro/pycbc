@@ -349,10 +349,10 @@ def check_significance_options(args, parser):
             try:
                 combo, value = tuple(combo_value.split(":"))
             except ValueError:
-                parser.error("Need combo:value format, got %s" % combo_value)
+                parser.error(f"Need combo:value format, got {combo_value}")
 
             if combo in combo_list:
-                parser.error("Duplicate combo %s in a significance option" % combo)
+                parser.error(f"Duplicate combo {combo} in a significance option")
             combo_list.append(combo)
 
             try:

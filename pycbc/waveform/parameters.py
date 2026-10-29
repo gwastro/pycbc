@@ -70,16 +70,12 @@ class Parameter(str):
         desc_indent = "\n" + prefix + "    "
         indented_desc = self.description.replace("\n", desc_indent)
 
-        outstr = "%s%s : {%s, %s}\n%s    %s" % (
-            prefix,
-            self.name,
-            str(self.default),
-            dtype_str,
-            prefix,
-            indented_desc,
+        outstr = (
+            f"{prefix}{self.name} : {{{self.default!s}, "
+            f"{dtype_str}}}\n{prefix}    {indented_desc}"
         )
         if include_label:
-            outstr += " Label: %s" % (self.label)
+            outstr += f" Label: {self.label}"
         return outstr
 
 
@@ -900,7 +896,7 @@ extrinsic_params = orientation_params + location_params
 
 
 # testing GR parameters
-testingGR_params = ParameterList(
+testing_gr_params = ParameterList(
     [
         dchi0,
         dchi1,
@@ -949,7 +945,7 @@ cbc_intrinsic_params = (
             octufmode2,
         ]
     )
-    + testingGR_params
+    + testing_gr_params
 )
 
 # the parameters of a cbc in the radiation frame

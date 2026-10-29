@@ -206,7 +206,7 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
             ][0]
             foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
         except IndexError:  # multi-ifo
-            foundtrg = injfile["found_after_vetoes/%s/trigger_id" % ifo]
+            foundtrg = injfile[f"found_after_vetoes/{ifo}/trigger_id"]
             # multi-ifo pipeline assigns -1 for inj not found in specific ifo
             found_in_ifo = foundtrg[:] != -1
     if bankfile is not None and param in bankfile.keys():

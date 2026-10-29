@@ -177,24 +177,24 @@ def generate_detector_strain(template_params, h_plus, h_cross):
     return h_plus * f_plus + h_cross * f_cross
 
 
-def make_padded_frequency_series(vec, filter_N=None, delta_f=None):
+def make_padded_frequency_series(vec, filter_tlen=None, delta_f=None):
     """
     Convert vec (TimeSeries or FrequencySeries) to a FrequencySeries. If
-    filter_N and/or delta_f are given, the output will take those values. If
+    filter_tlen and/or delta_f are given, the output will take those values. If
     not told otherwise the code will attempt to pad a timeseries first such that
     the waveform will not wraparound. However, if delta_f is specified to be
     shorter than the waveform length then wraparound *will* be allowed.
     """
-    if filter_N is None:
+    if filter_tlen is None:
         power = ceil(log(len(vec), 2)) + 1
-        N = 2**power
+        tlen = 2**power
     else:
-        N = filter_N
-    n = N / 2 + 1
+        tlen = filter_tlen
+    flen = tlen / 2 + 1
 
     if isinstance(vec, FrequencySeries):
         vectilde = FrequencySeries(
-            zeros(n, dtype=complex_same_precision_as(vec)), delta_f=1.0, copy=False
+            zeros(flen, dtype=complex_same_precision_as(vec)), delta_f=1.0, copy=False
         )
         if len(vectilde) < len(vec):
             cplen = len(vectilde)
@@ -221,8 +221,8 @@ def make_padded_frequency_series(vec, filter_N=None, delta_f=None):
         i_delta_f = v_tilde.get_delta_f()
         v_tilde = v_tilde.numpy()
         df_ratio = int(delta_f / i_delta_f)
-        n_freq_len = int((n - 1) * df_ratio + 1)
-        assert n <= len(v_tilde)
+        n_freq_len = int((flen - 1) * df_ratio + 1)
+        assert flen <= len(v_tilde)
         df_ratio = int(delta_f / i_delta_f)
         v_tilde = v_tilde[:n_freq_len:df_ratio]
         vectilde = FrequencySeries(v_tilde, delta_f=delta_f, dtype=complex128)
@@ -265,12 +265,12 @@ class TestChisq(unittest.TestCase):
         self.filter_t_length = 16
         self.low_freq_filter = 30.0
         self.sample_rate = 16384
-        self.filter_N = int(self.filter_t_length * self.sample_rate)
-        self.filter_n = int(self.filter_N / 2 + 1)
+        self.filter_tlen = int(self.filter_t_length * self.sample_rate)
+        self.filter_flen = int(self.filter_tlen / 2 + 1)
         self.filter_delta_f = 1.0 / self.filter_t_length
         self.psd = psd.from_string(
             "aLIGOZeroDetHighPowerGWINC",
-            self.filter_n,
+            self.filter_flen,
             self.filter_delta_f,
             self.low_freq_filter,
         )
@@ -315,7 +315,7 @@ class TestChisq(unittest.TestCase):
         # w1 = self.wps_list[idx]
         # w2 = self.wps_list[jdx]
         # stilde = get_waveform(w1, self.low_freq_filter-1,
-        #                      self.sample_rate, self.filter_N,
+        #                      self.sample_rate, self.filter_tlen,
         #                      self.sample_rate)
         # try:
         #    stilde.save('data/skymaxtest_stilde_%d.hdf' % idx)
@@ -337,7 +337,7 @@ class TestChisq(unittest.TestCase):
         stilde *= 100
         # Uncomment these lines if needing to regenerate data files
         # hplus, hcross = get_waveform(w2, self.low_freq_filter-1,
-        #                             self.sample_rate, self.filter_N,
+        #                             self.sample_rate, self.filter_tlen,
         #                             self.sample_rate, sky_max_template=True)
         # try:
         #    hplus.save('data/skymaxtest_hplus_%d.hdf' % jdx)
@@ -379,41 +379,49 @@ class TestChisq(unittest.TestCase):
             low_frequency_cutoff=self.low_freq_filter,
             normalized=False,
         )
-        hpc_corr_R = real(hpc_corr)
-        I_plus, _, n_plus = matched_filter_core(
+        hpc_corr_real = real(hpc_corr)
+        snr_plus, _, n_plus = matched_filter_core(
             hplus,
             stilde,
             psd=self.psd,
             low_frequency_cutoff=self.low_freq_filter,
             h_norm=1.0,
         )
-        I_plus = I_plus.astype(numpy.complex64)
-        I_cross, _, n_cross = matched_filter_core(
+        snr_plus = snr_plus.astype(numpy.complex64)
+        snr_cross, _, n_cross = matched_filter_core(
             hcross,
             stilde,
             psd=self.psd,
             low_frequency_cutoff=self.low_freq_filter,
             h_norm=1.0,
         )
-        I_cross = I_cross.astype(numpy.complex64)
-        I_plus = I_plus * n_plus
-        I_cross = I_cross * n_cross
-        IPM = abs(I_plus.data).argmax()
-        ICM = abs(I_cross.data).argmax()
+        snr_cross = snr_cross.astype(numpy.complex64)
+        snr_plus = snr_plus * n_plus
+        snr_cross = snr_cross * n_cross
+        max_idx_plus = abs(snr_plus.data).argmax()
+        max_idx_cross = abs(snr_cross.data).argmax()
         self.assertAlmostEqual(
-            float(abs(I_plus[IPM])), expected_results[idx][jdx]["Ip_snr"], places=4
+            float(abs(snr_plus[max_idx_plus])),
+            expected_results[idx][jdx]["Ip_snr"],
+            places=4,
         )
         self.assertAlmostEqual(
-            angle(I_plus[IPM]), expected_results[idx][jdx]["Ip_angle"], places=5
+            angle(snr_plus[max_idx_plus]),
+            expected_results[idx][jdx]["Ip_angle"],
+            places=5,
         )
-        self.assertEqual(IPM, expected_results[idx][jdx]["Ip_argmax"])
+        self.assertEqual(max_idx_plus, expected_results[idx][jdx]["Ip_argmax"])
         self.assertAlmostEqual(
-            float(abs(I_cross[ICM])), expected_results[idx][jdx]["Ic_snr"], places=4
+            float(abs(snr_cross[max_idx_cross])),
+            expected_results[idx][jdx]["Ic_snr"],
+            places=4,
         )
         self.assertAlmostEqual(
-            angle(I_cross[ICM]), expected_results[idx][jdx]["Ic_angle"], places=5
+            angle(snr_cross[max_idx_cross]),
+            expected_results[idx][jdx]["Ic_angle"],
+            places=5,
         )
-        self.assertEqual(ICM, expected_results[idx][jdx]["Ic_argmax"])
+        self.assertEqual(max_idx_cross, expected_results[idx][jdx]["Ic_argmax"])
 
         # print "expected_results[{}][{}]['Ip_snr'] = {}" .format(idx,jdx,abs(I_plus[IPM]))
         # print "expected_results[{}][{}]['Ip_angle'] = {}".format(idx,jdx,angle(I_plus[IPM]))
@@ -423,22 +431,22 @@ class TestChisq(unittest.TestCase):
         # print "expected_results[{}][{}]['Ic_argmax'] = {}".format(idx,jdx, ICM)
 
         det_stat_prec = compute_max_snr_over_sky_loc_stat(
-            I_plus,
-            I_cross,
-            hpc_corr_R,
+            snr_plus,
+            snr_cross,
+            hpc_corr_real,
             hpnorm=1.0,
             hcnorm=1.0,
             thresh=0.1,
-            analyse_slice=slice(0, len(I_plus.data)),
+            analyse_slice=slice(0, len(snr_plus.data)),
         )
         det_stat_hom = compute_max_snr_over_sky_loc_stat_no_phase(
-            I_plus,
-            I_cross,
-            hpc_corr_R,
+            snr_plus,
+            snr_cross,
+            hpc_corr_real,
             hpnorm=1.0,
             hcnorm=1.0,
             thresh=0.1,
-            analyse_slice=slice(0, len(I_plus.data)),
+            analyse_slice=slice(0, len(snr_plus.data)),
         )
         idx_max_prec = argmax(det_stat_prec.data)
         idx_max_hom = argmax(det_stat_hom.data)
@@ -446,18 +454,18 @@ class TestChisq(unittest.TestCase):
         max_ds_hom = det_stat_hom[idx_max_hom]
 
         uvals_prec, _ = compute_u_val_for_sky_loc_stat(
-            I_plus.data,
-            I_cross.data,
-            hpc_corr_R,
+            snr_plus.data,
+            snr_cross.data,
+            hpc_corr_real,
             indices=[idx_max_prec],
             hpnorm=1.0,
             hcnorm=1.0,
         )
         with numpy.errstate(divide="ignore"):
             uvals_hom, _ = compute_u_val_for_sky_loc_stat_no_phase(
-                I_plus.data,
-                I_cross.data,
-                hpc_corr_R,
+                snr_plus.data,
+                snr_cross.data,
+                hpc_corr_real,
                 indices=[idx_max_hom],
                 hpnorm=1.0,
                 hcnorm=1.0,
@@ -468,18 +476,18 @@ class TestChisq(unittest.TestCase):
         ht /= sqrt(float(ht_norm))
         ht.f_lower = self.low_freq_filter
         ht.params = random.randint(0, 100000000000)
-        I_t, corr_t, n_t = matched_filter_core(
+        snr_t, corr_t, n_t = matched_filter_core(
             ht,
             stilde,
             psd=self.psd,
             low_frequency_cutoff=self.low_freq_filter,
             h_norm=1.0,
         )
-        I_t = I_t * n_t
+        snr_t = snr_t * n_t
         self.assertAlmostEqual(
-            float(abs(real(I_t.data[idx_max_hom]))), max_ds_hom, places=4
+            float(abs(real(snr_t.data[idx_max_hom]))), max_ds_hom, places=4
         )
-        self.assertEqual(abs(real(I_t.data[idx_max_hom])), max(abs(real(I_t.data))))
+        self.assertEqual(abs(real(snr_t.data[idx_max_hom])), max(abs(real(snr_t.data))))
         with numpy.errstate(invalid="ignore", divide="ignore"):
             chisq, _ = self.power_chisq.values(
                 corr_t,
@@ -497,18 +505,18 @@ class TestChisq(unittest.TestCase):
         ht /= sqrt(float(ht_norm))
         ht.f_lower = self.low_freq_filter
         ht.params = random.randint(0, 100000000000)
-        I_t, corr_t, n_t = matched_filter_core(
+        snr_t, corr_t, n_t = matched_filter_core(
             ht,
             stilde,
             psd=self.psd,
             low_frequency_cutoff=self.low_freq_filter,
             h_norm=1.0,
         )
-        I_t = I_t * n_t
+        snr_t = snr_t * n_t
         self.assertAlmostEqual(
-            float(abs(I_t.data[idx_max_prec])), max_ds_prec, places=4
+            float(abs(snr_t.data[idx_max_prec])), max_ds_prec, places=4
         )
-        self.assertEqual(idx_max_prec, abs(I_t.data).argmax())
+        self.assertEqual(idx_max_prec, abs(snr_t.data).argmax())
 
         with numpy.errstate(divide="ignore", invalid="ignore"):
             chisq, _ = self.power_chisq.values(
@@ -528,7 +536,7 @@ def skymax_test_maker(class_name, idx, jdx):
         idx = idx
         jdx = jdx
 
-    Test.__name__ = "Test %s" % "_".join([str(idx), str(jdx)])
+    Test.__name__ = f"Test {'_'.join([str(idx), str(jdx)])}"
     return Test
 
 

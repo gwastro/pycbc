@@ -13,6 +13,9 @@ I use a similar naming convention here, with minor simplifications to the
 twiddle factors.
 """
 
+# Cooley-Tukey notation (N = N1 * N2, as in the reference above).
+# ruff: noqa: N803, N806
+
 import ctypes
 import logging
 

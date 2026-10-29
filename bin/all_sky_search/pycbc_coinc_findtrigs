@@ -276,8 +276,8 @@ logger.info(
 # ids in each ifo
 data = {"stat": [], "decimation_factor": [], "timeslide_id": [], "template_id": []}
 for ifo in trigs.ifos:
-    data["%s/time" % ifo] = []
-    data["%s/trigger_id" % ifo] = []
+    data[f"{ifo}/time"] = []
+    data[f"{ifo}/trigger_id"] = []
 
 factors = [1]
 threshes = [numpy.inf]
@@ -561,8 +561,8 @@ def process_template(tnum):
             for ifo in trigs.ifos:
                 addtime = times[ifo][ids[ifo]]
                 addtriggerid = tids[ifo][ids[ifo]]
-                local_data["%s/time" % ifo] += [addtime]
-                local_data["%s/trigger_id" % ifo] += [addtriggerid]
+                local_data[f"{ifo}/time"] += [addtime]
+                local_data[f"{ifo}/trigger_id"] += [addtriggerid]
             local_data["stat"] += [cstat]
             local_data["decimation_factor"] += [dec]
             local_data["timeslide_id"] += [slide]
@@ -588,8 +588,8 @@ if len(data["stat"]) > 0:
         data[key] = numpy.concatenate(data[key])
 
 if args.cluster_window and len(data["stat"]) > 0:
-    timestring0 = "%s/time" % args.pivot_ifo
-    timestring1 = "%s/time" % args.fixed_ifo
+    timestring0 = f"{args.pivot_ifo}/time"
+    timestring1 = f"{args.fixed_ifo}/time"
     cid = coinc.cluster_coincs(
         data["stat"],
         data[timestring0],
@@ -610,7 +610,7 @@ if len(data["stat"]) > 0:
 
 # Store coinc segments keyed by detector combination
 key = "".join(sorted(trigs.ifos))
-f["segments/%s/start" % key], f["segments/%s/end" % key] = trigs.singles[0].valid
+f[f"segments/{key}/start"], f[f"segments/{key}/end"] = trigs.singles[0].valid
 
 f.attrs["timeslide_interval"] = args.timeslide_interval
 f.attrs["coinc_time"] = abs(coinc_segs)
@@ -618,7 +618,7 @@ f.attrs["num_of_ifos"] = len(args.trigger_files)
 f.attrs["pivot"] = args.pivot_ifo
 f.attrs["fixed"] = args.fixed_ifo
 for i, sngl in zip(trigs.ifos, trigs.singles):
-    f.attrs["%s_foreground_time" % i] = abs(sngl.segs)
+    f.attrs[f"{i}_foreground_time"] = abs(sngl.segs)
 f.attrs["ifos"] = " ".join(sorted(trigs.ifos))
 
 # What does this code actually calculate?

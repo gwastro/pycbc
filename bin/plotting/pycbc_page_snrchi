@@ -18,6 +18,9 @@ parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--trigger-file", help="Single ifo trigger file")
 parser.add_argument(
+    "--ifo", default=None, help="IFO to plot from multi-detector trigger file"
+)
+parser.add_argument(
     "--veto-file", help="Optional, file of veto segments to remove triggers"
 )
 parser.add_argument(
@@ -48,15 +51,15 @@ pycbc.init_logging(args.verbose, default_level=1)
 if args.newsnr_contours is not None and not args.chisq_choice == "traditional":
     parser.error(
         "Newsnr contours are being plotted assuming a traditional "
-        "chisquared, but this is not being plotted! We are plotting %s"
-        % args.chisq_choice
+        "chisquared, but this is not being plotted! We are plotting "
+        f"{args.chisq_choice}"
     )
 
 args.newsnr_contours = args.newsnr_contours if args.newsnr_contours is not None else []
 
 # First - get the IFO from the file
 with HFile(args.trigger_file, "r") as f:
-    ifo = tuple(f.keys())[0]
+    ifo = args.ifo if args.ifo is not None else next(iter(f.keys()))
     n_triggers = f[ifo]["snr"].size
 
 logger.info("Plotting SNR vs %s chisq for %s triggers", args.chisq_choice, ifo)
@@ -102,9 +105,9 @@ for i, cval in enumerate(args.newsnr_contours):
     snrv = snr_from_chisq(r, cval)
     plt.plot(snrv, r, color="black", lw=0.5)
     if i == 0:
-        label = "$\\hat{\\rho} = %s$" % cval
+        label = f"$\\hat{{\\rho}} = {cval}$"
     else:
-        label = "$%s$" % cval
+        label = f"${cval}$"
     try:
         label_pos_idx = numpy.where(snrv > snr.max() * 0.8)[0][0]
     except IndexError:
@@ -142,9 +145,10 @@ plt.ylabel("Reduced $\\chi^2$")
 pycbc.results.save_fig_with_metadata(
     fig,
     args.output_file,
-    title="%s :SNR vs Reduced %s &chi;<sup>2</sup>" % (ifo, args.chisq_choice),
-    caption="Distribution of SNR and %s &chi;&sup2; for single detector triggers: "
-    "Black lines show contours of constant NewSNR." % (args.chisq_choice,),
+    title=f"{ifo} :SNR vs Reduced {args.chisq_choice} &chi;<sup>2</sup>",
+    caption=f"Distribution of SNR and {args.chisq_choice} &chi;&sup2; for single "
+    "detector triggers: "
+    "Black lines show contours of constant NewSNR.",
     cmd=" ".join(sys.argv),
     fig_kwds={"dpi": 300},
 )

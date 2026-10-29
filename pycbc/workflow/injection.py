@@ -116,7 +116,7 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir, tags
 
     opt_snr_split_files = []
     for i in range(factor):
-        group_str = "%s/%s" % (i, factor)
+        group_str = f"{i}/{factor}"
         opt_snr_exe = PyCBCOptimalSNRExecutable(
             workflow.cp,
             "optimal_snr",
@@ -262,7 +262,7 @@ def setup_injection_workflow(
             inj_files.append(curr_file)
         else:
             err = "Injection method must be one of IN_WORKFLOW, "
-            err += "AT_RUNTIME or PREGENERATED. Got %s." % (injection_method)
+            err += f"AT_RUNTIME or PREGENERATED. Got {injection_method}."
             raise ValueError(err)
 
         inj_tags.append(inj_tag)

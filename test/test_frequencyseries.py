@@ -30,7 +30,7 @@ import tempfile
 import unittest
 
 import numpy
-from utils import array_base, parse_args_all_schemes, simple_exit
+from utils import ArrayBase, parse_args_all_schemes, simple_exit
 
 from pycbc.scheme import DefaultScheme
 from pycbc.types import (
@@ -51,12 +51,12 @@ if _scheme == "cuda":
     import pycuda.gpuarray
     from pycuda.gpuarray import GPUArray as SchemeArray
 elif _scheme == "cpu":
-    from numpy import ndarray as SchemeArray
+    SchemeArray = numpy.ndarray
 
-from numpy import ndarray as CPUArray
+CPUArray = numpy.ndarray
 
 
-class TestFrequencySeriesBase(array_base, unittest.TestCase):
+class TestFrequencySeriesBase(ArrayBase, unittest.TestCase):
     __test__ = False
 
     def setUp(self):
@@ -101,7 +101,7 @@ class TestFrequencySeriesBase(array_base, unittest.TestCase):
         self.kwds = {"epoch": self.epoch, "delta_f": self.delta_f}
         # Now that the kinds are set, we need to call our parent method to set up all the
         # inputs and answers for our functions
-        self.setNumbers()
+        self.set_numbers()
 
         # The above call created instances for all of our inputs and various correct
         # outputs.  But we make a copy of the scalar to check later.

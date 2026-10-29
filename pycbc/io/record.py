@@ -144,7 +144,7 @@ def lstring_as_obj(true_or_false=None):
         numpy.sctypeDict["lstring"] = (
             numpy.object_
             if _default_types_status["lstring_as_obj"]
-            else "S%i" % _default_types_status["default_strlen"]
+            else f"S{int(_default_types_status['default_strlen'])}"
         )
     return _default_types_status["lstring_as_obj"]
 
@@ -157,7 +157,7 @@ def ilwd_as_int(true_or_false=None):
     if true_or_false is not None:
         _default_types_status["ilwd_as_int"] = true_or_false
         numpy.sctypeDict["ilwd:char"] = (
-            int if _default_types_status["ilwd_as_int"] else "S%i" % default_strlen
+            int if _default_types_status["ilwd_as_int"] else f"S{int(default_strlen)}"
         )
     return _default_types_status["ilwd_as_int"]
 
@@ -399,7 +399,7 @@ def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
         new_dt = combine_fields([arr.dtype for arr in merge_list])
     else:
         new_dt = numpy.dtype(
-            [("f%i" % ii, arr.dtype.descr) for ii, arr in enumerate(merge_list)]
+            [(f"f{ii}", arr.dtype.descr) for ii, arr in enumerate(merge_list)]
         )
     new_arr = merge_list[0].__class__(merge_list[0].shape, dtype=new_dt)
     # ii is a counter to keep track of which fields from the new array
@@ -1627,7 +1627,7 @@ def fields_from_names(fields, names=None):
             elif name in names_to_aliases:
                 key = (names_to_aliases[name], name)
             else:
-                raise KeyError("default fields has no field %s" % name)
+                raise KeyError(f"default fields has no field {name}")
             outfields[key] = fields[key]
     return outfields
 

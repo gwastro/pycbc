@@ -183,7 +183,7 @@ if args.distance_type == "redshift":
     dvals["redshift"] = f["injections/redshift"][:]
 
 if "snr" in args.distance_type:  # only evaluate SNRs if needed
-    opt_snrsq_arr = [f["injections/optimal_snr_%s" % ifo][:] ** 2.0 for ifo in ifos]
+    opt_snrsq_arr = [f[f"injections/optimal_snr_{ifo}"][:] ** 2.0 for ifo in ifos]
     dvals["comb_optimal_snr"] = numpy.array(
         [numpy.sqrt(sum(opt_snrsq)) for opt_snrsq in zip(*opt_snrsq_arr)]
     )
@@ -277,7 +277,7 @@ if args.gradient_far:
         else:
             ext = "neither"
         c = plot.colorbar(extend=ext)
-        c.set_label("False Alarm Rate $(yr^{-1})$, %s" % far_title)
+        c.set_label(f"False Alarm Rate $(yr^{{-1}})$, {far_title}")
 
         # Set up tick labels - there will be 5 if possible
         min_tick = numpy.ceil(min(numpy.log10(color)))
@@ -341,7 +341,7 @@ if ".html" in args.output_file:
     )
     mpld3.plugins.connect(fig, legend)
 
-title = "%s: %s vs %s" % (fig_title, args.axis_type, args.distance_type)
+title = f"{fig_title}: {args.axis_type} vs {args.distance_type}"
 cmd = " ".join(sys.argv)
 pycbc.results.save_fig_with_metadata(
     fig, args.output_file, fig_kwds=fig_kwds, title=title, cmd=cmd, caption=caption

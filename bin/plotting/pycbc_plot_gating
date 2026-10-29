@@ -83,11 +83,9 @@ if have_gates:
             total_time_pad[(ifo, gate_type)] = 0.0
 
     for i, (ifo, gate_type) in enumerate(sorted(gate_data.keys())):
-        label = "%s %s gates: %.1f s (zeroes), %.1f s (zeroes + pad)" % (
-            ifo,
-            gate_type,
-            total_time[(ifo, gate_type)],
-            total_time_pad[(ifo, gate_type)],
+        label = (
+            f"{ifo} {gate_type} gates: {total_time[(ifo, gate_type)]:.1f} s "
+            f"(zeroes), {total_time_pad[(ifo, gate_type)]:.1f} s (zeroes + pad)"
         )
         ax.text(t_min, i + 0.75, label)
 

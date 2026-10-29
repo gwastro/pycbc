@@ -202,12 +202,19 @@ injection_xml_file = resolve_url_to_file(os.path.abspath(args.injection_xml_file
 insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
 
 single_triggers = []
+single_triggers_by_ifo = {}
 insp_data_seglists = {}
 insp_analysed_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
+    shared_ifos = [
+        det for det, path in args.single_detector_triggers.items() if path == fname
+    ]
     strig_file = resolve_url_to_file(os.path.abspath(fname), attrs={"ifos": ifo})
-    single_triggers.append(strig_file)
+    strig_file.ifo_list = sorted(shared_ifos)
+    if strig_file not in single_triggers:
+        single_triggers.append(strig_file)
+    single_triggers_by_ifo[ifo] = strig_file
     insp_data_seglists[ifo] = select_segments_by_definer(
         args.inspiral_segments, segment_name=args.inspiral_data_read_name, ifo=ifo
     )
@@ -270,9 +277,9 @@ trigger_idx = {}
 trigger_snrs = {}
 trigger_times = {}
 # This finds the triggers near to _any_ missed injection
-for trig in single_triggers:
-    ifo = trig.ifo
-    with HFile(trig.lfn, "r") as trig_f:
+for ifo in args.single_detector_triggers:
+    fname = args.single_detector_triggers[ifo]
+    with HFile(fname, "r") as trig_f:
         trigger_idx[ifo], data_tuple = trig_f.select(
             nearby_missedinj,
             f"{ifo}/end_time",
@@ -303,8 +310,7 @@ for num_event in range(num_events):
     inj_params = {}
     for val in ["mass1", "mass2", "spin1z", "spin2z", "tc"]:
         inj_params[val] = inj_def[val][injection_index]
-    for single in single_triggers:
-        ifo = single.ifo
+    for ifo in args.single_detector_triggers:
         det = Detector(ifo)
         ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
         for seg in insp_analysed_seglists[ifo]:
@@ -313,9 +319,9 @@ for num_event in range(num_events):
         else:
             ifo_time = -1.0
 
-        ifo_times += " %s:%s " % (ifo, ifo_time)
+        ifo_times += f" {ifo}:{ifo_time} "
         inj_params[ifo + "_end_time"] = ifo_time
-    all_times = [inj_params[sngl.ifo + "_end_time"] for sngl in single_triggers]
+    all_times = [inj_params[ifo + "_end_time"] for ifo in args.single_detector_triggers]
     inj_params["mean_time"] = coinc.mean_if_greater_than_zero(all_times)[0]
 
     layouts += [
@@ -348,9 +354,8 @@ for num_event in range(num_events):
             )
         ]
 
-    for sngl in single_triggers:
+    for ifo in args.single_detector_triggers:
         # Find the triggers close to _this_ injection at this IFO
-        ifo = sngl.ifo
         trig_tdiff = abs(inj_params[ifo + "_end_time"] - trigger_times[ifo])
         nearby = trig_tdiff < args.nearby_triggers_window
         if not any(nearby):
@@ -362,6 +367,7 @@ for num_event in range(num_events):
         # Convert to the index in the trigger file
         nearby_trigger_idx = trigger_idx[ifo][nearby][loudest]
         # Make the info snippet
+        sngl = single_triggers_by_ifo[ifo]
         sngl_info = mini.make_sngl_ifo(
             workflow,
             sngl,
@@ -382,27 +388,29 @@ for num_event in range(num_events):
         tags=args.tags + [str(num_event)],
     )
 
-    for single in single_triggers:
+    for ifo in args.single_detector_triggers:
+        sngl = single_triggers_by_ifo[ifo]
         checkedtime = time
-        if inj_params[single.ifo + "_end_time"] == -1.0:
+        if inj_params[ifo + "_end_time"] == -1.0:
             checkedtime = inj_params["mean_time"]
-        for seg in insp_analysed_seglists[single.ifo]:
+        for seg in insp_analysed_seglists[ifo]:
             if checkedtime in seg:
                 files += mini.make_singles_timefreq(
                     workflow,
-                    single,
+                    sngl,
                     tmpltbank_file,
                     checkedtime,
                     args.output_dir,
-                    data_segments=insp_data_seglists[single.ifo],
+                    data_segments=insp_data_seglists[ifo],
                     tags=args.tags + [str(num_event)],
+                    ifo=ifo,
                 )
                 files += mini.make_qscan_plot(
                     workflow,
-                    single.ifo,
+                    ifo,
                     checkedtime,
                     args.output_dir,
-                    data_segments=insp_data_seglists[single.ifo],
+                    data_segments=insp_data_seglists[ifo],
                     injection_file=injection_xml_file,
                     tags=args.tags + [str(num_event)],
                 )
@@ -411,7 +419,7 @@ for num_event in range(num_events):
             logger.info(
                 "Trigger time %s is not valid in %s, skipping singles plots",
                 checkedtime,
-                single.ifo,
+                ifo,
             )
 
     _, norm_plot = mini.make_single_template_plots(
@@ -502,7 +510,7 @@ for num_event in range(num_events):
         except:
             pass
 
-        curr_tags = ["TMPLT_PARAMS_%s" % (curr_ifo,)]
+        curr_tags = [f"TMPLT_PARAMS_{curr_ifo}"]
         curr_tags += [str(num_event)]
         _, loudest_plot = mini.make_single_template_plots(
             workflow,
@@ -513,7 +521,7 @@ for num_event in range(num_events):
             args.output_dir,
             inj_file=injection_xml_file,
             tags=args.tags + curr_tags,
-            params_str="loudest template in %s" % curr_ifo,
+            params_str=f"loudest template in {curr_ifo}",
         )
         files += loudest_plot
 

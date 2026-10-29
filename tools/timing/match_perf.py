@@ -108,18 +108,18 @@ import timeit
 
 gt = timeit.Timer(ovlp)
 t = 1000 * gt.timeit(number=1) / niter
-print("Foverlap %.2f msec" % t, " %5.1f op/min " % (1000 * 60 / t))
+print(f"Foverlap {t:.2f} msec", " %5.1f op/min " % (1000 * 60 / t))
 
 gt = timeit.Timer(matcht)
 t = 1000 * gt.timeit(number=1) / niter
-print("MATCH %.2f msec" % t, " %5.1f op/min " % (1000 * 60 / t))
+print(f"MATCH {t:.2f} msec", " %5.1f op/min " % (1000 * 60 / t))
 
 
 gt = timeit.Timer(match_fast)
 t = 1000 * gt.timeit(number=1) / niter
-print("MATCH FAST %.2f msec" % t, " %5.1f op/min " % (1000 * 60 / t))
+print(f"MATCH FAST {t:.2f} msec", " %5.1f op/min " % (1000 * 60 / t))
 
 
 gt = timeit.Timer(filter_fast)
 t = 1000 * gt.timeit(number=1) / niter
-print("FILTER FAST %.2f msec" % t, " %5.1f op/min " % (1000 * 60 / t))
+print(f"FILTER FAST {t:.2f} msec", " %5.1f op/min " % (1000 * 60 / t))

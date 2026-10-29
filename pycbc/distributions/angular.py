@@ -526,14 +526,13 @@ class UniformSolidAngle(bounded.BoundedDist):
 
         if polar_angle not in variable_args:
             raise Error(
-                "polar-angle %s is not one of the variable args (%s)"
-                % (polar_angle, ", ".join(variable_args))
+                f"polar-angle {polar_angle} is not one of the variable args "
+                f"({', '.join(variable_args)})"
             )
         if azimuthal_angle not in variable_args:
             raise Error(
-                "azimuthal-angle %s is not one of the variable args "
-                % (azimuthal_angle)
-                + "(%s)" % (", ".join(variable_args))
+                f"azimuthal-angle {azimuthal_angle} is not one of the variable args "
+                f"({', '.join(variable_args)})"
             )
 
         # get the bounds, if provided

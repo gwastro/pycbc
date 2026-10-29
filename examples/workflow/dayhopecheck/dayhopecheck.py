@@ -72,54 +72,56 @@ _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
 workflow = _workflow.Workflow(args)
-currDir = os.path.abspath(args.output_dir)
-segDir = os.path.join(currDir, "segments")
-dfDir = os.path.join(currDir, "datafind")
+curr_dir = os.path.abspath(args.output_dir)
+seg_dir = os.path.join(curr_dir, "segments")
+df_dir = os.path.join(curr_dir, "datafind")
 
 print("BEGIN BY GENERATING SCIENCE AND CAT_X VETOES")
 
 
-def segment_report(sSegs):
-    fullLen = 0
-    fullNum = 0
-    shortLen = 0
-    shortNum = 0
-    longLen = 0
-    longNum = 0
-    for ifo in sSegs.keys():
-        for seg in sSegs[ifo]:
-            fullLen += abs(seg)
-            fullNum += 1
+def segment_report(s_segs):
+    full_len = 0
+    full_num = 0
+    short_len = 0
+    short_num = 0
+    long_len = 0
+    long_num = 0
+    for ifo in s_segs.keys():
+        for seg in s_segs[ifo]:
+            full_len += abs(seg)
+            full_num += 1
             if abs(seg) > 500:
-                shortLen += abs(seg)
-                shortNum += 1
+                short_len += abs(seg)
+                short_num += 1
             if abs(seg) > 2000:
-                longLen += abs(seg)
-                longNum += 1
+                long_len += abs(seg)
+                long_num += 1
         print(
-            "For ifo %s there is %d seconds of data in %d segments, %d seconds (%d unique segments) in segments longer than 500s and %d seconds (%d unique segments) longer than 2000s."
-            % (ifo, fullLen, fullNum, shortLen, shortNum, longLen, longNum)
+            f"For ifo {ifo} there is {int(full_len)} seconds of data in {full_num} "
+            f"segments, {int(short_len)} seconds ({short_num} unique segments) in "
+            f"segments longer than 500s and {int(long_len)} seconds ({long_num} unique "
+            "segments) longer than 2000s."
         )
 
 
-scienceSegs, segsList = _workflow.setup_segment_generation(workflow, segDir)
+science_segs, segs_list = _workflow.setup_segment_generation(workflow, seg_dir)
 
-segment_report(scienceSegs)
+segment_report(science_segs)
 
 print()
 print()
 
 print("RUNNING DATAFIND")
-datafinds, scienceSegs = _workflow.setup_datafind_workflow(
-    workflow, scienceSegs, dfDir, segsList
+datafinds, science_segs = _workflow.setup_datafind_workflow(
+    workflow, science_segs, df_dir, segs_list
 )
 
 # This is needed to know what times will be analysed by daily ahope
 # Template bank stuff
-banks = _workflow.setup_tmpltbank_workflow(workflow, scienceSegs, datafinds, dfDir)
+banks = _workflow.setup_tmpltbank_workflow(workflow, science_segs, datafinds, df_dir)
 # Do matched-filtering
 insps = _workflow.setup_matchedfltr_workflow(
-    workflow, scienceSegs, datafinds, banks, dfDir
+    workflow, science_segs, datafinds, banks, df_dir
 )
 
 # Now construct the summary XML file
@@ -130,28 +132,28 @@ outdoc.appendChild(ligolw.LIGO_LW())
 proc_id = outdoc.register_process("dayhopetest", vars(args)).process_id
 for ifo in workflow.ifos:
     # Lets get the segment lists we need
-    segIfoFiles = segsList.find_output_with_ifo(ifo)
+    seg_ifo_files = segs_list.find_output_with_ifo(ifo)
     # SCIENCE
-    sciSegFile = segIfoFiles.find_output_with_tag("SCIENCE")
-    assert len(sciSegFile) == 1
-    sciSegFile = sciSegFile[0]
-    sciSegs = sciSegFile.segmentList
+    sci_seg_file = seg_ifo_files.find_output_with_tag("SCIENCE")
+    assert len(sci_seg_file) == 1
+    sci_seg_file = sci_seg_file[0]
+    sci_segs = sci_seg_file.segmentList
     # SCIENCE_OK
-    sciokSegFile = segIfoFiles.find_output_with_tag("SCIENCE_OK")
-    assert len(sciokSegFile) == 1
-    sciokSegFile = sciokSegFile[0]
-    sciokSegs = sciokSegFile.segmentList
+    sci_ok_seg_file = seg_ifo_files.find_output_with_tag("SCIENCE_OK")
+    assert len(sci_ok_seg_file) == 1
+    sci_ok_seg_file = sci_ok_seg_file[0]
+    sci_ok_segs = sci_ok_seg_file.segmentList
     # SCIENCE_AVAILABLE
-    sciavailableSegFile = segIfoFiles.find_output_with_tag("SCIENCE_AVAILABLE")
-    assert len(sciavailableSegFile) == 1
-    sciavailableSegFile = sciavailableSegFile[0]
-    sciavailableSegs = sciavailableSegFile.segmentList
+    sci_available_seg_file = seg_ifo_files.find_output_with_tag("SCIENCE_AVAILABLE")
+    assert len(sci_available_seg_file) == 1
+    sci_available_seg_file = sci_available_seg_file[0]
+    sci_available_segs = sci_available_seg_file.segmentList
     # ANALYSABLE - This one needs to come from inspiral outs
-    analysableSegs = insps.get_times_covered_by_files()
+    analysable_segs = insps.get_times_covered_by_files()
 
     # And add these to the output file
     # Start with the segment summary
-    summSegs = segments.segmentlist([workflow.analysis_time])
+    summ_segs = segments.segmentlist([workflow.analysis_time])
     sci_def_id = segmentdb_utils.add_to_segment_definer(
         outdoc, proc_id, ifo, "CBC_DAYHOPE_SCIENCE", 0
     )
@@ -165,24 +167,24 @@ for ifo in workflow.ifos:
         outdoc, proc_id, ifo, "CBC_DAYHOPE_ANALYSABLE", 0
     )
 
-    segmentdb_utils.add_to_segment(outdoc, proc_id, sci_def_id, sciSegs)
-    segmentdb_utils.add_to_segment(outdoc, proc_id, sciok_def_id, sciokSegs)
+    segmentdb_utils.add_to_segment(outdoc, proc_id, sci_def_id, sci_segs)
+    segmentdb_utils.add_to_segment(outdoc, proc_id, sciok_def_id, sci_ok_segs)
     segmentdb_utils.add_to_segment(
-        outdoc, proc_id, sciavailable_def_id, sciavailableSegs
+        outdoc, proc_id, sciavailable_def_id, sci_available_segs
     )
-    segmentdb_utils.add_to_segment(outdoc, proc_id, analysable_def_id, analysableSegs)
+    segmentdb_utils.add_to_segment(outdoc, proc_id, analysable_def_id, analysable_segs)
 
     segmentdb_utils.add_to_segment_summary(
-        outdoc, proc_id, sci_def_id, summSegs, comment=""
+        outdoc, proc_id, sci_def_id, summ_segs, comment=""
     )
     segmentdb_utils.add_to_segment_summary(
-        outdoc, proc_id, sciok_def_id, summSegs, comment=""
+        outdoc, proc_id, sciok_def_id, summ_segs, comment=""
     )
     segmentdb_utils.add_to_segment_summary(
-        outdoc, proc_id, sciavailable_def_id, summSegs, comment=""
+        outdoc, proc_id, sciavailable_def_id, summ_segs, comment=""
     )
     segmentdb_utils.add_to_segment_summary(
-        outdoc, proc_id, analysable_def_id, summSegs, comment=""
+        outdoc, proc_id, analysable_def_id, summ_segs, comment=""
     )
 
 ligolw_utils.write_filename(outdoc, "SUMMARY.xml")

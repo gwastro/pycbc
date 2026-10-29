@@ -29,7 +29,7 @@ workflows.
 
 # FIXME: Is this module still relevant for any code? Can it be removed?
 
-import configparser as ConfigParser
+import configparser
 import logging
 
 from pycbc.workflow.core import FileList, resolve_url_to_file
@@ -49,7 +49,7 @@ def setup_psd_workflow(
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
     science_segs : Keyed dictionary of igwn_segments.segmentlist objects
-        scienceSegs[ifo] holds the science segments to be analysed for each
+        science_segs[ifo] holds the science segments to be analysed for each
         ifo.
     datafind_outs : pycbc.workflow.core.FileList
         The file list containing the datafind files.
@@ -72,19 +72,19 @@ def setup_psd_workflow(
 
     # Parse for options in ini file.
     try:
-        psdMethod = cp.get_opt_tags("workflow-psd", "psd-method", tags)
+        psd_method = cp.get_opt_tags("workflow-psd", "psd-method", tags)
     except:
         # Predefined PSD sare optional, just return an empty list if not
         # provided.
         return FileList([])
 
-    if psdMethod == "PREGENERATED_FILE":
+    if psd_method == "PREGENERATED_FILE":
         logger.info("Setting psd from pre-generated file(s).")
         psd_files = setup_psd_pregenerated(workflow, tags=tags)
     else:
-        errMsg = "PSD method not recognized. Only "
-        errMsg += "PREGENERATED_FILE is currently supported."
-        raise ValueError(errMsg)
+        err_msg = "PSD method not recognized. Only "
+        err_msg += "PREGENERATED_FILE is currently supported."
+        raise ValueError(err_msg)
 
     logger.info("Leaving psd module.")
     return psd_files
@@ -125,18 +125,18 @@ def setup_psd_pregenerated(workflow, tags=None):
         file_attrs["ifos"] = workflow.ifos
         curr_file = resolve_url_to_file(pre_gen_file, attrs=file_attrs)
         psd_files.append(curr_file)
-    except ConfigParser.Error:
+    except configparser.Error:
         # Check for one psd per ifo
         for ifo in workflow.ifos:
             try:
                 pre_gen_file = cp.get_opt_tags(
-                    "workflow-psd", "psd-pregenerated-file-%s" % ifo.lower(), tags
+                    "workflow-psd", f"psd-pregenerated-file-{ifo.lower()}", tags
                 )
                 file_attrs["ifos"] = [ifo]
                 curr_file = resolve_url_to_file(pre_gen_file, attrs=file_attrs)
                 psd_files.append(curr_file)
 
-            except ConfigParser.Error:
+            except configparser.Error:
                 # It's unlikely, but not impossible, that only some ifos
                 # will have pregenerated PSDs
                 logger.warning("No psd file specified for IFO %s.", ifo)

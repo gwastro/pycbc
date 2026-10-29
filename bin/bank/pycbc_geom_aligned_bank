@@ -143,9 +143,6 @@ psd_opts = pycbc.psd.insert_psd_option_group(parser)
 # Insert the data reading options
 data_opts = pycbc.strain.insert_strain_option_group(parser)
 
-# Add the ethinca calculation options - applied in the combiner
-ethinca_opts = pycbc.tmpltbank.insert_ethinca_metric_options(parser)
-
 # Workflow options
 
 
@@ -164,21 +161,12 @@ pycbc.init_logging(opts.verbose)
 opts.max_mismatch = 1 - opts.min_match
 
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
-metricParams = pycbc.tmpltbank.metricParameters.from_argparse(opts)
+metric_params = pycbc.tmpltbank.MetricParameters.from_argparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
-massRangeParams = pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
+mass_range_params = pycbc.tmpltbank.MassRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
-pycbc.tmpltbank.verify_ethinca_metric_options(opts, parser)
-ethincaParams = pycbc.tmpltbank.ethincaParameters.from_argparse(opts)
-# Ensure consistency of ethinca and bank metric parameters
-pycbc.tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
-# Ethinca calculation should currently only be done for non-spin templates
-if ethincaParams.full_ethinca and (
-    massRangeParams.maxNSSpinMag > 0.0 or massRangeParams.maxBHSpinMag > 0.0
-):
-    parser.error("Ethinca metric calculation is currently not valid for nonzero spins!")
 
 # Set random seed if needed
 if opts.random_seed is not None:
@@ -195,74 +183,74 @@ else:
 # Get the PSD using the pycbc interface
 logger.info("Obtaining PSD")
 # Want the number of samples to be a binary number and Nyquist must be above
-# opts.f_upper. All this assumes that 1 / deltaF is a binary number
-nyquistFreq = 2 ** numpy.ceil(numpy.log2(opts.f_upper))
-numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
+# opts.f_upper. All this assumes that 1 / delta_f is a binary number
+nyquist_freq = 2 ** numpy.ceil(numpy.log2(opts.f_upper))
+num_samples = int(round(nyquist_freq / opts.delta_f)) + 1
 psd = pycbc.psd.from_cli(
     opts,
-    length=numSamples,
+    length=num_samples,
     delta_f=opts.delta_f,
     low_frequency_cutoff=opts.f_low,
     strain=strain,
     dyn_range_factor=pycbc.DYN_RANGE_FAC,
 )
-metricParams.psd = psd
+metric_params.psd = psd
 
 # Begin by calculating a metric
 logger.info("Calculating metric")
-metricParams = pycbc.tmpltbank.determine_eigen_directions(metricParams)
+metric_params = pycbc.tmpltbank.determine_eigen_directions(metric_params)
 
 logger.info("Calculating covariance matrix")
 
 vals = pycbc.tmpltbank.estimate_mass_range(
-    1000000, massRangeParams, metricParams, metricParams.fUpper, covary=False
+    1000000, mass_range_params, metric_params, metric_params.f_upper, covary=False
 )
 cov = numpy.cov(vals)
-evalsCV, evecsCV = numpy.linalg.eig(cov)
-evecsCVdict = {}
-evecsCVdict[metricParams.fUpper] = evecsCV
-metricParams.evecsCV = evecsCVdict
+evals_cv, evecs_cv = numpy.linalg.eig(cov)
+evecs_cv_dict = {}
+evecs_cv_dict[metric_params.f_upper] = evecs_cv
+metric_params.evecs_cv = evecs_cv_dict
 
 
 logger.info("Determining parameter space extent")
 
 vals = pycbc.tmpltbank.estimate_mass_range(
-    1000000, massRangeParams, metricParams, metricParams.fUpper, covary=True
+    1000000, mass_range_params, metric_params, metric_params.f_upper, covary=True
 )
 
-chi1Max = vals[0].max()
-chi1Min = vals[0].min()
-chi1Diff = chi1Max - chi1Min
-chi2Max = vals[1].max()
-chi2Min = vals[1].min()
-chi2Diff = chi2Max - chi2Min
+chi1_max = vals[0].max()
+chi1_min = vals[0].min()
+chi1_diff = chi1_max - chi1_min
+chi2_max = vals[1].max()
+chi2_min = vals[1].min()
+chi2_diff = chi2_max - chi2_min
 
 logger.info("Calculating lattice")
 
 if not opts.threed_lattice:
     v1s, v2s = pycbc.tmpltbank.generate_hexagonal_lattice(
-        chi1Max + (0.02 * chi1Diff),
-        chi1Min - (0.02 * chi1Diff),
-        chi2Max + (0.02 * chi2Diff),
-        chi2Min - (0.02 * chi2Diff),
+        chi1_max + (0.02 * chi1_diff),
+        chi1_min - (0.02 * chi1_diff),
+        chi2_max + (0.02 * chi2_diff),
+        chi2_min - (0.02 * chi2_diff),
         opts.max_mismatch,
     )
 else:
-    chi3Max = vals[2].max()
-    chi3Min = vals[2].min()
-    chi3Diff = chi3Max - chi3Min
+    chi3_max = vals[2].max()
+    chi3_min = vals[2].min()
+    chi3_diff = chi3_max - chi3_min
     v1s, v2s, v3s = pycbc.tmpltbank.generate_anstar_3d_lattice(
-        chi1Max + (0.02 * chi1Diff),
-        chi1Min - (0.02 * chi1Diff),
-        chi2Max + (0.02 * chi2Diff),
-        chi2Min - (0.02 * chi2Diff),
-        chi3Max + (0.02 * chi3Diff),
-        chi3Min - (0.02 * chi3Diff),
+        chi1_max + (0.02 * chi1_diff),
+        chi1_min - (0.02 * chi1_diff),
+        chi2_max + (0.02 * chi2_diff),
+        chi2_min - (0.02 * chi2_diff),
+        chi3_max + (0.02 * chi3_diff),
+        chi3_min - (0.02 * chi3_diff),
         opts.max_mismatch,
     )
-    chi3Max = vals[2].max()
-    chi3Min = vals[2].min()
-    chi3Diff = chi3Max - chi3Min
+    chi3_max = vals[2].max()
+    chi3_min = vals[2].min()
+    chi3_diff = chi3_max - chi3_min
 
 logger.info("Lattice contains %d points", len(v1s))
 
@@ -273,28 +261,28 @@ if opts.filter_points:
     # Create a large set of points and map to xi_i to give a starting point when
     # mapping from xi_i to masses and spins
     # Use the EM constraint only if asked to do so
-    rMass1, rMass2, rSpin1z, rSpin2z = pycbc.tmpltbank.get_random_mass(
-        2000000, massRangeParams
+    r_mass1, r_mass2, r_spin1z, r_spin2z = pycbc.tmpltbank.get_random_mass(
+        2000000, mass_range_params
     )
 
-    rXis = pycbc.tmpltbank.get_cov_params(
-        rMass1, rMass2, rSpin1z, rSpin2z, metricParams, metricParams.fUpper
+    r_xis = pycbc.tmpltbank.get_cov_params(
+        r_mass1, r_mass2, r_spin1z, r_spin2z, metric_params, metric_params.f_upper
     )
 
-    xis = (numpy.array(rXis)).T
+    xis = (numpy.array(r_xis)).T
     f0 = opts.f0
     order = opts.pn_order
     maxmass1 = opts.max_mass1
     maxmass2 = opts.max_mass2
     minmass1 = opts.min_mass1
     minmass2 = opts.min_mass2
-    maxNSspin = opts.max_ns_spin_mag
-    maxBHspin = opts.max_bh_spin_mag
+    max_ns_spin = opts.max_ns_spin_mag
+    max_bh_spin = opts.max_bh_spin_mag
 
-    newV1s = []
-    newV2s = []
+    new_v1s = []
+    new_v2s = []
     if opts.threed_lattice:
-        newV3s = []
+        new_v3s = []
 
     # Use scipy's KDtree to quickly calculate Euclidean distances
     logger.info("Setting up KDtree to compute distances.")
@@ -312,26 +300,26 @@ if opts.filter_points:
 
     for i in range(len(v1s)):
         if dists[i] < 2.0:
-            newV1s.append(v1s[i])
-            newV2s.append(v2s[i])
+            new_v1s.append(v1s[i])
+            new_v2s.append(v2s[i])
             if opts.threed_lattice:
-                newV3s.append(v3s[i])
+                new_v3s.append(v3s[i])
 
-    logger.info("Filtered lattice contains %d points", len(newV1s))
+    logger.info("Filtered lattice contains %d points", len(new_v1s))
 else:
-    newV1s = v1s
-    newV2s = v2s
+    new_v1s = v1s
+    new_v2s = v2s
     if opts.threed_lattice:
-        newV3s = v3s
+        new_v3s = v3s
 
 # Now begin to generate the dag
 
 h5file = HFile(opts.output_file, "w")
 # Dump the full bank in \xi_i coordinates
-h5file["full_bank/v1s"] = newV1s
-h5file["full_bank/v2s"] = newV2s
+h5file["full_bank/v1s"] = new_v1s
+h5file["full_bank/v2s"] = new_v2s
 if opts.threed_lattice:
-    h5file["full_bank/v3s"] = newV3s
+    h5file["full_bank/v3s"] = new_v3s
 
 # Now store split banks
 bank_num = 0
@@ -340,38 +328,38 @@ logger.info("Printing split banks to HDF file.")
 v1s = []
 v2s = []
 v3s = []
-total_points = len(newV1s)
+total_points = len(new_v1s)
 points_per_job = (
     int(numpy.ceil(total_points / float(opts.num_split_jobs)))
     if total_points > 0 and opts.num_split_jobs > 0
     else 1
 )
 
-for i in range(len(newV1s)):
-    v1s.append(newV1s[i])
-    v2s.append(newV2s[i])
+for i in range(len(new_v1s)):
+    v1s.append(new_v1s[i])
+    v2s.append(new_v2s[i])
     if opts.threed_lattice:
-        v3s.append(newV3s[i])
+        v3s.append(new_v3s[i])
     if not (i + 1) % points_per_job:
-        h5file["split_banks/split_bank_%05d/v1s" % bank_num] = v1s
-        h5file["split_banks/split_bank_%05d/v2s" % bank_num] = v2s
+        h5file[f"split_banks/split_bank_{bank_num:05d}/v1s"] = v1s
+        h5file[f"split_banks/split_bank_{bank_num:05d}/v2s"] = v2s
         v1s = []
         v2s = []
         if opts.threed_lattice:
-            h5file["split_banks/split_bank_%05d/v3s" % bank_num] = v3s
+            h5file[f"split_banks/split_bank_{bank_num:05d}/v3s"] = v3s
             v3s = []
         bank_num = bank_num + 1
 
 if v1s:
     # There are still templates to dump
-    h5file["split_banks/split_bank_%05d/v1s" % bank_num] = v1s
-    h5file["split_banks/split_bank_%05d/v2s" % bank_num] = v2s
+    h5file[f"split_banks/split_bank_{bank_num:05d}/v1s"] = v1s
+    h5file[f"split_banks/split_bank_{bank_num:05d}/v2s"] = v2s
     if opts.threed_lattice:
-        h5file["split_banks/split_bank_%05d/v3s" % bank_num] = v3s
+        h5file[f"split_banks/split_bank_{bank_num:05d}/v3s"] = v3s
 
 logger.info("Adding metric information to HDF file.")
-h5file["cov_evecs"] = metricParams.evecsCV[metricParams.fUpper]
-h5file["metric_evals"] = metricParams.evals[metricParams.fUpper]
-h5file["metric_evecs"] = metricParams.evecs[metricParams.fUpper]
+h5file["cov_evecs"] = metric_params.evecs_cv[metric_params.f_upper]
+h5file["metric_evals"] = metric_params.evals[metric_params.f_upper]
+h5file["metric_evecs"] = metric_params.evecs[metric_params.f_upper]
 
 h5file.close()

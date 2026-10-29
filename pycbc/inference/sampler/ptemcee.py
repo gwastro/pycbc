@@ -103,7 +103,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         model,
         nwalkers,
         ntemps=None,
-        Tmax=None,
+        Tmax=None,  # noqa: N803
         betas=None,
         adaptive=False,
         adaptation_lag=None,

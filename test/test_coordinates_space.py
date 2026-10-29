@@ -199,7 +199,7 @@ class TestParams(unittest.TestCase):
         from pycbc.detector import Detector, add_detector_on_earth
         from pycbc.waveform import get_fd_det_waveform, get_fd_waveform
 
-        YRSID_SI = 31558149.763545603
+        YRSID_SI = 31558149.763545603  # noqa: N806
 
         def is_module_installed(module_name):
             try:
@@ -278,7 +278,7 @@ class TestParams(unittest.TestCase):
             # All of those hard-coded numbers are carefully chosen,
             # in order to almost co-align and co-locate both 2 detectors.
             fine_tunning = 7992204.094271309
-            OMEGA_0 = 1.99098659277e-7
+            OMEGA_0 = 1.99098659277e-7  # noqa: N806
             yangle = numpy.pi / 2 + fine_tunning * OMEGA_0
             add_detector_on_earth(
                 name="D1",
@@ -316,8 +316,8 @@ class TestParams(unittest.TestCase):
                 0, 2 * numpy.pi, num=nx, endpoint=False
             )
 
-            amp_E3_psi = []
-            amp_LISA3_psi = []
+            amp_E3_psi = []  # noqa: N806
+            amp_LISA3_psi = []  # noqa: N806
             phase_diff_psi = []
 
             for polarization_lisa in numpy.linspace(
@@ -343,16 +343,16 @@ class TestParams(unittest.TestCase):
                 bbhx_fd = get_fd_det_waveform(
                     ifos=["LISA_A", "LISA_E", "LISA_T"], **params
                 )
-                lisa_X_fd = (
+                lisa_X_fd = (  # noqa: N806
                     -numpy.sqrt(2) / 2 * bbhx_fd["LISA_A"]
                     + numpy.sqrt(6) / 6 * bbhx_fd["LISA_E"]
                     + numpy.sqrt(3) / 3 * bbhx_fd["LISA_T"]
                 )
-                lisa_Y_fd = (
+                lisa_Y_fd = (  # noqa: N806
                     -numpy.sqrt(6) / 3 * bbhx_fd["LISA_E"]
                     + numpy.sqrt(3) / 3 * bbhx_fd["LISA_T"]
                 )
-                lisa_Z_fd = (
+                lisa_Z_fd = (  # noqa: N806
                     numpy.sqrt(2) / 2 * bbhx_fd["LISA_A"]
                     + numpy.sqrt(6) / 6 * bbhx_fd["LISA_E"]
                     + numpy.sqrt(3) / 3 * bbhx_fd["LISA_T"]
@@ -377,7 +377,7 @@ class TestParams(unittest.TestCase):
                 params_3g["polarization"] = polarization_geo
                 params_3g["coa_phase"] = numpy.pi / 2 - params["coa_phase"]
 
-                E3_signal = strain_generator(
+                E3_signal = strain_generator(  # noqa: N806
                     det="D1",
                     model="IMRPhenomD",
                     fs=1.0 / params_3g["delta_t"],
@@ -388,7 +388,7 @@ class TestParams(unittest.TestCase):
                     params=params_3g,
                     fd_taper=False,
                 )
-                E3_signal_fd = {"DIY_E3": E3_signal[0].to_frequencyseries()}
+                E3_signal_fd = {"DIY_E3": E3_signal[0].to_frequencyseries()}  # noqa: N806
 
                 # Use the nearest frequency bin to f_ref on each side, rather
                 # than the first bin within an absolute tolerance: with
@@ -396,16 +396,16 @@ class TestParams(unittest.TestCase):
                 # window can still span several bins, and phase evolves fast
                 # enough at f_ref for these masses that which of those bins
                 # gets used matters.
-                index_E3 = numpy.argmin(
+                index_E3 = numpy.argmin(  # noqa: N806
                     numpy.abs(
                         E3_signal_fd["DIY_E3"].sample_frequencies - params_3g["f_ref"]
                     )
                 )
-                index_LISA3 = numpy.argmin(
+                index_LISA3 = numpy.argmin(  # noqa: N806
                     numpy.abs(bbhx_fd["LISA_A"].sample_frequencies - params["f_ref"])
                 )
-                val_E3 = E3_signal_fd["DIY_E3"][index_E3]
-                val_LISA3 = channel_xyz_fd["LISA_Z"][index_LISA3]
+                val_E3 = E3_signal_fd["DIY_E3"][index_E3]  # noqa: N806
+                val_LISA3 = channel_xyz_fd["LISA_Z"][index_LISA3]  # noqa: N806
 
                 amp_E3_psi.append(numpy.abs(val_E3))
                 amp_LISA3_psi.append(numpy.abs(val_LISA3))

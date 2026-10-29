@@ -18,7 +18,7 @@ from pycbc.events import significance
 logger = logging.getLogger(__name__)
 
 
-class fw:
+class FileWriter:
     def __init__(self, name):
         self.f = pycbc.io.HFile(name, "w")
         self.attrs = self.f.attrs
@@ -104,7 +104,7 @@ fg_time = fb.attrs["background_time"]
 fg_time_exc = fb.attrs["background_time_exc"]
 
 logger.info("Dumping foreground triggers")
-f = fw(args.output_file)
+f = FileWriter(args.output_file)
 f.attrs["num_of_ifos"] = 1
 f.attrs["ifos"] = ifo
 
@@ -112,8 +112,8 @@ f.attrs["timeslide_interval"] = all_trigs.attrs["timeslide_interval"]
 
 # Copy over the segment info
 for key in all_trigs.seg.keys():
-    f["segments/%s/start" % key] = all_trigs.seg[key]["start"][:]
-    f["segments/%s/end" % key] = all_trigs.seg[key]["end"][:]
+    f[f"segments/{key}/start"] = all_trigs.seg[key]["start"][:]
+    f[f"segments/{key}/end"] = all_trigs.seg[key]["end"][:]
 
 f["segments/foreground_veto/start"] = numpy.array([0])
 f["segments/foreground_veto/end"] = numpy.array([0])

@@ -75,7 +75,7 @@ class MultiDetOptionAction(argparse.Action):
                 "the append const action may be more appropriate"
             )
         if const is not None and nargs != argparse.OPTIONAL:
-            raise ValueError("nargs must be %r to supply const" % argparse.OPTIONAL)
+            raise ValueError(f"nargs must be {argparse.OPTIONAL!r} to supply const")
         super().__init__(
             option_strings=option_strings,
             dest=dest,
@@ -91,8 +91,8 @@ class MultiDetOptionAction(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         # Again this is modified from the standard argparse 'append' action
-        err_msg = "Issue with option: %s \n" % (self.dest,)
-        err_msg += "Received value: %s \n" % (" ".join(values),)
+        err_msg = f"Issue with option: {self.dest} \n"
+        err_msg += f"Received value: {' '.join(values)} \n"
         if getattr(namespace, self.dest, None) is None:
             setattr(namespace, self.dest, DictWithDefaultReturn())
         items = getattr(namespace, self.dest)
@@ -141,8 +141,8 @@ class MultiDetOptionActionSpecial(MultiDetOptionAction):
 
     def __call__(self, parser, namespace, values, option_string=None):
         # Again this is modified from the standard argparse 'append' action
-        err_msg = "Issue with option: %s \n" % (self.dest,)
-        err_msg += "Received value: %s \n" % (" ".join(values),)
+        err_msg = f"Issue with option: {self.dest} \n"
+        err_msg += f"Received value: {' '.join(values)} \n"
         if getattr(namespace, self.dest, None) is None:
             setattr(namespace, self.dest, {})
         items = getattr(namespace, self.dest)
@@ -152,10 +152,8 @@ class MultiDetOptionActionSpecial(MultiDetOptionAction):
             if len(value_split) == 2:
                 # "Normal" case, all ifos supplied independently as "H1:VALUE"
                 if value_split[0] in items:
-                    err_msg += "Multiple values supplied for ifo %s.\n" % (
-                        value_split[0],
-                    )
-                    err_msg += "Already have %s." % (items[value_split[0]])
+                    err_msg += f"Multiple values supplied for ifo {value_split[0]}.\n"
+                    err_msg += f"Already have {items[value_split[0]]}."
                     raise ValueError(err_msg)
                 items[value_split[0]] = value
             elif len(value_split) == 3:
@@ -164,10 +162,8 @@ class MultiDetOptionActionSpecial(MultiDetOptionAction):
                 # supply --channel-name H1:L1:LDAS-STRAIN I can use L1 data and
                 # pretend it is H1 internally.
                 if value_split[0] in items:
-                    err_msg += "Multiple values supplied for ifo %s.\n" % (
-                        value_split[0],
-                    )
-                    err_msg += "Already have %s." % (items[value_split[0]])
+                    err_msg += f"Multiple values supplied for ifo {value_split[0]}.\n"
+                    err_msg += f"Already have {items[value_split[0]]}."
                     raise ValueError(err_msg)
                 items[value_split[0]] = ":".join(value_split[1:3])
             else:
@@ -224,8 +220,8 @@ class MultiDetOptionAppendAction(MultiDetOptionAction):
                 else:
                     items[value[0]] = [self.internal_type(value[1])]
             else:
-                err_msg = "Issue with option: %s \n" % (self.dest,)
-                err_msg += "Received value: %s \n" % (" ".join(values),)
+                err_msg = f"Issue with option: {self.dest} \n"
+                err_msg += f"Received value: {' '.join(values)} \n"
                 err_msg += "The character ':' is used to distinguish the "
                 err_msg += "ifo and the value. It must be given exactly once "
                 err_msg += "for all entries"
@@ -260,7 +256,7 @@ class DictOptionAction(argparse.Action):
                 "the append const action may be more appropriate"
             )
         if const is not None and nargs != argparse.OPTIONAL:
-            raise ValueError("nargs must be %r to supply const" % argparse.OPTIONAL)
+            raise ValueError(f"nargs must be {argparse.OPTIONAL!r} to supply const")
         super().__init__(
             option_strings=option_strings,
             dest=dest,
@@ -276,8 +272,8 @@ class DictOptionAction(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         # Again this is modified from the standard argparse 'append' action
-        err_msg = "Issue with option: %s \n" % (self.dest,)
-        err_msg += "Received value: %s \n" % (" ".join(values),)
+        err_msg = f"Issue with option: {self.dest} \n"
+        err_msg += f"Received value: {' '.join(values)} \n"
         if getattr(namespace, self.dest, None) is None:
             setattr(namespace, self.dest, {})
         items = getattr(namespace, self.dest)
@@ -381,9 +377,9 @@ def required_opts(opt, parser, opt_list, required_by=None):
     for name in opt_list:
         attr = name[2:].replace("-", "_")
         if not hasattr(opt, attr) or (getattr(opt, attr) is None):
-            err_str = "%s is missing " % name
+            err_str = f"{name} is missing "
             if required_by is not None:
-                err_str += ", required by %s" % required_by
+                err_str += f", required by {required_by}"
             parser.error(err_str)
 
 
@@ -409,9 +405,9 @@ def required_opts_multi_ifo(opt, parser, ifo, opt_list, required_by=None):
             if getattr(opt, attr)[ifo] is None:
                 raise KeyError
         except KeyError:
-            err_str = "%s is missing " % name
+            err_str = f"{name} is missing "
             if required_by is not None:
-                err_str += ", required by %s" % required_by
+                err_str += f", required by {required_by}"
             parser.error(err_str)
 
 
@@ -435,10 +431,10 @@ def ensure_one_opt(opt, parser, opt_list):
             if the_one is None:
                 the_one = name
             else:
-                parser.error("%s and %s are mutually exculsive" % (the_one, name))
+                parser.error(f"{the_one} and {name} are mutually exculsive")
 
     if the_one is None:
-        parser.error("you must supply one of the following %s" % (", ".join(opt_list)))
+        parser.error(f"you must supply one of the following {', '.join(opt_list)}")
 
 
 def ensure_one_opt_multi_ifo(opt, parser, ifo, opt_list):
@@ -466,10 +462,10 @@ def ensure_one_opt_multi_ifo(opt, parser, ifo, opt_list):
             if the_one is None:
                 the_one = name
             else:
-                parser.error("%s and %s are mutually exculsive" % (the_one, name))
+                parser.error(f"{the_one} and {name} are mutually exculsive")
 
     if the_one is None:
-        parser.error("you must supply one of the following %s" % (", ".join(opt_list)))
+        parser.error(f"you must supply one of the following {', '.join(opt_list)}")
 
 
 def copy_opts_for_single_ifo(opt, ifo):

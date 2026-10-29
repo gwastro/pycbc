@@ -44,7 +44,7 @@ def int_gps_time_to_str(t):
     """
     int_t = int(t)
     if abs(float(t - int_t)) > 0.0:
-        raise ValueError("Need an integer GPS time, got %s" % str(t))
+        raise ValueError(f"Need an integer GPS time, got {t!s}")
     return str(int_t)
 
 
@@ -76,7 +76,7 @@ def select_tmpltbank_class(curr_exe):
         return exe_to_class_map[curr_exe]
     except KeyError:
         raise NotImplementedError(
-            "No job class exists for executable %s, exiting" % curr_exe
+            f"No job class exists for executable {curr_exe}, exiting"
         )
 
 
@@ -111,7 +111,7 @@ def select_matchedfilter_class(curr_exe):
     except KeyError:
         # also conceivable to introduce a default class??
         raise NotImplementedError(
-            "No job class exists for executable %s, exiting" % curr_exe
+            f"No job class exists for executable {curr_exe}, exiting"
         )
 
 
@@ -152,7 +152,7 @@ def select_generic_executable(workflow, exe_tag):
     except KeyError:
         # Should we try some sort of default class??
         raise NotImplementedError(
-            "No job class exists for executable %s, exiting" % exe_name
+            f"No job class exists for executable {exe_name}, exiting"
         )
 
 
@@ -247,12 +247,13 @@ def sngl_ifo_job_setup(
             if parents:
                 # Find the set of files with the best overlap
                 curr_parent = parents.find_outputs_in_range(
-                    ifo, job_valid_seg, useSplitLists=True
+                    ifo, job_valid_seg, use_split_lists=True
                 )
                 if not curr_parent:
-                    err_string = "No parent jobs found overlapping %d to %d." % (
-                        job_valid_seg[0],
-                        job_valid_seg[1],
+                    err_string = (
+                        "No parent jobs found overlapping "
+                        f"{int(job_valid_seg[0])} to "
+                        f"{int(job_valid_seg[1])}."
                     )
                     err_string += "\nThis is a bad error! Contact a developer."
                     raise ValueError(err_string)
@@ -262,12 +263,12 @@ def sngl_ifo_job_setup(
             curr_dfouts = None
             if datafind_outs:
                 curr_dfouts = datafind_outs.find_all_output_in_range(
-                    ifo, job_data_seg, useSplitLists=True
+                    ifo, job_data_seg, use_split_lists=True
                 )
                 if not curr_dfouts:
-                    err_str = "No datafind jobs found overlapping %d to %d." % (
-                        job_data_seg[0],
-                        job_data_seg[1],
+                    err_str = (
+                        "No datafind jobs found overlapping "
+                        f"{int(job_data_seg[0])} to {int(job_data_seg[1])}."
                     )
                     err_str += "\nThis shouldn't happen. Contact a developer."
                     raise ValueError(err_str)
@@ -344,8 +345,8 @@ def multi_ifo_coherent_job_setup(
                 data_seg,
                 job_valid_seg,
                 parent=split_bank,
-                dfParents=input_files,
-                bankVetoBank=bank_veto,
+                df_parents=input_files,
+                bank_veto_bank=bank_veto,
                 skygrid_file=skygrid_file,
                 ipn_file=ipn_sky_points,
                 slide=slide_dict,
@@ -366,8 +367,8 @@ def multi_ifo_coherent_job_setup(
                     parent=split_bank,
                     inj_file=inj_file,
                     tags=tag,
-                    dfParents=input_files,
-                    bankVetoBank=bank_veto,
+                    df_parents=input_files,
+                    bank_veto_bank=bank_veto,
                     skygrid_file=skygrid_file,
                     ipn_file=ipn_sky_points,
                 )
@@ -581,7 +582,7 @@ class PyCBCInspiralExecutable(Executable):
         if not self.has_opt("pad-data"):
             raise ValueError(
                 "The option pad-data is a required option of "
-                "%s. Please check the ini file." % self.name
+                f"{self.name}. Please check the ini file."
             )
         pad_data = int(self.get_opt("pad-data"))
 
@@ -769,8 +770,8 @@ class PyCBCMultiInspiralExecutable(Executable):
         valid_seg,
         parent=None,
         inj_file=None,
-        dfParents=None,
-        bankVetoBank=None,
+        df_parents=None,
+        bank_veto_bank=None,
         skygrid_file=None,
         ipn_file=None,
         slide=None,
@@ -780,10 +781,8 @@ class PyCBCMultiInspiralExecutable(Executable):
             tags = []
         node = Node(self)
 
-        if not dfParents:
-            raise ValueError(
-                "%s must be supplied with frame or cache files" % self.name
-            )
+        if not df_parents:
+            raise ValueError(f"{self.name} must be supplied with frame or cache files")
 
         # If doing single IFO search, make sure slides are disabled
         if len(self.ifo_list) < 2 and (
@@ -803,12 +802,12 @@ class PyCBCMultiInspiralExecutable(Executable):
         if pad_data is None:
             raise ValueError(
                 "The option pad-data is a required option of "
-                "%s. Please check the ini file." % self.name
+                f"{self.name}. Please check the ini file."
             )
 
         # Feed in bank_veto_bank.xml, if given
         if self.cp.has_option("workflow-inspiral", "bank-veto-bank-file"):
-            node.add_input_opt("--bank-veto-bank-file", bankVetoBank)
+            node.add_input_opt("--bank-veto-bank-file", bank_veto_bank)
         # Set time options
         node.add_opt("--gps-start-time", data_seg[0] + int(pad_data))
         node.add_opt("--gps-end-time", data_seg[1] - int(pad_data))
@@ -825,9 +824,9 @@ class PyCBCMultiInspiralExecutable(Executable):
             parent,
         )
 
-        if dfParents is not None:
+        if df_parents is not None:
             frame_arg = "--frame-files"
-            for frame_file in dfParents:
+            for frame_file in df_parents:
                 frame_arg += f" {frame_file.ifo}:{frame_file.name}"
                 node.add_input(frame_file)
             node.add_arg(frame_arg)
@@ -852,13 +851,13 @@ class PyCBCMultiInspiralExecutable(Executable):
 
         if slide is not None:
             for ifo in self.ifo_list:
-                node.add_opt("--%s-slide-segment" % ifo.lower(), slide[ifo])
+                node.add_opt(f"--{ifo.lower()}-slide-segment", slide[ifo])
 
         # Channels
         channel_names = {}
         for ifo in self.ifo_list:
             channel_names[ifo] = self.cp.get_opt_tags(
-                "workflow", "%s-channel-name" % ifo.lower(), ""
+                "workflow", f"{ifo.lower()}-channel-name", ""
             )
         channel_names_str = " ".join([val for key, val in channel_names.items()])
         node.add_opt("--channel-name", channel_names_str)
@@ -918,13 +917,13 @@ class PyCBCTmpltbankExecutable(Executable):
         node = Node(self)
 
         if not df_parents:
-            raise ValueError("%s must be supplied with data file(s)" % self.name)
+            raise ValueError(f"{self.name} must be supplied with data file(s)")
 
         pad_data = int(self.get_opt("pad-data"))
         if pad_data is None:
             raise ValueError(
                 "The option pad-data is a required option of "
-                "%s. Please check the ini file." % self.name
+                f"{self.name}. Please check the ini file."
             )
 
         # set the remaining option flags
@@ -1017,7 +1016,7 @@ class LigolwAddExecutable(Executable):
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
 
     def create_node(
-        self, jobSegment, input_files, output=None, use_tmp_subdirs=True, tags=None
+        self, job_segment, input_files, output=None, use_tmp_subdirs=True, tags=None
     ):
         if tags is None:
             tags = []
@@ -1034,7 +1033,7 @@ class LigolwAddExecutable(Executable):
             node.add_output_opt("--output", output)
         else:
             node.new_output_file_opt(
-                jobSegment,
+                job_segment,
                 ".xml.gz",
                 "--output",
                 tags=tags,
@@ -1069,7 +1068,7 @@ class PycbcSplitInspinjExecutable(Executable):
 
         out_files = FileList([])
         for i in range(self.num_splits):
-            curr_tag = "split%d" % i
+            curr_tag = f"split{i}"
             curr_tags = parent.tags + [curr_tag]
             job_tag = parent.description + "_" + self.name.upper()
             out_file = File(
@@ -1132,8 +1131,8 @@ class LalappsInspinjExecutable(Executable):
             triggered = False
         else:
             err_msg = "The argument 'l-distr' passed to the "
-            err_msg += "%s job has the value " % self.tagged_name
-            err_msg += "'%s' but you have not " % self.get_opt("l-distr")
+            err_msg += f"{self.tagged_name} job has the value "
+            err_msg += f"'{self.get_opt('l-distr')}' but you have not "
             err_msg += "provided the corresponding ExtTrig or IPN file. "
             err_msg += "Please check your configuration files and try again."
             raise ValueError(err_msg)
@@ -1374,7 +1373,7 @@ class PycbcHDFSplitInjExecutable(Executable):
         node.add_input_opt("--input-file", parent)
         out_files = FileList([])
         for i in range(self.num_splits):
-            curr_tag = "split%d" % i
+            curr_tag = f"split{i}"
             curr_tags = parent.tags + [curr_tag]
             job_tag = parent.description + "_" + self.name.upper()
             out_file = File(

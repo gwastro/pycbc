@@ -451,11 +451,11 @@ for th in args.stat_threshold:
         alpha, sig_alpha = trstats.fit_above_thresh(args.fit_function, vals_inbin, th)
         alphas[th][i] = alpha
         stdev[th][i] = sig_alpha
-        _, ks_prob[th][i] = trstats.KS_test(args.fit_function, vals_inbin, alpha, th)
+        _, ks_prob[th][i] = trstats.ks_test(args.fit_function, vals_inbin, alpha, th)
         # add histogram to plot
         histcounts, edges = np.histogram(vals_inbin, bins=50)
         cum_counts = histcounts[::-1].cumsum()[::-1]
-        binlabel = r"%.3g - %.3g" % (lower, upper)
+        binlabel = rf"{lower:.3g} - {upper:.3g}"
         # histogram of fitted values
         plt.semilogy(
             edges[:-1],
@@ -471,7 +471,7 @@ for th in args.stat_threshold:
             counts[th][i] * trstats.cum_fit(args.fit_function, plotrange, alpha, th),
             "--",
             color=histcolors[i],
-            label=r"$\alpha = $%.2f $\pm$ %.2f" % (alpha, sig_alpha),
+            label=rf"$\alpha = ${alpha:.2f} $\pm$ {sig_alpha:.2f}",
         )
         # 1sigma upper deviation on alpha
         plt.semilogy(
@@ -494,7 +494,7 @@ for th in args.stat_threshold:
     # finish the hist plot
     leg = plt.legend(labelspacing=0.2)
     unitstring = (
-        " (%s)" % args.bin_param_units if args.bin_param_units is not None else ""
+        f" ({args.bin_param_units})" if args.bin_param_units is not None else ""
     )
     leg.set_title(paramname + unitstring)
     plt.setp(leg.get_texts(), fontsize=11)
@@ -522,11 +522,11 @@ for th in args.stat_threshold:
         results.save_fig_with_metadata(
             fig,
             args.output_file,
-            title="%s: %s histogram of single detector triggers" % (args.ifo, statname),
+            title=f"{args.ifo}: {statname} histogram of single detector triggers",
             caption=(
-                r"Histogram of single detector %s values binned by %s "
-                "with fitted %s distribution parameterized by &alpha;"
-                % (statname, paramname, args.fit_function)
+                rf"Histogram of single detector {statname} values binned by "
+                rf"{paramname} "
+                f"with fitted {args.fit_function} distribution parameterized by &alpha;"
             ),
             cmd=" ".join(sys.argv),
         )
@@ -543,7 +543,7 @@ for th in args.stat_threshold:
         [alphas[th][i] for i in binind],
         yerr=[stdev[th][i] for i in binind],
         fmt="+-",
-        label=args.ifo + " fit above %.2f" % th,
+        label=args.ifo + f" fit above {th:.2f}",
     )
 if args.bin_spacing == "log":
     plt.semilogx()
@@ -562,7 +562,7 @@ for th in args.stat_threshold:
         [float(counts[th][i]) / templates[i] for i in binind],
         yerr=[counts[th][i] ** 0.5 / templates[i] for i in binind],
         fmt="+-",
-        label=args.ifo + " trigs above %.2f" % th,
+        label=args.ifo + f" trigs above {th:.2f}",
     )
 if args.bin_spacing == "log":
     plt.semilogx()
@@ -579,7 +579,7 @@ for th in args.stat_threshold:
         pbins.centres(),
         [ks_prob[th][i] for i in binind],
         "+--",
-        label=args.ifo + " KS prob, thresh %.2f" % th,
+        label=args.ifo + f" KS prob, thresh {th:.2f}",
     )
 if args.bin_spacing == "log":
     plt.loglog()

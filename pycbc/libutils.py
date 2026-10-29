@@ -60,7 +60,7 @@ def pkg_config(pkg_libraries):
 
     # Check that we have the packages
     for pkg in pkg_libraries:
-        if os.system("pkg-config --exists %s 2>/dev/null" % pkg) == 0:
+        if os.system(f"pkg-config --exists {pkg} 2>/dev/null") == 0:
             pass
         else:
             print(f"Could not find library {pkg}")
@@ -71,8 +71,8 @@ def pkg_config(pkg_libraries):
         # PKG_CONFIG_ALLOW_SYSTEM_CFLAGS explicitly lists system paths.
         # On system-wide LAL installs, this is needed for swig to find lalswig.i
         for token in getoutput(
-            "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s"
-            % " ".join(pkg_libraries)
+            "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags "
+            f"{' '.join(pkg_libraries)}"
         ).split():
             if token.startswith("-l"):
                 libraries.append(token[2:])
@@ -112,9 +112,9 @@ def pkg_config_libdirs(packages):
         return []
 
     # if calling pkg-config failes, don't continue and don't try again.
-    with open(os.devnull, "w") as FNULL:
+    with open(os.devnull, "w") as fnull:
         try:
-            subprocess.check_call(["pkg-config", "--version"], stdout=FNULL)
+            subprocess.check_call(["pkg-config", "--version"], stdout=fnull)
         except:
             print(
                 "PyCBC.libutils: pkg-config call failed, setting NO_PKGCONFIG=1",
@@ -132,9 +132,7 @@ def pkg_config_libdirs(packages):
 
     libdirs = []
     for token in getoutput(
-        "PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {0}".format(
-            " ".join(packages)
-        )
+        f"PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {' '.join(packages)}"
     ).split():
         if token.startswith("-L"):
             libdirs.append(token[2:])
@@ -237,7 +235,7 @@ def import_optional(library_name):
     except ImportError:
         # module wasn't found so let's return a stub instead to inform
         # the user what has happened when they try to use related functions
-        class no_module:
+        class NoModule:
             def __init__(self, library):
                 self.library = library
 
@@ -258,4 +256,4 @@ def import_optional(library_name):
                       """
                 raise ImportError(inspect.cleandoc(msg))
 
-        return no_module(library_name)
+        return NoModule(library_name)

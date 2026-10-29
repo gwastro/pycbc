@@ -154,7 +154,7 @@ stack_exe = GeomAligned2DStackExecutable(
 all_outs = wf.FileList([])
 
 for idx in range(num_split_jobs):
-    stackid = "job%05d" % (idx)
+    stackid = f"job{idx:05d}"
     stack_node = stack_exe.create_node(
         intermediate_file, idx, workflow.analysis_time, extra_tags=[stackid]
     )

@@ -33,11 +33,7 @@ def get_ifo_string(fi):
         # the ifos list can be reconstructed
         istring = " ".join(
             sorted(
-                [
-                    k
-                    for k in fi["foreground"].keys()
-                    if "time" in fi["foreground/%s" % k]
-                ]
+                [k for k in fi["foreground"].keys() if "time" in fi[f"foreground/{k}"]]
             )
         )
     return istring
@@ -176,10 +172,8 @@ for fi in files:
     f[f"segments/{key}/start"] = starts
     f[f"segments/{key}/end"] = ends
     if "segments/foreground_veto" in fi:
-        f["segments/%s/foreground_veto/end" % key] = fi["segments/foreground_veto/end"][
-            :
-        ]
-        f["segments/%s/foreground_veto/start" % key] = fi[
+        f[f"segments/{key}/foreground_veto/end"] = fi["segments/foreground_veto/end"][:]
+        f[f"segments/{key}/foreground_veto/start"] = fi[
             "segments/foreground_veto/start"
         ][:]
     for attr_name in fi.attrs:
@@ -330,7 +324,7 @@ for ifo in all_ifos:
         f.create_dataset(f"background_exc/{ifo}/trigger_id", data=bg_exc_trig_ids[ifo])
 
 # fg_times is a tuple of trigger time arrays
-fg_times = (f["foreground/%s/time" % ifo][:] for ifo in all_ifos)
+fg_times = (f[f"foreground/{ifo}/time"][:] for ifo in all_ifos)
 
 # Cluster using the chosen method. Currently only clustering zerolag,
 # i.e. foreground, so set all timeslide_ids to zero
@@ -356,9 +350,9 @@ def filter_dataset(h5file, name, idx):
 # multiple files
 for key in f["foreground"].keys():
     if key not in all_ifos:
-        filter_dataset(f, "foreground/%s" % key, cidx)
+        filter_dataset(f, f"foreground/{key}", cidx)
     else:  # key is an ifo
-        for k in f["foreground/%s" % key].keys():
+        for k in f[f"foreground/{key}"].keys():
             filter_dataset(f, f"foreground/{key}/{k}", cidx)
 
 fg_coinc_type = fg_coinc_type[cidx]
@@ -378,8 +372,8 @@ is_in_combo_time = {}
 for key in all_ifo_combos:
     logger.info("Checking if events are in %s time", key)
     is_in_combo_time[key] = np.zeros(n_triggers)
-    end_times = np.array(f["segments/%s/end" % key][:])
-    start_times = np.array(f["segments/%s/start" % key][:])
+    end_times = np.array(f[f"segments/{key}/end"][:])
+    start_times = np.array(f[f"segments/{key}/start"][:])
     idx_within_segment = pycbc.events.indices_within_times(
         test_times, start_times, end_times
     )
@@ -501,14 +495,14 @@ logger.info("Performing hierarchical removal")
 # Datasets required for hier removal
 grps = ["decimation_factor", "stat", "template_id", "timeslide_id", "ifar"]
 for ifo in all_ifos:
-    grps += ["%s/time" % ifo]
-    grps += ["%s/trigger_id" % ifo]
+    grps += [f"{ifo}/time"]
+    grps += [f"{ifo}/trigger_id"]
 
 fg_grps = grps + ["fap", "fap_exc", "ifar_exc"]
 
-combined_bg_data = pycbc.io.DictArray(data={g: f["background/%s" % g][:] for g in grps})
+combined_bg_data = pycbc.io.DictArray(data={g: f[f"background/{g}"][:] for g in grps})
 combined_fg_data = pycbc.io.DictArray(
-    data={g: f["foreground/%s" % g][:] for g in fg_grps}
+    data={g: f[f"foreground/{g}"][:] for g in fg_grps}
 )
 
 # Get coinc type for all coincidences
@@ -574,16 +568,14 @@ while True:
         for combo in all_ifo_combos:
             bg_grps[combo] = ["ifar", "stat", "timeslide_id"]
             for key in sep_fg_data[combo].data:
-                full_fg_key = "foreground_h0/%s/%s" % (combo, key)
+                full_fg_key = f"foreground_h0/{combo}/{key}"
                 f[full_fg_key] = sep_fg_data[combo].data[key][:]
             for key in bg_grps[combo]:
-                f["background_h0/%s/%s" % (combo, key)] = sep_bg_data[combo].data[key][
-                    :
-                ]
+                f[f"background_h0/{combo}/{key}"] = sep_bg_data[combo].data[key][:]
         for key in ["stat", "timeslide_id"]:
-            f["background_h0/%s" % (key)] = combined_bg_data.data[key][:]
+            f[f"background_h0/{key}"] = combined_bg_data.data[key][:]
         for key in combined_fg_data.data:
-            f["foreground_h0/%s" % (key)] = combined_fg_data.data[key][:]
+            f[f"foreground_h0/{key}"] = combined_fg_data.data[key][:]
     else:
         for combo in all_ifo_combos:
             bg_grps[combo] = [
@@ -596,8 +588,8 @@ while True:
             for key in sep_fg_data[combo].data:
                 if key.split("/")[0] in all_ifos:
                     bg_grps[combo] += [key]
-                full_fg_key = "foreground_h%d/%s/%s" % (h_iterations, combo, key)
-                comp_fg_key = "foreground_h%d/%s/%s" % (h_iterations - 1, combo, key)
+                full_fg_key = f"foreground_h{h_iterations}/{combo}/{key}"
+                comp_fg_key = f"foreground_h{h_iterations - 1}/{combo}/{key}"
                 if (
                     comp_fg_key in f
                     and sep_fg_data[combo].data[key].size == f[comp_fg_key].size
@@ -610,15 +602,15 @@ while True:
             for key in bg_grps[combo]:
                 # The background will (almost certainly) be affected,
                 # so copy as normal
-                f["background_h%s/%s/%s" % (h_iterations, combo, key)] = sep_bg_data[
+                f[f"background_h{h_iterations}/{combo}/{key}"] = sep_bg_data[
                     combo
                 ].data[key][:]
-            f[combo].attrs["foreground_time_h%s" % h_iterations] = fg_time_ct[combo]
-            f.attrs["foreground_time_h%s" % h_iterations] = fg_time
+            f[combo].attrs[f"foreground_time_h{h_iterations}"] = fg_time_ct[combo]
+            f.attrs[f"foreground_time_h{h_iterations}"] = fg_time
         for key in combined_bg_data.data:
-            f["background_h%s/%s" % (h_iterations, key)] = combined_bg_data.data[key][:]
+            f[f"background_h{h_iterations}/{key}"] = combined_bg_data.data[key][:]
         for key in combined_fg_data.data:
-            f["foreground_h%s/%s" % (h_iterations, key)] = combined_fg_data.data[key][:]
+            f[f"foreground_h{h_iterations}/{key}"] = combined_fg_data.data[key][:]
 
     if h_iterations == args.max_hierarchical_removal:
         logger.info(
@@ -666,7 +658,7 @@ while True:
 
     maxtime = pycbc.events.mean_if_greater_than_zero(
         [
-            sep_fg_data[maxcombo].data["%s/time" % ifo][:][max_ifar_idx]
+            sep_fg_data[maxcombo].data[f"{ifo}/time"][:][max_ifar_idx]
             for ifo in all_ifos
             if ifo in maxcombo
         ]
@@ -698,7 +690,7 @@ while True:
         all_hred_idx = []
         for ifo in all_ifos:
             if ifo in combo:
-                times = sep_bg_data[combo].data["%s/time" % ifo]
+                times = sep_bg_data[combo].data[f"{ifo}/time"]
                 hred_ids = np.nonzero(
                     abs(times - maxtime) < args.hierarchical_removal_window
                 )[0]
@@ -708,7 +700,7 @@ while True:
 
     hred_ids = []
     for ifo in all_ifos:
-        times = combined_bg_data.data["%s/time" % ifo][:]
+        times = combined_bg_data.data[f"{ifo}/time"][:]
         within_window = np.flatnonzero(
             abs(times - maxtime) < args.hierarchical_removal_window
         )
@@ -762,8 +754,8 @@ while True:
         )
         # Set up variable for whether each coincidence is available in each coincidence time
         is_in_combo_time[key] = np.zeros(n_triggers)
-        end_times = np.array(f["segments/%s/end" % key][:])
-        start_times = np.array(f["segments/%s/start" % key][:])
+        end_times = np.array(f[f"segments/{key}/end"][:])
+        start_times = np.array(f[f"segments/{key}/start"][:])
         idx_within_segment = pycbc.events.indices_within_times(
             test_times, start_times, end_times
         )
@@ -787,14 +779,14 @@ while True:
 for combo in all_ifo_combos:
     final_fg_data[combo] = final_fg_data[combo] + sep_fg_data[combo]
     for key in final_fg_data[combo].data:
-        full_key = "foreground/%s/%s" % (combo, key)
+        full_key = f"foreground/{combo}/{key}"
         if full_key in f:
             del f[full_key]
         f[full_key] = final_fg_data[combo].data[key]
 
 final_combined_fg = final_combined_fg + combined_fg_data
 for key in final_combined_fg.data:
-    full_key = "foreground/%s" % (key)
+    full_key = f"foreground/{key}"
     if full_key in f:
         del f[full_key]
     f[full_key] = final_combined_fg.data[key]

@@ -39,8 +39,8 @@ def basic_scatter(
     vmax,
     xmin,
     ymin,
-    majorL,
-    minorL,
+    major_tick,
+    minor_tick,
     colormap,
 ):
     if colormap != "jet":
@@ -99,14 +99,14 @@ def basic_scatter(
     plt.ylim(ymin, max(yval))
 
     ax = fig.gca()
-    if majorL:
-        majorL = float(majorL)
-        ax.xaxis.set_major_locator(MultipleLocator(majorL))
-        ax.yaxis.set_major_locator(MultipleLocator(majorL))
-    if minorL:
-        minorL = float(minorL)
-        ax.xaxis.set_minor_locator(MultipleLocator(minorL))
-        ax.yaxis.set_minor_locator(MultipleLocator(minorL))
+    if major_tick:
+        major_tick = float(major_tick)
+        ax.xaxis.set_major_locator(MultipleLocator(major_tick))
+        ax.yaxis.set_major_locator(MultipleLocator(major_tick))
+    if minor_tick:
+        minor_tick = float(minor_tick)
+        ax.xaxis.set_minor_locator(MultipleLocator(minor_tick))
+        ax.yaxis.set_minor_locator(MultipleLocator(minor_tick))
 
     plt.grid()
     plt.title(title)
@@ -206,7 +206,7 @@ basic_scatter(
     vmax=args.vmax,
     xmin=args.xmin,
     ymin=args.ymin,
-    majorL=args.majorL,
-    minorL=args.minorL,
+    major_tick=args.majorL,
+    minor_tick=args.minorL,
     colormap=args.colormap,
 )

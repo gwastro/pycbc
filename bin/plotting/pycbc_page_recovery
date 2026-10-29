@@ -100,7 +100,7 @@ trig = HFile(args.trigger_file, "r") if args.trigger_file else None
 # Check the detector
 dets = injs.attrs["ifos"].split(" ")
 if args.ifo not in dets:
-    raise RuntimeError("Can't find detector %s in injection file!" % args.ifo)
+    raise RuntimeError(f"Can't find detector {args.ifo} in injection file!")
 site = args.ifo[0].lower()
 
 # Determine which injections are found
@@ -301,7 +301,7 @@ results.save_fig_with_metadata(
     fig,
     args.output_file,
     fig_kwds=fig_kwds,
-    title="Injection %s recovery" % (args.error_param),
+    title=f"Injection {args.error_param} recovery",
     cmd=" ".join(sys.argv),
     caption=caption,
 )

@@ -42,11 +42,11 @@ class PartitionedTmpltbank:
 
         Parameters
         ----------
-        mass_range_params : massRangeParameters object
-            An initialized massRangeParameters object holding the details of
+        mass_range_params : MassRangeParameters object
+            An initialized MassRangeParameters object holding the details of
             the mass and spin ranges being considered.
-        metric_params : metricParameters object
-            An initialized metricParameters object holding the details of the
+        metric_params : MetricParameters object
+            An initialized MetricParameters object holding the details of the
             parameter space metric that is being used.
         ref_freq : float
             The reference frequency to use as the upper frequency cutoff of
@@ -551,7 +551,7 @@ class PartitionedTmpltbank:
         # These that masses obey the restrictions of mass_range_params
         if self.mass_range_params.is_outside_range(mass1, mass2, spin1z, spin2z):
             err_msg = "Point with masses given by "
-            err_msg += "%f %f %f %f " % (mass1, mass2, spin1z, spin2z)
+            err_msg += f"{mass1:f} {mass2:f} {spin1z:f} {spin2z:f} "
             err_msg += "(mass1, mass2, spin1z, spin2z) is not consistent "
             err_msg += "with the provided command-line restrictions on masses "
             err_msg += "and spins."
@@ -580,7 +580,7 @@ class PartitionedTmpltbank:
                 spin1z,
                 spin2z,
                 self.metric_params.f0,
-                self.metric_params.pnOrder,
+                self.metric_params.pn_order,
             )
             mus = []
             for freq in self.frequency_map:

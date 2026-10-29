@@ -55,8 +55,8 @@ def icumsum(vec):
 
 @context_dependent_memoize
 def call_prepare(self, sz, allocator):
-    MAX_BLOCK_COUNT = 1024
-    SMALL_SEQ_COUNT = 4
+    MAX_BLOCK_COUNT = 1024  # noqa: N806
+    SMALL_SEQ_COUNT = 4  # noqa: N806
 
     if sz <= self.block_size * SMALL_SEQ_COUNT * MAX_BLOCK_COUNT:
         total_block_size = SMALL_SEQ_COUNT * self.block_size
@@ -152,11 +152,7 @@ class LowerLatencyReductionKernel(ReductionKernel):
 @context_dependent_memoize
 def get_norm_kernel(dtype_x, dtype_out):
     return ElementwiseKernel(
-        "%(tp_x)s *x, %(tp_z)s *z"
-        % {
-            "tp_x": dtype_to_ctype(dtype_x),
-            "tp_z": dtype_to_ctype(dtype_out),
-        },
+        f"{dtype_to_ctype(dtype_x)} *x, {dtype_to_ctype(dtype_out)} *z",
         "z[i] = norm(x[i])",
         "normalize",
     )
@@ -189,12 +185,8 @@ def get_weighted_inner_kernel(dtype_x, dtype_y, dtype_w, dtype_out):
     return LowerLatencyReductionKernel(
         dtype_out,
         neutral="0",
-        arguments="%(tp_x)s *x, %(tp_y)s *y,  %(tp_w)s *w"
-        % {
-            "tp_x": dtype_to_ctype(dtype_x),
-            "tp_y": dtype_to_ctype(dtype_y),
-            "tp_w": dtype_to_ctype(dtype_w),
-        },
+        arguments=f"{dtype_to_ctype(dtype_x)} *x, {dtype_to_ctype(dtype_y)} *y,  "
+        f"{dtype_to_ctype(dtype_w)} *w",
         reduce_expr="a+b",
         map_expr=inner_map,
         name="weighted_inner",
@@ -210,11 +202,7 @@ def get_inner_kernel(dtype_x, dtype_y, dtype_out):
     return LowerLatencyReductionKernel(
         dtype_out,
         neutral="0",
-        arguments="%(tp_x)s *x, %(tp_y)s *y"
-        % {
-            "tp_x": dtype_to_ctype(dtype_x),
-            "tp_y": dtype_to_ctype(dtype_y),
-        },
+        arguments=f"{dtype_to_ctype(dtype_x)} *x, {dtype_to_ctype(dtype_y)} *y",
         reduce_expr="a+b",
         map_expr=inner_map,
         name="inner",

@@ -64,11 +64,11 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # Munge together SNR cut and any other filter specified
-snr_filter = "self.snr>%f" % (args.min_snr) if args.min_snr > 0.0 else None
+snr_filter = f"self.snr>{args.min_snr:f}" if args.min_snr > 0.0 else None
 filts = [f for f in [snr_filter, args.filter_string] if f is not None]
 if len(filts) == 2:  # both an explicit filter and a min-snr
     # io.hdf uses numpy imported as np
-    filter_func = "np.logical_and(%s, %s)" % (filts[0], filts[1])
+    filter_func = f"np.logical_and({filts[0]}, {filts[1]})"
 elif len(filts) == 1:
     filter_func = filts[0]
 else:

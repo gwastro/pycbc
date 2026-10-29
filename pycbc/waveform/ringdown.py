@@ -486,7 +486,7 @@ def spher_harms(
     return xlm, xlnm
 
 
-def Kerr_factor(final_mass, distance):
+def kerr_factor(final_mass, distance):
     """
     Return the factor final_mass/distance (in dimensionless units) for Kerr
     ringdowns
@@ -771,11 +771,11 @@ def fd_damped_sinusoid(
     if t_0 != 0:
         time_shift = numpy.exp(-1j * two_pi * freqs * t_0)
         norm *= time_shift
-    A1 = 1 + 2j * pi * freqs * tau
-    A2 = two_pi * f_0 * tau
+    a1 = 1 + 2j * pi * freqs * tau
+    a2 = two_pi * f_0 * tau
     # Analytical expression for the Fourier transform of the ringdown
-    hptilde = norm * xp * (A1 * numpy.cos(phi) - A2 * numpy.sin(phi))
-    hctilde = norm * xc * (A1 * numpy.sin(phi) + A2 * numpy.cos(phi))
+    hptilde = norm * xp * (a1 * numpy.cos(phi) - a2 * numpy.sin(phi))
+    hctilde = norm * xc * (a1 * numpy.sin(phi) + a2 * numpy.cos(phi))
     return hptilde, hctilde
 
 
@@ -845,7 +845,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False, sum_modes=T
             input_params["final_mass"], input_params["final_spin"], input_params["lmns"]
         )
         norm = (
-            Kerr_factor(input_params["final_mass"], input_params["distance"])
+            kerr_factor(input_params["final_mass"], input_params["distance"])
             if "distance" in input_params.keys()
             else 1.0
         )

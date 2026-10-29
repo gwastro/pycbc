@@ -188,7 +188,7 @@ for ifo in ifos:
         alpha_lines.append(
             ax_alpha.axhline(
                 ma,
-                label="total fit = %.2f" % ma,
+                label=f"total fit = {ma:.2f}",
                 c=bin_colour,
                 linestyle="--",
             )

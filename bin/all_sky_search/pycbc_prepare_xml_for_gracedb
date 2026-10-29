@@ -106,7 +106,7 @@ xmldoc = ligolw_utils.load_filename(
 )
 
 
-class psd_segment(segment):
+class PSDSegment(segment):
     def __new__(cls, psd, *args):
         return segment.__new__(cls, *args)
 
@@ -122,7 +122,7 @@ def read_psds(psd_files):
         ((ifo, group),) = HFile(psd_file, "r").items()
         psd = [group["psds"][str(i)] for i in range(len(group["psds"].keys()))]
         psds[ifo] = segmentlist(
-            psd_segment(*segargs)
+            PSDSegment(*segargs)
             for segargs in zip(psd, group["start_time"], group["end_time"])
         )
     return psds
@@ -196,9 +196,9 @@ snr_ts = {}
 for ifo, t in snr_timeseries.keys():
     if not abs(t - time) < 0.5:
         raise ValueError(
-            "SNR timeseries for IFO %s does not look like it "
-            "corresponds to this event, event time %.3f, SNR timeseries is "
-            "around time %.3f" % (ifo, time, t)
+            f"SNR timeseries for IFO {ifo} does not look like it "
+            f"corresponds to this event, event time {time:.3f}, SNR timeseries is "
+            f"around time {t:.3f}"
         )
     # Convert the SNR dict to be keyed on IFO-only:
     snr_ts[ifo] = snr_timeseries[(ifo, t)]

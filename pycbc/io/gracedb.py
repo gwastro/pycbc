@@ -428,7 +428,7 @@ class CandidateForGraceDB:
             self.basename = fname.replace(".xml", "")
         else:
             raise ValueError(
-                "Upload filename must end in .xml or .xml.gz, got %s" % fname
+                f"Upload filename must end in .xml or .xml.gz, got {fname}"
             )
 
         # First make sure the event is saved on disk
@@ -553,14 +553,14 @@ class CandidateForGraceDB:
 
             for ifo in sorted(self.snr_series):
                 curr_snrs = self.snr_series[ifo]
-                curr_snrs.save(snr_series_fname, group="%s/snr" % ifo)
+                curr_snrs.save(snr_series_fname, group=f"{ifo}/snr")
 
             # Additionally save the PSDs into the snr_series file
             for ifo in sorted(self.psds):
                 # Undo dynamic range factor
                 curr_psd = self.psds[ifo].astype(numpy.float64)
                 curr_psd /= pycbc.DYN_RANGE_FAC**2.0
-                curr_psd.save(snr_series_fname, group="%s/psd" % ifo)
+                curr_psd.save(snr_series_fname, group=f"{ifo}/psd")
 
         # Upload SNR series in HDF format and plots
         if self.snr_series is not None and gid is not None:

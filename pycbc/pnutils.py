@@ -128,7 +128,7 @@ def mchirp_q_to_mass1_mass2(mchirp, q):
     return mass1, mass2
 
 
-def A0(f_lower):
+def A0(f_lower):  # noqa: N802
     """
     Used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
     appendix 1, also lalinspiral/python/sbank/tau0tau3.py
@@ -136,7 +136,7 @@ def A0(f_lower):
     return conversions._a0(f_lower)
 
 
-def A3(f_lower):
+def A3(f_lower):  # noqa: N802
     """Another parameter used for chirp times"""
     return conversions._a3(f_lower)
 
@@ -194,17 +194,17 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
         (spin1z + spin2z) / 2.
 
     """
-    chiS = 0.5 * (spin1z + spin2z)
-    chiA = 0.5 * (spin1z - spin2z)
+    chi_s = 0.5 * (spin1z + spin2z)
+    chi_a = 0.5 * (spin1z - spin2z)
     delta = (1 - 4 * eta) ** 0.5
     spinspin = spin1z * spin2z
-    beta = (113.0 / 12.0 - 19.0 / 3.0 * eta) * chiS
-    beta += 113.0 / 12.0 * delta * chiA
+    beta = (113.0 / 12.0 - 19.0 / 3.0 * eta) * chi_s
+    beta += 113.0 / 12.0 * delta * chi_a
     sigma = eta / 48.0 * (474 * spinspin)
-    sigma += (1 - 2 * eta) * (81.0 / 16.0 * (chiS * chiS + chiA * chiA))
-    sigma += delta * (81.0 / 8.0 * (chiS * chiA))
-    gamma = (732985.0 / 2268.0 - 24260.0 / 81.0 * eta - 340.0 / 9.0 * eta * eta) * chiS
-    gamma += (732985.0 / 2268.0 + 140.0 / 9.0 * eta) * delta * chiA
+    sigma += (1 - 2 * eta) * (81.0 / 16.0 * (chi_s * chi_s + chi_a * chi_a))
+    sigma += delta * (81.0 / 8.0 * (chi_s * chi_a))
+    gamma = (732985.0 / 2268.0 - 24260.0 / 81.0 * eta - 340.0 / 9.0 * eta * eta) * chi_s
+    gamma += (732985.0 / 2268.0 + 140.0 / 9.0 * eta) * delta * chi_a
     return beta, sigma, gamma
 
 
@@ -220,22 +220,22 @@ def megaparsecs_to_meters(distance):
     return parsecs_to_meters(distance) * 1e6
 
 
-def velocity_to_frequency(v, M):
-    return conversions.velocity_to_frequency(v, M)
+def velocity_to_frequency(v, mtotal):
+    return conversions.velocity_to_frequency(v, mtotal)
 
 
-def frequency_to_velocity(f, M):
-    return conversions.frequency_to_velocity(f, M)
+def frequency_to_velocity(f, mtotal):
+    return conversions.frequency_to_velocity(f, mtotal)
 
 
-def f_SchwarzISCO(M):
+def f_schwarz_isco(mtotal):
     """
     Innermost stable circular orbit (ISCO) for a test particle
     orbiting a Schwarzschild black hole
 
     Parameters
     ----------
-    M : float or numpy.array
+    mtotal : float or numpy.array
         Total mass in solar mass units
 
     Returns
@@ -244,10 +244,10 @@ def f_SchwarzISCO(M):
         Frequency in Hz
 
     """
-    return conversions.f_schwarzchild_isco(M)
+    return conversions.f_schwarzchild_isco(mtotal)
 
 
-def f_BKLISCO(m1, m2):
+def f_bkl_isco(m1, m2):
     """
     Mass ratio dependent ISCO derived from estimates of the final spin
     of a merged black hole in a paper by Buonanno, Kidder, Lehner
@@ -268,17 +268,17 @@ def f_BKLISCO(m1, m2):
     """
     # q is defined to be in [0,1] for this formula
     q = numpy.minimum(m1 / m2, m2 / m1)
-    return f_SchwarzISCO(m1 + m2) * (1 + 2.8 * q - 2.6 * q * q + 0.8 * q * q * q)
+    return f_schwarz_isco(m1 + m2) * (1 + 2.8 * q - 2.6 * q * q + 0.8 * q * q * q)
 
 
-def f_LightRing(M):
+def f_light_ring(mtotal):
     """
     Gravitational wave frequency corresponding to the light-ring orbit,
     equal to 1/(3**(3/2) pi M) : see InspiralBankGeneration.c
 
     Parameters
     ----------
-    M : float or numpy.array
+    mtotal : float or numpy.array
         Total mass in solar mass units
 
     Returns
@@ -287,10 +287,10 @@ def f_LightRing(M):
         Frequency in Hz
 
     """
-    return 1.0 / (3.0 ** (1.5) * PI * M * MTSUN_SI)
+    return 1.0 / (3.0 ** (1.5) * PI * mtotal * MTSUN_SI)
 
 
-def f_ERD(M):
+def f_erd(mtotal):
     """
     Effective RingDown frequency studied in Pan et al. (arXiv:0704.1964)
     found to give good fit between stationary-phase templates and
@@ -299,7 +299,7 @@ def f_ERD(M):
 
     Parameters
     ----------
-    M : float or numpy.array
+    mtotal : float or numpy.array
         Total mass in solar mass units
 
     Returns
@@ -308,10 +308,10 @@ def f_ERD(M):
         Frequency in Hz
 
     """
-    return 1.07 * 0.5326 / (2 * PI * 0.955 * M * MTSUN_SI)
+    return 1.07 * 0.5326 / (2 * PI * 0.955 * mtotal * MTSUN_SI)
 
 
-def f_FRD(m1, m2):
+def f_frd(m1, m2):
     """
     Fundamental RingDown frequency calculated from the Berti, Cardoso and
     Will (gr-qc/0512160) value for the omega_220 QNM frequency using
@@ -338,7 +338,7 @@ def f_FRD(m1, m2):
     return tmp / (2.0 * PI * m_total * MTSUN_SI)
 
 
-def f_LRD(m1, m2):
+def f_lrd(m1, m2):
     """
     Lorentzian RingDown frequency = 1.2*FRD which captures part of
     the Lorentzian tail from the decay of the QNMs
@@ -356,7 +356,7 @@ def f_LRD(m1, m2):
         Frequency in Hz
 
     """
-    return 1.2 * f_FRD(m1, m2)
+    return 1.2 * f_frd(m1, m2)
 
 
 def _get_freq(freqfunc, m1, m2, s1z, s2z):
@@ -510,13 +510,13 @@ def get_final_freq(approx, m1, m2, s1z, s2z):
 # parameter dict indexed on mass1, mass2, spin1z, spin2z
 named_frequency_cutoffs = {
     # functions depending on the total mass alone
-    "SchwarzISCO": lambda p: f_SchwarzISCO(p["mass1"] + p["mass2"]),
-    "LightRing": lambda p: f_LightRing(p["mass1"] + p["mass2"]),
-    "ERD": lambda p: f_ERD(p["mass1"] + p["mass2"]),
+    "SchwarzISCO": lambda p: f_schwarz_isco(p["mass1"] + p["mass2"]),
+    "LightRing": lambda p: f_light_ring(p["mass1"] + p["mass2"]),
+    "ERD": lambda p: f_erd(p["mass1"] + p["mass2"]),
     # functions depending on the 2 component masses
-    "BKLISCO": lambda p: f_BKLISCO(p["mass1"], p["mass2"]),
-    "FRD": lambda p: f_FRD(p["mass1"], p["mass2"]),
-    "LRD": lambda p: f_LRD(p["mass1"], p["mass2"]),
+    "BKLISCO": lambda p: f_bkl_isco(p["mass1"], p["mass2"]),
+    "FRD": lambda p: f_frd(p["mass1"], p["mass2"]),
+    "LRD": lambda p: f_lrd(p["mass1"], p["mass2"]),
     # functions depending on 2 component masses and aligned spins
     "MECO": lambda p: meco_frequency(p["mass1"], p["mass2"], p["spin1z"], p["spin2z"]),
     "HybridMECO": lambda p: hybrid_meco_frequency(
@@ -634,7 +634,7 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
             f_low, m1 * MSUN_SI, m2 * MSUN_SI, chi, -1
         )
     else:
-        raise RuntimeError("I can't calculate a duration for %s" % approximant)
+        raise RuntimeError(f"I can't calculate a duration for {approximant}")
     # FIXME Add an extra factor of 1.1 for 'safety' since the duration
     # functions are approximate
     return time_length * 1.1 * scale
@@ -678,7 +678,7 @@ def get_inspiral_tf(
     if approximant in ["TaylorF2", "SPAtmplt"]:
         from pycbc.waveform.spa_tmplt import findchirp_chirptime
 
-        f_high = f_SchwarzISCO(mass1 + mass2)
+        f_high = f_schwarz_isco(mass1 + mass2)
 
         def tof_func(f):
             return findchirp_chirptime(
@@ -883,10 +883,10 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     qmdef1 = 1.0
     qmdef2 = 1.0
 
-    M = m1 + m2
+    M = m1 + m2  # noqa: N806
     dm = (m1 - m2) / M
-    m1M = m1 / M
-    m2M = m2 / M
+    m1M = m1 / M  # noqa: N806
+    m2M = m2 / M  # noqa: N806
 
     s1z = s1z * m1M * m1M
     s2z = s2z * m2M * m2M
@@ -916,25 +916,25 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
         )
     # Spin terms
 
-    ESO15s1 = 8.0 / 3.0 + 2.0 * m2 / m1
-    ESO15s2 = 8.0 / 3.0 + 2.0 * m1 / m2
+    ESO15s1 = 8.0 / 3.0 + 2.0 * m2 / m1  # noqa: N806
+    ESO15s2 = 8.0 / 3.0 + 2.0 * m1 / m2  # noqa: N806
 
-    ESS2 = 1.0 / eta
-    EQM2s1 = qmdef1 / 2.0 / m1M / m1M
-    EQM2s1L = -qmdef1 * 3.0 / 2.0 / m1M / m1M
+    ESS2 = 1.0 / eta  # noqa: N806
+    EQM2s1 = qmdef1 / 2.0 / m1M / m1M  # noqa: N806
+    EQM2s1L = -qmdef1 * 3.0 / 2.0 / m1M / m1M  # noqa: N806
     # EQM2s2 = qmdef2/2.0/m2M/m2M
-    EQM2s2L = -qmdef2 * 3.0 / 2.0 / m2M / m2M
+    EQM2s2L = -qmdef2 * 3.0 / 2.0 / m2M / m2M  # noqa: N806
 
-    ESO25s1 = 11.0 - 61.0 * eta / 9.0 + (dm / m1M) * (-3.0 + 10.0 * eta / 3.0)
-    ESO25s2 = 11.0 - 61.0 * eta / 9.0 + (dm / m2M) * (3.0 - 10.0 * eta / 3.0)
+    ESO25s1 = 11.0 - 61.0 * eta / 9.0 + (dm / m1M) * (-3.0 + 10.0 * eta / 3.0)  # noqa: N806
+    ESO25s2 = 11.0 - 61.0 * eta / 9.0 + (dm / m2M) * (3.0 - 10.0 * eta / 3.0)  # noqa: N806
 
-    ESO35s1 = (
+    ESO35s1 = (  # noqa: N806
         135.0 / 4.0
         - 367.0 * eta / 4.0
         + 29.0 * eta * eta / 12.0
         + (dm / m1M) * (-27.0 / 4.0 + 39.0 * eta - 5.0 * eta * eta / 4.0)
     )
-    ESO35s2 = (
+    ESO35s2 = (  # noqa: N806
         135.0 / 4.0
         - 367.0 * eta / 4.0
         + 29.0 * eta * eta / 12.0
@@ -1013,7 +1013,7 @@ def kerr_lightring_velocity(chi):
     return brentq(kerr_lightring, 0, 0.8, args=(chi))
 
 
-def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
+def hybrid_energy(v, m1, m2, chi1, chi2, qm1, qm2):
     """
     Return hybrid MECO energy.
 
@@ -1045,19 +1045,19 @@ def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
     v2, v3, v4, v5, v6, v7 = v**2, v**3, v**4, v**5, v**6, v**7
     chi1_sq, chi2_sq = chi1**2, chi2**2
     m1, m2 = float(m1), float(m2)
-    M = float(m1 + m2)
-    M_2, M_4 = M**2, M**4
+    M = float(m1 + m2)  # noqa: N806
+    M_2, M_4 = M**2, M**4  # noqa: N806
     eta = m1 * m2 / M_2
     eta2, eta3 = eta**2, eta**3
     m1_2, m1_4 = m1**2, m1**4
     m2_2, m2_4 = m2**2, m2**4
 
     chi = (chi1 * m1 + chi2 * m2) / M
-    Kerr = -1.0 + (1.0 - 2.0 * v2 * (1.0 - chi * v3) ** (1.0 / 3.0)) / numpy.sqrt(
+    Kerr = -1.0 + (1.0 - 2.0 * v2 * (1.0 - chi * v3) ** (1.0 / 3.0)) / numpy.sqrt(  # noqa: N806
         (1.0 - chi * v3) * (1.0 + chi * v3 - 3.0 * v2 * (1 - chi * v3) ** (1.0 / 3.0))
     )
 
-    h_E = Kerr - (v2 / 2.0) * (
+    h_E = Kerr - (v2 / 2.0) * (  # noqa: N806
         -eta * v2 / 12.0
         - 2 * (chi1 + chi2) * eta * v3 / 3.0
         + (
@@ -1154,7 +1154,7 @@ def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
     vmax = kerr_lightring_velocity(chi) - 0.01
 
     return minimize(
-        hybridEnergy, 0.2, args=(m1, m2, chi1, chi2, qm1, qm2), bounds=[(0.1, vmax)]
+        hybrid_energy, 0.2, args=(m1, m2, chi1, chi2, qm1, qm2), bounds=[(0.1, vmax)]
     ).x.item()
 
 

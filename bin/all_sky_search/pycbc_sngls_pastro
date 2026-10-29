@@ -417,7 +417,7 @@ if args.plot_distribution:
     ax1.set_xlim([bg_dens_max_stat, max_bin_c])
     ax1.set_ylim([0, 1])
     ax1.set_xlabel("Ranking Statistic")
-    ax1.set_ylabel("p_astro (%s)" % args.pastro_method)
+    ax1.set_ylabel(f"p_astro ({args.pastro_method})")
 
     fig.savefig(args.plot_distribution)
 
@@ -447,7 +447,7 @@ f_out.create_dataset(
 )
 
 # Store segments
-f_out["segments/%s/start" % sngl_ifo], f_out["segments/%s/end" % sngl_ifo] = (
+f_out[f"segments/{sngl_ifo}/start"], f_out[f"segments/{sngl_ifo}/end"] = (
     veto.segments_to_start_end(sngl_detector_segs)
 )
 f_out.attrs["foreground_time"] = fg_time

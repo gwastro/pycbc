@@ -454,7 +454,7 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
                 )
             if len(glitch_times) > 0:
                 logger.info(
-                    "Autogating at %s", ", ".join(["%.3f" % gt for gt in glitch_times])
+                    "Autogating at %s", ", ".join([f"{gt:.3f}" for gt in glitch_times])
                 )
             else:
                 break
@@ -1021,8 +1021,8 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
         action=MultiDetOptionAction,
         metavar="IFO:CHOICE",
         help="Name of model PSD for generating fake "
-        "gaussian noise. Choose from %s or zeroNoise"
-        % ((", ").join(pycbc.psd.get_lalsim_psd_list()),),
+        f"gaussian noise. Choose from {', '.join(pycbc.psd.get_lalsim_psd_list())} or "
+        "zeroNoise",
     )
     data_reading_group_multi.add_argument(
         "--fake-strain-extra-args",
@@ -1384,8 +1384,8 @@ def gate_data(data, gate_params):
 
     """
 
-    def inverted_tukey(M, n_pad):
-        midlen = M - 2 * n_pad
+    def inverted_tukey(length, n_pad):
+        midlen = length - 2 * n_pad
         if midlen < 0:
             raise ValueError("No zeros left after applying padding.")
         padarr = 0.5 * (1.0 + numpy.cos(numpy.pi * numpy.arange(n_pad) / n_pad))
@@ -1460,8 +1460,8 @@ class StrainSegments:
                 min_start_time = int(strain.start_time)
             if trigger_start < min_start_time:
                 err_msg = "Trigger start time must be within analysable "
-                err_msg += "window. Asked to start from %d " % (trigger_start)
-                err_msg += "but can only analyse from %d." % (min_start_time)
+                err_msg += f"window. Asked to start from {int(trigger_start)} "
+                err_msg += f"but can only analyse from {int(min_start_time)}."
                 raise ValueError(err_msg)
 
         if not trigger_end:
@@ -1473,8 +1473,8 @@ class StrainSegments:
                 max_end_time = int(strain.end_time)
             if trigger_end > max_end_time:
                 err_msg = "Trigger end time must be within analysable "
-                err_msg += "window. Asked to end at %d " % (trigger_end)
-                err_msg += "but can only analyse to %d." % (max_end_time)
+                err_msg += f"window. Asked to end at {int(trigger_end)} "
+                err_msg += f"but can only analyse to {int(max_end_time)}."
                 raise ValueError(err_msg)
 
         throwaway_size = seg_start_pad + seg_end_pad
@@ -2146,7 +2146,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 raise ValueError(
                     "If an iDQ channel is provided, a veto threshold must also be provided"
                 )
-            self.idq = pycbc.frame.iDQBuffer(
+            self.idq = pycbc.frame.IDQBuffer(
                 frame_src,
                 idq_channel,
                 idq_state_channel,
@@ -2547,7 +2547,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 logger.info(
                     "Autogating %s at %s",
                     self.detector,
-                    ", ".join(["%.3f" % gt for gt in glitch_times]),
+                    ", ".join([f"{gt:.3f}" for gt in glitch_times]),
                 )
                 self.gate_params = [
                     (gt, self.autogating_width, self.autogating_taper)

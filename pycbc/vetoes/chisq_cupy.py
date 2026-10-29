@@ -22,6 +22,9 @@
 # =============================================================================
 #
 
+# GPU kernel notation (N is the correlation length passed to the kernels,
+# BS a block size).
+# ruff: noqa: N803, N806
 import functools
 
 import cupy as cp

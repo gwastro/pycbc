@@ -124,8 +124,8 @@ class TestPSD(unittest.TestCase):
                     err_rms = numpy.sqrt(numpy.mean(error**2))
                     self.assertTrue(
                         err_rms < 0.2,
-                        msg="seg_len=%d seg_stride=%d method=%s -> rms=%.3f"
-                        % (seg_len, seg_stride, method, err_rms),
+                        msg=f"seg_len={int(seg_len)} seg_stride={int(seg_stride)} "
+                        f"method={method} -> rms={err_rms:.3f}",
                     )
 
     def test_truncation(self):
@@ -149,8 +149,8 @@ class TestPSD(unittest.TestCase):
                 err_rms = numpy.sqrt(numpy.mean(error**2))
                 self.assertTrue(
                     err_rms < 0.1,
-                    msg="seg_len=%d max_len=%d -> rms=%.3f"
-                    % (seg_len, max_len, err_rms),
+                    msg=f"seg_len={int(seg_len)} max_len={int(max_len)} -> "
+                    f"rms={err_rms:.3f}",
                 )
 
 

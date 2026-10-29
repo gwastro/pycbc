@@ -318,18 +318,18 @@ with open(opts.output_path + cwd.path + "/index.html", "w") as fp:
     fp.write(output)
 
 # copy css, js, and font files to html directory
-cssDir = pycbc.results.__path__[0] + "/static/css/"
-jsDir = pycbc.results.__path__[0] + "/static/js/"
-fontsDir = pycbc.results.__path__[0] + "/static/fonts/"
-cssOutputDir = opts.output_path + "/static/css/"
-jsOutputDir = opts.output_path + "/static/js/"
-fontsOutputDir = opts.output_path + "/static/fonts/"
-if not os.path.exists(cssOutputDir):
-    shutil.copytree(cssDir, cssOutputDir)
-if not os.path.exists(jsOutputDir):
-    shutil.copytree(jsDir, jsOutputDir)
-if not os.path.exists(fontsOutputDir):
-    shutil.copytree(fontsDir, fontsOutputDir)
+css_dir = pycbc.results.__path__[0] + "/static/css/"
+js_dir = pycbc.results.__path__[0] + "/static/js/"
+fonts_dir = pycbc.results.__path__[0] + "/static/fonts/"
+css_output_dir = opts.output_path + "/static/css/"
+js_output_dir = opts.output_path + "/static/js/"
+fonts_output_dir = opts.output_path + "/static/fonts/"
+if not os.path.exists(css_output_dir):
+    shutil.copytree(css_dir, css_output_dir)
+if not os.path.exists(js_output_dir):
+    shutil.copytree(js_dir, js_output_dir)
+if not os.path.exists(fonts_output_dir):
+    shutil.copytree(fonts_dir, fonts_output_dir)
 
 
 # When bundling assets into pyinstaller binaries the static directory is

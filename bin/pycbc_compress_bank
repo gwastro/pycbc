@@ -83,7 +83,7 @@ def _worker(ii):
     elif alg == "bounds":
         sample_points = numpy.array([fmin, kmax * df_val])
     else:
-        raise ValueError("unrecognized compression algorithm %s" % alg)
+        raise ValueError(f"unrecognized compression algorithm {alg}")
 
     # Compress
     hcompressed = compress.compress_waveform(

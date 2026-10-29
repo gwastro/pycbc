@@ -73,7 +73,7 @@ class TestMargModels(unittest.TestCase):
     def load_model(cls, model_name, fid_amp=None, phase_samples=500000):
         # load one of the models from given configs
         filename = os.path.join(DATADIR, f"{model_name}.ini")
-        cp = WorkflowConfigParser(configFiles=[filename])
+        cp = WorkflowConfigParser(config_files=[filename])
         cp.set("data", "injection-file", cls.injfile)
 
         # opt to change fiducial amplitude for multimargphase

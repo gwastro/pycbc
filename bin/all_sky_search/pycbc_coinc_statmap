@@ -22,7 +22,7 @@ from pycbc.events import coinc, significance, veto
 logger = logging.getLogger(__name__)
 
 
-class fw:
+class FileWriter:
     def __init__(self, name):
         self.f = pycbc.io.HFile(name, "w")
         self.attrs = self.f.attrs
@@ -162,7 +162,7 @@ if args.additional_event_times:
     manual_rm_idx = []
     for ifo in ifos:
         rm_idx = veto.indices_within_times(
-            all_trigs.data["%s/time" % ifo], rm_start_times, rm_end_times
+            all_trigs.data[f"{ifo}/time"], rm_start_times, rm_end_times
         )
         manual_rm_idx += list(rm_idx)
     logger.info("Removing %d triggers", len(manual_rm_idx))
@@ -174,7 +174,7 @@ fore_locs = all_trigs.timeslide_id == 0
 # Foreground trigger times for ifos
 fore_time = {}
 for ifo in ifos:
-    fore_time[ifo] = all_trigs.data["%s/time" % ifo][fore_locs]
+    fore_time[ifo] = all_trigs.data[f"{ifo}/time"][fore_locs]
 # Average times of triggers (note that coincs where not all ifos have triggers
 # will contain -1 sentinel values)
 fore_time_zip = zip(*fore_time.values())
@@ -197,7 +197,7 @@ veto_time = abs(
 fg_veto_ids = numpy.concatenate(
     [
         veto.indices_within_times(
-            all_trigs.data["%s/time" % ifo], remove_start_time, remove_end_time
+            all_trigs.data[f"{ifo}/time"], remove_start_time, remove_end_time
         )
         for ifo in ifos
     ]
@@ -215,7 +215,7 @@ logger.info("Clustering coinc triggers (exclusive of zerolag)")
 exc_zero_trigs = exc_zero_trigs.cluster(args.cluster_window)
 
 logger.info("Dumping foreground triggers")
-f = fw(args.output_file)
+f = FileWriter(args.output_file)
 f.attrs["num_of_ifos"] = all_trigs.attrs["num_of_ifos"]
 f.attrs["pivot"] = all_trigs.attrs["pivot"]
 f.attrs["fixed"] = all_trigs.attrs["fixed"]
@@ -228,8 +228,8 @@ f.attrs["timeslide_interval"] = all_trigs.attrs["timeslide_interval"]
 
 # Copy over the segment for coincs and singles
 for key in all_trigs.seg.keys():
-    f["segments/%s/start" % key] = all_trigs.seg[key]["start"][:]
-    f["segments/%s/end" % key] = all_trigs.seg[key]["end"][:]
+    f[f"segments/{key}/start"] = all_trigs.seg[key]["start"][:]
+    f[f"segments/{key}/end"] = all_trigs.seg[key]["end"][:]
 
 if fore_locs.sum() > 0:
     f["segments/foreground_veto/start"] = remove_start_time
@@ -261,13 +261,13 @@ logger.info("Dumping background triggers (exclusive of zerolag)")
 for k in exc_zero_trigs.data:
     f["background_exc/" + k] = exc_zero_trigs.data[k]
 
-maxtime = all_trigs.attrs["%s_foreground_time" % f.attrs["pivot"]]
+maxtime = all_trigs.attrs[f"{f.attrs['pivot']}_foreground_time"]
 for ifo in ifos:
-    maxtime = max(maxtime, all_trigs.attrs["%s_foreground_time" % ifo])
+    maxtime = max(maxtime, all_trigs.attrs[f"{ifo}_foreground_time"])
 
-mintime = all_trigs.attrs["%s_foreground_time" % f.attrs["pivot"]]
+mintime = all_trigs.attrs[f"{f.attrs['pivot']}_foreground_time"]
 for ifo in ifos:
-    mintime = min(mintime, all_trigs.attrs["%s_foreground_time" % ifo])
+    mintime = min(mintime, all_trigs.attrs[f"{ifo}_foreground_time"])
 
 maxtime_exc = maxtime - veto_time
 mintime_exc = mintime - veto_time
@@ -390,22 +390,22 @@ while numpy.any(ifar_foreground >= background_time):
     # Write foreground trigger info before hierarchical removals for
     # downstream codes.
     if h_iterations == 0:
-        f["background_h%s/stat" % h_iterations] = back_stat
-        f["background_h%s/ifar" % h_iterations] = conv.sec_to_year(1.0 / bg_far)
-        f["background_h%s/timeslide_id" % h_iterations] = all_trigs.data[
-            "timeslide_id"
-        ][back_locs]
-        f["foreground_h%s/stat" % h_iterations] = fore_stat
-        f["foreground_h%s/ifar" % h_iterations] = conv.sec_to_year(ifar)
-        f["foreground_h%s/fap" % h_iterations] = fap
-        f["foreground_h%s/template_id" % h_iterations] = all_trigs.data["template_id"][
+        f[f"background_h{h_iterations}/stat"] = back_stat
+        f[f"background_h{h_iterations}/ifar"] = conv.sec_to_year(1.0 / bg_far)
+        f[f"background_h{h_iterations}/timeslide_id"] = all_trigs.data["timeslide_id"][
+            back_locs
+        ]
+        f[f"foreground_h{h_iterations}/stat"] = fore_stat
+        f[f"foreground_h{h_iterations}/ifar"] = conv.sec_to_year(ifar)
+        f[f"foreground_h{h_iterations}/fap"] = fap
+        f[f"foreground_h{h_iterations}/template_id"] = all_trigs.data["template_id"][
             fore_locs
         ]
         for ifo in args.ifos:
-            trig_id = all_trigs.data["%s/trigger_id" % ifo][fore_locs]
-            trig_time = all_trigs.data["%s/time" % ifo][fore_locs]
-            f["foreground_h%s/%s/time" % (h_iterations, ifo)] = trig_time
-            f["foreground_h%s/%s/trigger_id" % (h_iterations, ifo)] = trig_id
+            trig_id = all_trigs.data[f"{ifo}/trigger_id"][fore_locs]
+            trig_time = all_trigs.data[f"{ifo}/time"][fore_locs]
+            f[f"foreground_h{h_iterations}/{ifo}/time"] = trig_time
+            f[f"foreground_h{h_iterations}/{ifo}/trigger_id"] = trig_id
 
     # Add the iteration number of hierarchical removals done.
     h_iterations += 1
@@ -434,12 +434,12 @@ while numpy.any(ifar_foreground >= background_time):
     # are associated with it.
     ave_rm_time = 0
     for ifo in args.ifos:
-        ave_rm_time += all_trigs.data["%s/time" % ifo][rm_trig_idx] / len(args.ifos)
+        ave_rm_time += all_trigs.data[f"{ifo}/time"][rm_trig_idx] / len(args.ifos)
 
     ind_to_rm = {}
     for ifo in args.ifos:
         ind_to_rm[ifo] = veto.indices_within_times(
-            all_trigs.data["%s/time" % ifo],
+            all_trigs.data[f"{ifo}/time"],
             [ave_rm_time - args.hierarchical_removal_window],
             [ave_rm_time + args.hierarchical_removal_window],
         )
@@ -463,15 +463,15 @@ while numpy.any(ifar_foreground >= background_time):
     logger.info("Dumping foreground triggers")
     logger.info("Dumping background triggers (inclusive of zerolag)")
     for k in all_trigs.data:
-        f["background_h%s/" % h_iterations + k] = all_trigs.data[k][back_locs]
+        f[f"background_h{h_iterations}/" + k] = all_trigs.data[k][back_locs]
 
-    maxtime = all_trigs.attrs["%s_foreground_time" % f.attrs["pivot"]]
+    maxtime = all_trigs.attrs[f"{f.attrs['pivot']}_foreground_time"]
     for ifo in ifos:
-        maxtime = max(maxtime, all_trigs.attrs["%s_foreground_time" % ifo])
+        maxtime = max(maxtime, all_trigs.attrs[f"{ifo}_foreground_time"])
 
-    mintime = all_trigs.attrs["%s_foreground_time" % f.attrs["pivot"]]
+    mintime = all_trigs.attrs[f"{f.attrs['pivot']}_foreground_time"]
     for ifo in ifos:
-        mintime = min(mintime, all_trigs.attrs["%s_foreground_time" % ifo])
+        mintime = min(mintime, all_trigs.attrs[f"{ifo}_foreground_time"])
 
     background_time = int(maxtime / all_trigs.attrs["timeslide_interval"]) * mintime
     coinc_time = float(all_trigs.attrs["coinc_time"])
@@ -517,18 +517,18 @@ while numpy.any(ifar_foreground >= background_time):
     # ifar_foreground has been updated and the code can continue.
 
     logger.info("Calculating ifar/fap values")
-    f["background_h%s/ifar" % h_iterations] = conv.sec_to_year(1.0 / bg_far)
-    f.attrs["background_time_h%s" % h_iterations] = background_time
-    f.attrs["foreground_time_h%s" % h_iterations] = coinc_time
+    f[f"background_h{h_iterations}/ifar"] = conv.sec_to_year(1.0 / bg_far)
+    f.attrs[f"background_time_h{h_iterations}"] = background_time
+    f.attrs[f"foreground_time_h{h_iterations}"] = coinc_time
 
     if fore_locs.sum() > 0:
         # Write ranking statistic to file just for downstream plotting code
-        f["foreground_h%s/stat" % h_iterations] = fore_stat
+        f[f"foreground_h{h_iterations}/stat"] = fore_stat
 
         ifar = 1.0 / fg_far
         fap = 1 - numpy.exp(-coinc_time / ifar)
-        f["foreground_h%s/ifar" % h_iterations] = conv.sec_to_year(ifar)
-        f["foreground_h%s/fap" % h_iterations] = fap
+        f[f"foreground_h{h_iterations}/ifar"] = conv.sec_to_year(ifar)
+        f[f"foreground_h{h_iterations}/fap"] = fap
         for key, value in sig_info.items():
             f["foreground_h%" % h_iterations].attrs[key] = value
 
@@ -542,22 +542,22 @@ while numpy.any(ifar_foreground >= background_time):
         # These don't change with the iterations but should be written at every
         # level.
 
-        f["foreground_h%s/template_id" % h_iterations] = all_trigs.data["template_id"][
+        f[f"foreground_h{h_iterations}/template_id"] = all_trigs.data["template_id"][
             fore_locs
         ]
         for ifo in args.ifos:
-            trig_id = all_trigs.data["%s/trigger_id" % ifo][fore_locs]
-            trig_time = all_trigs.data["%s/time" % ifo][fore_locs]
-            f["foreground_h%s/%s/time" % (h_iterations, ifo)] = trig_time
-            f["foreground_h%s/%s/trigger_id" % (h_iterations, ifo)] = trig_id
+            trig_id = all_trigs.data[f"{ifo}/trigger_id"][fore_locs]
+            trig_time = all_trigs.data[f"{ifo}/time"][fore_locs]
+            f[f"foreground_h{h_iterations}/{ifo}/time"] = trig_time
+            f[f"foreground_h{h_iterations}/{ifo}/trigger_id"] = trig_id
     else:
-        f["foreground_h%s/stat" % h_iterations] = numpy.array([])
-        f["foreground_h%s/ifar" % h_iterations] = numpy.array([])
-        f["foreground_h%s/fap" % h_iterations] = numpy.array([])
-        f["foreground_h%s/template_id" % h_iterations] = numpy.array([])
+        f[f"foreground_h{h_iterations}/stat"] = numpy.array([])
+        f[f"foreground_h{h_iterations}/ifar"] = numpy.array([])
+        f[f"foreground_h{h_iterations}/fap"] = numpy.array([])
+        f[f"foreground_h{h_iterations}/template_id"] = numpy.array([])
         for ifo in args.ifos:
-            f["foreground_h%s/%s/time" % (h_iterations, ifo)] = numpy.array([])
-            f["foreground_h%s/%s/trigger_id" % (h_iterations, ifo)] = numpy.array([])
+            f[f"foreground_h{h_iterations}/{ifo}/time"] = numpy.array([])
+            f[f"foreground_h{h_iterations}/{ifo}/trigger_id"] = numpy.array([])
 
 # Write to file how many hierarchical removals were implemented.
 f.attrs["hierarchical_removal_iterations"] = h_iterations

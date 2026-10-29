@@ -22,6 +22,9 @@ parser.add_argument(
     "--trigger-file", required=True, help="Combined single detector hdf trigger file"
 )
 parser.add_argument(
+    "--ifo", default=None, help="IFO to plot from multi-detector trigger file"
+)
+parser.add_argument(
     "--veto-file", help="segment xml file, indicates which triggers to ignore"
 )
 parser.add_argument("--segment-name", help="name of segment list in the veto file")
@@ -50,7 +53,7 @@ pycbc.init_logging(args.verbose)
 
 # read trigger file to determine IFO
 f = pycbc.io.HFile(args.trigger_file, "r")
-ifo = tuple(f.keys())[0]
+ifo = args.ifo if args.ifo is not None else next(iter(f.keys()))
 
 # Apply presort if we can; if we can't, load everything but it may be
 # inefficient
@@ -87,7 +90,7 @@ if args.special_time:
         histtype="stepfilled",
         stacked=True,
         color=[pycbc.results.ifo_color(ifo), "k"],
-        label=["Other times", "Triggers near %i" % (int(args.special_time))],
+        label=["Other times", f"Triggers near {int(args.special_time)}"],
     )
     pyplot.legend(loc="upper right")
 
@@ -141,7 +144,7 @@ elif args.background_bins:
     # write text for overflow bin
     text_left = rects[0].get_x()
     text_height = 1.10 * max([rect.get_height() for rect in rects])
-    pyplot.text(text_left, text_height, "%s+" % x_max)
+    pyplot.text(text_left, text_height, f"{x_max}+")
 
 # plot all triggers in a single label
 else:
@@ -176,7 +179,7 @@ pyplot.grid()
 pycbc.results.save_fig_with_metadata(
     fig,
     args.output_file,
-    title="%s: %s histogram of single detector triggers" % (ifo, args.x_var),
+    title=f"{ifo}: {args.x_var} histogram of single detector triggers",
     caption="Histogram of single detector triggers",
     cmd=" ".join(sys.argv),
 )

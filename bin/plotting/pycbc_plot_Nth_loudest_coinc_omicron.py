@@ -148,15 +148,8 @@ omicron_freq = []
 for era in eras:
     # Generate list of all Omicron SnglBurst xml trigger files
     file_list = glob.glob(
-        args.omicron_dir
-        + "/%s/%s_Omicron/%s/%s-%s_Omicron-*.xml.gz"
-        % (
-            args.ifo,
-            args.omicron_channel,
-            era,
-            args.ifo,
-            args.omicron_channel.replace("-", "_"),
-        )
+        args.omicron_dir + f"/{args.ifo}/{args.omicron_channel}_Omicron/{era}/"
+        f"{args.ifo}-{args.omicron_channel.replace('-', '_')}_Omicron-*.xml.gz"
     )
 
     # Parse trigger files into SNR, time, and frequency for Omicron triggers
@@ -208,13 +201,13 @@ cm = plt.cm.get_cmap("Reds")
 plt.scatter(omicron_times, omicron_freq, c=omicron_snr, s=30, cmap=cm, linewidth=0)
 plt.grid(b=True, which="both")
 cbar = plt.colorbar()
-cbar.set_label("%s Omicron trigger SNR" % (args.ifo))
+cbar.set_label(f"{args.ifo} Omicron trigger SNR")
 plt.yscale("log")
 plt.ylabel("Frequency (Hz)")
 plt.xlabel("Time (s)")
 plt.xlim(omicron_start_time, omicron_end_time)
 plt.suptitle(
-    "%s CBC trigger SNR = " % (args.ifo)
+    f"{args.ifo} CBC trigger SNR = "
     + format(snr, ".2f")
     + ", newSNR = "
     + format(newsnr, ".2f"),

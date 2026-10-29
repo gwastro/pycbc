@@ -49,6 +49,7 @@ urllib.parse.uses_netloc.append("gsiftp")
 
 KNOWN_SITES = [
     "local",
+    "clusterlink",
     "condorpool_symlink",
     "condorpool_copy",
     "condorpool_container",
@@ -285,6 +286,32 @@ def add_osg_site(sitecat, cp):
     sitecat.add_sites(site)
 
 
+def add_clusterlink_site(sitecat, cp):
+    """User-owned SSH federation; Clusterlink supplies the environment."""
+    site = Site("clusterlink", arch=Arch.X86_64, os_type=OS.LINUX)
+    add_site_pegasus_profile(site, cp)
+    site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
+    site.add_profiles(Namespace.PEGASUS, key="data.configuration", value="condorio")
+    site.add_profiles(
+        Namespace.PEGASUS, key="transfer.bypass.input.staging", value="true"
+    )
+    site.add_profiles(Namespace.PEGASUS, key="auxillary.local", value="true")
+    # Clusterlink always executes jobs inside its generated container image,
+    # where the Pegasus worker package is installed at /opt/clusterlink/pegasus.
+    # Setting PEGASUS_HOME on this site also instructs Pegasus not to transfer
+    # a separate worker package tarball per job.
+    site.add_profiles(
+        Namespace.ENV, key="PEGASUS_HOME", value="/opt/clusterlink/pegasus"
+    )
+    site.add_profiles(Namespace.CONDOR, key="universe", value="vanilla")
+    site.add_profiles(Namespace.CONDOR, key="should_transfer_files", value="Yes")
+    site.add_profiles(
+        Namespace.CONDOR, key="when_to_transfer_output", value="ON_SUCCESS"
+    )
+    site.add_profiles(Namespace.CONDOR, key="My.ClusterlinkEligible", value="True")
+    sitecat.add_sites(site)
+
+
 def add_site(sitecat, sitename, cp, out_dir=None):
     """Add site sitename to site catalog"""
     # Allow local site scratch to be overriden for any site which uses it
@@ -313,6 +340,8 @@ def add_site(sitecat, sitename, cp, out_dir=None):
         add_condorpool_container_site(sitecat, cp)
     elif sitename == "condorpool_shared":
         add_condorpool_shared_site(sitecat, cp, out_dir, local_url)
+    elif sitename == "clusterlink":
+        add_clusterlink_site(sitecat, cp)
     elif sitename == "osg":
         add_osg_site(sitecat, cp)
     else:

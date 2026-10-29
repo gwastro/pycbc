@@ -68,8 +68,9 @@ s, e = int(time[0]), int(time[1])
 s_utc = gps_to_utc_str(s)
 e_utc = gps_to_utc_str(e)
 time_str = (
-    "<center><p><b>GPS Interval [%s,%s). UTC Interval %s - %s. Interval duration = %.3f days.</b></p></center>"
-    % (s, e, s_utc, e_utc, float(e - s) / 86400.0)
+    f"<center><p><b>GPS Interval [{s},{e}). UTC Interval {s_utc} - {e_utc}. "
+    f"Interval duration = {float(e - s) / 86400.0:.3f} "
+    "days.</b></p></center>"
 )
 time_file = pycbc.workflow.File(
     workflow.ifos,
@@ -141,7 +142,7 @@ for ifo, segments in analyzable_segs.items():
 
     # each batch goes into a PSD estimation job
     for job_index, job_segs in enumerate(batches):
-        tag = "PART%.4d" % job_index
+        tag = f"PART{job_index:04d}"
         name = "ANALYZABLE_SPLIT_" + tag
         job_segs_file = pycbc.workflow.SegFile.from_segment_list(
             name,

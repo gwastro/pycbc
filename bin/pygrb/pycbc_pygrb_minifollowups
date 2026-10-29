@@ -55,7 +55,7 @@ def add_wiki_row(outfile, cols):
     Adds a wiki-formatted row to an output file from a list or a numpy array.
     """
     with open(outfile, "a") as f:
-        f.write("||%s||\n" % "||".join(map(str, cols)))
+        f.write(f"||{'||'.join(map(str, cols))}||\n")
 
 
 def make_timeseries_plot(

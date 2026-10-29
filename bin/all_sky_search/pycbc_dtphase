@@ -304,20 +304,20 @@ for ifo0 in args.ifos:
 
     logger.info("Presorting by keys for downstream use")
     ncol = keys.shape[1]
-    pdtype = [("c%s" % i, bin_dtype) for i in range(ncol)]
+    pdtype = [(f"c{i}", bin_dtype) for i in range(ncol)]
     keys_bin = np.zeros(len(values), dtype=pdtype)
     for i in range(ncol):
-        keys_bin["c%s" % i] = keys[:, i]
+        keys_bin[f"c{i}"] = keys[:, i]
     lsort = keys_bin.argsort()
     keys_bin = keys_bin[lsort]
     values = values[lsort]
 
     logger.info("Writing results to file")
     f.create_dataset(
-        "%s/param_bin" % ifo0, data=keys_bin, compression="gzip", compression_opts=7
+        f"{ifo0}/param_bin", data=keys_bin, compression="gzip", compression_opts=7
     )
     f.create_dataset(
-        "%s/weights" % ifo0, data=values, compression="gzip", compression_opts=7
+        f"{ifo0}/weights", data=values, compression="gzip", compression_opts=7
     )
 
 f.attrs["sensitivity_ratios"] = args.relative_sensitivities
@@ -327,6 +327,6 @@ f.attrs["twidth"] = twidth
 f.attrs["pwidth"] = pwidth
 f.attrs["swidth"] = swidth
 f.attrs["ifos"] = args.ifos
-f.attrs["stat"] = "phasetd_newsnr_%s" % "".join(args.ifos)
+f.attrs["stat"] = f"phasetd_newsnr_{''.join(args.ifos)}"
 
 logger.info("Done")

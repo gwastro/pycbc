@@ -102,9 +102,9 @@ for psd_file in args.psd_files:
                     flow = base_file.attrs[f"{ifo}_likelihood_low_freq"]
             except KeyError:
                 raise RuntimeError(
-                    "hdf file %s does not contain an attribute giving "
+                    f"hdf file {psd_file} does not contain an attribute giving "
                     "low frequency cutoff, please specify a value using "
-                    "the --low-frequency-cutoff option" % psd_file
+                    "the --low-frequency-cutoff option"
                 )
         kmin = int(flow / df)
         kmax = len(f[ifo + "/psds/" + keys[0]][:])

@@ -82,7 +82,7 @@ for psd_file in args.psd_files:
 
     for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
         if len(args.approximant) > 1:
-            label = r"%s: $%sM_{\odot}-%sM_{\odot}$ (%s)" % (ifo, m1, m2, apx)
+            label = rf"{ifo}: ${m1}M_{{\odot}}-{m2}M_{{\odot}}$ ({apx})"
         else:
             label = str(ifo)
         wf_key = (m1, m2, apx)
@@ -98,7 +98,7 @@ for psd_file in args.psd_files:
 plt.legend(loc="best", fontsize="small")
 
 if len(args.approximant) == 1:
-    fig.suptitle(r"$%sM_{\odot}-%sM_{\odot}$ %s" % (m1, m2, apx))
+    fig.suptitle(rf"${m1}M_{{\odot}}-{m2}M_{{\odot}}$ {apx}")
 
 pycbc.results.save_fig_with_metadata(
     fig,

@@ -246,9 +246,11 @@ elif args.vetoed_time_only and vetoed_idx.size == 0:
     logger.warning("No triggers exist inside vetoed times")
 
 if args.non_coinc_time_only:
-    from pycbc.io.ligolw import LIGOLWContentHandler as h
+    from pycbc.io.ligolw import LIGOLWContentHandler
 
-    segs_doc = ligolw_utils.load_filename(args.inspiral_segments, contenthandler=h)
+    segs_doc = ligolw_utils.load_filename(
+        args.inspiral_segments, contenthandler=LIGOLWContentHandler
+    )
     seg_def_table = ligolw.Table.get_table(segs_doc, "segment_definer")
     def_ifos = seg_def_table.getColumnByName("ifos")
     def_ifos = [str(ifo) for ifo in def_ifos]
@@ -302,9 +304,9 @@ for rank, num_event in enumerate(order):
 
     files = wf.FileList([])
     time = times[num_event]
-    ifo_time = "%s:%s" % (args.instrument, str(time))
+    ifo_time = f"{args.instrument}:{time!s}"
     tid = trigger_ids[num_event]
-    ifo_tid = "%s:%s" % (args.instrument, str(tid))
+    ifo_tid = f"{args.instrument}:{tid!s}"
 
     layouts += (
         mini.make_sngl_ifo(
@@ -384,6 +386,7 @@ for rank, num_event in enumerate(order):
         args.output_dir,
         data_segments=insp_data_seglists,
         tags=args.tags + [str(rank)],
+        ifo=args.instrument,
     )
 
     files += mini.make_qscan_plot(

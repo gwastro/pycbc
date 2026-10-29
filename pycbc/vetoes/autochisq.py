@@ -78,10 +78,10 @@ def autochisq_from_precomputed(
         autochisq values corresponding to the time instances defined by indices
 
     """
-    Nsnr = len(sn)
+    nsnr = len(sn)
 
     achisq = np.zeros(len(indices))
-    num_points_all = int(Nsnr / stride)
+    num_points_all = int(nsnr / stride)
     if num_points is None:
         num_points = num_points_all
     num_points = min(num_points, num_points_all)
@@ -117,9 +117,9 @@ def autochisq_from_precomputed(
 
         # Wrap index if needed (maybe should fail in this case?)
         if curr_achisq_idx_list[0] < 0:
-            curr_achisq_idx_list[curr_achisq_idx_list < 0] += Nsnr
-        if curr_achisq_idx_list[-1] > (Nsnr - 1):
-            curr_achisq_idx_list[curr_achisq_idx_list > (Nsnr - 1)] -= Nsnr
+            curr_achisq_idx_list[curr_achisq_idx_list < 0] += nsnr
+        if curr_achisq_idx_list[-1] > (nsnr - 1):
+            curr_achisq_idx_list[curr_achisq_idx_list > (nsnr - 1)] -= nsnr
 
         z = (
             corr_sn[curr_achisq_idx_list].real * cphi
@@ -224,6 +224,90 @@ class SingleDetAutoChisq:
         else:
             self.do = False
 
+    @staticmethod
+    def insert_option_group(parser):
+        """Add the auto-chisq options to an argument parser."""
+        group = parser.add_argument_group("Auto chisq")
+        group.add_argument(
+            "--autochi-number-points",
+            type=int,
+            default=0,
+            help="The number of points to use, in both "
+            "directions if doing a two-sided auto-chisq, "
+            "to calculate the auto-chisq statistic.",
+        )
+        group.add_argument(
+            "--autochi-stride",
+            type=int,
+            default=0,
+            help="The gap, in sample points, between the "
+            "points at which to calculate auto-chisq.",
+        )
+        group.add_argument(
+            "--autochi-two-phase",
+            action="store_true",
+            default=False,
+            help="If given auto-chisq will be calculated by "
+            "testing against both phases of the SNR "
+            "time-series. If not given, only the phase "
+            "matching the trigger will be used.",
+        )
+        group.add_argument(
+            "--autochi-onesided",
+            action="store",
+            default=None,
+            choices=["left", "right"],
+            help="Decide whether to calculate auto-chisq using "
+            "points on both sides of the trigger or only "
+            "on one side. If not given points on both "
+            "sides will be used. If given, with either "
+            "'left' or 'right', only points on that side "
+            "(right = forward in time, left = back in "
+            "time) will be used.",
+        )
+        group.add_argument(
+            "--autochi-reverse-template",
+            action="store_true",
+            default=False,
+            help="If given, time-reverse the template before "
+            "calculating the auto-chisq statistic. This "
+            "will come at additional computational cost "
+            "as the SNR time-series will need recomputing"
+            " for the time-reversed template.",
+        )
+        group.add_argument(
+            "--autochi-max-valued",
+            action="store_true",
+            default=False,
+            help="If given, store only the maximum value of "
+            "the auto-chisq over all points tested. A "
+            "disadvantage of this is that the mean value "
+            "will not be known analytically.",
+        )
+        group.add_argument(
+            "--autochi-max-valued-dof",
+            action="store",
+            metavar="INT",
+            type=int,
+            help="If using --autochi-max-valued this value "
+            "denotes the pre-calculated mean value that "
+            "will be stored as the auto-chisq degrees-of-"
+            "freedom value.",
+        )
+
+    @classmethod
+    def from_cli(cls, args):
+        """Create the auto-chisq from the options of insert_option_group."""
+        return cls(
+            args.autochi_stride,
+            args.autochi_number_points,
+            onesided=args.autochi_onesided,
+            twophase=args.autochi_two_phase,
+            reverse_template=args.autochi_reverse_template,
+            take_maximum_value=args.autochi_max_valued,
+            maximal_value_dof=args.autochi_max_valued_dof,
+        )
+
     def values(
         self,
         sn,
@@ -279,17 +363,17 @@ class SingleDetAutoChisq:
             logger.debug("Calculating autocorrelation")
 
             if not self.reverse_template:
-                Pt, _, P_norm = matched_filter_core(
+                autocor, _, autocor_norm = matched_filter_core(
                     htilde,
                     htilde,
                     psd=psd,
                     low_frequency_cutoff=low_frequency_cutoff,
                     high_frequency_cutoff=high_frequency_cutoff,
                 )
-                Pt = Pt * (1.0 / Pt[0])
-                self._autocor = Array(Pt, copy=True)
+                autocor = autocor * (1.0 / autocor[0])
+                self._autocor = Array(autocor, copy=True)
             else:
-                Pt, _, P_norm = matched_filter_core(
+                autocor, _, autocor_norm = matched_filter_core(
                     htilde.conj(),
                     htilde,
                     psd=psd,
@@ -301,9 +385,9 @@ class SingleDetAutoChisq:
                 # so we can normalize using that
                 # FIXME: Here sigmasq has to be cast to a float or the
                 #        code is really slow ... why??
-                norm_fac = P_norm / float((template.sigmasq(psd)) ** 0.5)
-                Pt *= norm_fac
-                self._autocor = Array(Pt, copy=True)
+                norm_fac = autocor_norm / float((template.sigmasq(psd)) ** 0.5)
+                autocor *= norm_fac
+                self._autocor = Array(autocor, copy=True)
             self._autocor_id = key
 
         logger.debug("...Calculating autochisquare")

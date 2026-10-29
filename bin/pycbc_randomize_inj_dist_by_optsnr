@@ -18,21 +18,21 @@ import pycbc
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
-def r_uniform_in_volume(r1, r2, N):
-    xi = numpy.random.uniform(0.0, 1.0, size=N)
+def r_uniform_in_volume(r1, r2, n):
+    xi = numpy.random.uniform(0.0, 1.0, size=n)
     return (xi * r2**3.0 + (1.0 - xi) * r1**3.0) ** (1.0 / 3)
 
 
-def r_uniform_in_distance(r1, r2, N):
-    return numpy.random.uniform(r1, r2, size=N)
+def r_uniform_in_distance(r1, r2, n):
+    return numpy.random.uniform(r1, r2, size=n)
 
 
-def r_uniform_in_logdist(r1, r2, N):
-    return r1 * (r2 / r1) ** numpy.random.uniform(0.0, 1.0, size=N)
+def r_uniform_in_logdist(r1, r2, n):
+    return r1 * (r2 / r1) ** numpy.random.uniform(0.0, 1.0, size=n)
 
 
-def r_beta_distribution(rmax, alpha, beta, N=1):
-    return rmax * stats.beta.rvs(alpha, beta, size=N)
+def r_beta_distribution(rmax, alpha, beta, n=1):
+    return rmax * stats.beta.rvs(alpha, beta, size=n)
 
 
 def beta_weight(r, rmax, alpha, beta):
@@ -58,7 +58,7 @@ def get_weights(distribution, r, r1, r2):
         min_vol = (4.0 / 3) * numpy.pi * r1**3.0
         weight = 4.0 * numpy.pi * r**3.0 * numpy.log(r2 / r1)
     else:
-        raise ValueError("unrecognized distribution %s" % (distribution))
+        raise ValueError(f"unrecognized distribution {distribution}")
     return min_vol, weight
 
 
@@ -200,7 +200,7 @@ injections = tabletype.get_table(xmldoc)
 
 for ii, inj in enumerate(injections):
     if opts.verbose:
-        print("Injection %i\r" % (ii + 1), end=" ", file=sys.stdout)
+        print(f"Injection {ii + 1}\r", end=" ", file=sys.stdout)
         sys.stdout.flush()
 
     # calculate the sigmas in each ifo
@@ -230,7 +230,7 @@ for ii, inj in enumerate(injections):
         distance = r_beta_distribution(max_dist, alpha, beta, 1)[0]
     else:
         raise ValueError(
-            "unrecognized distribution %s; " % (distribution), "see --help for options"
+            f"unrecognized distribution {distribution}; ", "see --help for options"
         )
 
     # scale by chirp distance if desired

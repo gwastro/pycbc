@@ -70,13 +70,12 @@ _psd_list = sorted(_psd_list)
 # add functions wrapping lalsimulation PSDs
 for _name in _psd_list:
     exec(
-        """
-def %s(length, delta_f, low_freq_cutoff):
-    \"\"\"Return a FrequencySeries containing the %s PSD from LALSimulation.
+        f"""
+def {_name}(length, delta_f, low_freq_cutoff):
+    \"\"\"Return a FrequencySeries containing the {_name} PSD from LALSimulation.
     \"\"\"
-    return from_string("%s", length, delta_f, low_freq_cutoff)
+    return from_string("{_name}", length, delta_f, low_freq_cutoff)
 """
-        % (_name, _name, _name)
     )
 
 
