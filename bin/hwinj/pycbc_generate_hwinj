@@ -68,7 +68,7 @@ def _empty_row(obj):
         elif entry == "event_id":
             row.event_id = 0
         else:
-            raise ValueError("Column %s not recognized." % (entry))
+            raise ValueError(f"Column {entry} not recognized.")
 
     return row
 

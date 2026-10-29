@@ -31,12 +31,8 @@ from .matchedfilter import _BaseCorrelator
 @context_dependent_memoize
 def get_correlate_kernel(dtype_x, dtype_y, dtype_out):
     return ElementwiseKernel(
-        "%(tp_x)s *x, %(tp_y)s *y, %(tp_z)s *z"
-        % {
-            "tp_x": dtype_to_ctype(dtype_x),
-            "tp_y": dtype_to_ctype(dtype_y),
-            "tp_z": dtype_to_ctype(dtype_out),
-        },
+        f"{dtype_to_ctype(dtype_x)} *x, {dtype_to_ctype(dtype_y)} *y, "
+        f"{dtype_to_ctype(dtype_out)} *z",
         "z[i] = conj(x[i]) * y[i]",
         "correlate",
     )

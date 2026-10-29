@@ -419,7 +419,7 @@ class TemplateBank:
             # add the compressed waveforms, if they exist IN THIS GROUP
             self.has_compressed_waveforms = "compressed_waveforms" in root
         else:
-            raise ValueError("Unsupported template bank file extension %s" % (ext))
+            raise ValueError(f"Unsupported template bank file extension {ext}")
 
         # if approximant is specified, override whatever was in the file
         # (if anything was in the file)
@@ -533,7 +533,7 @@ class TemplateBank:
 
             if os.path.exists(filename) and not force:
                 if group_key is None:
-                    raise OSError("File %s already exists" % filename)
+                    raise OSError(f"File {filename} already exists")
                 mode = "a"
             else:
                 mode = "w"
@@ -988,7 +988,7 @@ class FilterBank(TemplateBank):
                     "self.get_decompressed_waveform has raised a KeyError. "
                     "This may be as the compressed waveform has not been "
                     "generated for this approximant, but it could indicate "
-                    "a more serious issue. Approximant: %s" % approximant
+                    f"a more serious issue. Approximant: {approximant}"
                 )
 
         if full_calculate_waveform:
@@ -1044,7 +1044,7 @@ class FilterBank(TemplateBank):
                     "self.get_decompressed_waveform has raised a KeyError. "
                     "This may be as the compressed waveform has not been "
                     "generated for this approximant, but it could indicate "
-                    "a more serious issue. Approximant: %s" % approximant
+                    f"a more serious issue. Approximant: {approximant}"
                 )
 
         if full_calculate_waveform:

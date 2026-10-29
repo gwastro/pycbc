@@ -664,7 +664,7 @@ def get_fd_waveform_sequence(template=None, **kwds):
     input_params["delta_f"] = -1
     input_params["f_lower"] = -1
     if input_params["approximant"] not in fd_sequence:
-        raise ValueError("Approximant %s not available" % (input_params["approximant"]))
+        raise ValueError(f"Approximant {input_params['approximant']} not available")
     wav_gen = fd_sequence[input_params["approximant"]]
     if hasattr(wav_gen, "required"):
         required = wav_gen.required
@@ -699,7 +699,7 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
     """
     input_params = props(template, **kwds)
     if input_params["approximant"] not in fd_det_sequence:
-        raise ValueError("Approximant %s not available" % (input_params["approximant"]))
+        raise ValueError(f"Approximant {input_params['approximant']} not available")
     wav_gen = fd_det_sequence[input_params["approximant"]]
     if hasattr(wav_gen, "required"):
         required = wav_gen.required
@@ -744,7 +744,7 @@ def get_td_waveform(template=None, **kwargs):
     input_params = props(template, **kwargs)
     wav_gen = td_wav[type(_scheme.mgr.state)]
     if input_params["approximant"] not in wav_gen:
-        raise ValueError("Approximant %s not available" % (input_params["approximant"]))
+        raise ValueError(f"Approximant {input_params['approximant']} not available")
     wav_gen = wav_gen[input_params["approximant"]]
     if hasattr(wav_gen, "required"):
         required = wav_gen.required
@@ -782,7 +782,7 @@ def get_fd_waveform(template=None, **kwargs):
     input_params = props(template, **kwargs)
     wav_gen = fd_wav[type(_scheme.mgr.state)]
     if input_params["approximant"] not in wav_gen:
-        raise ValueError("Approximant %s not available" % (input_params["approximant"]))
+        raise ValueError(f"Approximant {input_params['approximant']} not available")
     try:
         ffunc = input_params.pop("f_final_func")
         if ffunc != "":
@@ -916,7 +916,7 @@ def get_fd_det_waveform(template=None, **kwargs):
     """
     input_params = props(template, **kwargs)
     if input_params["approximant"] not in fd_det:
-        raise ValueError("Approximant %s not available" % (input_params["approximant"]))
+        raise ValueError(f"Approximant {input_params['approximant']} not available")
     wav_gen = fd_det[input_params["approximant"]]
     if hasattr(wav_gen, "required"):
         required = wav_gen.required
@@ -961,9 +961,8 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
 
     if nparams["approximant"] not in _filter_time_lengths:
         raise ValueError(
-            "Approximant %s _filter_time_lengths function \
+            f"Approximant {nparams['approximant']} _filter_time_lengths function \
                          not available"
-            % (nparams["approximant"])
         )
     # determine the duration to use
     full_duration = duration = get_waveform_filter_length_in_time(**nparams)
@@ -1434,7 +1433,7 @@ def get_waveform_filter(out, template=None, **kwargs):
             )
         return td_waveform_to_fd_waveform(hp, out=out)
 
-    raise ValueError("Approximant %s not available" % (input_params["approximant"]))
+    raise ValueError(f"Approximant {input_params['approximant']} not available")
 
 
 def td_waveform_to_fd_waveform(waveform, out=None, length=None, buffer_length=100):
@@ -1565,7 +1564,7 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         hc_tilde.length_in_time = tmplt_length
         hc_tilde.chirp_length = t_chirp
         return hp_tilde, hc_tilde
-    raise ValueError("Approximant %s not available" % (input_params["approximant"]))
+    raise ValueError(f"Approximant {input_params['approximant']} not available")
 
 
 def waveform_norm_exists(approximant):

@@ -634,7 +634,7 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
             f_low, m1 * MSUN_SI, m2 * MSUN_SI, chi, -1
         )
     else:
-        raise RuntimeError("I can't calculate a duration for %s" % approximant)
+        raise RuntimeError(f"I can't calculate a duration for {approximant}")
     # FIXME Add an extra factor of 1.1 for 'safety' since the duration
     # functions are approximate
     return time_length * 1.1 * scale

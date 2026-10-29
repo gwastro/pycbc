@@ -446,7 +446,7 @@ def main(
 
     # BAYESTAR's convention for end time of subthreshold detectors
     subthreshold_sngl_time = np.mean(
-        [coinc_results["foreground/%s/end_time" % ifo] for ifo in trig_ifos]
+        [coinc_results[f"foreground/{ifo}/end_time"] for ifo in trig_ifos]
     )
 
     window_bins = int(snr_series_duration * sample_rate)

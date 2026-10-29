@@ -97,8 +97,10 @@ def segment_report(s_segs):
                 long_len += abs(seg)
                 long_num += 1
         print(
-            "For ifo %s there is %d seconds of data in %d segments, %d seconds (%d unique segments) in segments longer than 500s and %d seconds (%d unique segments) longer than 2000s."
-            % (ifo, full_len, full_num, short_len, short_num, long_len, long_num)
+            f"For ifo {ifo} there is {int(full_len)} seconds of data in {full_num} "
+            f"segments, {int(short_len)} seconds ({short_num} unique segments) in "
+            f"segments longer than 500s and {int(long_len)} seconds ({long_num} unique "
+            "segments) longer than 2000s."
         )
 
 

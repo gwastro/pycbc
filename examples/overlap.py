@@ -20,14 +20,14 @@ print("Generating waveform 1")
 hp, hc = get_td_waveform(
     approximant="EOBNRv2", mass1=10, mass2=10, f_lower=f_low, delta_t=1.0 / 4096
 )
-print("waveform is %s seconds long" % hp.duration)
+print(f"waveform is {hp.duration} seconds long")
 
 print("Generating waveform 2")
 sp, sc = get_td_waveform(
     approximant="TaylorT4", mass1=10, mass2=10, f_lower=f_low, delta_t=1.0 / 4096
 )
 
-print("waveform is %s seconds long" % sp.duration)
+print(f"waveform is {sp.duration} seconds long")
 
 # Ensure that the waveforms are resized to the same length
 sp.resize(tlen)
@@ -41,5 +41,5 @@ print("Calculating match and overlap")
 # subsequent calls within the same program will be faster
 m, i = match(hp, sp, psd=psd, low_frequency_cutoff=f_low)
 o = overlap(hp, sp, psd=psd, low_frequency_cutoff=f_low)
-print("Overlap %s" % o)
-print("Maximized Overlap %s" % m)
+print(f"Overlap {o}")
+print(f"Maximized Overlap {m}")

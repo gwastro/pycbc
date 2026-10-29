@@ -292,7 +292,7 @@ class PyCBCDistributeBackgroundBins(Executable):
                 self.name,
                 coinc_files[0].segment,
                 directory=self.out_dir,
-                tags=tags + ["mbin-%s" % i],
+                tags=tags + [f"mbin-{i}"],
                 extension=".hdf",
             )
             for i in range(len(background_bins))
@@ -587,7 +587,7 @@ def setup_interval_coinc_inj(
     )
     bg_files = []
     for i in range(factor):
-        group_str = "%s/%s" % (i, factor)
+        group_str = f"{i}/{factor}"
         coinc_node = findcoinc_exe.create_node(
             injinj_files,
             hdfbank,
@@ -654,7 +654,7 @@ def setup_interval_coinc(
     statmap_files = []
     bg_files = FileList()
     for i in range(factor):
-        group_str = "%s/%s" % (i, factor)
+        group_str = f"{i}/{factor}"
         coinc_node = findcoinc_exe.create_node(
             trig_files,
             hdfbank,
@@ -708,7 +708,7 @@ def setup_sngls(
     statmap_files = []
     bg_files = FileList()
     for i in range(factor):
-        group_str = "%s/%s" % (i, factor)
+        group_str = f"{i}/{factor}"
         sngls_node = findsngls_exe.create_node(
             trig_files,
             hdfbank,
@@ -761,7 +761,7 @@ def setup_sngls_inj(
     statmap_files = []
     bg_files = FileList()
     for i in range(factor):
-        group_str = "%s/%s" % (i, factor)
+        group_str = f"{i}/{factor}"
         sngls_node = findsnglsinj_exe.create_node(
             inj_trig_files,
             hdfbank,

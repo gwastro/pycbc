@@ -349,15 +349,10 @@ if opts.print_distances:
     for idx in range(len(points_mass1)):
         print("The test point with the following parameters (m1,m2,S1z,S2z)")
         print(
-            "%e %e %e %e"
-            % (
-                points_mass1[idx],
-                points_mass2[idx],
-                points_spin1z[idx],
-                points_spin2z[idx],
-            )
+            f"{points_mass1[idx]:e} {points_mass2[idx]:e} {points_spin1z[idx]:e} "
+            f"{points_spin2z[idx]:e}"
         )
-        print("Was recovered with an overlap of %e" % (points_fittingfactor[idx]))
+        print(f"Was recovered with an overlap of {points_fittingfactor[idx]:e}")
         if points_closestidxes[idx] is None:
             print("No template was within a metric distance of 1.")
             print()
@@ -370,5 +365,5 @@ if opts.print_distances:
                 points_closestidxes[idx][2],
             )
         )
-        print("%e %e %e %e" % (curr_m1, curr_m2, curr_spin1, curr_spin2))
+        print(f"{curr_m1:e} {curr_m2:e} {curr_spin1:e} {curr_spin2:e}")
         print()

@@ -107,15 +107,16 @@ def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
             err_msg += "bank chisq for this filter template. The expected "
             err_msg += "value will be added to the chisq to account for "
             err_msg += "the removal of this template.\n"
-            err_msg += "Masses of filter template: %e %e\n" % (
-                template.params.mass1,
-                template.params.mass2,
+            err_msg += (
+                f"Masses of filter template: {template.params.mass1:e} "
+                f"{template.params.mass2:e}\n"
             )
-            err_msg += "Masses of bank filter template: %e %e\n" % (
-                bank_template.params.mass1,
-                bank_template.params.mass2,
+            err_msg += (
+                "Masses of bank filter template: "
+                f"{bank_template.params.mass1:e} "
+                f"{bank_template.params.mass2:e}\n"
             )
-            err_msg += "Overlap: %e" % (abs(overlaps[-1]))
+            err_msg += f"Overlap: {abs(overlaps[-1]):e}"
             logger.info(err_msg)
     return overlaps
 

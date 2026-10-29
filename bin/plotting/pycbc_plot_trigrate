@@ -328,12 +328,12 @@ for i, lower, upper in zip(binind, pbins.lower(), pbins.upper()):
     minrate = min(minrate, yplot.max() / 5e2)
     print(minrate)
     maxrate = max(maxrate, yplot.max())
-    binlabel = r"%.3g - %.3g" % (lower, upper)
+    binlabel = rf"{lower:.3g} - {upper:.3g}"
     plt.plot(xplot, yplot, "-", c=bincolors[i], label=binlabel)
 
 # finish the plot
 leg = plt.legend(labelspacing=0.2, loc="lower center")
-unitstring = " (%s)" % args.bin_param_units if args.bin_param_units is not None else ""
+unitstring = f" ({args.bin_param_units})" if args.bin_param_units is not None else ""
 leg.set_title(paramname + unitstring)
 plt.setp(leg.get_texts(), fontsize=11)
 if args.log_y:
@@ -341,7 +341,7 @@ if args.log_y:
 plt.ylim(minrate, 1.4 * maxrate)
 plt.xlim(0, maxtime)
 plt.grid()
-plt.xlabel("GPS time after %i" % args.gps_start_time, size="large")
+plt.xlabel(f"GPS time after {int(args.gps_start_time)}", size="large")
 if args.rate:
     plt.ylabel(r"Trigger rate (s$^{-1}$)", size="large")
 else:
@@ -350,11 +350,9 @@ logger.info("Saving to %s", args.output_file)
 results.save_fig_with_metadata(
     fig,
     args.output_file,
-    title="%s: rate of triggers above a %s threshold %f"
-    % (args.ifo, statname, args.stat_threshold),
-    caption=(
-        r"Rate of %s single detector triggers thresholded on %s" % (args.ifo, statname)
-    ),
+    title=f"{args.ifo}: rate of triggers above a {statname} threshold "
+    f"{args.stat_threshold:f}",
+    caption=(rf"Rate of {args.ifo} single detector triggers thresholded on {statname}"),
     cmd=" ".join(sys.argv),
 )
 plt.close()

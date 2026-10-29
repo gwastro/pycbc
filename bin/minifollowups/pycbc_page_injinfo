@@ -107,8 +107,8 @@ derived["chip"] = conv.chi_p(m1, m2, s1x, s1y, s2x, s2y)
 if "optimal_snr" in " ".join(list(f["injections"].keys())):
     ifolist = f.attrs["ifos"].split(" ")
     for ifo in ifolist:
-        labels["optimal_snr_%s" % ifo] = "Opt.&nbsp;SNR %s" % ifo
-        params += ["optimal_snr_%s" % ifo]
+        labels[f"optimal_snr_{ifo}"] = f"Opt.&nbsp;SNR {ifo}"
+        params += [f"optimal_snr_{ifo}"]
 else:
     eff_dist = {}
     for ifo in ["H1", "L1", "V1"]:
@@ -146,14 +146,14 @@ params += [
 
 for p in params:
     if p in f["injections"]:
-        data += ["%.2f" % f["injections"][p][iidx]]
+        data += [f"{f['injections'][p][iidx]:.2f}"]
     elif p in derived:
         data += [f"{derived[p]:.2f}"]
     elif "eff_dist" in p:
-        ifo = "%s1" % p.split("_")[-1]
-        data += ["%.2f" % eff_dist[ifo.upper()]]
+        ifo = f"{p.split('_')[-1]}1"
+        data += [f"{eff_dist[ifo.upper()]:.2f}"]
     elif p == "dec_chirp_dist":
-        data += ["%.2f" % dec_chirp_dist]
+        data += [f"{dec_chirp_dist:.2f}"]
     else:
         print(f"No data for {p}, so skipping")
         continue

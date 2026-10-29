@@ -94,7 +94,7 @@ for psd_file in args.psd_files:
         avg_range.append(mean), rangerr.append(stddev), mbin.append(M)
 
     for apx in args.approximant:
-        label = "%s-%s" % (ifo, apx)
+        label = f"{ifo}-{apx}"
         plt.errorbar(
             mbin,
             avg_range,

@@ -158,8 +158,8 @@ f.attrs["timeslide_interval"] = all_trigs.attrs["timeslide_interval"]
 
 # Copy over the segment info
 for key in all_trigs.seg.keys():
-    f["segments/%s/start" % key] = all_trigs.seg[key]["start"][:]
-    f["segments/%s/end" % key] = all_trigs.seg[key]["end"][:]
+    f[f"segments/{key}/start"] = all_trigs.seg[key]["start"][:]
+    f[f"segments/{key}/end"] = all_trigs.seg[key]["end"][:]
 
 f["segments/foreground_veto/start"] = numpy.array([0])
 f["segments/foreground_veto/end"] = numpy.array([0])
@@ -310,20 +310,20 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
     # Write foreground trigger info before hierarchical removals for
     # downstream codes.
     if h_iterations == 0:
-        f["background_h%s/stat" % h_iterations] = back_stat
-        f["background_h%s/ifar" % h_iterations] = conv.sec_to_year(bg_ifar)
+        f[f"background_h{h_iterations}/stat"] = back_stat
+        f[f"background_h{h_iterations}/ifar"] = conv.sec_to_year(bg_ifar)
         for k in all_trigs.data:
-            f["background_h%s/" % h_iterations + k] = all_trigs.data[k]
-        f["foreground_h%s/stat" % h_iterations] = fore_stat
-        f["foreground_h%s/ifar" % h_iterations] = conv.sec_to_year(fg_ifar)
-        f["foreground_h%s/ifar_exc" % h_iterations] = conv.sec_to_year(fg_ifar_exc)
-        f["foreground_h%s/fap" % h_iterations] = fap
+            f[f"background_h{h_iterations}/" + k] = all_trigs.data[k]
+        f[f"foreground_h{h_iterations}/stat"] = fore_stat
+        f[f"foreground_h{h_iterations}/ifar"] = conv.sec_to_year(fg_ifar)
+        f[f"foreground_h{h_iterations}/ifar_exc"] = conv.sec_to_year(fg_ifar_exc)
+        f[f"foreground_h{h_iterations}/fap"] = fap
         for key, value in sig_info.items():
-            f["foreground_h%s" % h_iterations].attrs[key] = value
+            f[f"foreground_h{h_iterations}"].attrs[key] = value
         for key, value in exc_sig_info.items():
-            f["foreground_h%s" % h_iterations].attrs[key + "_exc"] = value
+            f[f"foreground_h{h_iterations}"].attrs[key + "_exc"] = value
         for k in all_trigs.data:
-            f["foreground_h%s/" % h_iterations + k] = all_trigs.data[k]
+            f[f"foreground_h{h_iterations}/" + k] = all_trigs.data[k]
     # Add the iteration number of hierarchical removals done.
     h_iterations += 1
 
@@ -349,11 +349,11 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
 
     # Remove the foreground trigger and all of the background triggers that
     # are associated with it.
-    ave_rm_time = all_trigs.data["%s/time" % ifo][rm_trig_idx]
+    ave_rm_time = all_trigs.data[f"{ifo}/time"][rm_trig_idx]
 
     ind_to_rm = {}
     ind_to_rm[ifo] = veto.indices_within_times(
-        all_trigs.data["%s/time" % ifo],
+        all_trigs.data[f"{ifo}/time"],
         [ave_rm_time - args.hierarchical_removal_window],
         [ave_rm_time + args.hierarchical_removal_window],
     )
@@ -373,7 +373,7 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
     logger.info("Dumping foreground triggers")
     logger.info("Dumping background triggers (inclusive of zerolag)")
     for k in all_trigs.data:
-        f["background_h%s/" % h_iterations + k] = all_trigs.data[k]
+        f[f"background_h{h_iterations}/" + k] = all_trigs.data[k]
 
     logger.info("Calculating FAN from background statistic values")
     back_stat = fore_stat = all_trigs.stat
@@ -428,25 +428,25 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
     # louder_foreground has been updated and the code can continue.
 
     logger.info("Calculating ifar/fap values")
-    f["background_h%s/ifar" % h_iterations] = conv.sec_to_year(bg_ifar)
-    f.attrs["background_time_h%s" % h_iterations] = fg_time
-    f.attrs["foreground_time_h%s" % h_iterations] = fg_time
+    f[f"background_h{h_iterations}/ifar"] = conv.sec_to_year(bg_ifar)
+    f.attrs[f"background_time_h{h_iterations}"] = fg_time
+    f.attrs[f"foreground_time_h{h_iterations}"] = fg_time
 
     if len(all_trigs) > 0:
         # Write ranking statistic to file just for downstream plotting code
-        f["foreground_h%s/stat" % h_iterations] = fore_stat
+        f[f"foreground_h{h_iterations}/stat"] = fore_stat
 
         for key, value in sig_info.items():
-            f["foreground_h%s" % h_iterations].attrs[key] = value
+            f[f"foreground_h{h_iterations}"].attrs[key] = value
         for key, value in exc_sig_info.items():
-            f["foreground_h%s" % h_iterations].attrs[key + "_exc"] = value
+            f[f"foreground_h{h_iterations}"].attrs[key + "_exc"] = value
         fap = 1 - numpy.exp(-fg_time / fg_ifar)
-        f["foreground_h%s/ifar" % h_iterations] = conv.sec_to_year(fg_ifar)
-        f["foreground_h%s/fap" % h_iterations] = fap
+        f[f"foreground_h{h_iterations}/ifar"] = conv.sec_to_year(fg_ifar)
+        f[f"foreground_h{h_iterations}/fap"] = fap
 
         fap_exc = 1 - numpy.exp(-fg_time / fg_ifar_exc)
-        f["foreground_h%s/ifar" % h_iterations] = conv.sec_to_year(fg_ifar_exc)
-        f["foreground_h%s/fap" % h_iterations] = fap_exc
+        f[f"foreground_h{h_iterations}/ifar"] = conv.sec_to_year(fg_ifar_exc)
+        f[f"foreground_h{h_iterations}/fap"] = fap_exc
 
         # Update ifar and fap for other foreground triggers
         for i in range(len(fg_ifar)):
@@ -458,18 +458,18 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
         # These don't change with the iterations but should be written at every
         # level.
 
-        f["foreground_h%s/template_id" % h_iterations] = all_trigs.data["template_id"]
-        trig_id = all_trigs.data["%s/trigger_id" % ifo]
-        trig_time = all_trigs.data["%s/time" % ifo]
-        f["foreground_h%s/%s/time" % (h_iterations, ifo)] = trig_time
-        f["foreground_h%s/%s/trigger_id" % (h_iterations, ifo)] = trig_id
+        f[f"foreground_h{h_iterations}/template_id"] = all_trigs.data["template_id"]
+        trig_id = all_trigs.data[f"{ifo}/trigger_id"]
+        trig_time = all_trigs.data[f"{ifo}/time"]
+        f[f"foreground_h{h_iterations}/{ifo}/time"] = trig_time
+        f[f"foreground_h{h_iterations}/{ifo}/trigger_id"] = trig_id
     else:
-        f["foreground_h%s/stat" % h_iterations] = numpy.array([])
-        f["foreground_h%s/ifar" % h_iterations] = numpy.array([])
-        f["foreground_h%s/fap" % h_iterations] = numpy.array([])
-        f["foreground_h%s/template_id" % h_iterations] = numpy.array([])
-        f["foreground_h%s/%s/time" % (h_iterations, ifo)] = numpy.array([])
-        f["foreground_h%s/%s/trigger_id" % (h_iterations, ifo)] = numpy.array([])
+        f[f"foreground_h{h_iterations}/stat"] = numpy.array([])
+        f[f"foreground_h{h_iterations}/ifar"] = numpy.array([])
+        f[f"foreground_h{h_iterations}/fap"] = numpy.array([])
+        f[f"foreground_h{h_iterations}/template_id"] = numpy.array([])
+        f[f"foreground_h{h_iterations}/{ifo}/time"] = numpy.array([])
+        f[f"foreground_h{h_iterations}/{ifo}/trigger_id"] = numpy.array([])
 
 # Write to file how many hierarchical removals were implemented.
 f.attrs["hierarchical_removal_iterations"] = h_iterations

@@ -406,9 +406,9 @@ for j in range(len(args.bins) - 1):
             x_values, reach - elow, reach + ehigh, facecolor=c, edgecolor=c, alpha=alpha
         )
         if label and args.hdf_out:
-            plotdict["data/%s" % label] = reach
-            plotdict["errorhigh/%s" % label] = ehigh
-            plotdict["errorlow/%s" % label] = elow
+            plotdict[f"data/{label}"] = reach
+            plotdict[f"errorhigh/{label}"] = ehigh
+            plotdict[f"errorlow/{label}"] = elow
 
 if args.hdf_out:
     outfile = HFile(args.hdf_out, "w")
@@ -440,18 +440,13 @@ plt.legend(loc="lower left")
 pycbc.results.save_fig_with_metadata(
     fig,
     args.output_file,
-    title="Sensitive %s vs %s: binned by %s using %s method"
-    % (
-        args.dist_type.title(),
-        args.sig_type.upper(),
-        args.bin_type,
-        args.integration_method,
-    ),
-    caption="Sensitive %s as a function of Significance:"
+    title=f"Sensitive {args.dist_type.title()} vs {args.sig_type.upper()}: binned by "
+    f"{args.bin_type} using {args.integration_method} method",
+    caption=f"Sensitive {args.dist_type.title()} as a function of Significance:"
     "Lighter lines represent the significance without"
     " including injections in their own background,"
     " while darker lines include each injection"
     " individually in the background. The integration"
-    " method used is based on %s." % (args.dist_type.title(), args.integration_method),
+    f" method used is based on {args.integration_method}.",
     cmd=" ".join(sys.argv),
 )

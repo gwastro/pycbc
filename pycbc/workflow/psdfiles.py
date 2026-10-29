@@ -130,7 +130,7 @@ def setup_psd_pregenerated(workflow, tags=None):
         for ifo in workflow.ifos:
             try:
                 pre_gen_file = cp.get_opt_tags(
-                    "workflow-psd", "psd-pregenerated-file-%s" % ifo.lower(), tags
+                    "workflow-psd", f"psd-pregenerated-file-{ifo.lower()}", tags
                 )
                 file_attrs["ifos"] = [ifo]
                 curr_file = resolve_url_to_file(pre_gen_file, attrs=file_attrs)

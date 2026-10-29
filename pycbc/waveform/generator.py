@@ -167,7 +167,7 @@ class BaseGenerator:
                 global failed_counter
 
                 if self.mpi_enabled:
-                    outname = "failed/params_%s.hdf" % self.mpi_rank
+                    outname = f"failed/params_{self.mpi_rank}.hdf"
                 else:
                     outname = "failed/params.hdf"
 
@@ -623,10 +623,9 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
             ]
             if any(missing_args):
                 raise ValueError(
-                    "detectors provided, but missing location "
-                    "parameters %s. "
-                    % (", ".join(missing_args))
-                    + "These must be either in the frozen params or the "
+                    "detectors provided, but missing location parameters "
+                    f"{', '.join(missing_args)}. "
+                    "These must be either in the frozen params or the "
                     "variable args."
                 )
         else:

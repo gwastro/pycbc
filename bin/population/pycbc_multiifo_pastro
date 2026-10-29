@@ -190,7 +190,7 @@ args = parser.parse_args()
 if not args.plot_dir.endswith("/"):
     args.plot_dir += "/"
 if not os.path.exists(args.plot_dir):
-    raise RuntimeError("Output dir %s doesn't exist!" % args.plot_dir)
+    raise RuntimeError(f"Output dir {args.plot_dir} doesn't exist!")
 if args.bg_bin_width is not None and args.bg_log_bin_width is not None:
     raise RuntimeError("Can't have both linear and log background bins!")
 if args.inj_bin_width is not None and args.inj_log_bin_width is not None:
@@ -412,8 +412,8 @@ if args.vt_mean:
     logger.info("Rate in units of %s ...", args.rate_units)
     print("Rate without VT uncertainty :")
     print(
-        "%.1f_{-%.1f}^{+%.1f}"
-        % (cmed / args.vt_mean, abs(cminus) / args.vt_mean, cplus / args.vt_mean)
+        f"{cmed / args.vt_mean:.1f}_{{-{abs(cminus) / args.vt_mean:.1f}}}"
+        f"^{{+{cplus / args.vt_mean:.1f}}}"
     )
     import rate_functions
 
@@ -429,7 +429,7 @@ if args.vt_mean:
         args, rate_distribution, plot_extensions=None, credible_intervals=[0.9]
     )
     print("Rate with VT uncertainty via rate_posterior :")
-    print("%.1f_{-%.1f}^{+%.1f}" % (median, abs(minus), plus))
+    print(f"{median:.1f}_{{-{abs(minus):.1f}}}^{{+{plus:.1f}}}")
 elif args.vt_err:
     raise RuntimeError("Can't supply VT error without a VT mean!")
 

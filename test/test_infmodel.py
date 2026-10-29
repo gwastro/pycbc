@@ -757,7 +757,7 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
             self.assertGreater(
                 mm, 0.99,
                 msg="match between rescaled and regenerated waveform is "
-                    "only {} at mtotal={}".format(mm, mtotal))
+                    f"only {mm} at mtotal={mtotal}")
 
             s_scaled = sigma(scaled, psd=self.psds[self.ifos[0]],
                              low_frequency_cutoff=self.flow)
@@ -766,7 +766,7 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
             self.assertAlmostEqual(
                 s_scaled / s_direct, 1.0, places=2,
                 msg="amplitude of rescaled waveform is wrong at "
-                    "mtotal={}".format(mtotal))
+                    f"mtotal={mtotal}")
 
     def test_loglr_matches_regeneration(self):
         """The marginalized loglr equals an explicit sum over the grid using
@@ -784,8 +784,8 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
 
             self.assertAlmostEqual(
                 marg_loglr, integrated, delta=0.5,
-                msg="marginalized loglr {} does not match explicit "
-                    "integration {} at q={}".format(marg_loglr, integrated, q))
+                msg=f"marginalized loglr {marg_loglr} does not match explicit "
+                    f"integration {integrated} at q={q}")
 
     def test_maxl_mtotal_matches_grid(self):
         """The recorded maximum likelihood total mass is the grid point that

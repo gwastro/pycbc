@@ -90,7 +90,7 @@ if (
         args.bank_file,
         sngl_files=args.single_detector_triggers,
         n_loudest=args.num_to_write,
-        group="foreground_h%s" % h_num_rm,
+        group=f"foreground_h{h_num_rm}",
     )
     # read in the regular triggers to get the exclusive ifar which is
     # independent of any removal
@@ -211,19 +211,19 @@ if args.output_file.endswith(".html"):
             chisqs = []
             for idx in range(len(single_snr[ifo][0])):
                 if single_snr[ifo][1][idx]:
-                    snrs.append("%.2f" % single_snr[ifo][0][idx])
+                    snrs.append(f"{single_snr[ifo][0][idx]:.2f}")
                     rchisq = single_chisq[ifo][0][idx] / (
                         single_chisq_dof[ifo][0][idx] * 2 - 2
                     )
-                    chisqs.append("%.2f" % rchisq)
+                    chisqs.append(f"{rchisq:.2f}")
                 else:
                     snrs.append(" ")
                     chisqs.append(" ")
             columns.append(numpy.array(snrs))
-            names.append("%s SNR" % (ifo))
+            names.append(f"{ifo} SNR")
             format_strings.append("##.##")
             columns.append(numpy.array(chisqs))
-            names.append("%s Red. Chisq" % (ifo))
+            names.append(f"{ifo} Red. Chisq")
             format_strings.append("##.##")
 
     logger.info("Making table of foreground triggers")

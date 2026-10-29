@@ -226,26 +226,21 @@ if len(indices) > 0:
         interesting_trig_rank = None
 
     if max_rank:
-        title = "%s - loudest %d triggers by %s - max %s = %.2f (light blue curve)" % (
-            opts.channel_name,
-            opts.num_loudest,
-            opts.rank,
-            opts.rank,
-            max_rank,
+        title = (
+            f"{opts.channel_name} - loudest {opts.num_loudest} triggers by "
+            f"{opts.rank} - max {opts.rank} = {max_rank:.2f} (light blue curve)"
         )
     else:
-        title = "%s - loudest %d triggers by %s" % (
-            opts.channel_name,
-            opts.num_loudest,
-            opts.rank,
+        title = (
+            f"{opts.channel_name} - loudest {opts.num_loudest} triggers by {opts.rank}"
         )
     if interesting_trig_rank is not None:
-        title += " - selected %s = %.2f (green curve)" % (
-            opts.rank,
-            interesting_trig_rank,
+        title += (
+            f" - selected {opts.rank} = {float(interesting_trig_rank):.2f} "
+            "(green curve)"
         )
 else:
-    title = "%s - no triggers" % opts.channel_name
+    title = f"{opts.channel_name} - no triggers"
 
 logger.info("Loading and plotting gates")
 for gate_type, hatch_style in [("file", "\\"), ("auto", "/")]:
@@ -290,7 +285,7 @@ ax.set_xlim(-half_width, half_width)
 ax.set_ylim(opts.f_low, opts.sample_rate / 2)
 ax.set_yscale("log")
 ax.grid(ls="solid", alpha=0.2)
-ax.set_xlabel("Time - %.3f (s)" % center_time)
+ax.set_xlabel(f"Time - {center_time:.3f} (s)")
 ax.set_ylabel("Frequency (Hz)")
 ax.set_title(title)
 cb = fig.colorbar(pc, fraction=0.04, pad=0.01, ticks=LogLocator(subs=range(10)))

@@ -61,9 +61,9 @@ else:
         time_2 = np.array(found[det_two_combo[i, 1] + "/time"][:])
         tdiff_vals = (time_1 - time_2) * 1000
         tdiff_vals[np.logical_or(time_1 < 0, time_2 < 0)] = np.nan
-        tdiff_1 = ["%.2f" % td if not np.isnan(td) else " " for td in tdiff_vals]
+        tdiff_1 = [f"{td:.2f}" if not np.isnan(td) else " " for td in tdiff_vals]
         tdiff.append(tdiff_1)
-        tdiff_head = "%s - %s time (ms)" % (det_two_combo[i, 0], det_two_combo[i, 1])
+        tdiff_head = f"{det_two_combo[i, 0]} - {det_two_combo[i, 1]} time (ms)"
         tdiff_str.append(tdiff_head)
         tdiff_format.append("##.##")
     ids = {detector: found[detector + "/trigger_id"][:] for detector in detectors_used}
@@ -82,22 +82,22 @@ else:
             chisq_vals = f["chisq"][:][ids_ifo] / (2 * f["chisq_dof"][:][ids_ifo] - 2)
             chisq_vals[ids_ifo == -1] = np.nan
             newsnr_vals = pycbc.events.ranking.newsnr(snr_vals, chisq_vals)
-            snr = ["%.2f" % s if not np.isnan(s) else " " for s in snr_vals]
-            chisq = ["%.2f" % c if not np.isnan(c) else " " for c in chisq_vals]
-            newsnr = ["%.2f" % s if not np.isnan(s) else " " for s in newsnr_vals]
+            snr = [f"{s:.2f}" if not np.isnan(s) else " " for s in snr_vals]
+            chisq = [f"{c:.2f}" if not np.isnan(c) else " " for c in chisq_vals]
+            newsnr = [f"{s:.2f}" if not np.isnan(s) else " " for s in newsnr_vals]
 
             found_names += [ifo + " SNR", ifo + " CHISQ", ifo + " NewSNR"]
             found_cols += [snr, chisq, newsnr]
             found_formats += ["##.##", "##.##", "##.##"]
 
-eff_dist = {"eff_dist_%s" % i[0].lower(): "Eff Dist (%s)" % i for i in ifos}
+eff_dist = {f"eff_dist_{i[0].lower()}": f"Eff Dist ({i})" for i in ifos}
 
 keys = inj.keys()
 eff_dist_str = []
 eff_distance = []
 eff_dist_format = []
 for dist in eff_dist:
-    ifo = ("%s1" % dist.split("_")[-1]).upper()
+    ifo = (f"{dist.split('_')[-1]}1").upper()
     d = pycbc.detector.Detector(ifo)
     edist = d.effective_distance(
         inj["distance"][:][idx],
@@ -182,8 +182,9 @@ html_table = pycbc.results.html_table(
 
 kwds = {
     "title": title,
-    "caption": "A table of %s and their coincident statistic information."
-    % title.lower(),
+    "caption": (
+        f"A table of {title.lower()} and their coincident statistic information."
+    ),
     "cmd": " ".join(sys.argv),
 }
 pycbc.results.save_fig_with_metadata(str(html_table), args.output_file, **kwds)

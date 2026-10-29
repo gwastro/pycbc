@@ -113,7 +113,7 @@ elif len(sci_segs.keys()) < 2 and not single_ifo:
     make_grb_segments_plot(
         wflow, segmentlistdict(sci_segs), triggertime, triggername, seg_dir
     )
-    msg = "Science segments exist only for %s. " % tuple(sci_segs.keys())[0]
+    msg = f"Science segments exist only for {tuple(sci_segs.keys())[0]}. "
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file."
@@ -233,7 +233,7 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
         else:
             msg = "[workflow-condition_strain] option 'gating-method' can "
             msg += "only have one of the values 'IN_WORKFLOW' or 'AT_RUNTIME'."
-            msg += " You have provided the value %s." % gating_method
+            msg += f" You have provided the value {gating_method}."
             logger.error(msg)
             sys.exit()
     datafind_files = _workflow.FileList([])
@@ -455,9 +455,8 @@ if wflow.cp.has_section("workflow-injections"):
                 if ("BANK" in s and s[-1].isdigit())
             ]
             if len(split_str) != 0:
-                inj_split.tagged_description += "%s_%d" % (
-                    inj_split.tag_str,
-                    int(split_str[0].replace("BANK", "")),
+                inj_split.tagged_description += (
+                    f"{inj_split.tag_str}_{int(split_str[0].replace('BANK', ''))}"
                 )
         all_files.extend(inj_splitbank_files)
     else:
@@ -480,7 +479,8 @@ if wflow.cp.has_section("workflow-injections"):
                 ]
                 if len(split_str) != 0:
                     new = inj_split.tagged_description.replace(
-                        split_str[0], "SPLIT_%s" % split_str[0].replace("SPLIT", "")
+                        split_str[0],
+                        f"SPLIT_{split_str[0].replace('SPLIT', '')}",
                     )
                     inj_split.tagged_description = new
             inj_split_files.extend(inj_splits)

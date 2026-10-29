@@ -74,7 +74,7 @@ for f in f_others:
         f["foreground/ifar"][:] > args.censor_ifar_threshold
     )[0]
     mean_times = np.mean(
-        [f["foreground/%s/time" % ifo][:] for ifo in f.attrs["ifos"].split(" ")], axis=0
+        [f[f"foreground/{ifo}/time"][:] for ifo in f.attrs["ifos"].split(" ")], axis=0
     )
     all_fg_times += list(mean_times[ifar_above_thresh])
 
@@ -83,12 +83,12 @@ all_fg_times = np.array(all_fg_times)
 logger.info("Loading coinc triggers into all_trigs structure")
 groups = ["decimation_factor", "stat", "template_id", "timeslide_id", "ifar"]
 for ifo in all_ifos:
-    groups += ["%s/time" % ifo]
-    groups += ["%s/trigger_id" % ifo]
-data = {g: f_in["background_exc/%s" % g] for g in groups}
+    groups += [f"{ifo}/time"]
+    groups += [f"{ifo}/trigger_id"]
+data = {g: f_in[f"background_exc/{g}"] for g in groups}
 all_trigs = pycbc.io.DictArray(data=data)
 
-n_triggers = f_in["background_exc/%s/time" % all_ifos[0]].size
+n_triggers = f_in[f"background_exc/{all_ifos[0]}/time"].size
 logger.info("%d background_exc triggers", n_triggers)
 
 logger.info(
@@ -100,7 +100,7 @@ remove_end_time = all_fg_times + args.veto_window
 all_vetoed_idx = []
 for ifo in all_ifos:
     fg_veto_ids = veto.indices_within_times(
-        f_in["background_exc/%s/time" % ifo][:], remove_start_time, remove_end_time
+        f_in[f"background_exc/{ifo}/time"][:], remove_start_time, remove_end_time
     )
     all_vetoed_idx += list(fg_veto_ids)
 all_vetoed_idx = np.unique(all_vetoed_idx)
@@ -115,7 +115,7 @@ logger.info("%d triggers remaining", n_triggers_new)
 
 logger.info("Writing updated background_exc to file")
 for k in filtered_trigs.data:
-    f_out["background_exc/%s" % k] = filtered_trigs.data[k]
+    f_out[f"background_exc/{k}"] = filtered_trigs.data[k]
 
 logger.info("Recalculating IFARs")
 bg_far, fg_far, sig_info = significance.get_far(

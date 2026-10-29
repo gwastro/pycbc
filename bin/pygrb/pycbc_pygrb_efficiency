@@ -705,7 +705,7 @@ if len(found_after_vetoes["network/template_id"]):
             # but let the workflow continue: the user will see the plot(s) and
             # repeat with more injections
             excl_dist[f"{percentile}%"] = 0
-            msg = "Efficiency below %d%% in first bin!" % (percentile)
+            msg = f"Efficiency below {int(percentile)}% in first bin!"
             logger.warning(msg)
 
 # Write 50% and 90% exclusion distances to JSON file

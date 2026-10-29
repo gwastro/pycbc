@@ -72,7 +72,7 @@ def select_segments(fname, anal_name, data_name, ifo, time, pad_data):
     s2 = s2[lgc]
     e2 = e2[lgc]
     if len(s2) == 0:
-        err_msg = "Cannot find a data segment within %s" % (str(time))
+        err_msg = f"Cannot find a data segment within {time!s}"
         raise ValueError(err_msg)
     if len(s2) == 1:
         data_time = (s2[0], e2[0])
@@ -542,7 +542,7 @@ with ctx:
         raise ValueError(err_msg)
 
     for i in range(chisq_bins):
-        key = "chisq_bins/%s" % i
+        key = f"chisq_bins/{i}"
         f[key] = numpy.concatenate(raw_bins[i])[sidx:eidx]
         f[key].attrs["start_time"] = start_time
         f[key].attrs["delta_t"] = snr.delta_t

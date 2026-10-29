@@ -349,5 +349,5 @@ with ctx:
 
 # Output the overlaps to  a file
 for m, o, i, s1, s2 in zip(matches, overlaps, time_offsets, s1s, s2s):
-    match_str = "%5.5f %5.5f %5.5f %5.5f %5.5f\n" % (m, o, i, s1, s2)
+    match_str = f"{m:5.5f} {o:5.5f} {i:5.5f} {s1:5.5f} {s2:5.5f}\n"
     fout.write(match_str)

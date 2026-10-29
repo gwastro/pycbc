@@ -85,8 +85,8 @@ def get_summary_page_link(ifo, utc_time):
         )
 
     # alog format is day-month-year
-    alog_utc = "%02d-%02d-%4d" % (day, month, year)
+    alog_utc = f"{day:02d}-{month:02d}-{year:4d}"
     # summary page is exactly the reverse
-    ext = "%4d%02d%02d" % (year, month, day)
+    ext = f"{year:4d}{month:02d}{day:02d}"
     return_string = search_form % (ifo.lower(), ifo.lower(), alog_utc, alog_utc)
     return return_string + data[ifo] % ext

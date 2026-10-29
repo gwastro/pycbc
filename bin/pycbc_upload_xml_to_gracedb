@@ -235,7 +235,7 @@ for event in coinc_table:
     time = coinc_inspiral_table_curr[0].end_time
     if not args.force_overwrite and not args.no_upload:
         far = coinc_inspiral_table_curr[0].combined_far
-        query = args.query_string + " %.3f .. %.3f" % (time - 1, time + 1)
+        query = args.query_string + f" {time - 1:.3f} .. {time + 1:.3f}"
         if check_gracedb_for_event(gracedb, query, far):
             continue
 
@@ -256,19 +256,17 @@ for event in coinc_table:
                 psd = psds[sngl.ifo]
             except KeyError:
                 parser.error(
-                    "--psd-files {0}: no PSDs found for detector {1}".format(
-                        " ".join(args.psd_files), sngl.ifo
-                    )
+                    f"--psd-files {' '.join(args.psd_files)}: no PSDs found for "
+                    f"detector {sngl.ifo}"
                 )
 
             try:
                 psd = psd[psd.find(sngl.end)].psd
             except ValueError:
                 parser.error(
-                    "--psd-files {0}: no PSD found for detector {1} "
-                    "at GPS time {2}".format(
-                        " ".join(args.psd_files), sngl.ifo, sngl.end
-                    )
+                    f"--psd-files {' '.join(args.psd_files)}: no PSD found for "
+                    f"detector {sngl.ifo} "
+                    f"at GPS time {sngl.end}"
                 )
 
             # Resample the psd so it can be uploaded to GDB

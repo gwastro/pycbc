@@ -133,7 +133,7 @@ def get_code_version_numbers(executable_names, executable_files):
         logger.info("Getting version info for %s", exe_name)
         version_string = None
         if value.scheme in ["gsiftp", "http", "https"]:
-            code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
+            code_version_dict[exe_name] = f"Using bundle downloaded from {value}"
         elif value.scheme == "singularity":
             txt = (
                 "Executable run from a singularity image. See config file "

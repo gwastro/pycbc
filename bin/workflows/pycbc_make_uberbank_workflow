@@ -137,7 +137,7 @@ class SbankDaxGenerator(wf.Executable):
             sfs = []
             for seed_file in seed_files:
                 sfs.append(seed_file.name)
-            config_overrides.append('workflow:seed-bank:"%s"' % " ".join(sfs))
+            config_overrides.append(f'workflow:seed-bank:"{" ".join(sfs)}"')
 
         if config_overrides:
             node.add_opt("--config-overrides", " ".join(config_overrides))

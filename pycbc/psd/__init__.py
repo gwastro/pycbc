@@ -434,8 +434,8 @@ def insert_psd_option_group_multi_ifo(parser):
         nargs="+",
         action=MultiDetOptionAction,
         metavar="IFO:MODEL",
-        help="Get PSD from given analytical model. "
-        "Choose from %s" % (", ".join(get_psd_model_list()),),
+        help="Get PSD from given analytical model. Choose from "
+        f"{', '.join(get_psd_model_list())}",
     )
     psd_options.add_argument(
         "--psd-extra-args",
@@ -773,10 +773,10 @@ def generate_segment_psds(
 
     if input_data_len < psd_data_len:
         raise ValueError(
-            "Input data (%.0fs) is shorter than the data needed to estimate a "
+            f"Input data ({input_data_len / sample_rate:.0f}s) is shorter than the "
+            "data needed to estimate a "
             "PSD ((psd-num-segments - 1) * psd-segment-stride + "
-            "psd-segment-length = %.0fs)."
-            % (input_data_len / sample_rate, psd_data_len / sample_rate)
+            f"psd-segment-length = {psd_data_len / sample_rate:.0f}s)."
         )
 
     cache = {}

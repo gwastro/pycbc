@@ -225,7 +225,7 @@ for method in significance._significance_meth_dict:
             # Tests on the significance info output dictionary
             self.assertTrue(isinstance(sig_info, dict))
 
-        setattr(SignificanceMethodTest, "test_%s_%s" % (method, function), meth_test)
+        setattr(SignificanceMethodTest, f"test_{method}_{function}", meth_test)
 
 # create and populate unittest's test suite
 suite = unittest.TestSuite()

@@ -74,7 +74,7 @@ for input_file in args.input_files:
         delta_f = df
     elif delta_f != df:
         raise ValueError(
-            "Inconsistent frequency resolution in input PSDs (%f vs %f)" % (df, delta_f)
+            f"Inconsistent frequency resolution in input PSDs ({df:f} vs {delta_f:f})"
         )
     keys = f[ifo + "/psds"].keys()
 

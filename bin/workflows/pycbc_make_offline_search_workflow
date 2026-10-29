@@ -57,8 +57,7 @@ def symlink_result(f, rdir_path):
 def ifo_combos(ifos):
     for i in range(2, len(ifos) + 1):
         combinations = itertools.combinations(ifos, i)
-        for ifocomb in combinations:
-            yield ifocomb
+        yield from combinations
 
 
 def finalize(container, workflow, finalize_workflow):
@@ -116,15 +115,16 @@ def finalize(container, workflow, finalize_workflow):
     logging.shutdown()
     with open(wf_log_file.storage_path) as logfile:
         logdata = logfile.read()
-    log_str = """
-    <p>Workflow generation script created workflow in output directory: %s</p>
-    <p>Workflow name is: %s</p>
-    <p>Workflow generation script run on host: %s</p>
-    <pre>%s</pre>
-    """ % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
+    cwd = os.getcwd()
+    log_str = f"""
+    <p>Workflow generation script created workflow in output directory: {cwd}</p>
+    <p>Workflow name is: {args.workflow_name}</p>
+    <p>Workflow generation script run on host: {socket.gethostname()}</p>
+    <pre>{logdata}</pre>
+    """
     kwds = {
         "title": "Workflow Generation Log",
-        "caption": "Log of the workflow script %s" % sys.argv[0],
+        "caption": f"Log of the workflow script {sys.argv[0]}",
         "cmd": " ".join(sys.argv),
     }
     save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
@@ -215,11 +215,9 @@ time = workflow.analysis_time
 s, e = int(time[0]), int(time[1])
 s_utc = gps_to_utc_str(s)
 e_utc = gps_to_utc_str(e)
-time_str = "<center><p><b>GPS Interval [%s,%s). " % (s, e)
-time_str += "UTC Interval %s - %s. " % (s_utc, e_utc)
-time_str += "Interval duration = %.3f days.</b></p></center>" % (
-    float(e - s) / 86400.0,
-)
+time_str = f"<center><p><b>GPS Interval [{s},{e}). "
+time_str += f"UTC Interval {s_utc} - {e_utc}. "
+time_str += f"Interval duration = {float(e - s) / 86400.0:.3f} days.</b></p></center>"
 time_file = wf.File(
     workflow.ifos,
     "time",
@@ -248,7 +246,7 @@ science_seg_file = wf.get_segments_file(
 
 ssegs = {}
 for ifo in workflow.ifos:
-    ssegs[ifo] = science_seg_file.segment_dict["%s:science" % ifo]
+    ssegs[ifo] = science_seg_file.segment_dict[f"{ifo}:science"]
 
 hoft_tags = []
 if "hoft" in workflow.cp.get_subsections("workflow-datafind"):
@@ -928,7 +926,7 @@ insps_dict = {}
 files_for_combined_injfind = []
 for inj_file, tag in zip(inj_files, inj_tags):
     ctags = [tag, "injections"]
-    output_dir = "%s_coinc" % tag
+    output_dir = f"{tag}_coinc"
 
     if workflow.cp.has_option_tags(
         "workflow-injections", "compute-optimal-snr", tags=ctags
@@ -1058,8 +1056,8 @@ if len(files_for_combined_injfind) > 0:
 for inj_file, tag in zip(inj_files, inj_tags):
     found_inj = found_inj_dict[tag]
     insps = insps_dict[tag]
-    injdir = rdir["injections/%s" % tag]
-    sensdir = rdir["search_sensitivity/%s" % tag]
+    injdir = rdir[f"injections/{tag}"]
+    sensdir = rdir[f"search_sensitivity/{tag}"]
 
     # foundmissed/sensitivity plots
     s = wf.make_sensitivity_plot(
@@ -1097,10 +1095,10 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
     # Make pages from plots
     inj_layout = list(layout.grouper(f, 2)) + [(found_table,), (missed_table,)]
-    layout.two_column_layout(rdir["injections/%s" % tag], inj_layout)
+    layout.two_column_layout(rdir[f"injections/{tag}"], inj_layout)
 
     if len(s) > 0:
-        layout.group_layout(rdir["search_sensitivity/%s" % tag], s)
+        layout.group_layout(rdir[f"search_sensitivity/{tag}"], s)
 
     # Minifollowups
     curr_dir_nam = f"injections/followup_of_{tag}"

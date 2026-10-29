@@ -258,7 +258,7 @@ if __name__ == "__main__":
         if set(detectors) != set(psds.keys()):
             parser.error(
                 "Inconsistent detector list in time-varying PSD "
-                "specification (%s vs %s)" % (detectors, psds.keys())
+                f"specification ({detectors} vs {psds.keys()})"
             )
     else:
         psds = pycbc.psd.from_cli_multi_ifos(

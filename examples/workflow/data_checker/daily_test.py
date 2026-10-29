@@ -78,8 +78,10 @@ def segment_report(s_segs):
                 long_len += abs(seg)
                 long_num += 1
         print(
-            "For ifo %s there is %d seconds of data in %d segments, %d seconds (%d unique segments) in segments longer than 500s and %d seconds (%d unique segments) longer than 2000s."
-            % (ifo, full_len, full_num, short_len, short_num, long_len, long_num)
+            f"For ifo {ifo} there is {int(full_len)} seconds of data in {full_num} "
+            f"segments, {int(short_len)} seconds ({short_num} unique segments) in "
+            f"segments longer than 500s and {int(long_len)} seconds ({long_num} unique "
+            "segments) longer than 2000s."
         )
 
 
@@ -121,7 +123,7 @@ for ifo in science_segs_s.keys():
     if ifo in science_segs_c.keys():
         print(science_segs_s[ifo] - science_segs_c[ifo])
     else:
-        print("No science segments for ifo %s at CIT" % (ifo))
+        print(f"No science segments for ifo {ifo} at CIT")
     print()
 
 print("Frames present at CIT and not at SYR:")
@@ -131,7 +133,7 @@ for ifo in science_segs_c.keys():
     if ifo in science_segs_s.keys():
         print(science_segs_c[ifo] - science_segs_s[ifo])
     else:
-        print("No science segments for ifo %s at SYR" % (ifo))
+        print(f"No science segments for ifo {ifo} at SYR")
     print()
 
 # Next do LHO comparison
@@ -153,7 +155,7 @@ for ifo in science_segs_s.keys():
     if ifo in science_segs_c.keys():
         print(science_segs_s[ifo] - science_segs_c[ifo])
     else:
-        print("No science segments for ifo %s at CIT" % (ifo))
+        print(f"No science segments for ifo {ifo} at CIT")
     print()
 
 print("Frames present at CIT and not at LHO:")
@@ -163,7 +165,7 @@ for ifo in science_segs_c.keys():
     if ifo in science_segs_s.keys():
         print(science_segs_c[ifo] - science_segs_s[ifo])
     else:
-        print("No science segments for ifo %s at LHO" % (ifo))
+        print(f"No science segments for ifo {ifo} at LHO")
     print()
 
 # Next do LLO comparison
@@ -185,7 +187,7 @@ for ifo in science_segs_s.keys():
     if ifo in science_segs_c.keys():
         print(science_segs_s[ifo] - science_segs_c[ifo])
     else:
-        print("No science segments for ifo %s at CIT" % (ifo))
+        print(f"No science segments for ifo {ifo} at CIT")
     print()
 
 print("Frames present at CIT and not at LLO:")
@@ -195,7 +197,7 @@ for ifo in science_segs_c.keys():
     if ifo in science_segs_s.keys():
         print(science_segs_c[ifo] - science_segs_s[ifo])
     else:
-        print("No science segments for ifo %s at LLO" % (ifo))
+        print(f"No science segments for ifo {ifo} at LLO")
     print()
 
 # Next do UWM comparison
@@ -217,7 +219,7 @@ for ifo in science_segs_s.keys():
     if ifo in science_segs_c.keys():
         print(science_segs_s[ifo] - science_segs_c[ifo])
     else:
-        print("No science segments for ifo %s at CIT" % (ifo))
+        print(f"No science segments for ifo {ifo} at CIT")
     print()
 
 print("Frames present at CIT and not at UWM:")
@@ -227,5 +229,5 @@ for ifo in science_segs_c.keys():
     if ifo in science_segs_s.keys():
         print(science_segs_c[ifo] - science_segs_s[ifo])
     else:
-        print("No science segments for ifo %s at UWM" % (ifo))
+        print(f"No science segments for ifo {ifo} at UWM")
     print()

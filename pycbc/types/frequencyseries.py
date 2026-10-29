@@ -476,9 +476,9 @@ class FrequencySeries(Array):
 
         if flen < len(self):
             raise ValueError(
-                "The value of delta_t (%s) would be "
+                f"The value of delta_t ({delta_t}) would be "
                 "undersampled. Maximum delta_t "
-                "is %s." % (delta_t, nat_delta_t)
+                f"is {nat_delta_t}."
             )
         if not delta_t:
             tmp = self
@@ -657,7 +657,6 @@ def load_frequencyseries(path, group=None):
         )
 
     raise ValueError(
-        "File has %s dimensions, cannot convert to FrequencySeries, \
+        f"File has {data.ndim} dimensions, cannot convert to FrequencySeries, \
                       must be 2 (real) or 3 (complex)"
-        % data.ndim
     )

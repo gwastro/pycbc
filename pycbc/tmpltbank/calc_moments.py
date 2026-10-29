@@ -101,23 +101,23 @@ def determine_eigen_directions(
         # Here we convert the moments into a form easier to use here
         Js = {}  # noqa: N806
         for i in range(-7, 18):
-            Js[i] = metric_params.moments["J%d" % (i)][item]
+            Js[i] = metric_params.moments[f"J{i}"][item]
 
         log_js = {}
         for i in range(-1, 18):
-            log_js[i] = metric_params.moments["log%d" % (i)][item]
+            log_js[i] = metric_params.moments[f"log{i}"][item]
 
         loglog_js = {}
         for i in range(-1, 18):
-            loglog_js[i] = metric_params.moments["loglog%d" % (i)][item]
+            loglog_js[i] = metric_params.moments[f"loglog{i}"][item]
 
         logloglog_js = {}
         for i in range(-1, 18):
-            logloglog_js[i] = metric_params.moments["logloglog%d" % (i)][item]
+            logloglog_js[i] = metric_params.moments[f"logloglog{i}"][item]
 
         loglogloglog_js = {}
         for i in range(-1, 18):
-            loglogloglog_js[i] = metric_params.moments["loglogloglog%d" % (i)][item]
+            loglogloglog_js[i] = metric_params.moments[f"loglogloglog{i}"][item]
 
         mapping = generate_mapping(metric_params.pn_order)
 
@@ -249,7 +249,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
     moments["I7"] = I7
     for i in range(-7, 18):
         funct = lambda x, f0: x ** ((-i + 7) / 3.0)
-        moments["J%d" % (i)] = calculate_moment(
+        moments[f"J{i}"] = calculate_moment(
             new_f,
             new_amp,
             metric_params.f_low,
@@ -266,7 +266,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
         funct = lambda x, f0: (
             (numpy.log((x * f0) ** (1.0 / 3.0))) * x ** ((-i + 7) / 3.0)
         )
-        moments["log%d" % (i)] = calculate_moment(
+        moments[f"log{i}"] = calculate_moment(
             new_f,
             new_amp,
             metric_params.f_low,
@@ -283,7 +283,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
         funct = lambda x, f0: (
             (numpy.log((x * f0) ** (1.0 / 3.0))) ** 2 * x ** ((-i + 7) / 3.0)
         )
-        moments["loglog%d" % (i)] = calculate_moment(
+        moments[f"loglog{i}"] = calculate_moment(
             new_f,
             new_amp,
             metric_params.f_low,
@@ -300,7 +300,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
         funct = lambda x, f0: (
             (numpy.log((x * f0) ** (1.0 / 3.0))) ** 3 * x ** ((-i + 7) / 3.0)
         )
-        moments["logloglog%d" % (i)] = calculate_moment(
+        moments[f"logloglog{i}"] = calculate_moment(
             new_f,
             new_amp,
             metric_params.f_low,
@@ -317,7 +317,7 @@ def get_moments(metric_params, vary_fmax=False, vary_density=None):
         funct = lambda x, f0: (
             (numpy.log((x * f0) ** (1.0 / 3.0))) ** 4 * x ** ((-i + 7) / 3.0)
         )
-        moments["loglogloglog%d" % (i)] = calculate_moment(
+        moments[f"loglogloglog{i}"] = calculate_moment(
             new_f,
             new_amp,
             metric_params.f_low,
@@ -530,86 +530,80 @@ def calculate_metric_comp(
     unmax_metric[-1, -1] = Js[1] - Js[4] * Js[4]
 
     # Normal terms
-    if "Lambda%d" % i in mapping and "Lambda%d" % j in mapping:
+    if f"Lambda{i}" in mapping and f"Lambda{j}" in mapping:
         gammaij = Js[17 - i - j] - Js[12 - i] * Js[12 - j]
         gamma0i = Js[9 - i] - Js[4] * Js[12 - i]
         gamma0j = Js[9 - j] - Js[4] * Js[12 - j]
-        gs[mapping["Lambda%d" % i], mapping["Lambda%d" % j]] = 0.5 * (
+        gs[mapping[f"Lambda{i}"], mapping[f"Lambda{j}"]] = 0.5 * (
             gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4])
         )
-        unmax_metric[mapping["Lambda%d" % i], -1] = gamma0i
-        unmax_metric[-1, mapping["Lambda%d" % j]] = gamma0j
-        unmax_metric[mapping["Lambda%d" % i], mapping["Lambda%d" % j]] = gammaij
+        unmax_metric[mapping[f"Lambda{i}"], -1] = gamma0i
+        unmax_metric[-1, mapping[f"Lambda{j}"]] = gamma0j
+        unmax_metric[mapping[f"Lambda{i}"], mapping[f"Lambda{j}"]] = gammaij
     # Normal,log cross terms
-    if "Lambda%d" % i in mapping and "LogLambda%d" % j in mapping:
+    if f"Lambda{i}" in mapping and f"LogLambda{j}" in mapping:
         gammaij = log_js[17 - i - j] - log_js[12 - j] * Js[12 - i]
         gamma0i = Js[9 - i] - Js[4] * Js[12 - i]
         gamma0j = log_js[9 - j] - log_js[12 - j] * Js[4]
-        gs[mapping["Lambda%d" % i], mapping["LogLambda%d" % j]] = gs[
-            mapping["LogLambda%d" % j], mapping["Lambda%d" % i]
+        gs[mapping[f"Lambda{i}"], mapping[f"LogLambda{j}"]] = gs[
+            mapping[f"LogLambda{j}"], mapping[f"Lambda{i}"]
         ] = 0.5 * (gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4]))
-        unmax_metric[mapping["Lambda%d" % i], -1] = gamma0i
-        unmax_metric[-1, mapping["Lambda%d" % i]] = gamma0i
-        unmax_metric[-1, mapping["LogLambda%d" % j]] = gamma0j
-        unmax_metric[mapping["LogLambda%d" % j], -1] = gamma0j
-        unmax_metric[mapping["Lambda%d" % i], mapping["LogLambda%d" % j]] = gammaij
-        unmax_metric[mapping["LogLambda%d" % j], mapping["Lambda%d" % i]] = gammaij
+        unmax_metric[mapping[f"Lambda{i}"], -1] = gamma0i
+        unmax_metric[-1, mapping[f"Lambda{i}"]] = gamma0i
+        unmax_metric[-1, mapping[f"LogLambda{j}"]] = gamma0j
+        unmax_metric[mapping[f"LogLambda{j}"], -1] = gamma0j
+        unmax_metric[mapping[f"Lambda{i}"], mapping[f"LogLambda{j}"]] = gammaij
+        unmax_metric[mapping[f"LogLambda{j}"], mapping[f"Lambda{i}"]] = gammaij
     # Log,log terms
-    if "LogLambda%d" % i in mapping and "LogLambda%d" % j in mapping:
+    if f"LogLambda{i}" in mapping and f"LogLambda{j}" in mapping:
         gammaij = loglog_js[17 - i - j] - log_js[12 - j] * log_js[12 - i]
         gamma0i = log_js[9 - i] - Js[4] * log_js[12 - i]
         gamma0j = log_js[9 - j] - log_js[12 - j] * Js[4]
-        gs[mapping["LogLambda%d" % i], mapping["LogLambda%d" % j]] = 0.5 * (
+        gs[mapping[f"LogLambda{i}"], mapping[f"LogLambda{j}"]] = 0.5 * (
             gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4])
         )
-        unmax_metric[mapping["LogLambda%d" % i], -1] = gamma0i
-        unmax_metric[-1, mapping["LogLambda%d" % j]] = gamma0j
-        unmax_metric[mapping["LogLambda%d" % i], mapping["LogLambda%d" % j]] = gammaij
+        unmax_metric[mapping[f"LogLambda{i}"], -1] = gamma0i
+        unmax_metric[-1, mapping[f"LogLambda{j}"]] = gamma0j
+        unmax_metric[mapping[f"LogLambda{i}"], mapping[f"LogLambda{j}"]] = gammaij
 
     # Normal,loglog cross terms
-    if "Lambda%d" % i in mapping and "LogLogLambda%d" % j in mapping:
+    if f"Lambda{i}" in mapping and f"LogLogLambda{j}" in mapping:
         gammaij = loglog_js[17 - i - j] - loglog_js[12 - j] * Js[12 - i]
         gamma0i = Js[9 - i] - Js[4] * Js[12 - i]
         gamma0j = loglog_js[9 - j] - loglog_js[12 - j] * Js[4]
-        gs[mapping["Lambda%d" % i], mapping["LogLogLambda%d" % j]] = gs[
-            mapping["LogLogLambda%d" % j], mapping["Lambda%d" % i]
+        gs[mapping[f"Lambda{i}"], mapping[f"LogLogLambda{j}"]] = gs[
+            mapping[f"LogLogLambda{j}"], mapping[f"Lambda{i}"]
         ] = 0.5 * (gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4]))
-        unmax_metric[mapping["Lambda%d" % i], -1] = gamma0i
-        unmax_metric[-1, mapping["Lambda%d" % i]] = gamma0i
-        unmax_metric[-1, mapping["LogLogLambda%d" % j]] = gamma0j
-        unmax_metric[mapping["LogLogLambda%d" % j], -1] = gamma0j
-        unmax_metric[mapping["Lambda%d" % i], mapping["LogLogLambda%d" % j]] = gammaij
-        unmax_metric[mapping["LogLogLambda%d" % j], mapping["Lambda%d" % i]] = gammaij
+        unmax_metric[mapping[f"Lambda{i}"], -1] = gamma0i
+        unmax_metric[-1, mapping[f"Lambda{i}"]] = gamma0i
+        unmax_metric[-1, mapping[f"LogLogLambda{j}"]] = gamma0j
+        unmax_metric[mapping[f"LogLogLambda{j}"], -1] = gamma0j
+        unmax_metric[mapping[f"Lambda{i}"], mapping[f"LogLogLambda{j}"]] = gammaij
+        unmax_metric[mapping[f"LogLogLambda{j}"], mapping[f"Lambda{i}"]] = gammaij
 
     # log,loglog cross terms
-    if "LogLambda%d" % i in mapping and "LogLogLambda%d" % j in mapping:
+    if f"LogLambda{i}" in mapping and f"LogLogLambda{j}" in mapping:
         gammaij = logloglog_js[17 - i - j] - loglog_js[12 - j] * log_js[12 - i]
         gamma0i = log_js[9 - i] - Js[4] * log_js[12 - i]
         gamma0j = loglog_js[9 - j] - loglog_js[12 - j] * Js[4]
-        gs[mapping["LogLambda%d" % i], mapping["LogLogLambda%d" % j]] = gs[
-            mapping["LogLogLambda%d" % j], mapping["LogLambda%d" % i]
+        gs[mapping[f"LogLambda{i}"], mapping[f"LogLogLambda{j}"]] = gs[
+            mapping[f"LogLogLambda{j}"], mapping[f"LogLambda{i}"]
         ] = 0.5 * (gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4]))
-        unmax_metric[mapping["LogLambda%d" % i], -1] = gamma0i
-        unmax_metric[-1, mapping["LogLambda%d" % i]] = gamma0i
-        unmax_metric[-1, mapping["LogLogLambda%d" % j]] = gamma0j
-        unmax_metric[mapping["LogLogLambda%d" % j], -1] = gamma0j
-        unmax_metric[mapping["LogLambda%d" % i], mapping["LogLogLambda%d" % j]] = (
-            gammaij
-        )
-        unmax_metric[mapping["LogLogLambda%d" % j], mapping["LogLambda%d" % i]] = (
-            gammaij
-        )
+        unmax_metric[mapping[f"LogLambda{i}"], -1] = gamma0i
+        unmax_metric[-1, mapping[f"LogLambda{i}"]] = gamma0i
+        unmax_metric[-1, mapping[f"LogLogLambda{j}"]] = gamma0j
+        unmax_metric[mapping[f"LogLogLambda{j}"], -1] = gamma0j
+        unmax_metric[mapping[f"LogLambda{i}"], mapping[f"LogLogLambda{j}"]] = gammaij
+        unmax_metric[mapping[f"LogLogLambda{j}"], mapping[f"LogLambda{i}"]] = gammaij
 
     # Loglog,loglog terms
-    if "LogLogLambda%d" % i in mapping and "LogLogLambda%d" % j in mapping:
+    if f"LogLogLambda{i}" in mapping and f"LogLogLambda{j}" in mapping:
         gammaij = loglogloglog_js[17 - i - j] - loglog_js[12 - j] * loglog_js[12 - i]
         gamma0i = loglog_js[9 - i] - Js[4] * loglog_js[12 - i]
         gamma0j = loglog_js[9 - j] - loglog_js[12 - j] * Js[4]
-        gs[mapping["LogLogLambda%d" % i], mapping["LogLogLambda%d" % j]] = 0.5 * (
+        gs[mapping[f"LogLogLambda{i}"], mapping[f"LogLogLambda{j}"]] = 0.5 * (
             gammaij - gamma0i * gamma0j / (Js[1] - Js[4] * Js[4])
         )
-        unmax_metric[mapping["LogLogLambda%d" % i], -1] = gamma0i
-        unmax_metric[-1, mapping["LogLogLambda%d" % j]] = gamma0j
-        unmax_metric[mapping["LogLogLambda%d" % i], mapping["LogLogLambda%d" % j]] = (
-            gammaij
-        )
+        unmax_metric[mapping[f"LogLogLambda{i}"], -1] = gamma0i
+        unmax_metric[-1, mapping[f"LogLogLambda{j}"]] = gamma0j
+        unmax_metric[mapping[f"LogLogLambda{i}"], mapping[f"LogLogLambda{j}"]] = gammaij

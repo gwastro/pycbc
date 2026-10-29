@@ -54,10 +54,7 @@ logger.info(
     (",").join([name.split("/")[-1] for name in args.single_detector_triggers]),
 )
 
-dir_path = "source_probability_results/CHUNK_%s-%s/" % (
-    GPS_START_TIME,
-    GPS_START_TIME_NS,
-)
+dir_path = f"source_probability_results/CHUNK_{GPS_START_TIME}-{GPS_START_TIME_NS}/"
 pycbc.makedir(dir_path)
 logger.info("Saving results in %s", dir_path)
 
@@ -107,10 +104,6 @@ for event in tqdm.trange(len(ifar)):
     if "Mass Gap" in probs:
         probs.pop("Mass Gap")
     ifo_names = "".join(sorted(ifos_event))
-    out_name = dir_path + "%s-%s-%i-1.json" % (
-        ifo_names,
-        args.search_tag,
-        int(end_time[event]),
-    )
+    out_name = dir_path + f"{ifo_names}-{args.search_tag}-{int(end_time[event])}-1.json"
     with open(out_name, "w") as outfile:
         json.dump(probs, outfile)

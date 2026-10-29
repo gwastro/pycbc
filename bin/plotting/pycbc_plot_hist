@@ -90,7 +90,7 @@ if args.special_time:
         histtype="stepfilled",
         stacked=True,
         color=[pycbc.results.ifo_color(ifo), "k"],
-        label=["Other times", "Triggers near %i" % (int(args.special_time))],
+        label=["Other times", f"Triggers near {int(args.special_time)}"],
     )
     pyplot.legend(loc="upper right")
 
@@ -144,7 +144,7 @@ elif args.background_bins:
     # write text for overflow bin
     text_left = rects[0].get_x()
     text_height = 1.10 * max([rect.get_height() for rect in rects])
-    pyplot.text(text_left, text_height, "%s+" % x_max)
+    pyplot.text(text_left, text_height, f"{x_max}+")
 
 # plot all triggers in a single label
 else:
@@ -179,7 +179,7 @@ pyplot.grid()
 pycbc.results.save_fig_with_metadata(
     fig,
     args.output_file,
-    title="%s: %s histogram of single detector triggers" % (ifo, args.x_var),
+    title=f"{ifo}: {args.x_var} histogram of single detector triggers",
     caption="Histogram of single detector triggers",
     cmd=" ".join(sys.argv),
 )

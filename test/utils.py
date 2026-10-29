@@ -159,7 +159,7 @@ def parse_args_cpu_only(feature_str):
     # and return.
 
     print(72 * "=")
-    print("Running {0} unit tests for {1}:".format("CPU", feature_str))
+    print(f"Running CPU unit tests for {feature_str}:")
 
 
 def simple_exit(results):

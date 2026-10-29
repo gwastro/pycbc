@@ -16,7 +16,7 @@ for phase_order in [2, 3, 4, 5, 6, 7]:
     amp = waveform.utils.amplitude_from_polarizations(hp, hc)
     f = waveform.utils.frequency_from_polarizations(hp, hc)
 
-    pp.plot(f.sample_times, f, label="PN Order = %s" % phase_order)
+    pp.plot(f.sample_times, f, label=f"PN Order = {phase_order}")
 
 pp.ylabel("Frequency (Hz)")
 pp.xlabel("Time (s)")

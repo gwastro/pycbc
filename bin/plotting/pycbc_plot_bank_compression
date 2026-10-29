@@ -89,8 +89,8 @@ if args.comparison_parameter is None:
     args.comparison_parameter_labels = {default_param: "Template Duration (s)"}
 elif args.comparison_parameter not in tmpltbank.conversion_options:
     raise parser.error(
-        "--comparison-parameter %s not in conversion options %s, see help"
-        % (args.comparison_parameter, ", ".join(tmpltbank.conversion_options))
+        f"--comparison-parameter {args.comparison_parameter} not in conversion options "
+        f"{', '.join(tmpltbank.conversion_options)}, see help"
     )
 
 pycbc.init_logging(args.verbose)
@@ -345,7 +345,7 @@ logger.info("Saving figure")
 save_fig_with_metadata(
     fig,
     args.output,
-    title="Bank compression vs %s" % comp_label,
+    title=f"Bank compression vs {comp_label}",
     caption=caption,
     cmd=" ".join(sys.argv),
 )

@@ -85,7 +85,7 @@ workflow = wf.Workflow(args)
 channel_opts = {}
 for ifo in workflow.ifos:
     channel_opts[ifo] = workflow.cp.get_opt_tags(
-        "workflow", "%s-channel-name" % ifo.lower(), ""
+        "workflow", f"{ifo.lower()}-channel-name", ""
     )
 
 # create a FileList that will contain all output files

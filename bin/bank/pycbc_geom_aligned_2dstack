@@ -64,8 +64,7 @@ parser.add_argument(
     "placing a bank of non-spinning templates, any "
     "spin-related terms in the metric will always "
     "be zero. REQUIRED ARGUMENT: "
-    + "choices are: %s"
-    % (pycbc_valid_orders_help_descriptions),
+    f"choices are: {pycbc_valid_orders_help_descriptions}",
 )
 parser.add_argument(
     "--f0",
@@ -163,10 +162,10 @@ metric_params = pycbc.tmpltbank.MetricParameters(
 
 # Load the list of points from file
 h5file = HFile(opts.input_file, "r")
-v1s = h5file["split_banks/split_bank_%05d/v1s" % opts.split_bank_num][:]
-v2s = h5file["split_banks/split_bank_%05d/v2s" % opts.split_bank_num][:]
-if "v3s" in h5file["split_banks/split_bank_%05d" % opts.split_bank_num].keys():
-    v3s = h5file["split_banks/split_bank_%05d/v3s" % opts.split_bank_num][:]
+v1s = h5file[f"split_banks/split_bank_{opts.split_bank_num:05d}/v1s"][:]
+v2s = h5file[f"split_banks/split_bank_{opts.split_bank_num:05d}/v2s"][:]
+if "v3s" in h5file[f"split_banks/split_bank_{opts.split_bank_num:05d}"].keys():
+    v3s = h5file[f"split_banks/split_bank_{opts.split_bank_num:05d}/v3s"][:]
     temp_bank = numpy.array([v1s, v2s, v3s]).T
 else:
     temp_bank = numpy.array([v1s, v2s]).T

@@ -208,11 +208,11 @@ elif opts.z_var in ranking.sngls_ranking_function_dict:
     hb = ax.hexbin(x, y, C=z, reduce_C_function=np.max, **hexbin_style)
     fig.colorbar(hb, **cb_style)
 else:
-    raise RuntimeError("z_var = %s is not recognized!" % (opts.z_var))
+    raise RuntimeError(f"z_var = {opts.z_var} is not recognized!")
 
 ax.set_xlabel(opts.x_var)
 ax.set_ylabel(opts.y_var)
-ax.set_title(opts.z_var.title() + " of %s triggers " % (opts.detector))
+ax.set_title(opts.z_var.title() + f" of {opts.detector} triggers ")
 pycbc.results.save_fig_with_metadata(
     fig,
     opts.output_file,

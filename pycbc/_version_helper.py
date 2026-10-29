@@ -70,7 +70,7 @@ def call(
 
     # throw exception if process failed
     if p.returncode != 0 and on_error == "raise":
-        raise GitInvocationError('Failed to run "%s"' % " ".join(command))
+        raise GitInvocationError(f'Failed to run "{" ".join(command)}"')
 
     out = out.decode("utf-8").strip()
 

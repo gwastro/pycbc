@@ -53,13 +53,8 @@ from pycbc.waveform import (
 
 
 def update_progress(progress):
-    print(
-        "\r\r[{0}] {1:.2%}".format(
-            "#" * (int(progress * 100) / 2) + " " * (50 - int(progress * 100) / 2),
-            progress,
-        ),
-        end=" ",
-    )
+    bar = "#" * (int(progress * 100) / 2) + " " * (50 - int(progress * 100) / 2)
+    print(f"\r\r[{bar}] {progress:.2%}", end=" ")
     if progress == 100:
         print("Done")
     sys.stdout.flush()
@@ -415,7 +410,7 @@ with ctx:
 
 # Find the maximum overlap in the bank and output to a file
 for stilde, s_norm, matches, sim_template in signals:
-    match_str = "%5.5f \n" % (max(matches))
+    match_str = f"{max(matches):5.5f} \n"
     match_str2 = (
         "  " + options.bank_file + " " + str(matches.index(max(matches))) + "\n"
     )

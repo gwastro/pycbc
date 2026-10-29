@@ -99,7 +99,7 @@ def generate_mapping(order):
     #    mapping['Lambda10'] = 8
     #    mapping['Lambda12'] = 9
     #    return mapping
-    raise ValueError("Order %s is not understood." % (order))
+    raise ValueError(f"Order {order} is not understood.")
 
 
 # Override doc so the PN orders are added automatically to online docs

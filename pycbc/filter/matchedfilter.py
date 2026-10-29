@@ -647,7 +647,7 @@ def compute_max_snr_over_sky_loc_stat(
     denom = 1 - hphccorr * hphccorr
     if denom < 0:
         if hphccorr > 1:
-            err_msg = "Overlap between hp and hc is given as %f. " % (hphccorr)
+            err_msg = f"Overlap between hp and hc is given as {hphccorr:f}. "
             err_msg += "How can an overlap be bigger than 1?"
             raise ValueError(err_msg)
         err_msg = "There really is no way to raise this error!?! "
@@ -866,7 +866,7 @@ def compute_max_snr_over_sky_loc_stat_no_phase(
     denom = 1 - hphccorr * hphccorr
     if denom < 0:
         if hphccorr > 1:
-            err_msg = "Overlap between hp and hc is given as %f. " % (hphccorr)
+            err_msg = f"Overlap between hp and hc is given as {hphccorr:f}. "
             err_msg += "How can an overlap be bigger than 1?"
             raise ValueError(err_msg)
         err_msg = "There really is no way to raise this error!?! "

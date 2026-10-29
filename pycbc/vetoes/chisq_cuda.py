@@ -36,11 +36,7 @@ from pycuda.tools import context_dependent_memoize, dtype_to_ctype
 @context_dependent_memoize
 def get_accum_diff_sq_kernel(dtype_x, dtype_z):
     return ElementwiseKernel(
-        "%(tp_a)s *x,  %(tp_c)s *z"
-        % {
-            "tp_a": dtype_to_ctype(dtype_x),
-            "tp_c": dtype_to_ctype(dtype_z),
-        },
+        f"{dtype_to_ctype(dtype_x)} *x,  {dtype_to_ctype(dtype_z)} *z",
         "x[i] += norm(z[i]) ",
         "chisq_accum",
     )
@@ -230,7 +226,7 @@ def get_pchisq_fn(np, fuse_correlate=False):
     if np not in _pchisq_cache:
         nt = 256
         mod = SourceModule(chisqkernel.render(NT=nt, NP=np, fuse=fuse_correlate))
-        fn = mod.get_function("power_chisq_at_points_%s" % (np))
+        fn = mod.get_function(f"power_chisq_at_points_{np}")
         if fuse_correlate:
             fn.prepare("PPPI" + "f" * np + "PPPI")
         else:
@@ -246,7 +242,7 @@ def get_pchisq_fn_pow2(np, fuse_correlate=False):
     if np not in _pchisq_cache_pow2:
         nt = 256
         mod = SourceModule(chisqkernel_pow2.render(NT=nt, NP=np, fuse=fuse_correlate))
-        fn = mod.get_function("power_chisq_at_points_%s_pow2" % (np))
+        fn = mod.get_function(f"power_chisq_at_points_{np}_pow2")
         if fuse_correlate:
             fn.prepare("PPPI" + "I" * np + "PPPI")
         else:

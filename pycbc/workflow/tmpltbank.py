@@ -348,7 +348,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
             try:
                 pre_gen_bank = cp.get_opt_tags(
                     "workflow-tmpltbank",
-                    "tmpltbank-pregenerated-bank-%s" % ifo.lower(),
+                    f"tmpltbank-pregenerated-bank-{ifo.lower()}",
                     tags,
                 )
                 file_attrs["ifos"] = [ifo]
@@ -360,11 +360,11 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                 err_msg += "[workflow-tmpltbank] or any tagged sections. "
                 if tags:
                     tagged_secs = " ".join(
-                        "[workflow-tmpltbank-%s]" % (ifo,) for ifo in workflow.ifos
+                        f"[workflow-tmpltbank-{ifo}]" for ifo in workflow.ifos
                     )
-                    err_msg += "Tagged sections are %s. " % (tagged_secs,)
+                    err_msg += f"Tagged sections are {tagged_secs}. "
                 err_msg += "I looked for 'tmpltbank-pregenerated-bank' option "
-                err_msg += "and 'tmpltbank-pregenerated-bank-%s'." % (ifo,)
+                err_msg += f"and 'tmpltbank-pregenerated-bank-{ifo}'."
                 raise configparser.Error(err_msg)
 
     return tmplt_banks

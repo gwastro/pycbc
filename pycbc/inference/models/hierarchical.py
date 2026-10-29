@@ -736,7 +736,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 prefix += "__"
         try:
             for lbl, model in self.submodels.items():
-                sampattrs["{}lognl".format(prefix + "%s__" % lbl)] = model.lognl
+                sampattrs[f"{prefix + f'{lbl}__'}lognl"] = model.lognl
         except AttributeError:
             pass
 
@@ -1011,7 +1011,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             for section in cp.sections():
                 # the primary model needs prior of marginlized parameters
                 if "prior-" in section and lbl in kwargs["primary_lbl"]:
-                    prior_section = "%s" % section
+                    prior_section = f"{section}"
                     subcp[prior_section] = cp[prior_section]
 
             # similar to the standard hierarchical model,
@@ -1022,7 +1022,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     subcp.set("static_params", param.subname, "REPLACE")
 
             # save the vitual config file to disk for later check
-            with open("%s.ini" % lbl, "w", encoding="utf-8") as file:
+            with open(f"{lbl}.ini", "w", encoding="utf-8") as file:
                 subcp.write(file)
 
             # initialize
@@ -1051,9 +1051,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         marginalized_params = primary_model.marginalized_params_name.copy()
 
         for p in primary_model.static_params.keys():
-            p_full = "%s__%s" % (kwargs["primary_lbl"][0], p)
+            p_full = f"{kwargs['primary_lbl'][0]}__{p}"
             if p_full not in cp["static_params"]:
-                cp["static_params"][p_full] = "%s" % primary_model.static_params[p]
+                cp["static_params"][p_full] = f"{primary_model.static_params[p]}"
 
         for section in cp.sections():
             if "prior-" in section:

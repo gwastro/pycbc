@@ -245,10 +245,10 @@ def get_random_mass(num_points, mass_range_params, eos="2H"):
         boundary_mass = mass_range_params.ns_bh_boundary_mass
         if max_ns_g_mass < boundary_mass:
             warn_msg = "WARNING: "
-            warn_msg += "Option of ns-bh-boundary-mass is  %s " % (boundary_mass)
+            warn_msg += f"Option of ns-bh-boundary-mass is  {boundary_mass} "
             warn_msg += "which is higher than the maximum NS gravitational "
             warn_msg += "mass admitted by the EOS that was prescribed "
-            warn_msg += "(%s). " % (max_ns_g_mass)
+            warn_msg += f"({max_ns_g_mass}). "
             warn_msg += "The code will proceed using the latter value "
             warn_msg += "as the boundary mass."
             logger.warning(warn_msg)
@@ -744,7 +744,7 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
     """
     cutoff_fns = pnutils.named_frequency_cutoffs
     if name not in cutoff_fns.keys():
-        err_msg = "%s not recognized as a valid cutoff frequency choice." % name
+        err_msg = f"{name} not recognized as a valid cutoff frequency choice."
         err_msg += "Recognized choices: " + " ".join(cutoff_fns.keys())
         raise ValueError(err_msg)
 
@@ -776,17 +776,17 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
     cutoffs = numpy.array([lower_f_cutoff, upper_f_cutoff])
     if lower_f_cutoff < freqs.min():
         warn_msg = "WARNING: "
-        warn_msg += "Lowest frequency cutoff is %s Hz " % (lower_f_cutoff,)
+        warn_msg += f"Lowest frequency cutoff is {lower_f_cutoff} Hz "
         warn_msg += "which is lower than the lowest frequency calculated "
-        warn_msg += "for the metric: %s Hz. " % (freqs.min())
+        warn_msg += f"for the metric: {freqs.min()} Hz. "
         warn_msg += "Distances for these waveforms will be calculated at "
         warn_msg += "the lowest available metric frequency."
         logger.warning(warn_msg)
     if upper_f_cutoff > freqs.max():
         warn_msg = "WARNING: "
-        warn_msg += "Highest frequency cutoff is %s Hz " % (upper_f_cutoff,)
+        warn_msg += f"Highest frequency cutoff is {upper_f_cutoff} Hz "
         warn_msg += "which is larger than the highest frequency calculated "
-        warn_msg += "for the metric: %s Hz. " % (freqs.max())
+        warn_msg += f"for the metric: {freqs.max()} Hz. "
         warn_msg += "Distances for these waveforms will be calculated at "
         warn_msg += "the largest available metric frequency."
         logger.warning(warn_msg)
@@ -823,7 +823,7 @@ def return_nearest_cutoff(name, mass_dict, freqs):
         return numpy.zeros(len(mass_dict["m1"]), dtype=float) + freqs[0]
     cutoff_fns = pnutils.named_frequency_cutoffs
     if name not in cutoff_fns.keys():
-        err_msg = "%s not recognized as a valid cutoff frequency choice." % name
+        err_msg = f"{name} not recognized as a valid cutoff frequency choice."
         err_msg += "Recognized choices: " + " ".join(cutoff_fns.keys())
         raise ValueError(err_msg)
     f_cutoff = cutoff_fns[name](mass_dict)

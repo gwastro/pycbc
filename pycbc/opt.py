@@ -115,7 +115,7 @@ def verify_optimization_options(opt, parser):
         requested_cpus = opt.cpu_affinity
 
     if requested_cpus is not None:
-        command = "taskset -pc %s %d" % (requested_cpus, os.getpid())
+        command = f"taskset -pc {requested_cpus} {int(os.getpid())}"
         retcode = os.system(command)
 
         if retcode != 0:

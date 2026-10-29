@@ -59,7 +59,7 @@ class Bins:
         """
         if isinstance(x, slice):
             if x.step is not None:
-                raise NotImplementedError("step not supported: %s" % repr(x))
+                raise NotImplementedError(f"step not supported: {x!r}")
             return slice(
                 self[x.start] if x.start is not None else 0,
                 self[x.stop] + 1 if x.stop is not None else len(self),
