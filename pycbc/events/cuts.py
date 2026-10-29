@@ -493,8 +493,8 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
                                                   ifos,
-                                                  (parameter, cut_function),
-                                                  cut_thresh,
+                                                  (parameter, cut_function if 'cut_function' in locals() else cut_function1),
+                                                  cut_thresh if isinstance(cut_thresh, float) else cut_thresh[0],
                                                   tids_out)
                 if 'cut_function2' in locals():
                     tids_out = np.union1d(tids_out, apply_template_fit_cut(statistic,
@@ -502,6 +502,10 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
                                                     (parameter, cut_function2),
                                                     cut_thresh[1],
                                                     tids_out_uncut))
+        if 'cut_function' in locals():
+            del cut_function
+        elif 'cut_function2' in locals():
+            del cut_function2
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
