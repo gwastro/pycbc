@@ -170,23 +170,20 @@ def fit_fir_filter(cand_idx, fine_np, fine_norm_sq, max_taps, binary_search=True
     band, w2, ref_weight, w2_sum, typ_w2, w2_scale, r_base = ref_fit
     target_w2 = fine_np * ref_weight
 
-    # Estimate bulk integer sample shift from PSD-weighted mean group delay
-    shift = 0
-    overlap_bins = np.flatnonzero(band & (fine_np != 0))
-    if len(overlap_bins) >= 2 and w2[overlap_bins].sum() > 0:
-        gd = (
-            -np.gradient(np.unwrap(np.angle(target_w2[overlap_bins])), g_delta_f)
-            / (2.0 * np.pi)
-            * sr
-        )
-        shift = int(np.round(np.sum(gd * w2[overlap_bins]) / np.sum(w2[overlap_bins])))
-
     c_full = ifft(target_w2, n=g_fft_len) * g_fft_len
+    energy = c_full.real**2 + c_full.imag**2
+    csum = np.concatenate(
+        ([0.0], np.cumsum(np.concatenate((energy, energy[:max_taps]))))
+    )
     b_base = c_full if is_complex else c_full.real
     ref_norm_sq = g_coarse_norm_sq[cand_idx]
 
     def _solve(n_taps):
-        pos = (np.arange(n_taps) - n_taps // 2 + shift) % g_fft_len
+        win_start = int(np.argmax(csum[n_taps : n_taps + g_fft_len] - csum[:g_fft_len]))
+        shift = (
+            (win_start + n_taps // 2 + g_fft_len // 2) % g_fft_len
+        ) - g_fft_len // 2
+        pos = (win_start + np.arange(n_taps)) % g_fft_len
         b, c_pos = b_base[pos], c_full[pos]
         fitted = band.copy()
         w2_cur = None
@@ -198,7 +195,7 @@ def fit_fir_filter(cand_idx, fine_np, fine_norm_sq, max_taps, binary_search=True
                 if attempt == 0
                 else spectrum_to_correlation(w2_cur)[:n_taps].copy()
             )
-            r_col[0] += g_cfg["reg"]
+            r_col[0] *= 1.0 + g_cfg["reg"]
             taps = np.asarray(
                 solve_toeplitz(r_col, b),
                 dtype=np.complex64 if is_complex else np.float32,
@@ -331,22 +328,36 @@ def _seed_worker(indices):
     max_taps = min(g_cfg["max_taps"], g_fft_len - 1)
     unassigned = list(np.argsort(-g_coarse_kmax, kind="stable"))
     seeds, seed_of = [], {}
-    while unassigned:
-        seed = unassigned[0]
-        seed_np = g_coarse_np[seed]
-        remaining = [
-            c
-            for c in unassigned[1:]
-            if estimate_fir_taps(seed_np, g_coarse_np[c]) > max_taps
-            or fit_fir_filter(
-                seed,
-                g_coarse_np[c],
-                g_coarse_norm_sq[c],
+
+    def _can_fit(parent, child):
+        return (
+            estimate_fir_taps(g_coarse_np[parent], g_coarse_np[child]) <= 3 * max_taps
+            and fit_fir_filter(
+                parent,
+                g_coarse_np[child],
+                g_coarse_norm_sq[child],
                 max_taps,
                 binary_search=False,
             )
-            is None
-        ]
+            is not None
+        )
+
+    while unassigned:
+        edge = unassigned[0]
+        reach = [c for c in unassigned[1:] if _can_fit(edge, c)]
+        seed = next(
+            (
+                c
+                for c in sorted(
+                    reach,
+                    key=lambda x: abs(g_coarse_tau0[x] - g_coarse_tau0[edge]),
+                    reverse=True,
+                )
+                if _can_fit(c, edge)
+            ),
+            edge,
+        )
+        remaining = [c for c in unassigned if c != seed and not _can_fit(seed, c)]
         for c in set(unassigned) - set(remaining):
             seed_of[int(indices[c])] = int(indices[seed])
         unassigned = remaining
@@ -447,7 +458,7 @@ def main():
             "sample_rate": sr,
             "max_taps": max_taps,
             "min_match": min_match,
-            "reg": 1e-2 if is_lowest else 1e-6,
+            "reg": 1e-4 if is_lowest else 1e-5,
             "complex_taps": is_lowest,
             "scale_by_sr": not is_lowest,
         }
