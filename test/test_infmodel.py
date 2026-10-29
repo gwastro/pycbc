@@ -34,7 +34,14 @@ from utils import simple_exit
 
 from pycbc.catalog import Merger
 from pycbc.conversions import mass1_from_mtotal_q, mass2_from_mtotal_q
-from pycbc.distributions import JointDistribution, SinAngle, Uniform, UniformAngle
+from pycbc.detector import Detector
+from pycbc.distributions import (
+    CosAngle,
+    JointDistribution,
+    SinAngle,
+    Uniform,
+    UniformAngle,
+)
 from pycbc.filter import highpass, match, resample_to_delta_t, sigma
 from pycbc.frame import read_frame
 from pycbc.inference import models
@@ -835,6 +842,136 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
         self.assertTrue(numpy.isfinite(model.loglr))
 
 
+class TestMarginalizedTimeRefFrame(unittest.TestCase):
+    """
+    Tests that the marginalized_time model gives the same loglr whether
+    tc is sampled in the geocentric frame or in a detector's frame.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tc = 1126259462.420
+        cls.flow = 20.0
+        cls.inj = {
+            "ra": 2.2,
+            "dec": -1.25,
+            "polarization": 1.75,
+            "distance": 400.0,
+            "mass1": 37.0,
+            "mass2": 32.0,
+            "inclination": 0.3,
+            "coa_phase": 0.0,
+        }
+        cls.ifos = ["H1", "L1"]
+        seglen = 8
+        sample_rate = 2048
+        tsamples = seglen * sample_rate
+        flen = tsamples // 2 + 1
+        delta_f = 1.0 / seglen
+        psd = aLIGOZeroDetHighPower(flen, delta_f, cls.flow)
+        hp, hc = get_fd_waveform(
+            approximant="IMRPhenomD", delta_f=delta_f, f_lower=cls.flow, **cls.inj
+        )
+        hp.resize(flen)
+        hc.resize(flen)
+        start = int(cls.tc) - seglen / 2
+        cls.data = {}
+        cls.psds = {}
+        for i, ifo in enumerate(cls.ifos):
+            ts = noise_from_psd(tsamples, 1.0 / sample_rate, psd, seed=1000 + i)
+            ts.start_time = start
+            det = Detector(ifo)
+            fp, fc = det.antenna_pattern(
+                cls.inj["ra"], cls.inj["dec"], cls.inj["polarization"], cls.tc
+            )
+            tdet = det.arrival_time(cls.tc, cls.inj["ra"], cls.inj["dec"])
+            h = (fp * hp + fc * hc).cyclic_time_shift(tdet - start)
+            d = ts.to_frequencyseries()
+            d += h.astype(d.dtype)
+            d._epoch = start
+            cls.data[ifo] = d
+            cls.psds[ifo] = psd
+
+    def _loglr(self, frame, marg_sky=False):
+        """
+        Return the mean marginalized loglr at the injected parameters,
+        with tc sampled in the given frame.
+        """
+        numpy.random.seed(0)
+        static = dict(self.inj, approximant="IMRPhenomD", f_lower=self.flow)
+        static.pop("mass1")
+        if frame == "geocentric":
+            ref_tc = self.tc
+        else:
+            static["tc_ref_frame"] = frame
+            ref_tc = Detector(frame).arrival_time(
+                self.tc, self.inj["ra"], self.inj["dec"]
+            )
+        variable = ["tc", "mass1"]
+        dists = [
+            Uniform(tc=(ref_tc - 0.05, ref_tc + 0.05)),
+            Uniform(mass1=(20.0, 50.0)),
+        ]
+        kwargs = {
+            "marginalize_vector_params": "tc",
+            "marginalize_vector_samples": 2000,
+        }
+        if marg_sky:
+            static.pop("ra")
+            static.pop("dec")
+            variable += ["ra", "dec"]
+            dists += [UniformAngle(ra=None), CosAngle(dec=None)]
+            kwargs = {
+                "marginalize_vector_params": "tc, ra, dec",
+                "marginalize_vector_samples": 5000,
+                "marginalize_sky_initial_samples": int(2e5),
+            }
+        model = models.MarginalizedTime(
+            variable,
+            copy.deepcopy(self.data),
+            dict.fromkeys(self.ifos, self.flow),
+            psds=self.psds,
+            static_params=static,
+            sample_rate=2048,
+            prior=JointDistribution(variable, *dists),
+            **kwargs,
+        )
+        loglrs = []
+        for _ in range(3):
+            model.update(mass1=self.inj["mass1"])
+            loglrs.append(model.loglr)
+        return numpy.mean(loglrs)
+
+    def test_time_marg_ref_frame(self):
+        """
+        Test that time marginalization works regardless of the frame times
+        are sampled in.
+        """
+        geo = self._loglr("geocentric")
+        # Make sure the signal is actually recovered
+        self.assertGreater(geo, 100)
+        for ifo in self.ifos:
+            det = self._loglr(ifo)
+            msg = (
+                f"loglr with tc in {ifo} frame ({det}) differs from geocentric ({geo})"
+            )
+            self.assertAlmostEqual(geo, det, delta=1.0, msg=msg)
+
+    def test_sky_time_marg_ref_frame(self):
+        """
+        Test that sky/time marginalization works regardless of the frame times
+        are sampled in.
+        """
+        geo = self._loglr("geocentric", marg_sky=True)
+        self.assertGreater(geo, 100)
+        for ifo in self.ifos:
+            det = self._loglr(ifo, marg_sky=True)
+            msg = (
+                f"loglr with tc in {ifo} frame ({det}) differs from geocentric ({geo})"
+            )
+            self.assertAlmostEqual(geo, det, delta=5.0, msg=msg)
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestModels))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestWaveformErrors))
@@ -842,6 +979,7 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMarginalizedPolMod
 suite.addTest(
     unittest.TestLoader().loadTestsFromTestCase(TestBruteTotalMassMarginalize)
 )
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMarginalizedTimeRefFrame))
 
 if __name__ == "__main__":
     from astropy.utils import iers
