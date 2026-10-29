@@ -58,17 +58,21 @@ class MatchedFilterRatioControl:
     cluster_window : float, optional
         Length of time-clustering window in seconds (default: 0.0).
     followup_snr_threshold : float, optional
-        Secondary detector SNR threshold for follow-up triggers. Multi-detector
-        follow-up is enabled only when ``followup_snr_threshold``,
-        ``followup_bin_width``, and ``followup_num_bins`` are all provided.
+        Secondary detector SNR threshold for follow-up triggers (default: None,
+        meaning 0.0 when follow-up is enabled via ``followup_bin_width`` and
+        ``followup_num_bins``).
     followup_bin_width : float, optional
-        Width in seconds of each bin in the follow-up window. Required together
-        with ``followup_snr_threshold`` and ``followup_num_bins`` to enable
-        follow-up.
+        Width in seconds of each bin in the follow-up window (default: None).
+        Both ``followup_bin_width`` and ``followup_num_bins`` must be provided
+        to enable secondary follow-up.
     followup_num_bins : int, optional
-        Number of bins in the follow-up window. Required together with
-        ``followup_snr_threshold`` and ``followup_bin_width`` to enable
-        follow-up.
+        Number of bins in the follow-up window (default: None). Both
+        ``followup_bin_width`` and ``followup_num_bins`` must be provided to
+        enable secondary follow-up.
+    followup_keep_loudest : int, optional
+        Maximum number of loudest bin peaks (by ``|snr|``) to retain per
+        primary trigger and secondary detector before evaluating signal
+        consistency (default: None, retaining all bin peaks).
     false_dismissal : float, optional
         Tolerated probability of missing a signal at ``snr_threshold`` in the
         hierarchical leaf filter (default: 1e-3).
@@ -87,6 +91,7 @@ class MatchedFilterRatioControl:
         followup_snr_threshold=None,
         followup_bin_width=None,
         followup_num_bins=None,
+        followup_keep_loudest=None,
         false_dismissal=1e-3,
         cores=1,
     ):
@@ -105,10 +110,16 @@ class MatchedFilterRatioControl:
         self.followup_threshold = followup_snr_threshold
         self.followup_bin_width = followup_bin_width
         self.followup_num_bins = followup_num_bins
+        self.followup_keep_loudest = followup_keep_loudest
         self.do_followup = (
-            followup_snr_threshold is not None
-            and followup_bin_width is not None
-            and followup_num_bins is not None
+            followup_bin_width is not None and followup_num_bins is not None
+        )
+        self.followup_window = (
+            max(1, round(self.followup_bin_width * self.sample_rate))
+            * int(self.followup_num_bins)
+            / self.sample_rate
+            if self.do_followup
+            else 0.0
         )
         self.cores = max(1, int(cores or 1))
         self.veto_callback = None
@@ -168,23 +179,29 @@ class MatchedFilterRatioControl:
             "--followup-snr-threshold",
             type=float,
             help="Optional secondary detector SNR threshold for follow-up "
-            "triggers. Multi-detector follow-up runs only when "
-            "--followup-snr-threshold, --followup-bin-width, and "
-            "--followup-num-bins are all provided.",
+            "triggers (defaults to 0.0 when follow-up is enabled via "
+            "--followup-bin-width and --followup-num-bins).",
         )
         group.add_argument(
             "--followup-bin-width",
             type=float,
             help="Optional width in seconds of each bin in the follow-up "
-            "window (required with --followup-snr-threshold and "
-            "--followup-num-bins to enable follow-up).",
+            "window (required together with --followup-num-bins to enable "
+            "secondary follow-up; default: disabled).",
         )
         group.add_argument(
             "--followup-num-bins",
             type=int,
             help="Optional number of bins in the follow-up window (required "
-            "with --followup-snr-threshold and --followup-bin-width to enable "
-            "follow-up).",
+            "together with --followup-bin-width to enable secondary "
+            "follow-up; default: disabled).",
+        )
+        group.add_argument(
+            "--followup-keep-loudest",
+            type=int,
+            help="Optional maximum number of loudest follow-up bin peaks to "
+            "retain per primary trigger and secondary detector (default: keep "
+            "all bin peaks).",
         )
         group.add_argument(
             "--cores",
@@ -207,6 +224,7 @@ class MatchedFilterRatioControl:
             followup_snr_threshold=args.followup_snr_threshold,
             followup_bin_width=args.followup_bin_width,
             followup_num_bins=args.followup_num_bins,
+            followup_keep_loudest=args.followup_keep_loudest,
             false_dismissal=args.ratio_filter_false_dismissal,
             cores=args.cores,
         )
@@ -444,6 +462,7 @@ class MatchedFilterRatioControl:
                 _template,
                 self.fine_correlation,
                 stilde=stilde,
+                is_followup=is_followup,
             )
             if not np.all(kept):
                 ids_local = ids_local[kept]
@@ -478,11 +497,14 @@ class MatchedFilterRatioControl:
 
     def _follow_up_secondaries(self, ctx, primaries):
         """Refilter surviving primary triggers from each detector in all other
-        active detectors at ``self.followup_threshold``.
+        active detectors across the configured follow-up window.
         """
         bs = max(1, round(self.followup_bin_width * self.sample_rate))
         wlen = self.followup_num_bins * bs
         half = (self.followup_num_bins // 2) * bs + bs // 2
+        fup_thresh = (
+            0.0 if self.followup_threshold is None else float(self.followup_threshold)
+        )
 
         # Follow up surviving primary triggers from each detector in all other detectors
         for ifo_a in ctx.channels:
@@ -509,8 +531,18 @@ class MatchedFilterRatioControl:
                         ifo_b,
                         windows=slice(start, stop),
                         binsize=bs,
-                        threshold=self.followup_threshold,
+                        threshold=fup_thresh,
                         template_index=int(local_id),
                     )
                     if res.snr.size:
+                        if (
+                            self.followup_keep_loudest is not None
+                            and res.snr.size > self.followup_keep_loudest
+                        ):
+                            keep_idx = np.sort(
+                                np.argpartition(
+                                    np.abs(res.snr), -self.followup_keep_loudest
+                                )[-self.followup_keep_loudest :]
+                            )
+                            res = type(res)(*(arr[keep_idx] for arr in res))
                         self._record_triggers(ctx, ifo_b, res, is_followup=True)
