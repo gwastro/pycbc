@@ -1,4 +1,4 @@
-name: run small splittable search using pegasus + condor
+name: run small FIR multi-detector search using pegasus + condor
 
 on: [push, pull_request]
 
@@ -45,22 +45,21 @@ jobs:
         python -m pip install --upgrade pip setuptools
         pip install GitPython # This shouldn't really be needed!
         pip install -r requirements.txt
+        pip install $(grep '^matchedfilter' companion.txt)
         pip install .
     - name: retrieving frame data
-      run: bash -e examples/search/get.sh
+      run: bash -e examples/search_fir/get.sh
     - name: generating template bank
-      run: bash -e examples/search_splittable/bank.sh
+      run: bash -e examples/search_fir/bank.sh
     - name: generating statistic files
-      run: bash -e examples/search/stats.sh
+      run: bash -e examples/search_fir/stats.sh
     - name: running workflow
       run: |
-        cp examples/search/*.ini ./
-        cp examples/search_splittable/*.ini ./
-        bash -e examples/search/gen.sh
-        cp *.gwf output/
+        cp examples/search_fir/*.ini ./
+        bash -e examples/search_fir/gen.sh
         cd output
         ./start
-        python ../examples/search/check_job.py
+        python ../examples/search_fir/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
       if: always()
