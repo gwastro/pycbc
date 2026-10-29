@@ -178,12 +178,13 @@ class TestMatchedFilterRatio(unittest.TestCase):
                 stilde.cumulative_index = 4096
                 segments[ifo] = [stilde]
 
-            # 1. Primary + follow-up search with power, auto, and sine-Gaussian chisq
+            # 1. Primary + follow-up search with no follow-up SNR threshold,
+            #    followup_keep_loudest=5, and a primary-only ':remove' step
             veto_chain = SignalConsistencyChain(
                 SingleDetPowerChisq(num_bins=16),
                 SingleDetAutoChisq(stride=2, num_points=10),
                 SingleDetSGChisq(bank, "16", None, ["mtotal>1:20-15,20-30"]),
-                steps=["power", "auto", "sg"],
+                steps=["power", "newsnr:5.5:lower:remove", "auto", "sg"],
                 window=int(sample_rate),
             )
             control = MatchedFilterRatioControl(
@@ -192,9 +193,9 @@ class TestMatchedFilterRatio(unittest.TestCase):
                 snr_threshold=6.0,
                 high_frequency_cutoff=sample_rate * 0.45,
                 cluster_window=1.0,
-                followup_snr_threshold=3.0,
                 followup_bin_width=0.1,
-                followup_num_bins=10,
+                followup_num_bins=20,
+                followup_keep_loudest=5,
             )
             triggers, has_followup = control.run(veto_callback=veto_chain.values)
 
@@ -207,16 +208,30 @@ class TestMatchedFilterRatio(unittest.TestCase):
             )
             self.assertLess(h1["chisq"][peak] / h1["chisq_dof"][peak], 2.5)
 
-            # Verify secondary follow-up trigger in L1 uses L1's own correlation
+            # Verify secondary follow-up in L1 kept <= 5 sub-threshold bin peaks
+            # despite newsnr:5.5:lower:remove, and evaluated L1's own correlation
             self.assertGreater(has_followup["L1"], 0)
             l1 = triggers["L1"]
-            self.assertTrue(np.any(l1["is_followup"]))
+            self.assertEqual(
+                int(np.sum(l1["is_followup"])), 5 * int(np.sum(~h1["is_followup"]))
+            )
+            self.assertTrue(np.any(np.abs(l1["snr"][l1["is_followup"]]) < 5.5))
             l1_peak = int(np.argmax(np.abs(l1["snr"])))
             self.assertGreater(abs(l1["snr"][l1_peak]), 3.0)
             self.assertLess(l1["chisq"][l1_peak] / l1["chisq_dof"][l1_peak], 2.5)
             self.assertNotAlmostEqual(
                 float(l1["chisq"][l1_peak]), float(h1["chisq"][peak]), places=3
             )
+
+            # Verify ':remove' drops primary triggers failing the cut
+            strict_chain = SignalConsistencyChain(
+                SingleDetPowerChisq(num_bins=16),
+                steps=["power", "newsnr:50.0:lower:remove"],
+                window=int(sample_rate),
+            )
+            dropped, dropped_followup = control.run(veto_callback=strict_chain.values)
+            self.assertEqual(len(dropped["H1"].get("snr", ())), 0)
+            self.assertEqual(dropped_followup["L1"], 0)
 
             # 2. Omitting follow-up options runs only the primary search
             primary_only = MatchedFilterRatioControl(

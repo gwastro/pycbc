@@ -430,12 +430,12 @@ class EventManager:
             self.chisq_threshold(opt.chisq_threshold, opt.chisq_bins, opt.chisq_delta)
             logger.info("%d remaining triggers", len(self.events))
 
-        if opt.newsnr_threshold and opt.chisq_bins:
+        if getattr(opt, "newsnr_threshold", None) and opt.chisq_bins:
             logger.info("Removing triggers with NewSNR below threshold")
             self.newsnr_threshold(opt.newsnr_threshold)
             logger.info("%d remaining triggers", len(self.events))
 
-        if opt.keep_loudest_interval:
+        if getattr(opt, "keep_loudest_interval", None):
             logger.info(
                 "Removing triggers not within the top %s "
                 "loudest of a %s second interval by %s",
