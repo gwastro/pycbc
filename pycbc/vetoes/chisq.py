@@ -389,7 +389,7 @@ class SingleDetPowerChisq:
         safe_dict.update(row.__dict__)
         safe_dict.update(math.__dict__)
         safe_dict.update(pycbc.pnutils.__dict__)
-        return eval(arg, {"__builtins__": None}, safe_dict)
+        return eval(str(arg), {"__builtins__": None}, safe_dict)  # noqa: S307
 
     @staticmethod
     def insert_option_group(parser):

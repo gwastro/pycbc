@@ -204,7 +204,7 @@ class SingleDetAutoChisq:
             self.num_points = num_points
             self.stride = stride
             self.one_sided = onesided
-            if onesided is not None:
+            if not self.one_sided:
                 self.dof = self.dof * 2
             self.two_phase = twophase
             if self.two_phase:
