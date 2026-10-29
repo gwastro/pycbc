@@ -324,7 +324,11 @@ def _seed_worker(indices):
     Returns the seeds, and a map from each template to the seed that
     absorbed it (a seed absorbs itself).
     """
+    logger.info("Seeding: generating %d candidate waveforms...", len(indices))
     _cache_parent_templates(indices)
+    logger.info(
+        "Seeding: clustering %d cached waveforms into parent seeds...", len(indices)
+    )
     max_taps = min(g_cfg["max_taps"], g_fft_len - 1)
     unassigned = list(np.argsort(-g_coarse_kmax, kind="stable"))
     seeds, seed_of = [], {}
@@ -358,10 +362,18 @@ def _seed_worker(indices):
             edge,
         )
         remaining = [c for c in unassigned if c != seed and not _can_fit(seed, c)]
+        n_absorbed = len(unassigned) - len(remaining)
         for c in set(unassigned) - set(remaining):
             seed_of[int(indices[c])] = int(indices[seed])
         unassigned = remaining
         seeds.append(int(indices[seed]))
+        logger.info(
+            "Seeding: selected seed %d (template %d, absorbed %d, %d remaining)",
+            len(seeds),
+            int(indices[seed]),
+            n_absorbed,
+            len(unassigned),
+        )
     return seeds, seed_of
 
 
@@ -470,7 +482,14 @@ def main():
         )
 
         # 1. Select initial parent templates via greedy dispersion clustering
-        logger.info("Bottom-up seeding: selecting %s templates...", label)
+        logger.info(
+            "Starting %s (%d input templates, max_taps=%d, min_match=%g, df=%.4g Hz)",
+            label,
+            len(fine_bank),
+            max_taps,
+            min_match,
+            sr / fft_len,
+        )
         init_level_state(fine_bank, psd, min_f_low, cfg)
         order = np.lexsort((g_fine_tau0, np.asarray(fine_bank.table["f_lower"], float)))
         chunks = [c for c in np.array_split(order, max(1, n_procs)) if len(c)]
@@ -487,12 +506,25 @@ def main():
                 seeds.extend(chunk_seeds)
                 g_seed_of.update(chunk_seed_of)
         seed_local = np.array(sorted(seeds), dtype=int)
+        logger.info(
+            "%s seeding complete: %d initial seeds selected; "
+            "caching parent waveforms...",
+            label,
+            len(seed_local),
+        )
         _cache_parent_templates(seed_local)
 
         # 2. Fit each child template to its lowest-tap parent and prune redundant groups
         n_children = len(fine_bank)
+        logger.info(
+            "%s fitting: matching %d templates against %d candidate parents...",
+            label,
+            n_children,
+            len(seed_local),
+        )
         results = [None] * n_children
         chunksize = max(1, min(n_children // (2 * n_procs), 8))
+        fit_log_step = max(1, n_children // 10)
         with mp.Pool(processes=n_procs) as pool:
             it = pool.imap_unordered(
                 process_template, range(n_children), chunksize=chunksize
@@ -501,7 +533,7 @@ def main():
                 it = tqdm(
                     it, total=n_children, desc=f"Fitting {label}", file=sys.stderr
                 )
-            for fine_idx, rec in it:
+            for done_count, (fine_idx, rec) in enumerate(it, 1):
                 if rec is None:
                     msg = (
                         f"{label} template {fine_idx} (input bank index "
@@ -509,44 +541,85 @@ def main():
                     )
                     raise RuntimeError(msg)
                 results[fine_idx] = rec
+                if args.verbose and (
+                    done_count % fit_log_step == 0 or done_count == n_children
+                ):
+                    logger.info(
+                        "%s fitting progress: %d/%d (%.0f%%)",
+                        label,
+                        done_count,
+                        n_children,
+                        100.0 * done_count / n_children,
+                    )
 
             # Prune redundant parent groups
             groups = defaultdict(list)
             for i, rec in enumerate(results):
                 groups[rec["c_idx"]].append(i)
             n_used = len(groups)
+            group_max_taps = [
+                max(results[i]["n_taps"] for i in ch) for ch in groups.values() if ch
+            ]
+            logger.info(
+                "%s fitting complete: %d/%d parents active "
+                "(group max taps: min=%d, median=%d, max=%d); "
+                "pruning redundant parents...",
+                label,
+                n_used,
+                len(seed_local),
+                min(group_max_taps),
+                round(float(np.median(group_max_taps))),
+                max(group_max_taps),
+            )
             unused = set(range(len(g_coarse_np))) - set(groups)
             removed = set()
-            for parent in sorted(groups, key=lambda p: (len(groups[p]), p)):
+            sorted_parents = sorted(groups, key=lambda p: (len(groups[p]), p))
+            prune_log_step = max(1, n_used // 10)
+            for prune_count, parent in enumerate(sorted_parents, 1):
                 children = list(groups[parent])
-                if not children:
-                    continue
-                excluded = frozenset(unused | removed | {parent})
-                seed_child = int(seed_local[parent])
-                reassignments, absorbed = {}, True
-                if seed_child in children:
-                    _, seed_rec = process_template((seed_child, excluded))
-                    if seed_rec is None:
-                        continue
-                    reassignments[seed_child] = seed_rec
-                    children.remove(seed_child)
-                for c_idx, rec in pool.imap_unordered(
-                    process_template, [(c, excluded) for c in children], chunksize=1
+                if children:
+                    excluded = frozenset(unused | removed | {parent})
+                    seed_child = int(seed_local[parent])
+                    reassignments, absorbed = {}, True
+                    if seed_child in children:
+                        _, seed_rec = process_template((seed_child, excluded))
+                        if seed_rec is None:
+                            absorbed = False
+                        else:
+                            reassignments[seed_child] = seed_rec
+                            children.remove(seed_child)
+                    if absorbed:
+                        for c_idx, rec in pool.imap_unordered(
+                            process_template,
+                            [(c, excluded) for c in children],
+                            chunksize=1,
+                        ):
+                            if rec is None:
+                                absorbed = False
+                                break
+                            reassignments[c_idx] = rec
+                    if absorbed:
+                        for c_idx, rec in reassignments.items():
+                            results[c_idx] = rec
+                            groups[rec["c_idx"]].append(c_idx)
+                        groups[parent] = []
+                        removed.add(parent)
+                        logger.info(
+                            "Pruned %s parent %d (%d children)",
+                            label,
+                            parent,
+                            len(reassignments),
+                        )
+                if args.verbose and (
+                    prune_count % prune_log_step == 0 or prune_count == n_used
                 ):
-                    if rec is None:
-                        absorbed = False
-                        break
-                    reassignments[c_idx] = rec
-                if not absorbed:
-                    continue
-                for c_idx, rec in reassignments.items():
-                    results[c_idx] = rec
-                    groups[rec["c_idx"]].append(c_idx)
-                groups[parent] = []
-                removed.add(parent)
-                logger.info(
-                    "Pruned %s parent %d (%d children)", label, parent, len(children)
-                )
+                    logger.info(
+                        "%s pruning progress: checked %d/%d parents (%d pruned)",
+                        label,
+                        prune_count,
+                        n_used,
+                        len(removed),
+                    )
             logger.info(
                 "Seed pruning: %d -> %d %s templates in use",
                 n_used,
@@ -559,6 +632,12 @@ def main():
         orig_index = orig_index[seed_local[used_pos]]
 
         # Write level datasets to HDF5
+        logger.info(
+            "Writing %s (%d parent groups, %d child filters) to HDF5...",
+            label,
+            len(used_pos),
+            n_children,
+        )
         lvl_group = fir_group.require_group(label)
         lvl_group.attrs["max_taps"] = max_taps
         meta_kw = {
@@ -681,6 +760,11 @@ def main():
     rng = np.random.default_rng(0)
     sample_idxs = rng.choice(
         len(orig_table), size=min(32, len(orig_table)), replace=False
+    )
+    logger.info(
+        "Running full-resolution spot check on %d random templates (df=%s)...",
+        len(sample_idxs),
+        fine_bank.delta_f,
     )
     spot_matches = []
     for idx in sample_idxs:
