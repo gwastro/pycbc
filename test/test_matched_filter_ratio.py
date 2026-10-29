@@ -197,7 +197,17 @@ class TestMatchedFilterRatio(unittest.TestCase):
                 followup_num_bins=20,
                 followup_keep_loudest=5,
             )
-            triggers, has_followup = control.run(veto_callback=veto_chain.values)
+            self.assertAlmostEqual(control.detector_time, 120.0)
+            with self.assertLogs(
+                "pycbc.filter.matched_filter_ratio", level="INFO"
+            ) as cm:
+                triggers, has_followup = control.run(veto_callback=veto_chain.values)
+            self.assertTrue(
+                any(
+                    "round throughput:" in msg and "program throughput:" in msg
+                    for msg in cm.output
+                )
+            )
 
             # Verify primary trigger in H1
             h1 = triggers["H1"]

@@ -145,10 +145,24 @@ def main():
         )
 
         ifo_opts = {}
+        psd_variations = {}
         for ifo in instruments:
             opt_ifo = pycbc.types.optparse.copy_opts_for_single_ifo(args, ifo)
             opt_ifo.ifo = ifo
             ifo_opts[ifo] = opt_ifo
+            if opt_ifo.psdvar_segment is not None:
+                logger.info("Calculating PSD variation for %s...", ifo)
+                psd_variations[ifo] = pycbc.psd.calc_filt_psd_variation(
+                    gwstrain[ifo],
+                    opt_ifo.psdvar_segment,
+                    opt_ifo.psdvar_short_segment,
+                    opt_ifo.psdvar_long_segment,
+                    opt_ifo.psdvar_psd_duration,
+                    opt_ifo.psdvar_psd_stride,
+                    opt_ifo.psd_estimation,
+                    opt_ifo.psdvar_low_freq,
+                    opt_ifo.psdvar_high_freq,
+                )
 
         out_types = {
             "time_index": int,
@@ -192,7 +206,9 @@ def main():
             int(args.cluster_window * sample_rate) if args.cluster_window else 0
         )
 
-        triggers, has_followup = engine.run(veto_callback=veto_chain.values)
+        triggers, has_followup = engine.run(
+            veto_callback=veto_chain.values, start_time=tstart
+        )
 
         for ifo in instruments:
             mgr = event_mgr[ifo]
@@ -204,20 +220,9 @@ def main():
                 continue
 
             opt_ifo = ifo_opts[ifo]
-            if opt_ifo.psdvar_segment is not None:
-                psd_var = pycbc.psd.calc_filt_psd_variation(
-                    gwstrain[ifo],
-                    opt_ifo.psdvar_segment,
-                    opt_ifo.psdvar_short_segment,
-                    opt_ifo.psdvar_long_segment,
-                    opt_ifo.psdvar_psd_duration,
-                    opt_ifo.psdvar_psd_stride,
-                    opt_ifo.psd_estimation,
-                    opt_ifo.psdvar_low_freq,
-                    opt_ifo.psdvar_high_freq,
-                )
+            if ifo in psd_variations:
                 data["psd_var_val"] = pycbc.psd.find_trigger_value(
-                    psd_var,
+                    psd_variations[ifo],
                     data["time_index"],
                     opt_ifo.gps_start_time,
                     sample_rate,
@@ -267,6 +272,13 @@ def main():
         mgr.consolidate_events(ifo_opts[ifo], gwstrain=gwstrain[ifo])
         mgr.finalize_events()
         mgr.write_events(args.output, mode="w" if i == 0 else "a")
+        logger.info(
+            "Saved %s throughput: %.0f templates/core (run_time=%.2f s, setup=%.2f s)",
+            ifo,
+            (len(bank) / cores_per_ifo) * (mgr.analysis_time / run_time),
+            run_time,
+            tsetup,
+        )
 
     logger.info("Finished.")
 
