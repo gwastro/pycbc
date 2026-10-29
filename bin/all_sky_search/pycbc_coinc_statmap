@@ -109,6 +109,13 @@ parser.add_argument(
     "both inclusive and exclusive background "
     "(gps seconds)",
 )
+parser.add_argument(
+    "--max-timeslide-offset",
+    type=float,
+    default=None,
+    help="Maximum time offset in seconds for timeslides. If not specified, "
+    "inferred from the coinc file metadata when present.",
+)
 significance.insert_significance_option_group(parser)
 parser.add_argument("--output-file")
 args = parser.parse_args()
@@ -149,6 +156,34 @@ ifo_combo = "".join(ifos)
 significance_dict = significance.digest_significance_options([ifo_combo], args)
 
 logger.info("We have %s triggers", len(all_trigs.stat))
+
+ts_interval = float(all_trigs.attrs.get("timeslide_interval", 0.0))
+max_slide = None
+if args.max_timeslide_offset is not None and ts_interval > 0:
+    max_slide = int(args.max_timeslide_offset // ts_interval)
+elif "max_timeslide_id" in all_trigs.attrs:
+    max_slide = int(all_trigs.attrs["max_timeslide_id"])
+elif ts_interval > 0:
+    nt_vals = [
+        float(all_trigs.attrs[f"{ifo}_non_threshold_time"])
+        for ifo in ifos
+        if f"{ifo}_non_threshold_time" in all_trigs.attrs
+        and float(all_trigs.attrs[f"{ifo}_non_threshold_time"]) > 0
+    ]
+    if nt_vals:
+        max_slide = int((min(nt_vals) / 2.0) // ts_interval)
+
+if max_slide is not None:
+    logger.info("Bounding timeslides in statmap to |timeslide_id| <= %d", max_slide)
+    if len(all_trigs.stat) > 0:
+        out_of_bounds = numpy.flatnonzero(numpy.abs(all_trigs.timeslide_id) > max_slide)
+        if len(out_of_bounds) > 0:
+            logger.info(
+                "Removing %d triggers with |timeslide_id| > %d",
+                len(out_of_bounds),
+                max_slide,
+            )
+            all_trigs = all_trigs.remove(out_of_bounds)
 
 # Remove triggers from manually flagged times:
 if args.additional_event_times:
@@ -225,6 +260,9 @@ else:
     f.attrs["ifos"] = " ".join(sorted(args.ifos))
 
 f.attrs["timeslide_interval"] = all_trigs.attrs["timeslide_interval"]
+if max_slide is not None:
+    f.attrs["max_timeslide_id"] = int(max_slide)
+    f.attrs["num_slides"] = int(max_slide * 2)
 
 # Copy over the segment for coincs and singles
 for key in all_trigs.seg.keys():
@@ -272,13 +310,29 @@ for ifo in ifos:
 maxtime_exc = maxtime - veto_time
 mintime_exc = mintime - veto_time
 
-background_time = int(maxtime / all_trigs.attrs["timeslide_interval"]) * mintime
 coinc_time = float(all_trigs.attrs["coinc_time"])
-
-background_time_exc = (
-    int(maxtime_exc / all_trigs.attrs["timeslide_interval"]) * mintime_exc
-)
 coinc_time_exc = coinc_time - veto_time
+
+if max_slide is not None:
+    offsets = numpy.arange(1, int(max_slide) + 1) * ts_interval
+    c_start = all_trigs.seg[ifo_combo]["start"][:]
+    c_end = all_trigs.seg[ifo_combo]["end"][:]
+    background_time = 2.0 * float(
+        coinc.timeslide_durations(c_start, c_start, c_end, c_end, offsets).sum()
+    )
+    exc_segs = (
+        veto.start_end_to_segments(c_start, c_end)
+        - veto.start_end_to_segments(remove_start_time, remove_end_time)
+    ).coalesce()
+    exc_start, exc_end = veto.segments_to_start_end(exc_segs)
+    background_time_exc = 2.0 * float(
+        coinc.timeslide_durations(exc_start, exc_start, exc_end, exc_end, offsets).sum()
+    )
+else:
+    background_time = int(maxtime / all_trigs.attrs["timeslide_interval"]) * mintime
+    background_time_exc = (
+        int(maxtime_exc / all_trigs.attrs["timeslide_interval"]) * mintime_exc
+    )
 
 logger.info("Calculating FAN from background statistic values")
 # Ranking statistic of foreground and background
@@ -473,8 +527,16 @@ while numpy.any(ifar_foreground >= background_time):
     for ifo in ifos:
         mintime = min(mintime, all_trigs.attrs[f"{ifo}_foreground_time"])
 
-    background_time = int(maxtime / all_trigs.attrs["timeslide_interval"]) * mintime
     coinc_time = float(all_trigs.attrs["coinc_time"])
+    if max_slide is not None:
+        offsets = numpy.arange(1, int(max_slide) + 1) * ts_interval
+        c_start = all_trigs.seg[ifo_combo]["start"][:]
+        c_end = all_trigs.seg[ifo_combo]["end"][:]
+        background_time = 2.0 * float(
+            coinc.timeslide_durations(c_start, c_start, c_end, c_end, offsets).sum()
+        )
+    else:
+        background_time = int(maxtime / all_trigs.attrs["timeslide_interval"]) * mintime
 
     logger.info("Calculating FAN from background statistic values")
     back_stat = all_trigs.stat[back_locs]

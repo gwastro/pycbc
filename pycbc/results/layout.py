@@ -18,6 +18,7 @@
 import os.path
 from itertools import zip_longest
 
+
 def two_column_layout(path, cols, unique="", filename=None, **kwargs):
     """
     Make a well layout in a two column format
@@ -38,11 +39,14 @@ def two_column_layout(path, cols, unique="", filename=None, **kwargs):
         '<path>/well<unique>.html'. The given name should still start
         with 'well' for pycbc_make_html_page to render it inline.
     """
+    target_dir = os.path.join(os.getcwd(), path)
     if filename is None:
-        filename = os.path.join(os.getcwd(), path, f"well{unique}.html")
+        filename = os.path.join(target_dir, f"well{unique}.html")
+    kwargs.setdefault("dir", target_dir)
     from pycbc.results.render import render_workflow_html_template
 
     render_workflow_html_template(filename, "two_column.html", cols, **kwargs)
+
 
 def single_layout(path, files, **kwargs):
     """

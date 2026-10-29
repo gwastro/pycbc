@@ -66,6 +66,12 @@ parser.add_argument(
     required=True,
     help="Add the ifo to use as the fixed ifo for multi detector coincidence",
 )
+parser.add_argument(
+    "--ifos",
+    nargs="+",
+    default=None,
+    help="Optional list of detectors to read from the input trigger files",
+)
 # produces a list of lists to allow multiple invocations and multiple args
 parser.add_argument("--use-maxalpha", action="store_true")
 parser.add_argument(
@@ -79,6 +85,14 @@ parser.add_argument(
     type=float,
     help="Interval between timeslides in seconds. Timeslides are"
     " disabled if the option is omitted.",
+)
+parser.add_argument(
+    "--max-timeslide-offset",
+    type=float,
+    default=None,
+    help="Maximum time offset in seconds for timeslides. If not specified, "
+    "inferred from the search/non_threshold_time metadata in the trigger "
+    "files when present.",
 )
 parser.add_argument(
     "--loudest-keep-values",
@@ -185,22 +199,39 @@ atexit.register(exit_cleaning)
 # coincs: so, track which templates contain triggers in all ifos
 tids_with_trigs = None
 
-for i in range(len(args.trigger_files)):
+staged_files = []
+for trig_file in args.trigger_files:
     if args.stage_input:
         dest = os.path.join(args.stage_input_dir, str(uuid.uuid4()) + ".hdf")
-        logger.info("Moving %s to shared memory as %s", args.trigger_files[i], dest)
+        logger.info("Moving %s to shared memory as %s", trig_file, dest)
         cleanup_files.append(dest)
-        shutil.copyfile(args.trigger_files[i], dest)
+        shutil.copyfile(trig_file, dest)
     else:
-        dest = args.trigger_files[i]
+        dest = trig_file
+    staged_files.append(dest)
 
-    logger.info("Opening trigger file %s: %s", i, dest)
+input_entries = []
+for dest in staged_files:
+    with HFile(dest, "r") as hf:
+        present_ifos = [
+            k for k in hf.keys() if hasattr(hf[k], "keys") and "template_id" in hf[k]
+        ]
+    requested_ifos = args.ifos if args.ifos is not None else present_ifos
+    for ifo in requested_ifos:
+        if ifo in present_ifos:
+            input_entries.append((dest, ifo))
+    if not present_ifos:
+        input_entries.append((dest, None))
+
+for i, (dest, target_ifo) in enumerate(input_entries):
+    logger.info("Opening trigger file %s: %s (ifo=%s)", i, dest, target_ifo)
     reader = ReadByTemplate(
         dest,
         args.template_bank,
         args.segment_name,
         args.veto_files,
         args.gating_veto_windows,
+        ifo=target_ifo,
     )
     ifo = reader.ifo
     trigs.ifos.append(ifo)
@@ -241,6 +272,42 @@ if args.timeslide_interval is not None and args.timeslide_interval <= TWOEARTH:
 # slide = 0 means don't do timeslides
 if args.timeslide_interval is None:
     args.timeslide_interval = 0.0
+
+non_threshold_times = {}
+for ifo, sngl in zip(trigs.ifos, trigs.singles):
+    if "search" in sngl.file[ifo] and "non_threshold_time" in sngl.file[ifo]["search"]:
+        nt_arr = numpy.atleast_1d(sngl.file[ifo]["search/non_threshold_time"][()])
+        if len(nt_arr) > 0:
+            non_threshold_times[ifo] = float(numpy.min(nt_arr))
+
+max_offset = args.max_timeslide_offset
+if max_offset is None and non_threshold_times:
+    positive_nt = [v for v in non_threshold_times.values() if v > 0]
+    if positive_nt:
+        # Follow-up windows are centered on primary triggers (+/- non_threshold_time / 2);
+        # reserve worst-case coincidence window so outer slides have complete coverage.
+        max_offset = min(positive_nt) / 2.0 - (
+            TWOEARTH / 2.0 + float(args.coinc_threshold)
+        )
+
+max_slide = None
+if args.timeslide_interval and (
+    args.max_timeslide_offset is not None
+    or bool(positive_nt if non_threshold_times else False)
+):
+    max_slide = int(max_offset // args.timeslide_interval) if max_offset > 0 else 0
+    if max_slide < 1:
+        raise parser.error(
+            f"Effective max timeslide offset ({max_offset:.3f}s) is smaller than "
+            f"--timeslide-interval ({args.timeslide_interval}s); cannot form "
+            "background timeslides."
+        )
+    logger.info(
+        "Bounding timeslides to +/- %d slides (max offset %.3fs, interval %.3fs)",
+        max_slide,
+        max_offset,
+        args.timeslide_interval,
+    )
 
 if args.randomize_template_order:
     seed(0)
@@ -302,6 +369,17 @@ factors = numpy.array(factors)[threshorder]
 
 # Decimation factors are applied successively in descending order of threshold
 total_factors = numpy.cumprod(factors)
+if max_slide is not None and int(total_factors[-1]) > max_slide:
+    raise parser.error(
+        f"Maximum decimation factor ({int(total_factors[-1])}) exceeds "
+        f"bounded max_slide ({max_slide}); reduce --loudest-keep-values "
+        "decimation or increase the follow-up window."
+    )
+eff_factors = (
+    numpy.array([max_slide / (max_slide // int(f)) for f in total_factors], dtype=float)
+    if max_slide is not None
+    else total_factors.astype(float)
+)
 
 
 # Gather the coincs from a single template
@@ -444,6 +522,11 @@ def process_template(tnum):
                 args.coinc_threshold,
                 args.pivot_ifo,
                 args.fixed_ifo,
+                max_slide=(
+                    max_slide // int(total_factors[-1])
+                    if max_slide is not None
+                    else None
+                ),
             )
             slide *= total_factors[-1]
 
@@ -470,7 +553,7 @@ def process_template(tnum):
             cstat = cstat[ti]
             slide = slide[ti]
             dec = numpy.concatenate(
-                [numpy.ones(len(fi)), numpy.repeat(total_factors[-1], len(bl))]
+                [numpy.ones(len(fi)), numpy.repeat(eff_factors[-1], len(bl))]
             )
 
             try:
@@ -509,6 +592,11 @@ def process_template(tnum):
                     args.coinc_threshold,
                     args.pivot_ifo,
                     args.fixed_ifo,
+                    max_slide=(
+                        max_slide // int(total_factors[kidx - 1])
+                        if max_slide is not None
+                        else None
+                    ),
                 )
                 set_slide *= total_factors[kidx - 1]
 
@@ -554,7 +642,7 @@ def process_template(tnum):
                 cstat = numpy.concatenate([cstat, test_cstat[test_bi]])
                 slide = numpy.concatenate([slide, set_slide[test_bi]])
                 dec = numpy.concatenate(
-                    [dec, numpy.repeat(total_factors[kidx - 1], len(test_bi))]
+                    [dec, numpy.repeat(eff_factors[kidx - 1], len(test_bi))]
                 )
 
             # temporary storage for decimated trigger ids
@@ -614,17 +702,23 @@ f[f"segments/{key}/start"], f[f"segments/{key}/end"] = trigs.singles[0].valid
 
 f.attrs["timeslide_interval"] = args.timeslide_interval
 f.attrs["coinc_time"] = abs(coinc_segs)
-f.attrs["num_of_ifos"] = len(args.trigger_files)
+f.attrs["num_of_ifos"] = len(trigs.ifos)
 f.attrs["pivot"] = args.pivot_ifo
 f.attrs["fixed"] = args.fixed_ifo
 for i, sngl in zip(trigs.ifos, trigs.singles):
     f.attrs[f"{i}_foreground_time"] = abs(sngl.segs)
+    if i in non_threshold_times:
+        f.attrs[f"{i}_non_threshold_time"] = non_threshold_times[i]
 f.attrs["ifos"] = " ".join(sorted(trigs.ifos))
 
-# What does this code actually calculate?
+# Record total number of timeslides (and max_timeslide_id when bounded)
 if args.timeslide_interval:
-    maxtrigs = max([abs(sngl.segs) for sngl in trigs.singles])
-    nslides = int(maxtrigs / args.timeslide_interval)
+    if max_slide is not None:
+        nslides = int(max_slide * 2)
+        f.attrs["max_timeslide_id"] = int(max_slide)
+    else:
+        maxtrigs = max([abs(sngl.segs) for sngl in trigs.singles])
+        nslides = int(maxtrigs / args.timeslide_interval)
 else:
     nslides = 0
 f.attrs["num_slides"] = nslides

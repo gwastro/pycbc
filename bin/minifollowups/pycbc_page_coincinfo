@@ -201,7 +201,7 @@ rank_method = pystat.get_statistic_from_opts(args, list(files.keys()))
 
 for ifo in files:
     # ignore ifo if coinc didn't participate (only for multi-ifo workflow)
-    if statmapfile[f"{ifo}/time"][n] == -1.0:
+    if ifo not in idx or statmapfile[f"{ifo}/time"][n] == -1.0:
         continue
 
     row_labels.append(ifo)

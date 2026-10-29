@@ -114,6 +114,8 @@ for ifo in ifos:
     rtime = numpy.array([], dtype=numpy.float64)
     starts = numpy.array([], dtype=numpy.float64)
     ends = numpy.array([], dtype=numpy.float64)
+    non_thresh_dur = 0.0
+    has_non_thresh = False
 
     gating = {}
     for filename in args.trigger_files:
@@ -133,6 +135,12 @@ for ifo in ifos:
                 stf = numpy.append(stf, ifo_data["search/setup_time_fraction"][:])
             if "run_time" in ifo_data["search"]:
                 rtime = numpy.append(rtime, ifo_data["search/run_time"][:])
+            if "non_threshold_time" in ifo_data["search"]:
+                has_non_thresh = True
+                val = float(
+                    numpy.max(numpy.asarray(ifo_data["search/non_threshold_time"]))
+                )
+                non_thresh_dur = max(non_thresh_dur, val)
 
             if "gating" in ifo_data:
                 gating_keys = []
@@ -160,6 +168,8 @@ for ifo in ifos:
         f[f"{ifo}/search/setup_time_fraction"] = stf
     if len(rtime) > 0:
         f[f"{ifo}/search/run_time"] = rtime
+    if has_non_thresh:
+        f[f"{ifo}/search/non_threshold_time"] = numpy.array([float(non_thresh_dur)])
 
     for gk, gv in gating.items():
         f[ifo + "/gating/" + gk] = gv
