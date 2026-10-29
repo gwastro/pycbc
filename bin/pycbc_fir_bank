@@ -447,6 +447,7 @@ def main():
 
     n_procs = args.n_processes
     level_links = []
+    level_stats = []
 
     # Index in the input bank of each template the current level fits
     orig_index = np.arange(len(fine_bank))
@@ -683,6 +684,19 @@ def main():
                 **meta_kw,
             )
         level_links.append(lvl_map)
+        level_stats.append(
+            {
+                "label": label,
+                "n_parents": len(used_pos),
+                "n_children": n_children,
+                "max_taps": max_taps,
+                "group_sizes": np.array(
+                    [len(groups[int(p)]) for p in used_pos], dtype=int
+                ),
+                "taps": np.array([r["n_taps"] for r in results], dtype=int),
+                "matches": np.array([r["match"] for r in results], dtype=float),
+            }
+        )
 
     # Compress top-level reference waveforms into level_{num_levels}
     top_lvl_group = fir_group[f"level_{num_levels}"]
@@ -796,6 +810,42 @@ def main():
 
     out_file.close()
     atexit.unregister(remove_partial)
+    cascade = " -> ".join(
+        [f"{len(orig_table)} (fine)"]
+        + [
+            f"{st['n_parents']} ({st['label']}"
+            f"{', top' if idx == len(level_stats) - 1 else ''})"
+            for idx, st in enumerate(level_stats)
+        ]
+    )
+    file_mib = Path(args.output_file).stat().st_size / (1024 * 1024)
+    logger.info(
+        "Bank summary: %s (%.1fx top-level reduction, %.2f MiB)",
+        cascade,
+        len(orig_table) / max(1, level_stats[-1]["n_parents"]),
+        file_mib,
+    )
+    for st in level_stats:
+        gs, tp, mt = st["group_sizes"], st["taps"], st["matches"]
+        logger.info(
+            "  %s: %d parents -> %d children "
+            "(group size min=%d, med=%d, max=%d | "
+            "taps cap=%d, min=%d, med=%d, max=%d, total=%d | "
+            "fit match min=%.6f, med=%.6f)",
+            st["label"],
+            st["n_parents"],
+            st["n_children"],
+            int(gs.min()),
+            round(float(np.median(gs))),
+            int(gs.max()),
+            st["max_taps"],
+            int(tp.min()),
+            round(float(np.median(tp))),
+            int(tp.max()),
+            int(tp.sum()),
+            float(mt.min()),
+            float(np.median(mt)),
+        )
     logger.info("Done. Saved to %s", args.output_file)
 
 
