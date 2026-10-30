@@ -141,6 +141,21 @@ class TestChisq(unittest.TestCase):
             max_diff = max(abs(chisq_full[ifo] - chisq_quick[ifo]))
             self.assertTrue(max_diff < 1e-5)
 
+            indices = numpy.arange(27402, 27492)
+            self.hp.f_lower = 20.0
+            self.hp.params = argparse.Namespace()
+            est = SingleDetPowerChisq(num_bins=nbins)
+            chisq_cls, dof_cls = est.values(
+                self.corr[ifo],
+                self.snr_unnorm[ifo][27402:27492].data,
+                self.norm[ifo],
+                self.psd[ifo],
+                indices,
+                self.hp,
+            )
+            numpy.testing.assert_array_equal(dof_cls, dof)
+            numpy.testing.assert_allclose(chisq_cls / dof, chisq_full[ifo], rtol=1e-5)
+
     def test_power_chisq_return_bins_slice(self):
         ifo = self.ifos[0]
         nbins = 16
