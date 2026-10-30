@@ -146,17 +146,17 @@ def convert_inputstr(inputstr, choices):
     if 'cut_limit2' in locals():
         try:
             cut_value2 = float(cut_value2_str)
-            if cut_value2 < cut_value1:
-                return {(cut_param, ineq_functions[cut_limit1], ineq_functions[cut_limit2]): (cut_value1, cut_value2)}
-            else:
-                raise NotImplementedError("When two limits are provided, the threshold VALUE for the "
-                                          "upper* limit must be less than that of "
-                                          "the lower* limit; the provided values: "
-                                          + str(cut_value2) + " >= " + str(cut_value1))
         except ValueError as value_e:
             print("ERROR: The second cut value must be convertible into a float, "
                            "got '%s'.", cut_value2_str)
             raise value_e
+        if cut_value2 < cut_value1:
+            return {(cut_param, ineq_functions[cut_limit1], ineq_functions[cut_limit2]): (cut_value1, cut_value2)}
+        else:
+            raise NotImplementedError("When two limits are provided, the threshold VALUE for the "
+                                      "upper* limit must be less than that of "
+                                      "the lower* limit; the provided values: "
+                                      + str(cut_value2) + " >= " + str(cut_value1))
 
 
 
