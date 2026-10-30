@@ -47,7 +47,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         """
         self.snr_threshold = snr_threshold
         self.num_bins = num_bins
-        self._tile_cache = LimitedSizeDict(size_limit=16)
+        self._tile_cache = LimitedSizeDict(size_limit=256)
         if chisq_locations is not None:
             self.do = True
             self.params = {}
@@ -88,15 +88,16 @@ class SingleDetSGChisq(SingleDetPowerChisq):
     def evaluate_batch(self, batch, j):
         """Evaluate sine-Gaussian chisq for trigger j in a batch."""
         stilde = batch.stilde
+        overwhitened = getattr(stilde, "overwhitened", None)
         template = batch.template(j)
         val = self.values(
-            stilde,
+            overwhitened if overwhitened is not None else stilde,
             template,
             stilde.psd,
             numpy.array([batch.snr[j]]),
             1,
             indices=numpy.array([batch.time_index[j]]),
-            overwhitened=False,
+            overwhitened=overwhitened is not None,
         )
         return {"sg_chisq": val[0]}
 
@@ -249,7 +250,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                 kmax = int(fhigh / delta_f)
                 # Calculate sine-gaussian tile
                 gtem = sinegauss.fd_sine_gaussian(
-                    1.0, q, fcen, flow, len(stilde) * delta_f, delta_f
+                    1.0, q, fcen, flow, (kmax + 1) * delta_f, delta_f
                 ).astype(complex_same_precision_as(psd))
                 gsigma = sigma(
                     gtem,
