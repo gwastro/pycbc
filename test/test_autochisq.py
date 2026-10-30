@@ -162,6 +162,21 @@ class TestAutochisquare(unittest.TestCase):
     #    for i in range(1, len(achi_list)):
     #   self.assertTrue(achi_list[i,2] > 4.0)
 
+        with _context:
+            est = SingleDetAutoChisq(stride=3, num_points=20, twophase=True)
+            self.assertEqual(est.dof, 80)
+            vals, est_dof = est.values(
+                snr,
+                indx,
+                self.htilde,
+                psd,
+                1.0,
+                low_frequency_cutoff=flow,
+                high_frequency_cutoff=self.fmax,
+            )
+        self.assertEqual(est_dof, 80)
+        np.testing.assert_allclose(vals, achisq, rtol=1e-5)
+
     def test_sg(self):
         ### use a sin-gaussian as a signal
 
@@ -217,6 +232,20 @@ class TestAutochisquare(unittest.TestCase):
 
     #    for i in range(1, len(achi_list)):
     #   self.assertTrue(achi_list[i,2] > 2.e3)
+
+        with _context:
+            est = SingleDetAutoChisq(stride=3, num_points=20, twophase=False)
+            vals, est_dof = est.values(
+                snr,
+                indx,
+                self.htilde,
+                psd,
+                1.0,
+                low_frequency_cutoff=flow,
+                high_frequency_cutoff=self.fmax,
+            )
+        self.assertEqual(est_dof, 40)
+        self.assertTrue(np.all(vals > 6.8e3))
 
 
 class TestAutochisqOptions(unittest.TestCase):

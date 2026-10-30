@@ -1,301 +1,699 @@
+# Copyright (C) 2026 Alex Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""Hierarchical ratio/FIR matched filtering and multi-detector follow-up."""
+
+import bisect
+import collections
+import logging
+import multiprocessing as mp
+import time
+
 import numpy as np
 
-from pycbc.fft import FFT, IFFT
-from pycbc.filter.matchedfilter import matched_filter_core
-from pycbc.filter.matchedfilter_cpu import (
-    fast_multiply_analytic_cython,
-    find_peaks_in_block_cython,
-)
-from pycbc.types import complex64, zeros
+from pycbc.filter.matchedfilter import get_cutoff_indices
+from pycbc.libutils import import_optional
+from pycbc.types import FrequencySeries, complex64, float32
+
+logger = logging.getLogger(__name__)
+
+mf_search = import_optional("matchedfilter.search")
+mf_td = import_optional("matchedfilter.time_domain")
+
+# Module-level reference and worker function used by fork-based multiprocessing
+# to dispatch individual top-level template hierarchies across worker processes.
+_WORKER_CONTROL = None
+
+
+def _run_top_worker(top_idx):
+    t0 = time.perf_counter()
+    triggers, followup = _WORKER_CONTROL.run_top(
+        top_idx, veto_callback=_WORKER_CONTROL.veto_callback
+    )
+    return (
+        int(top_idx),
+        _WORKER_CONTROL._last_template_count,
+        time.perf_counter() - t0,
+        triggers,
+        followup,
+    )
 
 
 class MatchedFilterRatioControl:
     """
-    High-performance engine for hierarchical "Ratio/FIR" matched filtering.
-    Uses pycbc's class-based FFT interface (pycbc.fft.FFT/IFFT) for all FFT
-    operations, so the actual backend (MKL, FFTW, numpy, ...) follows
-    whatever --processing-scheme the caller selected, with FFT/IFFT plans
-    built once per batch size and reused.
+    Control class for hierarchical ratio/FIR matched filtering and
+    multi-detector follow-up using ``matchedfilter``.
 
-    Note: pycbc's class-based IFFT does not normalize by 1/N the way
-    numpy.fft.ifft does; see _forward_block_fft for where that's corrected.
+    Parameters
+    ----------
+    bank : RatioFilterBank
+        The hierarchical ratio/FIR template bank.
+    segments : dict of list of FrequencySeries
+        Mapping from detector name to list of frequency-domain data segments
+        (each with ``.psd`` and ``.analyze`` attached).
+    snr_threshold : float
+        SNR threshold for primary trigger generation.
+    high_frequency_cutoff : float, optional
+        High frequency cutoff in Hz (defaults to Nyquist).
+    cluster_window : float, optional
+        Length of time-clustering window in seconds (default: 0.0).
+    group_keep_loudest : int, optional
+        Maximum number of loudest primary triggers (by ``|snr|``) to retain per
+        leaf group within ``±cluster_window`` before evaluating signal
+        consistency and secondary follow-up (default: None, retaining all
+        primary triggers in the leaf group).
+    followup_snr_threshold : float, optional
+        Secondary detector SNR threshold for follow-up triggers (default: None,
+        meaning 0.0 when follow-up is enabled via ``followup_bin_width`` and
+        ``followup_num_bins``).
+    followup_bin_width : float, optional
+        Width in seconds of each bin in the follow-up window (default: None).
+        Both ``followup_bin_width`` and ``followup_num_bins`` must be provided
+        to enable secondary follow-up.
+    followup_num_bins : int, optional
+        Number of bins in the follow-up window (default: None). Both
+        ``followup_bin_width`` and ``followup_num_bins`` must be provided to
+        enable secondary follow-up.
+    followup_keep_loudest : int, optional
+        Maximum number of loudest bin peaks (by ``|snr|``) to retain per
+        primary trigger and secondary detector before evaluating signal
+        consistency (default: None, retaining all bin peaks).
+    false_dismissal : float, optional
+        Tolerated probability of missing a signal at ``snr_threshold`` in the
+        hierarchical leaf filter (default: 1e-3).
+    cores : int, optional
+        Number of CPU cores to use for multiprocessing over top-level templates
+        (default: 1).
     """
 
     def __init__(
         self,
+        bank,
+        segments,
         snr_threshold,
-        delta_f,
         high_frequency_cutoff=None,
-        fir_fft_length=4096,
-        batch_size=64,
-        tap_sample_rate=2048,
-        engine_sample_rate=2048,
+        cluster_window=0.0,
+        group_keep_loudest=None,
+        followup_snr_threshold=None,
+        followup_bin_width=None,
+        followup_num_bins=None,
+        followup_keep_loudest=None,
+        false_dismissal=1e-3,
+        cores=1,
     ):
-        self.delta_f = delta_f
-        self.snr_threshold = snr_threshold
+        self.bank = bank
+        self.segments = segments
+        self.instruments = list(segments.keys())
+        self.seg_ifos = [ifo for ifo in self.instruments if len(segments[ifo]) > 0]
+        self.threshold = float(snr_threshold)
+        self.delta_f = float(bank.delta_f)
+        self.sample_rate = (
+            float(round(1.0 / segments[self.seg_ifos[0]][0].delta_t))
+            if self.seg_ifos
+            else float(bank.sample_rate)
+        )
         self.f_high = high_frequency_cutoff
+        self.cluster_window_samples = (
+            round(float(cluster_window) * int(self.sample_rate))
+            if cluster_window
+            else 0
+        )
+        self.group_keep_loudest = group_keep_loudest
+        self.followup_threshold = followup_snr_threshold
+        self.followup_bin_width = followup_bin_width
+        self.followup_num_bins = followup_num_bins
+        self.followup_keep_loudest = followup_keep_loudest
+        self.do_followup = (
+            followup_bin_width is not None and followup_num_bins is not None
+        )
+        self.followup_window = (
+            max(1, round(self.followup_bin_width * self.sample_rate))
+            * int(self.followup_num_bins)
+            / self.sample_rate
+            if self.do_followup
+            else 0.0
+        )
+        self.cores = max(1, int(cores or 1))
+        self.veto_callback = None
+        self.detector_time = sum(
+            (st.analyze.stop - st.analyze.start) / self.sample_rate
+            for ifo in self.seg_ifos
+            for st in self.segments[ifo]
+        )
+        self._last_template_count = 0
 
-        self.tap_sr = int(tap_sample_rate)
-        self.engine_sr = int(engine_sample_rate)
-
-        self.threshold_sq = float(snr_threshold**2)
-
-        self.fir_fft_len = fir_fft_length
-        self.batch_size = batch_size
-
-        # Both buffers span the same delta_f, so the tap buffer's length
-        # scales with the rate ratio.
-        exact_len = self.fir_fft_len * self.tap_sr / self.engine_sr
-        self.tap_fft_len = int(np.round(exact_len))
-        if abs(exact_len - self.tap_fft_len) > 1e-5 or self.tap_fft_len < 1:
+        # Verify that the bank's FIR tap sample rate is an integer multiple of data rate
+        exact_dec = float(bank.sample_rate) / self.sample_rate
+        self.decimation = round(exact_dec)
+        if abs(exact_dec - self.decimation) > 1e-5 or self.decimation < 1:
             raise ValueError(
-                f"Multi-rate Error: the bank sample rate ({self.tap_sr} Hz) "
-                f"and the engine sample rate ({self.engine_sr} Hz) must be in "
-                f"a ratio that divides the FIR FFT length "
-                f"({self.fir_fft_len}); this one asks for a tap buffer of "
-                f"{exact_len:.4f} samples."
+                f"Bank sample rate ({bank.sample_rate} Hz) must be an integer "
+                f"multiple of data sample rate ({self.sample_rate} Hz)."
             )
 
-        # Plans are keyed by (nbatch, size) and cached for the engine's
-        # lifetime: n_filters is not generally a multiple of batch_size, so a
-        # few smaller plans get cached alongside the dominant batch size.
-        self._fft_plans = {}
-        self._ifft_plans = {}
+        # Configure leaf TimeDomainFilterBank options and pre-overwhiten segments
+        self.leaf_options = {
+            "tap_sample_rate": int(bank.sample_rate),
+            "data_sample_rate": int(self.sample_rate),
+            "false_dismissal": float(false_dismissal),
+            "binsize": self.cluster_window_samples or None,
+        }
+        self._decimated_psds = {}
+        self.overwhitened = {}
+        for ifo in self.seg_ifos:
+            ow_segs = []
+            for st in segments[ifo]:
+                ow = st / st.psd
+                st.overwhitened = ow
+                ow_segs.append(ow)
+            self.overwhitened[ifo] = ow_segs
 
-    def _get_plan(self, plans, cls, nbatch, size):
-        key = (nbatch, size)
-        cached = plans.get(key)
-        if cached is None:
-            in_arr = zeros(nbatch * size, dtype=complex64)
-            out_arr = zeros(nbatch * size, dtype=complex64)
-            if nbatch > 1:
-                plan = cls(in_arr, out_arr, nbatch=nbatch, size=size)
-            else:
-                plan = cls(in_arr, out_arr)
-            in_view = in_arr.data.reshape(nbatch, size)
-            out_view = out_arr.data.reshape(nbatch, size)
-            cached = plans[key] = (plan, in_view, out_view)
-        return cached
+    @staticmethod
+    def insert_option_group(parser):
+        """Add Ratio/FIR matched-filter and multi-detector follow-up options."""
+        group = parser.add_argument_group("Ratio Filter Options")
+        group.add_argument(
+            "--snr-threshold",
+            type=float,
+            default=5.5,
+            help="SNR threshold for primary trigger generation (default: 5.5).",
+        )
+        group.add_argument(
+            "--high-frequency-cutoff",
+            type=float,
+            help="Optional high frequency cutoff in Hz (defaults to Nyquist).",
+        )
+        group.add_argument(
+            "--cluster-window",
+            type=float,
+            default=0.0,
+            help="Optional length of clustering window in seconds (default: 0.0).",
+        )
+        group.add_argument(
+            "--group-keep-loudest",
+            type=int,
+            help="Optional maximum number of loudest primary triggers to "
+            "retain per leaf group within +/- --cluster-window before "
+            "signal-consistency and secondary follow-up (default: keep all).",
+        )
+        group.add_argument(
+            "--ratio-filter-false-dismissal",
+            type=float,
+            default=1e-3,
+            metavar="PROB",
+            help="Optional tolerated probability of missing a signal at the "
+            "SNR threshold (default: 1e-3).",
+        )
+        group.add_argument(
+            "--followup-snr-threshold",
+            type=float,
+            help="Optional secondary detector SNR threshold for follow-up "
+            "triggers (defaults to 0.0 when follow-up is enabled via "
+            "--followup-bin-width and --followup-num-bins).",
+        )
+        group.add_argument(
+            "--followup-bin-width",
+            type=float,
+            help="Optional width in seconds of each bin in the follow-up "
+            "window (required together with --followup-num-bins to enable "
+            "secondary follow-up; default: disabled).",
+        )
+        group.add_argument(
+            "--followup-num-bins",
+            type=int,
+            help="Optional number of bins in the follow-up window (required "
+            "together with --followup-bin-width to enable secondary "
+            "follow-up; default: disabled).",
+        )
+        group.add_argument(
+            "--followup-keep-loudest",
+            type=int,
+            help="Optional maximum number of loudest follow-up bin peaks to "
+            "retain per primary trigger and secondary detector (default: keep "
+            "all bin peaks).",
+        )
+        group.add_argument(
+            "--cores",
+            type=int,
+            default=1,
+            help="Optional number of CPU cores to use for multiprocessing "
+            "over top templates (default: 1).",
+        )
+        return group
 
-    def _get_fft_plan(self, nbatch, size):
-        return self._get_plan(self._fft_plans, FFT, nbatch, size)
-
-    def _get_ifft_plan(self, nbatch, size):
-        return self._get_plan(self._ifft_plans, IFFT, nbatch, size)
-
-    def prepare_filters(self, fir_taps, tap_counts):
-        """
-        Prepare frequency-domain filters for a batch of taps.
-        """
-        n_filters, n_taps = fir_taps.shape
-        if n_taps >= self.tap_fft_len:
-            raise ValueError(
-                f"FIR Taps ({int(n_taps)}) exceed the tap FFT length "
-                f"({int(self.tap_fft_len)})"
-            )
-
-        # the overlap-save guard works in engine samples, not bank ones
-        n_taps = np.ceil(
-            np.asarray(tap_counts) * self.fir_fft_len / self.tap_fft_len
-        ).astype(int)
-
-        filters_f = self._fft_all_filters(fir_taps, tap_counts)
-        return filters_f, n_taps
-
-    def process_segment(
-        self, stilde, psd, ref_template, filters_f, n_taps, indices, valid_slice=None
-    ):
-        """
-        Process a single data segment.
-        """
-        if valid_slice is None:
-            valid_slice = getattr(stilde, "analyze", None)
-
-        h_norm = ref_template.sigmasq(psd)
-
-        snr, _, norm = matched_filter_core(
-            ref_template,
-            stilde,
-            psd=psd,
-            low_frequency_cutoff=ref_template.f_lower,
-            high_frequency_cutoff=self.f_high,
-            h_norm=h_norm,
+    @classmethod
+    def from_cli(cls, args, bank, segments):
+        """Construct ``MatchedFilterRatioControl`` from parsed CLI options."""
+        return cls(
+            bank,
+            segments,
+            snr_threshold=args.snr_threshold,
+            high_frequency_cutoff=args.high_frequency_cutoff,
+            cluster_window=args.cluster_window,
+            group_keep_loudest=args.group_keep_loudest,
+            followup_snr_threshold=args.followup_snr_threshold,
+            followup_bin_width=args.followup_bin_width,
+            followup_num_bins=args.followup_num_bins,
+            followup_keep_loudest=args.followup_keep_loudest,
+            false_dismissal=args.ratio_filter_false_dismissal,
+            cores=args.cores,
         )
 
-        self.ref_snr = snr.numpy() * (norm * stilde.delta_t)
-
-        local_idxs, t_idxs, snr_vals, tstarts = self._execute_blocked_kernel(
-            self.ref_snr, filters_f, n_taps, valid_slice
-        )
-
-        if len(local_idxs) > 0:
-            global_ids = indices[local_idxs]
-            return global_ids, t_idxs, snr_vals, tstarts, h_norm
-        return [], [], [], tstarts, h_norm
-
-    def _fft_all_filters(self, taps, counts):
-        """Helper to FFT all filters, batch_size rows at a time."""
-        n_filters, n_taps_alloc = taps.shape
-        filters_f = np.zeros((n_filters, self.fir_fft_len), dtype=np.complex64)
-
-        tap_fft_len = self.tap_fft_len
-        rate_ratio = self.fir_fft_len / tap_fft_len
-
-        for start in range(0, n_filters, self.batch_size):
-            end = min(start + self.batch_size, n_filters)
-            batch_len = end - start
-
-            plan, in_view, out_view = self._get_fft_plan(batch_len, tap_fft_len)
-
-            in_view[:] = 0.0
-            tmp_taps = taps[start:end]
-            in_view[:, :n_taps_alloc] = tmp_taps
-
-            # Roll each row so its center tap sits at index 0, with earlier
-            # taps wrapping to the end -- the circular layout an FFT-based
-            # FIR filter needs.
-            current_counts = counts[start:end]
-            roll_offsets = -(current_counts // 2)
-
-            cols_high = np.arange(tap_fft_len)
-            rows = np.arange(batch_len)[:, None]
-            shifted_cols_high = (
-                cols_high[None, :] - roll_offsets[:, None]
-            ) % tap_fft_len
-
-            current_data = in_view.copy()
-            in_view[:] = current_data[rows, shifted_cols_high]
-
-            plan.execute()
-
-            # drop the band the search cannot reach, or pad the band the
-            # taps have no content in
-            if tap_fft_len >= self.fir_fft_len:
-                fft_out = out_view[:, : self.fir_fft_len]
-            else:
-                fft_out = np.zeros((batch_len, self.fir_fft_len), dtype=out_view.dtype)
-                fft_out[:, :tap_fft_len] = out_view
-
-            # Conjugate so multiplying against the data spectrum and
-            # inverse-transforming (_execute_blocked_kernel) yields a
-            # correlation rather than a convolution.
-            filters_f[start:end] = np.conj(fft_out) * rate_ratio
-
-        return filters_f
-
-    def _forward_block_fft(self, segment):
+    def run(self, veto_callback=None, top_indices=None, start_time=None):
         """
-        FFT one time-domain block (nbatch=1), pre-dividing by fir_fft_len.
+        Run the hierarchical FIR search across ``top_indices`` and return
+        ``(triggers, has_followup)``.
 
-        pycbc's class-based IFFT (unlike numpy.fft.ifft) does
-        not normalize its output by 1/N. Since this block spectrum only
-        ever gets multiplied by a filter spectrum and then inverse
-        transformed (in _execute_blocked_kernel), pre-dividing it here by N
-        once -- rather than dividing the batched product after every IFFT --
-        gives an already-correctly-normalized correlation for free:
-        ifft_raw(block_f/N * filter_f) == ifft_normalized(block_f * filter_f).
+        Parameters
+        ----------
+        veto_callback : callable, optional
+            Signal-consistency callback evaluated on candidate batches.
+        top_indices : sequence of int, optional
+            Top-level reference indices to filter (defaults to
+            ``self.bank.top_indices``).
+        start_time : float, optional
+            Program start ``time.time()`` timestamp used to report cumulative
+            throughput from the start of the program (defaults to the start of
+            ``run()``).
+
+        Returns
+        -------
+        triggers : dict of dict of np.ndarray
+            Per-detector trigger column arrays.
+        has_followup : dict of int
+            Per-detector count of follow-up batches evaluated.
         """
-        plan, in_view, out_view = self._get_fft_plan(1, self.fir_fft_len)
-        in_view[0, :] = 0.0
-        in_view[0, : len(segment)] = segment
-        plan.execute()
-        return out_view[0].copy() / self.fir_fft_len
+        triggers = {ifo: collections.defaultdict(list) for ifo in self.instruments}
+        has_followup = dict.fromkeys(self.instruments, 0)
+        if not self.seg_ifos:
+            return triggers, has_followup
 
-    def _execute_blocked_kernel(self, data, filters_f, n_taps, valid_slice):
-        """
-        Inner loop: Time-Blocking + Filter-Batching.
-        """
-        tap_groups = 3
-        nsizes = np.quantile(n_taps, np.linspace(0, 1, tap_groups + 1)[1:]).astype(int)
-        n_samples = len(data)
-        n_filters = len(filters_f)
-
-        n_fft = self.fir_fft_len
-
-        all_f_idxs = []
-        all_t_idxs = []
-        all_snrs = []
-        all_tstarts = []
-
-        if valid_slice:
-            v_start = valid_slice.start
-            v_stop = valid_slice.stop
+        if top_indices is None:
+            top_indices = [int(x) for x in self.bank.top_indices]
         else:
-            v_start = 0
-            v_stop = n_samples
+            top_indices = [int(x) for x in top_indices]
 
-        block_f_cache = {}
-        for f_start in range(0, n_filters, self.batch_size):
-            f_end = min(f_start + self.batch_size, n_filters)
-            actual_batch_size = f_end - f_start
+        if start_time is None:
+            start_time = time.time()
+        num_tops = len(top_indices)
+        n_workers = min(self.cores, max(1, num_tops))
+        cores_per_worker = float(self.cores) / n_workers
+        completed_templates = 0
 
-            ifft_plan, current_mult_view, current_corr_view = self._get_ifft_plan(
-                actual_batch_size, n_fft
+        def _collect(results_iter):
+            nonlocal completed_templates
+            for step, (
+                top_idx,
+                num_templates,
+                round_elapsed,
+                worker_trigs,
+                worker_followup,
+            ) in enumerate(results_iter, start=1):
+                completed_templates += num_templates
+                program_elapsed = max(time.time() - start_time, 1e-9)
+                round_rate = (num_templates * self.detector_time) / (
+                    cores_per_worker * max(round_elapsed, 1e-9)
+                )
+                program_rate = (completed_templates * self.detector_time) / (
+                    self.cores * program_elapsed
+                )
+                logger.info(
+                    "Top template %d/%d (id=%d, %d templates) in %.2f s | "
+                    "round throughput: %.0f templates/core | "
+                    "program throughput: %.0f templates/core (elapsed %.2f s)",
+                    step,
+                    num_tops,
+                    top_idx,
+                    num_templates,
+                    round_elapsed,
+                    round_rate,
+                    program_rate,
+                    program_elapsed,
+                )
+                for ifo in self.instruments:
+                    for col, arr in worker_trigs[ifo].items():
+                        if len(arr) > 0:
+                            triggers[ifo][col].append(arr)
+                    has_followup[ifo] += worker_followup[ifo]
+
+        if n_workers > 1:
+            global _WORKER_CONTROL
+            logger.info(
+                "Filtering %d top templates across %d detector(s) "
+                "(%.1f s detector data, %d cores)...",
+                num_tops,
+                len(self.seg_ifos),
+                self.detector_time,
+                n_workers,
+            )
+            self.veto_callback = veto_callback
+            _WORKER_CONTROL = self
+            try:
+                self.bank.close_filehandler()
+                with mp.get_context("fork").Pool(processes=n_workers) as pool:
+                    _collect(pool.imap_unordered(_run_top_worker, top_indices))
+            finally:
+                _WORKER_CONTROL = None
+                self.veto_callback = None
+        else:
+            logger.info(
+                "Filtering %d top templates across %d detector(s) "
+                "(%.1f s detector data)...",
+                num_tops,
+                len(self.seg_ifos),
+                self.detector_time,
             )
 
-            # Overlap-save: valid output samples per block.
-            n_taps_max = n_taps[f_start:f_end].max()
-            i = np.searchsorted(nsizes, n_taps_max)
-            n_taps_max = nsizes[i]
-
-            n_valid = n_fft - n_taps_max + 1
-            step = n_valid
-            bad_start = n_taps_max // 2
-
-            first_block_idx = (v_start - bad_start) // step
-            loop_start = first_block_idx * step
-
-            for t_start in range(loop_start, n_samples, step):
-                block_valid_t0 = t_start + bad_start
-
-                if block_valid_t0 >= v_stop:
-                    break
-
-                if block_valid_t0 + n_valid <= v_start:
-                    continue
-
-                roi_start = max(v_start, block_valid_t0)
-                roi_stop = min(v_stop, block_valid_t0 + n_valid)
-
-                roi_len = roi_stop - roi_start
-
-                if roi_len <= 0:
-                    continue
-
-                buf_slice_start = roi_start - t_start
-
-                t_end = min(t_start + n_fft, n_samples)
-                if t_start not in block_f_cache:
-                    block_f_cache[t_start] = self._forward_block_fft(
-                        data[t_start:t_end]
+            def _serial_results():
+                for idx in top_indices:
+                    t0 = time.perf_counter()
+                    worker_trigs, worker_followup = self.run_top(
+                        idx, veto_callback=veto_callback
+                    )
+                    yield (
+                        idx,
+                        self._last_template_count,
+                        time.perf_counter() - t0,
+                        worker_trigs,
+                        worker_followup,
                     )
 
-                block_f_view = block_f_cache[t_start]
-                filter_batch_f = filters_f[f_start:f_end]
+            _collect(_serial_results())
 
-                fast_multiply_analytic_cython(
-                    block_f_view, filter_batch_f, current_mult_view
-                )
+        collapsed = {
+            ifo: {
+                col: np.concatenate(arrs) if arrs else np.empty(0)
+                for col, arrs in triggers[ifo].items()
+            }
+            for ifo in self.instruments
+        }
+        return collapsed, has_followup
 
-                ifft_plan.execute()
-                f_list, t_list, s_list = find_peaks_in_block_cython(
-                    current_corr_view,
-                    roi_start,
-                    roi_len,
-                    self.threshold_sq,
-                    f_start,
-                    input_offset=buf_slice_start,
-                )
+    def run_top(self, top_idx, veto_callback=None):
+        """Filter a single top-level reference template hierarchy across all
+        segments and detectors, returning ``(triggers, followup_counts)``.
+        """
+        self.veto_callback = veto_callback
+        self._triggers = {
+            ifo: collections.defaultdict(list) for ifo in self.instruments
+        }
+        self._followup = dict.fromkeys(self.instruments, 0)
 
-                if f_list:
-                    all_f_idxs.extend(f_list)
-                    all_t_idxs.extend(t_list)
-                    all_snrs.extend(s_list)
-                    all_tstarts.extend([t_start] * len(s_list))
-
-        return (
-            np.array(all_f_idxs, dtype=np.int32),
-            np.array(all_t_idxs, dtype=np.int64),
-            np.array(all_snrs, dtype=np.complex64),
-            np.array(all_tstarts, dtype=np.int32),
+        # Build the Inner/Leaf filter tree below this top-level reference template
+        children, self._groups = self.bank.build_children(int(top_idx))
+        self._last_template_count = sum(
+            len(fine_indices) for fine_indices, _, _ in self._groups.values()
         )
+        if not self._groups:
+            return {ifo: {} for ifo in self.instruments}, self._followup
+
+        # Decompress and band-limit the top-level reference waveform
+        self.top_template = self.bank.get_coarse_template(int(top_idx))
+        first_seg = self.segments[self.seg_ifos[0]][0]
+        n_series = (len(first_seg) - 1) * 2
+        kmin, kmax = get_cutoff_indices(
+            self.top_template.f_lower,
+            self.f_high,
+            self.delta_f,
+            n_series,
+        )
+        self.top_template[:kmin] = 0
+        self.top_template[kmax:] = 0
+
+        # Calibrate the root power profile and construct the HierarchicalSearch
+        profile = mf_td.reference_profile(
+            self.top_template,
+            first_seg.psd,
+            float(self.top_template.f_lower or 0.0),
+            float(self.f_high or 0.0),
+            self.delta_f,
+        )
+        self.root = mf_search.Root(
+            self.top_template,
+            (kmin, kmax),
+            children=children,
+            profile=(profile, self.delta_f),
+            node_id=int(top_idx),
+        )
+        self.search = mf_search.HierarchicalSearch(
+            [self.root],
+            threshold=self.threshold,
+            leaf_options=self.leaf_options,
+        )
+
+        self._fine_correlations = {}
+        self._ref_blocks = {}
+        self._batch = None
+
+        # Normalize each segment's root C2R IFFT output to unit-variance SNR
+        inputs = {
+            ifo: mf_search.BlockInput(
+                self.overwhitened[ifo],
+                [(st.analyze.start, st.analyze.stop) for st in segs],
+                lambda _root, chunk, segs=segs: (
+                    2.0
+                    * segs[chunk].delta_f
+                    * segs[chunk].delta_t
+                    / (
+                        np.sqrt(self.top_template.sigmasq(segs[chunk].psd))
+                        * self.decimation
+                    )
+                ),
+                tags=list(segs),
+            )
+            for ifo in self.seg_ifos
+            for segs in (self.segments[ifo],)
+        }
+        self.search.run(inputs, on_peaks=self._on_peaks)
+
+        # Concatenate per-batch trigger lists into flat arrays per detector
+        collapsed = {
+            ifo: {
+                col: np.concatenate(arrs) if arrs else np.empty(0)
+                for col, arrs in self._triggers[ifo].items()
+            }
+            for ifo in self.instruments
+        }
+        return collapsed, self._followup
+
+    def fine_correlation(self, j, reach=0):
+        """Return ``(corr, index)`` for trigger ``j`` in the current batch over
+        one leaf FFT block around the trigger, re-centering if ``reach`` extends
+        into the FIR wrap-around region.
+        """
+        ifo, leaf_bank, cid, local_idxs, t_idxs, tstarts, ref_snr = self._batch
+        i = int(local_idxs[j])
+        t = int(t_idxs[j])
+        tstart = int(tstarts[j])
+        n = leaf_bank.get_block_length(i)
+        half = int(leaf_bank.effective_data_counts[i]) // 2
+
+        # Re-center the FFT block if the requested reach enters the FIR wrap region
+        if t - reach - tstart < half or t + reach - tstart >= n - half:
+            tstart = min(max(t - n // 2, 0), len(ref_snr) - n)
+        if t - reach - tstart < half or t + reach - tstart >= n - half:
+            return None, None
+
+        # Multiply the leaf FIR spectrum by the FFT of the parent SNR block
+        key = (ifo, cid, i, tstart)
+        if key not in self._fine_correlations:
+            block_key = (ifo, cid, tstart, n)
+            if block_key not in self._ref_blocks:
+                self._ref_blocks[block_key] = np.fft.fft(
+                    ref_snr[tstart : tstart + n]
+                ).astype(np.complex64)
+            corr = FrequencySeries(
+                leaf_bank.get_filter_f(i) * self._ref_blocks[block_key] / n,
+                delta_f=self.sample_rate / n,
+            )
+            self._fine_correlations[key] = corr
+        return self._fine_correlations[key], t - tstart
+
+    def _on_peaks(self, ctx):
+        """Record primary triggers for each detector and follow up surviving
+        primaries in secondary detectors.
+        """
+        self._fine_correlations.clear()
+        self._ref_blocks.clear()
+        primaries = {
+            ifo: self._record_triggers(ctx, ifo, res) for ifo, res in ctx.peaks.items()
+        }
+        if self.do_followup and len(ctx.channels) > 1:
+            self._follow_up_secondaries(ctx, primaries)
+
+    def _record_triggers(self, ctx, ifo, res, is_followup=False):
+        """Apply ``self.veto_callback`` (if set) to ``res`` and append surviving
+        triggers for ``ifo``.
+        """
+        ids_local = res.template_indices
+        t_idxs = res.sample_indices
+        if len(ids_local) == 0:
+            return ids_local, t_idxs
+
+        # Map leaf-local template indices and sample lags to fine-bank indices and times
+        coarse_index = ctx.leaf.node_id
+        fine_indices, shifts, _ = self._groups[coarse_index]
+        stilde = ctx.tags[ifo]
+        snrs = res.snr
+        tstarts = res.block_starts
+        phys_t = t_idxs - (shifts[ids_local] if shifts is not None else 0)
+        gids = fine_indices[ids_local]
+
+        # Thin primary triggers per leaf group within +/- cluster_window if configured
+        if (
+            not is_followup
+            and self.group_keep_loudest is not None
+            and len(ids_local) > self.group_keep_loudest
+        ):
+            win = self.cluster_window_samples
+            kept_times = []
+            sel = []
+            for j in np.argsort(np.abs(snrs))[::-1]:
+                t_j = int(phys_t[j])
+                lo = bisect.bisect_left(kept_times, t_j - win)
+                hi = bisect.bisect_right(kept_times, t_j + win)
+                if hi - lo < self.group_keep_loudest:
+                    bisect.insort(kept_times, t_j)
+                    sel.append(j)
+            sel = np.sort(sel)
+            ids_local = ids_local[sel]
+            t_idxs = t_idxs[sel]
+            snrs = snrs[sel]
+            tstarts = tstarts[sel]
+            phys_t = phys_t[sel]
+            gids = gids[sel]
+
+        # Evaluate signal-consistency vetoes on the trigger batch and filter survivors
+        vals = {}
+        if self.veto_callback is not None:
+            leaf_bank = self.search.leaf_bank(self.root, ctx.leaf)
+            self._batch = (
+                ifo,
+                leaf_bank,
+                coarse_index,
+                ids_local,
+                t_idxs,
+                tstarts,
+                ctx.series(ifo),
+            )
+
+            def _template(j):
+                tmplt = self.bank.reconstruct_fine_template(
+                    self.top_template,
+                    coarse_index,
+                    ids_local[j],
+                    leaf_bank,
+                )
+                step = round(tmplt.delta_f / stilde.delta_f)
+                psd_key = (id(stilde.psd), step, len(tmplt))
+                dec_psd = self._decimated_psds.get(psd_key)
+                if dec_psd is None:
+                    dec_psd = stilde.psd[::step][: len(tmplt)]
+                    self._decimated_psds[psd_key] = dec_psd
+                tmplt.psd = dec_psd
+                return tmplt
+
+            group_ids = np.full(len(ids_local), coarse_index, dtype=np.int64)
+            kept, vals = self.veto_callback(
+                snrs,
+                phys_t,
+                group_ids,
+                _template,
+                self.fine_correlation,
+                stilde=stilde,
+                is_followup=is_followup,
+            )
+            if not np.all(kept):
+                ids_local = ids_local[kept]
+                t_idxs = t_idxs[kept]
+                snrs = snrs[kept]
+                phys_t = phys_t[kept]
+                gids = gids[kept]
+                vals = {k: v[kept] for k, v in vals.items()}
+                if len(ids_local) == 0:
+                    return ids_local, t_idxs
+
+        # Convert segment-relative sample indices to cumulative indices and record
+        offset = (
+            stilde.cumulative_index - stilde.analyze.start
+            if getattr(stilde, "analyze", None) is not None
+            else 0
+        )
+        sigmasq = self.top_template.sigmasq(stilde.psd) * (
+            self.bank.sigma_rescale(gids) ** 2
+        )
+        batch = {
+            "template_id": gids,
+            "time_index": (phys_t + offset).astype(np.int64),
+            "snr": snrs.astype(complex64),
+            "sigmasq": sigmasq.astype(float32),
+            "is_followup": np.full(len(ids_local), is_followup, dtype=bool),
+            **vals,
+        }
+        for col, arr in batch.items():
+            self._triggers[ifo][col].append(arr)
+        return ids_local, t_idxs
+
+    def _follow_up_secondaries(self, ctx, primaries):
+        """Refilter surviving primary triggers from each detector in all other
+        active detectors across the configured follow-up window.
+        """
+        bs = max(1, round(self.followup_bin_width * self.sample_rate))
+        wlen = self.followup_num_bins * bs
+        half = (self.followup_num_bins // 2) * bs + bs // 2
+        fup_thresh = (
+            0.0 if self.followup_threshold is None else float(self.followup_threshold)
+        )
+
+        # Follow up surviving primary triggers from each detector in all other detectors
+        for ifo_a in ctx.channels:
+            ids, t_idxs = primaries[ifo_a]
+            if len(ids) == 0:
+                continue
+            st_a = ctx.tags[ifo_a]
+            t0_a, dt_a = float(st_a.start_time), float(st_a.delta_t)
+            for ifo_b in ctx.channels:
+                if ifo_b == ifo_a:
+                    continue
+                st_b = ctx.tags[ifo_b]
+                t0_b, dt_b = float(st_b.start_time), float(st_b.delta_t)
+                v0, v1 = st_b.analyze.start, st_b.analyze.stop
+                for local_id, t_a in zip(ids, t_idxs, strict=False):
+                    # Shift the follow-up window to stay inside ifo_b's valid region
+                    t_center = round((t0_a + int(t_a) * dt_a - t0_b) / dt_b)
+                    start = min(max(t_center - half, v0), max(v0, v1 - wlen))
+                    stop = min(start + wlen, v1)
+                    if start >= stop:
+                        continue
+                    self._followup[ifo_b] += 1
+                    res = ctx.refilter(
+                        ifo_b,
+                        windows=slice(start, stop),
+                        binsize=bs,
+                        threshold=fup_thresh,
+                        template_index=int(local_id),
+                    )
+                    if res.snr.size:
+                        if (
+                            self.followup_keep_loudest is not None
+                            and res.snr.size > self.followup_keep_loudest
+                        ):
+                            keep_idx = np.sort(
+                                np.argpartition(
+                                    np.abs(res.snr), -self.followup_keep_loudest
+                                )[-self.followup_keep_loudest :]
+                            )
+                            res = type(res)(*(arr[keep_idx] for arr in res))
+                        self._record_triggers(ctx, ifo_b, res, is_followup=True)
