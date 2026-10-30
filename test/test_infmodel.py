@@ -34,7 +34,14 @@ from utils import simple_exit
 
 from pycbc.catalog import Merger
 from pycbc.conversions import mass1_from_mtotal_q, mass2_from_mtotal_q
-from pycbc.distributions import JointDistribution, SinAngle, Uniform, UniformAngle
+from pycbc.detector import Detector
+from pycbc.distributions import (
+    CosAngle,
+    JointDistribution,
+    SinAngle,
+    Uniform,
+    UniformAngle,
+)
 from pycbc.filter import highpass, match, resample_to_delta_t, sigma
 from pycbc.frame import read_frame
 from pycbc.inference import models
@@ -599,7 +606,6 @@ class TestMarginalizedPolModels(unittest.TestCase):
         self._test_models(margpol_model, orig_model, polsamples)
 
 
-
 class TestBruteTotalMassMarginalize(unittest.TestCase):
     """Tests the brute force total mass marginalization model.
 
@@ -615,52 +621,55 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
         cls.flow = 20.0
         seglen = 8
         sample_rate = 2048
-        delta_f = 1. / seglen
-        delta_t = 1. / sample_rate
+        delta_f = 1.0 / seglen
+        delta_t = 1.0 / sample_rate
         flen = int(sample_rate * seglen / 2) + 1
 
         # grid of total masses, and the reference the waveform is scaled from
-        cls.mtotal_grid = [45., 50., 55., 60., 65., 70., 75.]
-        cls.fiducial_mtotal = 60.
-        cls.injected_mtotal = 55.
+        cls.mtotal_grid = [45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0]
+        cls.fiducial_mtotal = 60.0
+        cls.injected_mtotal = 55.0
         cls.injected_q = 1.4
 
         psd = aLIGOZeroDetHighPower(flen, delta_f, cls.flow)
-        psd[0:int(cls.flow / delta_f + 1)] = psd[int(cls.flow / delta_f + 1)]
+        psd[0 : int(cls.flow / delta_f + 1)] = psd[int(cls.flow / delta_f + 1)]
         psd[-2:] = psd[-2]
 
         cls.static = {
-            'approximant': "IMRPhenomD",
-            'f_lower': cls.flow,
-            'spin1z': 0.,
-            'spin2z': 0.,
-            'ra': 3.44615914,
-            'dec': -0.40808407,
-            'tc': cls.tc,
-            'distance': 500.,
-            'inclination': 0.5,
-            'polarization': 0.3,
+            "approximant": "IMRPhenomD",
+            "f_lower": cls.flow,
+            "spin1z": 0.0,
+            "spin2z": 0.0,
+            "ra": 3.44615914,
+            "dec": -0.40808407,
+            "tc": cls.tc,
+            "distance": 500.0,
+            "inclination": 0.5,
+            "polarization": 0.3,
         }
-        cls.variable = ['q', 'mtotal']
-        cls.ifos = ['H1', 'L1']
-        cls.low_frequency_cutoff = {ifo: cls.flow for ifo in cls.ifos}
+        cls.variable = ["q", "mtotal"]
+        cls.ifos = ["H1", "L1"]
+        cls.low_frequency_cutoff = dict.fromkeys(cls.ifos, cls.flow)
 
         # noise, with a signal at the injected total mass added in
         hp, _ = get_fd_waveform(
-            approximant=cls.static['approximant'],
+            approximant=cls.static["approximant"],
             mass1=mass1_from_mtotal_q(cls.injected_mtotal, cls.injected_q),
             mass2=mass2_from_mtotal_q(cls.injected_mtotal, cls.injected_q),
-            spin1z=0., spin2z=0., inclination=cls.static['inclination'],
-            distance=cls.static['distance'], delta_f=delta_f,
-            f_lower=cls.flow)
+            spin1z=0.0,
+            spin2z=0.0,
+            inclination=cls.static["inclination"],
+            distance=cls.static["distance"],
+            delta_f=delta_f,
+            f_lower=cls.flow,
+        )
         hp.resize(flen)
 
         cls.data = {}
         cls.psds = {}
         seed = 1000
         for ifo in cls.ifos:
-            ts = noise_from_psd(int(seglen * sample_rate), delta_t, psd,
-                                seed=seed)
+            ts = noise_from_psd(int(seglen * sample_rate), delta_t, psd, seed=seed)
             ts._epoch = cls.tc - seglen / 2
             seed += 1027
             fs = ts.to_frequencyseries()
@@ -670,8 +679,9 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
 
         cls.prior = JointDistribution(
             cls.variable,
-            Uniform(q=(1., 2.)),
-            Uniform(mtotal=(min(cls.mtotal_grid), max(cls.mtotal_grid))))
+            Uniform(q=(1.0, 2.0)),
+            Uniform(mtotal=(min(cls.mtotal_grid), max(cls.mtotal_grid))),
+        )
 
     def _marg_model(self, **kwargs):
         opts = dict(
@@ -680,7 +690,7 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
             low_frequency_cutoff=self.low_frequency_cutoff,
             static_params=self.static,
             prior=self.prior,
-            base_model='marginalized_time',
+            base_model="marginalized_time",
             marginalize_mtotal=True,
             mtotal_grid=self.mtotal_grid,
             fiducial_mtotal=self.fiducial_mtotal,
@@ -693,30 +703,36 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
     def _base_model(self):
         """The base model, set up to take the component masses directly so
         the waveform can be regenerated at each point of the grid."""
-        variable = ['mass1', 'mass2']
+        variable = ["mass1", "mass2"]
         prior = JointDistribution(
-            variable,
-            Uniform(mass1=(1., 200.)),
-            Uniform(mass2=(1., 200.)))
+            variable, Uniform(mass1=(1.0, 200.0)), Uniform(mass2=(1.0, 200.0))
+        )
         return models.MarginalizedTime(
-            variable, data=copy.deepcopy(self.data), psds=self.psds,
+            variable,
+            data=copy.deepcopy(self.data),
+            psds=self.psds,
             low_frequency_cutoff=self.low_frequency_cutoff,
-            static_params=self.static, prior=prior,
-            marginalize_vector_samples=64)
+            static_params=self.static,
+            prior=prior,
+            marginalize_vector_samples=64,
+        )
 
     def _regenerated_loglrs(self, base, q):
         """loglr at each point of the grid, regenerating the waveform."""
         logls = numpy.zeros(len(self.mtotal_grid))
         for ii, mtotal in enumerate(self.mtotal_grid):
-            base.update(mass1=mass1_from_mtotal_q(mtotal, q),
-                        mass2=mass2_from_mtotal_q(mtotal, q))
+            base.update(
+                mass1=mass1_from_mtotal_q(mtotal, q),
+                mass2=mass2_from_mtotal_q(mtotal, q),
+            )
             logls[ii] = base.loglr
         return logls
 
     def test_model_is_registered(self):
         """The model is retrievable by name."""
-        self.assertIs(models.get_model('marginalized_mtotal'),
-                      models.BruteTotalMassMarginalize)
+        self.assertIs(
+            models.get_model("marginalized_mtotal"), models.BruteTotalMassMarginalize
+        )
 
     def test_waveform_rescaling(self):
         """A rescaled reference waveform matches one generated directly at
@@ -730,43 +746,59 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
         # frequency that the lightest grid point still covers the band
         kappa_min = min(self.mtotal_grid) / self.fiducial_mtotal
         href, _ = get_fd_waveform(
-            approximant=self.static['approximant'],
+            approximant=self.static["approximant"],
             mass1=mass1_from_mtotal_q(self.fiducial_mtotal, q),
             mass2=mass2_from_mtotal_q(self.fiducial_mtotal, q),
-            spin1z=0., spin2z=0., inclination=self.static['inclination'],
-            distance=self.static['distance'], delta_f=delta_f,
-            f_lower=self.flow * kappa_min)
+            spin1z=0.0,
+            spin2z=0.0,
+            inclination=self.static["inclination"],
+            distance=self.static["distance"],
+            delta_f=delta_f,
+            f_lower=self.flow * kappa_min,
+        )
         href.resize(flen)
 
         for mtotal in self.mtotal_grid:
-            scaled, _ = model.scale_waveform(
-                href, href, self.fiducial_mtotal, mtotal)
+            scaled, _ = model.scale_waveform(href, href, self.fiducial_mtotal, mtotal)
             direct, _ = get_fd_waveform(
-                approximant=self.static['approximant'],
+                approximant=self.static["approximant"],
                 mass1=mass1_from_mtotal_q(mtotal, q),
                 mass2=mass2_from_mtotal_q(mtotal, q),
-                spin1z=0., spin2z=0.,
-                inclination=self.static['inclination'],
-                distance=self.static['distance'], delta_f=delta_f,
-                f_lower=self.flow)
+                spin1z=0.0,
+                spin2z=0.0,
+                inclination=self.static["inclination"],
+                distance=self.static["distance"],
+                delta_f=delta_f,
+                f_lower=self.flow,
+            )
             direct.resize(flen)
 
             # the rescaled waveform must agree in both shape and amplitude
-            mm, _ = match(scaled, direct, psd=self.psds[self.ifos[0]],
-                          low_frequency_cutoff=self.flow)
+            mm, _ = match(
+                scaled,
+                direct,
+                psd=self.psds[self.ifos[0]],
+                low_frequency_cutoff=self.flow,
+            )
             self.assertGreater(
-                mm, 0.99,
+                mm,
+                0.99,
                 msg="match between rescaled and regenerated waveform is "
-                    f"only {mm} at mtotal={mtotal}")
+                f"only {mm} at mtotal={mtotal}",
+            )
 
-            s_scaled = sigma(scaled, psd=self.psds[self.ifos[0]],
-                             low_frequency_cutoff=self.flow)
-            s_direct = sigma(direct, psd=self.psds[self.ifos[0]],
-                             low_frequency_cutoff=self.flow)
+            s_scaled = sigma(
+                scaled, psd=self.psds[self.ifos[0]], low_frequency_cutoff=self.flow
+            )
+            s_direct = sigma(
+                direct, psd=self.psds[self.ifos[0]], low_frequency_cutoff=self.flow
+            )
             self.assertAlmostEqual(
-                s_scaled / s_direct, 1.0, places=2,
-                msg="amplitude of rescaled waveform is wrong at "
-                    f"mtotal={mtotal}")
+                s_scaled / s_direct,
+                1.0,
+                places=2,
+                msg=f"amplitude of rescaled waveform is wrong at mtotal={mtotal}",
+            )
 
     def test_loglr_matches_regeneration(self):
         """The marginalized loglr equals an explicit sum over the grid using
@@ -779,13 +811,15 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
             model.update(q=q, mtotal=self.fiducial_mtotal)
             marg_loglr = model.loglr
 
-            integrated = special.logsumexp(
-                self._regenerated_loglrs(base, q)) - norm
+            integrated = special.logsumexp(self._regenerated_loglrs(base, q)) - norm
 
             self.assertAlmostEqual(
-                marg_loglr, integrated, delta=0.5,
+                marg_loglr,
+                integrated,
+                delta=0.5,
                 msg=f"marginalized loglr {marg_loglr} does not match explicit "
-                    f"integration {integrated} at q={q}")
+                f"integration {integrated} at q={q}",
+            )
 
     def test_maxl_mtotal_matches_grid(self):
         """The recorded maximum likelihood total mass is the grid point that
@@ -795,11 +829,11 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
         q = self.injected_q
 
         model.update(q=q, mtotal=self.fiducial_mtotal)
-        model.loglr
+        _ = model.loglr
 
         logls = self._regenerated_loglrs(base, q)
         expected = self.mtotal_grid[int(numpy.argmax(logls))]
-        self.assertEqual(model.current_stats['maxl_mtotal'], expected)
+        self.assertEqual(model.current_stats["maxl_mtotal"], expected)
 
     def test_grid_from_prior_bounds(self):
         """The grid can be built from the mtotal prior instead of given."""
@@ -815,24 +849,159 @@ class TestBruteTotalMassMarginalize(unittest.TestCase):
         The base model generates its own waveform in this case, so it is set
         up with the component masses as its variable parameters.
         """
-        variable = ['mass1', 'mass2']
+        variable = ["mass1", "mass2"]
         prior = JointDistribution(
-            variable,
-            Uniform(mass1=(1., 200.)),
-            Uniform(mass2=(1., 200.)))
+            variable, Uniform(mass1=(1.0, 200.0)), Uniform(mass2=(1.0, 200.0))
+        )
         model = models.BruteTotalMassMarginalize(
-            variable, data=copy.deepcopy(self.data), psds=self.psds,
+            variable,
+            data=copy.deepcopy(self.data),
+            psds=self.psds,
             low_frequency_cutoff=self.low_frequency_cutoff,
-            static_params=self.static, prior=prior,
-            base_model='marginalized_time', marginalize_mtotal=False,
-            marginalize_vector_samples=64, cores=1)
+            static_params=self.static,
+            prior=prior,
+            base_model="marginalized_time",
+            marginalize_mtotal=False,
+            marginalize_vector_samples=64,
+            cores=1,
+        )
 
         self.assertIsNone(model.mtotal_grid)
-        model.update(mass1=mass1_from_mtotal_q(self.injected_mtotal,
-                                               self.injected_q),
-                     mass2=mass2_from_mtotal_q(self.injected_mtotal,
-                                               self.injected_q))
+        model.update(
+            mass1=mass1_from_mtotal_q(self.injected_mtotal, self.injected_q),
+            mass2=mass2_from_mtotal_q(self.injected_mtotal, self.injected_q),
+        )
         self.assertTrue(numpy.isfinite(model.loglr))
+
+
+class TestMarginalizedTimeRefFrame(unittest.TestCase):
+    """
+    Tests that the marginalized_time model gives the same loglr whether
+    tc is sampled in the geocentric frame or in a detector's frame.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tc = 1126259462.420
+        cls.flow = 20.0
+        cls.inj = {
+            "ra": 2.2,
+            "dec": -1.25,
+            "polarization": 1.75,
+            "distance": 400.0,
+            "mass1": 37.0,
+            "mass2": 32.0,
+            "inclination": 0.3,
+            "coa_phase": 0.0,
+        }
+        cls.ifos = ["H1", "L1"]
+        seglen = 8
+        sample_rate = 2048
+        tsamples = seglen * sample_rate
+        flen = tsamples // 2 + 1
+        delta_f = 1.0 / seglen
+        psd = aLIGOZeroDetHighPower(flen, delta_f, cls.flow)
+        hp, hc = get_fd_waveform(
+            approximant="IMRPhenomD", delta_f=delta_f, f_lower=cls.flow, **cls.inj
+        )
+        hp.resize(flen)
+        hc.resize(flen)
+        start = int(cls.tc) - seglen / 2
+        cls.data = {}
+        cls.psds = {}
+        for i, ifo in enumerate(cls.ifos):
+            ts = noise_from_psd(tsamples, 1.0 / sample_rate, psd, seed=1000 + i)
+            ts.start_time = start
+            det = Detector(ifo)
+            fp, fc = det.antenna_pattern(
+                cls.inj["ra"], cls.inj["dec"], cls.inj["polarization"], cls.tc
+            )
+            tdet = det.arrival_time(cls.tc, cls.inj["ra"], cls.inj["dec"])
+            h = (fp * hp + fc * hc).cyclic_time_shift(tdet - start)
+            d = ts.to_frequencyseries()
+            d += h.astype(d.dtype)
+            d._epoch = start
+            cls.data[ifo] = d
+            cls.psds[ifo] = psd
+
+    def _loglr(self, frame, marg_sky=False):
+        """
+        Return the mean marginalized loglr at the injected parameters,
+        with tc sampled in the given frame.
+        """
+        numpy.random.seed(0)
+        static = dict(self.inj, approximant="IMRPhenomD", f_lower=self.flow)
+        static.pop("mass1")
+        if frame == "geocentric":
+            ref_tc = self.tc
+        else:
+            static["tc_ref_frame"] = frame
+            ref_tc = Detector(frame).arrival_time(
+                self.tc, self.inj["ra"], self.inj["dec"]
+            )
+        variable = ["tc", "mass1"]
+        dists = [
+            Uniform(tc=(ref_tc - 0.05, ref_tc + 0.05)),
+            Uniform(mass1=(20.0, 50.0)),
+        ]
+        kwargs = {
+            "marginalize_vector_params": "tc",
+            "marginalize_vector_samples": 2000,
+        }
+        if marg_sky:
+            static.pop("ra")
+            static.pop("dec")
+            variable += ["ra", "dec"]
+            dists += [UniformAngle(ra=None), CosAngle(dec=None)]
+            kwargs = {
+                "marginalize_vector_params": "tc, ra, dec",
+                "marginalize_vector_samples": 5000,
+                "marginalize_sky_initial_samples": int(2e5),
+            }
+        model = models.MarginalizedTime(
+            variable,
+            copy.deepcopy(self.data),
+            dict.fromkeys(self.ifos, self.flow),
+            psds=self.psds,
+            static_params=static,
+            sample_rate=2048,
+            prior=JointDistribution(variable, *dists),
+            **kwargs,
+        )
+        loglrs = []
+        for _ in range(3):
+            model.update(mass1=self.inj["mass1"])
+            loglrs.append(model.loglr)
+        return numpy.mean(loglrs)
+
+    def test_time_marg_ref_frame(self):
+        """
+        Test that time marginalization works regardless of the frame times
+        are sampled in.
+        """
+        geo = self._loglr("geocentric")
+        # Make sure the signal is actually recovered
+        self.assertGreater(geo, 100)
+        for ifo in self.ifos:
+            det = self._loglr(ifo)
+            msg = (
+                f"loglr with tc in {ifo} frame ({det}) differs from geocentric ({geo})"
+            )
+            self.assertAlmostEqual(geo, det, delta=1.0, msg=msg)
+
+    def test_sky_time_marg_ref_frame(self):
+        """
+        Test that sky/time marginalization works regardless of the frame times
+        are sampled in.
+        """
+        geo = self._loglr("geocentric", marg_sky=True)
+        self.assertGreater(geo, 100)
+        for ifo in self.ifos:
+            det = self._loglr(ifo, marg_sky=True)
+            msg = (
+                f"loglr with tc in {ifo} frame ({det}) differs from geocentric ({geo})"
+            )
+            self.assertAlmostEqual(geo, det, delta=5.0, msg=msg)
 
 
 suite = unittest.TestSuite()
@@ -842,6 +1011,7 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMarginalizedPolMod
 suite.addTest(
     unittest.TestLoader().loadTestsFromTestCase(TestBruteTotalMassMarginalize)
 )
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMarginalizedTimeRefFrame))
 
 if __name__ == "__main__":
     from astropy.utils import iers

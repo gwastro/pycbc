@@ -246,6 +246,24 @@ class DistMarg:
 
         return variable_params, kwargs
 
+    @property
+    def tc_ref_frame(self):
+        """The frame in which tc is sampled ('geocentric' or a detector)"""
+        static = getattr(self, "static_params", None) or {}
+        return static.get("tc_ref_frame", "geocentric")
+
+    @property
+    def tc_window_padding(self):
+        """
+        Maximum time offset between the tc reference frame and any
+        detector, used to pad the tc prior when searching SNR time series
+        """
+        # if geocentric, the distance to any detector is Earth radius
+        if self.tc_ref_frame == "geocentric":
+            return EARTH_RADIUS
+        # From one detector to another can be up to an Earth diameter
+        return 2.0 * EARTH_RADIUS
+
     def reset_vector_params(self):
         """Redraw vector params from their priors"""
         for param in self.marginalized_vector_priors:
@@ -388,7 +406,8 @@ class DistMarg:
         # Determine the common valid time range
         iref = ifos[0]
         dref = d[iref]
-        dt = dref.time_delay_from_earth_center(ra, dec, tcave)
+        # time delay from the frame tc is sampled in to the reference ifo
+        dt = dref.arrival_time(tcave, ra, dec, self.tc_ref_frame) - tcave
 
         starts = []
         ends = []
@@ -493,6 +512,14 @@ class DistMarg:
                 fp[ifo], fc[ifo] = d[ifo].antenna_pattern(ra, dec, 0.0, tcave)
                 dtc[ifo] = d[ifo].time_delay_from_earth_center(ra, dec, tcave)
 
+            # time delay from geocenter to the frame tc is sampled in
+            refframe = self.tc_ref_frame
+            if refframe == "geocentric":
+                dtref = numpy.zeros(len(ra))
+            else:
+                dtref = Detector(refframe, reference_time=tcave)
+                dtref = dtref.time_delay_from_earth_center(ra, dec, tcave)
+
             dmap = {}
             for i, t in enumerate(tqdm.tqdm(zip(*dts))):
                 if t not in dmap:
@@ -505,7 +532,7 @@ class DistMarg:
             # Sky prior by bin
             bin_prior = {t: len(dmap[t]) / size for t in dmap}
 
-            return dmap, tcmin, tcmax, fp, fc, ra, dec, dtc, bin_prior
+            return dmap, tcmin, tcmax, fp, fc, ra, dec, dtc, dtref, bin_prior
 
         if not hasattr(self, "tinfo"):
             self.tinfo = {}
@@ -514,7 +541,7 @@ class DistMarg:
             logger.info("pregenerating sky pointings")
             self.tinfo[ikey] = make_init()
 
-        dmap, tcmin, tcmax, fp, fc, ra, dec, dtc, bin_prior = self.tinfo[ikey]
+        (dmap, tcmin, tcmax, fp, fc, ra, dec, dtc, dtref, bin_prior) = self.tinfo[ikey]
 
         # draw times from each snr time series
         # Is it worth doing this if some detector has low SNR?
@@ -525,7 +552,8 @@ class DistMarg:
         mcweight = None
         for ifo in ifos:
             snr = snrs[ifo]
-            tmin, tmax = tcmin - EARTH_RADIUS, tcmax + EARTH_RADIUS
+            pad = self.tc_window_padding
+            tmin, tmax = tcmin - pad, tcmax + pad
             if hasattr(self, "tstart"):
                 tmin = self.tstart[ifo]
                 tmax = self.tend[ifo]
@@ -582,6 +610,7 @@ class DistMarg:
         ra = ra[ix]
         dec = dec[ix]
         dtc = {ifo: dtc[ifo][ix] for ifo in dtc}
+        dtref = dtref[ix]
 
         ti = numpy.resize(numpy.array(ti, dtype=int), vsamples)
         wi = numpy.resize(numpy.array(wi), vsamples)
@@ -589,7 +618,10 @@ class DistMarg:
         # Second draw a subsample size offset so that all times are covered
         tct = numpy.random.uniform(-snr.delta_t / 2.0, snr.delta_t / 2.0, size=len(ti))
 
-        tc = tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc[ifos[0]]
+        # convert from the reference ifo's time to the frame tc is sampled in
+        tc = (
+            tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc[ifos[0]] + dtref
+        )
 
         # Update the current proposed times and the marginalization values.
         # The points are drawn from the incoherent likelihood, not from the
@@ -686,8 +718,9 @@ class DistMarg:
             return
 
         tcmin, tcmax = self.marginalized_vector_priors["tc"].bounds["tc"]
-        tstart = tcmin - EARTH_RADIUS
-        tmax = tcmax - tcmin + EARTH_RADIUS * 2.0
+        pad = self.tc_window_padding
+        tstart = tcmin - pad
+        tmax = tcmax - tcmin + pad * 2.0
         num_samples = int(tmax * sample_rate)
         self.tstart = dict.fromkeys(self.data, tstart)
         self.num_samples = dict.fromkeys(self.data, num_samples)
@@ -870,8 +903,8 @@ class DistMarg:
         psnrs = []
         for ifo in ifos:
             snr = snrs[ifo]
-            start = max(tcmin - EARTH_RADIUS, snr.start_time)
-            end = min(tcmax + EARTH_RADIUS, snr.end_time)
+            start = max(tcmin - self.tc_window_padding, snr.start_time)
+            end = min(tcmax + self.tc_window_padding, snr.end_time)
             snr = snr.time_slice(start, end, mode="nearest")
             psnr = abs(snr).max()
             if psnr > peak_snr_threshold:
