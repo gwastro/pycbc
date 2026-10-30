@@ -159,8 +159,6 @@ def convert_inputstr(inputstr, choices):
                                       + str(cut_value2) + " >= " + str(cut_value1))
 
 
-
-
 def check_update_cuts(cut_dict, new_cut):
     """
     Update a cuts dictionary, but check whether the cut exists already,
