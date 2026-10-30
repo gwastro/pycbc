@@ -5,6 +5,12 @@ time.sleep(30)
 while 1:
     time.sleep(60)
     subprocess.run(["condor_q", "-bet"])
+    held = subprocess.check_output(["condor_q", "-hold", "-nobatch"]).decode()
+    if [ln for ln in held.splitlines() if ln.strip() and ln.strip()[0].isdigit()]:
+        print("Condor has held jobs, ending now:\n" + held)
+        subprocess.run(["bash", "./stop"])
+        time.sleep(30)
+        exit(1)
     subprocess.run(["pegasus-status", "submitdir/work/"])
     out = subprocess.check_output(["pegasus-status", "submitdir/work/"])
     out = str(out)
