@@ -72,7 +72,8 @@ def call(
     if p.returncode != 0 and on_error == "raise":
         raise GitInvocationError(f'Failed to run "{" ".join(command)}"')
 
-    out = out.decode("utf-8").strip()
+    # out is None when stdout isn't captured (e.g. sent to a file)
+    out = "" if out is None else out.decode("utf-8").strip()
 
     if returncode:
         return out, p.returncode
