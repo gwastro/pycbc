@@ -286,7 +286,11 @@ plot_node, skygrid_plot = _workflow.make_pygrb_plot(
 plotting_nodes.append(plot_node)
 # Plot the template bank
 plot_node, bank_plot = _workflow.make_pygrb_plot(
-    wflow, "pycbc_plot_bank_corner", out_dir, bank_file=bank_file
+    wflow,
+    "pycbc_plot_bank_corner",
+    out_dir,
+    bank_file=bank_file,
+    tags=["bank"]
 )
 plotting_nodes.append(plot_node)
 # Retrieve the segments plot (produced in the preprocessing stage)

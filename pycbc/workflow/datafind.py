@@ -370,7 +370,7 @@ def setup_datafind_workflow(
 
     logger.info("Leaving datafind module")
     if datafind_method == "AT_RUNTIME_FAKE_DATA":
-        datafindouts = None
+        datafindouts = []
     else:
         datafindouts = FileList(datafindouts)
 
