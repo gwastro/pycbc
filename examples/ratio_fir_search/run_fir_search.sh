@@ -38,7 +38,6 @@ pycbc_inspiral_fir \
     --gps-end-time 1000005000 \
     --injection-filter-rejector-chirp-time-window 20000 \
     --output fir.hdf \
-    --newsnr-threshold 0 \
     --bank-file fir_full_bank.hdf \
     --fake-strain-seed 0 \
     --fake-strain aLIGOZeroDetHighPower \
