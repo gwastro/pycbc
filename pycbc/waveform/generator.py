@@ -1676,7 +1676,7 @@ class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
         return self._epoch
 
     @staticmethod
-    def select_rframe_generator(approximant):
+    def select_rframe_generator(approximant):  # noqa: ARG004
         """
         Returns the radiation frame generator.
 

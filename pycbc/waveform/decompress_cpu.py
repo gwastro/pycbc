@@ -41,7 +41,14 @@ from .decompress_cpu_cython import (
 
 
 def inline_linear_interp(
-    amp, phase, sample_frequencies, output, df, f_lower, imin, start_index
+    amp,
+    phase,
+    sample_frequencies,
+    output,
+    df,
+    f_lower,  # noqa: ARG001
+    imin,
+    start_index,
 ):
 
     rprec = real_same_precision_as(output)
@@ -66,7 +73,14 @@ def inline_linear_interp(
 
 
 def inline_quadratic_interp(
-    amp, phase, sample_frequencies, output, df, f_lower, imin, start_index
+    amp,
+    phase,
+    sample_frequencies,
+    output,
+    df,
+    f_lower,  # noqa: ARG001
+    imin,
+    start_index,
 ):
 
     rprec = real_same_precision_as(output)
@@ -91,7 +105,14 @@ def inline_quadratic_interp(
 
 
 def inline_cubic_interp(
-    amp, phase, sample_frequencies, output, df, f_lower, imin, start_index
+    amp,
+    phase,
+    sample_frequencies,
+    output,
+    df,
+    f_lower,  # noqa: ARG001
+    imin,
+    start_index,
 ):
 
     rprec = real_same_precision_as(output)
@@ -116,7 +137,14 @@ def inline_cubic_interp(
 
 
 def inline_quartic_interp(
-    amp, phase, sample_frequencies, output, df, f_lower, imin, start_index
+    amp,
+    phase,
+    sample_frequencies,
+    output,
+    df,
+    f_lower,  # noqa: ARG001
+    imin,
+    start_index,
 ):
 
     rprec = real_same_precision_as(output)

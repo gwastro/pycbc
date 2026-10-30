@@ -122,7 +122,7 @@ class CountPosterior(AugmentedRvContinuous):
         # power-law priors
         self.alpha = prior
         if prior == 0:
-            self.prior = lambda x: 1.0
+            self.prior = lambda x: 1.0  # noqa: ARG005
         elif prior > 0:
             self.prior = lambda x: x**prior
         else:

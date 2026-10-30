@@ -205,7 +205,7 @@ def render_text(path, cp):
     return output
 
 
-def render_ignore(path, cp):
+def render_ignore(path, cp):  # noqa: ARG001
     """Does not render anything."""
     return ""
 

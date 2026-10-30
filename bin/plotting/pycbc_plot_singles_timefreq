@@ -122,7 +122,7 @@ trig_f = HFile(opts.trig_file, "r")
 trigs = trig_f[opts.detector]
 
 
-def rough_filter(snr, chisq, chisq_dof, end_time, tmp_id, tmp_dur):
+def rough_filter(snr, chisq, chisq_dof, end_time, tmp_id, tmp_dur):  # noqa: ARG001
     return np.logical_and(
         end_time > opts.gps_start_time,
         end_time < opts.gps_end_time + tmp_dur.astype("float64"),

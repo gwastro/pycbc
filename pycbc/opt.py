@@ -71,7 +71,7 @@ def insert_optimization_option_group(parser):
     )
 
 
-def verify_optimization_options(opt, parser):
+def verify_optimization_options(opt, parser):  # noqa: ARG001
     """
     Parses the CLI options, verifies that they are consistent and
     reasonable, and acts on them if they are

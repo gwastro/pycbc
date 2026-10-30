@@ -52,7 +52,7 @@ def _get_plan(itype, otype, inlen):
     return theplan
 
 
-def fft(invec, outvec, prec, itype, otype):
+def fft(invec, outvec, prec, itype, otype):  # noqa: ARG001
     if itype == "complex" and otype == "complex":
         pyplan = _get_plan(invec.dtype, outvec.dtype, len(invec))
         pyplan.execute(invec.data, outvec.data)
@@ -61,7 +61,7 @@ def fft(invec, outvec, prec, itype, otype):
         raise NotImplementedError("Only Complex to Complex FFTs for pyfft currently.")
 
 
-def ifft(invec, outvec, prec, itype, otype):
+def ifft(invec, outvec, prec, itype, otype):  # noqa: ARG001
     if itype == "complex" and otype == "complex":
         pyplan = _get_plan(invec.dtype, outvec.dtype, len(invec))
         pyplan.execute(invec.data, outvec.data, inverse=True)

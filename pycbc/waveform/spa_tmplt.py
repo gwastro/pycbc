@@ -202,9 +202,10 @@ def spa_tmplt_engine(
     amp_factor,
 ):
     """Calculate the spa tmplt phase"""
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 def spa_tmplt(**kwds):

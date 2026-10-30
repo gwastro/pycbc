@@ -253,5 +253,5 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         return cp.asnumpy(cv[w]), cp.asnumpy(cl[w])
 
 
-def _threshold_cluster_factory(series):
+def _threshold_cluster_factory(series):  # noqa: ARG001
     return CUDAThresholdCluster

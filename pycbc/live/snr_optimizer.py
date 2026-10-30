@@ -59,7 +59,7 @@ Nfeval = 0
 start_time = time.time()
 
 
-def callback_func(xk, convergence=0):
+def callback_func(xk, convergence=0):  # noqa: ARG001
     global Nfeval
     logger.info("Currently at %d %s", Nfeval, convergence)
     # Time out if the optimization takes longer than 6 minutes
@@ -223,7 +223,7 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
     return results.x
 
 
-def optimize_shgo(bounds, cli_args, extra_args, initial_point):  # pylint: disable=unused-argument
+def optimize_shgo(bounds, cli_args, extra_args, initial_point):  # pylint: disable=unused-argument  # noqa: ARG001
     bounds = [bounds["mchirp"], bounds["eta"], bounds["spin1z"], bounds["spin2z"]]
     results = shgo(
         compute_minus_network_snr,

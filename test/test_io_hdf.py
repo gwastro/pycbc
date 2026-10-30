@@ -50,7 +50,7 @@ class TestIOHDF(unittest.TestCase):
                 f.create_dataset("b", data=np.arange(6))
 
             with HFile(p, "r") as f, self.assertRaises(RuntimeError):
-                f.select(lambda a, b: a > 0, "a", "b")
+                f.select(lambda a, b: a > 0, "a", "b")  # noqa: ARG005
 
     def test_filedata_mask_and_get_column(self):
         """Test FileData.mask and get_column with a simple filter_func."""

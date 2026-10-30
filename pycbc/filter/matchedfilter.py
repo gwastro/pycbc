@@ -52,9 +52,10 @@ BACKEND_PREFIX = "pycbc.filter.matchedfilter_"
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def correlate(x, y, z):
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 class BatchCorrelator:
@@ -88,9 +89,10 @@ class BatchCorrelator:
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def _correlate_factory(x, y, z):
-    err_msg = "This class is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This class is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 class Correlator:
@@ -383,7 +385,11 @@ class MatchedFilterControl:
         return snr, norm, corr, idx, snrv
 
     def full_matched_filter_thresh_only(
-        self, segnum, template_norm, window=None, epoch=None
+        self,
+        segnum,
+        template_norm,
+        window=None,  # noqa: ARG002
+        epoch=None,
     ):
         """
         Returns the complex snr timeseries, normalization of the complex snr,

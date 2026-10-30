@@ -460,13 +460,14 @@ def multi_ifo_job_setup(
     return out_files
 
 
+# science_segs and output_dir are unused; the signature matches sngl_ifo_job_setup
 def multi_ifo_coherent_job_setup(
     workflow,
     out_files,
     curr_exe_job,
-    science_segs,
+    science_segs,  # noqa: ARG001
     datafind_outs,
-    output_dir,
+    output_dir,  # noqa: ARG001
     parents=None,
     slide_dict=None,
     tags=None,
@@ -936,13 +937,14 @@ class PyCBCMultiInspiralExecutable(Executable):
     # bank-veto-bank-file is a file input option for pycbc_multi_inspiral
     file_input_options = Executable.file_input_options + ["--bank-veto-bank-file"]
 
+    # gate_files is unused, but kept so that existing calls keep working
     def __init__(
         self,
         cp,
         name,
         ifo=None,
         injection_file=None,
-        gate_files=None,
+        gate_files=None,  # noqa: ARG002
         out_dir=None,
         tags=None,
     ):
@@ -1102,7 +1104,7 @@ class PyCBCTmpltbankExecutable(Executable):
         self.write_psd = write_psd
         self.psd_files = psd_files
 
-    def create_node(self, data_seg, valid_seg, parent=None, df_parents=None, tags=None):
+    def create_node(self, data_seg, valid_seg, parent=None, df_parents=None, tags=None):  # noqa: ARG002
         if tags is None:
             tags = []
         node = Node(self)
