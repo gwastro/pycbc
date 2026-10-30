@@ -55,8 +55,6 @@ template_fit_param_choices = ['fit_by_fit_coeff', 'smoothed_fit_coeff',
 template_param_choices = bank_conv.conversion_options + \
                              template_fit_param_choices
 
-# What are the inequalities associated with the cuts?
-# 'upper' means upper limit, and so requires value < threshold
 # The functions should return True (False) to keep (cut) a trigger or template
 # How to associate the inequalities with the cuts :
 # 'upper' means upper limit, and requires value < threshold
