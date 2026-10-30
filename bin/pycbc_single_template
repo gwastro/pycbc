@@ -556,9 +556,9 @@ with ctx:
 
     f["chisq_boundaries"] = (
         numpy.array(
-            vetoes.power_chisq_bins(
+            vetoes.power_chisq_bins_and_weights(
                 template, chisq_bins, stilde.psd, low_frequency_cutoff=flow
-            )
+            )[0]
         )
         * template.delta_f
     )

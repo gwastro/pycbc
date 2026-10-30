@@ -131,45 +131,14 @@ def power_chisq_bin_weights(sigmasq_series, bins):
     return bins[kept], power.sum() / power
 
 
-def power_chisq_bins(
-    htilde, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None
-):
-    """
-    Returns the bins for use with the chisq functions: edges placed to
-    divide the template's power equally, with any bin that contains no
-    power merged into the next (see power_chisq_bin_weights).
-
-    Parameters
-    ----------
-    htilde: FrequencySeries
-        A frequency series containing the template waveform
-    num_bins: int
-        The number of chisq bins to calculate.
-    psd: FrequencySeries
-        A frequency series containing the psd. Its length must be commensurate
-        with the template waveform.
-    low_frequency_cutoff: {None, float}, optional
-        The low frequency cutoff to apply
-    high_frequency_cutoff: {None, float}, optional
-        The high frequency cutoff to apply
-
-    Returns
-    -------
-    bins: List of ints
-        A list of the edges of the chisq bins is returned.
-
-    """
-    return power_chisq_bins_and_weights(
-        htilde, num_bins, psd, low_frequency_cutoff, high_frequency_cutoff
-    )[0]
-
-
 def power_chisq_bins_and_weights(
     htilde, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None
 ):
     """
-    Returns the chisq bins of power_chisq_bins and the weight of each bin
-    (see power_chisq_bin_weights).
+    Returns the bins for use with the chisq functions and the weight of
+    each bin: edges placed to divide the template's power equally, with
+    any bin that contains no power merged into the next (see
+    power_chisq_bin_weights).
 
     Parameters
     ----------
@@ -656,10 +625,6 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
         super().__init__(**kwds)
         self.template_mem = None
         self.corr_mem = None
-
-    def calculate_chisq_bins(self, template, psd):
-        """Obtain the chisq bins for this template and PSD."""
-        return self.calculate_chisq_bins_and_weights(template, psd)[0]
 
     def calculate_chisq_bins_and_weights(self, template, psd):
         """Obtain the chisq bins for this template and PSD, and their weights."""
