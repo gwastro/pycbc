@@ -4,8 +4,8 @@ import time
 time.sleep(30)
 while 1:
     time.sleep(60)
-    subprocess.run(["condor_q", "-bet"])
-    subprocess.run(["pegasus-status", "submitdir/work/"])
+    subprocess.run(["condor_q", "-bet"], check=False)
+    subprocess.run(["pegasus-status", "submitdir/work/"], check=False)
     out = subprocess.check_output(["pegasus-status", "submitdir/work/"])
     out = str(out)
     lines = out.split("\\n")
@@ -44,7 +44,7 @@ while 1:
 
     if failed != 0:
         print("workflow has a failed job, ending now")
-        subprocess.run(["bash", "./stop"])
+        subprocess.run(["bash", "./stop"], check=False)
         # Need to wait here to make sure it fully exits before uploading logs!
         time.sleep(30)
         exit(1)

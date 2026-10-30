@@ -193,6 +193,9 @@ class FrequencySeries(Array):
             return self._epoch == other._epoch and self._delta_f == other._delta_f
         return False
 
+    # Defining __eq__ makes instances unhashable; make that explicit
+    __hash__ = None
+
     def almost_equal_elem(self, other, tol, relative=True, dtol=0.0):
         """
         Compare whether two frequency series are almost equal, element

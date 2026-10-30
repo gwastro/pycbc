@@ -156,7 +156,7 @@ def kfcv_awkde(sample, bwchoice, alphachoice, k=2):
 
 
 def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
-    npoints, ndim = sampleval.shape
+    npoints, _ = sampleval.shape
     fom = {}
     for gbw in bwgrid:
         for alphavals in alphagrid:

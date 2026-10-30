@@ -102,7 +102,7 @@ class TestQTransform(unittest.TestCase):
             self.assertTrue(numpy.isfinite(qplane_raw).all())
 
             # Test complex output
-            times_c, freqs_c, qplane_c = ts.qtransform(
+            _, freqs_c, qplane_c = ts.qtransform(
                 delta_t=ts.delta_t, delta_f=1.0, frange=(30, 300), return_complex=True
             )
             self.assertEqual(qplane_c.shape, (len(freqs_c), n))

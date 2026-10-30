@@ -351,6 +351,9 @@ class TimeSeries(Array):
             return self._epoch == other._epoch and self._delta_t == other._delta_t
         return False
 
+    # Defining __eq__ makes instances unhashable; make that explicit
+    __hash__ = None
+
     def almost_equal_elem(self, other, tol, relative=True, dtol=0.0):
         """
         Compare whether two time series are almost equal, element

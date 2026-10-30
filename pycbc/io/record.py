@@ -888,12 +888,13 @@ class FieldArray(numpy.recarray):
             # we'll get a ValueError if a subarray is being referenced using
             # '.'; so we'll try to parse it out here
             fields = item.split(".")
+            target = self
             if len(fields) > 1:
                 for field in fields[:-1]:
-                    self = self[field]
+                    target = target[field]
                 item = fields[-1]
-            # now try again
-            return super().__setitem__(item, values)
+            # now try again, on the sub-array
+            return super(FieldArray, target).__setitem__(item, values)
 
     def __getbaseitem__(self, item):
         """Gets an item assuming item is either an index or a fieldname."""
@@ -1795,6 +1796,7 @@ class _FieldArrayWithDefaults(FieldArray):
             evaluate the given parameters.
 
         """
+        array_class = cls
         if possible_fields is not None:
             # make sure field names are strings and not unicode
             possible_fields = dict([[f, dt] for f, dt in possible_fields.items()])
@@ -1802,8 +1804,8 @@ class _FieldArrayWithDefaults(FieldArray):
             class ModifiedArray(cls):
                 _staticfields = possible_fields
 
-            cls = ModifiedArray
-        return cls(1, names=parameters).fieldnames
+            array_class = ModifiedArray
+        return array_class(1, names=parameters).fieldnames
 
 
 #

@@ -117,7 +117,7 @@ class TestAutochisquare(unittest.TestCase):
         flow = self.low_frequency_cutoff
 
         with _context:
-            hautocor, hacorfr, hnrm = matched_filter_core(
+            hautocor, _, _ = matched_filter_core(
                 self.htilde,
                 self.htilde,
                 psd=psd,
@@ -126,7 +126,7 @@ class TestAutochisquare(unittest.TestCase):
             )
             hautocor = hautocor * float(np.real(1.0 / hautocor[0]))
 
-            snr, cor, nrm = matched_filter_core(
+            snr, _, nrm = matched_filter_core(
                 self.htilde,
                 sig_tilde,
                 psd=psd,
@@ -140,7 +140,7 @@ class TestAutochisquare(unittest.TestCase):
         snr = snr * nrm
 
         with _context:
-            dof, achisq = autochisq_from_precomputed(
+            _, achisq = autochisq_from_precomputed(
                 snr, snr, hacor, indx, stride=3, num_points=20
             )
 
@@ -173,7 +173,7 @@ class TestAutochisquare(unittest.TestCase):
         flow = self.low_frequency_cutoff
 
         with _context:
-            hautocor, hacorfr, hnrm = matched_filter_core(
+            hautocor, _, _ = matched_filter_core(
                 self.htilde,
                 self.htilde,
                 psd=psd,
@@ -182,7 +182,7 @@ class TestAutochisquare(unittest.TestCase):
             )
             hautocor = hautocor * float(np.real(1.0 / hautocor[0]))
 
-            snr, cor, nrm = matched_filter_core(
+            snr, _, nrm = matched_filter_core(
                 self.htilde,
                 sig_tilde,
                 psd=psd,
@@ -197,7 +197,7 @@ class TestAutochisquare(unittest.TestCase):
         snr = snr * nrm
 
         with _context:
-            dof, achisq = autochisq_from_precomputed(
+            _, achisq = autochisq_from_precomputed(
                 snr, snr, hacor, indx, stride=3, num_points=20
             )
 

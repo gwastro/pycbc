@@ -62,7 +62,7 @@ class TestDetector(unittest.TestCase):
         d = det.Detector("TEST")
 
         # Check that we can call the new detector response
-        fp, fc = d.antenna_pattern(1.5, 1.0, 0, 1000000000)
+        d.antenna_pattern(1.5, 1.0, 0, 1000000000)
 
         # Check it interacts with existing detectors
         d2 = det.Detector("H1")

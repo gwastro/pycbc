@@ -147,7 +147,7 @@ def hypertriangle(*params, bounds=(0, 1)):
     ), "All inputs must have the same number of elements"
 
     # map to numpy array
-    params, input_is_array = ensurearray(params)
+    params, _ = ensurearray(params)
 
     # check all values lie within bounds
     assert numpy.all(params >= bounds[0]) and numpy.all(params <= bounds[1]), (

@@ -117,6 +117,9 @@ class Injections:
             return False
         return False
 
+    # Defining __eq__ makes instances unhashable; make that explicit
+    __hash__ = None
+
 
 class RunInjectionResults:
     def __init__(
@@ -254,6 +257,9 @@ class RunInjectionResults:
             self.injections == other.injections
         )
 
+    # Defining __eq__ makes instances unhashable; make that explicit
+    __hash__ = None
+
     def write_to_hdf(self, outpath):
         outfp = File(outpath, "w")
         outfp.attrs["injection_set"] = self.injname
@@ -308,7 +314,7 @@ def compare_found_injs(reference_run, comparison_run, outfp):
             "Calculating indices of found/missed injections between"
             " reference and comparison runs"
         )
-        both, ref_both_idx, com_both_idx = np.intersect1d(
+        _, ref_both_idx, com_both_idx = np.intersect1d(
             ref_injs, com_injs, return_indices=True
         )
         # Now we want to find the indices of those injections found in one

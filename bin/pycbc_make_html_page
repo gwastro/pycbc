@@ -88,7 +88,7 @@ class Directory:
     def __init__(self, path, plots_dir):
 
         # find all subdirs and filenames in directory
-        cwd, subdirs, filenames = examine_dir(path)
+        _, subdirs, filenames = examine_dir(path)
 
         # save subdirs
         self.path = path.replace(plots_dir, "")

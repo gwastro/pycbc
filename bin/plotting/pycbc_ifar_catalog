@@ -281,7 +281,7 @@ if opts.open_box:
     max_ifar = max(fore_ifar)
 
     if h_inc_back_num > 0:
-        max_ifar = max(max_ifar, max(h_rm_ifar))
+        max_ifar = max(max_ifar, max(h_rm_ifar))  # noqa: PLW3301
         plt.loglog(
             h_rm_ifar,
             h_rm_cumnum,

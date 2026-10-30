@@ -42,7 +42,6 @@ class LikelihoodWrapper:
         _model = model
 
     def __call__(self, params):
-        global _model
         _model.update(**params)
         loglr = _model.loglr
         return loglr, _model.current_stats

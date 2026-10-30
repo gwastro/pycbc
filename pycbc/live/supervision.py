@@ -93,7 +93,7 @@ def run_and_error(command_arguments, controls):
     Wrapper around subprocess.run to catch errors and send emails if required
     """
     logger.info("Running %s", " ".join(command_arguments))
-    command_output = subprocess.run(command_arguments, capture_output=True)
+    command_output = subprocess.run(command_arguments, capture_output=True, check=False)
 
     if command_output.returncode:
         error_contents = [
