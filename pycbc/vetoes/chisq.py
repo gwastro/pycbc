@@ -533,10 +533,6 @@ class SingleDetPowerChisq:
         """Create the power chisq from the options of insert_option_group."""
         return cls(num_bins=args.chisq_bins, snr_threshold=args.chisq_snr_threshold)
 
-    def cached_chisq_bins(self, template, psd):
-        """Returns the chisq bin edges for this template and psd."""
-        return self.cached_chisq_bins_and_weights(template, psd)[0]
-
     def cached_chisq_bins_and_weights(self, template, psd):
         """
         Returns the chisq bin edges for this template and psd and the weight
