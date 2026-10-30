@@ -111,7 +111,6 @@ parser.add_argument(
     default=0,
     help="Maximize triggers over the template bank (ms)",
 )
-parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
 parser.add_argument("--chisq-threshold", type=float, default=0, help="FIXME: ADD")
 parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
 parser.add_argument(
@@ -191,6 +190,7 @@ scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 pycbc.opt.insert_optimization_option_group(parser)
 vetoes.SingleDetSkyMaxPowerChisq.insert_option_group(parser)
+vetoes.SingleDetSkyMaxBankVeto.insert_option_group(parser)
 vetoes.SingleDetSkyMaxAutoChisq.insert_option_group(parser)
 SingleDetSGChisq.insert_option_group(parser)
 
@@ -240,6 +240,7 @@ with ctx:
         "bank_chisq": float32,
         "bank_chisq_dof": int,
         "cont_chisq": float32,
+        "cont_chisq_dof": int,
         "psd_var_val": float32,
         "u_vals": float32,
         "coa_phase": float32,
@@ -287,15 +288,7 @@ with ctx:
             opt.low_frequency_cutoff, None, opt.snr_threshold, tlen, delta_f, complex64
         )
 
-    bank_chisq = vetoes.SingleDetSkyMaxBankVeto(
-        opt.bank_veto_bank_file,
-        flen,
-        delta_f,
-        flow,
-        complex64,
-        phase_order=opt.order,
-        approximant=opt.approximant,
-    )
+    bank_chisq = vetoes.SingleDetSkyMaxBankVeto.from_cli(opt)
 
     power_chisq = vetoes.SingleDetSkyMaxPowerChisq.from_cli(opt)
 
@@ -329,7 +322,7 @@ with ctx:
         low_frequency_cutoff=lfc,
     )
 
-    sg_chisq = SingleDetSGChisq.from_cli(opt, bank, opt.chisq_bins)
+    sg_chisq = SingleDetSGChisq.from_cli(opt, bank)
 
     for t_num, (hplus, hcross) in enumerate(bank):
         # FIXME: Here we need to store sigmasq for plus *and* cross. Derived
@@ -415,7 +408,7 @@ with ctx:
             )
 
             # This hasn't been implemented yet, but the stub is still here.
-            out_vals["cont_chisq"] = autochisq.values()
+            out_vals["cont_chisq"], out_vals["cont_chisq_dof"] = autochisq.values()
 
             idx += stilde.cumulative_index
 

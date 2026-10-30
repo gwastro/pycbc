@@ -1577,8 +1577,8 @@ class ReadByTemplate:
                 vfile, ifo=self.ifo, segment_name=name
             )
             self.segs = (self.segs - veto_segs).coalesce()
-        if self.ifo in gating_veto_windows:
-            gating_veto = gating_veto_windows[self.ifo].split(",")
+        if self.ifo in self.gating_veto_windows:
+            gating_veto = self.gating_veto_windows[self.ifo].split(",")
             gveto_before = float(gating_veto[0])
             gveto_after = float(gating_veto[1])
             if gveto_before > 0 or gveto_after < 0:

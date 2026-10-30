@@ -38,6 +38,14 @@ parser.add_argument(
     "hdf-group's attrs.",
 )
 parser.add_argument(
+    "--high-frequency-cutoff",
+    type=float,
+    default=None,
+    help="Optional high frequency cutoff (Hz) of the PSD to plot. "
+    "If not provided, will use the hdf-group's 'high_frequency_cutoff' "
+    "attribute when present, or plot up to Nyquist otherwise.",
+)
+parser.add_argument(
     "--ifos",
     nargs="+",
     help="What ifo(s) to plot. If none provided, will use  "
@@ -108,6 +116,10 @@ for psd_file in args.psd_files:
                 )
         kmin = int(flow / df)
         kmax = len(f[ifo + "/psds/" + keys[0]][:])
+        if args.high_frequency_cutoff is not None:
+            kmax = min(kmax, int(args.high_frequency_cutoff / df) + 1)
+        elif "high_frequency_cutoff" in f.attrs:
+            kmax = min(kmax, int(f.attrs["high_frequency_cutoff"] / df) + 1)
         klen = kmax - kmin
         # Let's try and keep this to 1GB
         num_points = len(keys) * (klen)

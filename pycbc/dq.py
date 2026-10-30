@@ -112,7 +112,10 @@ def parse_veto_definer(veto_def_filename, ifos):
     return data
 
 
-GWOSC_URL = "https://www.gwosc.org/timeline/segments/json/{}/{}_{}/{}/{}/"
+DEFAULT_GWOSC_URL = "https://www.gwosc.org"
+DEFAULT_DQSEGDB_URL = "https://segments.ligo.org"
+GWOSC_TIMELINE_PATH = "/timeline/segments/json/{}/{}_{}/{}/{}/"
+GWOSC_URL = DEFAULT_GWOSC_URL + GWOSC_TIMELINE_PATH
 
 
 def query_dqsegdb2(detector, flag_name, start_time, end_time, server):
@@ -139,7 +142,7 @@ def query_flag(
     start_time,
     end_time,
     source="any",
-    server="https://segments.ligo.org",
+    server=None,
     veto_definer=None,
     cache=False,
 ):
@@ -148,29 +151,31 @@ def query_flag(
 
     Parameters
     ----------
-    ifo: string
-        The interferometer to query (H1, L1).
-    segment_name: string
-        The status flag to query from GWOSC.
-    start_time: int
-        The starting gps time to begin querying from GWOSC
-    end_time: int
-        The end gps time of the query
-    source: str, Optional
-        Choice between "GWOSC" or "dqsegdb". If dqsegdb, the server option may
-        also be given. The default is to try GWOSC first then try dqsegdb.
-    server: str, Optional
-        The server path. Only used with dqsegdb atm.
-    veto_definer: str, Optional
+    ifo : str
+        The interferometer to query (H1, L1, V1).
+    segment_name : str
+        The status flag to query.
+    start_time : int
+        The starting GPS time to begin querying.
+    end_time : int
+        The end GPS time of the query.
+    source : str, optional
+        Choice between ``"GWOSC"``, ``"dqsegdb"``, or ``"any"``. The default is
+        ``"any"``, which tries GWOSC first and then ``dqsegdb``.
+    server : str, optional
+        Base URL of the segment server. Defaults to ``https://www.gwosc.org``
+        for GWOSC queries and ``https://segments.ligo.org`` for ``dqsegdb``
+        queries.
+    veto_definer : str, optional
         The path to a veto definer to define groups of flags which
         themselves define a set of segments.
-    cache: bool
-        If true cache the query. Default is not to cache
+    cache : bool, optional
+        If True, cache the query. Default is False.
 
     Returns
     -------
-    segments: igwn_segments.segmentlist
-        List of segments
+    segments : igwn_segments.segmentlist
+        List of segments.
 
     """
     flag_segments = segmentlist([])
@@ -181,31 +186,66 @@ def query_flag(
         if (
             "_HW_INJ" in segment_name and "NO" not in segment_name
         ) or "VETO" in segment_name:
-            data = query_flag(ifo, "DATA", start_time, end_time, cache=cache)
+            data = query_flag(
+                ifo,
+                "DATA",
+                start_time,
+                end_time,
+                source=source,
+                server=server,
+                veto_definer=veto_definer,
+                cache=cache,
+            )
 
             if "_HW_INJ" in segment_name:
                 name = "NO_" + segment_name
             else:
                 name = segment_name.replace("_VETO", "")
 
-            negate = query_flag(ifo, name, start_time, end_time, cache=cache)
+            negate = query_flag(
+                ifo,
+                name,
+                start_time,
+                end_time,
+                source=source,
+                server=server,
+                veto_definer=veto_definer,
+                cache=cache,
+            )
             return (data - negate).coalesce()
 
         duration = end_time - start_time
-        try:
-            url = GWOSC_URL.format(
-                get_run(start_time + duration / 2, ifo),
-                ifo,
-                segment_name,
-                int(start_time),
-                int(duration),
-            )
-            fname = get_file(url, cache=cache, timeout=10)
-            data = json.load(open(fname))
-            if "segments" in data:
-                flag_segments = data["segments"]
+        gwosc_bases = (
+            [server.rstrip("/"), DEFAULT_GWOSC_URL]
+            if server is not None
+            and server.rstrip("/") not in (DEFAULT_GWOSC_URL, DEFAULT_DQSEGDB_URL)
+            else [DEFAULT_GWOSC_URL]
+        )
+        fetched = False
+        for gwosc_base in gwosc_bases:
+            try:
+                url = (gwosc_base + GWOSC_TIMELINE_PATH).format(
+                    get_run(start_time + duration / 2, ifo),
+                    ifo,
+                    segment_name,
+                    int(start_time),
+                    int(duration),
+                )
+                fname = get_file(url, cache=cache, timeout=10)
+                with open(fname) as fh:
+                    data = json.load(fh)
+                if "segments" in data:
+                    flag_segments = data["segments"]
+                fetched = True
+                break
+            except (OSError, ValueError) as exc:
+                logger.warning(
+                    "Failed to query GWOSC segments from %s: %s",
+                    gwosc_base,
+                    exc,
+                )
 
-        except Exception:
+        if not fetched:
             if source != "any":
                 raise ValueError(
                     f"Unable to find {segment_name} segments in GWOSC, check "
@@ -223,6 +263,7 @@ def query_flag(
             )
 
     elif source == "dqsegdb":
+        dqsegdb_server = server if server is not None else DEFAULT_DQSEGDB_URL
         # The veto definer will allow the use of MACRO names
         # These directly correspond to the name in the veto definer file
         if veto_definer is not None:
@@ -234,7 +275,7 @@ def query_flag(
             for flag in veto_def[ifo][segment_name]:
                 partial = segmentlist([])
                 segs = query_dqsegdb2(
-                    ifo, flag["full_name"], start_time, end_time, server
+                    ifo, flag["full_name"], start_time, end_time, dqsegdb_server
                 )
                 # Apply padding to each segment
                 for rseg in segs:
@@ -253,7 +294,9 @@ def query_flag(
                 flag_segments += partial.coalesce() & send
 
         else:  # Standard case just query directly
-            segs = query_dqsegdb2(ifo, segment_name, start_time, end_time, server)
+            segs = query_dqsegdb2(
+                ifo, segment_name, start_time, end_time, dqsegdb_server
+            )
             for rseg in segs:
                 flag_segments.append(segment(rseg[0], rseg[1]))
 
@@ -275,7 +318,7 @@ def query_cumulative_flags(
     start_time,
     end_time,
     source="any",
-    server="https://segments.ligo.org",
+    server=None,
     veto_definer=None,
     bounds=None,
     padding=None,
@@ -296,11 +339,11 @@ def query_cumulative_flags(
         The starting gps time to begin querying from GWOSC
     end_time: int
         The end gps time of the query
-    source: str, Optional
-        Choice between "GWOSC" or "dqsegdb". If dqsegdb, the server option may
-        also be given. The default is to try GWOSC first then try dqsegdb.
-    server: str, Optional
-        The server path. Only used with dqsegdb atm.
+    source: str, optional
+        Choice between "GWOSC" or "dqsegdb". The default is to try GWOSC first
+        then try dqsegdb.
+    server: str, optional
+        Base URL of the segment server for GWOSC or dqsegdb queries.
     veto_definer: str, Optional
         The path to a veto definer to define groups of flags which
         themselves define a set of segments.
@@ -436,7 +479,7 @@ def query_str(
     start_time,
     end_time,
     source="any",
-    server="https://segments.ligo.org",
+    server=None,
     veto_definer=None,
     cache=False,
 ):
@@ -458,11 +501,11 @@ def query_str(
     end_time: int
         The end gps time. May be overridden for individual flags with the
         flag str bounds syntax
-    source: str, Optional
-        Choice between "GWOSC" or "dqsegdb". If dqsegdb, the server option may
-        also be given. The default is to try GWOSC first then try dqsegdb.
-    server: str, Optional
-        The server path. Only used with dqsegdb atm.
+    source: str, optional
+        Choice between "GWOSC" or "dqsegdb". The default is to try GWOSC first
+        then try dqsegdb.
+    server: str, optional
+        Base URL of the segment server for GWOSC or dqsegdb queries.
     veto_definer: str, Optional
         The path to a veto definer to define groups of flags which
         themselves define a set of segments.

@@ -115,7 +115,7 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
         logger.info("Caching queries enabled")
 
     # Check for provided server
-    server = "https://segments.ligo.org"
+    server = None
     if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
         server = cp.get_opt_tags("workflow-segments", "segments-database-url", tags)
 
@@ -475,7 +475,7 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
         logger.info("Caching query")
 
     # Check for provided server
-    server = "https://segments.ligo.org"
+    server = None
     if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
         server = cp.get_opt_tags("workflow-segments", "segments-database-url", tags)
 

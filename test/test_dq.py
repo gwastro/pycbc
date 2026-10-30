@@ -140,6 +140,61 @@ class TestDataQualityFlags(unittest.TestCase):
         d8 = query_str("H1", "+data,-CBC_HW_INJ", 1126051217, 1126051217 + 100000)
         self.assertTrue(abs((d - d7) - d8) == 0)
 
+    def test_custom_gwosc_server(self):
+        import json
+        import threading
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+
+        responses = {
+            "/timeline/segments/json/O2_16KHZ_R1/H1_DATA/1186740100/1000/": {
+                "dataset": "O2_16KHZ_R1",
+                "id": "H1_DATA",
+                "start": 1186740100,
+                "end": 1186741100,
+                "segments": [[1186740100, 1186741100]],
+            },
+            "/timeline/segments/json/O2_16KHZ_R1/H1_CBC_CAT1/1186740100/1000/": {
+                "dataset": "O2_16KHZ_R1",
+                "id": "H1_CBC_CAT1",
+                "start": 1186740100,
+                "end": 1186741100,
+                "segments": [[1186740100, 1186740500], [1186740600, 1186741100]],
+            },
+        }
+
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, fmt, *args):
+                pass
+
+            def do_GET(self):
+                body = json.dumps(responses[self.path]).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+        httpd = HTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+        thread.start()
+        try:
+            server_url = f"http://127.0.0.1:{httpd.server_port}"
+            segs = query_str(
+                "H1",
+                "+DATA,-CBC_CAT1_VETO",
+                1186740100,
+                1186741100,
+                source="GWOSC",
+                server=server_url,
+            )
+            self.assertEqual(
+                [(int(s[0]), int(s[1])) for s in segs],
+                [(1186740100, 1186740500), (1186740600, 1186741100)],
+            )
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDataQualityFlags))
