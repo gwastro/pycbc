@@ -10,6 +10,7 @@ from scipy import ndimage
 from scipy.interpolate import interp1d
 from scipy.special import i0e, logsumexp
 
+from pycbc.constants import C_SI
 from pycbc.detector import Detector
 from pycbc.distributions import JointDistribution
 
@@ -62,6 +63,7 @@ class DistMarg:
         marginalize_vector_params=None,
         marginalize_vector_samples=1e3,
         marginalize_sky_initial_samples=1e6,
+        marginalize_sky_analytic=False,
         monitor_vector_ess=False,
         **kwargs,
     ):
@@ -93,6 +95,16 @@ class DistMarg:
             as -numpy.inf.
         marginalize_distance_density: tuple of intes, (1000, 1000)
             The dimensions of the interpolation grid over (sh, hh).
+        marginalize_sky_analytic: bool
+            Draw (tc, ra, dec) by inverting the inter-detector delays in closed
+            form instead of looking them up in the pregenerated map. The
+            physical region is the exact ellipse the delays allow, so a drawn
+            delay tuple cannot fail to correspond to a sky position, and the
+            prior/proposal ratio is analytic rather than approximate. The
+            draw is isotropic and reweighted to the ra and dec priors, so a
+            sky prior much narrower than the whole sky wastes most draws.
+            Falls back to the map, with a warning, if it cannot produce a
+            usable draw.
 
         Returns
         -------
@@ -130,6 +142,8 @@ class DistMarg:
         self.marginalize_sky_initial_samples = int(
             float(marginalize_sky_initial_samples)
         )
+        self.marginalize_sky_analytic = str_to_bool(marginalize_sky_analytic)
+        self._sky_detectors = None
 
         for param in str_to_tuple(marginalize_vector_params, str):
             logger.info(
@@ -451,6 +465,280 @@ class DistMarg:
 
         return self.marginalize_vector_params
 
+    @staticmethod
+    def _draw_in_cells(logw, lo, hi, rng):
+        """Draw one cell per sample from ``[lo, hi)`` of a shared law.
+
+        Every sample has its own bounds, because the window each one may
+        draw in follows from where the previous detector was drawn. The
+        cumulative sum is over the whole series and is formed once; a
+        sample's own normalisation is then the difference of two of its
+        entries.
+
+        Returns the cells and the log probability of drawing each within
+        its own window, or ``-inf`` where the window holds no cell. The
+        cell returned for such a sample is arbitrary; every caller drops
+        it on the ``-inf``.
+        """
+        lmax = logw.max()
+        cum = numpy.concatenate(([0.0], numpy.cumsum(numpy.exp(logw - lmax))))
+        # an empty window draws from the whole series, so the arithmetic
+        # stays finite, and is rejected on the last line
+        empty = hi <= lo
+        lo = numpy.where(empty, 0, lo)
+        hi = numpy.where(empty, len(logw), hi)
+        norm = cum[hi] - cum[lo]
+        target = cum[lo] + rng.random(len(lo)) * norm
+        idx = numpy.clip(numpy.searchsorted(cum, target) - 1, 0, len(logw) - 1)
+        mass = (logw[idx] - lmax) - numpy.log(norm)
+        return idx, numpy.where(empty, -numpy.inf, mass)
+
+    @staticmethod
+    def _ellipse_slice(smat, dt12):
+        """The dt13 the physical sky allows, once dt12 is fixed.
+
+        The physical region is the ellipse ``dt^T S dt <= 1``. Fixing dt12
+        cuts a segment from it whose ends are the roots of a quadratic in
+        dt13. Returns the segment's centre and half width, and which
+        samples have no segment because their dt12 is already outside.
+        """
+        quad = smat[1, 1]
+        lin = 2.0 * smat[0, 1] * dt12
+        disc = lin * lin - 4.0 * quad * (smat[0, 0] * dt12 * dt12 - 1.0)
+        root = numpy.sqrt(numpy.maximum(disc, 0.0))
+        return -lin / (2.0 * quad), root / (2.0 * quad), disc <= 0.0
+
+    def _draw_second_delay(self, third, smat, epoch, t_off, dt12):
+        """Draw dt13 on the ellipse slice the first delay allows.
+
+        On that slice the isotropic sky prior is the arcsine law. A cell
+        of the third detector's series is drawn from those overlapping the
+        slice, in proportion to its SNR, and dt13 is placed within the cell
+        by the arcsine, so the prior/proposal ratio is the cell's
+        probability over its arcsine mass.
+        """
+        mid, half, invalid = self._ellipse_slice(smat, dt12)
+        # a sample whose slice has no width is already invalid; this only
+        # keeps the divisions below finite until it is dropped
+        half = numpy.maximum(half, 1e-300)
+
+        snr, logl = third
+        base, delta = float(snr.start_time - epoch), float(snr.delta_t)
+        ncell = len(logl)
+        # the slice, as a window of this detector's arrival times
+        lo = numpy.clip(
+            numpy.floor((t_off - mid - half - base) / delta), 0, ncell
+        ).astype(int)
+        hi = numpy.clip(
+            numpy.ceil((t_off - mid + half - base) / delta) + 1, 0, ncell
+        ).astype(int)
+        cell, logq = self._draw_in_cells(logl, lo, hi, self._choice_rng)
+
+        # where the drawn cell sits on the slice, and half a cell, both in
+        # units of the half width, which is what the arcsine takes
+        centre = (t_off - (base + cell * delta) - mid) / half
+        step = delta / (2.0 * half)
+        edge_lo = numpy.arcsin(numpy.clip(centre - step, -1.0, 1.0))
+        edge_hi = numpy.arcsin(numpy.clip(centre + step, -1.0, 1.0))
+        # arcsine is monotone and the step is positive, so hi >= lo always
+        mass = (edge_hi - edge_lo) / numpy.pi
+        invalid |= ~(mass > 0) | ~numpy.isfinite(logq)
+        safe = numpy.maximum(mass, 1e-300)
+
+        theta = edge_lo + self._choice_rng.random(len(dt12)) * (edge_hi - edge_lo)
+        dt13 = mid + half * numpy.sin(theta)
+        # q = (sh_j / W) p(dt13) / P_j  =>  p/q = W P_j / sh_j
+        dens = logq - numpy.log(safe)
+        return dt13, dens, invalid
+
+    def analytic_sky_draw(self, snrs, ifos, vsamples):
+        """Draw (tc, ra, dec) by inverting the inter-detector delays exactly.
+
+        An alternative to the pregenerated delay-to-sky map. Each delay is one
+        linear constraint on the unit source direction,
+
+            nhat . d_ij = -c * dt_ij       d_ij = r_i - r_j
+
+        so ``min(ndet - 1, 2)`` delays -- plus one azimuth when there is only a
+        single delay -- determine the sky. The physical region is exactly the
+        ellipse ``dt^T S dt <= 1``, so a drawn delay tuple cannot fail to
+        correspond to a sky position, and the Jacobian is analytic, so the
+        prior/proposal ratio is closed form rather than approximate.
+
+        The isotropic sky prior in delay space is exactly uniform in the first
+        delay and arcsine in the second, and drawing them that way makes every
+        geometric factor collapse to the constant ``-log(2 t12max)``. The
+        residual weight is then only the SNR tilt on the drawn times, and the
+        ratio of the ra and dec priors to the isotropic one.
+
+        Returns False if no sample is usable, and the caller then uses the
+        map.
+        """
+        tcmin, tcmax = self.marginalized_vector_priors["tc"].bounds["tc"]
+        tcmin, tcmax = float(tcmin), float(tcmax)
+        if self._sky_detectors is None:
+            # slow to build, so kept between calls
+            self._sky_detectors = {
+                i: Detector(i, reference_time=0.5 * (tcmin + tcmax)) for i in self.data
+            }
+        dets = self._sky_detectors
+        loc = {i: numpy.asarray(d.location) for i, d in dets.items()}
+        gmst = next(iter(dets.values())).gmst_estimate(0.5 * (tcmin + tcmax))
+
+        # each detector's SNR series, cut to the times the draw may use
+        series = {}
+        for ifo in ifos:
+            snr = snrs[ifo]
+            lo_t, hi_t = tcmin - EARTH_RADIUS, tcmax + EARTH_RADIUS
+            if hasattr(self, "tstart"):
+                lo_t, hi_t = self.tstart[ifo], self.tend[ifo]
+            snr = snr.time_slice(
+                max(lo_t, snr.start_time + snr.delta_t),
+                min(hi_t, snr.end_time - snr.delta_t * 2),
+                mode="nearest",
+            )
+            series[ifo] = (snr, snr.squared_norm().numpy() / 2.0)
+
+        order = sorted(ifos, key=lambda i: -series[i][1].max())
+        ndet = len(order)
+        log_tcspan = numpy.log(tcmax - tcmin)
+
+        snr0, logl0 = series[order[0]]
+        delta0 = float(snr0.delta_t)
+        l0max = logl0.max()
+        shifted0 = numpy.exp(logl0 - l0max)
+        i0 = draw_sample(logl0, size=vsamples)
+        # times below are offsets from this epoch: a double resolves an
+        # absolute GPS time only to 2.4e-7 s
+        epoch = snr0.start_time
+        epoch_t = float(epoch)
+        t_off = i0 * delta0 + self._choice_rng.uniform(
+            -delta0 / 2.0, delta0 / 2.0, vsamples
+        )
+        dens = (logl0[i0] - l0max) - numpy.log(shifted0.sum()) - numpy.log(delta0)
+        invalid = numpy.zeros(vsamples, dtype=bool)
+
+        if ndet == 1:
+            # no delay to invert, so the sky comes from the prior and only
+            # the arrival time carries anything
+            ra = self.marginalized_vector_priors["ra"].rvs(size=vsamples)["ra"]
+            dec = self.marginalized_vector_priors["dec"].rvs(size=vsamples)["dec"]
+            lon = ra - gmst
+            nhat = numpy.array(
+                [
+                    numpy.cos(dec) * numpy.cos(lon),
+                    numpy.cos(dec) * numpy.sin(lon),
+                    numpy.sin(dec),
+                ]
+            )
+            logw = -log_tcspan - dens
+        else:
+            # each delay is one linear constraint on the direction; the
+            # pseudo-inverse of the baselines turns a delay pair back into
+            # the component of the direction they fix
+            baselines = [loc[order[0]] - loc[i] for i in order[1:3]]
+            mpinv = numpy.linalg.pinv(numpy.vstack(baselines))
+            t12max = dets[order[0]].light_travel_time_to_detector(dets[order[1]])
+
+            snr1, logl1 = series[order[1]]
+            base1 = float(snr1.start_time - epoch)
+            delta1 = float(snr1.delta_t)
+            # the second detector's arrival lies within one light crossing
+            # of the first; a cell is in the window if it overlaps it at all
+            lo1 = numpy.clip(
+                numpy.floor((t_off - t12max - base1) / delta1), 0, len(logl1)
+            ).astype(int)
+            hi1 = numpy.clip(
+                numpy.ceil((t_off + t12max - base1) / delta1) + 1, 0, len(logl1)
+            ).astype(int)
+            i1, mass1 = self._draw_in_cells(logl1, lo1, hi1, self._choice_rng)
+            t_two = (
+                base1
+                + i1 * delta1
+                + self._choice_rng.uniform(-delta1 / 2.0, delta1 / 2.0, vsamples)
+            )
+            dens1 = mass1 - numpy.log(delta1)
+            dens += dens1
+            dt12 = t_off - t_two
+            invalid |= ~numpy.isfinite(dens1) | (numpy.abs(dt12) > t12max)
+
+            branch_corr = 0.0
+            if ndet == 2:
+                # one delay leaves the azimuth about the baseline free, and
+                # the isotropic prior is uniform in it
+                dhat = baselines[0] / numpy.linalg.norm(baselines[0])
+                uvec = numpy.cross(dhat, [0.0, 0.0, 1.0])
+                uvec = uvec / numpy.linalg.norm(uvec)
+                vvec = numpy.cross(dhat, uvec)
+                # clipped for samples already marked invalid
+                cos_t = numpy.clip(-dt12 / t12max, -1.0, 1.0)
+                sin_t = numpy.sqrt(1.0 - cos_t * cos_t)
+                az = self._choice_rng.uniform(0, 2 * numpy.pi, vsamples)
+                nhat = cos_t * dhat[:, None] + sin_t * (
+                    numpy.cos(az) * uvec[:, None] + numpy.sin(az) * vvec[:, None]
+                )
+            else:
+                normal = numpy.cross(*baselines)
+                e3 = normal / numpy.linalg.norm(normal)
+                dt13, dens2, bad2 = self._draw_second_delay(
+                    series[order[2]], C_SI**2.0 * (mpinv.T @ mpinv), epoch, t_off, dt12
+                )
+                dens += dens2
+                invalid |= bad2
+                npar = mpinv @ (-C_SI * numpy.vstack([dt12, dt13]))
+                perp = numpy.sqrt(numpy.clip(1.0 - (npar * npar).sum(0), 0.0, None))
+                # The delays fix the direction up to a reflection in the
+                # detector plane. Draw only among the roots whose tc is in
+                # the prior, and halve the weight when only one is.
+                loc0 = loc[order[0]] / C_SI
+                centre = t_off + loc0 @ npar
+                swing = perp * (loc0 @ e3)
+                pair = numpy.stack([centre + swing, centre - swing])
+                ok_up, ok_dn = (pair >= tcmin - epoch_t) & (pair <= tcmax - epoch_t)
+                both = ok_up & ok_dn
+                invalid |= ~(ok_up | ok_dn)
+                up = numpy.where(both, self._choice_rng.random(vsamples) < 0.5, ok_up)
+                nhat = npar + numpy.where(up, perp, -perp) * e3[:, None]
+                branch_corr = numpy.where(both, 0.0, -numpy.log(2.0))
+            logw = -log_tcspan - numpy.log(2.0 * t12max) - dens + branch_corr
+
+        dec = numpy.arcsin(numpy.clip(nhat[2], -1.0, 1.0))
+        ra = numpy.mod(numpy.arctan2(nhat[1], nhat[0]) + gmst, 2 * numpy.pi)
+        if ndet > 1:
+            # the delays were drawn for an isotropic sky, of density
+            # cos(dec) / 4pi in (ra, dec); reweight to the prior
+            sky = self.marginalized_vector_priors
+            logw = (
+                logw
+                + sky["ra"].logpdf(ra=ra)
+                + sky["dec"].logpdf(dec=dec)
+                - numpy.log(numpy.cos(dec) / (4 * numpy.pi))
+            )
+
+        fplus, fcross, delay = {}, {}, {}
+        for ifo, det in dets.items():
+            fplus[ifo], fcross[ifo] = det.antenna_pattern_from_direction(nhat)
+            delay[ifo] = det.time_delay_from_direction(nhat)
+        # tested against the prior as an offset, as the roots were
+        tc_off = t_off - delay[order[0]]
+        outside = (tc_off < tcmin - epoch_t) | (tc_off > tcmax - epoch_t)
+        tc = epoch_t + tc_off
+        logw = numpy.where(invalid | outside, -numpy.inf, logw)
+        if not numpy.isfinite(logw).any():
+            return False
+
+        self.snr_params = ["tc", "ra", "dec"]
+        self.sample_idx = numpy.arange(vsamples)
+        self.precalc_antenna_factors = fplus, fcross, delay
+        self.marginalize_vector_params["tc"] = tc
+        self.marginalize_vector_params["dec"] = dec
+        self.marginalize_vector_params["ra"] = ra
+        self.marginalize_vector_params["logw_partial"] = logw
+        if self._current_params is not None:
+            self._current_params.update(self.marginalize_vector_params)
+            self.marginalize_vector_weights += logw
+        return True
+
     def draw_sky_times(self, snrs, size=None):
         """
         Draw ra, dec, and tc together using SNR timeseries to determine
@@ -464,6 +752,17 @@ class DistMarg:
         ikey = "".join(ifos)
 
         vsamples = size if size is not None else self.vsamples
+
+        if self.marginalize_sky_analytic and len(ifos) > 0:
+            # invert the delays instead of looking them up in the map
+            if self.analytic_sky_draw(snrs, ifos, vsamples):
+                return self.marginalize_vector_params
+            if not getattr(self, "_analytic_fellback", False):
+                self._analytic_fellback = True
+                logger.warning(
+                    "analytic sky draw produced no usable samples; "
+                    "falling back to the pregenerated map"
+                )
 
         # No good SNR peaks, go with prior draw
         if len(ifos) == 0:
