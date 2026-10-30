@@ -19,8 +19,6 @@ logger = logging.getLogger(__name__)
 # Earth radius in seconds
 EARTH_RADIUS = 0.031
 
-# Metres per second, for the analytic delay -> sky inversion
-
 
 def str_to_tuple(sval, ftype):
     """Convenience parsing to convert str to tuple"""
@@ -97,6 +95,16 @@ class DistMarg:
             as -numpy.inf.
         marginalize_distance_density: tuple of intes, (1000, 1000)
             The dimensions of the interpolation grid over (sh, hh).
+        marginalize_sky_analytic: bool
+            Draw (tc, ra, dec) by inverting the inter-detector delays in closed
+            form instead of looking them up in the pregenerated map. The
+            physical region is the exact ellipse the delays allow, so a drawn
+            delay tuple cannot fail to correspond to a sky position, and the
+            prior/proposal ratio is analytic rather than approximate. The
+            draw is isotropic and reweighted to the ra and dec priors, so a
+            sky prior much narrower than the whole sky wastes most draws.
+            Falls back to the map, with a warning, if it cannot produce a
+            usable draw.
 
         Returns
         -------
@@ -134,10 +142,6 @@ class DistMarg:
         self.marginalize_sky_initial_samples = int(
             float(marginalize_sky_initial_samples)
         )
-        # PCG64 rather than the legacy global state: it is faster per
-        # draw, and seeding it from that state leaves numpy.random.seed
-        # pinning a run as before
-        self._sky_rng = numpy.random.default_rng(numpy.random.randint(0, 2**63))
         self.marginalize_sky_analytic = str_to_bool(marginalize_sky_analytic)
         self._sky_detectors = None
 
@@ -478,15 +482,8 @@ class DistMarg:
         """
         lmax = logw.max()
         cum = numpy.concatenate(([0.0], numpy.cumsum(numpy.exp(logw - lmax))))
-        # A window holding no cell is rejected on the last line; what
-        # these two do is keep the arithmetic between here and there
-        # defined. Left alone, such a sample divides by a zero or negative
-        # norm and carries an inf or a nan through to a value that is
-        # discarded anyway, so the only thing lost would be two warnings
-        # -- but the same inf from a window that is NOT empty would be a
-        # real fault, and silencing the warning would hide it. So they are
-        # pointed at the whole series, which is always drawable, and the
-        # result thrown away.
+        # an empty window draws from the whole series, so the arithmetic
+        # stays finite, and is rejected on the last line
         empty = hi <= lo
         lo = numpy.where(empty, 0, lo)
         hi = numpy.where(empty, len(logw), hi)
@@ -495,23 +492,6 @@ class DistMarg:
         idx = numpy.clip(numpy.searchsorted(cum, target) - 1, 0, len(logw) - 1)
         mass = (logw[idx] - lmax) - numpy.log(norm)
         return idx, numpy.where(empty, -numpy.inf, mass)
-
-    @staticmethod
-    def _weighted_draw(weights, shape, rng):
-        """Draw indices ``propto weights``, with replacement.
-
-        How many draws each cell wins is exactly a multinomial, so the
-        counts can be drawn in one call and expanded, which costs the
-        length of the series plus the number of draws and searches for
-        nothing. The expansion comes out ordered by cell, and the caller
-        pairs each draw with a different sample, so it is shuffled back
-        into an independent order.
-        """
-        size = int(numpy.prod(shape))
-        counts = rng.multinomial(size, weights / weights.sum())
-        idx = numpy.repeat(numpy.arange(len(weights)), counts)
-        rng.shuffle(idx)
-        return idx.reshape(shape)
 
     @staticmethod
     def _ellipse_slice(smat, dt12):
@@ -531,26 +511,11 @@ class DistMarg:
     def _draw_second_delay(self, third, smat, epoch, t_off, dt12):
         """Draw dt13 on the ellipse slice the first delay allows.
 
-        On that slice the exact isotropic sky prior is the ARCSINE law,
-        and substituting ``dt13 = mid + half*sin(theta)`` makes it uniform
-        in theta -- which is what cancels the ``1/s`` Jacobian singularity
-        at the ends of the slice, where the source lies in the detector
-        plane and the two timing cones go tangent. A proposal uniform in
-        dt13 instead has log-divergent weight variance and is worse than
-        the map this replaces.
-
-        The third detector's own SNR then tilts the draw, exactly as the
-        second detector's does: the slice is a window of arrival times, a
-        cell is drawn from the series inside it, and dt13 is placed within
-        that cell by the arcsine. The window is the cells that OVERLAP the
-        slice rather than those centred in it, because the arcsine density
-        diverges at the ends and the two edge cells carry a fifth of the
-        mass.
-
-        The weight is then ``W P_j / sh_j`` for the drawn cell j, where W
-        is the window's own share of the series. That is exact for the
-        cell drawn, not an estimate, so nothing here has a sample count to
-        choose.
+        On that slice the isotropic sky prior is the arcsine law. A cell
+        of the third detector's series is drawn from those overlapping the
+        slice, in proportion to its SNR, and dt13 is placed within the cell
+        by the arcsine, so the prior/proposal ratio is the cell's
+        probability over its arcsine mass.
         """
         mid, half, invalid = self._ellipse_slice(smat, dt12)
         # a sample whose slice has no width is already invalid; this only
@@ -567,7 +532,7 @@ class DistMarg:
         hi = numpy.clip(
             numpy.ceil((t_off - mid + half - base) / delta) + 1, 0, ncell
         ).astype(int)
-        cell, logq = self._draw_in_cells(logl, lo, hi, self._sky_rng)
+        cell, logq = self._draw_in_cells(logl, lo, hi, self._choice_rng)
 
         # where the drawn cell sits on the slice, and half a cell, both in
         # units of the half width, which is what the arcsine takes
@@ -580,7 +545,7 @@ class DistMarg:
         invalid |= ~(mass > 0) | ~numpy.isfinite(logq)
         safe = numpy.maximum(mass, 1e-300)
 
-        theta = edge_lo + self._sky_rng.random(len(dt12)) * (edge_hi - edge_lo)
+        theta = edge_lo + self._choice_rng.random(len(dt12)) * (edge_hi - edge_lo)
         dt13 = mid + half * numpy.sin(theta)
         # q = (sh_j / W) p(dt13) / P_j  =>  p/q = W P_j / sh_j
         dens = logq - numpy.log(safe)
@@ -603,18 +568,16 @@ class DistMarg:
         The isotropic sky prior in delay space is exactly uniform in the first
         delay and arcsine in the second, and drawing them that way makes every
         geometric factor collapse to the constant ``-log(2 t12max)``. The
-        residual weight is then only the SNR tilt on the drawn times.
+        residual weight is then only the SNR tilt on the drawn times, and the
+        ratio of the ra and dec priors to the isotropic one.
 
-        Returns True on success. On failure the caller falls back to the map,
-        which is reported so that a run cannot silently change estimator.
+        Returns False if no sample is usable, and the caller then uses the
+        map.
         """
         tcmin, tcmax = self.marginalized_vector_priors["tc"].bounds["tc"]
         tcmin, tcmax = float(tcmin), float(tcmax)
         if self._sky_detectors is None:
-            # the only part of this worth keeping between calls: Detector
-            # scans the LAL table and builds an astropy EarthLocation, about
-            # a millisecond for three of them, against microseconds for
-            # everything else here
+            # slow to build, so kept between calls
             self._sky_detectors = {
                 i: Detector(i, reference_time=0.5 * (tcmin + tcmax)) for i in self.data
             }
@@ -644,16 +607,12 @@ class DistMarg:
         delta0 = float(snr0.delta_t)
         l0max = logl0.max()
         shifted0 = numpy.exp(logl0 - l0max)
-        i0 = self._weighted_draw(shifted0, vsamples, self._sky_rng)
-        # Every time below is an OFFSET from this epoch, never an absolute
-        # GPS. The delays are differences of times near 1e9 s, which a
-        # double resolves to 2.4e-7 s -- a thousandth of a sample -- and
-        # that error lands on the cell boundaries the weights are read
-        # from, putting about 0.1% of samples in the neighbouring cell.
-        # As offsets the differences are exact to ~1e-18.
+        i0 = draw_sample(logl0, size=vsamples)
+        # times below are offsets from this epoch: a double resolves an
+        # absolute GPS time only to 2.4e-7 s
         epoch = snr0.start_time
         epoch_t = float(epoch)
-        t_off = i0 * delta0 + self._sky_rng.uniform(
+        t_off = i0 * delta0 + self._choice_rng.uniform(
             -delta0 / 2.0, delta0 / 2.0, vsamples
         )
         dens = (logl0[i0] - l0max) - numpy.log(shifted0.sum()) - numpy.log(delta0)
@@ -685,24 +644,18 @@ class DistMarg:
             base1 = float(snr1.start_time - epoch)
             delta1 = float(snr1.delta_t)
             # the second detector's arrival lies within one light crossing
-            # of the first, intersected with the series we have: under peak
-            # locking the region is narrower than the crossing, so this
-            # clip is the usual case rather than an edge one. A cell is in
-            # the window if it overlaps it at all, as in the third
-            # detector below: a drawn cell is jittered across its width, so
-            # excluding one that straddles an end would leave the times in
-            # the overlap undrawable rather than merely unlikely.
+            # of the first; a cell is in the window if it overlaps it at all
             lo1 = numpy.clip(
                 numpy.floor((t_off - t12max - base1) / delta1), 0, len(logl1)
             ).astype(int)
             hi1 = numpy.clip(
                 numpy.ceil((t_off + t12max - base1) / delta1) + 1, 0, len(logl1)
             ).astype(int)
-            i1, mass1 = self._draw_in_cells(logl1, lo1, hi1, self._sky_rng)
+            i1, mass1 = self._draw_in_cells(logl1, lo1, hi1, self._choice_rng)
             t_two = (
                 base1
                 + i1 * delta1
-                + self._sky_rng.uniform(-delta1 / 2.0, delta1 / 2.0, vsamples)
+                + self._choice_rng.uniform(-delta1 / 2.0, delta1 / 2.0, vsamples)
             )
             dens1 = mass1 - numpy.log(delta1)
             dens += dens1
@@ -711,20 +664,16 @@ class DistMarg:
 
             branch_corr = 0.0
             if ndet == 2:
-                # One delay leaves the azimuth about the baseline free.
-                # The Jacobian is constant there, so sweeping it uniformly
-                # is exactly isotropic and needs no correction.
+                # one delay leaves the azimuth about the baseline free, and
+                # the isotropic prior is uniform in it
                 dhat = baselines[0] / numpy.linalg.norm(baselines[0])
                 uvec = numpy.cross(dhat, [0.0, 0.0, 1.0])
                 uvec = uvec / numpy.linalg.norm(uvec)
                 vvec = numpy.cross(dhat, uvec)
-                # dt12 can exceed the crossing on a sample already marked
-                # invalid, so the cosine is clipped; the sine is then real
-                # without a guard of its own, since c*c rounds to at most
-                # one for every double in [-1, 1]
+                # clipped for samples already marked invalid
                 cos_t = numpy.clip(-dt12 / t12max, -1.0, 1.0)
                 sin_t = numpy.sqrt(1.0 - cos_t * cos_t)
-                az = self._sky_rng.uniform(0, 2 * numpy.pi, vsamples)
+                az = self._choice_rng.uniform(0, 2 * numpy.pi, vsamples)
                 nhat = cos_t * dhat[:, None] + sin_t * (
                     numpy.cos(az) * uvec[:, None] + numpy.sin(az) * vvec[:, None]
                 )
@@ -738,18 +687,9 @@ class DistMarg:
                 invalid |= bad2
                 npar = mpinv @ (-C_SI * numpy.vstack([dt12, dt13]))
                 perp = numpy.sqrt(numpy.clip(1.0 - (npar * npar).sum(0), 0.0, None))
-                # The delays fix the direction only up to a reflection in
-                # the detector plane. Both roots are physical but put the
-                # coalescence at times differing by twice the reference
-                # detector's offset from that plane, so for some geometries
-                # one of them is outside the tc prior for every sample.
-                # Testing a root is one dot product, so rather than draw
-                # blind and reject, draw only among the roots that survive
-                # and scale the weight by how many did: with both kept the
-                # expectation is (w+ + w-)/2 either way.
-                # where each root puts the coalescence, still as an offset
-                # from the epoch: the bounds move to offsets rather than
-                # the times moving to GPS, which would cost the 2.4e-7 s
+                # The delays fix the direction up to a reflection in the
+                # detector plane. Draw only among the roots whose tc is in
+                # the prior, and halve the weight when only one is.
                 loc0 = loc[order[0]] / C_SI
                 centre = t_off + loc0 @ npar
                 swing = perp * (loc0 @ e3)
@@ -757,20 +697,29 @@ class DistMarg:
                 ok_up, ok_dn = (pair >= tcmin - epoch_t) & (pair <= tcmax - epoch_t)
                 both = ok_up & ok_dn
                 invalid |= ~(ok_up | ok_dn)
-                # with both roots in the prior take either; with one, take
-                # it, and the half below no longer cancels the pair
-                up = numpy.where(both, self._sky_rng.random(vsamples) < 0.5, ok_up)
+                up = numpy.where(both, self._choice_rng.random(vsamples) < 0.5, ok_up)
                 nhat = npar + numpy.where(up, perp, -perp) * e3[:, None]
                 branch_corr = numpy.where(both, 0.0, -numpy.log(2.0))
             logw = -log_tcspan - numpy.log(2.0 * t12max) - dens + branch_corr
+
+        dec = numpy.arcsin(numpy.clip(nhat[2], -1.0, 1.0))
+        ra = numpy.mod(numpy.arctan2(nhat[1], nhat[0]) + gmst, 2 * numpy.pi)
+        if ndet > 1:
+            # the delays were drawn for an isotropic sky, of density
+            # cos(dec) / 4pi in (ra, dec); reweight to the prior
+            sky = self.marginalized_vector_priors
+            logw = (
+                logw
+                + sky["ra"].logpdf(ra=ra)
+                + sky["dec"].logpdf(dec=dec)
+                - numpy.log(numpy.cos(dec) / (4 * numpy.pi))
+            )
 
         fplus, fcross, delay = {}, {}, {}
         for ifo, det in dets.items():
             fplus[ifo], fcross[ifo] = det.antenna_pattern_from_direction(nhat)
             delay[ifo] = det.time_delay_from_direction(nhat)
-        # tc has to be absolute; the test against the prior does not, and
-        # in offsets it agrees exactly with the one the roots were chosen
-        # by rather than to the 2.4e-7 s a double resolves near 1.19e9
+        # tested against the prior as an offset, as the roots were
         tc_off = t_off - delay[order[0]]
         outside = (tc_off < tcmin - epoch_t) | (tc_off > tcmax - epoch_t)
         tc = epoch_t + tc_off
@@ -782,12 +731,8 @@ class DistMarg:
         self.sample_idx = numpy.arange(vsamples)
         self.precalc_antenna_factors = fplus, fcross, delay
         self.marginalize_vector_params["tc"] = tc
-        self.marginalize_vector_params["dec"] = numpy.arcsin(
-            numpy.clip(nhat[2], -1.0, 1.0)
-        )
-        self.marginalize_vector_params["ra"] = numpy.mod(
-            numpy.arctan2(nhat[1], nhat[0]) + gmst, 2 * numpy.pi
-        )
+        self.marginalize_vector_params["dec"] = dec
+        self.marginalize_vector_params["ra"] = ra
         self.marginalize_vector_params["logw_partial"] = logw
         if self._current_params is not None:
             self._current_params.update(self.marginalize_vector_params)
@@ -809,9 +754,7 @@ class DistMarg:
         vsamples = size if size is not None else self.vsamples
 
         if self.marginalize_sky_analytic and len(ifos) > 0:
-            # alternative path: invert the delays instead of looking them up.
-            # Falls through to the map below if it cannot produce a usable
-            # draw, and says so, so a run cannot silently change estimator.
+            # invert the delays instead of looking them up in the map
             if self.analytic_sky_draw(snrs, ifos, vsamples):
                 return self.marginalize_vector_params
             if not getattr(self, "_analytic_fellback", False):
@@ -1004,14 +947,6 @@ class DistMarg:
         snrs : Dict of SNR time series
             Either provide this or the model needs a function
             to get the reference SNRs.
-        marginalize_sky_analytic: bool
-            Draw (tc, ra, dec) by inverting the inter-detector delays in closed
-            form instead of looking them up in the pregenerated map. The
-            physical region is the exact ellipse the delays allow, so a drawn
-            delay tuple cannot fail to correspond to a sky position, and the
-            prior/proposal ratio is analytic rather than approximate.
-            Falls back to the map, with a warning, if it cannot produce a
-            usable draw.
         peak_lock_snr: float
             The minimum SNR to bother restricting from the prior range
         peak_lock_ratio: float
