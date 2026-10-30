@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-GWDATA_DIR="${PYCBC_GWDATA_DIR:-/home/ahnitz/gwdata}"
+GWDATA_DIR="${PYCBC_GWDATA_DIR:-}"
 FRAME_DIR="${PYCBC_FRAME_DIR:-$(pwd)/frames}"
 BASE_URL="https://gwosc.org/archive/data/O2_4KHZ_R1/1185972224"
 

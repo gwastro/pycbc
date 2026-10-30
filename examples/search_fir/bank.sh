@@ -38,7 +38,7 @@ pycbc_fir_bank \
         --sample-rate 2048 \
         --max-taps 501 6001 \
         --min-match 0.999 0.9999 \
-        --n-processes 2 \
+        --n-processes 4 \
         --force \
         --verbose --verbose 
 cp bank_full/bank.hdf bank_inj/bank.hdf
