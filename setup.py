@@ -206,8 +206,10 @@ def get_reqs_from_file(filename):
     return reqs
 
 
-extras_require["test"] = get_reqs_from_file("requirements.txt") + get_reqs_from_file(
-    "companion.txt"
+extras_require["test"] = (
+    get_reqs_from_file("requirements.txt")
+    + get_reqs_from_file("companion.txt")
+    + ["coverage"]
 )
 
 # do the actual work of building the package
