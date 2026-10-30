@@ -217,9 +217,7 @@ for dest in staged_files:
             k for k in hf if hasattr(hf[k], "keys") and "template_id" in hf[k]
         ]
     requested_ifos = args.ifos if args.ifos is not None else present_ifos
-    input_entries.extend(
-        (dest, ifo) for ifo in requested_ifos if ifo in present_ifos
-    )
+    input_entries.extend((dest, ifo) for ifo in requested_ifos if ifo in present_ifos)
     if not present_ifos:
         input_entries.append((dest, None))
 
