@@ -223,7 +223,9 @@ class MultinestSampler(BaseSampler):
 
     def loglikelihood(self, cube, *extra_args):
         """Log likelihood evaluator that gets passed to multinest."""
-        params = dict(zip(self.model.variable_params, cube, strict=True))
+        # cube is a ctypes pointer from pymultinest, with no length: the
+        # parameter names bound how many values are read
+        params = dict(zip(self.model.variable_params, cube, strict=False))
         # apply transforms
         if self.model.sampling_transforms is not None:
             params = self.model.sampling_transforms.apply(params)
@@ -242,7 +244,8 @@ class MultinestSampler(BaseSampler):
         Transforms the unit hypercube that multinest makes its draws
         from, into the prior space defined in the config file.
         """
-        dict_cube = dict(zip(self.model.variable_params, cube, strict=True))
+        # cube is a ctypes pointer (see loglikelihood)
+        dict_cube = dict(zip(self.model.variable_params, cube, strict=False))
         inv = self.model.prior_distribution.cdfinv(**dict_cube)
         for i, param in enumerate(self.model.variable_params):
             cube[i] = inv[param]
