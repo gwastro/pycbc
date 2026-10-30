@@ -21,9 +21,9 @@ from matplotlib import use
 
 use("Agg")
 import numpy as np
+import pycbc.version
 from matplotlib import pyplot as plt
 
-import pycbc.version
 from pycbc import bin_utils, events, results
 from pycbc.events import stat as pystat
 from pycbc.events import trigger_fits as trstats

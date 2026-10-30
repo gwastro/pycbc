@@ -22,10 +22,10 @@ import os
 import sys
 
 import numpy
+import pycbc.version
 from igwn_ligolw import ligolw, lsctables, utils
 
 import pycbc
-import pycbc.version
 from pycbc import DYN_RANGE_FAC, fft, pnutils
 from pycbc import psd as _psd
 from pycbc import strain as _strain

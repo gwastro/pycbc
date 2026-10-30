@@ -16,8 +16,9 @@ import os
 import subprocess
 import time
 
-import pycbc
 import pycbc.version
+
+import pycbc
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
