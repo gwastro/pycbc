@@ -214,12 +214,12 @@ input_entries = []
 for dest in staged_files:
     with HFile(dest, "r") as hf:
         present_ifos = [
-            k for k in hf.keys() if hasattr(hf[k], "keys") and "template_id" in hf[k]
+            k for k in hf if hasattr(hf[k], "keys") and "template_id" in hf[k]
         ]
     requested_ifos = args.ifos if args.ifos is not None else present_ifos
-    for ifo in requested_ifos:
-        if ifo in present_ifos:
-            input_entries.append((dest, ifo))
+    input_entries.extend(
+        (dest, ifo) for ifo in requested_ifos if ifo in present_ifos
+    )
     if not present_ifos:
         input_entries.append((dest, None))
 
@@ -274,7 +274,7 @@ if args.timeslide_interval is None:
     args.timeslide_interval = 0.0
 
 non_threshold_times = {}
-for ifo, sngl in zip(trigs.ifos, trigs.singles):
+for ifo, sngl in zip(trigs.ifos, trigs.singles, strict=True):
     if "search" in sngl.file[ifo] and "non_threshold_time" in sngl.file[ifo]["search"]:
         nt_arr = numpy.atleast_1d(sngl.file[ifo]["search/non_threshold_time"][()])
         if len(nt_arr) > 0:
@@ -284,8 +284,9 @@ max_offset = args.max_timeslide_offset
 if max_offset is None and non_threshold_times:
     positive_nt = [v for v in non_threshold_times.values() if v > 0]
     if positive_nt:
-        # Follow-up windows are centered on primary triggers (+/- non_threshold_time / 2);
-        # reserve worst-case coincidence window so outer slides have complete coverage.
+        # Follow-up windows are centered on primary triggers
+        # (+/- non_threshold_time / 2); reserve worst-case coincidence window
+        # so outer slides have complete coverage.
         max_offset = min(positive_nt) / 2.0 - (
             TWOEARTH / 2.0 + float(args.coinc_threshold)
         )
