@@ -57,7 +57,11 @@ template_param_choices = bank_conv.conversion_options + \
 
 # What are the inequalities associated with the cuts?
 # 'upper' means upper limit, and so requires value < threshold
-# to keep a trigger
+# The functions should return True (False) to keep (cut) a trigger or template
+# How to associate the inequalities with the cuts :
+# 'upper' means upper limit, and requires value < threshold
+# to keep a trigger / template
+# Thus it *cuts* triggers / templates with value >= threshold 
 ineq_functions = {
     'upper': np.less,
     'lower': np.greater,
