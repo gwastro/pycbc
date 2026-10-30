@@ -3,13 +3,18 @@ set -e
 
 GWDATA_DIR="${PYCBC_GWDATA_DIR:-}"
 FRAME_DIR="${PYCBC_FRAME_DIR:-$(pwd)/frames}"
-BASE_URL="https://gwosc.org/archive/data/O2_4KHZ_R1/1185972224"
+MIRROR_BASE_URL="${PYCBC_GWDATA_URL:-http://gravity-dev2.syr.edu:8080}/archive/data/O2_2048HZ_R1/1185939456"
+GWOSC_BASE_URL="https://gwosc.org/archive/data/O2_4KHZ_R1/1185972224"
 
 download_frame() {
-    local fname="$1"
+    local url="$1"
+    local fname="$2"
     mkdir -p "${FRAME_DIR}"
     if [ ! -s "${FRAME_DIR}/${fname}" ]; then
-        wget -nv "${BASE_URL}/${fname}" -O "${FRAME_DIR}/${fname}"
+        wget -nv --tries=3 --timeout=20 "${url}/${fname}" -O "${FRAME_DIR}/${fname}" || {
+            rm -f "${FRAME_DIR}/${fname}"
+            return 1
+        }
     fi
 }
 
@@ -31,13 +36,16 @@ write_cache() {
     shift 3
     : > "${out}"
     for t in "$@"; do
-        local local_2k="${GWDATA_DIR}/O2/${ifo}/1185939456/${site}-${ifo}_DATASAMPLER_O2_2048HZ-${t}-4096.hdf5"
-        if [ -s "${local_2k}" ]; then
+        local fn_2k="${site}-${ifo}_DATASAMPLER_O2_2048HZ-${t}-4096.hdf5"
+        local local_2k="${GWDATA_DIR}/O2/${ifo}/1185939456/${fn_2k}"
+        if [ -n "${GWDATA_DIR}" ] && [ -s "${local_2k}" ]; then
             echo "${site} ${ifo}_DATASAMPLER_O2_2048HZ ${t} 4096 file://$(realpath "${local_2k}")" >> "${out}"
+        elif download_frame "${MIRROR_BASE_URL}" "${fn_2k}"; then
+            echo "${site} ${ifo}_DATASAMPLER_O2_2048HZ ${t} 4096 file://$(realpath "${FRAME_DIR}/${fn_2k}")" >> "${out}"
         else
-            local fn="${site}-${ifo}_GWOSC_O2_4KHZ_R1-${t}-4096.hdf5"
-            download_frame "${fn}"
-            echo "${site} ${ifo}_GWOSC_O2_4KHZ_R1 ${t} 4096 file://$(realpath "${FRAME_DIR}/${fn}")" >> "${out}"
+            local fn_4k="${site}-${ifo}_GWOSC_O2_4KHZ_R1-${t}-4096.hdf5"
+            download_frame "${GWOSC_BASE_URL}" "${fn_4k}"
+            echo "${site} ${ifo}_GWOSC_O2_4KHZ_R1 ${t} 4096 file://$(realpath "${FRAME_DIR}/${fn_4k}")" >> "${out}"
         fi
     done
 }
