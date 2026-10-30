@@ -42,8 +42,7 @@ def draw_sample(loglr, size=None):
     loglr = loglr - loglr.max()
     cdf = numpy.exp(loglr).cumsum()
     cdf /= cdf[-1]
-    xl = numpy.searchsorted(cdf, x)
-    return xl
+    return numpy.searchsorted(cdf, x)
 
 
 class DistMarg:
@@ -109,7 +108,7 @@ class DistMarg:
             old_prior = kwargs["prior"]
 
             dists = [d for d in old_prior.distributions if param not in d.params]
-            dprior = [d for d in old_prior.distributions if param in d.params][0]
+            dprior = next(d for d in old_prior.distributions if param in d.params)
             prior = JointDistribution(variable_params, *dists, **old_prior.kwargs)
             kwargs["prior"] = prior
             return dprior
@@ -201,7 +200,7 @@ class DistMarg:
             if len(wtrans) == 0:
                 wtrans = None
             kwargs["waveform_transforms"] = wtrans
-            dtrans = [d for d in waveform_transforms if "distance" in d.outputs][0]
+            dtrans = next(d for d in waveform_transforms if "distance" in d.outputs)
             v = dprior.rvs(int(1e8))
             d = dtrans.transform({pname: v[pname]})["distance"]
             d.sort()
@@ -240,9 +239,10 @@ class DistMarg:
         # Save marginalized parameters' name into one place,
         # coa_phase will be a static param if been marginalized
         if marginalize_distance:
-            self.marginalized_params_name = list(
-                self.marginalize_vector_params.keys()
-            ) + [marginalize_distance_param]
+            self.marginalized_params_name = [
+                *list(self.marginalize_vector_params.keys()),
+                marginalize_distance_param,
+            ]
 
         return variable_params, kwargs
 
@@ -494,7 +494,7 @@ class DistMarg:
                 dtc[ifo] = d[ifo].time_delay_from_earth_center(ra, dec, tcave)
 
             dmap = {}
-            for i, t in enumerate(tqdm.tqdm(zip(*dts))):
+            for i, t in enumerate(tqdm.tqdm(zip(*dts, strict=True))):
                 if t not in dmap:
                     dmap[t] = []
                 dmap[t].append(i)

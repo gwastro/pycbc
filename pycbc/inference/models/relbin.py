@@ -113,7 +113,9 @@ def setup_bins(
     logger.info("Using powerlaw indices: %s", ga)
     dalp = chi * 2.0 * numpy.pi / numpy.absolute((f_lo**ga) - (f_hi**ga))
     dphi = numpy.sum(
-        numpy.array([numpy.sign(g) * d * (f**g) for g, d in zip(ga, dalp)]),
+        numpy.array(
+            [numpy.sign(g) * d * (f**g) for g, d in zip(ga, dalp, strict=True)]
+        ),
         axis=0,
     )
     dphi_diff = dphi - dphi[0]
@@ -138,8 +140,7 @@ def setup_bins(
             else:
                 curr_idx = idx_f_full
         fbin_ind[idx_fbin] = curr_idx
-    fbin_ind = numpy.unique(fbin_ind)
-    return fbin_ind
+    return numpy.unique(fbin_ind)
 
 
 class Relative(DistMarg, BaseGaussianNoise):
@@ -433,27 +434,27 @@ class Relative(DistMarg, BaseGaussianNoise):
         if self.marginalize_vector_params:
             p = self.current_params
 
-            vmarg = set(
+            vmarg = {
                 k for k in self.marginalize_vector_params if not numpy.isscalar(p[k])
-            )
+            }
 
             if self.earth_rotation:
-                if set(["tc", "polarization"]).issubset(vmarg):
+                if {"tc", "polarization"}.issubset(vmarg):
                     self.lformat = "earth_time_pol"
                     return likelihood_parts_v_pol_time
-                if set(["polarization"]).issubset(vmarg):
+                if {"polarization"}.issubset(vmarg):
                     self.lformat = "earth_pol"
                     return likelihood_parts_v_pol
-                if set(["tc"]).issubset(vmarg):
+                if {"tc"}.issubset(vmarg):
                     self.lformat = "earth_time"
                     return likelihood_parts_v_time
-            elif set(["ra", "dec", "tc"]).issubset(vmarg) or set(
-                ["tc", "polarization"]
-            ).issubset(vmarg):
+            elif {"ra", "dec", "tc"}.issubset(vmarg) or {"tc", "polarization"}.issubset(
+                vmarg
+            ):
                 return likelihood_parts_vector
-            elif set(["tc"]).issubset(vmarg):
+            elif {"tc"}.issubset(vmarg):
                 return likelihood_parts_vectort
-            elif set(["polarization"]).issubset(vmarg):
+            elif {"polarization"}.issubset(vmarg):
                 return likelihood_parts_vectorp
 
         return self.lik
@@ -543,7 +544,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     def multi_loglikelihood(self, models):
         """Calculate a multi-model (signal) likelihood"""
-        models = [self] + models
+        models = [self, *models]
         loglr = 0
         # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
         for m in models:
@@ -938,8 +939,7 @@ class RelativeTime(Relative):
                     )
             filt += filter_i
             norm += norm_i
-        loglr = self.marginalize_loglr(filt, norm)
-        return loglr
+        return self.marginalize_loglr(filt, norm)
 
     def _nowaveform_handler(self):
         """Sets loglr values if no waveform generated."""

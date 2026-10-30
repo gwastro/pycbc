@@ -169,7 +169,7 @@ index_list = [int(round(num_per_file * idx)) for idx in range(num_files)]
 index_list.append(length)
 assert index_list[0] == 0
 
-for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
+for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:], strict=True)):
     assert idx2 > idx1
     # create a blank xml document and add the process id
     outdoc = ligolw.Document()

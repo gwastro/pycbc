@@ -171,7 +171,7 @@ def setup_splittable_manual_directory(workflow, tags=None):
             "TMPLTBANK",
             workflow.analysis_time,
             file_url=pfn_local,
-            tags=tags + [bank_tag],
+            tags=[*tags, bank_tag],
         )
         curr_file.add_pfn(pfn_local, site="local")
         tmplt_banks.append(curr_file)

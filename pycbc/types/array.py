@@ -56,9 +56,9 @@ _ALLOWED_DTYPES = [
     int,
 ]
 try:
-    _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
+    _ALLOWED_SCALARS = [int, long, float, complex, *_ALLOWED_DTYPES]
 except NameError:
-    _ALLOWED_SCALARS = [int, float, complex] + _ALLOWED_DTYPES
+    _ALLOWED_SCALARS = [int, float, complex, *_ALLOWED_DTYPES]
 
 
 def _convert_to_scheme(ary):
@@ -1177,8 +1177,7 @@ def load_array(path, group=None):
     elif ext == ".hdf":
         key = "data" if group is None else group
         with h5py.File(path, "r") as f:
-            array = Array(f[key])
-        return array
+            return Array(f[key])
     else:
         raise ValueError("Path must end with .npy, .hdf, or .txt")
 

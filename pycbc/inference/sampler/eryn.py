@@ -115,7 +115,7 @@ class _ErynPrior:
         out = numpy.zeros((nsamples, self.ndim))
         for i, param in enumerate(self.model.sampling_params):
             out[:, i] = draws[param]
-        return out.reshape(shape + (self.ndim,))
+        return out.reshape((*shape, self.ndim))
 
 
 class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):

@@ -231,7 +231,7 @@ with h5py.File(args.output_file, "w") as destination:
             logger.info("Region references for %s", dataset)
             refs = [
                 triggers[dataset].regionref[l:r]
-                for l, r in zip(start_boundaries, end_boundaries)
+                for l, r in zip(start_boundaries, end_boundaries, strict=True)
             ]
 
             logger.info("Adding to file")

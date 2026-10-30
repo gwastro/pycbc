@@ -108,7 +108,7 @@ def make_grb_segments_plot(
     if len(ifos) == 1:
         subs = [subs]
     plt.xticks(rotation=20, ha="right")
-    for sub, ifo in zip(subs, ifos):
+    for sub, ifo in zip(subs, ifos, strict=True):
         for seg in science_segs[ifo]:
             sub.add_patch(
                 Rectangle(

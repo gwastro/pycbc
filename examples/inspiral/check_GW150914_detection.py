@@ -13,7 +13,7 @@ gw150914_snr = {"H1": 19.71, "L1": 13.28}
 gw150914_chi2r = {"H1": 1.05, "L1": 0.45}
 
 f = h5py.File(sys.argv[1], "r")
-detector = tuple(f.keys())[0]
+detector = next(iter(f.keys()))
 end_times = f[detector]["end_time"][:]
 snrs = f[detector]["snr"][:]
 chi2rs = f[detector]["chisq"][:] / (2 * f[detector]["chisq_dof"][:] - 2)
@@ -32,7 +32,7 @@ mask = np.logical_and.reduce(
 if mask.any():
     print(f"Pass: {int(sum(mask))} GW150914-like triggers")
     print("end_time snr reduced_chi2")
-    for t, s, c in zip(end_times[mask], snrs[mask], chi2rs[mask]):
+    for t, s, c in zip(end_times[mask], snrs[mask], chi2rs[mask], strict=True):
         print(f"{t:.3f} {s:.3f} {c:.3f}")
     sys.exit(0)
 else:

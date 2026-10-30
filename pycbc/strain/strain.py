@@ -202,9 +202,7 @@ def detect_loud_glitches(
     cluster_idx = pycbc.events.findchirp_cluster_over_window(
         indices, numpy.array(mag[indices]), int(cluster_window * strain.sample_rate)
     )
-    times = [idx * strain.delta_t + strain.start_time for idx in indices[cluster_idx]]
-
-    return times
+    return [idx * strain.delta_t + strain.start_time for idx in indices[cluster_idx]]
 
 
 def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None):
@@ -644,7 +642,7 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument(
         "--fake-strain",
         help="Name of model PSD for generating fake gaussian noise.",
-        choices=pycbc.psd.get_psd_model_list() + ["zeroNoise"],
+        choices=[*pycbc.psd.get_psd_model_list(), "zeroNoise"],
     )
     data_reading_group.add_argument(
         "--fake-strain-extra-args",
@@ -1543,7 +1541,7 @@ class StrainSegments:
                 for time in end_times
             ]
 
-        for seg, ana in zip(self.segment_slices, self.analyze_slices):
+        for seg, ana in zip(self.segment_slices, self.analyze_slices, strict=True):
             start = ana.start
             stop = ana.stop
             cum_start = start + seg.start
@@ -1587,7 +1585,9 @@ class StrainSegments:
         """
         if not self._fourier_segments:
             self._fourier_segments = []
-            for seg_slice, ana in zip(self.segment_slices, self.analyze_slices):
+            for seg_slice, ana in zip(
+                self.segment_slices, self.analyze_slices, strict=True
+            ):
                 if seg_slice.start >= 0 and seg_slice.stop <= len(self.strain):
                     freq_seg = make_frequency_series(self.strain[seg_slice])
                 # Assume that we cannot have a case where we both zero-pad on
@@ -2111,11 +2111,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # low latency dq channel
         if data_quality_channel is not None:
-            sb_kwargs = dict(
-                max_buffer=max_buffer,
-                force_update_cache=force_update_cache,
-                increment_update_cache=increment_update_cache,
-            )
+            sb_kwargs = {
+                "max_buffer": max_buffer,
+                "force_update_cache": force_update_cache,
+                "increment_update_cache": increment_update_cache,
+            }
             if (
                 len(self.data_quality_flags) == 1
                 and self.data_quality_flags[0] == "veto_nonzero"
@@ -2400,8 +2400,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             fseries_trimmed.psd = psd
             self.segments[delta_f] = fseries_trimmed
 
-        stilde = self.segments[delta_f]
-        return stilde
+        return self.segments[delta_f]
 
     def near_hwinj(self):
         """

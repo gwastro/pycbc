@@ -83,7 +83,9 @@ assert len(opts.posterior_samples) == len(opts.population_models), (
 
 # Save rate posteriors in one file
 with HFile(opts.rate_file, "w") as out:
-    for fname, model in zip(opts.posterior_samples, opts.population_models):
+    for fname, model in zip(
+        opts.posterior_samples, opts.population_models, strict=True
+    ):
         f = HFile(fname, "r")
         Rf = f[model + "/Rf"][:]
         Lf = f[model + "/Lf"][:]
@@ -98,7 +100,9 @@ with HFile(opts.rate_file, "w") as out:
 p_astro = []
 plt.figure()
 color = iter(cm.rainbow(np.linspace(0, 1, len(opts.population_models))))
-mods = zip(opts.posterior_samples, opts.population_models, opts.plot_labels)
+mods = zip(
+    opts.posterior_samples, opts.population_models, opts.plot_labels, strict=True
+)
 
 f = HFile(opts.prior_samples, "r")
 for fpost, model, lbl in mods:
@@ -149,7 +153,7 @@ plt.savefig(opts.rates_figure)
 
 plt.figure()
 color = iter(cm.rainbow(np.linspace(0, 1, len(opts.population_models))))
-for pas, lbl in zip(p_astro, opts.plot_labels):
+for pas, lbl in zip(p_astro, opts.plot_labels, strict=True):
     c = next(color)
     plt.plot(log_fg_ratios, 1 - pas, ".", label=lbl, color=c)
 

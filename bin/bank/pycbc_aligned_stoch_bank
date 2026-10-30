@@ -299,7 +299,7 @@ logger.info("Outputting bank")
 
 # Put the whole template bank in one list
 mass1, mass2, spin1z, spin2z = partitioned_bank_object.output_all_points()
-temp_bank = zip(mass1, mass2, spin1z, spin2z)
+temp_bank = zip(mass1, mass2, spin1z, spin2z, strict=True)
 
 # Output to file
 bank_output.output_bank_to_file(

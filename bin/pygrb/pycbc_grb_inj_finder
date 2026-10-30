@@ -227,7 +227,7 @@ with tqdm.tqdm(
     desc="Finding injections",
     disable=not args.verbose,
     unit="files",
-    postfix=dict(found=0, missed=0, excluded=nexcluded),
+    postfix={"found": 0, "missed": 0, "excluded": nexcluded},
     **TQDM_KW,
 ) as bar:
     for injf in bar:
@@ -267,7 +267,7 @@ with tqdm.tqdm(
 
         # get indices of found/missed injections and finding trigger
         for i, (l, r) in enumerate(
-            zip(_left, _right),
+            zip(_left, _right, strict=True),
             start=len(allinjections if allinjections is not None else []),
         ):
             if not r - l:

@@ -87,7 +87,7 @@ class BaseTransform:
         if isinstance(old_maps, record.FieldArray):
             keys = new_maps.keys()
             values = [new_maps[key] for key in keys]
-            for key, vals in zip(keys, values):
+            for key, vals in zip(keys, values, strict=True):
                 try:
                     old_maps = old_maps.add_fields([vals], [key])
                 except ValueError:
@@ -139,7 +139,7 @@ class BaseTransform:
         else:
             additional_opts = additional_opts.copy()
         outputs = set(outputs.split(VARARGS_DELIM))
-        special_args = ["name"] + skip_opts + list(additional_opts.keys())
+        special_args = ["name", *skip_opts, *list(additional_opts.keys())]
         # get any extra arguments to pass to init
         extra_args = {}
         for opt in cp.options("-".join([section, tag])):
@@ -234,7 +234,7 @@ class CustomTransform(BaseTransform):
             # we'll get a ValueError if the scratch space isn't the same size
             # as the maps; in that case, re-create the scratch space with the
             # appropriate size and try again
-            invals = maps[list(self.inputs)[0]]
+            invals = maps[next(iter(self.inputs))]
             if isinstance(invals, numpy.ndarray):
                 shape = invals.shape
             else:
@@ -245,7 +245,7 @@ class CustomTransform(BaseTransform):
 
     def _getslice(self, maps):
         """Determines how to slice the scratch for returning values."""
-        invals = maps[list(self.inputs)[0]]
+        invals = maps[next(iter(self.inputs))]
         if not isinstance(invals, (numpy.ndarray, list)):
             getslice = 0
         else:
@@ -3345,7 +3345,7 @@ def order_transforms(transforms):
     # get a set of all inputs and all outputs
     outputs = set().union(*[set(t.outputs) - set(t.inputs) for t in transforms])
     out = []
-    remaining = [t for t in transforms]
+    remaining = list(transforms)
     while remaining:
         # pull out transforms that have no inputs in the set of outputs
         leftover = []

@@ -116,8 +116,8 @@ class TestWaveform(unittest.TestCase):
 
         untapered = htilde()
         for taper in [
-            dict(taper="start"),
-            dict(taper="start", taper_method="constant", taper_window=0.5),
+            {"taper": "start"},
+            {"taper": "start", "taper_method": "constant", "taper_window": 0.5},
         ]:
             diff = abs(htilde(**taper) - untapered).max()
             self.assertGreater(diff / abs(untapered).max(), 1e-3, taper)

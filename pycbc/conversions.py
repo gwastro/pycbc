@@ -255,10 +255,7 @@ def eccmchirp_from_mass1_mass2_eccentricity(
     if method not in allowed_methods:
         raise ValueError(f"method must be one of {allowed_methods}")
     mchirp = mchirp_from_mass1_mass2(mass1, mass2)
-    mchirp_eccentric = eccmchirp_from_mchirp_eccentricity(
-        mchirp, eccentricity, method=method
-    )
-    return mchirp_eccentric
+    return eccmchirp_from_mchirp_eccentricity(mchirp, eccentricity, method=method)
 
 
 def mass1_from_mtotal_q(mtotal, q):
@@ -427,14 +424,12 @@ def eta_from_q(q):
 
 def mass1_from_mchirp_q(mchirp, q):
     """Returns the primary mass from the given chirp mass and mass ratio."""
-    mass1 = q ** (2.0 / 5.0) * (1.0 + q) ** (1.0 / 5.0) * mchirp
-    return mass1
+    return q ** (2.0 / 5.0) * (1.0 + q) ** (1.0 / 5.0) * mchirp
 
 
 def mass2_from_mchirp_q(mchirp, q):
     """Returns the secondary mass from the given chirp mass and mass ratio."""
-    mass2 = q ** (-3.0 / 5.0) * (1.0 + q) ** (1.0 / 5.0) * mchirp
-    return mass2
+    return q ** (-3.0 / 5.0) * (1.0 + q) ** (1.0 / 5.0) * mchirp
 
 
 def _a0(f_lower):
@@ -513,8 +508,7 @@ def mtotal_from_tau0_tau3(tau0, tau3, f_lower, in_seconds=False):
 def eta_from_tau0_tau3(tau0, tau3, f_lower):
     r"""Returns symmetric mass ratio from :math:`\tau_0, \tau_3`."""
     mtotal = mtotal_from_tau0_tau3(tau0, tau3, f_lower, in_seconds=True)
-    eta = mtotal ** (-2.0 / 3.0) * (_a3(f_lower) / tau3)
-    return eta
+    return mtotal ** (-2.0 / 3.0) * (_a3(f_lower) / tau3)
 
 
 def mass1_from_tau0_tau3(tau0, tau3, f_lower):
@@ -760,10 +754,7 @@ def lambda1_from_delta_lambda_tilde_lambda_tilde(
     amp = 1 / ((p1 * p4) - (p2 * p3))
     l_tilde_lambda1 = 13 / 16 * (p3 - p4) * lambda_tilde
     l_delta_tilde_lambda1 = (p1 - p2) * delta_lambda_tilde
-    lambda1 = formatreturn(
-        amp * (l_delta_tilde_lambda1 - l_tilde_lambda1), input_is_array
-    )
-    return lambda1
+    return formatreturn(amp * (l_delta_tilde_lambda1 - l_tilde_lambda1), input_is_array)
 
 
 def lambda2_from_delta_lambda_tilde_lambda_tilde(
@@ -784,10 +775,7 @@ def lambda2_from_delta_lambda_tilde_lambda_tilde(
     amp = 1 / ((p1 * p4) - (p2 * p3))
     l_tilde_lambda2 = 13 / 16 * (p3 + p4) * lambda_tilde
     l_delta_tilde_lambda2 = (p1 + p2) * delta_lambda_tilde
-    lambda2 = formatreturn(
-        amp * (l_tilde_lambda2 - l_delta_tilde_lambda2), input_is_array
-    )
-    return lambda2
+    return formatreturn(amp * (l_tilde_lambda2 - l_delta_tilde_lambda2), input_is_array)
 
 
 def lambda_from_mass_tov_file(mass, tov_file, distance=0.0):
@@ -800,8 +788,7 @@ def lambda_from_mass_tov_file(mass, tov_file, distance=0.0):
     mass_from_file = data[:, 0]
     lambda_from_file = data[:, 1]
     mass_src = mass / (1.0 + pycbc.cosmology.redshift(distance))
-    lambdav = numpy.interp(mass_src, mass_from_file, lambda_from_file)
-    return lambdav
+    return numpy.interp(mass_src, mass_from_file, lambda_from_file)
 
 
 def ensure_obj1_is_primary(mass1, mass2, *params):
@@ -831,7 +818,7 @@ def ensure_obj1_is_primary(mass1, mass2, *params):
     # Check params are 2N
     if len(params) % 2 != 0:
         raise ValueError("params must be 2N floats or arrays")
-    input_properties, input_is_array = ensurearray((mass1, mass2) + params)
+    input_properties, input_is_array = ensurearray((mass1, mass2, *params))
     # Check inputs are all the same length
     shapes = [par.shape for par in input_properties]
     if len(set(shapes)) != 1:

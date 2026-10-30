@@ -16,8 +16,8 @@ class BankOutputTest(unittest.TestCase):
 
     def test_output_roundtrip(self):
         templates = [(3.0, 2.0, 0.1, -0.05), (4.0, 1.5, -0.2, 0.0)]
-        options = dict(f_low=30.0, f_upper=512.0, output_f_final=True,
-                       f_low_column='alpha')
+        options = {"f_low": 30.0, "f_upper": 512.0, "output_f_final": True,
+                   "f_low_column": 'alpha'}
         with tempfile.TemporaryDirectory() as directory:
             for suffix in ['xml', 'xml.gz', 'hdf']:
                 with self.subTest(suffix=suffix):
@@ -39,7 +39,7 @@ class BankOutputTest(unittest.TestCase):
                             path, contenthandler=LIGOLWContentHandler)
                         bank = lsctables.SnglInspiralTable.get_table(document)
                         self.assertEqual(len(bank), len(templates))
-                        for row, expected in zip(bank, templates):
+                        for row, expected in zip(bank, templates, strict=True):
                             numpy.testing.assert_allclose(
                                 [row.mass1, row.mass2, row.spin1z, row.spin2z],
                                 expected, rtol=1e-6)

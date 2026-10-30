@@ -12,10 +12,7 @@ logger = logging.getLogger(__name__)
 
 class GeomAlignedBankSetupExecutable(wf.Executable):
     current_retention_level = wf.Executable.ALL_TRIGGERS
-    file_input_options = wf.Executable.file_input_options + [
-        "--asd-file",
-        "--psd-file",
-    ]
+    file_input_options = [*wf.Executable.file_input_options, "--asd-file", "--psd-file"]
 
     def create_node(self, analysis_time, num_split_jobs, extra_tags=None):
         if extra_tags is None:

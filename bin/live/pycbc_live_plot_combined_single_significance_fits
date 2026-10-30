@@ -150,7 +150,7 @@ for ifo in ifos:
     alpha_lines = []
     count_lines = []
 
-    for i, bl_bu in enumerate(zip(bin_starts, bin_ends)):
+    for i, bl_bu in enumerate(zip(bin_starts, bin_ends, strict=True)):
         bl, bu = bl_bu
 
         alphas = separate_alphas[ifo][i]

@@ -288,7 +288,7 @@ offsource_trigs = []
 sorted_off_trigs = ppu.sort_trigs(trial_dict, all_off_trigs, slide_dict, segment_dict)
 for slide_id in slide_dict:
     offsource_trigs.extend(
-        zip(trig_data[keys[1]][slide_id], sorted_off_trigs[slide_id])
+        zip(trig_data[keys[1]][slide_id], sorted_off_trigs[slide_id], strict=True)
     )
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
@@ -388,7 +388,7 @@ if len(found_after_vetoes["network/template_id"]):
     g_ifar["bestnr"] = found_after_vetoes["network/reweighted_snr"][nonzero_fap]
     g_ifar["stat"] = np.zeros([len(g_ifar["bestnr"])])
     for ix, (mc, bestnr) in enumerate(
-        zip(found_trig_mchirp[nonzero_fap], g_ifar["bestnr"])
+        zip(found_trig_mchirp[nonzero_fap], g_ifar["bestnr"], strict=True)
     ):
         g_ifar["stat"][ix] = (sorted_bkgd > bestnr).sum()
     g_ifar["stat"] = g_ifar["stat"] / total_trials
@@ -459,6 +459,7 @@ if len(found_after_vetoes["network/template_id"]):
             (upper_dist - lower_dist) / num_bins,
         )
         + (upper_dist - lower_dist) / num_bins,
+        strict=True,
     )
     dist_bins = list(dist_bins)
 
@@ -556,6 +557,7 @@ if len(found_after_vetoes["network/template_id"]):
         zip(
             found_after_vetoes["found/tc"][found_excl],
             found_after_vetoes["network/reweighted_snr"][found_excl],
+            strict=True,
         )
     ):
         # 0 is the zero-lag timeslide

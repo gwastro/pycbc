@@ -40,7 +40,7 @@ class SbankExecutable(wf.Executable):
     current_retention_level = wf.Executable.FINAL_RESULT
 
     # This tells us that reference-psd is a file option
-    file_input_options = wf.Executable.file_input_options + ["--reference-psd"]
+    file_input_options = [*wf.Executable.file_input_options, "--reference-psd"]
 
     sbank_job_seed = 0
 
@@ -224,7 +224,7 @@ if workflow.cp.has_option_tags("workflow", "seed-bank", args.tags):
             "h5add",
             ifos=["H1L1V1"],
             out_dir=out_dir,
-            tags=["INPUT"] + args.tags,
+            tags=["INPUT", *args.tags],
         )
         h5add_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
         h5add_node = h5add_exe.create_node(workflow.analysis_time, seed_files)
@@ -249,7 +249,7 @@ if not workflow.cp.has_option_tags(
         "sbank",
         ifos=workflow.ifos,
         out_dir=out_dir,
-        tags=["coarse"] + args.tags,
+        tags=["coarse", *args.tags],
     )
     coarse_sbank_exe.update_current_retention_level(wf.Executable.MERGED_TRIGGERS)
     # Then make a specific node
@@ -285,16 +285,16 @@ bins_exe = SbankChooseMchirpBinsExecutable(
     workflow.cp, "sbank_mchirp_bins", ifos=workflow.ifos, tags=args.tags
 )
 main_sbank_exe = SbankExecutable(
-    workflow.cp, "sbank", ifos=workflow.ifos, tags=["parallel"] + args.tags
+    workflow.cp, "sbank", ifos=workflow.ifos, tags=["parallel", *args.tags]
 )
 h5add_first_exe = CombineHDFBanksExecutable(
-    workflow.cp, "h5add", ifos=["H1L1V1"], tags=["FIRST"] + args.tags
+    workflow.cp, "h5add", ifos=["H1L1V1"], tags=["FIRST", *args.tags]
 )
 readder_sbank_exe = SbankExecutable(
-    workflow.cp, "sbank", ifos=workflow.ifos, tags=["readder"] + args.tags
+    workflow.cp, "sbank", ifos=workflow.ifos, tags=["readder", *args.tags]
 )
 h5add_final_exe = CombineHDFBanksExecutable(
-    workflow.cp, "h5add", ifos=["H1L1V1"], tags=["FINAL"] + args.tags
+    workflow.cp, "h5add", ifos=["H1L1V1"], tags=["FINAL", *args.tags]
 )
 
 for cycle_idx in range(num_cycles):
@@ -308,14 +308,14 @@ for cycle_idx in range(num_cycles):
     # all. Either supply it once in [workflow], or in [workflow-cycleN] for
     # N in range(num_cycles)
     nbanks = workflow.cp.get_opt_tags(
-        "workflow", "nbanks", tags=[cycle_tag] + args.tags
+        "workflow", "nbanks", tags=[cycle_tag, *args.tags]
     )
     nbanks = int(nbanks)
 
     #############
     # MASS BINS #
     #############
-    bins_exe.update_current_tags([cycle_tag] + args.tags)
+    bins_exe.update_current_tags([cycle_tag, *args.tags])
     bins_exe.update_output_directory(out_dir=out_dir)
     bins_node = bins_exe.create_node(workflow.analysis_time, bins_inp_file, nbanks)
     workflow += bins_node
@@ -326,7 +326,7 @@ for cycle_idx in range(num_cycles):
     # PARALELLIZED SBANKS #
     #######################
 
-    main_sbank_exe.update_current_tags(["parallel", cycle_tag] + args.tags)
+    main_sbank_exe.update_current_tags(["parallel", cycle_tag, *args.tags])
     main_sbank_exe.update_output_directory(out_dir=out_dir)
     # These jobs we don't always want to store
     main_sbank_exe.update_current_retention_level(wf.Executable.INTERMEDIATE_PRODUCT)
@@ -349,7 +349,7 @@ for cycle_idx in range(num_cycles):
     # COMBINER #
     ############
 
-    h5add_first_exe.update_current_tags([cycle_tag, "FIRST"] + args.tags)
+    h5add_first_exe.update_current_tags([cycle_tag, "FIRST", *args.tags])
     h5add_first_exe.update_output_directory(out_dir=out_dir)
     h5add_first_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
     h5add_node = h5add_first_exe.create_node(workflow.analysis_time, main_sbank_files)
@@ -361,7 +361,7 @@ for cycle_idx in range(num_cycles):
     # READDER #
     ###########
 
-    readder_sbank_exe.update_current_tags([cycle_tag, "readder"] + args.tags)
+    readder_sbank_exe.update_current_tags([cycle_tag, "readder", *args.tags])
     readder_sbank_exe.update_output_directory(out_dir=out_dir)
     readder_sbank_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
     readder_sbank_node = readder_sbank_exe.create_node(
@@ -384,7 +384,7 @@ for cycle_idx in range(num_cycles):
         crl = wf.Executable.MERGED_TRIGGERS
         output_path = None
 
-    h5add_final_exe.update_current_tags([cycle_tag, "FINAL"] + args.tags)
+    h5add_final_exe.update_current_tags([cycle_tag, "FINAL", *args.tags])
     h5add_final_exe.update_output_directory(out_dir)
     h5add_final_exe.update_current_retention_level(crl)
 

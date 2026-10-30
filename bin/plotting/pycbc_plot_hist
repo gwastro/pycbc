@@ -107,7 +107,7 @@ elif args.background_bins:
     locs_dict = background_bin_from_string(args.background_bins, bank_data)
 
     # get a list of bin names and a corresponding list for x values
-    loc_bin_keys = [key for key in locs_dict.keys()]
+    loc_bin_keys = list(locs_dict.keys())
     loc_bin_vals = [val[locs_dict[key]] for key in loc_bin_keys]
 
     # assign a color for each bin

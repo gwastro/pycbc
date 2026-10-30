@@ -45,7 +45,7 @@ def keep_ind(times, start, end):
     leftidx = numpy.searchsorted(times, start, side="left")
     rightidx = numpy.searchsorted(times, end, side="right")
 
-    for li, ri in zip(leftidx, rightidx):
+    for li, ri in zip(leftidx, rightidx, strict=True):
         seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
         indices = numpy.union1d(seg_indices, indices)
     return time_sorting[indices]
@@ -106,7 +106,9 @@ init_logging(args.verbose)
 fo = HFile(args.output_file, "w")
 
 injection_index = 0
-for trigger_file, injection_file in zip(args.trigger_files, args.injection_files):
+for trigger_file, injection_file in zip(
+    args.trigger_files, args.injection_files, strict=True
+):
     logger.info("Read in the coinc data: %s", trigger_file)
     f = HFile(trigger_file, "r")
 
@@ -142,7 +144,10 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
         time_dict[ifo] = f[f"foreground/{ifo}/time"][:]
         trig_dict[ifo] = f[f"foreground/{ifo}/trigger_id"][:]
     time = numpy.array(
-        [events.mean_if_greater_than_zero(vals)[0] for vals in zip(*ifo_times)]
+        [
+            events.mean_if_greater_than_zero(vals)[0]
+            for vals in zip(*ifo_times, strict=True)
+        ]
     )
     # We will discard injections which cannot be associated with a
     # coincident event, thus combine segments over all combinations

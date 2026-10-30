@@ -128,7 +128,7 @@ def get_code_version_numbers(executable_names, executable_files):
 
     """
     code_version_dict = {}
-    for exe_name, value in zip(executable_names, executable_files):
+    for exe_name, value in zip(executable_names, executable_files, strict=True):
         value = urllib.parse.urlparse(value)
         logger.info("Getting version info for %s", exe_name)
         version_string = None

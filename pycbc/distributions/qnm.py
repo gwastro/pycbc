@@ -177,10 +177,9 @@ class UniformF0Tau(uniform.Uniform):
         with numpy.errstate(invalid="ignore"):
             mf = conversions.final_mass_from_f0_tau(f0, tau, l=l, m=m)
             sf = conversions.final_spin_from_f0_tau(f0, tau, l=l, m=m)
-            isin = self.final_mass_bounds.contains(
+            return self.final_mass_bounds.contains(
                 mf
             ) & self.final_spin_bounds.contains(sf)
-        return isin
 
     def rvs(self, size=1):
         """
@@ -269,7 +268,7 @@ class UniformF0Tau(uniform.Uniform):
         else:
             damping_time = "tau"
         # check that they match whats in the variable args
-        if not variable_args == set([rdfreq, damping_time]):
+        if not variable_args == {rdfreq, damping_time}:
             raise ValueError("variable args do not match rdfreq and damping_time names")
         # get the final mass and spin values, if provided
         final_mass = bounded.get_param_bounds_from_config(

@@ -123,7 +123,7 @@ def read_psds(psd_files):
         psd = [group["psds"][str(i)] for i in range(len(group["psds"].keys()))]
         psds[ifo] = segmentlist(
             PSDSegment(*segargs)
-            for segargs in zip(psd, group["start_time"], group["end_time"])
+            for segargs in zip(psd, group["start_time"], group["end_time"], strict=True)
         )
     return psds
 

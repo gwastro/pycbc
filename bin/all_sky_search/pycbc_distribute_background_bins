@@ -58,7 +58,7 @@ names = [b.split(":")[0] for b in args.background_bins]
 
 d = pycbc.io.StatmapData(files=args.coinc_files)
 logger.info("%s coinc triggers", len(d))
-for name, outname in zip(names, args.output_files):
+for name, outname in zip(names, args.output_files, strict=True):
     # select the coincs from only this bin and save to a single combined file
     locs = locs_dict[name]
     e = d.select(numpy.isin(d.template_id, locs))

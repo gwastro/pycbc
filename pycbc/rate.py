@@ -259,7 +259,7 @@ def filter_injections_by_mass(injs, mbins, bin_num, bin_type, bin_num2=None):
         )
         m2lo = m2bins[bin_num2]
         m2hi = m2bins[bin_num2 + 1]
-        newinjs = [
+        return [
             l
             for l in injs
             if (
@@ -267,7 +267,6 @@ def filter_injections_by_mass(injs, mbins, bin_num, bin_type, bin_num2=None):
                 or (m1lo <= l.mass2 < m1hi and m2lo <= l.mass1 < m2hi)
             )
         ]
-        return newinjs
 
     mbins = numpy.concatenate((mbins.lower()[0], numpy.array([mbins.upper()[0][-1]])))
     mlow = mbins[bin_num]

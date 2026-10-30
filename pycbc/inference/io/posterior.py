@@ -72,7 +72,7 @@ def write_samples_to_file(fp, samples, parameters=None, group=None):
 
     """
     # check data dimensions; we'll just use the first array in samples
-    arr = list(samples.values())[0]
+    arr = next(iter(samples.values()))
     if not arr.ndim == 1:
         raise ValueError("samples must be 1D arrays")
     niterations = arr.size

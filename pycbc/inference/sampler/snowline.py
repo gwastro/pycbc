@@ -136,8 +136,7 @@ class SnowlineSampler(BaseSampler):
     def samples(self):
         samples = self.result["samples"]
         params = list(self.model.variable_params)
-        samples_dict = {p: samples[:, i] for i, p in enumerate(params)}
-        return samples_dict
+        return {p: samples[:, i] for i, p in enumerate(params)}
 
     def write_results(self, filename):
         """

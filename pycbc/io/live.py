@@ -30,7 +30,7 @@ def maximum_string(numbers):
     strings = [f"{{n:0{maxlen:d}d}}".format(n=n) for n in numbers]
     # Count how many digits are the same:
     n_digits = 0
-    for str_digit in zip(*strings):
+    for str_digit in zip(*strings, strict=True):
         if len(numpy.unique(str_digit)) == 1:
             # This digit is the same for all numbers
             n_digits += 1

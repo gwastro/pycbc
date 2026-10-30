@@ -237,7 +237,7 @@ class BoundedDist:
                     "can cause issues when used in an MCMC."
                 )
         self._bounds = params
-        self._params = sorted(list(params.keys()))
+        self._params = sorted(params.keys())
 
     @property
     def params(self):

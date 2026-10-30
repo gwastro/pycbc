@@ -129,10 +129,7 @@ def make_padded_frequency_series(vec, filter_tlen=None):
         )
         fft(vec_pad, vectilde)
 
-    vectilde = FrequencySeries(
-        vectilde * DYN_RANGE_FAC, delta_f=delta_f, dtype=complex64
-    )
-    return vectilde
+    return FrequencySeries(vectilde * DYN_RANGE_FAC, delta_f=delta_f, dtype=complex64)
 
 
 def get_waveform(
@@ -167,9 +164,7 @@ def get_waveform(
             amplitude_order=amplitude_order,
         )
 
-    htilde = make_padded_frequency_series(hvec, filter_tlen)
-
-    return htilde
+    return make_padded_frequency_series(hvec, filter_tlen)
 
 
 ###############################################################################

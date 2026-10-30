@@ -34,7 +34,7 @@ def dist(i1, i2, parvals, smoothing_width):
     the two with a metric of 1/(smoothing width^2)
     """
     dsq = 0
-    for v, s in zip(parvals, smoothing_width):
+    for v, s in zip(parvals, smoothing_width, strict=True):
         dsq += (v[i2] - v[i1]) ** 2.0 / s**2.0
     return dsq**0.5
 
@@ -78,12 +78,11 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx, weights=None):
     ntotal_t_smoothed = numpy.average(ntotal[template_idx], weights=weights)
     invalphan_mean = numpy.average(invalphan[template_idx], weights=weights)
 
-    return_tuple = (
+    return (
         nabove_t_smoothed,
         nabove_t_smoothed / invalphan_mean,
         ntotal_t_smoothed,
     )
-    return return_tuple
 
 
 def smooth_tophat(nabove, invalphan, ntotal, dists):
@@ -411,7 +410,8 @@ if len(args.template_fit_file) > 1:
         # we do not mess things up when nan values are given, so we
         # can't use the special cumsum fast option
         median_sigma = [
-            numpy.nanmean(median_sigma[tidsort[l:r]]) for l, r in zip(left, right)
+            numpy.nanmean(median_sigma[tidsort[l:r]])
+            for l, r in zip(left, right, strict=True)
         ]
 
 if args.output_fits_by_template:
@@ -451,7 +451,7 @@ m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
 parvals = []
 parnames = []
 
-for param, slog in zip(args.fit_param, args.log_param):
+for param, slog in zip(args.fit_param, args.log_param, strict=True):
     data = triggers.get_param(param, args, m1, m2, s1z, s2z)
     if slog in ["false", "False", "FALSE"]:
         logger.info("Using param: %s", param)
@@ -507,7 +507,7 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     cut_lengths = [s * c for s in args.smoothing_width]
     # Find the "longest" dimension in cut lengths
     sort_dim = numpy.argmax(
-        [(v.max() - v.min()) / c for v, c in zip(parvals, cut_lengths)]
+        [(v.max() - v.min()) / c for v, c in zip(parvals, cut_lengths, strict=True)]
     )
     logger.info("Sorting / Cutting on dimension %s", parnames[sort_dim])
 
@@ -535,7 +535,7 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     nabove_sort = nabove[par_sort]
     invalphan_sort = invalphan[par_sort]
     ntotal_sort = ntotal[par_sort]
-    slices = [slice(l, r) for l, r in zip(lefts, rights)]
+    slices = [slice(l, r) for l, r in zip(lefts, rights, strict=True)]
     for i in rang:
         report_percentage(i, num_templates)
         slc = slices[i]
@@ -573,7 +573,7 @@ outfile["count_in_template"] = smoothed_vals[:, 2]
 if median_sigma is not None:
     outfile["median_sigma"] = median_sigma
 
-for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
+for param, vals, slog in zip(args.fit_param, parvals, args.log_param, strict=True):
     if slog in ["false", "False", "FALSE"]:
         outfile[param] = vals
     elif slog in ["true", "True", "TRUE"]:

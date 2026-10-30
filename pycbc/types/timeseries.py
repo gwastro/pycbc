@@ -801,8 +801,7 @@ class TimeSeries(Array):
             # shift back to the original time
             fdata = data.to_frequencyseries()
             fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=False)
-            tdata = fdata.to_timeseries()
-            return tdata
+            return fdata.to_timeseries()
         if method == "hard":
             tslice = data.time_slice(time - window, time + window)
             tslice[:] = 0
@@ -1369,8 +1368,7 @@ class TimeSeries(Array):
         from matplotlib import pyplot
 
         if self.kind == "real":
-            plot = pyplot.plot(self.sample_times, self, **kwds)
-            return plot
+            return pyplot.plot(self.sample_times, self, **kwds)
         if self.kind == "complex":
             plot1 = pyplot.plot(self.sample_times, self.real(), **kwds)
             plot2 = pyplot.plot(self.sample_times, self.imag(), **kwds)
@@ -1412,7 +1410,7 @@ class TimeSeries(Array):
         ends_time = self.start_time + ends * self.delta_t
 
         # Convert to segments
-        for s, e in zip(starts_time, ends_time):
+        for s, e in zip(starts_time, ends_time, strict=True):
             segs.append(segment(s, e))
 
         return segs.coalesce()
@@ -1461,10 +1459,9 @@ def load_timeseries(path, group=None):
         key = "data" if group is None else group
         with h5py.File(path, "r") as f:
             data = f[key][:]
-            series = TimeSeries(
+            return TimeSeries(
                 data, delta_t=f[key].attrs["delta_t"], epoch=f[key].attrs["start_time"]
             )
-        return series
     else:
         raise ValueError("Path must end with .npy, .hdf, or .txt")
 

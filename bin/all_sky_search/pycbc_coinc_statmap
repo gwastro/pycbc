@@ -177,7 +177,7 @@ for ifo in ifos:
     fore_time[ifo] = all_trigs.data[f"{ifo}/time"][fore_locs]
 # Average times of triggers (note that coincs where not all ifos have triggers
 # will contain -1 sentinel values)
-fore_time_zip = zip(*fore_time.values())
+fore_time_zip = zip(*fore_time.values(), strict=True)
 ave_fore_time = []
 for ts in fore_time_zip:
     ave_fore_time.append(coinc.mean_if_greater_than_zero(ts)[0])

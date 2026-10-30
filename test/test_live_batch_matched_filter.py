@@ -163,7 +163,7 @@ class TestLiveBatchMatchedFilter(unittest.TestCase):
         for mem in (mf.out_mem, mf.cout_mem):
             largest = max(mem.values(), key=len)
             sizes = [len(tgroup) * psize for tgroup, psize
-                     in zip(mf.tgroups, mf.chunk_tsamples)]
+                     in zip(mf.tgroups, mf.chunk_tsamples, strict=True)]
             self.assertEqual(len(largest), max(sizes))
             for view in mem.values():
                 self.assertTrue(

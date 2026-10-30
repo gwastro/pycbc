@@ -592,8 +592,7 @@ class FrequencySeries(Array):
         from matplotlib import pyplot
 
         if self.kind == "real":
-            plot = pyplot.plot(self.sample_frequencies, self, **kwds)
-            return plot
+            return pyplot.plot(self.sample_frequencies, self, **kwds)
         if self.kind == "complex":
             plot1 = pyplot.plot(self.sample_frequencies, self.real(), **kwds)
             plot2 = pyplot.plot(self.sample_frequencies, self.imag(), **kwds)
@@ -646,8 +645,7 @@ def load_frequencyseries(path, group=None):
             data = f[key][:]
             delta_f = f[key].attrs["delta_f"]
             epoch = f[key].attrs["epoch"] if "epoch" in f[key].attrs else None
-            series = FrequencySeries(data, delta_f=delta_f, epoch=epoch)
-        return series
+            return FrequencySeries(data, delta_f=delta_f, epoch=epoch)
     else:
         raise ValueError("Path must end with .npy, .hdf, or .txt")
 

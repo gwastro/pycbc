@@ -159,7 +159,7 @@ def read_params_from_config(
     # sanity check that each parameter in [variable_params] has a prior section
     variable_args = cp.options(vargs_section)
     subsections = cp.get_subsections(prior_section)
-    tags = set([p for tag in subsections for p in tag.split("+")])
+    tags = {p for tag in subsections for p in tag.split("+")}
     missing_prior = set(variable_args) - tags
     if any(missing_prior):
         raise KeyError(
@@ -176,12 +176,10 @@ def read_params_from_config(
         )
     # get static args
     try:
-        static_args = dict(
-            [
-                (key, cp.get_opt_tags(sargs_section, key, []))
-                for key in cp.options(sargs_section)
-            ]
-        )
+        static_args = {
+            key: cp.get_opt_tags(sargs_section, key, [])
+            for key in cp.options(sargs_section)
+        }
     except _configparser.NoSectionError:
         static_args = {}
     # sanity check that each parameter in [variable_args]

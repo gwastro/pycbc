@@ -214,7 +214,7 @@ if len(args.bank_files) != nchunks:
 
 # Read zerolag/time slide data chunk by chunk
 tot_exp_bg = 0
-zl_inputs = zip(args.full_data_files, args.bank_files)
+zl_inputs = zip(args.full_data_files, args.bank_files, strict=True)
 
 logger.info("Setting up zerolag")
 fg = utils.ForegroundEvents(
@@ -258,7 +258,9 @@ logger.info("Total expected bg count %s", bg.norm)
 logger.info("Actual zerolag event count %s", len(fg.stat))
 
 # Read signal (injection) data
-inj_inputs = zip(args.injection_files, args.bank_files, args.full_data_files)
+inj_inputs = zip(
+    args.injection_files, args.bank_files, args.full_data_files, strict=True
+)
 sg = utils.SignalEventRate(
     args, args.coinc_times, bin_lo=args.min_mchirp, bin_hi=args.max_mchirp
 )
@@ -448,7 +450,7 @@ if args.rank_injections:
     else:
         assert len(args.rank_injections) == len(args.bank_files)
         banks = args.bank_files
-    for i, b in zip(args.rank_injections, banks):
+    for i, b in zip(args.rank_injections, banks, strict=True):
         logger.info("Adding bank info from %s", b)
         inj.add_bank(b)
         inj.filter_templates()

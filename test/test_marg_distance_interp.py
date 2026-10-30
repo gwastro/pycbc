@@ -91,7 +91,7 @@ class TestMargDistanceInterp(unittest.TestCase):
         cls.truth = numpy.array(
             [
                 marginalize_likelihood(a, b, distance=DIST_MARG, phase=True)
-                for a, b in zip(cls.sh, cls.hh)
+                for a, b in zip(cls.sh, cls.hh, strict=True)
             ]
         )
         cls.nophase = staticmethod(
@@ -166,7 +166,7 @@ class TestMargDistanceInterp(unittest.TestCase):
             truth = numpy.array(
                 [
                     marginalize_likelihood(p, q, distance=DIST_MARG, phase=True)
-                    for p, q in zip(x, y)
+                    for p, q in zip(x, y, strict=True)
                 ]
             )
             worst = numpy.abs(self.interp(x, y) - truth).max()

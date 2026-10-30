@@ -140,12 +140,12 @@ def odds_summary(
                 json.dump({"Astro": p_a, "Terrestrial": p_b}, jf)
 
         if hasattr(args, "json_min_ifar") and args.json_min_ifar is not None:
-            for g, ifar, pt in zip(times, ifars, p_b):
+            for g, ifar, pt in zip(times, ifars, p_b, strict=True):
                 if ifar < args.json_min_ifar:
                     continue
                 dump_json(g, 1.0 - pt, pt)
         else:
-            for g, pa in zip(topgps, toppastro):
+            for g, pa in zip(topgps, toppastro, strict=True):
                 dump_json(g, pa, 1.0 - pa)
 
     if plot_extensions is not None:

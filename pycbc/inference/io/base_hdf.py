@@ -525,8 +525,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         pos = self[dataset_name].attrs["pos"]
         has_gauss = self[dataset_name].attrs["has_gauss"]
         cached_gauss = self[dataset_name].attrs["cached_gauss"]
-        state = s, arr, pos, has_gauss, cached_gauss
-        return state
+        return s, arr, pos, has_gauss, cached_gauss
 
     def write_strain(self, strain_dict, group=None):
         """
@@ -651,8 +650,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         else:
             group = "/".join([group, self.injections_group])
         injset = InjectionSet(self.filename, hdf_group=group)
-        injections = injset.table.view(FieldArray)
-        return injections
+        return injset.table.view(FieldArray)
 
     def write_command_line(self):
         """
@@ -740,7 +738,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             ignore = []
         if isinstance(ignore, str):
             ignore = [ignore]
-        ignore = set(ignore + [self.samples_group])
+        ignore = {*ignore, self.samples_group}
         copy_groups = set(self.keys()) - ignore
         for key in copy_groups:
             super().copy(key, other)
@@ -858,9 +856,9 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             )
             # if any down selection was done, re-set the default
             # thin-start/interval/end
-            p = tuple(self[self.samples_group].keys())[0]
+            p = next(iter(self[self.samples_group].keys()))
             my_shape = self[self.samples_group][p].shape
-            p = tuple(other[other.samples_group].keys())[0]
+            p = next(iter(other[other.samples_group].keys()))
             other_shape = other[other.samples_group][p].shape
             if my_shape != other_shape:
                 other.attrs["thin_start"] = 0
@@ -960,7 +958,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
                 group.create_dataset(
                     name,
                     dshape,
-                    maxshape=tuple(list(dshape)[:-1] + [None]),
+                    maxshape=(*list(dshape)[:-1], None),
                     dtype=data.dtype,
                     fletcher32=True,
                 )

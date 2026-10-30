@@ -180,7 +180,7 @@ class Node(ProfileShortcuts):
         self._dax_node = dax.Job(transformation)
         # NOTE: We are enforcing one site per transformation. Therefore the
         #       transformation used indicates the site to be used.
-        self.set_execution_site(list(transformation.sites.keys())[0])
+        self.set_execution_site(next(iter(transformation.sites.keys())))
         self._args = []
         # Each value in _options is added separated with whitespace
         # so ['--option','value'] --> "--option value"

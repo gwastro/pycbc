@@ -617,7 +617,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 )
                 self.two_det_weights[ifo][id0, id1, id2] = self.weights[ifo]
 
-        for ifo, sense in zip(self.hist_ifos, relfac):
+        for ifo, sense in zip(self.hist_ifos, relfac, strict=True):
             self.relsense[ifo] = sense
 
         self.has_hist = True
@@ -661,7 +661,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         """
         # Convert time shift vector to dict, as hist ifos and self.ifos may
         # not be in same order
-        to_shift = {ifo: s for ifo, s in zip(self.ifos, to_shift)}
+        to_shift = dict(zip(self.ifos, to_shift, strict=True))
 
         if not self.has_hist:
             self.get_hist()
@@ -1021,8 +1021,7 @@ class ExpFitStatistic(PhaseTDStatistic):
                 tids = list(tids) + list(bin_tids.astype(int))
                 bin_nums = list(bin_nums) + list([bin_name] * len(bin_tids))
 
-        bin_dict = dict(zip(tids, bin_nums))
-        return bin_dict
+        return dict(zip(tids, bin_nums, strict=True))
 
     def assign_dq_rates(self, key):
         """
@@ -1488,9 +1487,7 @@ class ExpFitStatistic(PhaseTDStatistic):
         # determined by the least sensitive ifo
         network_sigmasq = numpy.amin([sngl[1]["sigmasq"] for sngl in sngls], axis=0)
         # Volume \propto sigma^3 or sigmasq^1.5
-        network_logvol = 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
-
-        return network_logvol
+        return 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
 
     def logsignalrate_shared(self, sngls_info):
         """
@@ -1637,7 +1634,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             ln_noise_rate -= numpy.log(hist_vol)
 
             # What is the signal pdf?
-            stat = {ifo: st for ifo, st in s}
+            stat = dict(s)
             ln_s += self.logsignalrate(stat, slide * step, to_shift)
 
         # Add in the feature-dependent terms to the signal rate
@@ -2053,8 +2050,6 @@ def get_statistic_from_opts(opts, ifos):
         opts.statistic_keywords,
     )
 
-    stat_class = get_statistic(opts.ranking_statistic)(
+    return get_statistic(opts.ranking_statistic)(
         opts.sngl_ranking, opts.statistic_files, ifos=ifos, **extra_kwargs
     )
-
-    return stat_class

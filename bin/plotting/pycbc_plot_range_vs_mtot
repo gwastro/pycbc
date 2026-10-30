@@ -47,7 +47,7 @@ plt.grid()
 
 for psd_file in args.psd_files:
     f = HFile(psd_file, "r")
-    ifo = tuple(f.keys())[0]
+    ifo = next(iter(f.keys()))
     flow = f.attrs["low_frequency_cutoff"]
     keys = f[ifo + "/psds"].keys()
     start, end = f[ifo + "/start_time"][:], f[ifo + "/end_time"][:]
@@ -64,7 +64,7 @@ for psd_file in args.psd_files:
         out = pycbc.types.zeros(len(psd), dtype=numpy.complex64)
 
         for mi, mf, dm, apx in zip(
-            args.min_mtot, args.max_mtot, args.d_mtot, args.approximant
+            args.min_mtot, args.max_mtot, args.d_mtot, args.approximant, strict=True
         ):
             for M in numpy.arange(mi, mf, dm):
                 htilde = pycbc.waveform.get_waveform_filter(

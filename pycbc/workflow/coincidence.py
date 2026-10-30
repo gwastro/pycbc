@@ -292,7 +292,7 @@ class PyCBCDistributeBackgroundBins(Executable):
                 self.name,
                 coinc_files[0].segment,
                 directory=self.out_dir,
-                tags=tags + [f"mbin-{i}"],
+                tags=[*tags, f"mbin-{i}"],
                 extension=".hdf",
             )
             for i in range(len(background_bins))
@@ -478,7 +478,9 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
     logger.info("convert single inspiral trigger files to hdf5")
 
     trig_files = FileList()
-    for ifo, insp_group in zip(*xml_trigger_files.categorize_by_attr("ifo")):
+    for ifo, insp_group in zip(
+        *xml_trigger_files.categorize_by_attr("ifo"), strict=True
+    ):
         trig2hdf_exe = PyCBCTrig2HDFExecutable(
             workflow.cp, "trig2hdf", ifos=ifo, out_dir=out_dir, tags=tags
         )
@@ -582,7 +584,7 @@ def setup_interval_coinc_inj(
         workflow.cp,
         "coinc",
         ifos=list(ifiles.keys()),
-        tags=tags + ["injinj"],
+        tags=[*tags, "injinj"],
         out_dir=out_dir,
     )
     bg_files = []
@@ -610,7 +612,7 @@ def setup_interval_coinc_inj(
         bg_files,
         background_file,
         out_dir,
-        tags=tags + [veto_name],
+        tags=[*tags, veto_name],
     )
 
 
@@ -647,7 +649,7 @@ def setup_interval_coinc(
         workflow.cp.get_opt_tags(
             "workflow-coincidence",
             "parallelization-factor",
-            [findcoinc_exe.ifo_string] + tags,
+            [findcoinc_exe.ifo_string, *tags],
         )
     )
 
@@ -701,7 +703,7 @@ def setup_sngls(
         workflow.cp.get_opt_tags(
             "workflow-coincidence",
             "parallelization-factor",
-            [findsngls_exe.ifo_string] + tags,
+            [findsngls_exe.ifo_string, *tags],
         )
     )
 
@@ -751,7 +753,7 @@ def setup_sngls_inj(
         workflow.cp, "sngls", ifos=ifos, tags=tags, out_dir=out_dir
     )
     # Wall time knob and memory knob
-    exe_str_tags = [findsnglsinj_exe.ifo_string] + tags
+    exe_str_tags = [findsnglsinj_exe.ifo_string, *tags]
     factor = int(
         workflow.cp.get_opt_tags(
             "workflow-coincidence", "parallelization-factor", exe_str_tags

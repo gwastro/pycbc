@@ -52,7 +52,7 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
     fmax = p["f_final"]
     flow = p["f_lower"]
 
-    bands = [flow] + bands + [fmax]
+    bands = [flow, *bands, fmax]
     dfs = [df] + [1.0 / l for l in lengths]
 
     dt = 1.0 / (2.0 * fmax)
@@ -97,7 +97,7 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
         kmax = int(p2["f_final"] / dfs[i])
         taper = numpy.hanning(int(overlap * 2 / dfs[i]))
 
-        for wf, h in zip([wf_plus, wf_cross], [hp, hc]):
+        for wf, h in zip([wf_plus, wf_cross], [hp, hc], strict=True):
             h = h.astype(numpy.complex64)
 
             if taper_start:

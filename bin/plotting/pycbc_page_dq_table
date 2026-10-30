@@ -37,7 +37,7 @@ for dq_state in dq_states:
 livetimes.append(total_livetime)
 
 frac_livetimes = [lt / total_livetime for lt in livetimes]
-state_names = list(dq_states.values()) + ["Total"]
+state_names = [*list(dq_states.values()), "Total"]
 columns = [state_names, livetimes, frac_livetimes]
 columns = [np.array(c) for c in columns]
 col_names = ["DQ State", "Livetime", "% of Livetime"]

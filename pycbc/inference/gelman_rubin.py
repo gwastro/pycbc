@@ -183,6 +183,4 @@ def gelman_rubin(chains, auto_burn_in=True):
 
     # calculate PSRF the potential scale reduction factor
     # this will have shape (nparameters)
-    psrf = numpy.sqrt(r2_estimate * df_adj)
-
-    return psrf
+    return numpy.sqrt(r2_estimate * df_adj)

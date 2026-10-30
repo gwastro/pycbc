@@ -918,8 +918,7 @@ class PyCBCInspiralExecutable(Executable):
         end_pad = int(self.get_opt("segment-end-pad"))
         new_data_start = max(curr_seg[0], job_data_seg[0] - start_pad)
         new_data_end = min(curr_seg[1], job_data_seg[1] + end_pad)
-        new_data_seg = segments.segment([new_data_start, new_data_end])
-        return new_data_seg
+        return segments.segment([new_data_start, new_data_end])
 
 
 # FIXME: This is probably misnamed, this is really GRBInspiralExectuable.
@@ -934,7 +933,7 @@ class PyCBCMultiInspiralExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
 
     # bank-veto-bank-file is a file input option for pycbc_multi_inspiral
-    file_input_options = Executable.file_input_options + ["--bank-veto-bank-file"]
+    file_input_options = [*Executable.file_input_options, "--bank-veto-bank-file"]
 
     def __init__(
         self,
@@ -1128,7 +1127,7 @@ class PyCBCTmpltbankExecutable(Executable):
                 valid_seg,
                 ".txt",
                 "--psd-output",
-                tags=tags + ["PSD_FILE"],
+                tags=[*tags, "PSD_FILE"],
                 store_file=self.retain_files,
             )
         node.new_output_file_opt(
@@ -1169,7 +1168,7 @@ class PyCBCTmpltbankExecutable(Executable):
                 valid_seg,
                 ".txt",
                 "--psd-output",
-                tags=tags + ["PSD_FILE"],
+                tags=[*tags, "PSD_FILE"],
                 store_file=self.retain_files,
             )
 
@@ -1260,7 +1259,7 @@ class PycbcSplitInspinjExecutable(Executable):
         out_files = FileList([])
         for i in range(self.num_splits):
             curr_tag = f"split{i}"
-            curr_tags = parent.tags + [curr_tag]
+            curr_tags = [*parent.tags, curr_tag]
             job_tag = parent.description + "_" + self.name.upper()
             out_file = File(
                 parent.ifo_list,
@@ -1382,7 +1381,7 @@ class PycbcSplitBankExecutable(Executable):
             curr_tag = (f"bank%0{n_dp}d") % (i)
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
-            curr_tags = bank.tags + [curr_tag] + tags
+            curr_tags = [*bank.tags, curr_tag, *tags]
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(
                 bank.ifo_list,
@@ -1565,7 +1564,7 @@ class PycbcHDFSplitInjExecutable(Executable):
         out_files = FileList([])
         for i in range(self.num_splits):
             curr_tag = f"split{i}"
-            curr_tags = parent.tags + [curr_tag]
+            curr_tags = [*parent.tags, curr_tag]
             job_tag = parent.description + "_" + self.name.upper()
             out_file = File(
                 parent.ifo_list,

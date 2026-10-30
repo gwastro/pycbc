@@ -97,7 +97,7 @@ logger.info("Copying foreground non-ifo-specific data")
 # copy and concatenate all the columns in the foreground group
 # from all files /except/ the IFO groups
 for key in key_set:
-    if key.startswith("foreground") and not any([ifo in key for ifo in all_ifos]):
+    if key.startswith("foreground") and not any(ifo in key for ifo in all_ifos):
         pycbc.io.combine_and_copy(f, files, key)
 
 logger.info("Collating triggers into single structure")
@@ -185,7 +185,10 @@ clustered_times = (f[f"foreground/{ifo}/time"][:] for ifo in all_ifos)
 #  at the time of the coincidence
 trials_factors = numpy.zeros_like(f["foreground/ifar"][:])
 test_times = numpy.array(
-    [pycbc.events.mean_if_greater_than_zero(tc)[0] for tc in zip(*clustered_times)]
+    [
+        pycbc.events.mean_if_greater_than_zero(tc)[0]
+        for tc in zip(*clustered_times, strict=True)
+    ]
 )
 
 # Iterate over different ifo combinations
@@ -209,7 +212,9 @@ f.attrs["foreground_time_exc"] = f.attrs["foreground_time"]
 thr = test_times[f["foreground/ifar"][:] > args.censor_ifar_threshold]
 vstart = thr - args.veto_window
 vend = thr + args.veto_window
-vtime = segments.segmentlist([segments.segment(s, e) for s, e in zip(vstart, vend)])
+vtime = segments.segmentlist(
+    [segments.segment(s, e) for s, e in zip(vstart, vend, strict=True)]
+)
 logger.info("Censoring %.2f seconds", abs(vtime))
 f.attrs["foreground_time_exc"] -= abs(vtime)
 f["segments/foreground_veto/start"] = vstart

@@ -223,8 +223,7 @@ def invert_covariance(invpsd, lindex, rindex):
     """
     tdfilter = invpsd.astype("complex").to_timeseries() * invpsd.delta_t
     mat = linalg.toeplitz(tdfilter[: (rindex - lindex)])
-    invmat = linalg.inv(mat)
-    return invmat
+    return linalg.inv(mat)
 
 
 def gate_and_paint_matmul(data, lindex, rindex, invpsd, invmat=None, copy=True):

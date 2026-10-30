@@ -82,11 +82,11 @@ class TestUtils(unittest.TestCase):
         # with spin
         result = mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(10.0, 1.4, 0.9, 0.1)
         answer = [7.208723197, 3.251802285, 243.2697314]
-        for r, a in zip(result, answer):
+        for r, a in zip(result, answer, strict=True):
             self.assertAlmostEqual(r / a, 1, places=6)
         result = mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(5.0, 5.0, 0.5, -0.7)
         answer = [-0.7833333333, 0.07250000000, -24.59479718]
-        for r, a in zip(result, answer):
+        for r, a in zip(result, answer, strict=True):
             self.assertAlmostEqual(r / a, 1, places=6)
         # using array arguments
         mass1 = numpy.array([1.4, 10.0, 5.0, 5.0])

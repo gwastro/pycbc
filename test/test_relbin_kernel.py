@@ -81,7 +81,7 @@ def make_case(seed):
     # bins as the model lays them down for this band
     index = setup_bins(fine, FLOW, FHIGH)
     edges = fine[index]
-    bins = list(zip(index[:-1], index[1:]))
+    bins = list(zip(index[:-1], index[1:], strict=True))
 
     def waveform(points, mass1, distance=100.0):
         return get_fd_waveform_sequence(
@@ -109,19 +109,19 @@ def make_case(seed):
     hp, hc = waveform(edges, MASS1 * 1.001)
     h00 = numpy.array(waveform(edges, MASS1)[0])
 
-    return dict(
-        freqs=edges,
-        hp=numpy.array(hp),
-        hc=numpy.array(hc),
-        h00=h00,
-        a0=a0,
-        a1=a1,
-        b0=numpy.abs(b0),
-        b1=numpy.abs(b1),
-        fp=rng.uniform(-1, 1, NSAMPLE),
-        fc=rng.uniform(-1, 1, NSAMPLE),
-        dtc=rng.uniform(-0.1, 0.1, NSAMPLE),
-    )
+    return {
+        "freqs": edges,
+        "hp": numpy.array(hp),
+        "hc": numpy.array(hc),
+        "h00": h00,
+        "a0": a0,
+        "a1": a1,
+        "b0": numpy.abs(b0),
+        "b1": numpy.abs(b1),
+        "fp": rng.uniform(-1, 1, NSAMPLE),
+        "fc": rng.uniform(-1, 1, NSAMPLE),
+        "dtc": rng.uniform(-0.1, 0.1, NSAMPLE),
+    }
 
 
 def direct(freqs, fp, fc, dtc, *, hp, hc, h00, a0, a1, b0, b1):
@@ -143,13 +143,13 @@ class TestRelbinKernel(unittest.TestCase):
         # with earth rotation fp, fc and the arrival are per bin
         rng = numpy.random.RandomState(cls.seed + 1)
         n = len(cls.case["freqs"])
-        cls.band = dict(
-            fp=rng.uniform(-1, 1, n),
-            fc=rng.uniform(-1, 1, n),
-            times=rng.uniform(-0.01, 0.01, n),
-            dtc=rng.uniform(-0.01, 0.01, n),
-            pol=numpy.exp(2.0j * rng.uniform(0, numpy.pi, NSAMPLE)),
-        )
+        cls.band = {
+            "fp": rng.uniform(-1, 1, n),
+            "fc": rng.uniform(-1, 1, n),
+            "times": rng.uniform(-0.01, 0.01, n),
+            "dtc": rng.uniform(-0.01, 0.01, n),
+            "pol": numpy.exp(2.0j * rng.uniform(0, numpy.pi, NSAMPLE)),
+        }
 
     def check(self, out, effective, label):
         """
@@ -299,7 +299,7 @@ class TestRelbinKernel(unittest.TestCase):
                 c["b0"],
                 c["b1"],
             ),
-            lambda j: self.rotated(j) + (b["dtc"],),
+            lambda j: (*self.rotated(j), b["dtc"]),
             "likelihood_parts_v_pol",
         )
 
@@ -344,7 +344,7 @@ class TestRelbinKernel(unittest.TestCase):
                 c["b0"],
                 c["b1"],
             ),
-            lambda j: self.rotated(j) + (b["times"] + c["dtc"][j],),
+            lambda j: (*self.rotated(j), b["times"] + c["dtc"][j]),
             "likelihood_parts_v_pol_time",
         )
 

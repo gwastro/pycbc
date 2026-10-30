@@ -415,7 +415,7 @@ if opts.plot_prior:
 if len(opts.input_file) > 1:
     handles = []
     labels = []
-    for color, fn in zip(hist_colors, opts.input_file):
+    for color, fn in zip(hist_colors, opts.input_file, strict=True):
         label = opts.input_file_labels[fn]
         handles.append(patches.Patch(color=color, label=label))
         labels.append(label)

@@ -90,7 +90,7 @@ def setup_psd_calculate(
                 seg_file,
                 segment_name,
                 out_dir,
-                tags=tags + [f"PART{i}"],
+                tags=[*tags, f"PART{i}"],
             )
         ]
 
