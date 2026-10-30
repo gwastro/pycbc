@@ -1,0 +1,4 @@
+<map id="inheritance8bc1911235" name="inheritance8bc1911235">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="19,5,217,33"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.cpnest.CPNestSampler" target="_top" title="This class is used to construct an CPNest sampler from the cpnest" alt="" coords="5,81,231,109"/>
+</map>

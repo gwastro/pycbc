@@ -1,0 +1,739 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.frame.buffer &mdash; PyCBC 0.0a1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=fe1e55ce"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../frame.html">pycbc.frame</a></li>
+      <li class="breadcrumb-item active">pycbc.frame.buffer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.frame.buffer</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2014 Andrew Miller, Alex Nitz, Tito Dal Canton, Christopher M. Biwer</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="sd">"""</span>
+<span class="sd">Rolling buffers of frame data, used by low-latency analyses.</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events.veto</span><span class="w"> </span><span class="kn">import</span> <span class="n">indices_outside_times</span><span class="p">,</span> <span class="n">indices_within_times</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.frame.cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_format</span><span class="p">,</span> <span class="n">locations_to_cache</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.frame.frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_channel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span><span class="p">,</span> <span class="n">zeros</span>
+
+
+<div class="viewcode-block" id="DataBuffer">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.DataBuffer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataBuffer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A linear buffer that acts as a FILO for reading in frame data"""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">frame_src</span><span class="p">,</span>
+        <span class="n">channel_name</span><span class="p">,</span>
+        <span class="n">start_time</span><span class="p">,</span>
+        <span class="n">max_buffer</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+        <span class="n">force_update_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">increment_update_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Create a rolling buffer of frame data</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        frame_src: str of list of strings</span>
+<span class="sd">            Strings that indicate where to read from files from. This can be a</span>
+<span class="sd">        list of frame files, a glob, etc.</span>
+<span class="sd">        channel_name: str</span>
+<span class="sd">            Name of the channel to read from the frame files</span>
+<span class="sd">        start_time:</span>
+<span class="sd">            Time to start reading from.</span>
+<span class="sd">        max_buffer: {int, 2048}, Optional</span>
+<span class="sd">            Length of the buffer in seconds</span>
+<span class="sd">        dtype: {dtype, np.float32}, Optional</span>
+<span class="sd">            Data type to use for the interal buffer</span>
+
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_src</span> <span class="o">=</span> <span class="n">frame_src</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span> <span class="o">=</span> <span class="n">channel_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_pos</span> <span class="o">=</span> <span class="n">start_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">force_update_cache</span> <span class="o">=</span> <span class="n">force_update_cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">increment_update_cache</span> <span class="o">=</span> <span class="n">increment_update_cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span> <span class="o">=</span> <span class="n">channel_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_sample_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_metadata</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span>
+        <span class="p">)</span>
+
+        <span class="n">raw_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_sample_rate</span> <span class="o">*</span> <span class="n">max_buffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span>
+            <span class="n">zeros</span><span class="p">(</span><span class="n">raw_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">),</span>
+            <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">epoch</span><span class="o">=</span><span class="n">start_time</span> <span class="o">-</span> <span class="n">max_buffer</span><span class="p">,</span>
+            <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_sample_rate</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="DataBuffer.update_cache">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.DataBuffer.update_cache">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Reset the cache. This can be used to update the cache if the</span>
+<span class="sd">        result may change due to more files being added to the filesystem,</span>
+<span class="sd">        for example.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">locations_to_cache</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_src</span><span class="p">,</span> <span class="n">latest</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_retrieve_metadata</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">channel_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Retrieve basic metadata by reading the first file in the cache</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cache: FrameCache</span>
+<span class="sd">            Cache containing a channel we want to learn about</span>
+<span class="sd">        channel_name: str</span>
+<span class="sd">            The name of the channel we want to know the dtype and sample rate of</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        channel_type: np.dtype</span>
+<span class="sd">            The dtype of the channel</span>
+<span class="sd">        sample_rate: int</span>
+<span class="sd">            The sample rate of the data within this channel</span>
+
+<span class="sd">        """</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">cache</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">dtype</span><span class="p">,</span> <span class="n">sample_rate</span> <span class="o">=</span> <span class="n">file_format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">channel_info</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">channel_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dtype</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_read_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Try to read the block of data blocksize seconds long</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read from the channel</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        data: TimeSeries</span>
+<span class="sd">            TimeSeries containg 'blocksize' seconds of frame data</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError:</span>
+<span class="sd">            If data cannot be read for any reason</span>
+
+<span class="sd">        """</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">read_channel</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">read_pos</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">read_pos</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">blocksize</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot read </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span><span class="si">}</span><span class="s2"> frame data"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>  <span class="c1"># noqa: TRY003</span>
+
+<div class="viewcode-block" id="DataBuffer.null_advance">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.DataBuffer.null_advance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">null_advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Advance and insert zeros</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read from the channel</span>
+
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">blocksize</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_sample_rate</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_pos</span> <span class="o">+=</span> <span class="n">blocksize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">blocksize</span></div>
+
+
+<div class="viewcode-block" id="DataBuffer.advance">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.DataBuffer.advance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Add blocksize seconds more to the buffer, push blocksize seconds</span>
+<span class="sd">        from the beginning.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read from the channel</span>
+
+<span class="sd">        """</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_frame</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_pos</span> <span class="o">+=</span> <span class="n">blocksize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">blocksize</span>
+        <span class="k">return</span> <span class="n">ts</span></div>
+
+
+<div class="viewcode-block" id="DataBuffer.update_cache_by_increment">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.DataBuffer.update_cache_by_increment">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_cache_by_increment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Update the internal cache by starting from the first frame</span>
+<span class="sd">        and incrementing.</span>
+
+<span class="sd">        Guess the next frame file name by incrementing from the first found</span>
+<span class="sd">        one. This allows a pattern to be used for the GPS folder of the file,</span>
+<span class="sd">        which is indicated by `GPSX` where x is the number of digits to use.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            Number of seconds to increment the next frame file.</span>
+
+<span class="sd">        """</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">blocksize</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"dur"</span><span class="p">):</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_src</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># noqa: PTH207</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">beg</span> <span class="o">=</span> <span class="s2">"-"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">fname</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fname</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fname</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fname</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="n">fstart</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ref</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">start</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dur</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dur</span>
+        <span class="p">)</span>
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fstart</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dur</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">starts</span><span class="p">:</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">increment_update_cache</span>
+            <span class="k">if</span> <span class="s2">"GPS"</span> <span class="ow">in</span> <span class="n">pattern</span><span class="p">:</span>
+                <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pattern</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">pattern</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"GPS"</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)])</span>
+                <span class="n">pattern</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">f</span><span class="s2">"GPS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">])</span>
+
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">beg</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dur</span><span class="si">}</span><span class="s2">.gwf"</span>
+            <span class="c1"># check that file actually exists, else abort now</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span>
+
+            <span class="n">keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">locations_to_cache</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_sample_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_metadata</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataBuffer.attempt_advance">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.DataBuffer.attempt_advance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attempt_advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Attempt to advance the frame buffer. Retry upon failure, except</span>
+<span class="sd">        if the frame file is beyond the timeout limit.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read from the channel</span>
+<span class="sd">        timeout: {int, 10}, Optional</span>
+<span class="sd">            Number of seconds before giving up on reading a frame</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        data: TimeSeries</span>
+<span class="sd">            TimeSeries containg 'blocksize' seconds of frame data</span>
+
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_update_cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">()</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">increment_update_cache</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">update_cache_by_increment</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">DataBuffer</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>  <span class="c1"># noqa: PERF203</span>
+                <span class="k">if</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">gps_now</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">timeout</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">end_time</span><span class="p">:</span>
+                    <span class="c1"># The frame is not there and it should be by now,</span>
+                    <span class="c1"># so we give up and treat it as zeros</span>
+                    <span class="n">DataBuffer</span><span class="o">.</span><span class="n">null_advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">None</span>
+                <span class="c1"># I am too early to give up on this frame,</span>
+                <span class="c1"># so we should try again</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="StatusBuffer">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.StatusBuffer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StatusBuffer</span><span class="p">(</span><span class="n">DataBuffer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Read state vector or DQ information from a frame file"""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">frame_src</span><span class="p">,</span>
+        <span class="n">channel_name</span><span class="p">,</span>
+        <span class="n">start_time</span><span class="p">,</span>
+        <span class="n">max_buffer</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+        <span class="n">valid_mask</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">force_update_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">increment_update_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">valid_on_zero</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Create a rolling buffer of status data from a frame</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        frame_src: str of list of strings</span>
+<span class="sd">            Strings that indicate where to read from files from. This can be a</span>
+<span class="sd">            list of frame files, a glob, etc.</span>
+<span class="sd">        channel_name: str</span>
+<span class="sd">            Name of the channel to read from the frame files</span>
+<span class="sd">        start_time:</span>
+<span class="sd">            Time to start reading from.</span>
+<span class="sd">        max_buffer: {int, 2048}, Optional</span>
+<span class="sd">            Length of the buffer in seconds</span>
+<span class="sd">        valid_mask: {int, HOFT_OK | SCIENCE_INTENT}, Optional</span>
+<span class="sd">            Set of flags that must be on to indicate valid frame data.</span>
+<span class="sd">        valid_on_zero: bool</span>
+<span class="sd">            If True, `valid_mask` is ignored and the status is considered</span>
+<span class="sd">            "good" simply when the channel is zero.</span>
+
+<span class="sd">        """</span>
+        <span class="n">DataBuffer</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">frame_src</span><span class="p">,</span>
+            <span class="n">channel_name</span><span class="p">,</span>
+            <span class="n">start_time</span><span class="p">,</span>
+            <span class="n">max_buffer</span><span class="o">=</span><span class="n">max_buffer</span><span class="p">,</span>
+            <span class="n">force_update_cache</span><span class="o">=</span><span class="n">force_update_cache</span><span class="p">,</span>
+            <span class="n">increment_update_cache</span><span class="o">=</span><span class="n">increment_update_cache</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span> <span class="o">=</span> <span class="n">valid_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_on_zero</span> <span class="o">=</span> <span class="n">valid_on_zero</span>
+
+<div class="viewcode-block" id="StatusBuffer.check_valid">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.StatusBuffer.check_valid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Check if the data contains any non-valid status information</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        values: pycbc.types.Array</span>
+<span class="sd">            Array of status information</span>
+<span class="sd">        flag: str, optional</span>
+<span class="sd">            Override the default valid mask with a user defined mask.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        status: boolean</span>
+<span class="sd">            Returns True if all of the status information if valid,</span>
+<span class="sd">             False if any is not.</span>
+
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_on_zero</span><span class="p">:</span>
+            <span class="n">valid</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">flag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">flag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span>
+            <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">flag</span><span class="p">)</span> <span class="o">==</span> <span class="n">flag</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">valid</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="StatusBuffer.is_extent_valid">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.StatusBuffer.is_extent_valid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_extent_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Check if the duration contains any non-valid frames</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        start_time: int</span>
+<span class="sd">            Beginning of the duration to check in gps seconds</span>
+<span class="sd">        duration: int</span>
+<span class="sd">            Number of seconds after the start_time to check</span>
+<span class="sd">        flag: str, optional</span>
+<span class="sd">            Override the default valid mask with a user defined mask.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        status: boolean</span>
+<span class="sd">            Returns True if all of the status information if valid,</span>
+<span class="sd">            False if any is not.</span>
+
+<span class="sd">        """</span>
+        <span class="n">sr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">sample_rate</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">start_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">*</span> <span class="n">sr</span><span class="p">)</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">s</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration</span> <span class="o">*</span> <span class="n">sr</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_valid</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="n">flag</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StatusBuffer.indices_of_flag">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.StatusBuffer.indices_of_flag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">indices_of_flag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Return the indices of the times lying in the flagged region</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        start_time: int</span>
+<span class="sd">            Beginning time to request for</span>
+<span class="sd">        duration: int</span>
+<span class="sd">            Number of seconds to check.</span>
+<span class="sd">        padding: float</span>
+<span class="sd">            Number of seconds to add around flag inactive times to be considered</span>
+<span class="sd">        inactive as well.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        indices: np.ndarray</span>
+<span class="sd">            Array of indices marking the location of triggers within valid</span>
+<span class="sd">        time.</span>
+
+<span class="sd">        """</span>
+        <span class="n">sr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">sample_rate</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">start_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">start_time</span> <span class="o">-</span> <span class="n">padding</span><span class="p">)</span> <span class="o">*</span> <span class="n">sr</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">s</span> <span class="o">+</span> <span class="nb">int</span><span class="p">((</span><span class="n">duration</span> <span class="o">+</span> <span class="n">padding</span><span class="p">)</span> <span class="o">*</span> <span class="n">sr</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="n">stamps</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_on_zero</span><span class="p">:</span>
+            <span class="n">invalid</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">invalid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span>
+
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">stamps</span><span class="p">[</span><span class="n">invalid</span><span class="p">]</span> <span class="o">-</span> <span class="n">padding</span>
+        <span class="n">ends</span> <span class="o">=</span> <span class="n">starts</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">sr</span> <span class="o">+</span> <span class="n">padding</span> <span class="o">*</span> <span class="mf">2.0</span>
+        <span class="k">return</span> <span class="n">indices_outside_times</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">starts</span><span class="p">,</span> <span class="n">ends</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StatusBuffer.advance">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.StatusBuffer.advance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Add blocksize seconds more to the buffer, push blocksize seconds</span>
+<span class="sd">        from the beginning.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read from the channel</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        status: boolean</span>
+<span class="sd">            Returns True if all of the status information if valid,</span>
+<span class="sd">            False if any is not.</span>
+
+<span class="sd">        """</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">increment_update_cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_cache_by_increment</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">DataBuffer</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_valid</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">null_advance</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="IDQBuffer">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.IDQBuffer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IDQBuffer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Read iDQ timeseries from a frame file"""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">frame_src</span><span class="p">,</span>
+        <span class="n">idq_channel_name</span><span class="p">,</span>
+        <span class="n">idq_status_channel_name</span><span class="p">,</span>
+        <span class="n">idq_threshold</span><span class="p">,</span>
+        <span class="n">start_time</span><span class="p">,</span>
+        <span class="n">max_buffer</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+        <span class="n">force_update_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">increment_update_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        frame_src: str of list of strings</span>
+<span class="sd">            Strings that indicate where to read from files from. This can be a</span>
+<span class="sd">            list of frame files, a glob, etc.</span>
+<span class="sd">        idq_channel_name: str</span>
+<span class="sd">            Name of the channel to read the iDQ statistic from</span>
+<span class="sd">        idq_status_channel_name: str</span>
+<span class="sd">            Name of the channel to read the iDQ status from</span>
+<span class="sd">        idq_threshold: float</span>
+<span class="sd">            Threshold which triggers a veto if iDQ channel falls below this threshold</span>
+<span class="sd">        start_time:</span>
+<span class="sd">            Time to start reading from.</span>
+<span class="sd">        max_buffer: {int, 512}, Optional</span>
+<span class="sd">            Length of the buffer in seconds</span>
+<span class="sd">        force_update_cache: {boolean, True}, Optional</span>
+<span class="sd">            Re-check the filesystem for frame files on every attempt to</span>
+<span class="sd">            read more data.</span>
+<span class="sd">        increment_update_cache: {str, None}, Optional</span>
+<span class="sd">            Pattern to look for frame files in a GPS dependent directory. This</span>
+<span class="sd">            is an alternate to the forced updated of the frame cache, and</span>
+<span class="sd">            apptempts to predict the next frame file name without probing the</span>
+<span class="sd">            filesystem.</span>
+
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">idq_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idq</span> <span class="o">=</span> <span class="n">DataBuffer</span><span class="p">(</span>
+            <span class="n">frame_src</span><span class="p">,</span>
+            <span class="n">idq_channel_name</span><span class="p">,</span>
+            <span class="n">start_time</span><span class="p">,</span>
+            <span class="n">max_buffer</span><span class="o">=</span><span class="n">max_buffer</span><span class="p">,</span>
+            <span class="n">force_update_cache</span><span class="o">=</span><span class="n">force_update_cache</span><span class="p">,</span>
+            <span class="n">increment_update_cache</span><span class="o">=</span><span class="n">increment_update_cache</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idq_state</span> <span class="o">=</span> <span class="n">DataBuffer</span><span class="p">(</span>
+            <span class="n">frame_src</span><span class="p">,</span>
+            <span class="n">idq_status_channel_name</span><span class="p">,</span>
+            <span class="n">start_time</span><span class="p">,</span>
+            <span class="n">max_buffer</span><span class="o">=</span><span class="n">max_buffer</span><span class="p">,</span>
+            <span class="n">force_update_cache</span><span class="o">=</span><span class="n">force_update_cache</span><span class="p">,</span>
+            <span class="n">increment_update_cache</span><span class="o">=</span><span class="n">increment_update_cache</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="IDQBuffer.flag_at_times">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.IDQBuffer.flag_at_times">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flag_at_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Check whether the idq flag was on at given times</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        start_time: int</span>
+<span class="sd">            Beginning time to request for</span>
+<span class="sd">        duration: int</span>
+<span class="sd">            Number of seconds to check.</span>
+<span class="sd">        times: array of floats</span>
+<span class="sd">            Times to check for an active flag</span>
+<span class="sd">        padding: float</span>
+<span class="sd">            Amount of time in seconds to flag around samples</span>
+<span class="sd">            below the iDQ FAP threshold</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        flag_state: np.ndarray</span>
+<span class="sd">            Boolean array of whether flag was on at given times</span>
+
+<span class="sd">        """</span>
+        <span class="c1"># convert start and end times to buffer indices</span>
+        <span class="n">sr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idq</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">sample_rate</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">start_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">idq</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">start_time</span> <span class="o">-</span> <span class="n">padding</span><span class="p">)</span> <span class="o">*</span> <span class="n">sr</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">s</span> <span class="o">+</span> <span class="nb">int</span><span class="p">((</span><span class="n">duration</span> <span class="o">+</span> <span class="n">padding</span><span class="p">)</span> <span class="o">*</span> <span class="n">sr</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="c1"># find samples when iDQ FAP is below threshold and state is valid</span>
+        <span class="n">idq_fap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idq</span><span class="o">.</span><span class="n">raw_buffer</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="n">low_fap</span> <span class="o">=</span> <span class="n">idq_fap</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span>
+        <span class="n">idq_valid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idq_state</span><span class="o">.</span><span class="n">raw_buffer</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="n">idq_valid</span> <span class="o">=</span> <span class="n">idq_valid</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">valid_low_fap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">idq_valid</span><span class="p">,</span> <span class="n">low_fap</span><span class="p">)</span>
+
+        <span class="c1"># find times corresponding to the valid low FAP samples</span>
+        <span class="n">glitch_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">valid_low_fap</span><span class="p">)</span>
+        <span class="n">stamps</span> <span class="o">=</span> <span class="n">idq_fap</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">glitch_times</span> <span class="o">=</span> <span class="n">stamps</span><span class="p">[</span><span class="n">glitch_idx</span><span class="p">]</span>
+
+        <span class="c1"># construct start and end times of flag segments</span>
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">glitch_times</span> <span class="o">-</span> <span class="n">padding</span>
+        <span class="n">ends</span> <span class="o">=</span> <span class="n">starts</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">sr</span> <span class="o">+</span> <span class="n">padding</span> <span class="o">*</span> <span class="mf">2.0</span>
+
+        <span class="c1"># check if times were flagged</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">indices_within_times</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">starts</span><span class="p">,</span> <span class="n">ends</span><span class="p">)</span>
+        <span class="n">flagged_bool</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">flagged_bool</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">flagged_bool</span></div>
+
+
+<div class="viewcode-block" id="IDQBuffer.advance">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.IDQBuffer.advance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Add blocksize seconds more to the buffer, push blocksize seconds</span>
+<span class="sd">        from the beginning.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        status: boolean</span>
+<span class="sd">            Returns True if advance is succesful,</span>
+<span class="sd">            False if not.</span>
+
+<span class="sd">        """</span>
+        <span class="n">idq_ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idq</span><span class="o">.</span><span class="n">attempt_advance</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+        <span class="n">idq_state_ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idq_state</span><span class="o">.</span><span class="n">attempt_advance</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">idq_ts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">idq_state_ts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IDQBuffer.null_advance">
+<a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.buffer.IDQBuffer.null_advance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">null_advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Advance and insert zeros</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to advance the buffers</span>
+
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idq</span><span class="o">.</span><span class="n">null_advance</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idq_state</span><span class="o">.</span><span class="n">null_advance</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 30, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
