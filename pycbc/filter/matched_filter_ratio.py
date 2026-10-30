@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """Hierarchical ratio/FIR matched filtering and multi-detector follow-up."""
 
+import bisect
 import collections
 import logging
 import multiprocessing as mp
@@ -68,6 +69,11 @@ class MatchedFilterRatioControl:
         High frequency cutoff in Hz (defaults to Nyquist).
     cluster_window : float, optional
         Length of time-clustering window in seconds (default: 0.0).
+    group_keep_loudest : int, optional
+        Maximum number of loudest primary triggers (by ``|snr|``) to retain per
+        leaf group within ``±cluster_window`` before evaluating signal
+        consistency and secondary follow-up (default: None, retaining all
+        primary triggers in the leaf group).
     followup_snr_threshold : float, optional
         Secondary detector SNR threshold for follow-up triggers (default: None,
         meaning 0.0 when follow-up is enabled via ``followup_bin_width`` and
@@ -99,6 +105,7 @@ class MatchedFilterRatioControl:
         snr_threshold,
         high_frequency_cutoff=None,
         cluster_window=0.0,
+        group_keep_loudest=None,
         followup_snr_threshold=None,
         followup_bin_width=None,
         followup_num_bins=None,
@@ -118,6 +125,12 @@ class MatchedFilterRatioControl:
             else float(bank.sample_rate)
         )
         self.f_high = high_frequency_cutoff
+        self.cluster_window_samples = (
+            round(float(cluster_window) * int(self.sample_rate))
+            if cluster_window
+            else 0
+        )
+        self.group_keep_loudest = group_keep_loudest
         self.followup_threshold = followup_snr_threshold
         self.followup_bin_width = followup_bin_width
         self.followup_num_bins = followup_num_bins
@@ -155,13 +168,17 @@ class MatchedFilterRatioControl:
             "tap_sample_rate": int(bank.sample_rate),
             "data_sample_rate": int(self.sample_rate),
             "false_dismissal": float(false_dismissal),
-            "binsize": round(float(cluster_window) * int(self.sample_rate))
-            if cluster_window
-            else None,
+            "binsize": self.cluster_window_samples or None,
         }
-        self.overwhitened = {
-            ifo: [st / st.psd for st in segments[ifo]] for ifo in self.seg_ifos
-        }
+        self._decimated_psds = {}
+        self.overwhitened = {}
+        for ifo in self.seg_ifos:
+            ow_segs = []
+            for st in segments[ifo]:
+                ow = st / st.psd
+                st.overwhitened = ow
+                ow_segs.append(ow)
+            self.overwhitened[ifo] = ow_segs
 
     @staticmethod
     def insert_option_group(parser):
@@ -183,6 +200,13 @@ class MatchedFilterRatioControl:
             type=float,
             default=0.0,
             help="Optional length of clustering window in seconds (default: 0.0).",
+        )
+        group.add_argument(
+            "--group-keep-loudest",
+            type=int,
+            help="Optional maximum number of loudest primary triggers to "
+            "retain per leaf group within +/- --cluster-window before "
+            "signal-consistency and secondary follow-up (default: keep all).",
         )
         group.add_argument(
             "--ratio-filter-false-dismissal",
@@ -238,6 +262,7 @@ class MatchedFilterRatioControl:
             snr_threshold=args.snr_threshold,
             high_frequency_cutoff=args.high_frequency_cutoff,
             cluster_window=args.cluster_window,
+            group_keep_loudest=args.group_keep_loudest,
             followup_snr_threshold=args.followup_snr_threshold,
             followup_bin_width=args.followup_bin_width,
             followup_num_bins=args.followup_num_bins,
@@ -518,13 +543,37 @@ class MatchedFilterRatioControl:
             return ids_local, t_idxs
 
         # Map leaf-local template indices and sample lags to fine-bank indices and times
-        cid = ctx.leaf.node_id
-        fine_indices, shifts, _ = self._groups[cid]
+        coarse_index = ctx.leaf.node_id
+        fine_indices, shifts, _ = self._groups[coarse_index]
         stilde = ctx.tags[ifo]
         snrs = res.snr
         tstarts = res.block_starts
         phys_t = t_idxs - (shifts[ids_local] if shifts is not None else 0)
         gids = fine_indices[ids_local]
+
+        # Thin primary triggers per leaf group within +/- cluster_window if configured
+        if (
+            not is_followup
+            and self.group_keep_loudest is not None
+            and len(ids_local) > self.group_keep_loudest
+        ):
+            win = self.cluster_window_samples
+            kept_times = []
+            sel = []
+            for j in np.argsort(np.abs(snrs))[::-1]:
+                t_j = int(phys_t[j])
+                lo = bisect.bisect_left(kept_times, t_j - win)
+                hi = bisect.bisect_right(kept_times, t_j + win)
+                if hi - lo < self.group_keep_loudest:
+                    bisect.insort(kept_times, t_j)
+                    sel.append(j)
+            sel = np.sort(sel)
+            ids_local = ids_local[sel]
+            t_idxs = t_idxs[sel]
+            snrs = snrs[sel]
+            tstarts = tstarts[sel]
+            phys_t = phys_t[sel]
+            gids = gids[sel]
 
         # Evaluate signal-consistency vetoes on the trigger batch and filter survivors
         vals = {}
@@ -533,7 +582,7 @@ class MatchedFilterRatioControl:
             self._batch = (
                 ifo,
                 leaf_bank,
-                cid,
+                coarse_index,
                 ids_local,
                 t_idxs,
                 tstarts,
@@ -543,18 +592,24 @@ class MatchedFilterRatioControl:
             def _template(j):
                 tmplt = self.bank.reconstruct_fine_template(
                     self.top_template,
-                    cid,
+                    coarse_index,
                     ids_local[j],
                     leaf_bank,
                 )
                 step = round(tmplt.delta_f / stilde.delta_f)
-                tmplt.psd = stilde.psd[::step][: len(tmplt)]
+                psd_key = (id(stilde.psd), step, len(tmplt))
+                dec_psd = self._decimated_psds.get(psd_key)
+                if dec_psd is None:
+                    dec_psd = stilde.psd[::step][: len(tmplt)]
+                    self._decimated_psds[psd_key] = dec_psd
+                tmplt.psd = dec_psd
                 return tmplt
 
+            group_ids = np.full(len(ids_local), coarse_index, dtype=np.int64)
             kept, vals = self.veto_callback(
                 snrs,
                 phys_t,
-                gids,
+                group_ids,
                 _template,
                 self.fine_correlation,
                 stilde=stilde,

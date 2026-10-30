@@ -64,31 +64,37 @@ def _make_synthetic_fir_bank(path, num_levels=2, sample_rate=2048.0, seg_len=64.
     htilde[:m] = (hp[:m] * pycbc.DYN_RANGE_FAC).astype(np.complex64)
 
     with h5py.File(path, "w") as f:
-        f.create_dataset("mass1", data=np.array([1.4], dtype=np.float64))
-        f.create_dataset("mass2", data=np.array([1.4], dtype=np.float64))
-        f.create_dataset("spin1z", data=np.array([0.0], dtype=np.float64))
-        f.create_dataset("spin2z", data=np.array([0.0], dtype=np.float64))
-        f.create_dataset("f_lower", data=np.array([f_low], dtype=np.float64))
+        f.create_dataset("mass1", data=np.array([1.4, 1.4], dtype=np.float64))
+        f.create_dataset("mass2", data=np.array([1.4, 1.4], dtype=np.float64))
+        f.create_dataset("spin1z", data=np.array([0.0, 0.0], dtype=np.float64))
+        f.create_dataset("spin2z", data=np.array([0.0, 0.0], dtype=np.float64))
+        f.create_dataset("f_lower", data=np.array([f_low, f_low], dtype=np.float64))
         f.create_dataset(
-            "f_final", data=np.array([sample_rate / 2.0], dtype=np.float64)
+            "f_final",
+            data=np.array([sample_rate / 2.0, sample_rate / 2.0], dtype=np.float64),
         )
-        f.create_dataset("template_hash", data=np.array([1001], dtype=np.int64))
-        f.create_dataset("approximant", data=np.array([b"TaylorF2"], dtype="S16"))
+        f.create_dataset("template_hash", data=np.array([1001, 1002], dtype=np.int64))
+        f.create_dataset(
+            "approximant", data=np.array([b"TaylorF2", b"TaylorF2"], dtype="S16")
+        )
 
         fir_grp = f.create_group("fir_data")
         fir_grp.attrs["num_levels"] = int(num_levels)
         fir_grp.attrs["sample_rate"] = float(sample_rate)
 
-        # Level 1: leaf impulse filter (scaled by 2 * sample_rate)
+        # Level 1: two leaf impulse filters in the same group (slightly different gain)
         lvl1 = fir_grp.create_group("level_1")
         g1 = lvl1.create_group("0")
-        taps1 = np.zeros((1, 33), dtype=np.complex64)
+        taps1 = np.zeros((2, 33), dtype=np.complex64)
         taps1[0, 16] = 2.0 * sample_rate + 0.0j
+        taps1[1, 16] = 1.9 * sample_rate + 0.0j
         g1.create_dataset("taps", data=taps1)
-        g1.create_dataset("actual_tap_count", data=np.array([33], dtype=np.int32))
-        g1.create_dataset("fine_bank_index", data=np.array([0], dtype=np.int64))
-        g1.create_dataset("sample_shift", data=np.array([2], dtype=np.int64))
-        g1.create_dataset("sigmas", data=np.array([[1.0, 1.5]], dtype=np.float64))
+        g1.create_dataset("actual_tap_count", data=np.array([33, 33], dtype=np.int32))
+        g1.create_dataset("fine_bank_index", data=np.array([0, 1], dtype=np.int64))
+        g1.create_dataset("sample_shift", data=np.array([2, 2], dtype=np.int64))
+        g1.create_dataset(
+            "sigmas", data=np.array([[1.0, 1.5], [1.0, 1.5]], dtype=np.float64)
+        )
 
         # Higher levels: unit impulse filters
         for lvl in range(2, num_levels + 1):
@@ -139,9 +145,11 @@ class TestMatchedFilterRatio(unittest.TestCase):
             )
 
             # Verify multi-level shift and sigma accumulation on RatioFilterBank
-            np.testing.assert_allclose(bank.sigma_rescale([0]), [3.0], rtol=1e-6)
+            np.testing.assert_allclose(
+                bank.sigma_rescale([0, 1]), [3.0, 3.0], rtol=1e-6
+            )
             _, _, _, shifts = bank.get_firs(0, level=1, return_shifts=True)
-            np.testing.assert_array_equal(shifts, [5])
+            np.testing.assert_array_equal(shifts, [5, 5])
 
             # Build colored noise + injected signal (SNR 15 in H1, SNR 4.5 in L1)
             psd = (
@@ -233,6 +241,33 @@ class TestMatchedFilterRatio(unittest.TestCase):
                 float(l1["chisq"][l1_peak]), float(h1["chisq"][peak]), places=3
             )
 
+            # Verify both templates in the leaf group share the leader's chisq
+            prim_mask = ~h1["is_followup"]
+            self.assertEqual(int(np.sum(prim_mask)), 2)
+            self.assertEqual(
+                float(h1["chisq"][prim_mask][0]), float(h1["chisq"][prim_mask][1])
+            )
+
+            # 2. Setting group_keep_loudest=1 keeps and follows up only the loudest
+            top1_control = MatchedFilterRatioControl(
+                bank,
+                segments,
+                snr_threshold=6.0,
+                high_frequency_cutoff=sample_rate * 0.45,
+                cluster_window=1.0,
+                group_keep_loudest=1,
+                followup_bin_width=0.1,
+                followup_num_bins=20,
+                followup_keep_loudest=5,
+            )
+            top1_trigs, top1_followup = top1_control.run(
+                veto_callback=veto_chain.values
+            )
+            self.assertEqual(int(np.sum(~top1_trigs["H1"]["is_followup"])), 1)
+            self.assertEqual(int(top1_trigs["H1"]["template_id"][0]), 0)
+            self.assertEqual(top1_followup["L1"], 1)
+            self.assertEqual(int(np.sum(top1_trigs["L1"]["is_followup"])), 5)
+
             # Verify ':remove' drops primary triggers failing the cut
             strict_chain = SignalConsistencyChain(
                 SingleDetPowerChisq(num_bins=16),
@@ -243,7 +278,7 @@ class TestMatchedFilterRatio(unittest.TestCase):
             self.assertEqual(len(dropped["H1"].get("snr", ())), 0)
             self.assertEqual(dropped_followup["L1"], 0)
 
-            # 2. Omitting follow-up options runs only the primary search
+            # 3. Omitting follow-up options runs only the primary search
             primary_only = MatchedFilterRatioControl(
                 bank, segments, snr_threshold=6.0, cluster_window=1.0
             )
