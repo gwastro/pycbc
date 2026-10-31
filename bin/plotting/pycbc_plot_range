@@ -32,6 +32,14 @@ parser.add_argument(
 parser.add_argument(
     "--mass2", nargs="+", type=float, help="Mass of second component in solar masses"
 )
+parser.add_argument(
+    "--high-frequency-cutoff",
+    type=float,
+    default=None,
+    help="Optional high frequency cutoff (Hz) for the range integral. "
+    "Defaults to None (use hdf 'high_frequency_cutoff' attribute if present, "
+    "otherwise integrate up to Nyquist).",
+)
 parser.add_argument("--approximant", nargs="+", help="approximant to use for range")
 args = parser.parse_args()
 
@@ -48,6 +56,9 @@ for psd_file in args.psd_files:
     f = HFile(psd_file, "r")
     ifo = tuple(f.keys())[0]
     flow = f.attrs["low_frequency_cutoff"]
+    fhigh = args.high_frequency_cutoff
+    if fhigh is None and "high_frequency_cutoff" in f.attrs:
+        fhigh = f.attrs["high_frequency_cutoff"]
     keys = list(f[ifo + "/psds"].keys())
     start, end = f[ifo + "/start_time"][:], f[ifo + "/end_time"][:]
     f.close()
@@ -70,7 +81,9 @@ for psd_file in args.psd_files:
                 distance=1.0 / pycbc.DYN_RANGE_FAC,
             )
             htilde = htilde.astype(numpy.complex64)
-            sigma = pycbc.filter.sigma(htilde, psd=psd, low_frequency_cutoff=flow)
+            sigma = pycbc.filter.sigma(
+                htilde, psd=psd, low_frequency_cutoff=flow, high_frequency_cutoff=fhigh
+            )
             horizon_distance = sigma / canonical_snr
             inspiral_range = horizon_distance / 2.26
 

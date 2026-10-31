@@ -394,7 +394,7 @@ def multi_ifo_job_setup(
             else:
                 groups.append(([ifo], s_ifo))
 
-        slice_len = abs(valid_slice)
+        slice_len = float(abs(valid_slice))
         num_jobs = math.ceil(slice_len / float(max_valid_length))
         for grp_ifos, common_sci_seg in groups:
             curr_exe_job = get_job_instance(grp_ifos)

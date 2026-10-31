@@ -127,6 +127,8 @@ class PyCBCFindCoincExecutable(Executable):
             node.add_opt("--segment-name", veto_name)
         node.add_opt("--pivot-ifo", pivot_ifo)
         node.add_opt("--fixed-ifo", fixed_ifo)
+        if self.ifo_list:
+            node.add_opt("--ifos", " ".join(self.ifo_list))
         node.add_opt("--template-fraction-range", template_str)
         node.new_output_file_opt(seg, ".hdf", "--output-file", tags=tags)
         return node
@@ -555,6 +557,7 @@ def setup_interval_coinc_inj(
     pivot_ifo,
     fixed_ifo,
     tags=None,
+    ifos=None,
 ):
     """
     This function sets up exact match coincidence for injections
@@ -571,17 +574,19 @@ def setup_interval_coinc_inj(
     ifiles = {}
     for f in inj_trig_files:
         for ifo in f.ifo_list:
-            ifiles[ifo] = f
+            if ifos is None or ifo in ifos:
+                ifiles[ifo] = f
 
     injinj_files = FileList()
     for ifo in ifiles:  # ifiles is keyed on ifo
         if ifiles[ifo] not in injinj_files:
             injinj_files.append(ifiles[ifo])
 
+    coinc_ifos = list(ifos) if ifos is not None else list(ifiles.keys())
     findcoinc_exe = PyCBCFindCoincExecutable(
         workflow.cp,
         "coinc",
-        ifos=list(ifiles.keys()),
+        ifos=coinc_ifos,
         tags=tags + ["injinj"],
         out_dir=out_dir,
     )
@@ -606,7 +611,7 @@ def setup_interval_coinc_inj(
 
     return setup_statmap_inj(
         workflow,
-        list(ifiles.keys()),
+        coinc_ifos,
         bg_files,
         background_file,
         out_dir,
@@ -625,6 +630,7 @@ def setup_interval_coinc(
     pivot_ifo,
     fixed_ifo,
     tags=None,
+    ifos=None,
 ):
     """
     This function sets up exact match coincidence
@@ -633,11 +639,14 @@ def setup_interval_coinc(
         tags = []
     logger.info("Setting up coincidence")
 
-    ifos = []
-    for f in trig_files:
-        for ifo in f.ifo_list:
-            if ifo not in ifos:
-                ifos.append(ifo)
+    if ifos is None:
+        ifos = []
+        for f in trig_files:
+            for ifo in f.ifo_list:
+                if ifo not in ifos:
+                    ifos.append(ifo)
+    else:
+        ifos = list(ifos)
     findcoinc_exe = PyCBCFindCoincExecutable(
         workflow.cp, "coinc", ifos=ifos, tags=tags, out_dir=out_dir
     )
@@ -879,7 +888,6 @@ def rerank_coinc_followup(
 ):
     if tags is None:
         tags = []
-
 
     if not workflow.cp.has_section("workflow-rerank"):
         logger.info("No reranking done in this workflow")
