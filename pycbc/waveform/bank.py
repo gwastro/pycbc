@@ -49,8 +49,8 @@ from pycbc.types import FrequencySeries, zeros
 
 logger = logging.getLogger(__name__)
 
-mf = import_optional("matchedfilter")
-mf_search = import_optional("matchedfilter.search")
+_mf = import_optional("matchedfilter")
+_mf_search = import_optional("matchedfilter.search")
 
 
 def sigma_cached(self, psd):
@@ -1562,7 +1562,9 @@ class RatioFilterBank(FilterBank):
                 if len(fine_indices) == 0:
                     return []
                 self._groups[coarse_index] = (fine_indices, shifts, ancestors)
-                return [mf_search.Leaf(taps, counts, lags=shifts, node_id=coarse_index)]
+                return [
+                    _mf_search.Leaf(taps, counts, lags=shifts, node_id=coarse_index)
+                ]
 
             taps_u, counts_u, child_indices = self.get_firs(parent_index, level=level)
             nodes = []
@@ -1577,7 +1579,7 @@ class RatioFilterBank(FilterBank):
                 )
                 if children:
                     nodes.append(
-                        mf_search.Inner(
+                        _mf_search.Inner(
                             row_taps,
                             count=tap_count,
                             children=children,
@@ -1617,7 +1619,7 @@ class RatioFilterBank(FilterBank):
             _, _, ancestors = self._groups[coarse_index]
             for ancestor_taps, tap_count in ancestors:
                 n_fft = max(block_length, 1 << tap_count.bit_length())
-                ancestor_filt, _ = mf.template_spectra(
+                ancestor_filt, _ = _mf.template_spectra(
                     ancestor_taps[:tap_count], [tap_count], n_fft
                 )
                 spec = spec * np.conj(

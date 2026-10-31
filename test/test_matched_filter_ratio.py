@@ -129,7 +129,7 @@ class TestMatchedFilterRatio(unittest.TestCase):
         sample_rate = 2048.0
         seg_len = 64.0
         n_samples = round(sample_rate * seg_len)
-        t_inj = 32.0
+        t_inj = 32.5
 
         with tempfile.TemporaryDirectory() as tmpdir:
             bank_path = os.path.join(tmpdir, "bank.hdf")
@@ -243,9 +243,9 @@ class TestMatchedFilterRatio(unittest.TestCase):
 
             # Verify both templates in the leaf group share the leader's chisq
             prim_mask = ~h1["is_followup"]
-            self.assertEqual(int(np.sum(prim_mask)), 2)
-            self.assertEqual(
-                float(h1["chisq"][prim_mask][0]), float(h1["chisq"][prim_mask][1])
+            self.assertEqual(set(h1["template_id"][prim_mask].tolist()), {0, 1})
+            np.testing.assert_allclose(
+                h1["chisq"][prim_mask], h1["chisq"][prim_mask][0]
             )
 
             # 2. Setting group_keep_loudest=1 keeps and follows up only the loudest

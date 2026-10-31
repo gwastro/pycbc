@@ -29,8 +29,8 @@ from pycbc.types import FrequencySeries, complex64, float32
 
 logger = logging.getLogger(__name__)
 
-mf_search = import_optional("matchedfilter.search")
-mf_td = import_optional("matchedfilter.time_domain")
+_mf_search = import_optional("matchedfilter.search")
+_mf_td = import_optional("matchedfilter.time_domain")
 
 # Module-level reference and worker function used by fork-based multiprocessing
 # to dispatch individual top-level template hierarchies across worker processes.
@@ -433,21 +433,21 @@ class MatchedFilterRatioControl:
         self.top_template[kmax:] = 0
 
         # Calibrate the root power profile and construct the HierarchicalSearch
-        profile = mf_td.reference_profile(
+        profile = _mf_td.reference_profile(
             self.top_template,
             first_seg.psd,
             float(self.top_template.f_lower or 0.0),
             float(self.f_high or 0.0),
             self.delta_f,
         )
-        self.root = mf_search.Root(
+        self.root = _mf_search.Root(
             self.top_template,
             (kmin, kmax),
             children=children,
             profile=(profile, self.delta_f),
             node_id=int(top_idx),
         )
-        self.search = mf_search.HierarchicalSearch(
+        self.search = _mf_search.HierarchicalSearch(
             [self.root],
             threshold=self.threshold,
             leaf_options=self.leaf_options,
@@ -459,7 +459,7 @@ class MatchedFilterRatioControl:
 
         # Normalize each segment's root C2R IFFT output to unit-variance SNR
         inputs = {
-            ifo: mf_search.BlockInput(
+            ifo: _mf_search.BlockInput(
                 self.overwhitened[ifo],
                 [(st.analyze.start, st.analyze.stop) for st in segs],
                 lambda _root, chunk, segs=segs: (
