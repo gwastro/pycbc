@@ -115,7 +115,7 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
         logger.info("Caching queries enabled")
 
     # Check for provided server
-    server = "https://segments.igwn.org"
+    server = None
     if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
         server = cp.get_opt_tags("workflow-segments", "segments-database-url", tags)
 
@@ -313,7 +313,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
     # Put segments into segmentlistdicts
     onsource = segments.segmentlistdict()
     offsource = segments.segmentlistdict()
-    for iifo in sciencesegs:
+    for iifo in sciencesegs.keys():
         onsource[iifo] = onsrc
         offsource[iifo] = offsrc
 
@@ -323,7 +323,10 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 def generate_triggered_segment(workflow, out_dir, sciencesegs):
     cp = workflow.cp
 
-    min_ifos = 1 if cp.has_option("workflow", "allow-single-ifo-search") else 2
+    if cp.has_option("workflow", "allow-single-ifo-search"):
+        min_ifos = 1
+    else:
+        min_ifos = 2
 
     triggertime = int(os.path.basename(cp.get("workflow", "trigger-time")))
     minbefore = int(os.path.basename(cp.get("workflow-exttrig_segments", "min-before")))
@@ -389,14 +392,14 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
             )
 
             offsource_segfile = os.path.join(out_dir, "offSourceSeg.txt")
-            with open(offsource_segfile, "w") as fp:
-                segments_utils.tosegwizard(
-                    fp, next(iter(offsource[best_comb].values()))
-                )
+            segments_utils.tosegwizard(
+                open(offsource_segfile, "w"), next(iter(offsource[best_comb].values()))
+            )
 
             onsource_segfile = os.path.join(out_dir, "onSourceSeg.txt")
-            with open(onsource_segfile, "w") as fp:
-                segments_utils.tosegwizard(fp, next(iter(onsource[best_comb].values())))
+            segments_utils.tosegwizard(
+                open(onsource_segfile, "w"), next(iter(onsource[best_comb].values()))
+            )
 
             bufferleft = int(cp.get("workflow-exttrig_segments", "num-buffer-before"))
             bufferright = int(cp.get("workflow-exttrig_segments", "num-buffer-after"))
@@ -406,8 +409,9 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                 triggertime + onafter + bufferright * onlen,
             )
             buffer_segfile = os.path.join(out_dir, "bufferSeg.txt")
-            with open(buffer_segfile, "w") as fp:
-                segments_utils.tosegwizard(fp, segments.segmentlist([buffer_segment]))
+            segments_utils.tosegwizard(
+                open(buffer_segfile, "w"), segments.segmentlist([buffer_segment])
+            )
 
             return onsource[best_comb], offsource[best_comb], buffer_segment
 
@@ -471,7 +475,7 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
         logger.info("Caching query")
 
     # Check for provided server
-    server = "https://segments.igwn.org"
+    server = None
     if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
         server = cp.get_opt_tags("workflow-segments", "segments-database-url", tags)
 
