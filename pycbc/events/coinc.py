@@ -203,8 +203,8 @@ def time_coincidence(t1, t2, window, slide_step=0, max_slide=None):
         If calculating background coincidences, the interval between background
         slides, arbitrary units (usually s)
     max_slide : int, optional
-        If given, restrict background coincidences to |slide| <= max_slide using
-        bounded time-window search instead of full-run modulo folding.
+        If given, restrict background coincidences to ``|slide| <= max_slide``
+        using bounded time-window search instead of full-run modulo folding.
 
     Returns
     -------
@@ -298,7 +298,7 @@ def time_multi_coincidence(
         time reference for additional ifos. All other ifos are not time shifted
         relative to this ifo
     max_slide: int, optional
-        If given, restrict background coincidences to |slide| <= max_slide.
+        If given, restrict background coincidences to ``|slide| <= max_slide``.
 
     Returns
     -------
