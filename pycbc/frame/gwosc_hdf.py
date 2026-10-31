@@ -29,7 +29,7 @@ import math
 from pathlib import Path
 
 import h5py
-from lal import LIGOTimeGPS
+import lal
 
 _HDF5_SIGNATURE = b"\x89HDF\r\n\x1a\n"
 
@@ -106,7 +106,7 @@ def read(path, channel, start, end, check_integrity=False):  # noqa: ARG001
     """
     with h5py.File(path, "r") as f:
         dset = _dataset(f, channel)
-        epoch = LIGOTimeGPS(float(dset.attrs["Xstart"]))
+        epoch = lal.LIGOTimeGPS(float(dset.attrs["Xstart"]))
         delta_t = float(dset.attrs["Xspacing"])
         # Choose samples as lalframe does (see LALFrStreamReadTS_source.c):
         # start at the first sample after `start`, or at a sample within
