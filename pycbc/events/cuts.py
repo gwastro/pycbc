@@ -294,11 +294,15 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
         set by the dictionary
     """
     idx_out = np.arange(len(triggers['snr']))
+    idx_out_uncut = np.copy(idx_out)
 
     # Loop through the different cuts, and apply them
     for parameter_cut_function, cut_thresh in trigger_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
-        parameter, cut_function = parameter_cut_function
+        if len(parameter_cut_function) == 2 and isinstance(cut_thresh, float):
+            parameter, cut_function = parameter_cut_function
+        elif len(parameter_cut_function) == 3 and len(cut_thresh) == 2:
+            parameter, cut_function1, cut_function2 = parameter_cut_function
 
         # What kind of parameter is it?
         if parameter.endswith('_chisq'):
@@ -317,10 +321,20 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
                 # depending on the template ID, so we rewrite cut_thresh
                 # as a value for each trigger, numpy comparison functions
                 # allow this
-                cut_thresh = sigma_multiple_cut_thresh(template_ids,
-                                                       statistic,
-                                                       cut_thresh,
-                                                       triggers.ifo)
+                if 'cut_function' in locals():
+                    cut_thresh = sigma_multiple_cut_thresh(template_ids,
+                                                           statistic,
+                                                           cut_thresh,
+                                                           triggers.ifo)
+                else:
+                    cut_thresh_vec = sigma_multiple_cut_thresh(template_ids,
+                                                           statistic,
+                                                           cut_thresh[0],
+                                                           triggers.ifo)
+                    cut_thresh_vec = np.union1d(cut_thresh, sigma_multiple_cut_thresh(template_ids,
+                                                           statistic,
+                                                           cut_thresh[1],
+                                                           triggers.ifo))
             else:
                 err_msg = "Cuts on 'sigma_multiple' are only implemented for "
                 err_msg += "triggers in a ReadByTemplate format. This code "
@@ -347,7 +361,13 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
                                       "recognised. Input sanitisation means "
                                       "this shouldn't have happened?!")
 
-        idx_out = idx_out[cut_function(value, cut_thresh)]
+        if 'cut_function' in locals():
+            idx_out = idx_out[cut_function(value, cut_thresh)]
+        else:
+            idx_out = idx_out[cut_function1(value, cut_thresh[0] if 'cut_thresh_vec' not in locals() else cut_thresh_vec)]
+            idx_out = np.union1d(idx_out, idx_out_uncut[cut_function2(value, cut_thresh[1] if 'cut_thresh_vec' not in locals() else cut_thresh_vec)])
+        if 'cut_function' in locals():
+            del cut_function
 
     return idx_out
 
@@ -487,7 +507,7 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
                 tids_out = tids_out[cut_function(values, cut_thresh)]
             else:
                 tids_out = tids_out[cut_function1(values, cut_thresh[0])]
-            if 'cut_function2' in locals():
+                ## A union collects the indices of entries surviving (as True) in either cut
                 tids_out = np.union1d(tids_out, tids_out_uncut[cut_function2(values, cut_thresh[1])])
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
@@ -502,12 +522,12 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
                                                     (parameter, cut_function2),
                                                     cut_thresh[1],
                                                     tids_out_uncut))
+        else:
+            raise ValueError("Cut parameter " + parameter + " not recognised."
+                             " This shouldn't happen with input sanitisation")
         if 'cut_function' in locals():
             del cut_function
         elif 'cut_function2' in locals():
             del cut_function2
-        else:
-            raise ValueError("Cut parameter " + parameter + " not recognised."
-                             " This shouldn't happen with input sanitisation")
 
     return tids_out
