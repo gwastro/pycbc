@@ -19,7 +19,7 @@ do
 
         test -f ${file} && continue
 
-        url=https://gwosc.org/archive/data/O2_4KHZ_R1/1186988032/${file}
+        url=https://github.com/gwastro/pycbc_data/raw/refs/heads/master/${file}
         echo Downloading ${url}
         curl -O -L --show-error --silent ${url}
     done
