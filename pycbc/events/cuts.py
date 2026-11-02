@@ -75,13 +75,13 @@ def insert_cuts_option_group(parser):
     """
     parser.add_argument('--trigger-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE:LIMIT, or as "
+                             "PARAMETER:VALUE1:LIMIT1, or as "
                              "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2,"
                              "where, PARAMETER is the parameter to be cut, "
-                             "VALUE, or VALUE1 and VALUE2 (when provided), are the "
-                             "values at which it is cut, and LIMIT, or LIMIT1 and "
-                             "LIMIT2 (must be opposite in nature to each other) "
-                             "are one of '"
+                             "VALUE1, and VALUE2 (when provided), are the "
+                             "values at which it is cut, and LIMIT1, and "
+                             "LIMIT2 (when provided with VALUE2, must be "
+                             "opposite in nature to each other) are one of '"
                              + "', '".join(ineq_choices) +
                              "' to indicate the inequality needed. "
                              "PARAMETER is one of:'"
@@ -92,7 +92,7 @@ def insert_cuts_option_group(parser):
                              "SNR < 6 and SNR > 4")
     parser.add_argument('--template-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE:LIMIT or as "
+                             "PARAMETER:VALUE1:LIMIT1 or as "
                              "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2."
                              " Format is the same as in --trigger-cuts. "
                              "PARAMETER can be one of '"
@@ -108,7 +108,8 @@ def convert_inputstr(inputstr, choices):
     """
     splitstr = inputstr.split(':')
     if len(splitstr) == 3:
-        cut_param, cut_value_str, cut_limit = splitstr
+        cut_param, cut_value1_str, cut_limit1 = splitstr
+        cut_value2_str, cut_limit2 = None, None
     elif len(splitstr) == 5:
         cut_param, cut_value1_str, cut_limit1, cut_value2_str, cut_limit2 = splitstr
         if not (('lower' in cut_limit1 and 'upper' in cut_limit2) or ('upper' in cut_limit1 and 'lower' in cut_limit2)):
@@ -125,41 +126,32 @@ def convert_inputstr(inputstr, choices):
         raise NotImplementedError("Cut parameter " + cut_param.lower() + " "
                                   "not recognised, choose from "
                                   + ", ".join(choices))
-    if (cut_limit if 'cut_limit' in locals() else cut_limit1).lower() not in ineq_choices:
-        raise NotImplementedError("Cut inequality " + (cut_limit if 'cut_limit' in locals() else cut_limit1).lower() + " "
+    if cut_limit1.lower() not in ineq_choices:
+        raise NotImplementedError("Cut inequality " + cut_limit1.lower() + " "
                                   "not recognised, choose from "
                                   + ", ".join(ineq_choices))
-
-    try:
-        if 'cut_value_str' in locals():
-            cut_value = float(cut_value_str)
-            return {(cut_param, ineq_functions[cut_limit]): cut_value}
-        else:
-            cut_value1 = float(cut_value1_str)
-    except ValueError as value_e:
-        logger.warning("ERROR: Cut value must be convertible into a float, "
-                       "got '%s'.", cut_value_str if 'cut_value_str' in locals() else cut_value1_str)
-        raise value_e
-
-    if 'cut_limit2' in locals() and cut_limit2.lower() not in ineq_choices:
+    if cut_limit2 is not None and cut_limit2.lower() not in ineq_choices:
         raise NotImplementedError("Cut inequality " + cut_limit2.lower() + " "
                                   "not recognised, choose from "
                                   + ", ".join(ineq_choices))
-    if 'cut_limit2' in locals():
-        try:
-            cut_value2 = float(cut_value2_str)
-        except ValueError as value_e:
-            print("ERROR: The second cut value must be convertible into a float, "
-                           "got '%s'.", cut_value2_str)
-            raise value_e
-        if cut_value2 < cut_value1:
-            return {(cut_param, ineq_functions[cut_limit1], ineq_functions[cut_limit2]): (cut_value1, cut_value2)}
-        else:
-            raise NotImplementedError("When two limits are provided, the threshold VALUE for the "
-                                      "upper* limit must be less than that of "
-                                      "the lower* limit; the provided values: "
-                                      + str(cut_value2) + " >= " + str(cut_value1))
 
+    for cut_value in [cut_value1_str, cut_value2_str]:
+        try:
+            locals()['cut_value1' if cut_value == cut_value1_str else 'cut_value2'] = float(cut_value) if cut_value is not None else None
+        except ValueError as value_e:
+            logger.warning("ERROR: A cut value must be convertible into a float, "
+                           "got '%s'.", cut_value)
+            raise value_e
+
+    if cut_value2_str is None:
+        return {(cut_param, ineq_functions[cut_limit1]): locals()['cut_value1']}
+    else:
+        if locals()['cut_value2'] < locals()['cut_value1']:
+            return {(cut_param, ineq_functions[cut_limit1], ineq_functions[cut_limit2]): (locals()['cut_value1'], locals()['cut_value2'])}
+        raise NotImplementedError("When two limits are provided, the threshold VALUE for the "
+                                  "upper* limit must be less than that of "
+                                  "the lower* limit; the provided values: "
+                                  + str(locals()['cut_value2']) + " >= " + str(locals()['cut_value1']))
 
 def check_update_cuts(cut_dict, new_cut):
     """
