@@ -42,29 +42,36 @@ SRATE_OVERRIDE = 4096
 
 class TestAnalyticSkyDraw(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
+    def make_data(cls, distance):
         hp, hc = get_td_waveform(
             approximant="TaylorF2",
             f_lower=FLOW,
             delta_t=1.0 / SRATE,
             mass1=1.4,
             mass2=1.35,
-            distance=40.0,
+            distance=distance,
             inclination=0.5,
             coa_phase=1.1,
         )
         hp.start_time += TC
         hc.start_time += TC
-        psd = aLIGOZeroDetHighPower(int(SRATE * SEGLEN / 2) + 1, 1.0 / SEGLEN, FLOW)
-        cls.data, cls.psds = {}, {}
+        data = {}
         for n, ifo in enumerate(IFOS):
-            noise = noise_from_psd(int(SEGLEN * SRATE), 1.0 / SRATE, psd, seed=11 + n)
+            noise = noise_from_psd(
+                int(SEGLEN * SRATE), 1.0 / SRATE, cls.psds[ifo], seed=11 + n
+            )
             noise._epoch = TC - SEGLEN / 2
             sig = Detector(ifo).project_wave(
                 hp, hc, SKY["ra"], SKY["dec"], SKY["polarization"]
             )
-            cls.data[ifo] = noise.add_into(sig).to_frequencyseries()
-            cls.psds[ifo] = psd
+            data[ifo] = noise.add_into(sig).to_frequencyseries()
+        return data
+
+    @classmethod
+    def setUpClass(cls):
+        psd = aLIGOZeroDetHighPower(int(SRATE * SEGLEN / 2) + 1, 1.0 / SEGLEN, FLOW)
+        cls.psds = dict.fromkeys(IFOS, psd)
+        cls.data = cls.make_data(40.0)
         cls.static = {
             "mass1": 1.4,
             "mass2": 1.35,
@@ -74,8 +81,9 @@ class TestAnalyticSkyDraw(unittest.TestCase):
         }
         cls.fiducial = {"mass1": 1.4, "tc": TC, **SKY}
 
-    def model(self, ifos=None, **kwargs):
+    def model(self, ifos=None, data=None, **kwargs):
         ifos = IFOS if ifos is None else ifos
+        data = self.data if data is None else data
         numpy.random.seed(5)
         prior = JointDistribution(
             list(VARIABLE),
@@ -87,7 +95,7 @@ class TestAnalyticSkyDraw(unittest.TestCase):
         )
         return models.RelativeTimeDom(
             list(VARIABLE),
-            {i: copy.deepcopy(self.data[i]) for i in ifos},
+            {i: copy.deepcopy(data[i]) for i in ifos},
             low_frequency_cutoff=dict.fromkeys(ifos, FLOW),
             psds={i: self.psds[i] for i in ifos},
             static_params=self.static,
@@ -117,6 +125,26 @@ class TestAnalyticSkyDraw(unittest.TestCase):
             values[analytic] = numpy.mean(loglr)
             # only the map builds its table of sky points
             self.assertEqual(hasattr(model, "tinfo"), not analytic)
+        self.assertAlmostEqual(values[True], values[False], delta=0.6)
+
+    def test_the_map_survives_a_detector_without_signal(self):
+        """At twice the distance Virgo has no peak above its noise.
+
+        Its drawn times spread over the whole window, so few delays match
+        a sky point. The map used to fall back to the same prior draws on
+        every call (108.2 here); it now draws from the louder detectors.
+        """
+        data = self.make_data(80.0)
+        point = dict(POINT, distance=80.0)
+        values = {}
+        for analytic in (False, True):
+            model = self.model(data=data, marginalize_sky_analytic=analytic)
+            loglr = []
+            for _ in range(5):
+                model.update(**point)
+                loglr.append(model.loglr)
+            self.assertGreater(numpy.std(loglr), 0.0)
+            values[analytic] = numpy.mean(loglr)
         self.assertAlmostEqual(values[True], values[False], delta=0.6)
 
 
