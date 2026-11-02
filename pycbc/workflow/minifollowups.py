@@ -1087,6 +1087,7 @@ def make_audio_file(
     ifo,
     trig_time,
     out_dir,
+    *,
     injection_file=None,
     data_segments=None,
     time_window=100,

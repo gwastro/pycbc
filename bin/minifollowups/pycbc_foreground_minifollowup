@@ -304,7 +304,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                         time,
                         args.output_dir,
                         data_segments=insp_data_seglists[single.ifo],
-                        tags=args.tags + [str(event_count)],
+                        tags=[*args.tags, str(event_count)],
                     )
                 break
         else:
