@@ -156,7 +156,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
 
 
 def _dummy_broadcast(self, f, args):
-    self.map(f, [args] * self.size)
+    return self.map(f, [args] * self.size)
 
 
 class SinglePool:
