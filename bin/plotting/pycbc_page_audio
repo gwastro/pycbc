@@ -54,9 +54,9 @@ else:
 # Set up the time window to be audified
 try:
     win_start, win_end = (float(v) for v in args.time_window.split(","))
-    if win_start <= 0 or win_end <= 0:
-        raise ValueError
 except ValueError:
+    parser.error(f"--time-window input error. Got {args.time_window}. See help.")
+if win_start <= 0 or win_end <= 0:
     parser.error(f"--time-window input error. Got {args.time_window}. See help.")
 
 logger.info("Loading Strain")

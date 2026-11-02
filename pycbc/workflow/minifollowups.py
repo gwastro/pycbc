@@ -53,8 +53,9 @@ def write_config_for_subworkflow(cp, config_path):
     generates is itself planned.
     """
     cp = copy.deepcopy(cp)
-    cp.set('workflow', 'skip-resolve-input-files', '')
-    cp.write(open(config_path, 'w'))
+    cp.set("workflow", "skip-resolve-input-files", "")
+    with open(config_path, "w") as config_file:
+        cp.write(config_file)
 
 
 def add_wellfile_opt(node, workflow, option_name, out_dir, extra_tags=None):
@@ -63,23 +64,24 @@ def add_wellfile_opt(node, workflow, option_name, out_dir, extra_tags=None):
     """
     exe = node.executable
     tags = list(exe.tags)
-    for tag in (extra_tags or []):
+    for tag in extra_tags or []:
         if tag not in tags:
             tags.append(tag)
 
     valid_seg = workflow.analysis_time
     start = int(valid_seg[0])
     duration = int(math.ceil(valid_seg[1])) - start
-    ifo_string = ''.join(exe.ifo_list).upper() if exe.ifo_list else 'ALL'
+    ifo_string = "".join(exe.ifo_list).upper() if exe.ifo_list else "ALL"
     bits = [ifo_string, exe.name.upper()] + [tag.upper() for tag in tags]
     filename = f"well_{'_'.join(bits)}_{start}_{duration}.html"
     path = os.path.join(out_dir, filename)
-    file_url = urllib.parse.urlunparse(
-        ['file', 'localhost', path, None, None, None])
-    fil = File(exe.ifo_list, exe.name, workflow.analysis_time,
-              file_url=file_url, tags=tags)
+    file_url = urllib.parse.urlunparse(["file", "localhost", path, None, None, None])
+    fil = File(
+        exe.ifo_list, exe.name, workflow.analysis_time, file_url=file_url, tags=tags
+    )
     node.add_output_opt(option_name, fil)
     return fil
+
 
 def grouper(iterable, n, fillvalue=None):
     """Create a list of n length tuples"""
