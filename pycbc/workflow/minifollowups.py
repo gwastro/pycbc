@@ -1147,7 +1147,7 @@ def make_audio_file(
 
     start = trig_time - time_window
     end = trig_time + time_window
-    node = curr_exe.create_node(valid_seg=segments.segment([start, end]))
+    node = curr_exe.create_node(valid_seg=segments.segment(start, end))
 
     if data_segments is not None:
         # Assumes coalesced, so trig_time can only be within one segment
