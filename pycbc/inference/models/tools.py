@@ -764,16 +764,17 @@ class DistMarg:
             self.marginalize_vector_weights += logw
         return True
 
-    def draw_sky_times(self, snrs, size=None):
+    def draw_sky_times(self, snrs, size=None, ifos=None):
         """
         Draw ra, dec, and tc together using SNR timeseries to determine
         monte-carlo weights.
         """
         # First setup
         # precalculate dense sky grid and make dict and or array of the results
-        ifos = list(snrs.keys())
-        if hasattr(self, "keep_ifos"):
-            ifos = self.keep_ifos
+        if ifos is None:
+            ifos = list(snrs.keys())
+            if hasattr(self, "keep_ifos"):
+                ifos = self.keep_ifos
         ikey = "".join(ifos)
 
         vsamples = size if size is not None else self.vsamples
@@ -855,6 +856,7 @@ class DistMarg:
         idx = []
         dx = []
         mcweight = None
+        peak = {}
         for ifo in ifos:
             snr = snrs[ifo]
             pad = self.tc_window_padding
@@ -869,6 +871,7 @@ class DistMarg:
 
             w = snr.squared_norm().numpy() / 2.0
             i = draw_sample(w, size=vsamples)
+            peak[ifo] = w.max()
             # the times are drawn from this detector's series in proportion
             # to its likelihood, so normalizing over that series gives the
             # probability they were drawn with
@@ -899,8 +902,14 @@ class DistMarg:
                 wi.append(bin_prior[t])
                 ti.append(i)
 
-        # If we had really poor efficiency at finding a point, we should
-        # give up and just use the original random draws
+        # If we had really poor efficiency at finding a point, a detector
+        # without a clear peak has spread its times over the whole window, so
+        # few delays match any sky point. Draw from the other detectors; the
+        # likelihood still uses all of them. One detector always finds points.
+        if len(ix) < 0.05 * vsamples and len(ifos) > 1:
+            quietest = min(ifos, key=peak.get)
+            louder = [ifo for ifo in ifos if ifo != quietest]
+            return self.draw_sky_times(snrs, size=size, ifos=louder)
         if len(ix) < 0.05 * vsamples:
             self.marginalize_vector_params["logw_partial"] = numpy.zeros(vsamples)
             return None
