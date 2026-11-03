@@ -138,12 +138,12 @@ def convert_inputstr(inputstr, choices):
                                   "not recognised, choose from "
                                   + ", ".join(ineq_choices))
 
-    for cut_value in [cut_value1_str, cut_value2_str]:
+    for i, cut_value_str in enumerate([cut_value1_str, cut_value2_str]):
         try:
-            locals()['cut_value1' if cut_value == cut_value1_str else 'cut_value2'] = float(cut_value) if cut_value is not None else None
+            locals()[f"cut_value{i+1}"] = float(cut_value_str) if cut_value_str is not None else None
         except ValueError as value_e:
             logger.warning("ERROR: A cut value must be convertible into a float, "
-                           "got '%s'.", cut_value)
+                           "got '%s'.", cut_value_str)
             raise value_e
 
     if cut_value2_str is None:
@@ -295,9 +295,11 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
     for parameter_cut_function, cut_thresh in trigger_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
         if len(parameter_cut_function) == 2 and isinstance(cut_thresh, float):
-            parameter, cut_function = parameter_cut_function
+            parameter, cut_function1 = parameter_cut_function
+            cut_function2, cut_thresh1, cut_thresh2 = None, cut_thresh, None
         elif len(parameter_cut_function) == 3 and len(cut_thresh) == 2:
             parameter, cut_function1, cut_function2 = parameter_cut_function
+            cut_thresh1, cut_thresh2 = cut_thresh[0], cut_thresh[1]
 
         # What kind of parameter is it?
         if parameter.endswith('_chisq'):
@@ -316,19 +318,14 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
                 # depending on the template ID, so we rewrite cut_thresh
                 # as a value for each trigger, numpy comparison functions
                 # allow this
-                if 'cut_function' in locals():
-                    cut_thresh = sigma_multiple_cut_thresh(template_ids,
+                cut_thresh1 = sigma_multiple_cut_thresh(template_ids,
+                                                       statistic,
+                                                       cut_thresh1,
+                                                       triggers.ifo)
+                if cut_function2 is not None:
+                    cut_thresh1 = np.union1d(cut_thresh1, sigma_multiple_cut_thresh(template_ids,
                                                            statistic,
-                                                           cut_thresh,
-                                                           triggers.ifo)
-                else:
-                    cut_thresh_vec = sigma_multiple_cut_thresh(template_ids,
-                                                           statistic,
-                                                           cut_thresh[0],
-                                                           triggers.ifo)
-                    cut_thresh_vec = np.union1d(cut_thresh, sigma_multiple_cut_thresh(template_ids,
-                                                           statistic,
-                                                           cut_thresh[1],
+                                                           cut_thresh2,
                                                            triggers.ifo))
             else:
                 err_msg = "Cuts on 'sigma_multiple' are only implemented for "
@@ -356,13 +353,9 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
                                       "recognised. Input sanitisation means "
                                       "this shouldn't have happened?!")
 
-        if 'cut_function' in locals():
-            idx_out = idx_out[cut_function(value, cut_thresh)]
-        else:
-            idx_out = idx_out[cut_function1(value, cut_thresh[0] if 'cut_thresh_vec' not in locals() else cut_thresh_vec)]
-            idx_out = np.union1d(idx_out, idx_out_uncut[cut_function2(value, cut_thresh[1] if 'cut_thresh_vec' not in locals() else cut_thresh_vec)])
-        if 'cut_function' in locals():
-            del cut_function
+        idx_out = idx_out[cut_function1(value, cut_thresh1)]
+        if cut_function2 is not None:
+            idx_out = np.union1d(idx_out, idx_out_uncut[cut_function2(value, cut_thresh2)])
 
     return idx_out
 
@@ -490,39 +483,35 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
     for parameter_cut_function, cut_thresh in template_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
         if len(parameter_cut_function) == 2 and isinstance(cut_thresh, float):
-            parameter, cut_function = parameter_cut_function
+            parameter, cut_function1 = parameter_cut_function
+            cut_function2, cut_thresh1, cut_thresh2 = None, cut_thresh, None
         elif len(parameter_cut_function) == 3 and len(cut_thresh) == 2:
             parameter, cut_function1, cut_function2 = parameter_cut_function
+            cut_thresh1, cut_thresh2 = cut_thresh[0], cut_thresh[1]
 
         if parameter in bank_conv.conversion_options:
             # Calculate the parameter values using the bank property helper
             values = bank_conv.get_bank_property(parameter, bank, tids_out)
             # Only keep templates which pass this cut
-            if 'cut_function' in locals():
-                tids_out = tids_out[cut_function(values, cut_thresh)]
-            else:
-                tids_out = tids_out[cut_function1(values, cut_thresh[0])]
+            tids_out = tids_out[cut_function1(values, cut_thresh1)]
+            if cut_function2 is not None:
                 ## A union collects the indices of entries surviving (as True) in either cut
-                tids_out = np.union1d(tids_out, tids_out_uncut[cut_function2(values, cut_thresh[1])])
+                tids_out = np.union1d(tids_out, tids_out_uncut[cut_function2(values, cut_thresh2)])
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
                                                   ifos,
-                                                  (parameter, cut_function if 'cut_function' in locals() else cut_function1),
-                                                  cut_thresh if isinstance(cut_thresh, float) else cut_thresh[0],
+                                                  (parameter, cut_function1),
+                                                  cut_thresh1,
                                                   tids_out)
-                if 'cut_function2' in locals():
+                if cut_function2 is not None:
                     tids_out = np.union1d(tids_out, apply_template_fit_cut(statistic,
                                                     ifos,
                                                     (parameter, cut_function2),
-                                                    cut_thresh[1],
+                                                    cut_thresh2,
                                                     tids_out_uncut))
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
-        if 'cut_function' in locals():
-            del cut_function
-        elif 'cut_function2' in locals():
-            del cut_function2
 
     return tids_out
