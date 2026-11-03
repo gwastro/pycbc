@@ -252,13 +252,22 @@ class DistMarg:
         static = getattr(self, "static_params", None) or {}
         return static.get("tc_ref_frame", "geocentric")
 
+    def geocentric_tc(self, tc, ra, dec):
+        """Convert tc from the frame it is sampled in to geocentric time"""
+        refframe = self.tc_ref_frame
+        if refframe == "geocentric":
+            return tc
+        refdet = getattr(self, "_tc_ref_det", None)
+        if refdet is None or refdet.name != refframe:
+            refdet = self._tc_ref_det = Detector(refframe)
+        return tc - refdet.time_delay_from_earth_center(ra, dec, tc)
+
     @property
     def tc_window_padding(self):
         """
         Maximum time offset between the tc reference frame and any
         detector, used to pad the tc prior when searching SNR time series
         """
-        # if geocentric, the distance to any detector is Earth radius
         if self.tc_ref_frame == "geocentric":
             return EARTH_RADIUS
         # From one detector to another can be up to an Earth diameter
