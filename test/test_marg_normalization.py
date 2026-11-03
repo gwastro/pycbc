@@ -40,10 +40,6 @@ RA, DEC = 1.7, -0.4
 FLOW, SEGLEN, SRATE = 25.0, 32, 2048
 POINT = {"distance": 50.0, "inclination": 0.5}
 FRAMES = ["geocentric", "H1"]
-
-# The SNR sample rate each model is checked at. RelativeTimeDom and
-# SingleTemplate interpolate <s|h> between samples, which at 8192 Hz is off
-# by about 0.1 for this signal; at 16384 Hz it is below the test's noise.
 MODELS = {
     "RelativeTime": 8192,
     "RelativeTimeDom": 16384,
@@ -190,10 +186,7 @@ class TestMargNormalization(unittest.TestCase):
                 "ra": (RA - 0.02, RA + 0.02),
                 "dec": (DEC - 0.02, DEC + 0.02),
             }
-            # a 15 x 15 sky grid sums about 0.07 short of the integral;
-            # 31 x 31 is within 0.01 of it
             integral = self.integral(bounds, {"tc": 61, "ra": 31, "dec": 31}, frame)
-            # points drawn for each likelihood, and drawn once in advance
             for name in MODELS:
                 for kwargs in ({}, {"precalculate_marginalization_points": 4000}):
                     with self.subTest(model=name, frame=frame, **kwargs):
