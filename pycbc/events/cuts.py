@@ -138,23 +138,25 @@ def convert_inputstr(inputstr, choices):
                                   "not recognised, choose from "
                                   + ", ".join(ineq_choices))
 
-    for i, cut_value_str in enumerate([cut_value1_str, cut_value2_str]):
+    cut_values = []
+    for cut_value_str in (cut_value1_str, cut_value2_str):
         try:
-            locals()[f"cut_value{i+1}"] = float(cut_value_str) if cut_value_str is not None else None
+            cut_values.append(float(cut_value_str) if cut_value_str is not None else None)
         except ValueError as value_e:
             logger.warning("ERROR: A cut value must be convertible into a float, "
                            "got '%s'.", cut_value_str)
             raise value_e
+    cut_value1, cut_value2 = cut_values
 
     if cut_value2_str is None:
-        return {(cut_param, ineq_functions[cut_limit1]): locals()['cut_value1']}
+        return {(cut_param, ineq_functions[cut_limit1]): cut_value1}
     else:
-        if locals()['cut_value2'] < locals()['cut_value1']:
-            return {(cut_param, ineq_functions[cut_limit1], ineq_functions[cut_limit2]): (locals()['cut_value1'], locals()['cut_value2'])}
+        if cut_value2 < cut_value1:
+            return {(cut_param, ineq_functions[cut_limit1], ineq_functions[cut_limit2]): (cut_value1, cut_value2)}
         raise NotImplementedError("When two limits are provided, the threshold VALUE for the "
                                   "upper* limit must be less than that of "
                                   "the lower* limit; the provided values: "
-                                  + str(locals()['cut_value2']) + " >= " + str(locals()['cut_value1']))
+                                  + str(cut_value2) + " >= " + str(cut_value1))
 
 def check_update_cuts(cut_dict, new_cut):
     """
