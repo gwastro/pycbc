@@ -21,7 +21,7 @@ pytest = "*"
 graphviz = "*"
 
 [tool.pixi.pypi-dependencies]
-pycbc = { path = ".", editable = true, extras = ["test", "docs"] }
+pycbc = { path = ".", editable = true, extras = ["test"] }
 
 [tool.pixi.environments]
 default = { features = ["bbhx"], solve-group = "default" }
@@ -53,6 +53,9 @@ mpi4py = "*"
 mpi4py = "*"
 
 [tool.pixi.feature.inference.dependencies]
+
+[tool.pixi.feature.docs.pypi-dependencies]
+pycbc = { path = ".", editable = true, extras = ["docs"] }
 
 [tool.pixi.feature.docs.target.linux-64.pypi-dependencies]
 cupy-cuda12x = "*"

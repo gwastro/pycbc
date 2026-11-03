@@ -53,7 +53,7 @@ as follows.
     cd pycbc
     pip install -r requirements.txt
     pip install -r companion.txt
-    pip install .
+    pip install ".[docs]"
 
 ========================================
 Development build on LDG / IGWN clusters
@@ -105,13 +105,12 @@ For more details, including instructions on starting a docker container  see:
 Building the Documentation
 =====================================
 
-To build the documentation from your virtual environment, first make sure that you have `Sphinx <http://sphinx-doc.org/>`_ and the required helper tools installed with
+To build the documentation from your virtual environment, install the docs extra
+from the repository root:
 
 .. code-block:: bash
 
-    pip install "Sphinx>=1.5.0"
-    pip install sphinx-rtd-theme
-    pip install sphinxcontrib-programoutput
+    pip install ".[docs]"
 
 You can then build the documentation locally as
 
