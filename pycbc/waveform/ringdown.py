@@ -525,7 +525,7 @@ def td_damped_sinusoid(
     Return a time domain damped sinusoid (plus and cross polarizations)
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
 
-        This returns the plus and cross polarization of the QNM, defined as
+    This returns the plus and cross polarization of the QNM, defined as
     :math:`h^{+}_{l|m|n} + i h^{\times}_{l|m|n} = h_{l|m|n}(t)`, i.e.,
     :math:`h^{+}_{l|m|n} = \Re\left\{h_{l|m|n}(t)\right\}` and
     :math:`h^{\times}_{l|m|n} = \Im\left\{h_{l|m|n}(t)\right\}`, where
@@ -560,6 +560,9 @@ def td_damped_sinusoid(
         \Delta \phi_{lmn} &\in [-\pi, \pi)
 
     are parameters that define the deviation from circular polarization.
+    Circular polarization occurs when both :math:`\Delta \beta_{lmn}` and
+    :math:`\Delta \phi_{lmn}` are zero (this is equivalent to assuming that
+    :math:`h_{l-mn} = (-1)^l h_{lmn}^*`).
 
     Parameters
     ----------
