@@ -93,8 +93,8 @@ def insert_cuts_option_group(parser):
     parser.add_argument('--template-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
                              "PARAMETER:VALUE1:LIMIT1 or as "
-                             "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2."
-                             " Format is the same as in --trigger-cuts. "
+                             "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2. "
+                             "Format is the same as in --trigger-cuts. "
                              "PARAMETER can be one of '"
                              + "', '".join(template_param_choices) + "'.")
 
