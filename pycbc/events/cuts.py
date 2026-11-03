@@ -119,8 +119,11 @@ def convert_inputstr(inputstr, choices):
                 cut_limit1, cut_limit2 = cut_limit2, cut_limit1
                 cut_value1_str, cut_value2_str = cut_value2_str, cut_value1_str
     else:
-        raise ValueError("ERROR: Cut string format not correct, please "
-                       "supply as PARAMETER:VALUE:LIMIT or as PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2")
+        raise ValueError(
+            "ERROR: Cut string format not correct, please "
+            "supply as PARAMETER:VALUE:LIMIT or as "
+            "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2"
+        )
 
     if cut_param.lower() not in choices:
         raise NotImplementedError("Cut parameter " + cut_param.lower() + " "
