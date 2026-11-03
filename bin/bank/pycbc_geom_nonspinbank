@@ -26,7 +26,6 @@ import logging
 import math
 
 import numpy
-import pycbc.version
 
 import pycbc
 import pycbc.psd
@@ -34,6 +33,7 @@ import pycbc.strain
 
 # Old ligolw output functions no longer imported at package level
 import pycbc.tmpltbank.bank_output_utils as bank_output
+import pycbc.version
 from pycbc import pnutils, tmpltbank
 
 __author__ = "Ian Harry <ian.harry@ligo.org>"

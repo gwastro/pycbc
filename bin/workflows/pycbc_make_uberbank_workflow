@@ -36,9 +36,8 @@ import argparse
 import logging
 import os
 
-import pycbc.version
-
 import pycbc
+import pycbc.version
 import pycbc.workflow as wf
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 

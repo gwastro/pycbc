@@ -28,8 +28,8 @@ import os
 import shutil
 
 import igwn_segments as segments
-import pycbc.version
 
+import pycbc.version
 import pycbc.workflow as wf
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.results import layout

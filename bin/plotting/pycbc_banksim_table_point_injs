@@ -20,8 +20,8 @@ import argparse
 import sys
 
 import numpy
-import pycbc.version
 
+import pycbc.version
 from pycbc import results
 from pycbc.io.hdf import HFile
 

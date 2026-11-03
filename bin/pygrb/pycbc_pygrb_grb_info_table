@@ -30,10 +30,9 @@ import argparse
 import math
 import sys
 
-import pycbc.version
-
 import pycbc.distributions
 import pycbc.results
+import pycbc.version
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.detector import Detector, ppdets
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_dist_factor

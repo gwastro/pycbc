@@ -28,9 +28,9 @@ import os
 import sys
 
 import numpy as np
-import pycbc.version
 
 import pycbc.results
+import pycbc.version
 from pycbc import init_logging
 from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.detector import Detector

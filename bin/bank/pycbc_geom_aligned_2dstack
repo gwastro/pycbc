@@ -31,9 +31,9 @@ import copy
 import logging
 
 import numpy
-import pycbc.version
 
 import pycbc.tmpltbank
+import pycbc.version
 from pycbc import pnutils
 from pycbc.io import HFile
 from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions

@@ -30,9 +30,9 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy
-import pycbc.version
 from matplotlib import rc
 
+import pycbc.version
 from pycbc import init_logging
 from pycbc.events.coherent import reweightedsnr_cut
 from pycbc.results import pygrb_plotting_utils as plu

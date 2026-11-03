@@ -26,7 +26,6 @@ import argparse
 import glob
 
 import numpy
-import pycbc.version
 from igwn_ligolw import utils
 
 import pycbc
@@ -35,6 +34,7 @@ import pycbc.strain
 
 # Old ligolw output functions no longer imported at package level
 import pycbc.tmpltbank.bank_output_utils as bank_output
+import pycbc.version
 from pycbc import tmpltbank
 from pycbc.io.hdf import HFile
 from pycbc.io.ligolw import LIGOLWContentHandler

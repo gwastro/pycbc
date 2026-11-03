@@ -35,9 +35,8 @@ single summary XML file:
    analysed by the daily analysis. (X1:CBC_DAYHOPE_ANALYSABLE)
 """
 
-import pycbc.version
-
 import pycbc
+import pycbc.version
 
 __author__ = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg

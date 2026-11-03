@@ -22,9 +22,8 @@ import argparse
 import json
 import sys
 
-import pycbc.version
-
 import pycbc.results
+import pycbc.version
 
 __author__ = "Jacob Buchanan <jacob.buchanan@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg

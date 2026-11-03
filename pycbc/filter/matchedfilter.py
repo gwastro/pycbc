@@ -1832,8 +1832,8 @@ class LiveBatchMatchedFilter:
         self.tgroups, self.mids = [], []
         for i, size in mem_types:
             dur, count = i
-            self.out_mem[i] = self._out_pool[0 : int(size)]
-            self.cout_mem[i] = self._cout_pool[0 : int(size)]
+            self.out_mem[i] = self._out_pool[0:int(size)]
+            self.cout_mem[i] = self._cout_pool[0:int(size)]
             self.ifts[i] = IFFT(
                 self.cout_mem[i],
                 self.out_mem[i],

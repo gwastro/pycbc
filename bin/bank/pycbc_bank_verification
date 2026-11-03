@@ -28,12 +28,12 @@ import matplotlib
 import numpy
 
 matplotlib.use("Agg")
-import pycbc.version
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from matplotlib import pyplot as plt
 
 import pycbc
+import pycbc.version
 from pycbc import psd, strain, tmpltbank
 from pycbc.io.hdf import HFile
 from pycbc.io.ligolw import LIGOLWContentHandler
