@@ -358,6 +358,8 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
         idx_out = idx_out[cut_function1(value, cut_thresh1)]
         # Only cut triggers if both criteria are met :
         # thus, output triggers are the union of those surviving each cut
+        # Only cut triggers if both criteria are met :
+        # thus, output triggers are the union of those surviving each cut
         if cut_function2 is not None:
             idx_out = np.union1d(idx_out, idx_out_uncut[cut_function2(value, cut_thresh2)])
 
