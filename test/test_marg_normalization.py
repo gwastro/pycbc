@@ -16,6 +16,9 @@
 A marginalized likelihood is the integral of the likelihood over the prior
 of the marginalized parameters. Each test compares one against a grid sum
 of the same model, unmarginalized, over the same prior.
+
+Each is checked for every time-marginalizing model, with tc sampled both at
+the geocenter and in a detector's frame (tc_ref_frame).
 """
 
 import copy
@@ -36,11 +39,34 @@ TC = 1187008882.4284
 RA, DEC = 1.7, -0.4
 FLOW, SEGLEN, SRATE = 25.0, 32, 2048
 POINT = {"distance": 50.0, "inclination": 0.5}
+FRAMES = ["geocentric", "H1"]
+MODELS = {
+    "RelativeTime": 8192,
+    "RelativeTimeDom": 16384,
+    "SingleTemplate": 16384,
+}
 
 
 def grid(lo, hi, n):
     """The midpoints of n equal cells between lo and hi."""
     return lo + (numpy.arange(n) + 0.5) * (hi - lo) / n
+
+
+_FRAME_DETECTORS = {}
+
+
+def frame_delay(frame, ra, dec, t):
+    """The time of arrival in frame, less the geocentric time."""
+    if frame == "geocentric":
+        return 0.0
+    if frame not in _FRAME_DETECTORS:
+        _FRAME_DETECTORS[frame] = Detector(frame)
+    return _FRAME_DETECTORS[frame].time_delay_from_earth_center(ra, dec, t)
+
+
+def frame_tc(frame):
+    """The signal's tc in the given frame."""
+    return TC + frame_delay(frame, RA, DEC, TC)
 
 
 class TestMargNormalization(unittest.TestCase):
@@ -75,7 +101,7 @@ class TestMargNormalization(unittest.TestCase):
             polarization=0.3,
         )
 
-    def model(self, cls, bounds, **kwargs):
+    def model(self, cls, bounds, frame="geocentric", **kwargs):
         """A model with a uniform prior over the given bounds."""
         variable = ["distance", "inclination"] + list(bounds)
         prior = JointDistribution(
@@ -88,6 +114,14 @@ class TestMargNormalization(unittest.TestCase):
         static.update(
             {k: v for k, v in dict(ra=RA, dec=DEC).items() if k not in bounds}
         )
+        if frame != "geocentric":
+            static["tc_ref_frame"] = frame
+        if cls is not models.SingleTemplate:
+            # the fiducial tc is in the frame tc is sampled in
+            kwargs["fiducial_params"] = dict(
+                mass1=1.42, tc=frame_tc(frame), ra=RA, dec=DEC
+            )
+            kwargs["epsilon"] = 0.1
         return cls(
             list(variable),
             copy.deepcopy(self.data),
@@ -95,32 +129,40 @@ class TestMargNormalization(unittest.TestCase):
             psds=self.psds,
             static_params=static,
             prior=prior,
-            fiducial_params=dict(mass1=1.42, tc=TC, ra=RA, dec=DEC),
-            epsilon=0.1,
             **kwargs,
         )
 
-    def integral(self, bounds, cells):
-        """The log of the mean likelihood ratio over a grid of the prior."""
+    def integral(self, bounds, cells, frame="geocentric"):
+        """
+        The log of the mean likelihood ratio over a grid of the prior.
+
+        Each grid point's tc, in the given frame, is moved to the
+        geocenter for its sky location, so the sum does not depend on the
+        models' own handling of tc_ref_frame.
+        """
         model = self.model(models.Relative, bounds)
         axes = [grid(*bounds[k], cells[k]) for k in bounds]
         lr = []
         for values in zip(*[a.ravel() for a in numpy.meshgrid(*axes)]):
-            model.update(**dict(zip(bounds, values)), **POINT)
+            p = dict(zip(bounds, values))
+            ra, dec = p.get("ra", RA), p.get("dec", DEC)
+            p["tc"] -= frame_delay(frame, ra, dec, p["tc"])
+            model.update(**p, **POINT)
             lr.append(model.loglr)
         return logsumexp(lr) - numpy.log(len(lr))
 
-    def marginal(self, bounds, nseed=6, **kwargs):
+    def marginal(self, name, bounds, frame="geocentric", nseed=6, **kwargs):
         """The marginalized log likelihood ratio and its error."""
         values = []
         for seed in range(nseed):
             numpy.random.seed(seed)
             model = self.model(
-                models.RelativeTime,
+                getattr(models, name),
                 bounds,
+                frame,
                 marginalize_vector_params=",".join(bounds),
                 marginalize_vector_samples=2000,
-                sample_rate=8192,
+                sample_rate=MODELS[name],
                 **kwargs,
             )
             model.update(**POINT)
@@ -128,31 +170,41 @@ class TestMargNormalization(unittest.TestCase):
         return numpy.mean(values), numpy.std(values) / nseed**0.5
 
     def test_time(self):
-        # The prior ends at the signal, so about half of the times drawn
-        # fall outside it and must carry no weight
-        bounds = {"tc": (TC - 0.002, TC)}
-        mean, error = self.marginal(bounds)
-        self.assertAlmostEqual(
-            mean, self.integral(bounds, {"tc": 4000}), delta=4 * error
-        )
+        for frame in FRAMES:
+            # The prior ends at the signal, so about half of the times drawn
+            # fall outside it and must carry no weight
+            tc = frame_tc(frame)
+            bounds = {"tc": (tc - 0.002, tc)}
+            integral = self.integral(bounds, {"tc": 4000}, frame)
+            for name in MODELS:
+                with self.subTest(model=name, frame=frame):
+                    mean, error = self.marginal(name, bounds, frame)
+                    self.assertAlmostEqual(mean, integral, delta=4 * error)
 
     def test_sky_and_time(self):
-        # A patch of sky small enough that some of the points drawn for it
-        # fall outside it, which is when the fraction kept matters
-        bounds = {
-            "tc": (TC - 0.002, TC),
-            "ra": (RA - 0.02, RA + 0.02),
-            "dec": (DEC - 0.02, DEC + 0.02),
-        }
-        integral = self.integral(bounds, {"tc": 61, "ra": 15, "dec": 15})
-        # points drawn for each likelihood, and drawn once in advance
-        for kwargs in ({}, {"precalculate_marginalization_points": 4000}):
-            mean, error = self.marginal(
-                bounds, marginalize_sky_initial_samples=3e4, **kwargs
-            )
-            self.assertAlmostEqual(
-                mean, integral, delta=max(0.1, 4 * error), msg=str(kwargs)
-            )
+        for frame in FRAMES:
+            # A patch of sky small enough that some of the points drawn for
+            # it fall outside it, which is when the fraction kept matters
+            tc = frame_tc(frame)
+            bounds = {
+                "tc": (tc - 0.002, tc),
+                "ra": (RA - 0.02, RA + 0.02),
+                "dec": (DEC - 0.02, DEC + 0.02),
+            }
+            integral = self.integral(bounds, {"tc": 61, "ra": 31, "dec": 31}, frame)
+            for name in MODELS:
+                for kwargs in ({}, {"precalculate_marginalization_points": 4000}):
+                    with self.subTest(model=name, frame=frame, **kwargs):
+                        mean, error = self.marginal(
+                            name,
+                            bounds,
+                            frame,
+                            marginalize_sky_initial_samples=3e4,
+                            **kwargs,
+                        )
+                        self.assertAlmostEqual(
+                            mean, integral, delta=max(0.1, 4 * error)
+                        )
 
 
 suite = unittest.TestSuite()

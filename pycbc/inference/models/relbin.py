@@ -287,17 +287,23 @@ class Relative(DistMarg, BaseGaussianNoise):
                 # Apply detector response if not handled by
                 # the waveform generator
                 self.det[ifo] = Detector(ifo)
+                # the fiducial tc is in the frame tc is sampled in
+                fid_tc = self.geocentric_tc(
+                    self.fid_params["tc"],
+                    self.fid_params["ra"],
+                    self.fid_params["dec"],
+                )
                 dt = self.det[ifo].time_delay_from_earth_center(
                     self.fid_params["ra"],
                     self.fid_params["dec"],
-                    self.fid_params["tc"],
+                    fid_tc,
                 )
-                self.ta[ifo] = self.fid_params["tc"] + dt
+                self.ta[ifo] = fid_tc + dt
                 fp, fc = self.det[ifo].antenna_pattern(
                     self.fid_params["ra"],
                     self.fid_params["dec"],
                     self.fid_params["polarization"],
-                    self.fid_params["tc"],
+                    fid_tc,
                 )
                 curr_wav = fid_hp * fp + fid_hc * fc
 
@@ -404,6 +410,12 @@ class Relative(DistMarg, BaseGaussianNoise):
     def setup_antenna(self, earth_rotation, mode, fedges):
         # Calculate the times to evaluate fp/fc
         self.earth_rotation = earth_rotation
+        # the fiducial tc is in the frame tc is sampled in
+        fid_tc = self.fid_params["tc"]
+        if self.tc_ref_frame != "geocentric":
+            fid_tc = self.geocentric_tc(
+                fid_tc, self.fid_params["ra"], self.fid_params["dec"]
+            )
         if earth_rotation is not False:
             logger.info("Enabling frequency-dependent earth rotation")
             from pycbc.waveform.spa_tmplt import spa_length_in_time
@@ -414,11 +426,11 @@ class Relative(DistMarg, BaseGaussianNoise):
                 mass2=self.fid_params["mass2"],
                 f_lower=numpy.array(fedges) / mode * 2.0,
             )
-            atimes = self.fid_params["tc"] - times
+            atimes = fid_tc - times
             self.lik = likelihood_parts_v
             self.mlik = likelihood_parts_multi_v
         else:
-            atimes = self.fid_params["tc"]
+            atimes = fid_tc
             if self.still_needs_det_response:
                 self.lik = likelihood_parts_det
                 self.mlik = likelihood_parts_det_multi
@@ -655,7 +667,8 @@ class Relative(DistMarg, BaseGaussianNoise):
                 det = self.det[ifo]
                 fp, fc = det.antenna_pattern(p["ra"], p["dec"], 0.0, times)
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
-                dtc = p["tc"] + dt - end_time - self.ta[ifo]
+                tc = self.geocentric_tc(p["tc"], p["ra"], p["dec"])
+                dtc = tc + dt - end_time - self.ta[ifo]
 
                 if self.lformat == "earth_pol":
                     filter_i, norm_i = lik(
@@ -873,6 +886,7 @@ class RelativeTime(Relative):
 
         self.snr_draw(wfs)
         p = self.current_params
+        tc = self.geocentric_tc(p["tc"], p["ra"], p["dec"])
 
         for ifo in self.data:
             freqs = self.fedges[ifo]
@@ -885,7 +899,7 @@ class RelativeTime(Relative):
             det = self.det[ifo]
             fp, fc = det.antenna_pattern(p["ra"], p["dec"], 0, times)
             times = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
-            dtc = p["tc"] - end_time - self.ta[ifo]
+            dtc = tc - end_time - self.ta[ifo]
 
             if self.lformat == "earth_time_pol":
                 filter_i, norm_i = lik(
@@ -1032,16 +1046,15 @@ class RelativeTimeDom(RelativeTime):
 
         snrs = self.get_snr(wfs)
         self.snr_draw(snrs=snrs)
+        tc = self.geocentric_tc(p["tc"], p["ra"], p["dec"])
 
         for ifo in self.sh:
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(ifo)
             else:
-                dt = self.det[ifo].time_delay_from_earth_center(
-                    p["ra"], p["dec"], p["tc"]
-                )
-                fp, fc = self.det[ifo].antenna_pattern(p["ra"], p["dec"], 0, p["tc"])
-            dts = p["tc"] + dt
+                dt = self.det[ifo].time_delay_from_earth_center(p["ra"], p["dec"], tc)
+                fp, fc = self.det[ifo].antenna_pattern(p["ra"], p["dec"], 0, tc)
+            dts = tc + dt
             f = (fp + 1.0j * fc) * pol_phase
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data

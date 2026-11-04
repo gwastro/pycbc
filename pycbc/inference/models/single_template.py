@@ -226,11 +226,12 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
 
         self.snr_draw(snrs=self.snr)
 
+        tc = self.geocentric_tc(p["tc"], p["ra"], p["dec"])
         for ifo in self.sh:
-            dt = self.det[ifo].time_delay_from_earth_center(p["ra"], p["dec"], p["tc"])
-            self.dts[ifo] = p["tc"] + dt
+            dt = self.det[ifo].time_delay_from_earth_center(p["ra"], p["dec"], tc)
+            self.dts[ifo] = tc + dt
 
-            fp, fc = self.det[ifo].antenna_pattern(p["ra"], p["dec"], 0, p["tc"])
+            fp, fc = self.det[ifo].antenna_pattern(p["ra"], p["dec"], 0, tc)
             f = (fp + 1.0j * fc) * pol_phase
 
             # Note, this includes complex conjugation already
