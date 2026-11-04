@@ -244,11 +244,11 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         cv = val[0:nb]
 
         fn(
-            (nt, 1, 1),
-            (nb, 1),
+            (nb,),
+            (nt,),
             (self.series.data, self.outv, self.outl, window, threshold),
         )
-        fn2((nb, 1, 1), (1, 1), (self.outv, self.outl, threshold, window))
+        fn2((1,), (nb,), (self.outv, self.outl, threshold, window))
         w = cl != -1
         return cp.asnumpy(cv[w]), cp.asnumpy(cl[w])
 
