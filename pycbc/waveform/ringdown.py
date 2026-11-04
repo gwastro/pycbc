@@ -526,41 +526,38 @@ def td_damped_sinusoid(
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
 
     This returns the plus and cross polarization of the QNM, defined as
-    :math:`h^{+,\times}_{l|m|n} = (\Re, \Im) \{ h_{l|m|n}(t)\right}`, where
+    :math:`h^{+}_{l|m|n} + i h^{\times}_{l|m|n} = h_{l|m|n}(t)`, i.e.,
+    :math:`h^{+}_{l|m|n} = \Re\left\{h_{l|m|n}(t)\right\}` and
+    :math:`h^{\times}_{l|m|n} = \Im\left\{h_{l|m|n}(t)\right\}`, where
 
     .. math::
 
-        h_{l|m|n}(t) &:= A_{lmn} X_{lmn}(\theta, \varphi)
-            e^{-t/\tau_{lmn} + i(2\pi f_{lmn}t + \phi_{lmn})} \\
-            & + A_{l-mn} X_{l-mn}(\theta, \varphi)
-            e^{-t/\tau_{lmn} - i(2\pi f_{lmn}t + \phi_{l-mn})}
+        h_{l|m|n}(t) &:= A^0_{lmn} e^{-t/\tau_{lmn}} \left[
+            X_{lmn}(\theta, \varphi) A^{(+)}_{lmn}
+            e^{i(2\pi f_{lmn} t + \phi_{lmn})} \right. \\
+            &\left. \qquad + X_{l-mn}(\theta, \varphi) A^{(-)}_{lmn}
+            e^{-i(2\pi f_{lmn} t + \phi_{lmn})} \right].
 
     Here, the :math:`X_{lmn}(\theta, \varphi)` are either the spherical or
     spheroidal harmonics, or an arbitrary complex number, depending on the
     input arguments. This uses the convention that the +/-m modes are
-    related to each other via  :math:`f_{l-mn} = -f_{lmn}` and
-    :math:`\tau_{l-mn} = \tau_{lmn}`. The amplitudes :math:`A_{l(-)mn}` and
-    phases :math:`\phi_{l(-)mn}` of the +/-m modes are related to each other
-    by:
+    related to each other via :math:`f_{l-mn} = -f_{lmn}` and
+    :math:`\tau_{l-mn} = \tau_{lmn}`. The relative amplitudes and phases of
+    the +/-m modes are given by:
 
     .. math::
 
-        \phi_{l-mn} = l\pi + \Delta \phi_{lmn} - \phi_{lmn}
-
-    and
-
-    .. math::
-
-        A_{lmn} &= A^0_{lmn} \sqrt{2} \cos(\pi/4 + \Delta \beta_{lmn})\\
-        A_{lmn} &= A^0_{lmn} \sqrt{2} \sin(\pi/4 +  \Delta \beta_{lmn}).
+        A^{(+)}_{lmn} &= \sqrt{2} \cos(\pi/4 + \Delta \beta_{lmn}), \\
+        A^{(-)}_{lmn} &= \sqrt{2} \sin(\pi/4 + \Delta \beta_{lmn})
+            e^{i(l\pi + \Delta \phi_{lmn})}.
 
     Here, :math:`A^0_{lmn}` is an overall fiducial amplitude (set by the
-    ``amp``) parameter, and
+    ``amp`` parameter), and
 
     .. math::
 
-        \Delta \beta_{lmn} &\in [-pi/4, pi/4], \\
-        \Delta \phi_{lmn}  &\in (-pi, pi)
+        \Delta \beta_{lmn} &\in [-\pi/4, \pi/4), \\
+        \Delta \phi_{lmn} &\in [-\pi, \pi)
 
     are parameters that define the deviation from circular polarization.
     Circular polarization occurs when both :math:`\Delta \beta_{lmn}` and
