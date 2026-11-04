@@ -52,11 +52,16 @@ def grid(lo, hi, n):
     return lo + (numpy.arange(n) + 0.5) * (hi - lo) / n
 
 
+_FRAME_DETECTORS = {}
+
+
 def frame_delay(frame, ra, dec, t):
     """The time of arrival in frame, less the geocentric time."""
     if frame == "geocentric":
         return 0.0
-    return Detector(frame).time_delay_from_earth_center(ra, dec, t)
+    if frame not in _FRAME_DETECTORS:
+        _FRAME_DETECTORS[frame] = Detector(frame)
+    return _FRAME_DETECTORS[frame].time_delay_from_earth_center(ra, dec, t)
 
 
 def frame_tc(frame):
