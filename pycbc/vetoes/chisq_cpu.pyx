@@ -30,7 +30,8 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
                      int n, int slen,
                      numpy.ndarray[REALTYPE, ndim=1] shifts,
                      numpy.ndarray[numpy.uint32_t, ndim=1] bins,
-                     int blen):
+                     int blen,
+                     numpy.ndarray[REALTYPE, ndim=1] weights):
     # Do I need to declare UINT vs INT??
     cdef int num_parallel_regions, bstart, bend, i, j, k, r, start, end
     cdef REALTYPE *outr
@@ -55,7 +56,8 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
     outr_tmp = <REALTYPE *> malloc(n * sizeof(REALTYPE))
     outi_tmp = <REALTYPE *> malloc(n * sizeof(REALTYPE))
 
-    for r in range(blen):
+    cdef int nbins = blen
+    for r in range(nbins):
         bstart = bins[r] # int
         bend = bins[r+1] # int
         blen = bend - bstart # int
@@ -118,7 +120,7 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
 
 
         for i in range(n):
-            chisq[i] += outr[i]*outr[i] + outi[i]*outi[i]
+            chisq[i] += weights[r] * (outr[i]*outr[i] + outi[i]*outi[i])
 
     free(outr)
     free(outi)
@@ -138,12 +140,15 @@ def chisq_accum_bin(chisq, q):
     N = len(chisq)
     chisq_accum_bin_cython(chisq, q, N)
 
-def shift_sum(v1, shifts, bins):
+def shift_sum(v1, shifts, bins, weights=None):
     real_type = real_same_precision_as(v1)
     shifts = numpy.array(shifts, dtype=real_type)
 
     bins = numpy.array(bins, dtype=numpy.uint32)
     blen = len(bins) - 1 #
+    if weights is None:
+        weights = numpy.ones(blen, dtype=real_type)
+    weights = numpy.array(weights, dtype=real_type)
     v1 = numpy.array(v1.data, copy=False)
     slen = len(v1)
     n = int(len(shifts))
@@ -151,7 +156,7 @@ def shift_sum(v1, shifts, bins):
     # Create some output memory
     chisq = numpy.zeros(n, dtype=real_type)
 
-    point_chisq_code(chisq, v1, n, slen, shifts, bins, blen)
+    point_chisq_code(chisq, v1, n, slen, shifts, bins, blen, weights)
 
     return  chisq
 

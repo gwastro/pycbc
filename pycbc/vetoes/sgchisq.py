@@ -116,7 +116,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         values = self.params[template.params.template_hash].split(",")
 
         # Get the chisq bins to use as the frequency reference point
-        bins = self.cached_chisq_bins(template, psd)
+        bins, _ = self.cached_chisq_bins_and_weights(template, psd)
 
         # This is implemented slowly, so let's not call it often, OK?
         chisq = numpy.ones(len(snrv))

@@ -76,11 +76,69 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
     return numpy.append(bins, kmax)
 
 
-def power_chisq_bins(
+def power_chisq_bin_weights(sigmasq_series, bins):
+    """
+    Remove the empty chisq bins, and calculate the weight of each
+    remaining bin.
+
+    The chisq bins are placed so that each contains an equal share of the
+    template's power. Because the bin edges must fall on frequency samples,
+    the shares are not exactly equal, and a bin that is only a few samples
+    wide may contain no power at all. Each such empty bin is merged into the
+    bin that follows it (an empty last bin, into the bin before it). Each
+    remaining bin j is then given the weight::
+
+        w_j = (total template power) / (template power in bin j).
+
+    The chisq functions use these weights to compute::
+
+        chisq = sum_j w_j |z_j|^2 - |rho|^2,
+
+    where z_j is the SNR accumulated over the frequencies of bin j and rho,
+    the sum of the z_j, is the SNR. For any bins this has 2p - 2 degrees of
+    freedom, where p is the number of bins, and a signal that exactly
+    matches the template does not increase it. If every bin contains the
+    same power, every w_j is p and this is the standard power chisq.
+
+    Parameters
+    ----------
+    sigmasq_series: numpy.ndarray
+        The cumulative template power: at each frequency sample, the sum of
+        ``|h(f)|^2 / S(f)`` over that sample and all below it, as returned by
+        pycbc.filter.sigmasq_series.
+    bins: numpy.ndarray
+        The bin edges, as indices into sigmasq_series. Bin j covers the
+        samples from bins[j] up to, but not including, bins[j + 1].
+
+    Returns
+    -------
+    bins: numpy.ndarray
+        The edges of the remaining bins.
+    weights: numpy.ndarray
+        The weight w_j of each remaining bin.
+
+    """
+    bins = numpy.asarray(bins)
+    # Power accumulated below each edge
+    below = numpy.where(bins > 0, sigmasq_series[numpy.maximum(bins - 1, 0)], 0)
+    kept = [0]
+    for j in range(1, len(bins)):
+        if below[j] > below[kept[-1]]:
+            kept.append(j)
+    # A trailing empty bin joins the last one
+    kept[-1] = len(bins) - 1
+    power = numpy.diff(below[kept])
+    return bins[kept], power.sum() / power
+
+
+def power_chisq_bins_and_weights(
     htilde, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None
 ):
     """
-    Returns bins of equal power for use with the chisq functions
+    Returns the bins for use with the chisq functions and the weight of
+    each bin: edges placed to divide the template's power equally, with
+    any bin that contains no power merged into the next (see
+    power_chisq_bin_weights).
 
     Parameters
     ----------
@@ -98,8 +156,10 @@ def power_chisq_bins(
 
     Returns
     -------
-    bins: List of ints
-        A list of the edges of the chisq bins is returned.
+    bins: numpy.ndarray
+        The edges of the chisq bins.
+    weights: numpy.ndarray
+        The weight of each bin.
 
     """
     sigma_vec = sigmasq_series(
@@ -111,7 +171,24 @@ def power_chisq_bins(
         htilde.delta_f,
         (len(htilde) - 1) * 2,
     )
-    return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
+    bins = power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
+    return power_chisq_bin_weights(sigma_vec, bins)
+
+
+def _template_bins_and_weights(template, num_bins, psd):
+    """
+    Returns the chisq bins and the weight of each bin for a bank
+    template. The template's cumulative power is taken from the psd's
+    precomputed sigmasq_vec for its approximant if the psd has one, and is
+    computed from the template otherwise.
+    """
+    if hasattr(psd, "sigmasq_vec") and template.approximant in psd.sigmasq_vec:
+        kmin = int(template.f_lower / psd.delta_f)
+        kmax = template.end_idx
+        series = numpy.asarray(psd.sigmasq_vec[template.approximant])
+        bins = power_chisq_bins_from_sigmasq_series(series, num_bins, kmin, kmax)
+        return power_chisq_bin_weights(series, bins)
+    return power_chisq_bins_and_weights(template, num_bins, psd, template.f_lower)
 
 
 @schemed(BACKEND_PREFIX)
@@ -122,14 +199,20 @@ def chisq_accum_bin(chisq, q):
 
 
 @schemed(BACKEND_PREFIX)
-def shift_sum(v1, shifts, bins):
-    """Calculate the time shifted sum of the FrequencySeries"""
+def shift_sum(v1, shifts, bins, weights=None):  # noqa: ARG001
+    """
+    Calculate the time shifted sum of the FrequencySeries: at each of
+    the given shifts, the sum over bins of ``w_j |z_j|^2``, where z_j is the sum
+    of v1 over bin j shifted in time. Each w_j is 1 if weights is None.
+    """
     err_msg = "This function is a stub that should be overridden using the "
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
 
 
-def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
+def power_chisq_at_points_from_precomputed(
+    corr, snr, snr_norm, bins, indices, weights=None
+):
     """
     Calculate the chisq timeseries from precomputed values for only select points.
 
@@ -149,6 +232,10 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     indices: Array
         The indices where we will calculate the chisq. These must be relative
         to the given `corr` series.
+    weights: numpy.ndarray, optional
+        The weight of each bin, as returned by power_chisq_bin_weights. If
+        not given, each weight is the number of bins, which gives the
+        standard chisq for bins of equal power.
 
     Returns
     -------
@@ -156,9 +243,10 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
         An array containing only the chisq at the selected points.
 
     """
-    num_bins = len(bins) - 1
-    chisq = shift_sum(corr, indices, bins)  # pylint:disable=assignment-from-no-return
-    return (chisq * num_bins - (snr.conj() * snr).real) * (snr_norm**2.0)
+    if weights is None:
+        weights = numpy.full(len(bins) - 1, len(bins) - 1)
+    chisq = shift_sum(corr, indices, bins, weights)  # pylint:disable=assignment-from-no-return
+    return (chisq - (snr.conj() * snr).real) * (snr_norm**2.0)
 
 
 _q_l = None
@@ -167,7 +255,14 @@ _chisq_l = None
 
 
 def power_chisq_from_precomputed(
-    corr, snr, snr_norm, bins, indices=None, return_bins=False, return_bins_slice=None
+    corr,
+    snr,
+    snr_norm,
+    bins,
+    indices=None,
+    return_bins=False,
+    return_bins_slice=None,
+    weights=None,
 ):
     """
     Calculate the chisq timeseries from precomputed values.
@@ -193,6 +288,10 @@ def power_chisq_from_precomputed(
     return_bins_slice: {slice, None}, optional
         If provided, only slice the specified range for each bin and return
         as numpy arrays, avoiding full-length TimeSeries allocations.
+    weights: numpy.ndarray, optional
+        The weight of each bin, as returned by power_chisq_bin_weights. If
+        not given, each weight is the number of bins, which gives the
+        standard chisq for bins of equal power.
 
     Returns
     -------
@@ -227,27 +326,25 @@ def power_chisq_from_precomputed(
         chisq.clear()
 
     num_bins = len(bins) - 1
+    if weights is None:
+        weights = numpy.full(num_bins, num_bins)
 
     for j in range(num_bins):
         k_min = int(bins[j])
         k_max = int(bins[j + 1])
 
-        qtilde[k_min:k_max] = corr[k_min:k_max]
+        # Scaling the bin by the square root of its weight before the
+        # inverse FFT makes the |q|^2 accumulated below w_j |z_j|^2
+        qtilde[k_min:k_max] = corr[k_min:k_max] * float(weights[j]) ** 0.5
         pycbc.fft.ifft(qtilde, q)
         qtilde[k_min:k_max].clear()
 
         if return_bins:
             if return_bins_slice is not None:
-                bin_snrs.append(
-                    (q[return_bins_slice] * (snr_norm * num_bins**0.5)).numpy()
-                )
+                bin_snrs.append((q[return_bins_slice] * snr_norm).numpy())
             else:
                 bin_snrs.append(
-                    TimeSeries(
-                        q * snr_norm * num_bins**0.5,
-                        delta_t=snr.delta_t,
-                        epoch=snr.start_time,
-                    )
+                    TimeSeries(q * snr_norm, delta_t=snr.delta_t, epoch=snr.start_time)
                 )
 
         if indices is not None:
@@ -255,7 +352,7 @@ def power_chisq_from_precomputed(
         else:
             chisq_accum_bin(chisq, q)
 
-    chisq = (chisq * num_bins - snr.squared_norm()) * (snr_norm**2.0)
+    chisq = (chisq - snr.squared_norm()) * (snr_norm**2.0)
 
     if indices is None:
         chisq = TimeSeries(chisq, delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
@@ -265,7 +362,9 @@ def power_chisq_from_precomputed(
     return chisq
 
 
-def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
+def fastest_power_chisq_at_points(
+    corr, snr, snrv, snr_norm, bins, indices, weights=None
+):
     """
     Calculate the chisq values for only selected points.
 
@@ -298,10 +397,12 @@ def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
     if isinstance(pycbc.scheme.mgr.state, pycbc.scheme.CPUScheme):
         # We don't have that many points so do the direct time shift.
         return power_chisq_at_points_from_precomputed(
-            corr, snrv, snr_norm, bins, indices
+            corr, snrv, snr_norm, bins, indices, weights
         )
     # We have a lot of points so it is faster to use the fourier transform
-    return power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=indices)
+    return power_chisq_from_precomputed(
+        corr, snr, snr_norm, bins, indices=indices, weights=weights
+    )
 
 
 def power_chisq(
@@ -349,7 +450,7 @@ def power_chisq(
     htilde = make_frequency_series(template)
     stilde = make_frequency_series(data)
 
-    bins = power_chisq_bins(
+    bins, weights = power_chisq_bins_and_weights(
         htilde, num_bins, psd, low_frequency_cutoff, high_frequency_cutoff
     )
     corra = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
@@ -364,6 +465,7 @@ def power_chisq(
         bins,
         return_bins=return_bins,
         return_bins_slice=return_bins_slice,
+        weights=weights,
     )
 
 
@@ -371,9 +473,23 @@ class SingleDetPowerChisq:
     """
     Class that handles precomputation and memory management for efficiently
     running the power chisq in a single detector inspiral analysis.
+
+    Each bin is weighted by the template power it contains, so that the
+    chisq does not depend on how evenly the bins divide that power; see
+    power_chisq_bin_weights.
     """
 
     def __init__(self, num_bins=0, snr_threshold=None):
+        """
+        Parameters
+        ----------
+        num_bins : int or str
+            The number of chisq bins, or an expression of the template
+            parameters that gives it (see parse_option).
+        snr_threshold : float, optional
+            Only triggers with an SNR above this have their chisq computed.
+
+        """
         if not (num_bins == "0" or num_bins == 0):
             self.do = True
             self.column_name = "chisq"
@@ -417,7 +533,11 @@ class SingleDetPowerChisq:
         """Create the power chisq from the options of insert_option_group."""
         return cls(num_bins=args.chisq_bins, snr_threshold=args.chisq_snr_threshold)
 
-    def cached_chisq_bins(self, template, psd):
+    def cached_chisq_bins_and_weights(self, template, psd):
+        """
+        Returns the chisq bin edges for this template and psd and the weight
+        of each bin, computing them only once for each pair.
+        """
         from pycbc.opt import LimitedSizeDict
 
         key = id(psd)
@@ -433,16 +553,9 @@ class SingleDetPowerChisq:
         ):
             psd._chisq_cached_key[id(template.params)] = True
             num_bins = int(self.parse_option(template, self.num_bins))
-
-            if hasattr(psd, "sigmasq_vec") and template.approximant in psd.sigmasq_vec:
-                kmin = int(template.f_lower / psd.delta_f)
-                kmax = template.end_idx
-                bins = power_chisq_bins_from_sigmasq_series(
-                    psd.sigmasq_vec[template.approximant], num_bins, kmin, kmax
-                )
-            else:
-                bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
-            template._bin_cache[key] = bins
+            template._bin_cache[key] = _template_bins_and_weights(
+                template, num_bins, psd
+            )
 
         return template._bin_cache[key]
 
@@ -476,11 +589,11 @@ class SingleDetPowerChisq:
                 above_snrv = snrv
 
             if num_above > 0:
-                bins = self.cached_chisq_bins(template, psd)
+                bins, weights = self.cached_chisq_bins_and_weights(template, psd)
                 # len(bins) is number of bin edges, num_bins = len(bins) - 1
                 dof = (len(bins) - 1) * 2 - 2
                 _chisq = power_chisq_at_points_from_precomputed(
-                    corr, above_snrv, snr_norm, bins, above_indices
+                    corr, above_snrv, snr_norm, bins, above_indices, weights
                 )
 
             if self.snr_threshold:
@@ -509,18 +622,10 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
         self.template_mem = None
         self.corr_mem = None
 
-    def calculate_chisq_bins(self, template, psd):
-        """Obtain the chisq bins for this template and PSD."""
+    def calculate_chisq_bins_and_weights(self, template, psd):
+        """Obtain the chisq bins for this template and PSD, and their weights."""
         num_bins = int(self.parse_option(template, self.num_bins))
-        if hasattr(psd, "sigmasq_vec") and template.approximant in psd.sigmasq_vec:
-            kmin = int(template.f_lower / psd.delta_f)
-            kmax = template.end_idx
-            bins = power_chisq_bins_from_sigmasq_series(
-                psd.sigmasq_vec[template.approximant], num_bins, kmin, kmax
-            )
-        else:
-            bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
-        return bins
+        return _template_bins_and_weights(template, num_bins, psd)
 
     def values(
         self,
@@ -610,7 +715,7 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
                     )
                     curr_corr_mult_fac = hp_fac
 
-                    bins = self.calculate_chisq_bins(template, psd)
+                    bins, weights = self.calculate_chisq_bins_and_weights(template, psd)
                     dof = (len(bins) - 1) * 2 - 2
                     curr_chisq = power_chisq_at_points_from_precomputed(
                         corr,
@@ -618,6 +723,7 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
                         norm_fac,
                         bins,
                         above_local_indices,
+                        weights,
                     )
                     chisq.append(curr_chisq[0])
                 chisq = numpy.array(chisq)
