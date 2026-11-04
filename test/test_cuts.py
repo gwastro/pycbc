@@ -5,10 +5,8 @@ Unit tests for cuts being applied to trigger and templates
 import argparse
 import copy
 import unittest
-
 import numpy as np
 from utils import simple_exit
-
 from pycbc.events import cuts, ranking
 from pycbc.tmpltbank import bank_conversions
 
@@ -26,7 +24,6 @@ class CutsErrorsTest(unittest.TestCase):
     def setUp(self):
         # Set up some things we will want to use in the tests:
         self.maxDiff = None
-
 
 # Tuples of inputs for tests which should fail
 test_parser_raises_error = []
@@ -104,7 +101,6 @@ class CutsParserTest(unittest.TestCase):
     def setUp(self):
         # Set up some things we will want to use in the tests:
         self.maxDiff = None
-
 
 # Tuples of inputs for tests where we are checking the output
 tests_parser_output = []
@@ -195,7 +191,6 @@ class CutsTest(unittest.TestCase):
         # Set up some things we will want to use in the tests:
         self.maxDiff = None
 
-
 # Set up values to be tested:
 test_cut_output = []
 
@@ -215,7 +210,6 @@ def newsnr_sgveto_upper_test(trigs, trig_idx, **kwargs):
     rwsnr = ranking.get_newsnr_sgveto(trigs)
     return all(rwsnr[trig_idx] < 10)
 
-
 test_cut_output.append(
     (
         ["--trigger-cuts", "newsnr_sgveto:10:upper"],
@@ -228,7 +222,6 @@ test_cut_output.append(
 # Lower limit on directly-read template bank parameter
 def template_duration_test(temps, temp_idx, **kwargs):
     return all(temps["template_duration"][temp_idx] > 10)
-
 
 test_cut_output.append(
     (
@@ -254,7 +247,6 @@ test_cut_output.append(
 # make sure the "or equal to" is working properly
 def mass1_ge_test(temps, temp_idx, **kwargs):
     return any(temps["mass1"][temp_idx] == 59)
-
 
 test_cut_output.append(
     (["--template-cuts", "mass1:59:lower_inc"], mass1_ge_test, "mass1_orequal")

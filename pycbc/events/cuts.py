@@ -356,6 +356,8 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
                                       "this shouldn't have happened?!")
 
         idx_out = idx_out[cut_function1(value, cut_thresh1)]
+        # Only cut triggers if both criteria are met :
+        # thus, output triggers are the union of those surviving each cut
         if cut_function2 is not None:
             idx_out = np.union1d(idx_out, idx_out_uncut[cut_function2(value, cut_thresh2)])
 
@@ -498,6 +500,8 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
             tids_out = tids_out[cut_function1(values, cut_thresh1)]
             if cut_function2 is not None:
                 ## A union collects the indices of entries surviving (as True) in either cut
+                # Only cut templates if both criteria are met :
+                # thus, output templates are the union of those surviving each cut
                 tids_out = np.union1d(tids_out, tids_out_uncut[cut_function2(values, cut_thresh2)])
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
