@@ -55,9 +55,11 @@ template_fit_param_choices = ['fit_by_fit_coeff', 'smoothed_fit_coeff',
 template_param_choices = bank_conv.conversion_options + \
                              template_fit_param_choices
 
-# What are the inequalities associated with the cuts?
-# 'upper' means upper limit, and so requires value < threshold
-# to keep a trigger
+# The functions should return True (False) to keep (cut) a trigger or template
+# How to associate the inequalities with the cuts :
+# 'upper' means upper limit, and requires value < threshold
+# to keep a trigger / template
+# Thus it *cuts* triggers / templates with value >= threshold 
 ineq_functions = {
     'upper': np.less,
     'lower': np.greater,
@@ -73,19 +75,27 @@ def insert_cuts_option_group(parser):
     """
     parser.add_argument('--trigger-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE:LIMIT, where, PARAMETER is the "
-                             "parameter to be cut, VALUE is the value at "
-                             "which it is cut, and LIMIT is one of '"
+                             "PARAMETER:VALUE1:LIMIT1, or as "
+                             "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2,"
+                             "where, PARAMETER is the parameter to be cut, "
+                             "VALUE1, and VALUE2 (when provided), are the "
+                             "values at which it is cut, and LIMIT1, and "
+                             "LIMIT2 (when provided with VALUE2, must be "
+                             "opposite in nature to each other) are one of '"
                              + "', '".join(ineq_choices) +
                              "' to indicate the inequality needed. "
                              "PARAMETER is one of:'"
                              + "', '".join(trigger_param_choices) +
                              "'. For example snr:6:LOWER removes triggers "
-                             "with matched filter SNR < 6")
+                             "with matched filter SNR < 6 or "
+                             "snr:6:LOWER:4:UPPER removes triggers with "
+                             "SNR < 6 and SNR > 4")
     parser.add_argument('--template-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE:LIMIT. Format is the same as in "
-                             "--trigger-cuts. PARAMETER can be one of '"
+                             "PARAMETER:VALUE1:LIMIT1 or as "
+                             "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2. "
+                             "Format is the same as in --trigger-cuts. "
+                             "PARAMETER can be one of '"
                              + "', '".join(template_param_choices) + "'.")
 
 
@@ -96,31 +106,57 @@ def convert_inputstr(inputstr, choices):
     the float to compare to.
     Do input checks
     """
-    try:
-        cut_param, cut_value_str, cut_limit = inputstr.split(':')
-    except ValueError as value_e:
-        logger.warning("ERROR: Cut string format not correct, please "
-                       "supply as PARAMETER:VALUE:LIMIT")
-        raise value_e
+    splitstr = inputstr.split(':')
+    if len(splitstr) == 3:
+        cut_param, cut_value1_str, cut_limit1 = splitstr
+        cut_value2_str, cut_limit2 = None, None
+    elif len(splitstr) == 5:
+        cut_param, cut_value1_str, cut_limit1, cut_value2_str, cut_limit2 = splitstr
+        if not (('lower' in cut_limit1 and 'upper' in cut_limit2) or ('upper' in cut_limit1 and 'lower' in cut_limit2)):
+            raise NotImplementedError("If using two limits for the same cut, the limits must be opposite in nature")
+        else:
+            if 'upper' in cut_limit1 and 'lower' in cut_limit2:  ## For ease of handling, let limit1 be always assigned lower*
+                cut_limit1, cut_limit2 = cut_limit2, cut_limit1
+                cut_value1_str, cut_value2_str = cut_value2_str, cut_value1_str
+    else:
+        raise ValueError(
+            "ERROR: Cut string format not correct, please "
+            "supply as PARAMETER:VALUE:LIMIT or as "
+            "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2"
+        )
 
     if cut_param.lower() not in choices:
         raise NotImplementedError("Cut parameter " + cut_param.lower() + " "
                                   "not recognised, choose from "
                                   + ", ".join(choices))
-    if cut_limit.lower() not in ineq_choices:
-        raise NotImplementedError("Cut inequality " + cut_limit.lower() + " "
+    if cut_limit1.lower() not in ineq_choices:
+        raise NotImplementedError("Cut inequality " + cut_limit1.lower() + " "
+                                  "not recognised, choose from "
+                                  + ", ".join(ineq_choices))
+    if cut_limit2 is not None and cut_limit2.lower() not in ineq_choices:
+        raise NotImplementedError("Cut inequality " + cut_limit2.lower() + " "
                                   "not recognised, choose from "
                                   + ", ".join(ineq_choices))
 
-    try:
-        cut_value = float(cut_value_str)
-    except ValueError as value_e:
-        logger.warning("ERROR: Cut value must be convertible into a float, "
-                       "got '%s'.", cut_value_str)
-        raise value_e
+    cut_values = []
+    for cut_value_str in (cut_value1_str, cut_value2_str):
+        try:
+            cut_values.append(float(cut_value_str) if cut_value_str is not None else None)
+        except ValueError as value_e:
+            logger.warning("ERROR: A cut value must be convertible into a float, "
+                           "got '%s'.", cut_value_str)
+            raise value_e
+    cut_value1, cut_value2 = cut_values
 
-    return {(cut_param, ineq_functions[cut_limit]): cut_value}
-
+    if cut_value2_str is None:
+        return {(cut_param, ineq_functions[cut_limit1]): cut_value1}
+    else:
+        if cut_value2 < cut_value1:
+            return {(cut_param, ineq_functions[cut_limit1], ineq_functions[cut_limit2]): (cut_value1, cut_value2)}
+        raise NotImplementedError("When two limits are provided, the threshold VALUE for the "
+                                  "upper* limit must be less than that of "
+                                  "the lower* limit; the provided values: "
+                                  + str(cut_value2) + " >= " + str(cut_value1))
 
 def check_update_cuts(cut_dict, new_cut):
     """
@@ -255,11 +291,17 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
         set by the dictionary
     """
     idx_out = np.arange(len(triggers['snr']))
+    idx_out_uncut = np.copy(idx_out)
 
     # Loop through the different cuts, and apply them
     for parameter_cut_function, cut_thresh in trigger_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
-        parameter, cut_function = parameter_cut_function
+        if len(parameter_cut_function) == 2 and isinstance(cut_thresh, float):
+            parameter, cut_function1 = parameter_cut_function
+            cut_function2, cut_thresh1, cut_thresh2 = None, cut_thresh, None
+        elif len(parameter_cut_function) == 3 and len(cut_thresh) == 2:
+            parameter, cut_function1, cut_function2 = parameter_cut_function
+            cut_thresh1, cut_thresh2 = cut_thresh[0], cut_thresh[1]
 
         # What kind of parameter is it?
         if parameter.endswith('_chisq'):
@@ -278,10 +320,15 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
                 # depending on the template ID, so we rewrite cut_thresh
                 # as a value for each trigger, numpy comparison functions
                 # allow this
-                cut_thresh = sigma_multiple_cut_thresh(template_ids,
+                cut_thresh1 = sigma_multiple_cut_thresh(template_ids,
                                                        statistic,
-                                                       cut_thresh,
+                                                       cut_thresh1,
                                                        triggers.ifo)
+                if cut_function2 is not None:
+                    cut_thresh1 = np.union1d(cut_thresh1, sigma_multiple_cut_thresh(template_ids,
+                                                           statistic,
+                                                           cut_thresh2,
+                                                           triggers.ifo))
             else:
                 err_msg = "Cuts on 'sigma_multiple' are only implemented for "
                 err_msg += "triggers in a ReadByTemplate format. This code "
@@ -308,7 +355,11 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
                                       "recognised. Input sanitisation means "
                                       "this shouldn't have happened?!")
 
-        idx_out = idx_out[cut_function(value, cut_thresh)]
+        idx_out = idx_out[cut_function1(value, cut_thresh1)]
+        # Only cut triggers if both criteria are met :
+        # thus, output triggers are the union of those surviving each cut
+        if cut_function2 is not None:
+            idx_out = np.union1d(idx_out, idx_out_uncut[cut_function2(value, cut_thresh2)])
 
     return idx_out
 
@@ -421,6 +472,7 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
     # Get the initial list of templates:
     tids_out = np.arange(bank['mass1'].size) \
         if template_ids is None else template_ids[:]
+    tids_out_uncut = np.copy(tids_out)
 
     if (statistic is None) ^ (ifos is None):
         raise NotImplementedError("Either both or neither of statistic and "
@@ -434,20 +486,36 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
     # Loop through the different cuts, and apply them
     for parameter_cut_function, cut_thresh in template_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
-        parameter, cut_function = parameter_cut_function
+        if len(parameter_cut_function) == 2 and isinstance(cut_thresh, float):
+            parameter, cut_function1 = parameter_cut_function
+            cut_function2, cut_thresh1, cut_thresh2 = None, cut_thresh, None
+        elif len(parameter_cut_function) == 3 and len(cut_thresh) == 2:
+            parameter, cut_function1, cut_function2 = parameter_cut_function
+            cut_thresh1, cut_thresh2 = cut_thresh[0], cut_thresh[1]
 
         if parameter in bank_conv.conversion_options:
             # Calculate the parameter values using the bank property helper
             values = bank_conv.get_bank_property(parameter, bank, tids_out)
             # Only keep templates which pass this cut
-            tids_out = tids_out[cut_function(values, cut_thresh)]
+            tids_out = tids_out[cut_function1(values, cut_thresh1)]
+            if cut_function2 is not None:
+                # Only cut templates if both criteria are met :
+                # thus, output templates are the union of those surviving each cut
+                tids_out = np.union1d(tids_out, tids_out_uncut[cut_function2(values, cut_thresh2)])
+
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
                                                   ifos,
-                                                  parameter_cut_function,
-                                                  cut_thresh,
+                                                  (parameter, cut_function1),
+                                                  cut_thresh1,
                                                   tids_out)
+                if cut_function2 is not None:
+                    tids_out = np.union1d(tids_out, apply_template_fit_cut(statistic,
+                                                    ifos,
+                                                    (parameter, cut_function2),
+                                                    cut_thresh2,
+                                                    tids_out_uncut))
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
