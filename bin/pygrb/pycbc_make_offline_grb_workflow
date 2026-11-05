@@ -23,6 +23,7 @@ Make workflow for the archival, targeted, coherent inspiral pipeline.
 import argparse
 import logging
 import os
+import socket
 import sys
 
 import matplotlib
@@ -34,6 +35,7 @@ from igwn_segments import segment, segmentlist, segmentlistdict
 import pycbc.workflow as _workflow
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.events.veto import select_segments_by_definer
+from pycbc.results import layout, save_fig_with_metadata
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
 from pycbc.workflow.core import FileList, SegFile, configparser_value_to_file
 from pycbc.workflow.injection import compute_inj_optimal_snr
@@ -52,7 +54,9 @@ args = parser.parse_args()
 
 init_logging(args.verbose, default_level=1)
 
-wflow = _workflow.Workflow(args, workflow_name)
+container = _workflow.Workflow(args, workflow_name)
+wflow = _workflow.Workflow(args, workflow_name + "-main")
+finalize_workflow = _workflow.Workflow(args, workflow_name + "-finalization")
 tags = []
 
 logger.info("Generating %s workflow", workflow_name)
@@ -64,6 +68,32 @@ logger.info("Workflow will be generated in %s", output_dir)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 os.chdir(output_dir)
+
+# Setup results directory
+rdir = layout.SectionNumber(
+    os.path.join(output_dir, "post_processing", "webpage"),
+    [
+        "offsource_triggers_vs_time",
+        "signal_consistency",
+        "injections",
+        "loudest_offsource_events",
+        "exclusion_distances",
+        "open_box",
+        "workflow",
+    ],
+)
+_workflow.makedir(rdir["workflow"])
+
+# We are _also_ logging to a file
+wf_log_file = _workflow.File(
+    wflow.ifos,
+    "workflow-log",
+    wflow.analysis_time,
+    extension=".txt",
+    directory=rdir["workflow"],
+)
+init_logging(args.verbose, default_level=1, to_file=wf_log_file.storage_path)
+logger.info("Created log file %s", wf_log_file.storage_path)
 
 # SEGMENTS
 triggertime = int(wflow.cp.get("workflow", "trigger-time"))
@@ -138,14 +168,16 @@ if on_src is None:
     )
     sys.exit()
 
-make_grb_segments_plot(
+seg_files = _workflow.build_segment_filelist(seg_dir)
+plot_met = make_grb_segments_plot(
     wflow,
     sci_segs,
     triggertime,
     triggername,
-    seg_dir,
+    rdir.base,
     coherent_seg=off_src[next(iter(off_src.keys()))][0],
 )
+seg_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2], file_url=plot_met[3])
 sci_segs = off_src
 
 if len(sci_segs) == 1:
@@ -487,12 +519,13 @@ inspiral_files = _workflow.setup_matchedfltr_workflow(
 # POST-PROCESSING
 pp_dir = os.path.join(curr_dir, "post_processing")
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc", "postproc-method", tags)
+make_results = False
 if post_proc_method == "PYGRB_OFFLINE":
     trig_comb_files, clustered_files, inj_find_files = (
         _workflow.setup_pygrb_pp_workflow(
             wflow,
             pp_dir,
-            seg_dir,
+            seg_files,
             sci_segs[ifo][0],
             full_bank_file,
             inspiral_files,
@@ -509,17 +542,73 @@ if post_proc_method == "PYGRB_OFFLINE":
         logger.info("Entering results module")
         _workflow.setup_pygrb_results_workflow(
             wflow,
-            pp_dir,
+            rdir,
             clustered_files,
             inj_files,
             inj_find_files,
             full_bank_file,
-            seg_dir,
+            seg_files,
+            seg_plot,
             skygrid_file[0],
             veto_file=veto_file,
         )
         logger.info("Leaving results module")
+        make_results = True
 
 # COMPILE WORKFLOW AND WRITE DAX
-wflow.save()
+container += wflow
+
+# The results page reads the directory that the results are delivered to, so it
+# must wait for the main workflow to finish, including its stage-out jobs
+if make_results:
+    _workflow.make_results_web_page(finalize_workflow, rdir.base, template="red")
+    container += finalize_workflow
+    container.add_subworkflow_dependancy(wflow, finalize_workflow)
+
+# Create a page to contain a dashboard link
+dashboard_file = _workflow.File(
+    wflow.ifos,
+    "DASHBOARD",
+    wflow.analysis_time,
+    extension=".html",
+    directory=rdir["workflow"],
+)
+dashboard_str = (
+    '<center><p style="font-size:20px"><b>'
+    '<a href="PEGASUS_DASHBOARD_URL" target="_blank">Pegasus Dashboard Page</a>'
+    "</b></p></center>"
+)
+kwds = {
+    "title": "Pegasus Dashboard",
+    "caption": "Link to Pegasus Dashboard",
+    "cmd": "PYCBC_SUBMIT_DAX_ARGV",
+}
+save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
+
+container.save()
 logger.info("Written dax.")
+
+# Close the log and flush to the html file
+log_file_html = _workflow.File(
+    wflow.ifos,
+    "WORKFLOW-LOG",
+    wflow.analysis_time,
+    extension=".html",
+    directory=rdir["workflow"],
+)
+logging.shutdown()
+with open(wf_log_file.storage_path) as logfile:
+    logdata = logfile.read()
+log_str = f"""
+<p>Workflow generation script created workflow in output directory: {os.getcwd()}</p>
+<p>Workflow name is: {workflow_name}</p>
+<p>Workflow generation script run on host: {socket.gethostname()}</p>
+<pre>{logdata}</pre>
+"""
+kwds = {
+    "title": "Workflow Generation Log",
+    "caption": f"Log of the workflow script {sys.argv[0]}",
+    "cmd": " ".join(sys.argv),
+}
+save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+layout.single_layout(rdir["workflow"], ([dashboard_file, log_file_html]))

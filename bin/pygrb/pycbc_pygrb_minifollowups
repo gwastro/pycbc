@@ -150,7 +150,13 @@ parser.add_argument("--trig-file", help="HDF file with the triggers found by PyG
 parser.add_argument(
     "--followups-file", help="HDF file with the triggers/injections to follow up"
 )
-parser.add_argument("--wiki-file", help="Name of file to save wiki-formatted table in")
+parser.add_argument("--wiki-file", help="Path of file to save wiki-formatted table in")
+parser.add_argument(
+    "--html-layout-file",
+    default=None,
+    help="Path to write the summary ('well') page to. If not given, it is "
+    "written into --output-dir.",
+)
 parser.add_argument(
     "-a",
     "--seg-files",
@@ -171,8 +177,6 @@ pycbc.init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s
 
 workflow = wf.Workflow(args)
 
-wf.makedir(args.output_dir)
-
 # Create a FileList that will contain all output files
 layouts = []
 
@@ -182,8 +186,7 @@ fp = HFile(args.followups_file, "r")
 
 # Initialize a wiki table and add the column headers
 if args.wiki_file:
-    wiki_file = os.path.join(args.output_dir, args.wiki_file)
-    add_wiki_row(wiki_file, fp.keys())
+    add_wiki_row(args.wiki_file, fp.keys())
 
 # Establish the number of follow-ups to perform
 num_events = int(workflow.cp.get_opt_tags("workflow-minifollowups", "num-events", ""))
@@ -228,11 +231,11 @@ for num_event in range(num_events):
     files = FileList([])
     logger.info("Processing event: %s", num_event + 1)
     tags = [*args.tags, str(num_event + 1)]
-    if wiki_file:
+    if args.wiki_file:
         row = []
         for key in fp.keys():
             row.append(fp[key][num_event])
-        add_wiki_row(wiki_file, row)
+        add_wiki_row(args.wiki_file, row)
     # Handle injections
     # They are on unslid data so geocenter time is used
     if is_injection_followup:
@@ -288,4 +291,4 @@ for num_event in range(num_events):
     layouts += list(layout.grouper(files, 2))
 
 workflow.save()
-layout.two_column_layout(args.output_dir, layouts)
+layout.two_column_layout(args.output_dir, layouts, filename=args.html_layout_file)
