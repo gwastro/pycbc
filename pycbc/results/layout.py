@@ -38,6 +38,7 @@ def two_column_layout(path, cols, unique="", filename=None, **kwargs):
         '<path>/well<unique>.html'. The given name should still start
         with 'well' for pycbc_make_html_page to render it inline.
     """
+    # If path is absolute, os.path.join ignores the cwd and returns only path
     file_dir = os.path.join(os.getcwd(), path)
     if filename is None:
         filename = os.path.join(file_dir, f"well{unique}.html")
