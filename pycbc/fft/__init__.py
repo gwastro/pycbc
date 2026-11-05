@@ -14,7 +14,19 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from .parser_support import insert_fft_option_group, verify_fft_options, from_cli
-from .func_api import fft, ifft
+from .backend_support import ensure_fftw_planning_off, get_backend_names
 from .class_api import FFT, IFFT
-from .backend_support import get_backend_names
+from .func_api import fft, ifft
+from .parser_support import from_cli, insert_fft_option_group, verify_fft_options
+
+__all__ = [
+    "FFT",
+    "IFFT",
+    "ensure_fftw_planning_off",
+    "fft",
+    "from_cli",
+    "get_backend_names",
+    "ifft",
+    "insert_fft_option_group",
+    "verify_fft_options",
+]
