@@ -124,7 +124,7 @@ def _build_condorio_site(name, cp):
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
-                      value="nonsharedfs")
+                      value="condorio")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
                       value="true")
     # This explicitly disables symlinking
