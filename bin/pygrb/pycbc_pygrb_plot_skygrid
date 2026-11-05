@@ -92,12 +92,6 @@ if opts.plot_title is None:
 
 logger.info("Imported and ready to go.")
 
-# Set output directories
-outdirs = [os.path.split(os.path.abspath(outfile))[0]]
-for outdir in outdirs:
-    if not os.path.isdir(outdir):
-        os.makedirs(outdir)
-
 # Extract all informations from sky grid
 with h5py.File(sky_grid, "r") as f:
     ra, dec = f["ra"][:], f["dec"][:]

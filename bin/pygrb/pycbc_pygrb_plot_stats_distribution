@@ -25,7 +25,6 @@ Plot distribution of BestNR/SNR/SNR after cuts of triggers in a PyGRB run.
 # Preamble
 # =============================================================================
 import logging
-import os
 import sys
 
 import matplotlib.pyplot as plt
@@ -76,12 +75,6 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 # Store options used multiple times in local variables
 trig_file = opts.trig_file
 stat = opts.x_variable
-
-# Set output directory
-logger.info("Setting output directory.")
-outdir = os.path.split(os.path.abspath(opts.output_file))[0]
-if not os.path.isdir(outdir):
-    os.makedirs(outdir)
 
 # Extract IFOs
 ifos = ppu.extract_ifos(trig_file)

@@ -336,12 +336,6 @@ outfile = opts.output_file
 trig_file = os.path.abspath(opts.trig_file)
 grb_time = opts.trigger_time
 
-# Set output directory
-logger.info("Setting output directory.")
-outdir = os.path.split(os.path.abspath(outfile))[0]
-if not os.path.isdir(outdir):
-    os.makedirs(outdir)
-
 # Extract IFOs
 ifos = ppu.extract_ifos(trig_file)
 

@@ -126,11 +126,6 @@ if snr_type == "single":
 
 logger.info("Imported and ready to go.")
 
-# Set output directories
-outdir = os.path.split(os.path.abspath(opts.output_file))[0]
-if not os.path.isdir(outdir):
-    os.makedirs(outdir)
-
 # Extract IFOs
 ifos = ppu.extract_ifos(trig_file)
 

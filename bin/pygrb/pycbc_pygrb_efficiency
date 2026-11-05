@@ -23,7 +23,6 @@
 # =============================================================================
 import json
 import logging
-import os
 import sys
 
 import matplotlib.pyplot as plt
@@ -215,19 +214,6 @@ num_mc_injs = opts.num_mc_injections
 # Initialize random number generator
 np.random.seed(opts.seed)
 logger.info("Setting random seed to %d.", opts.seed)
-
-# Set output directories
-outdir = None
-for output_file in [
-    opts.exclusion_dist_output_file,
-    opts.background_output_file,
-    opts.onsource_output_file,
-]:
-    if output_file is not None:
-        outdir = os.path.split(os.path.abspath(output_file))[0]
-        if not os.path.isdir(outdir):
-            logger.info("Creating the output directory %s.", outdir)
-            os.makedirs(outdir)
 
 # Extract IFOs
 ifos = ppu.extract_ifos(trig_file)
