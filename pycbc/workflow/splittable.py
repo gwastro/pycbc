@@ -31,7 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 import logging
 import os
 
-from pycbc.workflow.core import File, FileList
+from pycbc.workflow.core import FileList
 from pycbc.workflow.jobsetup import (
     PycbcHDFSplitInjExecutable,
     PycbcSplitBankExecutable,

@@ -45,6 +45,7 @@ def two_column_layout(path, cols, unique="", filename=None, **kwargs):
 
     render_workflow_html_template(filename, "two_column.html", cols, **kwargs)
 
+
 def single_layout(path, files, **kwargs):
     """Make a well layout in  single column format
 

@@ -839,7 +839,6 @@ def rerank_coinc_followup(
     if tags is None:
         tags = []
 
-
     if not workflow.cp.has_section("workflow-rerank"):
         logger.info("No reranking done in this workflow")
         return statmap_file

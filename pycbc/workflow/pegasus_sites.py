@@ -155,8 +155,7 @@ def _build_condorio_site(name, cp):
 def add_condorpool_copy_site(sitecat, cp):
     """Add condorpool_copy site to site catalog"""
     site = _build_condorio_site("condorpool_copy", cp)
-    site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
-                      value="true")
+    site.add_profiles(Namespace.PEGASUS, key="auxillary.local", value="true")
     sitecat.add_sites(site)
 
 

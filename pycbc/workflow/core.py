@@ -227,14 +227,17 @@ class Executable(pegasus_workflow.Executable):
 
         exe_site = exe_site.strip()
 
-        site_sec = 'pegasus_profile-%s' % exe_site
-        if (exe_url.scheme == '' and '/' not in exe_path
-                and cp.has_option(site_sec, 'pycbc|container-bin-dir')):
+        site_sec = "pegasus_profile-%s" % exe_site
+        if (
+            exe_url.scheme == ""
+            and "/" not in exe_path
+            and cp.has_option(site_sec, "pycbc|container-bin-dir")
+        ):
             # We know this will run in a container, and we know the
             # container's bin dir, so we can construct the path to the
             # executable accordingly.
-            bin_dir = cp.get(site_sec, 'pycbc|container-bin-dir').strip()
-            exe_path = '%s/%s' % (bin_dir.rstrip('/'), exe_path)
+            bin_dir = cp.get(site_sec, "pycbc|container-bin-dir").strip()
+            exe_path = "%s/%s" % (bin_dir.rstrip("/"), exe_path)
             # We don't check existence of this file, similar to the
             # singularity case below, because we don't know if the container
             # is available for it on the submit host.
@@ -278,8 +281,7 @@ class Executable(pegasus_workflow.Executable):
             "Using %s executable at %s on site %s", name, exe_url.path, exe_site
         )
 
-        super(Executable, self).__init__(self.pegasus_name,
-                                         installed=self.installed)
+        super().__init__(self.pegasus_name, installed=self.installed)
 
         if hasattr(self, "group_jobs"):
             self.add_profile("pegasus", "clusters.size", self.group_jobs)
@@ -393,11 +395,11 @@ class Executable(pegasus_workflow.Executable):
                     else:
                         curr_pfn = path
 
-                    if cp.has_option('workflow', 'skip-resolve-input-files'):
+                    if cp.has_option("workflow", "skip-resolve-input-files"):
                         # Trust curr_pfn directly, without checking it
                         # exists or fetching it now.
                         curr_file = File.from_path(curr_pfn)
-                        curr_file.add_pfn(curr_pfn, site='local')
+                        curr_file.add_pfn(curr_pfn, site="local")
                     else:
                         curr_file = resolve_url_to_file(curr_pfn)
                     self.common_input_files.append(curr_file)
@@ -1747,7 +1749,10 @@ class FileList(list):
         split lists are still valid.
         """
         # FIXME: Currently very primitive, but needs to be fast
-        if not (hasattr(self, "_splitListsSet") and (self._splitListsSet)) or len(self) != self._splitListsLength:
+        if (
+            not (hasattr(self, "_splitListsSet") and (self._splitListsSet))
+            or len(self) != self._splitListsLength
+        ):
             return False
         else:
             return True
