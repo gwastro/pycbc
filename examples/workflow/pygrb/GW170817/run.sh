@@ -4,18 +4,14 @@
 
 set -e
 
-# Download strain data for the GW170817 event and prepare cache files for each
-# detector.
+# Download strain data for the GW170817 event. These frame files are listed
+# explicitly in analysis.ini.
 
 for ifo in H-H1 L-L1
 do
-    ifo_short=${ifo#*-}
-    cache_file=strain_${ifo_short}.lcf
-    rm -f ${cache_file}
     for time in 1187000320 1187004416 1187008512 1187012608
     do
         file=${ifo}_GWOSC_O2_4KHZ_R1-${time}-4096.gwf
-        echo ${ifo_short} GWOSC_O2_4KHZ_R1 ${time} 4096 file://localhost$(readlink -f ${file}) >> strain_${ifo_short}.lcf
 
         test -f ${file} && continue
 

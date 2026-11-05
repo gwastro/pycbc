@@ -53,7 +53,6 @@ args = parser.parse_args()
 init_logging(args.verbose, default_level=1)
 
 wflow = _workflow.Workflow(args, workflow_name)
-all_files = _workflow.FileList([])
 tags = []
 
 logger.info("Generating %s workflow", workflow_name)
@@ -139,7 +138,7 @@ if on_src is None:
     )
     sys.exit()
 
-plot_met = make_grb_segments_plot(
+make_grb_segments_plot(
     wflow,
     sci_segs,
     triggertime,
@@ -147,10 +146,7 @@ plot_met = make_grb_segments_plot(
     seg_dir,
     coherent_seg=off_src[next(iter(off_src.keys()))][0],
 )
-segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2], file_url=plot_met[3])
-segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
 sci_segs = off_src
-all_files.append(segs_plot)
 
 if len(sci_segs) == 1:
     logger.info("Generating a single IFO search.")
@@ -236,25 +232,8 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
             msg += f" You have provided the value {gating_method}."
             logger.error(msg)
             sys.exit()
-    datafind_files = _workflow.FileList([])
-    for ifo in ifos:
-        gated_frames = _workflow.FileList(
-            [gated_frame for gated_frame in gated_files if gated_frame.ifo == ifo]
-        )
-        # TODO: Remove .lcf cache here
-        gated_cache = _workflow.File(
-            ifo,
-            "gated",
-            segment(
-                int(wflow.cp.get("workflow", "start-time")),
-                int(wflow.cp.get("workflow", "end-time")),
-            ),
-            extension="lcf",
-            directory=df_dir,
-        )
-        gated_cache.add_pfn(gated_cache.cache_entry.path, site="local")
-        gated_frames.convert_to_lal_cache().tofile(open(gated_cache.storage_path, "w"))
-        datafind_files.append(gated_cache)
+    # Downstream jobs must read the gated frames, not the original ones
+    datafind_files = gated_files
 input_files.extend(datafind_files)
 
 # Retrieve vetoes
@@ -329,8 +308,6 @@ if IPN:
     )
     input_files.append(search_pts_file)
 
-all_files.extend(input_files)
-
 # TEMPLATE BANK AND SPLIT BANK
 bank_files = _workflow.setup_tmpltbank_workflow(wflow, sci_segs, datafind_files, df_dir)
 # Check there are not multiple banks
@@ -341,14 +318,11 @@ full_bank_file = bank_files[0]
 splitbank_files = _workflow.setup_splittable_workflow(
     wflow, bank_files, df_dir, tags=["inspiral"]
 )
-all_files.append(full_bank_file)
-all_files.extend(splitbank_files)
 
 # --- TIME VARYING PSDS ---
 # Directory where time-varying PSD files will be written
 if wflow.cp.has_section("calculate_psd"):
     psd_dir = os.path.join(output_dir, "psds")
-    os.makedirs(psd_dir, exist_ok=True)
 
     tv_psd_files = FileList([])
 
@@ -368,7 +342,7 @@ if wflow.cp.has_section("calculate_psd"):
 
         psd_file = make_psd_file(
             workflow=wflow,
-            frame_files=None,  # ok: datafind cache already in workflow
+            frame_files=datafind_files.find_output_with_ifo(ifo),
             segment_file=psd_segfile,
             segment_name="psd",
             out_dir=psd_dir,
@@ -382,13 +356,9 @@ if wflow.cp.has_section("calculate_psd"):
 injs = None
 inj_tags = []
 inj_files = None
-inj_caches = None
 inj_insp_files = None
-inj_insp_caches = None
 if wflow.cp.has_section("workflow-injections"):
     inj_dir = os.path.join(curr_dir, "injections")
-    inj_caches = _workflow.FileList([])
-    inj_insp_caches = _workflow.FileList([])
 
     # Given the stretch of time this workflow will analyse, and the onsource
     # window with its buffer, generate the configuration file with the prior
@@ -413,12 +383,10 @@ if wflow.cp.has_section("workflow-injections"):
             "exe_name": "IPN_SKY_POINTS",
             "tags": ["SIM"],
         }
-        sim_pts_file = configparser_value_to_file(
+        configparser_value_to_file(
             wflow.cp, "workflow-inspiral", "ipn-sim-points", file_attrs=file_attrs
         )
-        all_files.append(sim_pts_file)
     inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, inj_dir)
-    all_files.extend(inj_files)
     injs = inj_files
 
     # Here we compute the optimal SNR for the injections before splitting them
@@ -427,7 +395,6 @@ if wflow.cp.has_section("workflow-injections"):
             raise ValueError("Optimal SNR calculation requires PSD estimation")
 
         snr_dir = os.path.join(inj_dir, "optimal_snr")
-        os.makedirs(snr_dir, exist_ok=True)
 
         optimal_snr_files = _workflow.FileList([])
         for inj, inj_tag in zip(injs, inj_tags, strict=True):
@@ -438,7 +405,6 @@ if wflow.cp.has_section("workflow-injections"):
             logger.info(
                 "Optimal SNR workflow node created for injection tag %s", inj_tag
             )
-        all_files.extend(optimal_snr_files)
         injs = optimal_snr_files
         inj_files = optimal_snr_files
 
@@ -458,7 +424,6 @@ if wflow.cp.has_section("workflow-injections"):
                 inj_split.tagged_description += (
                     f"{inj_split.tag_str}_{int(split_str[0].replace('BANK', ''))}"
                 )
-        all_files.extend(inj_splitbank_files)
     else:
         inj_splitbank_files = _workflow.FileList([])
         inj_splitbank_files.extend(splitbank_files)
@@ -484,7 +449,6 @@ if wflow.cp.has_section("workflow-injections"):
                     )
                     inj_split.tagged_description = new
             inj_split_files.extend(inj_splits)
-        all_files.extend(inj_split_files)
         injs = inj_split_files
 
     # Generate injection matched filter workflow
@@ -507,45 +471,8 @@ if wflow.cp.has_section("workflow-injections"):
             num = split_str[0].replace("SPLIT", "_")
             inj_insp_file.tagged_description += num
 
-    # Make cache files (needed for post-processing)
-    for inj_tag in inj_tags:
-        files = _workflow.FileList([file for file in injs if inj_tag in file.tag_str])
-        inj_cache = _workflow.File(
-            ifos,
-            "injections",
-            sci_segs[ifo][0],
-            extension="lcf",
-            directory=inj_dir,
-            tags=[inj_tag],
-        )
-        inj_cache.add_pfn(inj_cache.cache_entry.path, site="local")
-        inj_caches.append(inj_cache)
-        inj_cache_entries = files.convert_to_lal_cache()
-        inj_cache_entries.tofile(open(inj_cache.storage_path, "w"))
-
-        files = _workflow.FileList(
-            [file for file in inj_insp_files if inj_tag in file.tag_str]
-        )
-        inj_insp_cache = _workflow.File(
-            ifos,
-            "inspiral_injections",
-            sci_segs[ifo][0],
-            extension="lcf",
-            directory=inj_dir,
-            tags=[inj_tag],
-        )
-        inj_insp_cache.add_pfn(inj_insp_cache.cache_entry.path, site="local")
-        inj_insp_caches.append(inj_insp_cache)
-        inj_insp_cache_entries = files.convert_to_lal_cache()
-        inj_insp_cache_entries.tofile(open(inj_insp_cache.storage_path, "w"))
-
-    all_files.extend(inj_caches)
-    all_files.extend(inj_insp_files)
-    all_files.extend(inj_insp_caches)
-
 # MAIN MATCHED FILTERING
 insp_dir = os.path.join(curr_dir, "inspiral")
-os.makedirs(insp_dir, exist_ok=True)
 inspiral_files = _workflow.setup_matchedfltr_workflow(
     wflow,
     sci_segs,
@@ -554,24 +481,12 @@ inspiral_files = _workflow.setup_matchedfltr_workflow(
     insp_dir,
     tags=[mf_tag + "_no_injections"],
 )
-all_files.extend(inspiral_files)
-# TODO: Remove .lcf caches here?
-inspiral_cache = _workflow.File(
-    ifos, "inspiral", sci_segs[ifo][0], extension="lcf", directory=insp_dir
-)
-inspiral_cache.add_pfn(inspiral_cache.cache_entry.path, site="local")
-all_files.append(inspiral_cache)
-inspiral_cache_entries = inspiral_files.convert_to_lal_cache()
-inspiral_cache_entries.tofile(open(inspiral_cache.storage_path, "w"))
 
 # TODO: LONG TIME SLIDES
 
 # POST-PROCESSING
 pp_dir = os.path.join(curr_dir, "post_processing")
-os.makedirs(pp_dir)
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc", "postproc-method", tags)
-pp_files = _workflow.FileList([])
-results_files = _workflow.FileList([])
 if post_proc_method == "PYGRB_OFFLINE":
     trig_comb_files, clustered_files, inj_find_files = (
         _workflow.setup_pygrb_pp_workflow(
@@ -592,7 +507,7 @@ if post_proc_method == "PYGRB_OFFLINE":
         logger.info(msg)
     else:
         logger.info("Entering results module")
-        results_files = _workflow.setup_pygrb_results_workflow(
+        _workflow.setup_pygrb_results_workflow(
             wflow,
             pp_dir,
             clustered_files,
@@ -604,9 +519,6 @@ if post_proc_method == "PYGRB_OFFLINE":
             veto_file=veto_file,
         )
         logger.info("Leaving results module")
-
-all_files.extend(pp_files)
-all_files.extend(results_files)
 
 # COMPILE WORKFLOW AND WRITE DAX
 wflow.save()

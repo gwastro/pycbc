@@ -2171,6 +2171,7 @@ class SegFile(File):
         url = urljoin("file:", pathname2url(self.storage_path))
         if not override_file_if_exists or not self.has_pfn(url, site="local"):
             self.add_pfn(url, site="local")
+        makedir(os.path.dirname(self.storage_path))
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 
