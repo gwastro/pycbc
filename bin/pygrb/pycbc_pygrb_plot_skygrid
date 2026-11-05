@@ -28,12 +28,12 @@ import sys
 
 import h5py
 import numpy
+import pycbc.version
 from matplotlib import colors, rc
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
 import pycbc.distributions
-import pycbc.version
 from pycbc import init_logging
 from pycbc.detector import Detector
 from pycbc.results import pygrb_postprocessing_utils as ppu

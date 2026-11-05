@@ -19,8 +19,9 @@
 import argparse
 import sys
 
-import pycbc.results
 import pycbc.version
+
+import pycbc.results
 from pycbc import add_common_pycbc_options, init_logging
 
 # parse command line

@@ -35,9 +35,9 @@ __date__ = "31.10.2017"
 import argparse
 
 import numpy as np
+import pycbc.version
 
 import pycbc
-import pycbc.version
 from pycbc.io.hdf import HFile
 from pycbc.population import rates_functions as rf
 from pycbc.population import scale_injections as si

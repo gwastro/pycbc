@@ -30,10 +30,10 @@ import os
 import sys
 
 import numpy
+import pycbc.version
 from matplotlib import pyplot as plt
 from matplotlib import rc
 
-import pycbc.version
 from pycbc import init_logging
 from pycbc.results import pygrb_plotting_utils as plu
 from pycbc.results import pygrb_postprocessing_utils as ppu

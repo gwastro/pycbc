@@ -24,8 +24,8 @@ import numpy
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
 import pycbc.version
+
 from pycbc import results
 from pycbc.io.hdf import HFile
 

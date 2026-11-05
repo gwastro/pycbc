@@ -24,11 +24,14 @@ other groups (and by the veto correlation). These tests check that every
 template's SNR time series matches a direct calculation regardless of that
 stale data.
 """
+
 import unittest
+
 import numpy
-from pycbc.types import FrequencySeries
-from pycbc.filter.matchedfilter import LiveBatchMatchedFilter, correlate
 from utils import parse_args_cpu_only, simple_exit
+
+from pycbc.filter.matchedfilter import LiveBatchMatchedFilter, correlate
+from pycbc.types import FrequencySeries
 
 parse_args_cpu_only("LiveBatchMatchedFilter")
 
@@ -37,7 +40,7 @@ SAMPLE_RATE = 256.0
 # different slot sizes, so each group's zero-padded region overlaps data
 # written by the others.
 BINS = [(4, 3), (8, 5), (12, 2), (20, 4)]
-PARAMS_DTYPE = numpy.dtype([('mass1', 'f8'), ('mass2', 'f8')])
+PARAMS_DTYPE = numpy.dtype([("mass1", "f8"), ("mass2", "f8")])
 
 
 def _random_fseries(rng, flen, delta_f):
@@ -53,18 +56,17 @@ def _make_templates(seed=1):
         flen = int(dur * SAMPLE_RATE) // 2 + 1
         for _ in range(count):
             htilde = _random_fseries(rng, flen, 1.0 / dur)
-            htilde.params = numpy.array(
-                [(1.4, 1.4)], dtype=PARAMS_DTYPE
-            )[0]
+            htilde.params = numpy.array([(1.4, 1.4)], dtype=PARAMS_DTYPE)[0]
             htilde.id = len(templates)
             htilde.sigmasq = lambda psd: 1.0
             templates.append(htilde)
     return templates
 
 
-class _FakeStrain(object):
+class _FakeStrain:
     """Minimal stand-in for the StrainBuffer interface used by
     LiveBatchMatchedFilter: whitened data at each template resolution."""
+
     sample_rate = SAMPLE_RATE
     trim_padding = 16
     blocksize = 1
@@ -96,7 +98,6 @@ def _expected_snr(htilde, stilde):
 
 
 class TestLiveBatchMatchedFilter(unittest.TestCase):
-
     def _check_all_groups(self, mf, strain):
         """Run every template group once and compare each template's SNR
         series with the direct calculation, right after its own batch."""
@@ -113,9 +114,10 @@ class TestLiveBatchMatchedFilter(unittest.TestCase):
                 self.assertEqual(len(got), len(expected))
                 err = numpy.max(numpy.abs(got - expected))
                 self.assertLess(
-                    err, 1e-4 * numpy.max(numpy.abs(expected)),
-                    msg=f'SNR mismatch for template {htilde.id} '
-                        f'(duration {1.0 / htilde.delta_f:g} s)'
+                    err,
+                    1e-4 * numpy.max(numpy.abs(expected)),
+                    msg=f"SNR mismatch for template {htilde.id} "
+                    f"(duration {1.0 / htilde.delta_f:g} s)",
                 )
         return ngroups
 
@@ -129,8 +131,11 @@ class TestLiveBatchMatchedFilter(unittest.TestCase):
 
     def _run(self, maxelements):
         mf = LiveBatchMatchedFilter(
-            _make_templates(), snr_threshold=0.0, chisq_bins=0,
-            sg_chisq=None, maxelements=maxelements
+            _make_templates(),
+            snr_threshold=0.0,
+            chisq_bins=0,
+            sg_chisq=None,
+            maxelements=maxelements,
         )
         # First pass over every group, then dirty the workspace, then a
         # second pass with new data: each group then runs on memory that
@@ -157,25 +162,26 @@ class TestLiveBatchMatchedFilter(unittest.TestCase):
         """All groups use views of one buffer pair, sized for the largest
         group, instead of one allocation per group."""
         mf = LiveBatchMatchedFilter(
-            _make_templates(), snr_threshold=0.0, chisq_bins=0,
-            sg_chisq=None, maxelements=2**30
+            _make_templates(),
+            snr_threshold=0.0,
+            chisq_bins=0,
+            sg_chisq=None,
+            maxelements=2**30,
         )
         for mem in (mf.out_mem, mf.cout_mem):
             largest = max(mem.values(), key=len)
-            sizes = [len(tgroup) * psize for tgroup, psize
-                     in zip(mf.tgroups, mf.chunk_tsamples)]
+            sizes = [
+                len(tgroup) * psize
+                for tgroup, psize in zip(mf.tgroups, mf.chunk_tsamples)
+            ]
             self.assertEqual(len(largest), max(sizes))
             for view in mem.values():
-                self.assertTrue(
-                    numpy.shares_memory(view.numpy(), largest.numpy())
-                )
+                self.assertTrue(numpy.shares_memory(view.numpy(), largest.numpy()))
 
 
 suite = unittest.TestSuite()
-suite.addTest(
-    unittest.TestLoader().loadTestsFromTestCase(TestLiveBatchMatchedFilter)
-)
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestLiveBatchMatchedFilter))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

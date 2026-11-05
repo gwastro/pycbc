@@ -28,10 +28,10 @@ import sys
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pycbc.version
 
 import pycbc.conversions
 import pycbc.results
-import pycbc.version
 from pycbc import init_logging
 from pycbc.detector import Detector
 from pycbc.results import pygrb_postprocessing_utils as ppu
