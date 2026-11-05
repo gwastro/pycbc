@@ -33,7 +33,7 @@ library and application suite.
     .. card:: Flexible, easy-to-use, parameter estimation for GW Astronomy
         :link: inference.html
 
-        .. image:: https://collincapano.com/wp-content/uploads/2020/02/posterior3d-gw150914_masses-e1581860222179.png
+        .. image:: https://web.archive.org/web/20220318034556im_/https://collincapano.com/wp-content/uploads/2020/02/posterior3d-gw150914_masses-e1581860222179.png
             :height: 400px
 
     .. card:: Fast Parameter Estimation with Advanced Marginalizations
