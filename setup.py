@@ -29,10 +29,11 @@ from setuptools.command.build_ext import build_ext as _build_ext
 
 requires = []
 setup_requires = ["numpy>=1.16.0"]
-install_requires = setup_requires + [
+install_requires = [
+    *setup_requires,
     "cython>=0.29",
     "numpy>=1.16.0,!=1.19.0,!=2.2.2",
-    "scipy>=0.16.0,<1.17.0",
+    "scipy>=0.16.0",
     "astropy>=2.0.3,!=4.2.1,!=4.0.5",
     "matplotlib>=1.5.1",
     "mpld3>=0.3",
@@ -290,6 +291,7 @@ setup(
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: 3.14",
+        "Programming Language :: Python :: 3.15",
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "Topic :: Scientific/Engineering",

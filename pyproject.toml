@@ -9,6 +9,9 @@ requires = ["setuptools>=70.0.0",
 channels = ["conda-forge"]
 platforms = ["linux-64", "osx-arm64"]
 
+[tool.pixi.system-requirements]
+macos = "14.0"
+
 [tool.pixi.dependencies]
 c-compiler = "*"
 cxx-compiler = "*"
@@ -19,6 +22,10 @@ mpi = { version = "*", build = "openmpi" }
 fftw = "*"
 pytest = "*"
 graphviz = "*"
+hdf5 = "*"
+librdkafka = "*"
+healpix_cxx = "*"
+pkg-config = "*"
 
 [tool.pixi.pypi-dependencies]
 pycbc = { path = ".", editable = true, extras = ["test"] }
@@ -55,7 +62,7 @@ mpi4py = "*"
 [tool.pixi.feature.inference.dependencies]
 
 [tool.pixi.feature.docs.target.linux-64.pypi-dependencies]
-cupy-cuda12x = "*"
+cupy-cuda12x = { version = "*", env-markers = "python_version < '3.15'" }
 
 [tool.pixi.target.linux-64.dependencies]
 mkl = "*"

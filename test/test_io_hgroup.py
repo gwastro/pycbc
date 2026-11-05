@@ -86,17 +86,20 @@ class TestIOHFile(unittest.TestCase):
                 )
                 should_be_checksummed.append("data_np_str_array")
 
+                # Variable-length string datasets are not checked either way:
+                # whether HDF5 accepts fletcher32 on them depends on its
+                # version (2.0.0 and older reject it), and HFile falls back
+                # to no checksum when it is rejected.
+
                 # Make a dataset from some string data
                 f.create_dataset(
                     "data_str_list",
                     data=str_list,
                     dtype=h5py.string_dtype("utf-8"),
                 )
-                should_not_be_checksummed.append("data_str_list")
 
                 # Make an object array from some string data
                 f.create_dataset("data_obj_list", data=np.array(str_list, dtype=object))
-                should_not_be_checksummed.append("data_obj_list")
 
                 # Make a datasets from scalars:
                 f.create_dataset("data_scalar_with_dtype", data=0, dtype="f8")
