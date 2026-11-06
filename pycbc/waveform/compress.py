@@ -39,6 +39,8 @@ from pycbc.scheme import schemed
 from pycbc.types import FrequencySeries, real_same_precision_as
 from pycbc.waveform import utils
 
+logger = logging.getLogger(__name__)
+
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
     """
@@ -396,7 +398,7 @@ def compress_waveform(
         added_points.extend(new_addidxs)
 
         # --- 6. Iteration Logging ---
-        logging.debug(
+        logger.debug(
             "Iter %i: mismatch %.6f, added %i points (total %i), iter time %.2f ms",
             iteration_count,
             mismatch,
@@ -406,13 +408,13 @@ def compress_waveform(
         )
 
         if len(new_addidxs) == 0:
-            logging.info("Can't add any more points, stopping here..")
+            logger.info("Can't add any more points, stopping here..")
             break
 
     # Cast compression_factor to float to avoid HDF5 TypeErrors
     compression_factor = float(len(htilde)) / float(len(sample_points))
 
-    logging.info(
+    logger.info(
         "mismatch: %f, N points: %i (%i added), compression:%.3e, final decomp time %.2f ms",
         mismatch,
         len(comp_amp),
@@ -493,7 +495,10 @@ def inline_cubic_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed("pycbc.waveform.decompress_")
@@ -544,7 +549,10 @@ def inline_quadratic_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed("pycbc.waveform.decompress_")
@@ -595,7 +603,10 @@ def inline_linear_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed("pycbc.waveform.decompress_")
@@ -649,7 +660,10 @@ def inline_quartic_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 def fd_decompress(
@@ -780,9 +794,9 @@ def fd_decompress(
             fill_value=0.0,
             assume_sorted=True,
         )
-        A = amp_interp(outfreq)
+        out_amp = amp_interp(outfreq)
         phi = phase_interp(outfreq)
-        out.data[:] = A * numpy.cos(phi) + (1j) * A * numpy.sin(phi)
+        out.data[:] = out_amp * numpy.cos(phi) + (1j) * out_amp * numpy.sin(phi)
     return out
 
 
@@ -874,7 +888,7 @@ class CompressedWaveform:
         self.precision = precision
 
     def _get(self, param):
-        val = getattr(self, "_%s" % param)
+        val = getattr(self, f"_{param}")
         if isinstance(val, h5py.Dataset):
             try:
                 val = self._cache[param]
@@ -1018,16 +1032,16 @@ class CompressedWaveform:
         if root is None:
             root = ""
         else:
-            root = "%s/" % (root)
+            root = f"{root}/"
         if precision is None:
             precision = self.precision
         elif precision == "double" and self.precision == "single":
             raise ValueError("cannot cast single precision to double")
         outdtype = _real_dtypes[precision]
-        group = "%scompressed_waveforms/%s" % (root, str(template_hash))
+        group = f"{root}compressed_waveforms/{template_hash!s}"
         for param in ["amplitude", "phase", "sample_points"]:
             fp.create_dataset(
-                "%s/%s" % (group, param),
+                f"{group}/{param}",
                 data=self._get(param).astype(outdtype),
                 compression="gzip",
                 shuffle=True,
@@ -1077,8 +1091,8 @@ class CompressedWaveform:
         if root is None:
             root = ""
         else:
-            root = "%s/" % (root)
-        group = "%scompressed_waveforms/%s" % (root, str(template_hash))
+            root = f"{root}/"
+        group = f"{root}compressed_waveforms/{template_hash!s}"
         fp_group = fp[group]
         sample_points = fp_group["sample_points"]
         amp = fp_group["amplitude"]

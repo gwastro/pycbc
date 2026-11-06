@@ -109,7 +109,7 @@ if opts.maxpts is not None:
 else:
     maxptsarg = " "
 cmd = f"ligo-skymap-from-samples {maxptsarg}{txtfile} --fitsoutname {opts.output_file}"
-ret = subprocess.run(cmd.split())
+ret = subprocess.run(cmd.split(), check=False)
 os.remove(txtfile)
 ret.check_returncode()
 try:

@@ -33,9 +33,9 @@ import numpy
 
 # eryn 1.2.6 uses numpy aliases removed in numpy 2.0; restore them.
 if not hasattr(numpy, "in1d"):
-    numpy.in1d = numpy.isin
+    numpy.in1d = numpy.isin  # noqa: NPY201
 if not hasattr(numpy, "trapz"):
-    numpy.trapz = numpy.trapezoid
+    numpy.trapz = numpy.trapezoid  # noqa: NPY201
 
 import eryn.moves as eryn_moves
 from eryn.ensemble import EnsembleSampler
@@ -62,6 +62,8 @@ from .base_multitemper import (
     ensemble_compute_acl,
     read_betas_from_hdf,
 )
+
+logger = logging.getLogger(__name__)
 
 # fixed-dimension model: a single branch with a single leaf
 BRANCH = "model_0"
@@ -113,7 +115,7 @@ class _ErynPrior:
         out = numpy.zeros((nsamples, self.ndim))
         for i, param in enumerate(self.model.sampling_params):
             out[:, i] = draws[param]
-        return out.reshape(shape + (self.ndim,))
+        return out.reshape((*shape, self.ndim))
 
 
 class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):
@@ -164,7 +166,7 @@ class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         model,
         nwalkers,
         ntemps=None,
-        Tmax=None,
+        Tmax=None,  # noqa: N803
         betas=None,
         adaptive=False,
         moves=None,
@@ -587,7 +589,7 @@ class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         stored on disk.
         """
         if self.model.sampling_transforms is not None:
-            logging.info("Correcting logjacobian values on disk")
+            logger.info("Correcting logjacobian values on disk")
             with self.io(self.checkpoint_file, "r") as fp:
                 samples = fp.read_raw_samples(
                     self.variable_params,
@@ -601,7 +603,7 @@ class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
                     fp[fp.samples_group]["logjacobian"][()] = logjacobian
-        logging.info("Calculating log evidence")
+        logger.info("Calculating log evidence")
         with self.io(self.checkpoint_file, "r") as fp:
             thin_start = fp.thin_start
             thin_interval = fp.thin_interval
@@ -612,7 +614,7 @@ class ErynSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             thin_end=thin_end,
             thin_interval=thin_interval,
         )
-        logging.info(f"log Z, dlog Z: {logz}, {dlogz}")
+        logger.info("log Z, dlog Z: %s, %s", logz, dlogz)
         for fn in [self.checkpoint_file, self.backup_file]:
             with self.io(fn, "a") as fp:
                 fp.write_logevidence(logz, dlogz)

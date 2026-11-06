@@ -29,7 +29,7 @@ from .. import opt
 from .eventmgr import _BaseThresholdCluster
 from .simd_threshold_cython import parallel_thresh_cluster, parallel_threshold
 
-logger = logging.getLogger("pycbc.events.threshold_cpu")
+logger = logging.getLogger(__name__)
 
 l2_cache_size = opt.get_l2_cache_size()
 if l2_cache_size is not None:
@@ -59,9 +59,9 @@ def threshold_inline(series, value):
         outv = numpy.zeros(len(series), dtype=numpy.complex64)
         count = numpy.zeros(1, dtype=numpy.uint32)
 
-    N = len(series)
+    n = len(series)
     threshold = value**2.0
-    parallel_threshold(N, arr, outv, outl, count, threshold)
+    parallel_threshold(n, arr, outv, outl, count, threshold)
     num = count[0]
     if num > 0:
         return outl[0:num], outv[0:num]
@@ -100,5 +100,5 @@ class CPUThresholdCluster(_BaseThresholdCluster):
         )
 
 
-def _threshold_cluster_factory(series):
+def _threshold_cluster_factory(series):  # noqa: ARG001
     return CPUThresholdCluster

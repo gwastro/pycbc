@@ -57,7 +57,7 @@ def _make_templates(seed=1):
                 [(1.4, 1.4)], dtype=PARAMS_DTYPE
             )[0]
             htilde.id = len(templates)
-            htilde.sigmasq = lambda psd: 1.0
+            htilde.sigmasq = lambda psd: 1.0  # noqa: ARG005
             templates.append(htilde)
     return templates
 
@@ -163,7 +163,7 @@ class TestLiveBatchMatchedFilter(unittest.TestCase):
         for mem in (mf.out_mem, mf.cout_mem):
             largest = max(mem.values(), key=len)
             sizes = [len(tgroup) * psize for tgroup, psize
-                     in zip(mf.tgroups, mf.chunk_tsamples)]
+                     in zip(mf.tgroups, mf.chunk_tsamples, strict=True)]
             self.assertEqual(len(largest), max(sizes))
             for view in mem.values():
                 self.assertTrue(

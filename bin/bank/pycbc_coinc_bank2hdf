@@ -28,6 +28,8 @@ import logging
 import pycbc
 from pycbc.waveform import bank
 
+logger = logging.getLogger(__name__)
+
 # the following are the default parameters that will be loaded from the
 # xml file (and what they are called in the xml file)
 default_parameters = [
@@ -53,9 +55,7 @@ def parse_parameters(parameters):
         elif len(ps) == 2:
             outname, column = ps
         else:
-            raise ValueError(
-                "parameter %s not formatted correctly; " % (p) + "see help"
-            )
+            raise ValueError(f"parameter {p} not formatted correctly; " + "see help")
         outnames.append(outname)
         columns.append(column)
     return outnames, columns
@@ -86,7 +86,7 @@ parser.add_argument(
     "'inclination:alpha3'. Otherwise, the given name "
     "will assumed to be the same as the column name. "
     "Not used with HDF input files. "
-    "Default is '%s'." % (" ".join(default_parameters)),
+    f"Default is '{' '.join(default_parameters)}'.",
 )
 # add the ability to specify the approximant to use
 bank.add_approximant_arg(
@@ -114,13 +114,13 @@ if (
     if args.parameters is None:
         args.parameters = default_parameters
     outnames, columns = parse_parameters(args.parameters)
-    name_map = dict(zip(columns, outnames))
+    name_map = dict(zip(columns, outnames, strict=True))
 else:
     columns = None
     name_map = None
 
 # load the file
-logging.info("Loading %s" % (args.bank_file))
+logger.info("Loading %s", args.bank_file)
 bankf = bank.TemplateBank(
     args.bank_file, approximant=args.approximant, parameters=columns
 )
@@ -136,9 +136,9 @@ if name_map is not None:
     bankf.table.dtype.names = tuple(params)
 
 # compute the hash
-logging.info("Getting template hashes")
+logger.info("Getting template hashes")
 bankf.ensure_hash()
 
 # write to output
-logging.info("Writing to %s" % (args.output_file))
+logger.info("Writing to %s", args.output_file)
 bankf.write_to_hdf(args.output_file, force=args.force)

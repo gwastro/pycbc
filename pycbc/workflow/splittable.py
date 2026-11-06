@@ -35,7 +35,7 @@ import os
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 
-from pycbc.workflow.core import File, FileList, make_analysis_dir
+from pycbc.workflow.core import File, FileList
 from pycbc.workflow.jobsetup import (
     PycbcHDFSplitInjExecutable,
     PycbcSplitBankExecutable,
@@ -43,7 +43,7 @@ from pycbc.workflow.jobsetup import (
     PycbcSplitInspinjExecutable,
 )
 
-logger = logging.getLogger("pycbc.workflow.splittable")
+logger = logging.getLogger(__name__)
 
 
 def select_splitfilejob_instance(curr_exe):
@@ -78,7 +78,7 @@ def select_splitfilejob_instance(curr_exe):
         exe_class = PycbcHDFSplitInjExecutable
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for Executable %s" % (curr_exe,)
+        err_string = f"No class exists for Executable {curr_exe}"
         raise NotImplementedError(err_string)
 
     return exe_class
@@ -110,29 +110,28 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
     if tags is None:
         tags = []
     logger.info("Entering split output files module.")
-    make_analysis_dir(out_dir)
     # Parse for options in .ini file
-    splitMethod = workflow.cp.get_opt_tags(
+    split_method = workflow.cp.get_opt_tags(
         "workflow-splittable", "splittable-method", tags
     )
 
-    if splitMethod == "IN_WORKFLOW":
+    if split_method == "IN_WORKFLOW":
         # Scope here for choosing different options
         logger.info("Adding split output file jobs to workflow.")
         split_table_outs = setup_splittable_dax_generated(
             workflow, input_tables, out_dir, tags
         )
-    elif splitMethod == "MANUAL_DIRECTORY":
+    elif split_method == "MANUAL_DIRECTORY":
         logger.info("Registering pre-existing split files from directory.")
         split_table_outs = setup_splittable_manual_directory(workflow, tags)
-    elif splitMethod == "NOOP":
+    elif split_method == "NOOP":
         # Probably better not to call the module at all, but this option will
         # return the input file list.
         split_table_outs = input_tables
     else:
-        errMsg = "Splittable method not recognized. Must be one of "
-        errMsg += "IN_WORKFLOW, MANUAL_DIRECTORY or NOOP."
-        raise ValueError(errMsg)
+        err_msg = "Splittable method not recognized. Must be one of "
+        err_msg += "IN_WORKFLOW, MANUAL_DIRECTORY or NOOP."
+        raise ValueError(err_msg)
 
     logger.info("Leaving split output files module.")
     return split_table_outs
@@ -172,7 +171,7 @@ def setup_splittable_manual_directory(workflow, tags=None):
             "TMPLTBANK",
             workflow.analysis_time,
             file_url=pfn_local,
-            tags=tags + [bank_tag],
+            tags=[*tags, bank_tag],
         )
         curr_file.add_pfn(pfn_local, site="local")
         tmplt_banks.append(curr_file)

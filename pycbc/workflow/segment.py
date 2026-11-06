@@ -33,11 +33,11 @@ import os
 import shutil
 
 import igwn_segments as segments
-from igwn_segments import utils as segmentsUtils
+from igwn_segments import utils as segments_utils
 
 from pycbc.workflow.core import SegFile, make_analysis_dir, resolve_url
 
-logger = logging.getLogger("pycbc.workflow.segment")
+logger = logging.getLogger(__name__)
 
 
 def save_veto_definer(cp, out_dir, tags=None):
@@ -205,7 +205,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     # Check available data segments meet criteria specified in arguments
     commonsegs = sciencesegs.extract_common(sciencesegs.keys())
-    offsrclist = commonsegs[tuple(commonsegs.keys())[0]]
+    offsrclist = commonsegs[next(iter(commonsegs.keys()))]
     if len(offsrclist) > 1:
         logger.info("Removing network segments that do not contain trigger time")
         for seg in offsrclist:
@@ -391,29 +391,29 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                 "Calculated science segments, best combination is %s", best_comb
             )
 
-            offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
-            segmentsUtils.tosegwizard(
-                open(offsourceSegfile, "w"), list(offsource[best_comb].values())[0]
+            offsource_segfile = os.path.join(out_dir, "offSourceSeg.txt")
+            segments_utils.tosegwizard(
+                open(offsource_segfile, "w"), next(iter(offsource[best_comb].values()))
             )
 
-            onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
-            segmentsUtils.tosegwizard(
-                open(onsourceSegfile, "w"), list(onsource[best_comb].values())[0]
+            onsource_segfile = os.path.join(out_dir, "onSourceSeg.txt")
+            segments_utils.tosegwizard(
+                open(onsource_segfile, "w"), next(iter(onsource[best_comb].values()))
             )
 
             bufferleft = int(cp.get("workflow-exttrig_segments", "num-buffer-before"))
             bufferright = int(cp.get("workflow-exttrig_segments", "num-buffer-after"))
             onlen = onbefore + onafter
-            bufferSegment = segments.segment(
+            buffer_segment = segments.segment(
                 triggertime - onbefore - bufferleft * onlen,
                 triggertime + onafter + bufferright * onlen,
             )
-            bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
-            segmentsUtils.tosegwizard(
-                open(bufferSegfile, "w"), segments.segmentlist([bufferSegment])
+            buffer_segfile = os.path.join(out_dir, "bufferSeg.txt")
+            segments_utils.tosegwizard(
+                open(buffer_segfile, "w"), segments.segmentlist([buffer_segment])
             )
 
-            return onsource[best_comb], offsource[best_comb], bufferSegment
+            return onsource[best_comb], offsource[best_comb], buffer_segment
 
         num_ifos -= 1
 

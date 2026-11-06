@@ -391,7 +391,9 @@ class InjFilterRejector:
         # Create individual intervals
         starts = inj_times - window
         ends = inj_times + window
-        intervals = segmentlist([segment(s, e) for s, e in zip(starts, ends)])
+        intervals = segmentlist(
+            [segment(s, e) for s, e in zip(starts, ends, strict=True)]
+        )
         intervals.coalesce()
 
         return np.array(intervals)

@@ -25,6 +25,8 @@ from pycbc import add_common_pycbc_options, init_logging
 from pycbc import strain as _strain
 from pycbc.frame import write_frame
 
+logger = logging.getLogger(__name__)
+
 # command line usage
 parser = argparse.ArgumentParser(
     usage="pycbc_insert_frame_hwinj [--options]",
@@ -83,7 +85,7 @@ init_logging(opts.verbose, default_level=2)
 strain = _strain.from_cli(opts, precision=opts.precision)
 
 # load data
-logging.info("Reading the hardware injection data")
+logger.info("Reading the hardware injection data")
 initial_array = numpy.loadtxt(opts.hwinj_file)
 initial_array *= opts.scale_factor
 
@@ -92,13 +94,13 @@ start_pad = (opts.hwinj_start_time - strain.start_time) * opts.sample_rate
 start_pad = int(start_pad + 0.5)
 
 # add the two time series
-logging.info("Summing the two time series")
+logger.info("Summing the two time series")
 for i in range(len(initial_array)):
     strain[start_pad + 1 + i] += initial_array[i]
 
 # write frame
-logging.info("Writing data")
+logger.info("Writing data")
 write_frame(opts.output_file, opts.ifo + ":HWINJ_INJECTED", strain)
 
 # exit
-logging.info("Done.")
+logger.info("Done.")

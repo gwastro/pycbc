@@ -472,7 +472,7 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         # check that all of the sampling parameters have a specified
         # proposal
         sampling_params = set(model.sampling_params)
-        proposal_params = set(param for prop in proposals for param in prop.parameters)
+        proposal_params = {param for prop in proposals for param in prop.parameters}
         missing = sampling_params - proposal_params
         if missing:
             raise ValueError(

@@ -23,6 +23,7 @@ import argparse
 import logging
 import os
 import signal
+from types import SimpleNamespace
 
 import numpy
 import numpy.random
@@ -41,6 +42,8 @@ from pycbc.distributions import read_params_from_config
 from pycbc.distributions.utils import draw_samples_from_config, prior_from_config
 from pycbc.io import HFile
 from pycbc.waveform.spa_tmplt import spa_length_in_time
+
+logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -253,11 +256,8 @@ class TriangleBank:
     def culltau0(self, threshold):
         cull = numpy.where(self.tau0() < threshold)[0]
 
-        class dumb:
-            pass
-
         for c in cull:
-            d = dumb()
+            d = SimpleNamespace()
             d.tau0 = self.waveforms[c].tau0
             d.params = self.waveforms[c].params
             d.s = self.waveforms[c].s
@@ -314,10 +314,13 @@ class TriangleBank:
                 hp.matches = msorted[keep].copy()
                 hp.indices = rsorted[keep].copy()
 
-                logging.info(
-                    "TADD MaxMatch:%0.3f Size:%i "
-                    "AfterSigma:%i AfterTau0:%i Matches:%i"
-                    % (mmax, len(self), msig, mtau, mnum)
+                logger.info(
+                    "TADD MaxMatch:%0.3f Size:%i AfterSigma:%i AfterTau0:%i Matches:%i",
+                    mmax,
+                    len(self),
+                    msig,
+                    mtau,
+                    mnum,
                 )
                 hp.max_match = mmax
                 return False
@@ -351,7 +354,7 @@ class TriangleBank:
         progress=False,
     ):
         num_added = 0
-        total_num = len(tuple(params.values())[0])
+        total_num = len(next(iter(params.values())))
 
         idxs = numpy.arange(0, total_num)
         chunks = numpy.array_split(idxs, max(total_num // args.nprocesses // 4, 1))
@@ -386,7 +389,7 @@ class TriangleBank:
                         num_added += 1
                         self.insert(hp)
                 else:
-                    logging.info("Waveform generation failed!")
+                    logger.info("Waveform generation failed!")
                     continue
 
             pool.close_pool()
@@ -426,21 +429,18 @@ def decimate_frequency_domain(template, target_df):
     decimated_signal = template.data[::decimation_factor]
 
     # Create a new FrequencySeries object with the decimated data and the target delta_f
-    decimated_template = pycbc.types.FrequencySeries(
-        decimated_signal, delta_f=target_df
-    )
-    return decimated_template
+    return pycbc.types.FrequencySeries(decimated_signal, delta_f=target_df)
 
 
-def handle_exit_signal(signum, frame):
-    logging.warning(f"Signal {signum} received. Triggering emergency save...")
+def handle_exit_signal(signum, frame):  # noqa: ARG001
+    logger.warning("Signal %s received. Triggering emergency save...", signum)
     save_bank()
     # Force exit so the script doesn't try to resume the loops
     os._exit(1)
 
 
 def save_bank():  # Use a local name
-    logging.info("Saving current bank to %s", args.output_file)
+    logger.info("Saving current bank to %s", args.output_file)
     with HFile(args.output_file, "w") as o:
         o.attrs["minimal_match"] = args.minimal_match
         for k in bank.keys():
@@ -449,7 +449,7 @@ def save_bank():  # Use a local name
                 val = val.astype("bytes")
             o[k] = val
         o["max_matches"] = numpy.array(bank.max_matches)
-    logging.info("Save complete.")
+    logger.info("Save complete.")
 
 
 class GenUniformWaveform:
@@ -564,7 +564,7 @@ gen = GenUniformWaveform(
 bank = TriangleBank()
 
 
-def silent_child_exit(signum, frame):
+def silent_child_exit(signum, frame):  # noqa: ARG001
     # The child workers execute this branch
     # os._exit(0) ensures they die instantly and quietly
     os._exit(0)
@@ -592,10 +592,27 @@ def wf_wrapper(args):
 if len(args.input_file) > 0:
     total_raw_templates = 0
     for input_file in args.input_file:
-        logging.info("Loading: %s", input_file)
+        logger.info("Loading: %s", input_file)
         with HFile(input_file, "r") as f:
             params = {k: f[k][:] for k in f.keys() if k not in ["max_matches"]}
-            total_raw_templates += len(params[list(params.keys())[0]])
+
+            # Keep only templates inside [tau0_start, tau0_end]
+            tau0_in = pycbc.conversions.tau0_from_mass1_mass2(
+                params["mass1"], params["mass2"], args.tau0_cutoff_frequency
+            )
+            sel = (tau0_in >= args.tau0_start) & (tau0_in <= args.tau0_end)
+            logger.info(
+                "Input tau0 selection [%.2f, %.2f]: keeping %i / %i templates",
+                args.tau0_start,
+                args.tau0_end,
+                sel.sum(),
+                len(sel),
+            )
+            if not sel.any():
+                continue
+            params = {k: v[sel] for k, v in params.items()}
+
+            total_raw_templates += len(params[next(iter(params.keys()))])
             bank, _ = bank.check_params(
                 gen,
                 params,
@@ -605,7 +622,7 @@ if len(args.input_file) > 0:
                 progress=True,
             )
             reduction = total_raw_templates - len(bank)
-            logging.info(
+            logger.info(
                 "Combined Size: %i (Naive Total: %i, Removed: %i)",
                 len(bank),
                 total_raw_templates,
@@ -631,7 +648,7 @@ def draw(rtype):
         bdata = numpy.array([bank.key(k)[-trail:] for k in p])
         kde = gaussian_kde(bdata)
         points = kde.resample(size=size)
-        params = {k: v for k, v in zip(p, points)}
+        params = dict(zip(p, points, strict=True))
 
         # Add `static_args` back, some transformations may need them.
         if static_args is not None:
@@ -652,15 +669,15 @@ def cdraw(rtype, ts, te):
     from pycbc.conversions import tau0_from_mass1_mass2
 
     p = draw(rtype)
-    if len(p[list(p.keys())[0]]) > 0:
+    if len(p[next(iter(p.keys()))]) > 0:
         t = tau0_from_mass1_mass2(p["mass1"], p["mass2"], args.tau0_cutoff_frequency)
         l = (t < te) & (t > ts)
         p = {k: p[k][l] for k in p}
 
     i = 0
-    while len(p[list(p.keys())[0]]) < size:
+    while len(p[next(iter(p.keys()))]) < size:
         tp = draw(rtype)
-        if len(tp[list(tp.keys())[0]]) > 0:
+        if len(tp[next(iter(tp.keys()))]) > 0:
             t = tau0_from_mass1_mass2(
                 tp["mass1"], tp["mass2"], args.tau0_cutoff_frequency
             )
@@ -673,7 +690,7 @@ def cdraw(rtype, ts, te):
         if i > args.placement_iterations:
             break
 
-    if len(p[list(p.keys())[0]]) == 0:
+    if len(p[next(iter(p.keys()))]) == 0:
         return None
 
     return p
@@ -706,7 +723,7 @@ while tau0s < args.tau0_end:
         bank, uconv = bank.check_params(
             gen, params, args.minimal_match, parallel_check=args.parallel_check
         )
-        logging.info(
+        logger.info(
             "%s: Round (U): %s Size: %s conv: %s added: %s",
             region,
             r,
@@ -717,6 +734,8 @@ while tau0s < args.tau0_end:
         if r > 10:
             conv = uconv
         kloop = 0
+        # Set in the loop; the first pass (kloop == 0) does not use them
+        kconv = okconv = None
 
         while ((kloop == 0) or (kconv / okconv) > 0.5) and len(bank) > 10:
             r += 1
@@ -731,7 +750,7 @@ while tau0s < args.tau0_end:
                 bank.max_matches[int(len(bank.max_matches) * 0.9) :]
             )
             ave = numpy.mean(trail_matches)
-            logging.info(
+            logger.info(
                 "%s: Round (K) (%s): %s Size: %s conv: %0.4f added: %s Trail Ave: %0.4f Trail Min: %0.4f",
                 region,
                 kloop,
@@ -744,8 +763,8 @@ while tau0s < args.tau0_end:
             )
 
             if uconv:
-                logging.info("Ratio of convergences: %2.3f" % (kconv / (uconv)))
-                logging.info(f"Progress: {tau0e / args.tau0_end:.0%} completed")
+                logger.info("Ratio of convergences: %2.3f", kconv / (uconv))
+                logger.info("Progress: %.0f%% completed", 100 * tau0e / args.tau0_end)
 
             if kloop == 1:
                 okconv = kconv
@@ -755,7 +774,7 @@ while tau0s < args.tau0_end:
                 break
 
     bank.culltau0(tau0s - args.tau0_threshold * 2.0)
-    logging.info("Region Done %3.1f-%3.1f, %s stored", tau0s, tau0e, bank.activelen())
+    logger.info("Region Done %3.1f-%3.1f, %s stored", tau0s, tau0e, bank.activelen())
     region += 1
     tau0s += args.tau0_crawl / 2
     tau0e += args.tau0_crawl / 2

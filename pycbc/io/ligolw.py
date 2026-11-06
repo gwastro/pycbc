@@ -39,7 +39,7 @@ __all__ = (
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
-IDTypes = set(["ilwd:char", "ilwd:char_u"])
+IDTypes = {"ilwd:char", "ilwd:char_u"}
 
 
 def default_null_value(col_name, col_type):
@@ -157,7 +157,7 @@ def create_process_table(
         for key in key_del:
             opts.pop(key)
 
-    process = document.register_process(
+    return document.register_process(
         program_name,
         opts,
         version=pycbc_version.version,
@@ -166,10 +166,9 @@ def create_process_table(
         instruments=detectors,
         comment=comment,
     )
-    return process
 
 
-def legacy_row_id_converter(ContentHandler):
+def legacy_row_id_converter(ContentHandler):  # noqa: N803
     """
     Convert from old-style to new-style row IDs on the fly.
 
@@ -183,8 +182,11 @@ def legacy_row_id_converter(ContentHandler):
 
     """
 
-    def endElementNS(
-        self, uri_localname, qname, __orig_endElementNS=ContentHandler.endElementNS
+    def endElementNS(  # noqa: N802
+        self,
+        uri_localname,
+        qname,
+        __orig_endElementNS=ContentHandler.endElementNS,  # noqa: N803
     ):
         """Convert values of <Param> elements from ilwdchar to int."""
         if isinstance(self.current, ligolw.Param) and self.current.Type in IDTypes:
@@ -197,7 +199,7 @@ def legacy_row_id_converter(ContentHandler):
 
     remapped = {}
 
-    def startColumn(self, parent, attrs, __orig_startColumn=ContentHandler.startColumn):
+    def startColumn(self, parent, attrs, __orig_startColumn=ContentHandler.startColumn):  # noqa: N802, N803
         """
         Convert types in <Column> elements from ilwdchar to int.
 
@@ -234,7 +236,7 @@ def legacy_row_id_converter(ContentHandler):
 
         return result
 
-    def startStream(self, parent, attrs, __orig_startStream=ContentHandler.startStream):
+    def startStream(self, parent, attrs, __orig_startStream=ContentHandler.startStream):  # noqa: N802, N803
         """
         Convert values in table <Stream> elements from ilwdchar to int.
 
@@ -258,7 +260,9 @@ def legacy_row_id_converter(ContentHandler):
                         if colname in loadcolumns
                         else None
                     )
-                    for pytype, colname in zip(parent.columnpytypes, parent.columnnames)
+                    for pytype, colname in zip(
+                        parent.columnpytypes, parent.columnnames, strict=True
+                    )
                 ]
             )
         return result
@@ -271,7 +275,7 @@ def legacy_row_id_converter(ContentHandler):
 
 
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
-    Attributes = ligolw.sax.xmlreader.AttributesImpl
+    Attributes = ligolw.sax.xmlreader.AttributesImpl  # noqa: N806
     elem = ligolw.LIGO_LW(Attributes({"Name": str(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
@@ -309,7 +313,7 @@ def make_psd_xmldoc(psddict, xmldoc=None):
 
     # the PSDs must be children of a LIGO_LW with name "psd"
     root_name = "psd"
-    Attributes = ligolw.sax.xmlreader.AttributesImpl
+    Attributes = ligolw.sax.xmlreader.AttributesImpl  # noqa: N806
     lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({"Name": root_name})))
 
     for instrument, psd in psddict.items():

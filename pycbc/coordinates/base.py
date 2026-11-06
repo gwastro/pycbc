@@ -32,7 +32,7 @@ import logging
 
 import numpy
 
-logger = logging.getLogger("pycbc.coordinates.base")
+logger = logging.getLogger(__name__)
 
 
 def cartesian_to_spherical_rho(x, y, z):

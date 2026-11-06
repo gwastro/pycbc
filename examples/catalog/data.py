@@ -5,7 +5,7 @@ import pycbc.catalog
 m = pycbc.catalog.Merger("GW170817", source="gwtc-1")
 
 fig, axs = pp.subplots(2, 1, sharex=True, sharey=True)
-for ifo, ax in zip(["L1", "H1"], axs):
+for ifo, ax in zip(["L1", "H1"], axs, strict=True):
     pp.sca(ax)
     pp.title(ifo)
     # Retreive data around the BNS merger

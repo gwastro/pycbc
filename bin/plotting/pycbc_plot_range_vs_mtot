@@ -15,10 +15,10 @@ import pycbc.filter
 import pycbc.results
 import pycbc.types
 import pycbc.waveform
-from pycbc.fft.fftw import set_measure_level
+from pycbc.fft import ensure_fftw_planning_off
 from pycbc.io.hdf import HFile
 
-set_measure_level(0)
+ensure_fftw_planning_off()
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -47,7 +47,7 @@ plt.grid()
 
 for psd_file in args.psd_files:
     f = HFile(psd_file, "r")
-    ifo = tuple(f.keys())[0]
+    ifo = next(iter(f.keys()))
     flow = f.attrs["low_frequency_cutoff"]
     keys = f[ifo + "/psds"].keys()
     start, end = f[ifo + "/start_time"][:], f[ifo + "/end_time"][:]
@@ -64,7 +64,7 @@ for psd_file in args.psd_files:
         out = pycbc.types.zeros(len(psd), dtype=numpy.complex64)
 
         for mi, mf, dm, apx in zip(
-            args.min_mtot, args.max_mtot, args.d_mtot, args.approximant
+            args.min_mtot, args.max_mtot, args.d_mtot, args.approximant, strict=True
         ):
             for M in numpy.arange(mi, mf, dm):
                 htilde = pycbc.waveform.get_waveform_filter(
@@ -94,7 +94,7 @@ for psd_file in args.psd_files:
         avg_range.append(mean), rangerr.append(stddev), mbin.append(M)
 
     for apx in args.approximant:
-        label = "%s-%s" % (ifo, apx)
+        label = f"{ifo}-{apx}"
         plt.errorbar(
             mbin,
             avg_range,

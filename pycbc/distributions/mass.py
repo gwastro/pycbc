@@ -26,7 +26,7 @@ from scipy.special import hyp2f1
 
 from pycbc.distributions import bounded, power_law
 
-logger = logging.getLogger("pycbc.distributions.mass")
+logger = logging.getLogger(__name__)
 
 
 class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
@@ -104,7 +104,8 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
 
     name = "mchirp_from_uniform_mass1_mass2"
 
-    def __init__(self, dim=2, **params):
+    # This distribution is always 2D, whatever dim is given
+    def __init__(self, dim=2, **params):  # noqa: ARG002
         super().__init__(dim=2, **params)
 
 

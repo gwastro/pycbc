@@ -39,6 +39,8 @@ from pycbc.transforms import apply_transforms
 from .base import BaseSampler, setup_output
 from .base_mcmc import get_optional_arg_from_config
 
+logger = logging.getLogger(__name__)
+
 #
 # =============================================================================
 #
@@ -158,17 +160,16 @@ class MultinestSampler(BaseSampler):
         A dict mapping ``variable_params`` to arrays of samples currently
         in memory.
         """
-        samples_dict = {
+        return {
             p: self._samples[:, i] for i, p in enumerate(self.model.variable_params)
         }
-        return samples_dict
 
     @property
     def model_stats(self):
         """A dict mapping the model's ``default_stats`` to arrays of values."""
         stats = []
         for sample in self._samples:
-            params = dict(zip(self.model.variable_params, sample))
+            params = dict(zip(self.model.variable_params, sample, strict=True))
             if self.model.sampling_transforms is not None:
                 params = self.model.sampling_transforms.apply(params)
             self.model.update(**params)
@@ -194,11 +195,10 @@ class MultinestSampler(BaseSampler):
         current_vol, _, _ = numpy.loadtxt(resume_file, skiprows=6, unpack=True)
         maxloglike = max(self.get_posterior_samples()[:, -1])
         logz_remain = numpy.exp(maxloglike + numpy.log(current_vol) - self.logz)
-        logging.info("Estimate of remaining logZ is %s", logz_remain)
-        done = logz_remain < self._ztol
-        return done
+        logger.info("Estimate of remaining logZ is %s", logz_remain)
+        return logz_remain < self._ztol
 
-    def set_initial_conditions(self, initial_distribution=None, samples_file=None):
+    def set_initial_conditions(self, initial_distribution=None, samples_file=None):  # noqa: ARG002
         """
         Sets the initial starting point for the sampler.
 
@@ -223,7 +223,9 @@ class MultinestSampler(BaseSampler):
 
     def loglikelihood(self, cube, *extra_args):
         """Log likelihood evaluator that gets passed to multinest."""
-        params = {p: v for p, v in zip(self.model.variable_params, cube)}
+        # cube is a ctypes pointer from pymultinest, with no length: the
+        # parameter names bound how many values are read
+        params = dict(zip(self.model.variable_params, cube, strict=False))
         # apply transforms
         if self.model.sampling_transforms is not None:
             params = self.model.sampling_transforms.apply(params)
@@ -231,7 +233,7 @@ class MultinestSampler(BaseSampler):
             params = apply_transforms(params, self.model.waveform_transforms)
         # apply constraints
         if self._constraints is not None and not all(
-            [c(params) for c in self._constraints]
+            c(params) for c in self._constraints
         ):
             return -numpy.inf
         self.model.update(**params)
@@ -242,7 +244,8 @@ class MultinestSampler(BaseSampler):
         Transforms the unit hypercube that multinest makes its draws
         from, into the prior space defined in the config file.
         """
-        dict_cube = dict(zip(self.model.variable_params, cube))
+        # cube is a ctypes pointer (see loglikelihood)
+        dict_cube = dict(zip(self.model.variable_params, cube, strict=False))
         inv = self.model.prior_distribution.cdfinv(**dict_cube)
         for i, param in enumerate(self.model.variable_params):
             cube[i] = inv[param]
@@ -264,7 +267,7 @@ class MultinestSampler(BaseSampler):
         iterinterval = self.checkpoint_interval
         done = False
         while not done:
-            logging.info(
+            logger.info(
                 "Running sampler for %s to %s iterations",
                 self.niterations,
                 self.niterations + iterinterval,
@@ -297,7 +300,7 @@ class MultinestSampler(BaseSampler):
                     "nested importance sampling global log-evidence error"
                 ]
             self._samples = self.get_posterior_samples()[:, :-1]
-            logging.info("Have %s posterior samples", self._samples.shape[0])
+            logger.info("Have %s posterior samples", self._samples.shape[0])
             # update the itercounter
             self._itercount += iterinterval
             # make sure there's at least 1 posterior sample
@@ -337,12 +340,12 @@ class MultinestSampler(BaseSampler):
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""
-        logging.info("Writing samples to files")
+        logger.info("Writing samples to files")
         for f_n in [self.checkpoint_file, self.backup_file]:
             self.write_results(f_n)
             with self.io(f_n, "a") as f_p:
                 f_p.write_niterations(self.niterations)
-        logging.info("Validating checkpoint and backup files")
+        logger.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
             self.checkpoint_file, self.backup_file, check_nsamples=False
         )
@@ -383,7 +386,7 @@ class MultinestSampler(BaseSampler):
         """
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):  # noqa: ARG003
         """Loads the sampler from the given config file."""
         section = "sampler"
         # check name
@@ -419,7 +422,7 @@ class MultinestSampler(BaseSampler):
         ]
         optional_kwargs = {
             k: v
-            for k, v in zip(kwarg_names, [ztol, eff, ins, checkpoint])
+            for k, v in zip(kwarg_names, [ztol, eff, ins, checkpoint], strict=True)
             if v is not None
         }
         obj = cls(model, nlivepoints, constraints=constraints, **optional_kwargs)

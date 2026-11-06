@@ -33,7 +33,7 @@ import pycbc.scheme
 
 from .eventmgr import _BaseThresholdCluster
 
-logger = logging.getLogger("pycbc.events.threshold_cuda")
+logger = logging.getLogger(__name__)
 
 threshold_op = """
     if (i == 0)
@@ -49,14 +49,9 @@ threshold_op = """
 """
 
 threshold_kernel = ElementwiseKernel(
-    " %(tp_in)s *in, %(tp_out1)s *outv, %(tp_out2)s *outl, %(tp_th)s threshold, %(tp_n)s *bn"
-    % {
-        "tp_in": dtype_to_ctype(numpy.complex64),
-        "tp_out1": dtype_to_ctype(numpy.complex64),
-        "tp_out2": dtype_to_ctype(numpy.uint32),
-        "tp_th": dtype_to_ctype(numpy.float32),
-        "tp_n": dtype_to_ctype(numpy.uint32),
-    },
+    f" {dtype_to_ctype(numpy.complex64)} *in, {dtype_to_ctype(numpy.complex64)} *outv, "
+    f"{dtype_to_ctype(numpy.uint32)} *outl, {dtype_to_ctype(numpy.float32)} threshold, "
+    f"{dtype_to_ctype(numpy.uint32)} *bn",
     threshold_op,
     "getstuff",
 )
@@ -324,5 +319,5 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         return cv[w], cl[w]
 
 
-def _threshold_cluster_factory(series):
+def _threshold_cluster_factory(series):  # noqa: ARG001
     return CUDAThresholdCluster

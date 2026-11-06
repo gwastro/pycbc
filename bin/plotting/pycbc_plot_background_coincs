@@ -67,5 +67,5 @@ elif args.z_var == "ranking_stat":
 
 ax.set_xlabel(args.x_var)
 ax.set_ylabel(args.y_var)
-ax.set_title("Coincident Background Triggers, %s" % args.z_var)
+ax.set_title(f"Coincident Background Triggers, {args.z_var}")
 fig.savefig(args.output_file, dpi=args.dpi)

@@ -5,7 +5,7 @@ from numpy import float64
 
 from pycbc.libutils import import_optional
 
-logger = logging.getLogger("pycbc.type.utils")
+logger = logging.getLogger(__name__)
 
 _lal = import_optional("lal")
 
@@ -73,6 +73,6 @@ def determine_epoch(epoch, initial_array):
     except TypeError as e:
         # Give something helpful before failing.
         logger.warning(
-            f"epoch cannot be determined: type: {type(epoch)}, value: {epoch}"
+            "epoch cannot be determined: type: %s, value: %s", type(epoch), epoch
         )
         raise e

@@ -38,7 +38,7 @@ from pycbc.events import veto
 from pycbc.events.coherent import reweightedsnr_cut
 from pycbc.io.hdf import HFile
 
-logger = logging.getLogger("pycbc.results.pygrb_postprocessing_utils")
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -259,7 +259,7 @@ def _read_seg_files(seg_files):
     # Needs to be in this order for consistency with build_segment_filelist
     keys = ["buffer", "off", "on"]
 
-    for key, seg_file in zip(keys, seg_files):
+    for key, seg_file in zip(keys, seg_files, strict=True):
         segs = fromsegwizard(open(seg_file))
         if len(segs) > 1:
             err_msg = "More than one segment, an error has occured."
@@ -293,7 +293,7 @@ def _extract_vetoes(veto_file, ifos, offsource):
         for ifo in ifos:
             for v in vetoes[ifo]:
                 v_span = v[1] - v[0]
-                logging.info("%ds of data vetoed at GPS time %d", v_span, v[0])
+                logger.info("%ds of data vetoed at GPS time %d", v_span, v[0])
 
     return vetoes
 
@@ -359,11 +359,11 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None, slide_id=N
     # expected not to set data_tag to 'trigs'or 'injs' when processing the
     # onsource
     if data_tag == "trigs":
-        logging.info("%d triggers loaded.", len(rw_snr))
+        logger.info("%d triggers loaded.", len(rw_snr))
     elif data_tag == "injs":
-        logging.info("%d injections loaded.", len(rw_snr))
+        logger.info("%d injections loaded.", len(rw_snr))
     else:
-        logging.info("Loading triggers.")
+        logger.info("Loading triggers.")
     ifo_ids = {}
     for ifo in ifos:
         ifo_ids[ifo] = (
@@ -388,7 +388,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None, slide_id=N
         msg = f"{sum(above_thresh)} injections "
     if msg:
         msg += f"surviving reweighted SNR cut at {rw_snr_threshold}."
-        logging.info(msg)
+        logger.info(msg)
 
     # Do not assume that IFO and network datasets are sorted the same way:
     # find where each surviving network/event_id is placed in the IFO/event_id
@@ -489,7 +489,7 @@ def apply_vetoes_to_found_injs(
     if not found_missed_file or ifos[0] + "/end_time" not in found_injs.keys():
         t_id_key = "network/template_id"
         if t_id_key not in keep_keys:
-            keep_keys = list(keep_keys + [t_id_key])
+            keep_keys = [*keep_keys, t_id_key]
         empty_dict = dict.fromkeys(keep_keys, numpy.array([]))
         empty_dict[t_id_key] = empty_dict[t_id_key].astype(dtype=numpy.int64)
         return (empty_dict, empty_dict, None, None)
@@ -498,7 +498,7 @@ def apply_vetoes_to_found_injs(
     veto_idx = numpy.array([], dtype=numpy.int64)
 
     if veto_file:
-        logging.info("Applying data vetoes to found injections...")
+        logger.info("Applying data vetoes to found injections...")
         for ifo in ifos:
             inj_time = found_injs[ifo + "/end_time"][:]
             segs = veto.select_segments_by_definer(
@@ -507,13 +507,13 @@ def apply_vetoes_to_found_injs(
             if len(segs) > 0:
                 idx, _ = veto.indices_outside_segments(inj_time, [veto_file], ifo, None)
                 veto_idx = numpy.append(veto_idx, idx)
-                logging.info("%d injections vetoed due to %s.", len(idx), ifo)
+                logger.info("%d injections vetoed due to %s.", len(idx), ifo)
                 idx, _ = veto.indices_within_segments(inj_time, [veto_file], ifo, None)
                 found_idx = numpy.intersect1d(found_idx, idx)
 
         veto_idx = numpy.unique(veto_idx)
-        logging.info("%d injections vetoed.", len(veto_idx))
-        logging.info("%d injections surviving vetoes.", len(found_idx))
+        logger.info("%d injections vetoed.", len(veto_idx))
+        logger.info("%d injections surviving vetoes.", len(found_idx))
 
     found_after_vetoes = {}
     missed_after_vetoes = {}
@@ -571,7 +571,9 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     # Begin by sorting the triggers into each slide
     for slide_id in slide_dict:
         sorted_trigs[slide_id] = []
-    for slide_id, event_id in zip(trigs["network/slide_id"], trigs["network/event_id"]):
+    for slide_id, event_id in zip(
+        trigs["network/slide_id"], trigs["network/event_id"], strict=True
+    ):
         if slide_id in slide_dict:
             sorted_trigs[slide_id].append(event_id)
 
@@ -629,7 +631,7 @@ def extract_trig_properties(trial_dict, trigs, slide_dict, seg_dict, keys):
     n_surviving_trigs = sum(len(i) for i in sorted_trigs.values())
     msg = f"{n_surviving_trigs} triggers found within the trials dictionary "
     msg += "and sorted."
-    logging.info(msg)
+    logger.info(msg)
 
     found_trigs = {}
     for key in keys:
@@ -648,7 +650,7 @@ def extract_trig_properties(trial_dict, trigs, slide_dict, seg_dict, keys):
             else:
                 found_trigs[key][slide_id] = numpy.asarray([])
 
-    logging.info("Triggers information extracted.")
+    logger.info("Triggers information extracted.")
 
     return found_trigs
 
@@ -662,7 +664,7 @@ def extract_ifos(trig_file, ifo=None):
     hdf_file = HFile(trig_file, "r")
 
     # Extract IFOs
-    ifos = sorted(list(hdf_file.keys()))
+    ifos = sorted(hdf_file.keys())
 
     # Remove unwanted keys from key list to reduce it to the ifos
     for key in ["network", "found", "missed"]:
@@ -682,7 +684,7 @@ def extract_ifos(trig_file, ifo=None):
 # =============================================================================
 def load_time_slides(hdf_file_path):
     """Loads timeslides from PyGRB output file as a dictionary"""
-    logging.info("Loading timeslides.")
+    logger.info("Loading timeslides.")
     hdf_file = HFile(hdf_file_path, "r")
     ifos = extract_ifos(hdf_file_path)
     ids = numpy.arange(len(hdf_file[f"{ifos[0]}/search/time_slides"]))
@@ -714,7 +716,7 @@ def load_segment_dict(hdf_file_path):
     Loads the segment dictionary with the format
     {slide_id: segmentlist(segments analyzed)}
     """
-    logging.info("Loading segments.")
+    logger.info("Loading segments.")
 
     # Long time slides will require mapping between slides and segments
     hdf_file = HFile(hdf_file_path, "r")
@@ -734,9 +736,7 @@ def load_segment_dict(hdf_file_path):
 
     # Write segment_dict in proper format
     # At the moment of this comment, there is only one segment
-    segment_dict = {slide: seg_list.coalesce() for slide in slide_ids}
-
-    return segment_dict
+    return {slide: seg_list.coalesce() for slide in slide_ids}
 
 
 # =============================================================================
@@ -746,7 +746,7 @@ def construct_trials(
     seg_files, seg_dict, ifos, slide_dict, veto_file, hide_onsource=True
 ):
     """Constructs trials from segments, timeslides, and vetoes"""
-    logging.info("Constructing trials.")
+    logger.info("Constructing trials.")
     trial_dict = {}
 
     # Get segments
@@ -800,7 +800,7 @@ def construct_trials(
                 iter_int += 1
 
     total_trials = sum(len(trial_dict[slide_id]) for slide_id in slide_dict)
-    logging.info("%d trials generated.", total_trials)
+    logger.info("%d trials generated.", total_trials)
 
     return trial_dict, total_trials
 

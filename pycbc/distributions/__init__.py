@@ -19,7 +19,7 @@ probability density function of distributions.
 """
 
 # imports needed for functions below
-import configparser as _ConfigParser
+import configparser as _configparser
 
 from pycbc import VARARGS_DELIM as _VARARGS_DELIM
 from pycbc.distributions import constraints
@@ -44,10 +44,8 @@ from pycbc.distributions.sky_location import (
     UniformSky,
 )
 from pycbc.distributions.spins import IndependentChiPChiEff
-from pycbc.distributions.uniform import Uniform
+from pycbc.distributions.uniform import Trapezoid, Uniform
 from pycbc.distributions.uniform_log import UniformLog10
-
-# Promote some classes/functions to the distributions name space
 from pycbc.distributions.utils import draw_samples_from_config
 
 # a dict of all available distributions
@@ -60,6 +58,7 @@ distribs = {
     UniformRadius.name: UniformRadius,
     Uniform.name: Uniform,
     UniformAngle.name: UniformAngle,
+    Trapezoid.name: Trapezoid,
     CosAngle.name: CosAngle,
     SinAngle.name: SinAngle,
     UniformSolidAngle.name: UniformSolidAngle,
@@ -160,7 +159,7 @@ def read_params_from_config(
     # sanity check that each parameter in [variable_params] has a prior section
     variable_args = cp.options(vargs_section)
     subsections = cp.get_subsections(prior_section)
-    tags = set([p for tag in subsections for p in tag.split("+")])
+    tags = {p for tag in subsections for p in tag.split("+")}
     missing_prior = set(variable_args) - tags
     if any(missing_prior):
         raise KeyError(
@@ -177,13 +176,11 @@ def read_params_from_config(
         )
     # get static args
     try:
-        static_args = dict(
-            [
-                (key, cp.get_opt_tags(sargs_section, key, []))
-                for key in cp.options(sargs_section)
-            ]
-        )
-    except _ConfigParser.NoSectionError:
+        static_args = {
+            key: cp.get_opt_tags(sargs_section, key, [])
+            for key in cp.options(sargs_section)
+        }
+    except _configparser.NoSectionError:
         static_args = {}
     # sanity check that each parameter in [variable_args]
     # is not repeated in [static_args]

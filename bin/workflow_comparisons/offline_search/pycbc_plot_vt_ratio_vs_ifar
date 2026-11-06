@@ -93,7 +93,7 @@ alpha = 0.6
 # loop through each chirp mass bin:
 lines = []
 
-for n, key in zip(range(nkeys), keys):
+for n, key in zip(range(nkeys), keys, strict=True):
     c = next(color)
 
     data1 = f1["data"][key][:]

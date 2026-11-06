@@ -25,6 +25,8 @@ import numpy
 import pycbc.types
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--psd-files", nargs="+")
@@ -38,14 +40,14 @@ inc = {}
 start, end = {}, {}
 for psd_file in args.psd_files:
     f = HFile(psd_file, "r")
-    ifo = tuple(f.keys())[0]
+    ifo = next(iter(f.keys()))
     if ifo not in inc:
         inc[ifo] = 0
         start[ifo], end[ifo] = [], []
 
-    for rkey in f["%s/psds" % ifo].keys():
+    for rkey in f[f"{ifo}/psds"].keys():
         int_key = int(rkey)
-        rkey = "%s/psds/%s" % (ifo, rkey)
+        rkey = f"{ifo}/psds/{rkey}"
         psd = pycbc.types.load_frequencyseries(psd_file, group=rkey)
 
         key = ifo + "/psds/" + str(inc[ifo])
@@ -53,8 +55,8 @@ for psd_file in args.psd_files:
             key, data=psd, compression="gzip", compression_opts=9, shuffle=True
         )
 
-        s = f["%s/start_time" % ifo][int_key]
-        e = f["%s/end_time" % ifo][int_key]
+        s = f[f"{ifo}/start_time"][int_key]
+        e = f[f"{ifo}/end_time"][int_key]
 
         outf[key].attrs["epoch"] = int(psd.epoch)
         outf[key].attrs["delta_f"] = float(psd.delta_f)
@@ -69,4 +71,4 @@ for ifo in start:
 
 outf.attrs["low_frequency_cutoff"] = f.attrs["low_frequency_cutoff"]
 outf.attrs["dynamic_range_factor"] = pycbc.DYN_RANGE_FAC
-logging.info("Done!")
+logger.info("Done!")

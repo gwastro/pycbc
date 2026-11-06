@@ -9,7 +9,7 @@ import sys
 import types
 from multiprocessing import TimeoutError, cpu_count, get_context
 
-logger = logging.getLogger("pycbc.pool")
+logger = logging.getLogger(__name__)
 
 
 def use_fork_start_method():
@@ -208,7 +208,7 @@ def choose_pool(processes, mpi=False, **kwargs):
 
     Keyword arguments are passed to the pool constructor.
     """
-    do_mpi, size, rank = use_mpi(require_mpi=mpi)
+    do_mpi, size, _ = use_mpi(require_mpi=mpi)
     if do_mpi:
         try:
             import schwimmbad

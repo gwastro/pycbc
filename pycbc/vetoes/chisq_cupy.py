@@ -22,6 +22,9 @@
 # =============================================================================
 #
 
+# GPU kernel notation (N is the correlation length passed to the kernels,
+# BS a block size).
+# ruff: noqa: N803, N806
 import functools
 
 import cupy as cp
@@ -249,7 +252,7 @@ def get_cached_bin_layout(bins):
         else:
             k = list(numpy.arange(s, e, BS / 2))
             kmin += k
-            kmax += k[1:] + [e]
+            kmax += [*k[1:], e]
             bv += [i] * len(k)
     bv = cp.array(bv, dtype=cp.uint32)
     kmin = cp.array(kmin, dtype=cp.uint32)
@@ -267,7 +270,7 @@ def shift_sum_points(num, N, arg_tuple):
         args = [corr.htilde.data, corr.stilde.data]
     else:
         args = [corr.data]
-    args += [outp, N] + phase[0:num]
+    args += [outp, N, *phase[0:num]]
     args += [kmin, kmax, bv, nbins]
     fn(
         (nb,),
@@ -292,7 +295,7 @@ def shift_sum_points_pow2(num, arg_tuple):
         args = [corr.htilde.data, corr.stilde.data]
     else:
         args = [corr.data]
-    args += [outp, N] + points[0:num] + [kmin, kmax, bv, nbins]
+    args += [outp, N, *points[0:num], kmin, kmax, bv, nbins]
     fn((nb,), (nt,), tuple(args))
 
     outp = outp[num * nbins :]

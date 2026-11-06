@@ -39,6 +39,8 @@ from pycbc.io import FieldArray, dump_state, load_state
 from pycbc.types import FrequencySeries
 from pycbc.workflow import WorkflowConfigParser
 
+logger = logging.getLogger(__name__)
+
 
 def format_attr(val):
     """
@@ -270,7 +272,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         """
 
     @staticmethod
-    def extra_args_parser(parser=None, skip_args=None, **kwargs):
+    def extra_args_parser(parser=None, skip_args=None, **kwargs):  # noqa: ARG004
         r"""
         Provides a parser that can be used to parse sampler-specific command
         line options for loading samples.
@@ -523,8 +525,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         pos = self[dataset_name].attrs["pos"]
         has_gauss = self[dataset_name].attrs["has_gauss"]
         cached_gauss = self[dataset_name].attrs["cached_gauss"]
-        state = s, arr, pos, has_gauss, cached_gauss
-        return state
+        return s, arr, pos, has_gauss, cached_gauss
 
     def write_strain(self, strain_dict, group=None):
         """
@@ -615,7 +616,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             file's top level.
 
         """
-        logging.info("Writing injection file to output")
+        logger.info("Writing injection file to output")
         if group is None or group == "/":
             group = self.injections_group
         else:
@@ -624,7 +625,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             with h5py.File(injection_file, "r") as fp:
                 super().copy(fp, group)
         except OSError:
-            logging.warning("Could not read %s as an HDF file", injection_file)
+            logger.warning("Could not read %s as an HDF file", injection_file)
 
     def read_injections(self, group=None):
         """
@@ -649,8 +650,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         else:
             group = "/".join([group, self.injections_group])
         injset = InjectionSet(self.filename, hdf_group=group)
-        injections = injset.table.view(FieldArray)
-        return injections
+        return injset.table.view(FieldArray)
 
     def write_command_line(self):
         """
@@ -713,7 +713,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             An open inference file to write the data to.
 
         """
-        logging.info("Copying metadata")
+        logger.info("Copying metadata")
         # copy attributes
         for key in self.attrs.keys():
             other.attrs[key] = self.attrs[key]
@@ -732,13 +732,13 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             Don't copy the given groups.
 
         """
-        logging.info("Copying info")
+        logger.info("Copying info")
         # copy non-samples/stats data
         if ignore is None:
             ignore = []
         if isinstance(ignore, str):
             ignore = [ignore]
-        ignore = set(ignore + [self.samples_group])
+        ignore = {*ignore, self.samples_group}
         copy_groups = set(self.keys()) - ignore
         for key in copy_groups:
             super().copy(key, other)
@@ -771,7 +771,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
         """
         # select the samples to copy
-        logging.info("Reading samples to copy")
+        logger.info("Reading samples to copy")
         if parameters is None:
             parameters = self.variable_params
         # if list of desired parameters is different, rename
@@ -780,14 +780,14 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         if read_args is None:
             read_args = {}
         samples = self.read_samples(parameters, **read_args)
-        logging.info(f"Copying {samples.size} samples")
+        logger.info("Copying %s samples", samples.size)
         # if different parameter names are desired, get them from the samples
         if parameter_names:
             arrs = {pname: samples[p] for p, pname in parameter_names.items()}
             arrs.update({p: samples[p] for p in parameters if p not in parameter_names})
             samples = FieldArray.from_kwargs(**arrs)
             other.attrs["variable_params"] = samples.fieldnames
-        logging.info("Writing samples")
+        logger.info("Writing samples")
         if write_args is None:
             write_args = {}
         other.write_samples({p: samples[p] for p in samples.fieldnames}, **write_args)
@@ -856,9 +856,9 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             )
             # if any down selection was done, re-set the default
             # thin-start/interval/end
-            p = tuple(self[self.samples_group].keys())[0]
+            p = next(iter(self[self.samples_group].keys()))
             my_shape = self[self.samples_group][p].shape
-            p = tuple(other[other.samples_group].keys())[0]
+            p = next(iter(other[other.samples_group].keys()))
             other_shape = other[other.samples_group][p].shape
             if my_shape != other_shape:
                 other.attrs["thin_start"] = 0
@@ -958,7 +958,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
                 group.create_dataset(
                     name,
                     dshape,
-                    maxshape=tuple(list(dshape)[:-1] + [None]),
+                    maxshape=(*list(dshape)[:-1], None),
                     dtype=data.dtype,
                     fletcher32=True,
                 )

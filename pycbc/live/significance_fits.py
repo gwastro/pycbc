@@ -7,7 +7,7 @@ import logging
 import h5py
 import numpy
 
-logger = logging.getLogger("pycbc.live.single_fits")
+logger = logging.getLogger(__name__)
 
 
 def add_live_significance_trigger_pruning_options(parser):

@@ -7,13 +7,12 @@ import os
 import pycbc
 import pycbc.workflow as wf
 
+logger = logging.getLogger(__name__)
+
 
 class GeomAlignedBankSetupExecutable(wf.Executable):
     current_retention_level = wf.Executable.ALL_TRIGGERS
-    file_input_options = wf.Executable.file_input_options + [
-        "--asd-file",
-        "--psd-file",
-    ]
+    file_input_options = [*wf.Executable.file_input_options, "--asd-file", "--psd-file"]
 
     def create_node(self, analysis_time, num_split_jobs, extra_tags=None):
         if extra_tags is None:
@@ -152,7 +151,7 @@ stack_exe = GeomAligned2DStackExecutable(
 all_outs = wf.FileList([])
 
 for idx in range(num_split_jobs):
-    stackid = "job%05d" % (idx)
+    stackid = f"job{idx:05d}"
     stack_node = stack_exe.create_node(
         intermediate_file, idx, workflow.analysis_time, extra_tags=[stackid]
     )
@@ -200,4 +199,4 @@ workflow += bankverify_node
 
 workflow.save()
 
-logging.info("GENERATION SUCCESSFUL.")
+logger.info("GENERATION SUCCESSFUL.")

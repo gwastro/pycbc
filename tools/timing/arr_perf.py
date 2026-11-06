@@ -95,16 +95,16 @@ import timeit
 
 gt = timeit.Timer(addc)
 t = 1000 * gt.timeit(number=1) / niter
-print("ADDC  %.2f msec" % t, " %5.1f /min " % (1000 * 60 / t))
+print(f"ADDC  {t:.2f} msec", " %5.1f /min " % (1000 * 60 / t))
 
 gt = timeit.Timer(add)
 t = 1000 * gt.timeit(number=1) / niter
-print("ADD  %.2f msec" % t, " %5.1f /min " % (1000 * 60 / t))
+print(f"ADD  {t:.2f} msec", " %5.1f /min " % (1000 * 60 / t))
 
 gt = timeit.Timer(mul)
 t = 1000 * gt.timeit(number=1) / niter
-print("MUL %.2f msec" % t, " %5.1f /min " % (1000 * 60 / t))
+print(f"MUL {t:.2f} msec", " %5.1f /min " % (1000 * 60 / t))
 
 gt = timeit.Timer(sqnm)
 t = 1000 * gt.timeit(number=1) / niter
-print("SQNRM  %.2f msec" % t, " %5.1f /min " % (1000 * 60 / t))
+print(f"SQNRM  {t:.2f} msec", " %5.1f /min " % (1000 * 60 / t))

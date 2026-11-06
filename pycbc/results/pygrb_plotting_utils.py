@@ -108,7 +108,7 @@ def make_grb_segments_plot(
     if len(ifos) == 1:
         subs = [subs]
     plt.xticks(rotation=20, ha="right")
-    for sub, ifo in zip(subs, ifos):
+    for sub, ifo in zip(subs, ifos, strict=True):
         for seg in science_segs[ifo]:
             sub.add_patch(
                 Rectangle(
@@ -191,13 +191,13 @@ def make_grb_segments_plot(
     )
     fig.axes[-1].set_xlabel("GPS Time")
 
-    fig.axes[0].set_title("Science Segments for GRB%s" % trigger_name)
+    fig.axes[0].set_title(f"Science Segments for GRB{trigger_name}")
     plt.tight_layout()
     fig.subplots_adjust(hspace=0)
 
-    plot_name = "GRB%s_segments.png" % trigger_name
-    plot_url = "file://localhost%s/%s" % (out_dir, plot_name)
-    fig.savefig("%s/%s" % (out_dir, plot_name))
+    plot_name = f"GRB{trigger_name}_segments.png"
+    plot_url = f"file://localhost{out_dir}/{plot_name}"
+    fig.savefig(f"{out_dir}/{plot_name}")
 
     return [ifos, plot_name, extent, plot_url]
 

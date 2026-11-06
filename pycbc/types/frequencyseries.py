@@ -193,6 +193,9 @@ class FrequencySeries(Array):
             return self._epoch == other._epoch and self._delta_f == other._delta_f
         return False
 
+    # Defining __eq__ makes instances unhashable; make that explicit
+    __hash__ = None
+
     def almost_equal_elem(self, other, tol, relative=True, dtol=0.0):
         """
         Compare whether two frequency series are almost equal, element
@@ -476,9 +479,9 @@ class FrequencySeries(Array):
 
         if flen < len(self):
             raise ValueError(
-                "The value of delta_t (%s) would be "
+                f"The value of delta_t ({delta_t}) would be "
                 "undersampled. Maximum delta_t "
-                "is %s." % (delta_t, nat_delta_t)
+                f"is {nat_delta_t}."
             )
         if not delta_t:
             tmp = self
@@ -589,8 +592,7 @@ class FrequencySeries(Array):
         from matplotlib import pyplot
 
         if self.kind == "real":
-            plot = pyplot.plot(self.sample_frequencies, self, **kwds)
-            return plot
+            return pyplot.plot(self.sample_frequencies, self, **kwds)
         if self.kind == "complex":
             plot1 = pyplot.plot(self.sample_frequencies, self.real(), **kwds)
             plot2 = pyplot.plot(self.sample_frequencies, self.imag(), **kwds)
@@ -643,8 +645,7 @@ def load_frequencyseries(path, group=None):
             data = f[key][:]
             delta_f = f[key].attrs["delta_f"]
             epoch = f[key].attrs["epoch"] if "epoch" in f[key].attrs else None
-            series = FrequencySeries(data, delta_f=delta_f, epoch=epoch)
-        return series
+            return FrequencySeries(data, delta_f=delta_f, epoch=epoch)
     else:
         raise ValueError("Path must end with .npy, .hdf, or .txt")
 
@@ -657,7 +658,6 @@ def load_frequencyseries(path, group=None):
         )
 
     raise ValueError(
-        "File has %s dimensions, cannot convert to FrequencySeries, \
+        f"File has {data.ndim} dimensions, cannot convert to FrequencySeries, \
                       must be 2 (real) or 3 (complex)"
-        % data.ndim
     )

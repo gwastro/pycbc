@@ -48,7 +48,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     return htilde
 
 
-def fstimeshift(freqseries, phi, kmin, kmax):
+def fstimeshift(freqseries, phi, kmin, kmax):  # noqa: ARG001
     # Please note that the CPU version has a number of optimizations with respect
     # to this.
     # FIXME: Convert to ElementwiseKernel and use kmin and max in that.

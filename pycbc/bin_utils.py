@@ -11,7 +11,7 @@ import math
 
 import numpy
 
-logger = logging.getLogger("pycbc.bin_utils")
+logger = logging.getLogger(__name__)
 
 
 class Bins:
@@ -59,7 +59,7 @@ class Bins:
         """
         if isinstance(x, slice):
             if x.step is not None:
-                raise NotImplementedError("step not supported: %s" % repr(x))
+                raise NotImplementedError(f"step not supported: {x!r}")
             return slice(
                 self[x.start] if x.start is not None else 0,
                 self[x.stop] + 1 if x.stop is not None else len(self),
@@ -136,7 +136,7 @@ class IrregularBins(Bins):
         if len(boundaries) < 2:
             raise ValueError("less than two boundaries provided")
         boundaries = tuple(boundaries)
-        if any(a > b for a, b in zip(boundaries[:-1], boundaries[1:])):
+        if any(a > b for a, b in zip(boundaries[:-1], boundaries[1:], strict=True)):
             raise ValueError("non-monotonic boundaries provided")
 
         self.boundaries = boundaries
@@ -651,6 +651,7 @@ class BinnedArray:
             for centres, index in zip(
                 self.centres(),
                 numpy.unravel_index(self.array.argmin(), self.array.shape),
+                strict=True,
             )
         )
 
@@ -665,6 +666,7 @@ class BinnedArray:
             for centres, index in zip(
                 self.centres(),
                 numpy.unravel_index(self.array.argmax(), self.array.shape),
+                strict=True,
             )
         )
 

@@ -25,6 +25,7 @@
 # =============================================================================
 #
 
+import argparse
 import itertools
 import logging
 import sys
@@ -42,6 +43,8 @@ from pycbc.results import metadata
 from pycbc.results.plot import add_style_opt_to_parser, set_style_from_cli
 from pycbc.results.scatter_histograms import create_multidim_plot
 from pycbc.workflow import WorkflowConfigParser
+
+logger = logging.getLogger(__name__)
 
 use("agg")
 
@@ -172,7 +175,7 @@ samples = samples if isinstance(samples, list) else [samples]
 
 # if a z-arg is specified, load samples for it
 if opts.z_arg is not None:
-    logging.info("Getting samples for colorbar")
+    logger.info("Getting samples for colorbar")
     z_arg = "loglikelihood" if opts.z_arg == "snr" else opts.z_arg
     zlbl = opts.z_arg_labels[opts.z_arg]
     zvals = []
@@ -208,10 +211,10 @@ if opts.plot_prior is not None:
             "either turn on --plot-marginal, or turn off "
             "--plot-prior"
         )
-    logging.info("Loading prior")
+    logger.info("Loading prior")
     cp = WorkflowConfigParser(opts.plot_prior)
     prior = prior_from_config(cp)
-    logging.info("Drawing samples from prior")
+    logger.info("Drawing samples from prior")
     prior_samples = prior.rvs(opts.prior_nsamples)
     # we'll just use the first file for metadata
     fp = fps[0]
@@ -269,7 +272,7 @@ if opts.plot_injection_parameters:
             vals = injections[p]
         except (NameError, TypeError, AttributeError):
             # injection doesn't have this parameter, skip
-            logging.warning("Could not find injection parameter %s", p)
+            logger.warning("Could not find injection parameter %s", p)
             continue
 
         if opts.pick_injection_by_time:
@@ -303,7 +306,7 @@ else:
     colors = itertools.cycle(color_cycle)
 
 # plot each input file
-logging.info("Plotting")
+logger.info("Plotting")
 hist_colors = []
 for i, s in enumerate(samples):
     # on first iteration create figure otherwise update old figure
@@ -412,7 +415,7 @@ if opts.plot_prior:
 if len(opts.input_file) > 1:
     handles = []
     labels = []
-    for color, fn in zip(hist_colors, opts.input_file):
+    for color, fn in zip(hist_colors, opts.input_file, strict=True):
         label = opts.input_file_labels[fn]
         handles.append(patches.Patch(color=color, label=label))
         labels.append(label)
@@ -444,4 +447,4 @@ metadata.save_fig_with_metadata(
 )
 
 # finish
-logging.info("Done")
+logger.info("Done")

@@ -16,6 +16,10 @@
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
+# CUDA-only port of LALSimulation's SpinTaylorF2, using its notation; this module
+# is expected to be removed soon.
+# ruff: noqa: N806
+
 from math import acos, atan2, cos, log, pow, sin
 
 import numpy

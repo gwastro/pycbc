@@ -28,6 +28,8 @@ import numpy
 
 from pycbc import add_common_pycbc_options, init_logging
 
+logger = logging.getLogger(__name__)
+
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]", description=__doc__)
 add_common_pycbc_options(parser)
@@ -62,12 +64,12 @@ opts = parser.parse_args()
 init_logging(opts.verbose)
 
 # read data
-logging.info("Reading data")
+logger.info("Reading data")
 timeseries = numpy.loadtxt(opts.input_file)
 samples = range(len(timeseries))
 
 # plot data
-logging.info("Plotting data")
+logger.info("Plotting data")
 plt.plot(samples, timeseries)
 
 # format plot
@@ -78,8 +80,8 @@ plt.ylabel(opts.y_label)
 plt.grid()
 
 # save plot
-logging.info("Saving plot")
+logger.info("Saving plot")
 plt.savefig(opts.output_file)
 
 # done
-logging.info("Done")
+logger.info("Done")

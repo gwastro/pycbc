@@ -42,6 +42,8 @@ import pycbc.strain
 import pycbc.waveform
 from pycbc.io import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -94,7 +96,7 @@ ax = fig.gca()
 
 opts.low_frequency_cutoff = opts.f_low
 strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
-logging.info("Plotting strain spectrogram")
+logger.info("Plotting strain spectrogram")
 Pxx, freq, t = mlab.specgram(
     strain, NFFT=1024, noverlap=1000, Fs=opts.sample_rate, mode="psd"
 )
@@ -115,12 +117,12 @@ pc = ax.pcolormesh(
 )
 del freq, Pxx
 
-logging.info("Loading trigs")
+logger.info("Loading trigs")
 trig_f = HFile(opts.trig_file, "r")
 trigs = trig_f[opts.detector]
 
 
-def rough_filter(snr, chisq, chisq_dof, end_time, tmp_id, tmp_dur):
+def rough_filter(snr, chisq, chisq_dof, end_time, tmp_id, tmp_dur):  # noqa: ARG001
     return np.logical_and(
         end_time > opts.gps_start_time,
         end_time < opts.gps_end_time + tmp_dur.astype("float64"),
@@ -141,7 +143,7 @@ snr, chisq, chisq_dof, end_time, template_ids, template_duration = data_tuple
 
 if len(indices) > 0:
     if opts.veto_file:
-        logging.info("Loading veto segments")
+        logger.info("Loading veto segments")
         locs, _ = pycbc.events.veto.indices_outside_segments(
             end_time, [opts.veto_file], ifo=opts.detector
         )
@@ -179,7 +181,7 @@ if len(indices) > 0:
     except ValueError:
         max_rank = None
 
-    logging.info("Loading bank")
+    logger.info("Loading bank")
     bank = pycbc.waveform.bank.TemplateBank(
         opts.bank_file,
         approximant=opts.approximant,
@@ -188,8 +190,10 @@ if len(indices) > 0:
     )
     tmplts = bank.table
 
-    logging.info("Plotting %d trigs", len(sorted_end_time))
-    for tc, rho, tid in zip(sorted_end_time, sorted_rank, sorted_template_ids):
+    logger.info("Plotting %d trigs", len(sorted_end_time))
+    for tc, rho, tid in zip(
+        sorted_end_time, sorted_rank, sorted_template_ids, strict=True
+    ):
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
             tc - center_time,
             tmplts.mass1[tid],
@@ -224,28 +228,23 @@ if len(indices) > 0:
         interesting_trig_rank = None
 
     if max_rank:
-        title = "%s - loudest %d triggers by %s - max %s = %.2f (light blue curve)" % (
-            opts.channel_name,
-            opts.num_loudest,
-            opts.rank,
-            opts.rank,
-            max_rank,
+        title = (
+            f"{opts.channel_name} - loudest {opts.num_loudest} triggers by "
+            f"{opts.rank} - max {opts.rank} = {max_rank:.2f} (light blue curve)"
         )
     else:
-        title = "%s - loudest %d triggers by %s" % (
-            opts.channel_name,
-            opts.num_loudest,
-            opts.rank,
+        title = (
+            f"{opts.channel_name} - loudest {opts.num_loudest} triggers by {opts.rank}"
         )
     if interesting_trig_rank is not None:
-        title += " - selected %s = %.2f (green curve)" % (
-            opts.rank,
-            interesting_trig_rank,
+        title += (
+            f" - selected {opts.rank} = {float(interesting_trig_rank):.2f} "
+            "(green curve)"
         )
 else:
-    title = "%s - no triggers" % opts.channel_name
+    title = f"{opts.channel_name} - no triggers"
 
-logging.info("Loading and plotting gates")
+logger.info("Loading and plotting gates")
 for gate_type, hatch_style in [("file", "\\"), ("auto", "/")]:
     try:
         gate_time = trigs["gating/" + gate_type + "/time"][:]
@@ -253,7 +252,7 @@ for gate_type, hatch_style in [("file", "\\"), ("auto", "/")]:
         gate_pad = trigs["gating/" + gate_type + "/pad"][:]
     except KeyError:
         continue
-    gate_unique = list(frozenset(zip(gate_time, gate_width, gate_pad)))
+    gate_unique = list(frozenset(zip(gate_time, gate_width, gate_pad, strict=True)))
     for gt, gw, gp in gate_unique:
         # only plot gates within the plot time window
         if gt + gw < opts.gps_start_time or gt - gw > opts.gps_end_time:
@@ -267,7 +266,7 @@ for gate_type, hatch_style in [("file", "\\"), ("auto", "/")]:
         )
 
 if opts.veto_file:
-    logging.info("Loading and plotting veto segments")
+    logger.info("Loading and plotting veto segments")
     veto_segs = pycbc.events.veto.select_segments_by_definer(
         opts.veto_file, ifo=opts.detector
     )
@@ -288,7 +287,7 @@ ax.set_xlim(-half_width, half_width)
 ax.set_ylim(opts.f_low, opts.sample_rate / 2)
 ax.set_yscale("log")
 ax.grid(ls="solid", alpha=0.2)
-ax.set_xlabel("Time - %.3f (s)" % center_time)
+ax.set_xlabel(f"Time - {center_time:.3f} (s)")
 ax.set_ylabel("Frequency (Hz)")
 ax.set_title(title)
 cb = fig.colorbar(pc, fraction=0.04, pad=0.01, ticks=LogLocator(subs=range(10)))
@@ -315,4 +314,4 @@ pycbc.results.save_fig_with_metadata(
     fig_kwds={"dpi": 100},
 )
 
-logging.info("Done")
+logger.info("Done")

@@ -13,8 +13,6 @@ pycbc_geom_nonspinbank \
     --max-mass2 3 \
     --verbose \
     --output-file testNonSpin2.xml \
-    --calculate-ethinca-metric \
-    --filter-cutoff SchwarzISCO \
     --asd-file ZERO_DET_high_P.txt
 
 igwn_ligolw_print \

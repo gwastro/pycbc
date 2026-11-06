@@ -21,9 +21,9 @@ scipy.factorial = scipy.misc.factorial
 
 # handle python shared libary name
 basedir = sys._MEIPASS
-print("Setting up scipy for temporary basedir %s" % basedir)
+print(f"Setting up scipy for temporary basedir {basedir}")
 python_lib = find("libpython*.so.*", basedir)[0]
 python_lib_dest = python_lib.split(".so")[0] + ".so"
 os.symlink(python_lib, python_lib_dest)
 
-print("LD_LIBRARY_PATH=%s" % os.environ["LD_LIBRARY_PATH"])
+print(f"LD_LIBRARY_PATH={os.environ['LD_LIBRARY_PATH']}")

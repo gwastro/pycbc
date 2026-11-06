@@ -184,12 +184,10 @@ class TimeSeries(Array):
         in GPS seconds.
         """
         if start < self.start_time:
-            raise ValueError(
-                "Time series does not contain a time as early as %s" % start
-            )
+            raise ValueError(f"Time series does not contain a time as early as {start}")
 
         if end > self.end_time:
-            raise ValueError("Time series does not contain a time as late as %s" % end)
+            raise ValueError(f"Time series does not contain a time as late as {end}")
 
         start_idx = float(start - self.start_time) * self.sample_rate
         end_idx = float(end - self.start_time) * self.sample_rate
@@ -352,6 +350,9 @@ class TimeSeries(Array):
         if super().__eq__(other):
             return self._epoch == other._epoch and self._delta_t == other._delta_t
         return False
+
+    # Defining __eq__ makes instances unhashable; make that explicit
+    __hash__ = None
 
     def almost_equal_elem(self, other, tol, relative=True, dtol=0.0):
         """
@@ -644,8 +645,8 @@ class TimeSeries(Array):
             )
         if location not in taper_map:
             raise ValueError(
-                "Unknown location %s, valid locations are %s"
-                % (location, ", ".join(taper_map.keys()))
+                f"Unknown location {location}, valid locations are "
+                f"{', '.join(taper_map.keys())}"
             )
         if tsdata.dtype not in (float32, float64):
             raise TypeError(
@@ -682,8 +683,7 @@ class TimeSeries(Array):
 
             return gate_data(tsdata, gate_params)
         raise ValueError(
-            "Unknown tapering method %s, valid methods are lal and constant"
-            % (tapermethod)
+            f"Unknown tapering method {tapermethod}, valid methods are lal and constant"
         )
 
     def get_gate_indices(self, time, window):
@@ -801,8 +801,7 @@ class TimeSeries(Array):
             # shift back to the original time
             fdata = data.to_frequencyseries()
             fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=False)
-            tdata = fdata.to_timeseries()
-            return tdata
+            return fdata.to_timeseries()
         if method == "hard":
             tslice = data.time_slice(time - window, time + window)
             tslice[:] = 0
@@ -951,7 +950,7 @@ class TimeSeries(Array):
             The two dimensional interpolated qtransform of this time series.
 
         """
-        from scipy.interpolate import RectBivariateSpline as interp2d
+        from scipy.interpolate import RectBivariateSpline
 
         from pycbc.filter.qtransform import qplane, qtiling
 
@@ -968,10 +967,12 @@ class TimeSeries(Array):
         # Interpolate if requested
         if delta_f or delta_t or logfsteps:
             if return_complex:
-                interp_amp = interp2d(freqs, times, abs(q_plane), kx=1, ky=1)
-                interp_phase = interp2d(freqs, times, _numpy.angle(q_plane), kx=1, ky=1)
+                interp_amp = RectBivariateSpline(freqs, times, abs(q_plane), kx=1, ky=1)
+                interp_phase = RectBivariateSpline(
+                    freqs, times, _numpy.angle(q_plane), kx=1, ky=1
+                )
             else:
-                interp = interp2d(freqs, times, q_plane, kx=1, ky=1)
+                interp = RectBivariateSpline(freqs, times, q_plane, kx=1, ky=1)
 
         if delta_t:
             times = _numpy.arange(float(self.start_time), float(self.end_time), delta_t)
@@ -1200,9 +1201,9 @@ class TimeSeries(Array):
 
         if tlen < len(self):
             raise ValueError(
-                "The value of delta_f (%s) would be "
+                f"The value of delta_f ({delta_f}) would be "
                 "undersampled. Maximum delta_f "
-                "is %s." % (delta_f, 1.0 / self.duration)
+                f"is {1.0 / self.duration}."
             )
         if not delta_f:
             tmp = self
@@ -1367,8 +1368,7 @@ class TimeSeries(Array):
         from matplotlib import pyplot
 
         if self.kind == "real":
-            plot = pyplot.plot(self.sample_times, self, **kwds)
-            return plot
+            return pyplot.plot(self.sample_times, self, **kwds)
         if self.kind == "complex":
             plot1 = pyplot.plot(self.sample_times, self.real(), **kwds)
             plot2 = pyplot.plot(self.sample_times, self.imag(), **kwds)
@@ -1410,7 +1410,7 @@ class TimeSeries(Array):
         ends_time = self.start_time + ends * self.delta_t
 
         # Convert to segments
-        for s, e in zip(starts_time, ends_time):
+        for s, e in zip(starts_time, ends_time, strict=True):
             segs.append(segment(s, e))
 
         return segs.coalesce()
@@ -1459,10 +1459,9 @@ def load_timeseries(path, group=None):
         key = "data" if group is None else group
         with h5py.File(path, "r") as f:
             data = f[key][:]
-            series = TimeSeries(
+            return TimeSeries(
                 data, delta_t=f[key].attrs["delta_t"], epoch=f[key].attrs["start_time"]
             )
-        return series
     else:
         raise ValueError("Path must end with .npy, .hdf, or .txt")
 
@@ -1474,7 +1473,6 @@ def load_timeseries(path, group=None):
         return TimeSeries(data[:, 1] + 1j * data[:, 2], delta_t=delta_t, epoch=epoch)
 
     raise ValueError(
-        "File has %s dimensions, cannot convert to TimeSeries, \
+        f"File has {data.ndim} dimensions, cannot convert to TimeSeries, \
                       must be 2 (real) or 3 (complex)"
-        % data.ndim
     )

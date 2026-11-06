@@ -34,7 +34,7 @@ class Recalibrate(metaclass=ABCMeta):
 
     def __init__(self, ifo_name):
         self.ifo_name = ifo_name
-        self.params = dict()
+        self.params = {}
 
     @abstractmethod
     def apply_calibration(self, strain):
@@ -85,9 +85,7 @@ class Recalibrate(metaclass=ABCMeta):
             }
         )
 
-        strain_adjusted = self.apply_calibration(strain)
-
-        return strain_adjusted
+        return self.apply_calibration(strain)
 
     @classmethod
     def from_config(cls, cp, ifo, section):
@@ -189,14 +187,12 @@ class CubicSpline(Recalibrate):
         phase_spline = UnivariateSpline(self.spline_points, phase_parameters)
         delta_phase = phase_spline(strain.sample_frequencies.numpy())
 
-        strain_adjusted = (
+        return (
             strain
             * (1.0 + delta_amplitude)
             * (2.0 + 1j * delta_phase)
             / (2.0 - 1j * delta_phase)
         )
-
-        return strain_adjusted
 
 
 class PhysicalModel:
@@ -476,11 +472,7 @@ class PhysicalModel:
         k_phase_off = UnivariateSpline(self.freq, k_phase, k=order, s=0)
         freq_even = strain.sample_frequencies.numpy()
         k_even_sample = k_amp_off(freq_even) * np.exp(1.0j * k_phase_off(freq_even))
-        strain_adjusted = FrequencySeries(
-            strain.numpy() * k_even_sample, delta_f=strain.delta_f
-        )
-
-        return strain_adjusted
+        return FrequencySeries(strain.numpy() * k_even_sample, delta_f=strain.delta_f)
 
     @classmethod
     def tf_from_file(cls, path, delimiter=" "):
@@ -599,13 +591,13 @@ class PhysicalModel:
         default_values = [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0]
         # make list of calibration param values
         calib_args = []
-        for arg, val in zip(arg_labels, default_values):
+        for arg, val in zip(arg_labels, default_values, strict=True):
             if arg in params:
                 calib_args.append(params[arg])
             else:
                 calib_args.append(val)
         # adjust the strain using calibration param values
-        strain_adjusted = self.adjust_strain(
+        return self.adjust_strain(
             strain,
             delta_fs=calib_args[0],
             delta_fc=calib_args[1],
@@ -616,7 +608,6 @@ class PhysicalModel:
             kappa_pu_re=calib_args[6],
             kappa_pu_im=calib_args[7],
         )
-        return strain_adjusted
 
 
 def read_calibration_envelop_file(
@@ -665,18 +656,18 @@ def read_calibration_envelop_file(
             maximum_frequency = calibration_data[0][-1]
         else:
             raise ValueError(
-                "Maximum frequency (=%d) for tc=%s is more than"
-                "maximum frequency in calibration envelop (=%.3g)"
-                % (maximum_frequency, gps_time, calibration_data[0][-1])
+                f"Maximum frequency (={int(maximum_frequency)}) is more than the "
+                f"maximum frequency in calibration envelope file {calibration_file} "
+                f"(={calibration_data[0][-1]:.3g})"
             )
     else:
         pass
 
     if calibration_data[0][0] > minimum_frequency:
         raise ValueError(
-            "Minimum frequency (=%d) for tc=%s is less than"
-            "minimum frequency in calibration envelop (=%.3g)"
-            % (minimum_frequency, gps_time, calibration_data[0][0])
+            f"Minimum frequency (={int(minimum_frequency)}) is less than the "
+            f"minimum frequency in calibration envelope file {calibration_file} "
+            f"(={calibration_data[0][0]:.3g})"
         )
 
     amplitude_median_nodes = InterpolatedUnivariateSpline(
@@ -715,22 +706,22 @@ def get_calibration_files(ifos, gps_time, calibration_file_path):
     Output:
      A dictionary of calibration envelop file path for each IFO.
     """
-    RUN_NAME = get_run(gps_time).split("_")[0]
+    run_name = get_run(gps_time).split("_")[0]
     get_run(gps_time)
     dict_calibration_file = {}
     for ifo in ifos:
-        if RUN_NAME == "O4a":
+        if run_name == "O4a":
             all_calibration_files = glob.glob(
-                "%s/%s_%s/*.txt" % (calibration_file_path, ifo, RUN_NAME)
+                f"{calibration_file_path}/{ifo}_{run_name}/*.txt"
             )
         else:
             all_calibration_files = glob.glob(
-                "%s/%s/*FinalResults.txt" % (calibration_file_path, ifo)
+                f"{calibration_file_path}/{ifo}/*FinalResults.txt"
             )
         if ifo != "V1":
             # H1 and L1 detector files are treated seperately compared to V1 detector
             # This list of GPS times can be coded in a better way!!!
-            if RUN_NAME == "O4a":
+            if run_name == "O4a":
                 list_gpstimes = np.array(
                     [
                         int(item.split("_")[-1].split(".")[0])
@@ -743,35 +734,31 @@ def get_calibration_files(ifos, gps_time, calibration_file_path):
                 )
             dt_list = abs(list_gpstimes - gps_time)
             ifo_calibration_file = all_calibration_files[dt_list.argmin()]
-        elif RUN_NAME == "O2":
+        elif run_name == "O2":
             ifo_calibration_file = (
-                "%s/calibration_envelops/V1/V_calibrationUncertaintyEnvelope_magnitude5p1percent_phase40mraddeg20microsecond.txt"
-                % os.getcwd()
+                f"{os.getcwd()}/calibration_envelops/V1/"
+                "V_calibrationUncertaintyEnvelope_magnitude5p1percent_phase40mraddeg20microsecond.txt"
             )
-        elif RUN_NAME == "O3a":
+        elif run_name == "O3a":
             ifo_calibration_file = (
-                "%s/calibration_envelops/V1/V_O3a_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt"
-                % os.getcwd()
+                f"{os.getcwd()}/calibration_envelops/V1/"
+                "V_O3a_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt"
             )
-        elif RUN_NAME == "O3b":
+        elif run_name == "O3b":
             ifo_calibration_file = (
-                "%s/calibration_envelops/V1/V_O3b_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt"
-                % os.getcwd()
+                f"{os.getcwd()}/calibration_envelops/V1/"
+                "V_O3b_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt"
             )
         else:
             raise ValueError("Virgo GPS time is not in valid range")
 
-        if RUN_NAME == "O4a":
-            dict_calibration_file[ifo] = "%s/%s_%s/%s" % (
-                calibration_file_path,
-                ifo,
-                RUN_NAME,
-                ifo_calibration_file.split("/")[-1],
+        if run_name == "O4a":
+            dict_calibration_file[ifo] = (
+                f"{calibration_file_path}/{ifo}_{run_name}/"
+                f"{ifo_calibration_file.split('/')[-1]}"
             )
         else:
-            dict_calibration_file[ifo] = "%s/%s/%s" % (
-                calibration_file_path,
-                ifo,
-                ifo_calibration_file.split("/")[-1],
+            dict_calibration_file[ifo] = (
+                f"{calibration_file_path}/{ifo}/{ifo_calibration_file.split('/')[-1]}"
             )
     return dict_calibration_file

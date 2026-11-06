@@ -64,16 +64,18 @@ BACKEND_PREFIX = "pycbc.fft.backend_"
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def set_backend(backend_list):
-    err_msg = "This function is a stub that should be overridden using "
-    err_msg += "the scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using "
+        "the scheme. You shouldn't be seeing this error!"
+    )
 
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def get_backend():
-    err_msg = "This function is a stub that should be overridden using "
-    err_msg += "the scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using "
+        "the scheme. You shouldn't be seeing this error!"
+    )
 
 
 # Import all scheme-dependent backends, to get _all_backends accurate:
@@ -86,5 +88,18 @@ for scheme_name in ["cpu", "mkl", "cuda", "cupy"]:
         _alist = mod._alist
         _adict = mod._adict
         _update_global_available(_alist, _adict, _all_backends_list, _all_backends_dict)
+    except ImportError:
+        pass
+
+def ensure_fftw_planning_off():
+    """Set FFTW's measure level to 0 (estimate-only planning), if FFTW is
+    available, so that doing only a handful of FFTs isn't dominated by
+    FFTW's plan-measurement cost.
+
+    If FFTW isn't available then do nothing.
+    """
+    try:
+        from pycbc.fft.fftw import set_measure_level
+        set_measure_level(0)
     except ImportError:
         pass

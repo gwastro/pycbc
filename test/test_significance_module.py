@@ -139,14 +139,16 @@ thresholds = ["H1L1:6", "H1:5.5", "L1:5"]
 ifar_limits = ["H1:1"]
 tests_which_pass.append(
     (
-        ["--far-calculation-method"]
-        + calc_methods
-        + ["--fit-function"]
-        + functions
-        + ["--fit-threshold"]
-        + thresholds
-        + ["--limit-ifar"]
-        + ifar_limits,
+        [
+            "--far-calculation-method",
+            *calc_methods,
+            "--fit-function",
+            *functions,
+            "--fit-threshold",
+            *thresholds,
+            "--limit-ifar",
+            *ifar_limits,
+        ],
         test_dict,
         "different_combos",
     )
@@ -225,7 +227,7 @@ for method in significance._significance_meth_dict:
             # Tests on the significance info output dictionary
             self.assertTrue(isinstance(sig_info, dict))
 
-        setattr(SignificanceMethodTest, "test_%s_%s" % (method, function), meth_test)
+        setattr(SignificanceMethodTest, f"test_{method}_{function}", meth_test)
 
 # create and populate unittest's test suite
 suite = unittest.TestSuite()

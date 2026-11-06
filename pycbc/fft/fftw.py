@@ -382,7 +382,7 @@ def execute(plan, invec, outvec):
     f(plan, invec.ptr, outvec.ptr)
 
 
-def fft(invec, outvec, prec, itype, otype):
+def fft(invec, outvec, prec, itype, otype):  # noqa: ARG001
     theplan, destroy = plan(
         len(invec),
         invec.dtype,
@@ -397,7 +397,7 @@ def fft(invec, outvec, prec, itype, otype):
     destroy(theplan)
 
 
-def ifft(invec, outvec, prec, itype, otype):
+def ifft(invec, outvec, prec, itype, otype):  # noqa: ARG001
     theplan, destroy = plan(
         len(outvec),
         invec.dtype,

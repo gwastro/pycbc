@@ -36,6 +36,8 @@ from pycbc import init_logging
 from pycbc.detector import Detector
 from pycbc.results import pygrb_postprocessing_utils as ppu
 
+logger = logging.getLogger(__name__)
+
 plt.switch_backend("Agg")
 matplotlib.rc("image")
 
@@ -57,9 +59,7 @@ def process_var_strings(qty):
     qty = qty.replace("spin1a", "spin1_a")
     qty = qty.replace("spin2a", "spin2_a")
     qty = qty.replace("chip", "chi_p")
-    qty = qty.replace("netoptsnr", "net_opt_snr")
-
-    return qty
+    return qty.replace("netoptsnr", "net_opt_snr")
 
 
 def complete_incl_data(injs, key, tag):
@@ -115,8 +115,7 @@ def complete_spin_data(injs, tag):
     spin2x = injs[tag + "/spin2x"]
     spin2y = injs[tag + "/spin2y"]
 
-    data = pycbc.conversions.chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
-    return data
+    return pycbc.conversions.chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
 
 
 def complete_sky_error_data(injs, tag):
@@ -145,9 +144,7 @@ def complete_opt_snr_data(injs, tag, ifos):
     for i, ifo in enumerate(ifos):
         optimal_snr[:, i] = injs[tag + "/optimal_snr_" + ifo]
 
-    data = np.sqrt((optimal_snr**2).sum(axis=1))
-
-    return data
+    return np.sqrt((optimal_snr**2).sum(axis=1))
 
 
 # These are keys in the found-missed-file under 'found' and 'missed'
@@ -218,7 +215,7 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
                 data_dict[key] = injs[tag + "/" + key]
         except KeyError:
             # raise NotImplemented(key+' not allowed: returning empty entry')
-            logging.warning("%s/%s not allowed yet", tag, key)
+            logger.warning("%s/%s not allowed yet", tag, key)
 
     # Include information needed to apply vetoes and reweighted SNR cut
     if tag == "found":
@@ -228,7 +225,7 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
         key = "network/reweighted_snr"
         data_dict["reweighted_snr"] = injs[key] if key in injs else np.array([])
 
-    logging.info("%d %s injections analysed.", len(data_dict[keys[0]]), tag)
+    logger.info("%d %s injections analysed.", len(data_dict[keys[0]]), tag)
 
     return data_dict
 
@@ -238,7 +235,8 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
 # =============================================================================
 
 # FIXME: not all of these work
-admitted_vars = easy_keys + [
+admitted_vars = [
+    *easy_keys,
     "mtotal",
     "q",
     "mchirp",
@@ -339,7 +337,7 @@ trig_file = os.path.abspath(opts.trig_file)
 grb_time = opts.trigger_time
 
 # Set output directory
-logging.info("Setting output directory.")
+logger.info("Setting output directory.")
 outdir = os.path.split(os.path.abspath(outfile))[0]
 if not os.path.isdir(outdir):
     os.makedirs(outdir)
@@ -392,7 +390,7 @@ background = list(background.values())
 background = np.concatenate(background)
 max_bkgd_reweighted_snr = background.max()
 assert total_trials == len(background)
-logging.info("Background bestNR calculated.")
+logger.info("Background bestNR calculated.")
 
 # =======================
 # Post-process injections
@@ -418,7 +416,7 @@ if opts.newsnr_threshold:
     msg = f"After applying reweighted SNR cut at {opts.newsnr_threshold}: "
     msg += f"{len(found_inj[x_qty])} found injections and "
     msg += f"{len(missed_inj[x_qty])} missed injections"
-    logging.info(msg)
+    logger.info(msg)
 
 # Split in injections found surviving vetoes and injections found but vetoed
 found_after_vetoes, vetoed, found_idx, _ = ppu.apply_vetoes_to_found_injs(
@@ -724,4 +722,4 @@ pycbc.results.save_fig_with_metadata(
     fig_kwds=fig_kwds,
 )
 plt.close()
-logging.info("Plot complete.")
+logger.info("Plot complete.")

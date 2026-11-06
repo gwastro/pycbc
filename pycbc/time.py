@@ -160,12 +160,11 @@ def gmst_accurate(gps_time):
     float
 
     """
-    gmst = (
+    return (
         Time(gps_time, format="gps", scale="utc", location=(0, 0))
         .sidereal_time("mean")
         .rad
     )
-    return gmst
 
 
 __all__ = [

@@ -26,7 +26,7 @@ class Recalibrate(metaclass=ABCMeta):
 
     def __init__(self, ifo_name):
         self.ifo_name = ifo_name
-        self.params = dict()
+        self.params = {}
 
     @abstractmethod
     def apply_calibration(self, strain):
@@ -77,9 +77,7 @@ class Recalibrate(metaclass=ABCMeta):
             }
         )
 
-        strain_adjusted = self.apply_calibration(strain)
-
-        return strain_adjusted
+        return self.apply_calibration(strain)
 
     @classmethod
     def from_config(cls, cp, ifo, section):
@@ -179,14 +177,12 @@ class CubicSpline(Recalibrate):
         phase_spline = UnivariateSpline(self.spline_points, phase_parameters)
         delta_phase = phase_spline(strain.sample_frequencies.numpy())
 
-        strain_adjusted = (
+        return (
             strain
             * (1.0 + delta_amplitude)
             * (2.0 + 1j * delta_phase)
             / (2.0 - 1j * delta_phase)
         )
-
-        return strain_adjusted
 
 
 all_models = {CubicSpline.name: CubicSpline}

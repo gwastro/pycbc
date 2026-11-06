@@ -25,7 +25,7 @@ import scipy.spatial
 from pycbc import transforms
 from pycbc.io import HFile, record
 
-logger = logging.getLogger("pycbc.distributions.constraints")
+logger = logging.getLogger(__name__)
 
 
 class Constraint:

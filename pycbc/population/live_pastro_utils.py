@@ -3,7 +3,7 @@ import logging
 
 from . import live_pastro as livepa
 
-logger = logging.getLogger("pycbc.population.live_pastro_utils")
+logger = logging.getLogger(__name__)
 
 
 def insert_live_pastro_option_group(parser):

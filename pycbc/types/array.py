@@ -56,9 +56,9 @@ _ALLOWED_DTYPES = [
     int,
 ]
 try:
-    _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
+    _ALLOWED_SCALARS = [int, long, float, complex, *_ALLOWED_DTYPES]
 except NameError:
-    _ALLOWED_SCALARS = [int, float, complex] + _ALLOWED_DTYPES
+    _ALLOWED_SCALARS = [int, float, complex, *_ALLOWED_DTYPES]
 
 
 def _convert_to_scheme(ary):
@@ -117,25 +117,28 @@ def common_kind(*dtypes):
 @schemed(BACKEND_PREFIX)
 def _to_device(array):
     """Move input to device"""
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed(BACKEND_PREFIX)
 def _copy_base_array(array):
     """Copy a backend array"""
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed(BACKEND_PREFIX)
 def _scheme_matches_base_array(array):
     """Check that input matches array type for scheme"""
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 def check_same_len_precision(a, b):
@@ -149,6 +152,119 @@ def check_same_len_precision(a, b):
     if a.precision != b.precision:
         msg = f"precisions do not match ({a.precision} vs {b.precision})"
         raise TypeError(msg)
+
+
+def _memoize_single(func):
+    @wraps(func)
+    def memoize_single(self, arg):
+        badh = str(arg)
+
+        if badh in self._saved:
+            return self._saved[badh]
+
+        res = func(self, arg)  # pylint:disable=not-callable
+        self._saved[badh] = res
+        return res
+
+    return memoize_single
+
+
+def _returnarray(func):
+    @wraps(func)
+    def returnarray(self, *args, **kwargs):
+        return Array(func(self, *args, **kwargs), copy=False)  # pylint:disable=not-callable
+
+    return returnarray
+
+
+def _returntype(func):
+    @wraps(func)
+    def returntype(self, *args, **kwargs):
+        ary = func(self, *args, **kwargs)  # pylint:disable=not-callable
+        if ary is NotImplemented:
+            return NotImplemented
+        return self._return(ary)
+
+    return returntype
+
+
+def _checkother(func):
+    @wraps(func)
+    def checkother(self, *args):
+        nargs = ()
+        for other in args:
+            self._typecheck(other)
+            if type(other) in _ALLOWED_SCALARS:
+                other = force_precision_to_match(other, self.precision)
+                nargs += (other,)
+            elif isinstance(other, type(self)) or type(other) is Array:
+                check_same_len_precision(self, other)
+                _convert_to_scheme(other)
+                nargs += (other._data,)
+            else:
+                return NotImplemented
+
+        return func(self, *nargs)  # pylint:disable=not-callable
+
+    return checkother
+
+
+def _vcheckother(func):
+    @wraps(func)
+    def vcheckother(self, *args):
+        nargs = ()
+        for other in args:
+            self._typecheck(other)
+            if isinstance(other, type(self)) or type(other) is Array:
+                check_same_len_precision(self, other)
+                _convert_to_scheme(other)
+                nargs += (other._data,)
+            else:
+                raise TypeError("array argument required")
+
+        return func(self, *nargs)  # pylint:disable=not-callable
+
+    return vcheckother
+
+
+def _vrcheckother(func):
+    @wraps(func)
+    def vrcheckother(self, *args):
+        nargs = ()
+        for other in args:
+            if isinstance(other, type(self)) or type(other) is Array:
+                check_same_len_precision(self, other)
+                _convert_to_scheme(other)
+                nargs += (other._data,)
+            else:
+                raise TypeError("array argument required")
+
+        return func(self, *nargs)  # pylint:disable=not-callable
+
+    return vrcheckother
+
+
+def _icheckother(func):
+    @wraps(func)
+    def icheckother(self, other):
+        """Checks the input to in-place operations"""
+        self._typecheck(other)
+        if type(other) in _ALLOWED_SCALARS:
+            if self.kind == "real" and type(other) == complex:
+                raise TypeError("dtypes are incompatible")
+            other = force_precision_to_match(other, self.precision)
+        elif isinstance(other, type(self)) or type(other) is Array:
+            check_same_len_precision(self, other)
+            if self.kind == "real" and other.kind == "complex":
+                raise TypeError("dtypes are incompatible")
+            _convert_to_scheme(other)
+            other = other._data
+        else:
+            return NotImplemented
+
+        return func(self, other)  # pylint:disable=not-callable
+
+    return icheckother
 
 
 class Array:
@@ -246,117 +362,11 @@ class Array:
     def shape(self):
         return self._data.shape
 
-    def _memoize_single(func):
-        @wraps(func)
-        def memoize_single(self, arg):
-            badh = str(arg)
-
-            if badh in self._saved:
-                return self._saved[badh]
-
-            res = func(self, arg)  # pylint:disable=not-callable
-            self._saved[badh] = res
-            return res
-
-        return memoize_single
-
-    def _returnarray(func):
-        @wraps(func)
-        def returnarray(self, *args, **kwargs):
-            return Array(func(self, *args, **kwargs), copy=False)  # pylint:disable=not-callable
-
-        return returnarray
-
-    def _returntype(func):
-        @wraps(func)
-        def returntype(self, *args, **kwargs):
-            ary = func(self, *args, **kwargs)  # pylint:disable=not-callable
-            if ary is NotImplemented:
-                return NotImplemented
-            return self._return(ary)
-
-        return returntype
-
     def _return(self, ary):
         """Wrap the ary to return an Array type"""
         if isinstance(ary, Array):
             return ary
         return Array(ary, copy=False)
-
-    def _checkother(func):
-        @wraps(func)
-        def checkother(self, *args):
-            nargs = ()
-            for other in args:
-                self._typecheck(other)
-                if type(other) in _ALLOWED_SCALARS:
-                    other = force_precision_to_match(other, self.precision)
-                    nargs += (other,)
-                elif isinstance(other, type(self)) or type(other) is Array:
-                    check_same_len_precision(self, other)
-                    _convert_to_scheme(other)
-                    nargs += (other._data,)
-                else:
-                    return NotImplemented
-
-            return func(self, *nargs)  # pylint:disable=not-callable
-
-        return checkother
-
-    def _vcheckother(func):
-        @wraps(func)
-        def vcheckother(self, *args):
-            nargs = ()
-            for other in args:
-                self._typecheck(other)
-                if isinstance(other, type(self)) or type(other) is Array:
-                    check_same_len_precision(self, other)
-                    _convert_to_scheme(other)
-                    nargs += (other._data,)
-                else:
-                    raise TypeError("array argument required")
-
-            return func(self, *nargs)  # pylint:disable=not-callable
-
-        return vcheckother
-
-    def _vrcheckother(func):
-        @wraps(func)
-        def vrcheckother(self, *args):
-            nargs = ()
-            for other in args:
-                if isinstance(other, type(self)) or type(other) is Array:
-                    check_same_len_precision(self, other)
-                    _convert_to_scheme(other)
-                    nargs += (other._data,)
-                else:
-                    raise TypeError("array argument required")
-
-            return func(self, *nargs)  # pylint:disable=not-callable
-
-        return vrcheckother
-
-    def _icheckother(func):
-        @wraps(func)
-        def icheckother(self, other):
-            """Checks the input to in-place operations"""
-            self._typecheck(other)
-            if type(other) in _ALLOWED_SCALARS:
-                if self.kind == "real" and type(other) == complex:
-                    raise TypeError("dtypes are incompatible")
-                other = force_precision_to_match(other, self.precision)
-            elif isinstance(other, type(self)) or type(other) is Array:
-                check_same_len_precision(self, other)
-                if self.kind == "real" and other.kind == "complex":
-                    raise TypeError("dtypes are incompatible")
-                _convert_to_scheme(other)
-                other = other._data
-            else:
-                return NotImplemented
-
-            return func(self, other)  # pylint:disable=not-callable
-
-        return icheckother
 
     def _typecheck(self, other):
         """
@@ -533,6 +543,9 @@ class Array:
         # of that array of booleans is True.
         return (sary == oary).all()
 
+    # Defining __eq__ makes instances unhashable; make that explicit
+    __hash__ = None
+
     def almost_equal_elem(self, other, tol, relative=True):
         """
         Compare whether two array types are almost equal, element
@@ -689,9 +702,10 @@ class Array:
     @schemed(BACKEND_PREFIX)
     def squared_norm(self):
         """Return the elementwise squared norm of the array"""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_returntype
     @_checkother
@@ -703,121 +717,135 @@ class Array:
         Self is modified in place and returned as output.
         Precisions of inputs must match.
         """
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_vrcheckother
     @_convert
     @schemed(BACKEND_PREFIX)
     def inner(self, other):
         """Return the inner product of the array with complex conjugation."""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_vrcheckother
     @_convert
     @schemed(BACKEND_PREFIX)
     def vdot(self, other):
         """Return the inner product of the array with complex conjugation."""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def clear(self):
         """Clear out the values of the array."""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_vrcheckother
     @_convert
     @schemed(BACKEND_PREFIX)
     def weighted_inner(self, other, weight):
         """Return the inner product of the array with complex conjugation."""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def sum(self):
         """Return the sum of the the array."""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_returntype
     @_convert
     @schemed(BACKEND_PREFIX)
     def cumsum(self):
         """Return the cumulative sum of the the array."""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max(self):
         """Return the maximum value in the array."""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max_loc(self):
         """Return the maximum value in the array along with the index location"""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def abs_arg_max(self):
         """Return location of the maximum argument max"""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def abs_max_loc(self):
         """Return the maximum elementwise norm in the array along with the index location"""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def min(self):
         """Return the maximum value in the array."""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_returnarray
     @_convert
     @schemed(BACKEND_PREFIX)
     def take(self, indices):
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_convert
     @_vcheckother
     @schemed(BACKEND_PREFIX)
     def dot(self, other):
         """Return the dot product"""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @schemed(BACKEND_PREFIX)
     def _getvalue(self, index):
@@ -825,9 +853,10 @@ class Array:
         Helper function to return a single value from an array. May be very
         slow if the memory is on a gpu.
         """
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_memoize_single
     @_returntype
@@ -889,9 +918,10 @@ class Array:
         Helper function to copy between two arrays. The arrays references
         should be bare array types and not `Array` class instances.
         """
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_convert
     def __setitem__(self, index, other):
@@ -951,9 +981,10 @@ class Array:
     @schemed(BACKEND_PREFIX)
     def ptr(self):
         """Returns a pointer to the memory of this array"""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @property
     def itemsize(self):
@@ -977,9 +1008,10 @@ class Array:
     @schemed(BACKEND_PREFIX)
     def numpy(self):
         """Returns a Numpy Array that contains this data"""
-        err_msg = "This function is a stub that should be overridden using "
-        err_msg += "the scheme. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(
+            "This function is a stub that should be overridden using "
+            "the scheme. You shouldn't be seeing this error!"
+        )
 
     @_convert
     def lal(self):
@@ -1117,18 +1149,20 @@ def _return_array(func):
 @schemed(BACKEND_PREFIX)
 def zeros(length, dtype=float64):
     """Return an Array filled with zeros."""
-    err_msg = "This function is a stub that should be overridden using "
-    err_msg += "the scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using "
+        "the scheme. You shouldn't be seeing this error!"
+    )
 
 
 @_return_array
 @schemed(BACKEND_PREFIX)
 def empty(length, dtype=float64):
     """Return an empty Array (no initialization)"""
-    err_msg = "This function is a stub that should be overridden using "
-    err_msg += "the scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using "
+        "the scheme. You shouldn't be seeing this error!"
+    )
 
 
 def load_array(path, group=None):
@@ -1167,8 +1201,7 @@ def load_array(path, group=None):
     elif ext == ".hdf":
         key = "data" if group is None else group
         with h5py.File(path, "r") as f:
-            array = Array(f[key])
-        return array
+            return Array(f[key])
     else:
         raise ValueError("Path must end with .npy, .hdf, or .txt")
 
@@ -1178,7 +1211,6 @@ def load_array(path, group=None):
         return Array(data[:, 0] + 1j * data[:, 1])
 
     raise ValueError(
-        "File has %s dimensions, cannot convert to Array, \
+        f"File has {data.ndim} dimensions, cannot convert to Array, \
                       must be 1 (real) or 2 (complex)"
-        % data.ndim
     )

@@ -30,7 +30,7 @@ import tempfile
 import unittest
 
 import numpy
-from utils import array_base, parse_args_all_schemes, simple_exit
+from utils import ArrayBase, parse_args_all_schemes, simple_exit
 
 from pycbc.scheme import CPUScheme
 from pycbc.types import Array, complex64, complex128, float32, float64, zeros
@@ -44,14 +44,14 @@ if _scheme == "cuda":
     import pycuda.gpuarray
     from pycuda.gpuarray import GPUArray as SchemeArray
 elif _scheme == "cpu":
-    from numpy import ndarray as SchemeArray
+    SchemeArray = numpy.ndarray
 
-from numpy import ndarray as CPUArray
+CPUArray = numpy.ndarray
 
 # ********************GENERIC ARRAY TESTS ***********************
 
 
-class ArrayTestBase(array_base, unittest.TestCase):
+class ArrayTestBase(ArrayBase, unittest.TestCase):
     __test__ = False
 
     def setUp(self):
@@ -93,7 +93,7 @@ class ArrayTestBase(array_base, unittest.TestCase):
 
         # Now that the kinds are set, we need to call our parent method to set up all the
         # inputs and answers for our functions
-        self.setNumbers()
+        self.set_numbers()
 
         # The above call created instances for all of our inputs and various correct
         # outputs.  But we make a copy of the scalar to check later.
@@ -504,7 +504,7 @@ class ArrayTestBase(array_base, unittest.TestCase):
 
 
 def array_test_maker(dtype, odtype):
-    class tests(ArrayTestBase):
+    class ArrayTests(ArrayTestBase):
         __test__ = True
 
         def __init__(self, *args):
@@ -512,8 +512,8 @@ def array_test_maker(dtype, odtype):
             self.odtype = odtype
             unittest.TestCase.__init__(self, *args)
 
-    tests.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
-    return tests
+    ArrayTests.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
+    return ArrayTests
 
 
 types = [

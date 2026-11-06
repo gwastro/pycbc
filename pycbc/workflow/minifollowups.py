@@ -14,13 +14,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import copy
 import logging
+import math
 import os.path
+import urllib.parse
 
 import igwn_segments as segments
 
 from pycbc.events import coinc
-from pycbc.workflow.core import Executable, FileList, makedir, resolve_url_to_file
+from pycbc.workflow.core import (
+    Executable,
+    File,
+    FileList,
+    makedir,
+    resolve_url_to_file,
+)
 from pycbc.workflow.plotting import PlotExecutable, excludestr, requirestr
 
 try:
@@ -31,8 +40,46 @@ except ImportError:
     from itertools import izip_longest as zip_longest
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 
-logger = logging.getLogger("pycbc.workflow.minifollowups")
+logger = logging.getLogger(__name__)
 
+
+def write_config_for_subworkflow(cp, config_path):
+    """Write a copy of cp to config_path for a minifollowup-style
+    sub-workflow generator to read back in, with a flag set so that it
+    does not try to resolve or fetch any input files named in it: that
+    executable may run somewhere (e.g. inside a container on an execute
+    node) with no reason to have access to whatever those paths name, and
+    the files are only actually needed later, when the sub-workflow it
+    generates is itself planned.
+    """
+    cp = copy.deepcopy(cp)
+    cp.set('workflow', 'skip-resolve-input-files', '')
+    cp.write(open(config_path, 'w'))
+
+
+def add_wellfile_opt(node, workflow, option_name, out_dir, extra_tags=None):
+    """Declare a node's minifollowup summary page ('well.html') as a
+    properly-tracked Pegasus output file.
+    """
+    exe = node.executable
+    tags = list(exe.tags)
+    for tag in (extra_tags or []):
+        if tag not in tags:
+            tags.append(tag)
+
+    valid_seg = workflow.analysis_time
+    start = int(valid_seg[0])
+    duration = int(math.ceil(valid_seg[1])) - start
+    ifo_string = ''.join(exe.ifo_list).upper() if exe.ifo_list else 'ALL'
+    bits = [ifo_string, exe.name.upper()] + [tag.upper() for tag in tags]
+    filename = f"well_{'_'.join(bits)}_{start}_{duration}.html"
+    path = os.path.join(out_dir, filename)
+    file_url = urllib.parse.urlunparse(
+        ['file', 'localhost', path, None, None, None])
+    fil = File(exe.ifo_list, exe.name, workflow.analysis_time,
+              file_url=file_url, tags=tags)
+    node.add_output_opt(option_name, fil)
+    return fil
 
 def grouper(iterable, n, fillvalue=None):
     """Create a list of n length tuples"""
@@ -103,7 +150,7 @@ def setup_foreground_minifollowups(
     config_path = os.path.abspath(
         dax_output + "/" + "_".join(tags) + "foreground_minifollowup.ini"
     )
-    workflow.cp.write(open(config_path, "w"))
+    write_config_for_subworkflow(workflow.cp, config_path)
 
     config_file = resolve_url_to_file(config_path)
 
@@ -127,6 +174,7 @@ def setup_foreground_minifollowups(
         node.add_list_opt("--tags", tags)
     node.new_output_file_opt(workflow.analysis_time, ".dax", "--dax-file")
     node.new_output_file_opt(workflow.analysis_time, ".dax.map", "--output-map")
+    add_wellfile_opt(node, workflow, "--html-layout-file", out_dir)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -142,7 +190,7 @@ def setup_foreground_minifollowups(
 
     # determine if a staging site has been specified
     job = SubWorkflow(fil.name, is_planned=False)
-    input_files = [tmpltbank_file, coinc_file, insp_segs] + single_triggers
+    input_files = [tmpltbank_file, coinc_file, insp_segs, *single_triggers]
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(
         map_file, staging_site=workflow.staging_site, cache_file=workflow.cache_file
@@ -166,6 +214,7 @@ def setup_single_det_minifollowups(
     fg_name=None,
     statfiles=None,
     tags=None,
+    ifo=None,
 ):
     """
     Create plots that followup the Nth loudest clustered single detector
@@ -192,6 +241,8 @@ def setup_single_det_minifollowups(
         statistic.
     tags: {None, optional}
         Tags to add to the minifollowups executables
+    ifo: {None, optional}
+        IFO to follow up when single_trig_file contains multiple detectors.
 
     Returns
     -------
@@ -213,11 +264,11 @@ def setup_single_det_minifollowups(
     makedir(dax_output)
 
     # turn the config file into a File class
-    curr_ifo = single_trig_file.ifo
+    curr_ifo = ifo or single_trig_file.ifo
     config_path = os.path.abspath(
         dax_output + "/" + curr_ifo + "_".join(tags) + "singles_minifollowup.ini"
     )
-    workflow.cp.write(open(config_path, "w"))
+    write_config_for_subworkflow(workflow.cp, config_path)
 
     config_file = resolve_url_to_file(config_path)
 
@@ -255,6 +306,7 @@ def setup_single_det_minifollowups(
         node.add_list_opt("--tags", tags)
     node.new_output_file_opt(workflow.analysis_time, ".dax", "--dax-file")
     node.new_output_file_opt(workflow.analysis_time, ".dax.map", "--output-map")
+    add_wellfile_opt(node, workflow, "--html-layout-file", out_dir)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -342,7 +394,7 @@ def setup_injection_minifollowups(
     config_path = os.path.abspath(
         dax_output + "/" + "_".join(tags) + "injection_minifollowup.ini"
     )
-    workflow.cp.write(open(config_path, "w"))
+    write_config_for_subworkflow(workflow.cp, config_path)
 
     config_file = resolve_url_to_file(config_path)
 
@@ -365,6 +417,7 @@ def setup_injection_minifollowups(
     node.new_output_file_opt(
         workflow.analysis_time, ".dax.map", "--output-map", tags=tags
     )
+    add_wellfile_opt(node, workflow, "--html-layout-file", out_dir, extra_tags=tags)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -448,10 +501,10 @@ def get_single_template_params(curr_idx, times, bank_data, bank_id, fsdt, tids):
     """
     params = {}
     for ifo in times:
-        params["%s_end_time" % ifo] = times[ifo][curr_idx]
+        params[f"{ifo}_end_time"] = times[ifo][curr_idx]
         try:
             # Only present for precessing, so may not exist
-            params["u_vals_%s" % ifo] = fsdt[ifo][ifo]["u_vals"][tids[ifo][curr_idx]]
+            params[f"u_vals_{ifo}"] = fsdt[ifo][ifo]["u_vals"][tids[ifo][curr_idx]]
         except:
             pass
 
@@ -558,7 +611,6 @@ def make_single_template_files(
 
     """
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = "single_template"
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
@@ -575,26 +627,26 @@ def make_single_template_files(
     if use_exact_inj_params:
         node.add_opt("--use-params-of-closest-injection")
     else:
-        node.add_opt("--mass1", "%.6f" % params["mass1"])
-        node.add_opt("--mass2", "%.6f" % params["mass2"])
-        node.add_opt("--spin1z", "%.6f" % params["spin1z"])
-        node.add_opt("--spin2z", "%.6f" % params["spin2z"])
-        node.add_opt("--template-start-frequency", "%.6f" % params["f_lower"])
+        node.add_opt("--mass1", f"{params['mass1']:.6f}")
+        node.add_opt("--mass2", f"{params['mass2']:.6f}")
+        node.add_opt("--spin1z", f"{params['spin1z']:.6f}")
+        node.add_opt("--spin2z", f"{params['spin2z']:.6f}")
+        node.add_opt("--template-start-frequency", f"{params['f_lower']:.6f}")
         # Is this precessing?
-        if "u_vals" in params or "u_vals_%s" % ifo in params:
-            node.add_opt("--spin1x", "%.6f" % params["spin1x"])
-            node.add_opt("--spin1y", "%.6f" % params["spin1y"])
-            node.add_opt("--spin2x", "%.6f" % params["spin2x"])
-            node.add_opt("--spin2y", "%.6f" % params["spin2y"])
-            node.add_opt("--inclination", "%.6f" % params["inclination"])
+        if "u_vals" in params or f"u_vals_{ifo}" in params:
+            node.add_opt("--spin1x", f"{params['spin1x']:.6f}")
+            node.add_opt("--spin1y", f"{params['spin1y']:.6f}")
+            node.add_opt("--spin2x", f"{params['spin2x']:.6f}")
+            node.add_opt("--spin2y", f"{params['spin2y']:.6f}")
+            node.add_opt("--inclination", f"{params['inclination']:.6f}")
             try:
-                node.add_opt("--u-val", "%.6f" % params["u_vals"])
+                node.add_opt("--u-val", f"{params['u_vals']:.6f}")
             except:
-                node.add_opt("--u-val", "%.6f" % params["u_vals_%s" % ifo])
+                node.add_opt("--u-val", f"{params[f'u_vals_{ifo}']:.6f}")
         # If this is an eccentricity search
         if "eccentricity" in params:
-            node.add_opt("--eccentricity", "%.6f" % params["eccentricity"])
-            node.add_opt("--rel-anomaly", "%.6f" % params["rel_anomaly"])
+            node.add_opt("--eccentricity", f"{params['eccentricity']:.6f}")
+            node.add_opt("--rel-anomaly", f"{params['rel_anomaly']:.6f}")
 
     if params[ifo + "_end_time"] > 0 and not use_mean_time:
         trig_time = params[ifo + "_end_time"]
@@ -693,7 +745,6 @@ def make_single_template_plots(
 
     """
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = "single_template_plot"
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
@@ -705,7 +756,7 @@ def make_single_template_plots(
         valid[ifo] = (
             params["mean_time"] in data_segments[ifo]
             if data_segments
-            else params["%s_end_time" % ifo] > 0
+            else params[f"{ifo}_end_time"] > 0
         )
     for tag in secs:
         for ifo in workflow.ifos:
@@ -723,34 +774,32 @@ def make_single_template_plots(
                 inj_file=inj_file,
                 exclude=exclude,
                 require=require,
-                tags=tags + [tag],
+                tags=[*tags, tag],
                 store_file=False,
                 use_exact_inj_params=use_exact_inj_params,
             )
             hdf_files += data
             # Make the plot for this trigger and detector
             node = PlotExecutable(
-                workflow.cp, name, ifos=[ifo], out_dir=out_dir, tags=[tag] + tags
+                workflow.cp, name, ifos=[ifo], out_dir=out_dir, tags=[tag, *tags]
             ).create_node()
             node.add_input_opt("--single-template-file", data[0])
             node.new_output_file_opt(workflow.analysis_time, ".png", "--output-file")
-            title = "'%s SNR and chi^2 timeseries" % (ifo)
+            title = f"'{ifo} SNR and chi^2 timeseries"
             if params_str is not None:
-                title += " using %s" % (params_str)
+                title += f" using {params_str}"
             title += "'"
             node.add_opt("--plot-title", title)
             caption = "'The SNR and chi^2 timeseries around the injection"
             if params_str is not None:
-                caption += " using %s" % (params_str)
+                caption += f" using {params_str}"
             if use_exact_inj_params:
                 caption += ". The injection itself was used as the template.'"
             else:
                 caption += ". The template used has the following parameters: "
-                caption += "mass1=%s, mass2=%s, spin1z=%s, spin2z=%s'" % (
-                    params["mass1"],
-                    params["mass2"],
-                    params["spin1z"],
-                    params["spin2z"],
+                caption += (
+                    f"mass1={params['mass1']}, mass2={params['mass2']}, "
+                    f"spin1z={params['spin1z']}, spin2z={params['spin2z']}'"
                 )
             node.add_opt("--plot-caption", caption)
             workflow += node
@@ -763,7 +812,6 @@ def make_plot_waveform_plot(
 ):
     """Add plot_waveform jobs to the workflow."""
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = "single_template_plot"
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
@@ -771,23 +819,23 @@ def make_plot_waveform_plot(
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(
-            workflow.cp, "plot_waveform", ifos=ifos, out_dir=out_dir, tags=[tag] + tags
+            workflow.cp, "plot_waveform", ifos=ifos, out_dir=out_dir, tags=[tag, *tags]
         ).create_node()
-        node.add_opt("--mass1", "%.6f" % params["mass1"])
-        node.add_opt("--mass2", "%.6f" % params["mass2"])
-        node.add_opt("--spin1z", "%.6f" % params["spin1z"])
-        node.add_opt("--spin2z", "%.6f" % params["spin2z"])
+        node.add_opt("--mass1", f"{params['mass1']:.6f}")
+        node.add_opt("--mass2", f"{params['mass2']:.6f}")
+        node.add_opt("--spin1z", f"{params['spin1z']:.6f}")
+        node.add_opt("--spin2z", f"{params['spin2z']:.6f}")
         if "u_vals" in params:
             # Precessing options
-            node.add_opt("--spin1x", "%.6f" % params["spin1x"])
-            node.add_opt("--spin2x", "%.6f" % params["spin2x"])
-            node.add_opt("--spin1y", "%.6f" % params["spin1y"])
-            node.add_opt("--spin2y", "%.6f" % params["spin2y"])
-            node.add_opt("--inclination", "%.6f" % params["inclination"])
-            node.add_opt("--u-val", "%.6f" % params["u_vals"])
+            node.add_opt("--spin1x", f"{params['spin1x']:.6f}")
+            node.add_opt("--spin2x", f"{params['spin2x']:.6f}")
+            node.add_opt("--spin1y", f"{params['spin1y']:.6f}")
+            node.add_opt("--spin2y", f"{params['spin2y']:.6f}")
+            node.add_opt("--inclination", f"{params['inclination']:.6f}")
+            node.add_opt("--u-val", f"{params['u_vals']:.6f}")
         if "eccentricity" in params:
-            node.add_opt("--eccentricity", "%.6f" % params["eccentricity"])
-            node.add_opt("--rel-anomaly", "%.6f" % params["rel_anomaly"])
+            node.add_opt("--eccentricity", f"{params['eccentricity']:.6f}")
+            node.add_opt("--rel-anomaly", f"{params['rel_anomaly']:.6f}")
         node.new_output_file_opt(workflow.analysis_time, ".png", "--output-file")
         workflow += node
         files += node.output_files
@@ -796,7 +844,6 @@ def make_plot_waveform_plot(
 
 def make_inj_info(workflow, injection_file, injection_index, num, out_dir, tags=None):
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = "page_injinfo"
     files = FileList([])
     node = PlotExecutable(
@@ -826,13 +873,12 @@ def make_coinc_info(
     tags=None,
 ):
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = "page_coincinfo"
     files = FileList([])
     node = PlotExecutable(
         workflow.cp, name, ifos=workflow.ifos, out_dir=out_dir, tags=tags
     ).create_node()
-    node.add_input_list_opt("--single-trigger-files", singles)
+    node.add_input_list_opt("--single-trigger-files", list(dict.fromkeys(singles)))
     node.add_input_opt("--statmap-file", coinc_file)
     node.add_input_opt("--bank-file", bank)
     if sort_order:
@@ -866,7 +912,6 @@ def make_sngl_ifo(
 ):
     """Setup a job to create sngl detector sngl ifo html summary snippet."""
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = "page_snglinfo"
     files = FileList([])
     node = PlotExecutable(
@@ -901,7 +946,6 @@ def make_trigger_timeseries(
     tags=None,
 ):
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = "plot_trigger_timeseries"
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
@@ -909,7 +953,7 @@ def make_trigger_timeseries(
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(
-            workflow.cp, name, ifos=workflow.ifos, out_dir=out_dir, tags=[tag] + tags
+            workflow.cp, name, ifos=workflow.ifos, out_dir=out_dir, tags=[tag, *tags]
         ).create_node()
         node.add_multiifo_input_list_opt("--single-trigger-files", singles)
         node.add_opt("--times", ifo_times)
@@ -970,7 +1014,6 @@ def make_qscan_plot(
 
     """
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = "plot_qscan"
 
     curr_exe = PlotQScanExecutable(
@@ -995,7 +1038,7 @@ def make_qscan_plot(
                 node.add_opt("--gps-start-time", int(trig_time))
                 node.add_opt("--gps-end-time", int(trig_time))
                 node.add_opt("--center-time", trig_time)
-                caption_string = "'No trigger in %s'" % ifo
+                caption_string = f"'No trigger in {ifo}'"
                 node.add_opt("--plot-caption", caption_string)
                 node.new_output_file_opt(
                     workflow.analysis_time, ".png", "--output-file"
@@ -1039,6 +1082,7 @@ def make_singles_timefreq(
     time_window=10,
     data_segments=None,
     tags=None,
+    ifo=None,
 ):
     """
     Generate a singles_timefreq node and add it to workflow.
@@ -1077,14 +1121,16 @@ def make_singles_timefreq(
         trigger. This **must** be coalesced.
     tags: list (optional, default=None)
         List of tags to add to the created nodes, which determine file naming.
+    ifo: str (optional, default=None)
+        Detector to plot when single contains multiple detectors.
 
     """
     tags = [] if tags is None else tags
-    makedir(out_dir)
     name = "plot_singles_timefreq"
 
+    target_ifo = ifo or single.ifo
     curr_exe = SingleTimeFreqExecutable(
-        workflow.cp, name, ifos=[single.ifo], out_dir=out_dir, tags=tags
+        workflow.cp, name, ifos=[target_ifo], out_dir=out_dir, tags=tags
     )
 
     # Determine start/end times, using data segments if needed.
@@ -1112,7 +1158,7 @@ def make_singles_timefreq(
                 if veto_file:
                     node.add_input_opt("--veto-file", veto_file)
 
-                node.add_opt("--detector", single.ifo)
+                node.add_opt("--detector", target_ifo)
                 node.new_output_file_opt(
                     workflow.analysis_time, ".png", "--output-file"
                 )
@@ -1152,7 +1198,7 @@ def make_singles_timefreq(
     if veto_file:
         node.add_input_opt("--veto-file", veto_file)
 
-    node.add_opt("--detector", single.ifo)
+    node.add_opt("--detector", target_ifo)
     node.new_output_file_opt(workflow.analysis_time, ".png", "--output-file")
     workflow += node
     return node.output_files
@@ -1195,8 +1241,7 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
     node.add_opt("--title", '"Events were skipped"')
     node.new_output_file_opt(workflow.analysis_time, ".html", "--output-file")
     workflow += node
-    files = node.output_files
-    return files
+    return node.output_files
 
 
 def make_upload_files(
@@ -1242,12 +1287,12 @@ def make_upload_files(
         List of all output files from this process
 
     """
-    logging.info("Setting up upload files")
+    logger.info("Setting up upload files")
     indiv_xml_exe = Executable(
         workflow.cp, "generate_xml", ifos=workflow.ifos, out_dir=out_dir, tags=tags
     )
 
-    logging.info("Setting up XML generation")
+    logger.info("Setting up XML generation")
     xml_node = indiv_xml_exe.create_node()
     xml_node.add_input_opt("--input-file", xml_all)
     xml_node.add_opt("--event-id", event_id)
@@ -1266,7 +1311,7 @@ def make_upload_files(
 
     workflow += xml_node
 
-    logging.info("Setting up bayestar generation")
+    logger.info("Setting up bayestar generation")
     bayestar_exe = Executable(
         workflow.cp, "bayestar", ifos=workflow.ifos, out_dir=out_dir, tags=tags
     )
@@ -1288,7 +1333,7 @@ def make_upload_files(
 
     workflow += bayestar_node
 
-    logging.info("Setting up skymap plot generation")
+    logger.info("Setting up skymap plot generation")
     skymap_plot_exe = PlotExecutable(
         workflow.cp, "skymap_plot", ifos=workflow.ifos, out_dir=out_dir, tags=tags
     )
@@ -1302,12 +1347,11 @@ def make_upload_files(
     )
     workflow += skymap_plot_node
 
-    all_output_files = (
+    return (
         xml_node.output_files
         + bayestar_node.output_files
         + skymap_plot_node.output_files
     )
-    return all_output_files
 
 
 def setup_upload_prep_minifollowups(
@@ -1377,13 +1421,12 @@ def setup_upload_prep_minifollowups(
 
     tags = [] if tags is None else tags
     makedir(dax_output)
-    makedir(out_dir)
 
     # turn the config file into a File class
     config_path = os.path.abspath(
         dax_output + "/" + "_".join(tags) + "upload_prep_minifollowup.ini"
     )
-    workflow.cp.write(open(config_path, "w"))
+    write_config_for_subworkflow(workflow.cp, config_path)
 
     config_file = resolve_url_to_file(config_path)
 
@@ -1424,11 +1467,14 @@ def setup_upload_prep_minifollowups(
 
     # determine if a staging site has been specified
     job = SubWorkflow(fil.name, is_planned=False)
-    input_files = (
-        [xml_all_file, tmpltbank_file, coinc_file, insp_segs]
-        + single_triggers
-        + psd_files
-    )
+    input_files = [
+        xml_all_file,
+        tmpltbank_file,
+        coinc_file,
+        insp_segs,
+        *single_triggers,
+        *psd_files,
+    ]
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(
         map_file, staging_site=workflow.staging_site, cache_file=workflow.cache_file
