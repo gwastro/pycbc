@@ -5,7 +5,7 @@ import numpy
 
 from . import bin_utils
 
-logger = logging.getLogger("pycbc.rate")
+logger = logging.getLogger(__name__)
 
 
 def integral_element(mu, pdf):
@@ -259,7 +259,7 @@ def filter_injections_by_mass(injs, mbins, bin_num, bin_type, bin_num2=None):
         )
         m2lo = m2bins[bin_num2]
         m2hi = m2bins[bin_num2 + 1]
-        newinjs = [
+        return [
             l
             for l in injs
             if (
@@ -267,7 +267,6 @@ def filter_injections_by_mass(injs, mbins, bin_num, bin_type, bin_num2=None):
                 or (m1lo <= l.mass2 < m1hi and m2lo <= l.mass1 < m2hi)
             )
         ]
-        return newinjs
 
     mbins = numpy.concatenate((mbins.lower()[0], numpy.array([mbins.upper()[0][-1]])))
     mlow = mbins[bin_num]
@@ -310,12 +309,12 @@ def compute_volume_vs_mass(found, missed, mass_bins, bin_type, dbins=None):
     Input is the sets of found and missed injections.
     """
     # mean and std estimate for luminosity
-    volArray = bin_utils.BinnedArray(mass_bins)
-    vol2Array = bin_utils.BinnedArray(mass_bins)
+    vol_array = bin_utils.BinnedArray(mass_bins)
+    vol2_array = bin_utils.BinnedArray(mass_bins)
 
     # found/missed stats
-    foundArray = bin_utils.BinnedArray(mass_bins)
-    missedArray = bin_utils.BinnedArray(mass_bins)
+    found_array = bin_utils.BinnedArray(mass_bins)
+    missed_array = bin_utils.BinnedArray(mass_bins)
 
     # compute the mean luminosity in each mass bin
     effvmass = []
@@ -327,8 +326,8 @@ def compute_volume_vs_mass(found, missed, mass_bins, bin_type, dbins=None):
                 newfound = filter_injections_by_mass(found, mass_bins, j, bin_type, k)
                 newmissed = filter_injections_by_mass(missed, mass_bins, j, bin_type, k)
 
-                foundArray[(mc1, mc2)] = len(newfound)
-                missedArray[(mc1, mc2)] = len(newmissed)
+                found_array[(mc1, mc2)] = len(newfound)
+                missed_array[(mc1, mc2)] = len(newmissed)
 
                 # compute the volume using this injection set
                 meaneff, efferr, meanvol, volerr = mean_efficiency_volume(
@@ -336,18 +335,18 @@ def compute_volume_vs_mass(found, missed, mass_bins, bin_type, dbins=None):
                 )
                 effvmass.append(meaneff)
                 errvmass.append(efferr)
-                volArray[(mc1, mc2)] = meanvol
-                vol2Array[(mc1, mc2)] = volerr
+                vol_array[(mc1, mc2)] = meanvol
+                vol2_array[(mc1, mc2)] = volerr
 
-        return volArray, vol2Array, foundArray, missedArray, effvmass, errvmass
+        return vol_array, vol2_array, found_array, missed_array, effvmass, errvmass
 
     for j, mc in enumerate(mass_bins.centres()[0]):
         # filter out injections not in this mass bin
         newfound = filter_injections_by_mass(found, mass_bins, j, bin_type)
         newmissed = filter_injections_by_mass(missed, mass_bins, j, bin_type)
 
-        foundArray[(mc,)] = len(newfound)
-        missedArray[(mc,)] = len(newmissed)
+        found_array[(mc,)] = len(newfound)
+        missed_array[(mc,)] = len(newmissed)
 
         # compute the volume using this injection set
         meaneff, efferr, meanvol, volerr = mean_efficiency_volume(
@@ -355,7 +354,7 @@ def compute_volume_vs_mass(found, missed, mass_bins, bin_type, dbins=None):
         )
         effvmass.append(meaneff)
         errvmass.append(efferr)
-        volArray[(mc,)] = meanvol
-        vol2Array[(mc,)] = volerr
+        vol_array[(mc,)] = meanvol
+        vol2_array[(mc,)] = volerr
 
-    return volArray, vol2Array, foundArray, missedArray, effvmass, errvmass
+    return vol_array, vol2_array, found_array, missed_array, effvmass, errvmass

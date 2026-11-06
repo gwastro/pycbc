@@ -13,6 +13,8 @@ import pycbc
 import pycbc.workflow as wf
 from pycbc.results import layout, save_fig_with_metadata
 
+logger = logging.getLogger(__name__)
+
 
 def finalize(container, workflow, finalize_workflow):
     # Create the final log file
@@ -57,21 +59,22 @@ def finalize(container, workflow, finalize_workflow):
 
     container.save()
 
-    logging.info("Written dax.")
+    logger.info("Written dax.")
 
     # Close the log and flush to the html file
     logging.shutdown()
     with open(wf_log_file.storage_path) as logfile:
         logdata = logfile.read()
-    log_str = """
-    <p>Workflow generation script created workflow in output directory: %s</p>
-    <p>Workflow name is: %s</p>
-    <p>Workflow generation script run on host: %s</p>
-    <pre>%s</pre>
-    """ % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
+    cwd = os.getcwd()
+    log_str = f"""
+    <p>Workflow generation script created workflow in output directory: {cwd}</p>
+    <p>Workflow name is: {args.workflow_name}</p>
+    <p>Workflow generation script run on host: {socket.gethostname()}</p>
+    <pre>{logdata}</pre>
+    """
     kwds = {
         "title": "Workflow Generation Log",
-        "caption": "Log of the workflow script %s" % sys.argv[0],
+        "caption": f"Log of the workflow script {sys.argv[0]}",
         "cmd": " ".join(sys.argv),
     }
     save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
@@ -135,7 +138,7 @@ wf_log_file = wf.File(
 )
 
 pycbc.init_logging(args.verbose, default_level=1, to_file=wf_log_file.storage_path)
-logging.info("Created log file %s" % wf_log_file.storage_path)
+logger.info("Created log file %s", wf_log_file.storage_path)
 
 # Setup the workflow with the bank input file,
 # this will do the job to convert from e.g. xml to hdf as well

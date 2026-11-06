@@ -32,7 +32,7 @@ from urllib.request import pathname2url
 
 from pycbc.workflow.core import Executable, File, FileList
 
-logger = logging.getLogger("pycbc.workflow.plotting")
+logger = logging.getLogger(__name__)
 
 
 def excludestr(tags, substr):
@@ -99,7 +99,7 @@ def make_range_plot(
             "plot_range",
             ifos=workflow.ifos,
             out_dir=out_dir,
-            tags=[tag] + tags,
+            tags=[tag, *tags],
         ).create_node()
         node.add_input_list_opt("--psd-files", psd_files)
         node.new_output_file_opt(workflow.analysis_time, ".png", "--output-file")
@@ -170,7 +170,7 @@ def make_foreground_table(
 ):
 
     if hierarchical_level is not None and tags:
-        tags = [(f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}")] + tags
+        tags = [f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}", *tags]
     elif hierarchical_level is not None and not tags:
         tags = [f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}"]
     elif hierarchical_level is None and not tags:
@@ -209,7 +209,7 @@ def make_sensitivity_plot(
             "plot_sensitivity",
             ifos=workflow.ifos,
             out_dir=out_dir,
-            tags=[tag] + tags,
+            tags=[tag, *tags],
         ).create_node()
         node.add_input_opt("--injection-file", inj_file)
         node.new_output_file_opt(inj_file.segment, ".png", "--output-file")
@@ -228,25 +228,28 @@ def make_coinc_snrchi_plot(
     exclude=None,
     require=None,
     tags=None,
+    ifo=None,
 ):
     tags = [] if tags is None else tags
     secs = requirestr(workflow.cp.get_subsections("plot_coinc_snrchi"), require)
     secs = excludestr(secs, exclude)
     secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
+    ifo = ifo or inj_trig.ifo
     for tag in secs:
         exe = PlotExecutable(
             workflow.cp,
             "plot_coinc_snrchi",
-            ifos=inj_trig.ifo_list,
+            ifos=ifo,
             out_dir=out_dir,
-            tags=[tag] + tags,
+            tags=[tag, *tags],
         )
         node = exe.create_node()
         node.add_input_opt("--found-injection-file", inj_file)
         node.add_input_opt("--single-injection-file", inj_trig)
         node.add_input_opt("--coinc-statistic-file", stat_file)
         node.add_input_opt("--single-trigger-file", trig_file)
+        node.add_opt("--ifo", ifo)
         node.new_output_file_opt(inj_file.segment, ".png", "--output-file")
         workflow += node
         files += node.output_files
@@ -370,7 +373,7 @@ def make_ifar_plot(
     of IFAR values.
     """
     if hierarchical_level is not None and tags:
-        tags = [(f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}")] + tags
+        tags = [f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}", *tags]
     elif hierarchical_level is not None and not tags:
         tags = [f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}"]
     elif hierarchical_level is None and not tags:
@@ -388,13 +391,15 @@ def make_ifar_plot(
     return node.output_files[0]
 
 
+# hierarchical_level and require are unused; the signature matches the other
+# plotting functions
 def make_farstat_plot(
     workflow,
     trigger_files,
     out_dir,
     tags=None,
-    hierarchical_level=None,
-    require=None,
+    hierarchical_level=None,  # noqa: ARG001
+    require=None,  # noqa: ARG001
     executable="page_farstat",
 ):
     """
@@ -433,23 +438,25 @@ def make_snrchi_plot(
     files = FileList([])
     for tag in secs:
         for trig_file in trig_files:
-            exe = PlotExecutable(
-                workflow.cp,
-                "plot_snrchi",
-                ifos=trig_file.ifo_list,
-                out_dir=out_dir,
-                tags=[tag] + tags,
-            )
-            node = exe.create_node()
+            for ifo in trig_file.ifo_list:
+                exe = PlotExecutable(
+                    workflow.cp,
+                    "plot_snrchi",
+                    ifos=[ifo],
+                    out_dir=out_dir,
+                    tags=[tag, *tags],
+                )
+                node = exe.create_node()
 
-            node.set_memory(15000)
-            node.add_input_opt("--trigger-file", trig_file)
-            if veto_file is not None:
-                node.add_input_opt("--veto-file", veto_file)
-                node.add_opt("--segment-name", veto_name)
-            node.new_output_file_opt(trig_file.segment, ".png", "--output-file")
-            workflow += node
-            files += node.output_files
+                node.set_memory(15000)
+                node.add_input_opt("--trigger-file", trig_file)
+                node.add_opt("--ifo", ifo)
+                if veto_file is not None:
+                    node.add_input_opt("--veto-file", veto_file)
+                    node.add_opt("--segment-name", veto_name)
+                node.new_output_file_opt(trig_file.segment, ".png", "--output-file")
+                workflow += node
+                files += node.output_files
     return files
 
 
@@ -468,7 +475,7 @@ def make_foundmissed_plot(
             "plot_foundmissed",
             ifos=workflow.ifos,
             out_dir=out_dir,
-            tags=[tag] + tags,
+            tags=[tag, *tags],
         )
         node = exe.create_node()
         ext = ".html" if exe.has_opt("dynamic") else ".png"
@@ -484,7 +491,7 @@ def make_snrratehist_plot(
 ):
 
     if hierarchical_level is not None and tags:
-        tags = [(f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}")] + tags
+        tags = [f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}", *tags]
     elif hierarchical_level is not None and not tags:
         tags = [f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}"]
     elif hierarchical_level is None and not tags:
@@ -521,7 +528,7 @@ def make_snrifar_plot(
 ):
 
     if hierarchical_level is not None and tags:
-        tags = [(f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}")] + tags
+        tags = [f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}", *tags]
     elif hierarchical_level is not None and not tags:
         tags = [f"HIERARCHICAL_LEVEL_{hierarchical_level:02d}"]
     elif hierarchical_level is None and not tags:
@@ -573,24 +580,27 @@ def make_single_hist(
     exclude=None,
     require=None,
     tags=None,
+    ifo=None,
 ):
     tags = [] if tags is None else tags
     secs = requirestr(workflow.cp.get_subsections("plot_hist"), require)
     secs = excludestr(secs, exclude)
     secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
+    ifo = ifo or trig_file.ifo
     for tag in secs:
         node = PlotExecutable(
             workflow.cp,
             "plot_hist",
-            ifos=trig_file.ifo,
+            ifos=ifo,
             out_dir=out_dir,
-            tags=[tag] + tags,
+            tags=[tag, *tags],
         ).create_node()
         if veto_file is not None:
             node.add_opt("--segment-name", veto_name)
             node.add_input_opt("--veto-file", veto_file)
         node.add_input_opt("--trigger-file", trig_file)
+        node.add_opt("--ifo", ifo)
         if bank_file:
             node.add_input_opt("--bank-file", bank_file)
         node.new_output_file_opt(trig_file.segment, ".png", "--output-file")
@@ -609,21 +619,23 @@ def make_binned_hist(
     exclude=None,
     require=None,
     tags=None,
+    ifo=None,
 ):
     tags = [] if tags is None else tags
     secs = requirestr(workflow.cp.get_subsections("plot_binnedhist"), require)
     secs = excludestr(secs, exclude)
     secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
+    ifo = ifo or trig_file.ifo
     for tag in secs:
         node = PlotExecutable(
             workflow.cp,
             "plot_binnedhist",
-            ifos=trig_file.ifo,
+            ifos=ifo,
             out_dir=out_dir,
-            tags=[tag] + tags,
+            tags=[tag, *tags],
         ).create_node()
-        node.add_opt("--ifo", trig_file.ifo)
+        node.add_opt("--ifo", ifo)
         if veto_file is not None:
             node.add_opt("--veto-segment-name", veto_name)
             node.add_input_opt("--veto-file", veto_file)
@@ -645,6 +657,7 @@ def make_singles_plot(
     exclude=None,
     require=None,
     tags=None,
+    ifo=None,
 ):
     tags = [] if tags is None else tags
     secs = requirestr(workflow.cp.get_subsections("plot_singles"), require)
@@ -653,12 +666,13 @@ def make_singles_plot(
     files = FileList([])
     for tag in secs:
         for trig_file in trig_files:
+            curr_ifo = ifo or trig_file.ifo
             node = PlotExecutable(
                 workflow.cp,
                 "plot_singles",
-                ifos=trig_file.ifo,
+                ifos=curr_ifo,
                 out_dir=out_dir,
-                tags=[tag] + tags,
+                tags=[tag, *tags],
             ).create_node()
 
             node.set_memory(15000)
@@ -666,7 +680,7 @@ def make_singles_plot(
             if veto_file is not None:
                 node.add_input_opt("--veto-file", veto_file)
                 node.add_opt("--segment-name", veto_name)
-            node.add_opt("--detector", trig_file.ifo)
+            node.add_opt("--detector", curr_ifo)
             node.add_input_opt("--single-trig-file", trig_file)
             node.new_output_file_opt(trig_file.segment, ".png", "--output-file")
             workflow += node
@@ -729,7 +743,7 @@ def make_bank_compression_plots(workflow, bank_files, out_dir, tags=None):
             "plot_bank_compression",
             ifos=workflow.ifos,
             out_dir=out_dir,
-            tags=[tag] + tags,
+            tags=[tag, *tags],
         ).create_node()
         node.add_input_list_opt("--bank-files", bank_files)
 

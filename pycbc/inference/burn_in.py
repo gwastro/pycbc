@@ -34,7 +34,7 @@ from scipy.stats import ks_2samp
 
 from pycbc.io.record import get_vars_from_arg
 
-logger = logging.getLogger("pycbc.inference.burn_in")
+logger = logging.getLogger(__name__)
 
 # The value to use for a burn-in iteration if a chain is not burned in
 NOT_BURNED_IN_ITER = -1
@@ -363,8 +363,7 @@ class BaseBurnInTests(metaclass=ABCMeta):
                 thin_interval=1,
                 flatten=False,
             )
-            logposts = samples["loglikelihood"] + samples["logprior"]
-        return logposts
+            return samples["loglikelihood"] + samples["logprior"]
 
     def _getacls(self, filename, start_index):
         """Convenience function for calculating acls for the given filename."""
@@ -468,7 +467,7 @@ class BaseBurnInTests(metaclass=ABCMeta):
                     fp.write_data(name, data, subpath)
 
     @staticmethod
-    def _extra_tests_from_config(cp, section, tag):
+    def _extra_tests_from_config(cp, section, tag):  # noqa: ARG004
         """For loading class-specific tests."""
         # pylint: disable=unused-argument
         return {}
@@ -837,5 +836,4 @@ def _multitemper_getlogposts(sampler, filename):
         for stat, arr in samples.items():
             _, nwalkers, niterations = arr.shape
             samples[stat] = arr.reshape((nwalkers, niterations))
-        logposts = samples["loglikelihood"] + samples["logprior"]
-    return logposts
+        return samples["loglikelihood"] + samples["logprior"]

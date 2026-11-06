@@ -144,7 +144,7 @@ def lstring_as_obj(true_or_false=None):
         numpy.sctypeDict["lstring"] = (
             numpy.object_
             if _default_types_status["lstring_as_obj"]
-            else "S%i" % _default_types_status["default_strlen"]
+            else f"S{int(_default_types_status['default_strlen'])}"
         )
     return _default_types_status["lstring_as_obj"]
 
@@ -157,7 +157,7 @@ def ilwd_as_int(true_or_false=None):
     if true_or_false is not None:
         _default_types_status["ilwd_as_int"] = true_or_false
         numpy.sctypeDict["ilwd:char"] = (
-            int if _default_types_status["ilwd_as_int"] else "S%i" % default_strlen
+            int if _default_types_status["ilwd_as_int"] else f"S{int(default_strlen)}"
         )
     return _default_types_status["ilwd_as_int"]
 
@@ -260,14 +260,14 @@ def get_needed_fieldnames(arr, names):
         The set of the fields needed to evaluate the names.
 
     """
-    fieldnames = set([])
+    fieldnames = set()
     # we'll need the class that the array is an instance of to evaluate some
     # things
     cls = arr.__class__
     if isinstance(names, str):
         names = [names]
     # parse names for variables, incase some of them are functions of fields
-    parsed_names = set([])
+    parsed_names = set()
     for name in names:
         parsed_names.update(get_fields_from_arg(name))
     # only include things that are in the array's namespace
@@ -341,8 +341,7 @@ def combine_fields(dtypes):
         dtypes = [dtypes]
     # Note: incase any of the dtypes have offsets, we won't include any fields
     # that have no names and are void
-    new_dt = numpy.dtype([dt for dtype in dtypes for dt in get_dtype_descr(dtype)])
-    return new_dt
+    return numpy.dtype([dt for dtype in dtypes for dt in get_dtype_descr(dtype)])
 
 
 def _ensure_array_list(arrays):
@@ -399,7 +398,7 @@ def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
         new_dt = combine_fields([arr.dtype for arr in merge_list])
     else:
         new_dt = numpy.dtype(
-            [("f%i" % ii, arr.dtype.descr) for ii, arr in enumerate(merge_list)]
+            [(f"f{ii}", arr.dtype.descr) for ii, arr in enumerate(merge_list)]
         )
     new_arr = merge_list[0].__class__(merge_list[0].shape, dtype=new_dt)
     # ii is a counter to keep track of which fields from the new array
@@ -471,7 +470,7 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
         ]
         # group together by subarray
         groups = {}
-        for name, arr in zip(subarray_names, subarrays):
+        for name, arr in zip(subarray_names, subarrays, strict=True):
             key = name.split(".")[0]
             subkey = ".".join(name.split(".")[1:])
             try:
@@ -519,7 +518,7 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
         merged_arr = numpy.empty(len(arrays[0]), dtype=[("f0", arrays[0].dtype.descr)])
         merged_arr["f0"] = arrays[0]
         arrays = [merged_arr]
-    merge_list = [input_array] + arrays
+    merge_list = [input_array, *arrays]
     if names is not None:
         names = list(input_array.dtype.names) + names
     # merge into a single array
@@ -824,9 +823,9 @@ class FieldArray(numpy.recarray):
         """Initializes a new empty array."""
         obj = super().__new__(cls, shape, **kwargs).view(type=cls)
         obj.name = name
-        obj.__persistent_attributes__ = [a for a in cls.__persistent_attributes__]
-        obj._functionlib = {f: func for f, func in cls._functionlib.items()}
-        obj._virtualfields = [f for f in cls._virtualfields]
+        obj.__persistent_attributes__ = list(cls.__persistent_attributes__)
+        obj._functionlib = dict(cls._functionlib.items())
+        obj._virtualfields = list(cls._virtualfields)
         # zero out the array if desired
         if zero:
             default = default_empty(1, dtype=obj.dtype)
@@ -888,12 +887,13 @@ class FieldArray(numpy.recarray):
             # we'll get a ValueError if a subarray is being referenced using
             # '.'; so we'll try to parse it out here
             fields = item.split(".")
+            target = self
             if len(fields) > 1:
                 for field in fields[:-1]:
-                    self = self[field]
+                    target = target[field]
                 item = fields[-1]
-            # now try again
-            return super().__setitem__(item, values)
+            # now try again, on the sub-array
+            return super(FieldArray, target).__setitem__(item, values)
 
     def __getbaseitem__(self, item):
         """Gets an item assuming item is either an index or a fieldname."""
@@ -1035,7 +1035,7 @@ class FieldArray(numpy.recarray):
         if isinstance(names, str):
             names = [names]
             methods = [methods]
-        for name, method in zip(names, methods):
+        for name, method in zip(names, methods, strict=True):
             setattr(self, name, types.MethodType(method, self))
 
     def add_properties(self, names, methods):
@@ -1049,7 +1049,7 @@ class FieldArray(numpy.recarray):
         if isinstance(names, str):
             names = [names]
             methods = [methods]
-        for name, method in zip(names, methods):
+        for name, method in zip(names, methods, strict=True):
             setattr(cls, name, property(method))
         return self.view(type=cls)
 
@@ -1092,7 +1092,7 @@ class FieldArray(numpy.recarray):
             raise ValueError(
                 "number of provided names must be same as number of functions"
             )
-        self._functionlib.update(dict(zip(names, functions)))
+        self._functionlib.update(dict(zip(names, functions, strict=True)))
 
     def del_functions(self, names):
         """
@@ -1310,7 +1310,7 @@ class FieldArray(numpy.recarray):
     def virtualfields(self):
         """Returns a tuple listing the names of virtual fields in self."""
         if self._virtualfields is None:
-            vfs = tuple()
+            vfs = ()
         else:
             vfs = tuple(self._virtualfields)
         return vfs
@@ -1489,7 +1489,7 @@ class FieldArray(numpy.recarray):
         out = numpy.zeros(self.size, dtype=outdtype)
         mask = numpy.zeros(self.size, dtype=bool)
         leftovers = numpy.ones(self.size, dtype=bool)
-        for ii, (boolarg, val) in enumerate(zip(bool_args, return_vals)):
+        for ii, (boolarg, val) in enumerate(zip(bool_args, return_vals, strict=True)):
             if boolarg is None or boolarg == "" or boolarg.lower() == "else":
                 if ii + 1 != len(bool_args):
                     raise ValueError(
@@ -1584,7 +1584,12 @@ class FieldArray(numpy.recarray):
             possible_fields = [possible_fields]
         possible_fields = list(map(str, possible_fields))
         # we'll just use float as the dtype, as we just need this for names
-        arr = cls(1, dtype=list(zip(possible_fields, len(possible_fields) * [float])))
+        arr = cls(
+            1,
+            dtype=list(
+                zip(possible_fields, len(possible_fields) * [float], strict=True)
+            ),
+        )
         # try to perserve order
         return list(get_needed_fieldnames(arr, parameters))
 
@@ -1616,7 +1621,9 @@ def fields_from_names(fields, names=None):
     if isinstance(names, str):
         names = [names]
     aliases_to_names = aliases_from_fields(fields)
-    names_to_aliases = dict(zip(aliases_to_names.values(), aliases_to_names.keys()))
+    names_to_aliases = dict(
+        zip(aliases_to_names.values(), aliases_to_names.keys(), strict=True)
+    )
     outfields = {}
     for name in names:
         try:
@@ -1627,7 +1634,7 @@ def fields_from_names(fields, names=None):
             elif name in names_to_aliases:
                 key = (names_to_aliases[name], name)
             else:
-                raise KeyError("default fields has no field %s" % name)
+                raise KeyError(f"default fields has no field {name}")
             outfields[key] = fields[key]
     return outfields
 
@@ -1795,6 +1802,7 @@ class _FieldArrayWithDefaults(FieldArray):
             evaluate the given parameters.
 
         """
+        array_class = cls
         if possible_fields is not None:
             # make sure field names are strings and not unicode
             possible_fields = dict([[f, dt] for f, dt in possible_fields.items()])
@@ -1802,8 +1810,8 @@ class _FieldArrayWithDefaults(FieldArray):
             class ModifiedArray(cls):
                 _staticfields = possible_fields
 
-            cls = ModifiedArray
-        return cls(1, names=parameters).fieldnames
+            array_class = ModifiedArray
+        return array_class(1, names=parameters).fieldnames
 
 
 #

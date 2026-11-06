@@ -139,7 +139,7 @@ def render_default(path, cp):
             #        for now I just coalesce.
             wf_file.return_union_seglist()
         except Exception as e:
-            print("No segment table found in %s : %s" % (path, e))
+            print(f"No segment table found in {path} : {e}")
 
     # render template
     template_dir = pycbc.results.__path__[0] + "/templates/files"
@@ -155,9 +155,7 @@ def render_default(path, cp):
         "cp": cp,
         "content": content,
     }
-    output = template.render(context)
-
-    return output
+    return template.render(context)
 
 
 def render_glitchgram(path, cp):
@@ -172,9 +170,7 @@ def render_glitchgram(path, cp):
     env.globals.update(abs=abs)
     template = env.get_template(cp.get(filename, "template"))
     context = {"filename": filename, "slug": slug, "cp": cp}
-    output = template.render(context)
-
-    return output
+    return template.render(context)
 
 
 def render_text(path, cp):
@@ -200,12 +196,10 @@ def render_text(path, cp):
     env.globals.update(path_exists=os.path.exists)
     template = env.get_template("file_pre.html")
     context = {"filename": filename, "slug": slug, "cp": cp, "content": content}
-    output = template.render(context)
-
-    return output
+    return template.render(context)
 
 
-def render_ignore(path, cp):
+def render_ignore(path, cp):  # noqa: ARG001
     """Does not render anything."""
     return ""
 
@@ -234,6 +228,4 @@ def render_tmplt(path, cp):
     env.globals.update(path_exists=os.path.exists)
     template = env.get_template(filename)
     context = {"filename": filename, "slug": slug, "cp": cp, "content": content}
-    output = template.render(context)
-
-    return output
+    return template.render(context)

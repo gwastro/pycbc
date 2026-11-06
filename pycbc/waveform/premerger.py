@@ -2,6 +2,8 @@
 
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 def premerger_taylorf2(**p):
     """Generate time-shifted TaylorF2"""
@@ -22,7 +24,7 @@ def premerger_taylorf2(**p):
     hc = hc.cyclic_time_shift(removed)
     hc.start_time += removed
 
-    logging.info(
+    logger.info(
         "PreTaylorF2, m1=%.1f, m2=%.1f, fmax=%.1f, timeshift=%.1f",
         p["mass1"],
         p["mass2"],

@@ -46,7 +46,7 @@ def plt(index):
         "mode_array": modes,
     }
 
-    plot_code = f"""
+    return f"""
                 pycbc_inference_plot_posterior \
                 --input-file lisa_smbhb_ldc_pe.hdf \
                 --output-file lisa_smbhb_mass_tc_{p_index}.png \
@@ -61,7 +61,6 @@ def plt(index):
                     mass2_from_mchirp_q(mchirp,q):{params["mass2"]} \
                     tc:{params["tc_lisa"]} \
                 """
-    return plot_code
 
 
 # The index of first SMBHB in LDC Sangria (0-14) is 0.

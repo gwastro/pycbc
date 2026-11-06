@@ -35,7 +35,7 @@ from igwn_segments import segment, segmentlist
 from pycbc.frame.gwosc import get_run
 from pycbc.io import get_file
 
-logger = logging.getLogger("pycbc.dq")
+logger = logging.getLogger(__name__)
 
 
 def parse_veto_definer(veto_def_filename, ifos):
@@ -61,7 +61,7 @@ def parse_veto_definer(veto_def_filename, ifos):
     from igwn_ligolw import ligolw
     from igwn_ligolw import utils as ligolw_utils
 
-    from pycbc.io.ligolw import LIGOLWContentHandler as h
+    from pycbc.io.ligolw import LIGOLWContentHandler
 
     data = {}
     for ifo_name in ifos:
@@ -70,7 +70,9 @@ def parse_veto_definer(veto_def_filename, ifos):
         for cat_num in range(1, 5):
             data[ifo_name][f"CAT_{cat_num}"] = []
 
-    indoc = ligolw_utils.load_filename(veto_def_filename, False, contenthandler=h)
+    indoc = ligolw_utils.load_filename(
+        veto_def_filename, False, contenthandler=LIGOLWContentHandler
+    )
     veto_table = ligolw.Table.get_table(indoc, "veto_definer")
 
     ifo = veto_table.getColumnByName("ifo")
@@ -124,15 +126,11 @@ def query_dqsegdb2(detector, flag_name, start_time, end_time, server):
         )
         return query_res["active"]
     except Exception as e:
-        logger.error(
-            "Could not query segment database, check name "
-            "(%s), times (%d-%d) and server (%s)",
-            complete_flag,
-            int(start_time),
-            int(end_time),
-            server,
+        e.add_note(
+            f"Could not query segment database, check name ({complete_flag}), "
+            f"times ({int(start_time)}-{int(end_time)}) and server ({server})"
         )
-        raise e
+        raise
 
 
 def query_flag(
@@ -511,5 +509,4 @@ def query_str(
         cache=cache,
     )
 
-    segs = (segs - mseg).coalesce()
-    return segs
+    return (segs - mseg).coalesce()

@@ -118,7 +118,12 @@ class TestInjFilterRejector(unittest.TestCase):
             table = [SimpleNamespace(f_lower=F_LOWER)]
 
             def generate_with_delta_f_and_max_freq(
-                self, t_num, fmax, deltaf, low_frequency_cutoff, cached_mem=None
+                self,
+                t_num,  # noqa: ARG002
+                fmax,  # noqa: ARG002
+                deltaf,  # noqa: ARG002
+                low_frequency_cutoff,  # noqa: ARG002
+                cached_mem=None,  # noqa: ARG002
             ):
                 return rej.short_injections[0].copy()
 
@@ -126,7 +131,12 @@ class TestInjFilterRejector(unittest.TestCase):
             table = [SimpleNamespace(f_lower=F_LOWER)]
 
             def generate_with_delta_f_and_max_freq(
-                self, t_num, fmax, deltaf, low_frequency_cutoff, cached_mem=None
+                self,
+                t_num,  # noqa: ARG002
+                fmax,  # noqa: ARG002
+                deltaf,
+                low_frequency_cutoff,  # noqa: ARG002
+                cached_mem=None,  # noqa: ARG002
             ):
                 data = np.zeros(len(rej.short_injections[0]), dtype=np.complex64)
                 data[len(data) // 2] = 1.0

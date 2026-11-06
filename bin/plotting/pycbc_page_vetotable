@@ -29,6 +29,8 @@ import pycbc.results
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.results import save_fig_with_metadata
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 
 # add command line options
@@ -61,7 +63,7 @@ columns = (
 caption = "This table shows each veto in the veto definer table."
 
 # read input file
-logging.info("Reading veto definer XML file")
+logger.info("Reading veto definer XML file")
 vetodef_xml = utils.load_filename(
     opts.veto_definer_file, contenthandler=LIGOLWContentHandler
 )
@@ -70,7 +72,7 @@ vetodef_xml = utils.load_filename(
 vetodef_table = lsctables.VetoDefTable.get_table(vetodef_xml)
 
 # loop over rows in veto_definer table
-logging.info("Looping through veto_definer table and saving information")
+logger.info("Looping through veto_definer table and saving information")
 for vetodef in vetodef_table:
     # put values into columns
     columns[0][1].append(vetodef.category)
@@ -88,7 +90,7 @@ keys = [numpy.array(key, dtype=type(key[0])) for key, _ in columns]
 vals = [numpy.array(val, dtype=type(val[0])) for _, val in columns]
 
 # write HTML table
-logging.info("Writing HTML table")
+logger.info("Writing HTML table")
 fig_kwds = {}
 html_table = pycbc.results.html_table(vals, keys, page_size=25)
 save_fig_with_metadata(
@@ -100,4 +102,4 @@ save_fig_with_metadata(
     caption=caption,
 )
 
-logging.info("Done.")
+logger.info("Done.")

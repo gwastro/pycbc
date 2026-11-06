@@ -34,7 +34,7 @@ import igwn_segments as segments
 
 from pycbc.workflow.core import Executable, File, FileList, Node
 
-logger = logging.getLogger("pycbc.workflow.coincidence")
+logger = logging.getLogger(__name__)
 
 
 class PyCBCBank2HDFExecutable(Executable):
@@ -162,6 +162,8 @@ class PyCBCFindSnglsExecutable(Executable):
         if veto_file is not None:
             node.add_input_opt("--veto-files", veto_file)
             node.add_opt("--segment-name", veto_name)
+        if self.ifo_list and len(self.ifo_list) == 1:
+            node.add_opt("--ifo", self.ifo_list[0])
         node.add_opt("--template-fraction-range", template_str)
         node.new_output_file_opt(seg, ".hdf", "--output-file", tags=tags)
         return node
@@ -290,7 +292,7 @@ class PyCBCDistributeBackgroundBins(Executable):
                 self.name,
                 coinc_files[0].segment,
                 directory=self.out_dir,
-                tags=tags + ["mbin-%s" % i],
+                tags=[*tags, f"mbin-{i}"],
                 extension=".hdf",
             )
             for i in range(len(background_bins))
@@ -384,11 +386,27 @@ def merge_single_detector_hdf_files(
     if tags is None:
         tags = []
     out = FileList()
+    if workflow.cp.has_option_tags("workflow-coincidence", "combined-merge-file", tags):
+        node = MergeExecutable(
+            workflow.cp,
+            "hdf_trigger_merge",
+            ifos=workflow.ifos,
+            out_dir=out_dir,
+            tags=tags,
+        ).create_node()
+        node.add_input_opt("--bank-file", bank_file)
+        node.add_input_list_opt("--trigger-files", trigger_files)
+        node.new_output_file_opt(workflow.analysis_time, ".hdf", "--output-file")
+        workflow += node
+        out += node.output_files
+        return out
+
     for ifo in workflow.ifos:
         node = MergeExecutable(
             workflow.cp, "hdf_trigger_merge", ifos=ifo, out_dir=out_dir, tags=tags
         ).create_node()
         node.add_input_opt("--bank-file", bank_file)
+        node.add_opt("--ifo", ifo)
         node.add_input_list_opt(
             "--trigger-files", trigger_files.find_output_with_ifo(ifo)
         )
@@ -405,7 +423,7 @@ def setup_trigger_fitting(
         return FileList()
     smoothed_fit_files = FileList()
     for i in workflow.ifos:
-        ifo_insp = [insp for insp in insps if (insp.ifo == i)]
+        ifo_insp = insps.find_output_with_ifo(i)
         assert len(ifo_insp) == 1
         ifo_insp = ifo_insp[0]
         raw_exe = PyCBCFitByTemplateExecutable(
@@ -460,7 +478,9 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
     logger.info("convert single inspiral trigger files to hdf5")
 
     trig_files = FileList()
-    for ifo, insp_group in zip(*xml_trigger_files.categorize_by_attr("ifo")):
+    for ifo, insp_group in zip(
+        *xml_trigger_files.categorize_by_attr("ifo"), strict=True
+    ):
         trig2hdf_exe = PyCBCTrig2HDFExecutable(
             workflow.cp, "trig2hdf", ifos=ifo, out_dir=out_dir, tags=tags
         )
@@ -551,23 +571,25 @@ def setup_interval_coinc_inj(
     )
 
     ifiles = {}
-    for ifo, ifi in zip(*inj_trig_files.categorize_by_attr("ifo")):
-        ifiles[ifo] = ifi[0]
+    for f in inj_trig_files:
+        for ifo in f.ifo_list:
+            ifiles[ifo] = f
 
     injinj_files = FileList()
     for ifo in ifiles:  # ifiles is keyed on ifo
-        injinj_files.append(ifiles[ifo])
+        if ifiles[ifo] not in injinj_files:
+            injinj_files.append(ifiles[ifo])
 
     findcoinc_exe = PyCBCFindCoincExecutable(
         workflow.cp,
         "coinc",
-        ifos=ifiles.keys(),
-        tags=tags + ["injinj"],
+        ifos=list(ifiles.keys()),
+        tags=[*tags, "injinj"],
         out_dir=out_dir,
     )
     bg_files = []
     for i in range(factor):
-        group_str = "%s/%s" % (i, factor)
+        group_str = f"{i}/{factor}"
         coinc_node = findcoinc_exe.create_node(
             injinj_files,
             hdfbank,
@@ -586,11 +608,11 @@ def setup_interval_coinc_inj(
 
     return setup_statmap_inj(
         workflow,
-        ifiles.keys(),
+        list(ifiles.keys()),
         bg_files,
         background_file,
         out_dir,
-        tags=tags + [veto_name],
+        tags=[*tags, veto_name],
     )
 
 
@@ -613,7 +635,11 @@ def setup_interval_coinc(
         tags = []
     logger.info("Setting up coincidence")
 
-    ifos, _ = trig_files.categorize_by_attr("ifo")
+    ifos = []
+    for f in trig_files:
+        for ifo in f.ifo_list:
+            if ifo not in ifos:
+                ifos.append(ifo)
     findcoinc_exe = PyCBCFindCoincExecutable(
         workflow.cp, "coinc", ifos=ifos, tags=tags, out_dir=out_dir
     )
@@ -623,14 +649,14 @@ def setup_interval_coinc(
         workflow.cp.get_opt_tags(
             "workflow-coincidence",
             "parallelization-factor",
-            [findcoinc_exe.ifo_string] + tags,
+            [findcoinc_exe.ifo_string, *tags],
         )
     )
 
     statmap_files = []
     bg_files = FileList()
     for i in range(factor):
-        group_str = "%s/%s" % (i, factor)
+        group_str = f"{i}/{factor}"
         coinc_node = findcoinc_exe.create_node(
             trig_files,
             hdfbank,
@@ -652,12 +678,23 @@ def setup_interval_coinc(
 
 
 def setup_sngls(
-    workflow, hdfbank, trig_files, stat_files, veto_file, veto_name, out_dir, tags=None
+    workflow,
+    hdfbank,
+    trig_files,
+    stat_files,
+    veto_file,
+    veto_name,
+    out_dir,
+    tags=None,
+    ifo=None,
 ):
     """
     This function sets up getting statistic values for single-detector triggers
     """
-    ifos, _ = trig_files.categorize_by_attr("ifo")
+    if ifo is not None:
+        ifos = [ifo]
+    else:
+        ifos, _ = trig_files.categorize_by_attr("ifo")
     findsngls_exe = PyCBCFindSnglsExecutable(
         workflow.cp, "sngls", ifos=ifos, tags=tags, out_dir=out_dir
     )
@@ -666,14 +703,14 @@ def setup_sngls(
         workflow.cp.get_opt_tags(
             "workflow-coincidence",
             "parallelization-factor",
-            [findsngls_exe.ifo_string] + tags,
+            [findsngls_exe.ifo_string, *tags],
         )
     )
 
     statmap_files = []
     bg_files = FileList()
     for i in range(factor):
-        group_str = "%s/%s" % (i, factor)
+        group_str = f"{i}/{factor}"
         sngls_node = findsngls_exe.create_node(
             trig_files,
             hdfbank,
@@ -702,17 +739,21 @@ def setup_sngls_inj(
     veto_name,
     out_dir,
     tags=None,
+    ifo=None,
 ):
     """
     This function sets up getting statistic values for single-detector triggers
     from injections
     """
-    ifos, _ = inj_trig_files.categorize_by_attr("ifo")
+    if ifo is not None:
+        ifos = [ifo]
+    else:
+        ifos, _ = inj_trig_files.categorize_by_attr("ifo")
     findsnglsinj_exe = PyCBCFindSnglsExecutable(
         workflow.cp, "sngls", ifos=ifos, tags=tags, out_dir=out_dir
     )
     # Wall time knob and memory knob
-    exe_str_tags = [findsnglsinj_exe.ifo_string] + tags
+    exe_str_tags = [findsnglsinj_exe.ifo_string, *tags]
     factor = int(
         workflow.cp.get_opt_tags(
             "workflow-coincidence", "parallelization-factor", exe_str_tags
@@ -722,7 +763,7 @@ def setup_sngls_inj(
     statmap_files = []
     bg_files = FileList()
     for i in range(factor):
-        group_str = "%s/%s" % (i, factor)
+        group_str = f"{i}/{factor}"
         sngls_node = findsnglsinj_exe.create_node(
             inj_trig_files,
             hdfbank,
@@ -748,9 +789,10 @@ def select_files_by_ifo_combination(ifocomb, insps):
     This function selects single-detector files ('insps') for a given ifo combination
     """
     inspcomb = FileList()
-    for ifo, ifile in zip(*insps.categorize_by_attr("ifo")):
-        if ifo in ifocomb:
-            inspcomb += ifile
+    for ifo in ifocomb:
+        for f in insps.find_output_with_ifo(ifo):
+            if f not in inspcomb:
+                inspcomb.append(f)
 
     return inspcomb
 

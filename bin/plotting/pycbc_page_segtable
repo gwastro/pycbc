@@ -83,7 +83,7 @@ columns = (("Name", []),)
 # columns for detectors and combinations
 for combo in ifo_combinations:
     det_combo_string = "".join(combo).upper()
-    columns += (("%s Time (s)" % det_combo_string, []),)
+    columns += ((f"{det_combo_string} Time (s)", []),)
 
 caption = "This table shows the cumulative amount of time for each segment. Shown are:"
 

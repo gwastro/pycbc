@@ -27,7 +27,7 @@ import pycbc.detector
 from pycbc import conversions, pnutils
 from pycbc.events import coinc
 
-logger = logging.getLogger("pycbc.events.triggers")
+logger = logging.getLogger(__name__)
 
 
 def insert_bank_bins_option_group(parser):
@@ -88,7 +88,7 @@ def bank_bins_from_cli(opts):
     if opts.bank_bins:
         bins_idx = coinc.background_bin_from_string(opts.bank_bins, bank)
     else:
-        bins_idx = {"all": numpy.arange(0, len(bank[tuple(fp.keys())[0]]))}
+        bins_idx = {"all": numpy.arange(0, len(bank[next(iter(fp.keys()))]))}
     fp.close()
     return bins_idx, bank
 
@@ -199,14 +199,15 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
         try:  # old 2-ifo behaviour
             # get the name of the ifo in the injection file, eg "detector_1"
             # and the integer from that name
-            ifolabel = [
+            # (the IndexError below needs a list here, not next())
+            ifolabel = [  # noqa: RUF015
                 name
                 for name, val in injfile.attrs.items()
                 if "detector" in name and val == ifo
             ][0]
             foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
         except IndexError:  # multi-ifo
-            foundtrg = injfile["found_after_vetoes/%s/trigger_id" % ifo]
+            foundtrg = injfile[f"found_after_vetoes/{ifo}/trigger_id"]
             # multi-ifo pipeline assigns -1 for inj not found in specific ifo
             found_in_ifo = foundtrg[:] != -1
     if bankfile is not None and param in bankfile.keys():

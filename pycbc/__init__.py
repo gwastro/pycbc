@@ -64,7 +64,7 @@ class LogFormatter(logging.Formatter):
 
     converter = dt.fromtimestamp
 
-    def formatTime(self, record, datefmt=None):
+    def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
         ct = self.converter(record.created).astimezone()
         t = ct.strftime("%Y-%m-%dT%H:%M:%S")
         s = f"{t}.{int(record.msecs):03d}"
@@ -149,15 +149,15 @@ def init_logging(
 
     """
 
-    def sig_handler(signum, frame):
-        logger = logging.getLogger()
-        log_level = logger.level
+    def sig_handler(signum, frame):  # noqa: ARG001
+        root_logger = logging.getLogger()
+        log_level = root_logger.level
         if log_level == logging.DEBUG:
             log_level = logging.WARNING
         else:
             log_level = logging.DEBUG
-        logging.warning("Got signal %d, setting log level to %d", signum, log_level)
-        logger.setLevel(log_level)
+        root_logger.warning("Got signal %d, setting log level to %d", signum, log_level)
+        root_logger.setLevel(log_level)
 
     signal.signal(signal.SIGUSR1, sig_handler)
 
@@ -255,10 +255,10 @@ else:
 
 
 # https://pynative.com/python-generate-random-string/
-def random_string(stringLength=10):
+def random_string(string_length=10):
     """Generate a random string of fixed length"""
     letters = string.ascii_lowercase
-    return "".join(random.choice(letters) for i in range(stringLength))
+    return "".join(random.choice(letters) for i in range(string_length))
 
 
 # This is needed as a backwards compatibility. The function was removed in

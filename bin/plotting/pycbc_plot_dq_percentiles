@@ -34,10 +34,10 @@ f = HFile(args.dq_file, "r")
 
 bin_name = args.background_bin
 
-if bin_name not in f["%s/dq_percentiles" % ifo].keys():
+if bin_name not in f[f"{ifo}/dq_percentiles"].keys():
     raise ValueError("Background bin name not found in DQ file")
 else:
-    yvals = f["%s/dq_percentiles/%s" % (ifo, bin_name)][:]
+    yvals = f[f"{ifo}/dq_percentiles/{bin_name}"][:]
 
 xvals = numpy.linspace(0, 100, len(yvals) + 1)
 centers = (xvals[1:] + xvals[:-1]) / 2
@@ -92,7 +92,7 @@ ax2.set_xlim(xmin, xmax)
 ax2.set_yscale("log")
 
 # add meta data and save figure
-plot_title = "%s: %s log likelihood versus percentile" % (ifo, dq_name)
+plot_title = f"{ifo}: {dq_name} log likelihood versus percentile"
 plot_caption = "The log likelihood verus percentile of a DQ product."
 pycbc.results.save_fig_with_metadata(
     fig,

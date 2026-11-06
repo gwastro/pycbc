@@ -45,16 +45,17 @@ from pycbc.types import (
     zeros,
 )
 
-logger = logging.getLogger("pycbc.filter.matchedfilter")
+logger = logging.getLogger(__name__)
 
 BACKEND_PREFIX = "pycbc.filter.matchedfilter_"
 
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def correlate(x, y, z):
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 class BatchCorrelator:
@@ -88,9 +89,10 @@ class BatchCorrelator:
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def _correlate_factory(x, y, z):
-    err_msg = "This class is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This class is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 class Correlator:
@@ -254,27 +256,27 @@ class MatchedFilterControl:
             self.upsample_method = upsample_method
             self.upsample_threshold = upsample_threshold
 
-            N_full = self.tlen
-            N_red = N_full / downsample_factor
+            tlen_full = self.tlen
+            tlen_red = tlen_full / downsample_factor
             self.kmin_full, self.kmax_full = get_cutoff_indices(
-                self.flow, self.fhigh, self.delta_f, N_full
+                self.flow, self.fhigh, self.delta_f, tlen_full
             )
 
             self.kmin_red, _ = get_cutoff_indices(
-                self.flow, self.fhigh, self.delta_f, N_red
+                self.flow, self.fhigh, self.delta_f, tlen_red
             )
 
-            if self.kmax_full < N_red:
+            if self.kmax_full < tlen_red:
                 self.kmax_red = self.kmax_full
             else:
-                self.kmax_red = N_red - 1
+                self.kmax_red = tlen_red - 1
 
-            self.snr_mem = zeros(N_red, dtype=self.dtype)
+            self.snr_mem = zeros(tlen_red, dtype=self.dtype)
             self.corr_mem_full = FrequencySeries(
-                zeros(N_full, dtype=self.dtype), delta_f=self.delta_f
+                zeros(tlen_full, dtype=self.dtype), delta_f=self.delta_f
             )
-            self.corr_mem = Array(self.corr_mem_full[0:N_red], copy=False)
-            self.inter_vec = zeros(N_full, dtype=self.dtype)
+            self.corr_mem = Array(self.corr_mem_full[0:tlen_red], copy=False)
+            self.inter_vec = zeros(tlen_full, dtype=self.dtype)
 
         else:
             raise ValueError("Invalid downsample factor")
@@ -383,7 +385,11 @@ class MatchedFilterControl:
         return snr, norm, corr, idx, snrv
 
     def full_matched_filter_thresh_only(
-        self, segnum, template_norm, window=None, epoch=None
+        self,
+        segnum,
+        template_norm,
+        window=None,  # noqa: ARG002
+        epoch=None,
     ):
         """
         Returns the complex snr timeseries, normalization of the complex snr,
@@ -647,7 +653,7 @@ def compute_max_snr_over_sky_loc_stat(
     denom = 1 - hphccorr * hphccorr
     if denom < 0:
         if hphccorr > 1:
-            err_msg = "Overlap between hp and hc is given as %f. " % (hphccorr)
+            err_msg = f"Overlap between hp and hc is given as {hphccorr:f}. "
             err_msg += "How can an overlap be bigger than 1?"
             raise ValueError(err_msg)
         err_msg = "There really is no way to raise this error!?! "
@@ -866,7 +872,7 @@ def compute_max_snr_over_sky_loc_stat_no_phase(
     denom = 1 - hphccorr * hphccorr
     if denom < 0:
         if hphccorr > 1:
-            err_msg = "Overlap between hp and hc is given as %f. " % (hphccorr)
+            err_msg = f"Overlap between hp and hc is given as {hphccorr:f}. "
             err_msg += "How can an overlap be bigger than 1?"
             raise ValueError(err_msg)
         err_msg = "There really is no way to raise this error!?! "
@@ -1013,7 +1019,7 @@ class MatchedFilterSkyMaxControl:
             The snr values at the trigger locations.
 
         """
-        I_plus, Iplus_corr, Iplus_norm = matched_filter_core(
+        snr_plus, corr_plus, norm_plus = matched_filter_core(
             hplus,
             stilde,
             h_norm=hplus_norm,
@@ -1023,7 +1029,7 @@ class MatchedFilterSkyMaxControl:
             corr_out=self.corr_plus_mem,
         )
 
-        I_cross, Icross_corr, Icross_norm = matched_filter_core(
+        snr_cross, corr_cross, norm_cross = matched_filter_core(
             hcross,
             stilde,
             h_norm=hcross_norm,
@@ -1060,11 +1066,11 @@ class MatchedFilterSkyMaxControl:
             hplus_cross_corr = self.cached_hplus_hcross_correlation
 
         snr = self._maximized_snr(
-            I_plus,
-            I_cross,
+            snr_plus,
+            snr_cross,
             hplus_cross_corr,
-            hpnorm=Iplus_norm,
-            hcnorm=Icross_norm,
+            hpnorm=norm_plus,
+            hcnorm=norm_cross,
             out=self.snr_mem,
             thresh=self.snr_threshold,
             analyse_slice=stilde.analyze,
@@ -1085,25 +1091,25 @@ class MatchedFilterSkyMaxControl:
         logger.info("%d clustered points", len(idx))
         # erased self.
         u_vals, coa_phase = self._maximized_extrinsic_params(
-            I_plus.data,
-            I_cross.data,
+            snr_plus.data,
+            snr_cross.data,
             hplus_cross_corr,
             indices=idx + stilde.analyze.start,
-            hpnorm=Iplus_norm,
-            hcnorm=Icross_norm,
+            hpnorm=norm_plus,
+            hcnorm=norm_cross,
         )
 
         return (
             snr,
-            Iplus_corr,
-            Icross_corr,
+            corr_plus,
+            corr_cross,
             idx,
             snrv,
             u_vals,
             coa_phase,
             hplus_cross_corr,
-            Iplus_norm,
-            Icross_norm,
+            norm_plus,
+            norm_cross,
         )
 
     def _maximized_snr(self, hplus, hcross, hphccorr, **kwargs):
@@ -1148,11 +1154,13 @@ def make_frequency_series(vec):
     if isinstance(vec, FrequencySeries):
         return vec
     if isinstance(vec, TimeSeries):
-        N = len(vec)
-        n = N // 2 + 1
-        delta_f = 1.0 / N / vec.delta_t
+        tlen = len(vec)
+        flen = tlen // 2 + 1
+        delta_f = 1.0 / tlen / vec.delta_t
         vectilde = FrequencySeries(
-            zeros(n, dtype=complex_same_precision_as(vec)), delta_f=delta_f, copy=False
+            zeros(flen, dtype=complex_same_precision_as(vec)),
+            delta_f=delta_f,
+            copy=False,
         )
         fft(vec, vectilde)
         return vectilde
@@ -1188,10 +1196,10 @@ def sigmasq_series(
 
     """
     htilde = make_frequency_series(htilde)
-    N = (len(htilde) - 1) * 2
+    tlen = (len(htilde) - 1) * 2
     norm = 4.0 * htilde.delta_f
     kmin, kmax = get_cutoff_indices(
-        low_frequency_cutoff, high_frequency_cutoff, htilde.delta_f, N
+        low_frequency_cutoff, high_frequency_cutoff, htilde.delta_f, tlen
     )
 
     sigma_vec = FrequencySeries(
@@ -1234,10 +1242,10 @@ def sigmasq(htilde, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=N
 
     """
     htilde = make_frequency_series(htilde)
-    N = (len(htilde) - 1) * 2
+    tlen = (len(htilde) - 1) * 2
     norm = 4.0 * htilde.delta_f
     kmin, kmax = get_cutoff_indices(
-        low_frequency_cutoff, high_frequency_cutoff, htilde.delta_f, N
+        low_frequency_cutoff, high_frequency_cutoff, htilde.delta_f, tlen
     )
     ht = htilde[kmin:kmax]
 
@@ -1278,7 +1286,7 @@ def sigma(htilde, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=Non
     return sqrt(sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff))
 
 
-def get_cutoff_indices(flow, fhigh, df, N):
+def get_cutoff_indices(flow, fhigh, df, tlen):
     """
     Gets the indices of a frequency series at which to stop an overlap
     calculation.
@@ -1291,7 +1299,7 @@ def get_cutoff_indices(flow, fhigh, df, N):
         The frequency (in Hz) of the upper index.
     df: float
         The frequency step (in Hz) of the frequency series.
-    N: int
+    tlen: int
         The number of points in the **time** series. Can be odd
         or even.
 
@@ -1311,11 +1319,11 @@ def get_cutoff_indices(flow, fhigh, df, N):
         kmin = 1
     if fhigh:
         kmax = int(fhigh / df)
-        kmax = min(kmax, int((N + 1) / 2.0))
+        kmax = min(kmax, int((tlen + 1) / 2.0))
     else:
         # int() truncates towards 0, so this is
         # equivalent to the floor of the float
-        kmax = int((N + 1) / 2.0)
+        kmax = int((tlen + 1) / 2.0)
 
     if kmax <= kmin:
         err_msg = "Kmax cannot be less than or equal to kmin. "
@@ -1384,19 +1392,19 @@ def matched_filter_core(
     if len(htilde) != len(stilde):
         raise ValueError("Length of template and data must match")
 
-    N = (len(stilde) - 1) * 2
+    tlen = (len(stilde) - 1) * 2
     kmin, kmax = get_cutoff_indices(
-        low_frequency_cutoff, high_frequency_cutoff, stilde.delta_f, N
+        low_frequency_cutoff, high_frequency_cutoff, stilde.delta_f, tlen
     )
 
     if corr_out is not None:
         qtilde = corr_out
     else:
-        qtilde = zeros(N, dtype=complex_same_precision_as(data))
+        qtilde = zeros(tlen, dtype=complex_same_precision_as(data))
 
     if out is None:
-        _q = zeros(N, dtype=complex_same_precision_as(data))
-    elif (len(out) == N) and type(out) is Array and out.kind == "complex":
+        _q = zeros(tlen, dtype=complex_same_precision_as(data))
+    elif (len(out) == tlen) and type(out) is Array and out.kind == "complex":
         _q = out
     else:
         raise TypeError("Invalid Output Vector: wrong length or dtype")
@@ -1569,11 +1577,11 @@ def match(
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
 
-    N = (len(htilde) - 1) * 2
+    tlen = (len(htilde) - 1) * 2
 
     global _snr
-    if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != N:
-        _snr = zeros(N, dtype=complex_same_precision_as(vec1))
+    if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != tlen:
+        _snr = zeros(tlen, dtype=complex_same_precision_as(vec1))
     snr, _, snr_norm = matched_filter_core(
         htilde,
         stilde,
@@ -1803,7 +1811,9 @@ class LiveBatchMatchedFilter:
 
         chunks = numpy.array([])
         num = 0
-        for count, grab in zip(counts, grabs):
+        # counts is per unique duration and grabs per unique sample length, so
+        # these need not be the same length
+        for count, grab in zip(counts, grabs, strict=False):
             chunks = numpy.append(chunks, numpy.arange(num, count + num, grab))
             chunks = numpy.append(chunks, [count + num])
             num += count
@@ -1820,8 +1830,8 @@ class LiveBatchMatchedFilter:
         samples = self.chunk_tsamples * self.chunks
 
         # Create workspace memory for correlate and snr
-        mem_ids = [(a, b) for a, b in zip(chunk_durations, self.chunks)]
-        mem_types = set(zip(mem_ids, samples))
+        mem_ids = [(a, b) for a, b in zip(chunk_durations, self.chunks, strict=True)]
+        mem_types = set(zip(mem_ids, samples, strict=True))
 
         # Groups are processed strictly one at a time, so we use one pair
         # of memory buffers for both, sized for the largest and using views
@@ -1904,8 +1914,7 @@ class LiveBatchMatchedFilter:
             tmp = veto_info
             veto_info = [tmp[i] for i in sort]
 
-        result = self._process_vetoes(result, veto_info)
-        return result
+        return self._process_vetoes(result, veto_info)
 
     def _process_vetoes(self, results, veto_info):
         """Calculate signal based vetoes"""
@@ -2159,14 +2168,14 @@ def followup_event_significance(
         # samples
         min_required_lookback = 2 * max(onsource_end - onsource_start, duration)
         if new_lookback > min_required_lookback:
-            logging.warning(
+            logger.warning(
                 "Strain buffer too short for a lookback time of %f s, "
                 "reducing lookback to %f s",
                 lookback,
                 new_lookback,
             )
         else:
-            logging.error(
+            logger.error(
                 "Strain buffer too short to compute the followup SNR time "
                 "series for template %d, will not use %s for followup. "
                 "Either use shorter templates, or raise --max-length.",
@@ -2184,7 +2193,7 @@ def followup_event_significance(
             - buffer_duration
         )
         if not data_reader.state.is_extent_valid(state_start_time, buffer_duration):
-            logging.info(
+            logger.info(
                 "%s strain buffer contains invalid data during lookback, "
                 "will not use for followup",
                 ifo,
@@ -2197,7 +2206,7 @@ def followup_event_significance(
         dq_start_time = onsource_start - duration / 2.0
         dq_duration = onsource_end - onsource_start + duration
         if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
-            logging.info(
+            logger.info(
                 "%s DQ buffer indicates invalid data during onsource window, "
                 "will not use for followup",
                 ifo,
@@ -2408,9 +2417,9 @@ def optimized_match(
     waveform_1 = htilde.numpy()
     waveform_2 = stilde.numpy()
 
-    N = (len(stilde) - 1) * 2
+    tlen = (len(stilde) - 1) * 2
     kmin, kmax = get_cutoff_indices(
-        low_frequency_cutoff, high_frequency_cutoff, delta_f, N
+        low_frequency_cutoff, high_frequency_cutoff, delta_f, tlen
     )
     mask = slice(kmin, kmax)
 

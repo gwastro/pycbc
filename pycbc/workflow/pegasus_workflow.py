@@ -40,7 +40,7 @@ from urllib.request import pathname2url
 import Pegasus.api as dax
 from packaging import version
 
-logger = logging.getLogger("pycbc.workflow.pegasus_workflow")
+logger = logging.getLogger(__name__)
 
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), "pegasus_files")
 
@@ -54,11 +54,11 @@ class ProfileShortcuts:
 
     def set_memory(self, size):
         """Set the amount of memory that is required in megabytes"""
-        self.add_profile("condor", "request_memory", "%sM" % size)
+        self.add_profile("condor", "request_memory", f"{size}M")
 
     def set_storage(self, size):
         """Set the amount of storage required in megabytes"""
-        self.add_profile("condor", "request_disk", "%sM" % size)
+        self.add_profile("condor", "request_disk", f"{size}M")
 
     def set_num_cpus(self, number):
         self.add_profile("condor", "request_cpus", number)
@@ -90,7 +90,7 @@ class Executable(ProfileShortcuts):
     def __init__(
         self, name, os="linux", arch="x86_64", installed=False, container=None
     ):
-        self.logical_name = name + "_ID%s" % str(Executable.id)
+        self.logical_name = name + f"_ID{Executable.id!s}"
         self.pegasus_name = name
         Executable.id += 1
         self.os = dax.OS(os)
@@ -180,7 +180,7 @@ class Node(ProfileShortcuts):
         self._dax_node = dax.Job(transformation)
         # NOTE: We are enforcing one site per transformation. Therefore the
         #       transformation used indicates the site to be used.
-        self.set_execution_site(list(transformation.sites.keys())[0])
+        self.set_execution_site(next(iter(transformation.sites.keys())))
         self._args = []
         # Each value in _options is added separated with whitespace
         # so ['--option','value'] --> "--option value"
@@ -214,11 +214,11 @@ class Node(ProfileShortcuts):
             opt in self._options or opt in self._raw_options
         ):
             err_msg = (
-                "Trying to set option %s with value %s, but it "
+                f"Trying to set option {opt} with value {value}, but it "
                 "has already been provided by the configuration file. "
                 "Usually this should not be given in the config file, "
                 "but contact developers to check"
-            ) % (opt, value)
+            )
             raise ValueError(err_msg)
         if value is not None:
             if not isinstance(value, File):
@@ -535,7 +535,7 @@ class Workflow:
             return self.add_node(other)
         if isinstance(other, Workflow):
             return self.add_workflow(other)
-        raise TypeError("Cannot add type %s to this workflow" % type(other))
+        raise TypeError(f"Cannot add type {type(other)} to this workflow")
 
     def traverse_workflow_io(self):
         """
@@ -775,7 +775,7 @@ class SubWorkflow(dax.SubWorkflow):
             if version.parse(sproc_out) >= version.parse("5.0.4"):
                 output_map_file.for_planning = True
         except:
-            logging.warning("Could not execute pegasus-version, assuming >= 5.0.4")
+            logger.warning("Could not execute pegasus-version, assuming >= 5.0.4")
             output_map_file.for_planning = True
         self.add_inputs(output_map_file)
 
@@ -828,7 +828,7 @@ class File(dax.File):
 
     def output_map_str(self):
         if self.storage_path:
-            return '%s %s pool="%s"' % (self.name, self.storage_path, "local")
+            return f'{self.name} {self.storage_path} pool="local"'
         raise ValueError("This file does not have a storage path")
 
     def add_pfn(self, url, site):

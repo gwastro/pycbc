@@ -11,7 +11,7 @@ from . import fgmc_functions as fgmcfun
 
 _s_per_yr = 1.0 / conv.sec_to_year(1.0)
 
-logger = logging.getLogger("pycbc.population.live_pastro")
+logger = logging.getLogger(__name__)
 
 
 def check_template_param_bin_data(spec_json):

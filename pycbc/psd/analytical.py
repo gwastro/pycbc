@@ -70,13 +70,12 @@ _psd_list = sorted(_psd_list)
 # add functions wrapping lalsimulation PSDs
 for _name in _psd_list:
     exec(
-        """
-def %s(length, delta_f, low_freq_cutoff):
-    \"\"\"Return a FrequencySeries containing the %s PSD from LALSimulation.
+        f"""
+def {_name}(length, delta_f, low_freq_cutoff):
+    \"\"\"Return a FrequencySeries containing the {_name} PSD from LALSimulation.
     \"\"\"
-    return from_string("%s", length, delta_f, low_freq_cutoff)
+    return from_string("{_name}", length, delta_f, low_freq_cutoff)
 """
-        % (_name, _name, _name)
     )
 
 
@@ -109,8 +108,7 @@ def get_pycbc_psd_list():
 
     """
     pycbc_analytical_psd_list = pycbc_analytical_psds.keys()
-    pycbc_analytical_psd_list = sorted(pycbc_analytical_psd_list)
-    return pycbc_analytical_psd_list
+    return sorted(pycbc_analytical_psd_list)
 
 
 def from_string(psd_name, length, delta_f, low_freq_cutoff, **kwargs):

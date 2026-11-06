@@ -27,12 +27,14 @@ from pycbc import bin_utils, events, io
 from pycbc.events import ranking
 from pycbc.events import trigger_fits as trstats
 
+logger = logging.getLogger(__name__)
+
 #### DEFINITIONS AND FUNCTIONS ####
 
 stat_dict = {
     "new_snr": ranking.newsnr,
     "effective_snr": ranking.effsnr,
-    "snr": lambda snr, rchisq: snr,
+    "snr": lambda snr, rchisq: snr,  # noqa: ARG005
     "snronchi": lambda snr, rchisq: snr / (rchisq**0.5),
 }
 
@@ -138,7 +140,7 @@ cuts.add_argument(
     "--snr-threshold",
     type=float,
     help="Only fit triggers with SNR above this threshold. "
-    "Default %.1f" % default_thresh,
+    f"Default {default_thresh:.1f}",
 )
 cuts.add_argument(
     "--trig-filter",
@@ -221,9 +223,9 @@ if opt.trig_filter and trigformat != "hdf":
 # hack default values of SNR threshold and filter function
 if not opt.snr_threshold and not opt.trig_filter:
     opt.snr_threshold = default_thresh
-    filter_func = "self.snr > %f" % opt.snr_threshold
+    filter_func = f"self.snr > {opt.snr_threshold:f}"
 elif opt.snr_threshold:
-    filter_func = "self.snr > %f" % opt.snr_threshold
+    filter_func = f"self.snr > {opt.snr_threshold:f}"
 else:
     filter_func = opt.trig_filter
 
@@ -258,9 +260,9 @@ for ifo in opt.ifos:
     # FIXME: Would like a uniform input interface from trigger files
     # to the 'get_column' syntax used by SnglInspiralUtils
     if trigformat == "xml":
-        from pylal import SnglInspiralUtils as sniuls
+        from pylal import SnglInspiralUtils
 
-        sngls = sniuls.ReadSnglInspiralFromFiles(
+        sngls = SnglInspiralUtils.ReadSnglInspiralFromFiles(
             opt.inputs,
             filterFunc=lambda s: s.snr > opt.snr_threshold,
             verbose=opt.verbose,
@@ -287,7 +289,7 @@ for ifo in opt.ifos:
 
     snr = sngls.get_column("snr")
     if not len(snr):
-        logging.warning("no trigs, skipping %s", ifo)
+        logger.warning("no trigs, skipping %s", ifo)
         continue
     chisq = sngls.get_column("chisq")
     chisq_dof = sngls.get_column("chisq_dof")
@@ -306,7 +308,7 @@ for ifo in opt.ifos:
     # rchisq = np.maximum(rchisq, bank_rchisq)
 
     if opt.veto_file and not done_vetoing:
-        logging.info("Applying vetoes from %s for ifo %s" % (opt.veto_file, ifo))
+        logger.info("Applying vetoes from %s for ifo %s", opt.veto_file, ifo)
         keep_idx, segs = events.veto.indices_outside_segments(
             sngls.get_column("end_time").astype(int),
             [opt.veto_file],
@@ -322,32 +324,33 @@ for ifo in opt.ifos:
         if tid is not None:
             tid = tid[keep_idx]
         parvals = parvals[keep_idx]
-        logging.info("%i trigs remain" % len(snr))
+        logger.info("%i trigs remain", len(snr))
 
-    logging.info("Calculating ranking statistic values")
+    logger.info("Calculating ranking statistic values")
     statv = get_stat(opt.sngl_stat, snr, rchisq, opt.stat_factor)
 
-    logging.info("Parameter range of triggers: %f - %f" % (min(parvals), max(parvals)))
+    logger.info("Parameter range of triggers: %f - %f", min(parvals), max(parvals))
     if opt.bin_spacing == "irregular":
-        logging.info(
-            "Removing triggers outside bin range %f - %f"
-            % (min(opt.bin_edges), max(opt.bin_edges))
+        logger.info(
+            "Removing triggers outside bin range %f - %f",
+            min(opt.bin_edges),
+            max(opt.bin_edges),
         )
         in_range = np.logical_and(
             parvals >= min(opt.bin_edges), parvals <= max(opt.bin_edges)
         )
         statv = statv[in_range]
         parvals = parvals[in_range]
-        logging.info("%i remain" % len(statv))
+        logger.info("%i remain", len(statv))
     pbins = get_bins(opt, 0.99 * min(parvals), 1.01 * max(parvals))
     # list of bin indices
     binind = [pbins[c] for c in pbins.centres()]
-    logging.info("Assigning trigger param values to bins")
+    logger.info("Assigning trigger param values to bins")
     # FIXME: This is slow!! either find a better way of using pylal.rate
     # or write faster binning routine
     pind = np.array([pbins[par] for par in parvals])
 
-    logging.info("Getting max counts in bins")
+    logger.info("Getting max counts in bins")
     # determine trigger counts first to get plot limits to make them the same
     # for all thresholds; use only the smallest threshold requested
     minth = min(opt.stat_threshold)
@@ -365,13 +368,13 @@ for ifo in opt.ifos:
     ks_prob[ifo] = {}
 
     for th in opt.stat_threshold:
-        logging.info("Fitting above threshold %f" % th)
+        logger.info("Fitting above threshold %f", th)
         counts[ifo][th] = {}
         fits[ifo][th] = {}
         stdev[ifo][th] = {}
         ks_prob[ifo][th] = {}
 
-        for i, lower, upper in zip(binind, pbins.lower(), pbins.upper()):
+        for i, lower, upper in zip(binind, pbins.lower(), pbins.upper(), strict=True):
             # determine number of templates generating the triggers involved
             # for hdf5, use the template id; otherwise use masses
             if trigformat == "hdf":
@@ -380,7 +383,9 @@ for ifo in opt.ifos:
             else:
                 mass1_inbin = mass1[pind == i]
                 mass2_inbin = mass2[pind == i]
-                mass_tuples = [(m1, m2) for m1, m2 in zip(mass1_inbin, mass2_inbin)]
+                mass_tuples = [
+                    (m1, m2) for m1, m2 in zip(mass1_inbin, mass2_inbin, strict=True)
+                ]
                 numtmpl = len(set(mass_tuples))
             templates[ifo][i] = numtmpl
             vals_inbin = statv[pind == i]
@@ -390,7 +395,7 @@ for ifo in opt.ifos:
                 continue
             # FIXME: Also allow to use dynamically determined threshold
             # calculated via Nth loudest trig
-            # thresh = trstats.tail_threshold(vals_inbin, N=nmax)
+            # thresh = trstats.tail_threshold(vals_inbin, n=nmax)
             # counts[ifo][th][i] = nmax
             # do the fit
             alpha, sig_alpha = trstats.fit_above_thresh(
@@ -400,29 +405,20 @@ for ifo in opt.ifos:
             #                             opt.fit_function, vals_inbin, thresh)
             fits[ifo][th][i] = alpha
             stdev[ifo][th][i] = sig_alpha
-            _, ks_prob[ifo][th][i] = trstats.KS_test(
+            _, ks_prob[ifo][th][i] = trstats.ks_test(
                 opt.fit_function, vals_inbin, alpha, th
             )
             outfile.write(
-                "%s %.2f %.3g %.3g %d %d %.3f %.3f %.3g\n"
-                % (
-                    ifo,
-                    th,
-                    lower,
-                    upper,
-                    numtmpl,
-                    counts[ifo][th][i],
-                    alpha,
-                    sig_alpha,
-                    ks_prob[ifo][th][i],
-                )
+                f"{ifo} {th:.2f} {lower:.3g} {upper:.3g} {numtmpl} "
+                f"{int(counts[ifo][th][i])} {alpha:.3f} {sig_alpha:.3f} "
+                f"{ks_prob[ifo][th][i]:.3g}\n"
             )
 
             # add histogram to plot
             if opt.plot_dir:
                 histcounts, edges = np.histogram(vals_inbin, bins=50)
                 cum_counts = histcounts[::-1].cumsum()[::-1]
-                binlabel = r"%.2g - %.2g" % (lower, upper)
+                binlabel = rf"{lower:.2g} - {upper:.2g}"
                 plt.semilogy(
                     edges[:-1],
                     cum_counts,
@@ -438,7 +434,7 @@ for ifo in opt.ifos:
                     * trstats.cum_fit(opt.fit_function, plotrange, alpha, th),
                     "--",
                     color=histcolors[i],
-                    label=r"$\alpha = $%.2f $\pm$ %.2f" % (alpha, sig_alpha),
+                    label=rf"$\alpha = ${alpha:.2f} $\pm$ {sig_alpha:.2f}",
                 )
                 plt.semilogy(
                     plotrange,
@@ -480,7 +476,7 @@ for ifo in opt.ifos:
                 + str(th)
                 + ".png"
             )
-            logging.info("Saving plot to %s" % dest)
+            logger.info("Saving plot to %s", dest)
             plt.savefig(dest)
             plt.close()
 
@@ -493,7 +489,7 @@ if opt.plot_dir:
                 [fits[ifo][th][i] for i in binind],
                 yerr=[stdev[ifo][th][i] for i in binind],
                 fmt="+-",
-                label=ifo + " fit above %.2f" % th,
+                label=ifo + f" fit above {th:.2f}",
             )
         if opt.bin_spacing == "log":
             plt.semilogx()
@@ -509,7 +505,7 @@ if opt.plot_dir:
                 pbins.centres(),
                 [ks_prob[ifo][th][i] for i in binind],
                 "+--",
-                label=ifo + " KS prob, thresh %.2f" % th,
+                label=ifo + f" KS prob, thresh {th:.2f}",
             )
         if opt.bin_spacing == "log":
             plt.loglog()
@@ -523,4 +519,4 @@ if opt.plot_dir:
         plt.savefig(plotbase + "_KS_prob_vs_" + paramtag[0:3] + ".png")
         plt.close()
 
-logging.info("Done!")
+logger.info("Done!")

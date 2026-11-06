@@ -33,6 +33,8 @@ import numpy
 from pycbc import distributions, transforms
 from pycbc.io import FieldArray
 
+logger = logging.getLogger(__name__)
+
 #
 # =============================================================================
 #
@@ -105,7 +107,7 @@ class ModelStats:
             A dictionary of the requested stats.
 
         """
-        return dict(zip(names, self.getstats(names, default=default)))
+        return dict(zip(names, self.getstats(names, default=default), strict=True))
 
 
 class SamplingTransforms:
@@ -231,16 +233,16 @@ class SamplingTransforms:
         try:
             sampling_params, replace_parameters = read_sampling_params_from_config(cp)
         except NoSectionError as e:
-            logging.warning("No sampling_params section read from config file")
+            logger.warning("No sampling_params section read from config file")
             raise e
         # get sampling transformations
         sampling_transforms = transforms.read_transforms_from_config(
             cp, "sampling_transforms"
         )
-        logging.info(
-            "Sampling in {} in place of {}".format(
-                ", ".join(sampling_params), ", ".join(replace_parameters)
-            )
+        logger.info(
+            "Sampling in %s in place of %s",
+            ", ".join(sampling_params),
+            ", ".join(replace_parameters),
         )
         return cls(
             variable_params, sampling_params, replace_parameters, sampling_transforms
@@ -461,7 +463,7 @@ class BaseModel(metaclass=ABCMeta):
     @property
     def default_stats(self):
         """The stats that ``get_current_stats`` returns by default."""
-        return ["logjacobian", "logprior", "loglikelihood"] + self._extra_stats
+        return ["logjacobian", "logprior", "loglikelihood", *self._extra_stats]
 
     @property
     def _extra_stats(self):
@@ -685,8 +687,7 @@ class BaseModel(metaclass=ABCMeta):
         if self.sampling_transforms is not None:
             params = self.sampling_transforms.apply(params, inverse=True)
         # apply boundary conditions
-        params = self.prior_distribution.apply_boundary_conditions(**params)
-        return params
+        return self.prior_distribution.apply_boundary_conditions(**params)
 
     #
     # Methods for initiating from a config file.
@@ -759,7 +760,7 @@ class BaseModel(metaclass=ABCMeta):
 
         """
         # get prior distribution for each variable parameter
-        logging.info("Setting up priors for each parameter")
+        logger.info("Setting up priors for each parameter")
         dists = distributions.read_distributions_from_config(cp, prior_section)
         constraints = distributions.read_constraints_from_config(
             cp, constraint_section, static_args=static_params
@@ -824,7 +825,7 @@ class BaseModel(metaclass=ABCMeta):
         args["sampling_transforms"] = sampling_transforms
         # get any waveform transforms
         if any(cp.get_subsections("waveform_transforms")):
-            logging.info("Loading waveform transforms")
+            logger.info("Loading waveform transforms")
             waveform_transforms = transforms.read_transforms_from_config(
                 cp, "waveform_transforms"
             )
@@ -918,9 +919,11 @@ def check_for_cartesian_spins(
     """
     # don't do this check if the config file has the ignore section
     if cp.has_section(ignore):
-        logging.info(
-            f"[{ignore}] found in config file; not performing check for "
-            f"cartesian spin{which} parameters"
+        logger.info(
+            "[%s] found in config file; not performing check for cartesian spin%s "
+            "parameters",
+            ignore,
+            which,
         )
         return
     errmsg = (
@@ -949,9 +952,9 @@ def check_for_cartesian_spins(
         "not be performed in that case."
     )
     allparams = set(variable_params) | set(static_params.keys())
-    spinparams = set(p for p in allparams if p.startswith(f"spin{which}"))
+    spinparams = {p for p in allparams if p.startswith(f"spin{which}")}
     if any(spinparams):
-        cartspins = set(f"spin{which}{coord}" for coord in ["x", "y", "z"])
+        cartspins = {f"spin{which}{coord}" for coord in ["x", "y", "z"]}
         # add any parameters to all params that will be output by waveform
         # transforms
         allparams = allparams.union(*[t.outputs for t in waveform_transforms])

@@ -31,18 +31,14 @@ from .matchedfilter import _BaseCorrelator
 @context_dependent_memoize
 def get_correlate_kernel(dtype_x, dtype_y, dtype_out):
     return ElementwiseKernel(
-        "%(tp_x)s *x, %(tp_y)s *y, %(tp_z)s *z"
-        % {
-            "tp_x": dtype_to_ctype(dtype_x),
-            "tp_y": dtype_to_ctype(dtype_y),
-            "tp_z": dtype_to_ctype(dtype_out),
-        },
+        f"{dtype_to_ctype(dtype_x)} *x, {dtype_to_ctype(dtype_y)} *y, "
+        f"{dtype_to_ctype(dtype_out)} *z",
         "z[i] = conj(x[i]) * y[i]",
         "correlate",
     )
 
 
-def correlate(a, b, out, stream=None):
+def correlate(a, b, out, stream=None):  # noqa: ARG001
     dtype_out = _get_common_dtype(a, b)
     krnl = get_correlate_kernel(a.dtype, b.dtype, dtype_out)
     krnl(a.data, b.data, out.data)
@@ -60,5 +56,5 @@ class CUDACorrelator(_BaseCorrelator):
         self.krnl(self.x, self.y, self.z)
 
 
-def _correlate_factory(x, y, z):
+def _correlate_factory(x, y, z):  # noqa: ARG001
     return CUDACorrelator

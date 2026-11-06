@@ -24,7 +24,7 @@ from scipy.special import erf, erfinv
 
 from pycbc.distributions import bounded
 
-logger = logging.getLogger("pycbc.distributions.gaussian")
+logger = logging.getLogger(__name__)
 
 
 class Gaussian(bounded.BoundedDist):

@@ -60,6 +60,8 @@ from .relbin_cpu import (
 )
 from .tools import DistMarg
 
+logger = logging.getLogger(__name__)
+
 
 def setup_bins(
     f_full,
@@ -108,10 +110,12 @@ def setup_bins(
         if gammas is not None
         else numpy.array([-5.0 / 3, -2.0 / 3, 1.0, 5.0 / 3, 7.0 / 3])
     )
-    logging.info("Using powerlaw indices: %s", ga)
+    logger.info("Using powerlaw indices: %s", ga)
     dalp = chi * 2.0 * numpy.pi / numpy.absolute((f_lo**ga) - (f_hi**ga))
     dphi = numpy.sum(
-        numpy.array([numpy.sign(g) * d * (f**g) for g, d in zip(ga, dalp)]),
+        numpy.array(
+            [numpy.sign(g) * d * (f**g) for g, d in zip(ga, dalp, strict=True)]
+        ),
         axis=0,
     )
     dphi_diff = dphi - dphi[0]
@@ -136,8 +140,7 @@ def setup_bins(
             else:
                 curr_idx = idx_f_full
         fbin_ind[idx_fbin] = curr_idx
-    fbin_ind = numpy.unique(fbin_ind)
-    return fbin_ind
+    return numpy.unique(fbin_ind)
 
 
 class Relative(DistMarg, BaseGaussianNoise):
@@ -235,7 +238,23 @@ class Relative(DistMarg, BaseGaussianNoise):
             if self.fid_params[k] == "REPLACE":
                 self.fid_params.pop(k)
 
-        for ifo in data:
+        # the data with the fiducial waveform's timing taken out, and the
+        # frequency range it covers. Both are what the bins are laid out
+        # from, and are kept so that can be done again.
+        self.shifted, self.flimits = {}, {}
+
+        self.setup_fiducial()
+        self.setup_bin_layout(epsilon, gammas, earth_rotation, int(earth_rotation_mode))
+
+    def setup_fiducial(self):
+        """
+        Generate the fiducial waveform and the data to compare against it.
+
+        Redone when the fiducial parameters change. The bins are laid out
+        from what this leaves behind, so they have to be laid out again
+        after it.
+        """
+        for ifo in self.data:
             # store data and frequencies
             d0 = self.data[ifo]
             self.f[ifo] = d0.sample_frequencies.numpy()
@@ -245,7 +264,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             # generate fiducial waveform
             f_lo = self.kmin[ifo] * self.df[ifo]
             f_hi = self.kmax[ifo] * self.df[ifo]
-            logging.info(
+            logger.info(
                 "%s: Generating fiducial waveform from %s to %s Hz",
                 ifo,
                 f_lo,
@@ -269,17 +288,23 @@ class Relative(DistMarg, BaseGaussianNoise):
                 # Apply detector response if not handled by
                 # the waveform generator
                 self.det[ifo] = Detector(ifo)
+                # the fiducial tc is in the frame tc is sampled in
+                fid_tc = self.geocentric_tc(
+                    self.fid_params["tc"],
+                    self.fid_params["ra"],
+                    self.fid_params["dec"],
+                )
                 dt = self.det[ifo].time_delay_from_earth_center(
                     self.fid_params["ra"],
                     self.fid_params["dec"],
-                    self.fid_params["tc"],
+                    fid_tc,
                 )
-                self.ta[ifo] = self.fid_params["tc"] + dt
+                self.ta[ifo] = fid_tc + dt
                 fp, fc = self.det[ifo].antenna_pattern(
                     self.fid_params["ra"],
                     self.fid_params["dec"],
                     self.fid_params["polarization"],
-                    self.fid_params["tc"],
+                    fid_tc,
                 )
                 curr_wav = fid_hp * fp + fid_hc * fc
 
@@ -289,7 +314,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             if numzeros_lo > 0:
                 new_kmin = self.kmin[ifo] + numzeros_lo
                 f_lo = new_kmin * self.df[ifo]
-                logging.info(
+                logger.info(
                     "WARNING! Fiducial waveform starts above "
                     "low-frequency-cutoff, initial bin frequency "
                     "will be %s Hz",
@@ -299,7 +324,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             if numzeros_hi > 0:
                 new_kmax = self.kmax[ifo] - numzeros_hi
                 f_hi = new_kmax * self.df[ifo]
-                logging.info(
+                logger.info(
                     "WARNING! Fiducial waveform terminates below "
                     "high-frequency-cutoff, final bin frequency "
                     "will be %s Hz",
@@ -314,9 +339,22 @@ class Relative(DistMarg, BaseGaussianNoise):
             # This makes it easier to compare target signal to reference later
             tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
             self.h00[ifo] = numpy.array(curr_wav)  # * tshift
-            data_shifted = self.data[ifo] * numpy.conjugate(tshift)
+            self.shifted[ifo] = self.data[ifo] * numpy.conjugate(tshift)
+            self.flimits[ifo] = (f_lo, f_hi)
 
-            logging.info("Computing frequency bins")
+    def setup_bin_layout(self, epsilon, gammas, earth_rotation, earth_rotation_mode):
+        """
+        Place the frequency bins and compute the summary data for them.
+
+        Everything this needs is left behind by
+        :py:meth:`setup_fiducial`, so it can be redone on its own to
+        change the resolution without generating the fiducial waveform
+        again.
+        """
+        for ifo in self.data:
+            f_lo, f_hi = self.flimits[ifo]
+
+            logger.info("Computing frequency bins")
             fbin_ind = setup_bins(
                 f_full=self.f[ifo],
                 f_lo=f_lo,
@@ -324,13 +362,13 @@ class Relative(DistMarg, BaseGaussianNoise):
                 gammas=gammas,
                 eps=float(epsilon),
             )
-            logging.info("Using %s bins for this model", len(fbin_ind))
+            logger.info("Using %s bins for this model", len(fbin_ind))
 
             self.fedges[ifo] = self.f[ifo][fbin_ind]
             self.edges[ifo] = fbin_ind
-            self.init_from_frequencies(data_shifted, self.h00, fbin_ind, ifo)
+            self.init_from_frequencies(self.shifted[ifo], self.h00, fbin_ind, ifo)
             self.antenna_time[ifo] = self.setup_antenna(
-                earth_rotation, int(earth_rotation_mode), self.fedges[ifo]
+                earth_rotation, earth_rotation_mode, self.fedges[ifo]
             )
         self.combine_layout()
 
@@ -343,7 +381,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         self.h00_sparse[ifo] = h00[ifo].copy().take(fbin_ind)
 
         # compute summary data
-        logging.info(
+        logger.info(
             "Calculating summary data at frequency resolution %s Hz",
             self.df[ifo],
         )
@@ -368,13 +406,19 @@ class Relative(DistMarg, BaseGaussianNoise):
                 else:
                     self.ifo_map[ifo] = len(self.edge_unique)
                     self.edge_unique.append(Array(self.fedges[ifo]))
-        logging.info("%s unique ifo layouts", len(self.edge_unique))
+        logger.info("%s unique ifo layouts", len(self.edge_unique))
 
     def setup_antenna(self, earth_rotation, mode, fedges):
         # Calculate the times to evaluate fp/fc
         self.earth_rotation = earth_rotation
+        # the fiducial tc is in the frame tc is sampled in
+        fid_tc = self.fid_params["tc"]
+        if self.tc_ref_frame != "geocentric":
+            fid_tc = self.geocentric_tc(
+                fid_tc, self.fid_params["ra"], self.fid_params["dec"]
+            )
         if earth_rotation is not False:
-            logging.info("Enabling frequency-dependent earth rotation")
+            logger.info("Enabling frequency-dependent earth rotation")
             from pycbc.waveform.spa_tmplt import spa_length_in_time
 
             times = spa_length_in_time(
@@ -383,11 +427,11 @@ class Relative(DistMarg, BaseGaussianNoise):
                 mass2=self.fid_params["mass2"],
                 f_lower=numpy.array(fedges) / mode * 2.0,
             )
-            atimes = self.fid_params["tc"] - times
+            atimes = fid_tc - times
             self.lik = likelihood_parts_v
             self.mlik = likelihood_parts_multi_v
         else:
-            atimes = self.fid_params["tc"]
+            atimes = fid_tc
             if self.still_needs_det_response:
                 self.lik = likelihood_parts_det
                 self.mlik = likelihood_parts_det_multi
@@ -402,27 +446,27 @@ class Relative(DistMarg, BaseGaussianNoise):
         if self.marginalize_vector_params:
             p = self.current_params
 
-            vmarg = set(
+            vmarg = {
                 k for k in self.marginalize_vector_params if not numpy.isscalar(p[k])
-            )
+            }
 
             if self.earth_rotation:
-                if set(["tc", "polarization"]).issubset(vmarg):
+                if {"tc", "polarization"}.issubset(vmarg):
                     self.lformat = "earth_time_pol"
                     return likelihood_parts_v_pol_time
-                if set(["polarization"]).issubset(vmarg):
+                if {"polarization"}.issubset(vmarg):
                     self.lformat = "earth_pol"
                     return likelihood_parts_v_pol
-                if set(["tc"]).issubset(vmarg):
+                if {"tc"}.issubset(vmarg):
                     self.lformat = "earth_time"
                     return likelihood_parts_v_time
-            elif set(["ra", "dec", "tc"]).issubset(vmarg) or set(
-                ["tc", "polarization"]
-            ).issubset(vmarg):
+            elif {"ra", "dec", "tc"}.issubset(vmarg) or {"tc", "polarization"}.issubset(
+                vmarg
+            ):
                 return likelihood_parts_vector
-            elif set(["tc"]).issubset(vmarg):
+            elif {"tc"}.issubset(vmarg):
                 return likelihood_parts_vectort
-            elif set(["polarization"]).issubset(vmarg):
+            elif {"polarization"}.issubset(vmarg):
                 return likelihood_parts_vectorp
 
         return self.lik
@@ -481,7 +525,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             or self.marginalize_distance
             or self.marginalize_phase
         ):
-            logging.info(
+            logger.info(
                 "Cannot use single template model inside of"
                 "multi_signal if marginalizations are enabled"
             )
@@ -512,7 +556,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     def multi_loglikelihood(self, models):
         """Calculate a multi-model (signal) likelihood"""
-        models = [self] + models
+        models = [self, *models]
         loglr = 0
         # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
         for m in models:
@@ -624,7 +668,8 @@ class Relative(DistMarg, BaseGaussianNoise):
                 det = self.det[ifo]
                 fp, fc = det.antenna_pattern(p["ra"], p["dec"], 0.0, times)
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
-                dtc = p["tc"] + dt - end_time - self.ta[ifo]
+                tc = self.geocentric_tc(p["tc"], p["ra"], p["dec"])
+                dtc = tc + dt - end_time - self.ta[ifo]
 
                 if self.lformat == "earth_pol":
                     filter_i, norm_i = lik(
@@ -842,6 +887,7 @@ class RelativeTime(Relative):
 
         self.snr_draw(wfs)
         p = self.current_params
+        tc = self.geocentric_tc(p["tc"], p["ra"], p["dec"])
 
         for ifo in self.data:
             freqs = self.fedges[ifo]
@@ -854,7 +900,7 @@ class RelativeTime(Relative):
             det = self.det[ifo]
             fp, fc = det.antenna_pattern(p["ra"], p["dec"], 0, times)
             times = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
-            dtc = p["tc"] - end_time - self.ta[ifo]
+            dtc = tc - end_time - self.ta[ifo]
 
             if self.lformat == "earth_time_pol":
                 filter_i, norm_i = lik(
@@ -907,8 +953,7 @@ class RelativeTime(Relative):
                     )
             filt += filter_i
             norm += norm_i
-        loglr = self.marginalize_loglr(filt, norm)
-        return loglr
+        return self.marginalize_loglr(filt, norm)
 
     def _nowaveform_handler(self):
         """Sets loglr values if no waveform generated."""
@@ -1001,16 +1046,15 @@ class RelativeTimeDom(RelativeTime):
 
         snrs = self.get_snr(wfs)
         self.snr_draw(snrs=snrs)
+        tc = self.geocentric_tc(p["tc"], p["ra"], p["dec"])
 
         for ifo in self.sh:
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(ifo)
             else:
-                dt = self.det[ifo].time_delay_from_earth_center(
-                    p["ra"], p["dec"], p["tc"]
-                )
-                fp, fc = self.det[ifo].antenna_pattern(p["ra"], p["dec"], 0, p["tc"])
-            dts = p["tc"] + dt
+                dt = self.det[ifo].time_delay_from_earth_center(p["ra"], p["dec"], tc)
+                fp, fc = self.det[ifo].antenna_pattern(p["ra"], p["dec"], 0, tc)
+            dts = tc + dt
             f = (fp + 1.0j * fc) * pol_phase
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data

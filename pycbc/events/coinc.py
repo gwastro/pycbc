@@ -48,7 +48,7 @@ from .eventmgr_cython import (
     timecoincidence_getslideint,
 )
 
-logger = logging.getLogger("pycbc.events.coinc")
+logger = logging.getLogger(__name__)
 
 
 def background_bin_from_string(background_bins, data):
@@ -82,7 +82,7 @@ def background_bin_from_string(background_bins, data):
         bin_type_list = bin_type_list.split(",")
         boundary_list = boundary_list.split(",")
 
-        for bin_type, boundary in zip(bin_type_list, boundary_list):
+        for bin_type, boundary in zip(bin_type_list, boundary_list, strict=True):
             if boundary[0:2] == "lt":
                 member_func = lambda vals, bd=boundary: vals < float(bd[2:])
             elif boundary[0:2] == "gt":
@@ -136,7 +136,7 @@ def background_bin_from_string(background_bins, data):
                 )
                 cached_values[bin_type] = vals
             else:
-                raise ValueError("Invalid bin type %s" % bin_type)
+                raise ValueError(f"Invalid bin type {bin_type}")
 
             sub_locs = member_func(vals)
             sub_locs = numpy.where(sub_locs)[0]
@@ -346,9 +346,9 @@ def time_multi_coincidence(times, slide_step=0, slop=0.003, pivot="H1", fixed="L
                 #  jobs. For these, arbitrarily keep the first trigger and
                 #  discard the second (and any subsequent ones).
                 logger.warning(
-                    "Triggers in %s are closer than coincidence "
-                    "window, 1 or more coincs will be discarded. "
-                    "This is a warning, not an error." % ifo1
+                    "Triggers in %s are closer than coincidence window, 1 or more "
+                    "coincs will be discarded. This is a warning, not an error.",
+                    ifo1,
                 )
             # identify indices of times in ifo1 that form coincs with ifo2
             dep_ids = left[nz]
@@ -441,7 +441,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, **kw
         The set of indices corresponding to the surviving coincidences
 
     """
-    time_coinc_zip = list(zip(*time_coincs))
+    time_coinc_zip = list(zip(*time_coincs, strict=True))
     if len(time_coinc_zip) == 0:
         logger.info("No coincident triggers.")
         return numpy.array([])
@@ -451,7 +451,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, **kw
     for tc in time_coinc_zip:
         time_avg_num.append(mean_if_greater_than_zero(tc))
 
-    time_avg, num_ifos = zip(*time_avg_num)
+    time_avg, num_ifos = zip(*time_avg_num, strict=True)
 
     time_avg = numpy.array(time_avg)
     num_ifos = numpy.array(num_ifos)
@@ -661,7 +661,7 @@ class MultiRingBuffer:
 
     def add(self, indices, values):
         """Add triggers in 'values' to the buffers indicated by the indices"""
-        for i, v in zip(indices, values):
+        for i, v in zip(indices, values, strict=True):
             # Expand ring buffer size if needed
             if self.valid_ends[i] == len(self.buffer[i]):
                 # First clear out any old triggers before resizing
@@ -691,10 +691,7 @@ class MultiRingBuffer:
 
     def valid_slice(self, buffer_index):
         """Return the valid slice for this buffer index"""
-        ret_slice = slice(
-            self.valid_starts[buffer_index], self.valid_ends[buffer_index]
-        )
-        return ret_slice
+        return slice(self.valid_starts[buffer_index], self.valid_ends[buffer_index])
 
     def expire_vector(self, buffer_index):
         """Return the expiration vector of a given ring buffer"""
@@ -1370,6 +1367,7 @@ class LiveCoincTimeslideBackgroundEstimator:
             [self.ifos[0], self.ifos[1]],
             [self.ifos[1], self.ifos[0]],
             [[0, -1], [-1, 0]],
+            strict=True,
         ):
             if fixed_ifo not in valid_ifos:
                 # This ifo is not online now, so no new triggers or coincs

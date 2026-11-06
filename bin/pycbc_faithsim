@@ -40,6 +40,8 @@ from pycbc.scheme import CPUScheme, CUDAScheme
 from pycbc.types import FrequencySeries, zeros
 from pycbc.waveform import fd_approximants, get_two_pol_waveform_filter, td_approximants
 
+logger = logging.getLogger(__name__)
+
 
 def update_progress(progress):
     print(f"Progress: {progress}/{100} members processed")
@@ -61,8 +63,8 @@ def get_waveform(
 ):
 
     delta_f = sample_rate / length
-    vecplus = FrequencySeries(zeros(filter_n), delta_f=delta_f, dtype=complex64)
-    veccross = FrequencySeries(zeros(filter_n), delta_f=delta_f, dtype=complex64)
+    vecplus = FrequencySeries(zeros(filter_flen), delta_f=delta_f, dtype=complex64)
+    veccross = FrequencySeries(zeros(filter_flen), delta_f=delta_f, dtype=complex64)
 
     if tapering is not None:
         curr_taper = tapering
@@ -73,7 +75,7 @@ def get_waveform(
 
     # NOTE: for now only hplus is used! For precessing faithsims one would want
     #       to also specify a polarization phase, or "u_val".
-    hplus, hcross = get_two_pol_waveform_filter(
+    hplus, _ = get_two_pol_waveform_filter(
         vecplus,
         veccross,
         template_params,
@@ -236,25 +238,25 @@ except ValueError:
 
 # open the output file where the max overlaps over the bank are stored
 fout = open(options.out_file, "w")
-logging.info("Writing matches to " + options.out_file)
+logger.info("Writing matches to %s", options.out_file)
 
-filter_N = options.filter_waveform_length * options.filter_sample_rate
-filter_n = int(filter_N / 2) + 1
-delta_f = float(options.filter_sample_rate) / filter_N
+filter_tlen = options.filter_waveform_length * options.filter_sample_rate
+filter_flen = int(filter_tlen / 2) + 1
+delta_f = float(options.filter_sample_rate) / filter_tlen
 
-logging.info("Number of Waveforms      : %d" % len(waveform_table))
+logger.info("Number of Waveforms      : %d", len(waveform_table))
 
-logging.info("Reading and Interpolating PSD")
+logger.info("Reading and Interpolating PSD")
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if options.psd_estimation:
-    logging.info("Obtaining h(t) for PSD generation")
+    logger.info("Obtaining h(t) for PSD generation")
     strain = pycbc.strain.from_cli(options, pycbc.DYN_RANGE_FAC)
 else:
     strain = None
 
 psd = pycbc.psd.from_cli(
     options,
-    length=filter_n,
+    length=filter_flen,
     delta_f=delta_f,
     low_frequency_cutoff=options.filter_low_frequency_cutoff,
     strain=strain,
@@ -267,7 +269,7 @@ overlaps = []
 time_offsets = []
 s1s = []
 s2s = []
-logging.info("Calculating Overlaps")
+logger.info("Calculating Overlaps")
 with ctx:
     index = 0
     # Calculate the overlaps
@@ -286,7 +288,7 @@ with ctx:
                 waveform_params,
                 options.waveform1_start_frequency,
                 options.filter_sample_rate,
-                filter_N,
+                filter_tlen,
             )
 
             htilde2 = get_waveform(
@@ -298,7 +300,7 @@ with ctx:
                 waveform_params,
                 options.waveform2_start_frequency,
                 options.filter_sample_rate,
-                filter_N,
+                filter_tlen,
             )
 
             m, i = match(
@@ -331,14 +333,14 @@ with ctx:
             )
             matches.append(m)
             overlaps.append(o)
-            if i > filter_n:
-                i = i - filter_N
+            if i > filter_flen:
+                i = i - filter_tlen
             time_offsets.append(i * 1.0 / options.filter_sample_rate)
             s1s.append(s1)
             s2s.append(s2)
         except Exception as e:
-            logging.warning("Unable to generate waveforms")
-            logging.warning("Error: %s, %s", str(type(e)), str(e))
+            logger.warning("Unable to generate waveforms")
+            logger.warning("Error: %s, %s", str(type(e)), str(e))
             matches.append(-1)
             overlaps.append(-1)
             time_offsets.append(-1)
@@ -346,6 +348,6 @@ with ctx:
             s2s.append(-1)
 
 # Output the overlaps to  a file
-for m, o, i, s1, s2 in zip(matches, overlaps, time_offsets, s1s, s2s):
-    match_str = "%5.5f %5.5f %5.5f %5.5f %5.5f\n" % (m, o, i, s1, s2)
+for m, o, i, s1, s2 in zip(matches, overlaps, time_offsets, s1s, s2s, strict=True):
+    match_str = f"{m:5.5f} {o:5.5f} {i:5.5f} {s1:5.5f} {s2:5.5f}\n"
     fout.write(match_str)

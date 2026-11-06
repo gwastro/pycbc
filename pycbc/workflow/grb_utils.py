@@ -41,7 +41,7 @@ from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.workflow.plotting import PlotExecutable
 
-logger = logging.getLogger("pycbc.workflow.grb_utils")
+logger = logging.getLogger(__name__)
 
 
 def _select_grb_pp_class(wflow, curr_exe):
@@ -185,7 +185,9 @@ def fermi_core_tail_model(
     scaledsq = sky_err**2 / -2 / np.log(0.32)
     return (
         frac * (1 - np.exp(-0.5 * (rad / np.sqrt(scaledsq + sigma**2)) ** 2))
-        for frac, sigma in zip([core_frac, 1 - core_frac], [core_sigma, tail_sigma])
+        for frac, sigma in zip(
+            [core_frac, 1 - core_frac], [core_sigma, tail_sigma], strict=True
+        )
     )
 
 
@@ -296,17 +298,15 @@ def generate_tc_prior(wflow, tc_path, buffer_seg):
     """
     # Write the tc-prior configuration file if it does not exist
     if os.path.exists(tc_path):
-        raise ValueError("Refusing to overwrite %s." % tc_path)
+        raise ValueError(f"Refusing to overwrite {tc_path}.")
     tc_file = open(tc_path, "w")
     tc_file.write("[prior-tc]\n")
     tc_file.write("name = uniform\n")
-    tc_file.write("min-tc = %s\n" % wflow.analysis_time[0])
-    tc_file.write("max-tc = %s\n\n" % wflow.analysis_time[1])
+    tc_file.write(f"min-tc = {wflow.analysis_time[0]}\n")
+    tc_file.write(f"max-tc = {wflow.analysis_time[1]}\n\n")
     tc_file.write("[constraint-tc]\n")
     tc_file.write("name = custom\n")
-    tc_file.write(
-        "constraint_arg = (tc < %s) | (tc > %s)\n" % (buffer_seg[0], buffer_seg[1])
-    )
+    tc_file.write(f"constraint_arg = (tc < {buffer_seg[0]}) | (tc > {buffer_seg[1]})\n")
     tc_file.close()
 
     # Add the tc-prior configuration file url to wflow.cp if necessary
@@ -504,9 +504,7 @@ def build_segment_filelist(seg_dir):
     file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
     seg_files = [os.path.join(seg_dir, fn) for fn in file_names]
     seg_files = [resolve_url_to_file(sf) for sf in seg_files]
-    seg_files = FileList(seg_files)
-
-    return seg_files
+    return FileList(seg_files)
 
 
 def make_pygrb_plot(
@@ -581,7 +579,7 @@ def make_pygrb_plot(
                 workflow.analysis_time,
                 ".png",
                 "--background-output-file",
-                tags=extra_tags + ["max_background"],
+                tags=[*extra_tags, "max_background"],
             )
         # Output the exclusion distance plot and table
         else:
@@ -590,7 +588,7 @@ def make_pygrb_plot(
                 workflow.analysis_time,
                 ".png",
                 "--onsource-output-file",
-                tags=["onsource"] + extra_tags,
+                tags=["onsource", *extra_tags],
             )
             node.new_output_file_opt(
                 workflow.analysis_time,
@@ -741,7 +739,7 @@ def make_pygrb_injs_tables(
             workflow.analysis_time,
             ".h5",
             "--quiet-found-injs-h5-output-file",
-            tags=extra_tags + ["QUIET_FOUND"],
+            tags=[*extra_tags, "QUIET_FOUND"],
         )
     # Handle input/output for onsource/offsource
     else:
@@ -805,13 +803,13 @@ def setup_pygrb_minifollowups(
         Tags to add to the minifollowups executables
 
     """
-    logging.info("Entering minifollowups module")
+    logger.info("Entering minifollowups module")
 
     if not workflow.cp.has_section("workflow-minifollowups"):
         msg = "There is no [workflow-minifollowups] section in "
         msg += "the configuration file"
-        logging.info(msg)
-        logging.info("Leaving minifollowups")
+        logger.info(msg)
+        logger.info("Leaving minifollowups")
         return None
 
     tags = [] if tags is None else tags
@@ -870,7 +868,7 @@ def setup_pygrb_minifollowups(
         map_file, staging_site=workflow.staging_site, cache_file=workflow.cache_file
     )
     job.add_into_workflow(workflow)
-    logging.info("Leaving minifollowups module")
+    logger.info("Leaving minifollowups module")
 
     return job
 

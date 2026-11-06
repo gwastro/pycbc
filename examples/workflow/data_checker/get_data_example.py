@@ -49,19 +49,19 @@ _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
 workflow = _workflow.Workflow(args)
-currDir = os.getcwd()
-segDir = os.path.join(currDir, "segments")
-if not os.path.exists(segDir + "/logs"):
-    os.makedirs(segDir + "/logs")
-dfDir = os.path.join(currDir, "datafind")
-if not os.path.exists(dfDir + "/logs"):
-    os.makedirs(dfDir + "/logs")
+curr_dir = os.getcwd()
+seg_dir = os.path.join(curr_dir, "segments")
+if not os.path.exists(seg_dir + "/logs"):
+    os.makedirs(seg_dir + "/logs")
+df_dir = os.path.join(curr_dir, "datafind")
+if not os.path.exists(df_dir + "/logs"):
+    os.makedirs(df_dir + "/logs")
 
-scienceSegs, segsList = _workflow.setup_segment_generation(workflow, segDir)
-datafinds, scienceSegs = _workflow.setup_datafind_workflow(
-    workflow, scienceSegs, dfDir, segsList
+science_segs, segs_list = _workflow.setup_segment_generation(workflow, seg_dir)
+datafinds, science_segs = _workflow.setup_datafind_workflow(
+    workflow, science_segs, df_dir, segs_list
 )
 
-# scienceSegs is a ligo.segment.segmentlist of the times you should analyse.
+# science_segs is a ligo.segment.segmentlist of the times you should analyse.
 # It contains science times, that are present on disk, with CAT_1 times
 # removed.

@@ -106,4 +106,4 @@ import timeit
 
 gt = timeit.Timer(tifft)
 t = 1000 * gt.timeit(number=1) / niter
-print("C2C iFFT %.2f msec" % t, " %5.1f /min " % (1000 * 60 / t))
+print(f"C2C iFFT {t:.2f} msec", " %5.1f /min " % (1000 * 60 / t))

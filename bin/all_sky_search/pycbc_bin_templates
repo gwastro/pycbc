@@ -11,6 +11,8 @@ import pycbc
 import pycbc.pnutils
 from pycbc.events import background_bin_from_string
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--ifo", type=str, required=True)
@@ -32,10 +34,10 @@ parser.add_argument("--output-file", required=True)
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
-logging.info("Starting template binning")
+logger.info("Starting template binning")
 
 with h5.File(args.bank_file, "r") as bank:
-    logging.info("Sorting bank into bins")
+    logger.info("Sorting bank into bins")
     data = {
         "mass1": bank["mass1"][:],
         "mass2": bank["mass2"][:],
@@ -47,7 +49,7 @@ with h5.File(args.bank_file, "r") as bank:
     bin_dict = background_bin_from_string(args.background_bins, data)
     bin_names = [b.split(":")[0] for b in args.background_bins]
 
-logging.info("Writing bin template ids to file")
+logger.info("Writing bin template ids to file")
 with h5.File(args.output_file, "w") as f:
     ifo_grp = f.create_group(args.ifo)
     for bin_name in bin_names:
@@ -58,4 +60,4 @@ with h5.File(args.output_file, "w") as f:
     f.attrs["f_lower"] = args.f_lower
     f.attrs["background_bins"] = " ".join(args.background_bins)
 
-logging.info("Finished")
+logger.info("Finished")

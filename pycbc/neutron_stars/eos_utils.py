@@ -26,7 +26,7 @@ from scipy.interpolate import interp1d
 from pycbc.libutils import import_optional
 
 from . import NS_DATA_DIRECTORY, NS_SEQUENCES
-from .pg_isso_solver import PG_ISSO_solver
+from .pg_isso_solver import solve_pg_isso
 
 #  Imports needed if we implement the lalsimulation EOS interface
 # from pycbc.constants import (
@@ -218,7 +218,7 @@ def foucart18(eta, ns_compactness, ns_b_mass, bh_spin_mag, bh_spin_pol):
         The tilt angle of the BH spin.
 
     """
-    isso = PG_ISSO_solver(bh_spin_mag, bh_spin_pol)
+    isso = solve_pg_isso(bh_spin_mag, bh_spin_pol)
     # Fit parameters and tidal correction
     alpha = 0.406
     beta = 0.139

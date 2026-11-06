@@ -44,11 +44,11 @@ class TestDetector(unittest.TestCase):
         self.d = [det.Detector(ifo) for ifo in det.get_available_detectors()]
 
         # not distributed sanely, but should provide some good coverage
-        N = 1000
-        self.ra = uniform(0, numpy.pi * 2, size=N)
-        self.dec = uniform(-numpy.pi, numpy.pi, size=N)
-        self.pol = uniform(0, numpy.pi * 2, size=N)
-        self.time = uniform(1126000000.0, 1336096017.0, size=N)
+        n = 1000
+        self.ra = uniform(0, numpy.pi * 2, size=n)
+        self.dec = uniform(-numpy.pi, numpy.pi, size=n)
+        self.pol = uniform(0, numpy.pi * 2, size=n)
+        self.time = uniform(1126000000.0, 1336096017.0, size=n)
 
     def test_light_time(self):
         for d1 in self.d:
@@ -62,7 +62,7 @@ class TestDetector(unittest.TestCase):
         d = det.Detector("TEST")
 
         # Check that we can call the new detector response
-        fp, fc = d.antenna_pattern(1.5, 1.0, 0, 1000000000)
+        d.antenna_pattern(1.5, 1.0, 0, 1000000000)
 
         # Check it interacts with existing detectors
         d2 = det.Detector("H1")
@@ -77,7 +77,7 @@ class TestDetector(unittest.TestCase):
             self.assertAlmostEqual((ref_resp - resp).max(), 0, places=6)
 
     def test_antenna_pattern(self):
-        vals = list(zip(self.ra, self.dec, self.pol, self.time))
+        vals = list(zip(self.ra, self.dec, self.pol, self.time, strict=True))
         for ifo in self.d:
             fp = []
             fc = []
@@ -134,7 +134,7 @@ class TestDetector(unittest.TestCase):
             delay0 = numpy.array(
                 [
                     ifo.time_delay_from_earth_center(r, d, t)
-                    for r, d, t in zip(self.ra, self.dec, self.time)
+                    for r, d, t in zip(self.ra, self.dec, self.time, strict=True)
                 ]
             )
             self.assertLess(abs(delay - delay0).max(), 1e-12)
@@ -149,7 +149,7 @@ class TestDetector(unittest.TestCase):
         for d1 in self.d:
             for d2 in self.d:
                 time1 = []
-                for ra1, dec1, tim1 in zip(ra, dec, time):
+                for ra1, dec1, tim1 in zip(ra, dec, time, strict=True):
                     t1 = lal.ArrivalTimeDiff(d1.location, d2.location, ra1, dec1, tim1)
                     time1.append(t1)
                 time1 = numpy.array(time1)
@@ -172,7 +172,7 @@ class TestDetector(unittest.TestCase):
         Test that the convert_tc method functions properly. The same times
         should be returned in all frames regardless of the reference.
         """
-        vals = list(zip(self.ra, self.dec, self.time))
+        vals = list(zip(self.ra, self.dec, self.time, strict=True))
         ref_frames = ["geocentric", "H1", "L1", "V1"]
         target_frames = ["H1", "L1", "V1"]
         # convert the times from geocentric using time_delay_from_earth_center
@@ -247,15 +247,16 @@ class TestDetector(unittest.TestCase):
                     ),
                 )
 
-                for kwargs, from_vector in zip(polarizations, response_vectors):
+                for kwargs, from_vector in zip(
+                    polarizations, response_vectors, strict=True
+                ):
                     one_at_a_time = detector.antenna_pattern(
                         right_ascension, declination, polarization, test_time, **kwargs
                     )
-                    for whole, single in zip(from_vector, one_at_a_time):
+                    for whole, single in zip(from_vector, one_at_a_time, strict=True):
                         self.assertTrue(
                             numpy.isclose(whole[index], single, rtol=1e-14, atol=1e-16),
-                            "%s at %s: %r against %r"
-                            % (kwargs, index, whole[index], single),
+                            f"{kwargs} at {index}: {whole[index]!r} against {single!r}",
                         )
 
 

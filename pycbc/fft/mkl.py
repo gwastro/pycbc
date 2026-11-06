@@ -109,7 +109,7 @@ def create_descriptor(size, idtype, odtype, inplace):
     return desc
 
 
-def fft(invec, outvec, prec, itype, otype):
+def fft(invec, outvec, prec, itype, otype):  # noqa: ARG001
     descr = create_descriptor(
         max(len(invec), len(outvec)),
         invec.dtype,
@@ -123,7 +123,7 @@ def fft(invec, outvec, prec, itype, otype):
     check_status(status)
 
 
-def ifft(invec, outvec, prec, itype, otype):
+def ifft(invec, outvec, prec, itype, otype):  # noqa: ARG001
     descr = create_descriptor(
         max(len(invec), len(outvec)),
         invec.dtype,

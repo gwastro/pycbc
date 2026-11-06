@@ -102,7 +102,7 @@ def html_table(columns, names, page_size=None, format_strings=None):
     div_id = uuid.uuid4()
 
     column_descriptions = []
-    for column, name in zip(columns, names):
+    for column, name in zip(columns, names, strict=True):
         if column.dtype.kind in "iuf":
             # signed and unsigned integers and floats
             ctype = "number"
@@ -113,11 +113,11 @@ def html_table(columns, names, page_size=None, format_strings=None):
         column_descriptions.append((ctype, name))
 
     data = []
-    for row in zip(*columns):
+    for row in zip(*columns, strict=True):
         row2 = []
         # the explicit conversions here are to make sure the JS code
         # sees proper numbers and not something like 'np.float64(12)'
-        for item, column in zip(row, columns):
+        for item, column in zip(row, columns, strict=True):
             if column.dtype.kind == "f":
                 row2.append(float(item))
             elif column.dtype.kind in "iu":

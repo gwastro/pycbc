@@ -75,13 +75,16 @@ parser.add_argument(
     default="traditional",
     help="Which chisquared to plot. Default=traditional",
 )
+parser.add_argument(
+    "--ifo", default=None, help="IFO to plot from multi-detector trigger file"
+)
 parser.add_argument("--output-file", required=True)
 args = parser.parse_args()
 
 init_logging(args.verbose)
 # First - check the IFO being used
 with HFile(args.single_trigger_file, "r") as stf:
-    ifo = tuple(stf.keys())[0]
+    ifo = args.ifo if args.ifo is not None else next(iter(stf.keys()))
 
 # Add the background triggers
 with HFile(args.coinc_statistic_file, "r") as csf:
@@ -230,7 +233,7 @@ except (TypeError, ZeroDivisionError):
     if len(inj_chisq):
         raise
 
-plt.title("%s Coincident Triggers" % ifo, size="large")
+plt.title(f"{ifo} Coincident Triggers", size="large")
 plt.xlabel("SNR", size="large")
 plt.ylabel(r"Reduced $\chi^2$", size="large")
 try:
@@ -249,20 +252,18 @@ plt.legend(loc="lower right", prop={"size": 10})
 plt.grid(which="major", ls="solid", alpha=0.7, linewidth=0.5)
 plt.grid(which="minor", ls="solid", alpha=0.7, linewidth=0.1)
 
-title = "%s %s chisq vs SNR. %s background with injections %s" % (
-    ifo.upper(),
-    args.chisq_choice,
-    "".join(ifos).upper(),
-    "behind" if args.background_front else "ontop",
+title = (
+    f"{ifo.upper()} {args.chisq_choice} chisq vs SNR. {''.join(ifos).upper()} "
+    "background with injections "
+    f"{'behind' if args.background_front else 'ontop'}"
 )
-caption = """Distribution of SNR and %s chi-squared veto for single detector
-triggers. Black points are %s background triggers. Triangles are injection
-triggers colored by %s of the injection. Dashed lines show contours of
-constant NewSNR.""" % (
-    args.chisq_choice,
-    "".join(ifos).upper(),
-    coloring[args.colorbar_choice][1],
-)
+chisq_name = args.chisq_choice
+bg_ifos = "".join(ifos).upper()
+colour_by = coloring[args.colorbar_choice][1]
+caption = f"""Distribution of SNR and {chisq_name} chi-squared veto for single detector
+triggers. Black points are {bg_ifos} background triggers. Triangles are injection
+triggers colored by {colour_by} of the injection. Dashed lines show contours of
+constant NewSNR."""
 pycbc.results.save_fig_with_metadata(
     fig,
     args.output_file,

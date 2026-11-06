@@ -41,6 +41,8 @@ import pycbc.pnutils
 import pycbc.results
 from pycbc.events import ranking
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -90,7 +92,7 @@ ranking_keys = list(ranking.sngls_ranking_function_dict.keys())
 parser.add_argument(
     "--z-var",
     required=True,
-    choices=["density"] + ranking_keys,
+    choices=["density", *ranking_keys],
     help="Quantity to plot on the color scale. Required",
 )
 parser.add_argument("--detector", required=True, help="Detector. Required")
@@ -187,7 +189,7 @@ minz = opts.min_z or 1
 maxz = opts.max_z
 hexbin_style["norm"] = LogNorm(vmin=minz, vmax=maxz)
 
-logging.info("Plotting")
+logger.info("Plotting")
 fig = plt.figure()
 ax = fig.gca()
 
@@ -206,11 +208,11 @@ elif opts.z_var in ranking.sngls_ranking_function_dict:
     hb = ax.hexbin(x, y, C=z, reduce_C_function=np.max, **hexbin_style)
     fig.colorbar(hb, **cb_style)
 else:
-    raise RuntimeError("z_var = %s is not recognized!" % (opts.z_var))
+    raise RuntimeError(f"z_var = {opts.z_var} is not recognized!")
 
 ax.set_xlabel(opts.x_var)
 ax.set_ylabel(opts.y_var)
-ax.set_title(opts.z_var.title() + " of %s triggers " % (opts.detector))
+ax.set_title(opts.z_var.title() + f" of {opts.detector} triggers ")
 pycbc.results.save_fig_with_metadata(
     fig,
     opts.output_file,
@@ -220,4 +222,4 @@ pycbc.results.save_fig_with_metadata(
     fig_kwds={"dpi": 200},
 )
 
-logging.info("Done")
+logger.info("Done")

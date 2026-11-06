@@ -174,9 +174,9 @@ def ladder_thermodynamic_integration(betas, logls):
     else:
         betas2 = numpy.concatenate((betas0[:-1:2], [0]))
         logls2 = numpy.concatenate((logls[:-1:2], [logls[-1]]))
-    logZ = -_trapezoid(logls, betas)
-    logZ2 = -_trapezoid(logls2, betas2)
-    return logZ, numpy.abs(logZ - logZ2)
+    logz = -_trapezoid(logls, betas)
+    logz2 = -_trapezoid(logls2, betas2)
+    return logz, numpy.abs(logz - logz2)
 
 
 def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
@@ -219,7 +219,7 @@ def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
     method_list = ["trapezoid", "trapezoid_corrected", "simpsons"]
 
     if method not in method_list:
-        raise ValueError("Method %s not supported. Expected %s" % (method, method_list))
+        raise ValueError(f"Method {method} not supported. Expected {method_list}")
     # Read in the data and ensure ordering of data.
     # Ascending order sort
     order = numpy.argsort(betas)

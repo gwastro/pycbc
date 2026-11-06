@@ -91,7 +91,7 @@ class TestMargDistanceInterp(unittest.TestCase):
         cls.truth = numpy.array(
             [
                 marginalize_likelihood(a, b, distance=DIST_MARG, phase=True)
-                for a, b in zip(cls.sh, cls.hh)
+                for a, b in zip(cls.sh, cls.hh, strict=True)
             ]
         )
         cls.nophase = staticmethod(
@@ -118,16 +118,15 @@ class TestMargDistanceInterp(unittest.TestCase):
                     brute,
                     want,
                     places=10,
-                    msg="brute force distance marginalization is %s, the "
-                    "integral is %s (sh=%s hh=%s phase=%s)"
-                    % (brute, want, sh, hh, phase),
+                    msg=f"brute force distance marginalization is {brute}, the "
+                    f"integral is {want} (sh={sh} hh={hh} phase={phase})",
                 )
                 interp = self.interp if phase else self.nophase
                 self.assertLess(
                     abs(interp(sh, hh) - want),
                     0.01,
-                    "the interpolant is %s, the integral is %s (sh=%s "
-                    "hh=%s phase=%s)" % (interp(sh, hh), want, sh, hh, phase),
+                    f"the interpolant is {interp(sh, hh)}, the integral is {want} "
+                    f"(sh={sh} hh={hh} phase={phase})",
                 )
 
     def test_it_still_stands_in_for_the_integral(self):
@@ -136,9 +135,7 @@ class TestMargDistanceInterp(unittest.TestCase):
         far outside what a wrong index would move it by.
         """
         worst = numpy.abs(self.interp(self.sh, self.hh) - self.truth).max()
-        self.assertLess(
-            worst, 0.1, "off the marginalized likelihood by %s nats" % worst
-        )
+        self.assertLess(worst, 0.1, f"off the marginalized likelihood by {worst} nats")
 
     def test_it_is_as_good_at_the_edge_of_its_range(self):
         """
@@ -169,11 +166,11 @@ class TestMargDistanceInterp(unittest.TestCase):
             truth = numpy.array(
                 [
                     marginalize_likelihood(p, q, distance=DIST_MARG, phase=True)
-                    for p, q in zip(x, y)
+                    for p, q in zip(x, y, strict=True)
                 ]
             )
             worst = numpy.abs(self.interp(x, y) - truth).max()
-            self.assertLess(worst, 0.1, "off by %s nats next to the edge" % worst)
+            self.assertLess(worst, 0.1, f"off by {worst} nats next to the edge")
 
     def test_a_single_point_is_not_marginalized_a_second_time(self):
         """

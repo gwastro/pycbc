@@ -14,7 +14,7 @@ from pycbc.events import trigger_fits as fits
 from pycbc.io.hdf import HFile
 from pycbc.types import MultiDetOptionAction
 
-logger = logging.getLogger("pycbc.events.single")
+logger = logging.getLogger(__name__)
 
 
 class LiveSingle:
@@ -379,7 +379,7 @@ class LiveSingle:
                 rates = dist_grp["counts"][:] / live_time
                 coeffs = dist_grp["fit_coeff"][:]
         except FileNotFoundError:
-            logger.error(
+            logger.exception(
                 "Single fit file %s not found; "
                 "dropping a potential single-detector candidate!",
                 self.fit_file,

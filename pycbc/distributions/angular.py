@@ -24,7 +24,7 @@ import numpy
 from pycbc import VARARGS_DELIM, boundaries
 from pycbc.distributions import bounded, uniform
 
-logger = logging.getLogger("pycbc.distributions.angular")
+logger = logging.getLogger(__name__)
 
 
 class UniformAngle(uniform.Uniform):
@@ -238,8 +238,7 @@ class SinAngle(UniformAngle):
         """Return inverse of cdf for mapping unit interval to parameter bounds."""
         scale = numpy.cos(self._bounds[arg][0]) - numpy.cos(self._bounds[arg][1])
         offset = 1.0 + numpy.cos(self._bounds[arg][1]) / scale
-        new_value = numpy.arccos(-scale * (value - offset))
-        return new_value
+        return numpy.arccos(-scale * (value - offset))
 
     def _pdf(self, **kwargs):
         """
@@ -289,8 +288,7 @@ class CosAngle(SinAngle):
         b = self._bounds[param][1]
         scale = numpy.sin(b) - numpy.sin(a)
         offset = 1.0 - numpy.sin(b) / (numpy.sin(b) - numpy.sin(a))
-        new_value = numpy.arcsin((value - offset) * scale)
-        return new_value
+        return numpy.arcsin((value - offset) * scale)
 
 
 class UniformSolidAngle(bounded.BoundedDist):
@@ -526,14 +524,13 @@ class UniformSolidAngle(bounded.BoundedDist):
 
         if polar_angle not in variable_args:
             raise Error(
-                "polar-angle %s is not one of the variable args (%s)"
-                % (polar_angle, ", ".join(variable_args))
+                f"polar-angle {polar_angle} is not one of the variable args "
+                f"({', '.join(variable_args)})"
             )
         if azimuthal_angle not in variable_args:
             raise Error(
-                "azimuthal-angle %s is not one of the variable args "
-                % (azimuthal_angle)
-                + "(%s)" % (", ".join(variable_args))
+                f"azimuthal-angle {azimuthal_angle} is not one of the variable args "
+                f"({', '.join(variable_args)})"
             )
 
         # get the bounds, if provided

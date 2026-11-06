@@ -50,7 +50,7 @@ class TestIOHDF(unittest.TestCase):
                 f.create_dataset("b", data=np.arange(6))
 
             with HFile(p, "r") as f, self.assertRaises(RuntimeError):
-                f.select(lambda a, b: a > 0, "a", "b")
+                f.select(lambda a, b: a > 0, "a", "b")  # noqa: ARG005
 
     def test_filedata_mask_and_get_column(self):
         """Test FileData.mask and get_column with a simple filter_func."""
@@ -63,9 +63,9 @@ class TestIOHDF(unittest.TestCase):
                 grp.create_dataset("b", data=np.arange(8) * 10)
 
             # Use the FileData class from the module under test
-            from pycbc.io.hdf import FileData as FD
+            from pycbc.io.hdf import FileData
 
-            fdata = FD(p)
+            fdata = FileData(p)
 
             # Before setting filter_func, accessing mask should raise
             with self.assertRaises(RuntimeError):

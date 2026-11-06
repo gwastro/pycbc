@@ -59,8 +59,8 @@ col_names = [
 ]
 format_strings = ["##.##", "##.##", "#.###", "#.###", "#.###", "#.###"]
 if opt.directory_links is not None:
-    col_names = ["More <br\\> details  <br\\> link"] + col_names
-    format_strings = [None] + format_strings
+    col_names = ["More <br\\> details  <br\\> link", *col_names]
+    format_strings = [None, *format_strings]
     dir_names = []
 
 m1 = []
@@ -91,7 +91,7 @@ columns = [
     numpy.array(min_ff),
 ]
 if opt.directory_links is not None:
-    columns = [numpy.array(dir_names)] + columns
+    columns = [numpy.array(dir_names), *columns]
 
 test_fp = HFile(opt.input_files[0], "r")
 if "filtered_points" in test_fp.keys():

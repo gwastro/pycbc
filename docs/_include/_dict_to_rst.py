@@ -56,7 +56,7 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None, sort=True
     ========  ===============
 
     """
-    keys, values = zip(*dict_.items())
+    keys, values = zip(*dict_.items(), strict=True)
 
     # apply formatting
     keys = list(map(key_format, keys))
@@ -81,7 +81,7 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None, sort=True
     lines = [divider]
     if header:
         lines.extend((row(*header), divider))
-    params = zip(keys, values)
+    params = zip(keys, values, strict=True)
 
     if sort:
         params = sorted(params)

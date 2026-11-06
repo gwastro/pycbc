@@ -27,7 +27,7 @@ import os
 import subprocess
 import sys
 
-logger = logging.getLogger("pycbc._version")
+logger = logging.getLogger(__name__)
 
 
 def print_link(library):
@@ -98,7 +98,7 @@ class PyCBCVersionAction(argparse._StoreAction):
             **kw,
         )
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         version_no = 0 if values is None else values
         import pycbc
 

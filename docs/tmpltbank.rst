@@ -52,9 +52,7 @@ lalapps_tmpltbank. It uses a globally flat coordinate system, which enables it
 to easily place banks at 3.5PN order (and higher order as these become available).
 
 Mapping back from the new coordinate system to masses and spins makes the bank
-placement slower than lalapps_tmpltbank. However, it doesn't waste stupid
-amounts of time calculating the ethinca metric so it is faster than tmpltbank
-if the ethinca components are being computed.
+placement slower than lalapps_tmpltbank.
 
 A metric-based approach is not very reliable at high masses, but we have found
 that in general this just results in overcoverage, which is not normally a problem as most templates are found at lower masses. One might want to consider the stochastic code sbank if placing a high-mass only non-spinning template bank.
@@ -98,11 +96,11 @@ If anyone wants to investigate this I can provide lots of data!
 Some examples
 -------------------
 
-This first example computes a non-spinning template bank using a supplied ASD text file. It also calculates the ethinca metric components for a filter with ISCO cutoff
+This first example computes a non-spinning template bank using a supplied ASD text file.
 
 .. code-block:: bash
 
-    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --filter-cutoff SchwarzISCO --asd-file ZERO_DET_high_P.txt
+    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --asd-file ZERO_DET_high_P.txt
 
 Here is a second example that computes a non-spinning template bank from a frame
 cache file. This needs a bunch more options to read data and estimate the PSD
@@ -110,7 +108,7 @@ from that.
 
 .. code-block:: bash
 
-    pycbc_geom_nonspinbank --pn-order threePointFivePN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --filter-cutoff SchwarzISCO --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
+    pycbc_geom_nonspinbank --pn-order threePointFivePN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
 
 --------------------------
 Command line options
@@ -122,7 +120,7 @@ The command line options read as follows
 
 Some notes on these options:
 
-* The value of f0 generally doesn't matter (so just use 70 if unsure). However if ethinca is being calculated f0 and f-low must be equal.
+* The value of f0 generally doesn't matter (so just use 70 if unsure).
 * Choose f-upper wisely! If your signals coalesce at <1000Hz, you might want to use a lower value ... although of course in this regime this inspiral-only metric will lose validity.
 * A delta-f value of 1/256 will certainly be accurate enough, a larger value will cause the code to run faster.
 * Using binary values for f-upper, delta-f and sample-rate is not needed for the metric calculation (which is a direct integral), but will provide a noticeable speed difference if reading data to compute a PSD.
@@ -142,9 +140,7 @@ TaylorF2 metric.
 
 This code will begin by generating a dax (a pegasus workflow, from which a DAG
 is created), which the user submits, that will
-generate the final template bank. This code will not calculate ethinca, as
-ethinca is not defined for spinning waveforms. However, if a new coincidence
-scheme is developed it could be used in that. This code forms part of the
+generate the final template bank. This code forms part of the
 "uberbank", described later, that is being used in Advanced LIGO searches.
 
 **Ian's recommendation: This code will produce optimal template banks, if the
@@ -252,7 +248,7 @@ As before some notes on these options:
 
 Some notes on these options:
 
-* The value of f0 generally doesn't matter (so just use 70 if unsure). However if ethinca is being calculated f0 and f-low must be equal.
+* The value of f0 generally doesn't matter (so just use 70 if unsure).
 * Choose f-upper wisely! If your signals coalesce at <1000Hz, you might want to use a lower value ... although of course in this regime this inspiral-only metric will lose validity.
 * A delta-f value of 1/256 will certainly be accurate enough, a larger value will cause the code to run faster.
 * Using binary values for f-upper, delta-f and sample-rate is not needed for the metric calculation (which is a direct integral), but will provide a noticeable speed difference if reading data to compute a PSD.
@@ -317,9 +313,6 @@ Nevertheless it has been found that the computational cost of generating
 aligned-spin banks for Advanced LIGO, using direct-match algorithms is not
 too large, and this approach forms a large part of the "uberbank" construction
 described below.
-
-The stochastic bank code can calculate the ethinca metric, but **only** if both 
-component maximum spins are set to 0.0, i.e. a stochastic non-spinning bank. One can also generate only the time component of the metric if doing exact-match coincidence.
 
 Stochastic placement was first proposed in terms of LISA searches in
 
@@ -429,7 +422,7 @@ As before some notes on these options:
 
 Some notes on these options:
 
-* The value of f0 generally doesn't matter (so just use 70 if unsure). However if ethinca is being calculated f0 and f-low must be equal.
+* The value of f0 generally doesn't matter (so just use 70 if unsure).
 * Choose f-upper wisely! If your signals coalesce at <1000Hz, you might want to use a lower value ... although of course in this regime this inspiral-only metric will lose validity.
 * A delta-f value of 1/256 will certainly be accurate enough, a larger value will cause the code to run faster.
 * For the purposes of spin calculations a NS is considered to be anything with mass < 3 solar masses and a BH is considered to be anything with mass > 3 solar masses. But this can be overridden with the `--ns-bh-boundary-mass` option.

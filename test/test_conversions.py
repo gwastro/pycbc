@@ -271,7 +271,7 @@ class TestParams(unittest.TestCase):
         Check that times remain unchanged when converting from one frame to
         another and back.
         """
-        vals = list(zip(self.ra, self.dec, self.tc))
+        vals = list(zip(self.ra, self.dec, self.tc, strict=True))
         ref_frames = ["geocentric", "H1", "L1", "V1"]
         target_frames = ["geocentric", "H1", "L1", "V1"]
         for ra1, dec1, time1 in vals:

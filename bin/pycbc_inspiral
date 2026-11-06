@@ -34,6 +34,8 @@ from pycbc.pool import BroadcastPool as Pool
 from pycbc.types import complex64, float32, zeros
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 
+logger = logging.getLogger(__name__)
+
 last_progress_update = -1.0
 
 
@@ -43,7 +45,7 @@ def update_progress(p, u, n):
     if p > last_progress_update + u:
         f = open(n, "w")
         if f:
-            f.write("%.4f" % p)
+            f.write(f"{p:.4f}")
             f.close()
         last_progress_update = p
 
@@ -134,86 +136,8 @@ parser.add_argument(
     default=0,
     help="Length of clustering window in seconds. Set to 0 to disable clustering.",
 )
-parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
-parser.add_argument(
-    "--chisq-snr-threshold", type=float, help="Minimum SNR to calculate the power chisq"
-)
-parser.add_argument(
-    "--chisq-bins",
-    default=0,
-    help="Number of frequency bins to use for power chisq. Specify"
-    " an integer for a constant number of bins, or a function "
-    "of template attributes.  Math functions are "
-    "allowed, ex. "
-    "'10./math.sqrt((params.mass1+params.mass2)/100.)'. "
-    "Non-integer values will be rounded down.",
-)
 parser.add_argument("--chisq-threshold", type=float, default=0, help="FIXME: ADD")
 parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
-parser.add_argument(
-    "--autochi-number-points",
-    type=int,
-    default=0,
-    help="The number of points to use, in both directions if"
-    "doing a two-sided auto-chisq, to calculate the"
-    "auto-chisq statistic.",
-)
-parser.add_argument(
-    "--autochi-stride",
-    type=int,
-    default=0,
-    help="The gap, in sample points, between the points at"
-    "which to calculate auto-chisq.",
-)
-parser.add_argument(
-    "--autochi-two-phase",
-    action="store_true",
-    default=False,
-    help="If given auto-chisq will be calculated by testing "
-    "against both phases of the SNR time-series. "
-    "If not given, only the phase matching the trigger "
-    "will be used.",
-)
-parser.add_argument(
-    "--autochi-onesided",
-    action="store",
-    default=None,
-    choices=["left", "right"],
-    help="Decide whether to calculate auto-chisq using"
-    "points on both sides of the trigger or only on one"
-    "side. If not given points on both sides will be"
-    "used. If given, with either 'left' or 'right',"
-    "only points on that side (right = forward in time,"
-    "left = back in time) will be used.",
-)
-parser.add_argument(
-    "--autochi-reverse-template",
-    action="store_true",
-    default=False,
-    help="If given, time-reverse the template before"
-    "calculating the auto-chisq statistic. This will"
-    "come at additional computational cost as the SNR"
-    "time-series will need recomputing for the time-"
-    "reversed template.",
-)
-parser.add_argument(
-    "--autochi-max-valued",
-    action="store_true",
-    default=False,
-    help="If given, store only the maximum value of the auto-"
-    "chisq over all points tested. A disadvantage of this "
-    "is that the mean value will not be known "
-    "analytically.",
-)
-parser.add_argument(
-    "--autochi-max-valued-dof",
-    action="store",
-    metavar="INT",
-    type=int,
-    help="If using --autochi-max-valued this value denotes "
-    "the pre-calculated mean value that will be stored "
-    "as the auto-chisq degrees-of-freedom value.",
-)
 parser.add_argument(
     "--downsample-factor",
     type=int,
@@ -334,6 +258,9 @@ scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 pycbc.opt.insert_optimization_option_group(parser)
 pycbc.inject.insert_injfilterrejector_option_group(parser)
+vetoes.SingleDetPowerChisq.insert_option_group(parser)
+vetoes.SingleDetBankVeto.insert_option_group(parser)
+vetoes.SingleDetAutoChisq.insert_option_group(parser)
 SingleDetSGChisq.insert_option_group(parser)
 opt = parser.parse_args()
 
@@ -379,9 +306,12 @@ def template_triggers(t_num):
                 opt.update_progress,
                 opt.update_progress_file,
             )
-        logging.info(
-            "Filtering template %d/%d segment %d/%d"
-            % (t_num + 1, len(bank), s_num + 1, len(segments))
+        logger.info(
+            "Filtering template %d/%d segment %d/%d",
+            t_num + 1,
+            len(bank),
+            s_num + 1,
+            len(segments),
         )
 
         sigmasq = template.sigmasq(stilde.psd)
@@ -462,7 +392,7 @@ with ctx:
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
 
-    logging.info("Making frequency-domain data segments")
+    logger.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
     psd.associate_psds_to_segments(
         opt,
@@ -492,7 +422,7 @@ with ctx:
     names = sorted(out_vals_ref.keys())
 
     if len(strain_segments.segment_slices) == 0:
-        logging.info("--filter-inj-only specified and no injections in analysis time")
+        logger.info("--filter-inj-only specified and no injections in analysis time")
         event_mgr = events.EventManager(
             opt,
             names,
@@ -502,12 +432,12 @@ with ctx:
         )
         event_mgr.finalize_template_events()
         event_mgr.write_events(opt.output)
-        logging.info("Finished")
+        logger.info("Finished")
         sys.exit(0)
 
     # FIXME: Maybe we should use the PSD corresponding to each trigger
     if opt.psdvar_segment is not None:
-        logging.info("Calculating PSD variation")
+        logger.info("Calculating PSD variation")
         psd_var = pycbc.psd.calc_filt_psd_variation(
             gwstrain,
             opt.psdvar_segment,
@@ -521,7 +451,7 @@ with ctx:
         )
 
     if opt.enable_q_transform:
-        logging.info("Performing q-transform on analysis segments")
+        logger.info("Performing q-transform on analysis segments")
         q_trans = qtransform.inspiral_qtransform_generator(segments)
 
     else:
@@ -537,12 +467,12 @@ with ctx:
             tnum_start, event_mgr = events.EventManager.restore_state(checkpoint_file)
             checkpoint_exists = True
         except Exception as e:
-            if args.require_valid_checkpoint:
-                logging.info("Failed to load checkpoint file")
+            if opt.require_valid_checkpoint:
+                logger.info("Failed to load checkpoint file")
                 raise (e)
 
-            logging.info("Failed to load checkpoint file, starting anew")
-            logging.info(e)
+            logger.info("Failed to load checkpoint file, starting anew")
+            logger.info(e)
 
     if not checkpoint_exists:
         event_mgr = events.EventManager(
@@ -586,33 +516,17 @@ with ctx:
         cluster_function=opt.cluster_function,
     )
 
-    bank_chisq = vetoes.SingleDetBankVeto(
-        opt.bank_veto_bank_file,
-        flen,
-        delta_f,
-        flow,
-        complex64,
-        phase_order=opt.order,
-        approximant=opt.approximant,
-    )
+    bank_chisq = vetoes.SingleDetBankVeto.from_cli(opt)
 
-    power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins, opt.chisq_snr_threshold)
+    power_chisq = vetoes.SingleDetPowerChisq.from_cli(opt)
 
-    autochisq = vetoes.SingleDetAutoChisq(
-        opt.autochi_stride,
-        opt.autochi_number_points,
-        onesided=opt.autochi_onesided,
-        twophase=opt.autochi_two_phase,
-        reverse_template=opt.autochi_reverse_template,
-        take_maximum_value=opt.autochi_max_valued,
-        maximal_value_dof=opt.autochi_max_valued_dof,
-    )
+    autochisq = vetoes.SingleDetAutoChisq.from_cli(opt)
 
-    logging.info("Overwhitening frequency-domain data segments")
+    logger.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= seg.psd
 
-    logging.info("Read in template bank")
+    logger.info("Read in template bank")
     bank = waveform.FilterBank(
         opt.bank_file,
         flen,
@@ -630,11 +544,11 @@ with ctx:
         else None,
     )
 
-    sg_chisq = SingleDetSGChisq.from_cli(opt, bank, opt.chisq_bins)
+    sg_chisq = SingleDetSGChisq.from_cli(opt, bank)
 
-    logging.info("Full template bank size: %s", len(bank))
+    logger.info("Full template bank size: %s", len(bank))
     bank.template_thinning(inj_filter_rejector)
-    logging.info("Template bank size after thinning: %s", len(bank))
+    logger.info("Template bank size after thinning: %s", len(bank))
 
     tsetup = time.time() - tstart
     tcheckpoint = time.time()
@@ -679,13 +593,13 @@ with ctx:
 
 event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 event_mgr.finalize_events()
-logging.info("Outputting %s triggers" % str(len(event_mgr.events)))
+logger.info("Outputting %s triggers", str(len(event_mgr.events)))
 
 tstop = time.time()
 run_time = tstop - tstart
 event_mgr.save_performance(ncores, len(segments), len(bank), run_time, tsetup)
 
-logging.info("Writing out triggers")
+logger.info("Writing out triggers")
 event_mgr.write_events(opt.output)
 
 if opt.fft_backends == "fftw":
@@ -695,4 +609,4 @@ if opt.fft_backends == "fftw":
     if opt.fftw_output_double_wisdom_file:
         fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
 
-logging.info("Finished")
+logger.info("Finished")

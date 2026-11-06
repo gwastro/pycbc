@@ -24,7 +24,7 @@ import numpy
 from pycbc.io.hdf import HFile
 from pycbc.types import TimeSeries
 
-logger = logging.getLogger("pycbc.frame.store")
+logger = logging.getLogger(__name__)
 
 
 def read_store(fname, channel, start_time, end_time):

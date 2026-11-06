@@ -35,6 +35,8 @@ from pycbc.workflow import WorkflowConfigParser
 
 from .base import BaseModel
 
+logger = logging.getLogger(__name__)
+
 #
 # =============================================================================
 #
@@ -121,7 +123,7 @@ class HierarchicalModel(BaseModel):
                 map_params(
                     [
                         HierarchicalParam.from_subname(lbl, p)
-                        for p in model._extra_stats + ["loglikelihood"]
+                        for p in [*model._extra_stats, "loglikelihood"]
                     ]
                 )
             )
@@ -345,9 +347,9 @@ class HierarchicalModel(BaseModel):
             wfparam_map = {lbl: [] for lbl in submodel_lbls}
         # initialize the models
         submodels = {}
-        logging.info("Loading submodels")
+        logger.info("Loading submodels")
         for lbl in submodel_lbls:
-            logging.info("============= %s =============", lbl)
+            logger.info("============= %s =============", lbl)
             # create a config parser to pass to the model
             subcp = WorkflowConfigParser()
             # copy sections over that start with the model label (this should
@@ -414,9 +416,9 @@ class HierarchicalModel(BaseModel):
                 submodel.static_params.pop(p.subname)
             # store
             submodels[lbl] = submodel
-            logging.info("")
+            logger.info("")
         # now load the model
-        logging.info("Loading hierarchical model")
+        logger.info("Loading hierarchical model")
         return super().from_config(cp, submodels=submodels)
 
 
@@ -480,7 +482,7 @@ class HierarchicalParam(str):
     @classmethod
     def from_subname(cls, model_label, subname):
         """Creates a HierarchicalParam from the given subname and model label."""
-        return cls(cls.delim.join([model_label, subname]), set([model_label]))
+        return cls(cls.delim.join([model_label, subname]), {model_label})
 
     @classmethod
     def parse(cls, fullname, possible_models):
@@ -544,7 +546,7 @@ def hpiter(params, possible_models):
         Iterator of :py:class:`HierarchicalParam` instances.
 
     """
-    return map(lambda x: HierarchicalParam(x, possible_models), params)
+    return (HierarchicalParam(x, possible_models) for x in params)
 
 
 def map_params(params, labels=None):
@@ -574,7 +576,7 @@ def map_params(params, labels=None):
             try:
                 param_map[lbl].update([p])
             except KeyError:
-                param_map[lbl] = set([p])
+                param_map[lbl] = {p}
     return param_map
 
 
@@ -613,7 +615,7 @@ class MultiSignalModel(HierarchicalModel):
         for lbl in support:
             if ctypes <= support[lbl]:
                 self.primary_model = lbl
-                logging.info("MultiSignalModel: PrimaryModel == %s", lbl)
+                logger.info("MultiSignalModel: PrimaryModel == %s", lbl)
                 break
         else:
             # Oh, no, we don't support this combo!
@@ -734,7 +736,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 prefix += "__"
         try:
             for lbl, model in self.submodels.items():
-                sampattrs["{}lognl".format(prefix + "%s__" % lbl)] = model.lognl
+                sampattrs[f"{prefix + f'{lbl}__'}lognl"] = model.lognl
         except AttributeError:
             pass
 
@@ -850,9 +852,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
 
-        loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
-
-        return loglr
+        return self.primary_model.marginalize_loglr(sh_total, hh_total)
 
     def others_lognl(self):
         """Calculate the combined lognl from all others sub-models."""
@@ -945,9 +945,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             wfparam_map = {lbl: [] for lbl in submodel_lbls}
         # initialize the models
         submodels = {}
-        logging.info("Loading submodels")
+        logger.info("Loading submodels")
         for lbl in submodel_lbls:
-            logging.info("============= %s =============", lbl)
+            logger.info("============= %s =============", lbl)
             # create a config parser to pass to the model
             subcp = WorkflowConfigParser()
             # copy sections over that start with the model label (this should
@@ -1009,7 +1009,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             for section in cp.sections():
                 # the primary model needs prior of marginlized parameters
                 if "prior-" in section and lbl in kwargs["primary_lbl"]:
-                    prior_section = "%s" % section
+                    prior_section = f"{section}"
                     subcp[prior_section] = cp[prior_section]
 
             # similar to the standard hierarchical model,
@@ -1020,7 +1020,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     subcp.set("static_params", param.subname, "REPLACE")
 
             # save the vitual config file to disk for later check
-            with open("%s.ini" % lbl, "w", encoding="utf-8") as file:
+            with open(f"{lbl}.ini", "w", encoding="utf-8") as file:
                 subcp.write(file)
 
             # initialize
@@ -1039,7 +1039,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 for p in wfparam_map[lbl]:
                     submodel.static_params.pop(p.subname)
             submodels[lbl] = submodel
-            logging.info("")
+            logger.info("")
 
         # remove all marginalized parameters from the top-level model's
         # `variable_params` and `prior` sections
@@ -1049,9 +1049,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         marginalized_params = primary_model.marginalized_params_name.copy()
 
         for p in primary_model.static_params.keys():
-            p_full = "%s__%s" % (kwargs["primary_lbl"][0], p)
+            p_full = f"{kwargs['primary_lbl'][0]}__{p}"
             if p_full not in cp["static_params"]:
-                cp["static_params"][p_full] = "%s" % primary_model.static_params[p]
+                cp["static_params"][p_full] = f"{primary_model.static_params[p]}"
 
         for section in cp.sections():
             if "prior-" in section:
@@ -1065,7 +1065,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             cp.write(file)
 
         # now load the model
-        logging.info("Loading joint_primary_marginalized model")
+        logger.info("Loading joint_primary_marginalized model")
         return super(HierarchicalModel, cls).from_config(
             cp, submodels=submodels, **kwargs
         )

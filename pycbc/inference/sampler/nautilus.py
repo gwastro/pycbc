@@ -39,6 +39,8 @@ from .base import BaseSampler, setup_output
 from .base_cube import setup_calls
 from .base_mcmc import get_optional_arg_from_config
 
+logger = logging.getLogger(__name__)
+
 #
 # =============================================================================
 #
@@ -102,7 +104,7 @@ class NautilusSampler(BaseSampler):
             i for i, param in enumerate(self.variable_params) if param in cyclic
         ]
         for i in self.periodic:
-            logging.info("Param: %s will be cyclic", self.variable_params[i])
+            logger.info("Param: %s will be cyclic", self.variable_params[i])
 
     def setup_sampler(self, filepath=None):
         """
@@ -144,11 +146,11 @@ class NautilusSampler(BaseSampler):
             if self._sampler.n_like == n_like:
                 # nothing was gained, so only a limit already reached can be
                 # stopping it, and calling again would spin
-                logging.info("nautilus stopped making progress")
+                logger.info("nautilus stopped making progress")
                 break
             if self.checkpoint_time_interval:
                 self.checkpoint()
-                logging.info(
+                logger.info(
                     "Checkpointed after %s likelihood calls", self._sampler.n_like
                 )
 
@@ -315,10 +317,10 @@ class NautilusSampler(BaseSampler):
             os.remove(scratch)
         # the scratch file is gone; checkpoint writes the state from here on
         self._sampler.filepath = None
-        logging.info("Resumed nautilus after %s likelihood calls", self._sampler.n_like)
+        logger.info("Resumed nautilus after %s likelihood calls", self._sampler.n_like)
 
     def finalize(self):
-        logging.info("log Z, dlog Z: %s, %s", self.logz, self.logz_err)
+        logger.info("log Z, dlog Z: %s, %s", self.logz, self.logz_err)
         self.checkpoint()
 
     @property

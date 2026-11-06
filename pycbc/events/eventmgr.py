@@ -42,15 +42,16 @@ from pycbc.types import Array
 from . import coinc, ranking
 from .eventmgr_cython import findchirp_cluster_over_window_cython
 
-logger = logging.getLogger("pycbc.events.eventmgr")
+logger = logging.getLogger(__name__)
 
 
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
     """Return list of values and indices values over threshold in series."""
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed("pycbc.events.threshold_")
@@ -59,9 +60,10 @@ def threshold_only(series, value):
     Return list of values and indices whose values in series are
     larger (in absolute value) than value
     """
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 # FIXME: This should be under schemed, but I don't understand that yet!
@@ -75,16 +77,18 @@ def threshold_real_numpy(series, value):
 @schemed("pycbc.events.threshold_")
 def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series."""
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed("pycbc.events.threshold_")
 def _threshold_cluster_factory(series):
-    err_msg = "This class is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This class is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 class ThresholdCluster:
@@ -221,7 +225,7 @@ class EventManager:
         self.array_minsize = array_minsize
 
         self.event_dtype = [("template_id", int)]
-        for col, coltype in zip(column, column_types):
+        for col, coltype in zip(column, column_types, strict=True):
             self.event_dtype.append((col, coltype))
 
         self._events = numpy.zeros([self.array_minsize], dtype=self.event_dtype)
@@ -288,7 +292,8 @@ class EventManager:
         self._events[:num_keep] = self._events[: self._events_size][indices]
         self._events_size = num_keep
 
-    def chisq_threshold(self, value, num_bins, delta=0):
+    # num_bins is unused, but kept so that existing calls keep working
+    def chisq_threshold(self, value, num_bins, delta=0):  # noqa: ARG002
         keep = numpy.ones(self._events_size, dtype=bool)
         for i, event in enumerate(self.events):
             xi = event["chisq"] / (
@@ -380,7 +385,7 @@ class EventManager:
         # they shouldn't all be None
         assert new_events is not None
         new_events["template_id"] = self.template_index
-        for c, v in zip(columns, vectors):
+        for c, v in zip(columns, vectors, strict=True):
             if v is not None:
                 if isinstance(v, Array):
                     new_events[c] = v.numpy()
@@ -612,12 +617,10 @@ class EventManager:
                 if key == "qtiles":
                     for seg in qtrans[key]:
                         for q in qtrans[key][seg]:
-                            f["qtransform/%s/%s/%s" % (key, seg, q)] = qtrans[key][seg][
-                                q
-                            ]
+                            f[f"qtransform/{key}/{seg}/{q}"] = qtrans[key][seg][q]
                 elif key == "qplanes":
                     for seg in qtrans[key]:
-                        f["qtransform/%s/%s" % (key, seg)] = qtrans[key][seg]
+                        f[f"qtransform/{key}/{seg}"] = qtrans[key][seg]
 
         if "gating_info" in self.global_params:
             gating_info = self.global_params["gating_info"]
@@ -656,7 +659,7 @@ class EventManagerMultiDetBase(EventManager):
             self.ifo_reverse[i] = ifo
 
         self.event_dtype = [("template_id", int), ("event_id", int)]
-        for col, coltype in zip(column, column_types):
+        for col, coltype in zip(column, column_types, strict=True):
             self.event_dtype.append((col, coltype))
 
         self._events = numpy.zeros([self.array_minsize], dtype=self.event_dtype)
@@ -731,7 +734,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.network_event_dtype = [(ifo + "_event_id", int) for ifo in self.ifos]
         self.network_event_dtype.append(("template_id", int))
         self.network_event_dtype.append(("event_id", int))
-        for col, coltype in zip(network_column, network_column_types):
+        for col, coltype in zip(network_column, network_column_types, strict=True):
             self.network_event_dtype.append((col, coltype))
         self.network_events = numpy.zeros(
             [self.array_minsize], dtype=self.network_event_dtype
@@ -807,7 +810,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         # they shouldn't all be None
         assert new_events is not None
         new_events["template_id"] = self.template_index
-        for c, v in zip(columns, vectors):
+        for c, v in zip(columns, vectors, strict=True):
             if v is not None:
                 if isinstance(v, Array):
                     new_events[c] = v.numpy()
@@ -1138,7 +1141,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                     end_times1, end_times2, coinc_window
                 )
                 if len(idx_list1):
-                    for idx1, idx2 in zip(idx_list1, idx_list2):
+                    for idx1, idx2 in zip(idx_list1, idx_list2, strict=True):
                         event1 = curr_tev_dict1[:curr_tev_size1][idx1]
                         event2 = curr_tev_dict2[:curr_tev_size2][idx2]
                         self.coinc_list.append((event1, event2))
