@@ -373,6 +373,10 @@ class SingleDetPowerChisq:
     running the power chisq in a single detector inspiral analysis.
     """
 
+    name = "power"
+    columns = {"chisq": numpy.float32, "chisq_dof": int}
+    default_values = {"chisq": 0, "chisq_dof": -100}
+
     def __init__(self, num_bins=0, snr_threshold=None):
         if not (num_bins == "0" or num_bins == 0):
             self.do = True
@@ -383,13 +387,30 @@ class SingleDetPowerChisq:
             self.do = False
         self.snr_threshold = snr_threshold
 
+    def evaluate_batch(self, batch, j):
+        """Evaluate power chisq for trigger j in a SignalConsistencyChain batch."""
+        corr, index = batch.correlation(j, 0)
+        template = batch.template(j)
+        psd = getattr(template, "psd", getattr(batch.stilde, "psd", None))
+        chi, dof = self.values(
+            corr,
+            numpy.array([batch.snr[j]]),
+            1,
+            psd,
+            numpy.array([index]),
+            template,
+        )
+        if chi is None or not len(chi):
+            return None
+        return {"chisq": chi[0], "chisq_dof": dof[0]}
+
     @staticmethod
     def parse_option(row, arg):
         safe_dict = {"max": max, "min": min}
         safe_dict.update(row.__dict__)
         safe_dict.update(math.__dict__)
         safe_dict.update(pycbc.pnutils.__dict__)
-        return eval(arg, {"__builtins__": None}, safe_dict)
+        return eval(str(arg), {"__builtins__": None}, safe_dict)  # noqa: S307
 
     @staticmethod
     def insert_option_group(parser):
@@ -413,7 +434,7 @@ class SingleDetPowerChisq:
         )
 
     @classmethod
-    def from_cli(cls, args):
+    def from_cli(cls, args, **kwargs):
         """Create the power chisq from the options of insert_option_group."""
         return cls(num_bins=args.chisq_bins, snr_threshold=args.chisq_snr_threshold)
 
