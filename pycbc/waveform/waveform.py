@@ -564,8 +564,7 @@ def props(obj, **kwargs):
     input_params = default_args.copy()
     input_params.update(pr)
     # if mode array present and is a string, convert to a list of tuples
-    input_params = parse_mode_array(input_params)
-    return input_params
+    return parse_mode_array(input_params)
 
 
 def check_args(args, required_args):
@@ -944,7 +943,7 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
         # In the `pycbc.waveform.parameters` module, spin1z and
         # spin2z have the default value 0. Users must have input
         # masses, so no else is needed.
-        mass_spin_params = set(["mass1", "mass2", "spin1z", "spin2z"])
+        mass_spin_params = {"mass1", "mass2", "spin1z", "spin2z"}
         if mass_spin_params.issubset(set(nparams.keys())):
             m_final, spin_final = get_final_from_initial(
                 mass1=nparams["mass1"],

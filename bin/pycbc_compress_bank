@@ -150,7 +150,7 @@ if __name__ == "__main__":
         "--compression-algorithm",
         type=str,
         required=True,
-        choices=list(compress.compression_algorithms.keys()) + ["bounds"],
+        choices=[*list(compress.compression_algorithms.keys()), "bounds"],
         help="The compression algorithm to use for selecting frequency points.",
     )
     parser.add_argument(

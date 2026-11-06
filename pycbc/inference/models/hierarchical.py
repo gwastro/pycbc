@@ -123,7 +123,7 @@ class HierarchicalModel(BaseModel):
                 map_params(
                     [
                         HierarchicalParam.from_subname(lbl, p)
-                        for p in model._extra_stats + ["loglikelihood"]
+                        for p in [*model._extra_stats, "loglikelihood"]
                     ]
                 )
             )
@@ -482,7 +482,7 @@ class HierarchicalParam(str):
     @classmethod
     def from_subname(cls, model_label, subname):
         """Creates a HierarchicalParam from the given subname and model label."""
-        return cls(cls.delim.join([model_label, subname]), set([model_label]))
+        return cls(cls.delim.join([model_label, subname]), {model_label})
 
     @classmethod
     def parse(cls, fullname, possible_models):
@@ -546,7 +546,7 @@ def hpiter(params, possible_models):
         Iterator of :py:class:`HierarchicalParam` instances.
 
     """
-    return map(lambda x: HierarchicalParam(x, possible_models), params)
+    return (HierarchicalParam(x, possible_models) for x in params)
 
 
 def map_params(params, labels=None):
@@ -576,7 +576,7 @@ def map_params(params, labels=None):
             try:
                 param_map[lbl].update([p])
             except KeyError:
-                param_map[lbl] = set([p])
+                param_map[lbl] = {p}
     return param_map
 
 
@@ -852,9 +852,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
 
-        loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
-
-        return loglr
+        return self.primary_model.marginalize_loglr(sh_total, hh_total)
 
     def others_lognl(self):
         """Calculate the combined lognl from all others sub-models."""

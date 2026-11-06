@@ -29,9 +29,7 @@ def read_options(args):
     """
     logger.info("Reading config file")
     cp = InterpolatingConfigParser(config_files=[args.config_file])
-    config_opts = {
-        section: {k: v for k, v in cp[section].items()} for section in cp.sections()
-    }
+    config_opts = {section: dict(cp[section].items()) for section in cp.sections()}
     del config_opts["environment"]
     return config_opts
 
@@ -284,7 +282,7 @@ def single_significance_fits(
     daily_fit_options["gps-end-time"] = f"{gps_end_time:d}"
     daily_args += sv.dict_to_args(daily_fit_options)
     if stat_files is not None:
-        daily_args += ["--statistic-files"] + stat_files
+        daily_args += ["--statistic-files", *stat_files]
 
     sv.run_and_error(daily_args, controls)
 

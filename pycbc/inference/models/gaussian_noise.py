@@ -1023,7 +1023,7 @@ class GaussianNoise(BaseGaussianNoise):
         """Calculate a multi-model (signal) likelihood"""
         # Generate the waveforms for each submodel
         wfs = []
-        for m in models + [self]:
+        for m in [*models, self]:
             wfs.append(m.get_waveforms())
 
         # combine into a single waveform
@@ -1356,7 +1356,7 @@ def create_waveform_generator(
             raise ValueError(
                 "data must all have the same delta_t, delta_f, and start_time"
             )
-    waveform_generator = generator_class(
+    return generator_class(
         gen_function,
         epoch=start_time,
         variable_args=variable_params,
@@ -1367,4 +1367,3 @@ def create_waveform_generator(
         gates=gates,
         **static_params,
     )
-    return waveform_generator

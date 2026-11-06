@@ -88,7 +88,7 @@ def bank_bins_from_cli(opts):
     if opts.bank_bins:
         bins_idx = coinc.background_bin_from_string(opts.bank_bins, bank)
     else:
-        bins_idx = {"all": numpy.arange(0, len(bank[tuple(fp.keys())[0]]))}
+        bins_idx = {"all": numpy.arange(0, len(bank[next(iter(fp.keys()))]))}
     fp.close()
     return bins_idx, bank
 
@@ -199,7 +199,8 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
         try:  # old 2-ifo behaviour
             # get the name of the ifo in the injection file, eg "detector_1"
             # and the integer from that name
-            ifolabel = [
+            # (the IndexError below needs a list here, not next())
+            ifolabel = [  # noqa: RUF015
                 name
                 for name, val in injfile.attrs.items()
                 if "detector" in name and val == ifo

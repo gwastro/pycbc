@@ -226,7 +226,7 @@ class HFile(HGroup, h5py.File):
 
             if return_data:
                 # Store the dataset results that pass the function
-                for arg, part in zip(args, partial):
+                for arg, part in zip(args, partial, strict=True):
                     data[arg].append(part[keep])
 
             i += chunksize
@@ -304,7 +304,7 @@ class DictArray:
         return self.__class__(data=data)
 
     def __len__(self):
-        return len(self.data[tuple(self.data.keys())[0]])
+        return len(self.data[next(iter(self.data.keys()))])
 
     def __add__(self, other):
         if self.data == {}:
@@ -1126,7 +1126,7 @@ class ForegroundTriggers:
                     curr_ifo = curr_dat.group_key
                     self.sngl_files[curr_ifo] = curr_dat
 
-        if not all([ifo in self.sngl_files.keys() for ifo in self.ifos]):
+        if not all(ifo in self.sngl_files.keys() for ifo in self.ifos):
             print(f"sngl_files: {sngl_files}")
             print(f"self.ifos: {self.ifos}")
             raise RuntimeError(
@@ -1242,8 +1242,9 @@ class ForegroundTriggers:
 
     def get_end_time(self):
         times_gen = (self.get_coincfile_array(f"{ifo}/time") for ifo in self.ifos)
-        ref_times = np.array([mean_if_greater_than_zero(t)[0] for t in zip(*times_gen)])
-        return ref_times
+        return np.array(
+            [mean_if_greater_than_zero(t)[0] for t in zip(*times_gen, strict=True)]
+        )
 
     def get_ifos(self):
         """
@@ -1261,8 +1262,7 @@ class ForegroundTriggers:
         for ifo in self.ifos:
             ifo_trigs = np.where(self.get_coincfile_array(ifo + "/time") < 0, "-", ifo)
             ifo_or_minus.append(ifo_trigs)
-        ifos_list = [list(trig[trig != "-"]) for trig in iter(np.array(ifo_or_minus).T)]
-        return ifos_list
+        return [list(trig[trig != "-"]) for trig in iter(np.array(ifo_or_minus).T)]
 
     def to_coinc_xml_object(self, file_name):
         outdoc = ligolw.Document()
@@ -1521,7 +1521,8 @@ class ForegroundTriggers:
         ]
         # Combine the ifo letters to make a single string per event
         triggered_detectors = [
-            "".join(triggered).encode("ascii") for triggered in zip(*triggered_matrix)
+            "".join(triggered).encode("ascii")
+            for triggered in zip(*triggered_matrix, strict=True)
         ]
         ofd.create_dataset("trig", data=triggered_detectors, dtype="<S3")
 
@@ -1535,7 +1536,7 @@ class ForegroundTriggers:
         # Combine the ifo letters to make a single string per event
         active_detectors = [
             "".join(active_at_time).encode("ascii")
-            for active_at_time in zip(*active_matrix)
+            for active_at_time in zip(*active_matrix, strict=True)
         ]
         ofd.create_dataset("obs", data=active_detectors, dtype="<S3")
 
@@ -1554,7 +1555,7 @@ class ReadByTemplate:
     ):
         self.filename = filename
         self.file = HFile(filename, "r")
-        self.ifo = ifo if ifo is not None else tuple(self.file.keys())[0]
+        self.ifo = ifo if ifo is not None else next(iter(self.file.keys()))
         self.valid = None
         self.bank = HFile(bank, "r") if bank else {}
         self.segment_name = segment_name
@@ -1572,7 +1573,7 @@ class ReadByTemplate:
             segment_name = []
         if veto_files is None:
             veto_files = []
-        for vfile, name in zip(veto_files, segment_name):
+        for vfile, name in zip(veto_files, segment_name, strict=True):
             veto_segs = veto.select_segments_by_definer(
                 vfile, ifo=self.ifo, segment_name=name
             )
@@ -1657,8 +1658,7 @@ class ReadByTemplate:
         # Calculate the trigger id by adding the relative offset in self.keep
         # to the absolute beginning index of this templates triggers stored
         # in 'template_boundaries'
-        trigger_id = self.keep + self.file[f"{self.ifo}/template_boundaries"][num]
-        return trigger_id
+        return self.keep + self.file[f"{self.ifo}/template_boundaries"][num]
 
     def __getitem__(self, col):
         """
@@ -1682,8 +1682,7 @@ class ReadByTemplate:
                 "template to read data from"
             )
         data = self.get_data(col, self.template_num)
-        data = data[self.keep] if self.valid else data
-        return data
+        return data[self.keep] if self.valid else data
 
 
 chisq_choices = [

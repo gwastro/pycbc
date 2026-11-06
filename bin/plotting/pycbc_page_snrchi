@@ -119,7 +119,7 @@ for i, cval in enumerate(args.newsnr_contours):
         fontsize=6,
         horizontalalignment="center",
         verticalalignment="center",
-        bbox=dict(facecolor="white", lw=0, pad=0, alpha=0.9),
+        bbox={"facecolor": "white", "lw": 0, "pad": 0, "alpha": 0.9},
     )
 
 plt.hexbin(

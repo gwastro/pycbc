@@ -156,5 +156,4 @@ def get_gracedb_search_link(time):
     gdb_search_url = (
         f"https://gracedb.ligo.org/search/?query={gdb_search_query}&query_type=S"
     )
-    gdb_search_link = '<a href="' + gdb_search_url + '">Search</a>'
-    return gdb_search_link
+    return '<a href="' + gdb_search_url + '">Search</a>'

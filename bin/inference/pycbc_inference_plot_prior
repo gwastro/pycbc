@@ -140,7 +140,7 @@ fig, axis_dict = create_multidim_plot(
 fig.set_dpi(200)
 
 # save figure with meta-data
-caption = """This plot shows the probability density function (PDF) from the 
+caption = """This plot shows the probability density function (PDF) from the
 prior distributions."""
 title = "Prior Distribution"
 results.save_fig_with_metadata(

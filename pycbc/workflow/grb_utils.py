@@ -185,7 +185,9 @@ def fermi_core_tail_model(
     scaledsq = sky_err**2 / -2 / np.log(0.32)
     return (
         frac * (1 - np.exp(-0.5 * (rad / np.sqrt(scaledsq + sigma**2)) ** 2))
-        for frac, sigma in zip([core_frac, 1 - core_frac], [core_sigma, tail_sigma])
+        for frac, sigma in zip(
+            [core_frac, 1 - core_frac], [core_sigma, tail_sigma], strict=True
+        )
     )
 
 
@@ -502,9 +504,7 @@ def build_segment_filelist(seg_dir):
     file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
     seg_files = [os.path.join(seg_dir, fn) for fn in file_names]
     seg_files = [resolve_url_to_file(sf) for sf in seg_files]
-    seg_files = FileList(seg_files)
-
-    return seg_files
+    return FileList(seg_files)
 
 
 def make_pygrb_plot(
@@ -579,7 +579,7 @@ def make_pygrb_plot(
                 workflow.analysis_time,
                 ".png",
                 "--background-output-file",
-                tags=extra_tags + ["max_background"],
+                tags=[*extra_tags, "max_background"],
             )
         # Output the exclusion distance plot and table
         else:
@@ -588,7 +588,7 @@ def make_pygrb_plot(
                 workflow.analysis_time,
                 ".png",
                 "--onsource-output-file",
-                tags=["onsource"] + extra_tags,
+                tags=["onsource", *extra_tags],
             )
             node.new_output_file_opt(
                 workflow.analysis_time,
@@ -739,7 +739,7 @@ def make_pygrb_injs_tables(
             workflow.analysis_time,
             ".h5",
             "--quiet-found-injs-h5-output-file",
-            tags=extra_tags + ["QUIET_FOUND"],
+            tags=[*extra_tags, "QUIET_FOUND"],
         )
     # Handle input/output for onsource/offsource
     else:

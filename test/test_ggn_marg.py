@@ -16,21 +16,21 @@ DATADIR = os.path.join(TESTDIR, "data", "ggn_marg")
 CREATE_INJECTIONS = os.path.join(TESTDIR, "..", "bin", "pycbc_create_injections")
 
 MAXL_PHI220 = 0.66926183
-TEMPLATE_PARAMS = dict(
-    ra=3.5,
-    dec=0.73,
-    delta_tc=0.01525955,
-    inclination=0.52359877,
-    final_mass=305.33635657,
-    final_spin=0.49861983,
-    polarization=1.62913401,
-    amp220=7.41039482e-21,
-    amp330=0.14645439,
-    phi330=0.00250140 - MAXL_PHI220,
-    phi220=0.0,
-    delta_phi330=0.00250140 - MAXL_PHI220,  # brute-force
-    amp220_snr=91.2,  # approx. SNR for inj
-)
+TEMPLATE_PARAMS = {
+    "ra": 3.5,
+    "dec": 0.73,
+    "delta_tc": 0.01525955,
+    "inclination": 0.52359877,
+    "final_mass": 305.33635657,
+    "final_spin": 0.49861983,
+    "polarization": 1.62913401,
+    "amp220": 7.41039482e-21,
+    "amp330": 0.14645439,
+    "phi330": 0.00250140 - MAXL_PHI220,
+    "phi220": 0.0,
+    "delta_phi330": 0.00250140 - MAXL_PHI220,  # brute-force
+    "amp220_snr": 91.2,  # approx. SNR for inj
+}
 
 
 class TestMargModels(unittest.TestCase):

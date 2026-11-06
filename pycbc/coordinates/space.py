@@ -82,9 +82,7 @@ def rotation_matrix_ssb_to_lisa(alpha):
     r = Rotation.from_rotvec(
         [[0, 0, alpha], [0, -np.pi / 3, 0], [0, 0, -alpha]]
     ).as_matrix()
-    r_total = np.array(r[0]) @ np.array(r[1]) @ np.array(r[2])
-
-    return r_total
+    return np.array(r[0]) @ np.array(r[1]) @ np.array(r[2])
 
 
 def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):

@@ -499,7 +499,7 @@ class Executable(pegasus_workflow.Executable):
         self.current_retention_level = value
         try:
             global_retention_level = self.cp.get_opt_tags(
-                "workflow", "file-retention-level", self.tags + [self.name]
+                "workflow", "file-retention-level", [*self.tags, self.name]
             )
         except configparser.Error:
             msg = "Cannot find file-retention-level in [workflow] section "
@@ -637,10 +637,10 @@ class Executable(pegasus_workflow.Executable):
         """
         # Determine the output directory
         if self.cp.has_option_tags(
-            "pegasus_profile", "pycbc|stage-out", self.tags + [self.name]
+            "pegasus_profile", "pycbc|stage-out", [*self.tags, self.name]
         ):
             self.out_dir = self.cp.get_opt_tags(
-                "pegasus_profile", "pycbc|stage-out", self.tags + [self.name]
+                "pegasus_profile", "pycbc|stage-out", [*self.tags, self.name]
             )
         elif out_dir is not None:
             self.out_dir = out_dir
@@ -748,8 +748,7 @@ class Workflow(pegasus_workflow.Workflow):
         else:
             name = "output.map"
 
-        path = os.path.join(self.out_dir, name)
-        return path
+        return os.path.join(self.out_dir, name)
 
     @property
     def sites(self):
@@ -977,7 +976,7 @@ class Node(pegasus_workflow.Node):
         # downloaded by resolve_url
         exe_path = urllib.parse.urlsplit(self.executable.get_pfn()).path
 
-        return [exe_path] + arglist
+        return [exe_path, *arglist]
 
     def new_output_file_opt(
         self,
@@ -1256,7 +1255,7 @@ class File(pegasus_workflow.File):
 
         if len(self.tags):
             self.tag_str = "_".join(tags)
-            tagged_description = "_".join([self.description] + tags)
+            tagged_description = "_".join([self.description, *tags])
         else:
             tagged_description = self.description
 
@@ -1404,8 +1403,7 @@ class File(pegasus_workflow.File):
         else:
             tags = []
 
-        curr_file = cls(ifos, exe_name, segs, path, tags=tags, **kwargs)
-        return curr_file
+        return cls(ifos, exe_name, segs, path, tags=tags, **kwargs)
 
 
 class FileList(list):
@@ -1562,8 +1560,7 @@ class FileList(list):
         segment_lst = overlap_files[overlap_windows.argmax()].segment_list
 
         # Get all output files with the exact same segment definition
-        output_files = [f for f in overlap_files if f.segment_list == segment_lst]
-        return output_files
+        return [f for f in overlap_files if f.segment_list == segment_lst]
 
     def find_output_in_range(self, ifo, start, end):
         """
@@ -1941,11 +1938,13 @@ class SegFile(File):
 
         """
         seglistdict = segments.segmentlistdict()
-        for name, ifo, segmentlist in zip(names, ifos, segmentlists):
+        for name, ifo, segmentlist in zip(names, ifos, segmentlists, strict=True):
             seglistdict[ifo + ":" + name] = segmentlist
         if seg_summ_lists is not None:
             seg_summ_dict = segments.segmentlistdict()
-            for name, ifo, seg_summ_list in zip(names, ifos, seg_summ_lists):
+            for name, ifo, seg_summ_list in zip(
+                names, ifos, seg_summ_lists, strict=True
+            ):
                 seg_summ_dict[ifo + ":" + name] = seg_summ_list
         else:
             seg_summ_dict = None
@@ -1988,7 +1987,7 @@ class SegFile(File):
 
         """
         if ifo_list is None:
-            ifo_set = set([i.split(":")[0] for i in segmentlistdict.keys()])
+            ifo_set = {i.split(":")[0] for i in segmentlistdict.keys()}
             ifo_list = list(ifo_set)
             ifo_list.sort()
         if valid_segment is None:
@@ -2161,7 +2160,7 @@ class SegFile(File):
                 x.add(
                     ligolw_segments.LigolwSegmentList(
                         active=fsegs,
-                        instruments=set([ifo]),
+                        instruments={ifo},
                         name=name,
                         version=1,
                         valid=vsegs,
@@ -2370,8 +2369,7 @@ def configparser_value_to_file(cp, sec, opt, attrs=None):
 
     """
     path = cp.get(sec, opt)
-    fileobj_from_path = resolve_url_to_file(path, attrs=attrs)
-    return fileobj_from_path
+    return resolve_url_to_file(path, attrs=attrs)
 
 
 def get_full_analysis_chunk(science_segs):
@@ -2397,8 +2395,7 @@ def get_full_analysis_chunk(science_segs):
             min = lo
         if max < hi:
             max = hi
-    full_segment = segments.segment(min, max)
-    return full_segment
+    return segments.segment(min, max)
 
 
 def get_random_label():

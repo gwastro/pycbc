@@ -278,18 +278,16 @@ class LiveEventManager:
 
         # Copy the common fields from the other detector;
         # ignore fields that contain detector-specific data
-        fields_to_ignore = set(
-            [
-                "end_time",
-                "snr",
-                "stat",
-                "coa_phase",
-                "chisq",
-                "chisq_dof",
-                "sg_chisq",
-                "sigmasq",
-            ]
-        )
+        fields_to_ignore = {
+            "end_time",
+            "snr",
+            "stat",
+            "coa_phase",
+            "chisq",
+            "chisq_dof",
+            "sg_chisq",
+            "sigmasq",
+        }
         for key in set(triggers):
             if f"foreground/{coinc_ifo}/" not in key:
                 continue
@@ -1519,7 +1517,7 @@ with ctx:
         pr.enable()
 
     # main analysis loop
-    data_end = lambda: data_reader[tuple(data_reader.keys())[0]].end_time
+    data_end = lambda: data_reader[next(iter(data_reader.keys()))].end_time
     last_bg_dump_time = int(data_end())
     psd_count = dict.fromkeys(evnt.ifos, 0)
 

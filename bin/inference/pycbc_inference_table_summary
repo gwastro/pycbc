@@ -68,7 +68,7 @@ if ninputs > 1:
 
 # make sure the loglikelihood and logprior are included in the parameters
 # so that we can get the maxL and MAP values
-requested_params = [p for p in opts.parameters]
+requested_params = list(opts.parameters)
 if "loglikelihood" not in requested_params:
     opts.parameters.append("loglikelihood")
 if "logprior" not in requested_params:

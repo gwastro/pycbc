@@ -205,7 +205,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     # Check available data segments meet criteria specified in arguments
     commonsegs = sciencesegs.extract_common(sciencesegs.keys())
-    offsrclist = commonsegs[tuple(commonsegs.keys())[0]]
+    offsrclist = commonsegs[next(iter(commonsegs.keys()))]
     if len(offsrclist) > 1:
         logger.info("Removing network segments that do not contain trigger time")
         for seg in offsrclist:
@@ -393,12 +393,12 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
 
             offsource_segfile = os.path.join(out_dir, "offSourceSeg.txt")
             segments_utils.tosegwizard(
-                open(offsource_segfile, "w"), list(offsource[best_comb].values())[0]
+                open(offsource_segfile, "w"), next(iter(offsource[best_comb].values()))
             )
 
             onsource_segfile = os.path.join(out_dir, "onSourceSeg.txt")
             segments_utils.tosegwizard(
-                open(onsource_segfile, "w"), list(onsource[best_comb].values())[0]
+                open(onsource_segfile, "w"), next(iter(onsource[best_comb].values()))
             )
 
             bufferleft = int(cp.get("workflow-exttrig_segments", "num-buffer-before"))

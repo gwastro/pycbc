@@ -134,7 +134,7 @@ input_density, ra_edge, dec_edge = numpy.histogram2d(
 
 cols, rows = define_rows_cols_subplot(len(detectors) + 2)
 fig, ax = plt.subplots(
-    nrows=rows, ncols=cols, subplot_kw=dict(projection="mollweide"), figsize=(20, 20)
+    nrows=rows, ncols=cols, subplot_kw={"projection": "mollweide"}, figsize=(20, 20)
 )
 
 cmap = "Oranges"

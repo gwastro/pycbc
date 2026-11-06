@@ -115,7 +115,7 @@ def make_multi_det_grid(args):
         sky_dist_samples = sky_dist.rvs(size=10000)
         sky_ra = sky_dist_samples["ra"]
         sky_dec = sky_dist_samples["dec"]
-        for prop_ra, prop_dec in zip(sky_ra, sky_dec):
+        for prop_ra, prop_dec in zip(sky_ra, sky_dec, strict=True):
             # Calculate the light travel times between detector pairs
             # for the given proposed sky positions
             light_travel_times = np.array(
@@ -143,8 +143,7 @@ def make_multi_det_grid(args):
         if num_new_accepted == 0:
             # We reached our convergence criterion
             break
-    sky_grid = SkyGrid(grid[:, 0], grid[:, 1], args.instruments, args.trigger_time)
-    return sky_grid
+    return SkyGrid(grid[:, 0], grid[:, 1], args.instruments, args.trigger_time)
 
 
 parser = argparse.ArgumentParser(description=__doc__)

@@ -205,7 +205,7 @@ seg_summ_seglists = [science_segs, science_ok_segs, analyzable_segs]
 seg_list = []
 names = []
 ifos = []
-for segment_list, segment_name in zip(seg_summ_seglists, seg_summ_names):
+for segment_list, segment_name in zip(seg_summ_seglists, seg_summ_names, strict=True):
     for ifo in workflow.ifos:
         seg_list.append(segment_list[ifo])
         names.append(segment_name)

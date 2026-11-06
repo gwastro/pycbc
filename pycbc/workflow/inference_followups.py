@@ -960,7 +960,7 @@ def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir, tags
                 sf,
                 rdir[base],
                 analysis_seg=workflow.analysis_time,
-                tags=tags + [label, str(kk)],
+                tags=[*tags, label, str(kk)],
             )
         out["samples"] = samples_plots
         layout.group_layout(rdir[base], samples_plots)
@@ -975,7 +975,7 @@ def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir, tags
                 sf,
                 rdir[base],
                 analysis_seg=workflow.analysis_time,
-                tags=tags + [label, str(kk)],
+                tags=[*tags, label, str(kk)],
             )
         out["acceptance_rate"] = acceptance_plots
         layout.single_layout(rdir[base], acceptance_plots)
@@ -990,7 +990,7 @@ def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir, tags
                 sf,
                 rdir[base],
                 analysis_seg=workflow.analysis_time,
-                tags=tags + [label, str(kk)],
+                tags=[*tags, label, str(kk)],
             )
         out["mcmc_history"] = history_plots
         layout.single_layout(rdir[base], history_plots)
@@ -1005,7 +1005,7 @@ def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir, tags
                 sf,
                 rdir[base],
                 analysis_seg=workflow.analysis_time,
-                tags=tags + [label, str(kk)],
+                tags=[*tags, label, str(kk)],
             )
         out["dynesty_run"] = dynesty_run_plots
         layout.single_layout(rdir[base], dynesty_run_plots)
@@ -1020,7 +1020,7 @@ def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir, tags
                 sf,
                 rdir[base],
                 analysis_seg=workflow.analysis_time,
-                tags=tags + [label, str(kk)],
+                tags=[*tags, label, str(kk)],
             )
         out["dynesty_traceplot"] = dynesty_trace_plots
         layout.single_layout(rdir[base], dynesty_trace_plots)
@@ -1161,7 +1161,7 @@ def make_posterior_workflow(
         samples_files,
         posterior_file_dir,
         analysis_seg=analysis_seg,
-        tags=tags + [label],
+        tags=[*tags, label],
     )[0]
 
     # summary table
@@ -1173,7 +1173,7 @@ def make_posterior_workflow(
             parameters=table_params,
             print_metadata=table_metadata,
             analysis_seg=analysis_seg,
-            tags=tags + [label],
+            tags=[*tags, label],
         ),
     )
 
@@ -1188,7 +1188,7 @@ def make_posterior_workflow(
             parameters=params,
             plot_prior_from_file=_config,
             analysis_seg=analysis_seg,
-            tags=tags + [label, group],
+            tags=[*tags, label, group],
         )
 
     # sky map
@@ -1199,7 +1199,7 @@ def make_posterior_workflow(
             posterior_file,
             rdir.base,
             analysis_seg=analysis_seg,
-            tags=tags + [label],
+            tags=[*tags, label],
         )[0]
         # now plot the skymap
         skymap_plot = make_inference_skymap(
@@ -1207,7 +1207,7 @@ def make_posterior_workflow(
             fits_file,
             rdir.base,
             analysis_seg=analysis_seg,
-            tags=tags + [label],
+            tags=[*tags, label],
         )
         summary_plots += skymap_plot
 
@@ -1224,7 +1224,7 @@ def make_posterior_workflow(
             parameters=params,
             plot_prior_from_file=_config,
             analysis_seg=analysis_seg,
-            tags=tags + [label, group],
+            tags=[*tags, label, group],
         )
     layout.single_layout(rdir[base], posterior_plots)
 
@@ -1237,7 +1237,7 @@ def make_posterior_workflow(
             config_file,
             rdir[base],
             analysis_seg=workflow.analysis_time,
-            tags=tags + [label],
+            tags=[*tags, label],
         )
         layout.single_layout(rdir[base], prior_plots)
     return posterior_file, summary_files, prior_plots, posterior_plots

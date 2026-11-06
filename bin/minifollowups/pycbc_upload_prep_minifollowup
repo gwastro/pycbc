@@ -187,7 +187,7 @@ for curr_idx in range(event_idx.size):
             params,
             args.output_dir,
             store_file=True,
-            tags=args.tags + ["upload", str(curr_idx)],
+            tags=[*args.tags, "upload", str(curr_idx)],
         )
 
     mini.make_upload_files(
@@ -199,7 +199,7 @@ for curr_idx in range(event_idx.size):
         appx,
         args.output_dir,
         channel_name,
-        tags=args.tags + ["upload", str(curr_idx)],
+        tags=[*args.tags, "upload", str(curr_idx)],
     )
 
 workflow.save()

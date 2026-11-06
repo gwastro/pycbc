@@ -318,9 +318,7 @@ def lm_deltat(freqs, damping_times):
     else:
         delta_t = 1.0 / qnm_freq_decay(freqs, damping_times, 1.0 / 1000)
 
-    delta_t = max(delta_t, min_dt)
-
-    return delta_t
+    return max(delta_t, min_dt)
 
 
 def lm_ffinal(freqs, damping_times):
@@ -339,8 +337,7 @@ def lm_ffinal(freqs, damping_times):
         raise ValueError("Missing frequencies.")
     else:
         f_final = qnm_freq_decay(freqs, damping_times, 1.0 / 1000)
-    f_final = min(f_final, max_freq)
-    return f_final
+    return min(f_final, max_freq)
 
 
 def lm_deltaf(damping_times):

@@ -109,7 +109,7 @@ n_gates = 0
 for single_file in args.single_trigger_files:
     logger.info("Reading trigger file %s...", single_file.split("/")[-1])
     file_ = HFile(single_file, "r")
-    ifo = str(list(file_.keys())[0])
+    ifo = str(next(iter(file_.keys())))
     data = file_[ifo]
 
     if gating_type in data["gating"].keys():

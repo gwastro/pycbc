@@ -107,7 +107,7 @@ class ModelStats:
             A dictionary of the requested stats.
 
         """
-        return dict(zip(names, self.getstats(names, default=default)))
+        return dict(zip(names, self.getstats(names, default=default), strict=True))
 
 
 class SamplingTransforms:
@@ -463,7 +463,7 @@ class BaseModel(metaclass=ABCMeta):
     @property
     def default_stats(self):
         """The stats that ``get_current_stats`` returns by default."""
-        return ["logjacobian", "logprior", "loglikelihood"] + self._extra_stats
+        return ["logjacobian", "logprior", "loglikelihood", *self._extra_stats]
 
     @property
     def _extra_stats(self):
@@ -687,8 +687,7 @@ class BaseModel(metaclass=ABCMeta):
         if self.sampling_transforms is not None:
             params = self.sampling_transforms.apply(params, inverse=True)
         # apply boundary conditions
-        params = self.prior_distribution.apply_boundary_conditions(**params)
-        return params
+        return self.prior_distribution.apply_boundary_conditions(**params)
 
     #
     # Methods for initiating from a config file.
@@ -953,9 +952,9 @@ def check_for_cartesian_spins(
         "not be performed in that case."
     )
     allparams = set(variable_params) | set(static_params.keys())
-    spinparams = set(p for p in allparams if p.startswith(f"spin{which}"))
+    spinparams = {p for p in allparams if p.startswith(f"spin{which}")}
     if any(spinparams):
-        cartspins = set(f"spin{which}{coord}" for coord in ["x", "y", "z"])
+        cartspins = {f"spin{which}{coord}" for coord in ["x", "y", "z"]}
         # add any parameters to all params that will be output by waveform
         # transforms
         allparams = allparams.union(*[t.outputs for t in waveform_transforms])

@@ -121,7 +121,7 @@ class LowerLatencyReductionKernel(ReductionKernel):
             grid_size,
             block_size,
             None,
-            *([result.gpudata] + s1_invocation_args + [seq_count, sz]),
+            *([result.gpudata, *s1_invocation_args, seq_count, sz]),
             shared_size=self.shared_size,
         )
 
@@ -138,9 +138,13 @@ class LowerLatencyReductionKernel(ReductionKernel):
                 block_size,
                 None,
                 *(
-                    [result.gpudata, result2.gpudata]
-                    + s1_invocation_args
-                    + [seq_count, sz]
+                    [
+                        result.gpudata,
+                        result2.gpudata,
+                        *s1_invocation_args,
+                        seq_count,
+                        sz,
+                    ]
                 ),
                 shared_size=self.shared_size,
             )
@@ -235,15 +239,15 @@ maxloc_preamble = """
     struct MAXLOCN{
         TTYPE max;
         LTYPE   loc;
-        
+
         __device__
         MAXLOCN(){}
-        
+
         __device__
         MAXLOCN(MAXLOCN const &src): max(src.max), loc(src.loc){}
         __device__
         MAXLOCN(MAXLOCN const volatile &src): max(src.max), loc(src.loc){}
-        
+
         __device__
         MAXLOCN volatile &operator=( MAXLOCN const &src) volatile{
             max = src.max;
@@ -251,15 +255,15 @@ maxloc_preamble = """
             return *this;
         }
     };
-    
+
     __device__
     MAXLOCN maxloc_red(MAXLOCN a, MAXLOCN b){
         if (a.max > b.max)
             return a;
-        else 
-            return b;  
+        else
+            return b;
     }
-    
+
     __device__
     MAXLOCN maxloc_start(){
         MAXLOCN t;
@@ -267,7 +271,7 @@ maxloc_preamble = """
         t.loc=0;
         return t;
     }
-    
+
     __device__
     MAXLOCN maxloc_map(TTYPE val, LTYPE loc){
         MAXLOCN t;

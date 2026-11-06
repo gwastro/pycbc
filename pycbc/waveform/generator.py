@@ -158,8 +158,7 @@ class BaseGenerator:
     def _generate_from_current(self):
         """Generates a waveform from the current parameters."""
         try:
-            new_waveform = self.generator(**self.current_params)
-            return new_waveform
+            return self.generator(**self.current_params)
         except RuntimeError as e:
             if self.record_failures:
                 from pycbc.io.hdf import HFile, dump_state
@@ -208,7 +207,7 @@ class BaseCBCGenerator(BaseGenerator):
         # parameters to those used by the waveform generation interface
         all_args = set(list(self.frozen_params.keys()) + list(self.variable_args))
         # check that there are no unused (non-calibration) parameters
-        calib_args = set([a for a in self.variable_args if a.startswith("calib_")])
+        calib_args = {a for a in self.variable_args if a.startswith("calib_")}
         all_args = all_args - calib_args
         unused_args = all_args - self.possible_args
         if len(unused_args):
@@ -577,7 +576,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
 
     """
 
-    location_args = set([])
+    location_args = set()
     """Set: Should be overriden by children classes with a set of parameters
         that set the binary's location.
     """
@@ -730,7 +729,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
 
     """
 
-    location_args = set(["tc", "ra", "dec", "polarization"])
+    location_args = {"tc", "ra", "dec", "polarization"}
     """set(['tc', 'ra', 'dec', 'polarization']):
         The set of location parameters. These are not passed to the rFrame
         generator class; instead, they are used to apply the detector response
@@ -872,7 +871,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
 
     """
 
-    location_args = set(["tc", "ra", "dec"])
+    location_args = {"tc", "ra", "dec"}
     """ set(['tc', 'ra', 'dec']):
         The set of location parameters. These are not passed to the rFrame
         generator class; instead, they are used to apply the detector response
@@ -1149,7 +1148,7 @@ class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
 
     """
 
-    location_args = set(["tc", "ra", "dec", "polarization"])
+    location_args = {"tc", "ra", "dec", "polarization"}
     """set(['tc', 'ra', 'dec', 'polarization']):
         The set of location parameters. These are not passed to the rFrame
         generator class; instead, they are used to apply the detector response
@@ -1314,7 +1313,7 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
 
     """
 
-    location_args = set(["tc", "ra", "dec"])
+    location_args = {"tc", "ra", "dec"}
     """ set(['tc', 'ra', 'dec']):
         The set of location parameters. These are not passed to the rFrame
         generator class; instead, they are used to apply the detector response
@@ -1491,7 +1490,7 @@ class FDomainDetFrameTwoPhaseModesGenerator(BaseFDomainDetFrameGenerator):
 
     """
 
-    location_args = set(["tc", "ra", "dec"])
+    location_args = {"tc", "ra", "dec"}
     """ set(['tc', 'ra', 'dec']):
         The set of location parameters. These are not passed to the rFrame
         generator class; instead, they are used to apply the detector response

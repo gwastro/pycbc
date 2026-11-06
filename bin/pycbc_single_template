@@ -80,7 +80,7 @@ def select_segments(fname, anal_name, data_name, ifo, time, pad_data):
         # The tricksy case. The corresponding data segment should have the
         # largest overlap with anal_time
         overlap = None
-        for start, end in zip(s2, e2):
+        for start, end in zip(s2, e2, strict=True):
             if start + pad_data > anal_time[0] or end - pad_data < anal_time[1]:
                 # The analysis time must lie within the data time, otherwise
                 # this clearly is not the right data segment!

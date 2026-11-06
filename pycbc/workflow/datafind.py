@@ -160,8 +160,8 @@ def setup_datafind_workflow(
         )
     else:
         msg = """Entry datafind-method in [workflow-datafind] does not have "
-              expected value. Valid values are 
-              AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES 
+              expected value. Valid values are
+              AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES
               AT_RUNTIME_MULTIPLE_CACHES, AT_RUNTIME_SINGLE_CACHES,
               FROM_PREGENERATED_LCF_FILES, or AT_RUNTIME_FAKE_DATA.
               Consult the documentation for more info."""

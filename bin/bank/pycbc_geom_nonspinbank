@@ -57,10 +57,10 @@ parser.add_argument(
     type=int,
     default=None,
     help="""Random seed to use when calling numpy.random
-                            functions used in obtaining the principal 
-                            components and when translating points back to 
-                            physical space.  
-                            If given, the code should give the same output 
+                            functions used in obtaining the principal
+                            components and when translating points back to
+                            physical space.
+                            If given, the code should give the same output
                             when run with the same random seed.""",
 )
 
@@ -336,7 +336,7 @@ temp_number = 0
 req_match = 0.0001
 # This can be used for debugging
 # fileP = open('bank_file.dat','w')
-for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
+for iter, (v1, v2) in enumerate(zip(v1s, v2s, strict=True)):
     # First check if point is within the physical space
     # and find some example nearby physical points if it is.
     v1bin = int((v1 - v1smin) / bin_size)

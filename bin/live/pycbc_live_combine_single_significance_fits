@@ -153,8 +153,8 @@ start_time_n = trigger_file_starts[ad_order[0]]
 ad = trigger_file_ends[ad_order] - start_time_n
 
 # Swap the time and bin dimensions for counts and alphas
-counts_bin = {ifo: [c for c in zip(*counts_all[ifo])] for ifo in args.ifos}
-alphas_bin = {ifo: [a for a in zip(*alphas_all[ifo])] for ifo in args.ifos}
+counts_bin = {ifo: list(zip(*counts_all[ifo], strict=True)) for ifo in args.ifos}
+alphas_bin = {ifo: list(zip(*alphas_all[ifo], strict=True)) for ifo in args.ifos}
 
 alphas_out = {ifo: np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
 counts_out = {ifo: np.inf * np.ones(len(counts_bin[ifo])) for ifo in args.ifos}
@@ -166,7 +166,7 @@ logger.info("Writing results")
 fout = HFile(args.output, "w")
 fout.attrs["conservative_percentile"] = args.conservative_percentile
 fout.attrs["ifos"] = args.ifos
-fout["bins_edges"] = list(bl) + [bu[-1]]
+fout["bins_edges"] = [*list(bl), bu[-1]]
 fout["fits_dates"] = ad + start_time_n
 
 for ifo in args.ifos:
@@ -182,7 +182,9 @@ for ifo in args.ifos:
     fout_ifo["separate_fits/start_time"] = trigger_file_starts[ad_order]
     fout_ifo["separate_fits/end_time"] = trigger_file_ends[ad_order]
 
-    for counter, (a, c) in enumerate(zip(alphas_bin[ifo], counts_bin[ifo])):
+    for counter, (a, c) in enumerate(
+        zip(alphas_bin[ifo], counts_bin[ifo], strict=True)
+    ):
         # Sort alpha and counts by date
         a = np.array(a)[ad_order]
         c = np.array(c)[ad_order]

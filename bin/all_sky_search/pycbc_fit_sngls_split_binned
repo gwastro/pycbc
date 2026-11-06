@@ -266,7 +266,10 @@ logger.info("assigning template ids to different splits")
 id_in_bin1 = [[]] * args.split_one_nbins
 id_in_bin2 = [[]] * args.split_two_nbins
 for i, lower_1, upper_1 in zip(
-    range(args.split_one_nbins), sp_one_bounds.lower(), sp_one_bounds.upper()
+    range(args.split_one_nbins),
+    sp_one_bounds.lower(),
+    sp_one_bounds.upper(),
+    strict=True,
 ):
     id_in_bin1[i] = np.intersect1d(
         np.argwhere(params[args.split_param_one] > lower_1),
@@ -274,7 +277,10 @@ for i, lower_1, upper_1 in zip(
     )
 
 for i, lower_2, upper_2 in zip(
-    range(args.split_two_nbins), sp_two_bounds.lower(), sp_two_bounds.upper()
+    range(args.split_two_nbins),
+    sp_two_bounds.lower(),
+    sp_two_bounds.upper(),
+    strict=True,
 ):
     id_in_bin2[i] = np.intersect1d(
         np.argwhere(params[args.split_param_two] > lower_2),
@@ -477,7 +483,9 @@ fig, axes = plt.subplots(
 # Setting up overall legend outside the split-up plots
 lines = []
 labels = []
-for i, lower, upper in zip(range(args.num_bins), pbins.lower(), pbins.upper()):
+for i, lower, upper in zip(
+    range(args.num_bins), pbins.lower(), pbins.upper(), strict=True
+):
     binlabel = f"{lower:#.3g} - {upper:#.3g}"
     (line,) = axes[0, 0].plot(
         [0, 0], [0, 0], linewidth=2, color=histcolors[i], alpha=0.6
@@ -509,7 +517,9 @@ for x in range(args.split_one_nbins):
             y,
         )
         ax = axes[x, y]
-        for i, lower, upper in zip(range(args.num_bins), pbins.lower(), pbins.upper()):
+        for i, lower, upper in zip(
+            range(args.num_bins), pbins.lower(), pbins.upper(), strict=True
+        ):
             indices_all_conditions = np.intersect1d(pidx[i], id_in_both)
             logger.info("%s split %#.3g-%#.3g", args.bin_param, lower, upper)
             if len(indices_all_conditions) == 0:

@@ -221,7 +221,7 @@ for i in range(len(args.trigger_files)):
 
 # Coinc_segs contains only segments where all ifos are analyzed
 coinc_segs = veto.start_end_to_segments([-infinity()], [infinity()])
-for i, sngl in zip(trigs.ifos, trigs.singles):
+for i, sngl in zip(trigs.ifos, trigs.singles, strict=True):
     coinc_segs = coinc_segs & sngl.segs
 for sngl in trigs.singles:
     sngl.segs = coinc_segs
@@ -311,7 +311,7 @@ def process_template(tnum):
     sds_full = {}
     tids_full = {}
     logger.debug("Obtaining trigs for template %i ..", tnum)
-    for i, sngl in zip(trigs.ifos, trigs.singles):
+    for i, sngl in zip(trigs.ifos, trigs.singles, strict=True):
         # Apply cuts to triggers
         tids_uncut = sngl.set_template(tnum)
         trigger_keep_ids = cuts.apply_trigger_cuts(
@@ -617,7 +617,7 @@ f.attrs["coinc_time"] = abs(coinc_segs)
 f.attrs["num_of_ifos"] = len(args.trigger_files)
 f.attrs["pivot"] = args.pivot_ifo
 f.attrs["fixed"] = args.fixed_ifo
-for i, sngl in zip(trigs.ifos, trigs.singles):
+for i, sngl in zip(trigs.ifos, trigs.singles, strict=True):
     f.attrs[f"{i}_foreground_time"] = abs(sngl.segs)
 f.attrs["ifos"] = " ".join(sorted(trigs.ifos))
 

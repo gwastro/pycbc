@@ -161,7 +161,7 @@ def smooth_param(data, index, wrapped=None):
                 continue
 
             weight = 0
-            for b, w in zip(bins, kernel):
+            for b, w in zip(bins, kernel, strict=True):
                 wkey = list(nkey)
                 wkey[index] += b
                 # If smoothing a wrapped parameter (e.g. phase)
@@ -224,7 +224,7 @@ for ifo0 in args.ifos:
 
         # calculate the toa, poa, and amplitude of each sample
         data = {}
-        for rs, ifo in zip(args.relative_sensitivities, args.ifos):
+        for rs, ifo in zip(args.relative_sensitivities, args.ifos, strict=True):
             data[ifo] = {}
             fp, fc = d[ifo].antenna_pattern(ra, dec, pol, 0)
             sp, sc = fp * ip, fc * ic
@@ -255,7 +255,7 @@ for ifo0 in args.ifos:
         bind = [a[keep] for a in bind]
 
         w = data[ifo0]["s"][keep] ** 3.0
-        for i, key in enumerate(zip(*bind)):
+        for i, key in enumerate(zip(*bind, strict=True)):
             if key not in weights:
                 weights[key] = 0
             weights[key] += w[i]
@@ -287,7 +287,7 @@ for ifo0 in args.ifos:
     n_precut = len(keys)
     keep = None
     for i in range(len(args.ifos) - 1):
-        srbin = np.array(list(zip(*keys))[i * 3 + 2])
+        srbin = np.array(list(zip(*keys, strict=True))[i * 3 + 2])
         if keep is None:
             keep = (srbin <= srbmax) & (srbin >= srbmin)
         else:

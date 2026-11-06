@@ -93,39 +93,42 @@ class TestMargNormalization(unittest.TestCase):
             signal = Detector(ifo).project_wave(hp, hc, RA, DEC, 0.3)
             cls.data[ifo] = noise.add_into(signal).to_frequencyseries()
             cls.psds[ifo] = psd
-        cls.static = dict(
-            mass1=1.42,
-            mass2=1.36,
-            f_lower=FLOW,
-            approximant="TaylorF2",
-            polarization=0.3,
-        )
+        cls.static = {
+            "mass1": 1.42,
+            "mass2": 1.36,
+            "f_lower": FLOW,
+            "approximant": "TaylorF2",
+            "polarization": 0.3,
+        }
 
     def model(self, cls, bounds, frame="geocentric", **kwargs):
         """A model with a uniform prior over the given bounds."""
-        variable = ["distance", "inclination"] + list(bounds)
+        variable = ["distance", "inclination", *list(bounds)]
         prior = JointDistribution(
             variable,
             SinAngle(inclination=None),
             Uniform(distance=(10, 200)),
             *[Uniform(**{k: v}) for k, v in bounds.items()],
         )
-        static = {k: v for k, v in self.static.items()}
+        static = dict(self.static.items())
         static.update(
-            {k: v for k, v in dict(ra=RA, dec=DEC).items() if k not in bounds}
+            {k: v for k, v in {"ra": RA, "dec": DEC}.items() if k not in bounds}
         )
         if frame != "geocentric":
             static["tc_ref_frame"] = frame
         if cls is not models.SingleTemplate:
             # the fiducial tc is in the frame tc is sampled in
-            kwargs["fiducial_params"] = dict(
-                mass1=1.42, tc=frame_tc(frame), ra=RA, dec=DEC
-            )
+            kwargs["fiducial_params"] = {
+                "mass1": 1.42,
+                "tc": frame_tc(frame),
+                "ra": RA,
+                "dec": DEC,
+            }
             kwargs["epsilon"] = 0.1
         return cls(
             list(variable),
             copy.deepcopy(self.data),
-            low_frequency_cutoff={ifo: FLOW for ifo in self.data},
+            low_frequency_cutoff=dict.fromkeys(self.data, FLOW),
             psds=self.psds,
             static_params=static,
             prior=prior,
@@ -143,8 +146,8 @@ class TestMargNormalization(unittest.TestCase):
         model = self.model(models.Relative, bounds)
         axes = [grid(*bounds[k], cells[k]) for k in bounds]
         lr = []
-        for values in zip(*[a.ravel() for a in numpy.meshgrid(*axes)]):
-            p = dict(zip(bounds, values))
+        for values in zip(*[a.ravel() for a in numpy.meshgrid(*axes)], strict=True):
+            p = dict(zip(bounds, values, strict=True))
             ra, dec = p.get("ra", RA), p.get("dec", DEC)
             p["tc"] -= frame_delay(frame, ra, dec, p["tc"])
             model.update(**p, **POINT)

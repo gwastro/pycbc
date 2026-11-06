@@ -40,7 +40,7 @@ inc = {}
 start, end = {}, {}
 for psd_file in args.psd_files:
     f = HFile(psd_file, "r")
-    ifo = tuple(f.keys())[0]
+    ifo = next(iter(f.keys()))
     if ifo not in inc:
         inc[ifo] = 0
         start[ifo], end[ifo] = [], []

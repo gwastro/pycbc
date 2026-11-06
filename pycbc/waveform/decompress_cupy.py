@@ -41,7 +41,7 @@ from mako.template import Template
 
 kernel_sources = Template("""
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>     
+#include <device_launch_parameters.h>
 
 __device__ int binary_search(float freq, int lower, int upper, const float* freq_tex){
 
@@ -138,7 +138,7 @@ extern "C" __global__ void find_block_indices(
 
 extern "C" __global__ void linear_interp(
     float2 *h, float df, int hlen, float flow, float fmax, int texlen,
-    const float *freq_tex, const float *amp_tex, const float *phase_tex,                    
+    const float *freq_tex, const float *amp_tex, const float *phase_tex,
     const int *lower, const int *upper){
 
     /*
@@ -206,7 +206,7 @@ extern "C" __global__ void linear_interp(
           int idx = binary_search(freq, low[0], high[0], freq_tex);
           float amp, phase, inv_df, x, y;
           float a0, a1, f0, f1, p0, p1;
-          
+
           if (idx < texlen - 1) {
               f0 = freq_tex[idx];
               f1 = freq_tex[idx+1];
@@ -215,7 +215,7 @@ extern "C" __global__ void linear_interp(
               a1 = amp_tex[idx+1];
               p0 = phase_tex[idx];
               p1 = phase_tex[idx+1];
-                          
+
               amp = a0*inv_df*(f1-freq) + a1*inv_df*(freq-f0);
               phase = p0*inv_df*(f1-freq) + p1*inv_df*(freq-f0);
           } else {

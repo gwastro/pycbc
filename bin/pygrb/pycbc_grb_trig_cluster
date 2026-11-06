@@ -235,7 +235,7 @@ for slide_id in unique_slide_ids:
         disable=not args.verbose,
         total=nbins,
         unit="bins",
-        postfix=dict(nclusters=0),
+        postfix={"nclusters": 0},
         **TQDM_KW,
     )
     for i, bin_ in enumerate(bar):

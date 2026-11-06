@@ -201,13 +201,11 @@ class DistributionFunctionFromFile(External):
                 bounds_error=False,
                 fill_value=0,
             )
-        pdf_val = np.float64(self.interp["pdf"](x010))
-        return pdf_val
+        return np.float64(self.interp["pdf"](x010))
 
     def _logpdf(self, x010, **kwargs):
         """Calculate the logPDF by calling `pdf` function."""
-        z = np.log(self._pdf(x010, **kwargs))
-        return z
+        return np.log(self._pdf(x010, **kwargs))
 
     def _cdf(self, x, **kwargs):
         """
@@ -228,8 +226,7 @@ class DistributionFunctionFromFile(External):
                 )[0]
                 cdf_list.append(cdf_x)
             self.interp["cdf"] = scipy_interpolate.interp1d(self.x_list, cdf_list)
-        cdf_val = np.float64(self.interp["cdf"](x))
-        return cdf_val
+        return np.float64(self.interp["cdf"](x))
 
     def _cdfinv(self, **kwargs):
         """
@@ -241,10 +238,9 @@ class DistributionFunctionFromFile(External):
             for x_value in self.x_list:
                 cdf_list.append(self._cdf(x_value))
             self.interp["cdfinv"] = scipy_interpolate.interp1d(cdf_list, self.x_list)
-        cdfinv_val = {
+        return {
             self.params[0]: np.float64(self.interp["cdfinv"](kwargs[self.params[0]]))
         }
-        return cdfinv_val
 
     @classmethod
     def from_config(cls, cp, section, variable_args):

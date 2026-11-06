@@ -42,7 +42,7 @@ class MultinestFile(BaseSamplerFile):
             write all of the keys in the ``samples`` dict.
 
         """
-        niterations = len(tuple(samples.values())[0])
+        niterations = len(next(iter(samples.values())))
         assert all(len(p) == niterations for p in samples.values()), (
             "all samples must have the same shape"
         )
@@ -90,7 +90,7 @@ class MultinestFile(BaseSamplerFile):
         """
         self.attrs["log_evidence"] = lnz
         self.attrs["dlog_evidence"] = dlnz
-        if all([e is not None for e in [importance_lnz, importance_dlnz]]):
+        if all(e is not None for e in [importance_lnz, importance_dlnz]):
             self.attrs["importance_log_evidence"] = importance_lnz
             self.attrs["importance_dlog_evidence"] = importance_dlnz
 

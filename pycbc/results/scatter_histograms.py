@@ -365,7 +365,7 @@ def create_density_plot(
         # label contours
         if label_contours:
             lbls = [f"{int(p)}%" for p in (100.0 - percentiles)]
-            fmt = dict(zip(ct.levels, lbls))
+            fmt = dict(zip(ct.levels, lbls, strict=True))
             fs = 12
             ax.clabel(ct, ct.levels, inline=True, fmt=fmt, fontsize=fs)
 
@@ -573,9 +573,13 @@ def set_marginal_histogram_title(ax, fmt, color, label=None, rotated=False):
         title = f"{label} = {fmt}"
         tbox1 = offsetbox.TextArea(
             title,
-            textprops=dict(
-                color=color, size=15, rotation=rotation, ha="left", va="bottom"
-            ),
+            textprops={
+                "color": color,
+                "size": 15,
+                "rotation": rotation,
+                "ha": "left",
+                "va": "bottom",
+            },
         )
 
         # save a list of text boxes as attribute for later
@@ -592,11 +596,15 @@ def set_marginal_histogram_title(ax, fmt, color, label=None, rotated=False):
         # add new text box to list
         tbox1 = offsetbox.TextArea(
             f" {fmt}",
-            textprops=dict(
-                color=color, size=15, rotation=rotation, ha="left", va="bottom"
-            ),
+            textprops={
+                "color": color,
+                "size": 15,
+                "rotation": rotation,
+                "ha": "left",
+                "va": "bottom",
+            },
         )
-        ax.title_boxes = ax.title_boxes + [tbox1]
+        ax.title_boxes = [*ax.title_boxes, tbox1]
 
         # pack text boxes
         ybox = packer_class(children=ax.title_boxes, align="bottom", pad=0, sep=5)
@@ -817,12 +825,12 @@ def create_multidim_plot(
         mins = {p: samples[p].min() for p in parameters}
     else:
         # copy the dict
-        mins = {p: val for p, val in mins.items()}
+        mins = dict(mins.items())
     if maxs is None:
         maxs = {p: samples[p].max() for p in parameters}
     else:
         # copy the dict
-        maxs = {p: val for p, val in maxs.items()}
+        maxs = dict(maxs.items())
 
     # Diagonals...
     if plot_marginal:

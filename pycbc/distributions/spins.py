@@ -201,10 +201,9 @@ class IndependentChiPChiEff(Arbitrary):
         s2z = conversions.spin2z_from_mass1_mass2_chi_eff_chi_a(
             mass1, mass2, chi_eff, chi_a
         )
-        test = ((s1x**2.0 + s1y**2.0 + s1z**2.0) < 1.0) & (
+        return ((s1x**2.0 + s1y**2.0 + s1z**2.0) < 1.0) & (
             (s2x**2.0 + s2y**2.0 + s2z**2.0) < 1.0
         )
-        return test
 
     def contains(self, params):
         """

@@ -149,7 +149,7 @@ def write_samples(
         something other than inference samples!**
 
     """
-    ntemps, nwalkers, niterations = tuple(samples.values())[0].shape
+    ntemps, nwalkers, niterations = next(iter(samples.values())).shape
     assert all(p.shape == (ntemps, nwalkers, niterations) for p in samples.values()), (
         "all samples must have the same shape"
     )
@@ -295,7 +295,7 @@ def read_raw_samples(
                 continue
             if isinstance(idx, (int, numpy.int_)):
                 # make sure the last dimension corresponds to iteration
-                thisarr = thisarr.reshape(list(thisarr.shape) + [1])
+                thisarr = thisarr.reshape([*list(thisarr.shape), 1])
             # pull out the temperatures we need
             if selecttemps:
                 thisarr = thisarr[temps, ...]

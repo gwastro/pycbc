@@ -159,8 +159,7 @@ def redshift_estimation(distance, distance_std, lal_cosmology):
     z_est_max = _redshift((distance + distance_std), cosmology=cosmology)
     z_est_min = _redshift((distance - distance_std), cosmology=cosmology)
     z_std_estimation = 0.5 * (z_est_max - z_est_min)
-    z = {"central": z_estimation, "delta": z_std_estimation}
-    return z
+    return {"central": z_estimation, "delta": z_std_estimation}
 
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
@@ -231,8 +230,7 @@ def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
     int_min = intmc(mc_min, lim_min1, lim_min2)
     intline_sup = quad(fun_sup, lim_min1, lim_max1)[0]
     intline_inf = quad(fun_inf, lim_min2, lim_max2)[0]
-    area = int_max + intline_sup - int_min - intline_inf
-    return area
+    return int_max + intline_sup - int_min - intline_inf
 
 
 def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap, mass_gap_separate):

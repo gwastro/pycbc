@@ -113,7 +113,7 @@ elif len(sci_segs.keys()) < 2 and not single_ifo:
     make_grb_segments_plot(
         wflow, segmentlistdict(sci_segs), triggertime, triggername, seg_dir
     )
-    msg = f"Science segments exist only for {tuple(sci_segs.keys())[0]}. "
+    msg = f"Science segments exist only for {next(iter(sci_segs.keys()))}. "
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file."
@@ -145,7 +145,7 @@ plot_met = make_grb_segments_plot(
     triggertime,
     triggername,
     seg_dir,
-    coherent_seg=off_src[tuple(off_src.keys())[0]][0],
+    coherent_seg=off_src[next(iter(off_src.keys()))][0],
 )
 segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2], file_url=plot_met[3])
 segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
@@ -159,7 +159,7 @@ elif len(sci_segs) > 1:
     mf_tag = "coherent"
 
 # Update analysis time after coherent segment calculation
-ifo = tuple(sci_segs.keys())[0]
+ifo = next(iter(sci_segs.keys()))
 wflow.cp = _workflow.set_grb_start_end(
     wflow.cp, int(sci_segs[ifo][0][0]), int(sci_segs[ifo][0][1])
 )
@@ -430,7 +430,7 @@ if wflow.cp.has_section("workflow-injections"):
         os.makedirs(snr_dir, exist_ok=True)
 
         optimal_snr_files = _workflow.FileList([])
-        for inj, inj_tag in zip(injs, inj_tags):
+        for inj, inj_tag in zip(injs, inj_tags, strict=True):
             snr_file = compute_inj_optimal_snr(
                 wflow, inj, tv_psd_files, snr_dir, tags=[inj_tag]
             )
@@ -466,7 +466,7 @@ if wflow.cp.has_section("workflow-injections"):
     # Split the injection files
     if wflow.cp.has_section("workflow-splittable-split_inspinj"):
         inj_split_files = _workflow.FileList([])
-        for inj_file, inj_tag in zip(inj_files, inj_tags):
+        for inj_file, inj_tag in zip(inj_files, inj_tags, strict=True):
             file = _workflow.FileList([inj_file])
             inj_splits = _workflow.setup_splittable_workflow(
                 wflow, file, inj_dir, tags=["split_inspinj", inj_tag]

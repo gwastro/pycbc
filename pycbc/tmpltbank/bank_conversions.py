@@ -130,14 +130,14 @@ def get_bank_property(parameter, bank, template_ids):
         if fullband_req:
             # Unpack the appropriate arguments
             fullband_dur = pnutils.get_imr_duration(
-                *[bank[k][:][template_ids] for k in imr_args + ["f_lower"]], **kwargs
+                *[bank[k][:][template_ids] for k in [*imr_args, "f_lower"]], **kwargs
             )
 
         if prem_required and "f_final" in bank:
             # If f_final is in the bank, then we need to calculate
             # the premerger time of the end of the template
             prem_dur = pnutils.get_imr_duration(
-                *[bank[k][:][template_ids] for k in imr_args + ["f_final"]], **kwargs
+                *[bank[k][:][template_ids] for k in [*imr_args, "f_final"]], **kwargs
             )
         elif prem_required:
             # Pre-merger for bank without f_final is zero

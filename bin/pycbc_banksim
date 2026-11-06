@@ -178,7 +178,7 @@ def get_waveform(
     return make_padded_frequency_series(hvec, filter_tlen, delta_f=delta_f)
 
 
-aprs = sorted(list(set(td_approximants() + fd_approximants())))
+aprs = sorted(set(td_approximants() + fd_approximants()))
 
 # File output Settings
 parser = ArgumentParser(description=__doc__)

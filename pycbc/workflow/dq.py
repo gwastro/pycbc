@@ -106,7 +106,7 @@ def setup_dq_reranking(
         dq_name = dq_names[dq_label]
         dq_type = dq_types[dq_label]
 
-        dq_tags = tags + [dq_label]
+        dq_tags = [*tags, dq_label]
 
         # get triggers for this ifo
         ifo_insp = [insp for insp in insps if (insp.ifo == ifo)]

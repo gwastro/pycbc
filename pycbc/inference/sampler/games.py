@@ -136,7 +136,7 @@ class GameSampler(DummySampler):
         pweight = numpy.zeros(total_draw, dtype=float)
         bin_id = numpy.zeros(total_draw, dtype=int)
         j = 0
-        for i, (c, w) in enumerate(zip(drawcount, drawweight)):
+        for i, (c, w) in enumerate(zip(drawcount, drawweight, strict=True)):
             bdraw = self.draw_samples_from_bin(node_idx[i], c)
             psamp[j : j + len(bdraw)] = FieldArray.from_records(bdraw, dtype=self.dtype)
             pweight[j : j + len(bdraw)] = numpy.log(bin_weight[i]) - numpy.log(w)
@@ -171,7 +171,7 @@ class GameSampler(DummySampler):
         logger.info("Retrieving params of parameter space nodes")
         with h5py.File(self.mapfile, "r") as mapfile:
             bparams = {p: mapfile["bank"][p][:] for p in self.variable_params}
-            num_nodes = len(bparams[list(bparams.keys())[0]])
+            num_nodes = len(bparams[next(iter(bparams.keys()))])
             lengths = numpy.array(
                 [len(mapfile["map"][str(x)]) for x in range(num_nodes)]
             )
@@ -220,7 +220,7 @@ class GameSampler(DummySampler):
                 logger.info("No more samples to draw from")
                 break
 
-            for j, v in zip(bin_id, weight2_v):
+            for j, v in zip(bin_id, weight2_v, strict=True):
                 weight[j] += v
 
             if psamp is None:

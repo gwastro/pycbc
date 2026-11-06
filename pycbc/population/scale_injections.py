@@ -492,9 +492,7 @@ def inj_spin_pdf(key, high_spin, spinz):
     if key == "disable_spin":
         # Returns unit array
 
-        pdf = np.ones_like(spinz)
-
-        return pdf
+        return np.ones_like(spinz)
 
 
 def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp=1):

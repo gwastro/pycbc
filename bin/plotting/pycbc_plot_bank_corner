@@ -202,14 +202,14 @@ cpar_label = args.color_parameter_labels[cpar] if cpar else False
 
 required_params = []
 for co in parameter_options:
-    if any([co in par for par in args.parameters]):
+    if any(co in par for par in args.parameters):
         required_params.append(co)
     if cpar and co in cpar:
         required_params.append(co)
 
 # Check for possible double-counting of duration parameter:
 if "duration" in required_params and any(
-    [p.endswith("_duration") for p in required_params]
+    p.endswith("_duration") for p in required_params
 ):
     # Check whether duration was specified directly:
     dur_pars = [par for par in args.parameters if "duration" in par]
@@ -222,7 +222,7 @@ if "duration" in required_params and any(
 # sure we have some other keys in order to calculate duration
 duration_required_keys = ["mass1", "mass2", "spin1z", "spin2z", "f_lower"]
 
-if any(["duration" in par for par in args.parameters]):
+if any("duration" in par for par in args.parameters):
     required_params += duration_required_keys
 
 # Some things may have been double counted - undo this
@@ -251,7 +251,7 @@ else:
     hist_color = "black"
 
 # All parameters should be in the bank now, check they are the right size:
-assert all([len(bank[p]) == banklen for p in bank])
+assert all(len(bank[p]) == banklen for p in bank)
 
 # Change the bank to the format required for the plot:
 bank_fa = FieldArray.from_arrays(bank.values(), names=list(bank.keys()))
@@ -333,7 +333,7 @@ for i in range(len(args.parameters)):
     # Share the axis to the one to the left of it
     # can't call sharey method on the same axes twice for some reason
     if len(sharey_axes) > 1:
-        for s0, s1 in zip(sharey_axes[:-1], sharey_axes[1:]):
+        for s0, s1 in zip(sharey_axes[:-1], sharey_axes[1:], strict=True):
             s0.sharey(s1)
     # Get the axes on column i
     # not statement removes diagonals
@@ -341,7 +341,7 @@ for i in range(len(args.parameters)):
     # Share the axis to the one to the left of it
     # can't call sharex method on the same axes twice for some reason
     if len(sharex_axes) > 1:
-        for s0, s1 in zip(sharex_axes[:-1], sharex_axes[1:]):
+        for s0, s1 in zip(sharex_axes[:-1], sharex_axes[1:], strict=True):
             s0.sharex(s1)
 
 for (p1, p2), ax in axis_dict.items():

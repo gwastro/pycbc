@@ -95,7 +95,9 @@ def write_combined_results(outgrp, both_dict, ref_dict, com_dict):
             g.create_dataset(k, data=both_dict[key][k])
     grp.create_dataset("file_number", data=both_dict["file_number"])
     for nm, ddict in zip(
-        ["found_reference_only", "found_comparison_only"], [ref_dict, com_dict]
+        ["found_reference_only", "found_comparison_only"],
+        [ref_dict, com_dict],
+        strict=True,
     ):
         grp = outgrp.create_group(nm)
         for key in ddict.keys():

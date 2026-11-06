@@ -185,14 +185,17 @@ if args.distance_type == "redshift":
 if "snr" in args.distance_type:  # only evaluate SNRs if needed
     opt_snrsq_arr = [f[f"injections/optimal_snr_{ifo}"][:] ** 2.0 for ifo in ifos]
     dvals["comb_optimal_snr"] = numpy.array(
-        [numpy.sqrt(sum(opt_snrsq)) for opt_snrsq in zip(*opt_snrsq_arr)]
+        [numpy.sqrt(sum(opt_snrsq)) for opt_snrsq in zip(*opt_snrsq_arr, strict=True)]
     )
     # Decisive optimal SNR is the 2nd largest optimal SNR
     dvals["decisive_optimal_snr"] = numpy.array(
-        [numpy.sqrt(sorted(opt_snrsq)[-2]) for opt_snrsq in zip(*opt_snrsq_arr)]
+        [
+            numpy.sqrt(sorted(opt_snrsq)[-2])
+            for opt_snrsq in zip(*opt_snrsq_arr, strict=True)
+        ]
     )
     dvals["max_optimal_snr"] = numpy.array(
-        [numpy.sqrt(max(opt_snrsq)) for opt_snrsq in zip(*opt_snrsq_arr)]
+        [numpy.sqrt(max(opt_snrsq)) for opt_snrsq in zip(*opt_snrsq_arr, strict=True)]
     )
 
 fdvals = dvals[args.distance_type][found]

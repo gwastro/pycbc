@@ -85,7 +85,7 @@ if opts.z_arg is not None:
 # loop over input files and its samples
 logger.info("Plotting")
 for i, (input_file, input_fp, input_samples) in enumerate(
-    zip(opts.input_file, fp, samples)
+    zip(opts.input_file, fp, samples, strict=True)
 ):
     # get paramter values
     sampled_vals = input_samples[parameter]

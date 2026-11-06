@@ -92,7 +92,7 @@ ranking_keys = list(ranking.sngls_ranking_function_dict.keys())
 parser.add_argument(
     "--z-var",
     required=True,
-    choices=["density"] + ranking_keys,
+    choices=["density", *ranking_keys],
     help="Quantity to plot on the color scale. Required",
 )
 parser.add_argument("--detector", required=True, help="Detector. Required")

@@ -39,7 +39,7 @@ __all__ = (
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
-IDTypes = set(["ilwd:char", "ilwd:char_u"])
+IDTypes = {"ilwd:char", "ilwd:char_u"}
 
 
 def default_null_value(col_name, col_type):
@@ -157,7 +157,7 @@ def create_process_table(
         for key in key_del:
             opts.pop(key)
 
-    process = document.register_process(
+    return document.register_process(
         program_name,
         opts,
         version=pycbc_version.version,
@@ -166,7 +166,6 @@ def create_process_table(
         instruments=detectors,
         comment=comment,
     )
-    return process
 
 
 def legacy_row_id_converter(ContentHandler):  # noqa: N803
@@ -261,7 +260,9 @@ def legacy_row_id_converter(ContentHandler):  # noqa: N803
                         if colname in loadcolumns
                         else None
                     )
-                    for pytype, colname in zip(parent.columnpytypes, parent.columnnames)
+                    for pytype, colname in zip(
+                        parent.columnpytypes, parent.columnnames, strict=True
+                    )
                 ]
             )
         return result
