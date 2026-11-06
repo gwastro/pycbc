@@ -597,6 +597,31 @@ class TestTimeSeriesBase(ArrayBase, unittest.TestCase):
             self.assertEqual(numpy.abs(b[:, 1] - a_numpy).max(), 0)
             os.remove(temp_path_txt)
 
+    def test_save_to_wav(self):
+        if self.kind != "real":
+            return
+        from scipy.io import wavfile
+
+        with self.context:
+            temp_file = tempfile.NamedTemporaryFile()
+            temp_path = temp_file.name + ".wav"
+            # a tiny-amplitude signal must be normalised to full scale
+            a_numpy = numpy.sin(numpy.arange(64) / 4.0).astype(self.dtype) * 1e-21
+            a = TimeSeries(a_numpy, delta_t=1.0 / 64)
+            a.save_to_wav(temp_path)
+            rate, data = wavfile.read(temp_path)
+            self.assertEqual(rate, 64)
+            self.assertEqual(data.dtype, numpy.int16)
+            self.assertEqual(len(data), 64)
+            self.assertEqual(numpy.abs(data).max(), 32767)
+            # all-zero data must give silence, not a divide-by-zero
+            z = TimeSeries(numpy.zeros(64, dtype=self.dtype), delta_t=1.0 / 64)
+            z.save_to_wav(temp_path)
+            _, data = wavfile.read(temp_path)
+            self.assertEqual(data.dtype, numpy.int16)
+            self.assertTrue((data == 0).all())
+            os.remove(temp_path)
+
     def test_taper_constant(self):
         if self.scheme != "cpu" or self.dtype not in (float32, float64):
             self.skipTest("constant tapering needs real data on the CPU")

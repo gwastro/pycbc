@@ -556,8 +556,11 @@ class TimeSeries(Array):
              The output file name
 
         """
-        scaled = _numpy.int16(self.numpy() / max(abs(self)) * 32767)
-        write_wav(file_name, int(self.sample_rate), scaled)
+        scaled = self.numpy()
+        peak = _numpy.max(_numpy.abs(scaled))
+        if peak > 0:
+            scaled = scaled / peak * 32767
+        write_wav(file_name, int(self.sample_rate), _numpy.int16(scaled))
 
     def psd(self, segment_duration, **kwds):
         """
