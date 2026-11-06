@@ -21,6 +21,7 @@ pytest = "*"
 graphviz = "*"
 
 [tool.pixi.pypi-dependencies]
+coverage = "*"
 pycbc = { path = ".", editable = true, extras = ["test"] }
 
 [tool.pixi.environments]
