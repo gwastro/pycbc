@@ -103,10 +103,10 @@ class BaseRedshiftEvolution(ABC):
     def __init__(
         self,
         z_max: float = 2.0,
-        z_max_cosmo: float = 50.0,
         num_zbins: int = 1000,
         cosmology=None,
         z_grid = None,
+        z_max_cosmo: float = 5000.0,
         z_grid_cosmo = None,
         ):
         """
@@ -126,13 +126,17 @@ class BaseRedshiftEvolution(ABC):
             Custom redshift grid
             (must be strictly increasing, start at 0, end at z_max).
             If None, a uniform grid from 0 to z_max is used.
+        z_max_cosmo : float
+            Maximum redshift for grid for cosmological interpolation.
+            Must be positive. It is different from z_max which is required 
+            for normalization.
         z_grid_cosmo : array_like, optional
             Custom redshift grid for cosmological functions
             (must be strictly increasing, start at 0, end at z_max).
             If None, a uniform grid from 0 to z_max is used.
         """
         self.z_max = float(z_max)
-        self.z_max_cosmo = float(z_max)
+        self.z_max_cosmo = float(z_max_cosmo)
         self.num_zbins = int(num_zbins)
 
         # Validate z_max, num_bin, and cosmology
@@ -194,8 +198,8 @@ class BaseRedshiftEvolution(ABC):
         )*u.sr
 
         # Cache for interpolated values
-        self._cached_z = None
-        self._cached_dvc_dz = None
+        #self._cached_z = None
+        #self._cached_dvc_dz = None
 
     # ------------------------------------------------------------------
     # Utilities; it makes it compatible with scalar/numpy.arrays
@@ -830,7 +834,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         td_min=0.02,
         td_max=None,
     ):
-        super().__init__(z_max, num_zbins, cosmology, z_grid)
+        super().__init__(z_max, num_zbins, cosmology, z_grid=z_grid)
         self.sfr_model = sfr_model
         self.time_delay_model = time_delay_model
 
@@ -984,7 +988,7 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
                         integrand, z_start, self.z_formation_max, points=pts, limit=1000
                     )[0]
         else:
-            for i, (zm, tm) in enumerate(zip(self._z_grid, tm_grid)):
+            for i, (zm, tm) in enumerate(zip(self._z_grid, tm_grid, strict=True)):
                 valid = self._zf_grid >= zm
                 zf_valid = self._zf_grid[valid]
                 tf_valid = self._tf_grid[valid]
