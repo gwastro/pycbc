@@ -176,7 +176,7 @@ def exit_cleaning():
         try:
             os.remove(fname)
         except OSError as e:
-            print(e)
+            logger.warning("%s", e)
 
 
 atexit.register(exit_cleaning)

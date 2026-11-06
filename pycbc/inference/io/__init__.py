@@ -401,15 +401,15 @@ class PrintFileParams(argparse.Action):
             fp.close()
         # now print information about the intersection of all parameters
         parameters = get_common_parameters(input_files, collection="all")
-        print(
+        print(  # noqa: T201
             "\n"
             + textwrap.fill("Parameters available with this (these) input file(s):"),
             end="\n\n",
         )
-        print(textwrap.fill(" ".join(sorted(parameters))), end="\n\n")
+        print(textwrap.fill(" ".join(sorted(parameters))), end="\n\n")  # noqa: T201
         # information about the pycbc functions
         pfuncs = sorted(FieldArray.functionlib.fget(FieldArray).keys())
-        print(
+        print(  # noqa: T201
             textwrap.fill(
                 "Available pycbc functions (see "
                 "http://pycbc.org/pycbc/latest/html for "
@@ -417,7 +417,7 @@ class PrintFileParams(argparse.Action):
             ),
             end="\n\n",
         )
-        print(textwrap.fill(", ".join(pfuncs)), end="\n\n")
+        print(textwrap.fill(", ".join(pfuncs)), end="\n\n")  # noqa: T201
         # numpy funcs
         npfuncs = sorted(
             [
@@ -426,13 +426,13 @@ class PrintFileParams(argparse.Action):
                 if isinstance(obj, numpy.ufunc)
             ]
         )
-        print(textwrap.fill("Available numpy functions:"), end="\n\n")
-        print(textwrap.fill(", ".join(npfuncs)), end="\n\n")
+        print(textwrap.fill("Available numpy functions:"), end="\n\n")  # noqa: T201
+        print(textwrap.fill(", ".join(npfuncs)), end="\n\n")  # noqa: T201
         # misc
         consts = "e euler_gamma inf nan pi"
-        print(textwrap.fill("Recognized constants:"), end="\n\n")
-        print(consts, end="\n\n")
-        print(
+        print(textwrap.fill("Recognized constants:"), end="\n\n")  # noqa: T201
+        print(consts, end="\n\n")  # noqa: T201
+        print(  # noqa: T201
             textwrap.fill(
                 "Python arthimetic (+ - * / // ** %), "
                 "binary (&, |, etc.), and comparison (>, <, >=, "
@@ -446,12 +446,12 @@ class PrintFileParams(argparse.Action):
             "options that may be provided, along with the "
             "input files that understand them:"
         )
-        print("\n" + outstr, end="\n\n")
+        print("\n" + outstr, end="\n\n")  # noqa: T201
         for ftype, fparser in fileparsers.items():
             fnames = ", ".join(filesbytype[ftype])
             if fparser is None:
                 outstr = textwrap.fill(f"File(s) {fnames} use no additional options.")
-                print(outstr, end="\n\n")
+                print(outstr, end="\n\n")  # noqa: T201
             else:
                 fparser.usage = fnames
                 fparser.print_help()

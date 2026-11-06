@@ -4,11 +4,14 @@ PyCBC.
 """
 
 import configparser
+import logging
 import os.path
 from html.parser import HTMLParser
 from xml.sax.saxutils import escape, unescape
 
 import pycbc.version
+
+logger = logging.getLogger(__name__)
 
 escape_table = {
     '"': "&quot;",
@@ -67,7 +70,7 @@ def load_html_metadata(filename):
     data = open(filename).read()
 
     if "pycbc-meta" in data:
-        print(f"LOADING HTML FILE {filename}")
+        logger.info("Loading HTML file %s", filename)
     parser.feed(data)
     cp = configparser.ConfigParser(parser.metadata)
     cp.add_section(os.path.basename(filename))

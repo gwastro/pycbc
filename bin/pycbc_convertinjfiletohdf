@@ -22,6 +22,7 @@ or the LIGO HDF format) into a PyCBC hdf injection format
 """
 
 import argparse
+import logging
 import shutil
 
 import numpy
@@ -33,6 +34,8 @@ from pycbc.inject import CBCHDFInjectionSet
 from pycbc.io.hdf import HFile
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.io.record import FieldArray
+
+logger = logging.getLogger(__name__)
 
 # Handlers for alternative injection formats
 
@@ -48,7 +51,7 @@ def legacy_approximant_name(apx):
     try:
         order = lalsim.GetOrderFromString(apx)
     except:
-        print("Warning: Could not read phase order from string, using default")
+        logger.warning("Could not read phase order from string, using default")
         order = -1
     name = lalsim.GetStringFromApproximant(lalsim.GetApproximantFromString(apx))
     return name, order

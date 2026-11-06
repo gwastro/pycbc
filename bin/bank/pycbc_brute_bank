@@ -585,7 +585,7 @@ def wf_wrapper(args):
             hp.gen = None
         return hp
     except Exception as e:
-        print(e)
+        logger.warning("Waveform generation failed: %s", e)
         return None
 
 

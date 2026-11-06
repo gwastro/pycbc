@@ -164,11 +164,11 @@ if len(opts.parameters) > 1:
 param = opts.parameters[0]
 null = float(opts.parameter_null_value)
 
-print(
+print(  # noqa: T201
     f"Calculating Bayes factor for selected parameter {param} versus {param} "
     f"at null value {null}"
 )
-print("======================================================================")
+print("======================================================================")  # noqa: T201
 
 priors = []
 posteriors = []
@@ -297,9 +297,9 @@ for file in opts.input_file:
         plt.close()
 
     # print output
-    print(f"File: {file}")
+    print(f"File: {file}")  # noqa: T201
     if B > 1e-3:
-        print(f"Bayes factor: {B[0]:.3f}")
+        print(f"Bayes factor: {B[0]:.3f}")  # noqa: T201
     else:
-        print(f"Bayes factor: {B[0]:.5e}")
-    print()
+        print(f"Bayes factor: {B[0]:.5e}")  # noqa: T201
+    print()  # noqa: T201

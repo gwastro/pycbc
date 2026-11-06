@@ -151,7 +151,7 @@ def legacy_approximant_name(apx):
     try:
         order = sim.GetOrderFromString(apx)
     except:
-        print("Warning: Could not read phase order from string, using default")
+        logger.warning("Could not read phase order from string, using default")
         order = -1
     name = sim.GetStringFromApproximant(sim.GetApproximantFromString(apx))
     return name, order

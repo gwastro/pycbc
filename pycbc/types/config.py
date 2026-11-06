@@ -387,8 +387,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                         "${" + rep_string + "}",
                         self.get(section, split_string[0]),
                     )
-                except configparser.NoOptionError:
-                    print("Substitution failed")
+                except configparser.NoOptionError as e:
+                    e.add_note("Substitution failed")
                     raise
             if len(split_string) == 2:
                 try:
@@ -396,8 +396,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                         "${" + rep_string + "}",
                         self.get(split_string[0], split_string[1]),
                     )
-                except configparser.NoOptionError:
-                    print("Substitution failed")
+                except configparser.NoOptionError as e:
+                    e.add_note("Substitution failed")
                     raise
             re_obj = re.search(r"\$\{.*?\}", test_string)
 

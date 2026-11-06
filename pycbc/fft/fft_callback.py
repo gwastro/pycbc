@@ -1,9 +1,12 @@
 #!/usr/bin/python
 import ctypes
+import logging
 import os
 import subprocess
 
 from mako.template import Template
+
+logger = logging.getLogger(__name__)
 
 full_corr = """
     __device__ cufftComplex in_call(void* input, size_t offset,
@@ -200,7 +203,7 @@ def compile(source, name):
         "-c",
         src_file,
     ]
-    print(" ".join(cmd))
+    logger.info("%s", " ".join(cmd))
     subprocess.check_call(cmd)
 
     cmd = [
@@ -215,7 +218,7 @@ def compile(source, name):
         "-lcufft_static",
         "-lculibos",
     ]
-    print(" ".join(cmd))
+    logger.info("%s", " ".join(cmd))
 
     subprocess.check_call(cmd)
 
