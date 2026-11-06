@@ -150,14 +150,8 @@ class Gaussian(bounded.BoundedDist):
     def cdf(self, param, value):
         """Returns the CDF of the given parameter value."""
         a, b = self._bounds[param]
-        if a != -numpy.inf:
-            phi_a = self._normalcdf(param, a)
-        else:
-            phi_a = 0.0
-        if b != numpy.inf:
-            phi_b = self._normalcdf(param, b)
-        else:
-            phi_b = 1.0
+        phi_a = self._normalcdf(param, a) if a != -numpy.inf else 0.0
+        phi_b = self._normalcdf(param, b) if b != numpy.inf else 1.0
         phi_x = self._normalcdf(param, value)
         return (phi_x - phi_a) / (phi_b - phi_a)
 
@@ -170,14 +164,8 @@ class Gaussian(bounded.BoundedDist):
     def _cdfinv_param(self, param, p):
         """Return inverse of the CDF."""
         a, b = self._bounds[param]
-        if a != -numpy.inf:
-            phi_a = self._normalcdf(param, a)
-        else:
-            phi_a = 0.0
-        if b != numpy.inf:
-            phi_b = self._normalcdf(param, b)
-        else:
-            phi_b = 1.0
+        phi_a = self._normalcdf(param, a) if a != -numpy.inf else 0.0
+        phi_b = self._normalcdf(param, b) if b != numpy.inf else 1.0
         adjusted_p = phi_a + p * (phi_b - phi_a)
         return self._normalcdfinv(param, adjusted_p)
 

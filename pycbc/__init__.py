@@ -152,10 +152,7 @@ def init_logging(
     def sig_handler(signum, frame):  # noqa: ARG001
         root_logger = logging.getLogger()
         log_level = root_logger.level
-        if log_level == logging.DEBUG:
-            log_level = logging.WARNING
-        else:
-            log_level = logging.DEBUG
+        log_level = logging.WARNING if log_level == logging.DEBUG else logging.DEBUG
         root_logger.warning("Got signal %d, setting log level to %d", signum, log_level)
         root_logger.setLevel(log_level)
 

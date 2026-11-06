@@ -292,7 +292,7 @@ def lm_tfinal(damping_times):
     """
     if isinstance(damping_times, dict):
         t_max = {}
-        for lmn in damping_times.keys():
+        for lmn in damping_times:
             t_max[lmn] = qnm_time_decay(damping_times[lmn], 1.0 / 1000)
         t_final = max(t_max.values())
     else:
@@ -308,7 +308,7 @@ def lm_deltat(freqs, damping_times):
     """
     if isinstance(freqs, dict) and isinstance(damping_times, dict):
         dt = {}
-        for lmn in freqs.keys():
+        for lmn in freqs:
             dt[lmn] = 1.0 / qnm_freq_decay(freqs[lmn], damping_times[lmn], 1.0 / 1000)
         delta_t = min(dt.values())
     elif isinstance(freqs, dict) and not isinstance(damping_times, dict):
@@ -328,7 +328,7 @@ def lm_ffinal(freqs, damping_times):
     """
     if isinstance(freqs, dict) and isinstance(damping_times, dict):
         f_max = {}
-        for lmn in freqs.keys():
+        for lmn in freqs:
             f_max[lmn] = qnm_freq_decay(freqs[lmn], damping_times[lmn], 1.0 / 1000)
         f_final = max(f_max.values())
     elif isinstance(freqs, dict) and not isinstance(damping_times, dict):
@@ -348,7 +348,7 @@ def lm_deltaf(damping_times):
     """
     if isinstance(damping_times, dict):
         df = {}
-        for lmn in damping_times.keys():
+        for lmn in damping_times:
             df[lmn] = 1.0 / qnm_time_decay(damping_times[lmn], 1.0 / 1000)
         delta_f = min(df.values())
     else:
@@ -821,10 +821,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False, sum_modes=T
     except KeyError:
         harmonics = "spherical"
     # we'll need the final spin for spheroidal harmonics
-    if harmonics == "spheroidal":
-        final_spin = input_params["final_spin"]
-    else:
-        final_spin = None
+    final_spin = input_params["final_spin"] if harmonics == "spheroidal" else None
     # add inclination and azimuthal if they aren't provided
     if "inclination" not in input_params:
         input_params["inclination"] = 0.0
@@ -840,7 +837,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False, sum_modes=T
         )
         norm = (
             kerr_factor(input_params["final_mass"], input_params["distance"])
-            if "distance" in input_params.keys()
+            if "distance" in input_params
             else 1.0
         )
         for mode, freq in freqs.items():

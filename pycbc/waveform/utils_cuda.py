@@ -91,10 +91,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
             "CUDA version of apply_fseries_time_shift only supports single precision"
         )
 
-    if copy:
-        out = htilde.copy()
-    else:
-        out = htilde
+    out = htilde.copy() if copy else htilde
 
     kmin = numpy.int32(kmin)
     kmax = numpy.int32(len(htilde))

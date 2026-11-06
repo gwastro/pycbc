@@ -410,11 +410,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             hh_total += hh
 
         loglr = self.marginalize_loglr(sh_total, hh_total)
-        if self.return_sh_hh:
-            results = (sh_total, hh_total)
-        else:
-            results = loglr
-        return results
+        return (sh_total, hh_total) if self.return_sh_hh else loglr
 
 
 class MarginalizedPolarization(DistMarg, BaseGaussianNoise):

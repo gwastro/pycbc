@@ -32,9 +32,7 @@ def get_ifo_string(fi):
         # Foreground group contains the time information for each ifo so
         # the ifos list can be reconstructed
         istring = " ".join(
-            sorted(
-                [k for k in fi["foreground"].keys() if "time" in fi[f"foreground/{k}"]]
-            )
+            sorted([k for k in fi["foreground"] if "time" in fi[f"foreground/{k}"]])
         )
     return istring
 
@@ -348,11 +346,11 @@ def filter_dataset(h5file, name, idx):
 
 # Downsample the foreground columns to only the loudest ifar between the
 # multiple files
-for key in f["foreground"].keys():
+for key in f["foreground"]:
     if key not in all_ifos:
         filter_dataset(f, f"foreground/{key}", cidx)
     else:  # key is an ifo
-        for k in f[f"foreground/{key}"].keys():
+        for k in f[f"foreground/{key}"]:
             filter_dataset(f, f"foreground/{key}/{k}", cidx)
 
 fg_coinc_type = fg_coinc_type[cidx]
@@ -558,10 +556,7 @@ bg_time_ct = {
 # Counter for number of removals
 h_iterations = 0
 
-if args.hierarchical_removal_against == "inclusive":
-    ifar_key = "ifar"
-else:
-    ifar_key = "ifar_exc"
+ifar_key = "ifar" if args.hierarchical_removal_against == "inclusive" else "ifar_exc"
 
 # Break out of loop if max number of removals is reached
 # or no more triggers above specified IFAR threshold

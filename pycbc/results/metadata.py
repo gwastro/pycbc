@@ -52,19 +52,20 @@ def save_html_with_metadata(fig, filename, fig_kwds, kwds):
 
         text = fig_to_html(fig, **fig_kwds)
 
-    f = open(filename, "w")
-    for key, value in kwds.items():
-        value = escape(value, escape_table)
-        line = f'<div class=pycbc-meta key="{key!s}" value="{value}"></div>'
-        f.write(line)
+    with open(filename, "w") as f:
+        for key, value in kwds.items():
+            value = escape(value, escape_table)
+            line = f'<div class=pycbc-meta key="{key!s}" value="{value}"></div>'
+            f.write(line)
 
-    f.write(text)
+        f.write(text)
 
 
 def load_html_metadata(filename):
     """Get metadata from html file"""
     parser = MetaParser()
-    data = open(filename).read()
+    with open(filename) as fp:
+        data = fp.read()
 
     if "pycbc-meta" in data:
         print(f"LOADING HTML FILE {filename}")

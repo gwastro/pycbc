@@ -18,10 +18,7 @@ def _dataset_has_checksumming(dataset):
     for i in range(n):
         tpl = plist.get_filter(i)
         name = tpl[-1]
-        if isinstance(name, bytes):
-            name_low = name.lower()
-        else:
-            name_low = str(name).lower()
+        name_low = name.lower() if isinstance(name, bytes) else str(name).lower()
         # check if fletcher32 has been anabled
         if (
             b"fletcher" in name_low
@@ -158,10 +155,9 @@ class TestIOHFile(unittest.TestCase):
             p = os.path.join(td, "bad_dtype.hdf")
             # create a unicode numpy array whose elements are non-numeric
             arr = np.array(["a", "b", "c"], dtype="<U1")
-            with HFile(p, "w") as f:
-                # Attempting to write this array as floats should fail
-                with self.assertRaises((TypeError, ValueError)):
-                    f.create_dataset("bad", data=arr, dtype="f8")
+            # Attempting to write this array as floats should fail
+            with HFile(p, "w") as f, self.assertRaises((TypeError, ValueError)):
+                f.create_dataset("bad", data=arr, dtype="f8")
 
     def test_getitem_wraps_group_and_leaves_dataset(self):
         """

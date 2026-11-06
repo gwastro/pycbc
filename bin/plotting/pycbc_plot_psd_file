@@ -84,17 +84,14 @@ for psd_file in args.psd_files:
     f = HFile(psd_file, "r")
     if args.hdf_group is not None:
         f = f[args.hdf_group]
-    if args.ifos is not None:
-        ifo_list = args.ifos
-    else:
-        ifo_list = list(f.keys())
+    ifo_list = args.ifos if args.ifos is not None else list(f.keys())
     for ifo in ifo_list:
         fac = 1.0 / args.dyn_range_factor
         df = f[ifo + "/psds/0"].attrs["delta_f"]
         keys = list(f[ifo + "/psds"].keys())
         if args.low_frequency_cutoff is not None:
             flow = args.low_frequency_cutoff
-        elif "low_frequency_cutoff" in f.attrs.keys():
+        elif "low_frequency_cutoff" in f.attrs:
             flow = f.attrs["low_frequency_cutoff"]
         else:
             try:

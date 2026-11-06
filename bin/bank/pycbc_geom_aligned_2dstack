@@ -164,7 +164,7 @@ metric_params = pycbc.tmpltbank.MetricParameters(
 h5file = HFile(opts.input_file, "r")
 v1s = h5file[f"split_banks/split_bank_{opts.split_bank_num:05d}/v1s"][:]
 v2s = h5file[f"split_banks/split_bank_{opts.split_bank_num:05d}/v2s"][:]
-if "v3s" in h5file[f"split_banks/split_bank_{opts.split_bank_num:05d}"].keys():
+if "v3s" in h5file[f"split_banks/split_bank_{opts.split_bank_num:05d}"]:
     v3s = h5file[f"split_banks/split_bank_{opts.split_bank_num:05d}/v3s"][:]
     temp_bank = numpy.array([v1s, v2s, v3s]).T
 else:

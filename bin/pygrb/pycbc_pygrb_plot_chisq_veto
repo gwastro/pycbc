@@ -153,10 +153,9 @@ ifo = opts.ifo
 snr_type = opts.snr_type
 # If this is false, coherent SNR is used on the horizontal axis
 # otherwise the single IFO SNR is used
-if snr_type == "single":
-    if ifo is None:
-        err_msg = "--ifo must be given to plot single IFO SNR veto"
-        parser.error(err_msg)
+if snr_type == "single" and ifo is None:
+    err_msg = "--ifo must be given to plot single IFO SNR veto"
+    parser.error(err_msg)
 
 # Veto is intended as a single IFO quantity. Network chisq will be obsolete.
 # TODO: fix vetoes
@@ -229,10 +228,7 @@ inj_data = ppu.load_data(
 )
 
 # Dataset name for the horizontal direction
-if snr_type == "single":
-    x_key = ifo + "/snr"
-else:
-    x_key = "network/" + snr_type + "_snr"
+x_key = ifo + "/snr" if snr_type == "single" else "network/" + snr_type + "_snr"
 # Dataset name for the vertical direction and for normalization
 if veto_type == "power":
     y_key = opts.ifo + "/chisq"

@@ -134,10 +134,7 @@ class BaseTransform:
         tag = outputs
         if skip_opts is None:
             skip_opts = []
-        if additional_opts is None:
-            additional_opts = {}
-        else:
-            additional_opts = additional_opts.copy()
+        additional_opts = {} if additional_opts is None else additional_opts.copy()
         outputs = set(outputs.split(VARARGS_DELIM))
         special_args = ["name", *skip_opts, *list(additional_opts.keys())]
         # get any extra arguments to pass to init
@@ -235,10 +232,7 @@ class CustomTransform(BaseTransform):
             # as the maps; in that case, re-create the scratch space with the
             # appropriate size and try again
             invals = maps[next(iter(self.inputs))]
-            if isinstance(invals, numpy.ndarray):
-                shape = invals.shape
-            else:
-                shape = len(invals)
+            shape = invals.shape if isinstance(invals, numpy.ndarray) else len(invals)
             self._createscratch(shape)
             for p in self.inputs:
                 self._scratch[p][:] = maps[p]
@@ -2538,10 +2532,7 @@ class Logit(BaseTransform):
         opt = f"min-{inputvar}"
         if skip_opts is None:
             skip_opts = []
-        if additional_opts is None:
-            additional_opts = {}
-        else:
-            additional_opts = additional_opts.copy()
+        additional_opts = {} if additional_opts is None else additional_opts.copy()
         if cp.has_option(s, opt):
             a = cp.get_opt_tag(section, opt, outputs)
             skip_opts.append(opt)
@@ -3028,10 +3019,7 @@ class Logistic(Logit):
         outputvar = cp.get_opt_tag(section, "output", outputs)
         if skip_opts is None:
             skip_opts = []
-        if additional_opts is None:
-            additional_opts = {}
-        else:
-            additional_opts = additional_opts.copy()
+        additional_opts = {} if additional_opts is None else additional_opts.copy()
         s = "-".join([section, outputs])
         opt = f"min-{outputvar}"
         if cp.has_option(s, opt):
@@ -3283,10 +3271,7 @@ def apply_transforms(samples, transforms, inverse=False):
         transforms = transforms[::-1]
     for t in transforms:
         try:
-            if inverse:
-                samples = t.inverse_transform(samples)
-            else:
-                samples = t.transform(samples)
+            samples = t.inverse_transform(samples) if inverse else t.transform(samples)
         except NotImplementedError:
             continue
     return samples

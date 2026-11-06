@@ -226,7 +226,7 @@ def bin_events(
     ifotag, _, seg = filename_metadata(inputfile)
 
     with HFile(inputfile, "r") as h5in:
-        ifos = [k for k in h5in.keys() if k != "network"]
+        ifos = [k for k in h5in if k != "network"]
         times = h5in[column][()]
 
         for bin_, segl in bins.items():

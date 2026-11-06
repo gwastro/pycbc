@@ -53,9 +53,7 @@ with HFile(daily_files[-1], "r") as last_file:
     dq_channel = last_file.attrs["dq_channel"]
     dq_ok_channel = last_file.attrs["dq_ok_channel"]
     bin_group = last_file[f"{args.ifo}/bins"]
-    template_bins = {
-        bin_name: bin_group[bin_name]["tids"][:] for bin_name in bin_group.keys()
-    }
+    template_bins = {bin_name: bin_group[bin_name]["tids"][:] for bin_name in bin_group}
 num_bins = len(bin_str.split())
 
 total_livetime = 0
@@ -71,7 +69,7 @@ for fpath in daily_files:
         total_livetime += f[f"{args.ifo}/observing_livetime"][()]
         flagged_livetime += f[f"{args.ifo}/dq_flag_livetime"][()]
         bin_group = f[f"{args.ifo}/bins"]
-        for bin_name in bin_group.keys():
+        for bin_name in bin_group:
             # bins are named as 'bin{bin_num}'
             bin_num = int(bin_name[3:])
             bgrp = bin_group[bin_name]

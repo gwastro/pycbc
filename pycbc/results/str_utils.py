@@ -194,10 +194,7 @@ def format_value(
     minus_sign = "-" if value < 0.0 else ""
     value = abs(value)
     minus_err = abs(error)
-    if plus_error is None:
-        plus_err = minus_err
-    else:
-        plus_err = abs(plus_error)
+    plus_err = minus_err if plus_error is None else abs(plus_error)
     error = min(minus_err, plus_err)
     if value == 0.0 or abs(numpy.log10(value)) < use_scientific_notation:
         conversion_factor = 0.0
@@ -212,10 +209,7 @@ def format_value(
     else:
         powfactor = f"\\times 10^{{{int(conversion_factor)}}}"
 
-    if ndecs is not None:
-        decs = value * 10 ** (-ndecs)
-    else:
-        decs = error
+    decs = value * 10 ** (-ndecs) if ndecs is not None else error
     # now round the the appropriate number of sig figs
     valtxt = get_signum(value, decs)
     valtxt = f"{minus_sign}{valtxt}"

@@ -299,15 +299,16 @@ def generate_tc_prior(wflow, tc_path, buffer_seg):
     # Write the tc-prior configuration file if it does not exist
     if os.path.exists(tc_path):
         raise ValueError(f"Refusing to overwrite {tc_path}.")
-    tc_file = open(tc_path, "w")
-    tc_file.write("[prior-tc]\n")
-    tc_file.write("name = uniform\n")
-    tc_file.write(f"min-tc = {wflow.analysis_time[0]}\n")
-    tc_file.write(f"max-tc = {wflow.analysis_time[1]}\n\n")
-    tc_file.write("[constraint-tc]\n")
-    tc_file.write("name = custom\n")
-    tc_file.write(f"constraint_arg = (tc < {buffer_seg[0]}) | (tc > {buffer_seg[1]})\n")
-    tc_file.close()
+    with open(tc_path, "w") as tc_file:
+        tc_file.write("[prior-tc]\n")
+        tc_file.write("name = uniform\n")
+        tc_file.write(f"min-tc = {wflow.analysis_time[0]}\n")
+        tc_file.write(f"max-tc = {wflow.analysis_time[1]}\n\n")
+        tc_file.write("[constraint-tc]\n")
+        tc_file.write("name = custom\n")
+        tc_file.write(
+            f"constraint_arg = (tc < {buffer_seg[0]}) | (tc > {buffer_seg[1]})\n"
+        )
 
     # Add the tc-prior configuration file url to wflow.cp if necessary
     tc_file_path = "file://" + tc_path
@@ -819,7 +820,8 @@ def setup_pygrb_minifollowups(
     config_path = os.path.abspath(
         dax_output + "/" + "_".join(tags) + "_minifollowup.ini"
     )
-    workflow.cp.write(open(config_path, "w"))
+    with open(config_path, "w") as fp:
+        workflow.cp.write(fp)
     config_file = resolve_url_to_file(config_path)
 
     # wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
@@ -951,7 +953,8 @@ def setup_pygrb_results_workflow(
 
     # Turn the config file into a File instance
     config_path = os.path.abspath(dax_output + "/" + "_".join(tags) + "webpage.ini")
-    workflow.cp.write(open(config_path, "w"))
+    with open(config_path, "w") as fp:
+        workflow.cp.write(fp)
     config_file = resolve_url_to_file(config_path)
     node.add_input_opt("--config-files", config_file)
 

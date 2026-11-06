@@ -193,7 +193,7 @@ for coinc_map in coinc_event_map_table:
 # Check that the SNR timeseries correspond to the event
 # - allow 0.5s either side of the time
 snr_ts = {}
-for ifo, t in snr_timeseries.keys():
+for ifo, t in snr_timeseries:
     if not abs(t - time) < 0.5:
         raise ValueError(
             f"SNR timeseries for IFO {ifo} does not look like it "

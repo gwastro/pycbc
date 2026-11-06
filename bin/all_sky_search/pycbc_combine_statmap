@@ -169,11 +169,11 @@ def filter_dataset(h5file, name, idx):
 
 # Downsample the foreground columns to only the loudest ifar between the
 # multiple files
-for key in f["foreground"].keys():
+for key in f["foreground"]:
     if key not in all_ifos:
         id = filter_dataset(f, f"foreground/{key}", cidx)
     else:  # key is an ifo
-        for k in f[f"foreground/{key}"].keys():
+        for k in f[f"foreground/{key}"]:
             id = filter_dataset(f, f"foreground/{key}/{k}", cidx)
 
 logger.info("Applying trials factor")

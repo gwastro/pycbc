@@ -130,7 +130,7 @@ class LVKNewStyleInjectionSet:
     def columns_in_pycbc_format(self):
         # Loop over columns in input file
 
-        for field_name in self.inj_file[self.subdir].keys():
+        for field_name in self.inj_file[self.subdir]:
             if field_name in self.translation_dict:
                 yield (field_name, self.translation_dict[field_name])
             else:

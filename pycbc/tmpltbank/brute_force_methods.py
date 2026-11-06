@@ -87,9 +87,8 @@ def get_physical_covaried_masses(
     curr_dist = 100000000000000000
     while 1:
         # If we are a long way away we use larger jumps
-        if count:
-            if curr_dist > 1 and scale_factor == orig_scale_factor:
-                scale_factor = orig_scale_factor * 10
+        if count and curr_dist > 1 and scale_factor == orig_scale_factor:
+            scale_factor = orig_scale_factor * 10
         # Get a set of test points with mass -> xi mappings
         totmass, eta, spin1z, spin2z, mass1, mass2, new_xis = get_mass_distribution(
             [best_chirpmass, best_masses[1], best_masses[2], best_masses[3]],
@@ -563,10 +562,7 @@ def find_xi_extrema_brute(
     # Setup
     xi_size = len(xis)
     best_chirpmass = best_masses[0] * (best_masses[1]) ** (3.0 / 5.0)
-    if find_minimum:
-        xiextrema = 10000000000
-    else:
-        xiextrema = -100000000000
+    xiextrema = 10000000000 if find_minimum else -100000000000
 
     for _ in range(num_iterations):
         # Evaluate extrema of the xi direction specified

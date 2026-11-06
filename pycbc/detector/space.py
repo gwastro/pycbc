@@ -192,7 +192,7 @@ def cut_channels(tdi_dict, remove_garbage=False, t0=1e4):
         Default 1e4.
 
     """
-    for chan in tdi_dict.keys():
+    for chan in tdi_dict:
         if remove_garbage:
             dt = tdi_dict[chan].delta_t
             pad_idx = int(t0 / dt)
@@ -737,9 +737,8 @@ class _FLRDetector(AbsSpaceDet):
         # class initialization
         self.tdi_init = None
         self.tdi_chan = "AET"
-        if "tdi_chan" in kwargs:
-            if kwargs["tdi_chan"] is not None and kwargs["tdi_chan"] in "XYZ":
-                self.tdi_chan = "XYZ"
+        if kwargs.get("tdi_chan") is not None and kwargs["tdi_chan"] in "XYZ":
+            self.tdi_chan = "XYZ"
 
     @property
     def sky_coords(self):
@@ -1032,7 +1031,7 @@ class SpaceDetector(AbsSpaceDet):
 
     def __init__(self, detector_name, reference_time=None, backend="LDC", **kwargs):
         super().__init__(detector_name, reference_time, **kwargs)
-        if backend in _backends[self.det].keys():
+        if backend in _backends[self.det]:
             c = _backends[self.det][backend]
             self.backend = c(detector_name, reference_time, **kwargs)
         else:

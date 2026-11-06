@@ -58,7 +58,7 @@ all_ifo_key = "".join(all_ifos)
 significance_dict = significance.digest_significance_options([all_ifo_key], args)
 
 logger.info("Copying attributes to %s", args.output_file)
-for attrk in f_in.attrs.keys():
+for attrk in f_in.attrs:
     f_out.attrs[attrk] = f_in.attrs[attrk]
 
 logger.info("Copying unchanged datasets to %s", args.output_file)

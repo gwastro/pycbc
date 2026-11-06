@@ -203,7 +203,7 @@ def p_tau(tau, td_model="inverse"):
         td_min = 0.02  # Taken from Regimbau et al. https://journals.aps.org/prd/abstract/10.1103/PhysRevD.86.122001
         td_max = cosmological_quantity_from_redshift(0, "age")
         norm_const = 1 / np.log(td_max / td_min)
-        if isinstance(tau, (float, int)) or isinstance(tau, np.ndarray):
+        if isinstance(tau, (float, int, np.ndarray)):
             p_t = np.where(
                 (tau < td_min) | (tau > td_max), 0, norm_const * tau ** (-0.999)
             )

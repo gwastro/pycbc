@@ -222,7 +222,7 @@ for ifo in files:
 
     trig_dict = {
         k: numpy.array([d[k][i]])
-        for k in d.keys()
+        for k in d
         if not k.endswith("_template")
         and k not in ["gating", "search", "template_boundaries"]
     }

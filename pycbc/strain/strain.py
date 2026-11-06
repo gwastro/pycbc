@@ -1439,10 +1439,7 @@ class StrainSegments:
         self.delta_t = strain.delta_t
         self.sample_rate = strain.sample_rate
 
-        if segment_length:
-            seg_len = segment_length
-        else:
-            seg_len = strain.duration
+        seg_len = segment_length or strain.duration
 
         self.delta_f = 1.0 / seg_len
         self.time_len = int(seg_len * self.sample_rate)
@@ -1883,10 +1880,7 @@ def execute_cached_fft(
     """
     from pycbc.types import real_same_precision_as
 
-    if ifft:
-        npoints_time = (len(invec_data) - 1) * 2
-    else:
-        npoints_time = len(invec_data)
+    npoints_time = (len(invec_data) - 1) * 2 if ifft else len(invec_data)
 
     try:
         delta_t = invec_data.delta_t
@@ -2269,7 +2263,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         )
 
         # If the new psd is similar to the old one, don't replace it
-        if self.psd and self.psd_recalculate_difference:
+        if self.psd and self.psd_recalculate_difference:  # noqa: SIM102
             if (
                 abs(self.psd.dist - psd.dist) / self.psd.dist
                 < self.psd_recalculate_difference
@@ -2283,7 +2277,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 return True
 
         # If the new psd is *really* different than the old one, return an error
-        if self.psd and self.psd_abort_difference:
+        if self.psd and self.psd_abort_difference:  # noqa: SIM102
             if (
                 abs(self.psd.dist - psd.dist) / self.psd.dist
                 > self.psd_abort_difference
@@ -2417,11 +2411,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if not self.state:
             return False
 
-        if not self.state.is_extent_valid(
+        return not self.state.is_extent_valid(
             self.start_time, self.blocksize, pycbc.frame.NO_HWINJ
-        ):
-            return True
-        return False
+        )
 
     def null_advance_strain(self, blocksize):
         """

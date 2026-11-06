@@ -138,10 +138,7 @@ cax.set_ylim([0.9, 1000])
 
 cax = axarr[2, 1]
 cax.autoscale_view("tight")
-if len(m1):
-    normed_hist = hist / hist.sum()
-else:
-    normed_hist = hist
+normed_hist = hist / hist.sum() if len(m1) else hist
 cumulative = numpy.cumsum(normed_hist)
 cax.bar(center, cumulative, align="center", width=width, edgecolor="none")
 cax.set_xlabel("fitting factor")

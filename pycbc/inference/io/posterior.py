@@ -79,10 +79,7 @@ def write_samples_to_file(fp, samples, parameters=None, group=None):
     assert all(len(p) == niterations for p in samples.values()), (
         "all samples must have the same shape"
     )
-    if group is not None:
-        group = group + "/{name}"
-    else:
-        group = fp.samples_group + "/{name}"
+    group = (group if group is not None else fp.samples_group) + "/{name}"
     if parameters is None:
         parameters = samples.keys()
     # loop over number of dimensions

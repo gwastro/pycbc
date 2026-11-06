@@ -391,11 +391,8 @@ def ensemble_read_raw_samples(
         if selecttemps:
             # pull out the temperatures we need
             arr = arr[temps, ...]
-        if flatten:
-            arr = arr.flatten()
-        else:
-            # ensure that the returned array is 3D
-            arr = arr.reshape((ntemps, nwalkers, niterations))
+        # if not flattening, ensure that the returned array is 3D
+        arr = arr.flatten() if flatten else arr.reshape((ntemps, nwalkers, niterations))
         arrays[name] = arr
     return arrays
 

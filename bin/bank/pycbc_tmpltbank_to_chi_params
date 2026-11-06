@@ -177,15 +177,14 @@ else:
     err_msg = f"Don't know how to read extension {opts.input_bank}."
     raise NotImplementedError(err_msg)
 
-fp = open(opts.output_file, "w")
-for idx in range(len(mass1)):
-    chi_coords = tmpltbank.get_cov_params(
-        mass1[idx], mass2[idx], spin1z[idx], spin2z[idx], metric_params, ref_freq
-    )
-    vals = " ".join(
-        [str(mass1[idx]), str(mass2[idx]), str(spin1z[idx]), str(spin2z[idx])]
-    )
-    vals += " "
-    vals += " ".join([str(i) for i in chi_coords])
-    fp.write(f"{vals}\n")
-fp.close()
+with open(opts.output_file, "w") as fp:
+    for idx in range(len(mass1)):
+        chi_coords = tmpltbank.get_cov_params(
+            mass1[idx], mass2[idx], spin1z[idx], spin2z[idx], metric_params, ref_freq
+        )
+        vals = " ".join(
+            [str(mass1[idx]), str(mass2[idx]), str(spin1z[idx]), str(spin2z[idx])]
+        )
+        vals += " "
+        vals += " ".join([str(i) for i in chi_coords])
+        fp.write(f"{vals}\n")

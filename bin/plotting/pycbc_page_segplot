@@ -124,9 +124,8 @@ for segment_file in opts.segment_files:
     seg_dict = SegFile.from_segment_xml(segment_file).segment_dict
 
     # read comments from segment definer table
-    comment_dict = get_segment_definer_comments(
-        open(segment_file, "rb"), include_version=False
-    )
+    with open(segment_file, "rb") as fp:
+        comment_dict = get_segment_definer_comments(fp, include_version=False)
 
     # loop over segment names
     for segment_name in opts.segment_names:
@@ -135,7 +134,7 @@ for segment_file in opts.segment_files:
             # get new color for this segment name
             color = next(color_cycle[ifo])
 
-            for key in seg_dict.keys():
+            for key in seg_dict:
                 seg_key = ifo + ":" + segment_name
                 if key == seg_key or key.startswith(ifo + ":" + segment_name + ":"):
                     segs = seg_dict[key]

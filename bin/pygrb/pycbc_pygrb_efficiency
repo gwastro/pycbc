@@ -176,7 +176,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 bank_file = HFile(opts.bank_file, "r")
 
 # Check options
-if opts.exclusion_dist_output_file is not None or opts.onsource_output_file is not None:
+if opts.exclusion_dist_output_file is not None or opts.onsource_output_file is not None:  # noqa: SIM102
     if opts.onsource_file is None:
         logger.error(
             "Requesting the --exclusion-dist-output-file or "
@@ -356,7 +356,7 @@ injs = ppu.load_data(
 
 # Gather injections that were not missed
 found_inj = {}
-for k in injs.keys():
+for k in injs:
     if "missed" not in k:
         found_inj[k] = injs[k]
 
@@ -518,10 +518,7 @@ if len(found_after_vetoes["network/template_id"]):
     logger.info("MC injection set distributed with %d iterations.", num_mc_injs)
 
     # Check injections against on source
-    if onsource_file:
-        more_sig_than_onsource = inj_fap <= loud_on_fap
-    else:
-        more_sig_than_onsource = inj_fap <= 0.5
+    more_sig_than_onsource = inj_fap <= (loud_on_fap if onsource_file else 0.5)
 
     distance_count = np.zeros(len(dist_bins))
 
@@ -598,10 +595,7 @@ if len(found_after_vetoes["network/template_id"]):
 
             # Record number of injections, number found for exclusion
             # and number of zero FAR
-            if k == 0:
-                key = "no_mc"
-            else:
-                key = "mc"
+            key = "no_mc" if k == 0 else "mc"
             num_pass = num_found_pass + num_missed_pass + num_long_pass
             num_injections[key][j] += num_pass
             num_injections[key][-1] += num_pass

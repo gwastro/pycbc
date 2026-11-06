@@ -67,7 +67,7 @@ def segment_report(s_segs):
     short_num = 0
     long_len = 0
     long_num = 0
-    for ifo in s_segs.keys():
+    for ifo in s_segs:
         for seg in s_segs[ifo]:
             full_len += abs(seg)
             full_num += 1
@@ -118,9 +118,9 @@ datafinds, science_segs_c = _workflow.setup_datafind_workflow(
 segment_report(science_segs_c)
 
 print("Frames present a SYR and not at CIT:")
-for ifo in science_segs_s.keys():
+for ifo in science_segs_s:
     print("For ifo", ifo)
-    if ifo in science_segs_c.keys():
+    if ifo in science_segs_c:
         print(science_segs_s[ifo] - science_segs_c[ifo])
     else:
         print(f"No science segments for ifo {ifo} at CIT")
@@ -128,9 +128,9 @@ for ifo in science_segs_s.keys():
 
 print("Frames present at CIT and not at SYR:")
 
-for ifo in science_segs_c.keys():
+for ifo in science_segs_c:
     print("For ifo", ifo)
-    if ifo in science_segs_s.keys():
+    if ifo in science_segs_s:
         print(science_segs_c[ifo] - science_segs_s[ifo])
     else:
         print(f"No science segments for ifo {ifo} at SYR")
@@ -150,9 +150,9 @@ datafinds, science_segs_s = _workflow.setup_datafind_workflow(
 segment_report(science_segs_s)
 
 print("Frames present at LHO and not at CIT:")
-for ifo in science_segs_s.keys():
+for ifo in science_segs_s:
     print("For ifo", ifo)
-    if ifo in science_segs_c.keys():
+    if ifo in science_segs_c:
         print(science_segs_s[ifo] - science_segs_c[ifo])
     else:
         print(f"No science segments for ifo {ifo} at CIT")
@@ -160,9 +160,9 @@ for ifo in science_segs_s.keys():
 
 print("Frames present at CIT and not at LHO:")
 
-for ifo in science_segs_c.keys():
+for ifo in science_segs_c:
     print("For ifo", ifo)
-    if ifo in science_segs_s.keys():
+    if ifo in science_segs_s:
         print(science_segs_c[ifo] - science_segs_s[ifo])
     else:
         print(f"No science segments for ifo {ifo} at LHO")
@@ -182,9 +182,9 @@ datafinds, science_segs_s = _workflow.setup_datafind_workflow(
 segment_report(science_segs_s)
 
 print("Frames present at LLO and not at CIT:")
-for ifo in science_segs_s.keys():
+for ifo in science_segs_s:
     print("For ifo", ifo)
-    if ifo in science_segs_c.keys():
+    if ifo in science_segs_c:
         print(science_segs_s[ifo] - science_segs_c[ifo])
     else:
         print(f"No science segments for ifo {ifo} at CIT")
@@ -192,9 +192,9 @@ for ifo in science_segs_s.keys():
 
 print("Frames present at CIT and not at LLO:")
 
-for ifo in science_segs_c.keys():
+for ifo in science_segs_c:
     print("For ifo", ifo)
-    if ifo in science_segs_s.keys():
+    if ifo in science_segs_s:
         print(science_segs_c[ifo] - science_segs_s[ifo])
     else:
         print(f"No science segments for ifo {ifo} at LLO")
@@ -214,9 +214,9 @@ datafinds, science_segs_s = _workflow.setup_datafind_workflow(
 segment_report(science_segs_s)
 
 print("Frames present at UWM and not at CIT:")
-for ifo in science_segs_s.keys():
+for ifo in science_segs_s:
     print("For ifo", ifo)
-    if ifo in science_segs_c.keys():
+    if ifo in science_segs_c:
         print(science_segs_s[ifo] - science_segs_c[ifo])
     else:
         print(f"No science segments for ifo {ifo} at CIT")
@@ -224,9 +224,9 @@ for ifo in science_segs_s.keys():
 
 print("Frames present at CIT and not at UWM:")
 
-for ifo in science_segs_c.keys():
+for ifo in science_segs_c:
     print("For ifo", ifo)
-    if ifo in science_segs_s.keys():
+    if ifo in science_segs_s:
         print(science_segs_c[ifo] - science_segs_s[ifo])
     else:
         print(f"No science segments for ifo {ifo} at UWM")

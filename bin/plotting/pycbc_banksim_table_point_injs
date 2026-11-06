@@ -94,7 +94,7 @@ if opt.directory_links is not None:
     columns = [numpy.array(dir_names), *columns]
 
 test_fp = HFile(opt.input_files[0], "r")
-if "filtered_points" in test_fp.keys():
+if "filtered_points" in test_fp:
     test_fp.close()
     cn1 = "Fraction <br\\> of points <br\\> within <br\\> template <br\\> bank"
     cn2 = "Filtered <br\\> points <br\\> signal <br\\> recovery<br\\>fraction"

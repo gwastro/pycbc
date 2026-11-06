@@ -117,10 +117,7 @@ for kk, tk in enumerate(temps):
     ax = fig.add_subplot(len(temps), 1, axnum)
     for param in parameters:
         logger.info("Parameter %s", param)
-        if multi_tempered:
-            acf = acfs[param][kk, ...]
-        else:
-            acf = acfs[param]
+        acf = acfs[param][kk, ...] if multi_tempered else acfs[param]
         if opts.per_walker:
             lbl = "{}, walker {}"
             # account for thinning that was done on the fly

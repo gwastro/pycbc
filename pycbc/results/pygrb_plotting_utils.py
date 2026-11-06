@@ -100,7 +100,7 @@ def make_grb_segments_plot(
     ifo_colors = {}
     for ifo in ifos:
         ifo_colors[ifo] = ifo_color(ifo)
-        if ifo not in science_segs.keys():
+        if ifo not in science_segs:
             science_segs[ifo] = segments.segmentlist([])
 
     # Make plot
@@ -151,10 +151,7 @@ def make_grb_segments_plot(
         else:
             sub.plot([trigger_time, trigger_time], [0, 1], ":k")
         if fail_criterion:
-            if len(science_segs[ifo]) > 0:
-                style_str = "--"
-            else:
-                style_str = "-"
+            style_str = "--" if len(science_segs[ifo]) > 0 else "-"
             sub.plot(
                 [fail_criterion[0], fail_criterion[0]],
                 [0, 1],

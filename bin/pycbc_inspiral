@@ -43,10 +43,8 @@ def update_progress(p, u, n):
     """Updates a file 'progress.txt' with a value 0 .. 1.0 when enough (filtering) progress was made"""
     global last_progress_update
     if p > last_progress_update + u:
-        f = open(n, "w")
-        if f:
+        with open(n, "w") as f:
             f.write(f"{p:.4f}")
-            f.close()
         last_progress_update = p
 
 
@@ -487,15 +485,9 @@ with ctx:
     template_mem = zeros(tlen, dtype=complex64)
     cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
 
-    if opt.cluster_window == 0.0:
-        use_cluster = False
-    else:
-        use_cluster = True
+    use_cluster = opt.cluster_window != 0.0
 
-    if hasattr(ctx, "num_threads"):
-        ncores = ctx.num_threads
-    else:
-        ncores = 1
+    ncores = ctx.num_threads if hasattr(ctx, "num_threads") else 1
     if opt.multiprocessing_nprocesses:
         ncores *= opt.multiprocessing_nprocesses
 
@@ -538,7 +530,7 @@ with ctx:
         approximant=opt.approximant,
         out=template_mem,
         max_template_length=opt.max_template_length,
-        enable_compressed_waveforms=True if opt.use_compressed_waveforms else False,
+        enable_compressed_waveforms=opt.use_compressed_waveforms,
         waveform_decompression_method=opt.waveform_decompression_method
         if opt.use_compressed_waveforms
         else None,

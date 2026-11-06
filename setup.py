@@ -240,7 +240,7 @@ cython_link_args = []
 # disable openmp builds on MacOSX. Optimization should never really be a
 # concern on that OS, and this line can be commented out if needed anyway.
 # Mac's also alias gcc and can run into troubles getting libc correctly
-if not sys.platform == "darwin":
+if sys.platform != "darwin":
     cython_compile_args += ["-fopenmp"]
     cython_link_args += ["-fopenmp"]
 else:
@@ -261,11 +261,14 @@ for name in cythonext:
     )
     ext.append(e)
 
+with open("README.md") as fp:
+    long_description = fp.read()
+
 setup(
     name="PyCBC",
     version=VERSION,
     description="Core library to analyze gravitational-wave data, find signals, and study their parameters.",
-    long_description=open("README.md").read(),
+    long_description=long_description,
     long_description_content_type="text/markdown",
     author="The PyCBC team",
     author_email="alex.nitz@gmail.org",

@@ -28,7 +28,7 @@ sngl_thresh = f.attrs["sngl_ranking_threshold"]
 
 livetime = 0
 seg_grp = f[args.ifo]["dq_segments"]
-for k in seg_grp.keys():
+for k in seg_grp:
     livetime += seg_grp[k]["livetime"][()]
 
 num_templates = []

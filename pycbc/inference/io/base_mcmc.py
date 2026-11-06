@@ -574,11 +574,7 @@ class EnsembleMCMCMetadataIO:
             acl = self.acl
         except ValueError:
             acl = 1
-        if numpy.isfinite(acl):
-            acl = int(numpy.ceil(acl))
-        else:
-            acl = 1
-        return acl
+        return int(numpy.ceil(acl)) if numpy.isfinite(acl) else 1
 
 
 def write_samples(
@@ -734,11 +730,8 @@ def ensemble_read_raw_samples(
     for name in fields:
         arr = fp[group.format(name=name)][widx, get_index]
         niterations = arr.shape[-1] if iteration is None else 1
-        if flatten:
-            arr = arr.flatten()
-        else:
-            # ensure that the returned array is 2D
-            arr = arr.reshape((nwalkers, niterations))
+        # if not flattening, ensure that the returned array is 2D
+        arr = arr.flatten() if flatten else arr.reshape((nwalkers, niterations))
         arrays[name] = arr
     return arrays
 

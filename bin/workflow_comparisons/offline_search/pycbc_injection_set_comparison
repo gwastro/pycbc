@@ -216,7 +216,7 @@ class RunInjectionResults:
                     "coa_phase",
                     "end_time",
                 ]:
-                    if param in self.trigger_merge_dict[ifo]["data"].keys():
+                    if param in self.trigger_merge_dict[ifo]["data"]:
                         idx = fdict[ifo]["trigger_id"]
                         vals = self.trigger_merge_dict[ifo]["data"][param][:][idx]
                         # A hack:
@@ -272,7 +272,7 @@ class RunInjectionResults:
         outfp.attrs["detector_2"] = self.inj_dets[1]
         self.injfile.copy("injections", outfp)
         missed_group = outfp.create_group("missed")
-        for col in self.missed.keys():
+        for col in self.missed:
             missed_group.create_dataset(col, data=self.missed[col])
         for fname in ["found", "found_after_vetoes"]:
             fgroup = outfp.create_group(fname)
@@ -284,7 +284,7 @@ class RunInjectionResults:
                 fgroup.create_dataset(col, data=fdict[col])
             for ifo in self.inj_dets:
                 igroup = fgroup.create_group(ifo)
-                for col in fdict[ifo].keys():
+                for col in fdict[ifo]:
                     igroup.create_dataset(col, data=fdict[ifo][col])
         outfp.close()
 
@@ -297,7 +297,7 @@ def populate_injection_group(fgroup, fidx, fdict, ifos):
         fgroup.create_dataset(key, data=fdict[key][fidx])
     for ifo in ifos:
         igroup = fgroup.create_group(ifo)
-        for key in fdict[ifo].keys():
+        for key in fdict[ifo]:
             igroup.create_dataset(key, data=fdict[ifo][key][fidx])
 
 

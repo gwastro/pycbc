@@ -571,12 +571,12 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
                 curr_tmplt_mult_fac = 0.0
                 curr_corr_mult_fac = 0.0
                 if self.template_mem is None or (
-                    not len(self.template_mem) == len(template_plus)
+                    len(self.template_mem) != len(template_plus)
                 ):
                     self.template_mem = zeros(
                         len(template_plus), dtype=complex_same_precision_as(corr_plus)
                     )
-                if self.corr_mem is None or (not len(self.corr_mem) == len(corr_plus)):
+                if self.corr_mem is None or (len(self.corr_mem) != len(corr_plus)):
                     self.corr_mem = zeros(
                         len(corr_plus), dtype=complex_same_precision_as(corr_plus)
                     )

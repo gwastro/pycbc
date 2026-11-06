@@ -35,13 +35,10 @@ class DictWithDefaultReturn(defaultdict):
         if self.items() and not all(entry is None for entry in self.values()):
             # True if any values are explictly set.
             return True
-        if self["RANDOM_STRING_314324"] is not None:
-            # Or true if the default value was set
-            # NOTE: This stores the string RANDOM_STRING_314324 in the dict
-            # so subsequent calls will be caught in the first test here.
-            return True
-        # Else false
-        return False
+        # Or true if the default value was set
+        # NOTE: This stores the string RANDOM_STRING_314324 in the dict
+        # so subsequent calls will be caught in the first test here.
+        return self["RANDOM_STRING_314324"] is not None
 
     # Python 2 and 3 have different conventions for boolean method
     __nonzero__ = __bool__
@@ -493,7 +490,7 @@ def convert_to_process_params_dict(opt):
     for arg, val in vars(opt).items():
         if isinstance(val, DictWithDefaultReturn):
             new_val = []
-            for key in val.keys():
+            for key in val:
                 if isinstance(val[key], list):
                     for item in val[key]:
                         if item is not None:

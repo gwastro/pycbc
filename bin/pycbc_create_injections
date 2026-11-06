@@ -293,7 +293,7 @@ while True:
 
 # write results
 logger.info("Writing results")
-write_args = [arg for arg in samples.fieldnames if arg not in static_params.keys()]
+write_args = [arg for arg in samples.fieldnames if arg not in static_params]
 InjectionSet.write(
     opts.output_file, samples, write_args, static_params, cmd=" ".join(sys.argv)
 )

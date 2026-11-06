@@ -120,18 +120,9 @@ class Row:
             helpmsg = self.helpmsg.split("\n")
             nlines = max(len(metavar), len(helpmsg))
             for ii in range(nlines):
-                if ii == 0:
-                    optstr = self.option
-                else:
-                    optstr = ""
-                if ii < len(metavar):
-                    metastr = metavar[ii]
-                else:
-                    metastr = ""
-                if ii < len(helpmsg):
-                    helpstr = helpmsg[ii]
-                else:
-                    helpstr = ""
+                optstr = self.option if ii == 0 else ""
+                metastr = metavar[ii] if ii < len(metavar) else ""
+                helpstr = helpmsg[ii] if ii < len(helpmsg) else ""
                 optstr = tmplt.format(msg=optstr, rpad=optlen)
                 metastr = tmplt.format(msg=metastr, rpad=metalen)
                 helpstr = tmplt.format(msg=helpstr, rpad=helplen)
@@ -274,14 +265,13 @@ formatargs = [maxlen, optlen, metalen, helplen]
 
 # Write the formatted table to file
 filename = "inference_data_opts-table.rst"
-out = open(filename, "w")
-print(minorline.format(*formatargs), file=out)
-# print the header
-print(header.format(*formatargs), file=out)
-print(majorline.format(*formatargs), file=out)
-# print everything else in the table
-for ii in range(1, len(table)):
-    row = table[ii]
-    print(row.format(*formatargs), file=out)
+with open(filename, "w") as out:
     print(minorline.format(*formatargs), file=out)
-out.close()
+    # print the header
+    print(header.format(*formatargs), file=out)
+    print(majorline.format(*formatargs), file=out)
+    # print everything else in the table
+    for ii in range(1, len(table)):
+        row = table[ii]
+        print(row.format(*formatargs), file=out)
+        print(minorline.format(*formatargs), file=out)

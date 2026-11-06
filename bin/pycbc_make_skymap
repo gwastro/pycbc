@@ -270,7 +270,9 @@ def main(
             "--gps-end-time",
             str(gps_end_time),
             "--trigger-time",
-            f"{trig_time[ifo] if ifo in trig_time else mean_trig_time:.6f}",
+            # trig_time is a list, not a dict, when a single approximate
+            # time was given, so .get() can't be used here
+            f"{trig_time[ifo] if ifo in trig_time else mean_trig_time:.6f}",  # noqa: SIM401
             "--window",
             "1",
             "--channel-name",
@@ -349,7 +351,8 @@ def main(
         log_path = os.path.join(
             tmpdir, f"pycbc_single_template_{file_name_tag}_{ifo}_log.txt"
         )
-        log_file = open(log_path, "w")
+        # Kept open for the process; closed once it has finished, below
+        log_file = open(log_path, "w")  # noqa: SIM115
         log_file.write(" ".join(command) + "\n\n")
         log_file.flush()
 

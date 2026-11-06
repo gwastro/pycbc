@@ -142,11 +142,7 @@ def get_optional_arg_from_config(cp, section, arg, dtype=str):
         If the argument is present, the value. Otherwise, None.
 
     """
-    if cp.has_option(section, arg):
-        val = dtype(cp.get(section, arg))
-    else:
-        val = None
-    return val
+    return dtype(cp.get(section, arg)) if cp.has_option(section, arg) else None
 
 
 #
@@ -880,10 +876,7 @@ class EnsembleSupport:
         act = self.act
         if act is None:
             act = numpy.inf
-        if self.burn_in is None:
-            start_iter = 0
-        else:
-            start_iter = self.burn_in.burn_in_iteration
+        start_iter = 0 if self.burn_in is None else self.burn_in.burn_in_iteration
         nperwalker = nsamples_in_chain(start_iter, act, self.niterations)
         if self.burn_in is not None:
             # after burn in, we always have atleast 1 sample per walker

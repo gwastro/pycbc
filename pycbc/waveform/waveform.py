@@ -1009,7 +1009,7 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
         )
         return hp, hc
     wfs = get_fd_det_waveform(**nparams)
-    for ifo in wfs.keys():
+    for ifo in wfs:
         wfs[ifo].resize(fsize)
         # avoid wraparound
         wfs[ifo] = wfs[ifo].cyclic_time_shift(-rwrap)
@@ -1113,10 +1113,7 @@ def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True, **params
     params["delta_f"] = df_min
     hp, hc = get_fd_waveform(**params)
     hp = hp.astype(dtype)
-    if return_hc:
-        hc = hc.astype(dtype)
-    else:
-        hc = None
+    hc = hc.astype(dtype) if return_hc else None
 
     f_end = get_waveform_end_frequency(**params)
     if f_end is None:
@@ -1422,7 +1419,7 @@ def get_waveform_filter(out, template=None, **kwargs):
         wav_gen = td_wav[type(_scheme.mgr.state)]
         hp, _ = wav_gen[input_params["approximant"]](**input_params)
         # taper the time series hp if required
-        if "taper" in input_params.keys() and input_params["taper"] is not None:
+        if "taper" in input_params and input_params["taper"] is not None:
             tapermethod, taper_window = wfutils.get_taper_settings(input_params)
             hp = hp.taper_timeseries(
                 location=input_params["taper"],
@@ -1502,7 +1499,7 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
     flen = len(outplus)
 
     # If we don't have an inclination column alpha3 might be used
-    if not hasattr(template, "inclination") and "inclination" not in kwargs:
+    if not hasattr(template, "inclination") and "inclination" not in kwargs:  # noqa: SIM102
         if hasattr(template, "alpha3"):
             kwargs["inclination"] = template.alpha3
 
@@ -1529,7 +1526,7 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         wav_gen = td_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params["approximant"]](**input_params)
         # taper the time series hp if required
-        if "taper" in input_params.keys() and input_params["taper"] is not None:
+        if "taper" in input_params and input_params["taper"] is not None:
             tapermethod, taper_window = wfutils.get_taper_settings(input_params)
             hp = hp.taper_timeseries(
                 location=input_params["taper"],
@@ -1567,9 +1564,7 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
 
 
 def waveform_norm_exists(approximant):
-    if approximant in _filter_norms:
-        return True
-    return False
+    return approximant in _filter_norms
 
 
 def get_template_amplitude_norm(template=None, **kwargs):

@@ -179,7 +179,7 @@ with HFile(args.template_bin_file, "r") as bin_file:
     # only ever one group in this file
     grp = bin_file[next(iter(bin_file.keys()))]
     num_bins = len(grp.keys())
-    for k in grp.keys():
+    for k in grp:
         template_bins[k] = grp[k]["tids"][:]
         num_templates += len(template_bins[k])
 

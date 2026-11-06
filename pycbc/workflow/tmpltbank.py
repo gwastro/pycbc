@@ -279,10 +279,7 @@ def setup_tmpltbank_without_frames(
     tmplt_banks = FileList([])
 
     # Make the distinction between one bank for all ifos and one bank per ifo
-    if independent_ifos:
-        ifo_list = list(ifos)
-    else:
-        ifo_list = [list(ifos)]
+    ifo_list = list(ifos) if independent_ifos else [list(ifos)]
 
     # Check for the write_psd flag
     if cp.has_option_tags("workflow-tmpltbank", "tmpltbank-write-psd-file", tags):

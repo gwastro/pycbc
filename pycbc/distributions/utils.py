@@ -128,9 +128,8 @@ def draw_samples_from_config(path, num=1, seed=150914):
     # Initialise InterpolatingConfigParser class.
     config_parser = InterpolatingConfigParser()
     # Read the file
-    file = open(path)
-    config_parser.read_file(file)
-    file.close()
+    with open(path) as file:
+        config_parser.read_file(file)
 
     # Construct class that will draw the samples.
     prior_dists = prior_from_config(cp=config_parser)

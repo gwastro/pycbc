@@ -57,10 +57,7 @@ def find_event_in_catalog(name, source=None):
     """
     from .catalog import get_source, list_catalogs
 
-    if source is None:
-        catalogs = list_catalogs()
-    else:
-        catalogs = [source]
+    catalogs = list_catalogs() if source is None else [source]
 
     for catalog in catalogs:
         try:
