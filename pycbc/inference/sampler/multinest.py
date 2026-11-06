@@ -200,7 +200,7 @@ class MultinestSampler(BaseSampler):
         done = logz_remain < self._ztol
         return done
 
-    def set_initial_conditions(self, initial_distribution=None, samples_file=None):
+    def set_initial_conditions(self, initial_distribution=None, samples_file=None):  # noqa: ARG002
         """
         Sets the initial starting point for the sampler.
 
@@ -385,7 +385,7 @@ class MultinestSampler(BaseSampler):
         """
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):  # noqa: ARG003
         """Loads the sampler from the given config file."""
         section = "sampler"
         # check name

@@ -391,13 +391,15 @@ def make_ifar_plot(
     return node.output_files[0]
 
 
+# hierarchical_level and require are unused; the signature matches the other
+# plotting functions
 def make_farstat_plot(
     workflow,
     trigger_files,
     out_dir,
     tags=None,
-    hierarchical_level=None,
-    require=None,
+    hierarchical_level=None,  # noqa: ARG001
+    require=None,  # noqa: ARG001
     executable="page_farstat",
 ):
     """

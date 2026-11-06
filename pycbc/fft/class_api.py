@@ -29,13 +29,13 @@ implementations within PyCBC.
 from .backend_support import get_backend
 
 
-def _fft_factory(invec, outvec, nbatch=1, size=None):
+def _fft_factory(invec, outvec, nbatch=1, size=None):  # noqa: ARG001
     backend = get_backend()
     cls = backend.FFT
     return cls
 
 
-def _ifft_factory(invec, outvec, nbatch=1, size=None):
+def _ifft_factory(invec, outvec, nbatch=1, size=None):  # noqa: ARG001
     backend = get_backend()
     cls = backend.IFFT
     return cls

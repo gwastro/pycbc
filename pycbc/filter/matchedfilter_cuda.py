@@ -38,7 +38,7 @@ def get_correlate_kernel(dtype_x, dtype_y, dtype_out):
     )
 
 
-def correlate(a, b, out, stream=None):
+def correlate(a, b, out, stream=None):  # noqa: ARG001
     dtype_out = _get_common_dtype(a, b)
     krnl = get_correlate_kernel(a.dtype, b.dtype, dtype_out)
     krnl(a.data, b.data, out.data)
@@ -56,5 +56,5 @@ class CUDACorrelator(_BaseCorrelator):
         self.krnl(self.x, self.y, self.z)
 
 
-def _correlate_factory(x, y, z):
+def _correlate_factory(x, y, z):  # noqa: ARG001
     return CUDACorrelator

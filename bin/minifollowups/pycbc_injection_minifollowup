@@ -248,7 +248,7 @@ missed_inj_times = numpy.sort(inj_def["tc"][:][missed])
 safe_window = args.nearby_triggers_window + 0.0425
 
 
-def nearby_missedinj(endtime, snr):
+def nearby_missedinj(endtime, snr):  # noqa: ARG001
     """
     Convenience function to check if trigger times are within a small
     window of the injections

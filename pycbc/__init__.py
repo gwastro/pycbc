@@ -64,7 +64,7 @@ class LogFormatter(logging.Formatter):
 
     converter = dt.fromtimestamp
 
-    def formatTime(self, record, datefmt=None):  # noqa: N802
+    def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
         ct = self.converter(record.created).astimezone()
         t = ct.strftime("%Y-%m-%dT%H:%M:%S")
         s = f"{t}.{int(record.msecs):03d}"
@@ -149,7 +149,7 @@ def init_logging(
 
     """
 
-    def sig_handler(signum, frame):
+    def sig_handler(signum, frame):  # noqa: ARG001
         root_logger = logging.getLogger()
         log_level = root_logger.level
         if log_level == logging.DEBUG:

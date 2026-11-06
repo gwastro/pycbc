@@ -1417,6 +1417,8 @@ class StrainSegments:
     conditioning.
     """
 
+    # injection_window is unused, but kept so that existing calls keep working
+    # (the injection window is applied by EventManager)
     def __init__(
         self,
         strain,
@@ -1426,7 +1428,7 @@ class StrainSegments:
         trigger_start=None,
         trigger_end=None,
         filter_inj_only=False,
-        injection_window=None,
+        injection_window=None,  # noqa: ARG002
         allow_zero_padding=False,
     ):
         """
@@ -1796,9 +1798,14 @@ class StrainSegments:
             required_opts_multi_ifo(opt, parser, ifo, cls.required_opts_list)
 
 
+# uid is only part of the lru_cache key
 @functools.lru_cache(maxsize=500)
 def create_memory_and_engine_for_class_based_fft(
-    npoints_time, dtype, delta_t=1, ifft=False, uid=0
+    npoints_time,
+    dtype,
+    delta_t=1,
+    ifft=False,
+    uid=0,  # noqa: ARG001
 ):
     """
     Create memory and engine for class-based FFT/IFFT

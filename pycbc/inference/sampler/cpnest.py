@@ -116,7 +116,7 @@ class CPNestSampler(BaseSampler):
         return len(tuple(self.samples.values())[0])
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):  # noqa: ARG003
         """
         Loads the sampler from the given config file.
         """

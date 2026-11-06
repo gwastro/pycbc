@@ -319,5 +319,5 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         return cv[w], cl[w]
 
 
-def _threshold_cluster_factory(series):
+def _threshold_cluster_factory(series):  # noqa: ARG001
     return CUDAThresholdCluster

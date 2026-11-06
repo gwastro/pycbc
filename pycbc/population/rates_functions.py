@@ -63,7 +63,8 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_mchirp, hi_mchirp):
     }
 
 
-def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_mchirp, hi_mchirp):
+# path is unused, but kept so that existing calls keep working
+def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_mchirp, hi_mchirp):  # noqa: ARG001
     """
     Read the STATMAP files to derive snr falloff for the background events.
     Save the output to a txt file
@@ -233,7 +234,7 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
 
 
 # PDF for the two canonical models plus flat in mass model
-def prob_lnm(m1, m2, s1z, s2z, **kwargs):
+def prob_lnm(m1, m2, s1z, s2z, **kwargs):  # noqa: ARG001
     """
     Return probability density for uniform in log
 
@@ -279,7 +280,7 @@ def prob_lnm(m1, m2, s1z, s2z, **kwargs):
     return p_m1_m2
 
 
-def prob_imf(m1, m2, s1z, s2z, **kwargs):
+def prob_imf(m1, m2, s1z, s2z, **kwargs):  # noqa: ARG001
     """
     Return probability density for power-law
 
@@ -329,7 +330,7 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
     return p_m1_m2 / 2.0
 
 
-def prob_flat(m1, m2, s1z, s2z, **kwargs):
+def prob_flat(m1, m2, s1z, s2z, **kwargs):  # noqa: ARG001
     """
     Return probability density for uniform in component mass
 

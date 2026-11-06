@@ -39,7 +39,7 @@ class BaseJob(CondorDAGJob, CondorJob):
 
 
 class FaithsimNode(CondorDAGNode):
-    def __init__(self, job, tmplt_file, match_file, inj_per_job=None):
+    def __init__(self, job, tmplt_file, match_file):
         CondorDAGNode.__init__(self, job)
         self.add_file_opt("param-file", tmplt_file)
         self.add_file_opt("match-file", match_file, file_is_output_file=True)
@@ -171,7 +171,7 @@ for inj_num in range(num_banks):
     for fsjob, sec in zip(fsjobs, fs_secs):
         sec_sub = str(sec[len("faithsim") :])
         mf = "match/match" + sec_sub + "-" + str(inj_num) + ".dat"
-        fsnode = FaithsimNode(fsjob, bn, mf, inj_per_job=templates_per_job)
+        fsnode = FaithsimNode(fsjob, bn, mf)
         dag.add_node(fsnode)
         rnode.add_parent(fsnode)
 dag.add_node(rnode)

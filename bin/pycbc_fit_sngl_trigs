@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 stat_dict = {
     "new_snr": ranking.newsnr,
     "effective_snr": ranking.effsnr,
-    "snr": lambda snr, rchisq: snr,
+    "snr": lambda snr, rchisq: snr,  # noqa: ARG005
     "snronchi": lambda snr, rchisq: snr / (rchisq**0.5),
 }
 

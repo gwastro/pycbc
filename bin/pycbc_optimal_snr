@@ -53,7 +53,7 @@ class TimeIndependentPSD:
     def __init__(self, psd_series):
         self.psd_series = psd_series
 
-    def __call__(self, time=None):
+    def __call__(self, time=None):  # noqa: ARG002
         return self.psd_series
 
 
@@ -354,7 +354,7 @@ if __name__ == "__main__":
 
     if opts.input_sort == "random":
         np.random.seed(100)
-        sort_func = lambda x: np.random.random()
+        sort_func = lambda x: np.random.random()  # noqa: ARG005
     elif opts.input_sort == "time":
         sort_func = get_gc_end_time
     inj_table = sorted(inj_table, key=sort_func)

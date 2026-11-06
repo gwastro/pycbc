@@ -676,7 +676,8 @@ def setup_datafind_runtime_frames_multi_calls_perifo(
     return datafindcaches, datafindouts
 
 
-def setup_datafind_from_pregenerated_lcf_files(cp, ifos, output_dir, tags=None):
+# output_dir is unused; the signature matches the other datafind setup functions
+def setup_datafind_from_pregenerated_lcf_files(cp, ifos, output_dir, tags=None):  # noqa: ARG001
     """
     This function is used if you want to run with pregenerated lcf frame
     cache files.

@@ -100,5 +100,5 @@ class CPUThresholdCluster(_BaseThresholdCluster):
         )
 
 
-def _threshold_cluster_factory(series):
+def _threshold_cluster_factory(series):  # noqa: ARG001
     return CPUThresholdCluster

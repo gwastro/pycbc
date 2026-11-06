@@ -60,8 +60,14 @@ def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):
     return bits[-10:], filterbank_off
 
 
+# swstat_channel_name is unused, but kept so that existing calls keep working
 def filter_data(
-    data, filter_name, filter_file, bits, filterbank_off=False, swstat_channel_name=None
+    data,
+    filter_name,
+    filter_file,
+    bits,
+    filterbank_off=False,
+    swstat_channel_name=None,  # noqa: ARG001
 ):
     """
     A naive function to determine if the filter was on at the time

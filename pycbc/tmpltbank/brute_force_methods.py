@@ -7,10 +7,11 @@ from pycbc.tmpltbank.coord_utils import get_cov_params
 logger = logging.getLogger(__name__)
 
 
+# best_xis is unused, but kept so that existing calls keep working
 def get_physical_covaried_masses(
     xis,
     best_masses,
-    best_xis,
+    best_xis,  # noqa: ARG001
     req_match,
     mass_range_params,
     metric_params,
@@ -148,6 +149,7 @@ def get_physical_covaried_masses(
     raise RuntimeError
 
 
+# spin2z_jump_fac is unused, but kept so that existing calls keep working
 def get_mass_distribution(
     best_masses,
     scale_factor,
@@ -158,7 +160,7 @@ def get_mass_distribution(
     chirp_mass_jump_fac=0.0001,
     eta_jump_fac=0.01,
     spin1z_jump_fac=0.01,
-    spin2z_jump_fac=0.01,
+    spin2z_jump_fac=0.01,  # noqa: ARG001
 ):
     """
     Given a set of masses, this function will create a set of points nearby
@@ -491,10 +493,11 @@ def stack_xi_direction_brute(
     return ximin, ximax
 
 
+# best_xis is unused, but kept so that existing calls keep working
 def find_xi_extrema_brute(
     xis,
     best_masses,
-    best_xis,
+    best_xis,  # noqa: ARG001
     direction_num,
     req_match,
     mass_range_params,

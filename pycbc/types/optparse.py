@@ -89,7 +89,7 @@ class MultiDetOptionAction(argparse.Action):
             metavar=metavar,
         )
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         # Again this is modified from the standard argparse 'append' action
         err_msg = f"Issue with option: {self.dest} \n"
         err_msg += f"Received value: {' '.join(values)} \n"
@@ -139,7 +139,7 @@ class MultiDetOptionActionSpecial(MultiDetOptionAction):
     value to H1:CHANNEL_NAME for this example.
     """
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         # Again this is modified from the standard argparse 'append' action
         err_msg = f"Issue with option: {self.dest} \n"
         err_msg += f"Received value: {' '.join(values)} \n"
@@ -184,7 +184,7 @@ class MultiDetMultiColonOptionAction(MultiDetOptionAction):
     corresponding detector.
     """
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         err_msg = ("Issue with option: {}\nReceived value: {}\n").format(
             self.dest, " ".join(values)
         )
@@ -205,7 +205,7 @@ class MultiDetMultiColonOptionAction(MultiDetOptionAction):
 
 
 class MultiDetOptionAppendAction(MultiDetOptionAction):
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         # Again this is modified from the standard argparse 'append' action
         if getattr(namespace, self.dest, None) is None:
             setattr(namespace, self.dest, {})
@@ -270,7 +270,7 @@ class DictOptionAction(argparse.Action):
             metavar=metavar,
         )
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         # Again this is modified from the standard argparse 'append' action
         err_msg = f"Issue with option: {self.dest} \n"
         err_msg += f"Received value: {' '.join(values)} \n"
@@ -305,7 +305,7 @@ class MultiDetDictOptionAction(DictOptionAction):
     values of those parameters.
     """
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         # Again this is modified from the standard argparse 'append' action
         err_msg = ("Issue with option: {}\nReceived value: {}\n").format(
             self.dest, " ".join(values)

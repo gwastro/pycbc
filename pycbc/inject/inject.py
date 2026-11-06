@@ -1368,7 +1368,7 @@ class SGBurstInjectionSet:
         self.table = lsctables.SimBurstTable.get_table(self.indoc)
         self.extra_args = kwds
 
-    def apply(self, strain, detector_name, f_lower=None, distance_scale=1):
+    def apply(self, strain, detector_name, f_lower=None, distance_scale=1):  # noqa: ARG002
         """
         Add injections (as seen by a particular detector) to a time series.
 

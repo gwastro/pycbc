@@ -51,7 +51,7 @@ class ParseTempsArg(argparse.Action):
             raise ValueError("the type for this action must be a string")
         super().__init__(type=type, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         singlearg = isinstance(values, str)
         if singlearg:
             values = [values]

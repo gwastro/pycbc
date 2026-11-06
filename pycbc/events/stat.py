@@ -159,7 +159,7 @@ class Stat:
             self.update_file(file_key)
         self.file_hashes = self.get_file_hashes()
 
-    def update_file(self, key):
+    def update_file(self, key):  # noqa: ARG002
         """
         Update file used in this statistic referenced by key.
         """
@@ -186,7 +186,7 @@ class Stat:
             trigs, self.sngl_ranking, **self.sngl_ranking_kwargs
         )
 
-    def single(self, trigs):  # pylint:disable=unused-argument
+    def single(self, trigs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Calculate the necessary single detector information
 
@@ -205,7 +205,7 @@ class Stat:
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise NotImplementedError(err_msg)
 
-    def rank_stat_single(self, single_info):  # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Calculate the statistic for a single detector candidate
 
@@ -225,7 +225,7 @@ class Stat:
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise NotImplementedError(err_msg)
 
-    def rank_stat_coinc(self, s, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Calculate the coincident detection statistic.
         """
@@ -255,7 +255,7 @@ class Stat:
             err_msg += "list of allowed_names above."
             raise NotImplementedError(err_msg)
 
-    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument
+    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -310,7 +310,7 @@ class QuadratureSumStatistic(Stat):
         """
         return single_info[1]
 
-    def rank_stat_coinc(self, sngls_list, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument
+    def rank_stat_coinc(self, sngls_list, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Calculate the coincident detection statistic.
 
@@ -336,7 +336,7 @@ class QuadratureSumStatistic(Stat):
             cstat[sngls == -1] = 0
         return cstat
 
-    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument
+    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -1066,7 +1066,8 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         return dq_state_segs_dict
 
-    def find_dq_noise_rate(self, trigs, dq_state):
+    # trigs is unused, but kept so that existing calls keep working
+    def find_dq_noise_rate(self, trigs, dq_state):  # noqa: ARG002
         """Get dq values for a specific ifo and dq states"""
         dq_val = numpy.ones(len(dq_state))
 
@@ -1812,7 +1813,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
             sngl_multiifo = -1.0 * single_info[1]
         return sngl_multiifo
 
-    def rank_stat_coinc(self, s, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Calculate the coincident detection statistic.
 
@@ -1835,7 +1836,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # scale by 1/sqrt(number of ifos) to resemble network SNR
         return sum(sngl[1] for sngl in s) / (len(s) ** 0.5)
 
-    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument
+    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Optimization function to identify coincs too quiet to be of interest
 

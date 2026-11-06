@@ -59,7 +59,7 @@ def get_true_date(replay_day_dt, controls):
 
 
 def trigger_collation(
-    day_dt, day_str, collation_control_options, collation_options, output_dir, controls
+    day_dt, collation_control_options, collation_options, output_dir, controls
 ):
     """
     Perform the trigger collation as specified
@@ -572,7 +572,6 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
     else:
         merged_triggers = trigger_collation(
             day_dt,
-            day_str,
             collation_control_options,
             collation_options,
             output_dir,

@@ -74,7 +74,7 @@ from pycbc.scheme import CPUScheme, CUDAScheme
 from pycbc.types import Array
 
 
-def _check_scheme_all(option, opt_str, scheme, parser):
+def _check_scheme_all(option, opt_str, scheme, parser):  # noqa: ARG001
     if scheme == "cuda" and not pycbc.HAVE_CUDA:
         raise optparse.OptionValueError("CUDA not found")
 
@@ -123,7 +123,7 @@ def parse_args_all_schemes(feature_str):
     return [_scheme, _context]
 
 
-def _check_scheme_cpu(option, opt_str, scheme, parser):
+def _check_scheme_cpu(option, opt_str, scheme, parser):  # noqa: ARG001
     if scheme == "cuda":
         exit(0)
 

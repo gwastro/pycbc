@@ -495,7 +495,10 @@ def inline_cubic_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed("pycbc.waveform.decompress_")
@@ -546,7 +549,10 @@ def inline_quadratic_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed("pycbc.waveform.decompress_")
@@ -597,7 +603,10 @@ def inline_linear_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed("pycbc.waveform.decompress_")
@@ -651,7 +660,10 @@ def inline_quartic_interp(
         FrequencySeries with the decompressed waveform.
 
     """
-    return
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 def fd_decompress(

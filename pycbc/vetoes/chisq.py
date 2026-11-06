@@ -116,17 +116,19 @@ def power_chisq_bins(
 
 @schemed(BACKEND_PREFIX)
 def chisq_accum_bin(chisq, q):
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed(BACKEND_PREFIX)
 def shift_sum(v1, shifts, bins):
     """Calculate the time shifted sum of the FrequencySeries"""
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
