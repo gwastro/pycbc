@@ -77,6 +77,41 @@ class TestOneDataSource(unittest.TestCase):
         node.add_list_opt("--frame-type", ["H1:H1_HOFT_C00"])
         self.assert_rejected(node, "for H1")
 
+    def test_required_ifos_have_a_source(self):
+        node = make_node()
+        node.required_data_ifos = ["H1", "L1"]
+        node.add_arg("--frame-files H1:a.gwf L1:b.gwf")
+        node._finalize()
+
+    def test_required_ifos_may_differ(self):
+        node = make_node()
+        node.required_data_ifos = ["H1", "L1"]
+        node.add_arg("--frame-files H1:a.gwf")
+        node.add_list_opt("--fake-strain", ["L1:zeroNoise"])
+        node._finalize()
+
+    def test_required_ifos_one_value_for_all(self):
+        node = make_node({"fake-strain": "zeroNoise"})
+        node.required_data_ifos = ["H1", "L1"]
+        node._finalize()
+
+    def test_required_ifo_without_source(self):
+        node = make_node()
+        node.required_data_ifos = ["H1", "L1"]
+        node.add_arg("--frame-files H1:a.gwf")
+        self.assert_rejected(node, "no source of data for L1")
+
+    def test_required_ifos_no_sources(self):
+        node = make_node()
+        node.required_data_ifos = ["H1"]
+        self.assert_rejected(node, "no source of data for H1")
+
+    def test_required_ifos_two_sources(self):
+        node = make_node({"frame-type": "H1:H1_HOFT_C00"})
+        node.required_data_ifos = ["H1"]
+        node.add_arg("--frame-files H1:a.gwf")
+        self.assert_rejected(node, "more than one source", "for H1")
+
 
 if __name__ == "__main__":
     unittest.main()

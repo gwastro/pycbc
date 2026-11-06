@@ -942,6 +942,8 @@ class Node(pegasus_workflow.Node):
         self.executed = False
         self.set_category(executable.name)
         self.valid_seg = valid_seg
+        # Detectors this job must read data for, if this is known
+        self.required_data_ifos = None
 
         self._options += self.executable.common_options
         self._raw_options += self.executable.common_raw_options
@@ -961,7 +963,10 @@ class Node(pegasus_workflow.Node):
         """
         Check that this job is not told to get its data in more than one way.
 
-        The strain reading code rejects this when the job starts, but by then
+        If required_data_ifos is set, also check that it is told how to get
+        data for each of those detectors, so it has exactly one source.
+
+        The strain reading code rejects these when the job starts, but by then
         the workflow has been running for a while. This has to look at the
         final command line, as the options can be set from the configuration
         file, by the code creating the job, or by a mix of both. For
@@ -994,6 +999,13 @@ class Node(pegasus_workflow.Node):
                         f"{self.executable.name} job given more than one source "
                         f"of data{where}: {', '.join(opts)}. Only one should be "
                         "set, note that frame files may also come from datafind."
+                    )
+            for ifo in self.required_data_ifos or []:
+                if ifo not in given and None not in given:
+                    raise ValueError(
+                        f"{self.executable.name} job given no source of data for "
+                        f"{ifo}. One of {', '.join(opt_group)} should be set, "
+                        "note that frame files may also come from datafind."
                     )
 
     def _finalize(self):
