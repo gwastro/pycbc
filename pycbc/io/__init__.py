@@ -11,7 +11,7 @@ from .gracedb import *
 from .hdf import *
 from .record import *
 
-logger = logging.getLogger("pycbc.io")
+logger = logging.getLogger(__name__)
 
 # Backup locations for the GWOSC data files used by the test suite / examples,
 # in gwastro/pycbc_data.  Binary frame/ROM files are stored as release assets

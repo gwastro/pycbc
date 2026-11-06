@@ -109,18 +109,18 @@ def noise_from_psd(length, delta_t, psd, seed=None):
 
     randomness = lal.gsl_rng("ranlux", seed)
 
-    N = round(1.0 / delta_t / psd.delta_f)
-    n = N // 2 + 1
-    stride = N // 2
+    tlen = round(1.0 / delta_t / psd.delta_f)
+    flen = tlen // 2 + 1
+    stride = tlen // 2
 
-    if n > len(psd):
+    if flen > len(psd):
         raise ValueError("PSD not compatible with requested delta_t")
 
-    psd = (psd[0:n]).lal()
-    psd.data.data[n - 1] = 0
+    psd = (psd[0:flen]).lal()
+    psd.data.data[flen - 1] = 0
     psd.data.data[0] = 0
 
-    segment = TimeSeries(zeros(N), delta_t=delta_t).lal()
+    segment = TimeSeries(zeros(tlen), delta_t=delta_t).lal()
     length_generated = 0
 
     lalsimulation.SimNoise(segment, 0, psd, randomness)

@@ -35,7 +35,7 @@ bin_name = args.background_bin
 if bin_name not in f[f"{ifo}/dq_vals"].keys():
     raise ValueError("Background bin name not found in DQ file")
 else:
-    yvals = f["%s/dq_vals/%s" % (ifo, bin_name)][:]
+    yvals = f[f"{ifo}/dq_vals/{bin_name}"][:]
 
 xvals = f[f"{ifo}/times"][:]
 dq_name = f.attrs["stat"].split("-")[0]
@@ -89,7 +89,7 @@ pycbc.results.save_fig_with_metadata(
     fig,
     args.output_file,
     fig_kwds=fig_kwds,
-    title="%s %s log likelihood versus time" % (ifo, dq_name),
+    title=f"{ifo} {dq_name} log likelihood versus time",
     caption="The log likelihood verus time of a DQ product.",
     cmd=" ".join(sys.argv),
 )

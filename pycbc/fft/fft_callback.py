@@ -245,11 +245,11 @@ def get_fn_plan(callback=None, out_callback=None, name="pycbc_cufft", parameters
 _plans = {}
 
 
-class param(ctypes.Structure):
+class Param(ctypes.Structure):
     _fields_ = [("htilde", ctypes.c_void_p)]
 
 
-hparam = param()
+hparam = Param()
 
 
 def c2c_correlate_ifft(htilde, stilde, outvec):
@@ -263,7 +263,7 @@ def c2c_correlate_ifft(htilde, stilde, outvec):
     fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata), ctypes.pointer(hparam))
 
 
-class param2(ctypes.Structure):
+class Param2(ctypes.Structure):
     _fields_ = [
         ("htilde", ctypes.c_void_p),
         ("in_kmax", ctypes.c_uint),
@@ -272,7 +272,7 @@ class param2(ctypes.Structure):
     ]
 
 
-hparam_zeros = param2()
+hparam_zeros = Param2()
 
 
 def c2c_half_correlate_ifft(htilde, stilde, outvec):

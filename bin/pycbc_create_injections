@@ -123,6 +123,8 @@ from pycbc.distributions import JointDistribution
 from pycbc.inject import InjectionSet
 from pycbc.workflow import WorkflowConfigParser, configuration
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(
     description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
 )
@@ -208,7 +210,7 @@ if opts.ninjections and (
 
 numpy.random.seed(opts.seed)
 
-logging.info("Loading config file")
+logger.info("Loading config file")
 cp = WorkflowConfigParser.from_cli(opts)
 
 # get the vairable and static arguments from the config file
@@ -229,7 +231,7 @@ else:
     write_args = variable_params
 
 # get prior distribution for each variable parameter
-logging.info("Reading distributions")
+logger.info("Reading distributions")
 dists = distributions.read_distributions_from_config(cp, opts.dist_section)
 
 # construct class that will draw the samples
@@ -242,11 +244,11 @@ else:
     old_samples = None
 
 while True:
-    logging.info("Drawing samples")
+    logger.info("Drawing samples")
     samples = randomsampler.rvs(size=draw_size)
 
     if waveform_transforms is not None:
-        logging.info("Transforming to waveform transform parameters")
+        logger.info("Transforming to waveform transform parameters")
         for t in waveform_transforms:
             if not set(t.inputs).isdisjoint(set(static_params.keys())):
                 for item in list(
@@ -282,7 +284,7 @@ while True:
 
         if tc.max() >= opts.gps_end_time:
             samples = samples[samples["tc"] < opts.gps_end_time]
-            logging.info("Total Injections: %s", len(samples))
+            logger.info("Total Injections: %s", len(samples))
             break
 
     # We got as many samples as we needed so we can stop
@@ -290,7 +292,7 @@ while True:
         break
 
 # write results
-logging.info("Writing results")
+logger.info("Writing results")
 write_args = [arg for arg in samples.fieldnames if arg not in static_params.keys()]
 InjectionSet.write(
     opts.output_file, samples, write_args, static_params, cmd=" ".join(sys.argv)

@@ -54,7 +54,7 @@ class ParseLabelArg(argparse.Action):
             raise ValueError("nargs must not be 0 for this action")
         super().__init__(type=type, nargs=nargs, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         singlearg = isinstance(values, str)
         if singlearg:
             values = [values]

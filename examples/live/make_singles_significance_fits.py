@@ -43,7 +43,7 @@ for ifo in ["H1", "L1", "V1"]:
     ifo_group.create_group("daily_fits")
     daily_group = ifo_group["daily_fits"]
     for bin_no in range(n_bins):
-        key = "bin_%d" % bin_no
+        key = f"bin_{bin_no}"
         daily_group.create_group(key)
         bin_group = daily_group[key]
         bin_group["date"] = np.arange(n_days)

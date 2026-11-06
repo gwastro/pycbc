@@ -30,7 +30,6 @@ from optparse import OptionParser
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from numpy import complex64, float32
-from pycbc.utils import mass1_mass2_to_mchirp_eta
 
 import pycbc.psd
 from pycbc import DYN_RANGE_FAC
@@ -44,6 +43,7 @@ from pycbc.types import (
     real_same_precision_as,
     zeros,
 )
+from pycbc.utils import mass1_mass2_to_mchirp_eta
 from pycbc.waveform import (
     fd_approximants,
     get_fd_waveform,
@@ -53,13 +53,8 @@ from pycbc.waveform import (
 
 
 def update_progress(progress):
-    print(
-        "\r\r[{0}] {1:.2%}".format(
-            "#" * (int(progress * 100) / 2) + " " * (50 - int(progress * 100) / 2),
-            progress,
-        ),
-        end=" ",
-    )
+    bar = "#" * (int(progress * 100) / 2) + " " * (50 - int(progress * 100) / 2)
+    print(f"\r\r[{bar}] {progress:.2%}", end=" ")
     if progress == 100:
         print("Done")
     sys.stdout.flush()
@@ -99,22 +94,22 @@ def generate_detector_strain(template_params, h_plus, h_cross):
     return f_plus * h_plus + f_cross * h_cross
 
 
-def make_padded_frequency_series(vec, filter_N=None):
+def make_padded_frequency_series(vec, filter_tlen=None):
     """
     Pad a TimeSeries with a length of zeros greater than its length, such
     that the total length is the closest power of 2. This prevents the effects
     of wraparound.
     """
-    if filter_N is None:
+    if filter_tlen is None:
         power = ceil(log(len(vec), 2)) + 1
-        N = 2**power
+        tlen = 2**power
     else:
-        N = filter_N
-    n = N / 2 + 1
+        tlen = filter_tlen
+    flen = tlen / 2 + 1
 
     if isinstance(vec, FrequencySeries):
         vectilde = FrequencySeries(
-            zeros(n, dtype=complex_same_precision_as(vec)), delta_f=1.0, copy=False
+            zeros(flen, dtype=complex_same_precision_as(vec)), delta_f=1.0, copy=False
         )
         if len(vectilde) < len(vec):
             cplen = len(vectilde)
@@ -125,19 +120,16 @@ def make_padded_frequency_series(vec, filter_N=None):
 
     if isinstance(vec, TimeSeries):
         vec_pad = TimeSeries(
-            zeros(N), delta_t=vec.delta_t, dtype=real_same_precision_as(vec)
+            zeros(tlen), delta_t=vec.delta_t, dtype=real_same_precision_as(vec)
         )
         vec_pad[0 : len(vec)] = vec
-        delta_f = 1.0 / (vec.delta_t * N)
+        delta_f = 1.0 / (vec.delta_t * tlen)
         vectilde = FrequencySeries(
-            zeros(n), delta_f=1.0, dtype=complex_same_precision_as(vec)
+            zeros(flen), delta_f=1.0, dtype=complex_same_precision_as(vec)
         )
         fft(vec_pad, vectilde)
 
-    vectilde = FrequencySeries(
-        vectilde * DYN_RANGE_FAC, delta_f=delta_f, dtype=complex64
-    )
-    return vectilde
+    return FrequencySeries(vectilde * DYN_RANGE_FAC, delta_f=delta_f, dtype=complex64)
 
 
 def get_waveform(
@@ -172,9 +164,7 @@ def get_waveform(
             amplitude_order=amplitude_order,
         )
 
-    htilde = make_padded_frequency_series(hvec, filter_N)
-
-    return htilde
+    return make_padded_frequency_series(hvec, filter_tlen)
 
 
 ###############################################################################
@@ -325,8 +315,8 @@ def outside_mchirp_window(template, signal, w):
     False
 
 
-filter_N = int(options.filter_signal_length * options.filter_sample_rate)
-filter_n = filter_N / 2 + 1
+filter_tlen = int(options.filter_signal_length * options.filter_sample_rate)
+filter_flen = filter_tlen / 2 + 1
 filter_delta_f = 1.0 / float(options.filter_signal_length)
 
 print("Number of Signal Waveforms: ", len(signal_table))
@@ -336,11 +326,14 @@ print("Number of Templates       : ", len(template_table))
 print("Reading and Interpolating PSD")
 if options.asd_file:
     psd = pycbc.psd.read.from_txt(
-        options.asd_file, filter_n, filter_delta_f, options.filter_low_frequency_cutoff
+        options.asd_file,
+        filter_flen,
+        filter_delta_f,
+        options.filter_low_frequency_cutoff,
     )
 elif options.psd:
     psd = pycbc.psd.analytic.from_string(
-        options.psd, filter_n, filter_delta_f, options.filter_low_frequency_cutoff
+        options.psd, filter_flen, filter_delta_f, options.filter_low_frequency_cutoff
     )
 
 psd *= DYN_RANGE_FAC**2
@@ -360,7 +353,7 @@ with ctx:
             signal_params,
             options.signal_start_frequency,
             options.filter_sample_rate,
-            filter_N,
+            filter_tlen,
         )
         s_norm = sigmasq(
             stilde, psd=psd, low_frequency_cutoff=options.filter_low_frequency_cutoff
@@ -392,7 +385,7 @@ with ctx:
                     template_params,
                     options.template_start_frequency,
                     options.filter_sample_rate,
-                    filter_N,
+                    filter_tlen,
                 )
                 h_norm = sigmasq(
                     htilde,
@@ -412,7 +405,7 @@ with ctx:
 
 # Find the maximum overlap in the bank and output to a file
 for stilde, s_norm, matches, sim_template in signals:
-    match_str = "%5.5f \n" % (max(matches))
+    match_str = f"{max(matches):5.5f} \n"
     match_str2 = (
         "  " + options.bank_file + " " + str(matches.index(max(matches))) + "\n"
     )

@@ -52,7 +52,7 @@ from pycbc.types import (
 )
 from pycbc.waveform.spa_tmplt import spa_distance
 
-logger = logging.getLogger("pycbc.strain.strain")
+logger = logging.getLogger(__name__)
 
 
 def next_power_of_2(n):
@@ -202,9 +202,7 @@ def detect_loud_glitches(
     cluster_idx = pycbc.events.findchirp_cluster_over_window(
         indices, numpy.array(mag[indices]), int(cluster_window * strain.sample_rate)
     )
-    times = [idx * strain.delta_t + strain.start_time for idx in indices[cluster_idx]]
-
-    return times
+    return [idx * strain.delta_t + strain.start_time for idx in indices[cluster_idx]]
 
 
 def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None):
@@ -330,7 +328,7 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
             )
             raise ValueError(err_msg)
 
-        logging.info("Reading Frames containing injections")
+        logger.info("Reading Frames containing injections")
 
         if opt.injection_frame_type:
             injection_strain = pycbc.frame.query_and_read_frame(
@@ -454,7 +452,7 @@ def from_cli(opt, dyn_range_fac=1, precision="single", inj_filter_rejector=None)
                 )
             if len(glitch_times) > 0:
                 logger.info(
-                    "Autogating at %s", ", ".join(["%.3f" % gt for gt in glitch_times])
+                    "Autogating at %s", ", ".join([f"{gt:.3f}" for gt in glitch_times])
                 )
             else:
                 break
@@ -644,7 +642,7 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument(
         "--fake-strain",
         help="Name of model PSD for generating fake gaussian noise.",
-        choices=pycbc.psd.get_psd_model_list() + ["zeroNoise"],
+        choices=[*pycbc.psd.get_psd_model_list(), "zeroNoise"],
     )
     data_reading_group.add_argument(
         "--fake-strain-extra-args",
@@ -1021,8 +1019,8 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
         action=MultiDetOptionAction,
         metavar="IFO:CHOICE",
         help="Name of model PSD for generating fake "
-        "gaussian noise. Choose from %s or zeroNoise"
-        % ((", ").join(pycbc.psd.get_lalsim_psd_list()),),
+        f"gaussian noise. Choose from {', '.join(pycbc.psd.get_lalsim_psd_list())} or "
+        "zeroNoise",
     )
     data_reading_group_multi.add_argument(
         "--fake-strain-extra-args",
@@ -1384,8 +1382,8 @@ def gate_data(data, gate_params):
 
     """
 
-    def inverted_tukey(M, n_pad):
-        midlen = M - 2 * n_pad
+    def inverted_tukey(length, n_pad):
+        midlen = length - 2 * n_pad
         if midlen < 0:
             raise ValueError("No zeros left after applying padding.")
         padarr = 0.5 * (1.0 + numpy.cos(numpy.pi * numpy.arange(n_pad) / n_pad))
@@ -1417,6 +1415,8 @@ class StrainSegments:
     conditioning.
     """
 
+    # injection_window is unused, but kept so that existing calls keep working
+    # (the injection window is applied by EventManager)
     def __init__(
         self,
         strain,
@@ -1426,7 +1426,7 @@ class StrainSegments:
         trigger_start=None,
         trigger_end=None,
         filter_inj_only=False,
-        injection_window=None,
+        injection_window=None,  # noqa: ARG002
         allow_zero_padding=False,
     ):
         """
@@ -1460,8 +1460,8 @@ class StrainSegments:
                 min_start_time = int(strain.start_time)
             if trigger_start < min_start_time:
                 err_msg = "Trigger start time must be within analysable "
-                err_msg += "window. Asked to start from %d " % (trigger_start)
-                err_msg += "but can only analyse from %d." % (min_start_time)
+                err_msg += f"window. Asked to start from {int(trigger_start)} "
+                err_msg += f"but can only analyse from {int(min_start_time)}."
                 raise ValueError(err_msg)
 
         if not trigger_end:
@@ -1473,8 +1473,8 @@ class StrainSegments:
                 max_end_time = int(strain.end_time)
             if trigger_end > max_end_time:
                 err_msg = "Trigger end time must be within analysable "
-                err_msg += "window. Asked to end at %d " % (trigger_end)
-                err_msg += "but can only analyse to %d." % (max_end_time)
+                err_msg += f"window. Asked to end at {int(trigger_end)} "
+                err_msg += f"but can only analyse to {int(max_end_time)}."
                 raise ValueError(err_msg)
 
         throwaway_size = seg_start_pad + seg_end_pad
@@ -1543,7 +1543,7 @@ class StrainSegments:
                 for time in end_times
             ]
 
-        for seg, ana in zip(self.segment_slices, self.analyze_slices):
+        for seg, ana in zip(self.segment_slices, self.analyze_slices, strict=True):
             start = ana.start
             stop = ana.stop
             cum_start = start + seg.start
@@ -1587,7 +1587,9 @@ class StrainSegments:
         """
         if not self._fourier_segments:
             self._fourier_segments = []
-            for seg_slice, ana in zip(self.segment_slices, self.analyze_slices):
+            for seg_slice, ana in zip(
+                self.segment_slices, self.analyze_slices, strict=True
+            ):
                 if seg_slice.start >= 0 and seg_slice.stop <= len(self.strain):
                     freq_seg = make_frequency_series(self.strain[seg_slice])
                 # Assume that we cannot have a case where we both zero-pad on
@@ -1796,9 +1798,14 @@ class StrainSegments:
             required_opts_multi_ifo(opt, parser, ifo, cls.required_opts_list)
 
 
+# uid is only part of the lru_cache key
 @functools.lru_cache(maxsize=500)
 def create_memory_and_engine_for_class_based_fft(
-    npoints_time, dtype, delta_t=1, ifft=False, uid=0
+    npoints_time,
+    dtype,
+    delta_t=1,
+    ifft=False,
+    uid=0,  # noqa: ARG001
 ):
     """
     Create memory and engine for class-based FFT/IFFT
@@ -2111,11 +2118,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # low latency dq channel
         if data_quality_channel is not None:
-            sb_kwargs = dict(
-                max_buffer=max_buffer,
-                force_update_cache=force_update_cache,
-                increment_update_cache=increment_update_cache,
-            )
+            sb_kwargs = {
+                "max_buffer": max_buffer,
+                "force_update_cache": force_update_cache,
+                "increment_update_cache": increment_update_cache,
+            }
             if (
                 len(self.data_quality_flags) == 1
                 and self.data_quality_flags[0] == "veto_nonzero"
@@ -2146,7 +2153,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 raise ValueError(
                     "If an iDQ channel is provided, a veto threshold must also be provided"
                 )
-            self.idq = pycbc.frame.iDQBuffer(
+            self.idq = pycbc.frame.IDQBuffer(
                 frame_src,
                 idq_channel,
                 idq_state_channel,
@@ -2400,8 +2407,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             fseries_trimmed.psd = psd
             self.segments[delta_f] = fseries_trimmed
 
-        stilde = self.segments[delta_f]
-        return stilde
+        return self.segments[delta_f]
 
     def near_hwinj(self):
         """
@@ -2547,7 +2553,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 logger.info(
                     "Autogating %s at %s",
                     self.detector,
-                    ", ".join(["%.3f" % gt for gt in glitch_times]),
+                    ", ".join([f"{gt:.3f}" for gt in glitch_times]),
                 )
                 self.gate_params = [
                     (gt, self.autogating_width, self.autogating_taper)

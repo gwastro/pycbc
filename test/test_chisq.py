@@ -25,6 +25,7 @@
 These are the unittests for the pycbc.waveform module
 """
 
+import argparse
 import unittest
 
 import numpy
@@ -34,17 +35,17 @@ from pycbc.types import Array, complex64, float32, zeros
 
 _scheme, _context = parse_args_all_schemes("correlate")
 
-from pycbc.vetoes.chisq_cpu import chisq_accum_bin_numpy
-
 from pycbc.catalog import Merger
 from pycbc.filter import matched_filter_core, resample_to_delta_t
 from pycbc.psd import interpolate, inverse_spectrum_truncation
 from pycbc.vetoes import (
+    SingleDetPowerChisq,
     chisq_accum_bin,
     power_chisq,
     power_chisq_at_points_from_precomputed,
     power_chisq_bins,
 )
+from pycbc.vetoes.chisq_cpu import chisq_accum_bin_numpy
 from pycbc.waveform import get_fd_waveform
 
 trusted_accum = chisq_accum_bin_numpy
@@ -140,12 +141,27 @@ class TestChisq(unittest.TestCase):
             max_diff = max(abs(chisq_full[ifo] - chisq_quick[ifo]))
             self.assertTrue(max_diff < 1e-5)
 
+            indices = numpy.arange(27402, 27492)
+            self.hp.f_lower = 20.0
+            self.hp.params = argparse.Namespace()
+            est = SingleDetPowerChisq(num_bins=nbins)
+            chisq_cls, dof_cls = est.values(
+                self.corr[ifo],
+                self.snr_unnorm[ifo][27402:27492].data,
+                self.norm[ifo],
+                self.psd[ifo],
+                indices,
+                self.hp,
+            )
+            numpy.testing.assert_array_equal(dof_cls, dof)
+            numpy.testing.assert_allclose(chisq_cls / dof, chisq_full[ifo], rtol=1e-5)
+
     def test_power_chisq_return_bins_slice(self):
         ifo = self.ifos[0]
         nbins = 16
         sl = slice(27400, 27500)
         # 1. Full return_bins (user-side slicing)
-        chisq_full, bins_full = power_chisq(
+        _, bins_full = power_chisq(
             self.hp,
             self.data[ifo],
             nbins,
@@ -154,7 +170,7 @@ class TestChisq(unittest.TestCase):
             return_bins=True,
         )
         # 2. Optimized internal return_bins_slice
-        chisq_sl, bins_sl = power_chisq(
+        _, bins_sl = power_chisq(
             self.hp,
             self.data[ifo],
             nbins,
@@ -172,8 +188,27 @@ class TestChisq(unittest.TestCase):
             numpy.testing.assert_allclose(actual, expected, rtol=1e-5, atol=1e-7)
 
 
+class TestPowerChisqOptions(unittest.TestCase):
+    def parse(self, args):
+        parser = argparse.ArgumentParser()
+        SingleDetPowerChisq.insert_option_group(parser)
+        return SingleDetPowerChisq.from_cli(parser.parse_args(args))
+
+    def test_options_reach_the_estimator(self):
+        est = self.parse(["--chisq-bins", "16", "--chisq-snr-threshold", "4.5"])
+        self.assertTrue(est.do)
+        self.assertEqual(est.num_bins, "16")
+        self.assertEqual(est.snr_threshold, 4.5)
+
+    def test_off_by_default(self):
+        est = self.parse([])
+        self.assertFalse(est.do)
+        self.assertIsNone(est.snr_threshold)
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestChisq))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPowerChisqOptions))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)

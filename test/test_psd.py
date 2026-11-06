@@ -124,8 +124,8 @@ class TestPSD(unittest.TestCase):
                     err_rms = numpy.sqrt(numpy.mean(error**2))
                     self.assertTrue(
                         err_rms < 0.2,
-                        msg="seg_len=%d seg_stride=%d method=%s -> rms=%.3f"
-                        % (seg_len, seg_stride, method, err_rms),
+                        msg=f"seg_len={int(seg_len)} seg_stride={int(seg_stride)} "
+                        f"method={method} -> rms={err_rms:.3f}",
                     )
 
     def test_truncation(self):
@@ -149,8 +149,8 @@ class TestPSD(unittest.TestCase):
                 err_rms = numpy.sqrt(numpy.mean(error**2))
                 self.assertTrue(
                     err_rms < 0.1,
-                    msg="seg_len=%d max_len=%d -> rms=%.3f"
-                    % (seg_len, max_len, err_rms),
+                    msg=f"seg_len={int(seg_len)} max_len={int(max_len)} -> "
+                    f"rms={err_rms:.3f}",
                 )
 
 
@@ -266,7 +266,7 @@ class TestPSDSegmentPlacement(unittest.TestCase):
         # --psd-num-segments omitted and data too short for the stride -> the
         # segment count is clamped to 1, so the estimation stretch is never
         # shorter than one Welch segment, and a warning is emitted. (Patch
-        # logging.warning rather than use assertLogs: another test module
+        # logger.warning rather than use assertLogs: another test module
         # calls logging.disable().)
         noise = self._white_noise(4096)
         opt = SimpleNamespace(
@@ -281,7 +281,7 @@ class TestPSDSegmentPlacement(unittest.TestCase):
             psd_low_frequency_cutoff=None,
             invpsd_trunc_method=None,
         )
-        with self.context, mock.patch.object(pycbc.psd.logging, "warning") as warn:
+        with self.context, mock.patch.object(pycbc.psd.logger, "warning") as warn:
             out = generate_segment_psds(
                 opt,
                 noise,
@@ -298,7 +298,7 @@ class TestPSDSegmentPlacement(unittest.TestCase):
         # warning (segment fully covered by the window, so no other warning
         # fires either)
         opt.psd_num_segments = 0
-        with self.context, mock.patch.object(pycbc.psd.logging, "warning") as warn:
+        with self.context, mock.patch.object(pycbc.psd.logger, "warning") as warn:
             out = generate_segment_psds(
                 opt,
                 noise,

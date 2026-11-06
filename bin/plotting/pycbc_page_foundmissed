@@ -17,6 +17,8 @@ import pycbc.results.followup
 from pycbc.detector import Detector
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 labels = {
     "mchirp": "Chirp Mass",
     "mtotal": "Total Mass",
@@ -93,7 +95,7 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-logging.info("Read in the data")
+logger.info("Read in the data")
 f = HFile(args.injection_file, "r")
 time = f["injections/tc"][:]
 found = f["found_after_vetoes/injection_index"][:]
@@ -139,7 +141,7 @@ dvals = {}
 if "ifos" in f.attrs:
     ifos = f.attrs["ifos"].split(" ")
 else:
-    logging.warning("Ifos not found in input file, assuming H-L")
+    logger.warning("Ifos not found in input file, assuming H-L")
     ifos = ["H1", "L1"]
 
 # NOTE: Effective distance is hardcoded to these values. It's also normally
@@ -181,16 +183,19 @@ if args.distance_type == "redshift":
     dvals["redshift"] = f["injections/redshift"][:]
 
 if "snr" in args.distance_type:  # only evaluate SNRs if needed
-    opt_snrsq_arr = [f["injections/optimal_snr_%s" % ifo][:] ** 2.0 for ifo in ifos]
+    opt_snrsq_arr = [f[f"injections/optimal_snr_{ifo}"][:] ** 2.0 for ifo in ifos]
     dvals["comb_optimal_snr"] = numpy.array(
-        [numpy.sqrt(sum(opt_snrsq)) for opt_snrsq in zip(*opt_snrsq_arr)]
+        [numpy.sqrt(sum(opt_snrsq)) for opt_snrsq in zip(*opt_snrsq_arr, strict=True)]
     )
     # Decisive optimal SNR is the 2nd largest optimal SNR
     dvals["decisive_optimal_snr"] = numpy.array(
-        [numpy.sqrt(sorted(opt_snrsq)[-2]) for opt_snrsq in zip(*opt_snrsq_arr)]
+        [
+            numpy.sqrt(sorted(opt_snrsq)[-2])
+            for opt_snrsq in zip(*opt_snrsq_arr, strict=True)
+        ]
     )
     dvals["max_optimal_snr"] = numpy.array(
-        [numpy.sqrt(max(opt_snrsq)) for opt_snrsq in zip(*opt_snrsq_arr)]
+        [numpy.sqrt(max(opt_snrsq)) for opt_snrsq in zip(*opt_snrsq_arr, strict=True)]
     )
 
 fdvals = dvals[args.distance_type][found]
@@ -275,7 +280,7 @@ if args.gradient_far:
         else:
             ext = "neither"
         c = plot.colorbar(extend=ext)
-        c.set_label("False Alarm Rate $(yr^{-1})$, %s" % far_title)
+        c.set_label(f"False Alarm Rate $(yr^{{-1}})$, {far_title}")
 
         # Set up tick labels - there will be 5 if possible
         min_tick = numpy.ceil(min(numpy.log10(color)))
@@ -339,7 +344,7 @@ if ".html" in args.output_file:
     )
     mpld3.plugins.connect(fig, legend)
 
-title = "%s: %s vs %s" % (fig_title, args.axis_type, args.distance_type)
+title = f"{fig_title}: {args.axis_type} vs {args.distance_type}"
 cmd = " ".join(sys.argv)
 pycbc.results.save_fig_with_metadata(
     fig, args.output_file, fig_kwds=fig_kwds, title=title, cmd=cmd, caption=caption

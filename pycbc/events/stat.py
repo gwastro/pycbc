@@ -39,7 +39,7 @@ from .eventmgr_cython import (
     logsignalrateinternals_computepsignalbins,
 )
 
-logger = logging.getLogger("pycbc.events.stat")
+logger = logging.getLogger(__name__)
 
 _allowed_statistic_features = [
     "phasetd",
@@ -81,7 +81,7 @@ class Stat:
             if stat in self.files:
                 raise RuntimeError(
                     "We already have one file with stat attr = "
-                    "%s. Can't provide more than one!" % stat
+                    f"{stat}. Can't provide more than one!"
                 )
             logger.info("Found file %s for stat %s", filename, stat)
             self.files[stat] = filename
@@ -159,7 +159,7 @@ class Stat:
             self.update_file(file_key)
         self.file_hashes = self.get_file_hashes()
 
-    def update_file(self, key):
+    def update_file(self, key):  # noqa: ARG002
         """
         Update file used in this statistic referenced by key.
         """
@@ -186,7 +186,7 @@ class Stat:
             trigs, self.sngl_ranking, **self.sngl_ranking_kwargs
         )
 
-    def single(self, trigs):  # pylint:disable=unused-argument
+    def single(self, trigs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Calculate the necessary single detector information
 
@@ -205,7 +205,7 @@ class Stat:
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise NotImplementedError(err_msg)
 
-    def rank_stat_single(self, single_info):  # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Calculate the statistic for a single detector candidate
 
@@ -225,7 +225,7 @@ class Stat:
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise NotImplementedError(err_msg)
 
-    def rank_stat_coinc(self, s, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Calculate the coincident detection statistic.
         """
@@ -255,7 +255,7 @@ class Stat:
             err_msg += "list of allowed_names above."
             raise NotImplementedError(err_msg)
 
-    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument
+    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -310,7 +310,7 @@ class QuadratureSumStatistic(Stat):
         """
         return single_info[1]
 
-    def rank_stat_coinc(self, sngls_list, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument
+    def rank_stat_coinc(self, sngls_list, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Calculate the coincident detection statistic.
 
@@ -336,7 +336,7 @@ class QuadratureSumStatistic(Stat):
             cstat[sngls == -1] = 0
         return cstat
 
-    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument
+    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -541,12 +541,12 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             if param[ifo].dtype == numpy.int8:
                 # Older style, incorrectly sorted histogram file
                 ncol = param[ifo].shape[1]
-                self.pdtype = [("c%s" % i, param[ifo].dtype) for i in range(ncol)]
+                self.pdtype = [(f"c{i}", param[ifo].dtype) for i in range(ncol)]
                 self.param_bin[ifo] = numpy.zeros(
                     len(self.weights[ifo]), dtype=self.pdtype
                 )
                 for i in range(ncol):
-                    self.param_bin[ifo]["c%s" % i] = param[ifo][:, i]
+                    self.param_bin[ifo][f"c{i}"] = param[ifo][:, i]
 
                 lsort = self.param_bin[ifo].argsort()
                 self.param_bin[ifo] = self.param_bin[ifo][lsort]
@@ -617,7 +617,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 )
                 self.two_det_weights[ifo][id0, id1, id2] = self.weights[ifo]
 
-        for ifo, sense in zip(self.hist_ifos, relfac):
+        for ifo, sense in zip(self.hist_ifos, relfac, strict=True):
             self.relsense[ifo] = sense
 
         self.has_hist = True
@@ -661,7 +661,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         """
         # Convert time shift vector to dict, as hist ifos and self.ifos may
         # not be in same order
-        to_shift = {ifo: s for ifo, s in zip(self.ifos, to_shift)}
+        to_shift = dict(zip(self.ifos, to_shift, strict=True))
 
         if not self.has_hist:
             self.get_hist()
@@ -1021,8 +1021,7 @@ class ExpFitStatistic(PhaseTDStatistic):
                 tids = list(tids) + list(bin_tids.astype(int))
                 bin_nums = list(bin_nums) + list([bin_name] * len(bin_tids))
 
-        bin_dict = dict(zip(tids, bin_nums))
-        return bin_dict
+        return dict(zip(tids, bin_nums, strict=True))
 
     def assign_dq_rates(self, key):
         """
@@ -1066,7 +1065,8 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         return dq_state_segs_dict
 
-    def find_dq_noise_rate(self, trigs, dq_state):
+    # trigs is unused, but kept so that existing calls keep working
+    def find_dq_noise_rate(self, trigs, dq_state):  # noqa: ARG002
         """Get dq values for a specific ifo and dq states"""
         dq_val = numpy.ones(len(dq_state))
 
@@ -1488,9 +1488,7 @@ class ExpFitStatistic(PhaseTDStatistic):
         # determined by the least sensitive ifo
         network_sigmasq = numpy.amin([sngl[1]["sigmasq"] for sngl in sngls], axis=0)
         # Volume \propto sigma^3 or sigmasq^1.5
-        network_logvol = 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
-
-        return network_logvol
+        return 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
 
     def logsignalrate_shared(self, sngls_info):
         """
@@ -1637,7 +1635,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             ln_noise_rate -= numpy.log(hist_vol)
 
             # What is the signal pdf?
-            stat = {ifo: st for ifo, st in s}
+            stat = dict(s)
             ln_s += self.logsignalrate(stat, slide * step, to_shift)
 
         # Add in the feature-dependent terms to the signal rate
@@ -1812,7 +1810,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
             sngl_multiifo = -1.0 * single_info[1]
         return sngl_multiifo
 
-    def rank_stat_coinc(self, s, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Calculate the coincident detection statistic.
 
@@ -1835,7 +1833,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # scale by 1/sqrt(number of ifos) to resemble network SNR
         return sum(sngl[1] for sngl in s) / (len(s) ** 0.5)
 
-    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument
+    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):  # pylint:disable=unused-argument  # noqa: ARG002
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -1898,7 +1896,7 @@ def get_statistic(stat):
     try:
         return statistic_dict[stat]
     except KeyError:
-        raise RuntimeError("%s is not an available detection statistic" % stat)
+        raise RuntimeError(f"{stat} is not an available detection statistic")
 
 
 def insert_statistic_option_group(parser, default_ranking_statistic=None):
@@ -2053,8 +2051,6 @@ def get_statistic_from_opts(opts, ifos):
         opts.statistic_keywords,
     )
 
-    stat_class = get_statistic(opts.ranking_statistic)(
+    return get_statistic(opts.ranking_statistic)(
         opts.sngl_ranking, opts.statistic_files, ifos=ifos, **extra_kwargs
     )
-
-    return stat_class

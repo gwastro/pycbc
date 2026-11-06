@@ -12,6 +12,12 @@ env:
   # they just fall back to curl/wget defaults.)
   CURL_HOME: ${{ github.workspace }}/tools
   WGETRC: ${{ github.workspace }}/tools/.wgetrc
+  # The PyCBC Live example runs 2 MPI processes on one machine. Some runners
+  # have an RDMA device (mana_0) that Open MPI's UCX layer picks but can't
+  # use, so the processes can't exchange messages. Use shared memory instead.
+  # (Only set here, so running the example elsewhere is unaffected.)
+  OMPI_MCA_pml: ob1
+  OMPI_MCA_btl: self,sm
 
 jobs:
   build:

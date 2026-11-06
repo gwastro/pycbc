@@ -27,7 +27,7 @@ These are the unittests for the pycbc.filter.matchedfilter module
 
 import unittest
 
-from lal import LIGOTimeGPS as LTG
+from lal import LIGOTimeGPS
 from utils import parse_args_all_schemes, simple_exit
 
 from pycbc.types import (
@@ -47,7 +47,7 @@ class TestUtils(unittest.TestCase):
     def setUp(self, *args):
         self.context = _context
         self.delta_t = 1.0 / 4096
-        self.epoch = LTG(0, 0)
+        self.epoch = LIGOTimeGPS(0, 0)
 
         self.at = TimeSeries([1], delta_t=self.delta_t, dtype=float32, epoch=self.epoch)
         self.bt = TimeSeries([1], delta_t=self.delta_t, dtype=float64, epoch=self.epoch)

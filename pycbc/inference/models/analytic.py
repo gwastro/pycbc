@@ -26,6 +26,8 @@ from scipy import stats
 
 from .base import BaseModel
 
+logger = logging.getLogger(__name__)
+
 
 class TestNormal(BaseModel):
     r"""
@@ -255,9 +257,9 @@ class TestPosterior(BaseModel):
 
         from pycbc.inference.io import loadfile  # avoid cyclic import
 
-        logging.info("loading test posterior model")
+        logger.info("loading test posterior model")
         inf_file = loadfile(posterior_file)
-        logging.info("reading samples")
+        logger.info("reading samples")
         samples = inf_file.read_samples(variable_params)
         samples = numpy.array([samples[v] for v in variable_params])
 
@@ -266,9 +268,9 @@ class TestPosterior(BaseModel):
         idx = numpy.random.choice(idx, size=int(nsamples), replace=False)
         samples = samples[:, idx]
 
-        logging.info("making kde with %s samples", samples.shape[-1])
+        logger.info("making kde with %s samples", samples.shape[-1])
         self.kde = stats.gaussian_kde(samples)
-        logging.info("done initializing test posterior model")
+        logger.info("done initializing test posterior model")
 
     def _loglikelihood(self):
         """Returns the log pdf of the test posterior kde"""

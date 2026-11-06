@@ -36,6 +36,8 @@ from .gaussian_noise import (
 )
 from .tools import DistMarg, marginalize_likelihood
 
+logger = logging.getLogger(__name__)
+
 
 class MarginalizedPhaseGaussianNoise(GaussianNoise):
     r"""
@@ -282,7 +284,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             for ifo in self.data:
                 if self.sample_rate < self.data[ifo].sample_rate:
                     raise ValueError("Model sample rate was set less than the data. ")
-            logging.info("Using %s sample rate for marginalization", sample_rate)
+            logger.info("Using %s sample rate for marginalization", sample_rate)
 
     def _nowaveform_handler(self):
         """Convenience function to set loglr values if no waveform generated."""
@@ -311,7 +313,17 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         from pycbc.filter import matched_filter_core
 
         params = self.current_params
-        if self.all_ifodata_same_rate_length:
+        # A custom waveform is handed in by the brute force total mass
+        # marginalization model, which rescales a single reference waveform
+        # instead of regenerating it for each point on the mtotal grid. The
+        # waveforms are whitened in place below, so take a copy: the caller
+        # holds on to them and may ask for more than one evaluation.
+        if "custom_waveform" in params:
+            wfs = {
+                det: (hp.copy(), hc.copy())
+                for det, (hp, hc) in params["custom_waveform"].items()
+            }
+        elif self.all_ifodata_same_rate_length:
             wfs = self.waveform_generator.generate(**params)
         else:
             wfs = {}
@@ -380,7 +392,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 self.dets[det] = Detector(det)
             tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
             if self.precalc_antenna_factors:
-                fp, fc, dt = self.get_precalc_antenna_factors(det)
+                fp, fc, _ = self.get_precalc_antenna_factors(det)
                 pol_phase = numpy.exp(-2.0j * params["polarization"])
                 f = (fp + 1.0j * fc) * pol_phase
                 fp = f.real

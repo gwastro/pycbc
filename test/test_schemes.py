@@ -33,7 +33,7 @@ GPU, because that test is done in the test_lalwrap unit tests.
 
 import unittest
 
-from numpy import complex64, complex128, float32, float64
+from numpy import complex64, complex128, float32, float64, ndarray
 from utils import parse_args_all_schemes, simple_exit
 
 from pycbc.scheme import CPUScheme, CUDAScheme, DefaultScheme
@@ -46,9 +46,9 @@ _scheme, _context = parse_args_all_schemes("Scheme")
 if isinstance(_context, CUDAScheme):
     from pycuda.gpuarray import GPUArray as SchemeArray
 elif isinstance(_context, CPUScheme):
-    from numpy import ndarray as SchemeArray
+    SchemeArray = ndarray
 
-from numpy import ndarray as CPUArray
+CPUArray = ndarray
 
 
 class SchemeTestBase(unittest.TestCase):
@@ -159,7 +159,7 @@ class SchemeTestBase(unittest.TestCase):
 
 
 def scheme_test_maker(dtype, odtype):
-    class tests(SchemeTestBase):
+    class SchemeTests(SchemeTestBase):
         __test__ = True
 
         def __init__(self, *args):
@@ -167,8 +167,8 @@ def scheme_test_maker(dtype, odtype):
             self.odtype = odtype
             unittest.TestCase.__init__(self, *args)
 
-    tests.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
-    return tests
+    SchemeTests.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
+    return SchemeTests
 
 
 types = [

@@ -32,6 +32,8 @@ from ligo.gracedb.rest import GraceDb
 import pycbc
 from pycbc.io.gracedb import gracedb_tag_with_version, insert_gracedb_option_group
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 insert_gracedb_option_group(parser)
@@ -108,7 +110,7 @@ if set(labels) - set(allowed_labels):
 group_tag = "Test" if args.testing else "CBC"
 
 
-logging.info("Creating Kafka producer...")
+logger.info("Creating Kafka producer...")
 ca_bundle = certifi.where()
 producer = GraceDbKafkaProducer(
     bootstrap_servers=args.bootstrap_servers,
@@ -128,7 +130,7 @@ r = gracedb.create_event(
     http_fallback=True,
 ).json()
 
-logging.info("Uploaded event %s.", r["graceid"])
+logger.info("Uploaded event %s.", r["graceid"])
 
 # add info for tracking code version
 gracedb_tag_with_version(gracedb, r["graceid"])
@@ -151,7 +153,7 @@ def upload_file(upload_filename, displayname, comment, tag):
     """
     Helper function to upload files associated with the event.
     """
-    logging.info(
+    logger.info(
         "Uploading %s file %s to event %s.", displayname, upload_filename, r["graceid"]
     )
     gracedb.write_log(
@@ -192,4 +194,4 @@ if args.source_probabilities_plot:
         args.source_probabilities_plot, "", "Source probabilities plot upload", "pe"
     )
 
-logging.info("Done!")
+logger.info("Done!")

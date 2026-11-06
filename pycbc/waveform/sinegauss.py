@@ -80,9 +80,9 @@ def fd_sine_gaussian(amp, quality, central_frequency, fmin, fmax, delta_f):
         ** 2.0
     )
 
-    A_term = amp * (pi**0.5) / 2 * tau
+    a_term = amp * (pi**0.5) / 2 * tau
 
-    v[low_freq_first_idx:high_freq_first_idx] = A_term * numpy.exp(exp_term_1)
+    v[low_freq_first_idx:high_freq_first_idx] = a_term * numpy.exp(exp_term_1)
     # If the first term is already less than e**50 don't need the second
     # term at all ... It's often the case that the second term is not needed.
     if high_freq_second_idx > kmin:

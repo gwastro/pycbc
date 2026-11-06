@@ -26,7 +26,7 @@ lalframe = import_optional("lalframe")
 lalsimulation = import_optional("lalsimulation")
 
 
-logger = logging.getLogger("pycbc.results.versioning")
+logger = logging.getLogger(__name__)
 
 
 def get_library_version_info():
@@ -128,12 +128,12 @@ def get_code_version_numbers(executable_names, executable_files):
 
     """
     code_version_dict = {}
-    for exe_name, value in zip(executable_names, executable_files):
+    for exe_name, value in zip(executable_names, executable_files, strict=True):
         value = urllib.parse.urlparse(value)
         logger.info("Getting version info for %s", exe_name)
         version_string = None
         if value.scheme in ["gsiftp", "http", "https"]:
-            code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
+            code_version_dict[exe_name] = f"Using bundle downloaded from {value}"
         elif value.scheme == "singularity":
             txt = (
                 "Executable run from a singularity image. See config file "

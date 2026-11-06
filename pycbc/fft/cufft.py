@@ -77,12 +77,12 @@ def _get_inv_plan(itype, otype, outlen, batch=1):
     return theplan
 
 
-def fft(invec, outvec, prec, itype, otype):
+def fft(invec, outvec, prec, itype, otype):  # noqa: ARG001
     cuplan = _get_fwd_plan(invec.dtype, outvec.dtype, len(invec))
     cu_fft.fft(invec.data, outvec.data, cuplan)
 
 
-def ifft(invec, outvec, prec, itype, otype):
+def ifft(invec, outvec, prec, itype, otype):  # noqa: ARG001
     cuplan = _get_inv_plan(invec.dtype, outvec.dtype, len(outvec))
     cu_fft.ifft(invec.data, outvec.data, cuplan)
 

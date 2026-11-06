@@ -31,7 +31,7 @@ import os
 
 from pycbc.workflow.core import Executable
 
-logger = logging.getLogger("pycbc.workflow.versioning")
+logger = logging.getLogger(__name__)
 
 
 class VersioningExecutable(Executable):

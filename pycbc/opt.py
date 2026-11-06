@@ -23,7 +23,7 @@ import os
 import sys
 from collections import OrderedDict
 
-logger = logging.getLogger("pycbc.opt")
+logger = logging.getLogger(__name__)
 
 
 def get_l2_cache_size():
@@ -71,7 +71,7 @@ def insert_optimization_option_group(parser):
     )
 
 
-def verify_optimization_options(opt, parser):
+def verify_optimization_options(opt, parser):  # noqa: ARG001
     """
     Parses the CLI options, verifies that they are consistent and
     reasonable, and acts on them if they are
@@ -115,7 +115,7 @@ def verify_optimization_options(opt, parser):
         requested_cpus = opt.cpu_affinity
 
     if requested_cpus is not None:
-        command = "taskset -pc %s %d" % (requested_cpus, os.getpid())
+        command = f"taskset -pc {requested_cpus} {int(os.getpid())}"
         retcode = os.system(command)
 
         if retcode != 0:

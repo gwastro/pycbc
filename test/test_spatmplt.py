@@ -96,8 +96,8 @@ class TestSPAtmplt(unittest.TestCase):
                             self.assertAlmostEqual(1.0, o, places=4)
 
                             print(
-                                "checked m1: %s m2:: %s s1z: %s s2z: %s] overlap = %s, diff = %s"
-                                % (m1, m2, s1, s2, o, diff)
+                                f"checked m1: {m1} m2:: {m2} s1z: {s1} s2z: {s2}] "
+                                f"overlap = {o}, diff = {diff}"
                             )
 
 
@@ -211,7 +211,13 @@ class TestChirpTime(unittest.TestCase):
         pnutils.get_inspiral_tf passes spins through to the TaylorF2
         time-frequency track.
         """
-        kwargs = dict(tc=0.0, mass1=15.0, mass2=1.4, f_low=20.0, approximant="TaylorF2")
+        kwargs = {
+            "tc": 0.0,
+            "mass1": 15.0,
+            "mass2": 1.4,
+            "f_low": 20.0,
+            "approximant": "TaylorF2",
+        }
         t_aligned, _ = pnutils.get_inspiral_tf(spin1=0.8, spin2=0.0, **kwargs)
         t_anti, _ = pnutils.get_inspiral_tf(spin1=-0.8, spin2=0.0, **kwargs)
         t_nospin, _ = pnutils.get_inspiral_tf(spin1=0.0, spin2=0.0, **kwargs)

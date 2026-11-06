@@ -32,7 +32,7 @@ import logging
 
 from pycbc.io import get_file
 
-logger = logging.getLogger("pycbc.catalog.catalog")
+logger = logging.getLogger(__name__)
 
 # For the time being all quantities are the 1-d median value
 # FIXME with posteriors when available and we can just post-process that
@@ -43,8 +43,7 @@ base_lvc_url = "https://www.gwosc.org/eventapi/jsonfull/{}/"
 
 def lvk_catalogs():
     _catalog_source = "https://gwosc.org/eventapi/json/"
-    catalog_list = json.load(open(get_file(_catalog_source)))
-    return catalog_list
+    return json.load(open(get_file(_catalog_source)))
 
 
 def populate_catalogs():

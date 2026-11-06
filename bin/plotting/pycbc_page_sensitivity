@@ -18,6 +18,8 @@ from pycbc import conversions as conv
 from pycbc import sensitivity
 from pycbc.io.hdf import HFile
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -147,7 +149,7 @@ if args.integration_method == "mc" and args.limits_param is None:
 
 pycbc.init_logging(args.verbose)
 
-logging.info("Read in the data")
+logger.info("Read in the data")
 
 
 def get_spin(frame, inc, m1, m2, s1x, s1z, s2x, s2z):
@@ -296,14 +298,14 @@ for j in range(len(args.bins) - 1):
     c = next(color)
 
     # cycle over inclusive / exclusive significance if available
-    for sig_val, do_label, alpha in zip(fvalues, do_labels, alphas):
+    for sig_val, do_label, alpha in zip(fvalues, do_labels, alphas, strict=True):
         if sig_val[0] is None:
-            logging.info("Skipping exclusive significance")
+            logger.info("Skipping exclusive significance")
             continue
 
         left = float(args.bins[j])
         right = float(args.bins[j + 1])
-        logging.info("Injections between param values %5.2f and %5.2f" % (left, right))
+        logger.info("Injections between param values %5.2f and %5.2f", left, right)
 
         # Get distance of missed injections within parameter bin
         binm = numpy.logical_and(missed["param"] >= left, missed["param"] < right)
@@ -321,7 +323,7 @@ for j in range(len(args.bins) - 1):
 
         # Calculate each sensitive distance at a given significance threshold
         for x_val in x_values:
-            logging.info("Thresholding on significance at %5.2f" % x_val)
+            logger.info("Thresholding on significance at %5.2f", x_val)
             # Count found inj towards sensitivity if IFAR/stat exceeds threshold
             # or if FAP value is less than threshold
             if args.sig_type == "ifar" or args.sig_type == "stat":
@@ -404,9 +406,9 @@ for j in range(len(args.bins) - 1):
             x_values, reach - elow, reach + ehigh, facecolor=c, edgecolor=c, alpha=alpha
         )
         if label and args.hdf_out:
-            plotdict["data/%s" % label] = reach
-            plotdict["errorhigh/%s" % label] = ehigh
-            plotdict["errorlow/%s" % label] = elow
+            plotdict[f"data/{label}"] = reach
+            plotdict[f"errorhigh/{label}"] = ehigh
+            plotdict[f"errorlow/{label}"] = elow
 
 if args.hdf_out:
     outfile = HFile(args.hdf_out, "w")
@@ -438,18 +440,13 @@ plt.legend(loc="lower left")
 pycbc.results.save_fig_with_metadata(
     fig,
     args.output_file,
-    title="Sensitive %s vs %s: binned by %s using %s method"
-    % (
-        args.dist_type.title(),
-        args.sig_type.upper(),
-        args.bin_type,
-        args.integration_method,
-    ),
-    caption="Sensitive %s as a function of Significance:"
+    title=f"Sensitive {args.dist_type.title()} vs {args.sig_type.upper()}: binned by "
+    f"{args.bin_type} using {args.integration_method} method",
+    caption=f"Sensitive {args.dist_type.title()} as a function of Significance:"
     "Lighter lines represent the significance without"
     " including injections in their own background,"
     " while darker lines include each injection"
     " individually in the background. The integration"
-    " method used is based on %s." % (args.dist_type.title(), args.integration_method),
+    f" method used is based on {args.integration_method}.",
     cmd=" ".join(sys.argv),
 )

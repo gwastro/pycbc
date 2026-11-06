@@ -51,13 +51,15 @@ from pycbc.waveform import (
 )
 from pycbc.waveform import utils as wfutils
 
-logger = logging.getLogger("pycbc.inject.inject")
+logger = logging.getLogger(__name__)
 
 sim = libutils.import_optional("lalsimulation")
 
+# The lambdas look up the functions only when called: if lalsimulation is not
+# installed, sim is a stub that raises ImportError on any attribute access.
 injection_func_map = {
-    np.dtype(float32): lambda *args: sim.SimAddInjectionREAL4TimeSeries(*args),
-    np.dtype(float64): lambda *args: sim.SimAddInjectionREAL8TimeSeries(*args),
+    np.dtype(float32): lambda *args: sim.SimAddInjectionREAL4TimeSeries(*args),  # noqa: PLW0108
+    np.dtype(float64): lambda *args: sim.SimAddInjectionREAL8TimeSeries(*args),  # noqa: PLW0108
 }
 
 # Map parameter names used in pycbc to names used in the sim_inspiral
@@ -128,7 +130,7 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     logger.info("Injecting at %s, method is %s", tc, projection_method)
 
     # compute the detector response and add it to the strain
-    signal = detector.project_wave(
+    return detector.project_wave(
         hp_tapered,
         hc_tapered,
         ra,
@@ -137,7 +139,6 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
         method=projection_method,
         reference_time=tc,
     )
-    return signal
 
 
 def legacy_approximant_name(apx):
@@ -435,7 +436,7 @@ class _HDFInjectionSet(metaclass=ABCMeta):
         if len(parameters) == 0:
             numinj = 1
         else:
-            numinj = tuple(injvals.values())[0].size
+            numinj = next(iter(injvals.values())).size
         # add any static args in the file
         try:
             # ensure parameter names are string types
@@ -621,7 +622,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
                     "Be very sure that the injection file exactly matches "
                     "how the injections were pregenerated!"
                 )
-                logging.warning(warn_msg)
+                logger.warning(warn_msg)
         must_make_injections = generate_injections or (
             inj_filter_rejector and inj_filter_rejector.match_threshold
         )
@@ -1366,7 +1367,7 @@ class SGBurstInjectionSet:
         self.table = lsctables.SimBurstTable.get_table(self.indoc)
         self.extra_args = kwds
 
-    def apply(self, strain, detector_name, f_lower=None, distance_scale=1):
+    def apply(self, strain, detector_name, f_lower=None, distance_scale=1):  # noqa: ARG002
         """
         Add injections (as seen by a particular detector) to a time series.
 

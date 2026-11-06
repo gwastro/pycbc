@@ -1,6 +1,7 @@
 from pycbc.fft.fftw import set_measure_level
 
 set_measure_level(0)
+import argparse
 import unittest
 from math import cos, exp, pi, sin
 
@@ -9,7 +10,11 @@ from utils import parse_args_all_schemes, simple_exit
 
 from pycbc.filter import matched_filter_core
 from pycbc.types import Array, FrequencySeries, TimeSeries
-from pycbc.vetoes import autochisq_from_precomputed, make_frequency_series
+from pycbc.vetoes import (
+    SingleDetAutoChisq,
+    autochisq_from_precomputed,
+    make_frequency_series,
+)
 from pycbc.waveform import get_td_waveform
 
 _scheme, _context = parse_args_all_schemes("Auto Chi-squared Veto")
@@ -89,12 +94,12 @@ class TestAutochisquare(unittest.TestCase):
 
         # generate sin-gaussian signal
         time = np.arange(0, len(hp)) * self.del_t
-        Nby2 = int(len(hp) / 2)
+        half_len = int(len(hp) / 2)
         sngt = np.zeros(len(hp))
         for i in range(len(hp)):
             sngt[i] = (
                 9.0e-21
-                * exp(-((time[i] - time[Nby2]) ** 2) / self.Q)
+                * exp(-((time[i] - time[half_len]) ** 2) / self.Q)
                 * sin(self.om * time[i])
             )
 
@@ -112,7 +117,7 @@ class TestAutochisquare(unittest.TestCase):
         flow = self.low_frequency_cutoff
 
         with _context:
-            hautocor, hacorfr, hnrm = matched_filter_core(
+            hautocor, _, _ = matched_filter_core(
                 self.htilde,
                 self.htilde,
                 psd=psd,
@@ -121,7 +126,7 @@ class TestAutochisquare(unittest.TestCase):
             )
             hautocor = hautocor * float(np.real(1.0 / hautocor[0]))
 
-            snr, cor, nrm = matched_filter_core(
+            snr, _, nrm = matched_filter_core(
                 self.htilde,
                 sig_tilde,
                 psd=psd,
@@ -135,7 +140,7 @@ class TestAutochisquare(unittest.TestCase):
         snr = snr * nrm
 
         with _context:
-            dof, achisq = autochisq_from_precomputed(
+            _, achisq = autochisq_from_precomputed(
                 snr, snr, hacor, indx, stride=3, num_points=20
             )
 
@@ -157,6 +162,21 @@ class TestAutochisquare(unittest.TestCase):
     #    for i in range(1, len(achi_list)):
     #   self.assertTrue(achi_list[i,2] > 4.0)
 
+        with _context:
+            est = SingleDetAutoChisq(stride=3, num_points=20, twophase=True)
+            self.assertEqual(est.dof, 80)
+            vals, est_dof = est.values(
+                snr,
+                indx,
+                self.htilde,
+                psd,
+                1.0,
+                low_frequency_cutoff=flow,
+                high_frequency_cutoff=self.fmax,
+            )
+        self.assertEqual(est_dof, 80)
+        np.testing.assert_allclose(vals, achisq, rtol=1e-5)
+
     def test_sg(self):
         ### use a sin-gaussian as a signal
 
@@ -168,7 +188,7 @@ class TestAutochisquare(unittest.TestCase):
         flow = self.low_frequency_cutoff
 
         with _context:
-            hautocor, hacorfr, hnrm = matched_filter_core(
+            hautocor, _, _ = matched_filter_core(
                 self.htilde,
                 self.htilde,
                 psd=psd,
@@ -177,7 +197,7 @@ class TestAutochisquare(unittest.TestCase):
             )
             hautocor = hautocor * float(np.real(1.0 / hautocor[0]))
 
-            snr, cor, nrm = matched_filter_core(
+            snr, _, nrm = matched_filter_core(
                 self.htilde,
                 sig_tilde,
                 psd=psd,
@@ -192,7 +212,7 @@ class TestAutochisquare(unittest.TestCase):
         snr = snr * nrm
 
         with _context:
-            dof, achisq = autochisq_from_precomputed(
+            _, achisq = autochisq_from_precomputed(
                 snr, snr, hacor, indx, stride=3, num_points=20
             )
 
@@ -213,9 +233,61 @@ class TestAutochisquare(unittest.TestCase):
     #    for i in range(1, len(achi_list)):
     #   self.assertTrue(achi_list[i,2] > 2.e3)
 
+        with _context:
+            est = SingleDetAutoChisq(stride=3, num_points=20, twophase=False)
+            vals, est_dof = est.values(
+                snr,
+                indx,
+                self.htilde,
+                psd,
+                1.0,
+                low_frequency_cutoff=flow,
+                high_frequency_cutoff=self.fmax,
+            )
+        self.assertEqual(est_dof, 40)
+        self.assertTrue(np.all(vals > 6.8e3))
+
+
+class TestAutochisqOptions(unittest.TestCase):
+    def parse(self, args):
+        parser = argparse.ArgumentParser()
+        SingleDetAutoChisq.insert_option_group(parser)
+        return SingleDetAutoChisq.from_cli(parser.parse_args(args))
+
+    def test_options_reach_the_estimator(self):
+        # Each option has a value different from its default and from the
+        # other numerical options, so that a missing or swapped option fails
+        est = self.parse(
+            [
+                "--autochi-stride",
+                "2",
+                "--autochi-number-points",
+                "7",
+                "--autochi-onesided",
+                "left",
+                "--autochi-two-phase",
+                "--autochi-reverse-template",
+                "--autochi-max-valued",
+                "--autochi-max-valued-dof",
+                "9",
+            ]
+        )
+        self.assertTrue(est.do)
+        self.assertEqual(est.stride, 2)
+        self.assertEqual(est.num_points, 7)
+        self.assertEqual(est.one_sided, "left")
+        self.assertTrue(est.two_phase)
+        self.assertTrue(est.reverse_template)
+        self.assertTrue(est.take_maximum_value)
+        self.assertEqual(est.dof, 9)
+
+    def test_off_by_default(self):
+        self.assertFalse(self.parse([]).do)
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestAutochisquare))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestAutochisqOptions))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)

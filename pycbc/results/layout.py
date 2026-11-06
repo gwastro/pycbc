@@ -18,28 +18,31 @@
 import os.path
 from itertools import zip_longest
 
-
-def two_column_layout(path, cols, unique="", **kwargs):
+def two_column_layout(path, cols, unique="", filename=None, **kwargs):
     """
     Make a well layout in a two column format
 
     Parameters
     ----------
     path: str
-        Location to make the well html file
+        Directory to make the well html file in. Ignored if filename is
+        given.
     unique: str
         String to add to end of well name. Used if you want more than one well.
     cols: list of tuples
         The format of the items on the well result section. Each tuple
         contains the two files that are shown in the left and right hand
         side of a row in the well.html page.
-
+    filename: str, optional
+        If given, write directly to this path instead of constructing
+        '<path>/well<unique>.html'. The given name should still start
+        with 'well' for pycbc_make_html_page to render it inline.
     """
-    path = os.path.join(os.getcwd(), path, f"well{unique}.html")
+    if filename is None:
+        filename = os.path.join(os.getcwd(), path, f"well{unique}.html")
     from pycbc.results.render import render_workflow_html_template
 
-    render_workflow_html_template(path, "two_column.html", cols, **kwargs)
-
+    render_workflow_html_template(filename, "two_column.html", cols, **kwargs)
 
 def single_layout(path, files, **kwargs):
     """
@@ -95,7 +98,7 @@ class SectionNumber:
         self.num = {}
 
         for num, sec in enumerate(secs):
-            self.name[sec] = "%s._%s" % (num + 1, sec)
+            self.name[sec] = f"{num + 1}._{sec}"
             self.num[sec] = num
             self.count[sec] = 1
 
@@ -111,8 +114,7 @@ class SectionNumber:
             sec, subsec = path.split("/")
             subnum = self.count[sec]
             num = self.num[sec]
-            name = "%s/%s.%02d_%s" % (self.name[sec], num + 1, subnum, subsec)
+            name = f"{self.name[sec]}/{num + 1}.{int(subnum):02d}_{subsec}"
             self.count[sec] += 1
             self.name[path] = name
-        path = os.path.join(os.getcwd(), self.base, name)
-        return path
+        return os.path.join(os.getcwd(), self.base, name)

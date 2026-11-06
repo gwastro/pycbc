@@ -21,6 +21,9 @@
 #
 # =============================================================================
 #
+# GPU kernel notation (N is the correlation length passed to the kernels,
+# BS a block size).
+# ruff: noqa: N803, N806
 import numpy
 import pycuda.driver
 import pycuda.gpuarray
@@ -33,11 +36,7 @@ from pycuda.tools import context_dependent_memoize, dtype_to_ctype
 @context_dependent_memoize
 def get_accum_diff_sq_kernel(dtype_x, dtype_z):
     return ElementwiseKernel(
-        "%(tp_a)s *x,  %(tp_c)s *z"
-        % {
-            "tp_a": dtype_to_ctype(dtype_x),
-            "tp_c": dtype_to_ctype(dtype_z),
-        },
+        f"{dtype_to_ctype(dtype_x)} *x,  {dtype_to_ctype(dtype_z)} *z",
         "x[i] += norm(z[i]) ",
         "chisq_accum",
     )
@@ -227,7 +226,7 @@ def get_pchisq_fn(np, fuse_correlate=False):
     if np not in _pchisq_cache:
         nt = 256
         mod = SourceModule(chisqkernel.render(NT=nt, NP=np, fuse=fuse_correlate))
-        fn = mod.get_function("power_chisq_at_points_%s" % (np))
+        fn = mod.get_function(f"power_chisq_at_points_{np}")
         if fuse_correlate:
             fn.prepare("PPPI" + "f" * np + "PPPI")
         else:
@@ -243,7 +242,7 @@ def get_pchisq_fn_pow2(np, fuse_correlate=False):
     if np not in _pchisq_cache_pow2:
         nt = 256
         mod = SourceModule(chisqkernel_pow2.render(NT=nt, NP=np, fuse=fuse_correlate))
-        fn = mod.get_function("power_chisq_at_points_%s_pow2" % (np))
+        fn = mod.get_function(f"power_chisq_at_points_{np}_pow2")
         if fuse_correlate:
             fn.prepare("PPPI" + "I" * np + "PPPI")
         else:
@@ -264,7 +263,7 @@ def get_cached_bin_layout(bins):
         else:
             k = list(numpy.arange(s, e, BS / 2))
             kmin += k
-            kmax += k[1:] + [e]
+            kmax += [*k[1:], e]
             bv += [i] * len(k)
     bv = pycuda.gpuarray.to_gpu_async(numpy.array(bv, dtype=numpy.uint32))
     kmin = pycuda.gpuarray.to_gpu_async(numpy.array(kmin, dtype=numpy.uint32))
@@ -283,11 +282,15 @@ def shift_sum_points(num, N, arg_tuple):
         args += [corr.htilde.data.gpudata, corr.stilde.data.gpudata]
     else:
         args += [corr.data.gpudata]
-    args += (
-        [outp.gpudata, N]
-        + phase[0:num]
-        + [kmin.gpudata, kmax.gpudata, bv.gpudata, nbins]
-    )
+    args += [
+        outp.gpudata,
+        N,
+        *phase[0:num],
+        kmin.gpudata,
+        kmax.gpudata,
+        bv.gpudata,
+        nbins,
+    ]
     fn.prepared_call(*args)
     outp = outp[num * nbins :]
     phase = phase[num:]
@@ -307,11 +310,15 @@ def shift_sum_points_pow2(num, arg_tuple):
         args += [corr.htilde.data.gpudata, corr.stilde.data.gpudata]
     else:
         args += [corr.data.gpudata]
-    args += (
-        [outp.gpudata, N]
-        + points[0:num]
-        + [kmin.gpudata, kmax.gpudata, bv.gpudata, nbins]
-    )
+    args += [
+        outp.gpudata,
+        N,
+        *points[0:num],
+        kmin.gpudata,
+        kmax.gpudata,
+        bv.gpudata,
+        nbins,
+    ]
     fn.prepared_call(*args)
     outp = outp[num * nbins :]
     points = points[num:]

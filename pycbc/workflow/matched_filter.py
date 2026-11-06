@@ -30,15 +30,17 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 
 import logging
 import os
+from pathlib import Path
 
-from pycbc.workflow.core import FileList, make_analysis_dir
+from pycbc.workflow.core import FileList
 from pycbc.workflow.jobsetup import (
     multi_ifo_coherent_job_setup,
+    multi_ifo_job_setup,
     select_matchedfilter_class,
     sngl_ifo_job_setup,
 )
 
-logger = logging.getLogger("pycbc.workflow.matched_filter")
+logger = logging.getLogger(__name__)
 
 
 def setup_matchedfltr_workflow(
@@ -93,27 +95,18 @@ def setup_matchedfltr_workflow(
     if tags is None:
         tags = []
     logger.info("Entering matched-filtering setup module.")
-    make_analysis_dir(output_dir)
     cp = workflow.cp
 
     # Parse for options in .ini file
-    mfltrMethod = cp.get_opt_tags(
+    mfltr_method = cp.get_opt_tags(
         "workflow-matchedfilter", "matchedfilter-method", tags
     )
+    match_fltr_exe = Path(cp.get("executables", "inspiral")).name
 
     # Could have a number of choices here
-    if mfltrMethod == "WORKFLOW_INDEPENDENT_IFOS":
-        logger.info("Adding matched-filter jobs to workflow.")
-        inspiral_outs = setup_matchedfltr_dax_generated(
-            workflow,
-            science_segs,
-            datafind_outs,
-            tmplt_banks,
-            output_dir,
-            injection_file=injection_file,
-            tags=tags,
-        )
-    elif mfltrMethod == "WORKFLOW_MULTIPLE_IFOS":
+    if mfltr_method == "WORKFLOW_MULTIPLE_IFOS" and (
+        match_fltr_exe == "pycbc_multi_inspiral"
+    ):
         logger.info("Adding matched-filter jobs to workflow.")
         inspiral_outs = setup_matchedfltr_dax_generated_multi(
             workflow,
@@ -124,10 +117,22 @@ def setup_matchedfltr_workflow(
             injection_file=injection_file,
             tags=tags,
         )
+    elif mfltr_method in ["WORKFLOW_INDEPENDENT_IFOS", "WORKFLOW_MULTIPLE_IFOS"]:
+        logger.info("Adding matched-filter jobs to workflow.")
+        inspiral_outs = setup_matchedfltr_dax_generated(
+            workflow,
+            science_segs,
+            datafind_outs,
+            tmplt_banks,
+            output_dir,
+            injection_file=injection_file,
+            tags=tags,
+            multi_ifo=(mfltr_method == "WORKFLOW_MULTIPLE_IFOS"),
+        )
     else:
-        errMsg = "Matched filter method not recognized. Must be one of "
-        errMsg += "WORKFLOW_INDEPENDENT_IFOS or WORKFLOW_MULTIPLE_IFOS."
-        raise ValueError(errMsg)
+        err_msg = "Matched filter method not recognized. Must be one of "
+        err_msg += "WORKFLOW_INDEPENDENT_IFOS or WORKFLOW_MULTIPLE_IFOS."
+        raise ValueError(err_msg)
 
     logger.info("Leaving matched-filtering setup module.")
     return inspiral_outs
@@ -141,6 +146,7 @@ def setup_matchedfltr_dax_generated(
     output_dir,
     injection_file=None,
     tags=None,
+    multi_ifo=False,
 ):
     """
     Setup matched-filter jobs that are generated as part of the workflow.
@@ -170,6 +176,9 @@ def setup_matchedfltr_dax_generated(
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['BNSINJECTIONS'] or
         ['NOINJECTIONANALYSIS']. This will be used in output names.
+    multi_ifo : boolean, optional (default=False)
+        If True, set up multi-detector matched-filtering jobs across ``ifos``
+        using ``multi_ifo_job_setup``.
 
     Returns
     -------
@@ -194,6 +203,21 @@ def setup_matchedfltr_dax_generated(
 
     # Set up class for holding the banks
     inspiral_outs = FileList([])
+
+    if multi_ifo:
+        logger.info("Setting up matched-filtering for %s.", " ".join(sorted(ifos)))
+        return multi_ifo_job_setup(
+            workflow,
+            ifos,
+            inspiral_outs,
+            exe_class,
+            science_segs,
+            datafind_outs,
+            output_dir,
+            injection_file=injection_file,
+            parents=tmplt_banks,
+            tags=tags,
+        )
 
     # Matched-filtering is done independently for different ifos, but might not be!
     # If we want to use multi-detector matched-filtering or something similar to this

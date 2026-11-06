@@ -24,9 +24,9 @@
 
 import logging
 
-from pycbc.workflow.core import Executable, FileList, Node, make_analysis_dir
+from pycbc.workflow.core import Executable, FileList, Node
 
-logger = logging.getLogger("pycbc.workflow.dq")
+logger = logging.getLogger(__name__)
 
 
 class PyCBCBinTemplatesDQExecutable(Executable):
@@ -75,7 +75,6 @@ def setup_dq_reranking(
     tags=None,
 ):
     logger.info("Setting up dq reranking")
-    make_analysis_dir(output_dir)
     output_files = FileList()
     output_labels = []
     if tags is None:
@@ -107,7 +106,7 @@ def setup_dq_reranking(
         dq_name = dq_names[dq_label]
         dq_type = dq_types[dq_label]
 
-        dq_tags = tags + [dq_label]
+        dq_tags = [*tags, dq_label]
 
         # get triggers for this ifo
         ifo_insp = [insp for insp in insps if (insp.ifo == ifo)]

@@ -15,10 +15,12 @@ import pycbc.filter
 import pycbc.results
 import pycbc.types
 import pycbc.waveform
-from pycbc.fft.fftw import set_measure_level
+from pycbc.fft import ensure_fftw_planning_off
 from pycbc.io.hdf import HFile
 
-set_measure_level(0)
+logger = logging.getLogger(__name__)
+
+ensure_fftw_planning_off()
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -44,7 +46,7 @@ plt.grid()
 
 for psd_file in args.psd_files:
     f = HFile(psd_file, "r")
-    ifo = tuple(f.keys())[0]
+    ifo = next(iter(f.keys()))
     flow = f.attrs["low_frequency_cutoff"]
     keys = list(f[ifo + "/psds"].keys())
     start, end = f[ifo + "/start_time"][:], f[ifo + "/end_time"][:]
@@ -56,7 +58,7 @@ for psd_file in args.psd_files:
         delta_t = 1.0 / ((len(psd) - 1) * 2 * psd.delta_f)
         out = pycbc.types.zeros(len(psd), dtype=numpy.complex64)
 
-        for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
+        for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant, strict=True):
             htilde = pycbc.waveform.get_waveform_filter(
                 out,
                 mass1=m1,
@@ -78,9 +80,9 @@ for psd_file in args.psd_files:
             else:
                 ranges[wf_key] = [inspiral_range]
 
-    for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
+    for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant, strict=True):
         if len(args.approximant) > 1:
-            label = r"%s: $%sM_{\odot}-%sM_{\odot}$ (%s)" % (ifo, m1, m2, apx)
+            label = rf"{ifo}: ${m1}M_{{\odot}}-{m2}M_{{\odot}}$ ({apx})"
         else:
             label = str(ifo)
         wf_key = (m1, m2, apx)
@@ -96,7 +98,7 @@ for psd_file in args.psd_files:
 plt.legend(loc="best", fontsize="small")
 
 if len(args.approximant) == 1:
-    fig.suptitle(r"$%sM_{\odot}-%sM_{\odot}$ %s" % (m1, m2, apx))
+    fig.suptitle(rf"${m1}M_{{\odot}}-{m2}M_{{\odot}}$ {apx}")
 
 pycbc.results.save_fig_with_metadata(
     fig,
@@ -108,4 +110,4 @@ pycbc.results.save_fig_with_metadata(
     fig_kwds={"dpi": 200},
 )
 
-logging.info("Done!")
+logger.info("Done!")

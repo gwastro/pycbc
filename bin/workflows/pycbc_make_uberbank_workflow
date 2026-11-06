@@ -41,6 +41,8 @@ import pycbc.version
 import pycbc.workflow as wf
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 
+logger = logging.getLogger(__name__)
+
 # Boiler-plate stuff
 __author__ = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -135,7 +137,7 @@ class SbankDaxGenerator(wf.Executable):
             sfs = []
             for seed_file in seed_files:
                 sfs.append(seed_file.name)
-            config_overrides.append('workflow:seed-bank:"%s"' % " ".join(sfs))
+            config_overrides.append(f'workflow:seed-bank:"{" ".join(sfs)}"')
 
         if config_overrides:
             node.add_opt("--config-overrides", " ".join(config_overrides))
@@ -179,7 +181,7 @@ wf.makedir("daxes")
 ##############################################
 # Run the geom_bank workflow the first time  #
 ##############################################
-logging.info("Setting up the round of geometric bank jobs.")
+logger.info("Setting up the round of geometric bank jobs.")
 
 config_path = os.path.abspath("daxes" + "/" + "geom_workflow.ini")
 workflow.cp.write(open(config_path, "w"))
@@ -211,8 +213,8 @@ geom_node = geom_exe.create_node(
 workflow += geom_node
 
 # Verify files are the correct ones, they have unique extensions
-dax_file = [x for x in geom_node.output_files if x.name.endswith(".dax")][0]
-map_file = [x for x in geom_node.output_files if x.name.endswith(".map")][0]
+dax_file = next(x for x in geom_node.output_files if x.name.endswith(".dax"))
+map_file = next(x for x in geom_node.output_files if x.name.endswith(".map"))
 
 # NOTE: One can use workflow += dax_job, but this seems to miss a bunch of
 #       the stuff done below, and does not consider file management
@@ -244,7 +246,7 @@ config_file = wf.resolve_url_to_file(config_path)
 # a PyGRB uberbank covers only potentially EM-bright systems and therfore
 # skips this step.
 if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
-    logging.info("Setting up the (optional) first round of sbank jobs.")
+    logger.info("Setting up the (optional) first round of sbank jobs.")
     sbank_out_file_bbh = wf.File(
         sbank_exe.ifo_list,
         sbank_exe.name,
@@ -267,8 +269,8 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     workflow += sbank_node
 
     ofiles = sbank_node.output_files
-    dax_file = [x for x in ofiles if x.name.endswith(".dax")][0]
-    map_file = [x for x in ofiles if x.name.endswith(".map")][0]
+    dax_file = next(x for x in ofiles if x.name.endswith(".dax"))
+    map_file = next(x for x in ofiles if x.name.endswith(".map"))
     dax_job = SubWorkflow(dax_file, is_planned=False, _id="sbank_bbh")
     dax_job.set_subworkflow_properties(
         map_file, staging_site=workflow.staging_site, cache_file=workflow.cache_file
@@ -283,7 +285,7 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
 # Run the sbank workflow for the second time  #
 ###############################################
 
-logging.info("Setting up the final round of sbank jobs.")
+logger.info("Setting up the final round of sbank jobs.")
 sbank_out_file_final = wf.File(
     sbank_exe.ifo_list,
     sbank_exe.name,
@@ -315,8 +317,8 @@ sbank_node = sbank_exe.create_node(
 workflow += sbank_node
 
 ofiles = sbank_node.output_files
-dax_file = [x for x in ofiles if x.name.endswith(".dax")][0]
-map_file = [x for x in ofiles if x.name.endswith(".map")][0]
+dax_file = next(x for x in ofiles if x.name.endswith(".dax"))
+map_file = next(x for x in ofiles if x.name.endswith(".map"))
 dax_job = SubWorkflow(dax_file, is_planned=False, _id="sbank_final")
 dax_job.set_subworkflow_properties(
     map_file, staging_site=workflow.staging_site, cache_file=workflow.cache_file

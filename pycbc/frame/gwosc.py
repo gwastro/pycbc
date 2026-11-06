@@ -24,7 +24,7 @@ import logging
 from pycbc.frame import read_frame
 from pycbc.io import get_file
 
-logger = logging.getLogger("pycbc.frame.gwosc")
+logger = logging.getLogger(__name__)
 
 _GWOSC_URL = "https://www.gwosc.org/archive/links/%s/%s/%s/%s/json/"
 
@@ -163,7 +163,7 @@ def read_frame_gwosc(channels, start_time, end_time):
         urls[ifo] = gwosc_frame_urls(ifo, start_time, end_time)
         if len(urls[ifo]) == 0:
             raise ValueError(
-                "No data found for %s so we can't produce a time series" % ifo
+                f"No data found for {ifo} so we can't produce a time series"
             )
 
     fnames = {ifo: [] for ifo in ifos}

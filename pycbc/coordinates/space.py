@@ -45,12 +45,16 @@ from astropy.time import Time
 from scipy.optimize import fsolve
 from scipy.spatial.transform import Rotation
 
-logger = logging.getLogger("pycbc.coordinates.space")
+logger = logging.getLogger(__name__)
 
 # This constant makes sure LISA is behind the Earth by 19-23 degrees.
 # Making this a stand-alone constant will also make it callable by
 # the waveform plugin and PE config file. In the unit of 's'.
 TIME_OFFSET_20_DEGREES = 7365189.431698299
+
+# Angular frequency (rad/s) and radius (m) of LISA's orbit around the Sun.
+OMEGA_0 = 1.99098659277e-7
+R_ORBIT = au.value
 
 # "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" should be
 # more general for other detectors in the near future.
@@ -78,9 +82,7 @@ def rotation_matrix_ssb_to_lisa(alpha):
     r = Rotation.from_rotvec(
         [[0, 0, alpha], [0, -np.pi / 3, 0], [0, 0, -alpha]]
     ).as_matrix()
-    r_total = np.array(r[0]) @ np.array(r[1]) @ np.array(r[2])
-
-    return r_total
+    return np.array(r[0]) @ np.array(r[1]) @ np.array(r[2])
 
 
 def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):
@@ -110,8 +112,6 @@ def lisa_position_ssb(t_lisa, t0=TIME_OFFSET_20_DEGREES):
         In the unit of 'radian'.
 
     """
-    OMEGA_0 = 1.99098659277e-7
-    R_ORBIT = au.value
     alpha = np.mod(OMEGA_0 * (t_lisa + t0), 2 * np.pi)
     p = np.array(
         [[R_ORBIT * np.cos(alpha)], [R_ORBIT * np.sin(alpha)], [0]], dtype=object

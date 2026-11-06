@@ -9,6 +9,8 @@ import logging
 
 import pycbc.strain
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--output-file", required=True, help="Output plot")
@@ -47,19 +49,19 @@ try:
 except (RuntimeError, IndexError, ValueError):
     parser.error(f"--time-window input error. Got {args.time_window}. See help.")
 
-logging.info("Loading Strain")
+logger.info("Loading Strain")
 strain = pycbc.strain.from_cli(args, pycbc.DYN_RANGE_FAC)
 
 rem_corrupted = True
 if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
     rem_corrupted = False
 
-logging.info("Whitening")
+logger.info("Whitening")
 strain = strain.whiten(4, 4, remove_corrupted=rem_corrupted)
 
-logging.info("Slicing to specified region")
+logger.info("Slicing to specified region")
 strain_zoom = strain.time_slice(
     args.center_time - win_start, args.center_time + win_end
 )
-logging.info("Saving audio to %s", args.output_file)
+logger.info("Saving audio to %s", args.output_file)
 strain_zoom.save_to_wav(args.output_file)

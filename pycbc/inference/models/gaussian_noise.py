@@ -40,6 +40,8 @@ from .data_utils import (
     gate_overwhitened_data,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def catch_waveform_error(method):
     """
@@ -188,7 +190,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             self.all_ifodata_same_rate_length = True
         else:
             self.all_ifodata_same_rate_length = False
-            logging.info(
+            logger.info(
                 "You are using different data segment lengths or "
                 "sampling rates for different IFOs"
             )
@@ -706,7 +708,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         args.update(cls.extra_args_from_config(cp, "model", skip_args=ignore_args))
         # get ifo-specific instances of calibration model
         if cp.has_section("calibration"):
-            logging.info("Initializing calibration model")
+            logger.info("Initializing calibration model")
             recalib = {
                 ifo: Recalibrate.from_config(cp, ifo, section="calibration")
                 for ifo in opts.instruments
@@ -1021,7 +1023,7 @@ class GaussianNoise(BaseGaussianNoise):
         """Calculate a multi-model (signal) likelihood"""
         # Generate the waveforms for each submodel
         wfs = []
-        for m in models + [self]:
+        for m in [*models, self]:
             wfs.append(m.get_waveforms())
 
         # combine into a single waveform
@@ -1354,7 +1356,7 @@ def create_waveform_generator(
             raise ValueError(
                 "data must all have the same delta_t, delta_f, and start_time"
             )
-    waveform_generator = generator_class(
+    return generator_class(
         gen_function,
         epoch=start_time,
         variable_args=variable_params,
@@ -1365,4 +1367,3 @@ def create_waveform_generator(
         gates=gates,
         **static_params,
     )
-    return waveform_generator

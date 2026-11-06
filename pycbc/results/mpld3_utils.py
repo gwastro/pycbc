@@ -118,12 +118,14 @@ class MPLSlide(mpld3.plugins.PluginBase):
 class Tooltip(mpld3.plugins.PointHTMLTooltip):
     JAVASCRIPT = ""
 
-    def __init__(self, points, labels=None, hoffset=0, voffset=10, css=None):
+    # css is ignored: no extra CSS is used for these tooltips
+    def __init__(self, points, labels=None, hoffset=0, voffset=10, css=None):  # noqa: ARG002
         super().__init__(points, labels, hoffset, voffset, "")
 
 
 class LineTooltip(mpld3.plugins.LineHTMLTooltip):
     JAVASCRIPT = ""
 
-    def __init__(self, line, label=None, hoffset=0, voffset=10, css=None):
+    # css is ignored: no extra CSS is used for these tooltips
+    def __init__(self, line, label=None, hoffset=0, voffset=10, css=None):  # noqa: ARG002
         super().__init__(line, label, hoffset, voffset, "")

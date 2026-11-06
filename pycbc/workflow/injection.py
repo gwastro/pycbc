@@ -36,7 +36,6 @@ from pycbc.workflow.core import (
     Executable,
     FileList,
     Node,
-    make_analysis_dir,
     resolve_url_to_file,
 )
 from pycbc.workflow.jobsetup import (
@@ -44,12 +43,11 @@ from pycbc.workflow.jobsetup import (
     select_generic_executable,
 )
 
-logger = logging.getLogger("pycbc.workflow.injection")
+logger = logging.getLogger(__name__)
 
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
-    make_analysis_dir(out_dir)
 
     node = Executable(
         workflow.cp, "strip_injections", ifos=workflow.ifos, out_dir=out_dir, tags=tags
@@ -118,13 +116,13 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir, tags
 
     opt_snr_split_files = []
     for i in range(factor):
-        group_str = "%s/%s" % (i, factor)
+        group_str = f"{i}/{factor}"
         opt_snr_exe = PyCBCOptimalSNRExecutable(
             workflow.cp,
             "optimal_snr",
             ifos=workflow.ifos,
             out_dir=out_dir,
-            tags=tags + [str(i)],
+            tags=[*tags, str(i)],
         )
         opt_snr_exe.update_current_retention_level(Executable.INTERMEDIATE_PRODUCT)
         node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files, group_str)
@@ -211,7 +209,6 @@ def setup_injection_workflow(
     if tags is None:
         tags = []
     logger.info("Entering injection module.")
-    make_analysis_dir(output_dir)
 
     # Get full analysis segment for output file naming
     full_segment = workflow.analysis_time
@@ -223,7 +220,7 @@ def setup_injection_workflow(
 
     for section in workflow.cp.get_subsections(inj_section_name):
         inj_tag = section.upper()
-        curr_tags = tags + [inj_tag]
+        curr_tags = [*tags, inj_tag]
 
         # Parse for options in ini file
         injection_method = workflow.cp.get_opt_tags(
@@ -265,7 +262,7 @@ def setup_injection_workflow(
             inj_files.append(curr_file)
         else:
             err = "Injection method must be one of IN_WORKFLOW, "
-            err += "AT_RUNTIME or PREGENERATED. Got %s." % (injection_method)
+            err += f"AT_RUNTIME or PREGENERATED. Got {injection_method}."
             raise ValueError(err)
 
         inj_tags.append(inj_tag)

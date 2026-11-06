@@ -43,6 +43,8 @@ from pycbc.strain import (
 )
 from pycbc.types import MultiDetOptionAction
 
+logger = logging.getLogger(__name__)
+
 
 def strain_from_cli_multi_ifos(*args, **kwargs):
     """
@@ -332,7 +334,7 @@ def detectors_with_valid_data(
         pad_data = dict.fromkeys(detectors, 0)
     dets_with_data = {}
     for det in detectors:
-        logging.info("Checking that %s has valid data in the requested segment", det)
+        logger.info("Checking that %s has valid data in the requested segment", det)
         try:
             pad = pad_data[det]
             start, end = check_validtimes(
@@ -342,7 +344,7 @@ def detectors_with_valid_data(
         except NoValidDataError as e:
             if err_on_missing_detectors:
                 raise e
-            logging.warning(
+            logger.warning(
                 "WARNING: Detector %s will not be used in "
                 "the analysis, as it does not have "
                 "continuous valid data that spans the "
@@ -404,7 +406,7 @@ def data_opts_from_config(cp, section, filter_flow):
     # parse the options
     opts = parser.parse_args(optstr.split())
     # figure out the times to use
-    logging.info("Determining analysis times to use")
+    logger.info("Determining analysis times to use")
     opts.trigger_time = int(opts.trigger_time)
     gps_start = opts.analysis_start_time.copy()
     gps_end = opts.analysis_end_time.copy()
@@ -413,7 +415,7 @@ def data_opts_from_config(cp, section, filter_flow):
         gps_end[det] += opts.trigger_time
         if opts.psd_inverse_length[det] is not None:
             pad = int(numpy.ceil(opts.psd_inverse_length[det] / 2))
-            logging.info(
+            logger.info(
                 "Padding %s analysis start and end times by %d "
                 "(= psd-inverse-length/2) seconds to "
                 "account for PSD wrap around effects.",
@@ -528,7 +530,7 @@ def data_from_cli(
     # get strain time series to use for PSD estimation
     # if user has not given the PSD time options then use same data as analysis
     if opts.psd_start_time and opts.psd_end_time:
-        logging.info("Will generate a different time series for PSD estimation")
+        logger.info("Will generate a different time series for PSD estimation")
         if check_for_valid_times:
             psd_times = detectors_with_valid_data(
                 instruments,
@@ -561,7 +563,7 @@ def data_from_cli(
                 strain_from_cli_multi_ifos(opts, [det], precision="double")
             )
         # apply any gates
-        logging.info("Applying gates to PSD data")
+        logger.info("Applying gates to PSD data")
         psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
         # check that there aren't nans in the psd data
         check_for_nans(psd_strain_dict)
@@ -658,7 +660,7 @@ def gate_overwhitened_data(stilde_dict, psd_dict, gates):
         applied after overwhitening. The returned data is not overwhitened.
 
     """
-    logging.info("Applying gates to overwhitened data")
+    logger.info("Applying gates to overwhitened data")
     # overwhiten the data
     out = {}
     for det in gates:

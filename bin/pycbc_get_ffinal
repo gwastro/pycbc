@@ -38,9 +38,9 @@ parser.add_argument(
     required=True,
     help=(
         "What approximant to use to generate the "
-        "waveform(s). Options are: TD approximants: %s."
-        % ", ".join(waveform.td_approximants())
-        + ". FD approximants: %s." % ", ".join(waveform.fd_approximants())
+        "waveform(s). Options are: TD approximants: "
+        f"{', '.join(waveform.td_approximants())}."
+        f". FD approximants: {', '.join(waveform.fd_approximants())}."
     ),
     choices=appx_options,
 )
@@ -163,8 +163,8 @@ else:
 if fd_approx and opts.segment_length is None:
     raise ValueError("FD approximants require a segment-length")
 seg_length = opts.segment_length
-wFmin = opts.f_min
-if not fd_approx and wFmin >= min_sample_rate / 2.0:
+f_min = opts.f_min
+if not fd_approx and f_min >= min_sample_rate / 2.0:
     raise ValueError("f-min must be < half the sample-rate")
 phi0 = 0.0
 
@@ -200,7 +200,7 @@ if opts.verbose and infile is not None:
 for cache_id, tmplt in enumerate(sngl_insp_table):
     if opts.verbose and infile is not None:
         print(
-            "Template %i/%i\r" % (cache_id + 1, len(sngl_insp_table)),
+            f"Template {cache_id + 1}/{len(sngl_insp_table)}\r",
             end=" ",
             file=sys.stdout,
         )
@@ -211,7 +211,7 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
             hplus, hcross = waveform.get_fd_waveform(
                 approximant=opts.approximant,
                 delta_f=1.0 / seg_length,
-                f_lower=wFmin,
+                f_lower=f_min,
                 **tmplt,
             )
         else:
@@ -219,7 +219,7 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
                 template=tmplt,
                 approximant=opts.approximant,
                 delta_f=1.0 / seg_length,
-                f_lower=wFmin,
+                f_lower=f_min,
             )
 
         freq = hplus.delta_f * numpy.nonzero(abs(hplus.data))[0][-1]
@@ -234,7 +234,7 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
                     hplus, hcross = waveform.get_td_waveform(
                         approximant=opts.approximant,
                         delta_t=1.0 / sample_rate,
-                        f_lower=wFmin,
+                        f_lower=f_min,
                         **tmplt,
                     )
                 else:
@@ -242,14 +242,14 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
                         template=tmplt,
                         approximant=opts.approximant,
                         delta_t=1.0 / sample_rate,
-                        f_lower=wFmin,
+                        f_lower=f_min,
                     )
                 # success break
                 success = True
             except:
                 sample_rate *= 2
                 if sample_rate > max_sample_rate:
-                    err_msg = "Unable to generate template %i;" % (cache_id)
+                    err_msg = f"Unable to generate template {cache_id};"
                     err_msg += " try increasing max sample rate"
                     raise ValueError(err_msg)
 
@@ -263,9 +263,9 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
         freq = waveform.frequency_from_polarizations(hplus, hcross).max()
 
     if infile is None:
-        print("f Final: %f Hz" % (freq), file=sys.stdout)
+        print(f"f Final: {freq:f} Hz", file=sys.stdout)
         if not fd_approx:
-            print("Duration: %f s" % (hplus.duration), file=sys.stdout)
+            print(f"Duration: {hplus.duration:f} s", file=sys.stdout)
     else:
         sngl_insp_table[cache_id].f_final = freq
 

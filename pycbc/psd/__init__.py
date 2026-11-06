@@ -35,6 +35,8 @@ from pycbc.types import (
     required_opts_multi_ifo,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def from_cli(
     opt,
@@ -432,8 +434,8 @@ def insert_psd_option_group_multi_ifo(parser):
         nargs="+",
         action=MultiDetOptionAction,
         metavar="IFO:MODEL",
-        help="Get PSD from given analytical model. "
-        "Choose from %s" % (", ".join(get_psd_model_list()),),
+        help="Get PSD from given analytical model. Choose from "
+        f"{', '.join(get_psd_model_list())}",
     )
     psd_options.add_argument(
         "--psd-extra-args",
@@ -752,7 +754,7 @@ def generate_segment_psds(
     if opt.psd_num_segments is None:
         num_segments = max(int(input_data_len // seg_stride) - 1, 1)
         if num_segments < 10:
-            logging.warning(
+            logger.warning(
                 "Only %d Welch segment(s) fit in the %.0fs of data available "
                 "for PSD estimation; the PSD estimate will be noisy. Provide "
                 "more data or set --psd-num-segments explicitly.",
@@ -771,10 +773,10 @@ def generate_segment_psds(
 
     if input_data_len < psd_data_len:
         raise ValueError(
-            "Input data (%.0fs) is shorter than the data needed to estimate a "
+            f"Input data ({input_data_len / sample_rate:.0f}s) is shorter than the "
+            "data needed to estimate a "
             "PSD ((psd-num-segments - 1) * psd-segment-stride + "
-            "psd-segment-length = %.0fs)."
-            % (input_data_len / sample_rate, psd_data_len / sample_rate)
+            f"psd-segment-length = {psd_data_len / sample_rate:.0f}s)."
         )
 
     cache = {}
@@ -818,7 +820,7 @@ def generate_segment_psds(
     if uncovered:
         epoch = float(gwstrain.start_time)
         a0, a1, p0, p1 = uncovered[0]
-        logging.warning(
+        logger.warning(
             "%d of %d analysis segment(s) are not fully covered by the data "
             "used to estimate their PSD, so the matched-filter SNR near the "
             "uncovered edge(s) will be slightly over-estimated. Increase "

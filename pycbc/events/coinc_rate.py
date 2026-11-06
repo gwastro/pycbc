@@ -17,7 +17,7 @@ import numpy
 
 import pycbc.detector
 
-logger = logging.getLogger("pycbc.events.coinc_rate")
+logger = logging.getLogger(__name__)
 
 
 def multiifo_noise_lograte(log_rates, slop):
@@ -44,7 +44,7 @@ def multiifo_noise_lograte(log_rates, slop):
     expected_log_rates = {}
 
     # Order of ifos must be stable in output dict keys, so sort them
-    ifos = sorted(list(log_rates.keys()))
+    ifos = sorted(log_rates.keys())
     ifostring = " ".join(ifos)
 
     # Calculate coincidence for all-ifo combination

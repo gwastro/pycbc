@@ -42,6 +42,8 @@ from pycbc.types import (
     zeros,
 )
 
+logger = logging.getLogger(__name__)
+
 BACKEND_PREFIX = "pycbc.vetoes.chisq_"
 
 
@@ -114,17 +116,19 @@ def power_chisq_bins(
 
 @schemed(BACKEND_PREFIX)
 def chisq_accum_bin(chisq, q):
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 @schemed(BACKEND_PREFIX)
 def shift_sum(v1, shifts, bins):
     """Calculate the time shifted sum of the FrequencySeries"""
-    err_msg = "This function is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
+    raise NotImplementedError(
+        "This function is a stub that should be overridden using the "
+        "scheme. You shouldn't be seeing this error!"
+    )
 
 
 def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
@@ -387,7 +391,33 @@ class SingleDetPowerChisq:
         safe_dict.update(row.__dict__)
         safe_dict.update(math.__dict__)
         safe_dict.update(pycbc.pnutils.__dict__)
-        return eval(arg, {"__builtins__": None}, safe_dict)
+        return eval(str(arg), {"__builtins__": None}, safe_dict)  # noqa: S307
+
+    @staticmethod
+    def insert_option_group(parser):
+        """Add the power chisq options to an argument parser."""
+        group = parser.add_argument_group("Power chisq")
+        group.add_argument(
+            "--chisq-snr-threshold",
+            type=float,
+            help="Minimum SNR to calculate the power chisq",
+        )
+        group.add_argument(
+            "--chisq-bins",
+            default=0,
+            help="Number of frequency bins to use for power "
+            "chisq. Specify an integer for a constant "
+            "number of bins, or a function of template "
+            "attributes. Math functions are allowed, ex. "
+            "'10./math.sqrt((params.mass1+params.mass2)"
+            "/100.)'. Non-integer values will be rounded "
+            "down.",
+        )
+
+    @classmethod
+    def from_cli(cls, args):
+        """Create the power chisq from the options of insert_option_group."""
+        return cls(num_bins=args.chisq_bins, snr_threshold=args.chisq_snr_threshold)
 
     def cached_chisq_bins(self, template, psd):
         from pycbc.opt import LimitedSizeDict
@@ -439,7 +469,7 @@ class SingleDetPowerChisq:
             if self.snr_threshold:
                 above = abs(snrv * snr_norm) > self.snr_threshold
                 num_above = above.sum()
-                logging.info("%s above chisq activation threshold" % num_above)
+                logger.info("%s above chisq activation threshold", num_above)
                 above_indices = indices[above]
                 above_snrv = snrv[above]
                 chisq_out = numpy.zeros(len(indices), dtype=numpy.float32)
@@ -526,7 +556,7 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
             if self.snr_threshold:
                 above = abs(snrv) > self.snr_threshold
                 num_above = above.sum()
-                logging.info("%s above chisq activation threshold" % num_above)
+                logger.info("%s above chisq activation threshold", num_above)
                 above_indices = indices[above]
                 above_snrv = snrv[above]
                 u_vals = u_vals[above]

@@ -31,7 +31,7 @@ from pycbc.io import FieldArray
 from pycbc.libutils import import_optional
 from pycbc.types import angle_as_radians
 
-logger = logging.getLogger("pycbc.distributions.sky_location")
+logger = logging.getLogger(__name__)
 
 
 class UniformSky(angular.UniformSolidAngle):
@@ -50,7 +50,7 @@ class UniformSky(angular.UniformSolidAngle):
 
     def to_uniform_patch(self, coverage):
         if coverage < 1:
-            logging.warning(
+            logger.warning(
                 "Attempt to convert UniformSky to a uniform patch assumes 100% coverage"
             )
         return self
@@ -152,7 +152,7 @@ class UniformDiskSky:
 
     def to_uniform_patch(self, coverage):
         if coverage < 1:
-            logging.warning(
+            logger.warning(
                 "Attempt to convert UniformDiskSky to a "
                 "uniform patch assumes 100% coverage"
             )
@@ -381,7 +381,7 @@ class HealpixSky:
         non_zero_ind = numpy.flatnonzero(uniform_patch.pix_probs)
         dtype = numpy.dtype([("index", numpy.ndarray), ("prob", numpy.float64)])
         prob = uniform_patch.pix_probs[non_zero_ind]
-        ind_prob = numpy.array(list(zip(non_zero_ind, prob)), dtype=dtype)
+        ind_prob = numpy.array(list(zip(non_zero_ind, prob, strict=True)), dtype=dtype)
         ind_prob_sorted = numpy.sort(ind_prob, order="prob")
         prob = numpy.sort(prob)
         ind_prob_rev_sorted = ind_prob_sorted[::-1]

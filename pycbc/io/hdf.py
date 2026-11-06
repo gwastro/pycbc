@@ -22,7 +22,7 @@ from pycbc.io.ligolw import (
     return_search_summary,
 )
 
-logger = logging.getLogger("pycbc.io.hdf")
+logger = logging.getLogger(__name__)
 
 
 class HGroup(h5py.Group):
@@ -45,7 +45,7 @@ class HGroup(h5py.Group):
         try:
             return super().create_dataset(name, *args, **kwds, fletcher32=True)
         except (ValueError, TypeError):
-            logging.debug(
+            logger.debug(
                 "Could not create a dataset with fletcher32, falling back to default"
             )
             return super().create_dataset(name, *args, **kwds)
@@ -226,7 +226,7 @@ class HFile(HGroup, h5py.File):
 
             if return_data:
                 # Store the dataset results that pass the function
-                for arg, part in zip(args, partial):
+                for arg, part in zip(args, partial, strict=True):
                     data[arg].append(part[keep])
 
             i += chunksize
@@ -304,7 +304,7 @@ class DictArray:
         return self.__class__(data=data)
 
     def __len__(self):
-        return len(self.data[tuple(self.data.keys())[0]])
+        return len(self.data[next(iter(self.data.keys()))])
 
     def __add__(self, other):
         if self.data == {}:
@@ -435,16 +435,16 @@ class StatmapData(DictArray):
         super().save(outname)
         with HFile(outname, "w") as f:
             for key in self.seg.keys():
-                f["segments/%s/start" % key] = self.seg[key]["start"][:]
-                f["segments/%s/end" % key] = self.seg[key]["end"][:]
+                f[f"segments/{key}/start"] = self.seg[key]["start"][:]
+                f[f"segments/{key}/end"] = self.seg[key]["end"][:]
 
 
 class MultiifoStatmapData(StatmapData):
     def __init__(self, data=None, seg=None, attrs=None, files=None, ifos=None):
         groups = ["decimation_factor", "stat", "template_id", "timeslide_id"]
         for ifo in ifos:
-            groups += ["%s/time" % ifo]
-            groups += ["%s/trigger_id" % ifo]
+            groups += [f"{ifo}/time"]
+            groups += [f"{ifo}/trigger_id"]
 
         super().__init__(data=data, files=files, groups=groups, attrs=attrs, seg=seg)
 
@@ -461,8 +461,8 @@ class MultiifoStatmapData(StatmapData):
         pivot_ifo = self.attrs["pivot"]
         fixed_ifo = self.attrs["fixed"]
         if (
-            len(self.data["%s/time" % pivot_ifo]) == 0
-            or len(self.data["%s/time" % fixed_ifo]) == 0
+            len(self.data[f"{pivot_ifo}/time"]) == 0
+            or len(self.data[f"{fixed_ifo}/time"]) == 0
         ):
             return self
         from pycbc.events import cluster_coincs
@@ -470,8 +470,8 @@ class MultiifoStatmapData(StatmapData):
         interval = self.attrs["timeslide_interval"]
         cid = cluster_coincs(
             self.stat,
-            self.data["%s/time" % pivot_ifo],
-            self.data["%s/time" % fixed_ifo],
+            self.data[f"{pivot_ifo}/time"],
+            self.data[f"{fixed_ifo}/time"],
             self.timeslide_id,
             interval,
             window,
@@ -765,7 +765,7 @@ class SingleDetTriggers:
 
     def checkbank(self, param):
         if self.bank == {}:
-            return RuntimeError("Can't get %s values without a bank file" % param)
+            return RuntimeError(f"Can't get {param} values without a bank file")
 
     def trig_dict(self):
         """Returns dict of the masked trigger values"""
@@ -1080,12 +1080,12 @@ class SingleDetTriggers:
         Read columns while applying the mask
         """
         # Fiducial value that seems to work, not extensively tuned.
-        MFRAC = 0.3
+        mfrac = 0.3
 
         # If the mask accesses few enough elements then directly use it
         # This can be slower than reading in all the elements if most of them
         # will be read.
-        if isinstance(self.mask, list) or self.mask_size < (self.ntriggers * MFRAC):
+        if isinstance(self.mask, list) or self.mask_size < (self.ntriggers * mfrac):
             return self.trigs[cname][self.mask]
 
         # We have a lot of elements to read so we resort to readin the entire
@@ -1126,7 +1126,7 @@ class ForegroundTriggers:
                     curr_ifo = curr_dat.group_key
                     self.sngl_files[curr_ifo] = curr_dat
 
-        if not all([ifo in self.sngl_files.keys() for ifo in self.ifos]):
+        if not all(ifo in self.sngl_files.keys() for ifo in self.ifos):
             print(f"sngl_files: {sngl_files}")
             print(f"self.ifos: {self.ifos}")
             raise RuntimeError(
@@ -1242,8 +1242,9 @@ class ForegroundTriggers:
 
     def get_end_time(self):
         times_gen = (self.get_coincfile_array(f"{ifo}/time") for ifo in self.ifos)
-        ref_times = np.array([mean_if_greater_than_zero(t)[0] for t in zip(*times_gen)])
-        return ref_times
+        return np.array(
+            [mean_if_greater_than_zero(t)[0] for t in zip(*times_gen, strict=True)]
+        )
 
     def get_ifos(self):
         """
@@ -1261,8 +1262,7 @@ class ForegroundTriggers:
         for ifo in self.ifos:
             ifo_trigs = np.where(self.get_coincfile_array(ifo + "/time") < 0, "-", ifo)
             ifo_or_minus.append(ifo_trigs)
-        ifos_list = [list(trig[trig != "-"]) for trig in iter(np.array(ifo_or_minus).T)]
-        return ifos_list
+        return [list(trig[trig != "-"]) for trig in iter(np.array(ifo_or_minus).T)]
 
     def to_coinc_xml_object(self, file_name):
         outdoc = ligolw.Document()
@@ -1521,7 +1521,8 @@ class ForegroundTriggers:
         ]
         # Combine the ifo letters to make a single string per event
         triggered_detectors = [
-            "".join(triggered).encode("ascii") for triggered in zip(*triggered_matrix)
+            "".join(triggered).encode("ascii")
+            for triggered in zip(*triggered_matrix, strict=True)
         ]
         ofd.create_dataset("trig", data=triggered_detectors, dtype="<S3")
 
@@ -1535,7 +1536,7 @@ class ForegroundTriggers:
         # Combine the ifo letters to make a single string per event
         active_detectors = [
             "".join(active_at_time).encode("ascii")
-            for active_at_time in zip(*active_matrix)
+            for active_at_time in zip(*active_matrix, strict=True)
         ]
         ofd.create_dataset("obs", data=active_detectors, dtype="<S3")
 
@@ -1554,7 +1555,7 @@ class ReadByTemplate:
     ):
         self.filename = filename
         self.file = HFile(filename, "r")
-        self.ifo = ifo if ifo is not None else tuple(self.file.keys())[0]
+        self.ifo = ifo if ifo is not None else next(iter(self.file.keys()))
         self.valid = None
         self.bank = HFile(bank, "r") if bank else {}
         self.segment_name = segment_name
@@ -1565,14 +1566,14 @@ class ReadByTemplate:
 
         # Determine the segments which define the boundaries of valid times
         # to use triggers
-        key = "%s/search/" % self.ifo
+        key = f"{self.ifo}/search/"
         s, e = self.file[key + "start_time"][:], self.file[key + "end_time"][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()
         if segment_name is None:
             segment_name = []
         if veto_files is None:
             veto_files = []
-        for vfile, name in zip(veto_files, segment_name):
+        for vfile, name in zip(veto_files, segment_name, strict=True):
             veto_segs = veto.select_segments_by_definer(
                 vfile, ifo=self.ifo, segment_name=name
             )
@@ -1616,8 +1617,8 @@ class ReadByTemplate:
             The requested column of data
 
         """
-        ref = self.file["%s/%s_template" % (self.ifo, col)][num]
-        return self.file["%s/%s" % (self.ifo, col)][ref]
+        ref = self.file[f"{self.ifo}/{col}_template"][num]
+        return self.file[f"{self.ifo}/{col}"][ref]
 
     def set_template(self, num):
         """
@@ -1657,8 +1658,7 @@ class ReadByTemplate:
         # Calculate the trigger id by adding the relative offset in self.keep
         # to the absolute beginning index of this templates triggers stored
         # in 'template_boundaries'
-        trigger_id = self.keep + self.file["%s/template_boundaries" % self.ifo][num]
-        return trigger_id
+        return self.keep + self.file[f"{self.ifo}/template_boundaries"][num]
 
     def __getitem__(self, col):
         """
@@ -1682,8 +1682,7 @@ class ReadByTemplate:
                 "template to read data from"
             )
         data = self.get_data(col, self.template_num)
-        data = data[self.keep] if self.valid else data
-        return data
+        return data[self.keep] if self.valid else data
 
 
 chisq_choices = [
@@ -1755,7 +1754,7 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
     elif chisq_choice == "max_bank_cont_trad":
         chisq = np.maximum(np.maximum(red_bank_chisq, red_cont_chisq), red_trad_chisq)
     else:
-        err_msg = "Do not recognize --chisq-choice %s" % chisq_choice
+        err_msg = f"Do not recognize --chisq-choice {chisq_choice}"
         raise ValueError(err_msg)
     return chisq
 
@@ -1795,7 +1794,7 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
         elif isinstance(item, dict):
             recursively_save_dict_contents_to_group(h5file, path + key + "/", item)
         else:
-            raise ValueError("Cannot save %s type" % type(item))
+            raise ValueError(f"Cannot save {type(item)} type")
 
 
 def load_hdf5_to_dict(h5file, path):
@@ -1820,7 +1819,7 @@ def load_hdf5_to_dict(h5file, path):
         elif isinstance(item, h5py.Group):
             dic[key] = load_hdf5_to_dict(h5file, path + key + "/")
         else:
-            raise ValueError("Cannot load %s type" % type(item))
+            raise ValueError(f"Cannot load {type(item)} type")
     return dic
 
 

@@ -33,7 +33,7 @@ import numpy as np
 from pycbc import distributions, transforms
 from pycbc.types.config import InterpolatingConfigParser
 
-logger = logging.getLogger("pycbc.distributions.utils")
+logger = logging.getLogger(__name__)
 
 
 def prior_from_config(cp, prior_section="prior"):

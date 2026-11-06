@@ -41,7 +41,7 @@ from pycbc import DYN_RANGE_FAC, waveform
 from pycbc.filter import matched_filter_core
 from pycbc.types import zeros
 
-logger = logging.getLogger("pycbc.live.snr_optimizer")
+logger = logging.getLogger(__name__)
 
 try:
     import pyswarms as ps
@@ -59,7 +59,7 @@ Nfeval = 0
 start_time = time.time()
 
 
-def callback_func(Xi, convergence=0):
+def callback_func(xk, convergence=0):  # noqa: ARG001
     global Nfeval
     logger.info("Currently at %d %s", Nfeval, convergence)
     # Time out if the optimization takes longer than 6 minutes
@@ -152,7 +152,7 @@ def compute_network_snr_core(
         return -numpy.inf, {}
 
     if not hasattr(htilde, "params"):
-        htilde.params = dict(mass1=mass1, mass2=mass2, spin1z=v[2], spin2z=v[3])
+        htilde.params = {"mass1": mass1, "mass2": mass2, "spin1z": v[2], "spin2z": v[3]}
     if not hasattr(htilde, "end_idx"):
         htilde.end_idx = int(f_end / htilde.delta_f)
     htilde.approximant = approximant
@@ -223,7 +223,7 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
     return results.x
 
 
-def optimize_shgo(bounds, cli_args, extra_args, initial_point):  # pylint: disable=unused-argument
+def optimize_shgo(bounds, cli_args, extra_args, initial_point):  # pylint: disable=unused-argument  # noqa: ARG001
     bounds = [bounds["mchirp"], bounds["eta"], bounds["spin1z"], bounds["spin2z"]]
     results = shgo(
         compute_minus_network_snr,
@@ -330,7 +330,7 @@ option_dict = {
 def insert_snr_optimizer_options(parser):
     opt_opt_group = parser.add_argument_group("SNR optimizer configuration options.")
     # Option to choose which optimizer to use:
-    optimizer_choices = sorted(list(option_dict.keys()))
+    optimizer_choices = sorted(option_dict.keys())
     opt_opt_group.add_argument(
         "--snr-opt-method",
         default="differential_evolution",

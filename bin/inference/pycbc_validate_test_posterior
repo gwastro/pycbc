@@ -59,7 +59,7 @@ fig, axs = plt.subplots(1, nparam, figsize=[6 * nparam, 4], dpi=100)
 
 result = d1.read_samples(model.variable_params)
 failed = False
-for param, ax in zip(model.variable_params, axs):
+for param, ax in zip(model.variable_params, axs, strict=True):
     rpart = numpy.random.choice(result[param], replace=False, size=args.ind_samples)
     kv, pvalue = ks_2samp(ref[param], rpart)
     print(f"{param}, p-value={pvalue:.3f}")

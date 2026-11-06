@@ -139,9 +139,10 @@ if h_inc_back_num > h_iterations:
     ax.set_ylim(0, 1)
 
     output_message = (
-        "No more foreground events louder than all background\n"
-        "at this removal level.\nAttempted to show %d "
-        "removal(s),\nbut only %d removal(s) done." % (h_inc_back_num, h_iterations)
+        "No more foreground events louder than all background\nat "
+        "this removal level.\nAttempted to show "
+        f"{int(h_inc_back_num)} removal(s),\nbut only "
+        f"{int(h_iterations)} removal(s) done."
     )
 
     ax.text(
@@ -166,7 +167,7 @@ if h_inc_back_num > h_iterations:
 # get foreground IFAR values and cumulative number for each IFAR value
 if opts.open_box:
     if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
-        fore_ifar = fp["foreground_h%s/ifar" % h_inc_back_num][:]
+        fore_ifar = fp[f"foreground_h{h_inc_back_num}/ifar"][:]
         # Get ifar of hierarchically removed foreground triggers
         supp_fore_ifar = fp["foreground/ifar"][:]
 
@@ -194,8 +195,8 @@ expected_cumnum = conv.sec_to_year(fp.attrs["foreground_time"] / expected_ifar)
 # and test for backwards compatibility and that stage was written.
 if opts.open_box:
     if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
-        back_tsid = fp["background_h%s/timeslide_id" % h_inc_back_num][:]
-        back_ifar = fp["background_h%s/ifar" % h_inc_back_num][:]
+        back_tsid = fp[f"background_h{h_inc_back_num}/timeslide_id"][:]
+        back_ifar = fp[f"background_h{h_inc_back_num}/ifar"][:]
 
     # If the user wants to plot foreground events at h_inc_back_num == 0
     # and h_iterations == 0 then no hierarchical removals were done and
@@ -378,14 +379,13 @@ plt.xlabel("Inverse False Alarm Rate (yr)")
 # save
 caption = (
     "This is a cumulative histogram of triggers. The blue triangles "
-    "represent coincident foreground triggers. The dashed line "
-    "represents the expected background given the analysis time. The "
-    "shaded regions represent counting errors. The gray lines are "
-    "time slides treated as zero lag, here there are %d time slides "
-    "plotted. Gray dots are time slides with only one event. %d of "
-    "the plotted slides have zero events. The green line represents "
-    "all decimated time slides rescaled to the analysis time."
-    % (plotted_slide_count, empty_slide_count)
+    "represent coincident foreground triggers. The dashed line represents "
+    "the expected background given the analysis time. The shaded regions "
+    "represent counting errors. The gray lines are time slides treated as "
+    f"zero lag, here there are {plotted_slide_count} time slides plotted. "
+    f"Gray dots are time slides with only one event. {empty_slide_count} of "
+    "the plotted slides have zero events. The green line represents all "
+    "decimated time slides rescaled to the analysis time."
 )
 
 pycbc.results.save_fig_with_metadata(

@@ -32,7 +32,11 @@ from .analytic import (
 )
 from .base import BaseModel
 from .base_data import BaseDataModel
-from .brute_marg import BruteLISASkyModesMarginalize, BruteParallelGaussianMarginalize
+from .brute_marg import (
+    BruteLISASkyModesMarginalize,
+    BruteParallelGaussianMarginalize,
+    BruteTotalMassMarginalize,
+)
 from .gated_gaussian_noise import (
     GatedGaussianMargPhase,
     GatedGaussianMargPol,
@@ -53,6 +57,8 @@ from .marginalized_gaussian_noise import (
 )
 from .relbin import Relative, RelativeTime, RelativeTimeDom
 from .single_template import SingleTemplate
+
+logger = logging.getLogger(__name__)
 
 # Used to manage a model instance across multiple cores or MPI
 _global_instance = None
@@ -171,7 +177,7 @@ class CallModel:
             callstat = self.callstat
         if return_all_stats is None:
             return_all_stats = self.return_all_stats
-        params = dict(zip(self.model.sampling_params, param_values))
+        params = dict(zip(self.model.sampling_params, param_values, strict=True))
         self.model.update(**params)
         val = getattr(self.model, callstat)
         if return_all_stats:
@@ -219,6 +225,7 @@ _models = {
         MarginalizedPolarization,
         MarginalizedHMPolPhase,
         MarginalizedTime,
+        BruteTotalMassMarginalize,
         BruteParallelGaussianMarginalize,
         BruteLISASkyModesMarginalize,
         GatedGaussianNoise,
@@ -257,7 +264,7 @@ class _ModelManager(dict):
         printed in that case.
         """
         if super().__contains__(model.name):
-            logging.warning(
+            logger.warning(
                 "Custom model %s will override a model of the "
                 "same name. If you don't want this, change the "
                 "model's name attribute and restart.",

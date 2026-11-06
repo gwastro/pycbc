@@ -112,14 +112,14 @@ class TestIOHFile(unittest.TestCase):
                     d = f[dataset_name]
                     self.assertTrue(
                         _dataset_has_checksumming(d),
-                        "checksumming should be enabled for %s dataset" % dataset_name,
+                        f"checksumming should be enabled for {dataset_name} dataset",
                     )
                 for dataset_name in should_not_be_checksummed:
                     d = f[dataset_name]
                     self.assertFalse(
                         _dataset_has_checksumming(d),
-                        "checksumming should be not enabled for %s dataset"
-                        % dataset_name,
+                        f"checksumming should be not enabled for {dataset_name} "
+                        "dataset",
                     )
 
     def test_getitem_returns_hgroup_and_root_parent_behaviour(self):

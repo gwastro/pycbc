@@ -197,7 +197,7 @@ def _iter_frequencies(q, frange, mismatch, dur):
         )
 
 
-def qseries(fseries, Q, f0, return_complex=False):
+def qseries(fseries, Q, f0, return_complex=False):  # noqa: N803
     """
     Calculate the energy 'TimeSeries' for the given fseries
 

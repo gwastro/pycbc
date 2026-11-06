@@ -175,13 +175,13 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
         if not raw_samples:
             rng = numpy.random.default_rng(seed)
             weights = numpy.exp(logwt - logz)
-            N = len(weights)
-            positions = (rng.random() + numpy.arange(N)) / N
-            idx = numpy.zeros(N, dtype=int)
+            n = len(weights)
+            positions = (rng.random() + numpy.arange(n)) / n
+            idx = numpy.zeros(n, dtype=int)
             cumulative_sum = numpy.cumsum(weights)
             cumulative_sum /= cumulative_sum[-1]
             i, j = 0, 0
-            while i < N:
+            while i < n:
                 if positions[i] < cumulative_sum[j]:
                     idx[i] = j
                     i += 1

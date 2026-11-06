@@ -26,7 +26,7 @@ import pycbc.transforms
 from pycbc.distributions import bounded
 from pycbc.io.hdf import HFile
 
-logger = logging.getLogger("pycbc.distributions.arbitrary")
+logger = logging.getLogger(__name__)
 
 
 class Arbitrary(bounded.BoundedDist):

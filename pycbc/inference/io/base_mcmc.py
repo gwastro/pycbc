@@ -188,7 +188,7 @@ class CommonMCMCMetadataIO:
             group = self.samples_group
         if parameter is None:
             try:
-                parameter = list(self[group].keys())[0]
+                parameter = list(self[group].keys())[0]  # noqa: RUF015
             except (IndexError, KeyError):
                 # nothing has been written yet, just return 0
                 return 0
@@ -387,7 +387,7 @@ class CommonMCMCMetadataIO:
             # no acts were calculate
             act = None
         if act is not None:
-            act = act.reshape(tuple(list(act.shape) + [1]))
+            act = act.reshape((*list(act.shape), 1))
             self.write_data("act", act, path=path, append=True)
         # write the burn in iteration in the same way
         try:
@@ -396,7 +396,7 @@ class CommonMCMCMetadataIO:
             # no burn in tests were done
             burn_in = None
         if burn_in is not None:
-            burn_in = burn_in.reshape(tuple(list(burn_in.shape) + [1]))
+            burn_in = burn_in.reshape((*list(burn_in.shape), 1))
             self.write_data("burn_in_iteration", burn_in, path=path, append=True)
 
     @staticmethod
@@ -629,7 +629,7 @@ def write_samples(
         something other than inference samples!**
 
     """
-    nwalkers, nsamples = list(samples.values())[0].shape
+    nwalkers, nsamples = next(iter(samples.values())).shape
     assert all(p.shape == (nwalkers, nsamples) for p in samples.values()), (
         "all samples must have the same shape"
     )

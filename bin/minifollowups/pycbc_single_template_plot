@@ -93,7 +93,7 @@ ax1.set_ylabel("SNR")
 if args.log_y:
     ax1.set_yscale("log")
 ax1.legend(loc="upper left")
-ax1.set_xlabel("Time - %.3f (s)" % time)
+ax1.set_xlabel(f"Time - {time:.3f} (s)")
 
 ax2 = ax1.twinx()
 ax2.plot(rang, chisq, color="green", label="$\\chi^2_{\\rm r}$")
@@ -103,7 +103,7 @@ if args.log_y:
 ax2.legend(loc="upper right")
 
 if args.plot_title is None:
-    args.plot_title = "%s: SNR and chi^2 time series" % ifo
+    args.plot_title = f"{ifo}: SNR and chi^2 time series"
 if args.plot_caption is None:
     args.plot_caption = ""
 

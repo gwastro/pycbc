@@ -17,6 +17,8 @@ from pycbc.results import (
     save_fig_with_metadata,
 )
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -44,25 +46,23 @@ if not len(args.executables) == len(args.executables_names):
     )
 
 
-logging.info("Getting version information for libraries")
+logger.info("Getting version information for libraries")
 library_list = get_library_version_info()
 html_text = ""
 for curr_lib in library_list:
     lib_name = curr_lib["Name"]
-    logging.info(f"Getting {lib_name} information")
+    logger.info("Getting %s information", lib_name)
     html_text += f"<h2>{lib_name} Version Information</h2>:<br>\n"
     for key, value in curr_lib.items():
-        html_text += "<li> %s : %s </li>\n" % (key, value)
+        html_text += f"<li> {key} : {value} </li>\n"
 
 
 code_version_dict = get_code_version_numbers(args.executables_names, args.executables)
 
 html_text += "<h2>Version Information from Executables</h2>:<br>\n"
 for key, value in code_version_dict.items():
-    html_text += "<li><b>%s</b>:<br><pre>%s</pre></li><hr><br><br>\n" % (
-        key,
-        str(value).replace("@", "&#64;"),
-    )
+    value_html = str(value).replace("@", "&#64;")
+    html_text += f"<li><b>{key}</b>:<br><pre>{value_html}</pre></li><hr><br><br>\n"
 
 kwds = {
     "render-function": "render_text",
@@ -70,4 +70,4 @@ kwds = {
 }
 
 save_fig_with_metadata(html_escape(html_text), args.output_file, **kwds)
-logging.info("Done")
+logger.info("Done")

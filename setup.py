@@ -29,7 +29,8 @@ from setuptools.command.build_ext import build_ext as _build_ext
 
 requires = []
 setup_requires = ["numpy>=1.16.0"]
-install_requires = setup_requires + [
+install_requires = [
+    *setup_requires,
     "cython>=0.29",
     "numpy>=1.16.0,!=1.19.0,!=2.2.2",
     "scipy>=0.16.0,<1.17.0",
@@ -70,7 +71,7 @@ def find_files(dirname, relpath=None):
     return [os.path.relpath(path, relpath) for path in items]
 
 
-class cbuild_ext(_build_ext):
+class CBuildExt(_build_ext):
     def run(self):
         # At this point we can be sure pip has already installed numpy
         import numpy
@@ -88,7 +89,7 @@ def get_version_info():
     """Get VCS info and write version info to version.py."""
     from pycbc import _version_helper
 
-    class vdummy:
+    class VersionDummy:
         def __getattr__(self, attr):
             return ""
 
@@ -96,7 +97,7 @@ def get_version_info():
     try:
         vinfo = _version_helper.generate_git_version_info()
     except:
-        vinfo = vdummy()
+        vinfo = VersionDummy()
         vinfo.version = "2.12.dev1"
         vinfo.release = False
 
@@ -136,7 +137,7 @@ from pycbc._version import *
     return version.version
 
 
-class build_docs(Command):
+class BuildDocs(Command):
     user_options = []
     description = "Build the documentation pages"
 
@@ -156,7 +157,7 @@ class build_docs(Command):
         subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=True)
 
 
-class build_gh_pages(Command):
+class BuildGhPages(Command):
     user_options = []
     description = "Build the documentation pages for GitHub"
 
@@ -179,9 +180,9 @@ class build_gh_pages(Command):
 
 
 cmdclass = {
-    "build_docs": build_docs,
-    "build_gh_pages": build_gh_pages,
-    "build_ext": cbuild_ext,
+    "build_docs": BuildDocs,
+    "build_gh_pages": BuildGhPages,
+    "build_ext": CBuildExt,
 }
 
 extras_require = {

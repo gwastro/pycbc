@@ -31,6 +31,8 @@ import pycbc
 from pycbc import results
 from pycbc.inference import io
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(
     usage="pycbc_inference_plot_dynesty_traceplots [--options]",
     description="Plots various figures showing evolution of dynesty run.",
@@ -52,14 +54,14 @@ opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
 
 # load the samples
-logging.info("Reading input file")
+logger.info("Reading input file")
 fp = io.loadfile(opts.input_file, "r")
 
 sampler_state = fp.read_pickled_data_from_checkpoint_file()
 fp.close()
 
 # plot evolution of dynesty run
-logging.info("Plotting dynesty tracelots")
+logger.info("Plotting dynesty tracelots")
 fig, axes = dyplot.traceplot(
     sampler_state.results,
     truth_color="black",
@@ -82,4 +84,4 @@ results.save_fig_with_metadata(
 plt.close()
 
 # exit
-logging.info("Done")
+logger.info("Done")

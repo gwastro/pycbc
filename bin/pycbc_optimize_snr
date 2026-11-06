@@ -24,6 +24,8 @@ from pycbc.live import snr_optimizer
 from pycbc.psd import interpolate
 from pycbc.types import MultiDetOptionAction, load_frequencyseries
 
+logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
@@ -109,7 +111,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 if args.snr_opt_seed is not None and args.snr_opt_seed != "random":
-    logging.info("Setting snr optimizer random seed.")
+    logger.info("Setting snr optimizer random seed.")
     numpy.random.seed(int(args.snr_opt_seed))
 
 # Input checking
@@ -131,7 +133,7 @@ MIN_CPT_MASS = snr_optimizer.MIN_CPT_MASS
 MAX_ETA = 0.24999999999
 MIN_ETA = 0.01
 
-logging.info("Starting optimize SNR")
+logger.info("Starting optimize SNR")
 
 data = {}
 ifos = list(args.data_files.keys())
@@ -148,7 +150,7 @@ if args.enable_gracedb_upload and not original_gid:
         "Params must include original gracedb ID in order to upload followup!"
     )
 if original_gid:
-    logging.info("Following up GID %s", original_gid)
+    logger.info("Following up GID %s", original_gid)
 
 coinc_times = {}
 for ifo in ifos:
@@ -232,12 +234,12 @@ else:
     initial_point = None
 
 with scheme_context:
-    logging.info("Starting optimization")
+    logger.info("Starting optimization")
 
     optimize_func = snr_optimizer.optimize_funcs[args.snr_opt_method]
     opt_params = optimize_func(bounds, args, extra_args, initial_point)
 
-    logging.info("Optimization complete")
+    logger.info("Optimization complete")
 
     fup_ifos = set(ifos) - set(coinc_ifos)
     for ifo in fup_ifos:
@@ -385,7 +387,7 @@ xml_path = os.path.join(
 )
 
 if args.enable_gracedb_upload:
-    logging.info("Uploading optimized candidate to GraceDB")
+    logger.info("Uploading optimized candidate to GraceDB")
 
     comment = (
         "Automatic PyCBC followup of trigger "
@@ -406,7 +408,7 @@ if args.enable_gracedb_upload:
         labels=args.gracedb_labels,
     )
     if gid is not None:
-        logging.info("Event uploaded as %s", gid)
+        logger.info("Event uploaded as %s", gid)
 
         # add a note to the original G event pointing to the optimized one
         from ligo.gracedb.rest import GraceDb
@@ -419,7 +421,7 @@ if args.enable_gracedb_upload:
         comment = f'Result of SNR maximization uploaded as <a href="/events/{gid}/view">{gid}</a>'
         gracedb.write_log(original_gid, comment, tag_name=["analyst_comments"])
 else:
-    logging.info("Saving optimized candidate")
+    logger.info("Saving optimized candidate")
     doc.save(xml_path)
 
-logging.info("Done")
+logger.info("Done")
