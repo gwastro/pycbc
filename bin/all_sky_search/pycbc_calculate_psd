@@ -5,10 +5,10 @@ import logging, argparse, numpy, h5py, multiprocessing, time, copy
 from six.moves import zip_longest
 import pycbc, pycbc.psd, pycbc.strain, pycbc.events
 from pycbc.version import git_verbose_msg as version
-from pycbc.fft.fftw import set_measure_level
+from pycbc.fft import ensure_fftw_planning_off
 from pycbc.workflow import resolve_td_option
 from ligo.segments import segmentlist, segment
-set_measure_level(0)
+ensure_fftw_planning_off()
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)

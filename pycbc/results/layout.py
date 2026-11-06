@@ -18,23 +18,32 @@
 import os.path
 from itertools import zip_longest
 
-def two_column_layout(path, cols, unique='', **kwargs):
+def two_column_layout(path, cols, unique='', filename=None, **kwargs):
     """ Make a well layout in a two column format
 
     Parameters
     ----------
     path: str
-        Location to make the well html file
+        Directory containing the files shown in the well. The well html
+        file is made here too, unless filename is given.
     unique: str
         String to add to end of well name. Used if you want more than one well.
     cols: list of tuples
         The format of the items on the well result section. Each tuple
         contains the two files that are shown in the left and right hand
         side of a row in the well.html page.
+    filename: str, optional
+        If given, write directly to this path instead of constructing
+        '<path>/well<unique>.html'. The given name should still start
+        with 'well' for pycbc_make_html_page to render it inline.
     """
-    path = os.path.join(os.getcwd(), path, 'well{}.html'.format(unique))
+    # If path is absolute, os.path.join ignores the cwd and returns only path
+    file_dir = os.path.join(os.getcwd(), path)
+    if filename is None:
+        filename = os.path.join(file_dir, 'well{}.html'.format(unique))
     from pycbc.results.render import render_workflow_html_template
-    render_workflow_html_template(path, 'two_column.html', cols, **kwargs)
+    render_workflow_html_template(filename, 'two_column.html', cols,
+                                  file_dir=file_dir, **kwargs)
 
 def single_layout(path, files, **kwargs):
     """ Make a well layout in  single column format
