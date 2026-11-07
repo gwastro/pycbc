@@ -975,8 +975,8 @@ class PyCBCMultiInspiralExecutable(Executable):
 
         if not (
             df_parents
-            or self.cp.has_option(self.name, "frame-files")
-            or self.cp.has_option(self.name, "frame-cache")
+            or self.has_opt("frame-files")
+            or self.has_opt("frame-cache")
         ):
             raise ValueError(f"{self.name} must be supplied with frame or cache files")
 
