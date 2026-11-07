@@ -7,6 +7,8 @@ healpy<1.20
 # Needed for GraceDB uploads and skymap generation
 ligo-gracedb>=2.10.0
 ligo.skymap!=1.1.0,<2.0.0
+# astropy-healpix>=2 (needed by ligo.skymap) requires numpy>=2
+astropy-healpix<2
 
 # auxiliary samplers
 epsie>=1.0
