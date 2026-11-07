@@ -21,6 +21,9 @@
 #
 # =============================================================================
 #
+# The commented-out lists in the test classes give the exact expressions
+# (fractions and powers) that the hard-coded expected values come from.
+# ruff: noqa: ERA001
 """
 This module contains a few helper functions designed to make writing PyCBC
 unit tests easier, while still allowing the tests to be run on CPU and CUDA

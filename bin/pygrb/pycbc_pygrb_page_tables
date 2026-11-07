@@ -763,9 +763,6 @@ if found_missed_file is not None:
 
     # 3) missed after being recovered: vetoed (these have bestnr = 0)
 
-    # Avoids a problem with formatting in the non-static html output file
-    # missed_na = [-0] * len(missed_injs['mchirp'])
-
     # Write quiet triggers to file
     sites = [ifo[0] for ifo in ifos]
     # Table header

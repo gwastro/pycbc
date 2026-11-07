@@ -23,7 +23,6 @@ SbankExecutable class in the pycbc.workflow module, to give an illustration of
 how a simple workflow is constructed with pycbc.workflow.
 """
 
-# imports
 import argparse
 import os
 
@@ -306,7 +305,7 @@ for cycle_idx in range(num_cycles):
 
     # How many banks to use? This can vary cycle to cycle, or be the same for
     # all. Either supply it once in [workflow], or in [workflow-cycleN] for
-    # N in range(num_cycles)
+    # each cycle N.
     nbanks = workflow.cp.get_opt_tags(
         "workflow", "nbanks", tags=[cycle_tag, *args.tags]
     )

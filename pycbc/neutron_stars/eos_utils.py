@@ -28,11 +28,6 @@ from pycbc.libutils import import_optional
 from . import NS_DATA_DIRECTORY, NS_SEQUENCES
 from .pg_isso_solver import solve_pg_isso
 
-#  Imports needed if we implement the lalsimulation EOS interface
-# from pycbc.constants import (
-#     MSUN_SI, G_SI, C_SI
-# )
-
 lalsim = import_optional("lalsimulation")
 
 
@@ -180,11 +175,6 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
             ns_mass, ns_seq, extrapolate=extrapolate
         )
     elif eos in lalsim.SimNeutronStarEOSNames:
-        # from pycbc.constants import MSUN_SI, G_SI, C_SI
-        # eos_obj = lalsim.SimNeutronStarEOSByName(eos)
-        # eos_fam = lalsim.CreateSimNeutronStarFamily(eos_obj)
-        # r_ns = lalsim.SimNeutronStarRadius(ns_mass * MSUN_SI, eos_obj)
-        # ns_compactness = G_SI * ns_mass * MSUN_SI / (r_ns * C_SI**2)
         raise NotImplementedError("LALSimulation EOS interface not yet implemented!")
     else:
         raise NotImplementedError(

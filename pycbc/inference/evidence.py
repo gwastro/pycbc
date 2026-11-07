@@ -261,7 +261,7 @@ def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
         log_evidence = integrate.simps(average_logl, betas, even="last")
 
     # Estimate the Monte Carlo variance of the evidence calculation
-    # See (Evans, Annis, 2019.)
+    # See Evans and Annis (2019):
     # https://www.sciencedirect.com/science/article/pii/S0022249617302651
     ti_vec = numpy.zeros(len(log_likelihood[0]))
 

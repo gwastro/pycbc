@@ -265,7 +265,7 @@ def pygrb_plotter(
         polyx = numpy.append(polyx, [max(snr_vals), min(snr_vals)])
         polyy = numpy.append(polyy, [limy, limy])
         cax.fill(polyx, polyy, color="#dddddd")
-    # Axes: labels and limits
+    # Axes labels and limits
     cax.set_xlabel(xlabel)
     cax.set_ylabel(ylabel)
     if opts.x_lims:

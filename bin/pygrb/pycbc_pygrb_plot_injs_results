@@ -188,7 +188,6 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
         try:
             if key == "end_time":
                 data_dict[key] = injs[tag + "/tc"]
-                # data_dict[key] -= grb_time
             elif key in ["mchirp", "mtotal", "q"]:
                 data_dict[key] = complete_mass_data(injs, key, tag)
             elif key == "chi_p":
@@ -214,7 +213,6 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
             else:
                 data_dict[key] = injs[tag + "/" + key]
         except KeyError:
-            # raise NotImplemented(key+' not allowed: returning empty entry')
             logger.warning("%s/%s not allowed yet", tag, key)
 
     # Include information needed to apply vetoes and reweighted SNR cut
@@ -528,8 +526,6 @@ ax.set_ylabel(axis_labels_dict[y_qty])
 
 # Define p-value colour
 cmap = plt.get_cmap(opts.colormap)
-# Set color for out-of-range values
-# cmap.set_over('g')
 
 # Define the 'found' injection colour
 fnd_col = cmap(0)
@@ -614,8 +610,6 @@ if y_qty == "chi_p":
 # Handle axis limits when plotting inclination
 if "incl" in x_qty or "incl" in y_qty:
     max_inc = np.pi
-    # max_inc = max(np.concatenate((g_found[qty], g_ifar[qty], \
-    #                               g_missed2[qty], missed_inj[qty])))
     max_inc_deg = np.rad2deg(max_inc)
     max_inc_deg = np.ceil(max_inc_deg / 10.0) * 10
     max_inc = np.deg2rad(max_inc_deg)
@@ -627,26 +621,20 @@ if "incl" in x_qty or "incl" in y_qty:
         ax.set_ylim(0, max_inc_deg)
     elif y_qty == "abs_incl":
         ax.set_ylim(0, max_inc_deg * 0.5)
-    # if "cos_incl" in [x_qty, y_qty]:
     if "cos_" in [x_qty, y_qty]:
-        # tt = np.arange(0, max_inc_deg + 10, 10)
         tt = np.asarray(
             [0, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 180]
         )
         tks = np.cos(np.deg2rad(tt))
         tk_labs = [f"cos({tk} deg)" for tk in tt]
-        # if x_qty == "cos_incl":
         if "cos_" in x_qty:
             plt.xticks(tks, tk_labs, fontsize=10)
             fig.autofmt_xdate()
             ax.set_xlim(np.cos(max_inc), 1)
-            # ax.set_xlim(-1, 1)
-        # if y_qty == "cos_incl":
         if "cos_" in y_qty:
             plt.yticks(tks, tk_labs, fontsize=10)
             fig.autofmt_xdate()
             ax.set_ylim(np.cos(max_inc), 1)
-            # ax.set_ylim(-1, 1)
 
 # Take care of caption
 plot_caption = opts.plot_caption

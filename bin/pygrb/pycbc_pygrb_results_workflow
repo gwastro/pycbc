@@ -194,8 +194,8 @@ _workflow.makedir(rdir.base)
 _workflow.makedir(rdir["workflow"])
 
 # File instances of all input trigger files
-# Expected structure of args.trig_files:
-# [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
+# Expected structure of args.trig_files: ALL_TIMES, ONSOURCE, OFFSOURCE,
+# then OFFTRIAL_1 to OFFTRIAL_N
 trig_files = [
     _workflow.resolve_url_to_file(os.path.join(start_rundir, trig_file))
     for trig_file in args.trig_files
@@ -262,9 +262,6 @@ logger.info("Created log file %s", wf_log_file.storage_path)
 
 # TODO: Pick up inifile, segments plot, GRB time and location, and
 #       report IFO responses
-# Read the configuration file
-# typecast str from command line to File instances
-# cp = configuration.WorkflowConfigParser(opts.pp_config_file)
 
 out_dir = rdir.base
 _workflow.makedir(out_dir)
@@ -533,7 +530,7 @@ for inj_set in inj_sets:
                 plotting_nodes.append(plot_node)
                 # A File is needed, not a 1-element list with a File
                 # pycbc_pygrb_plot_injs_results produces only one plot, so
-                # take [0]
+                # take the first one
                 files.append(output_files[0])
     # Generate quiet-found and missed-found html tables
     html_node, [mf_table, qf_table, qf_h5] = _workflow.make_pygrb_injs_tables(

@@ -31,7 +31,6 @@ one described, so hopefully the script is clear enough to allow someone to do
 that.
 """
 
-# imports
 import argparse
 import logging
 import os

@@ -291,8 +291,6 @@ def _lalsim_td_waveform(**p):
             return hp, hc
         raise
 
-    # lal.DestroyDict(lal_pars)
-
     hp = TimeSeries(hp1.data.data[:], delta_t=hp1.deltaT, epoch=hp1.epoch)
     hc = TimeSeries(hc1.data.data[:], delta_t=hc1.deltaT, epoch=hc1.epoch)
 
@@ -349,7 +347,6 @@ def _lalsim_fd_waveform(**p):
     hp = FrequencySeries(hp1.data.data[:], delta_f=hp1.deltaF, epoch=hp1.epoch)
 
     hc = FrequencySeries(hc1.data.data[:], delta_f=hc1.deltaF, epoch=hc1.epoch)
-    # lal.DestroyDict(lal_pars)
     return hp, hc
 
 
@@ -1281,14 +1278,6 @@ _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
 _filter_ends["SPAtmplt"] = spa_tmplt_end
 _filter_ends["TaylorF2"] = spa_tmplt_end
-# _filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrv2_final_frequency
-# _filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrv2_final_frequency
-# _filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrv2_final_frequency
-# _filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrv2_final_frequency
-# _filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrv2_final_frequency
-# PhenomD returns higher frequencies than this, so commenting this out for now
-# _filter_ends["IMRPhenomC"] = seobnrv2_final_frequency
-# _filter_ends["IMRPhenomD"] = seobnrv2_final_frequency
 
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
@@ -1374,8 +1363,8 @@ def td_fd_waveform_transform(approximant):
         _filter_time_lengths[apx_int] = _filter_time_lengths[approximant]
 
         # We can also make a td version of this
-        # This will override any existing approximants with the same name
-        # (ex. IMRPhenomXX)
+        # This will override any existing approximants with the same name,
+        # such as IMRPhenomXX
         cpu_td[approximant] = get_td_waveform_from_fd
 
 

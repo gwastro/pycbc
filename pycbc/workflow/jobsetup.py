@@ -218,33 +218,28 @@ def sngl_ifo_job_setup(
         workflow.
 
     """
-    ########### (1) ############
-    # Get the times that can be analysed and needed data lengths
+    # Step 1: get the times that can be analysed and needed data lengths
     data_length, valid_chunk, valid_length = identify_needed_data(curr_exe_job)
 
     exe_tags = curr_exe_job.tags
     # Loop over science segments and set up jobs
     for curr_seg in science_segs:
-        ########### (2) ############
-        # Initialize the class that identifies how many jobs are needed and the
-        # shift between them.
+        # Step 2: initialize the class that identifies how many jobs are needed
+        # and the shift between them.
         segmenter = JobSegmenter(
             data_length, valid_chunk, valid_length, curr_seg, curr_exe_job
         )
 
         for job_num in range(segmenter.num_jobs):
-            ############## (3) #############
-            # Figure out over what times this job will be valid for
+            # Step 3: figure out over what times this job will be valid for
             job_valid_seg = segmenter.get_valid_times_for_job(
                 job_num, allow_overlap=allow_overlap
             )
 
-            ############## (4) #############
-            # Get the data that this job should read in
+            # Step 4: get the data that this job should read in
             job_data_seg = segmenter.get_data_times_for_job(job_num)
 
-            ############# (5) ############
-            # Identify parents/inputs to the job
+            # Step 5: identify parents/inputs to the job
             if parents:
                 # Find the set of files with the best overlap
                 curr_parent = parents.find_outputs_in_range(
@@ -274,8 +269,7 @@ def sngl_ifo_job_setup(
                     err_str += "\nThis shouldn't happen. Contact a developer."
                     raise ValueError(err_str)
 
-            ############## (6) #############
-            # Make node and add to workflow
+            # Step 6: make node and add to workflow
 
             # Note if I have more than one curr_parent I need to make more than
             # one job. If there are no curr_parents it is set to [None] and I
@@ -859,8 +853,6 @@ class PyCBCInspiralExecutable(Executable):
         #       pad take normal values. When using zero-padding this data will
         #       be used for SNR generation.
 
-        # if self.has_opt('taper-data'):
-        #    pad_data += int(self.get_opt( 'taper-data' ))
         if self.has_opt("allow-zero-padding"):
             self.zero_padding = True
         else:
@@ -1539,12 +1531,6 @@ class PycbcInferenceExecutable(Executable):
             err_msg = "This is not yet supported/tested with pegasus 5. "
             err_msg += "Please reimplement this (with unittest :-) )."
             raise ValueError(err_msg)
-            # ckpt_file_name = "{}.checkpoint".format(inference_file.name)
-            # ckpt_file = dax.File(ckpt_file_name)
-            # DO NOT call pegasus API stuff outside of
-            # pegasus_workflow.py.
-            # node._dax_node.uses(ckpt_file, link=dax.Link.OUTPUT,
-            #                    register=False, transfer=False)
 
         return node, inference_file
 

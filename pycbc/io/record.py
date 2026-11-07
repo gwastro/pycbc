@@ -221,8 +221,8 @@ def get_fields_from_arg(arg):
 
 # this parser looks for fields inside a class method function. This is done by
 # looking for variables that start with self.{x} or self["{x}"]; e.g.,
-# self.a.b*3 + self.c, self['a.b']*3 + self.c, self.a.b*3 + self["c"], all
-# return set('a.b', 'c').
+# self.a.b*3 + self.c, self['a.b']*3 + self.c, self.a.b*3 + self["c"],  # noqa: ERA001
+# all return set('a.b', 'c').
 _instfieldparser = re.compile(
     r"""self(?:\.|(?:\[['"]))(?P<identifier>[\w_][.\w\d_]*)"""
 )

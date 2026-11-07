@@ -22,7 +22,6 @@ Workflow generator to create diagnosis plots and figures of merit for an input
 template bank.
 """
 
-# imports
 import argparse
 import os
 import shutil

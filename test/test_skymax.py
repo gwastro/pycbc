@@ -312,14 +312,14 @@ class TestChisq(unittest.TestCase):
         idx = self.idx
         jdx = self.jdx
         # Uncomment these lines if needing to regenerate data files
-        # w1 = self.wps_list[idx]
-        # w2 = self.wps_list[jdx]
+        # w1 = self.wps_list[idx]  # noqa: ERA001
+        # w2 = self.wps_list[jdx]  # noqa: ERA001
         # stilde = get_waveform(w1, self.low_freq_filter-1,
         #                      self.sample_rate, self.filter_tlen,
         #                      self.sample_rate)
-        # try:
-        #    stilde.save('data/skymaxtest_stilde_%d.hdf' % idx)
-        # except:
+        # try:  # noqa: ERA001
+        #    stilde.save('data/skymaxtest_stilde_%d.hdf' % idx)  # noqa: ERA001
+        # except:  # noqa: ERA001
         #    pass
         url = "https://github.com/gwastro/pycbc-config/raw/master/test_data_files/{}"
         fname = f"skymaxtest_stilde_{idx}.hdf"
@@ -339,10 +339,10 @@ class TestChisq(unittest.TestCase):
         # hplus, hcross = get_waveform(w2, self.low_freq_filter-1,
         #                             self.sample_rate, self.filter_tlen,
         #                             self.sample_rate, sky_max_template=True)
-        # try:
-        #    hplus.save('data/skymaxtest_hplus_%d.hdf' % jdx)
-        #    hcross.save('data/skymaxtest_hcross_%d.hdf' % jdx)
-        # except:
+        # try:  # noqa: ERA001
+        #    hplus.save('data/skymaxtest_hplus_%d.hdf' % jdx)  # noqa: ERA001
+        #    hcross.save('data/skymaxtest_hcross_%d.hdf' % jdx)  # noqa: ERA001
+        # except:  # noqa: ERA001
         #    pass
         fname = f"skymaxtest_hplus_{jdx}.hdf"
         apy_fname = get_file(url.format(fname), cache=True)
@@ -498,7 +498,7 @@ class TestChisq(unittest.TestCase):
                 ht,
             )
         # FIXME This test fails for me! Check, debug and reenable
-        # self.assertLess(chisq, 1e-3)
+        # self.assertLess(chisq, 1e-3)  # noqa: ERA001
 
         ht = hplus * uvals_prec[0] + hcross
         ht_norm = sigmasq(ht, psd=self.psd, low_frequency_cutoff=self.low_freq_filter)

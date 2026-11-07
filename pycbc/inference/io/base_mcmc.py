@@ -1025,9 +1025,9 @@ def nsamples_in_chain(start_iter, interval, niterations):
     # this is written in a slightly wonky way so that it will work with either
     # python scalars or numpy arrays; it is equivalent to:
     #    if start_iter < 0:
-    #        count = min(abs(start_iter), niterations)
-    #    else:
-    #        count = max(niterations - start_iter, 0)
+    #        count = min(abs(start_iter), niterations)  # noqa: ERA001
+    #    else:  # noqa: ERA001
+    #        count = max(niterations - start_iter, 0)  # noqa: ERA001
     slt0 = start_iter < 0
     sgt0 = start_iter >= 0
     count = slt0 * abs(start_iter) + sgt0 * (niterations - start_iter)

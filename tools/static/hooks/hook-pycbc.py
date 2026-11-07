@@ -93,9 +93,3 @@ if os.environ.get("NOW_BUILDING", None) in needs_mkl:
     datas += find_lib_path("mkl_def", [])
     datas += find_lib_path("iomp5", [])
     datas += find_lib_path("mkl_mc3", [])
-
-# try to pull in the openmp fftw files
-# datas += find_lib_path('fftw3', ['fftw3'])
-# datas += find_lib_path('fftw3f', ['fft3f'])
-# datas += find_lib_path('fftw3f_omp', ['fftw3f'])
-# datas += find_lib_path('fftw3_omp', ['fftw3'])

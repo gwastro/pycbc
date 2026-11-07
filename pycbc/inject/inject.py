@@ -1400,7 +1400,6 @@ class SGBurstInjectionSet:
             )
 
         lalstrain = strain.lal()
-        # detector = Detector(detector_name)
         earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time

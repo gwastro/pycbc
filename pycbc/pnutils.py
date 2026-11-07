@@ -922,7 +922,7 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     ESS2 = 1.0 / eta  # noqa: N806
     EQM2s1 = qmdef1 / 2.0 / m1M / m1M  # noqa: N806
     EQM2s1L = -qmdef1 * 3.0 / 2.0 / m1M / m1M  # noqa: N806
-    # EQM2s2 = qmdef2/2.0/m2M/m2M
+    # EQM2s2 = qmdef2/2.0/m2M/m2M  # noqa: ERA001
     EQM2s2L = -qmdef2 * 3.0 / 2.0 / m2M / m2M  # noqa: N806
 
     ESO25s1 = 11.0 - 61.0 * eta / 9.0 + (dm / m1M) * (-3.0 + 10.0 * eta / 3.0)  # noqa: N806

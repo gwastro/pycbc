@@ -24,14 +24,6 @@ def parse_workflow_ini_file(cp_file, parsed_filepath=None):
     cp = read_ini_file(cp_file)
     print(cp.sections())
 
-    # Check for any substitutions that can be made
-    # FIXME: The python 3 version of ConfigParser can do this automatically
-    # move over to that if it can be backported to python2.X.
-    # We use the same formatting as the new configparser module when doing
-    # ExtendedInterpolation
-    # This is described at http://docs.python.org/3.4/library/configparser.html
-    # cp = perform_extended_interpolation(cp)
-
     # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
     cp = split_multi_sections(cp)
     print(cp.sections())

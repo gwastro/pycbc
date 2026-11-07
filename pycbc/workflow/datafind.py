@@ -1041,10 +1041,9 @@ def run_datafind_instance(
     df_cache.ifo = ifo
     # Dump output to file
     fp = open(cache_file.storage_path, "w")
-    # FIXME: CANNOT use df_cache.tofile because it will print 815901601.00000
-    #        as a gps time which is incompatible with the lal cache format
-    #        (and the C codes) which demand an integer.
-    # df_cache.tofile(fp)
+    # CANNOT use df_cache.tofile because it will print 815901601.00000
+    # as a gps time which is incompatible with the lal cache format
+    # (and the C codes) which demand an integer.
     for entry in df_cache:
         start = str(int(entry.segment[0]))
         duration = str(int(abs(entry.segment)))

@@ -912,16 +912,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     )
                     f["sigmasq"] = template_sigmasq[tid]
 
-                # FIXME: Can we get this value from the autochisq instance?
-                # cont_dof = self.opt.autochi_number_points
-                # if self.opt.autochi_onesided is None:
-                #     cont_dof = cont_dof * 2
-                # if self.opt.autochi_two_phase:
-                #     cont_dof = cont_dof * 2
-                # if self.opt.autochi_max_valued_dof:
-                #     cont_dof = self.opt.autochi_max_valued_dof
-                # f['cont_chisq_dof'] = numpy.repeat(cont_dof, len(ifo_events))
-
                 if "chisq_dof" in ifo_events.dtype.names:
                     f["chisq_dof"] = ifo_events["chisq_dof"] / 2 + 1
                 else:
@@ -1215,10 +1205,6 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                 cont_dof = self.opt.autochi_number_points
                 if self.opt.autochi_onesided is None:
                     cont_dof = cont_dof * 2
-                # if self.opt.autochi_two_phase:
-                #     cont_dof = cont_dof * 2
-                # if self.opt.autochi_max_valued_dof:
-                #     cont_dof = self.opt.autochi_max_valued_dof
                 f["cont_chisq_dof"] = numpy.repeat(cont_dof, len(ifo_events))
 
                 if "chisq_dof" in ifo_events.dtype.names:
