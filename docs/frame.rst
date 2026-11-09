@@ -26,6 +26,19 @@ Alternatively, if you just want the location of the frame files, you can do::
 
 This will return a ``list`` of the frame files' paths.
 
+For public GWOSC strain, request 4 kHz frames with ``sample_rate=4096``::
+
+    >>> strain = frame.query_and_read_frame('GWOSC_STRAIN', 'H1:GWOSC-4KHZ_R1_STRAIN', 1238166018, 1238166022, sample_rate=4096)
+
+The default remains 4 kHz for S5, S6, and O1, and 16 kHz from O2 onward.
+For O1 at 16 kHz, the strain reader selects the distinct
+``GWOSC-16KHZ_R1_STRAIN`` channel automatically.
+GWOSC run metadata uses PyCBC's existing download path and CI mirror; the GWF
+files use that path with caching. Not every run has both rates; requesting an
+unpublished rate raises ``ValueError``. In particular, the separate H1
+background release around GW170608 is available only at 16 kHz through this
+run-data interface.
+
 =====================
 Reading a frame file
 =====================
