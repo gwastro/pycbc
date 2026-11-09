@@ -475,8 +475,6 @@ with ctx:
     f["template"] = template.numpy()
     f["template"].attrs["delta_f"] = template.delta_f
     snrs, chisqs = [], []
-    # Bins that hold no template power are merged away, so the number of
-    # bins actually used is taken from the first segment
     raw_bins = None
 
     if opt.trig_start_time:
