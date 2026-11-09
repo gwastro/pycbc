@@ -26,5 +26,6 @@ for f in "${FILES[@]}"; do
     # wget -nc leaves existing cache files alone
     wget -nv -nc -P "$cache_dir" \
         "${BASE}/$f"
-    cp "$cache_dir/$f" .
+    # Copy into the working directory when running from elsewhere
+    [ "$cache_dir/$f" -ef "$f" ] || cp "$cache_dir/$f" .
 done
