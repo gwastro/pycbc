@@ -132,16 +132,18 @@ class TestAnalyticSkyDraw(unittest.TestCase):
     TC = 1187008882.4
     NUM = 200000
 
-    def draw(self, ifos, tilt=1.0, sky=None, seed=0):
+    def draw(self, ifos, tilt=1.0, sky=None, seed=0, tc_half=0.05, frame=None):
         numpy.random.seed(seed)
         marg = DistMarg()
         marg.data = dict.fromkeys(ifos)
         marg._current_params = None
+        if frame is not None:
+            marg.static_params = {"tc_ref_frame": frame}
         if sky is None:
             sky = Uniform(ra=(0, 2 * numpy.pi)), CosAngle(dec=None)
         prior = JointDistribution(
             ["tc", "ra", "dec"],
-            Uniform(tc=(self.TC - 0.05, self.TC + 0.05)),
+            Uniform(tc=(self.TC - tc_half, self.TC + tc_half)),
             *sky,
         )
         marg.setup_marginalization(
@@ -222,6 +224,24 @@ class TestAnalyticSkyDraw(unittest.TestCase):
                 self.assertAlmostEqual(weight.mean(), 1.0, delta=0.03)
                 self.assertAlmostEqual((weight * vec["ra"]).mean(), 1.5, delta=0.04)
                 self.assertAlmostEqual((weight * vec["dec"]).mean(), 0.15, delta=0.03)
+
+    def test_tc_in_a_detector_frame(self):
+        """With tc in Hanford's frame, the prior and the roots are in it too.
+
+        A tc prior narrower than the light travel time makes the choice
+        between the two mirror roots depend on the frame.
+        """
+        for half in (0.05, 0.004):
+            with self.subTest(tc_half=half):
+                marg, ok = self.draw(["H1", "L1", "V1"], tc_half=half, frame="H1")
+                self.assertTrue(ok)
+                vec = marg.marginalize_vector_params
+                weight = numpy.exp(vec["logw_partial"])
+                # few draws survive the narrow prior, so the spread is 0.01
+                self.assertAlmostEqual(weight.mean(), 1.0, delta=0.04)
+                self.assertAlmostEqual(
+                    (weight * (vec["tc"] - self.TC) / half).mean(), 0.0, delta=0.02
+                )
 
     def test_colocated_detectors_leave_it_to_the_map(self):
         _, ok = self.draw(["H1", "H2"])

@@ -127,6 +127,23 @@ class TestAnalyticSkyDraw(unittest.TestCase):
             self.assertEqual(hasattr(model, "tinfo"), not analytic)
         self.assertAlmostEqual(values[True], values[False], delta=0.6)
 
+    def test_tc_in_a_detector_frame(self):
+        """The draw returns tc in the frame it is sampled in.
+
+        Returned at the geocentre, it would be read as Hanford's time and
+        give 630.0 here.
+        """
+        self.static = dict(self.static, tc_ref_frame="H1")
+        values = {}
+        for analytic in (False, True):
+            model = self.model(marginalize_sky_analytic=analytic)
+            loglr = []
+            for _ in range(5):
+                model.update(**POINT)
+                loglr.append(model.loglr)
+            values[analytic] = numpy.mean(loglr)
+        self.assertAlmostEqual(values[True], values[False], delta=0.6)
+
     def test_the_map_survives_a_detector_without_signal(self):
         """At twice the distance Virgo has no peak above its noise.
 

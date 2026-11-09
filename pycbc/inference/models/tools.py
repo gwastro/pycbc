@@ -606,15 +606,21 @@ class DistMarg:
             self._sky_detectors = {
                 i: Detector(i, reference_time=0.5 * (tcmin + tcmax)) for i in self.data
             }
+            # tc is sampled at the geocentre or in a detector's frame
+            self._sky_refloc = numpy.zeros(3)
+            if self.tc_ref_frame != "geocentric":
+                self._sky_refloc = numpy.asarray(Detector(self.tc_ref_frame).location)
         dets = self._sky_detectors
         loc = {i: numpy.asarray(d.location) for i, d in dets.items()}
+        refloc = self._sky_refloc / C_SI
         gmst = next(iter(dets.values())).gmst_estimate(0.5 * (tcmin + tcmax))
 
         # each detector's SNR series, cut to the times the draw may use
         series = {}
+        pad = self.tc_window_padding
         for ifo in ifos:
             snr = snrs[ifo]
-            lo_t, hi_t = tcmin - EARTH_RADIUS, tcmax + EARTH_RADIUS
+            lo_t, hi_t = tcmin - pad, tcmax + pad
             if hasattr(self, "tstart"):
                 lo_t, hi_t = self.tstart[ifo], self.tend[ifo]
             snr = snr.time_slice(
@@ -715,7 +721,7 @@ class DistMarg:
                 # The delays fix the direction up to a reflection in the
                 # detector plane. Draw only among the roots whose tc is in
                 # the prior, and halve the weight when only one is.
-                loc0 = loc[order[0]] / C_SI
+                loc0 = loc[order[0]] / C_SI - refloc
                 centre = t_off + loc0 @ npar
                 swing = perp * (loc0 @ e3)
                 pair = numpy.stack([centre + swing, centre - swing])
@@ -744,8 +750,9 @@ class DistMarg:
         for ifo, det in dets.items():
             fplus[ifo], fcross[ifo] = det.antenna_pattern_from_direction(nhat)
             delay[ifo] = det.time_delay_from_direction(nhat)
-        # tested against the prior as an offset, as the roots were
-        tc_off = t_off - delay[order[0]]
+        # in the frame tc is sampled in, and tested against the prior as an
+        # offset, as the roots were
+        tc_off = t_off - delay[order[0]] - refloc @ nhat
         outside = (tc_off < tcmin - epoch_t) | (tc_off > tcmax - epoch_t)
         tc = epoch_t + tc_off
         logw = numpy.where(invalid | outside, -numpy.inf, logw)
