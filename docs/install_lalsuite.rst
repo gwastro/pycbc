@@ -141,7 +141,7 @@ To install the data into your virtual environment, run the commands
 Then deactivate and activate your virtual environment.
 
 Alternatively, follow the `instructions for installing CVMFS for OSG
-<https://twiki.grid.iu.edu/bin/view/Documentation/Release3/InstallCvmfs>`_ and
+<https://osg-htc.org/docs/worker-node/install-cvmfs/>`_ and
 run the command
 
 .. code-block:: bash
