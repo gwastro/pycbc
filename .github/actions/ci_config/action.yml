@@ -1,5 +1,5 @@
-name: Defaults
-description: "Composite action that exposes default values for workflows (e.g., python_version)."
+name: CI config
+description: "Shared CI configuration: default Python version, Python test matrix and cibuildwheel selector."
 
 inputs:
   python_version:
@@ -22,6 +22,9 @@ runs:
       run: |
         echo "python_version=$PYTHON_VERSION" >> "$GITHUB_OUTPUT"
         echo "python_versions_matrix=$PYTHON_VERSIONS_MATRIX" >> "$GITHUB_OUTPUT"
+        # cibuildwheel selector covering the matrix, e.g. "cp311-* cp312-*"
+        CIBW_BUILD=$(jq -er 'map("cp" + sub("\\."; "") + "-*") | join(" ")' <<< "$PYTHON_VERSIONS_MATRIX")
+        echo "cibw_build=$CIBW_BUILD" >> "$GITHUB_OUTPUT"
       shell: bash
 
 outputs:
@@ -31,3 +34,6 @@ outputs:
   python_versions_matrix:
     description: "Python test matrix as a JSON array"
     value: ${{ steps.set.outputs.python_versions_matrix }}
+  cibw_build:
+    description: "cibuildwheel CIBW_BUILD selector for the Python test matrix"
+    value: ${{ steps.set.outputs.cibw_build }}

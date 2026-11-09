@@ -7,24 +7,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  defaults:
+  ci_config:
     runs-on: ubuntu-24.04
     outputs:
-      python_versions_matrix: ${{ steps.defaults.outputs.python_versions_matrix }}
+      python_versions_matrix: ${{ steps.ci_config.outputs.python_versions_matrix }}
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-      - name: Load defaults
-        id: defaults
-        uses: ./.github/actions/defaults
+      - name: Load CI config
+        id: ci_config
+        uses: ./.github/actions/ci_config
 
   build:
-    needs: defaults
+    needs: ci_config
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 60
       matrix:
         os: [ubuntu-24.04]
-        python_version: ${{ fromJSON(needs.defaults.outputs.python_versions_matrix) }}
+        python_version: ${{ fromJSON(needs.ci_config.outputs.python_versions_matrix) }}
     steps:
     - uses: actions/checkout@v5
     - name: Configure CI downloads

@@ -6,13 +6,13 @@ jobs:
         steps:
             - name: Check out repository
               uses: actions/checkout@v5
-            - name: Load defaults
-              id: defaults
-              uses: ./.github/actions/defaults
+            - name: Load CI config
+              id: ci_config
+              uses: ./.github/actions/ci_config
             - name: Set up Python
               uses: actions/setup-python@v6
               with:
-                  python-version: ${{ steps.defaults.outputs.python_version }}
+                  python-version: ${{ steps.ci_config.outputs.python_version }}
             - name: Install flake8
               run: pip install flake8
             - name: Checking executables for unused imports
