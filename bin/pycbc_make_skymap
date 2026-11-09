@@ -662,7 +662,7 @@ if __name__ == "__main__":
         "--segment-server",
         metavar="URL",
         help="URL of segment server to query when using `--detector-state`",
-        default="https://segments.ligo.org",
+        default="https://segments.igwn.org",
     )
     parser.add_argument(
         "--ligolw-skymap-output",

@@ -139,7 +139,7 @@ def query_flag(
     start_time,
     end_time,
     source="any",
-    server="https://segments.ligo.org",
+    server="https://segments.igwn.org",
     veto_definer=None,
     cache=False,
 ):
@@ -275,7 +275,7 @@ def query_cumulative_flags(
     start_time,
     end_time,
     source="any",
-    server="https://segments.ligo.org",
+    server="https://segments.igwn.org",
     veto_definer=None,
     bounds=None,
     padding=None,
@@ -436,7 +436,7 @@ def query_str(
     start_time,
     end_time,
     source="any",
-    server="https://segments.ligo.org",
+    server="https://segments.igwn.org",
     veto_definer=None,
     cache=False,
 ):
