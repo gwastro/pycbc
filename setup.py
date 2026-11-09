@@ -48,7 +48,7 @@ install_requires = [
     "pegasus-wms.api >= 5.1.1",
     "igwn-ligolw >= 2.1.0",
     "igwn-segments",
-    "lalsuite!=7.2",
+    "lalsuite!=7.2,!=8.0.0",
     "lscsoft-glue>=1.59.3",
     "pykerr",
 ]
