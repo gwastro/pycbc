@@ -592,7 +592,7 @@ while numpy.any(ifar_foreground >= background_time):
         f[f"foreground_h{h_iterations}/ifar"] = conv.sec_to_year(ifar)
         f[f"foreground_h{h_iterations}/fap"] = fap
         for key, value in sig_info.items():
-            f["foreground_h%" % h_iterations].attrs[key] = value
+            f[f"foreground_h{h_iterations}"].attrs[key] = value
 
         # Update ifar and fap for other foreground triggers
         for i in range(len(ifar)):
