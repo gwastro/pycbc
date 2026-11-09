@@ -1,0 +1,10 @@
+name: Configure CI downloads
+description: Apply shared curl and wget retry settings to subsequent CI steps.
+runs:
+  using: composite
+  steps:
+    - name: Export download configuration
+      shell: bash
+      run: |
+        echo "CURL_HOME=$GITHUB_WORKSPACE/tools" >> "$GITHUB_ENV"
+        echo "WGETRC=$GITHUB_WORKSPACE/tools/.wgetrc" >> "$GITHUB_ENV"
