@@ -27,6 +27,21 @@ runs:
         echo "cibw_build=$CIBW_BUILD" >> "$GITHUB_OUTPUT"
       shell: bash
 
+    - name: Check setup.py classifiers match the Python matrix
+      env:
+        PYTHON_VERSIONS_MATRIX: ${{ inputs.python_versions_matrix }}
+      run: |
+        # Python versions listed as "Programming Language :: Python :: 3.x"
+        classifiers=$(grep -oE '"Programming Language :: Python :: [0-9]+\.[0-9]+"' \
+          "$GITHUB_WORKSPACE/setup.py" | grep -oE '[0-9]+\.[0-9]+' | sort -V)
+        matrix=$(jq -r '.[]' <<< "$PYTHON_VERSIONS_MATRIX" | sort -V)
+        if [ "$classifiers" != "$matrix" ]; then
+          echo "::error file=setup.py::Python classifiers ($(echo $classifiers)) do not match the ci_config python_versions_matrix ($(echo $matrix))"
+          exit 1
+        fi
+        echo "setup.py classifiers match the Python matrix: $(echo $matrix)"
+      shell: bash
+
 outputs:
   python_version:
     description: "Python version string"
