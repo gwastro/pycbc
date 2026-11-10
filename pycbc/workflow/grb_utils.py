@@ -876,6 +876,12 @@ def setup_pygrb_minifollowups(
     # Execute this in a sub-workflow
     fil = node.output_files[0]
     job = SubWorkflow(fil.name, is_planned=False)
+    # Declare the files the sub-workflow's jobs read, so that the planner is
+    # given their locations from this workflow.
+    input_files = [trigger_file, *(seg_files or [])]
+    if veto_file:
+        input_files.append(veto_file)
+    job.add_inputs(*input_files)
     job.set_subworkflow_properties(
         map_file, staging_site=workflow.staging_site, cache_file=workflow.cache_file
     )
