@@ -80,6 +80,11 @@ parser.add_argument(
     "For instance H-H1_arrakis_O4LLPIC-*.gwf has a frame-pattern of arrakis_O4LLPIC",
 )
 parser.add_argument("--analysis-flag-name")
+parser.add_argument(
+    "--segments-database-url",
+    metavar="URL",
+    help="URL of segment server to query", default="https://segments.igwn.org"
+)
 parser.add_argument("--dq-channel", required=True)
 parser.add_argument("--dq-ok-channel", required=True)
 parser.add_argument("--dq-thresh", required=True, type=float)
@@ -101,7 +106,8 @@ if args.analysis_flag_name is not None:
     # Get observing segs
     ar_flag_name = args.analysis_flag_name.format(ifo=args.ifo)
     observing_flag = pycbc.dq.query_flag(
-        args.ifo, ar_flag_name, args.gps_start_time, args.gps_end_time
+        args.ifo, ar_flag_name, args.gps_start_time, args.gps_end_time,
+        server=args.dq_server,
     )
 else:
     # If we are not querying the database for segments, just assume that the
