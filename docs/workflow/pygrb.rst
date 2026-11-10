@@ -74,7 +74,7 @@ Data segment information is given in the section::
     segments-method = AT_RUNTIME
     segments-h1-science-name = H1:DMT-ANALYSIS_READY:1
     segments-l1-science-name = L1:DMT-ANALYSIS_READY:1
-    segments-database-url = https://segments.ligo.org
+    segments-database-url = https://segments.igwn.org
     segments-veto-categories = 3
     segments-minimum-segment-length = 256
     segments-veto-definer-url = https://code.pycbc.phy.syr.edu/detchar/veto-definitions/download/master/cbc/ER8/H1L1-HOFT_C00_ER8B_CBC.xml

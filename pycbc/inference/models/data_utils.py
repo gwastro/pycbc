@@ -181,7 +181,7 @@ def create_data_parser():
     )
     dqgroup.add_argument(
         "--dq-server",
-        default="https://segments.ligo.org",
+        default="https://segments.igwn.org",
         help="The server to use for dqsegdb.",
     )
     dqgroup.add_argument(
