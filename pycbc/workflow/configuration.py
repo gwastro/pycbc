@@ -39,14 +39,6 @@ from shutil import which
 
 from pycbc.types.config import InterpolatingConfigParser
 
-__all__ = [
-    'hash_compare',
-    'resolve_url_http',
-    'resolve_url',
-    'add_workflow_command_line_group',
-    'WorkflowConfigParser',
-]
-
 logger = logging.getLogger(__name__)
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
@@ -598,3 +590,12 @@ class WorkflowConfigParser(InterpolatingConfigParser):
                 return local_url
 
         return test_string
+
+
+__all__ = [
+    "hash_compare",
+    "resolve_url_http",
+    "resolve_url",
+    "add_workflow_command_line_group",
+    "WorkflowConfigParser",
+]

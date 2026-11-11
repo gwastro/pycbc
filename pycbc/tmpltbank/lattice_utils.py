@@ -19,11 +19,6 @@ import logging
 
 import numpy
 
-__all__ = [
-    'generate_hexagonal_lattice',
-    'generate_anstar_3d_lattice',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -171,3 +166,9 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, mindist
         vs2.append(curr_point.data[1])
         vs3.append(curr_point.data[2])
     return vs1, vs2, vs3
+
+
+__all__ = [
+    "generate_hexagonal_lattice",
+    "generate_anstar_3d_lattice",
+]

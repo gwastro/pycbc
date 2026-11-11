@@ -32,39 +32,6 @@ from urllib.request import pathname2url
 
 from pycbc.workflow.core import Executable, File, FileList
 
-__all__ = [
-    'excludestr',
-    'requirestr',
-    'PlotExecutable',
-    'make_template_plot',
-    'make_range_plot',
-    'make_spectrum_plot',
-    'make_segments_plot',
-    'make_gating_plot',
-    'make_throughput_plot',
-    'make_foreground_table',
-    'make_sensitivity_plot',
-    'make_coinc_snrchi_plot',
-    'make_inj_table',
-    'make_seg_table',
-    'make_veto_table',
-    'make_seg_plot',
-    'make_ifar_plot',
-    'make_farstat_plot',
-    'make_snrchi_plot',
-    'make_foundmissed_plot',
-    'make_snrratehist_plot',
-    'make_snrifar_plot',
-    'make_results_web_page',
-    'make_single_hist',
-    'make_binned_hist',
-    'make_singles_plot',
-    'make_dq_flag_trigger_rate_plot',
-    'make_dq_segment_table',
-    'make_template_bin_table',
-    'make_bank_compression_plots',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -784,3 +751,37 @@ def make_bank_compression_plots(workflow, bank_files, out_dir, tags=None):
         workflow += node
         files += node.output_files
     return files
+
+
+__all__ = [
+    "excludestr",
+    "requirestr",
+    "PlotExecutable",
+    "make_template_plot",
+    "make_range_plot",
+    "make_spectrum_plot",
+    "make_segments_plot",
+    "make_gating_plot",
+    "make_throughput_plot",
+    "make_foreground_table",
+    "make_sensitivity_plot",
+    "make_coinc_snrchi_plot",
+    "make_inj_table",
+    "make_seg_table",
+    "make_veto_table",
+    "make_seg_plot",
+    "make_ifar_plot",
+    "make_farstat_plot",
+    "make_snrchi_plot",
+    "make_foundmissed_plot",
+    "make_snrratehist_plot",
+    "make_snrifar_plot",
+    "make_results_web_page",
+    "make_single_hist",
+    "make_binned_hist",
+    "make_singles_plot",
+    "make_dq_flag_trigger_rate_plot",
+    "make_dq_segment_table",
+    "make_template_bin_table",
+    "make_bank_compression_plots",
+]

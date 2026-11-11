@@ -39,26 +39,6 @@ from pycbc.types import (
     real_same_precision_as,
 )
 
-__all__ = [
-    'DEFAULT_TAPER_METHOD',
-    'DEFAULT_TAPER_WINDOW',
-    'get_taper_settings',
-    'ceilpow2',
-    'coalign_waveforms',
-    'phase_from_frequencyseries',
-    'amplitude_from_frequencyseries',
-    'time_from_frequencyseries',
-    'phase_from_polarizations',
-    'amplitude_from_polarizations',
-    'frequency_from_polarizations',
-    'apply_fseries_time_shift',
-    'apply_fd_time_shift',
-    'td_taper',
-    'fd_taper',
-    'fd_to_td',
-    'redshift_waveform',
-]
-
 DEFAULT_TAPER_METHOD = "lal"
 DEFAULT_TAPER_WINDOW = None
 
@@ -626,3 +606,24 @@ def redshift_waveform(srch, z, tref=0):
         # convert back to frequency domain
         redshifted = redshifted.to_frequencyseries()
     return redshifted
+
+
+__all__ = [
+    "DEFAULT_TAPER_METHOD",
+    "DEFAULT_TAPER_WINDOW",
+    "get_taper_settings",
+    "ceilpow2",
+    "coalign_waveforms",
+    "phase_from_frequencyseries",
+    "amplitude_from_frequencyseries",
+    "time_from_frequencyseries",
+    "phase_from_polarizations",
+    "amplitude_from_polarizations",
+    "frequency_from_polarizations",
+    "apply_fseries_time_shift",
+    "apply_fd_time_shift",
+    "td_taper",
+    "fd_taper",
+    "fd_to_td",
+    "redshift_waveform",
+]

@@ -20,15 +20,6 @@ import numpy
 
 from pycbc.tmpltbank.lambda_mapping import generate_mapping
 
-__all__ = [
-    'determine_eigen_directions',
-    'get_moments',
-    'interpolate_psd',
-    'calculate_moment',
-    'calculate_metric',
-    'calculate_metric_comp',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -616,3 +607,13 @@ def calculate_metric_comp(
         unmax_metric[mapping[f"LogLogLambda{i}"], -1] = gamma0i
         unmax_metric[-1, mapping[f"LogLogLambda{j}"]] = gamma0j
         unmax_metric[mapping[f"LogLogLambda{i}"], mapping[f"LogLogLambda{j}"]] = gammaij
+
+
+__all__ = [
+    "determine_eigen_directions",
+    "get_moments",
+    "interpolate_psd",
+    "calculate_moment",
+    "calculate_metric",
+    "calculate_metric_comp",
+]

@@ -36,30 +36,6 @@ import igwn_segments as segments
 
 from pycbc.workflow.core import Executable, File, FileList, Node, resolve_td_option
 
-__all__ = [
-    'int_gps_time_to_str',
-    'select_tmpltbank_class',
-    'select_matchedfilter_class',
-    'select_generic_executable',
-    'sngl_ifo_job_setup',
-    'multi_ifo_job_setup',
-    'multi_ifo_coherent_job_setup',
-    'identify_needed_data',
-    'JobSegmenter',
-    'PyCBCInspiralExecutable',
-    'PyCBCMultiInspiralExecutable',
-    'PyCBCTmpltbankExecutable',
-    'LigolwAddExecutable',
-    'PycbcSplitInspinjExecutable',
-    'LalappsInspinjExecutable',
-    'PycbcSplitBankExecutable',
-    'PycbcSplitBankXmlExecutable',
-    'PycbcConditionStrainExecutable',
-    'PycbcCreateInjectionsExecutable',
-    'PycbcInferenceExecutable',
-    'PycbcHDFSplitInjExecutable',
-]
-
 
 def int_gps_time_to_str(t):
     """
@@ -1604,3 +1580,28 @@ class PycbcHDFSplitInjExecutable(Executable):
             out_files.append(out_file)
         node.add_output_list_opt("--output-files", out_files)
         return node
+
+
+__all__ = [
+    "int_gps_time_to_str",
+    "select_tmpltbank_class",
+    "select_matchedfilter_class",
+    "select_generic_executable",
+    "sngl_ifo_job_setup",
+    "multi_ifo_job_setup",
+    "multi_ifo_coherent_job_setup",
+    "identify_needed_data",
+    "JobSegmenter",
+    "PyCBCInspiralExecutable",
+    "PyCBCMultiInspiralExecutable",
+    "PyCBCTmpltbankExecutable",
+    "LigolwAddExecutable",
+    "PycbcSplitInspinjExecutable",
+    "LalappsInspinjExecutable",
+    "PycbcSplitBankExecutable",
+    "PycbcSplitBankXmlExecutable",
+    "PycbcConditionStrainExecutable",
+    "PycbcCreateInjectionsExecutable",
+    "PycbcInferenceExecutable",
+    "PycbcHDFSplitInjExecutable",
+]

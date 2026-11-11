@@ -28,11 +28,6 @@ from pycbc.types import float64
 from pycbc.types.array import Array, _convert, _noreal, zeros
 from pycbc.types.utils import determine_epoch
 
-__all__ = [
-    'FrequencySeries',
-    'load_frequencyseries',
-]
-
 _lal = import_optional("lal")
 
 
@@ -666,3 +661,9 @@ def load_frequencyseries(path, group=None):
         f"File has {data.ndim} dimensions, cannot convert to FrequencySeries, \
                       must be 2 (real) or 3 (complex)"
     )
+
+
+__all__ = [
+    "FrequencySeries",
+    "load_frequencyseries",
+]

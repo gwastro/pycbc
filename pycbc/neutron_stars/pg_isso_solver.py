@@ -26,17 +26,6 @@ formalism. See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
 import numpy as np
 from scipy.optimize import root_scalar
 
-__all__ = [
-    'isco_solution',
-    'isso_eq_at_pole',
-    'isso_eq_at_pole_dr',
-    'isso_eq_at_pole_dr2',
-    'pg_isso_eq',
-    'pg_isso_eq_dr',
-    'pg_isso_eq_dr2',
-    'solve_pg_isso',
-]
-
 
 def isco_solution(chi, incl):
     r"""
@@ -415,3 +404,15 @@ def solve_pg_isso(chi, incl):
         if any(oob):
             raise RuntimeError("Unable to obtain some solutions!")
     return solution
+
+
+__all__ = [
+    "isco_solution",
+    "isso_eq_at_pole",
+    "isso_eq_at_pole_dr",
+    "isso_eq_at_pole_dr2",
+    "pg_isso_eq",
+    "pg_isso_eq_dr",
+    "pg_isso_eq_dr2",
+    "solve_pg_isso",
+]

@@ -12,19 +12,6 @@ from scipy.interpolate import interp1d
 from pycbc.conversions import mchirp_from_mass1_mass2 as m1m2tomch
 from pycbc.io.hdf import HFile
 
-__all__ = [
-    'read_injections',
-    'estimate_vt',
-    'process_injections',
-    'dlum_to_z',
-    'astro_redshifts',
-    'pdf_z_astro',
-    'contracted_dvdc',
-    'inj_mass_pdf',
-    'inj_spin_pdf',
-    'inj_distance_pdf',
-]
-
 _MCH_BNS = 1.4 / 2**0.2
 _redshifts, _d_lum, _I = np.arange(0.0, 5.0, 0.01), [], []
 _save_params = [
@@ -549,3 +536,17 @@ def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp=1):
         idx = np.where(bound != 1)
         pdf[idx] = 0
         return pdf
+
+
+__all__ = [
+    "read_injections",
+    "estimate_vt",
+    "process_injections",
+    "dlum_to_z",
+    "astro_redshifts",
+    "pdf_z_astro",
+    "contracted_dvdc",
+    "inj_mass_pdf",
+    "inj_spin_pdf",
+    "inj_distance_pdf",
+]

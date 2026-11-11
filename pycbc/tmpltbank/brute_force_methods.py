@@ -4,13 +4,6 @@ import numpy
 
 from pycbc.tmpltbank.coord_utils import get_cov_params
 
-__all__ = [
-    'get_physical_covaried_masses',
-    'get_mass_distribution',
-    'stack_xi_direction_brute',
-    'find_xi_extrema_brute',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -607,3 +600,11 @@ def find_xi_extrema_brute(
                 best_masses[3] = spin2z[idx]
                 best_chirpmass = best_masses[0] * (best_masses[1]) ** (3.0 / 5.0)
     return xiextrema
+
+
+__all__ = [
+    "get_physical_covaried_masses",
+    "get_mass_distribution",
+    "stack_xi_direction_brute",
+    "find_xi_extrema_brute",
+]

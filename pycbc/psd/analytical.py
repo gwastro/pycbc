@@ -44,15 +44,6 @@ from pycbc.psd.analytical_space import (
 )
 from pycbc.types import FrequencySeries
 
-__all__ = [
-    'get_psd_model_list',
-    'get_lalsim_psd_list',
-    'get_pycbc_psd_list',
-    'from_string',
-    'flat_unity',
-    'pycbc_analytical_psds',
-]
-
 # build a list of usable PSD functions from lalsimulation
 _name_prefix = "SimNoisePSD"
 _name_suffix = "Ptr"
@@ -222,3 +213,13 @@ pycbc_analytical_psds = {
     "analytical_psd_taiji_tdi_T": analytical_psd_taiji_tdi_T,
     "analytical_psd_taiji_tdi_AE_confusion": analytical_psd_taiji_tdi_AE_confusion,
 }
+
+
+__all__ = [
+    "get_psd_model_list",
+    "get_lalsim_psd_list",
+    "get_pycbc_psd_list",
+    "from_string",
+    "flat_unity",
+    "pycbc_analytical_psds",
+]

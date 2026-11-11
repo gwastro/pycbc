@@ -42,20 +42,6 @@ from pycbc.types import (
     zeros,
 )
 
-__all__ = [
-    'BACKEND_PREFIX',
-    'power_chisq_bins_from_sigmasq_series',
-    'power_chisq_bins',
-    'chisq_accum_bin',
-    'shift_sum',
-    'power_chisq_at_points_from_precomputed',
-    'power_chisq_from_precomputed',
-    'fastest_power_chisq_at_points',
-    'power_chisq',
-    'SingleDetPowerChisq',
-    'SingleDetSkyMaxPowerChisq',
-]
-
 logger = logging.getLogger(__name__)
 
 BACKEND_PREFIX = "pycbc.vetoes.chisq_"
@@ -651,3 +637,18 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
                 dof, len(indices)
             )  # dof * numpy.ones_like(indices)
         return None, None
+
+
+__all__ = [
+    "BACKEND_PREFIX",
+    "power_chisq_bins_from_sigmasq_series",
+    "power_chisq_bins",
+    "chisq_accum_bin",
+    "shift_sum",
+    "power_chisq_at_points_from_precomputed",
+    "power_chisq_from_precomputed",
+    "fastest_power_chisq_at_points",
+    "power_chisq",
+    "SingleDetPowerChisq",
+    "SingleDetSkyMaxPowerChisq",
+]

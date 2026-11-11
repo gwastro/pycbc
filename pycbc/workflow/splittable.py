@@ -43,13 +43,6 @@ from pycbc.workflow.jobsetup import (
     PycbcSplitInspinjExecutable,
 )
 
-__all__ = [
-    'select_splitfilejob_instance',
-    'setup_splittable_workflow',
-    'setup_splittable_manual_directory',
-    'setup_splittable_dax_generated',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -243,3 +236,11 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
         workflow.add_node(node)
         out_file_groups += node.output_files
     return out_file_groups
+
+
+__all__ = [
+    "select_splitfilejob_instance",
+    "setup_splittable_workflow",
+    "setup_splittable_manual_directory",
+    "setup_splittable_dax_generated",
+]

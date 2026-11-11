@@ -41,22 +41,6 @@ from igwn_ligolw import ligolw, utils
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.workflow.core import File, FileList, SegFile, make_analysis_dir
 
-__all__ = [
-    'setup_datafind_workflow',
-    'setup_datafind_runtime_cache_multi_calls_perifo',
-    'setup_datafind_runtime_cache_single_call_perifo',
-    'setup_datafind_runtime_frames_single_call_perifo',
-    'setup_datafind_runtime_frames_multi_calls_perifo',
-    'setup_datafind_from_pregenerated_lcf_files',
-    'convert_cachelist_to_filelist',
-    'get_science_segs_from_datafind_outs',
-    'get_missing_segs_from_frame_file_cache',
-    'get_segment_summary_times',
-    'run_datafind_instance',
-    'log_datafind_command',
-    'datafind_keep_unique_backups',
-]
-
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
 # We can add schemes explicitly, as below, but be careful with this!
@@ -1161,3 +1145,20 @@ def datafind_keep_unique_backups(backup_outs, orig_outs):
             orig_out.add_pfn(pfns[0].url, site="notlocal")
 
     return return_list
+
+
+__all__ = [
+    "setup_datafind_workflow",
+    "setup_datafind_runtime_cache_multi_calls_perifo",
+    "setup_datafind_runtime_cache_single_call_perifo",
+    "setup_datafind_runtime_frames_single_call_perifo",
+    "setup_datafind_runtime_frames_multi_calls_perifo",
+    "setup_datafind_from_pregenerated_lcf_files",
+    "convert_cachelist_to_filelist",
+    "get_science_segs_from_datafind_outs",
+    "get_missing_segs_from_frame_file_cache",
+    "get_segment_summary_times",
+    "run_datafind_instance",
+    "log_datafind_command",
+    "datafind_keep_unique_backups",
+]

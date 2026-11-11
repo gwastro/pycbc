@@ -1,13 +1,5 @@
 """This module contains utilities for following up search triggers"""
 
-__all__ = [
-    'redirect_javascript',
-    'search_form_string',
-    'data_h1_string',
-    'data_l1_string',
-    'get_summary_page_link',
-]
-
 # JavaScript for searching the aLOG
 redirect_javascript = """<script type="text/javascript">
 function redirect(form,way)
@@ -98,3 +90,12 @@ def get_summary_page_link(ifo, utc_time):
     ext = f"{year:4d}{month:02d}{day:02d}"
     return_string = search_form % (ifo.lower(), ifo.lower(), alog_utc, alog_utc)
     return return_string + data[ifo] % ext
+
+
+__all__ = [
+    "redirect_javascript",
+    "search_form_string",
+    "data_h1_string",
+    "data_l1_string",
+    "get_summary_page_link",
+]

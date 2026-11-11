@@ -31,15 +31,6 @@ from dateutil.relativedelta import relativedelta
 
 import pycbc
 
-__all__ = [
-    'symlink',
-    'dict_to_args',
-    'mail_volunteers_error',
-    'run_and_error',
-    'wait_for_utc_time',
-    'ensure_directories',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -150,3 +141,13 @@ def ensure_directories(control_values, day_str):
         # day, e.g. 2024_04_12 will be in 2024/04/12.
         public_dir = os.path.join(control_values["public-dir"], *day_str.split("_"))
         pycbc.makedir(public_dir)
+
+
+__all__ = [
+    "symlink",
+    "dict_to_args",
+    "mail_volunteers_error",
+    "run_and_error",
+    "wait_for_utc_time",
+    "ensure_directories",
+]

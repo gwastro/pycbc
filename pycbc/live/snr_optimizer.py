@@ -48,24 +48,6 @@ try:
 except:
     ps = None
 
-__all__ = [
-    'MIN_CPT_MASS',
-    'MAX_MTOTAL',
-    'Nfeval',
-    'start_time',
-    'callback_func',
-    'compute_network_snr_core',
-    'compute_minus_network_snr',
-    'compute_minus_network_snr_pso',
-    'optimize_di',
-    'optimize_shgo',
-    'optimize_pso',
-    'optimize_funcs',
-    'option_dict',
-    'insert_snr_optimizer_options',
-    'check_snr_optimizer_options',
-]
-
 # Set a minimum mass for points tried in optimization allowing for
 # minimal slop relative to the lightest template
 MIN_CPT_MASS = 0.99
@@ -429,3 +411,22 @@ def check_snr_optimizer_options(args, parser):
         key_name = f"snr_opt_{optimizer_name}_{key}"
         if not getattr(args, key_name):
             setattr(args, key_name, value[1])
+
+
+__all__ = [
+    "MIN_CPT_MASS",
+    "MAX_MTOTAL",
+    "Nfeval",
+    "start_time",
+    "callback_func",
+    "compute_network_snr_core",
+    "compute_minus_network_snr",
+    "compute_minus_network_snr_pso",
+    "optimize_di",
+    "optimize_shgo",
+    "optimize_pso",
+    "optimize_funcs",
+    "option_dict",
+    "insert_snr_optimizer_options",
+    "check_snr_optimizer_options",
+]

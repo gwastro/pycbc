@@ -34,11 +34,6 @@ import logging
 
 from pycbc.workflow.core import FileList, resolve_url_to_file
 
-__all__ = [
-    'setup_psd_workflow',
-    'setup_psd_pregenerated',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -153,3 +148,9 @@ def setup_psd_pregenerated(workflow, tags=None):
                 logger.warning("No psd file specified for IFO %s.", ifo)
 
     return psd_files
+
+
+__all__ = [
+    "setup_psd_workflow",
+    "setup_psd_pregenerated",
+]

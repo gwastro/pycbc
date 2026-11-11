@@ -29,13 +29,6 @@ import uuid
 import mako.template
 import numpy
 
-__all__ = [
-    'google_table_template',
-    'html_table',
-    'static_table_template',
-    'static_table',
-]
-
 google_table_template = mako.template.Template("""
     <script type='text/javascript' src='https://www.google.com/jsapi'></script>
     <script type='text/javascript'>
@@ -231,3 +224,11 @@ def static_table(data, titles=None, columns_max=None, row_labels=None):
         n_rows=n_rows,
         row_labels=row_labels,
     )
+
+
+__all__ = [
+    "google_table_template",
+    "html_table",
+    "static_table_template",
+    "static_table",
+]

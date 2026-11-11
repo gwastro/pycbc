@@ -34,45 +34,6 @@ import igwn_segments as segments
 
 from pycbc.workflow.core import Executable, File, FileList, Node
 
-__all__ = [
-    'PyCBCBank2HDFExecutable',
-    'PyCBCTrig2HDFExecutable',
-    'PyCBCFitByTemplateExecutable',
-    'PyCBCFitOverParamExecutable',
-    'PyCBCFindCoincExecutable',
-    'PyCBCFindSnglsExecutable',
-    'PyCBCStatMapExecutable',
-    'PyCBCSnglsStatMapExecutable',
-    'PyCBCStatMapInjExecutable',
-    'PyCBCSnglsStatMapInjExecutable',
-    'PyCBCHDFInjFindExecutable',
-    'PyCBCDistributeBackgroundBins',
-    'PyCBCCombineStatmap',
-    'PyCBCAddStatmap',
-    'PyCBCExcludeZerolag',
-    'MergeExecutable',
-    'CensorForeground',
-    'make_foreground_censored_veto',
-    'merge_single_detector_hdf_files',
-    'setup_trigger_fitting',
-    'find_injections_in_hdf_coinc',
-    'convert_bank_to_hdf',
-    'convert_trig_to_hdf',
-    'setup_statmap',
-    'setup_sngls_statmap',
-    'setup_statmap_inj',
-    'setup_sngls_statmap_inj',
-    'setup_interval_coinc_inj',
-    'setup_interval_coinc',
-    'setup_sngls',
-    'setup_sngls_inj',
-    'select_files_by_ifo_combination',
-    'get_ordered_ifo_list',
-    'setup_combine_statmap',
-    'setup_exclude_zerolag',
-    'rerank_coinc_followup',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -994,3 +955,43 @@ def rerank_coinc_followup(
     node.new_output_file_opt(workflow.analysis_time, ".hdf", "--output-file")
     workflow += node
     return node.output_file
+
+
+__all__ = [
+    "PyCBCBank2HDFExecutable",
+    "PyCBCTrig2HDFExecutable",
+    "PyCBCFitByTemplateExecutable",
+    "PyCBCFitOverParamExecutable",
+    "PyCBCFindCoincExecutable",
+    "PyCBCFindSnglsExecutable",
+    "PyCBCStatMapExecutable",
+    "PyCBCSnglsStatMapExecutable",
+    "PyCBCStatMapInjExecutable",
+    "PyCBCSnglsStatMapInjExecutable",
+    "PyCBCHDFInjFindExecutable",
+    "PyCBCDistributeBackgroundBins",
+    "PyCBCCombineStatmap",
+    "PyCBCAddStatmap",
+    "PyCBCExcludeZerolag",
+    "MergeExecutable",
+    "CensorForeground",
+    "make_foreground_censored_veto",
+    "merge_single_detector_hdf_files",
+    "setup_trigger_fitting",
+    "find_injections_in_hdf_coinc",
+    "convert_bank_to_hdf",
+    "convert_trig_to_hdf",
+    "setup_statmap",
+    "setup_sngls_statmap",
+    "setup_statmap_inj",
+    "setup_sngls_statmap_inj",
+    "setup_interval_coinc_inj",
+    "setup_interval_coinc",
+    "setup_sngls",
+    "setup_sngls_inj",
+    "select_files_by_ifo_combination",
+    "get_ordered_ifo_list",
+    "setup_combine_statmap",
+    "setup_exclude_zerolag",
+    "rerank_coinc_followup",
+]

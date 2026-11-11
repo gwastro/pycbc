@@ -8,16 +8,6 @@ from scipy.interpolate import interp1d
 import pycbc.psd
 from pycbc.types import TimeSeries
 
-__all__ = [
-    'create_full_filt',
-    'mean_square',
-    'calc_filt_psd_variation',
-    'find_trigger_value',
-    'live_create_filter',
-    'live_calc_psd_variation',
-    'live_find_var_value',
-]
-
 
 def create_full_filt(freqs, filt, plong, srate, psd_duration):
     """
@@ -420,3 +410,14 @@ def live_find_var_value(triggers, psd_var_timeseries):
     )
     # Evaluate at the trigger times
     return interpolator(triggers["end_time"])
+
+
+__all__ = [
+    "create_full_filt",
+    "mean_square",
+    "calc_filt_psd_variation",
+    "find_trigger_value",
+    "live_create_filter",
+    "live_calc_psd_variation",
+    "live_find_var_value",
+]

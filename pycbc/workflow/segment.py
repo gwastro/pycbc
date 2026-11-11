@@ -37,14 +37,6 @@ from igwn_segments import utils as segments_utils
 
 from pycbc.workflow.core import SegFile, make_analysis_dir, resolve_url
 
-__all__ = [
-    'save_veto_definer',
-    'get_segments_file',
-    'get_triggered_coherent_segment',
-    'generate_triggered_segment',
-    'get_flag_segments_file',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -529,3 +521,12 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
         valid_segment=workflow.analysis_time,
         directory=out_dir,
     )
+
+
+__all__ = [
+    "save_veto_definer",
+    "get_segments_file",
+    "get_triggered_coherent_segment",
+    "generate_triggered_segment",
+    "get_flag_segments_file",
+]

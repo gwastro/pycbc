@@ -22,12 +22,6 @@ import scipy.interpolate
 
 from pycbc.types import FrequencySeries
 
-__all__ = [
-    'from_numpy_arrays',
-    'from_txt',
-    'from_xml',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -213,3 +207,10 @@ def from_xml(
     freq_data = f0 + numpy.arange(len(noise_data)) * psd_freq_series.deltaF
 
     return from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff)
+
+
+__all__ = [
+    "from_numpy_arrays",
+    "from_txt",
+    "from_xml",
+]

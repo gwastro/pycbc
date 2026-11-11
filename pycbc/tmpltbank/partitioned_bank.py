@@ -21,10 +21,6 @@ import numpy
 
 from pycbc.tmpltbank import coord_utils
 
-__all__ = [
-    'PartitionedTmpltbank',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -681,3 +677,8 @@ class PartitionedTmpltbank:
                     spin2z.append(curr_bank["spin2s"][k])
 
         return mass1, mass2, spin1z, spin2z
+
+
+__all__ = [
+    "PartitionedTmpltbank",
+]

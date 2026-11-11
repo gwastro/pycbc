@@ -26,16 +26,6 @@ from igwn_ligolw.types import FormatFunc, FromPyType, ToPyType
 
 import pycbc.version as pycbc_version
 
-__all__ = (
-    "LIGOLWContentHandler",
-    "create_process_table",
-    "default_null_value",
-    "get_table_columns",
-    "legacy_row_id_converter",
-    "return_empty_sngl",
-    "return_search_summary",
-)
-
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
@@ -362,3 +352,14 @@ def get_table_columns(table):
 @legacy_row_id_converter
 class LIGOLWContentHandler(OrigLIGOLWContentHandler):
     """Dummy class needed for loading LIGOLW files"""
+
+
+__all__ = (
+    "LIGOLWContentHandler",
+    "create_process_table",
+    "default_null_value",
+    "get_table_columns",
+    "legacy_row_id_converter",
+    "return_empty_sngl",
+    "return_search_summary",
+)

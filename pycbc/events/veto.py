@@ -10,18 +10,6 @@ from igwn_ligolw import ligolw, lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_segments import segment, segmentlist
 
-__all__ = [
-    'start_end_to_segments',
-    'segments_to_start_end',
-    'start_end_from_segments',
-    'indices_within_times',
-    'indices_outside_times',
-    'select_segments_by_definer',
-    'indices_within_segments',
-    'indices_outside_segments',
-    'get_segment_definer_comments',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -265,3 +253,16 @@ def get_segment_definer_comments(xml_file, include_version=True):
         comment_dict[full_channel_name] = seg_def.comment
 
     return comment_dict
+
+
+__all__ = [
+    "start_end_to_segments",
+    "segments_to_start_end",
+    "start_end_from_segments",
+    "indices_within_times",
+    "indices_outside_times",
+    "select_segments_by_definer",
+    "indices_within_segments",
+    "indices_outside_segments",
+    "get_segment_definer_comments",
+]

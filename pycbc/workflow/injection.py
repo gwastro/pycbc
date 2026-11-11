@@ -43,16 +43,6 @@ from pycbc.workflow.jobsetup import (
     select_generic_executable,
 )
 
-__all__ = [
-    'veto_injections',
-    'PyCBCOptimalSNRExecutable',
-    'PyCBCMergeHDFExecutable',
-    'compute_inj_optimal_snr',
-    'cut_distant_injections',
-    'inj_to_hdf',
-    'setup_injection_workflow',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -279,3 +269,14 @@ def setup_injection_workflow(
 
     logger.info("Leaving injection module.")
     return inj_files, inj_tags
+
+
+__all__ = [
+    "veto_injections",
+    "PyCBCOptimalSNRExecutable",
+    "PyCBCMergeHDFExecutable",
+    "compute_inj_optimal_snr",
+    "cut_distant_injections",
+    "inj_to_hdf",
+    "setup_injection_workflow",
+]

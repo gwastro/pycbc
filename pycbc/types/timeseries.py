@@ -37,11 +37,6 @@ from pycbc.types.array import (
 from pycbc.types.frequencyseries import FrequencySeries
 from pycbc.types.utils import determine_epoch
 
-__all__ = [
-    'TimeSeries',
-    'load_timeseries',
-]
-
 _lal = import_optional("lal")
 
 
@@ -1481,3 +1476,9 @@ def load_timeseries(path, group=None):
         f"File has {data.ndim} dimensions, cannot convert to TimeSeries, \
                       must be 2 (real) or 3 (complex)"
     )
+
+
+__all__ = [
+    "TimeSeries",
+    "load_timeseries",
+]

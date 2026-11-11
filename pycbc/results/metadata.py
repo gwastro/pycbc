@@ -10,20 +10,6 @@ from xml.sax.saxutils import escape, unescape
 
 import pycbc.version
 
-__all__ = [
-    'escape_table',
-    'unescape_table',
-    'html_escape',
-    'MetaParser',
-    'save_html_with_metadata',
-    'load_html_metadata',
-    'save_png_with_metadata',
-    'save_pdf_with_metadata',
-    'load_png_metadata',
-    'save_fig_with_metadata',
-    'load_metadata_from_file',
-]
-
 escape_table = {
     '"': "&quot;",
     "'": "&apos;",
@@ -188,3 +174,18 @@ def load_metadata_from_file(filename):
             f"Cannot read metadata from file {filename}, extension {extension} not "
             "supported at this time"
         )
+
+
+__all__ = [
+    "escape_table",
+    "unescape_table",
+    "html_escape",
+    "MetaParser",
+    "save_html_with_metadata",
+    "load_html_metadata",
+    "save_png_with_metadata",
+    "save_pdf_with_metadata",
+    "load_png_metadata",
+    "save_fig_with_metadata",
+    "load_metadata_from_file",
+]

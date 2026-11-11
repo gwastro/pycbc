@@ -20,13 +20,6 @@ import numpy as np
 from pycbc.filter import make_frequency_series, matched_filter_core
 from pycbc.types import Array
 
-__all__ = [
-    'BACKEND_PREFIX',
-    'autochisq_from_precomputed',
-    'SingleDetAutoChisq',
-    'SingleDetSkyMaxAutoChisq',
-]
-
 logger = logging.getLogger(__name__)
 
 BACKEND_PREFIX = "pycbc.vetoes.autochisq_"
@@ -441,3 +434,11 @@ class SingleDetSkyMaxAutoChisq(SingleDetAutoChisq):
             err_msg += "been written. If you want to use it, why not help "
             err_msg += "write it?"
             raise NotImplementedError(err_msg)
+
+
+__all__ = [
+    "BACKEND_PREFIX",
+    "autochisq_from_precomputed",
+    "SingleDetAutoChisq",
+    "SingleDetSkyMaxAutoChisq",
+]

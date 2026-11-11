@@ -21,16 +21,6 @@ import numpy
 import pycbc.libutils
 from pycbc.constants import MTSUN_SI, PI
 
-__all__ = [
-    'lal',
-    'lalsimulation',
-    'pycbc_valid_tmpltbank_orders',
-    'pycbc_valid_orders_help_descriptions',
-    'generate_mapping',
-    'generate_inverse_mapping',
-    'get_chirp_params',
-]
-
 lal = pycbc.libutils.import_optional("lal")
 lalsimulation = pycbc.libutils.import_optional("lalsimulation")
 
@@ -311,3 +301,14 @@ def get_chirp_params(
 get_chirp_params.__doc__ = get_chirp_params.__doc__.format(
     pycbc_valid_orders_help_descriptions
 )
+
+
+__all__ = [
+    "lal",
+    "lalsimulation",
+    "pycbc_valid_tmpltbank_orders",
+    "pycbc_valid_orders_help_descriptions",
+    "generate_mapping",
+    "generate_inverse_mapping",
+    "get_chirp_params",
+]

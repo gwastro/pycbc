@@ -26,18 +26,6 @@ from pycbc.neutron_stars import load_ns_sequence
 from pycbc.tmpltbank.lambda_mapping import pycbc_valid_orders_help_descriptions
 from pycbc.types import nonnegative_float, positive_float
 
-__all__ = [
-    'IndentedHelpFormatterWithNL',
-    'get_options_from_group',
-    'insert_base_bank_options',
-    'insert_metric_calculation_options',
-    'verify_metric_calculation_options',
-    'MetricParameters',
-    'insert_mass_range_option_group',
-    'verify_mass_range_options',
-    'MassRangeParameters',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -1267,3 +1255,16 @@ class MassRangeParameters:
             return 1
 
         return 0
+
+
+__all__ = [
+    "IndentedHelpFormatterWithNL",
+    "get_options_from_group",
+    "insert_base_bank_options",
+    "insert_metric_calculation_options",
+    "verify_metric_calculation_options",
+    "MetricParameters",
+    "insert_mass_range_option_group",
+    "verify_mass_range_options",
+    "MassRangeParameters",
+]

@@ -26,12 +26,6 @@ import logging
 
 from pycbc.workflow.core import Executable, FileList, Node
 
-__all__ = [
-    'PyCBCBinTemplatesDQExecutable',
-    'PyCBCBinTriggerRatesDQExecutable',
-    'setup_dq_reranking',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -156,3 +150,10 @@ def setup_dq_reranking(
 
     logger.info("Finished setting up dq reranking")
     return output_files, output_labels
+
+
+__all__ = [
+    "PyCBCBinTemplatesDQExecutable",
+    "PyCBCBinTriggerRatesDQExecutable",
+    "setup_dq_reranking",
+]

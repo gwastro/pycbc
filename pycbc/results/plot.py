@@ -1,11 +1,5 @@
 """Plotting utilities and premade plot configurations"""
 
-__all__ = [
-    'hist_overflow',
-    'add_style_opt_to_parser',
-    'set_style_from_cli',
-]
-
 
 def hist_overflow(val, val_max, **kwds):
     """Make a histogram with an overflow bar above val_max"""
@@ -60,3 +54,10 @@ def set_style_from_cli(opts):
         pyplot.xkcd()
     elif opts.mpl_style is not None:
         pyplot.style.use(opts.mpl_style)
+
+
+__all__ = [
+    "hist_overflow",
+    "add_style_opt_to_parser",
+    "set_style_from_cli",
+]

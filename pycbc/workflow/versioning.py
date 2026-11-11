@@ -31,11 +31,6 @@ import os
 
 from pycbc.workflow.core import Executable
 
-__all__ = [
-    'VersioningExecutable',
-    'make_versioning_page',
-]
-
 logger = logging.getLogger(__name__)
 
 
@@ -79,3 +74,9 @@ def make_versioning_page(workflow, config_parser, out_dir, tags=None):
     workflow.add_node(node)
 
     return node, node.output_files
+
+
+__all__ = [
+    "VersioningExecutable",
+    "make_versioning_page",
+]

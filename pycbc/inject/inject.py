@@ -51,23 +51,6 @@ from pycbc.waveform import (
 )
 from pycbc.waveform import utils as wfutils
 
-__all__ = [
-    'sim',
-    'injection_func_map',
-    'sim_inspiral_map',
-    'set_sim_data',
-    'projector',
-    'legacy_approximant_name',
-    'CBCHDFInjectionSet',
-    'RingdownHDFInjectionSet',
-    'IncoherentFromFileHDFInjectionSet',
-    'hdfinjtypes',
-    'get_hdf_injtype',
-    'hdf_injtype_from_approximant',
-    'InjectionSet',
-    'SGBurstInjectionSet',
-]
-
 logger = logging.getLogger(__name__)
 
 sim = libutils.import_optional("lalsimulation")
@@ -1462,3 +1445,21 @@ class SGBurstInjectionSet:
             add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
+
+
+__all__ = [
+    "sim",
+    "injection_func_map",
+    "sim_inspiral_map",
+    "set_sim_data",
+    "projector",
+    "legacy_approximant_name",
+    "CBCHDFInjectionSet",
+    "RingdownHDFInjectionSet",
+    "IncoherentFromFileHDFInjectionSet",
+    "hdfinjtypes",
+    "get_hdf_injtype",
+    "hdf_injtype_from_approximant",
+    "InjectionSet",
+    "SGBurstInjectionSet",
+]
