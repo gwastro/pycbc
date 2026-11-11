@@ -29,9 +29,11 @@ Standard models with full waveform generation
     specialized models.
 
     Supported Marginalizations: None
-    +++
-    Earth Rotation:❌ LISA:❌ Higher Modes:✅
-    :ref:`Example <inference_example_bbh>`
+
+    .. card-footer::
+
+        Earth Rotation:❌ LISA:❌ Higher Modes:✅
+        :ref:`Example <inference_example_bbh>`
 
 .. card:: Marginalized Phase
 
@@ -48,8 +50,10 @@ Standard models with full waveform generation
 
 
     Supported Marginalizations: coa_phase (automatic, dominant-mode)
-    +++
-    Earth Rotation:❌ LISA:❌ Higher Modes:❌
+
+    .. card-footer::
+
+        Earth Rotation:❌ LISA:❌ Higher Modes:❌
 
 .. card:: Marginalized Polarization
 
@@ -67,8 +71,10 @@ Standard models with full waveform generation
     because it can support waveform models with higher order modes.
 
     Supported Marginalizations: polarization (automatic), coa_phase (dominant-mode), distance
-    +++
-    Earth Rotation:❌ LISA:❌ Higher Modes:✅
+
+    .. card-footer::
+
+        Earth Rotation:❌ LISA:❌ Higher Modes:✅
 
 .. card:: Marginalized Time
 
@@ -85,9 +91,11 @@ Standard models with full waveform generation
     done in concert with sky and various intrinsic marginalizations.
 
     Supported Marginalizations: tc (time), distance, coa_phase (dominant mode), polarization, ra dec
-    +++
-    Earth Rotation:❌ LISA:❌ Higher Modes:✅
-    :ref:`Example <marginalized_time_example>`
+
+    .. card-footer::
+
+        Earth Rotation:❌ LISA:❌ Higher Modes:✅
+        :ref:`Example <marginalized_time_example>`
 
 .. card:: Marginalized Higher Mode Phase
 
@@ -104,8 +112,10 @@ Standard models with full waveform generation
     as we need to be able to calculate the each mode separately.
 
     Supported Marginalizations: polarization (automatic), coa_phase (automatic)
-    +++
-    Earth Rotation:❌ LISA:❌ Higher Modes:✅
+
+    .. card-footer::
+
+        Earth Rotation:❌ LISA:❌ Higher Modes:✅
 
 =========================================
 Heterodyne / Relative Models
@@ -136,9 +146,11 @@ Heterodyne / Relative Models
     There is also support in this model for use with :ref:`LISA Sangria data analysis <inference_example_lisa_smbhb_ldc>` and :ref:`LISA injection data analysis <inference_example_lisa_smbhb_inj>`.
 
     Supported Marginalizations: distance, coa_phase (dominant mode), polarization
-    +++
-    Earth Rotation:✅ LISA:✅ Higher Modes:❌
-    :ref:`Example <relative_example>`
+
+    .. card-footer::
+
+        Earth Rotation:✅ LISA:✅ Higher Modes:❌
+        :ref:`Example <relative_example>`
 
 .. card:: Relative Time
 
@@ -151,8 +163,10 @@ Heterodyne / Relative Models
     can be done in concert.
 
     Supported Marginalizations: distance, coa_phase (dominant mode), polarization, ra dec
-    +++
-    Earth Rotation:❌ LISA:❌ Higher Modes:❌
+
+    .. card-footer::
+
+        Earth Rotation:❌ LISA:❌ Higher Modes:❌
 
 .. card:: Relative Time Dominant-mode Only
 
@@ -163,8 +177,10 @@ Heterodyne / Relative Models
     gains the ability to marginalize over inclination
 
     Supported Marginalizations: distance, coa_phase (dominant mode), polarization, inclination, ra dec
-    +++
-    Earth Rotation:❌ LISA:❌ Higher Modes:❌
+
+    .. card-footer::
+
+        Earth Rotation:❌ LISA:❌ Higher Modes:❌
 
 .. card:: Brute force LISA sky modes
 
@@ -174,8 +190,10 @@ Heterodyne / Relative Models
     degeneracies. It is built upon the `relative` model
 
     Supported Marginalizations: distance, coa_phase (dominant mode)
-    +++
-    Earth Rotation:❌ LISA:✅ Higher Modes:❌
+
+    .. card-footer::
+
+        Earth Rotation:❌ LISA:✅ Higher Modes:❌
 
 =========================================
 Extrinsic Parameter Only Models
@@ -196,9 +214,11 @@ Extrinsic Parameter Only Models
     or any subset.
 
     Supported Marginalizations: tc (time), distance, coa_phase (dominant mode), polarization, ra dec
-    +++
-    Earth Rotation:❌ LISA:❌ Higher Modes:❌
-    :ref:`Example <single_template_examples>`
+
+    .. card-footer::
+
+        Earth Rotation:❌ LISA:❌ Higher Modes:❌
+        :ref:`Example <single_template_examples>`
 
 =================================================
 Composite Models
