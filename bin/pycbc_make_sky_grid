@@ -53,7 +53,7 @@ def dist_from_str(s):
     string argument.
     """
     assert s.endswith(")")
-    return eval("pycbc.distributions." + s)
+    return pycbc.distributions.distribution_from_string(s)
 
 
 def make_single_det_grid(args):

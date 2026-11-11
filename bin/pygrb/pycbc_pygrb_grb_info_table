@@ -115,7 +115,7 @@ if opts.input_dist is not None:
         parser.error(
             "You can't use input-dist argument and (ra,dec) at the same time, please choose one"
         )
-    input_dist = eval("pycbc.distributions." + opts.input_dist)
+    input_dist = pycbc.distributions.distribution_from_string(opts.input_dist)
     ra, dec = input_dist.get_max_prob_point()
     sky_error = None
 

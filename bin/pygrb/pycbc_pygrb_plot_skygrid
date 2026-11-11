@@ -102,7 +102,7 @@ for outdir in outdirs:
 with h5py.File(sky_grid, "r") as f:
     ra, dec = f["ra"][:], f["dec"][:]
     dist = f.attrs["input_distribution"]
-    input_dist = eval("pycbc.distributions." + dist)
+    input_dist = pycbc.distributions.distribution_from_string(dist)
     samples = input_dist.rvs(opts.num_density_samples)
     input_ra, input_dec = samples["ra"], samples["dec"]
     ifos = f.attrs["detectors"]

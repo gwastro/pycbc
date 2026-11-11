@@ -195,8 +195,8 @@ y_dict = {
     "err_v_param": "diff",
     "fracerr_v_param": "reldiff",
     "ratio_v_param": "errrat",
-    "errhist": "None",
-    "fracerrhist": "None",
+    "errhist": None,
+    "fracerrhist": None,
 }
 ylabels = {
     "scatter": "Recovered " + args.error_param,
@@ -210,8 +210,13 @@ ylabels = {
     "fracerrhist": "Number of injections",
 }
 
-xvals = eval(x_dict[args.plot_type])
-yvals = eval(y_dict[args.plot_type])
+# arrays that may be plotted; some are only computed for certain plot types
+plot_arrays = {
+    name: globals().get(name)
+    for name in ("inj_params", "inj_xparams", "rec_params", "diff", "reldiff", "errrat")
+}
+xvals = plot_arrays[x_dict[args.plot_type]]
+yvals = plot_arrays.get(y_dict[args.plot_type])
 
 logger.info("Plotting %i found inj ...", len(xvals))
 fig = plot.figure()

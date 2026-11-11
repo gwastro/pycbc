@@ -6,7 +6,6 @@ import inspect
 import logging
 import pickle
 from io import BytesIO
-from itertools import chain
 
 import h5py
 import numpy as np
@@ -16,6 +15,7 @@ from lal import LIGOTimeGPS
 
 from pycbc import conversions, events, pnutils
 from pycbc.events import mean_if_greater_than_zero, ranking, veto
+from pycbc.io.safe_eval import AttributeNamespace, safe_eval
 from pycbc.io.ligolw import (
     create_process_table,
     return_empty_sngl,
@@ -527,11 +527,15 @@ class FileData:
             raise RuntimeError("Can't get a mask without a filter function!")
         # only evaluate if no previous calculation was done
         if self._mask is None:
-            # get required columns into the namespace as numpy arrays
-            for column in self.columns:
-                if column in self.filter_func:
-                    setattr(self, column, self.group[column][:])
-            self._mask = eval(self.filter_func)
+            # expose the required columns to the filter as self.<column>
+            columns = {
+                column: self.group[column][:]
+                for column in self.columns
+                if column in self.filter_func
+            }
+            self._mask = safe_eval(
+                self.filter_func, {"self": AttributeNamespace(columns)}
+            )
         return self._mask
 
     def get_column(self, col):
@@ -708,23 +712,13 @@ class SingleDetTriggers:
                         rank_str,
                     )
             logger.info("Setting up filter function")
-            for c in self.trigs.keys():
-                if c in filter_func:
-                    setattr(self, "_" + c, self.trigs[c][:])
+            columns = {c: self.trigs[c][:] for c in self.trigs if c in filter_func}
             for c in self.bank.keys():
                 if c in filter_func:
                     # get template parameters corresponding to triggers
-                    setattr(
-                        self,
-                        "_" + c,
-                        np.array(self.bank[c])[self.trigs["template_id"][:]],
-                    )
-
-            filter_mask = eval(filter_func.replace("self.", "self._"))
-            # remove the dummy attributes
-            for c in chain(self.trigs.keys(), self.bank.keys()):
-                if c in filter_func:
-                    delattr(self, "_" + c)
+                    columns[c] = np.array(self.bank[c])[self.trigs["template_id"][:]]
+            # the filter refers to columns as self.<column>
+            filter_mask = safe_eval(filter_func, {"self": AttributeNamespace(columns)})
 
             self.apply_mask(filter_mask)
             logger.info(

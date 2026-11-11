@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+import ast
 import configparser
 import glob
 import logging
@@ -394,12 +395,12 @@ f = open("results.dat", "w")
 for row in res:
     outstr = ""
     if row['bank'] not in btables:
-        indoc = utils.load_filename(eval(row['bank']).decode('utf-8'), False,
+        indoc = utils.load_filename(ast.literal_eval(row['bank']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
         btables[row['bank']] = Table.get_table(indoc, "sngl_inspiral")
 
     if row['sim'] not in itables:
-        indoc = utils.load_filename(eval(row['sim']).decode('utf-8'), False,
+        indoc = utils.load_filename(ast.literal_eval(row['sim']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
         itables[row['sim']] = Table.get_table(indoc, "sim_inspiral")
 

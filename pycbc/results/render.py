@@ -83,6 +83,18 @@ def get_embedded_config(filename):
     return cp
 
 
+def get_render_function(name):
+    """Return the render function in this module called ``name``.
+
+    The name comes from metadata embedded in result files, so only functions
+    defined in this module whose names start with ``render_`` are accepted.
+    """
+    func = globals().get(name)
+    if not name.startswith("render_") or not callable(func):
+        raise ValueError(f"Unknown render function {name!r}")
+    return func
+
+
 def setup_template_render(path, config_path):
     """This function is the gateway for rendering a template for a file."""
     # initialization
@@ -93,7 +105,7 @@ def setup_template_render(path, config_path):
     # use meta-data if not empty for rendering
     if cp.has_option(filename, "render-function"):
         render_function_name = cp.get(filename, "render-function")
-        render_function = eval(render_function_name)
+        render_function = get_render_function(render_function_name)
         output = render_function(path, cp)
 
     # read configuration file for rendering
@@ -103,7 +115,7 @@ def setup_template_render(path, config_path):
         # render template
         if cp.has_option(filename, "render-function"):
             render_function_name = cp.get(filename, "render-function")
-            render_function = eval(render_function_name)
+            render_function = get_render_function(render_function_name)
             output = render_function(path, cp)
         else:
             output = render_default(path, cp)

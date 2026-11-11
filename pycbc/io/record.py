@@ -38,6 +38,7 @@ from igwn_ligolw import types as ligolw_types
 
 from pycbc import conversions, coordinates, cosmology
 from pycbc.population import population_models
+from pycbc.io.safe_eval import parse_expression, safe_eval
 from pycbc.waveform import parameters
 
 # what functions are given to the eval in FieldArray's __getitem__:
@@ -938,7 +939,7 @@ class FieldArray(numpy.recarray):
                 self._code_cache = {}
 
             if item not in self._code_cache:
-                code = compile(item, "<string>", "eval")
+                code = parse_expression(item)
 
                 # get the function library
                 item_dict = dict(_numpy_function_lib.items())
@@ -978,7 +979,7 @@ class FieldArray(numpy.recarray):
             if item_dict is not None:
                 item_dict.update(added)
 
-            ans = eval(code, {"__builtins__": None}, item_dict)
+            ans = safe_eval(code, item_dict)
             for k in added:
                 item_dict.pop(k)
             return ans

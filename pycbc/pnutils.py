@@ -670,9 +670,12 @@ def get_inspiral_tf(
     params.mass2 = mass2
     params.spin1z = spin1
     params.spin2z = spin2
+    # imported here as pycbc.io depends on pycbc.pnutils
+    from pycbc.io.safe_eval import safe_eval
+
     try:
-        approximant = eval(approximant, {"__builtins__": None}, {"params": params})
-    except (NameError, TypeError):
+        approximant = safe_eval(approximant, {"params": params})
+    except (NameError, TypeError, SyntaxError, AttributeError):
         pass
 
     if approximant in ["TaylorF2", "SPAtmplt"]:

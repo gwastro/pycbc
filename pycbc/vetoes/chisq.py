@@ -387,11 +387,14 @@ class SingleDetPowerChisq:
 
     @staticmethod
     def parse_option(row, arg):
+        # imported here as pycbc.io depends on pycbc.vetoes
+        from pycbc.io.safe_eval import safe_eval
+
         safe_dict = {"max": max, "min": min}
         safe_dict.update(row.__dict__)
         safe_dict.update(math.__dict__)
         safe_dict.update(pycbc.pnutils.__dict__)
-        return eval(str(arg), {"__builtins__": None}, safe_dict)  # noqa: S307
+        return safe_eval(str(arg), safe_dict)
 
     @staticmethod
     def insert_option_group(parser):

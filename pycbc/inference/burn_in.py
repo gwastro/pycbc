@@ -33,6 +33,7 @@ import numpy
 from scipy.stats import ks_2samp
 
 from pycbc.io.record import get_vars_from_arg
+from pycbc.io.safe_eval import safe_eval
 
 logger = logging.getLogger(__name__)
 
@@ -239,7 +240,7 @@ def evaluate_tests(burn_in_test, test_is_burned_in, test_burn_in_iter):
             t: (test_is_burned_in[t] & 0 <= test_burn_in_iter[t] <= ii)
             for t in test_is_burned_in
         }
-        is_burned_in = eval(burn_in_test, {"__builtins__": None}, test_results)
+        is_burned_in = safe_eval(burn_in_test, test_results)
         if is_burned_in:
             break
     if not is_burned_in:

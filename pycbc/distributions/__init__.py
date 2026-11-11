@@ -257,3 +257,27 @@ def read_constraints_from_config(
         )
 
     return cons
+
+
+def distribution_from_string(spec):
+    """Instantiate a distribution from a string such as ``'UniformSky()'``.
+
+    Parameters
+    ----------
+    spec : str
+        A call to one of the distribution classes defined in this package,
+        with literal or arithmetic arguments, e.g.
+        ``'FisherSky(mean_ra=1.2, mean_dec=0.3, sigma=0.1)'``.
+
+    Returns
+    -------
+    The distribution instance.
+    """
+    from pycbc.io.safe_eval import safe_eval
+
+    classes = {
+        name: obj
+        for name, obj in globals().items()
+        if isinstance(obj, type) and not name.startswith("_")
+    }
+    return safe_eval(spec, classes)
