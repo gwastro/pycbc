@@ -17,8 +17,8 @@ import itertools
 import json
 import logging
 import os.path
-import shlex
 import platform
+import shlex
 import subprocess
 import sys
 from multiprocessing.dummy import threading

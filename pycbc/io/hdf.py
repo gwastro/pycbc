@@ -15,12 +15,12 @@ from lal import LIGOTimeGPS
 
 from pycbc import conversions, events, pnutils
 from pycbc.events import mean_if_greater_than_zero, ranking, veto
-from pycbc.io.safe_eval import AttributeNamespace, safe_eval
 from pycbc.io.ligolw import (
     create_process_table,
     return_empty_sngl,
     return_search_summary,
 )
+from pycbc.io.safe_eval import AttributeNamespace, safe_eval
 
 logger = logging.getLogger(__name__)
 

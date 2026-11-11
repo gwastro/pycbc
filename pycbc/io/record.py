@@ -37,8 +37,8 @@ import numpy
 from igwn_ligolw import types as ligolw_types
 
 from pycbc import conversions, coordinates, cosmology
-from pycbc.population import population_models
 from pycbc.io.safe_eval import parse_expression, safe_eval
+from pycbc.population import population_models
 from pycbc.waveform import parameters
 
 # what functions are given to the eval in FieldArray's __getitem__:
