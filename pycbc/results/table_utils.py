@@ -57,7 +57,7 @@ google_table_template = mako.template.Template("""
       }
     </script>
     <div id='${div_id}'></div>
-""")
+""")  # noqa: S702
 
 
 def html_table(columns, names, page_size=None, format_strings=None):
@@ -169,7 +169,7 @@ static_table_template = mako.template.Template("""
             % endfor
         % endfor
     </table>
-""")
+""")  # noqa: S702
 
 
 def static_table(data, titles=None, columns_max=None, row_labels=None):

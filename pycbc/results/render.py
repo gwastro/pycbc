@@ -46,7 +46,7 @@ def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
 
     # render subtemplate
     subtemplate_dir = pycbc.results.__path__[0] + "/templates/wells"
-    env = Environment(loader=FileSystemLoader(subtemplate_dir))
+    env = Environment(loader=FileSystemLoader(subtemplate_dir))  # noqa: S701
     env.globals.update(get_embedded_config=get_embedded_config)
     env.globals.update(path_exists=os.path.exists)
     env.globals.update(len=len)
@@ -155,7 +155,7 @@ def render_default(path, cp):
 
     # render template
     template_dir = pycbc.results.__path__[0] + "/templates/files"
-    env = Environment(loader=FileSystemLoader(template_dir))
+    env = Environment(loader=FileSystemLoader(template_dir))  # noqa: S701
     env.globals.update(abs=abs)
     env.globals.update(open=open)
     env.globals.update(path_exists=os.path.exists)
@@ -178,7 +178,7 @@ def render_glitchgram(path, cp):
 
     # render template
     template_dir = pycbc.results.__path__[0] + "/templates/files"
-    env = Environment(loader=FileSystemLoader(template_dir))
+    env = Environment(loader=FileSystemLoader(template_dir))  # noqa: S701
     env.globals.update(abs=abs)
     template = env.get_template(cp.get(filename, "template"))
     context = {"filename": filename, "slug": slug, "cp": cp}
@@ -203,7 +203,7 @@ def render_text(path, cp):
 
     # render template
     template_dir = pycbc.results.__path__[0] + "/templates/files"
-    env = Environment(loader=FileSystemLoader(template_dir))
+    env = Environment(loader=FileSystemLoader(template_dir))  # noqa: S701
     env.globals.update(abs=abs)
     env.globals.update(path_exists=os.path.exists)
     template = env.get_template("file_pre.html")
@@ -234,7 +234,7 @@ def render_tmplt(path, cp):
 
     # render template
     template_dir = "/".join(path.split("/")[:-1])
-    env = Environment(loader=FileSystemLoader(template_dir))
+    env = Environment(loader=FileSystemLoader(template_dir))  # noqa: S701
     env.globals.update(setup_template_render=setup_template_render)
     env.globals.update(get_embedded_config=get_embedded_config)
     env.globals.update(path_exists=os.path.exists)

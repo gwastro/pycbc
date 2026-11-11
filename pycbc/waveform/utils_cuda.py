@@ -71,7 +71,7 @@ __global__ void fseries_ts(float2 *out, float phi,
 
     return;
     }
-""")
+""")  # noqa: S702
 
 # Right now, hardcoding the number of threads per block
 nt = 1024

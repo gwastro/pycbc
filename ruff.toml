@@ -158,10 +158,6 @@ ignore = [
     # pegasus-*, git, pkg-config, ...) is the point of a workflow package, and
     # their location is up to the user's environment.
     "S603", "S607",
-    # Not planned to be enabled: template autoescaping (S701 Jinja2, S702 Mako).
-    # Most Mako templates generate CUDA/CuPy kernel source, and the HTML
-    # templates render PyCBC's own results, some of which are HTML on purpose.
-    "S701", "S702",
     # Not planned to be enabled: the random module (S311). It is used for IDs
     # and test values, not security.
     "S311",

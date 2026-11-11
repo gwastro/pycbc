@@ -190,7 +190,7 @@ __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int w
         }
     }
 }
-""")
+""")  # noqa: S702
 
 tkernel2 = mako.template.Template("""
 #include <stdio.h>
@@ -221,7 +221,7 @@ __global__ void threshold_and_cluster2(float2* outv, int* outl, float threshold,
         return;
     }
 }
-""")
+""")  # noqa: S702
 
 tfn_cache = {}
 

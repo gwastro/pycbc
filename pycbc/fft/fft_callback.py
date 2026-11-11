@@ -162,7 +162,7 @@ fftsrc = Template("""
             checkCudaErrors(cudaMemcpyToSymbolAsync(callback_params, p, sizeof(param_t), 0,  cudaMemcpyHostToDevice, 0));
          checkCudaErrors(cufftExecC2C(*plan, in, out, CUFFT_INVERSE));
     }
-""")
+""")  # noqa: S702
 
 
 def compile(source, name):

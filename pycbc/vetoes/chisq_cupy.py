@@ -126,7 +126,7 @@ extern "C" __global__ void power_chisq_at_points_${NP}(
     }
 
 }
-""")
+""")  # noqa: S702
 
 chisqkernel_pow2 = Template("""
 #include <cstdint>
@@ -215,7 +215,7 @@ extern "C" __global__ void power_chisq_at_points_${NP}_pow2(
     }
 
 }
-""")
+""")  # noqa: S702
 
 
 @functools.cache

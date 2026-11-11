@@ -132,7 +132,7 @@ extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* 
         }
     }
 }
-""")
+""")  # noqa: S702
 
 tkernel2 = mako.template.Template("""
 extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl, float threshold, int window){
@@ -162,7 +162,7 @@ extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl, float
         return;
     }
 }
-""")
+""")  # noqa: S702
 
 
 @functools.cache

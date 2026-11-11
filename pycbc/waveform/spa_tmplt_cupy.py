@@ -74,7 +74,7 @@ taylorf2_text = mako.template.Template("""
 
     htilde.real(pcos * amp2);
     htilde.imag(-psin * amp2);
-""").render(TWOPI=TWOPI, PI_4=PI_4, LN4=2 * LN2)
+""").render(TWOPI=TWOPI, PI_4=PI_4, LN4=2 * LN2)  # noqa: S702
 
 
 taylorf2_kernel = cp.ElementwiseKernel(

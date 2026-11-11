@@ -233,7 +233,7 @@ extern "C" __global__ void linear_interp(
     }
 
 }
-""")
+""")  # noqa: S702
 
 dckernel_cache = {}
 

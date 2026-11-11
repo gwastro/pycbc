@@ -249,7 +249,7 @@ __global__ void linear_interp(float2 *h, float df, int hlen,
     return;
 
 }
-""")
+""")  # noqa: S702
 
 dckernel_cache = {}
 
