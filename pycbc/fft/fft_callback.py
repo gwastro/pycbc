@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import ctypes
+import hashlib
 import os
 import subprocess
 
@@ -169,17 +170,31 @@ def compile(source, name):
     Compile the string source code into a shared object linked against
     the static version of cufft for callback support.
     """
-    # If we start using this again, we should find a better place for the cache
-    cache = os.path.join("/tmp", name)
+    # The compiled library is loaded into this process, so it is cached in a
+    # directory only the current user can write to
+    cache_dir = os.path.join(
+        os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
+        "pycbc",
+        "cufft_callback",
+    )
+    os.makedirs(cache_dir, mode=0o700, exist_ok=True)
+    cache_stat = os.stat(cache_dir)
+    if cache_stat.st_uid != os.getuid() or cache_stat.st_mode & 0o022:
+        raise PermissionError(
+            f"cuFFT callback cache {cache_dir} must be owned by and only "
+            "writable by the current user"
+        )
+    cache = os.path.join(cache_dir, name)
     hash_file = cache + ".hash"
     lib_file = cache + ".so"
     obj_file = cache + ".o"
+    source_hash = hashlib.sha256(source.encode()).hexdigest()
 
     try:
-        if int(open(hash_file).read()) == hash(source):
-            return lib_file
-        raise ValueError
-    except:
+        with open(hash_file) as fhash:
+            if fhash.read() == source_hash:
+                return lib_file
+    except OSError:
         pass
 
     src_file = cache + ".cu"
@@ -219,9 +234,8 @@ def compile(source, name):
 
     subprocess.check_call(cmd)
 
-    hash_file = cache + ".hash"
-    fhash = open(hash_file, "w")
-    fhash.write(str(hash(source)))
+    with open(hash_file, "w") as fhash:
+        fhash.write(source_hash)
     return lib_file
 
 
