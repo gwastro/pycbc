@@ -39,13 +39,13 @@ def two_column_layout(path, cols, unique="", filename=None, **kwargs):
         with 'well' for pycbc_make_html_page to render it inline.
     """
     # If path is absolute, os.path.join ignores the cwd and returns only path
-    file_dir = os.path.join(os.getcwd(), path)
+    final_dir = os.path.join(os.getcwd(), path)
     if filename is None:
-        filename = os.path.join(file_dir, f"well{unique}.html")
+        filename = os.path.join(final_dir, f"well{unique}.html")
     from pycbc.results.render import render_workflow_html_template
 
     render_workflow_html_template(
-        filename, "two_column.html", cols, file_dir=file_dir, **kwargs
+        filename, "two_column.html", cols, final_dir=final_dir, **kwargs
     )
 
 def single_layout(path, files, **kwargs):
