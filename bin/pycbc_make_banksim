@@ -209,7 +209,7 @@ mkdir("plots")
 
 logger.info("Copying scripts")
 shutil.copy(banksim_prog, "scripts/pycbc_banksim")
-os.chmod("scripts/pycbc_banksim", 0o0777)
+os.chmod("scripts/pycbc_banksim", 0o0755)
 
 logger.info("Creating injection file")
 if confs.has_section("inspinj"):
@@ -370,7 +370,7 @@ for i, j in enumerate(indices):
 maxmatch=array(maxmatch, dtype =dtypef)
 savetxt(options.output_file, maxmatch,fmt=('%5.5f', '%s', '%i', '%s', '%i', '%5.5f'), delimiter=' ')
 """)
-os.chmod("scripts/pycbc_banksim_match_combine", 0o0777)
+os.chmod("scripts/pycbc_banksim_match_combine", 0o0755)
 
 f = open("scripts/pycbc_banksim_collect_results", "w")
 f.write("""#!/usr/bin/env python
@@ -444,7 +444,7 @@ for row in res:
 
     f.write(outstr)
 """)
-os.chmod("scripts/pycbc_banksim_collect_results", 0o0777)
+os.chmod("scripts/pycbc_banksim_collect_results", 0o0755)
 
 if gpu:
     f = open("cconfig", "w")
@@ -502,7 +502,7 @@ if gpu:
 
     exit 0
     """)
-    os.chmod("scripts/diff_match.sh", 0o0777)
+    os.chmod("scripts/diff_match.sh", 0o0755)
 
 logger.info("Creating submit script")
 f = open("submit.sh", "w")
@@ -514,13 +514,13 @@ else:
     f.write("""#!/bin/bash
     condor_submit_dag banksim.dag
     """)
-os.chmod("submit.sh", 0o0777)
+os.chmod("submit.sh", 0o0755)
 
 f = open("partial_results.sh", "w")
 f.write("""#!/bin/bash
 scripts/pycbc_banksim_collect_results
 """)
-os.chmod("partial_results.sh", 0o0777)
+os.chmod("partial_results.sh", 0o0755)
 
 dag.write_sub_files()
 dag.write_script()
@@ -642,6 +642,6 @@ mplot(q, ispin1z, (imchirp-tmchirp)/imchirp, "plots/q-s1z-mchirpreldiff.png")
 mplot(q, ispin2z, (imchirp-tmchirp)/imchirp, "plots/q-s2z-mchirpreldiff.png")
 
 """)
-os.chmod("scripts/pycbc_banksim_plots", 0o0777)
+os.chmod("scripts/pycbc_banksim_plots", 0o0755)
 
 logger.info("Done")
