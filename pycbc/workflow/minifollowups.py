@@ -53,8 +53,9 @@ def write_config_for_subworkflow(cp, config_path):
     generates is itself planned.
     """
     cp = copy.deepcopy(cp)
-    cp.set('workflow', 'skip-resolve-input-files', '')
-    cp.write(open(config_path, 'w'))
+    cp.set("workflow", "skip-resolve-input-files", "")
+    with open(config_path, "w") as config_file:
+        cp.write(config_file)
 
 
 def add_wellfile_opt(node, workflow, option_name, out_dir, extra_tags=None):
@@ -63,23 +64,24 @@ def add_wellfile_opt(node, workflow, option_name, out_dir, extra_tags=None):
     """
     exe = node.executable
     tags = list(exe.tags)
-    for tag in (extra_tags or []):
+    for tag in extra_tags or []:
         if tag not in tags:
             tags.append(tag)
 
     valid_seg = workflow.analysis_time
     start = int(valid_seg[0])
     duration = int(math.ceil(valid_seg[1])) - start
-    ifo_string = ''.join(exe.ifo_list).upper() if exe.ifo_list else 'ALL'
+    ifo_string = "".join(exe.ifo_list).upper() if exe.ifo_list else "ALL"
     bits = [ifo_string, exe.name.upper()] + [tag.upper() for tag in tags]
     filename = f"well_{'_'.join(bits)}_{start}_{duration}.html"
     path = os.path.join(out_dir, filename)
-    file_url = urllib.parse.urlunparse(
-        ['file', 'localhost', path, None, None, None])
-    fil = File(exe.ifo_list, exe.name, workflow.analysis_time,
-              file_url=file_url, tags=tags)
+    file_url = urllib.parse.urlunparse(["file", "localhost", path, None, None, None])
+    fil = File(
+        exe.ifo_list, exe.name, workflow.analysis_time, file_url=file_url, tags=tags
+    )
     node.add_output_opt(option_name, fil)
     return fil
+
 
 def grouper(iterable, n, fillvalue=None):
     """Create a list of n length tuples"""
@@ -467,6 +469,16 @@ class PlotQScanExecutable(PlotExecutable):
     """
     Class to be used for to create workflow.Executable instances for the
     pycbc_plot_qscan executable. Basically inherits directly from
+    PlotExecutable.
+    """
+
+    time_dependent_options = ["--channel-name", "--frame-type"]
+
+
+class PageAudioExecutable(PlotExecutable):
+    """
+    Class to be used for to create workflow.Executable instances for the
+    pycbc_page_audio executable. Basically inherits directly from
     PlotExecutable.
     """
 
@@ -1070,6 +1082,106 @@ def make_qscan_plot(
     node.new_output_file_opt(workflow.analysis_time, ".png", "--output-file")
     workflow += node
     return node.output_files
+
+
+def make_audio_file(
+    workflow,
+    ifo,
+    trig_time,
+    out_dir,
+    *,
+    injection_file=None,
+    data_segments=None,
+    time_window=100,
+    tags=None,
+):
+    """
+    Generate a page_audio node and add it to workflow.
+
+    This function generates a single node of the page_audio executable, which
+    writes a wav file of the whitened strain around the trigger together with
+    an HTML snippet embedding an audio player for it. Only the HTML snippet is
+    returned so that it can be placed directly in a results page layout; the
+    wav file is still registered as an output of the node so that it is staged
+    alongside it.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.core.Workflow
+        The workflow class that stores the jobs that will be run.
+    ifo: str
+        Which interferometer are we using?
+    trig_time: int
+        The time of the trigger being followed up.
+    out_dir: str
+        Location of directory to output to
+    injection_file: pycbc.workflow.File (optional, default=None)
+        If given, add the injections in the file to strain before making the
+        audio file.
+    data_segments: igwn_segments.segmentlist (optional, default=None)
+        The list of segments for which data exists and can be read in. If given
+        the start/end times given to page_audio will be adjusted if
+        [trig_time - time_window, trig_time + time_window] does not completely
+        lie within a valid data segment. A ValueError will be raised if the
+        trig_time is not within a valid segment. This **must** be coalesced.
+    time_window: int (optional, default=100)
+        The amount of data (not including padding) that will be read in by the
+        page_audio job, used to estimate the PSD for whitening. The default
+        value of 100s should be fine for most cases.
+    tags: list (optional, default=None)
+        List of tags to add to the created nodes, which determine file naming.
+
+    Returns
+    -------
+    files: pycbc.workflow.FileList
+        A list containing only the HTML snippet output file.
+    """
+    tags = [] if tags is None else tags
+    if trig_time == -1.0:
+        # No trigger in this detector, so nothing to listen to
+        return FileList([])
+    makedir(out_dir)
+    name = "page_audio"
+
+    curr_exe = PageAudioExecutable(
+        workflow.cp, name, ifos=[ifo], out_dir=out_dir, tags=tags
+    )
+
+    start = trig_time - time_window
+    end = trig_time + time_window
+    node = curr_exe.create_node(valid_seg=segments.segment(start, end))
+
+    if data_segments is not None:
+        # Assumes coalesced, so trig_time can only be within one segment
+        for seg in data_segments:
+            if trig_time in seg:
+                data_seg = seg
+                break
+        else:
+            err_msg = f"Trig time {trig_time} "
+            err_msg += "does not seem to lie within any data segments. "
+            err_msg += "This shouldn't be possible, please ask for help!"
+            raise ValueError(err_msg)
+        if curr_exe.has_opt("pad-data"):
+            pad_data = int(curr_exe.get_opt("pad-data"))
+        else:
+            pad_data = 0
+        end = min(end, data_seg[1] - pad_data)
+        start = max(start, data_seg[0] + pad_data)
+
+    node.add_opt("--gps-start-time", int(start))
+    node.add_opt("--gps-end-time", int(end))
+    node.add_opt("--center-time", trig_time)
+
+    if injection_file is not None:
+        node.add_input_opt("--injection-file", injection_file)
+
+    node.new_output_file_opt(workflow.analysis_time, ".wav", "--output-file")
+    html_file = node.new_output_file_opt(
+        workflow.analysis_time, ".html", "--output-html"
+    )
+    workflow += node
+    return FileList([html_file])
 
 
 def make_singles_timefreq(

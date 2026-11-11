@@ -6,14 +6,26 @@ Convert single-detector gravitational-wave strain data to an audio file
 
 import argparse
 import logging
+import os
+import sys
+
+import numpy as np
 
 import pycbc.strain
+from pycbc.results import save_fig_with_metadata
 
 logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--output-file", required=True, help="Output plot")
+parser.add_argument("--output-file", required=True, help="Output wav file")
+parser.add_argument(
+    "--output-html",
+    help="Optional HTML snippet embedding an audio player for the output "
+    "wav file, with title and caption metadata so it can be shown on "
+    "results pages. The wav file is referenced by basename, so both "
+    "files must be served from the same directory.",
+)
 parser.add_argument(
     "--center-time",
     type=float,
@@ -41,12 +53,10 @@ else:
     center_time = args.center_time
 # Set up the time window to be audified
 try:
-    split = args.time_window.split(",")
-    win_start = float(args.time_window.split(",")[0])
-    win_end = float(args.time_window.split(",")[1])
-    if win_start <= 0 or win_end <= 0:
-        raise RuntimeError
-except (RuntimeError, IndexError, ValueError):
+    win_start, win_end = (float(v) for v in args.time_window.split(","))
+except ValueError:
+    parser.error(f"--time-window input error. Got {args.time_window}. See help.")
+if win_start <= 0 or win_end <= 0:
     parser.error(f"--time-window input error. Got {args.time_window}. See help.")
 
 logger.info("Loading Strain")
@@ -60,8 +70,33 @@ logger.info("Whitening")
 strain = strain.whiten(4, 4, remove_corrupted=rem_corrupted)
 
 logger.info("Slicing to specified region")
-strain_zoom = strain.time_slice(
-    args.center_time - win_start, args.center_time + win_end
-)
+strain_zoom = strain.time_slice(center_time - win_start, center_time + win_end)
+
+if not np.any(strain_zoom.numpy()):
+    logger.warning("Strain is identically zero in the window, writing silence")
+
 logger.info("Saving audio to %s", args.output_file)
 strain_zoom.save_to_wav(args.output_file)
+
+if args.output_html is not None:
+    logger.info("Saving HTML snippet to %s", args.output_html)
+    wav_name = os.path.basename(args.output_file)
+    ifo = args.channel_name.split(":")[0] if args.channel_name else "detector"
+    html = (
+        f'<audio controls preload="none" src="{wav_name}" '
+        'style="width:100%">Your browser does not support audio '
+        f'playback. <a href="{wav_name}">Download the wav file</a>.</audio>'
+    )
+    caption = (
+        f"Whitened {ifo} strain from {win_start:g} s before to {win_end:g} s "
+        f"after GPS time {center_time:.3f}, played back at the data sample "
+        f"rate of {int(strain_zoom.sample_rate)} Hz. The amplitude is "
+        "normalised to the loudest sample in the window."
+    )
+    save_fig_with_metadata(
+        html,
+        args.output_html,
+        title=f"Audio of {ifo} strain around {center_time:.3f}",
+        caption=caption,
+        cmd=" ".join(sys.argv),
+    )

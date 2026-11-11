@@ -297,6 +297,15 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                     data_segments=insp_data_seglists[ifo],
                     tags=[*args.tags, str(event_count)],
                 )
+                if workflow.cp.has_option("executables", "page_audio"):
+                    files += mini.make_audio_file(
+                        workflow,
+                        ifo,
+                        time,
+                        args.output_dir,
+                        data_segments=insp_data_seglists[ifo],
+                        tags=[*args.tags, str(event_count)],
+                    )
                 break
         else:
             logger.info(
