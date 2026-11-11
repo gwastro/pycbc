@@ -40,7 +40,8 @@ igwn-ligolw>=2.1.0
 
 # Needed for Parameter Estimation Tasks
 emcee>=3.0.0
-dynesty>=1.2
+# dynesty 3.2 removed dynesty.utils.apply_reflect, used by the dynesty sampler
+dynesty>=1.2,<3.2
 
 # For building documentation
 Sphinx>=4.2.0
