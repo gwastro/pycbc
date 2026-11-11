@@ -120,7 +120,9 @@ class Stat:
         file_hashes = {}
         for stat, filename in self.files.items():
             with open(filename, "rb") as file_binary:
-                file_hashes[stat] = sha1(file_binary.read()).hexdigest()
+                file_hashes[stat] = sha1(
+                    file_binary.read(), usedforsecurity=False
+                ).hexdigest()
         logger.debug(
             "Got file hashes for %d files, took %.3es",
             len(self.files),

@@ -101,7 +101,7 @@ def _url_to_dirname(url):
     if parts[0].lower() in ("http", "https") and parts[1] and parts[2] == "":
         parts[2] = "/"
     normalised = urllib.parse.urlunsplit(parts)
-    return hashlib.md5(normalised.encode("utf-8")).hexdigest()
+    return hashlib.md5(normalised.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 def prefetch(url, attempts=5):

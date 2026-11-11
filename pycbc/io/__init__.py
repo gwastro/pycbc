@@ -69,7 +69,9 @@ def _candidate_urls(url):
                 url,
             ]
         elif any(host in url for host in _JSON_API_HOSTS):
-            hh = hashlib.md5(url.strip().lower().encode("utf-8")).hexdigest()
+            hh = hashlib.md5(
+                url.strip().lower().encode("utf-8"), usedforsecurity=False
+            ).hexdigest()
             candidates = [base_backup_url.format(hh + ".json"), url]
         else:
             candidates = [url]
