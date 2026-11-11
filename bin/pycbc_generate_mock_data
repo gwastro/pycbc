@@ -21,7 +21,6 @@ It contains Gaussian noise, population injections, and glitches.
 
 import argparse
 import logging
-import os
 import shlex
 import subprocess
 
@@ -293,6 +292,6 @@ for ifo in opts.ifo_list:
     if opts.low_frequency_cutoff is not None:
         args_opt.append(f"--fake-strain-flow {opts.low_frequency_cutoff[ifo]:f}")
 
-    cmd = shlex.split(" ".join(args_opt))
-    print(shlex.join(cmd))
-    subprocess.run(cmd, check=False)
+    cmd = " ".join(args_opt)
+    logger.info("Running: %s", cmd)
+    subprocess.run(shlex.split(cmd), check=False)
