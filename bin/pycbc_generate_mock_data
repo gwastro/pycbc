@@ -143,6 +143,7 @@ parser.add_argument(
 
 # parse the command line
 opts = parser.parse_args()
+pycbc.init_logging(opts.verbose)
 
 
 # Function to generate command line script
