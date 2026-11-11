@@ -88,9 +88,9 @@ try:
 except:
     log_path = "./"
 
-tempfile.tempdir = log_path
-tempfile.template = "faithsim.dag.log."
-logfile = tempfile.mktemp()
+# create the log file securely so its name cannot be claimed by another process
+log_fd, logfile = tempfile.mkstemp(prefix="faithsim.dag.log.", dir=log_path)
+os.close(log_fd)
 
 try:
     accounting_group = confs.get("workflow", "accounting-group")

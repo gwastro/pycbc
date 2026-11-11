@@ -168,9 +168,9 @@ templates_per_job = confs.get("workflow", "templates-per-job")
 
 log_path = confs.get("workflow", "log-path")
 
-tempfile.tempdir = log_path
-tempfile.template = "banksim.dag.log."
-logfile = tempfile.mktemp()
+# create the log file securely so its name cannot be claimed by another process
+log_fd, logfile = tempfile.mkstemp(prefix="banksim.dag.log.", dir=log_path)
+os.close(log_fd)
 
 mchirp_window = None
 if confs.has_option("banksim", "mchirp-window"):
