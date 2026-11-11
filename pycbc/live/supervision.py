@@ -31,6 +31,15 @@ from dateutil.relativedelta import relativedelta
 
 import pycbc
 
+__all__ = [
+    'symlink',
+    'dict_to_args',
+    'mail_volunteers_error',
+    'run_and_error',
+    'wait_for_utc_time',
+    'ensure_directories',
+]
+
 logger = logging.getLogger(__name__)
 
 

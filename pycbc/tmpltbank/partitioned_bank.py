@@ -21,6 +21,10 @@ import numpy
 
 from pycbc.tmpltbank import coord_utils
 
+__all__ = [
+    'PartitionedTmpltbank',
+]
+
 logger = logging.getLogger(__name__)
 
 

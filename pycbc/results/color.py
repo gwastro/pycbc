@@ -1,5 +1,10 @@
 """Utilities for managing matplotlib colors and mapping ifos to color"""
 
+__all__ = [
+    'ifo_color',
+    'source_color',
+]
+
 _ifo_color_map = {
     "G1": "#222222",  # dark gray
     "K1": "#ffb200",  # yellow/orange

@@ -41,6 +41,19 @@ from pycbc.libutils import import_optional
 from pycbc.opt import LimitedSizeDict
 from pycbc.scheme import cpuonly, schemed
 
+__all__ = [
+    'BACKEND_PREFIX',
+    'force_precision_to_match',
+    'common_kind',
+    'check_same_len_precision',
+    'Array',
+    'real_same_precision_as',
+    'complex_same_precision_as',
+    'zeros',
+    'empty',
+    'load_array',
+]
+
 _lal = import_optional("lal")
 
 #! FIXME: the uint32 datatype has not been fully tested,

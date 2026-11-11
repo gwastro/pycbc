@@ -36,8 +36,8 @@ from utils import _check_scheme_cpu, simple_exit
 
 from pycbc.constants import PI
 from pycbc.filter import make_frequency_series, match, overlap, sigma
+from pycbc.types import TimeSeries
 from pycbc.waveform import (
-    TimeSeries,
     fd_approximants,
     get_fd_waveform,
     get_td_waveform,

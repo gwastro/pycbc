@@ -31,6 +31,11 @@ import os
 
 from pycbc.workflow.core import Executable
 
+__all__ = [
+    'VersioningExecutable',
+    'make_versioning_page',
+]
+
 logger = logging.getLogger(__name__)
 
 

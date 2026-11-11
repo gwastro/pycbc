@@ -40,6 +40,12 @@ from pycbc.workflow.jobsetup import (
     sngl_ifo_job_setup,
 )
 
+__all__ = [
+    'setup_matchedfltr_workflow',
+    'setup_matchedfltr_dax_generated',
+    'setup_matchedfltr_dax_generated_multi',
+]
+
 logger = logging.getLogger(__name__)
 
 

@@ -4,6 +4,13 @@ import numpy
 
 from pycbc.tmpltbank.coord_utils import get_cov_params
 
+__all__ = [
+    'get_physical_covaried_masses',
+    'get_mass_distribution',
+    'stack_xi_direction_brute',
+    'find_xi_extrema_brute',
+]
+
 logger = logging.getLogger(__name__)
 
 

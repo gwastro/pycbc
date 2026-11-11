@@ -27,6 +27,18 @@ from pycbc.types import (
     zeros,
 )
 
+__all__ = [
+    'USE_CACHING_FOR_WELCH_FFTS',
+    'USE_CACHING_FOR_INV_SPEC_TRUNC',
+    'WELCH_UNIQUE_ID',
+    'INVSPECTRUNC_UNIQUE_ID',
+    'median_bias',
+    'welch',
+    'inverse_spectrum_truncation',
+    'interpolate',
+    'bandlimited_interpolate',
+]
+
 # Change to True in front-end if you want this function to use caching
 # This is a mostly-hidden optimization option that most users will not want
 # to use. It is used in PyCBC Live

@@ -37,6 +37,11 @@ from pycbc.types.array import (
 from pycbc.types.frequencyseries import FrequencySeries
 from pycbc.types.utils import determine_epoch
 
+__all__ = [
+    'TimeSeries',
+    'load_timeseries',
+]
+
 _lal = import_optional("lal")
 
 

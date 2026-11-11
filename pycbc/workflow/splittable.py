@@ -43,6 +43,13 @@ from pycbc.workflow.jobsetup import (
     PycbcSplitInspinjExecutable,
 )
 
+__all__ = [
+    'select_splitfilejob_instance',
+    'setup_splittable_workflow',
+    'setup_splittable_manual_directory',
+    'setup_splittable_dax_generated',
+]
+
 logger = logging.getLogger(__name__)
 
 

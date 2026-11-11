@@ -22,6 +22,12 @@ import scipy.interpolate
 
 from pycbc.types import FrequencySeries
 
+__all__ = [
+    'from_numpy_arrays',
+    'from_txt',
+    'from_xml',
+]
+
 logger = logging.getLogger(__name__)
 
 

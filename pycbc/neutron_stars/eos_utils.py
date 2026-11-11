@@ -28,6 +28,15 @@ from pycbc.libutils import import_optional
 from . import NS_DATA_DIRECTORY, NS_SEQUENCES
 from .pg_isso_solver import solve_pg_isso
 
+__all__ = [
+    'lalsim',
+    'load_ns_sequence',
+    'interp_grav_mass_to_baryon_mass',
+    'interp_grav_mass_to_compactness',
+    'initialize_eos',
+    'foucart18',
+]
+
 #  Imports needed if we implement the lalsimulation EOS interface
 # from pycbc.constants import (
 #     MSUN_SI, G_SI, C_SI

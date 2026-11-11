@@ -30,6 +30,14 @@ from pycbc.filter import matched_filter_core, overlap_cplx, sigmasq
 from pycbc.types import Array, TimeSeries, real_same_precision_as, zeros
 from pycbc.waveform import FilterBank
 
+__all__ = [
+    'segment_snrs',
+    'template_overlaps',
+    'bank_chisq_from_filters',
+    'SingleDetBankVeto',
+    'SingleDetSkyMaxBankVeto',
+]
+
 logger = logging.getLogger(__name__)
 
 

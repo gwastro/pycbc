@@ -19,6 +19,11 @@ import logging
 
 import numpy
 
+__all__ = [
+    'generate_hexagonal_lattice',
+    'generate_anstar_3d_lattice',
+]
+
 logger = logging.getLogger(__name__)
 
 

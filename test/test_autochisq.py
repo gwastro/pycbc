@@ -8,12 +8,11 @@ from math import cos, exp, pi, sin
 import numpy as np
 from utils import parse_args_all_schemes, simple_exit
 
-from pycbc.filter import matched_filter_core
+from pycbc.filter import make_frequency_series, matched_filter_core
 from pycbc.types import Array, FrequencySeries, TimeSeries
 from pycbc.vetoes import (
     SingleDetAutoChisq,
     autochisq_from_precomputed,
-    make_frequency_series,
 )
 from pycbc.waveform import get_td_waveform
 

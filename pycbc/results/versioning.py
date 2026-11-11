@@ -21,6 +21,14 @@ import urllib.parse
 import pycbc.version
 from pycbc.libutils import import_optional
 
+__all__ = [
+    'lal',
+    'lalframe',
+    'lalsimulation',
+    'get_library_version_info',
+    'get_code_version_numbers',
+]
+
 lal = import_optional("lal")
 lalframe = import_optional("lalframe")
 lalsimulation = import_optional("lalsimulation")

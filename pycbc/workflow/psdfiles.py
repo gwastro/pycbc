@@ -34,6 +34,11 @@ import logging
 
 from pycbc.workflow.core import FileList, resolve_url_to_file
 
+__all__ = [
+    'setup_psd_workflow',
+    'setup_psd_pregenerated',
+]
+
 logger = logging.getLogger(__name__)
 
 

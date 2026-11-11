@@ -30,6 +30,14 @@ import numpy
 
 from pycbc.results import save_fig_with_metadata
 
+__all__ = [
+    'contour_plotter',
+    'make_grb_segments_plot',
+    'axis_max_value',
+    'axis_min_value',
+    'pygrb_plotter',
+]
+
 
 # =============================================================================
 # Used locally: plot contours in a scatter plot with SNR as horizontal axis

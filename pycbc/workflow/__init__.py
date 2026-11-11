@@ -29,6 +29,7 @@ interferometer data
 
 import os.path
 
+from pycbc import makedir
 from pycbc.workflow.coincidence import *
 from pycbc.workflow.configuration import *
 from pycbc.workflow.core import *

@@ -34,6 +34,12 @@ from pycbc.filter import match
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3, nearest_larger_binary_number
 from pycbc.types import FrequencySeries, MultiDetOptionAction, positive_float, zeros
 
+__all__ = [
+    'insert_injfilterrejector_option_group',
+    'insert_injfilterrejector_option_group_multi_ifo',
+    'InjFilterRejector',
+]
+
 _injfilterrejector_group_help = (
     "Options that, if injections are present in "
     "this run, are responsible for performing pre-checks between injections "

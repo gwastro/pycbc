@@ -20,6 +20,15 @@ import numpy
 
 from pycbc.tmpltbank.lambda_mapping import generate_mapping
 
+__all__ = [
+    'determine_eigen_directions',
+    'get_moments',
+    'interpolate_psd',
+    'calculate_moment',
+    'calculate_metric',
+    'calculate_metric_comp',
+]
+
 logger = logging.getLogger(__name__)
 
 

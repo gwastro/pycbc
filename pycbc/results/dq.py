@@ -1,5 +1,13 @@
 """This module contains utilities for following up search triggers"""
 
+__all__ = [
+    'redirect_javascript',
+    'search_form_string',
+    'data_h1_string',
+    'data_l1_string',
+    'get_summary_page_link',
+]
+
 # JavaScript for searching the aLOG
 redirect_javascript = """<script type="text/javascript">
 function redirect(form,way)

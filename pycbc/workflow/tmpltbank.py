@@ -41,6 +41,15 @@ from pycbc.workflow.core import (
 )
 from pycbc.workflow.jobsetup import select_tmpltbank_class, sngl_ifo_job_setup
 
+__all__ = [
+    'setup_tmpltbank_workflow',
+    'setup_tmpltbank_dax_generated',
+    'setup_tmpltbank_without_frames',
+    'setup_tmpltbank_pregenerated',
+    'make_compress_split_banks',
+    'make_combine_split_banks',
+]
+
 logger = logging.getLogger(__name__)
 
 

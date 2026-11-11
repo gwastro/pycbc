@@ -26,6 +26,12 @@ import logging
 
 from pycbc.workflow.core import Executable, FileList, Node
 
+__all__ = [
+    'PyCBCBinTemplatesDQExecutable',
+    'PyCBCBinTriggerRatesDQExecutable',
+    'setup_dq_reranking',
+]
+
 logger = logging.getLogger(__name__)
 
 

@@ -38,6 +38,31 @@ from pycbc.events import veto
 from pycbc.events.coherent import reweightedsnr_cut
 from pycbc.io.hdf import HFile
 
+__all__ = [
+    'pygrb_initialize_plot_parser',
+    'pygrb_add_slide_opts',
+    'slide_opts_helper',
+    'pygrb_add_injmc_opts',
+    'pygrb_add_bestnr_opts',
+    'pygrb_add_null_snr_opts',
+    'pygrb_add_bestnr_cut_opt',
+    'load_data',
+    'apply_vetoes_to_found_injs',
+    'get_antenna_responses',
+    'get_antenna_dist_factor',
+    'sort_trigs',
+    'extract_trig_properties',
+    'extract_ifos',
+    'load_time_slides',
+    'load_segment_dict',
+    'construct_trials',
+    'sort_stat',
+    'max_median_stat',
+    'mc_cal_wf_errs',
+    'get_coinc_snr',
+    'template_hash_to_id',
+]
+
 logger = logging.getLogger(__name__)
 
 

@@ -33,6 +33,13 @@ import numpy as np
 from pycbc import conversions as conv
 from pycbc import pnutils
 
+__all__ = [
+    'conversion_options',
+    'mass_conversions',
+    'spin_conversions',
+    'get_bank_property',
+]
+
 logger = logging.getLogger(__name__)
 
 # Convert from parameter name to helper function
