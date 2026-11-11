@@ -1226,10 +1226,14 @@ class LiveCoincTimeslideBackgroundEstimator:
 
     @staticmethod
     def restore_state(filename):
-        """Restore state of the background buffers from a file"""
+        """Restore state of the background buffers from a file.
+
+        Loading a pickle can execute arbitrary code, so only load files written by
+        PyCBC from a trusted source, such as this analysis's own checkpoints.
+        """
         import pickle
 
-        return pickle.load(filename)
+        return pickle.load(filename)  # noqa: S301
 
     def ifar(self, coinc_stat):
         """

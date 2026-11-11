@@ -1794,10 +1794,13 @@ class FileList(list):
     @classmethod
     def load(cls, filename):
         """
-        Load a FileList from a pickle file
+        Load a FileList from a pickle file.
+
+        Loading a pickle can execute arbitrary code, so only load files written by
+        PyCBC from a trusted source, such as this analysis's own checkpoints.
         """
         f = open(filename)
-        return pickle.load(f)
+        return pickle.load(f)  # noqa: S301
 
     def dump(self, filename):
         """

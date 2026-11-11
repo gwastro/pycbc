@@ -13,7 +13,7 @@ def spin_ldc2pycbc(mag, pol):
 def plt(index):
 
     with open("./MBHB_params_v2_LISA_frame.pkl", "rb") as f:
-        params_true_all = pickle.load(f)
+        params_true_all = pickle.load(f)  # noqa: S301
 
     p_index = index
     params_true = params_true_all[p_index]

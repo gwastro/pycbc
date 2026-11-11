@@ -1933,6 +1933,9 @@ def load_state(fp, path=None, dsetname="state"):
     The sampler state is expected to be stored as a raw bytes array which can
     be loaded by pickle.
 
+    Loading a pickle can execute arbitrary code, so only load files written by
+    PyCBC from a trusted source, such as this analysis's own checkpoints.
+
     Parameters
     ----------
     fp : h5py.File
@@ -1948,7 +1951,7 @@ def load_state(fp, path=None, dsetname="state"):
     if path is not None:
         fp = fp[path]
     bdata = fp[dsetname][()].tobytes()
-    return pickle.load(BytesIO(bdata))
+    return pickle.load(BytesIO(bdata))  # noqa: S301
 
 
 __all__ = (
