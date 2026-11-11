@@ -20,6 +20,7 @@ This module defines optimization flags and some optimized utilities.
 
 import logging
 import os
+import subprocess
 import sys
 from collections import OrderedDict
 
@@ -115,8 +116,9 @@ def verify_optimization_options(opt, parser):  # noqa: ARG001
         requested_cpus = opt.cpu_affinity
 
     if requested_cpus is not None:
-        command = f"taskset -pc {requested_cpus} {int(os.getpid())}"
-        retcode = os.system(command)
+        command = ["taskset", "-pc", str(requested_cpus), str(os.getpid())]
+        logger.debug("Setting CPU affinity with %s", command)
+        retcode = subprocess.run(command, check=False).returncode
 
         if retcode != 0:
             logger.error(

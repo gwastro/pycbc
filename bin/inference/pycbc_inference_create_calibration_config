@@ -262,7 +262,7 @@ else:
 
 # Sanity check plots
 plots_dir = f"{output_dir}/plots"
-os.system(f"mkdir -p {plots_dir}")
+os.makedirs(plots_dir, exist_ok=True)
 if opts.plot_sanity_checks:
     for ifo in opts.ifos:
         calib_env_path = input_dict[f"calibration_envelop_file_{ifo}"]

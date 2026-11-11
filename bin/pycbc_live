@@ -17,6 +17,7 @@ import itertools
 import json
 import logging
 import os.path
+import shlex
 import platform
 import subprocess
 import sys
@@ -465,7 +466,7 @@ class LiveEventManager:
 
         logger.info("running %s with log to %s", cmd, log_fname)
         with open(log_fname, "w") as logfile:
-            subprocess.Popen(cmd, shell=True, stdout=logfile, stderr=logfile)
+            subprocess.Popen(shlex.split(cmd), stdout=logfile, stderr=logfile)
 
     def create_gdb(self):
         """

@@ -30,7 +30,6 @@ import subprocess
 import sys
 from collections import deque
 from ctypes.util import find_library
-from subprocess import getoutput
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +59,7 @@ def pkg_config(pkg_libraries):
 
     # Check that we have the packages
     for pkg in pkg_libraries:
-        if os.system(f"pkg-config --exists {pkg} 2>/dev/null") == 0:
-            pass
-        else:
+        if not pkg_config_check_exists(pkg):
             print(f"Could not find library {pkg}")
             sys.exit(1)
 
@@ -70,9 +67,9 @@ def pkg_config(pkg_libraries):
     if len(pkg_libraries) > 0:
         # PKG_CONFIG_ALLOW_SYSTEM_CFLAGS explicitly lists system paths.
         # On system-wide LAL installs, this is needed for swig to find lalswig.i
-        for token in getoutput(
-            "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags "
-            f"{' '.join(pkg_libraries)}"
+        for token in _pkg_config_output(
+            ["--libs", "--cflags", *pkg_libraries],
+            PKG_CONFIG_ALLOW_SYSTEM_CFLAGS="1",
         ).split():
             if token.startswith("-l"):
                 libraries.append(token[2:])
@@ -96,8 +93,34 @@ def pkg_config_header_strings(pkg_libraries):
     return header_strings
 
 
+def _pkg_config_output(args, **env):
+    """Run pkg-config with ``args`` and extra environment variables.
+
+    Returns the combined stdout and stderr, with any trailing newline removed.
+    """
+    result = subprocess.run(
+        ["pkg-config", *args],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        env={**os.environ, **env},
+        check=False,
+    )
+    logger.debug("pkg-config %s returned %d", args, result.returncode)
+    return result.stdout.rstrip("\n")
+
+
 def pkg_config_check_exists(package):
-    return os.system(f"pkg-config --exists {package} 2>/dev/null") == 0
+    try:
+        result = subprocess.run(
+            ["pkg-config", "--exists", package],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except FileNotFoundError:
+        return False
+    return result.returncode == 0
 
 
 def pkg_config_libdirs(packages):
@@ -131,8 +154,8 @@ def pkg_config_libdirs(packages):
             )
 
     libdirs = []
-    for token in getoutput(
-        f"PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {' '.join(packages)}"
+    for token in _pkg_config_output(
+        ["--libs-only-L", *packages], PKG_CONFIG_ALLOW_SYSTEM_LIBS="1"
     ).split():
         if token.startswith("-L"):
             libdirs.append(token[2:])

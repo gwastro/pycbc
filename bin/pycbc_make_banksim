@@ -4,6 +4,7 @@ import configparser
 import glob
 import logging
 import os
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -100,11 +101,11 @@ class CombineNode(CondorDAGNode):
 
 
 def get_ini_opts(confs, section):
-    op_str = ""
+    """Return the options in ``section`` as a list of command-line arguments."""
+    args = []
     for opt in confs.options(section):
-        val = confs.get(section, opt)
-        op_str += "--" + opt + " " + val + " \\" + "\n"
-    return op_str
+        args += ["--" + opt, *shlex.split(confs.get(section, opt))]
+    return args
 
 
 def mkdir(dir_name):
@@ -213,8 +214,13 @@ os.chmod("scripts/pycbc_banksim", 0o0777)
 logger.info("Creating injection file")
 if confs.has_section("inspinj"):
     logger.info("Using lalapps_inspinj to create injections")
-    inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
-    os.system(inj_str)
+    inj_cmd = [
+        "lalapps_inspinj",
+        *get_ini_opts(confs, "inspinj"),
+        "--output",
+        "inj.xml",
+    ]
+    subprocess.run(inj_cmd, check=True)
 elif confs.has_section("external_injection"):
     logger.info(
         "Using external injection file. Please ensure the file is in sim_inspiral table (.xml) format."
@@ -223,7 +229,7 @@ elif confs.has_section("external_injection"):
     if inj_file_path == "inj.xml":
         pass
     else:
-        os.system(f"cp {inj_file_path} inj.xml")
+        shutil.copy(inj_file_path, "inj.xml")
 else:
     raise ValueError(
         "Need to specify the injection method. Either provide [inspinj] section or [external_injection]"

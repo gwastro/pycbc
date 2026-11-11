@@ -154,7 +154,8 @@ class BuildDocs(Command):
             "sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc "
             "&& make html"
         )
-        subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=True)
+        # cmd is a fixed string that needs shell syntax (cd, &&)
+        subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=True)  # noqa: S602
 
 
 class BuildGhPages(Command):
@@ -176,7 +177,8 @@ class BuildGhPages(Command):
             "sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc "
             "&& make html"
         )
-        subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=True)
+        # cmd is a fixed string that needs shell syntax (cd, &&)
+        subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=True)  # noqa: S602
 
 
 cmdclass = {
