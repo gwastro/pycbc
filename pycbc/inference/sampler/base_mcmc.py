@@ -25,6 +25,8 @@
 
 import configparser
 import logging
+import os
+import signal
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 import numpy
@@ -622,8 +624,13 @@ class BaseMCMC(metaclass=ABCMeta):
         if self.checkpoint_signal:
             # kill myself with the specified signal
             logger.info("Exiting with SIG %s", self.checkpoint_signal)
-            kill_cmd = f"os.kill(os.getpid(), signal.SIG{self.checkpoint_signal})"
-            exec(kill_cmd)
+            try:
+                signum = getattr(signal, f"SIG{self.checkpoint_signal}")
+            except AttributeError:
+                raise ValueError(
+                    f"Unknown checkpoint signal {self.checkpoint_signal!r}"
+                ) from None
+            os.kill(os.getpid(), signum)
         # clear the in-memory chain to save memory
         logger.info("Clearing samples from memory")
         self.clear_samples()

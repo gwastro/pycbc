@@ -67,16 +67,24 @@ except ImportError:
 
 _psd_list = sorted(_psd_list)
 
+
+def _make_lalsim_psd_function(name):
+    """Return a module-level function generating the ``name`` LALSimulation PSD."""
+
+    def psd_function(length, delta_f, low_freq_cutoff):
+        return from_string(name, length, delta_f, low_freq_cutoff)
+
+    psd_function.__name__ = psd_function.__qualname__ = name
+    psd_function.__module__ = __name__
+    psd_function.__doc__ = (
+        f"Return a FrequencySeries containing the {name} PSD from LALSimulation."
+    )
+    return psd_function
+
+
 # add functions wrapping lalsimulation PSDs
 for _name in _psd_list:
-    exec(
-        f"""
-def {_name}(length, delta_f, low_freq_cutoff):
-    \"\"\"Return a FrequencySeries containing the {_name} PSD from LALSimulation.
-    \"\"\"
-    return from_string("{_name}", length, delta_f, low_freq_cutoff)
-"""
-    )
+    globals()[_name] = _make_lalsim_psd_function(_name)
 
 
 def get_psd_model_list():
