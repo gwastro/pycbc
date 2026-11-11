@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-import ast
 import configparser
 import glob
 import logging
@@ -374,6 +373,7 @@ os.chmod("scripts/pycbc_banksim_match_combine", 0o0755)
 
 f = open("scripts/pycbc_banksim_collect_results", "w")
 f.write("""#!/usr/bin/env python
+import ast
 from os.path import isfile
 import numpy as np
 from igwn_ligolw import utils
@@ -401,12 +401,14 @@ f = open("results.dat", "w")
 for row in res:
     outstr = ""
     if row['bank'] not in btables:
-        indoc = utils.load_filename(ast.literal_eval(row['bank']).decode('utf-8'), False,
+        fname = ast.literal_eval(row['bank']).decode('utf-8')
+        indoc = utils.load_filename(fname, False,
                                     contenthandler=LIGOLWContentHandler)
         btables[row['bank']] = Table.get_table(indoc, "sngl_inspiral")
 
     if row['sim'] not in itables:
-        indoc = utils.load_filename(ast.literal_eval(row['sim']).decode('utf-8'), False,
+        fname = ast.literal_eval(row['sim']).decode('utf-8')
+        indoc = utils.load_filename(fname, False,
                                     contenthandler=LIGOLWContentHandler)
         itables[row['sim']] = Table.get_table(indoc, "sim_inspiral")
 
