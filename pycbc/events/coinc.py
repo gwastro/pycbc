@@ -1538,18 +1538,14 @@ class LiveCoincTimeslideBackgroundEstimator:
                 win_min = int(min_end // self.analysis_block)
                 win_max = int(cur_max_time // self.analysis_block)
                 self.active_injection_veto_chunks = (
-                    self.injection_veto_chunks
-                    & frozenset(range(win_min, win_max + 1))
+                    self.injection_veto_chunks & frozenset(range(win_min, win_max + 1))
                 )
 
             any_loud = (
-                (self.ifar_remove_threshold is not None and self.loud_chunks)
-                or self.active_injection_veto_chunks
-            )
+                self.ifar_remove_threshold is not None and self.loud_chunks
+            ) or self.active_injection_veto_chunks
             if any_loud:
-                good = self._filter_loud_coincs(
-                    cstat, ctime0, ctime1, offsets, min_end
-                )
+                good = self._filter_loud_coincs(cstat, ctime0, ctime1, offsets, min_end)
 
             logger.info("Clustering %s coincs", ppdets(self.ifos, "-"))
             cluster_window = self.analysis_block + 2 * self.time_window
@@ -1665,15 +1661,13 @@ class LiveCoincTimeslideBackgroundEstimator:
         # update's background triggers; only when return_background_info=True.
         if _bkg_info is not None:
             coinc_results["background_coincs/stat"] = _bkg_info["stat"]
-            coinc_results[f"background_coincs/{self.ifos[0]}/end_time"] = (
-                _bkg_info["end_time_0"]
-            )
-            coinc_results[f"background_coincs/{self.ifos[1]}/end_time"] = (
-                _bkg_info["end_time_1"]
-            )
-            coinc_results["background_coincs/template_id"] = (
-                _bkg_info["template_id"]
-            )
+            coinc_results[f"background_coincs/{self.ifos[0]}/end_time"] = _bkg_info[
+                "end_time_0"
+            ]
+            coinc_results[f"background_coincs/{self.ifos[1]}/end_time"] = _bkg_info[
+                "end_time_1"
+            ]
+            coinc_results["background_coincs/template_id"] = _bkg_info["template_id"]
             coinc_results["background_coincs/offset"] = _bkg_info["offset"]
 
         return num_background, coinc_results
