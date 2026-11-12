@@ -143,6 +143,7 @@ parser.add_argument(
 
 # parse the command line
 opts = parser.parse_args()
+pycbc.init_logging(opts.verbose)
 
 
 # Function to generate command line script
@@ -292,5 +293,5 @@ for ifo in opts.ifo_list:
         args_opt.append(f"--fake-strain-flow {opts.low_frequency_cutoff[ifo]:f}")
 
     cmd = " ".join(args_opt)
-    print(cmd)
+    logger.info("Running: %s", cmd)
     os.system(cmd)

@@ -62,7 +62,7 @@ failed = False
 for param, ax in zip(model.variable_params, axs, strict=True):
     rpart = numpy.random.choice(result[param], replace=False, size=args.ind_samples)
     kv, pvalue = ks_2samp(ref[param], rpart)
-    print(f"{param}, p-value={pvalue:.3f}")
+    print(f"{param}, p-value={pvalue:.3f}")  # noqa: T201
 
     plt.sca(ax)
     plt.hist(ref[param], density=True, bins=30, label="reference")

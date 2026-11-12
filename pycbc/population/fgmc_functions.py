@@ -12,6 +12,7 @@ See https://dcc.ligo.org/LIGO-T2100060/public for technical explanations
 """
 
 import bisect
+import logging
 from itertools import chain as it_chain
 from itertools import combinations as it_comb
 from os.path import basename
@@ -23,6 +24,8 @@ from pycbc import events
 from pycbc.events import triggers
 from pycbc.events.coinc import mean_if_greater_than_zero as coinc_meanigz
 from pycbc.io.hdf import HFile
+
+logger = logging.getLogger(__name__)
 
 
 def filter_bin_lo_hi(values, lo, hi):
@@ -168,8 +171,7 @@ def log_rho_fg(trigs, injstats, bins):
     # allow 'very loud' triggers
     bmax = np.max(bins)
     if np.max(trigs) >= bmax:
-        print("Replacing stat values lying above highest bin")
-        print(str(bmax))
+        logger.info("Replacing stat values lying above highest bin %s", bmax)
         trigs = np.where(trigs >= bmax, bmax - 1e-6, trigs)
     assert np.max(trigs) < np.max(bins)  # check it worked
 
@@ -267,7 +269,9 @@ class EventRate:
                 assert ty in list(self.allctimes)
             self.coinc_types = frozenset(["".join(t) for t in coinc_types])
         if args.verbose:
-            print("Using", self.coinc_types, "coincs in", self.allctimestring, "times")
+            logger.info(
+                "Using %s coincs in %s times", self.coinc_types, self.allctimestring
+            )
         self.args = args
         self.thr = self.args.stat_threshold
         self.bin_param = bin_param
@@ -296,7 +300,9 @@ class EventRate:
         assert self.lo is not None
         assert self.hi is not None
         if self.args.verbose:
-            print(f"Cutting on {self.bin_param} between {self.lo:f} - {self.hi:f}")
+            logger.info(
+                "Cutting on %s between %f - %f", self.bin_param, self.lo, self.hi
+            )
         self.tpars = triggers.get_param(self.bin_param, None, *self.massspins)
         self.in_bin = filter_bin_lo_hi(self.tpars, self.lo, self.hi)
 
@@ -318,7 +324,7 @@ class EventRate:
         else:
             raise RuntimeError(f"Can't make bins without a {choice} bin width option!")
         if self.args.verbose:
-            print(str(n_bins) + " " + choice + " stat bins")
+            logger.info("%s %s stat bins", n_bins, choice)
         return bins
 
     def get_ctypes(self, tdict):
@@ -436,7 +442,7 @@ class ForegroundEvents(EventRate):
             _ctype = self.get_ctypes(_times)
             if len(_ctype) == 0:
                 if self.args.verbose:
-                    print("No events in " + start)
+                    logger.info("No events in %s", start)
                 return
             # filter events
             in_ctypes = np.array([cty in self.coinc_types for cty in _ctype])
@@ -448,7 +454,9 @@ class ForegroundEvents(EventRate):
                 intime = self.in_coinc_time_excl(f, ct, meantimes)
                 _ctime[intime == 1] = ct
                 if self.args.verbose:
-                    print(f"Got {len(_ctime[intime == 1])} events in {ct} time")
+                    logger.info(
+                        "Got %s events in %s time", len(_ctime[intime == 1]), ct
+                    )
             # store
             self.stat = np.append(self.stat, _stats[_keep][in_ctypes])
             try:  # injection analyses only have 'ifar_exc', not 'ifar'
@@ -485,7 +493,7 @@ class ForegroundEvents(EventRate):
                     # store
                     self.bg_pdf[_idx] = _pdf
                     if self.args.verbose:
-                        print("Found bg PDFs for " + cty + " coincs from " + st)
+                        logger.info("Found bg PDFs for %s coincs from %s", cty, st)
 
     def get_sg_pdf(self, sg_rate):
         assert isinstance(sg_rate, SignalEventRate)
@@ -506,7 +514,12 @@ class ForegroundEvents(EventRate):
                     # store
                     self.sg_pdf[_idx] = _pdf
                     if self.args.verbose:
-                        print(f"Found sg PDFs for {cty} coincs in {ct} time from {st}")
+                        logger.info(
+                            "Found sg PDFs for %s coincs in %s time from %s",
+                            cty,
+                            ct,
+                            st,
+                        )
 
 
 class BackgroundEventRate(EventRate):
@@ -578,7 +591,7 @@ class BackgroundEventRate(EventRate):
                 # hack to make larger bins for H1L1V1
                 if cty == "H1L1V1":
                     if self.args.verbose:
-                        print("Halving bg bins for triple bg hist")
+                        logger.info("Halving bg bins for triple bg hist")
                     bins = bins[::2].copy()  # take every 2nd bin edge
                 self.bg_hist[(start, cty)] = np.histogram(
                     _bgstat[_ctype == cty], weights=_bgdec[_ctype == cty], bins=bins
@@ -594,7 +607,7 @@ class BackgroundEventRate(EventRate):
         from matplotlib import pyplot as plt
 
         for chunk_type, hist in self.bg_hist.items():
-            print("Plotting", chunk_type, "background PDF ...")
+            logger.info("Plotting %s background PDF ...", chunk_type)
             xplot = np.linspace(self.thr, self.args.plot_max_stat, 500)
             heights, bins = hist[0], hist[1]
             logpdf, _ = log_rho_bg(xplot, heights, bins)
@@ -695,14 +708,14 @@ class SignalEventRate(EventRate):
                 intime = self.in_coinc_time_excl(HFile(fg_file, "r"), ct, meantimes)
                 _ctime[intime == 1] = ct  # do we need this?
                 if self.args.verbose:
-                    print(f"Got {int((intime == 1).sum())} " + f"inj in {ct} time")
+                    logger.info("Got %d inj in %s time", int((intime == 1).sum()), ct)
                 # filter by coinc type and add to array
                 for cty in self.coinc_types:
                     if not type_in_time(ct, cty):
                         continue
                     my_vals = _injstat[np.logical_and(_ctype == cty, intime == 1)]
                     if self.args.verbose:
-                        print(f"{len(my_vals)} " + f"are {cty} coincs")
+                        logger.info("%s are %s coincs", len(my_vals), cty)
                     if (ct, cty) not in self.inj_vals:  # initialize
                         self.inj_vals[(ct, cty)] = np.array([])
                     if len(my_vals) > 0:
@@ -728,7 +741,7 @@ class SignalEventRate(EventRate):
             for cty in self.coinc_types:
                 if not type_in_time(ct, cty):
                     continue
-                print("Plotting " + cty + " signal PDF in " + ct + " time ...")
+                logger.info("Plotting %s signal PDF in %s time ...", cty, ct)
                 samples = self.inj_vals[(ct, cty)]
                 bins = self.fg_bins[(ct, cty)]
                 xplot = np.logspace(np.log10(self.thr), np.log10(samples.max()), 500)

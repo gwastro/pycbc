@@ -1418,8 +1418,8 @@ with ctx:
 
         if args.fftw_planning_limit:
             fft.fftw.set_planning_limit(args.fftw_planning_limit)
-    except (ValueError, RuntimeError) as e:
-        print(e)
+    except (ValueError, RuntimeError):
+        logger.exception("Failed to set up FFTW")
         exit()
 
     if evnt.rank > 0:

@@ -9,6 +9,7 @@ __prog__ = "pycbc_get_ffinal"
 __author__ = "Collin Capano <collin.capano@ligo.org>"
 
 import argparse
+import logging
 import sys
 
 import numpy
@@ -17,6 +18,8 @@ from igwn_ligolw import utils as ligolw_utils
 
 import pycbc
 from pycbc import waveform
+
+logger = logging.getLogger(__name__)
 
 appx_options = waveform.td_approximants() + waveform.fd_approximants()
 
@@ -194,17 +197,12 @@ else:
     tmplt = dict([[arg, getattr(opts, arg)] for arg in tmplt_args])
     sngl_insp_table = [tmplt]
 
-if opts.verbose and infile is not None:
-    print("Cycling over templates...", file=sys.stdout)
+if infile is not None:
+    logger.info("Cycling over templates...")
 
 for cache_id, tmplt in enumerate(sngl_insp_table):
-    if opts.verbose and infile is not None:
-        print(
-            f"Template {cache_id + 1}/{len(sngl_insp_table)}\r",
-            end=" ",
-            file=sys.stdout,
-        )
-        sys.stdout.flush()
+    if infile is not None:
+        logger.debug("Template %d/%d", cache_id + 1, len(sngl_insp_table))
 
     if fd_approx:
         if infile is None:
@@ -263,9 +261,9 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
         freq = waveform.frequency_from_polarizations(hplus, hcross).max()
 
     if infile is None:
-        print(f"f Final: {freq:f} Hz", file=sys.stdout)
+        print(f"f Final: {freq:f} Hz", file=sys.stdout)  # noqa: T201
         if not fd_approx:
-            print(f"Duration: {hplus.duration:f} s", file=sys.stdout)
+            print(f"Duration: {hplus.duration:f} s", file=sys.stdout)  # noqa: T201
     else:
         sngl_insp_table[cache_id].f_final = freq
 
@@ -273,13 +271,10 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
             sngl_insp_table[cache_id].template_duration = hplus.duration
 
 if infile is not None:
-    if opts.verbose:
-        print("\nWriting output file...", file=sys.stdout)
-        sys.stdout.flush()
+    logger.info("Writing output file...")
 
     # write the xml file
     ligolw_utils.write_filename(xmldoc, outfile, gz=outfile.endswith(".gz"))
 
-    if opts.verbose:
-        print("Finished!", file=sys.stdout)
+    logger.info("Finished!")
 sys.exit(0)

@@ -1127,11 +1127,10 @@ class ForegroundTriggers:
                     self.sngl_files[curr_ifo] = curr_dat
 
         if not all(ifo in self.sngl_files.keys() for ifo in self.ifos):
-            print(f"sngl_files: {sngl_files}")
-            print(f"self.ifos: {self.ifos}")
             raise RuntimeError(
                 "IFOs in statmap file not all represented "
-                "by single-detector trigger files."
+                f"by single-detector trigger files. IFOs: {self.ifos}, "
+                f"single-detector trigger files: {sngl_files}"
             )
         if not sorted(self.sngl_files.keys()) == sorted(self.ifos):
             logger.warning(

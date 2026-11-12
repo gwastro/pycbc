@@ -6,10 +6,13 @@
 # option) any later version.
 
 import json
+import logging
 
 import numpy
 from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
+logger = logging.getLogger(__name__)
 
 
 def plot_setup(*args):
@@ -82,7 +85,7 @@ def finalize_plot(fig, args, extensions, name, pltype, tag):
     for extn in extensions:
         filename = args.pldir + "_".join(name.split()) + "_" + pltype + tag + extn
         if args.verbose:
-            print(f"writing {filename} ...")
+            logger.info("writing %s ...", filename)
         fig.savefig(filename)
 
 
@@ -98,7 +101,7 @@ def odds_summary(
     plot_extensions=None,
 ):
 
-    print(f"\nSummary of Top {int(ntop)} {name.title()}")
+    print(f"\nSummary of Top {int(ntop)} {name.title()}")  # noqa: T201
 
     # do sort in reverse order
     statsort = numpy.argsort(1.0 / numpy.array(rankstats))
@@ -115,10 +118,10 @@ def odds_summary(
         topgps.append(gps)
         topstat.append(stat)
         topifar.append(ifar)
-        print(f"#{n + 1} event:", str(gps), mchirpstring)
-        print(f"    rankstat = {stat:<8.3f}")
-        print(f"    IFAR     = {ifar:.2f}")
-        print("    odds     = %g" % ((1.0 - p_b[i]) / p_b[i]))
+        print(f"#{n + 1} event:", str(gps), mchirpstring)  # noqa: T201
+        print(f"    rankstat = {stat:<8.3f}")  # noqa: T201
+        print(f"    IFAR     = {ifar:.2f}")  # noqa: T201
+        print("    odds     = %g" % ((1.0 - p_b[i]) / p_b[i]))  # noqa: T201
         toppastro.append(1.0 - p_b[i])
 
     if args.p_astro_txt is not None:
@@ -251,20 +254,20 @@ def dist_summary(
     median = rv.median()
     mode = rv.mode() if hasattr(rv, "mode") else None
 
-    print("Summary of " + name.title())
-    print("mean   =", rv.mean(), unit)
-    print("median =", median, unit)
+    print("Summary of " + name.title())  # noqa: T201
+    print("mean   =", rv.mean(), unit)  # noqa: T201
+    print("median =", median, unit)  # noqa: T201
     if mode is not None:
-        print("mode   =", mode, unit)
-    print("stddev =", rv.std(), unit)
+        print("mode   =", mode, unit)  # noqa: T201
+    print("stddev =", rv.std(), unit)  # noqa: T201
 
     if credible_intervals is not None and len(credible_intervals) > 0:
-        print("equal-tailed credible intervals:")
+        print("equal-tailed credible intervals:")  # noqa: T201
         equal_tailed_credible_intervals = {}
         for cred in credible_intervals:
             lo, hi = rv.interval(cred)
             equal_tailed_credible_intervals[cred] = (lo, hi)
-            print(
+            print(  # noqa: T201
                 "%g%%" % (cred * 100),
                 "credible interval =",
                 f"[{lo:g}, {hi:g}]",
@@ -272,12 +275,12 @@ def dist_summary(
             )
 
         if hasattr(rv, "hpd_interval"):
-            print("highest probability density credible intervals:")
+            print("highest probability density credible intervals:")  # noqa: T201
             hpd_credible_intervals = {}
             for cred in credible_intervals:
                 hpdlo, hpdhi = rv.hpd_interval(cred)
                 hpd_credible_intervals[cred] = (hpdlo, hpdhi)
-                print(
+                print(  # noqa: T201
                     "%g%%" % (cred * 100),
                     "credible interval =",
                     f"[{hpdlo:g}, {hpdhi:g}]",

@@ -911,8 +911,20 @@ def verify_mass_range_options(opts, parser, non_spin=False):
             # And this is the bad case
             err_msg = "The maximum eta provided is not possible given "
             err_msg += "restrictions on component masses."
-            print(m1_at_min_m2, m2_at_min_m1, m1_at_max_m2, m2_at_max_m1)
-            print(opts.min_mass1, opts.max_mass1, opts.min_mass2, opts.max_mass2)
+            logger.error(
+                "Component masses at the eta limits: %s %s %s %s",
+                m1_at_min_m2,
+                m2_at_min_m1,
+                m1_at_max_m2,
+                m2_at_max_m1,
+            )
+            logger.error(
+                "Mass ranges: %s %s %s %s",
+                opts.min_mass1,
+                opts.max_mass1,
+                opts.min_mass2,
+                opts.max_mass2,
+            )
             raise ValueError(err_msg)
         # Update min_tot_mass if needed
         if min_tot_mass > opts.min_total_mass:

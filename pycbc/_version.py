@@ -141,7 +141,7 @@ class PyCBCVersionAction(argparse._StoreAction):
             else:
                 version_str += get_lal_info(lalsimulation, "_lalsimulation*.so")
 
-        print(version_str)
+        print(version_str)  # noqa: T201
         sys.exit(0)
 
 

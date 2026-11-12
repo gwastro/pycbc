@@ -63,7 +63,7 @@ def pkg_config(pkg_libraries):
         if os.system(f"pkg-config --exists {pkg} 2>/dev/null") == 0:
             pass
         else:
-            print(f"Could not find library {pkg}")
+            logger.error("Could not find library %s", pkg)
             sys.exit(1)
 
     # Get the pck-config flags
@@ -116,10 +116,7 @@ def pkg_config_libdirs(packages):
         try:
             subprocess.check_call(["pkg-config", "--version"], stdout=fnull)
         except:
-            print(
-                "PyCBC.libutils: pkg-config call failed, setting NO_PKGCONFIG=1",
-                file=sys.stderr,
-            )
+            logger.warning("pkg-config call failed, setting NO_PKGCONFIG=1")
             os.environ["NO_PKGCONFIG"] = "1"
             return []
 
