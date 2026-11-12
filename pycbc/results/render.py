@@ -31,14 +31,22 @@ from pycbc.workflow.core import SegFile, makedir
 logger = logging.getLogger(__name__)
 
 
-def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
+def render_workflow_html_template(
+    filename, subtemplate, filelists, final_dir=None, **kwargs
+):
     """
     Writes a template given inputs from the workflow generator. Takes
     a list of tuples. Each tuple is a pycbc File object. Also the name of the
     subtemplate to render and the filename of the output.
+
+    The page refers to the files by their final location, which is taken to
+    be the directory of the output file unless final_dir is given. It must be
+    given if the page is written somewhere other than where it, and the
+    files, end up, e.g. by a job writing to its working directory.
     """
-    dirnam = os.path.dirname(filename)
-    makedir(dirnam)
+    # Directory the files end up in, not necessarily where the page is written
+    if final_dir is None:
+        final_dir = os.path.dirname(filename)
 
     try:
         filenames = [
@@ -54,7 +62,7 @@ def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
     env.globals.update(path_exists=os.path.exists)
     env.globals.update(len=len)
     subtemplate = env.get_template(subtemplate)
-    context = {"filelists": filelists, "dir": dirnam}
+    context = {"filelists": filelists, "dir": final_dir}
     context.update(kwargs)
     output = subtemplate.render(context)
 
@@ -65,6 +73,7 @@ def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
     for key in kwds:
         kwds[key] = str(kwds[key])
 
+    makedir(os.path.dirname(filename))
     save_html_with_metadata(str(output), filename, None, kwds)
 
 

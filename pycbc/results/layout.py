@@ -25,8 +25,8 @@ def two_column_layout(path, cols, unique="", filename=None, **kwargs):
     Parameters
     ----------
     path: str
-        Directory to make the well html file in. Ignored if filename is
-        given.
+        Directory containing the files shown in the well. The well html
+        file is made here too, unless filename is given.
     unique: str
         String to add to end of well name. Used if you want more than one well.
     cols: list of tuples
@@ -38,11 +38,15 @@ def two_column_layout(path, cols, unique="", filename=None, **kwargs):
         '<path>/well<unique>.html'. The given name should still start
         with 'well' for pycbc_make_html_page to render it inline.
     """
+    # If path is absolute, os.path.join ignores the cwd and returns only path
+    final_dir = os.path.join(os.getcwd(), path)
     if filename is None:
-        filename = os.path.join(os.getcwd(), path, f"well{unique}.html")
+        filename = os.path.join(final_dir, f"well{unique}.html")
     from pycbc.results.render import render_workflow_html_template
 
-    render_workflow_html_template(filename, "two_column.html", cols, **kwargs)
+    render_workflow_html_template(
+        filename, "two_column.html", cols, final_dir=final_dir, **kwargs
+    )
 
 def single_layout(path, files, **kwargs):
     """
