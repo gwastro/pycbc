@@ -1641,7 +1641,6 @@ class ReadByTemplate:
         # applying vetoes
         if self.valid:
             self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1])
-        #            logger.info('applying vetoes')
         else:
             self.keep = np.arange(0, len(times))
 

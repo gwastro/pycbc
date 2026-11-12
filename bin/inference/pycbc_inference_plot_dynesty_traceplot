@@ -69,7 +69,6 @@ fig, axes = dyplot.traceplot(
     trace_cmap="viridis",
     connect=True,
 )
-# plt.savefig()
 # save figure with meta-data
 caption = """Set of plots shows 'evolution of particles (and their marginal
              posterior distributions) in 1-D projections'."""

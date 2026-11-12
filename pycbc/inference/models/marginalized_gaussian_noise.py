@@ -561,7 +561,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
             hp[self._kmin[det] : kmax] *= self._weight[det][slc]
             hc[self._kmin[det] : kmax] *= self._weight[det][slc]
 
-            # h = fp * hp + hc * hc
+            # h = fp * hp + fc * hc  # noqa: ERA001
             # <h, d> = fp * <hp,d> + fc * <hc,d>
             # the inner products
             cplx_hpd = hp[slc].inner(self._whitened_data[det][slc])  # <hp, d>
@@ -570,8 +570,8 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
             cplx_hd = fp * cplx_hpd + fc * cplx_hcd
 
             # <h, h> = <fp * hp + fc * hc, fp * hp + fc * hc>
-            # = Real(fpfp * <hp,hp> + fcfc * <hc,hc> + \
-            #  fphc * (<hp, hc> + <hc, hp>))
+            # = Real(fpfp * <hp,hp> + fcfc * <hc,hc> +
+            #  fpfc * (<hp, hc> + <hc, hp>))
             hphp = hp[slc].inner(hp[slc]).real  # < hp, hp>
             hchc = hc[slc].inner(hc[slc]).real  # <hc, hc>
 

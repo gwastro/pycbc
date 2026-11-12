@@ -166,8 +166,8 @@ def read_params_from_config(
             "You are missing a priors section in the config file "
             "for parameter(s): {}".format(", ".join(missing_prior))
         )
-    # sanity check that each parameter with a priors section is in
-    # [variable_args]
+    # sanity check that each parameter with a priors section is in the
+    # [variable_args] section
     missing_variable = tags - set(variable_args)
     if any(missing_variable):
         raise KeyError(

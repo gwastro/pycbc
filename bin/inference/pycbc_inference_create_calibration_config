@@ -182,7 +182,6 @@ logger.debug("Input dictionary: %s", input_dict)
 # file as well as in detector notation.
 prior_dict = {}
 for ifo in opts.ifos:
-    # ifo = ifo.lower()
     min_freq = input_dict[f"min_freq_{ifo}"]
     max_freq = input_dict[f"max_freq_{ifo}"]
     correction_type = input_dict[f"correction_type_{ifo}"]

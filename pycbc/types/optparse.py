@@ -67,7 +67,6 @@ class MultiDetOptionAction(argparse.Action):
         else:
             self.internal_type = str
         new_default = DictWithDefaultReturn(lambda: default)
-        # new_default.default_value=default
         if nargs == 0:
             raise ValueError(
                 "nargs for append actions must be > 0; if arg "
@@ -118,7 +117,6 @@ class MultiDetOptionAction(argparse.Action):
                     err_msg += "If you are supplying a value for all ifos, you "
                     err_msg += "cannot also supply values for specific ifos."
                     raise ValueError(err_msg)
-                # items.default_value = self.internal_type(value[0])
                 new_default = self.internal_type(value[0])
                 items.default_factory = lambda: new_default
                 items.default_set = True

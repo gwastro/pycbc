@@ -633,13 +633,6 @@ def make_pygrb_plot(
                 node.add_opt("--" + log_flag)
     elif exec_name == "pycbc_plot_bank_corner":
         node.add_opt("--no-suptitle")
-        # if inj_file:
-        #    node.add_opt('--title', f'\"{tags[0]} injections\"')
-        #    params = workflow.cp.get_opt_tags(exec_name, 'parameters', ['injs'])
-        # else:
-        #    node.add_opt('--title', '\"Template bank\"')
-        #    params = workflow.cp.get_opt_tags(exec_name, 'parameters', ['bank'])
-        # node.add_opt('--parameters', params)
 
     # Add job node to workflow
     workflow += node
@@ -822,7 +815,6 @@ def setup_pygrb_minifollowups(
     workflow.cp.write(open(config_path, "w"))
     config_file = resolve_url_to_file(config_path)
 
-    # wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
     wikifile = "_".join(tags) + "loudest_table.txt"
 
     # Create the node
@@ -911,7 +903,6 @@ def setup_pygrb_results_workflow(
     """
     tags = [] if tags is None else tags
     dax_output = res_dir + "/webpage_daxes"
-    # _workflow.makedir(dax_output)
     makedir(dax_output)
 
     # Create the node
@@ -925,7 +916,6 @@ def setup_pygrb_results_workflow(
     node = exe.create_node()
     # Grab and pass all necessary files
     node.add_input_list_opt("--trig-files", trig_files)
-    # node.add_input_opt('--config-files', config_file)
     node.add_input_list_opt("--full-inj-files", full_injs_files)
     node.add_input_list_opt("--inj-files", inj_files)
     node.add_input_opt("--bank-file", bank_file)

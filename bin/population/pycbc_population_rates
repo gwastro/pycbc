@@ -189,7 +189,6 @@ all_bkg, coincs = rf.save_bkg_falloff(
 bg_l, bg_h, bg_counts = all_bkg
 bg_bins = np.append(bg_l, bg_h[-1])
 
-# fg_stats = np.concatenate([inj_falloff[dist] for dist in distrs])
 fg_stats = inj_falloff[inj_falloff > opts.thr_val]
 fg_bins = np.logspace(np.log10(opts.thr_val), np.log10(np.max(fg_stats)), 101)
 

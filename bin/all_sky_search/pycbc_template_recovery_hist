@@ -81,17 +81,8 @@ for f, b, t in zip(args.found, args.bank_files, args.trig, strict=True):
     foundifar = np.concatenate((foundifar, f["found_after_vetoes/ifar"][:]))
     # acrobatics to find right ifo
     ifo = next(iter(t.keys())) if t else None
-    ## each tuple is of form ('L1', 'detector_1')
-    # dettuples = [(val, key) for (key, val) in f.attrs.items()
-    #             if "detector" in key]
-    # ifotag = [tag for (name, tag) in dettuples if name == ifo][0]
-    ## get the trigger ids
-    # ftrig_id = f['found_after_vetoes/trigger_id%s' % ifotag[-1]]
     fparam, found_in_ifo = triggers.get_found_param(f, b, t, args.x_param, ifo)
-    # if args.x_param == 'template_duration':
-    #    # duration values
     foundparam = np.concatenate((foundparam, fparam))
-    # t['%s/template_duration' % ifo][:][ftrig_id]))
 
 # apply filters
 if args.min_stat is not None:

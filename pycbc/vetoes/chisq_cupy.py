@@ -261,7 +261,6 @@ def get_cached_bin_layout(bins):
 
 
 def shift_sum_points(num, N, arg_tuple):
-    # fuse = 'fuse' in corr.gpu_callback_method
     fuse = False
 
     fn, nt = get_pchisq_fn(num, fuse_correlate=fuse)
@@ -285,7 +284,6 @@ def shift_sum_points(num, N, arg_tuple):
 
 
 def shift_sum_points_pow2(num, arg_tuple):
-    # fuse = 'fuse' in corr.gpu_callback_method
     fuse = False
 
     fn, nt = get_pchisq_fn_pow2(num, fuse_correlate=fuse)

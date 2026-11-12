@@ -216,7 +216,6 @@ def spa_tmplt(**kwds):
     s1z = kwds["spin1z"]
     s2z = kwds["spin2z"]
     phase_order = int(kwds["phase_order"])
-    # amplitude_order = int(kwds['amplitude_order'])
     spin_order = int(kwds["spin_order"])
 
     if "out" in kwds:

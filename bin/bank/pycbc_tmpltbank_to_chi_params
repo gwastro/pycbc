@@ -62,18 +62,6 @@ parser.add_argument(
     "this file will hold: mass1, mass2, spin1z, spin2z, chi_1, "
     "chi_2, ....",
 )
-# Not sure that vary-fupper makes sense in this code.
-# parser.add_argument("-V", "--vary-fupper", action="store_true", default=False,
-#                    help="Use a variable upper frequency cutoff in laying "
-#                    "out the bank.  OPTIONAL.")
-# parser.add_argument("--bank-fupper-step", type=float, default=10.,
-#                    help="Size of discrete frequency steps used when varying "
-#                    "the fupper. OPTIONAL. Units=Hz")
-# parser.add_argument("--bank-fupper-formula", default="SchwarzISCO",
-#                    choices=["SchwarzISCO","LightRing","ERD"],
-#                    help="Frequency cutoff formula for varying fupper. "
-#                    "Frequencies will be rounded to the nearest discrete "
-#                    "step. OPTIONAL.")
 parser.add_argument(
     "--random-seed",
     action="store",

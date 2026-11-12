@@ -122,11 +122,6 @@ parser.add_argument(
     choices=["snr", "snronchi", "effective_snr", "new_snr"],
     help="Function of SNR and chisq to perform fits with",
 )
-# FIXME: how to parse various possible mixtures of chisq
-# parser.add_argument("--chisq-choice", default="power",
-#                    choices=["power","bank","auto","maxpowerbank"],
-#                    help="Which chisq value or values to form the "
-#                    "single-trigger statistic with")
 parser.add_argument(
     "--stat-factor",
     type=float,
@@ -304,8 +299,6 @@ for ifo in opt.ifos:
         mass2 = sngls.get_column("mass2")
     parvals = sngls.get_column(opt.fit_param)
     rchisq = chisq / (2 * chisq_dof - 2)
-    # bank_rchisq = sngls.get_column('bank_chisq') / sngls.get_column('bank_chisq_dof')
-    # rchisq = np.maximum(rchisq, bank_rchisq)
 
     if opt.veto_file and not done_vetoing:
         logger.info("Applying vetoes from %s for ifo %s", opt.veto_file, ifo)
@@ -395,14 +388,10 @@ for ifo in opt.ifos:
                 continue
             # FIXME: Also allow to use dynamically determined threshold
             # calculated via Nth loudest trig
-            # thresh = trstats.tail_threshold(vals_inbin, n=nmax)
-            # counts[ifo][th][i] = nmax
             # do the fit
             alpha, sig_alpha = trstats.fit_above_thresh(
                 opt.fit_function, vals_inbin, th
             )
-            # alpha, sig_alpha = trstats.fit_above_thresh(
-            #                             opt.fit_function, vals_inbin, thresh)
             fits[ifo][th][i] = alpha
             stdev[ifo][th][i] = sig_alpha
             _, ks_prob[ifo][th][i] = trstats.ks_test(

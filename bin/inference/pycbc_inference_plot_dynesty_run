@@ -65,7 +65,6 @@ logger.info("Plotting dynesty runplot")
 fig, axes = dyplot.runplot(
     sampler_state.results, lnz_truth=sampler_state.results["logz"][-1]
 )
-# plt.savefig()
 # save figure with meta-data
 caption = """Set of plots shows evolution of Evidence, nlive points,
               likelihood values, and importance weight pdf."""

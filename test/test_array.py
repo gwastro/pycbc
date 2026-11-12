@@ -238,16 +238,16 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
 
                 if out1.dtype == numpy.float32:
                     self.assertTrue(out1.precision == "single")
-                    # self.assertTrue(out1.kind == 'real')
+                    self.assertTrue(out1.kind == "real")
                 if out1.dtype == numpy.float64:
                     self.assertTrue(out1.precision == "double")
-                    # self.assertTrue(out1.kind == 'real')
+                    self.assertTrue(out1.kind == "real")
                 if out1.dtype == numpy.complex64:
                     self.assertTrue(out1.precision == "single")
-                    # self.assertTrue(out1.kind == 'complex')
+                    self.assertTrue(out1.kind == "complex")
                 if out1.dtype == numpy.complex128:
                     self.assertTrue(out1.precision == "double")
-                    # self.assertTrue(out1.kind == 'complex')
+                    self.assertTrue(out1.kind == "complex")
 
                 self.assertTrue(type(out2._scheme) == type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
@@ -385,16 +385,16 @@ class ArrayTestBase(ArrayBase, unittest.TestCase):
 
             if out1.dtype == numpy.float32:
                 self.assertTrue(out1.precision == "single")
-                # self.assertTrue(out1.kind == 'real')
+                self.assertTrue(out1.kind == "real")
             if out1.dtype == numpy.float64:
                 self.assertTrue(out1.precision == "double")
-                # self.assertTrue(out1.kind == 'real')
+                self.assertTrue(out1.kind == "real")
             if out1.dtype == numpy.complex64:
                 self.assertTrue(out1.precision == "single")
-                # self.assertTrue(out1.kind == 'complex')
+                self.assertTrue(out1.kind == "complex")
             if out1.dtype == numpy.complex128:
                 self.assertTrue(out1.precision == "double")
-                # self.assertTrue(out1.kind == 'complex')
+                self.assertTrue(out1.kind == "complex")
 
             if self.kind == "complex":
                 out2 = Array([5 + 0j, 3 + 0j, 1 + 0j], dtype=self.dtype)

@@ -269,7 +269,7 @@ def load_source(modname, filename):
     module = importlib.util.module_from_spec(spec)
     # The module is always executed and not cached in sys.modules.
     # Uncomment the following line to cache the module.
-    # sys.modules[module.__name__] = module
+    # sys.modules[module.__name__] = module  # noqa: ERA001
     loader.exec_module(module)
     return module
 

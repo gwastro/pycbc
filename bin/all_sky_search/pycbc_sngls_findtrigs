@@ -303,8 +303,4 @@ f.attrs["fixed"] = ifo
 f.attrs["ifos"] = ifo
 f.attrs["timeslide_interval"] = 0
 
-# Do hierarchical removal
-# h_iterations = 0
-# if args.max_hierarchical_removal != 0:
-
 logger.info("Done")

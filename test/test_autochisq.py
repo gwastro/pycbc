@@ -151,17 +151,6 @@ class TestAutochisquare(unittest.TestCase):
         self.assertTrue(achisq[0] > 20.0)
         self.assertTrue(achisq[2] > 20.0)
 
-        # with _context:
-
-    #       dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
-    #          low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax, max_snr=True)
-
-    # self.assertTrue(obt_snr == achi_list[0, 1])
-    # self.assertTrue(obt_ach == achi_list[0, 2])
-
-    #    for i in range(1, len(achi_list)):
-    #   self.assertTrue(achi_list[i,2] > 4.0)
-
         with _context:
             est = SingleDetAutoChisq(stride=3, num_points=20, twophase=True)
             self.assertEqual(est.dof, 80)
@@ -222,16 +211,6 @@ class TestAutochisquare(unittest.TestCase):
         self.assertTrue(obt_ach > 6.8e3)
         self.assertTrue(achisq[0] > 6.8e3)
         self.assertTrue(achisq[2] > 6.8e3)
-
-    #    with _context:
-    #    dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
-    #          low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax, max_snr=True)
-
-    # self.assertTrue(obt_snr == achi_list[0, 1])
-    # self.assertTrue(obt_ach == achi_list[0, 2])
-
-    #    for i in range(1, len(achi_list)):
-    #   self.assertTrue(achi_list[i,2] > 2.e3)
 
         with _context:
             est = SingleDetAutoChisq(stride=3, num_points=20, twophase=False)

@@ -123,7 +123,6 @@ def combination_noise_lograte(log_rates, slop, dets=None):
     """
     # multiply product of trigger rates by the overlap time
     allowed_area = multiifo_noise_coincident_area(list(log_rates), slop, dets=dets)
-    # list(dict.values()) is python-3-proof
     rateprod = numpy.sum(list(log_rates.values()), axis=0)
     return numpy.log(allowed_area) + rateprod
 

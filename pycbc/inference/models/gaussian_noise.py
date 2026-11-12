@@ -1266,7 +1266,7 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
         # versions of python, the following kludge tries to account for that.
         # If/when we drop support for all earlier versions of python, then the
         # following can just be replaced by:
-        # replace_val = shlex.join(splitvals)
+        # replace_val = shlex.join(splitvals)  # noqa: ERA001
         for jj, arg in enumerate(splitvals):
             if " " in arg:
                 arg = "'" + arg + "'"
