@@ -310,27 +310,24 @@ for trigger_file, injection_file in zip(
             hdf_append(fo, f"injections/{k}", data)
 
     # copy over common search info
-    if "foreground_time" in f.attrs.keys():
+    if "foreground_time" in f.attrs:
         fo.attrs["foreground_time"] = f.attrs["foreground_time"]
-    if "foreground_time_exc" in f.attrs.keys():
+    if "foreground_time_exc" in f.attrs:
         fo.attrs["foreground_time_exc"] = f.attrs["foreground_time_exc"]
 
-    for key in f["segments"].keys():
+    for key in f["segments"]:
         if "foreground" in key or "coinc" in key:
             continue
         if key not in fo:
             fo.create_group(key)
-        if key in f:
-            fkey = f[key]
-        else:
-            fkey = f
+        fkey = f.get(key, f)
         if "pivot" in fo[key].attrs:
             # This is a coincident statmap file
             fo[key].attrs["pivot"] = fkey.attrs["pivot"]
             fo[key].attrs["fixed"] = fkey.attrs["fixed"]
-        if "foreground_time" in fkey.attrs.keys():
+        if "foreground_time" in fkey.attrs:
             fo[key].attrs["foreground_time"] = fkey.attrs["foreground_time"]
-        if "foreground_time_exc" in fkey.attrs.keys():
+        if "foreground_time_exc" in fkey.attrs:
             fo[key].attrs["foreground_time_exc"] = fkey.attrs["foreground_time_exc"]
 
     hdf_append(fo, "missed/all", missed + injection_index)

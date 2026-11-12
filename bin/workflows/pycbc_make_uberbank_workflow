@@ -183,7 +183,8 @@ wf.makedir("daxes")
 logger.info("Setting up the round of geometric bank jobs.")
 
 config_path = os.path.abspath("daxes" + "/" + "geom_workflow.ini")
-workflow.cp.write(open(config_path, "w"))
+with open(config_path, "w") as fp:
+    workflow.cp.write(fp)
 config_file = wf.resolve_url_to_file(config_path)
 
 geom_exe = GeomBankExecutable(
@@ -238,7 +239,8 @@ sbank_exe = SbankDaxGenerator(
 )
 
 config_path = os.path.abspath("daxes" + "/" + "sbank_workflow.ini")
-workflow.cp.write(open(config_path, "w"))
+with open(config_path, "w") as fp:
+    workflow.cp.write(fp)
 config_file = wf.resolve_url_to_file(config_path)
 
 # This first round of sbank is used for BBHs for the standard uberbank;

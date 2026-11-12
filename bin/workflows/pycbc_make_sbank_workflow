@@ -258,7 +258,7 @@ if not workflow.cp.has_option_tags(
     # And record output file, as it will be needed later
     assert len(coarse_node.output_files) == 1
     bins_inp_file = coarse_node.output_files[0]
-    if seed_file is None:
+    if seed_file is None:  # noqa: SIM102
         if not workflow.cp.has_option_tags(
             "workflow", "do-not-use-coarse-job-as-seed", args.tags
         ):
@@ -387,10 +387,7 @@ for cycle_idx in range(num_cycles):
     h5add_final_exe.update_output_directory(out_dir)
     h5add_final_exe.update_current_retention_level(crl)
 
-    if seed_file is None:
-        inputs = [readder_out]
-    else:
-        inputs = [seed_file, readder_out]
+    inputs = [readder_out] if seed_file is None else [seed_file, readder_out]
 
     h5add_node = h5add_final_exe.create_node(
         workflow.analysis_time, inputs, output=output_path

@@ -179,7 +179,7 @@ for counter, filename in enumerate(files):
             # happens to be the same as the trigger count
             triggers[ifo] = {
                 k: fin[ifo][k][:]
-                for k in fin[ifo].keys()
+                for k in fin[ifo]
                 if k not in ("loudest", "stat", "gates", "psd")
                 and fin[ifo][k].size == n_triggers
             }
@@ -204,7 +204,7 @@ for counter, filename in enumerate(files):
             continue
 
         # Apply the cuts
-        triggers_cut = {k: trigs_ifo[k][keep_idx] for k in trigs_ifo.keys()}
+        triggers_cut = {k: trigs_ifo[k][keep_idx] for k in trigs_ifo}
 
         # Calculate the sngl_ranking values
         sds = rank_method[ifo].single(triggers_cut)

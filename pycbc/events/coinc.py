@@ -140,11 +140,8 @@ def background_bin_from_string(background_bins, data):
 
             sub_locs = member_func(vals)
             sub_locs = numpy.where(sub_locs)[0]
-            if locs is not None:
-                # find intersection of boundary conditions
-                locs = numpy.intersect1d(locs, sub_locs)
-            else:
-                locs = sub_locs
+            # find intersection of boundary conditions
+            locs = numpy.intersect1d(locs, sub_locs) if locs is not None else sub_locs
 
         # make sure we don't reuse anything from an earlier bin
         locs = numpy.delete(locs, numpy.where(numpy.isin(locs, used))[0])
@@ -308,7 +305,7 @@ def time_multi_coincidence(times, slide_step=0, slop=0.003, pivot="H1", fixed="L
     ctimes = {fixed: fixed_time, pivot: pivot_time}
     ids = {fixed: fix_id, pivot: pivot_id}
 
-    dep_ifos = [ifo for ifo in times.keys() if ifo != fixed and ifo != pivot]
+    dep_ifos = [ifo for ifo in times if ifo != fixed and ifo != pivot]
     for ifo1 in dep_ifos:
         # FIXME - make this loop into a function?
 
@@ -1693,7 +1690,7 @@ class LiveCoincTimeslideBackgroundEstimator:
         )
 
         # If there are no results just return
-        valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]
+        valid_ifos = [k for k in results if results[k] and k in self.ifos]
         if len(valid_ifos) == 0:
             return {}
 

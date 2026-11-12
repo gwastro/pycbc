@@ -115,11 +115,11 @@ lims = [[], [0, 2 * np.pi], slim]
 tdiffs = [
     coinc_rate.multiifo_noise_coincident_area([ref_ifo, ifo], 0)
     for ifo in f.attrs["ifos"]
-    if not ifo == ref_ifo
+    if ifo != ref_ifo
 ][::-1]
 
 # Which IFOs are the differences between?
-ifostrs = [f"{ifo}-{ref_ifo}" for ifo in f.attrs["ifos"] if not ifo == ref_ifo]
+ifostrs = [f"{ifo}-{ref_ifo}" for ifo in f.attrs["ifos"] if ifo != ref_ifo]
 
 # Set up strings for the legends and axis labels
 tlegs = [f"{ifostr} time of flight (s)" for ifostr in ifostrs]

@@ -137,14 +137,14 @@ class Transformation(dax.Transformation):
             "container",
         ]
         # Check for logical name first
-        if not self.pycbc_name == other.pycbc_name:
+        if self.pycbc_name != other.pycbc_name:
             return False
 
         # Check the properties of the executable
         for val in test_vals:
             sattr = getattr(self, val)
             oattr = getattr(other, val)
-            if not sattr == oattr:
+            if sattr != oattr:
                 return False
         # Some properties are stored in the TransformationSite
         self_site = list(self.sites.values())
@@ -156,19 +156,14 @@ class Transformation(dax.Transformation):
         for val in test_site_vals:
             sattr = getattr(self_site, val)
             oattr = getattr(other_site, val)
-            if not sattr == oattr:
+            if sattr != oattr:
                 return False
 
         # Also check the "profile". This is things like Universe, RAM/disk/CPU
         # requests, execution site, getenv=True, etc.
-        for profile in self.profiles:
-            if profile not in other.profiles:
-                return False
-        for profile in other.profiles:
-            if profile not in self.profiles:
-                return False
-
-        return True
+        return all(p in other.profiles for p in self.profiles) and all(
+            p in self.profiles for p in other.profiles
+        )
 
 
 class Node(ProfileShortcuts):
@@ -629,9 +624,8 @@ class Workflow:
         olddir = os.getcwd()
         os.chdir(self.out_dir)
         self._adag.write(filename)
-        if not self.in_workflow:
-            if submit_now or plan_now:
-                self.plan_and_submit(submit_now=submit_now)
+        if not self.in_workflow and (submit_now or plan_now):
+            self.plan_and_submit(submit_now=submit_now)
         os.chdir(olddir)
 
     def plan_and_submit(self, submit_now=True):
@@ -864,11 +858,10 @@ class File(dax.File):
         )
         urlparts = urlsplit(path)
         site = "nonlocal"
-        if urlparts.scheme == "" or urlparts.scheme == "file":
-            if os.path.isfile(urlparts.path):
-                path = os.path.abspath(urlparts.path)
-                path = urljoin("file:", pathname2url(path))
-                site = "local"
+        if urlparts.scheme in ("", "file") and os.path.isfile(urlparts.path):
+            path = os.path.abspath(urlparts.path)
+            path = urljoin("file:", pathname2url(path))
+            site = "local"
 
         fil = cls(os.path.basename(path))
         fil.add_pfn(path, site=site)

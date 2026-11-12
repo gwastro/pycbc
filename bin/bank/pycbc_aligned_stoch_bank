@@ -240,11 +240,7 @@ while True:
                 metric_params.f0,
                 metric_params.pn_order,
             )
-            mus = []
-            idx = 0
-            for freq in fs:
-                mus.append(tmpltbank.get_mu_params(lambdas, metric_params, freq))
-                idx += 1
+            mus = [tmpltbank.get_mu_params(lambdas, metric_params, freq) for freq in fs]
             mus = numpy.array(mus)
         vecs = tmpltbank.get_cov_params(
             r_mass1, r_mass2, r_spin1z, r_spin2z, metric_params, ref_freq

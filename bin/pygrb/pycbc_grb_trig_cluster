@@ -58,13 +58,10 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
     Here ``include`` should be an index array
     """
     include = numpy.array(include, copy=False)
-    if include.dtype == numpy.bool_:
-        nevents = include.sum()
-    else:
-        nevents = include.size
+    nevents = include.sum() if include.dtype == numpy.bool_ else include.size
 
     with HFile(inputfile, "r") as h5in:
-        ifos = [k for k in h5in.keys() if k != "network"]
+        ifos = [k for k in h5in if k != "network"]
 
         # find which single-ifo events to keep
         ifo_index = {
@@ -75,7 +72,7 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
         }
 
         nsets = sum(
-            isinstance(item, h5py.Dataset) or isinstance(item, h5py.Group)
+            isinstance(item, (h5py.Dataset, h5py.Group))
             for group in h5in.values()
             for item in group.values()
         )

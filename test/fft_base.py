@@ -145,7 +145,7 @@ def _test_fft(test_case, inarr, expec, tol):
             # Next, check that the output is correct to within tolerance.
             # That will require exact equality of all other meta-data
             emsg = f"FFT output differs by more than a factor of {tol} from expected"
-            if isinstance(outarr, TimeSeries) or isinstance(outarr, FrequencySeries):
+            if isinstance(outarr, (TimeSeries, FrequencySeries)):
                 tc.assertTrue(
                     outarr.almost_equal_norm(expec, tol=tol, dtol=tol), msg=emsg
                 )
@@ -194,7 +194,7 @@ def _test_ifft(test_case, inarr, expec, tol):
                 "Inverse FFT output differs by more than a factor "
                 f"of {tol} from expected"
             )
-            if isinstance(outarr, TimeSeries) or isinstance(outarr, FrequencySeries):
+            if isinstance(outarr, (TimeSeries, FrequencySeries)):
                 tc.assertTrue(
                     outarr.almost_equal_norm(expec, tol=tol, dtol=tol), msg=emsg
                 )
@@ -253,7 +253,7 @@ def _test_random(test_case, inarr, outarr, tol):
                 "IFFT(FFT(random)) did not reproduce original array to "
                 f"within tolerance {tol}"
             )
-            if isinstance(incopy, TimeSeries) or isinstance(incopy, FrequencySeries):
+            if isinstance(incopy, (TimeSeries, FrequencySeries)):
                 tc.assertTrue(
                     incopy.almost_equal_norm(inarr, tol=tol, dtol=tol), msg=emsg
                 )
@@ -303,7 +303,7 @@ def _test_random(test_case, inarr, outarr, tol):
                 "FFT(IFFT(random)) did not reproduce original array to "
                 f"within tolerance {tol}"
             )
-            if isinstance(outcopy, TimeSeries) or isinstance(outcopy, FrequencySeries):
+            if isinstance(outcopy, (TimeSeries, FrequencySeries)):
                 tc.assertTrue(
                     outcopy.almost_equal_norm(outarr, tol=tol, dtol=tol), msg=emsg
                 )

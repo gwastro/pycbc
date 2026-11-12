@@ -740,7 +740,7 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
     ADD DOCS
     """
     cutoff_fns = pnutils.named_frequency_cutoffs
-    if name not in cutoff_fns.keys():
+    if name not in cutoff_fns:
         err_msg = f"{name} not recognized as a valid cutoff frequency choice."
         err_msg += "Recognized choices: " + " ".join(cutoff_fns.keys())
         raise ValueError(err_msg)
@@ -819,7 +819,7 @@ def return_nearest_cutoff(name, mass_dict, freqs):
     if len(freqs) == 1:
         return numpy.zeros(len(mass_dict["m1"]), dtype=float) + freqs[0]
     cutoff_fns = pnutils.named_frequency_cutoffs
-    if name not in cutoff_fns.keys():
+    if name not in cutoff_fns:
         err_msg = f"{name} not recognized as a valid cutoff frequency choice."
         err_msg += "Recognized choices: " + " ".join(cutoff_fns.keys())
         raise ValueError(err_msg)

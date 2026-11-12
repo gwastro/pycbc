@@ -69,7 +69,7 @@ def get_available_lal_detectors():
     properly.
     """
     ld = lal.__dict__
-    known_lal_names = [j for j in ld.keys() if "DETECTOR_PREFIX" in j]
+    known_lal_names = [j for j in ld if "DETECTOR_PREFIX" in j]
     known_prefixes = [ld[k] for k in known_lal_names]
     known_names = [ld[k.replace("PREFIX", "NAME")] for k in known_lal_names]
     return list(zip(known_prefixes, known_names, strict=True))

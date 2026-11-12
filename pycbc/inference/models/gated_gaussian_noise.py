@@ -613,11 +613,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
 
         """
         gate_idx_len = int(rindex - lindex)
-        if gate_idx_len not in self._cond.keys():
-            conds = {}
-        else:
-            conds = self._cond[gate_idx_len]
-        if det not in conds.keys():
+        conds = self._cond.get(gate_idx_len, {})
+        if det not in conds:
             # construct the matrix
             invpsd = self._invpsds[det]
             tdfilter = invpsd.astype("complex").to_timeseries() * invpsd.delta_t
@@ -1578,13 +1575,12 @@ class GatedGaussianMultimodeMargPhase(BaseGatedGaussian):
         # specify whether one of the modes is a reference to all other modes;
         # it is assumed that only one mode is given to be the reference
         self.ref_mode = ref_mode
-        if self.ref_mode:
-            if len(self.amp_names) > 1:
-                raise ValueError(
-                    "More than one mode is specified for SNR "
-                    "sampling. This model only supports one mode "
-                    "sampled in SNR if ref_amp is turned on."
-                )
+        if self.ref_mode and len(self.amp_names) > 1:
+            raise ValueError(
+                "More than one mode is specified for SNR "
+                "sampling. This model only supports one mode "
+                "sampled in SNR if ref_amp is turned on."
+            )
 
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(

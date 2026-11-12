@@ -1041,11 +1041,11 @@ class MatchedFilterSkyMaxControl:
 
         # The information on the complex side of this overlap is important
         # we may want to use this in the future.
-        if not id(hplus) == self.cached_hplus_hcross_hplus:
+        if id(hplus) != self.cached_hplus_hcross_hplus:
             self.cached_hplus_hcross_correlation = None
-        if not id(hcross) == self.cached_hplus_hcross_hcross:
+        if id(hcross) != self.cached_hplus_hcross_hcross:
             self.cached_hplus_hcross_correlation = None
-        if not id(psd) == self.cached_hplus_hcross_psd:
+        if id(psd) != self.cached_hplus_hcross_psd:
             self.cached_hplus_hcross_correlation = None
         if self.cached_hplus_hcross_correlation is None:
             hplus_cross_corr = overlap_cplx(
@@ -1255,10 +1255,7 @@ def sigmasq(htilde, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=N
         except AssertionError:
             raise ValueError("Waveform does not have same delta_f as psd")
 
-    if psd is None:
-        sq = ht.inner(ht)
-    else:
-        sq = ht.weighted_inner(ht, psd[kmin:kmax])
+    sq = ht.inner(ht) if psd is None else ht.weighted_inner(ht, psd[kmin:kmax])
 
     return sq.real * norm
 
@@ -1999,9 +1996,8 @@ class LiveBatchMatchedFilter:
         # Find the peaks in our SNR times series from the various templates
         i = 0
         for htilde in tgroup:
-            if hasattr(htilde, "time_offset"):
-                if "time_offset" not in result:
-                    result["time_offset"] = []
+            if hasattr(htilde, "time_offset") and "time_offset" not in result:
+                result["time_offset"] = []
 
             l = htilde.out[seg].abs_arg_max()
 
@@ -2304,14 +2300,14 @@ def compute_followup_snr_series(
         state_start_time = trig_time - duration / 2 - htilde.length_in_time
         state_end_time = trig_time + duration / 2
         state_duration = state_end_time - state_start_time
-        if data_reader.state is not None:
+        if data_reader.state is not None:  # noqa: SIM102
             if not data_reader.state.is_extent_valid(state_start_time, state_duration):
                 return None
 
         # was the data quality ok for the full amount of involved data?
         dq_start_time = state_start_time - data_reader.dq_padding
         dq_duration = state_duration + 2 * data_reader.dq_padding
-        if data_reader.dq is not None:
+        if data_reader.dq is not None:  # noqa: SIM102
             if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
                 return None
 
@@ -2427,10 +2423,7 @@ def optimized_match(
     waveform_2 = waveform_2[mask]
     frequencies = frequencies[mask]
 
-    if psd is not None:
-        psd_arr = psd.numpy()[mask]
-    else:
-        psd_arr = numpy.ones_like(waveform_1)
+    psd_arr = psd.numpy()[mask] if psd is not None else numpy.ones_like(waveform_1)
 
     def product(a, b):
         integral = numpy.sum(numpy.conj(a) * b / psd_arr) * delta_f

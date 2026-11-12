@@ -82,10 +82,7 @@ def weighted_inner(self, other, weight):
         return self.inner(other)
 
     cdtype = common_kind(self.dtype, other.dtype)
-    if cdtype.kind == "c":
-        acum_dtype = complex128
-    else:
-        acum_dtype = float64
+    acum_dtype = complex128 if cdtype.kind == "c" else float64
 
     return cp.sum(self.data.conj() * other / weight, dtype=acum_dtype)
 
@@ -137,9 +134,7 @@ def clear(self):
 
 
 def _scheme_matches_base_array(array):
-    if isinstance(array, cp.ndarray):
-        return True
-    return False
+    return isinstance(array, cp.ndarray)
 
 
 def _to_device(array):

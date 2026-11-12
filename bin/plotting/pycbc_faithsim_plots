@@ -85,15 +85,9 @@ def basic_scatter(
     plt.xlabel(xname)
     plt.ylabel(yname)
 
-    if xmin is None:
-        xmin = min(xval)
-    else:
-        xmin = float(xmin)
+    xmin = min(xval) if xmin is None else float(xmin)
 
-    if ymin is None:
-        ymin = min(yval)
-    else:
-        ymin = float(ymin)
+    ymin = min(yval) if ymin is None else float(ymin)
 
     plt.xlim(xmin, max(xval))
     plt.ylim(ymin, max(yval))

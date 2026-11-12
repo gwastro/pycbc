@@ -135,10 +135,7 @@ def setup_bins(
         else:
             abs1 = abs(f_full[idx_f_full] - fbin[idx_fbin])
             abs2 = abs(f_full[idx_f_full - 1] - fbin[idx_fbin])
-            if abs1 > abs2:
-                curr_idx = idx_f_full - 1
-            else:
-                curr_idx = idx_f_full
+            curr_idx = idx_f_full - 1 if abs1 > abs2 else idx_f_full
         fbin_ind[idx_fbin] = curr_idx
     return numpy.unique(fbin_ind)
 
@@ -709,11 +706,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             norm += norm_i
 
         loglr = self.marginalize_loglr(filt, norm)
-        if self.return_sh_hh:
-            results = (filt, norm)
-        else:
-            results = loglr
-        return results
+        return (filt, norm) if self.return_sh_hh else loglr
 
     def _nowaveform_handler(self):
         """
@@ -744,10 +737,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
         """
         super().write_metadata(fp, group=group)
-        if group is None:
-            attrs = fp.attrs
-        else:
-            attrs = fp[group].attrs
+        attrs = fp.attrs if group is None else fp[group].attrs
         for p, v in self.fid_params.items():
             attrs[f"{p}_ref"] = v
 
@@ -1064,17 +1054,9 @@ class RelativeTimeDom(RelativeTime):
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
         loglr = self.marginalize_loglr(sh_total, hh_total)
-        if self.return_sh_hh:
-            results = (sh_total, hh_total)
-        else:
-            results = loglr
-        return results
+        return (sh_total, hh_total) if self.return_sh_hh else loglr
 
     def _nowaveform_handler(self):
         """Sets loglr values if no waveform generated."""
         loglr = sh_total = hh_total = -numpy.inf
-        if self.return_sh_hh:
-            results = (sh_total, hh_total)
-        else:
-            results = loglr
-        return results
+        return (sh_total, hh_total) if self.return_sh_hh else loglr

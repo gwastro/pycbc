@@ -577,7 +577,7 @@ class InjFilterRejector:
                 self._short_psd_storage[id(segment.psd)] = red_psd
 
             # Set htilde to be the current short template
-            if not t_num == self._short_template_id:
+            if t_num != self._short_template_id:
                 if self._short_template_mem is None:
                     wav_len = 1 + int(self.coarsematch_fmax / self.coarsematch_deltaf)
                     self._short_template_mem = zeros(wav_len, dtype=np.complex64)

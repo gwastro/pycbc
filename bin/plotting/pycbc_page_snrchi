@@ -48,7 +48,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose, default_level=1)
 
 
-if args.newsnr_contours is not None and not args.chisq_choice == "traditional":
+if args.newsnr_contours is not None and args.chisq_choice != "traditional":
     parser.error(
         "Newsnr contours are being plotted assuming a traditional "
         "chisquared, but this is not being plotted! We are plotting "
@@ -104,10 +104,7 @@ for i, cval in enumerate(args.newsnr_contours):
     logger.info("Plotting newsnr %s contour", cval)
     snrv = snr_from_chisq(r, cval)
     plt.plot(snrv, r, color="black", lw=0.5)
-    if i == 0:
-        label = f"$\\hat{{\\rho}} = {cval}$"
-    else:
-        label = f"${cval}$"
+    label = f"$\\hat{{\\rho}} = {cval}$" if i == 0 else f"${cval}$"
     try:
         label_pos_idx = numpy.where(snrv > snr.max() * 0.8)[0][0]
     except IndexError:

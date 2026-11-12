@@ -118,11 +118,13 @@ producer = GraceDbKafkaProducer(
     ca_cert_path=ca_bundle,
 )
 
+with open(args.xml_file_for_upload, "rb") as fp:
+    xml_contents = fp.read()
 r = gracedb.create_event(
     group_tag,
     "pycbc",
     args.xml_file_for_upload,
-    filecontents=open(args.xml_file_for_upload, "rb").read(),
+    filecontents=xml_contents,
     search=args.search_tag,
     offline=True,
     labels=labels,

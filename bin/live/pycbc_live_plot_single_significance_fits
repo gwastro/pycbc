@@ -86,7 +86,7 @@ with HFile(args.trigger_fits_file, "r") as trfit_f:
     # Get the ifos to plot from the file
     # Check that all the ifos we want to plot are in the file
     all_ifos = trfit_f.attrs["ifos"].split(",")
-    ifos = [k for k in trfit_f.keys() if not k.startswith("bins")]
+    ifos = [k for k in trfit_f if not k.startswith("bins")]
 
     # Grab some info from the attributes
     if trfit_f.attrs["ranking_statistic"] in ["quadsum", "single_ranking_only"]:

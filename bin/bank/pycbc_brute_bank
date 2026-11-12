@@ -290,10 +290,7 @@ class TriangleBank:
             )
             hp.tbin = int(hp.tau0 / args.tau0_threshold)
 
-            if hp.tbin in self.tbins:
-                r = numpy.array(self.tbins[hp.tbin])
-            else:
-                r = r[:0]
+            r = numpy.array(self.tbins[hp.tbin]) if hp.tbin in self.tbins else r[:0]
 
         mtau = len(r)
 
@@ -442,7 +439,9 @@ def save_bank():  # Use a local name
     logger.info("Saving current bank to %s", args.output_file)
     with HFile(args.output_file, "w") as o:
         o.attrs["minimal_match"] = args.minimal_match
-        for k in bank.keys():
+        # TriangleBank.keys() gives the parameter names; iterating over the
+        # bank itself would give the waveforms.
+        for k in bank.keys():  # noqa: SIM118
             val = bank.key(k)
             if val.dtype.char == "U":
                 val = val.astype("bytes")
@@ -550,10 +549,7 @@ class GenUniformWaveform:
 
 
 r = 0
-if not args.tolerance:
-    tolerance = (1 - args.minimal_match) / 10
-else:
-    tolerance = args.tolerance
+tolerance = (1 - args.minimal_match) / 10 if not args.tolerance else args.tolerance
 
 size = int(1.0 / tolerance)
 
@@ -593,7 +589,7 @@ if len(args.input_file) > 0:
     for input_file in args.input_file:
         logger.info("Loading: %s", input_file)
         with HFile(input_file, "r") as f:
-            params = {k: f[k][:] for k in f.keys() if k not in ["max_matches"]}
+            params = {k: f[k][:] for k in f if k not in ["max_matches"]}
 
             # Keep only templates inside [tau0_start, tau0_end]
             tau0_in = pycbc.conversions.tau0_from_mass1_mass2(
@@ -637,7 +633,7 @@ def draw(rtype):
         params = {name: samples[name] for name in samples.fieldnames}
         # Add `static_args` back.
         if static_args is not None:
-            for k in static_args.keys():
+            for k in static_args:
                 params[k] = numpy.array([static_args[k]] * size)
 
     elif rtype == "kde":
@@ -651,7 +647,7 @@ def draw(rtype):
 
         # Add `static_args` back, some transformations may need them.
         if static_args is not None:
-            for k in static_args.keys():
+            for k in static_args:
                 params[k] = numpy.array([static_args[k]] * size)
 
         # Apply `waveform_transforms` defined in the .ini file to samples.

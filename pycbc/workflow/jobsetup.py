@@ -674,16 +674,14 @@ class JobSegmenter:
         shift_dur = self.curr_seg[0] + int(self.job_time_shift * num_job + 0.0001)
         job_data_seg = self.data_chunk.shift(shift_dur)
         # Sanity check that all data is used
-        if num_job == 0:
-            if job_data_seg[0] != self.curr_seg[0]:
-                err = "Job is not using data from the start of the "
-                err += "science segment. It should be using all data."
-                raise ValueError(err)
-        if num_job == (self.num_jobs - 1):
-            if job_data_seg[1] != self.curr_seg[1]:
-                err = "Job is not using data from the end of the "
-                err += "science segment. It should be using all data."
-                raise ValueError(err)
+        if num_job == 0 and job_data_seg[0] != self.curr_seg[0]:
+            err = "Job is not using data from the start of the "
+            err += "science segment. It should be using all data."
+            raise ValueError(err)
+        if num_job == (self.num_jobs - 1) and job_data_seg[1] != self.curr_seg[1]:
+            err = "Job is not using data from the end of the "
+            err += "science segment. It should be using all data."
+            raise ValueError(err)
 
         if hasattr(self.exe_class, "zero_pad_data_extend"):
             job_data_seg = self.exe_class.zero_pad_data_extend(
@@ -1245,10 +1243,7 @@ class PycbcSplitInspinjExecutable(Executable):
 
         node.add_input_opt("--input-file", parent)
 
-        if parent.name.endswith("gz"):
-            ext = ".xml.gz"
-        else:
-            ext = ".xml"
+        ext = ".xml.gz" if parent.name.endswith("gz") else ".xml"
 
         out_files = FileList([])
         for i in range(self.num_splits):

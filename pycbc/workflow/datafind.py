@@ -168,7 +168,7 @@ def setup_datafind_workflow(
         raise ValueError(msg)
 
     using_backup_server = False
-    if (
+    if (  # noqa: SIM102
         datafind_method == "AT_RUNTIME_MULTIPLE_FRAMES"
         or datafind_method == "AT_RUNTIME_SINGLE_FRAMES"
     ):
@@ -203,7 +203,7 @@ def setup_datafind_workflow(
         new_science_segs = get_science_segs_from_datafind_outs(datafindcaches)
         logger.info("New segments calculated from data find output.....")
         missing_data = False
-        for ifo in science_segs.keys():
+        for ifo in science_segs:
             # If no science segments in input then do nothing
             if not science_segs[ifo]:
                 msg = f"No science segments are present for ifo {ifo}, "
@@ -248,7 +248,7 @@ def setup_datafind_workflow(
             datafindcaches
         )
         missing_flag = False
-        for ifo in missing_frames.keys():
+        for ifo in missing_frames:
             # If no data in the input then do nothing
             if not science_segs[ifo]:
                 continue
@@ -316,7 +316,7 @@ def setup_datafind_workflow(
             err_msg += "datafind-check-segment-summary option."
             raise ValueError(err_msg)
         seg_summary_times = seg_file.seg_summ_dict
-        for ifo in df_science_segs.keys():
+        for ifo in df_science_segs:
             curr_seg_summ_times = seg_summary_times[ifo + ":" + sci_seg_name]
             missing = df_science_segs[ifo] & seg_file.valid_segments
             missing.coalesce()
@@ -355,7 +355,7 @@ def setup_datafind_workflow(
     sci_avlble_dict = segments.segmentlistdict()
     # NOTE: Should this be overrideable in the config file?
     sci_avlble_name = "SCIENCE_AVAILABLE"
-    for ifo in science_segs.keys():
+    for ifo in science_segs:
         sci_avlble_dict[ifo + ":" + sci_avlble_name] = science_segs[ifo]
 
     sci_avlble_file = SegFile.from_segment_list_dict(
@@ -858,7 +858,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
         if len(cache) > 0:
             # Don't bother if these are not file:// urls, assume all urls in
             # one cache file must be the same type
-            if not cache[0].scheme == "file":
+            if cache[0].scheme != "file":
                 warn_msg = f"We have {cache[0].scheme} entries in the "
                 warn_msg += "cache file. I do not check if these exist."
                 logger.warning(warn_msg)
@@ -918,7 +918,7 @@ def get_segment_summary_times(science_file, segment_name):
     # Get the segment_def_id for the segment_name
     segment_def_table = ligolw.Table.get_table(xmldoc, "segment_definer")
     for entry in segment_def_table:
-        if (entry.ifos == ifo) and (entry.name == channel):
+        if (entry.ifos == ifo) and (entry.name == channel):  # noqa: SIM102
             if len(segment_name) == 2 or (entry.version == version):
                 seg_def_id = entry.segment_def_id
                 break
@@ -1040,20 +1040,21 @@ def run_datafind_instance(
 
     df_cache.ifo = ifo
     # Dump output to file
-    fp = open(cache_file.storage_path, "w")
-    # CANNOT use df_cache.tofile because it will print 815901601.00000
-    # as a gps time which is incompatible with the lal cache format
-    # (and the C codes) which demand an integer.
-    for entry in df_cache:
-        start = str(int(entry.segment[0]))
-        duration = str(int(abs(entry.segment)))
-        print(
-            f"{entry.observatory} {entry.description} {start} {duration} {entry.url}",
-            file=fp,
-        )
-        entry.segment = segments.segment(int(entry.segment[0]), int(entry.segment[1]))
-
-    fp.close()
+    with open(cache_file.storage_path, "w") as fp:
+        # CANNOT use df_cache.tofile because it will print 815901601.00000
+        # as a gps time which is incompatible with the lal cache format
+        # (and the C codes) which demand an integer.
+        for entry in df_cache:
+            start = str(int(entry.segment[0]))
+            duration = str(int(abs(entry.segment)))
+            print(
+                f"{entry.observatory} {entry.description} {start} {duration} "
+                f"{entry.url}",
+                file=fp,
+            )
+            entry.segment = segments.segment(
+                int(entry.segment[0]), int(entry.segment[1])
+            )
     return df_cache, cache_file
 
 
@@ -1097,9 +1098,8 @@ def log_datafind_command(
         f"{observatory}-{frame_type}-{int(start_time)}-{int(end_time - start_time)}.sh"
     )
     file_path = os.path.join(output_dir, file_name)
-    fp = open(file_path, "w")
-    fp.write(" ".join(gw_command))
-    fp.close()
+    with open(file_path, "w") as fp:
+        fp.write(" ".join(gw_command))
 
 
 def datafind_keep_unique_backups(backup_outs, orig_outs):

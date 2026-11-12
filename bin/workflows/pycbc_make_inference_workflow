@@ -109,19 +109,13 @@ def read_events_from_config(cp):
     for event in events:
         section = "-".join(["event", event])
         # get the label
-        if cp.has_option(section, "label"):
-            label = cp.get(section, "label")
-        else:
-            label = event
+        label = cp.get(section, "label") if cp.has_option(section, "label") else event
         labels.append(label)
         # convert the config-file options to a command line string
         cli = cp.section_to_cli(section, skip_opts=["label", "nruns"])
         cpopts.append(cfparser.parse_args(shlex.split(cli)))
         # get the number of times to run the event
-        if cp.has_option(section, "nruns"):
-            nrun = int(cp.get(section, "nruns"))
-        else:
-            nrun = 1
+        nrun = int(cp.get(section, "nruns")) if cp.has_option(section, "nruns") else 1
         if nrun < 1:
             raise ValueError("nruns must be >= 1")
         nruns.append(nrun)

@@ -319,10 +319,7 @@ for i, s in enumerate(samples):
         axis_dict = None
 
     # get a default line color; this is used for the 1D marginal lines
-    if opts.hist_color:
-        linecolor = opts.hist_color
-    else:
-        linecolor = next(colors)
+    linecolor = opts.hist_color or next(colors)
     # set different colors depending on if one or more files was provided
     if len(opts.input_file) == 1:
         # make the hist color black or white, depending on if dark background
@@ -334,10 +331,7 @@ for i, s in enumerate(samples):
         else:
             hist_color = "black"
         # fill histogram if fill_hist is True
-        if opts.fill_hist:
-            fill_color = opts.hist_fill_color
-        else:
-            fill_color = None
+        fill_color = opts.hist_fill_color if opts.fill_hist else None
         # make the default contour color white if plot density is on
         if not opts.contour_color and opts.plot_density:
             contour_color = "white"

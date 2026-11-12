@@ -220,10 +220,7 @@ options = parser.parse_args()
 
 pycbc.init_logging(options.verbose)
 
-if options.cuda:
-    ctx = CUDAScheme()
-else:
-    ctx = CPUScheme()
+ctx = CUDAScheme() if options.cuda else CPUScheme()
 
 # Load in the waveform1 bank file
 indoc = ligolw_utils.load_filename(
@@ -235,117 +232,115 @@ except ValueError:
     waveform_table = lsctables.SimInspiralTable.get_table(indoc)
 
 # open the output file where the max overlaps over the bank are stored
-fout = open(options.out_file, "w")
-logger.info("Writing matches to %s", options.out_file)
+with open(options.out_file, "w") as fout:
+    logger.info("Writing matches to %s", options.out_file)
 
-filter_tlen = options.filter_waveform_length * options.filter_sample_rate
-filter_flen = int(filter_tlen / 2) + 1
-delta_f = float(options.filter_sample_rate) / filter_tlen
+    filter_tlen = options.filter_waveform_length * options.filter_sample_rate
+    filter_flen = int(filter_tlen / 2) + 1
+    delta_f = float(options.filter_sample_rate) / filter_tlen
 
-logger.info("Number of Waveforms      : %d", len(waveform_table))
+    logger.info("Number of Waveforms      : %d", len(waveform_table))
 
-logger.info("Reading and Interpolating PSD")
-# If we are going to use h(t) to estimate a PSD we need h(t)
-if options.psd_estimation:
-    logger.info("Obtaining h(t) for PSD generation")
-    strain = pycbc.strain.from_cli(options, pycbc.DYN_RANGE_FAC)
-else:
-    strain = None
+    logger.info("Reading and Interpolating PSD")
+    # If we are going to use h(t) to estimate a PSD we need h(t)
+    if options.psd_estimation:
+        logger.info("Obtaining h(t) for PSD generation")
+        strain = pycbc.strain.from_cli(options, pycbc.DYN_RANGE_FAC)
+    else:
+        strain = None
 
-psd = pycbc.psd.from_cli(
-    options,
-    length=filter_flen,
-    delta_f=delta_f,
-    low_frequency_cutoff=options.filter_low_frequency_cutoff,
-    strain=strain,
-    dyn_range_factor=DYN_RANGE_FAC,
-    precision="single",
-)
+    psd = pycbc.psd.from_cli(
+        options,
+        length=filter_flen,
+        delta_f=delta_f,
+        low_frequency_cutoff=options.filter_low_frequency_cutoff,
+        strain=strain,
+        dyn_range_factor=DYN_RANGE_FAC,
+        precision="single",
+    )
 
-matches = []
-overlaps = []
-time_offsets = []
-s1s = []
-s2s = []
-logger.info("Calculating Overlaps")
-with ctx:
-    index = 0
-    # Calculate the overlaps
-    for waveform_params in waveform_table:
-        index += 1
-        if options.verbose:
-            update_progress(index * 100 / len(waveform_table))
+    matches = []
+    overlaps = []
+    time_offsets = []
+    s1s = []
+    s2s = []
+    logger.info("Calculating Overlaps")
+    with ctx:
+        # Calculate the overlaps
+        for index, waveform_params in enumerate(waveform_table, start=1):
+            if options.verbose:
+                update_progress(index * 100 / len(waveform_table))
 
-        try:
-            htilde1 = get_waveform(
-                options.waveform1_approximant,
-                options.waveform1_phase_order,
-                options.waveform1_amplitude_order,
-                options.waveform1_spin_order,
-                options.waveform1_taper_template,
-                waveform_params,
-                options.waveform1_start_frequency,
-                options.filter_sample_rate,
-                filter_tlen,
-            )
+            try:
+                htilde1 = get_waveform(
+                    options.waveform1_approximant,
+                    options.waveform1_phase_order,
+                    options.waveform1_amplitude_order,
+                    options.waveform1_spin_order,
+                    options.waveform1_taper_template,
+                    waveform_params,
+                    options.waveform1_start_frequency,
+                    options.filter_sample_rate,
+                    filter_tlen,
+                )
 
-            htilde2 = get_waveform(
-                options.waveform2_approximant,
-                options.waveform2_phase_order,
-                options.waveform2_amplitude_order,
-                options.waveform2_spin_order,
-                options.waveform2_taper_template,
-                waveform_params,
-                options.waveform2_start_frequency,
-                options.filter_sample_rate,
-                filter_tlen,
-            )
+                htilde2 = get_waveform(
+                    options.waveform2_approximant,
+                    options.waveform2_phase_order,
+                    options.waveform2_amplitude_order,
+                    options.waveform2_spin_order,
+                    options.waveform2_taper_template,
+                    waveform_params,
+                    options.waveform2_start_frequency,
+                    options.filter_sample_rate,
+                    filter_tlen,
+                )
 
-            m, i = match(
-                htilde1,
-                htilde2,
-                psd=psd,
-                low_frequency_cutoff=options.filter_low_frequency_cutoff,
-                high_frequency_cutoff=options.filter_high_frequency_cutoff,
-            )
+                m, i = match(
+                    htilde1,
+                    htilde2,
+                    psd=psd,
+                    low_frequency_cutoff=options.filter_low_frequency_cutoff,
+                    high_frequency_cutoff=options.filter_high_frequency_cutoff,
+                )
 
-            o = overlap(
-                htilde1,
-                htilde2,
-                psd=psd,
-                low_frequency_cutoff=options.filter_low_frequency_cutoff,
-                high_frequency_cutoff=options.filter_high_frequency_cutoff,
-            )
+                o = overlap(
+                    htilde1,
+                    htilde2,
+                    psd=psd,
+                    low_frequency_cutoff=options.filter_low_frequency_cutoff,
+                    high_frequency_cutoff=options.filter_high_frequency_cutoff,
+                )
 
-            s1 = sigma(
-                htilde1,
-                psd=psd,
-                low_frequency_cutoff=options.filter_low_frequency_cutoff,
-                high_frequency_cutoff=options.filter_high_frequency_cutoff,
-            )
-            s2 = sigma(
-                htilde2,
-                psd=psd,
-                low_frequency_cutoff=options.filter_low_frequency_cutoff,
-                high_frequency_cutoff=options.filter_high_frequency_cutoff,
-            )
-            matches.append(m)
-            overlaps.append(o)
-            if i > filter_flen:
-                i = i - filter_tlen
-            time_offsets.append(i * 1.0 / options.filter_sample_rate)
-            s1s.append(s1)
-            s2s.append(s2)
-        except Exception as e:
-            logger.warning("Unable to generate waveforms")
-            logger.warning("Error: %s, %s", str(type(e)), str(e))
-            matches.append(-1)
-            overlaps.append(-1)
-            time_offsets.append(-1)
-            s1s.append(-1)
-            s2s.append(-1)
+                s1 = sigma(
+                    htilde1,
+                    psd=psd,
+                    low_frequency_cutoff=options.filter_low_frequency_cutoff,
+                    high_frequency_cutoff=options.filter_high_frequency_cutoff,
+                )
+                s2 = sigma(
+                    htilde2,
+                    psd=psd,
+                    low_frequency_cutoff=options.filter_low_frequency_cutoff,
+                    high_frequency_cutoff=options.filter_high_frequency_cutoff,
+                )
+                matches.append(m)
+                overlaps.append(o)
+                if i > filter_flen:
+                    i = i - filter_tlen
+                time_offsets.append(i * 1.0 / options.filter_sample_rate)
+                s1s.append(s1)
+                s2s.append(s2)
+            except Exception as e:
+                logger.warning("Unable to generate waveforms")
+                logger.warning("Error: %s, %s", str(type(e)), str(e))
+                matches.append(-1)
+                overlaps.append(-1)
+                time_offsets.append(-1)
+                s1s.append(-1)
+                s2s.append(-1)
 
-# Output the overlaps to  a file
-for m, o, i, s1, s2 in zip(matches, overlaps, time_offsets, s1s, s2s, strict=True):
-    match_str = f"{m:5.5f} {o:5.5f} {i:5.5f} {s1:5.5f} {s2:5.5f}\n"
-    fout.write(match_str)
+    # Output the overlaps to  a file
+    for m, o, i, s1, s2 in zip(matches, overlaps, time_offsets, s1s, s2s, strict=True):
+        match_str = f"{m:5.5f} {o:5.5f} {i:5.5f} {s1:5.5f} {s2:5.5f}\n"
+        fout.write(match_str)

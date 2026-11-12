@@ -69,7 +69,7 @@ if h_num_rm is not None and (h_iterations is None or h_num_rm > h_iterations):
     pycbc.results.save_fig_with_metadata(str(html_table), args.output_file, **kwds)
     sys.exit(0)
 
-if args.output_file.endswith(".xml") or args.output_file.endswith(".xml.gz"):
+if args.output_file.endswith(".xml") or args.output_file.endswith(".xml.gz"):  # noqa: SIM102
     if args.single_detector_triggers is None:
         err_msg = "If creating xml files must provide the single detector "
         err_msg += "trigger lists with --single-detector-triggers."

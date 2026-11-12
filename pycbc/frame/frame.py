@@ -135,10 +135,7 @@ def read_frame(
     if end_time and duration:
         raise ValueError("end time and duration are mutually exclusive")
 
-    if type(location) is list:
-        locations = location
-    else:
-        locations = [location]
+    locations = location if type(location) is list else [location]
 
     cache = locations_to_cache(locations)
     if sieve:

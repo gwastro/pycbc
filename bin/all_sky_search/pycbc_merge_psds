@@ -45,7 +45,7 @@ for psd_file in args.psd_files:
         inc[ifo] = 0
         start[ifo], end[ifo] = [], []
 
-    for rkey in f[f"{ifo}/psds"].keys():
+    for rkey in f[f"{ifo}/psds"]:
         int_key = int(rkey)
         rkey = f"{ifo}/psds/{rkey}"
         psd = pycbc.types.load_frequencyseries(psd_file, group=rkey)

@@ -93,10 +93,7 @@ def read_events_from_config(cp):
     samples_files = []
     for event in events:
         section = "-".join(["event", event])
-        if cp.has_option(section, "label"):
-            label = cp.get(section, "label")
-        else:
-            label = event
+        label = cp.get(section, "label") if cp.has_option(section, "label") else event
         cf = shlex.split(cp.get(section, "config-files"))
         sf = shlex.split(cp.get(section, "samples-files"))
         labels.append(label)

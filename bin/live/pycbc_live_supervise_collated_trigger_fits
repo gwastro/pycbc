@@ -97,7 +97,7 @@ def get_active_ifos(trigger_file):
     Get the active ifos from the trigger file
     """
     with HFile(trigger_file, "r") as f:
-        ifos = [ifo for ifo in f.keys() if "snr" in f[ifo].keys()]
+        ifos = [ifo for ifo in f if "snr" in f[ifo]]
     logger.info("Interferometers with data: %s", " ".join(ifos))
     return ifos
 

@@ -54,7 +54,7 @@ def _empty_row(obj):
         cols = lsctables.SnglInspiralTable.validcolumns
 
     # populate columns with default values
-    for entry in cols.keys():
+    for entry in cols:
         if cols[entry] in ["real_4", "real_8"]:
             setattr(row, entry, 0.0)
         elif cols[entry] == "int_4s":
@@ -361,10 +361,7 @@ for ifo in opts.instruments:
 sample_rate = opts.sample_rate[opts.instruments[0]]
 
 # set upper frequency cutoff if not given
-if opts.high_frequency_cutoff:
-    f_high = opts.high_frequency_cutoff
-else:
-    f_high = int(sample_rate / 2)
+f_high = opts.high_frequency_cutoff or int(sample_rate / 2)
 
 # check that frame types are not lists
 if opts.frame_type:
@@ -453,7 +450,7 @@ sim.numrel_data = opts.numrel_data
 
 # construct waveform string that can be parsed by lalsimulation
 waveform_string = opts.approximant
-if not pn_orders[opts.order] == -1:
+if pn_orders[opts.order] != -1:
     waveform_string += opts.order
 sim.waveform = waveform_string
 name, phase_order = legacy_approximant_name(sim.waveform)

@@ -242,7 +242,7 @@ class LiveSingle:
                 # Default - no singles being used
                 continue
 
-            if not args.sngl_ifar_est_dist[ifo] == "fixed":
+            if args.sngl_ifar_est_dist[ifo] != "fixed":
                 if not args.single_fit_file:
                     # Fixed IFAR option doesnt need the fits file
                     parser.error(

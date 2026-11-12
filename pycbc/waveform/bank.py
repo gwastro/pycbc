@@ -367,7 +367,7 @@ class TemplateBank:
             except KeyError:
                 # Auto-detection: Ignore subgroups (like 'fir_data'), only read Datasets
                 fileparams = []
-                for k in root.keys():
+                for k in root:
                     if isinstance(root.get(k), h5py.Dataset):
                         fileparams.append(k)
                 logger.info(
@@ -399,7 +399,7 @@ class TemplateBank:
                 data[key] = root[key][:]
                 dtype.append((key, data[key].dtype))
 
-            if not fileparams and len(data) == 0:
+            if not fileparams and len(data) == 0:  # noqa: SIM102
                 # It's possible fileparams is empty if the group is empty,
                 # but we should catch it if we expected data.
                 # If we are just initializing an empty bank writer, this might occur,
@@ -543,12 +543,9 @@ class TemplateBank:
             f = pycbc.io.HFile(filename, mode)
 
         # 2. Resolve Write Root (Group vs File)
-        if group_key:
-            # If f is a Group, require_group creates a subgroup.
-            # If f is a File, it creates a root group.
-            root = f.require_group(group_key)
-        else:
-            root = f
+        # If f is a Group, require_group creates a subgroup.
+        # If f is a File, it creates a root group.
+        root = f.require_group(group_key) if group_key else f
 
         # 3. Write Parameters
         parameters = self.parameters
@@ -929,10 +926,7 @@ class FilterBank(TemplateBank):
             decompression_method = compressed_waveform.interpolation
         logger.info("Decompressing waveform using %s", decompression_method)
 
-        if df is not None:
-            delta_f = df
-        else:
-            delta_f = self.delta_f
+        delta_f = df if df is not None else self.delta_f
 
         # Create memory space for writing the decompressed waveform
         decomp_scratch = FrequencySeries(

@@ -226,10 +226,8 @@ if opts.log_steps and not opts.frame_number:
         "provided; see help for details."
     )
 
-if opts.frame_number:
-    thinint = 1
-else:  # frame step was provided
-    thinint = opts.frame_step
+# Otherwise the frame step was provided
+thinint = 1 if opts.frame_number else opts.frame_step
 
 # get the samples
 samples = fp.samples_from_cli(
@@ -264,10 +262,7 @@ else:
 # Get z-values
 if opts.z_arg is not None:
     logger.info("Getting samples for colorbar")
-    if opts.z_arg == "snr":
-        z_arg = "loglikelihood"
-    else:
-        z_arg = opts.z_arg
+    z_arg = "loglikelihood" if opts.z_arg == "snr" else opts.z_arg
     zsamples = fp.samples_from_cli(
         opts,
         z_arg,
@@ -288,14 +283,8 @@ if opts.z_arg is not None:
     zvals = zsamples[z_arg]
     show_colorbar = True
     # Set common min and max for colorbar in all plots
-    if opts.vmin is None:
-        vmin = zvals.min()
-    else:
-        vmin = opts.vmin
-    if opts.vmax is None:
-        vmax = zvals.max()
-    else:
-        vmax = opts.vmax
+    vmin = zvals.min() if opts.vmin is None else opts.vmin
+    vmax = zvals.max() if opts.vmax is None else opts.vmax
 else:
     zvals = None
     zlbl = None
@@ -347,10 +336,7 @@ for p in parameters:
 linecolor = next(iter(matplotlib.rcParams["axes.prop_cycle"]))["color"]
 # make the hist color black or white, depending on if the
 # dark background is used
-if opts.mpl_style == "dark_background":
-    hist_color = "white"
-else:
-    hist_color = "black"
+hist_color = "white" if opts.mpl_style == "dark_background" else "black"
 # make the default contour color white if plot density is on
 if not opts.contour_color and opts.plot_density:
     contour_color = "white"
@@ -369,10 +355,7 @@ max_iter_num = indices[-1] * thinned_by + 1
 def _make_frame(frame):
     """Wrapper for making the plot in a pooled environment."""
     plotargs = samples[:, frame]
-    if zvals is not None:
-        z = zvals[:, frame]
-    else:
-        z = None
+    z = zvals[:, frame] if zvals is not None else None
     iter_num = str(indices[frame] * thinned_by + 1)
     iter_num = iter_num.zfill(len(str(max_iter_num)))
     output = opts.output_prefix + f"-{iter_num}.png"
@@ -403,10 +386,7 @@ def _make_frame(frame):
     )
 
     # Write sample number
-    if show_colorbar:
-        xtxt = 0.85
-    else:
-        xtxt = 0.9
+    xtxt = 0.85 if show_colorbar else 0.9
     ytxt = 0.95
     scale_fac = get_scale_fac(fig)
     fontsize = 8 * scale_fac

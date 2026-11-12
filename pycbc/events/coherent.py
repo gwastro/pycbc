@@ -84,7 +84,7 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos, wraparound_dict):
         )
         return outarr[:num_idxs]
     coinc_list = np.array([], dtype=int)
-    for ifo in idx_dict.keys():
+    for ifo in idx_dict:
         # Create list of indexes above single detector threshold, in geocent
         # time (-time_delay_idx[ifo] applies the time delay for the specific
         # detector). The periodic boundary condition of time slides is
@@ -167,7 +167,7 @@ def coincident_snr(snr_dict, index, threshold, time_delay_idx):
     # Restrict the snr timeseries to just the interesting points
     coinc_triggers = get_coinc_triggers(snr_dict, index, time_delay_idx)
     # Calculate the coincident snr
-    snr_array = np.array([coinc_triggers[ifo] for ifo in coinc_triggers.keys()])
+    snr_array = np.array([coinc_triggers[ifo] for ifo in coinc_triggers])
     rho_coinc = abs(np.sqrt(np.sum(snr_array * snr_array.conj(), axis=0)))
     # Apply threshold
     thresh_indexes = rho_coinc > threshold
@@ -285,7 +285,7 @@ def coherent_snr(snr_triggers, index, threshold, projection_matrix, coinc_snr=No
     coinc_snr = [] if coinc_snr is None else coinc_snr
     if len(coinc_snr) != 0:
         coinc_snr = coinc_snr[above]
-    snrv = {ifo: snr_triggers[ifo][above] for ifo in snr_triggers.keys()}
+    snrv = {ifo: snr_triggers[ifo][above] for ifo in snr_triggers}
     rho_coh = rho_coh[above]
     return rho_coh, index, snrv, coinc_snr
 

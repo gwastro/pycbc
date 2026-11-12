@@ -179,16 +179,17 @@ def compile(source, name):
     obj_file = cache + ".o"
 
     try:
-        if int(open(hash_file).read()) == hash(source):
+        with open(hash_file) as fp:
+            cached_hash = int(fp.read())
+        if cached_hash == hash(source):
             return lib_file
         raise ValueError
     except:
         pass
 
     src_file = cache + ".cu"
-    fsrc = open(src_file, "w")
-    fsrc.write(source)
-    fsrc.close()
+    with open(src_file, "w") as fsrc:
+        fsrc.write(source)
 
     cmd = [
         "nvcc",
@@ -223,8 +224,8 @@ def compile(source, name):
     subprocess.check_call(cmd)
 
     hash_file = cache + ".hash"
-    fhash = open(hash_file, "w")
-    fhash.write(str(hash(source)))
+    with open(hash_file, "w") as fhash:
+        fhash.write(str(hash(source)))
     return lib_file
 
 

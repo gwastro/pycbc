@@ -283,10 +283,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-if args.smoothing_keywords:
-    smooth_kwargs = args.smoothing_keywords
-else:
-    smooth_kwargs = []
+smooth_kwargs = args.smoothing_keywords or []
 
 kwarg_dict = {}
 for inputstr in smooth_kwargs:
@@ -326,13 +323,13 @@ for filename in args.template_fit_file:
     with HFile(filename, "r") as fits:
         if num_templates is None:
             num_templates = fits["template_id"].size
-        elif not num_templates == fits["template_id"].size:
+        elif num_templates != fits["template_id"].size:
             raise RuntimeError(
                 "Input fit files correspond to different banks. "
                 "This situation is not yet supported."
             )
         # get attributes from the template-level fit
-        for k in fits.attrs.keys():
+        for k in fits.attrs:
             if k == "analysis_time":
                 # For this attribute only, we want the mean
                 analysis_time += fits.attrs["analysis_time"]
@@ -344,7 +341,7 @@ for filename in args.template_fit_file:
                 # We don't mind if this attribute is different, however the
                 # output attributes will only correspond to the first file's
                 # IFO. Warn if different IFOs are being used.
-                if not attr_dict[k] == fits.attrs[k]:
+                if attr_dict[k] != fits.attrs[k]:
                     logger.warning(
                         "Fit files correspond to different IFOs: %s and %s, "
                         "only %s is being used for output file attributes",
@@ -353,7 +350,7 @@ for filename in args.template_fit_file:
                         attr_dict[k],
                     )
                 continue
-            elif not attr_dict[k] == fits.attrs[k]:
+            elif attr_dict[k] != fits.attrs[k]:
                 # Check that the files are consistent with one another
                 err_msg = f"Input files are not consistent, file {filename} "
                 err_msg += f"has attribute {k} of {fits.attrs[k]}, whereas "
@@ -431,11 +428,7 @@ if args.output_fits_by_template:
     alpha[nabove == 0] = -100
     fbt_dict["fit_coeff"] = alpha
 
-n_required = (
-    _default_total_trigs
-    if "total_trigs" not in kwarg_dict
-    else kwarg_dict["total_trigs"]
-)
+n_required = kwarg_dict.get("total_trigs", _default_total_trigs)
 if args.smoothing_method == "n_closest" and n_required > nabove.sum():
     logger.warning(
         "There are %.2f triggers above threshold, not enough to give a "
@@ -587,7 +580,7 @@ if args.output_fits_by_template:
 # Add metadata, some is inherited from template level fit
 for k, v in attr_dict.items():
     outfile.attrs[k] = v
-if not analysis_time == 0:
+if analysis_time != 0:
     outfile.attrs["analysis_time"] = analysis_time
 
 # Add a magic file attribute so that coinc_findtrigs can parse it

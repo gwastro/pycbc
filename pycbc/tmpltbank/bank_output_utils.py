@@ -89,9 +89,8 @@ def output_sngl_inspiral_table(
 
     # get IFO to put in search summary table
     ifos = []
-    if "channel_name" in opt_dict.keys():
-        if opt_dict["channel_name"] is not None:
-            ifos = [opt_dict["channel_name"][0:2]]
+    if opt_dict.get("channel_name") is not None:
+        ifos = [opt_dict["channel_name"][0:2]]
 
     proc = create_process_table(
         outdoc, program_name=program_name, detectors=ifos, options=opt_dict
@@ -113,7 +112,7 @@ def output_sngl_inspiral_table(
     # get times to put in search summary table
     start_time = 0
     end_time = 0
-    if "gps_start_time" in opt_dict.keys() and "gps_end_time" in opt_dict.keys():
+    if "gps_start_time" in opt_dict and "gps_end_time" in opt_dict:
         start_time = opt_dict["gps_start_time"]
         end_time = opt_dict["gps_end_time"]
 

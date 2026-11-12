@@ -111,7 +111,7 @@ f.attrs["ifos"] = ifo
 f.attrs["timeslide_interval"] = all_trigs.attrs["timeslide_interval"]
 
 # Copy over the segment info
-for key in all_trigs.seg.keys():
+for key in all_trigs.seg:
     f[f"segments/{key}/start"] = all_trigs.seg[key]["start"][:]
     f[f"segments/{key}/end"] = all_trigs.seg[key]["end"][:]
 

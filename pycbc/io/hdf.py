@@ -164,12 +164,9 @@ class HFile(HGroup, h5py.File):
             size = refs[ds].size
 
         # Apply any pre-masks
-        if premask is None:
-            mask = np.ones(size, dtype=bool)
-        else:
-            mask = premask
+        mask = np.ones(size, dtype=bool) if premask is None else premask
 
-        if not mask.dtype == bool:
+        if mask.dtype != bool:
             # mask is an array of indices rather than booleans,
             # make it a bool array
             new_mask = np.zeros(size, dtype=bool)
@@ -200,17 +197,14 @@ class HFile(HGroup, h5py.File):
                 i += chunksize
                 continue
 
-            if all(mask[i:r]):
-                # Everything allowed through the mask in this chunk
-                submask = np.arange(r - i)
-            else:
-                submask = np.flatnonzero(mask[i:r])
+            # all(...) is True if everything in this chunk is allowed through
+            submask = np.arange(r - i) if all(mask[i:r]) else np.flatnonzero(mask[i:r])
 
             # Read each chunk's worth of data
             partial_data = {arg: refs[arg][i:r][mask[i:r]] for arg in dsets}
             partial = []
             for a in args:
-                if a in derived.keys():
+                if a in derived:
                     # If this is a derived dataset, calculate it
                     derived_fcn = derived[a][0]
                     partial += [derived_fcn(partial_data)]
@@ -292,7 +286,7 @@ class DictArray:
                 d.close()
 
             for k in self.data:
-                if not len(self.data[k]) == 0:
+                if len(self.data[k]) != 0:
                     self.data[k] = np.concatenate(self.data[k])
                 else:
                     self.data[k] = np.array([])
@@ -434,7 +428,7 @@ class StatmapData(DictArray):
     def save(self, outname):
         super().save(outname)
         with HFile(outname, "w") as f:
-            for key in self.seg.keys():
+            for key in self.seg:
                 f[f"segments/{key}/start"] = self.seg[key]["start"][:]
                 f[f"segments/{key}/end"] = self.seg[key]["end"][:]
 
@@ -699,7 +693,7 @@ class SingleDetTriggers:
 
         if filter_func:
             # Apply a filter on the triggers which is _not_ a ranking statistic
-            for rank_str in ranking.sngls_ranking_function_dict.keys():
+            for rank_str in ranking.sngls_ranking_function_dict:
                 if f"self.{rank_str}" in filter_func:
                     logger.warning(
                         "Supplying the ranking (%s) in "
@@ -708,10 +702,10 @@ class SingleDetTriggers:
                         rank_str,
                     )
             logger.info("Setting up filter function")
-            for c in self.trigs.keys():
+            for c in self.trigs:
                 if c in filter_func:
                     setattr(self, "_" + c, self.trigs[c][:])
-            for c in self.bank.keys():
+            for c in self.bank:
                 if c in filter_func:
                     # get template parameters corresponding to triggers
                     setattr(
@@ -1126,13 +1120,13 @@ class ForegroundTriggers:
                     curr_ifo = curr_dat.group_key
                     self.sngl_files[curr_ifo] = curr_dat
 
-        if not all(ifo in self.sngl_files.keys() for ifo in self.ifos):
+        if not all(ifo in self.sngl_files for ifo in self.ifos):
             raise RuntimeError(
                 "IFOs in statmap file not all represented "
                 f"by single-detector trigger files. IFOs: {self.ifos}, "
                 f"single-detector trigger files: {sngl_files}"
             )
-        if not sorted(self.sngl_files.keys()) == sorted(self.ifos):
+        if sorted(self.sngl_files.keys()) != sorted(self.ifos):
             logger.warning(
                 "WARNING: Single-detector trigger files "
                 "given for IFOs not in the statmap file"
@@ -1841,11 +1835,8 @@ def name_all_datasets(files):
 def get_all_subkeys(grp, key):
     subkey_list = []
     subkey_start = key
-    if key == "":
-        grpk = grp
-    else:
-        grpk = grp[key]
-    for sk in grpk.keys():
+    grpk = grp if key == "" else grp[key]
+    for sk in grpk:
         path = subkey_start + "/" + sk
         if isinstance(grp[path], h5py.Dataset):
             subkey_list.append(path.lstrip("/"))

@@ -87,7 +87,7 @@ class JointDistribution:
 
         # store the constraints on the parameters defined inside the
         # distributions list
-        self._constraints = kwargs["constraints"] if "constraints" in kwargs else []
+        self._constraints = kwargs.get("constraints", [])
 
         # store kwargs
         self.kwargs = kwargs

@@ -688,10 +688,7 @@ class Workflow(pegasus_workflow.Workflow):
         self.cp = WorkflowConfigParser.from_cli(args)
         self.args = args
 
-        if hasattr(args, "dax_file"):
-            dax_file = args.dax_file or None
-        else:
-            dax_file = None
+        dax_file = getattr(args, "dax_file", None) or None
 
         if hasattr(args, "dax_file_directory"):
             output_dir = args.dax_file_directory or args.output_dir or None
@@ -743,10 +740,7 @@ class Workflow(pegasus_workflow.Workflow):
         if hasattr(args, "output_map") and args.output_map is not None:
             return args.output_map
 
-        if self.in_workflow is not False:
-            name = self.name + ".map"
-        else:
-            name = "output.map"
+        name = self.name + ".map" if self.in_workflow is not False else "output.map"
 
         return os.path.join(self.out_dir, name)
 
@@ -1386,22 +1380,13 @@ class File(pegasus_workflow.File):
         """
         if attrs is None:
             attrs = {}
-        if attrs and "ifos" in attrs:
-            ifos = attrs["ifos"]
-        else:
-            ifos = ["H1", "K1", "L1", "V1"]
-        if attrs and "exe_name" in attrs:
-            exe_name = attrs["exe_name"]
-        else:
-            exe_name = "INPUT"
+        ifos = attrs["ifos"] if attrs and "ifos" in attrs else ["H1", "K1", "L1", "V1"]
+        exe_name = attrs["exe_name"] if attrs and "exe_name" in attrs else "INPUT"
         if attrs and "segs" in attrs:
             segs = attrs["segs"]
         else:
             segs = segments.segment([1, 2000000000])
-        if attrs and "tags" in attrs:
-            tags = attrs["tags"]
-        else:
-            tags = []
+        tags = attrs["tags"] if attrs and "tags" in attrs else []
 
         return cls(ifos, exe_name, segs, path, tags=tags, **kwargs)
 
@@ -1680,7 +1665,7 @@ class FileList(list):
         tag = tag.upper()
         matching_files = FileList([i for i in self if tag in i.tags])
         if fail_if_not_single_file:
-            if not len(matching_files) == 1:
+            if len(matching_files) != 1:
                 err_msg = f"More than one file with tag {tag} was found."
                 raise ValueError(err_msg)
             matching_files = matching_files[0]
@@ -1784,27 +1769,25 @@ class FileList(list):
         split lists are still valid.
         """
         # FIXME: Currently very primitive, but needs to be fast
-        if (
-            not (hasattr(self, "_split_lists_set") and (self._split_lists_set))
-            or len(self) != self._split_lists_length
-        ):
-            return False
-        return True
+        return (
+            bool(getattr(self, "_split_lists_set", False))
+            and len(self) == self._split_lists_length
+        )
 
     @classmethod
     def load(cls, filename):
         """
         Load a FileList from a pickle file
         """
-        f = open(filename)
-        return pickle.load(f)
+        with open(filename) as f:
+            return pickle.load(f)
 
     def dump(self, filename):
         """
         Output this FileList to a pickle file
         """
-        f = open(filename, "w")
-        pickle.dump(self, f)
+        with open(filename, "w") as f:
+            pickle.dump(self, f)
 
     def to_file_object(self, name, out_dir):
         """
@@ -1987,7 +1970,7 @@ class SegFile(File):
 
         """
         if ifo_list is None:
-            ifo_set = {i.split(":")[0] for i in segmentlistdict.keys()}
+            ifo_set = {i.split(":")[0] for i in segmentlistdict}
             ifo_list = list(ifo_set)
             ifo_list.sort()
         if valid_segment is None:
@@ -2040,45 +2023,44 @@ class SegFile(File):
 
         """
         # load xmldocument and SegmentDefTable and SegmentTables
-        fp = open(xml_file, "rb")
-        xmldoc = ligolw_utils.load_fileobj(
-            fp, compress="auto", contenthandler=LIGOLWContentHandler
-        )
-
-        seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
-        seg_table = lsctables.SegmentTable.get_table(xmldoc)
-        seg_sum_table = lsctables.SegmentSumTable.get_table(xmldoc)
-
-        segs = segments.segmentlistdict()
-        seg_summ = segments.segmentlistdict()
-
-        seg_id = {}
-        for seg_def in seg_def_table:
-            # Here we want to encode ifo and segment name
-            full_channel_name = ":".join([str(seg_def.ifos), str(seg_def.name)])
-            seg_id[int(seg_def.segment_def_id)] = full_channel_name
-            segs[full_channel_name] = segments.segmentlist()
-            seg_summ[full_channel_name] = segments.segmentlist()
-
-        for seg in seg_table:
-            seg_obj = segments.segment(
-                lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
-                lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns),
+        with open(xml_file, "rb") as fp:
+            xmldoc = ligolw_utils.load_fileobj(
+                fp, compress="auto", contenthandler=LIGOLWContentHandler
             )
-            segs[seg_id[int(seg.segment_def_id)]].append(seg_obj)
 
-        for seg in seg_sum_table:
-            seg_obj = segments.segment(
-                lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
-                lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns),
-            )
-            seg_summ[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+            seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
+            seg_table = lsctables.SegmentTable.get_table(xmldoc)
+            seg_sum_table = lsctables.SegmentSumTable.get_table(xmldoc)
 
-        for seg_name in seg_id.values():
-            segs[seg_name] = segs[seg_name].coalesce()
+            segs = segments.segmentlistdict()
+            seg_summ = segments.segmentlistdict()
 
-        xmldoc.unlink()
-        fp.close()
+            seg_id = {}
+            for seg_def in seg_def_table:
+                # Here we want to encode ifo and segment name
+                full_channel_name = ":".join([str(seg_def.ifos), str(seg_def.name)])
+                seg_id[int(seg_def.segment_def_id)] = full_channel_name
+                segs[full_channel_name] = segments.segmentlist()
+                seg_summ[full_channel_name] = segments.segmentlist()
+
+            for seg in seg_table:
+                seg_obj = segments.segment(
+                    lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                    lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns),
+                )
+                segs[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+
+            for seg in seg_sum_table:
+                seg_obj = segments.segment(
+                    lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                    lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns),
+                )
+                seg_summ[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+
+            for seg_name in seg_id.values():
+                segs[seg_name] = segs[seg_name].coalesce()
+
+            xmldoc.unlink()
         curr_url = urllib.parse.urlunparse(
             ["file", "localhost", xml_file, None, None, None]
         )
@@ -2218,13 +2200,13 @@ def make_external_call(
     if out_dir:
         out_base = os.path.join(out_dir, out_basename)
         err_file = out_base + ".err"
-        err_fp = open(err_file, "w")
+        # These two are closed after the call below
+        err_fp = open(err_file, "w")  # noqa: SIM115
         out_file = out_base + ".out"
-        out_fp = open(out_file, "w")
+        out_fp = open(out_file, "w")  # noqa: SIM115
         cmd_file = out_base + ".sh"
-        cmd_fp = open(cmd_file, "w")
-        cmd_fp.write(" ".join(cmd_list))
-        cmd_fp.close()
+        with open(cmd_file, "w") as cmd_fp:
+            cmd_fp.write(" ".join(cmd_list))
     else:
         err_file = None
         out_file = None
@@ -2388,7 +2370,7 @@ def get_full_analysis_chunk(science_segs):
         The segment spanning the first and last time point contained in science_segs.
 
     """
-    extents = [science_segs[ifo].extent() for ifo in science_segs.keys()]
+    extents = [science_segs[ifo].extent() for ifo in science_segs]
     min, max = extents[0]
     for lo, hi in extents:
         if min > lo:

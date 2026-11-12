@@ -314,30 +314,21 @@ def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
     if idtype == odtype:
         # We're in the complex-to-complex case, so lengths are the same
         ip = zeros(size, dtype=idtype)
-        if inplace:
-            op = ip
-        else:
-            op = zeros(size, dtype=odtype)
+        op = ip if inplace else zeros(size, dtype=odtype)
     elif (idtype.kind == "c") and (odtype.kind == "f"):
         # Complex-to-real (reverse), so size is length of real array.
         # However the complex array may be larger (in bytes) and
         # should therefore be allocated first and reused for an in-place
         # transform
         ip = zeros(size / 2 + 1, dtype=idtype)
-        if inplace:
-            op = ip.view(dtype=odtype)[0:size]
-        else:
-            op = zeros(size, dtype=odtype)
+        op = ip.view(dtype=odtype)[0:size] if inplace else zeros(size, dtype=odtype)
     else:
         # Real-to-complex (forward), and size is still that of real.
         # However it is still true that the complex array may be larger
         # (in bytes) and should therefore be allocated first and reused
         # for an in-place transform
         op = zeros(size / 2 + 1, dtype=odtype)
-        if inplace:
-            ip = op.view(dtype=idtype)[0:size]
-        else:
-            ip = zeros(size, dtype=idtype)
+        ip = op.view(dtype=idtype)[0:size] if inplace else zeros(size, dtype=idtype)
 
     # Get the plan function
     idtype = _np.dtype(idtype)
@@ -553,10 +544,7 @@ def _fftw_setup(fftobj):
     tmpout = zeros(len(fftobj.outvec), dtype=fftobj.outvec.dtype)
     # C2C
     if fftobj.outvec.kind == "complex" and fftobj.invec.kind == "complex":
-        if fftobj.forward:
-            ffd = FFTW_FORWARD
-        else:
-            ffd = FFTW_BACKWARD
+        ffd = FFTW_FORWARD if fftobj.forward else FFTW_BACKWARD
         plan = plan_func(
             1,
             n.ctypes.data,
@@ -694,7 +682,7 @@ def verify_fft_options(opt, parser):
             " either of --fftw-input-float-wisdom-file or --fftw-input-double-wisdom-file"
         )
 
-    if opt.fftw_threads_backend is not None:
+    if opt.fftw_threads_backend is not None:  # noqa: SIM102
         if opt.fftw_threads_backend not in ["openmp", "pthreads", "unthreaded"]:
             parser.error(
                 "Invalid threads backend; must be 'openmp', 'pthreads' or 'unthreaded'"

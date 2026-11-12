@@ -87,13 +87,13 @@ f.attrs["foreground_time_exc"] = sum(
 )
 
 # Combine segments
-for key in files[0]["segments"].keys():
+for key in files[0]["segments"]:
     com(f, files, f"segments/{key}/start")
     com(f, files, f"segments/{key}/end")
 
 # copy over all the columns in the foreground group. A few special cases here
 for fg_bg_key in ["foreground", "background", "background_exc"]:
-    for key in files[0][fg_bg_key].keys():
+    for key in files[0][fg_bg_key]:
         if key not in [
             "time1",
             "time2",

@@ -191,7 +191,7 @@ for pi, p in enumerate(model.default_stats):
 
 if opts.reconstruct_parameters:
     logger.info("Writing reconstructed parameters")
-    for p in rec[0].keys():
+    for p in rec[0]:
         vals = numpy.array([r[p] for r in rec]).reshape(shape)
         out.write_data(p, vals, path=fp.samples_group, append=False)
 

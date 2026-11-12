@@ -1231,10 +1231,7 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
                 if subval.startswith(lookfor):
                     # determine what we should retrieve from the injection
                     subval = subval.split(":", 1)
-                    if len(subval) == 1:
-                        subval = opt
-                    else:
-                        subval = subval[1]
+                    subval = opt if len(subval) == 1 else subval[1]
                     replace_this.append((ii, subval))
             if replace_this:
                 replace_params.append((sec, opt, splitvals, replace_this))
