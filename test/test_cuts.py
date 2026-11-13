@@ -9,6 +9,7 @@ import numpy as np
 from utils import simple_exit
 from pycbc.events import cuts, ranking
 from pycbc.tmpltbank import bank_conversions
+from pycbc.io import get_chisq_from_file_choice
 
 
 def parse_args(args):
@@ -61,27 +62,51 @@ test_parser_raises_error.append(
 )
 
 test_parser_raises_error.append(
-    (["--trigger-cuts", "newsnr:5.5:nonsense"], NotImplementedError, "nonsense_limit")
+    (
+        ["--trigger-cuts", "newsnr:5.5:nonsense"],
+        NotImplementedError,
+        "nonsense_limit",
+    )
 )
 
 test_parser_raises_error.append(
-    (["--trigger-cuts", "newsnr:5.5:lower:2.2:lower"], NotImplementedError, "both_lower_limits")
+    (
+        ["--trigger-cuts", "newsnr:5.5:lower:2.2:lower"],
+        NotImplementedError,
+        "both_lower_limits",
+    )
 )
 
 test_parser_raises_error.append(
-    (["--trigger-cuts", "newsnr:5.5:upper:2.2:upper"], NotImplementedError, "both_upper_limits")
+    (
+        ["--trigger-cuts", "newsnr:5.5:upper:2.2:upper"],
+        NotImplementedError,
+        "both_upper_limits",
+    )
 )
 
 test_parser_raises_error.append(
-    (["--trigger-cuts", "newsnr:notafloat:upper"], ValueError, "threshold_not_a_float")
+    (
+        ["--trigger-cuts", "newsnr:notafloat:upper"],
+        ValueError,
+        "threshold_not_a_float",
+    )
 )
 
 test_parser_raises_error.append(
-    (["--trigger-cuts", "newsnr:5.5:lower:notafloat:upper"], ValueError, "second_threshold_not_a_float")
+    (
+        ["--trigger-cuts", "newsnr:5.5:lower:notafloat:upper"],
+        ValueError,
+        "second_threshold_not_a_float",
+    )
 )
 
 test_parser_raises_error.append(
-    (["--trigger-cuts", "newsnr:2.2:lower:5.5:upper"], NotImplementedError, "upper_limit_value_not_smaller_than_lower_limit_value")
+    (
+        ["--trigger-cuts", "newsnr:2.2:lower:5.5:upper"],
+        NotImplementedError,
+        "upper_limit_value_not_smaller_than_lower_limit_value",
+    )
 )
 
 # Dynamically add error tests into the class
@@ -264,6 +289,62 @@ test_cut_output.append(
         ["--template-cuts", "chi_eff:0.8:upper", "chi_eff:-0.5:lower_inc"],
         chi_eff_upper_lower_test,
         "chi_eff_cut_upper_lower",
+    )
+)
+
+
+# Mixed limits on trigger or its derived parameter; single-limit specified first
+def traditional_chisq_lower_snr_lower_upper_test(trigs, trig_idx, **kwargs):
+    value = get_chisq_from_file_choice(trigs, 'traditional')
+    return all((value[trig_idx] < 10) & ((trigs["snr"][trig_idx] < 5) | (trigs["snr"][trig_idx] > 7)))
+
+test_cut_output.append(
+    (
+        ["--trigger-cuts", "traditional_chisq:10:upper_inc", "snr:7:lower_inc:5:upper_inc"],
+        traditional_chisq_lower_snr_lower_upper_test,
+        "traditional_chisq_lower_snr_lower_upper_test",
+    )
+)
+
+
+# Mixed limits on trigger or its derived parameter; double-limit specified first
+def snr_lower_upper_traditional_chisq_lower_test(trigs, trig_idx, **kwargs):
+    value = get_chisq_from_file_choice(trigs, 'traditional')
+    return all((value[trig_idx] < 10) & ((trigs["snr"][trig_idx] < 5) | (trigs["snr"][trig_idx] > 7)))
+
+test_cut_output.append(
+    (
+        ["--trigger-cuts", "snr:7:lower_inc:5:upper_inc", "traditional_chisq:10:upper_inc"],
+        snr_lower_upper_traditional_chisq_lower_test,
+        "snr_lower_upper_traditional_chisq_lower_test",
+    )
+)
+
+
+# Mixed limits on template parameters; single-limit specified first
+def template_duration_lower_chi_eff_lower_upper_test(temps, temp_idx, **kwargs):
+    chi_eff = bank_conversions.get_bank_property("chi_eff", temps, temp_idx)
+    return all((temps["template_duration"][temp_idx] > 2) & ((chi_eff >= -0.5) | (chi_eff <= 0.8)))
+
+test_cut_output.append(
+    (
+        ["--template-cuts", "template_duration:2:lower_inc", "chi_eff:7:lower:5:upper"],
+        template_duration_lower_chi_eff_lower_upper_test,
+        "template_duration_lower_chi_eff_lower_upper_test",
+    )
+)
+
+
+# Mixed limits on template parameters; single-limit specified first
+def chi_eff_lower_upper_template_duration_lower_test(temps, temp_idx, **kwargs):
+    chi_eff = bank_conversions.get_bank_property("chi_eff", temps, temp_idx)
+    return all((temps["template_duration"][temp_idx] > 2) & ((chi_eff >= -0.5) | (chi_eff <= 0.8)))
+
+test_cut_output.append(
+    (
+        ["--template-cuts", "chi_eff:7:lower:5:upper", "template_duration:2:lower_inc"],
+        chi_eff_lower_upper_template_duration_lower_test,
+        "chi_eff_lower_upper_template_duration_lower_test",
     )
 )
 
