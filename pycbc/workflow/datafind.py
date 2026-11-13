@@ -452,7 +452,7 @@ def setup_datafind_runtime_cache_multi_calls_perifo(
                     ifo,
                     tags=tags,
                 )
-            except:
+            except Exception:
                 cache, cache_file = run_datafind_instance(
                     cp,
                     output_dir,
@@ -562,7 +562,7 @@ def setup_datafind_runtime_cache_single_call_perifo(
                 cache, cache_file = run_datafind_instance(
                     cp, output_dir, observatory, ftype, start, end, ifo, tags=tags
                 )
-            except:
+            except Exception:
                 cache, cache_file = run_datafind_instance(
                     cp, output_dir, observatory, ftype, start, end, ifo, tags=tags
                 )
@@ -980,7 +980,8 @@ def run_datafind_instance(
        The glue.lal.Cache representation of the call to the datafind
        server and the returned frame files.
     cacheFile : pycbc.workflow.core.File
-        Cache file listing all of the datafind output files for use later in the pipeline.
+        Cache file listing all of the datafind output files for use
+        later in the pipeline.
 
     """
     from glue import lal

@@ -15,8 +15,10 @@ import logging
 import os
 import subprocess
 import time
+from unittest.mock import MagicMock
 
 import pycbc
+import pycbc.libutils
 import pycbc.version
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -62,7 +64,10 @@ master_doc = "index"
 
 # General information about the project.
 project = "PyCBC"
-copyright = "2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton"
+copyright = (
+    "2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. "
+    "Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton"
+)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -119,7 +124,8 @@ html_theme = "sphinx_rtd_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "style_nav_header_background": "linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)",
+    "style_nav_header_background": "linear-gradient(0deg, "
+    "rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)",
     "logo_only": True,
 }
 
@@ -296,13 +302,10 @@ autodoc_mock_imports = [
     "pytools",
 ]
 
-# Mock ctypes library loading so Sphinx can document modules like pycbc.fft.mkl without raising ImportError
-from unittest.mock import MagicMock
-
-import pycbc.libutils
-
 logger = logging.getLogger(__name__)
 
+# Mock ctypes library loading so Sphinx can document modules like pycbc.fft.mkl without
+# raising ImportError
 pycbc.libutils.get_ctypes_library = MagicMock()
 
 

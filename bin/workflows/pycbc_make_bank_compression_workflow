@@ -42,7 +42,10 @@ def finalize(container, workflow, finalize_workflow):
         extension=".html",
         directory=rdir["workflow"],
     )
-    dashboard_str = """<center><p style="font-size:20px"><b><a href="PEGASUS_DASHBOARD_URL" target="_blank">Pegasus Dashboard Page</a></b></p></center>"""
+    dashboard_str = (
+        '<center><p style="font-size:20px"><b><a href="PEGASUS_DASHBOARD_URL" '
+        'target="_blank">Pegasus Dashboard Page</a></b></p></center>'
+    )
     kwds = {
         "title": "Pegasus Dashboard",
         "caption": "Link to Pegasus Dashboard",

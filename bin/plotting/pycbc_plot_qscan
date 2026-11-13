@@ -41,7 +41,7 @@ def t_window(s):
     try:
         start, end = map(float, s.split(","))
         return [start, end]
-    except:
+    except ValueError:
         raise argparse.ArgumentTypeError("Input must be start,end start,end")
 
 

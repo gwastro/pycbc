@@ -40,7 +40,8 @@ last_progress_update = -1.0
 
 
 def update_progress(p, u, n):
-    """Updates a file 'progress.txt' with a value 0 .. 1.0 when enough (filtering) progress was made"""
+    """Updates a file 'progress.txt' with a value 0 .. 1.0 when enough
+    (filtering) progress was made"""
     global last_progress_update
     if p > last_progress_update + u:
         with open(n, "w") as f:
@@ -57,7 +58,8 @@ parser = argparse.ArgumentParser(
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
     "--update-progress",
-    help="updates a file 'progress.txt' with a value 0 .. 1.0 when this amount of (filtering) progress was made",
+    help="updates a file 'progress.txt' with a value 0 .. "
+    "1.0 when this amount of (filtering) progress was made",
     type=float,
     default=0,
 )

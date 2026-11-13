@@ -65,7 +65,7 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
         If data is a TimeSeries then acf will be a TimeSeries of the
         one-sided ACF. Else acf is a numpy.array.
 
-    """
+    """  # noqa: E501
     # if given a TimeSeries instance then get numpy.array
     if isinstance(data, TimeSeries):
         y = data.numpy()
@@ -169,7 +169,7 @@ def calculate_acl(data, m=5, dtype=int):
     win = m * cacf <= numpy.arange(len(cacf))
     if win.any():
         acl = cacf[numpy.where(win)[0][0]]
-        if dtype == int:
+        if dtype is int:
             acl = int(numpy.ceil(acl))
     else:
         acl = numpy.inf

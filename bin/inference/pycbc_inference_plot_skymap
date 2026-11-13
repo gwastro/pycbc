@@ -46,7 +46,10 @@ opts = parser.parse_args()
 
 init_logging(opts.verbose)
 
-cmd = f"ligo-skymap-plot {opts.input_file} -o {opts.output_file} --annotate --contour 50 90"
+cmd = (
+    f"ligo-skymap-plot {opts.input_file} -o "
+    f"{opts.output_file} --annotate --contour 50 90"
+)
 if opts.colormap is not None:
     cmd += f" --colormap {opts.colormap}"
 subprocess.run(cmd.split(), check=True)

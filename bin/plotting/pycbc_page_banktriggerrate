@@ -48,9 +48,9 @@ for trig_filename in args.trigger_files:
     chisq = f["chisq"][:][tsort]
 
     u = numpy.unique(tid)
-    l = numpy.searchsorted(tid, u, side="left")
-    r = numpy.searchsorted(tid, u, side="right")
-    n = r - l
+    left = numpy.searchsorted(tid, u, side="left")
+    right = numpy.searchsorted(tid, u, side="right")
+    n = right - left
     template_num[u] += n
 
     snrs += [snr]

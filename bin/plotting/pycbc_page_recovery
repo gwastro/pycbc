@@ -153,7 +153,7 @@ if not all(found_in_ifo):
     inj_xparams = inj_xparams[found_in_ifo]
     ifar_found = ifar_found[found_in_ifo]
     logger.info(
-        "Removing %i inj not found in %s", (found_in_ifo == False).sum(), args.ifo
+        "Removing %i inj not found in %s", (~found_in_ifo).sum(), args.ifo
     )
 
 # calculate needed values

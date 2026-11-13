@@ -686,9 +686,9 @@ class ResultsArgumentParser(argparse.ArgumentParser):
             paramparser = ParseParametersArg
             lblhelp = (
                 "If LABEL is the same as a parameter in "
-                "pycbc.waveform.parameters, the label "
-                "property of that parameter will be used (e.g., if LABEL "
-                f"were 'mchirp' then {_waveform.parameters.mchirp.label} would be used). "
+                "pycbc.waveform.parameters, the label property of that "
+                "parameter will be used (e.g., if LABEL were 'mchirp' "
+                f"then {_waveform.parameters.mchirp.label} would be used). "
             )
         else:
             paramparser = ParseLabelArg
@@ -822,7 +822,8 @@ def results_from_cli(opts, load_samples=True, **kwargs):
                 samples = samples[mask]
                 if samples.size == 0:
                     raise ValueError(
-                        f"No samples remain after constraint {constraints[input_file]} applied"
+                        "No samples remain after constraint "
+                        f"{constraints[input_file]} applied"
                     )
                 logger.info("%s samples remain", samples.size)
 

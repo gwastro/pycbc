@@ -217,7 +217,12 @@ if len(detectors) + 2 < rows * cols:
         ax[-1, -2].axis("Off")
 
 # Wrap up
-plot_caption = f"First panel: search sky grid points (in black) associated to the input external trigger skymap (color scale). Second panel: zoom on the external trigger sky region. Other panels: sky grid points over the corresponding antenna pattern of the interferometers used for the search. Number of sky grid points: {num_points}"
+plot_caption = (
+    "First panel: search sky grid points (in black) associated to the input external "
+    "trigger skymap (color scale). Second panel: zoom on the external trigger sky "
+    "region. Other panels: sky grid points over the corresponding antenna pattern of "
+    f"the interferometers used for the search. Number of sky grid points: {num_points}"
+)
 
 save_fig_with_metadata(
     fig, outfile, cmd=" ".join(sys.argv), title=opts.plot_title, caption=plot_caption

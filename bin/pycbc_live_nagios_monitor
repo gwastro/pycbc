@@ -39,7 +39,7 @@ while 1:
         # Check that the pycbc live logfile has been updated recently.
         if tdiff >= 60:
             everything_ok = False
-    except:
+    except OSError:
         everything_ok = False
 
     if everything_ok:

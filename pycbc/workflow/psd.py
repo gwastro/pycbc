@@ -33,12 +33,12 @@ class MergePSDFiles(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
 
 
-def chunks(l, n):
+def chunks(items, n):
     """Yield n successive chunks from l."""
-    newn = int(len(l) / n)
+    newn = int(len(items) / n)
     for i in range(n - 1):
-        yield l[i * newn : i * newn + newn]
-    yield l[n * newn - newn :]
+        yield items[i * newn : i * newn + newn]
+    yield items[n * newn - newn :]
 
 
 def merge_psds(workflow, files, ifo, out_dir, tags=None):

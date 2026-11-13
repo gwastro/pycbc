@@ -354,7 +354,9 @@ if __name__ == "__main__":
 
     if opts.input_sort == "random":
         np.random.seed(100)
-        sort_func = lambda x: np.random.random()  # noqa: ARG005
+
+        def sort_func(x):  # noqa: ARG001
+            return np.random.random()
     elif opts.input_sort == "time":
         sort_func = get_gc_end_time
     inj_table = sorted(inj_table, key=sort_func)

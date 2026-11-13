@@ -117,7 +117,7 @@ parser.add_argument("--output-file", help="name of output file")
 
 args = parser.parse_args()
 
-injection_style = args.background_files != None
+injection_style = args.background_files is not None
 
 significance.check_significance_options(args, parser)
 if args.max_hierarchical_removal and injection_style:
@@ -755,7 +755,8 @@ while True:
             bg_time_ct[key],
             **significance_dict[key],
         )
-        # Set up variable for whether each coincidence is available in each coincidence time
+        # Set up variable for whether each coincidence is available in each coincidence
+        # time
         is_in_combo_time[key] = np.zeros(n_triggers)
         end_times = np.array(f[f"segments/{key}/end"][:])
         start_times = np.array(f[f"segments/{key}/start"][:])

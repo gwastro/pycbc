@@ -58,7 +58,7 @@ f = HFile(args.single_template_file, "r")
 try:
     delta_t = f["snr"].attrs["delta_t"]
     start_time = f["snr"].attrs["start_time"]
-except:
+except KeyError:
     plt.text(0.5, 0.5, "no triggers found")
     plt.savefig(args.output_file)
     sys.exit()

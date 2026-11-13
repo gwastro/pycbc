@@ -324,12 +324,13 @@ class HealpixSky:
 
         # Sanity-check the probabilities, and ensure they are normalized
         # correctly (sum to one).
-        assert type(self.pix_probs) == numpy.ndarray
+        assert type(self.pix_probs) is numpy.ndarray
         sum_pix_probs = self.pix_probs.sum(dtype=numpy.float64)
         if not numpy.isclose(sum_pix_probs, 1):
             warnings.warn(
-                f"Sum of probs in HEALPix map is {self.pix_probs.sum(dtype=numpy.float64)}, "
-                "far from 1. Something might be wrong with that map"
+                "Sum of probs in HEALPix map is "
+                f"{self.pix_probs.sum(dtype=numpy.float64)}, far "
+                "from 1. Something might be wrong with that map"
             )
         self.pix_probs /= sum_pix_probs
 

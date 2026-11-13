@@ -122,7 +122,7 @@ else:
     try:
         fstat = f["foreground/stat"][:]
         fstat.sort()
-    except:
+    except KeyError:
         fstat = None
     if len(fstat) == 0:
         fstat = None

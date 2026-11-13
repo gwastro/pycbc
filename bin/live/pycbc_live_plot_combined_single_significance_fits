@@ -225,7 +225,7 @@ for ifo in ifos:
             ax_count.axhline(cr, c=bin_colour, linestyle=":", label=clab)
         )
 
-    alpha_labels = [l.get_label() for l in alpha_lines]
+    alpha_labels = [line.get_label() for line in alpha_lines]
     ax_alpha.legend(
         alpha_lines,
         alpha_labels,
@@ -235,7 +235,7 @@ for ifo in ifos:
     )
     ax_alpha.set_ylabel("Fit coefficient")
 
-    count_labels = [l.get_label() for l in count_lines]
+    count_labels = [line.get_label() for line in count_lines]
     if args.log_counts:
         ax_count.semilogy()
     ax_count.legend(

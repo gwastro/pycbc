@@ -185,7 +185,7 @@ class DistMarg:
             )
             dmin, dmax = dprior.bounds["distance"]
             dist_locs = numpy.linspace(dmin, dmax, int(marginalize_distance_samples))
-            dist_weights = [dprior.pdf(distance=l) for l in dist_locs]
+            dist_weights = [dprior.pdf(distance=loc) for loc in dist_locs]
             dist_weights = numpy.array(dist_weights)
 
         # (2) prior is univariate and can be converted to distance
@@ -355,7 +355,7 @@ class DistMarg:
         try:
             p = self.current_params
             set_scalar = numpy.isscalar(p["tc"])
-        except:
+        except (AttributeError, KeyError, TypeError, ValueError):
             set_scalar = False
 
         if not set_scalar:

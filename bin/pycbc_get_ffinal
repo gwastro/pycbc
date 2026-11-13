@@ -244,7 +244,7 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
                     )
                 # success break
                 success = True
-            except:
+            except Exception:
                 sample_rate *= 2
                 if sample_rate > max_sample_rate:
                     err_msg = f"Unable to generate template {cache_id};"

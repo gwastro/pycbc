@@ -236,7 +236,10 @@ class FDomainCBCGenerator(BaseCBCGenerator):
     Initialize a generator:
 
     >>> from pycbc.waveform.generator import FDomainCBCGenerator
-    >>> generator = FDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
+    >>> generator = FDomainCBCGenerator(
+    ...     variable_args=['mass1', 'mass2'], delta_f=1./32, f_lower=30.,
+    ...     approximant='TaylorF2'
+    ... )
 
     Create a waveform with the variable arguments (in this case, mass1, mass2):
 
@@ -284,7 +287,10 @@ class TDomainCBCGenerator(BaseCBCGenerator):
     Initialize a generator:
 
     >>> from pycbc.waveform.generator import TDomainCBCGenerator
-    >>> generator = TDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
+    >>> generator = TDomainCBCGenerator(
+    ...     variable_args=['mass1', 'mass2'], delta_t=1./4096, f_lower=30.,
+    ...     approximant='TaylorT4'
+    ... )
 
     Create a waveform with the variable arguments (in this case, mass1, mass2):
 
@@ -367,9 +373,11 @@ class FDomainMassSpinRingdownGenerator(BaseGenerator):
     Initialize a generator:
 
     >>> from pycbc.waveform.generator import FDomainMassSpinRingdownGenerator
-    >>> generator = FDomainMassSpinRingdownGenerator(variable_args=['final_mass',
-                    'final_spin','amp220','amp210','phi220','phi210'], lmns=['221','211'],
-                    delta_f=1./32, f_lower=30., f_final=500)
+    >>> generator = FDomainMassSpinRingdownGenerator(
+    ...     variable_args=['final_mass', 'final_spin', 'amp220', 'amp210',
+    ...                    'phi220', 'phi210'],
+    ...     lmns=['221', '211'], delta_f=1./32, f_lower=30., f_final=500
+    ... )
 
     Create a ringdown with the variable arguments:
 
@@ -441,9 +449,11 @@ class TDomainMassSpinRingdownGenerator(BaseGenerator):
     Initialize a generator:
 
     >>> from pycbc.waveform.generator import TDomainMassSpinRingdownGenerator
-    >>> generator = TDomainMassSpinRingdownGenerator(variable_args=['final_mass',
-                    'final_spin','amp220','amp210','phi220','phi210'], lmns=['221','211'],
-                    delta_t=1./2048)
+    >>> generator = TDomainMassSpinRingdownGenerator(
+    ...     variable_args=['final_mass', 'final_spin', 'amp220', 'amp210',
+    ...                    'phi220', 'phi210'],
+    ...     lmns=['221', '211'], delta_t=1./2048
+    ... )
 
     Create a ringdown with the variable arguments:
 
@@ -719,11 +729,20 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
     Initialize a generator:
 
     >>> from pycbc.waveform.generator import FDomainDetFrameGenerator
-    >>> generator = FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
+    >>> generator = FDomainDetFrameGenerator(
+    ...     waveform.FDomainCBCGenerator, 0.,
+    ...     variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec',
+    ...                    'polarization'],
+    ...     detectors=['H1', 'L1'], delta_f=1./64, f_lower=20.,
+    ...     approximant='SEOBNRv2_ROM_DoubleSpin'
+    ... )
 
     Generate a waveform:
 
-    >>> generator.generate(mass1=38.6, mass2=29.3, spin1z=0.33, spin2z=-0.94, tc=2.43, ra=1.37, dec=-1.26, polarization=2.76)
+    >>> generator.generate(
+    ...     mass1=38.6, mass2=29.3, spin1z=0.33, spin2z=-0.94, tc=2.43, ra=1.37,
+    ...     dec=-1.26, polarization=2.76
+    ... )
     {'H1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637350>,
      'L1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637a50>}
 

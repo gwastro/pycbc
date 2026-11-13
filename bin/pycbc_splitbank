@@ -129,7 +129,7 @@ indoc = ligolw_utils.load_filename(
 try:
     template_bank_table = lsctables.SnglInspiralTable.get_table(indoc)
     tabletype = lsctables.SnglInspiralTable
-except:
+except ValueError:
     template_bank_table = lsctables.SimInspiralTable.get_table(indoc)
     tabletype = lsctables.SimInspiralTable
 
@@ -140,13 +140,19 @@ length = len(template_bank_table)
 tt = template_bank_table
 
 if args.sort_frequency_cutoff:
-    sort_key = lambda x: frequency_cutoff_from_name(
-        args.sort_frequency_cutoff, x.mass1, x.mass2, x.spin1z, x.spin2z
-    )
+
+    def sort_key(x):
+        return frequency_cutoff_from_name(
+            args.sort_frequency_cutoff, x.mass1, x.mass2, x.spin1z, x.spin2z
+        )
+
     tt = sorted(template_bank_table, key=sort_key)
 
 if args.sort_mchirp:
-    sort_key = lambda x: mchirp_from_mass1_mass2(x.mass1, x.mass2)
+
+    def sort_key(x):
+        return mchirp_from_mass1_mass2(x.mass1, x.mass2)
+
     tt = sorted(template_bank_table, key=sort_key)
 
 if args.random_sort:

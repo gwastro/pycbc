@@ -115,7 +115,8 @@ subprocess.check_output(cmd)
 fits_filenames = glob.glob(os.path.join(tmpdir, "*.fits*"))
 if len(fits_filenames) != 1:
     raise ValueError(
-        f"argh, got {len(fits_filenames)} FITS files after running BAYESTAR, I want one!"
+        f"argh, got {len(fits_filenames)} FITS "
+        "files after running BAYESTAR, I want one!"
     )
 
 logger.info("Moving output to %s", args.output_file)

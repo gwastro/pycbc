@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import logging
+import timeit
 from math import log
 from optparse import OptionParser
 
@@ -10,8 +12,6 @@ from pycbc.scheme import CPUScheme, CUDAScheme
 from pycbc.types import TimeSeries, complex64, float32, zeros
 
 parser = OptionParser()
-
-import logging
 
 logging.basicConfig(format="%(asctime)s : %(message)s", level=logging.DEBUG)
 
@@ -103,8 +103,6 @@ def filter_fast():
                 ntilde2, ntilde2, psd=None, h_norm=1, out=out
             )
 
-
-import timeit
 
 gt = timeit.Timer(ovlp)
 t = 1000 * gt.timeit(number=1) / niter

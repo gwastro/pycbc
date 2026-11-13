@@ -592,7 +592,7 @@ def angle_as_radians(s):
         value = float(s)
         warnings.warn(f"Angle units not specified for {value}, assuming radians")
         return value
-    except:
+    except ValueError:
         pass
     # looks like we have units, so do some parsing
     rematch = re.match("([0-9.e+-]+) *(deg|rad)", s)

@@ -285,7 +285,7 @@ def get_chirp_params(
         raise ValueError(err_msg)
 
     if sngl_inp:
-        return [l[0] for l in lambdas]
+        return [lam[0] for lam in lambdas]
     return lambdas
 
 

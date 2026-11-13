@@ -50,6 +50,9 @@ from pycbc.types import (
 from pycbc.waveform import parameters
 from pycbc.waveform import utils as wfutils
 
+from .multiband import multiband_fd_waveform
+from .nltides import nonlinear_tidal_spa
+from .premerger import premerger_taylorf2
 from .spa_tmplt import (
     spa_amplitude_factor,
     spa_length_in_time,
@@ -192,7 +195,7 @@ def _check_lal_pars(p):
                 "approximant takes no harmonic index n"
             )
         ma = lalsimulation.SimInspiralCreateModeArray()
-        for l, m in p["mode_array"]:
+        for l, m in p["mode_array"]:  # noqa: E741
             lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
         lalsimulation.SimInspiralWaveformParamsInsertModeArray(lal_pars, ma)
     # TestingGR parameters:
@@ -500,7 +503,7 @@ def get_obj_attrs(obj):
                     value = getattr(obj, name)
                     if not name.startswith("__") and not inspect.ismethod(value):
                         pr[name] = value
-                except:
+                except Exception:
                     continue
 
     return pr
@@ -536,9 +539,9 @@ def parse_mode_array(input_params):
             # if ma is a str convert to (int, int) (e.g., '22' -> (2, 2))
             if isinstance(ma, str):
                 if len(ma) == 2:  # format is "22", presumed m is positive
-                    l, m = ma
+                    l, m = ma  # noqa: E741
                 elif len(ma) == 3:  # format is "2+2", "2-2", signed m
-                    l = ma[0]
+                    l = ma[0]  # noqa: E741
                     m = ma[1:]
                 else:
                     raise ValueError(f"Unknown lm mode string format: {ma}")
@@ -586,7 +589,7 @@ def props_sgburst(obj, **kwargs):
                 value = getattr(obj, name)
                 if not name.startswith("__") and not inspect.ismethod(value):
                     pr[name] = value
-            except:
+            except Exception:
                 continue
 
     # Get the parameters to generate the waveform
@@ -850,7 +853,7 @@ def get_fd_waveform_from_td(**params):
     try:
         f_end = get_waveform_end_frequency(**params)
         delta_t = 0.5 / pnutils.nearest_larger_binary_number(f_end)
-    except:
+    except Exception:
         delta_t = 1.0 / 2048
 
     nparams["delta_t"] = delta_t
@@ -1311,15 +1314,9 @@ apx_name = "SpinTaylorF2_SWAPPER"
 cpu_fd[apx_name] = _spintaylor_aligned_prec_swapper
 _filter_time_lengths[apx_name] = _filter_time_lengths["SpinTaylorF2"]
 
-from .nltides import nonlinear_tidal_spa
-
 cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
 
-from .premerger import premerger_taylorf2
-
 cpu_fd["PreTaylorF2"] = premerger_taylorf2
-
-from .multiband import multiband_fd_waveform
 
 cpu_fd["multiband"] = multiband_fd_waveform
 

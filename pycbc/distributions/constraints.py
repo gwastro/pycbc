@@ -46,12 +46,11 @@ class Constraint:
         )
         for arg, val in static_args.items():
             swp = f"'{val}'" if isinstance(val, str) else str(val)
-            # Substitute static arg name for value if it appears in the
-            # constraint_arg string at the beginning of a word and is not
-            # followed by an underscore or equals sign.
-            # This ensures that static_args that are also kwargs in function calls are
-            # handled correctly, i.e., the kwarg is not touched while its value is replaced
-            # with the static_arg value.
+            # Substitute static arg name for value if it appears in the constraint_arg
+            # string at the beginning of a word and is not followed by an underscore or
+            # equals sign. This ensures that static_args that are also kwargs in
+            # function calls are handled correctly, i.e., the kwarg is not touched while
+            # its value is replaced with the static_arg value.
             constraint_arg = re.sub(rf"\b{arg}(?!\_|\=)", swp, constraint_arg)
         self.constraint_arg = constraint_arg
         self.transforms = transforms

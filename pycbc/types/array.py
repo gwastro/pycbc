@@ -26,8 +26,6 @@
 This modules provides a device independent Array class based on PyCUDA and Numpy.
 """
 
-BACKEND_PREFIX = "pycbc.types.array_"
-
 import os as _os
 from functools import wraps
 
@@ -41,9 +39,11 @@ from pycbc.libutils import import_optional
 from pycbc.opt import LimitedSizeDict
 from pycbc.scheme import cpuonly, schemed
 
+BACKEND_PREFIX = "pycbc.types.array_"
+
 _lal = import_optional("lal")
 
-#! FIXME: the uint32 datatype has not been fully tested,
+# FIXME: the uint32 datatype has not been fully tested,
 # we should restrict any functions that do not allow an
 # array of uint32 integers
 _ALLOWED_DTYPES = [
@@ -250,7 +250,7 @@ def _icheckother(func):
         """Checks the input to in-place operations"""
         self._typecheck(other)
         if type(other) in _ALLOWED_SCALARS:
-            if self.kind == "real" and type(other) == complex:
+            if self.kind == "real" and type(other) is complex:
                 raise TypeError("dtypes are incompatible")
             other = force_precision_to_match(other, self.precision)
         elif isinstance(other, type(self)) or type(other) is Array:
@@ -522,7 +522,7 @@ class Array:
         """
         # Writing the first test as below allows this method to be safely
         # called from subclasses.
-        if type(self) != type(other):
+        if type(self) is not type(other):
             return False
         if self.dtype != other.dtype:
             return False
@@ -597,7 +597,7 @@ class Array:
         # Check that the meta-data agree; the type check is written in
         # this way so that this method may be safely called from
         # subclasses as well.
-        if type(other) != type(self):
+        if type(other) is not type(self):
             return False
         if self.dtype != other.dtype:
             return False
@@ -663,7 +663,7 @@ class Array:
         # Check that the meta-data agree; the type check is written in
         # this way so that this method may be safely called from
         # subclasses as well.
-        if type(other) != type(self):
+        if type(other) is not type(self):
             return False
         if self.dtype != other.dtype:
             return False
@@ -812,7 +812,8 @@ class Array:
     @_convert
     @schemed(BACKEND_PREFIX)
     def abs_max_loc(self):
-        """Return the maximum elementwise norm in the array along with the index location"""
+        """Return the maximum elementwise norm in the array along with the index
+        location"""
         raise NotImplementedError(
             "This function is a stub that should be overridden using "
             "the scheme. You shouldn't be seeing this error!"

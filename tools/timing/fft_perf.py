@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import timeit
 from optparse import OptionParser
 
 from pycbc.fft import ifft
@@ -101,8 +102,6 @@ def tifft():
             ifft(vecin, vecout)
         sync = vecout[0]
 
-
-import timeit
 
 gt = timeit.Timer(tifft)
 t = 1000 * gt.timeit(number=1) / niter

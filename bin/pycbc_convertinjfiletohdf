@@ -50,7 +50,7 @@ def legacy_approximant_name(apx):
     apx = str(apx)
     try:
         order = lalsim.GetOrderFromString(apx)
-    except:
+    except RuntimeError:
         logger.warning("Could not read phase order from string, using default")
         order = -1
     name = lalsim.GetStringFromApproximant(lalsim.GetApproximantFromString(apx))

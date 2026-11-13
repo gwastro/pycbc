@@ -90,8 +90,8 @@ def read_injections(sim_files, m_dist, s_dist, d_dist):
 def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
     # Try including ifar threshold
     """
-    Based on injection strategy and the desired astro model estimate the injected volume.
-    Scale injections and estimate sensitive volume.
+    Based on injection strategy and the desired astro model estimate the injected
+    volume. Scale injections and estimate sensitive volume.
 
     Parameters
     ----------

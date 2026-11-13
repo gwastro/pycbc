@@ -102,7 +102,7 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
         tc = inj.tc
         ra = inj.ra
         dec = inj.dec
-    except:
+    except AttributeError:
         tc = inj.time_geocent
         ra = inj.longitude
         dec = inj.latitude
@@ -150,7 +150,7 @@ def legacy_approximant_name(apx):
     apx = str(apx)
     try:
         order = sim.GetOrderFromString(apx)
-    except:
+    except RuntimeError:
         logger.warning("Could not read phase order from string, using default")
         order = -1
     name = sim.GetStringFromApproximant(sim.GetApproximantFromString(apx))

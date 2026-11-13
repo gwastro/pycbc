@@ -65,7 +65,10 @@ def make_single_det_grid(args):
     if (args.ra and args.dec and args.sky_error) is not None:
         # --ra/--dec arguments
         ra, dec = args.ra, args.dec
-        args.input_dist = f'UniformDiskSky(mean_ra="{ra}", mean_dec="{dec}", radius="{args.sky_error}")'
+        args.input_dist = (
+            f'UniformDiskSky(mean_ra="{ra}", '
+            f'mean_dec="{dec}", radius="{args.sky_error}")'
+        )
     elif args.input_dist == "UniformSky()":
         # Covering the whole sky, just pick a reference point
         ra, dec = 0.0, 0.0
@@ -90,7 +93,10 @@ def make_multi_det_grid(args):
     # based on the input arguments
     if (args.ra and args.dec and args.sky_error) is not None:
         # --ra/--dec/--sky-error arguments
-        args.input_dist = f'UniformDiskSky(mean_ra="{args.ra}", mean_dec="{args.dec}", radius="{args.sky_error}")'
+        args.input_dist = (
+            f'UniformDiskSky(mean_ra="{args.ra}", '
+            f'mean_dec="{args.dec}", radius="{args.sky_error}")'
+        )
         sky_dist = dist_from_str(args.input_dist)
         grid = np.vstack((np.empty((0, 2)), (args.ra, args.dec)))
     elif args.input_dist == "UniformSky()":

@@ -351,7 +351,7 @@ for rank, num_event in enumerate(order):
     try:
         # Only present for precessing search
         curr_params["u_vals"] = trigs.u_vals[num_event]
-    except:
+    except KeyError:
         pass
 
     _, sngl_plot = mini.make_single_template_plots(

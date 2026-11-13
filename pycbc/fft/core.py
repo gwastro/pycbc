@@ -170,9 +170,9 @@ def _check_inv_args(invec, itype, outvec, otype, nbatch, size):
 #
 # will work? Is there a better way?
 #
-# Unlike some other places within PyCBC, however, the __init__ method of these classes do
-# nontrivial work and hence should be called inside the __init__ method of all child classes,
-# before anything else.
+# Unlike some other places within PyCBC, however, the __init__ method of these classes
+# do nontrivial work and hence should be called inside the __init__ method of all child
+# classes, before anything else.
 
 
 class _BaseFFT:
