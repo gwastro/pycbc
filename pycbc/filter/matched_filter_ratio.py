@@ -432,19 +432,26 @@ class MatchedFilterRatioControl:
         self.top_template[:kmin] = 0
         self.top_template[kmax:] = 0
 
-        # Calibrate the root power profile and construct the HierarchicalSearch
-        profile = mf_td.reference_profile(
-            self.top_template,
-            first_seg.psd,
-            float(self.top_template.f_lower or 0.0),
-            float(self.f_high or 0.0),
-            self.delta_f,
-        )
+        # Calibrate the leaf gates on each detector's own noise spectrum: one
+        # expected signal power profile per detector, from its first segment's PSD
+        profiles = {
+            ifo: (
+                mf_td.reference_profile(
+                    self.top_template,
+                    self.segments[ifo][0].psd,
+                    float(self.top_template.f_lower or 0.0),
+                    float(self.f_high or 0.0),
+                    self.delta_f,
+                ),
+                self.delta_f,
+            )
+            for ifo in self.seg_ifos
+        }
         self.root = mf_search.Root(
             self.top_template,
             (kmin, kmax),
             children=children,
-            profile=(profile, self.delta_f),
+            profile=profiles,
             node_id=int(top_idx),
         )
         self.search = mf_search.HierarchicalSearch(
@@ -578,7 +585,7 @@ class MatchedFilterRatioControl:
         # Evaluate signal-consistency vetoes on the trigger batch and filter survivors
         vals = {}
         if self.veto_callback is not None:
-            leaf_bank = self.search.leaf_bank(self.root, ctx.leaf)
+            leaf_bank = self.search.leaf_bank(self.root, ctx.leaf, ifo)
             self._batch = (
                 ifo,
                 leaf_bank,

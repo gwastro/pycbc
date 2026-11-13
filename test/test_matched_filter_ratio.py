@@ -286,6 +286,104 @@ class TestMatchedFilterRatio(unittest.TestCase):
             self.assertEqual(no_followup["L1"], 0)
             bank.close_filehandler()
 
+    @unittest.skipUnless(HAS_MATCHEDFILTER, "matchedfilter is not installed")
+    def test_leaf_gates_are_calibrated_per_detector(self):
+        """Each detector's leaf gates use a profile built from its own PSD."""
+        sample_rate = 2048.0
+        seg_len = 64.0
+        n_samples = round(sample_rate * seg_len)
+        t_inj = 32.0
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            bank_path = os.path.join(tmpdir, "bank.hdf")
+            htilde, delta_f, flen, f_low = _make_synthetic_fir_bank(
+                bank_path, num_levels=2, sample_rate=sample_rate, seg_len=seg_len
+            )
+            bank = RatioFilterBank(
+                bank_path,
+                filter_length=flen,
+                delta_f=delta_f,
+                dtype=np.complex64,
+                low_frequency_cutoff=f_low,
+            )
+
+            # Two detectors with different noise spectra: L1 is tilted toward
+            # better low-frequency sensitivity relative to H1
+            freqs = np.arange(flen) * delta_f
+            h1_psd = (
+                pycbc.psd.aLIGOZeroDetHighPower(flen, delta_f, f_low)
+                * (pycbc.DYN_RANGE_FAC**2)
+            ).astype(np.float32)
+            l1_psd = h1_psd * np.clip(freqs / 100.0, 0.1, 10.0).astype(np.float32)
+            phase = np.exp(-2j * np.pi * freqs * t_inj).astype(np.complex64)
+
+            # Build colored noise + an SNR 15 injection in each detector
+            rng = np.random.default_rng(7)
+            segments = {}
+            for ifo, psd in (("H1", h1_psd), ("L1", l1_psd)):
+                sig_unit = htilde / float(
+                    sigma(htilde, psd=psd, low_frequency_cutoff=f_low)
+                )
+                noise_fd = TimeSeries(
+                    rng.standard_normal(n_samples).astype(np.float32),
+                    delta_t=1.0 / sample_rate,
+                ).to_frequencyseries()
+                w_fd = noise_fd.numpy() / np.sqrt(n_samples * sample_rate / 2.0)
+                stilde = FrequencySeries(
+                    (
+                        w_fd * np.sqrt(np.maximum(psd.numpy(), 0.0))
+                        + 15.0 * sig_unit.numpy() * phase
+                    ).astype(np.complex64),
+                    delta_f=delta_f,
+                    epoch=1000.0,
+                )
+                stilde[0] = 0.0
+                stilde[len(stilde) - 1] = 0.0
+                stilde.psd = psd
+                stilde.analyze = slice(4096, n_samples - 4096)
+                stilde.cumulative_index = 4096
+                segments[ifo] = [stilde]
+
+            control = MatchedFilterRatioControl(
+                bank,
+                segments,
+                snr_threshold=6.0,
+                high_frequency_cutoff=sample_rate * 0.45,
+                cluster_window=1.0,
+            )
+            triggers, _ = control.run_top(int(bank.top_indices[0]))
+
+            # Verify each detector's profile is |h|^2 / S for its own PSD
+            profiles = control.root.profile
+            self.assertEqual(sorted(profiles), ["H1", "L1"])
+            for ifo in ("H1", "L1"):
+                profile, profile_delta_f = profiles[ifo]
+                self.assertEqual(profile_delta_f, delta_f)
+                good = segments[ifo][0].psd.numpy() > 0
+                expected = np.zeros(flen)
+                expected[good] = (
+                    np.abs(control.top_template.numpy()[good]) ** 2
+                    / segments[ifo][0].psd.numpy()[good]
+                )
+                np.testing.assert_allclose(profile, expected, rtol=1e-6)
+            self.assertFalse(
+                np.allclose(
+                    profiles["H1"][0] / profiles["H1"][0].sum(),
+                    profiles["L1"][0] / profiles["L1"][0].sum(),
+                    rtol=0.05,
+                )
+            )
+
+            # Verify the injection is recovered in both detectors
+            for ifo in ("H1", "L1"):
+                snr = np.abs(triggers[ifo]["snr"])
+                peak = int(np.argmax(snr))
+                self.assertGreater(snr[peak], 12.0)
+                self.assertAlmostEqual(
+                    triggers[ifo]["time_index"][peak] / sample_rate, t_inj, delta=0.01
+                )
+            bank.close_filehandler()
+
 
 if __name__ == "__main__":
     unittest.main()
