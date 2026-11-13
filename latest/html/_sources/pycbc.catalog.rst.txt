@@ -1,0 +1,21 @@
+pycbc.catalog package
+=====================
+
+Submodules
+----------
+
+pycbc.catalog.catalog module
+----------------------------
+
+.. automodule:: pycbc.catalog.catalog
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.catalog
+   :members:
+   :show-inheritance:
+   :undoc-members:

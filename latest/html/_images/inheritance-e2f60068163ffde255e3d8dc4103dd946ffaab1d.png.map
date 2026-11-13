@@ -1,0 +1,4 @@
+<map id="inheritance03f50129ca" name="inheritance03f50129ca">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="27,5,225,33"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.nautilus.NautilusSampler" target="_top" title="This class is used to construct a nautilus sampler from the nautilus" alt="" coords="5,81,247,109"/>
+</map>
