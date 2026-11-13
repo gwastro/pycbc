@@ -17,8 +17,9 @@ import logging
 
 import numpy as np
 
+from pycbc.fft import ifft
 from pycbc.filter import make_frequency_series, matched_filter_core
-from pycbc.types import Array
+from pycbc.types import Array, zeros
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +157,10 @@ class SingleDetAutoChisq:
     Class that handles precomputation and memory management for efficiently
     running the auto chisq in a single detector inspiral analysis.
     """
+
+    name = "auto"
+    columns = {"cont_chisq": np.float32, "cont_chisq_dof": int}
+    default_values = {"cont_chisq": 0, "cont_chisq_dof": 0}
 
     def __init__(
         self,
@@ -296,7 +301,7 @@ class SingleDetAutoChisq:
         )
 
     @classmethod
-    def from_cli(cls, args):
+    def from_cli(cls, args, **kwargs):
         """Create the auto-chisq from the options of insert_option_group."""
         return cls(
             args.autochi_stride,
@@ -307,6 +312,28 @@ class SingleDetAutoChisq:
             take_maximum_value=args.autochi_max_valued,
             maximal_value_dof=args.autochi_max_valued_dof,
         )
+
+    def evaluate_batch(self, batch, j):
+        """Evaluate auto-chisq for trigger j in a SignalConsistencyChain batch."""
+        if getattr(self, "reverse_template", False):
+            raise ValueError("The chain does not support --autochi-reverse-template")
+        corr, index = batch.correlation(j, self.stride * self.num_points)
+        if corr is None:
+            return None
+        corr = Array(corr, copy=False)
+        sn = zeros(len(corr), dtype=corr.dtype)
+        ifft(corr, sn)
+        template = batch.template(j)
+        psd = getattr(template, "psd", getattr(batch.stilde, "psd", None))
+        achisq, dof = self.values(
+            sn,
+            [index],
+            template,
+            psd,
+            1,
+            low_frequency_cutoff=getattr(template, "f_lower", None),
+        )
+        return {"cont_chisq": achisq[0], "cont_chisq_dof": dof}
 
     def values(
         self,
@@ -434,3 +461,4 @@ class SingleDetSkyMaxAutoChisq(SingleDetAutoChisq):
             err_msg += "been written. If you want to use it, why not help "
             err_msg += "write it?"
             raise NotImplementedError(err_msg)
+        return None, None
