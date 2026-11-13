@@ -28,11 +28,11 @@ from setuptools import Command, Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext as _build_ext
 
 requires = []
-setup_requires = ["numpy>=1.16.0"]
+setup_requires = ["numpy>=2.0.0"]
 install_requires = [
     *setup_requires,
     "cython>=0.29",
-    "numpy>=1.16.0,!=1.19.0,!=2.2.2",
+    "numpy>=2.0.0,!=2.2.2",
     "scipy>=0.16.0,<1.17.0",
     "astropy>=2.0.3,!=4.2.1,!=4.0.5",
     "matplotlib>=1.5.1",
