@@ -23,6 +23,8 @@ class SingleDetSGChisq(SingleDetPowerChisq):
     name = "sg"
     columns = {"sg_chisq": numpy.float32}
     default_values = {"sg_chisq": 1}
+    # Memory the cached sine-Gaussian tiles may take, in bytes
+    tile_cache_bytes = 256 * 2**20
     returns = {"sg_chisq": numpy.float32}
 
     def __init__(self, bank, num_bins=0, snr_threshold=None, chisq_locations=None):
@@ -185,7 +187,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             # Calculate the sum of SNR^2 for the sine-Gaussians specified
             for gtem, kmin, kmax, gsigma, overlap in tiles:
                 # Calculate the SNR of the tile
-                gsnr = (gtem[kmin:kmax] * stilde_shift[kmin:kmax]).sum()
+                gsnr = (gtem * stilde_shift[kmin:kmax]).sum()
                 gsnr *= 4.0 * gtem.delta_f / gsigma
                 if subtract_signal:
                     gsnr -= snrs[i] * overlap
@@ -268,6 +270,12 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                     overlap *= 4.0 * template.delta_f / (gsigma * hsigma)
                 else:
                     overlap = 0.0
-                tiles.append((gtem, kmin, kmax, gsigma, overlap))
+                # Keep only the band the tile is evaluated on
+                tiles.append((gtem[kmin:kmax].copy(), kmin, kmax, gsigma, overlap))
+            # Hold as many templates' tiles as fit in the cache's memory
+            tile_bytes = sum(tile[0].data.nbytes for tile in tiles)
+            self._tile_cache.size_limit = int(
+                min(256, max(16, self.tile_cache_bytes // max(tile_bytes, 1)))
+            )
             self._tile_cache[key] = tiles
         return self._tile_cache[key]
