@@ -388,6 +388,7 @@ for ifocomb in ifo_combos(ifo_ids.keys()):
         pivot_ifo,
         fixed_ifo,
         tags=ctagcomb,
+        ifos=ifocomb,
     )
 
     # Optionally perform follow-up on triggers and rerank the candidates
@@ -975,6 +976,7 @@ for inj_file, tag in zip(inj_files, inj_tags, strict=True):
             pivot_ifo,
             fixed_ifo,
             tags=ctagcomb,
+            ifos=ifocomb,
         )
 
         # Rerank events
