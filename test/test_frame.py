@@ -351,6 +351,19 @@ class TestGWOSCRealData(unittest.TestCase):
                 self.assertLess(abs(float(hdf.start_time - gwf.start_time)), 1e-6)
 
 
+class TestPartialGWF(unittest.TestCase):
+    def test_frame_not_yet_written(self):
+        """
+        A .gwf file that exists but is not yet written, as in a low-latency
+        stream, raises the RuntimeError the frame buffers retry on (#5533).
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "H-H1_llhoft-1446000000-1.gwf")
+            open(path, "wb").close()
+            with self.assertRaises(RuntimeError):
+                pycbc.frame.read_frame(path, "H1:GDS-CALIB_STRAIN")
+
+
 # We take a factory approach so we can test all possible dtypes we support
 TestClasses = []
 types = [numpy.float32, numpy.float64, numpy.complex64, numpy.complex128]
@@ -362,7 +375,7 @@ for ty in types:
     TestClasses.append(klass)
     del klass
 
-TestClasses.extend([TestGWOSCHDF, TestGWOSCRealData])
+TestClasses.extend([TestGWOSCHDF, TestGWOSCRealData, TestPartialGWF])
 
 if __name__ == "__main__":
     suite = unittest.TestSuite()

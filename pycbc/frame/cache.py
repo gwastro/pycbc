@@ -31,7 +31,16 @@ _FORMATS = (gwf, gwosc_hdf)
 
 
 def file_format(path):
-    """Return the format module that can read `path`, or None."""
+    """
+    Return the format module that can read `path`, or None. A known
+    extension is trusted without opening the file, which may still be
+    being written; other files are recognized by their content.
+    """
+    suffix = Path(path).suffix
+    if suffix == ".gwf":
+        return gwf
+    if suffix in (".hdf", ".hdf5", ".h5"):
+        return gwosc_hdf
     for fmt in _FORMATS:
         if fmt.is_format(path):
             return fmt
