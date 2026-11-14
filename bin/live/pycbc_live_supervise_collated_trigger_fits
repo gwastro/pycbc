@@ -276,7 +276,7 @@ def single_significance_fits(
     daily_args = ["pycbc_live_single_significance_fits"]
 
     gps_start_time = int(utc_datetime_to_gps(day_dt))
-    gps_end_time = int(utc_datetime_to_gps(day_dt) + timedelta(days=1))
+    gps_end_time = int(utc_datetime_to_gps(day_dt + timedelta(days=1)))
 
     daily_fit_options["gps-start-time"] = f"{gps_start_time:d}"
     daily_fit_options["gps-end-time"] = f"{gps_end_time:d}"
