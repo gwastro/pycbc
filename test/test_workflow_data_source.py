@@ -69,6 +69,11 @@ class TestOneDataSource(unittest.TestCase):
         node.add_list_opt("--fake-strain", ["L1:zeroNoise"])
         self.assert_rejected(node, "for L1", "--frame-files", "--fake-strain")
 
+    def test_multi_ifo_shared_and_prefixed_sources(self):
+        node = make_node({"fake-strain": "zeroNoise"})
+        node.add_arg("--frame-files H1:a.gwf")
+        self.assert_rejected(node, "for H1", "--fake-strain", "--frame-files")
+
     def test_multi_ifo_raw_options(self):
         node = make_node()
         node.add_raw_arg("--frame-files")
@@ -95,6 +100,12 @@ class TestOneDataSource(unittest.TestCase):
         node = make_node({"fake-strain": "zeroNoise"})
         node.required_data_ifos = ["H1", "L1"]
         node._finalize()
+
+    def test_required_ifos_shared_and_prefixed_sources(self):
+        node = make_node({"fake-strain": "zeroNoise"})
+        node.required_data_ifos = ["H1"]
+        node.add_arg("--frame-files H1:a.gwf")
+        self.assert_rejected(node, "more than one source", "for H1")
 
     def test_required_ifo_without_source(self):
         node = make_node()

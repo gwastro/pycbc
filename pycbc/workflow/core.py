@@ -986,7 +986,10 @@ class Node(pegasus_workflow.Node):
                     }
                     for ifo in ifos or {None}:
                         given.setdefault(ifo, []).append(opt)
-            for ifo, opts in given.items():
+            # An option without a detector prefix applies to every detector
+            shared = given.pop(None, [])
+            per_ifo = {ifo: shared + opts for ifo, opts in given.items()}
+            for ifo, opts in (per_ifo or {None: shared}).items():
                 if len(opts) > 1:
                     where = f" for {ifo}" if ifo else ""
                     raise ValueError(
@@ -995,7 +998,7 @@ class Node(pegasus_workflow.Node):
                         "set, note that frame files may also come from datafind."
                     )
             for ifo in self.required_data_ifos or []:
-                if ifo not in given and None not in given:
+                if ifo not in per_ifo and not shared:
                     raise ValueError(
                         f"{self.executable.name} job given no source of data for "
                         f"{ifo}. One of {', '.join(opt_group)} should be set, "
