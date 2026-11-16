@@ -565,7 +565,7 @@ its man page).
 Pegasus Analyzer
 -----------------------------
 
-The `pegasus analyzer <http://pegasus.isi.edu/wms/docs/trunk/cli-pegasus-analyzer.php>`_ is a command-line tool for reporting sucessful and failed jobs.
+The `pegasus analyzer <http://pegasus.isi.edu/wms/docs/trunk/cli-pegasus-analyzer.php>`_ is a command-line tool for reporting successful and failed jobs.
 
 To run ``pegasus_analyzer`` on your workflow, type::
 
