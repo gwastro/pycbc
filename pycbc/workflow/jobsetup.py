@@ -298,7 +298,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
             tag = list(tags)
             tag.append(split_bank.tag_str)
             node = curr_exe_job.create_node(data_seg, job_valid_seg,
-                    parent=split_bank, dfParents=input_files,
+                    parent=split_bank, df_parents=input_files,
                     bankVetoBank=bank_veto,
                     skygrid_file=skygrid_file, ipn_file=ipn_sky_points,
                     slide=slide_dict, tags=tag)
@@ -313,7 +313,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                 tag.append(split_bank.tag_str)
                 node = curr_exe_job.create_node(data_seg, job_valid_seg,
                         parent=split_bank, inj_file=inj_file, tags=tag,
-                        dfParents=input_files, bankVetoBank=bank_veto,
+                        df_parents=input_files, bankVetoBank=bank_veto,
                         skygrid_file=skygrid_file, ipn_file=ipn_sky_points)
                 workflow.add_node(node)
                 split_bank_counter += 1
@@ -674,16 +674,19 @@ class PyCBCMultiInspiralExecutable(Executable):
         self.num_threads = 1
 
     def create_node(self, data_seg, valid_seg, parent=None, inj_file=None,
-                    dfParents=None, bankVetoBank=None,
+                    df_parents=None, bankVetoBank=None,
                     skygrid_file=None, ipn_file=None,
                     slide=None, tags=None):
         if tags is None:
             tags = []
         node = Node(self)
 
-        if not dfParents:
-            raise ValueError("%s must be supplied with frame or cache files"
-                              % self.name)
+        if not (
+            df_parents
+            or self.has_opt("frame-files")
+            or self.has_opt("frame-cache")
+        ):
+            raise ValueError(f"{self.name} must be supplied with frame or cache files")
 
         # If doing single IFO search, make sure slides are disabled
         if len(self.ifo_list) < 2 and \
@@ -716,9 +719,9 @@ class PyCBCMultiInspiralExecutable(Executable):
                                  tags=tags, store_file=self.retain_files)
         node.add_input_opt('--bank-file', parent, )
 
-        if dfParents is not None:
-            frame_arg = '--frame-files'
-            for frame_file in dfParents:
+        if df_parents:
+            frame_arg = "--frame-files"
+            for frame_file in df_parents:
                 frame_arg += f" {frame_file.ifo}:{frame_file.name}"
                 node.add_input(frame_file)
             node.add_arg(frame_arg)

@@ -352,7 +352,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
 
     logger.info("Leaving datafind module")
     if datafind_method == "AT_RUNTIME_FAKE_DATA":
-        datafindouts = None
+        datafindouts = FileList([])
     else:
         datafindouts = FileList(datafindouts) 
 
