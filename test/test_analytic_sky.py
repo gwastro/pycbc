@@ -9,17 +9,26 @@
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-"""Unit tests for the analytic delay-to-sky extrinsic draw."""
+"""Tests for the analytic delay-to-sky extrinsic draw.
 
+The helpers it is built from, the draw itself on made-up SNR series, and
+the draw through a model, against the pregenerated sky map.
+"""
+
+import copy
 import unittest
 
 import numpy
 from utils import simple_exit
 
 from pycbc.detector import Detector
-from pycbc.distributions import CosAngle, JointDistribution, Uniform
+from pycbc.distributions import CosAngle, JointDistribution, SinAngle, Uniform
+from pycbc.inference import models
 from pycbc.inference.models.tools import DistMarg
+from pycbc.noise import noise_from_psd
+from pycbc.psd import aLIGOZeroDetHighPower
 from pycbc.types import TimeSeries
+from pycbc.waveform import get_td_waveform
 
 
 class TestDrawInCells(unittest.TestCase):
@@ -55,6 +64,7 @@ class TestDrawInCells(unittest.TestCase):
         )
 
     def test_the_draw_stays_inside_the_window(self):
+        """A drawn cell outside the window would be an unphysical delay."""
         idx, mass = self.draw(10, 20)
         self.assertGreaterEqual(idx.min(), 10)
         self.assertLess(idx.max(), 20)
@@ -94,6 +104,7 @@ class TestEllipseSlice(unittest.TestCase):
         return s[0, 0] * dt12**2 + 2 * s[0, 1] * dt12 * dt13 + s[1, 1] * dt13**2
 
     def test_the_ends_sit_on_the_ellipse(self):
+        """The ends are the most extreme dt13 a real direction can give."""
         dt12 = numpy.linspace(-0.008, 0.008, 40)
         mid, half, bad = DistMarg._ellipse_slice(self.smat, dt12)
         good = ~bad
@@ -106,6 +117,7 @@ class TestEllipseSlice(unittest.TestCase):
             )
 
     def test_the_middle_is_inside(self):
+        """Between the ends, every dt13 is a real direction."""
         dt12 = numpy.linspace(-0.008, 0.008, 40)
         mid, _, bad = DistMarg._ellipse_slice(self.smat, dt12)
         good = ~bad
@@ -167,6 +179,10 @@ class TestAnalyticSkyDraw(unittest.TestCase):
         return marg, ok
 
     def test_the_weights_average_to_one(self):
+        """The weights are prior over proposal, so their mean is one.
+
+        A wrong normalization or Jacobian anywhere in the draw shows here.
+        """
         for ifos in (
             ["H1"],
             ["H1", "L1"],
@@ -181,6 +197,12 @@ class TestAnalyticSkyDraw(unittest.TestCase):
                 self.assertAlmostEqual(numpy.exp(logw).mean(), 1.0, delta=0.01)
 
     def test_the_weighted_draws_follow_the_prior(self):
+        """Moments of the isotropic sky and of the uniform tc prior.
+
+        Weight that is right on average but in the wrong places, such as
+        on the wrong mirror root or with the earth turned the wrong way,
+        shows here.
+        """
         marg, _ = self.draw(["H1", "L1", "V1"])
         vec = marg.marginalize_vector_params
         weight = numpy.exp(vec["logw_partial"])
@@ -244,14 +266,143 @@ class TestAnalyticSkyDraw(unittest.TestCase):
                 )
 
     def test_colocated_detectors_leave_it_to_the_map(self):
+        """With no delay to invert, the draw hands over to the map."""
         _, ok = self.draw(["H1", "H2"])
         self.assertFalse(ok)
+
+
+class TestThroughAModel(unittest.TestCase):
+    """The draw as a model uses it, against the pregenerated sky map.
+
+    A BNS in simulated noise in H1, L1 and V1, marginalized over tc, ra
+    and dec by RelativeTimeDom. Three detectors, since with two the second
+    delay is a free azimuth and with one there is no delay to invert.
+    Both draws estimate the same integral, so the means of five calls
+    must agree; each call scatters by 0.2 to 0.3 at this number of draws.
+    """
+
+    TC = 1187008882.42
+    FLOW, SEGLEN, SRATE = 25.0, 32, 2048
+    IFOS = ["H1", "L1", "V1"]
+    VARIABLE = ["distance", "inclination", "tc", "ra", "dec"]
+    POINT = {"distance": 40.0, "inclination": 0.5}
+    SKY = {"ra": 1.7, "dec": -0.4, "polarization": 0.3}
+
+    @classmethod
+    def make_data(cls, distance):
+        hp, hc = get_td_waveform(
+            approximant="TaylorF2",
+            f_lower=cls.FLOW,
+            delta_t=1.0 / cls.SRATE,
+            mass1=1.4,
+            mass2=1.35,
+            distance=distance,
+            inclination=0.5,
+            coa_phase=1.1,
+        )
+        hp.start_time += cls.TC
+        hc.start_time += cls.TC
+        data = {}
+        for n, ifo in enumerate(cls.IFOS):
+            noise = noise_from_psd(
+                int(cls.SEGLEN * cls.SRATE), 1.0 / cls.SRATE, cls.psds[ifo], seed=11 + n
+            )
+            noise._epoch = cls.TC - cls.SEGLEN / 2
+            sig = Detector(ifo).project_wave(
+                hp, hc, cls.SKY["ra"], cls.SKY["dec"], cls.SKY["polarization"]
+            )
+            data[ifo] = noise.add_into(sig).to_frequencyseries()
+        return data
+
+    @classmethod
+    def setUpClass(cls):
+        psd = aLIGOZeroDetHighPower(
+            int(cls.SRATE * cls.SEGLEN / 2) + 1, 1.0 / cls.SEGLEN, cls.FLOW
+        )
+        cls.psds = dict.fromkeys(cls.IFOS, psd)
+        cls.data = cls.make_data(40.0)
+        cls.static = {
+            "mass1": 1.4,
+            "mass2": 1.35,
+            "f_lower": cls.FLOW,
+            "approximant": "TaylorF2",
+            "polarization": cls.SKY["polarization"],
+        }
+        cls.fiducial = {"mass1": 1.4, "tc": cls.TC, **cls.SKY}
+
+    def loglr(self, analytic, data=None, point=None, static=None):
+        """The mean of five marginalized likelihoods, and the model."""
+        data = self.data if data is None else data
+        numpy.random.seed(5)
+        prior = JointDistribution(
+            list(self.VARIABLE),
+            SinAngle(inclination=None),
+            Uniform(distance=(10, 200)),
+            Uniform(tc=(self.TC - 0.1, self.TC + 0.1)),
+            Uniform(ra=(0, 2 * numpy.pi)),
+            CosAngle(dec=None),
+        )
+        model = models.RelativeTimeDom(
+            list(self.VARIABLE),
+            {i: copy.deepcopy(data[i]) for i in self.IFOS},
+            low_frequency_cutoff=dict.fromkeys(self.IFOS, self.FLOW),
+            psds=self.psds,
+            static_params=self.static if static is None else static,
+            prior=prior,
+            fiducial_params=self.fiducial,
+            epsilon=0.1,
+            marginalize_phase=True,
+            marginalize_vector_params="tc,ra,dec",
+            marginalize_vector_samples=2000,
+            sample_rate=4096,
+            marginalize_sky_analytic=analytic,
+        )
+        values = []
+        for _ in range(5):
+            model.update(**(self.POINT if point is None else point))
+            values.append(model.loglr)
+        return numpy.array(values), model
+
+    def test_it_agrees_with_the_map(self):
+        """The analytic draw is used, and gives the map's answer."""
+        analytic, model = self.loglr(True)
+        # only the map builds its table of sky points
+        self.assertFalse(hasattr(model, "tinfo"))
+        sky_map, model = self.loglr(False)
+        self.assertTrue(hasattr(model, "tinfo"))
+        self.assertAlmostEqual(analytic.mean(), sky_map.mean(), delta=0.6)
+
+    def test_tc_in_a_detector_frame(self):
+        """The draw returns tc in the frame it is sampled in.
+
+        Returned at the geocentre, it would be read as Hanford's time and
+        give 630.0 here, against 636.5 from the map.
+        """
+        static = dict(self.static, tc_ref_frame="H1")
+        analytic, _ = self.loglr(True, static=static)
+        sky_map, _ = self.loglr(False, static=static)
+        self.assertAlmostEqual(analytic.mean(), sky_map.mean(), delta=0.6)
+
+    def test_the_map_survives_a_detector_without_signal(self):
+        """At twice the distance Virgo has no peak above its noise.
+
+        Its drawn times spread over the whole window, so few delays match
+        a sky point. The map used to fall back to the same prior draws on
+        every call (108.2 here); it now draws from the louder detectors.
+        """
+        data = self.make_data(80.0)
+        point = dict(self.POINT, distance=80.0)
+        analytic, _ = self.loglr(True, data=data, point=point)
+        sky_map, _ = self.loglr(False, data=data, point=point)
+        self.assertGreater(sky_map.std(), 0.0)
+        self.assertAlmostEqual(analytic.mean(), sky_map.mean(), delta=0.6)
 
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDrawInCells))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestEllipseSlice))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestAnalyticSkyDraw))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestThroughAModel))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
