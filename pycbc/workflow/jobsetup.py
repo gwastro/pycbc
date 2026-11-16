@@ -963,7 +963,11 @@ class PyCBCMultiInspiralExecutable(Executable):
             tags = []
         node = Node(self)
 
-        if not df_parents:
+        if not (
+            df_parents
+            or self.has_opt("frame-files")
+            or self.has_opt("frame-cache")
+        ):
             raise ValueError(f"{self.name} must be supplied with frame or cache files")
 
         # If doing single IFO search, make sure slides are disabled
@@ -1006,7 +1010,7 @@ class PyCBCMultiInspiralExecutable(Executable):
             parent,
         )
 
-        if df_parents is not None:
+        if df_parents:
             frame_arg = "--frame-files"
             for frame_file in df_parents:
                 frame_arg += f" {frame_file.ifo}:{frame_file.name}"
