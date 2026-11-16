@@ -26,7 +26,8 @@ from pycbc.io.ligolw import (
 from pycbc.types import TimeSeries
 
 
-SCRIPT = pathlib.Path(__file__).resolve().parents[1] / 'bin/all_sky_search/pycbc_prepare_xml_for_gracedb'
+SCRIPT = (pathlib.Path(__file__).resolve().parents[1]
+          / 'bin/all_sky_search/pycbc_prepare_xml_for_gracedb')
 
 
 class TestOfflineLocalizationXML(unittest.TestCase):
@@ -98,28 +99,35 @@ class TestOfflineLocalizationXML(unittest.TestCase):
                     group = f.create_group(ifo)
                     group['start_time'] = [99.]
                     group['end_time'] = [101.]
-                    psd = group.create_dataset('psds/0', data=np.full(4097, pycbc.DYN_RANGE_FAC**2 * 1e-46))
+                    psd = group.create_dataset(
+                        'psds/0', data=np.full(4097, pycbc.DYN_RANGE_FAC**2 * 1e-46))
                     psd.attrs['delta_f'] = .25
                     psd.attrs['epoch'] = 99
                 snr_files.append(str(snr_file))
                 psd_files.append(str(psd_file))
-            completed = subprocess.run([sys.executable, str(SCRIPT), '--input-file', str(source),
+            completed = subprocess.run([sys.executable, str(SCRIPT),
+                            '--input-file', str(source),
                             '--output-file', str(output), '--event-id', '0',
                             '--snr-timeseries', *snr_files, '--psd-files', *psd_files,
                             '--channel-name', *[ifo + ':STRAIN' for ifo in ifos],
                             '--snr-timeseries-plot', str(root / 'snr.png')],
                            capture_output=True, text=True)
-            self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
-            result = utils.load_filename(str(output), contenthandler=LIGOLWContentHandler)
+            self.assertEqual(completed.returncode, 0,
+                             completed.stdout + completed.stderr)
+            result = utils.load_filename(str(output),
+                                         contenthandler=LIGOLWContentHandler)
             singles = lsctables.SnglInspiralTable.get_table(result)
             self.assertEqual({row.ifo for row in singles}, set(ifos))
             self.assertEqual(len({row.event_id for row in singles}), len(ifos))
-            self.assertEqual(len(lsctables.CoincMapTable.get_table(result)), len(ifos))
-            self.assertEqual(lsctables.CoincTable.get_table(result)[0].nevents, len(ifos))
+            self.assertEqual(len(lsctables.CoincMapTable.get_table(result)),
+                             len(ifos))
+            self.assertEqual(lsctables.CoincTable.get_table(result)[0].nevents,
+                             len(ifos))
             ci = lsctables.CoincInspiralTable.get_table(result)[0]
             self.assertEqual(ci.snr, 12)
             self.assertEqual(ci.combined_far, 1e-8)
-            parsed = LigoLWEventSource(str(output), psd_file=str(output), coinc_def=None)[0]
+            parsed = LigoLWEventSource(str(output), psd_file=str(output),
+                                       coinc_def=None)[0]
             self.assertEqual({single.detector for single in parsed.singles}, set(ifos))
             for single in parsed.singles:
                 self.assertIsNotNone(single.snr_series)

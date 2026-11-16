@@ -24,28 +24,28 @@
 #
 """PyCBC contains a toolkit for CBC gravitational wave analysis"""
 
+import importlib.machinery
+import importlib.util
+import logging
 import os
+import random
 import signal
+import string
 import subprocess
 import sys
 import warnings
+from datetime import datetime as dt
 
 # Filter annoying Cython warnings that serve no good purpose.
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
-import importlib.machinery
-import importlib.util
-import logging
-import random
-import string
-from datetime import datetime as dt
 
 try:
     # This will fail when pycbc is imported during the build process,
     # before version.py has been generated.
     from .version import PyCBCVersionAction, git_hash
     from .version import version as pycbc_version
-except:
+except ImportError:
     git_hash = "none"
     pycbc_version = "none"
     PyCBCVersionAction = None

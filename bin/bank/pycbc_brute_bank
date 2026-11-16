@@ -58,7 +58,8 @@ parser.add_argument(
 )
 parser.add_argument(
     "--keep-entire-input-file",
-    help="All of the templates in the input file will be kept in the output file, even if they do not pass normal mismatch criteria.",
+    help="All of the templates in the input file will be kept in the "
+    "output file, even if they do not pass normal mismatch criteria.",
     action="store_true",
 )
 parser.add_argument(
@@ -79,12 +80,14 @@ parser.add_argument(
     "--full-resolution-buffer-length",
     default=None,
     type=float,
-    help="Size of the waveform buffer in seconds for generating time-domain signals at full resolution before conversion to the frequency domain.",
+    help="Size of the waveform buffer in seconds for generating time-domain "
+    "signals at full resolution before conversion to the frequency domain.",
 )
 parser.add_argument(
     "--max-signal-length",
     type=float,
-    help="When specified, it cuts the maximum length of the waveform model to the lengh provided",
+    help="When specified, it cuts the maximum length "
+    "of the waveform model to the lengh provided",
 )
 parser.add_argument(
     "--sample-rate", default=2048, type=float, help="sample rate in seconds"
@@ -99,7 +102,8 @@ parser.add_argument(
     "--placement-iterations",
     default=1000,
     type=int,
-    help="Specify the number of attempts the bank should make when placing points. Use this option if the bank fails to place any points.",
+    help="Specify the number of attempts the bank should make when placing "
+    "points. Use this option if the bank fails to place any points.",
 )
 parser.add_argument("--seed", type=int, default=0)
 parser.add_argument("--tolerance", type=float)
@@ -113,12 +117,14 @@ parser.add_argument(
     "--nprocesses",
     type=int,
     default=1,
-    help="Number of processes to use for waveform generation parallelization. If not given then only a single core will be used.",
+    help="Number of processes to use for waveform generation "
+    "parallelization. If not given then only a single core will be used.",
 )
 parser.add_argument(
     "--parallel-check",
     action="store_true",
-    help="Do bank checking parallel, note that this means that proposals WILL NOT be checked against each other.",
+    help="Do bank checking parallel, note that this means "
+    "that proposals WILL NOT be checked against each other.",
 )
 parser.add_argument(
     "--max-connections",
@@ -131,8 +137,9 @@ parser.add_argument(
     "--use-trimmed-buffer",
     action="store_true",
     help=(
-        "When specified, the match calculation will use only the first and last 100 samples "
-        "of the waveform instead of the full buffer. Enabling this option makes match computation faster."
+        "When specified, the match calculation will use only the first "
+        "and last 100 samples of the waveform instead of the full "
+        "buffer. Enabling this option makes match computation faster."
     ),
 )
 
@@ -195,9 +202,9 @@ class Shrinker:
     def pop(self):
         if len(self.data) == 0:
             return None
-        l = self.data[-1]
+        last = self.data[-1]
         self.data = self.data[:-1]
-        return l
+        return last
 
 
 class TriangleBank:
@@ -479,7 +486,7 @@ class GenUniformWaveform:
             )
             maxlen = args.max_signal_length
             x = numpy.searchsorted(length, maxlen) - 1
-            l = length[x]
+            signal_length = length[x]
             f = flow[x]
         else:
             f = self.f_lower
@@ -655,8 +662,8 @@ def draw(rtype):
             params = transforms.apply_transforms(params, waveform_transforms)
 
     # Filter out stuff (kde method may also generate samples outside boundaries).
-    l = dists_joint.contains(params)
-    params = {k: params[k][l] for k in params}
+    inside = dists_joint.contains(params)
+    params = {k: params[k][inside] for k in params}
     return params
 
 
@@ -666,8 +673,8 @@ def cdraw(rtype, ts, te):
     p = draw(rtype)
     if len(p[next(iter(p.keys()))]) > 0:
         t = tau0_from_mass1_mass2(p["mass1"], p["mass2"], args.tau0_cutoff_frequency)
-        l = (t < te) & (t > ts)
-        p = {k: p[k][l] for k in p}
+        in_range = (t < te) & (t > ts)
+        p = {k: p[k][in_range] for k in p}
 
     i = 0
     while len(p[next(iter(p.keys()))]) < size:
@@ -676,8 +683,8 @@ def cdraw(rtype, ts, te):
             t = tau0_from_mass1_mass2(
                 tp["mass1"], tp["mass2"], args.tau0_cutoff_frequency
             )
-            l = (t < te) & (t > ts)
-            tp = {k: tp[k][l] for k in tp}
+            in_range = (t < te) & (t > ts)
+            tp = {k: tp[k][in_range] for k in tp}
 
         p = {k: numpy.concatenate([p[k], tp[k]]) for k in p}
 
@@ -746,7 +753,8 @@ while tau0s < args.tau0_end:
             )
             ave = numpy.mean(trail_matches)
             logger.info(
-                "%s: Round (K) (%s): %s Size: %s conv: %0.4f added: %s Trail Ave: %0.4f Trail Min: %0.4f",
+                "%s: Round (K) (%s): %s Size: %s conv: %0.4f "
+                "added: %s Trail Ave: %0.4f Trail Min: %0.4f",
                 region,
                 kloop,
                 r,

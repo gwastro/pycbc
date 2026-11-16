@@ -867,7 +867,10 @@ def _dtdv_cutoff_velocity(m1, m2, chi1, chi2):
 
 
 def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
-    """Return the energy coefficients. This assumes that the system has aligned spins only."""
+    """Return the energy coefficients.
+
+    This assumes that the system has aligned spins only.
+    """
     implemented_phase_order = 7
     implemented_spin_order = 7
     if phase_order > implemented_phase_order:

@@ -412,7 +412,8 @@ def compress_waveform(
     compression_factor = float(len(htilde)) / float(len(sample_points))
 
     logger.info(
-        "mismatch: %f, N points: %i (%i added), compression:%.3e, final decomp time %.2f ms",
+        "mismatch: %f, N points: %i (%i added), "
+        "compression:%.3e, final decomp time %.2f ms",
         mismatch,
         len(comp_amp),
         len(added_points),

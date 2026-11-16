@@ -107,7 +107,8 @@ def _init_threads(backend):
     global _float_threaded_lib
     if _fftw_threaded_set:
         raise RuntimeError(
-            f"Threading backend for FFTW already set to {_fftw_threaded_lib}; cannot be changed"
+            "Threading backend for FFTW already set to "
+            f"{_fftw_threaded_lib}; cannot be changed"
         )
     try:
         double_threaded_libname = _fftw_threading_libnames[backend]["double"]
@@ -130,10 +131,7 @@ def _init_threads(backend):
                 float_threaded_libname, ["fftw3f"], mode=FFTW_RTLD_MODE
             )
             if (_double_threaded_lib is None) or (_float_threaded_lib is None):
-                err_str = "Unable to load threaded libraries"
-                err_str += f"{double_threaded_libname} or "
-                err_str += f"{float_threaded_libname}"
-                raise RuntimeError(err_str)
+                return 1
             dret = _double_threaded_lib.fftw_init_threads()
             fret = _float_threaded_lib.fftwf_init_threads()
             # FFTW for some reason uses *0* to indicate failure.  In C.
@@ -143,7 +141,7 @@ def _init_threads(backend):
             _fftw_threaded_set = True
             _fftw_threaded_lib = backend
             return 0
-        except:
+        except (OSError, AttributeError):
             return 1
     else:
         # We get here when we were given the 'unthreaded' backend
@@ -626,7 +624,8 @@ def insert_fft_options(optgroup):
     )
     optgroup.add_argument(
         "--fftw-threads-backend",
-        help="Give 'openmp', 'pthreads' or 'unthreaded' to specify which threaded FFTW to use",
+        help="Give 'openmp', 'pthreads' or 'unthreaded' "
+        "to specify which threaded FFTW to use",
         default=None,
     )
     optgroup.add_argument(
@@ -678,8 +677,8 @@ def verify_fft_options(opt, parser):
         or (opt.fftw_input_double_wisdom_file is not None)
     ):
         parser.error(
-            "If --fftw-import-system-wisdom is given, then you cannot give"
-            " either of --fftw-input-float-wisdom-file or --fftw-input-double-wisdom-file"
+            "If --fftw-import-system-wisdom is given, then you cannot give either "
+            "of --fftw-input-float-wisdom-file or --fftw-input-double-wisdom-file"
         )
 
     if opt.fftw_threads_backend is not None:  # noqa: SIM102

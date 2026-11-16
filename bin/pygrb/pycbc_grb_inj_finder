@@ -266,16 +266,20 @@ with tqdm.tqdm(
         )
 
         # get indices of found/missed injections and finding trigger
-        for i, (l, r) in enumerate(
+        for i, (left, right) in enumerate(
             zip(_left, _right, strict=True),
             start=len(allinjections if allinjections is not None else []),
         ):
-            if not r - l:
+            if not right - left:
                 missed.append(i)
             else:
                 found.append(i)
                 # the needed event_id is unique within its split_inj file
-                eid = event_id[l] if r - l == 1 else event_id[l + snr[l:r].argmax()]
+                eid = (
+                    event_id[left]
+                    if right - left == 1
+                    else event_id[left + snr[left:right].argmax()]
+                )
                 for x in triggers:
                     ij = x.split("/")
                     # assign a new, overall unique event_id to a found

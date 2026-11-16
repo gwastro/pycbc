@@ -31,6 +31,7 @@ import unittest
 from types import SimpleNamespace
 
 import lalsimulation
+import matplotlib
 import numpy
 from utils import _check_scheme_cpu, simple_exit
 
@@ -115,11 +116,10 @@ parser.add_option("--tidal-order", type=int, default=-1, help="[default: %defaul
 print(72 * "=")
 print("Running CPU unit tests for Lalsimulation Waveforms:")
 
-import matplotlib
-
 if not opt.show_plots:
     matplotlib.use("Agg")
-from matplotlib import pyplot as plt
+# The backend depends on --show-plots, so pyplot is imported once it is set
+from matplotlib import pyplot as plt  # noqa: E402
 
 
 def get_waveform(p, **kwds):

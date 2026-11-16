@@ -269,7 +269,7 @@ class FromFile(Arbitrary):
         """
         try:
             f = HFile(params_file, "r")
-        except:
+        except OSError:
             raise ValueError("File not found.")
         get = f[self.datagroup] if self.datagroup is not None else f
         if params is not None:

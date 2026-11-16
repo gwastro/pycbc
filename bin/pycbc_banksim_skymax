@@ -555,7 +555,7 @@ with ctx:
                 #        in XML banks, this must be retained.
                 try:
                     this_approximant = template_params["approximant"]
-                except:
+                except (KeyError, ValueError):
                     this_approximant = options.template_approximant
                     if (
                         options.total_mass_divide is not None

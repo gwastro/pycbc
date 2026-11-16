@@ -174,10 +174,10 @@ results.save_fig_with_metadata(
     {},
     cmd=" ".join(sys.argv),
     title="Parameter Estimates",
-    caption=f"Summary of parameter estimates. The {int(interval):d}-percent credible "
-    f"interval is the {int(opts.percentiles[1]):d}th +/- {int(opts.percentiles[2]):d}th/{int(opts.percentiles[0]):d}th percentiles. "
-    "The maximum posterior parameters are the parameters "
-    "with the largest likelihood * prior. The maximum "
-    "likelihood parameters are the parameters with the "
-    "largest likelihood.",
+    caption=f"Summary of parameter estimates. The {int(interval):d}-percent "
+    f"credible interval is the {int(opts.percentiles[1]):d}th +/- "
+    f"{int(opts.percentiles[2]):d}th/{int(opts.percentiles[0]):d}th "
+    "percentiles. The maximum posterior parameters are the parameters with "
+    "the largest likelihood * prior. The maximum likelihood parameters are "
+    "the parameters with the largest likelihood.",
 )

@@ -1281,9 +1281,9 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                 ref_phase,
             )
             self.phase_names = [ref_phase]
-        elif type(phase_names) == list:
+        elif type(phase_names) is list:
             self.phase_names = phase_names
-        elif type(phase_names) == str:
+        elif type(phase_names) is str:
             self.phase_names = phase_names.split(" ")
         else:
             raise TypeError(

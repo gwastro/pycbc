@@ -169,9 +169,9 @@ class UniformF0Tau(uniform.Uniform):
         # check if we need to specify a particular mode (l,m) != (2,2)
         if re.match(r"f_\d{3}", self.rdfreq):
             mode = self.rdfreq.strip("f_")
-            l, m = int(mode[0]), int(mode[1])
+            l, m = int(mode[0]), int(mode[1])  # noqa: E741
         else:
-            l, m = 2, 2
+            l, m = 2, 2  # noqa: E741
         # temporarily silence invalid warnings... these will just be ruled out
         # automatically
         with numpy.errstate(invalid="ignore"):

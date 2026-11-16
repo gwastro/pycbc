@@ -212,12 +212,14 @@ nsamples = fp.niterations // thinned_by
 start_index = opts.start_index
 if start_index >= nsamples:
     raise ValueError(
-        f"given start-index {start_index} is >= the number of samples in the input file {nsamples}"
+        f"given start-index {start_index} is >= the "
+        f"number of samples in the input file {nsamples}"
     )
 end_index = opts.end_index
 if end_index is not None and end_index >= nsamples:
     raise ValueError(
-        f"given end-index {end_index} is >= the number of samples in the input file {nsamples}"
+        f"given end-index {end_index} is >= the number "
+        f"of samples in the input file {nsamples}"
     )
 
 if opts.log_steps and not opts.frame_number:

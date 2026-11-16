@@ -201,7 +201,7 @@ for ifo in opts.ifos:
 
 
 calibration_filename = f"{output_dir}/calibration-{tag}.ini"
-if os.path.isfile(calibration_filename) != True:
+if not os.path.isfile(calibration_filename):
     with open(calibration_filename, "w") as text_file:
         text_file.write("[calibration] \n")
         for ifo in opts.ifos:

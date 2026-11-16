@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import timeit
 from argparse import ArgumentParser
 
 from pycbc.scheme import CPUScheme, CUDAScheme
@@ -90,8 +91,6 @@ def sqnm():
             v.squared_norm()
         v[0]
 
-
-import timeit
 
 gt = timeit.Timer(addc)
 t = 1000 * gt.timeit(number=1) / niter

@@ -1,5 +1,7 @@
 """Utilities for handling waveform plugins"""
 
+from importlib.metadata import entry_points
+
 
 def add_custom_waveform(
     approximant,
@@ -164,9 +166,6 @@ def add_end_frequency_estimator(approximant, function):
         )
 
     _filter_ends[approximant] = function
-
-
-from importlib.metadata import entry_points
 
 
 def retrieve_waveform_plugins():

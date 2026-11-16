@@ -206,7 +206,7 @@ for ifo0 in args.ifos:
     other_ifos = deepcopy(args.ifos)
     other_ifos.remove(ifo0)
 
-    l = 0
+    nbins = 0
     nsamples = 0
     weights = {}
     for k in range(chunks):
@@ -260,10 +260,14 @@ for ifo0 in args.ifos:
                 weights[key] = 0
             weights[key] += w[i]
 
-        ol = l
-        l = len(weights.values())
+        prev_nbins = nbins
+        nbins = len(weights.values())
         logger.info(
-            "%s, %s, %s, %s", l, l - ol, (l - ol) / float(size), l / float(nsamples)
+            "%s, %s, %s, %s",
+            nbins,
+            nbins - prev_nbins,
+            (nbins - prev_nbins) / float(size),
+            nbins / float(nsamples),
         )
 
     logger.info("applying smoothing")
@@ -297,9 +301,9 @@ for ifo0 in args.ifos:
     logger.info("Removed %s bins", n_precut - len(keys))
 
     logger.info("discarding bins below threshold to limit storage")
-    l = values > args.weight_threshold
-    keys = keys[l].astype(bin_dtype)
-    values = values[l].astype(np.float32)
+    above = values > args.weight_threshold
+    keys = keys[above].astype(bin_dtype)
+    values = values[above].astype(np.float32)
     logger.info("Final length: %s", len(keys))
 
     logger.info("Presorting by keys for downstream use")

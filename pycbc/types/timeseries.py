@@ -67,7 +67,8 @@ class TimeSeries(Array):
                 delta_t = initial_array.delta_t
             except AttributeError:
                 raise TypeError(
-                    "must provide either an initial_array with a delta_t attribute, or a value for delta_t"
+                    "must provide either an initial_array with "
+                    "a delta_t attribute, or a value for delta_t"
                 )
         if not delta_t > 0:
             raise ValueError("delta_t must be a positive number")

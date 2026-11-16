@@ -32,14 +32,11 @@ import unittest
 import numpy
 from utils import parse_args_all_schemes, simple_exit
 
-from pycbc.types import Array, complex64, float32, zeros
-
-_scheme, _context = parse_args_all_schemes("correlate")
-
 from pycbc.catalog import Merger
 from pycbc.filter import matched_filter_core, resample_to_delta_t, sigma
 from pycbc.noise import noise_from_psd
 from pycbc.psd import aLIGOZeroDetHighPower, interpolate, inverse_spectrum_truncation
+from pycbc.types import Array, complex64, float32, zeros
 from pycbc.vetoes import (
     SingleDetPowerChisq,
     chisq_accum_bin,
@@ -53,6 +50,8 @@ from pycbc.vetoes.chisq import (
 )
 from pycbc.vetoes.chisq_cpu import chisq_accum_bin_numpy
 from pycbc.waveform import get_fd_waveform
+
+_scheme, _context = parse_args_all_schemes("correlate")
 
 trusted_accum = chisq_accum_bin_numpy
 

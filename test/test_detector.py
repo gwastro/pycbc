@@ -27,16 +27,15 @@ These are the unittests for the pycbc.detector module
 
 import unittest
 
+# We require lal as a reference comparison
+import lal
 import numpy
 from numpy.random import seed, uniform
+from utils import simple_exit
 
 import pycbc.detector as det
 
 seed(0)
-
-# We require lal as a reference comparison
-import lal
-from utils import simple_exit
 
 
 class TestDetector(unittest.TestCase):

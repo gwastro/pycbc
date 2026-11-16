@@ -64,8 +64,9 @@ phenomC_text = """
     double wPlusf2 = 0.5*(1. + tanh( (4*(fd - Mf2)/d2) ));
     double wMinusf2 = 0.5*(1. - tanh( (4*(fd - Mf2)/d2) ));
 
-    double phasing = (phSPA * ((double) wMinusf1)) + (phPM * ((double) wPlusf1 * wMinusf2)) +
-                  (phRD * ((double) wPlusf2));
+    double phasing = (phSPA * ((double) wMinusf1)) +
+                     (phPM * ((double) wPlusf1 * wMinusf2)) +
+                     (phRD * ((double) wPlusf2));
 
     /* ******************************************************* */
     /* ********************** Amplitude **************** */
@@ -114,8 +115,9 @@ phenomC_kernel = ElementwiseKernel(
     """pycuda::complex<double> *htilde, int kmin, double delta_f, double PI,
                                        double eta, double Xi, double distance,
                                        double m_sec, double piM, double Mfrd,
-                                       double pfaN, double pfa2, double pfa3, double pfa4,
-                                       double pfa5, double pfa6, double pfa6log, double pfa7,
+                                       double pfaN, double pfa2, double pfa3,
+                                       double pfa4, double pfa5, double pfa6,
+                                       double pfa6log, double pfa7,
                                        double a1, double a2, double a3, double a4,
                                        double a5, double a6, double b1, double b2,
                                        double Mf1, double Mf2, double Mf0,
@@ -124,7 +126,8 @@ phenomC_kernel = ElementwiseKernel(
                                        double xdota5, double xdota6, double xdota6log,
                                        double xdota7, double xdotaN, double AN,
                                        double A2, double A3, double A4, double A5,
-                                       double A5imag, double A6, double A6log, double A6imag,
+                                       double A5imag, double A6, double A6log,
+                                       double A6imag,
                                        double g1, double del1, double del2, double Q""",
     phenomC_text,
     "phenomC_kernel",
@@ -133,7 +136,10 @@ phenomC_kernel = ElementwiseKernel(
 
 
 def FinalSpin(Xi, eta):
-    """Computes the spin of the final BH that gets formed after merger. This is done usingn Eq 5-6 of arXiv:0710.3345"""
+    """Computes the spin of the final BH that gets formed after merger.
+
+    This is done usingn Eq 5-6 of arXiv:0710.3345
+    """
     s4 = -0.129
     s5 = -0.384
     t0 = -2.686
@@ -156,7 +162,10 @@ def FinalSpin(Xi, eta):
 
 
 def fRD(a, M):
-    """Calculate the ring-down frequency for the final Kerr BH. Using Eq. 5.5 of Main paper"""
+    """Calculate the ring-down frequency for the final Kerr BH.
+
+    Using Eq. 5.5 of Main paper
+    """
     return (C_SI**3.0 / (2.0 * PI * G_SI * M * MSUN_SI)) * (
         1.5251 - 1.1568 * (1.0 - a) ** 0.1292
     )

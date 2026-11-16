@@ -243,9 +243,9 @@ def eccmchirp_from_mass1_mass2_eccentricity(
     mass2 : float or array
         Mass of the secondary object
     eccentricity : float or array
-        Eccentricity of the orbit (For "fit" method, eccentricity must be defined at 10 Hz.
-        For "spa_phase" method, eccentricity can be defined at any frequency, usually the start
-        frequency of the waveform.)
+        Eccentricity of the orbit (For "fit" method, eccentricity must be defined at 10
+        Hz. For "spa_phase" method, eccentricity can be defined at any frequency,
+        usually the start frequency of the waveform.)
     method : str, optiona
         Method to use for the calculation ("spa_phase", "fit").
         See `eccmchirp_from_mchirp_eccentricity` for details.
@@ -1440,7 +1440,7 @@ def snr_from_loglr(loglr):
 #
 
 
-def get_lm_f0tau(mass, spin, l, m, n=0, which="both"):
+def get_lm_f0tau(mass, spin, l, m, n=0, which="both"):  # noqa: E741
     """
     Return the f0 and the tau for one or more overtones of an l, m mode.
 
@@ -1472,7 +1472,7 @@ def get_lm_f0tau(mass, spin, l, m, n=0, which="both"):
 
     """
     # convert to arrays
-    mass, spin, l, m, n, input_is_array = ensurearray(mass, spin, l, m, n)
+    mass, spin, l, m, n, input_is_array = ensurearray(mass, spin, l, m, n)  # noqa: E741
     # we'll ravel the arrays so we can evaluate each parameter combination
     # one at a a time
     getf0 = which == "both" or which == "f0"
@@ -1521,7 +1521,7 @@ def get_lm_f0tau_allmodes(mass, spin, modes):
     f0, tau = {}, {}
     for lmn in modes:
         key = "{}{}{}"
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])  # noqa: E741
         for n in range(nmodes):
             tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, n)
             f0[key.format(l, abs(m), n)] = tmp_f0
@@ -1529,7 +1529,7 @@ def get_lm_f0tau_allmodes(mass, spin, modes):
     return f0, tau
 
 
-def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, n=0):
+def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, n=0):  # noqa: E741
     """
     Returns QNM frequency for the given mass and spin and mode.
 
@@ -1556,7 +1556,7 @@ def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, n=0):
     return get_lm_f0tau(final_mass, final_spin, l, m, n=n, which="f0")
 
 
-def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2, n=0):
+def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2, n=0):  # noqa: E741
     """
     Returns QNM damping time for the given mass and spin and mode.
 
@@ -1602,7 +1602,7 @@ _berti_mass_constants = {
 }
 
 
-def final_spin_from_f0_tau(f0, tau, l=2, m=2):
+def final_spin_from_f0_tau(f0, tau, l=2, m=2):  # noqa: E741
     """
     Returns the final spin based on the given frequency and damping time.
 
@@ -1648,7 +1648,7 @@ def final_spin_from_f0_tau(f0, tau, l=2, m=2):
     return formatreturn(spins, input_is_array)
 
 
-def final_mass_from_f0_tau(f0, tau, l=2, m=2):
+def final_mass_from_f0_tau(f0, tau, l=2, m=2):  # noqa: E741
     """
     Returns the final mass (in solar masses) based on the given frequency
     and damping time.

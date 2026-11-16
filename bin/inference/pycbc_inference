@@ -180,7 +180,7 @@ if condor_ckpt:
     # unlink the empty output file
     try:
         os.unlink(opts.output_file)
-    except:
+    except OSError:
         pass
 
 # rename checkpoint to output and delete backup

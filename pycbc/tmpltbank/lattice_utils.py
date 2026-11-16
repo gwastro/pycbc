@@ -128,7 +128,7 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, mindist
     try:
         import lal
         import lalpulsar
-    except:
+    except ImportError:
         raise ImportError(
             "A SWIG-wrapped install of lalpulsar is needed to use "
             "the anstar tiling functionality."

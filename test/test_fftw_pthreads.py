@@ -44,11 +44,12 @@ if "fftw" not in pycbc.fft.get_backend_names():
         "skipping pthreads thread tests"
     )
 
-import pycbc.fft.fftw
+# Only importable when FFTW is available, so imported after the check above
+import pycbc.fft.fftw  # noqa: E402
 
 try:
     pycbc.fft.fftw.set_threads_backend("pthreads")
-except:
+except RuntimeError:
     raise unittest.SkipTest(
         "Unable to import pthreads threads backend to FFTW; "
         "skipping pthreads thread tests"

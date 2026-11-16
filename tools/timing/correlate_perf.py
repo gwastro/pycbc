@@ -52,5 +52,6 @@ for dtp in [complex64, complex128]:
                 corr.correlate()
             t2 = time()
             print(
-                f"Correlator Perf Type:{dtp!r} Size:{N} Time:{(t2 - t1) * 1000 / niter:3.3f}"
+                f"Correlator Perf Type:{dtp!r} Size:{N} "
+                f"Time:{(t2 - t1) * 1000 / niter:3.3f}"
             )

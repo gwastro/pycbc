@@ -509,7 +509,7 @@ for num_event in range(num_events):
         try:
             # Only present for precessing search
             curr_params["u_vals"] = hd_sngl.u_vals[0]
-        except:
+        except KeyError:
             pass
 
         curr_tags = [f"TMPLT_PARAMS_{curr_ifo}"]
