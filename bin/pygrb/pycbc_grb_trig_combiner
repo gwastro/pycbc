@@ -31,7 +31,7 @@ from gwdatafind.utils import file_segment, filename_metadata
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.io.hdf import HFile
 from pycbc.results.pygrb_postprocessing_utils import (
-    _read_seg_files,
+    read_seg_files,
     template_hash_to_id,
 )
 
@@ -436,7 +436,7 @@ else:
 
 # -- construct segments -------------------------
 
-segs = _read_seg_files(args.seg_files)
+segs = read_seg_files(args.seg_files)
 trialtime = abs(segs["on"])
 bins = {
     "ONSOURCE": segs["on"],

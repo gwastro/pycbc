@@ -507,7 +507,7 @@ class PycbcGrbInjFinderExecutable(Executable):
 
 def build_segment_filelist(seg_dir):
     """Construct a FileList instance containing all segments txt files"""
-    # Needs to be in this order for consistency with _read_seg_files
+    # Needs to be in this order for consistency with read_seg_files
     file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
     seg_files = FileList([])
     for file_name in file_names:

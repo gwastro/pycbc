@@ -214,7 +214,7 @@ seg_files = wf.FileList([wf.resolve_url_to_file(f) for f in seg_file_abs_paths])
 # The Q-scan jobs need to be told the valid science segments to deal with
 # triggers near the boundaries correctly. We use the offsource segment as a
 # proxy for the valid science segments, and ignore vetoed time inside it.
-valid_segs = segmentlist([ppu._read_seg_files(seg_file_abs_paths)["off"]])
+valid_segs = segmentlist([ppu.read_seg_files(seg_file_abs_paths)["off"]])
 
 # Determine whether injections or loudest off/on-source triggers are
 # being followed up.
