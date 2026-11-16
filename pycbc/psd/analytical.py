@@ -213,3 +213,15 @@ pycbc_analytical_psds = {
     "analytical_psd_taiji_tdi_T": analytical_psd_taiji_tdi_T,
     "analytical_psd_taiji_tdi_AE_confusion": analytical_psd_taiji_tdi_AE_confusion,
 }
+
+# The generated LALSimulation PSD functions are exported along with the
+# functions defined above
+__all__ = [
+    "flat_unity",
+    "from_string",
+    "get_lalsim_psd_list",
+    "get_psd_model_list",
+    "get_pycbc_psd_list",
+    "pycbc_analytical_psds",
+]
+__all__ += _psd_list  # noqa: PLE0605

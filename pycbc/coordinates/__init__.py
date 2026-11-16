@@ -18,8 +18,33 @@ more advanced transformations between ground-based detectors and space-borne
 detectors.
 """
 
-from pycbc.coordinates.base import *
-from pycbc.coordinates.space import *
+from pycbc.coordinates.base import (
+    cartesian_to_spherical,
+    cartesian_to_spherical_azimuthal,
+    cartesian_to_spherical_polar,
+    cartesian_to_spherical_rho,
+    spherical_to_cartesian,
+)
+from pycbc.coordinates.space import (
+    TIME_OFFSET_20_DEGREES,
+    earth_position_ssb,
+    geo_to_lisa,
+    geo_to_ssb,
+    lisa_position_ssb,
+    lisa_to_geo,
+    lisa_to_ssb,
+    localization_to_propagation_vector,
+    polarization_newframe,
+    propagation_vector_to_localization,
+    rotation_matrix_ssb_to_geo,
+    rotation_matrix_ssb_to_lisa,
+    ssb_to_geo,
+    ssb_to_lisa,
+    t_geo_from_ssb,
+    t_lisa_from_ssb,
+    t_ssb_from_t_geo,
+    t_ssb_from_t_lisa,
+)
 
 __all__ = [
     "TIME_OFFSET_20_DEGREES",

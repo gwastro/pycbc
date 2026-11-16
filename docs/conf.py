@@ -14,6 +14,7 @@ import glob
 import logging
 import os
 import subprocess
+import sys
 import time
 from unittest.mock import MagicMock
 
@@ -368,10 +369,35 @@ if "SKIP_PYCBC_DOCS_INCLUDE" not in os.environ:
     build_includes()
 
 
+def skip_reexported_members(app, what, name, obj, skip, options):  # noqa: ARG001
+    """Document each name of a package only in the module that defines it.
+
+    The package __init__ files list the names they import from their
+    submodules in __all__, and autodoc documents every name in a module's
+    __all__. Documenting them on the package page as well would give each
+    one two targets, which makes cross-references to them ambiguous.
+    """
+    if what != "module":
+        return None
+    # The module being documented: Sphinx >= 8.2 keeps it in current_document
+    current_document = getattr(app.env, "current_document", None)
+    modname = getattr(current_document, "autodoc_module", None)
+    if modname is None:
+        modname = getattr(app.env, "temp_data", {}).get("autodoc:module")
+    package = sys.modules.get(modname or "")
+    if package is None or not hasattr(package, "__path__"):
+        return None
+    defined_in = getattr(obj, "__module__", None)
+    if defined_in is not None and defined_in != modname:
+        return True
+    return None
+
+
 def setup(app):
     app.add_js_file("typed.min.js")
     app.add_js_file("terminal.css")
     app.add_js_file("theme_overrides.css")
+    app.connect("autodoc-skip-member", skip_reexported_members)
 
 
 # -- Options for inheritance graphs -------------------------------------------

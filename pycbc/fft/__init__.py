@@ -20,13 +20,13 @@ from .func_api import fft, ifft
 from .parser_support import from_cli, insert_fft_option_group, verify_fft_options
 
 __all__ = [
-    "insert_fft_option_group",
-    "verify_fft_options",
-    "from_cli",
-    "fft",
-    "ifft",
     "FFT",
     "IFFT",
-    "get_backend_names",
     "ensure_fftw_planning_off",
+    "fft",
+    "from_cli",
+    "get_backend_names",
+    "ifft",
+    "insert_fft_option_group",
+    "verify_fft_options",
 ]

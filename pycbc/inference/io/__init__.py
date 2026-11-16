@@ -27,7 +27,6 @@ import numpy
 
 from pycbc import waveform as _waveform
 from pycbc.inference.option_utils import ParseLabelArg, ParseParametersArg
-from pycbc.io.hdf import dump_state, load_state
 from pycbc.io.record import FieldArray, _numpy_function_lib, get_vars_from_arg
 
 from .cpnest import CPNestFile
@@ -70,8 +69,9 @@ try:
     from .eryn import ErynFile
 
     filetypes[ErynFile.name] = ErynFile
+    _have_eryn = True
 except ImportError:
-    pass
+    _have_eryn = False
 
 
 def get_file_type(filename):
@@ -891,3 +891,34 @@ def injections_from_cli(opts):
             these_injs = these_injs.add_fields([mapvals[p] for p in ps], names=ps)
         injections = these_injs if injections is None else injections.append(these_injs)
     return injections
+
+
+__all__ = [
+    "CPNestFile",
+    "DynestyFile",
+    "EmceeFile",
+    "EmceePTFile",
+    "InferenceTXTFile",
+    "MultinestFile",
+    "NautilusFile",
+    "NessaiFile",
+    "NoInputFileError",
+    "PTEmceeFile",
+    "PosteriorFile",
+    "PrintFileParams",
+    "ResultsArgumentParser",
+    "SnowlineFile",
+    "UltranestFile",
+    "check_integrity",
+    "filetypes",
+    "get_common_parameters",
+    "get_file_type",
+    "get_sampled_parameters",
+    "injections_from_cli",
+    "loadfile",
+    "results_from_cli",
+    "validate_checkpoint_files",
+]
+# ErynFile is only available when eryn is installed
+if _have_eryn:
+    __all__.append("ErynFile")
