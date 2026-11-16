@@ -115,7 +115,7 @@ else:
     observing_flag = segmentlist([segment(args.gps_start_time, args.gps_end_time)])
 
 # shift observing flag to current time
-observing_flag.protract(args.replay_offset)
+observing_flag.shift(args.replay_offset)
 
 livetime = abs(observing_flag)
 logger.info("Found %s seconds of observing time at %s.", livetime, args.ifo)
