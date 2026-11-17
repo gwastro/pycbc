@@ -23,7 +23,6 @@ Make workflow for the archival, targeted, coherent inspiral pipeline.
 import argparse
 import logging
 import os
-import socket
 import sys
 
 import matplotlib
@@ -35,7 +34,7 @@ from igwn_segments import segment, segmentlist, segmentlistdict
 import pycbc.workflow as _workflow
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.events.veto import select_segments_by_definer
-from pycbc.results import layout, save_fig_with_metadata
+from pycbc.results import layout, save_workflow_log
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
 from pycbc.workflow.core import FileList, SegFile, configparser_value_to_file
 from pycbc.workflow.injection import compute_inj_optimal_snr
@@ -506,18 +505,5 @@ log_file_html = _workflow.File(
     directory=rdir["workflow"],
 )
 logging.shutdown()
-with open(wf_log_file.storage_path) as logfile:
-    logdata = logfile.read()
-log_str = f"""
-<p>Workflow generation script created workflow in output directory: {os.getcwd()}</p>
-<p>Workflow name is: {workflow_name}</p>
-<p>Workflow generation script run on host: {socket.gethostname()}</p>
-<pre>{logdata}</pre>
-"""
-kwds = {
-    "title": "Workflow Generation Log",
-    "caption": f"Log of the workflow script {sys.argv[0]}",
-    "cmd": " ".join(sys.argv),
-}
-save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+save_workflow_log(wf_log_file.storage_path, log_file_html.storage_path, workflow_name)
 layout.single_layout(rdir["workflow"], [log_file_html])
