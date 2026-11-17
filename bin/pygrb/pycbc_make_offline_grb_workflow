@@ -64,6 +64,8 @@ logger.info("Generating %s workflow", workflow_name)
 # Options for features that have been removed: stop rather than ignore them
 for section, option in [
     ("workflow-condition_strain", "do-gating"),
+    ("workflow-inspiral", "ipn-search-points"),
+    ("workflow-injections", "ipn-sim-points"),
 ]:
     if wflow.cp.has_option(section, option):
         raise ValueError(f"[{section}] {option} is no longer supported.")
@@ -233,7 +235,6 @@ wflow.ifos = ifos
 # 2) the veto file determined by looking up the segments being used
 # 3) the sky grid file (if one is produced)
 # 4) the bank-veto file
-# 5) the IPN search points file (if one is produced)
 input_files = _workflow.FileList([])
 
 # Convenience variable to operate on sci_segs within this executable
@@ -274,24 +275,6 @@ if wflow.cp.has_option("workflow", "sky-error") or wflow.cp.has_option(
     skygrid_file = _workflow.make_skygrid_node(wflow, df_dir, tags=["SEARCH"])
     input_files.extend(skygrid_file)
 
-# Config file consistency check for IPN GRBs
-if wflow.cp.has_option(
-    "workflow-inspiral", "ipn-search-points"
-) and wflow.cp.has_option("workflow-injections", "ipn-sim-points"):
-    wflow.cp.set("injections", "ipn-gps-time", wflow.cp.get("workflow", "trigger-time"))
-    IPN = True
-elif wflow.cp.has_option(
-    "workflow-inspiral", "ipn-search-points"
-) or wflow.cp.has_option("workflow-injections", "ipn-sim-points"):
-    msg = "You have provided only one of 'ipn-search-points' under "
-    msg += "[workflow-inspiral] and 'ipn-sim-points' under "
-    msg += "[workflow-injections] in your configuration files. If this is an "
-    msg += "IPN GRB please provide both, otherwise provide neither."
-    logger.error(msg)
-    sys.exit()
-else:
-    IPN = False
-
 # Get bank_veto_bank.xml if running bank veto
 if wflow.cp.has_option("workflow-inspiral", "bank-veto-bank-file"):
     bank_veto_file = configparser_value_to_file(
@@ -300,18 +283,6 @@ if wflow.cp.has_option("workflow-inspiral", "bank-veto-bank-file"):
     bank_veto_file.description += "_BANK_VETO_BANK"
     bank_veto_file = _workflow.FileList([bank_veto_file])
     input_files.extend(bank_veto_file)
-
-if IPN:
-    file_attrs = {
-        "ifos": wflow.ifos,
-        "segs": wflow.analysis_time,
-        "exe_name": "IPN_SKY_POINTS",
-        "tags": ["SEARCH"],
-    }
-    search_pts_file = configparser_value_to_file(
-        wflow.cp, "workflow-inspiral", "ipn-search-points", file_attrs=file_attrs
-    )
-    input_files.append(search_pts_file)
 
 # TEMPLATE BANK AND SPLIT BANK
 bank_files = _workflow.setup_tmpltbank_workflow(wflow, sci_segs, datafind_files, df_dir)
@@ -376,21 +347,6 @@ if wflow.cp.has_section("workflow-injections"):
         _workflow.generate_tc_prior(wflow, tc_path, buffer_seg)
 
     # Generate injection files
-    if IPN:
-        # TODO: we used to pass this file to setup_injection_workflow as
-        # exttrig_file = sim_pts_file to then use it in lalapps_inspinj.
-        # The code below picks it up but does not pass it: get
-        # setup_injection_workflow or pycbc_create_injections handle it
-        # directly via configparser_value_to_file
-        file_attrs = {
-            "ifos": wflow.ifos,
-            "segs": wflow.analysis_time,
-            "exe_name": "IPN_SKY_POINTS",
-            "tags": ["SIM"],
-        }
-        configparser_value_to_file(
-            wflow.cp, "workflow-inspiral", "ipn-sim-points", file_attrs=file_attrs
-        )
     inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, inj_dir)
     injs = inj_files
 
