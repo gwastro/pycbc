@@ -53,9 +53,9 @@ args = parser.parse_args()
 
 init_logging(args.verbose, default_level=1)
 
-container = _workflow.Workflow(args, workflow_name)
-wflow = _workflow.Workflow(args, workflow_name + "-main")
-finalize_workflow = _workflow.Workflow(args, workflow_name + "-finalization")
+container_wf = _workflow.Workflow(args, workflow_name)
+main_wf = _workflow.Workflow(args, workflow_name + "-main")
+finalize_wf = _workflow.Workflow(args, workflow_name + "-finalization")
 tags = []
 
 logger.info("Generating %s workflow", workflow_name)
@@ -66,11 +66,11 @@ for section, option in [
     ("workflow-inspiral", "ipn-search-points"),
     ("workflow-injections", "ipn-sim-points"),
 ]:
-    if wflow.cp.has_option(section, option):
+    if main_wf.cp.has_option(section, option):
         raise ValueError(f"[{section}] {option} is no longer supported.")
 
 # Setup run directory
-triggername = str(wflow.cp.get("workflow", "trigger-name"))
+triggername = str(main_wf.cp.get("workflow", "trigger-name"))
 output_dir = os.path.abspath(args.output_dir)
 logger.info("Workflow will be generated in %s", output_dir)
 if not os.path.exists(output_dir):
@@ -94,9 +94,9 @@ _workflow.makedir(rdir["workflow"])
 
 # We are _also_ logging to a file
 wf_log_file = _workflow.File(
-    wflow.ifos,
+    main_wf.ifos,
     "workflow-log",
-    wflow.analysis_time,
+    main_wf.analysis_time,
     extension=".txt",
     directory=rdir["workflow"],
 )
@@ -104,51 +104,53 @@ init_logging(args.verbose, default_level=1, to_file=wf_log_file.storage_path)
 logger.info("Created log file %s", wf_log_file.storage_path)
 
 # SEGMENTS
-triggertime = int(wflow.cp.get("workflow", "trigger-time"))
-start = triggertime - int(wflow.cp.get("workflow-exttrig_segments", "max-duration"))
-end = triggertime + int(wflow.cp.get("workflow-exttrig_segments", "max-duration"))
-wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
+triggertime = int(main_wf.cp.get("workflow", "trigger-time"))
+start = triggertime - int(main_wf.cp.get("workflow-exttrig_segments", "max-duration"))
+end = triggertime + int(main_wf.cp.get("workflow-exttrig_segments", "max-duration"))
+main_wf.cp = _workflow.set_grb_start_end(main_wf.cp, start, end)
 
 # Retrieve science segments
 curr_dir = os.getcwd()
 seg_dir = os.path.join(curr_dir, "segments")
 sci_segs_file = _workflow.get_segments_file(
-    wflow, "science", "segments-science", seg_dir
+    main_wf, "science", "segments-science", seg_dir
 )
 sci_segs = {}
-for ifo in wflow.ifos:
+for ifo in main_wf.ifos:
     sci_segs[ifo] = sci_segs_file.segment_dict[ifo + ":science"]
 
 # This block of code and PyCBCMultiInspiralExecutable.get_valid_times()
 # must be consistent
-if wflow.cp.has_option("inspiral", "segment-start-pad"):
-    pad_data = int(wflow.cp.get("inspiral", "pad-data"))
-    start_pad = int(wflow.cp.get("inspiral", "segment-start-pad"))
-    end_pad = int(wflow.cp.get("inspiral", "segment-end-pad"))
-    wflow.cp.set("workflow-exttrig_segments", "min-before", str(start_pad + pad_data))
-    wflow.cp.set("workflow-exttrig_segments", "min-after", str(end_pad + pad_data))
-elif wflow.cp.has_option("inspiral", "analyse-segment-end"):
+if main_wf.cp.has_option("inspiral", "segment-start-pad"):
+    pad_data = int(main_wf.cp.get("inspiral", "pad-data"))
+    start_pad = int(main_wf.cp.get("inspiral", "segment-start-pad"))
+    end_pad = int(main_wf.cp.get("inspiral", "segment-end-pad"))
+    main_wf.cp.set("workflow-exttrig_segments", "min-before", str(start_pad + pad_data))
+    main_wf.cp.set("workflow-exttrig_segments", "min-after", str(end_pad + pad_data))
+elif main_wf.cp.has_option("inspiral", "analyse-segment-end"):
     safety = 1
-    deadtime = int(wflow.cp.get("inspiral", "segment-length")) / 2
-    spec_len = int(wflow.cp.get("inspiral", "inverse-spec-length")) / 2
-    wflow.cp.set(
+    deadtime = int(main_wf.cp.get("inspiral", "segment-length")) / 2
+    spec_len = int(main_wf.cp.get("inspiral", "inverse-spec-length")) / 2
+    main_wf.cp.set(
         "workflow-exttrig_segments", "min-before", str(deadtime - spec_len - safety)
     )
-    wflow.cp.set("workflow-exttrig_segments", "min-after", str(spec_len + safety))
+    main_wf.cp.set("workflow-exttrig_segments", "min-after", str(spec_len + safety))
 else:
-    deadtime = int(wflow.cp.get("inspiral", "segment-length")) / 4
-    wflow.cp.set("workflow-exttrig_segments", "min-before", str(deadtime))
-    wflow.cp.set("workflow-exttrig_segments", "min-after", str(deadtime))
+    deadtime = int(main_wf.cp.get("inspiral", "segment-length")) / 4
+    main_wf.cp.set("workflow-exttrig_segments", "min-before", str(deadtime))
+    main_wf.cp.set("workflow-exttrig_segments", "min-after", str(deadtime))
 
 # Do checks for no/single IFO case
-single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
+single_ifo = main_wf.cp.has_option("workflow", "allow-single-ifo-search")
 if len(sci_segs.keys()) == 0:
-    make_grb_segments_plot(wflow, segmentlistdict(), triggertime, triggername, seg_dir)
+    make_grb_segments_plot(
+        main_wf, segmentlistdict(), triggertime, triggername, seg_dir
+    )
     logger.error("No science segments available.")
     sys.exit()
 elif len(sci_segs.keys()) < 2 and not single_ifo:
     make_grb_segments_plot(
-        wflow, segmentlistdict(sci_segs), triggertime, triggername, seg_dir
+        main_wf, segmentlistdict(sci_segs), triggertime, triggername, seg_dir
     )
     msg = f"Science segments exist only for {next(iter(sci_segs.keys()))}. "
     msg += "If you wish to enable single IFO running add the option "
@@ -158,16 +160,16 @@ elif len(sci_segs.keys()) < 2 and not single_ifo:
     sys.exit()
 
 on_src, off_src, buffer_seg = _workflow.generate_triggered_segment(
-    wflow, seg_dir, sci_segs
+    main_wf, seg_dir, sci_segs
 )
 
 sci_segs = segmentlistdict(sci_segs)
 if on_src is None:
     logger.info("Making segment plot and exiting.")
     # `make_grb_segments_plot()` wants a single segment for fail_criterion.
-    fail_criterion = off_src[wflow.ifos[0]][0]
+    fail_criterion = off_src[main_wf.ifos[0]][0]
     make_grb_segments_plot(
-        wflow,
+        main_wf,
         sci_segs,
         triggertime,
         triggername,
@@ -178,7 +180,7 @@ if on_src is None:
 
 seg_files = _workflow.build_segment_filelist(seg_dir)
 plot_met = make_grb_segments_plot(
-    wflow,
+    main_wf,
     sci_segs,
     triggertime,
     triggername,
@@ -196,26 +198,26 @@ elif len(sci_segs) > 1:
 
 # Update analysis time after coherent segment calculation
 ifo = next(iter(sci_segs.keys()))
-wflow.cp = _workflow.set_grb_start_end(
-    wflow.cp, int(sci_segs[ifo][0][0]), int(sci_segs[ifo][0][1])
+main_wf.cp = _workflow.set_grb_start_end(
+    main_wf.cp, int(sci_segs[ifo][0][0]), int(sci_segs[ifo][0][1])
 )
 
-padding = int(wflow.cp.get("inspiral", "pad-data"))
+padding = int(main_wf.cp.get("inspiral", "pad-data"))
 
-if wflow.cp.has_option("inspiral", "segment-start-pad"):
-    start_pad = int(wflow.cp.get("inspiral", "segment-start-pad"))
-    end_pad = int(wflow.cp.get("inspiral", "segment-end-pad"))
-    wflow.analysis_time = segment(
+if main_wf.cp.has_option("inspiral", "segment-start-pad"):
+    start_pad = int(main_wf.cp.get("inspiral", "segment-start-pad"))
+    end_pad = int(main_wf.cp.get("inspiral", "segment-end-pad"))
+    main_wf.analysis_time = segment(
         int(sci_segs[ifo][0][0]) + start_pad + padding,
         int(sci_segs[ifo][0][1]) - padding - end_pad,
     )
-elif wflow.cp.has_option("inspiral", "analyse-segment-end"):
-    wflow.analysis_time = segment(
+elif main_wf.cp.has_option("inspiral", "analyse-segment-end"):
+    main_wf.analysis_time = segment(
         int(sci_segs[ifo][0][0]) + deadtime - spec_len + padding - safety,
         int(sci_segs[ifo][0][1]) - spec_len - padding - safety,
     )
 else:
-    wflow.analysis_time = segment(
+    main_wf.analysis_time = segment(
         int(sci_segs[ifo][0][0]) + deadtime + padding,
         int(sci_segs[ifo][0][1]) - deadtime - padding,
     )
@@ -223,11 +225,11 @@ else:
 # DATAFIND
 df_dir = os.path.join(curr_dir, "datafind")
 datafind_files, _, sci_segs, _ = _workflow.setup_datafind_workflow(
-    wflow, sci_segs, df_dir, sci_segs_file
+    main_wf, sci_segs, df_dir, sci_segs_file
 )
 
 ifos = sorted(sci_segs.keys())
-wflow.ifos = ifos
+main_wf.ifos = ifos
 
 # input_files will contain:
 # 1) the output files produced by the datafind
@@ -243,9 +245,9 @@ input_files.extend(datafind_files)
 
 # Retrieve vetoes
 veto_file = None
-if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
+if main_wf.cp.has_option("workflow-segments", "segments-vetoes"):
     veto_file = _workflow.get_segments_file(
-        wflow, "vetoes", "segments-vetoes", seg_dir, tags=["veto"]
+        main_wf, "vetoes", "segments-vetoes", seg_dir, tags=["veto"]
     )
     input_files.append(veto_file)
     # Check that the onsource is free from vetoes
@@ -267,56 +269,58 @@ if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
 
 # Generate sky grid if needed
 skygrid_file = None
-if wflow.cp.has_option("workflow", "sky-error") or wflow.cp.has_option(
+if main_wf.cp.has_option("workflow", "sky-error") or main_wf.cp.has_option(
     "workflow", "input-dist"
 ):
     logger.info("Generating sky-grid file.")
-    skygrid_file = _workflow.make_skygrid_node(wflow, df_dir, tags=["SEARCH"])
+    skygrid_file = _workflow.make_skygrid_node(main_wf, df_dir, tags=["SEARCH"])
     input_files.extend(skygrid_file)
 
 # Get bank_veto_bank.xml if running bank veto
-if wflow.cp.has_option("workflow-inspiral", "bank-veto-bank-file"):
+if main_wf.cp.has_option("workflow-inspiral", "bank-veto-bank-file"):
     bank_veto_file = configparser_value_to_file(
-        wflow.cp, "workflow-inspiral", "bank-veto-bank-file"
+        main_wf.cp, "workflow-inspiral", "bank-veto-bank-file"
     )
     bank_veto_file.description += "_BANK_VETO_BANK"
     bank_veto_file = _workflow.FileList([bank_veto_file])
     input_files.extend(bank_veto_file)
 
 # TEMPLATE BANK AND SPLIT BANK
-bank_files = _workflow.setup_tmpltbank_workflow(wflow, sci_segs, datafind_files, df_dir)
+bank_files = _workflow.setup_tmpltbank_workflow(
+    main_wf, sci_segs, datafind_files, df_dir
+)
 # Check there are not multiple banks
 if len(bank_files) > 1:
     raise NotImplementedError("Multiple banks not supported")
 full_bank_file = bank_files[0]
 # Note: setup_splittable_workflow requires a FileList as input
 splitbank_files = _workflow.setup_splittable_workflow(
-    wflow, bank_files, df_dir, tags=["inspiral"]
+    main_wf, bank_files, df_dir, tags=["inspiral"]
 )
 
 # --- TIME VARYING PSDS ---
 # Directory where time-varying PSD files will be written
-if wflow.cp.has_section("calculate_psd"):
+if main_wf.cp.has_section("calculate_psd"):
     psd_dir = os.path.join(output_dir, "psds")
 
     tv_psd_files = FileList([])
 
-    for ifo in wflow.ifos:
+    for ifo in main_wf.ifos:
         logger.info("Creating time-varying PSD job for %s", ifo)
 
         # Segment file containing the FULL analysis segment
         psd_segfile = SegFile.from_segment_list(
             description=f"psd_{ifo}",
-            segmentlist=segmentlist([wflow.analysis_time]),
+            segmentlist=segmentlist([main_wf.analysis_time]),
             name="psd",
             ifo=ifo,
-            seg_summ_list=segmentlist([wflow.analysis_time]),
+            seg_summ_list=segmentlist([main_wf.analysis_time]),
             directory=psd_dir,
             extension="xml",
         )
 
         psd_file = make_psd_file(
-            workflow=wflow,
+            workflow=main_wf,
             frame_files=datafind_files.find_output_with_ifo(ifo),
             segment_file=psd_segfile,
             segment_name="psd",
@@ -332,26 +336,26 @@ injs = None
 inj_tags = []
 inj_files = None
 inj_insp_files = None
-if wflow.cp.has_section("workflow-injections"):
+if main_wf.cp.has_section("workflow-injections"):
     inj_dir = os.path.join(curr_dir, "injections")
 
     # Given the stretch of time this workflow will analyse, and the onsource
     # window with its buffer, generate the configuration file with the prior
     # for the injections times and add it to the config parser
-    inj_method = wflow.cp.get("workflow-injections", "injections-method")
-    if inj_method == "IN_WORKFLOW" and wflow.cp.has_option(
+    inj_method = main_wf.cp.get("workflow-injections", "injections-method")
+    if inj_method == "IN_WORKFLOW" and main_wf.cp.has_option(
         "workflow-injections", "tc-prior-at-runtime"
     ):
         tc_path = os.path.join(output_dir, "tc_prior.ini")
-        _workflow.generate_tc_prior(wflow, tc_path, buffer_seg)
+        _workflow.generate_tc_prior(main_wf, tc_path, buffer_seg)
 
     # Generate injection files
-    inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, inj_dir)
+    inj_files, inj_tags = _workflow.setup_injection_workflow(main_wf, inj_dir)
     injs = inj_files
 
     # Here we compute the optimal SNR for the injections before splitting them
-    if wflow.cp.has_section("optimal_snr"):
-        if not wflow.cp.has_section("calculate_psd"):
+    if main_wf.cp.has_section("optimal_snr"):
+        if not main_wf.cp.has_section("calculate_psd"):
             raise ValueError("Optimal SNR calculation requires PSD estimation")
 
         snr_dir = os.path.join(inj_dir, "optimal_snr")
@@ -359,7 +363,7 @@ if wflow.cp.has_section("workflow-injections"):
         optimal_snr_files = _workflow.FileList([])
         for inj, inj_tag in zip(injs, inj_tags, strict=True):
             snr_file = compute_inj_optimal_snr(
-                wflow, inj, tv_psd_files, snr_dir, tags=[inj_tag]
+                main_wf, inj, tv_psd_files, snr_dir, tags=[inj_tag]
             )
             optimal_snr_files.append(snr_file)
             logger.info(
@@ -370,9 +374,9 @@ if wflow.cp.has_section("workflow-injections"):
 
     # Either split template bank for injections jobs or use same split banks
     # as for standard matched filter jobs
-    if wflow.cp.has_section("workflow-splittable-injections"):
+    if main_wf.cp.has_section("workflow-splittable-injections"):
         inj_splitbank_files = _workflow.setup_splittable_workflow(
-            wflow, bank_files, inj_dir, tags=["injections"]
+            main_wf, bank_files, inj_dir, tags=["injections"]
         )
         for inj_split in inj_splitbank_files:
             split_str = [
@@ -389,12 +393,12 @@ if wflow.cp.has_section("workflow-injections"):
         inj_splitbank_files.extend(splitbank_files)
 
     # Split the injection files
-    if wflow.cp.has_section("workflow-splittable-split_inspinj"):
+    if main_wf.cp.has_section("workflow-splittable-split_inspinj"):
         inj_split_files = _workflow.FileList([])
         for inj_file, inj_tag in zip(inj_files, inj_tags, strict=True):
             file = _workflow.FileList([inj_file])
             inj_splits = _workflow.setup_splittable_workflow(
-                wflow, file, inj_dir, tags=["split_inspinj", inj_tag]
+                main_wf, file, inj_dir, tags=["split_inspinj", inj_tag]
             )
             for inj_split in inj_splits:
                 split_str = [
@@ -413,7 +417,7 @@ if wflow.cp.has_section("workflow-injections"):
 
     # Generate injection matched filter workflow
     inj_insp_files = _workflow.setup_matchedfltr_workflow(
-        wflow,
+        main_wf,
         sci_segs,
         input_files,
         inj_splitbank_files,
@@ -434,7 +438,7 @@ if wflow.cp.has_section("workflow-injections"):
 # MAIN MATCHED FILTERING
 insp_dir = os.path.join(curr_dir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(
-    wflow,
+    main_wf,
     sci_segs,
     input_files,
     splitbank_files,
@@ -446,12 +450,12 @@ inspiral_files = _workflow.setup_matchedfltr_workflow(
 
 # POST-PROCESSING
 pp_dir = os.path.join(curr_dir, "post_processing")
-post_proc_method = wflow.cp.get_opt_tags("workflow-postproc", "postproc-method", tags)
+post_proc_method = main_wf.cp.get_opt_tags("workflow-postproc", "postproc-method", tags)
 make_results = False
 if post_proc_method == "PYGRB_OFFLINE":
     trig_comb_files, clustered_files, inj_find_files = (
         _workflow.setup_pygrb_pp_workflow(
-            wflow,
+            main_wf,
             pp_dir,
             seg_files,
             sci_segs[ifo][0],
@@ -463,13 +467,13 @@ if post_proc_method == "PYGRB_OFFLINE":
         )
     )
     sec_name = "workflow-pygrb_results_workflow"
-    if not wflow.cp.has_section(sec_name):
+    if not main_wf.cp.has_section(sec_name):
         msg = f"No {sec_name} section found in configuration file."
         logger.info(msg)
     else:
         logger.info("Entering results module")
         _workflow.setup_pygrb_results_workflow(
-            wflow,
+            main_wf,
             rdir,
             clustered_files,
             inj_files,
@@ -484,23 +488,23 @@ if post_proc_method == "PYGRB_OFFLINE":
         make_results = True
 
 # COMPILE WORKFLOW AND WRITE DAX
-container += wflow
+container_wf += main_wf
 
 # The results page reads the directory that the results are delivered to, so it
 # must wait for the main workflow to finish, including its stage-out jobs
 if make_results:
-    _workflow.make_results_web_page(finalize_workflow, rdir.base, template="red")
-    container += finalize_workflow
-    container.add_subworkflow_dependancy(wflow, finalize_workflow)
+    _workflow.make_results_web_page(finalize_wf, rdir.base, template="red")
+    container_wf += finalize_wf
+    container_wf.add_subworkflow_dependancy(main_wf, finalize_wf)
 
-container.save()
+container_wf.save()
 logger.info("Written dax.")
 
 # Close the log and flush to the html file
 log_file_html = _workflow.File(
-    wflow.ifos,
+    main_wf.ifos,
     "WORKFLOW-LOG",
-    wflow.analysis_time,
+    main_wf.analysis_time,
     extension=".html",
     directory=rdir["workflow"],
 )
