@@ -528,7 +528,7 @@ def mean_if_greater_than_zero(vals):
     return vals[above_zero].mean(), above_zero.sum()
 
 
-def cluster_over_time(stat, time, window, method="python", argmax=numpy.argmax):
+def cluster_over_time(stat, time, window, method="cython", argmax=numpy.argmax):
     """
     Cluster generalized transient events over time via maximum stat over a
     symmetric sliding window

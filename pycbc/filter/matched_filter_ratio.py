@@ -678,10 +678,15 @@ class MatchedFilterRatioControl:
                 t0_b, dt_b = float(st_b.start_time), float(st_b.delta_t)
                 v0, v1 = st_b.analyze.start, st_b.analyze.stop
                 for local_id, t_a in zip(ids, t_idxs, strict=False):
-                    # Shift the follow-up window to stay inside ifo_b's valid region
+                    # Shift window by integer bins to stay in ifo_b's valid region
                     t_center = round((t0_a + int(t_a) * dt_a - t0_b) / dt_b)
-                    start = min(max(t_center - half, v0), max(v0, v1 - wlen))
-                    stop = min(start + wlen, v1)
+                    raw_start = t_center - half
+                    if raw_start + wlen > v1:
+                        raw_start -= ((raw_start + wlen - v1 + bs - 1) // bs) * bs
+                    if raw_start < v0:
+                        raw_start += ((v0 - raw_start + bs - 1) // bs) * bs
+                    start = raw_start
+                    stop = start + ((min(start + wlen, v1) - start) // bs) * bs
                     if start >= stop:
                         continue
                     self._followup[ifo_b] += 1

@@ -278,7 +278,29 @@ class TestMatchedFilterRatio(unittest.TestCase):
             self.assertEqual(len(dropped["H1"].get("snr", ())), 0)
             self.assertEqual(dropped_followup["L1"], 0)
 
-            # 3. Omitting follow-up options runs only the primary search
+            # 3. Follow-up window wider than segment bounds stays integer-bin aligned
+            boundary_control = MatchedFilterRatioControl(
+                bank,
+                segments,
+                snr_threshold=6.0,
+                high_frequency_cutoff=sample_rate * 0.45,
+                cluster_window=1.0,
+                group_keep_loudest=1,
+                followup_bin_width=0.1,
+                followup_num_bins=800,
+                followup_keep_loudest=5,
+            )
+            boundary_trigs, _ = boundary_control.run()
+            b_l1 = boundary_trigs["L1"]
+            b_peak = int(np.argmax(np.abs(b_l1["snr"])))
+            self.assertAlmostEqual(
+                b_l1["time_index"][b_peak] / sample_rate, t_inj, delta=0.01
+            )
+            self.assertAlmostEqual(
+                abs(b_l1["snr"][b_peak]), abs(l1["snr"][l1_peak]), places=4
+            )
+
+            # 4. Omitting follow-up options runs only the primary search
             primary_only = MatchedFilterRatioControl(
                 bank, segments, snr_threshold=6.0, cluster_window=1.0
             )

@@ -14,6 +14,7 @@ from numpy.random import seed, shuffle
 
 import pycbc
 from pycbc import init_logging, pool
+from pycbc.detector import Detector
 from pycbc.events import coinc, cuts, stat, veto
 from pycbc.io import HFile
 from pycbc.io.hdf import ReadByTemplate
@@ -259,12 +260,24 @@ for sngl in trigs.singles:
 # Stat class instance to calculate the coinc ranking statistic
 rank_method = stat.get_statistic_from_opts(args, trigs.ifos)
 
-# Sanity check, time slide interval should be larger than twice the
-# Earth crossing time, which is approximately 0.085 seconds.
-TWOEARTH = 0.085
-if args.timeslide_interval is not None and args.timeslide_interval <= TWOEARTH:
+# Require time slide interval to exceed twice the network coincidence half-window
+# so adjacent slides do not overlap.
+max_light_travel = max(
+    (
+        Detector(ifo1).light_travel_time_to_detector(Detector(ifo2))
+        for idx, ifo1 in enumerate(trigs.ifos)
+        for ifo2 in trigs.ifos[idx + 1 :]
+    ),
+    default=0.0,
+)
+coinc_half_window = max_light_travel + float(args.coinc_threshold)
+if (
+    args.timeslide_interval is not None
+    and args.timeslide_interval <= 2.0 * coinc_half_window
+):
     raise parser.error(
-        "The time slide interval should be larger than twice the Earth crossing time."
+        f"The time slide interval ({args.timeslide_interval}s) must exceed "
+        f"twice the coincidence half-window ({2.0 * coinc_half_window:.4f}s)."
     )
 
 # slide = 0 means don't do timeslides
@@ -283,11 +296,9 @@ if max_offset is None and non_threshold_times:
     positive_nt = [v for v in non_threshold_times.values() if v > 0]
     if positive_nt:
         # Follow-up windows are centered on primary triggers
-        # (+/- non_threshold_time / 2); reserve worst-case coincidence window
+        # (+/- non_threshold_time / 2); reserve coincidence half-window
         # so outer slides have complete coverage.
-        max_offset = min(positive_nt) / 2.0 - (
-            TWOEARTH / 2.0 + float(args.coinc_threshold)
-        )
+        max_offset = min(positive_nt) / 2.0 - coinc_half_window
 
 max_slide = None
 if args.timeslide_interval and (

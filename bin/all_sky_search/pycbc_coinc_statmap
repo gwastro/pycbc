@@ -70,6 +70,14 @@ parser.add_argument(
     help="Time around each zerolag trigger to window out [default=.1s]",
 )
 parser.add_argument(
+    "--censor-ifar-threshold",
+    type=float,
+    default=0.003,
+    help="Only window out foreground triggers with inclusive IFAR (years) "
+    "above the threshold when constructing the exclusive background "
+    "[default=0.003yr]",
+)
+parser.add_argument(
     "--hierarchical-removal-window",
     type=float,
     default=1.0,
@@ -204,40 +212,19 @@ if args.additional_event_times:
     all_trigs = all_trigs.remove(manual_rm_idx)
 
 logger.info("%s triggers remain", len(all_trigs.stat))
-fore_locs = all_trigs.timeslide_id == 0
+censor_ifar_thresh = float(args.censor_ifar_threshold)
 
-# Foreground trigger times for ifos
-fore_time = {}
-for ifo in ifos:
-    fore_time[ifo] = all_trigs.data[f"{ifo}/time"][fore_locs]
-# Average times of triggers (note that coincs where not all ifos have triggers
-# will contain -1 sentinel values)
-fore_time_zip = zip(*fore_time.values(), strict=True)
-ave_fore_time = []
-for ts in fore_time_zip:
-    ave_fore_time.append(coinc.mean_if_greater_than_zero(ts)[0])
-ave_fore_time = numpy.array(ave_fore_time)
-
-# Window out start and end time around every average foreground trigger time
-remove_start_time = ave_fore_time - args.veto_window
-remove_end_time = ave_fore_time + args.veto_window
-
-# Total amount of time removed around foreground triggers
-veto_time = abs(
-    veto.start_end_to_segments(remove_start_time, remove_end_time).coalesce()
-)
-
-# Veto indices from list of triggers in the windowed times around fg triggers
-# This gives exclusive background triggers
-fg_veto_ids = numpy.concatenate(
-    [
-        veto.indices_within_times(
-            all_trigs.data[f"{ifo}/time"], remove_start_time, remove_end_time
-        )
-        for ifo in ifos
-    ]
-)
-exc_zero_trigs = all_trigs.remove(fg_veto_ids)
+raw_fore_locs = all_trigs.timeslide_id == 0
+if censor_ifar_thresh <= 0.0:
+    raw_fore_time = {ifo: all_trigs.data[f"{ifo}/time"][raw_fore_locs] for ifo in ifos}
+    raw_ave_fore_time = numpy.array(
+        [
+            coinc.mean_if_greater_than_zero(ts)[0]
+            for ts in zip(*raw_fore_time.values(), strict=True)
+        ],
+        dtype=float,
+    )
+raw_back_trigs = all_trigs.remove(numpy.flatnonzero(raw_fore_locs))
 
 logger.info("Clustering coinc triggers (inclusive of zerolag)")
 all_trigs = all_trigs.cluster(args.cluster_window)
@@ -246,10 +233,15 @@ all_trigs = all_trigs.cluster(args.cluster_window)
 fore_locs = all_trigs.timeslide_id == 0
 logger.info("%s clustered foreground triggers", fore_locs.sum())
 
-logger.info("Clustering coinc triggers (exclusive of zerolag)")
-exc_zero_trigs = exc_zero_trigs.cluster(args.cluster_window)
+# If a particular index of all_trigs.timeslide_id isn't 0, evaluate true.
+back_locs = all_trigs.timeslide_id != 0
 
-logger.info("Dumping foreground triggers")
+if (back_locs.sum()) == 0:
+    logger.warning(
+        "There were no background events, so we could not assign any statistic values"
+    )
+    sys.exit()
+
 f = FileWriter(args.output_file)
 f.attrs["num_of_ifos"] = all_trigs.attrs["num_of_ifos"]
 f.attrs["pivot"] = all_trigs.attrs["pivot"]
@@ -269,36 +261,6 @@ for key in all_trigs.seg:
     f[f"segments/{key}/start"] = all_trigs.seg[key]["start"][:]
     f[f"segments/{key}/end"] = all_trigs.seg[key]["end"][:]
 
-if fore_locs.sum() > 0:
-    f["segments/foreground_veto/start"] = remove_start_time
-    f["segments/foreground_veto/end"] = remove_end_time
-    for k in all_trigs.data:
-        f["foreground/" + k] = all_trigs.data[k][fore_locs]
-else:
-    # Put SOMETHING in here to avoid failures later
-    f["segments/foreground_veto/start"] = numpy.array([0])
-    f["segments/foreground_veto/end"] = numpy.array([0])
-    for k in all_trigs.data:
-        f["foreground/" + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
-
-# If a particular index of all_trigs.timeslide_id isn't 0, evaluate true.
-# List of locations that is background.
-back_locs = all_trigs.timeslide_id != 0
-
-if (back_locs.sum()) == 0:
-    logger.warning(
-        "There were no background events, so we could not assign any statistic values"
-    )
-    sys.exit()
-
-logger.info("Dumping background triggers (inclusive of zerolag)")
-for k in all_trigs.data:
-    f["background/" + k] = all_trigs.data[k][back_locs]
-
-logger.info("Dumping background triggers (exclusive of zerolag)")
-for k in exc_zero_trigs.data:
-    f["background_exc/" + k] = exc_zero_trigs.data[k]
-
 maxtime = all_trigs.attrs[f"{f.attrs['pivot']}_foreground_time"]
 for ifo in ifos:
     maxtime = max(maxtime, all_trigs.attrs[f"{ifo}_foreground_time"])
@@ -307,11 +269,7 @@ mintime = all_trigs.attrs[f"{f.attrs['pivot']}_foreground_time"]
 for ifo in ifos:
     mintime = min(mintime, all_trigs.attrs[f"{ifo}_foreground_time"])
 
-maxtime_exc = maxtime - veto_time
-mintime_exc = mintime - veto_time
-
 coinc_time = float(all_trigs.attrs["coinc_time"])
-coinc_time_exc = coinc_time - veto_time
 
 if max_slide is not None:
     offsets = numpy.arange(1, int(max_slide) + 1) * ts_interval
@@ -320,19 +278,8 @@ if max_slide is not None:
     background_time = 2.0 * float(
         coinc.timeslide_durations(c_start, c_start, c_end, c_end, offsets).sum()
     )
-    exc_segs = (
-        veto.start_end_to_segments(c_start, c_end)
-        - veto.start_end_to_segments(remove_start_time, remove_end_time)
-    ).coalesce()
-    exc_start, exc_end = veto.segments_to_start_end(exc_segs)
-    background_time_exc = 2.0 * float(
-        coinc.timeslide_durations(exc_start, exc_start, exc_end, exc_end, offsets).sum()
-    )
 else:
     background_time = int(maxtime / all_trigs.attrs["timeslide_interval"]) * mintime
-    background_time_exc = (
-        int(maxtime_exc / all_trigs.attrs["timeslide_interval"]) * mintime_exc
-    )
 
 logger.info("Calculating FAN from background statistic values")
 # Ranking statistic of foreground and background
@@ -349,6 +296,101 @@ bg_far, fg_far, sig_info = significance.get_far(
     **significance_dict[ifo_combo],
 )
 
+fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo_combo)
+bg_far = significance.apply_far_limit(bg_far, significance_dict, combo=ifo_combo)
+
+# Determine foreground times to censor when constructing exclusive background
+if censor_ifar_thresh > 0.0:
+    if fore_locs.sum() > 0:
+        clustered_fore_time = {
+            ifo: all_trigs.data[f"{ifo}/time"][fore_locs] for ifo in ifos
+        }
+        clustered_ave_time = numpy.array(
+            [
+                coinc.mean_if_greater_than_zero(ts)[0]
+                for ts in zip(*clustered_fore_time.values(), strict=True)
+            ],
+            dtype=float,
+        )
+        fg_ifar_yr = conv.sec_to_year(1.0 / fg_far)
+        ave_fore_time = clustered_ave_time[fg_ifar_yr > censor_ifar_thresh]
+    else:
+        ave_fore_time = numpy.array([], dtype=float)
+else:
+    ave_fore_time = raw_ave_fore_time
+
+remove_start_time = ave_fore_time - args.veto_window
+remove_end_time = ave_fore_time + args.veto_window
+veto_time = (
+    abs(veto.start_end_to_segments(remove_start_time, remove_end_time).coalesce())
+    if len(ave_fore_time) > 0
+    else 0.0
+)
+
+if len(ave_fore_time) > 0 and len(raw_back_trigs.stat) > 0:
+    fg_veto_ids = numpy.concatenate(
+        [
+            veto.indices_within_times(
+                raw_back_trigs.data[f"{ifo}/time"], remove_start_time, remove_end_time
+            )
+            for ifo in ifos
+        ]
+    )
+    exc_zero_trigs = raw_back_trigs.remove(fg_veto_ids)
+else:
+    exc_zero_trigs = raw_back_trigs
+
+logger.info("Clustering coinc triggers (exclusive of zerolag)")
+exc_zero_trigs = exc_zero_trigs.cluster(args.cluster_window)
+
+logger.info("Dumping foreground triggers")
+if fore_locs.sum() > 0:
+    if len(remove_start_time) > 0:
+        f["segments/foreground_veto/start"] = remove_start_time
+        f["segments/foreground_veto/end"] = remove_end_time
+    else:
+        f["segments/foreground_veto/start"] = numpy.array([0])
+        f["segments/foreground_veto/end"] = numpy.array([0])
+    for k in all_trigs.data:
+        f["foreground/" + k] = all_trigs.data[k][fore_locs]
+else:
+    # Put SOMETHING in here to avoid failures later
+    f["segments/foreground_veto/start"] = numpy.array([0])
+    f["segments/foreground_veto/end"] = numpy.array([0])
+    for k in all_trigs.data:
+        f["foreground/" + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
+
+logger.info("Dumping background triggers (inclusive of zerolag)")
+for k in all_trigs.data:
+    f["background/" + k] = all_trigs.data[k][back_locs]
+
+logger.info("Dumping background triggers (exclusive of zerolag)")
+for k in exc_zero_trigs.data:
+    f["background_exc/" + k] = exc_zero_trigs.data[k]
+
+maxtime_exc = max(0.0, maxtime - veto_time)
+mintime_exc = max(0.0, mintime - veto_time)
+coinc_time_exc = max(0.0, coinc_time - veto_time)
+
+if max_slide is not None:
+    if len(remove_start_time) > 0:
+        exc_segs = (
+            veto.start_end_to_segments(c_start, c_end)
+            - veto.start_end_to_segments(remove_start_time, remove_end_time)
+        ).coalesce()
+        exc_start, exc_end = veto.segments_to_start_end(exc_segs)
+        background_time_exc = 2.0 * float(
+            coinc.timeslide_durations(
+                exc_start, exc_start, exc_end, exc_end, offsets
+            ).sum()
+        )
+    else:
+        background_time_exc = background_time
+else:
+    background_time_exc = (
+        int(maxtime_exc / all_trigs.attrs["timeslide_interval"]) * mintime_exc
+    )
+
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
 bg_far_exc, fg_far_exc, exc_sig_info = significance.get_far(
@@ -359,8 +401,6 @@ bg_far_exc, fg_far_exc, exc_sig_info = significance.get_far(
     **significance_dict[ifo_combo],
 )
 
-fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo_combo)
-bg_far = significance.apply_far_limit(bg_far, significance_dict, combo=ifo_combo)
 fg_far_exc = significance.apply_far_limit(
     fg_far_exc, significance_dict, combo=ifo_combo
 )
