@@ -61,6 +61,13 @@ tags = []
 
 logger.info("Generating %s workflow", workflow_name)
 
+# Options for features that have been removed: stop rather than ignore them
+for section, option in [
+    ("workflow-condition_strain", "do-gating"),
+]:
+    if wflow.cp.has_option(section, option):
+        raise ValueError(f"[{section}] {option} is no longer supported.")
+
 # Setup run directory
 triggername = str(wflow.cp.get("workflow", "trigger-name"))
 output_dir = os.path.abspath(args.output_dir)
@@ -193,9 +200,6 @@ wflow.cp = _workflow.set_grb_start_end(
 )
 
 padding = int(wflow.cp.get("inspiral", "pad-data"))
-if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
-    gate_pad = int(wflow.cp.get("condition_strain", "pad-data"))
-    padding += gate_pad
 
 if wflow.cp.has_option("inspiral", "segment-start-pad"):
     start_pad = int(wflow.cp.get("inspiral", "segment-start-pad"))
@@ -220,13 +224,6 @@ df_dir = os.path.join(curr_dir, "datafind")
 datafind_files, _, sci_segs, _ = _workflow.setup_datafind_workflow(
     wflow, sci_segs, df_dir, sci_segs_file
 )
-if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
-    new_seg = segment(sci_segs[ifo][0][0] + gate_pad, sci_segs[ifo][0][1] - gate_pad)
-    for iifo in sci_segs:
-        sci_segs[iifo][0] = new_seg
-    wflow.cp = _workflow.set_grb_start_end(
-        wflow.cp, int(sci_segs[ifo][0][0]), int(sci_segs[ifo][0][1])
-    )
 
 ifos = sorted(sci_segs.keys())
 wflow.ifos = ifos
@@ -242,30 +239,6 @@ input_files = _workflow.FileList([])
 # Convenience variable to operate on sci_segs within this executable
 ifo = ifos[0]
 
-# GATING
-if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
-    logger.info("Creating gating jobs.")
-    wflow.cp = _workflow.set_grb_start_end(
-        wflow.cp, int(sci_segs[ifo][0][0]), int(sci_segs[ifo][0][1])
-    )
-    gating_nodes, gated_files = _workflow.make_gating_node(
-        wflow, datafind_files, outdir=df_dir
-    )
-    gating_method = wflow.cp.get("workflow-condition_strain", "gating-method")
-    for gating_node in gating_nodes:
-        if gating_method == "IN_WORKFLOW":
-            wflow.add_node(gating_node)
-        elif gating_method == "AT_RUNTIME":
-            logger.info("Executing gating node...")
-            wflow.execute_node(gating_node)
-        else:
-            msg = "[workflow-condition_strain] option 'gating-method' can "
-            msg += "only have one of the values 'IN_WORKFLOW' or 'AT_RUNTIME'."
-            msg += f" You have provided the value {gating_method}."
-            logger.error(msg)
-            sys.exit()
-    # Downstream jobs must read the gated frames, not the original ones
-    datafind_files = gated_files
 input_files.extend(datafind_files)
 
 # Retrieve vetoes
