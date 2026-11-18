@@ -1,0 +1,13 @@
+# Regular expressions for URLs that lychee should not check.
+
+# Valid pages that reject automated requests
+^https://(ui\.)?adsabs\.harvard\.edu/
+^https://journals\.aps\.org/
+^https://web\.archive\.org/
+
+# Placeholder and templated URLs in documentation examples
+^https://username\.github\.io/
+^https://github\.com/gwastro/revchirp/tarball/v%s$
+
+# Historical segment database server named in example commands and configs
+^https://dqsegdb5\.phy\.syr\.edu
