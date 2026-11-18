@@ -221,7 +221,7 @@ for i in range(len(args.trigger_files)):
 
 # Coinc_segs contains only segments where all ifos are analyzed
 coinc_segs = veto.start_end_to_segments([-infinity()], [infinity()])
-for i, sngl in zip(trigs.ifos, trigs.singles, strict=True):
+for sngl in trigs.singles:
     coinc_segs = coinc_segs & sngl.segs
 for sngl in trigs.singles:
     sngl.segs = coinc_segs

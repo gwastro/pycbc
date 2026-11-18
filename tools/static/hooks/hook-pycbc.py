@@ -70,7 +70,7 @@ cwd = os.environ.get("PYCBC_HOOKS_DIR", os.getcwd())
 basedir = cwd.replace("tools/static", "")
 rootdir = basedir + "pycbc/results"
 
-for root, subdirs, files in os.walk(rootdir):
+for root, _, files in os.walk(rootdir):
     for filename in files:
         if not filename.endswith(".py") and not filename.endswith(".pyc"):
             file_path = os.path.join(root, filename)

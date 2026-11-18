@@ -185,7 +185,7 @@ class BaseGenerator:
             raise FailedWaveformError(
                 "Failed to generate waveform with "
                 f"parameters:\n{strparams}\nError was: {e}"
-            )
+            ) from e
 
 
 class BaseCBCGenerator(BaseGenerator):

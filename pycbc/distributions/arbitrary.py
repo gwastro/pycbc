@@ -269,8 +269,8 @@ class FromFile(Arbitrary):
         """
         try:
             f = HFile(params_file, "r")
-        except OSError:
-            raise ValueError("File not found.")
+        except OSError as err:
+            raise ValueError("File not found.") from err
         get = f[self.datagroup] if self.datagroup is not None else f
         if params is not None:
             if not isinstance(params, list):

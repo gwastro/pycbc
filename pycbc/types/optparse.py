@@ -115,7 +115,7 @@ class MultiDetOptionAction(argparse.Action):
                     err_msg += "cannot also supply values for specific ifos."
                     raise ValueError(err_msg)
                 new_default = self.internal_type(value[0])
-                items.default_factory = lambda: new_default
+                items.default_factory = lambda v=new_default: v
                 items.default_set = True
             else:
                 err_msg += "The character ':' is used to deliminate the "
@@ -509,8 +509,8 @@ def _positive_type(s, dtype=None):
     err_msg = f"Input must be a positive {dtype}, not {s}"
     try:
         value = dtype(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(err_msg)
+    except ValueError as err:
+        raise argparse.ArgumentTypeError(err_msg) from err
     if value <= 0:
         raise argparse.ArgumentTypeError(err_msg)
     return value
@@ -526,8 +526,8 @@ def _nonnegative_type(s, dtype=None):
     err_msg = f"Input must be either a positive or zero {dtype}, not {s}"
     try:
         value = dtype(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(err_msg)
+    except ValueError as err:
+        raise argparse.ArgumentTypeError(err_msg) from err
     if value < 0:
         raise argparse.ArgumentTypeError(err_msg)
     return value
@@ -590,7 +590,9 @@ def angle_as_radians(s):
     # if `s` converts to a float then there is no unit, so assume radians
     try:
         value = float(s)
-        warnings.warn(f"Angle units not specified for {value}, assuming radians")
+        warnings.warn(
+            f"Angle units not specified for {value}, assuming radians", stacklevel=1
+        )
         return value
     except ValueError:
         pass

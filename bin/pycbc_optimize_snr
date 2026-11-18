@@ -315,7 +315,7 @@ for ifo in ifos:
     snr_series_dict[ifo] = snr_series_dict[ifo][new_snr_slice]
 
 netsnr = 0
-for idx, ifo in enumerate(ifos):
+for ifo in ifos:
     coinc_results["foreground/" + ifo + "/mass1"] = mass1
     coinc_results["foreground/" + ifo + "/mass2"] = mass2
     coinc_results["foreground/" + ifo + "/spin1z"] = spin1z

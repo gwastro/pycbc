@@ -137,12 +137,12 @@ def loadfile(path, mode=None, filetype=None, **kwargs):
         # try to read the file to get its filetype
         try:
             fileclass = get_file_type(path)
-        except OSError:
+        except OSError as err:
             # file doesn't exist, filetype must be provided
             raise OSError(
                 "The file appears not to exist. In this case, "
                 "filetype must be provided."
-            )
+            ) from err
     else:
         fileclass = filetypes[filetype]
     return fileclass(path, mode=mode, **kwargs)

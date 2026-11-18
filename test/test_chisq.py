@@ -65,7 +65,7 @@ class TestChisq(unittest.TestCase):
         xi = numpy.random.uniform(low=-1, high=1.0, size=2**20)
         self.x = Array(xr + xi * 1.0j, dtype=complex64)
         self.z = zeros(2**20, dtype=float32)
-        for i in range(4):
+        for _ in range(4):
             trusted_accum(self.z, self.x)
 
         m = Merger("GW170814")
@@ -115,7 +115,7 @@ class TestChisq(unittest.TestCase):
     def test_accum(self):
         with self.context:
             z = zeros(2**20, dtype=float32)
-            for i in range(4):
+            for _ in range(4):
                 chisq_accum_bin(z, self.x)
             self.assertTrue(self.z.almost_equal_elem(z, self.tolerance))
 

@@ -56,11 +56,11 @@ class FrequencySeries(Array):
         if delta_f is None:
             try:
                 delta_f = initial_array.delta_f
-            except AttributeError:
+            except AttributeError as err:
                 raise TypeError(
                     "must provide either an initial_array with "
                     "a delta_f attribute, or a value for delta_f"
-                )
+                ) from err
         if not delta_f > 0:
             raise ValueError("delta_f must be a positive number")
 
@@ -75,8 +75,8 @@ class FrequencySeries(Array):
         if isinstance(other, FrequencySeries):
             try:
                 _numpy.testing.assert_almost_equal(other._delta_f, self._delta_f)
-            except AssertionError:
-                raise ValueError("different delta_f")
+            except AssertionError as err:
+                raise ValueError("different delta_f") from err
             # consistency of _epoch is not required because we may want
             # to combine frequency series estimated at different times
             # (e.g. PSD estimation)

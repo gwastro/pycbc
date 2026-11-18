@@ -253,7 +253,7 @@ for gate_type, hatch_style in [("file", "\\"), ("auto", "/")]:
     except KeyError:
         continue
     gate_unique = list(frozenset(zip(gate_time, gate_width, gate_pad, strict=True)))
-    for gt, gw, gp in gate_unique:
+    for gt, gw, _ in gate_unique:
         # only plot gates within the plot time window
         if gt + gw < opts.gps_start_time or gt - gw > opts.gps_end_time:
             continue

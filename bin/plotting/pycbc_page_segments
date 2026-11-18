@@ -125,9 +125,9 @@ for i, seg_file in enumerate(sorted(args.segment_files)[::-1]):
     names += [(name, total, y + h + 0.1)]
 
     patches = plot_segs(start, end, y=y, h=h)
-    for i, p in enumerate(patches):
-        text = label % (start[i], end[i], timestr(dur[i]))
-        if i == 0:
+    for j, p in enumerate(patches):
+        text = label % (start[j], end[j], timestr(dur[j]))
+        if j == 0:
             mpld3.plugins.connect(
                 fig, mpld3.plugins.PointHTMLTooltip(p, [text], css=css)
             )

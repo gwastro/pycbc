@@ -855,6 +855,7 @@ class File(dax.File):
             "output files) in core.py or resolve_url_to_file "
             "in core.py (for input files) instead.",
             DeprecationWarning,
+            stacklevel=2,
         )
         urlparts = urlsplit(path)
         site = "nonlocal"

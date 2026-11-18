@@ -875,7 +875,7 @@ class FieldArray(numpy.recarray):
             if attr in self.fields:
                 return self.__getitem__(attr)
             # otherwise, unrecognized
-            raise AttributeError(e)
+            raise
 
     def __setitem__(self, item, values):
         """
@@ -918,13 +918,13 @@ class FieldArray(numpy.recarray):
         """Gets a subfield using `field.subfield` notation."""
         try:
             return self.__getbaseitem__(item)
-        except ValueError as err:
+        except ValueError:
             subitems = item.split(".")
             if len(subitems) > 1:
                 return self.__getbaseitem__(subitems[0]).__getsubitem__(
                     ".".join(subitems[1:])
                 )
-            raise ValueError(err)
+            raise
 
     def __getitem__(self, item):
         """
@@ -1014,9 +1014,9 @@ class FieldArray(numpy.recarray):
         """
         try:
             numpy.recarray.sort(self, axis=axis, kind=kind, order=order)
-        except ValueError:
+        except ValueError as err:
             if isinstance(order, list):
-                raise ValueError("Cannot process more than one order field")
+                raise ValueError("Cannot process more than one order field") from err
             self[:] = self[numpy.argsort(self[order])]
 
     def addattr(self, attrname, value=None, persistent=True):
@@ -1635,13 +1635,13 @@ def fields_from_names(fields, names=None):
     for name in names:
         try:
             outfields[name] = fields[name]
-        except KeyError:
+        except KeyError as err:
             if name in aliases_to_names:
                 key = (name, aliases_to_names[name])
             elif name in names_to_aliases:
                 key = (names_to_aliases[name], name)
             else:
-                raise KeyError(f"default fields has no field {name}")
+                raise KeyError(f"default fields has no field {name}") from err
             outfields[key] = fields[key]
     return outfields
 

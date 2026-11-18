@@ -206,12 +206,12 @@ def query_flag(
             if "segments" in data:
                 flag_segments = data["segments"]
 
-        except Exception:
+        except Exception as err:
             if source != "any":
                 raise ValueError(
                     f"Unable to find {segment_name} segments in GWOSC, check "
                     "flag name or times"
-                )
+                ) from err
 
             return query_flag(
                 ifo,

@@ -984,7 +984,8 @@ class FilterBank(TemplateBank):
                     "self.get_decompressed_waveform has raised a KeyError. "
                     "This may be as the compressed waveform has not been "
                     "generated for this approximant, but it could indicate "
-                    f"a more serious issue. Approximant: {approximant}"
+                    f"a more serious issue. Approximant: {approximant}",
+                    stacklevel=1,
                 )
 
         if full_calculate_waveform:
@@ -1040,7 +1041,8 @@ class FilterBank(TemplateBank):
                     "self.get_decompressed_waveform has raised a KeyError. "
                     "This may be as the compressed waveform has not been "
                     "generated for this approximant, but it could indicate "
-                    f"a more serious issue. Approximant: {approximant}"
+                    f"a more serious issue. Approximant: {approximant}",
+                    stacklevel=1,
                 )
 
         if full_calculate_waveform:

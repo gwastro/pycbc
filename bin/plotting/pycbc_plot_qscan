@@ -41,8 +41,8 @@ def t_window(s):
     try:
         start, end = map(float, s.split(","))
         return [start, end]
-    except ValueError:
-        raise argparse.ArgumentTypeError("Input must be start,end start,end")
+    except ValueError as err:
+        raise argparse.ArgumentTypeError("Input must be start,end start,end") from err
 
 
 parser = argparse.ArgumentParser(description=__doc__)

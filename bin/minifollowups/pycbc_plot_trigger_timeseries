@@ -92,7 +92,7 @@ for ifo in args.single_trigger_files:
     # Identify trigger idxs within window of trigger time
     with HFile(args.single_trigger_files[ifo], "r") as data:
         idx, _ = data.select(
-            lambda endtime: abs(endtime - t) < args.window,
+            lambda endtime, t=t: abs(endtime - t) < args.window,
             "end_time",
             group=ifo,
             return_data=False,

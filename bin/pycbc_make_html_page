@@ -336,7 +336,7 @@ if not os.path.exists(fonts_output_dir):
 # created with restrictions that are too restrictive.  So, go through and make
 # sure that directories are readable+executable and files are readable.
 
-for dirpath, dirnames, filenames in os.walk(opts.output_path + "/static"):
+for dirpath, _, filenames in os.walk(opts.output_path + "/static"):
     os.chmod(
         dirpath,
         stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH,
@@ -348,7 +348,7 @@ for dirpath, dirnames, filenames in os.walk(opts.output_path + "/static"):
 
 # Protect the results if the requested
 if opts.protect_results:
-    for dirpath, dirnames, filenames in os.walk(opts.output_path):
+    for dirpath, _, filenames in os.walk(opts.output_path):
         # Do not open the box
         dir_permission = stat.S_IREAD | stat.S_IEXEC
         existing_perm = os.stat(dirpath)

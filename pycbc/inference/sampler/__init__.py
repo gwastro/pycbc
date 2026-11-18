@@ -125,10 +125,10 @@ def load_from_config(cp, model, **kwargs):
     name = cp.get("sampler", "name")
     try:
         return samplers[name].from_config(cp, model, **kwargs)
-    except KeyError:
+    except KeyError as err:
         raise ImportError(
             f"No available sampler named {name}. Please check "
             "if the name is correct or the required package "
             "for this sampler is installed correctly. "
             f"Available samplers: {', '.join(list(samplers.keys()))}"
-        )
+        ) from err

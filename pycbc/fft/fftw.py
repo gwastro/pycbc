@@ -113,8 +113,10 @@ def _init_threads(backend):
     try:
         double_threaded_libname = _fftw_threading_libnames[backend]["double"]
         float_threaded_libname = _fftw_threading_libnames[backend]["float"]
-    except KeyError:
-        raise ValueError(f"Backend {backend} for FFTW threading does not exist!")
+    except KeyError as err:
+        raise ValueError(
+            f"Backend {backend} for FFTW threading does not exist!"
+        ) from err
     if double_threaded_libname is not None:
         try:
             # For reasons Ian doesn't understand we should not load libgomp

@@ -162,11 +162,11 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
                     f"Maximum NS mass for {eos} is {ns_max}, received masses "
                     f"up to {max(ns_mass[ns_mass > ns_max])}"
                 )
-        except TypeError:
+        except TypeError as err:
             if ns_mass > ns_max and not input_is_array:
                 raise ValueError(
                     f"Maximum NS mass for {eos} is {ns_max}, received {ns_mass}"
-                )
+                ) from err
         # Interpolate NS compactness and rest mass
         ns_compactness = interp_grav_mass_to_compactness(
             ns_mass, ns_seq, extrapolate=extrapolate

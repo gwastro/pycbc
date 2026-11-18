@@ -999,9 +999,8 @@ class IncoherentFromFileHDFInjectionSet(_HDFInjectionSet):
         if inj.filename.endswith(".gwf"):
             try:
                 channel = inj.channel
-            except AttributeError as _err:
-                # Py3.XX: uncomment the "from _err" when we drop 2.7
-                raise ValueError("Must provide a channel for frame files")  # from _err
+            except AttributeError as err:
+                raise ValueError("Must provide a channel for frame files") from err
             ts = frame.read_frame(inj.filename, channel)
         else:
             ts = load_timeseries(inj.filename)
@@ -1016,17 +1015,16 @@ class IncoherentFromFileHDFInjectionSet(_HDFInjectionSet):
         """
         try:
             ref_point = inj.ref_point
-        except AttributeError as _err:
-            # Py3.XX: uncomment the "from _err" when we drop 2.7
+        except AttributeError as err:
             raise ValueError(
                 f"Must provide a ref_point for {self.injtype} injections"
-            )  # from _err
+            ) from err
         # try to get from buffer
         if self._rtbuffer is None:
             self._rtbuffer = LimitedSizeDict(size_limit=self._buffersize)
         try:
             reftime = self._rtbuffer[inj.filename, ref_point]
-        except KeyError:
+        except KeyError as err:
             if ref_point == "start":
                 reftime = 0.0
             elif ref_point == "end":
@@ -1038,7 +1036,9 @@ class IncoherentFromFileHDFInjectionSet(_HDFInjectionSet):
             elif isinstance(ref_point, (float, int)):
                 reftime = -float(ref_point)
             else:
-                raise ValueError(f"Unrecognized ref_point {ref_point} provided")
+                raise ValueError(
+                    f"Unrecognized ref_point {ref_point} provided"
+                ) from err
             self._rtbuffer[inj.filename, ref_point] = reftime
         ts._epoch = reftime
 
