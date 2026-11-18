@@ -19,6 +19,7 @@ import logging
 import os.path
 import types
 from configparser import ConfigParser
+from pathlib import Path
 from xml.sax.saxutils import unescape
 
 from jinja2 import Environment, FileSystemLoader
@@ -109,7 +110,7 @@ def setup_template_render(path, config_path):
         output = render_function(path, cp)
 
     # read configuration file for rendering
-    elif os.path.exists(config_path):
+    elif config_path is not None and Path(config_path).exists():
         cp.read(config_path)
 
         # render template
