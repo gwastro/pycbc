@@ -240,6 +240,7 @@ with ctx:
         "bank_chisq": float32,
         "bank_chisq_dof": int,
         "cont_chisq": float32,
+        "cont_chisq_dof": int,
         "psd_var_val": float32,
         "u_vals": float32,
         "coa_phase": float32,
@@ -407,7 +408,7 @@ with ctx:
             )
 
             # This hasn't been implemented yet, but the stub is still here.
-            out_vals["cont_chisq"] = autochisq.values()
+            out_vals["cont_chisq"], out_vals["cont_chisq_dof"] = autochisq.values()
 
             idx += stilde.cumulative_index
 

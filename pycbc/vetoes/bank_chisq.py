@@ -27,7 +27,12 @@ from math import sqrt
 import numpy
 
 from pycbc.filter import matched_filter_core, overlap_cplx, sigmasq
-from pycbc.types import Array, TimeSeries, real_same_precision_as, zeros
+from pycbc.types import (
+    Array,
+    TimeSeries,
+    real_same_precision_as,
+    zeros,
+)
 from pycbc.waveform import FilterBank
 
 logger = logging.getLogger(__name__)
@@ -96,11 +101,14 @@ def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
 
     """
     overlaps = []
+    step = round(template.delta_f / psd.delta_f)
+    psd = psd[::step][: len(template)]
     template_ow = template / psd
     template_norm = sigmasq(
         template, psd=psd, low_frequency_cutoff=low_frequency_cutoff
     )
     for bank_template in bank_filters:
+        bank_template = bank_template[::step][: len(template)]
         overlap = overlap_cplx(
             template_ow,
             bank_template,
@@ -212,6 +220,10 @@ class SingleDetBankVeto:
     veto TimeSeries.
     """
 
+    name = "bank"
+    columns = {"bank_chisq": numpy.float32, "bank_chisq_dof": int}
+    default_values = {"bank_chisq": 0, "bank_chisq_dof": 0}
+
     def __init__(
         self,
         bank_file,
@@ -243,6 +255,23 @@ class SingleDetBankVeto:
         else:
             self.do = False
 
+    def evaluate_batch(self, batch, j):
+        """Evaluate bank chisq for trigger j in a SignalConsistencyChain batch."""
+        stilde = batch.stilde
+        template = batch.template(j)
+        chi, dof = self.values(
+            template,
+            stilde.psd,
+            stilde,
+            numpy.array([batch.snr[j]], dtype=stilde.dtype),
+            1,
+            numpy.array([batch.time_index[j]]),
+            overwhitened=False,
+        )
+        if chi is None:
+            return None
+        return {"bank_chisq": float(chi[0]), "bank_chisq_dof": int(dof[0])}
+
     @staticmethod
     def insert_option_group(parser):
         group = parser.add_argument_group("Bank Veto")
@@ -253,7 +282,7 @@ class SingleDetBankVeto:
         )
 
     @classmethod
-    def from_cli(cls, args):
+    def from_cli(cls, args, **kwargs):
         kwds = {}
         if getattr(args, "order", None) is not None:
             kwds["phase_order"] = args.order
