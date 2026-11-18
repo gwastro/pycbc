@@ -1,0 +1,69 @@
+pycbc.frame package
+===================
+
+Submodules
+----------
+
+pycbc.frame.buffer module
+-------------------------
+
+.. automodule:: pycbc.frame.buffer
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.frame.cache module
+------------------------
+
+.. automodule:: pycbc.frame.cache
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.frame.frame module
+------------------------
+
+.. automodule:: pycbc.frame.frame
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.frame.gwf module
+----------------------
+
+.. automodule:: pycbc.frame.gwf
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.frame.gwosc module
+------------------------
+
+.. automodule:: pycbc.frame.gwosc
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.frame.gwosc\_hdf module
+-----------------------------
+
+.. automodule:: pycbc.frame.gwosc_hdf
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pycbc.frame.store module
+------------------------
+
+.. automodule:: pycbc.frame.store
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.frame
+   :members:
+   :show-inheritance:
+   :undoc-members:
