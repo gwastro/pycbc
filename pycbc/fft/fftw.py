@@ -5,9 +5,8 @@ import numpy as _np
 
 import pycbc.scheme as _scheme
 from pycbc.libutils import get_ctypes_library
-from pycbc.types import zeros
+from pycbc.types import check_aligned, zeros
 
-from ..types import check_aligned
 from .core import _BaseFFT, _BaseIFFT
 
 # IMPORTANT NOTE TO PYCBC DEVELOPERS:

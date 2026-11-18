@@ -201,18 +201,12 @@ class TestMatchedFilter(unittest.TestCase):
 
     def test_imperfect_match(self):
         with self.context:
-            f = make_frequency_series(self.filt)
-            f2 = make_frequency_series(self.filt2)
             o, i = match(self.filt, self.filt2)
             self.assertAlmostEqual(sqrt(0.5), o, places=3)
 
-            f = make_frequency_series(self.filtD)
-            f2 = make_frequency_series(self.filt2D)
             o, i = match(self.filtD, self.filt2D)
             self.assertAlmostEqual(sqrt(0.5), o, places=3)
 
-            f = make_frequency_series(self.filt)
-            f2 = make_frequency_series(self.filt2)
             o, i = match(self.filt, self.filt2, subsample_interpolation=True)
             self.assertAlmostEqual(sqrt(0.5), o, places=3)
 

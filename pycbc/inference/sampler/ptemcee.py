@@ -25,6 +25,8 @@ import shlex
 import numpy
 import ptemcee
 
+from pycbc.inference import models
+from pycbc.inference.burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from pycbc.inference.evidence import (
     ladder_thermodynamic_integration,
     mean_logl_by_temperature,
@@ -32,8 +34,6 @@ from pycbc.inference.evidence import (
 from pycbc.inference.io import PTEmceeFile
 from pycbc.pool import choose_pool
 
-from .. import models
-from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from .base import BaseSampler, setup_output
 from .base_mcmc import (
     BaseMCMC,

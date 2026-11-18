@@ -29,11 +29,11 @@ packages for parameter estimation.
 import emcee
 import numpy
 
+from pycbc.inference import models
+from pycbc.inference.burn_in import EnsembleMCMCBurnInTests
 from pycbc.inference.io import EmceeFile
 from pycbc.pool import choose_pool
 
-from .. import models
-from ..burn_in import EnsembleMCMCBurnInTests
 from .base import BaseSampler, setup_output
 from .base_mcmc import (
     BaseMCMC,

@@ -346,6 +346,7 @@ class TriangleBank:
             if m > hp.threshold:
                 return True
             mmax = max(mmax, m)
+        return None
 
     def check_params(
         self,
@@ -586,7 +587,7 @@ def wf_wrapper(args):
             hp.checked = hp not in bank
             hp.gen = None
         return hp
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning("Waveform generation failed: %s", e)
         return None
 
@@ -596,7 +597,7 @@ if len(args.input_file) > 0:
     for input_file in args.input_file:
         logger.info("Loading: %s", input_file)
         with HFile(input_file, "r") as f:
-            params = {k: f[k][:] for k in f if k not in ["max_matches"]}
+            params = {k: f[k][:] for k in f if k != "max_matches"}
 
             # Keep only templates inside [tau0_start, tau0_end]
             tau0_in = pycbc.conversions.tau0_from_mass1_mass2(

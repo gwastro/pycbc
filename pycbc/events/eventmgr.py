@@ -511,8 +511,8 @@ class EventManager:
                 f["u_vals"] = self.events["u_vals"]
                 f["coa_phase"] = self.events["coa_phase"]
                 f["hplus_cross_corr"] = self.events["hplus_cross_corr"]
-            except Exception:
-                # Not precessing
+            except (KeyError, ValueError):
+                # Not precessing: no such field in the events
                 f["coa_phase"] = numpy.angle(self.events["snr"])
             f["chisq"] = self.events["chisq"]
             f["bank_chisq"] = self.events["bank_chisq"]
@@ -539,8 +539,8 @@ class EventManager:
                 #        need information from the plus and cross correlation
                 #        (both real and imaginary(?)) to get this.
                 f["sigmasq"] = template_sigmasq_plus[tid]
-            except Exception:
-                # Not precessing
+            except (KeyError, ValueError):
+                # Not precessing: no sigmasq_plus in the template parameters
                 f["sigmasq"] = self.events["sigmasq"]
 
             # Template durations should ideally be stored in the bank file.
@@ -639,15 +639,11 @@ class EventManager:
 
 
 class EventManagerMultiDetBase(EventManager):
-    def __init__(
-        self, opt, ifos, column, column_types, psd=None, array_minsize=10000, **kwargs
-    ):
+    def __init__(self, opt, ifos, column, column_types, array_minsize=10000, **kwargs):
         self.opt = opt
         self.ifos = ifos
         self.global_params = kwargs
         self.array_minsize = array_minsize
-        if psd is not None:
-            self.global_params["psd"] = psd[ifos[0]]
 
         # The events array does not like holding the ifo as string,
         # so create a mapping dict and hold as an int
@@ -726,10 +722,9 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         network_column_types,
         segments,
         time_slides,
-        psd=None,
         **kwargs,
     ):
-        super().__init__(opt, ifos, column, column_types, psd=None, **kwargs)
+        super().__init__(opt, ifos, column, column_types, **kwargs)
         self.network_event_dtype = [(ifo + "_event_id", int) for ifo in self.ifos]
         self.network_event_dtype.append(("template_id", int))
         self.network_event_dtype.append(("event_id", int))
@@ -873,7 +868,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     f["u_vals"] = ifo_events["u_vals"]
                     f["coa_phase"] = ifo_events["coa_phase"]
                     f["hplus_cross_corr"] = ifo_events["hplus_cross_corr"]
-                except Exception:
+                except (KeyError, ValueError):
+                    # Not precessing: no such field in the events
                     f["coa_phase"] = numpy.angle(ifo_events["snr"])
                 f["chisq"] = ifo_events["chisq"]
                 f["bank_chisq"] = ifo_events["bank_chisq"]
@@ -903,8 +899,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     #      need information from the plus and cross correlation
                     #      (both real and imaginary(?)) to get this.
                     f["sigmasq"] = template_sigmasq_plus[tid]
-                except Exception:
-                    # Not precessing
+                except (KeyError, ValueError):
+                    # Not precessing: no sigmasq_plus in the template parameters
                     template_sigmasq = numpy.array(
                         [t["sigmasq"][ifo] for t in self.template_params],
                         dtype=numpy.float32,
@@ -1072,8 +1068,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
 
 
 class EventManagerMultiDet(EventManagerMultiDetBase):
-    def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
-        super().__init__(opt, ifos, column, column_types, psd=None, **kwargs)
+    def __init__(self, opt, ifos, column, column_types, **kwargs):
+        super().__init__(opt, ifos, column, column_types, **kwargs)
         self.event_index = 0
 
     def cluster_template_events_single_ifo(self, tcolumn, column, window_size, ifo):
@@ -1165,7 +1161,8 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                     f["u_vals"] = ifo_events["u_vals"]
                     f["coa_phase"] = ifo_events["coa_phase"]
                     f["hplus_cross_corr"] = ifo_events["hplus_cross_corr"]
-                except Exception:
+                except (KeyError, ValueError):
+                    # Not precessing: no such field in the events
                     f["coa_phase"] = numpy.angle(ifo_events["snr"])
                 f["chisq"] = ifo_events["chisq"]
                 f["bank_chisq"] = ifo_events["bank_chisq"]
@@ -1192,8 +1189,8 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                     #      need information from the plus and cross correlation
                     #      (both real and imaginary(?)) to get this.
                     f["sigmasq"] = template_sigmasq_plus[tid]
-                except Exception:
-                    # Not precessing
+                except (KeyError, ValueError):
+                    # Not precessing: no sigmasq_plus in the template parameters
                     template_sigmasq = numpy.array(
                         [t["sigmasq"][ifo] for t in self.template_params],
                         dtype=numpy.float32,

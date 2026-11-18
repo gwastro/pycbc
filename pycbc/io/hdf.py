@@ -759,7 +759,7 @@ class SingleDetTriggers:
 
     def checkbank(self, param):
         if self.bank == {}:
-            return RuntimeError(f"Can't get {param} values without a bank file")
+            raise RuntimeError(f"Can't get {param} values without a bank file")
 
     def trig_dict(self):
         """Returns dict of the masked trigger values"""

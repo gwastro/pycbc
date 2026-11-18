@@ -17,6 +17,7 @@ from pycbc.io.hdf import HFile
 def get_var(data, name):
     if name in data:
         return data[name][:]
+    return None
 
 
 parser = argparse.ArgumentParser(description=__doc__)

@@ -50,7 +50,7 @@ logger.info("Copying segments and attributes to %s", args.output_file)
 # in earlier files
 for fi in files:
     for key in fi["segments"]:
-        if key.startswith("foreground") or key.startswith("background"):
+        if key.startswith(("foreground", "background")):
             continue
         f[f"segments/{key}/end"] = fi[f"segments/{key}/end"][:]
         f[f"segments/{key}/start"] = fi[f"segments/{key}/start"][:]
@@ -193,7 +193,7 @@ test_times = numpy.array(
 
 # Iterate over different ifo combinations
 for key in f["segments"]:
-    if key.startswith("foreground") or key.startswith("background"):
+    if key.startswith(("foreground", "background")):
         continue
     end_times = numpy.array(f[f"segments/{key}/end"][:])
     start_times = numpy.array(f[f"segments/{key}/start"][:])

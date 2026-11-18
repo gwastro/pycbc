@@ -1,6 +1,6 @@
 import datetime as dt
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 from astropy.time import Time
 
@@ -103,7 +103,8 @@ class TestTimeConversionsFull(unittest.TestCase):
 
             # converting the string to a datetime as then converting to gps
             # should match the hard-coded GPS value
-            utc_dt = datetime.strptime(utc_str, "%Y-%m-%d %H:%M:%S")
+            # naive on purpose: utc_datetime_to_gps treats naive datetimes as UTC
+            utc_dt = datetime.strptime(utc_str, "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
             gps_back = pycbc.time.utc_datetime_to_gps(utc_dt)
             self.assertAlmostEqual(gps, gps_back, places=6)
 
@@ -124,7 +125,8 @@ class TestTimeConversionsFull(unittest.TestCase):
         """Test stripping of time around leap seconds."""
         for utc_str, (gps, _) in TRUTH_CONVERSIONS.items():
             # strip_time_from_date should zero the time
-            utc_dt = datetime.strptime(utc_str, "%Y-%m-%d %H:%M:%S")
+            # naive on purpose: utc_datetime_to_gps treats naive datetimes as UTC
+            utc_dt = datetime.strptime(utc_str, "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
             stripped = pycbc.time.strip_time_from_date(utc_dt)
             self.assertEqual(stripped.hour, 0)
             self.assertEqual(stripped.minute, 0)
@@ -145,7 +147,7 @@ class TestTimeConversionsFull(unittest.TestCase):
 
     def test_datetime_to_str_formats(self):
         """Confirm conversion from datetime to strings with different formats"""
-        dt = datetime(2020, 2, 29, 15, 4, 5)
+        dt = datetime(2020, 2, 29, 15, 4, 5, tzinfo=UTC)
         self.assertEqual(
             pycbc.time.datetime_to_str(dt, format="%Y-%m-%d"), "2020-02-29"
         )

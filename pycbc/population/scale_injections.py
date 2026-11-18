@@ -442,6 +442,7 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2=0, himass_2=0):
         pdf[idx] = 0
 
         return pdf
+    return None
 
 
 def inj_spin_pdf(key, high_spin, spinz):
@@ -493,6 +494,7 @@ def inj_spin_pdf(key, high_spin, spinz):
         # Returns unit array
 
         return np.ones_like(spinz)
+    return None
 
 
 def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp=1):
@@ -536,3 +538,4 @@ def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp=1):
         idx = np.where(bound != 1)
         pdf[idx] = 0
         return pdf
+    return None

@@ -25,7 +25,8 @@ import logging
 
 import numpy
 
-from .. import opt
+from pycbc import opt
+
 from .eventmgr import _BaseThresholdCluster
 from .simd_threshold_cython import parallel_thresh_cluster, parallel_threshold
 

@@ -92,6 +92,7 @@ class SkyGrid:
             "Please specify a sky grid via --sky-grid or a single sky "
             "position via --ra and --dec"
         )
+        return None
 
     @classmethod
     def read_from_file(cls, path):

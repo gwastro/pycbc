@@ -430,6 +430,7 @@ class Detector:
                 fb = (x * dx + y * dy).sum()
                 fl = (z * dz).sum()
             return fb, fl
+        return None
 
     def antenna_pattern(
         self,

@@ -17,8 +17,9 @@ import nessai.utils.settings
 import numpy
 import numpy.lib.recfunctions as rfn
 
-from ...pool import choose_pool
-from ..io import NessaiFile, loadfile
+from pycbc.inference.io import NessaiFile, loadfile
+from pycbc.pool import choose_pool
+
 from .base import BaseSampler, setup_output
 from .base_mcmc import get_optional_arg_from_config
 
@@ -262,7 +263,7 @@ class NessaiSampler(BaseSampler):
             with loadfile(self.checkpoint_file, "r") as fp:
                 self.resume_data = fp.read_pickled_data_from_checkpoint_file()
             logger.info("Found valid checkpoint file: %s", self.checkpoint_file)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.info("Failed to load checkpoint file with error: %s", e)
 
     def finalize(self):

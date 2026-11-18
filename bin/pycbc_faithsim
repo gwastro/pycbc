@@ -331,7 +331,7 @@ with open(options.out_file, "w") as fout:
                 time_offsets.append(i * 1.0 / options.filter_sample_rate)
                 s1s.append(s1)
                 s2s.append(s2)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning("Unable to generate waveforms")
                 logger.warning("Error: %s, %s", str(type(e)), str(e))
                 matches.append(-1)

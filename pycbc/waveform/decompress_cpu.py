@@ -27,7 +27,8 @@ domain waveforms.
 
 import numpy
 
-from ..types import complex_same_precision_as, real_same_precision_as
+from pycbc.types import complex_same_precision_as, real_same_precision_as
+
 from .decompress_cpu_cython import (
     decomp_ccode_double,
     decomp_ccode_float,

@@ -447,6 +447,7 @@ class BruteParallelGaussianMarginalize(BaseGaussianNoise):
             self._current_stats.maxl_loglr = maxl_loglrs[maxidx]
             # calculate the marginal loglr and return
             return logsumexp(loglr) - numpy.log(len(self.phase))
+        return None
 
 
 class BruteLISASkyModesMarginalize(BaseGaussianNoise):
