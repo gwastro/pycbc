@@ -6,7 +6,7 @@ from pycbc.filter.matchedfilter_cpu import (
     fast_multiply_analytic_cython,
     find_peaks_in_block_cython,
 )
-from pycbc.types import complex64, zeros
+from pycbc.types import Array, FrequencySeries, complex64, zeros
 
 
 class MatchedFilterRatioControl:
@@ -103,7 +103,15 @@ class MatchedFilterRatioControl:
         return filters_f, n_taps
 
     def process_segment(
-        self, stilde, psd, ref_template, filters_f, n_taps, indices, valid_slice=None
+        self,
+        stilde,
+        psd,
+        ref_template,
+        filters_f,
+        n_taps,
+        indices,
+        valid_slice=None,
+        templates=None,
     ):
         """
         Process a single data segment.
@@ -123,15 +131,81 @@ class MatchedFilterRatioControl:
         )
 
         self.ref_snr = snr.numpy() * (norm * stilde.delta_t)
-
         local_idxs, t_idxs, snr_vals, tstarts = self._execute_blocked_kernel(
             self.ref_snr, filters_f, n_taps, valid_slice
         )
+        self._batch = (
+            stilde,
+            psd,
+            ref_template,
+            filters_f,
+            n_taps,
+            templates,
+            local_idxs,
+            t_idxs,
+            tstarts,
+        )
+        self._fine_templates = {}
+        self._fine_correlations = {}
+        self._ref_blocks = {}
 
         if len(local_idxs) > 0:
             global_ids = indices[local_idxs]
             return global_ids, t_idxs, snr_vals, tstarts, h_norm
         return [], [], [], tstarts, h_norm
+
+    def fine_template(self, j):
+        """Reconstruct the frequency-domain template for trigger j on the FIR
+        block grid by multiplying the decimated reference template by the
+        conjugate of the FIR ratio filter.
+        """
+        stilde, psd, ref_template, filters_f, _, templates, local_idxs, _, _ = (
+            self._batch
+        )
+        i = int(local_idxs[j])
+        if i not in self._fine_templates:
+            n = self.fir_fft_len
+            flen = n // 2 + 1
+            delta_f = self.engine_sr / n
+            step = round(delta_f / stilde.delta_f)
+            tmplt = FrequencySeries(
+                np.conj(filters_f[i, :flen])
+                * ref_template[::step][:flen]
+                / self.engine_sr,
+                delta_f=delta_f,
+                dtype=stilde.dtype,
+            )
+            tmplt.params = templates[i]
+            tmplt.f_lower = ref_template.f_lower
+            tmplt.psd = psd[::step][:flen]
+            self._fine_templates[i] = tmplt
+        return self._fine_templates[i]
+
+    def fine_correlation(self, j, reach=0):
+        """
+        Return (corr, index) for trigger j over an FIR block around the trigger,
+        re-centering the block if reach extends into the filter wrap-around region.
+        """
+        _, _, _, filters_f, n_taps, _, local_idxs, t_idxs, tstarts = self._batch
+        i = int(local_idxs[j])
+        t = int(t_idxs[j])
+        tstart = int(tstarts[j])
+        n = self.fir_fft_len
+        half = int(n_taps[i]) // 2
+        if t - reach - tstart < half or t + reach - tstart >= n - half:
+            tstart = min(max(t - n // 2, 0), len(self.ref_snr) - n)
+        key = (i, tstart)
+        if key not in self._fine_correlations:
+            if tstart not in self._ref_blocks:
+                ref = self.ref_snr[tstart : tstart + n]
+                ref_f = zeros(len(ref), dtype=complex64)
+                FFT(Array(ref, dtype=complex64), ref_f).execute()
+                self._ref_blocks[tstart] = ref_f.numpy()
+            corr = FrequencySeries(
+                filters_f[i] * self._ref_blocks[tstart], delta_f=self.engine_sr / n
+            )
+            self._fine_correlations[key] = corr / n
+        return self._fine_correlations[key], t - tstart
 
     def _fft_all_filters(self, taps, counts):
         """Helper to FFT all filters, batch_size rows at a time."""
