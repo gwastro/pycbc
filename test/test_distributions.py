@@ -90,7 +90,7 @@ class TestDistributions(unittest.TestCase):
         # read distributions
         self.dists = distributions.read_distributions_from_config(self.cp)
 
-        # check that all distriubtions will be tested
+        # check that all distributions will be tested
         for dname in distributions.distribs:
             dclass = distributions.distribs[dname]
             if (
@@ -104,7 +104,7 @@ class TestDistributions(unittest.TestCase):
         Check the Kullback-Leibler divergence between draws of random
         samples form the distribution and the probability density function
         of the distribution. This implementation only works for
-        one dimensional distriubtions.
+        one dimensional distributions.
         """
         # set threshold for KL divergence
         threshold = 0.1
@@ -121,13 +121,12 @@ class TestDistributions(unittest.TestCase):
             # skip it for this test
             if dist.name in [*EXCLUDE_DIST_NAMES, "trapezoid"]:
                 continue
+            # generate some random draws
+            samples = dist.rvs(n_samples)
             for param in dist.params:
                 # get min and max
                 hist_min = dist.bounds[param][0]
                 hist_max = dist.bounds[param][1]
-
-                # generate some random draws
-                samples = dist.rvs(n_samples)[param]
 
                 # get the PDF
                 x = numpy.arange(hist_min, hist_max, step)
@@ -135,25 +134,21 @@ class TestDistributions(unittest.TestCase):
 
                 # compute the KL divergence and check if below threshold
                 kl_val = entropy.kl(
-                    samples,
+                    samples[param],
                     pdf,
                     bins=pdf.size,
                     pdf2=True,
                     hist_min=hist_min,
                     hist_max=hist_max,
                 )
-                if not (kl_val < threshold):
-                    raise ValueError(
-                        f"Class {dist.name} KL divergence is {kl_val} which is "
-                        "greater than the threshold "
-                        f"of {threshold}"
-                    )
+                with self.subTest(dist=dist.name, param=param):
+                    self.assertLess(kl_val, threshold)
 
     def test_pdf_logpdf(self):
         """
         Checks that the probability density function (PDF) is within some
         tolerance of the natural logarithm of the PDF. This implementation is
-        for one dimensional distributions.
+        for one-dimensional distributions.
         """
         # assign tolerance for element-wise ratio of logarithm of PDF
         tolerance = 0.01
@@ -170,7 +165,7 @@ class TestDistributions(unittest.TestCase):
                 hist_min = dist.bounds[param][0]
                 hist_max = dist.bounds[param][1]
 
-                # get the PDF and logarithm of the PDF from the distriubtion
+                # get the PDF and logarithm of the PDF from the distribution
                 x = numpy.arange(hist_min, hist_max, step)
                 pdf = numpy.array([dist.pdf(**{param: xx}) for xx in x])
                 logpdf = numpy.array([dist.logpdf(**{param: xx}) for xx in x])
@@ -180,13 +175,12 @@ class TestDistributions(unittest.TestCase):
 
                 # see if each element in ratio of these two logarithm of PDF
                 # values are within the specified tolerance
-                if not numpy.all(
-                    abs(numpy.nan_to_num(1.0 - logpdf / pdf_log)) < tolerance
-                ):
-                    raise ValueError(
-                        "The PDF and logarithm of the PDF "
-                        f"functions for distribution {dist.name} "
-                        "do not agree"
+                with self.subTest(dist=dist.name, param=param):
+                    self.assertTrue(
+                        numpy.all(
+                            abs(numpy.nan_to_num(1.0 - logpdf / pdf_log)) < tolerance
+                        ),
+                        f"The PDF and logarithm of the PDF functions for distribution {dist.name} do not agree",
                     )
 
     def test_pdf_arrays(self):
@@ -351,27 +345,28 @@ class TestDistributions(unittest.TestCase):
             else:
                 continue
 
-            # check PDF equilvalent
-            pdf_1 = numpy.array(
-                [
-                    dist.pdf(**{dist.polar_angle: p, dist.azimuthal_angle: a})
-                    for p, a in cart_sin
-                ]
-            )
-            pdf_2 = numpy.array(
-                [polar_dist.pdf(theta=p) * ang_dist.pdf(theta=a) for p, a in cart_sin]
-            )
-
             # Catch and silence warnings here
-            with numpy.errstate(invalid="ignore", divide="ignore"):
-                if not (
-                    numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2)) < tolerance)
-                ):
-                    raise ValueError(
-                        f"The {dist.name} distribution PDF does not match "
-                        "its component "
-                        "distributions."
-                    )
+            with (
+                numpy.errstate(invalid="ignore", divide="ignore"),
+                self.subTest(dist=dist.name),
+            ):
+                # check PDF equivalent
+                pdf_1 = numpy.array(
+                    [
+                        dist.pdf(**{dist.polar_angle: p, dist.azimuthal_angle: a})
+                        for p, a in cart_sin
+                    ]
+                )
+                pdf_2 = numpy.array(
+                    [
+                        polar_dist.pdf(theta=p) * ang_dist.pdf(theta=a)
+                        for p, a in cart_sin
+                    ]
+                )
+                self.assertTrue(
+                    numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2)) < tolerance),
+                    f"The {dist.name} distribution PDF does not match its component distributions.",
+                )
 
                 # check logarithm of PDF equivalent
                 pdf_1 = numpy.array(
@@ -386,14 +381,10 @@ class TestDistributions(unittest.TestCase):
                         for p, a in cart_sin
                     ]
                 )
-                if not (
-                    numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2)) < tolerance)
-                ):
-                    raise ValueError(
-                        f"The {dist.name} distribution PDF does not match "
-                        "its component "
-                        "distriubtions."
-                    )
+                self.assertTrue(
+                    numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2)) < tolerance),
+                    f"The {dist.name} distribution PDF does not match its component distributions.",
+                )
 
             # check random draws from polar angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.polar_angle]
@@ -405,12 +396,15 @@ class TestDistributions(unittest.TestCase):
                 hist_min=polar_vals.min(),
                 hist_max=polar_vals.max(),
             )
-            if not (kl_val < threshold):
-                raise ValueError(
+            self.assertLess(
+                kl_val,
+                threshold,
+                msg=(
                     f"Class {dist.name} KL divergence is {kl_val} which is "
                     "greater than the threshold for polar angle"
                     f"of {threshold}"
-                )
+                ),
+            )
 
             # check random draws from azimuthal angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.azimuthal_angle]
@@ -422,12 +416,38 @@ class TestDistributions(unittest.TestCase):
                 hist_min=azimuthal.min(),
                 hist_max=azimuthal.max(),
             )
-            if not (kl_val < threshold):
-                raise ValueError(
+            self.assertLess(
+                kl_val,
+                threshold,
+                msg=(
                     f"Class {dist.name} KL divergence is {kl_val} which is "
                     "greater than the threshold for azimuthal angle"
                     f"of {threshold}"
+                ),
+            )
+
+    def test_sky_loc_distributions(self, n_samples=1000):
+        sky_loc_distributions = [
+            "uniform_sky",
+            "uniform_disk_sky",
+            "fisher_sky",
+            #'healpix_sky'  # Avoided as it requires mhealpy
+        ]
+        for dist in self.dists:
+            if dist.name not in sky_loc_distributions:
+                continue
+            with self.subTest(dist=dist.name):
+                samples = dist.rvs(n_samples)
+                # Pretty basic sanity checks only
+                self.assertEqual(samples.size, n_samples)
+                numpy.testing.assert_array_less(0, samples[dist.azimuthal_angle])
+                numpy.testing.assert_array_less(
+                    samples[dist.azimuthal_angle], 2 * numpy.pi
                 )
+                numpy.testing.assert_array_less(
+                    -numpy.pi / 2, samples[dist.polar_angle]
+                )
+                numpy.testing.assert_array_less(samples[dist.polar_angle], numpy.pi / 2)
 
 
 suite = unittest.TestSuite()
