@@ -20,7 +20,7 @@ import logging
 
 from igwn_segments import segmentlist
 
-from pycbc.workflow.core import Executable, FileList, SegFile, make_analysis_dir
+from pycbc.workflow.core import Executable, FileList, SegFile
 
 logger = logging.getLogger("pycbc.workflow.psd")
 
@@ -55,8 +55,7 @@ def merge_psds(workflow, files, ifo, out_dir, tags=None):
 def setup_psd_calculate(
     workflow, frame_files, ifo, segments, segment_name, out_dir, tags=None
 ):
-    tags = [] if not tags else tags
-    make_analysis_dir(out_dir)
+    tags = tags or []
     if workflow.cp.has_option_tags("workflow-psd", "parallelization-factor", tags=tags):
         num_parts = int(
             workflow.cp.get_opt_tags(

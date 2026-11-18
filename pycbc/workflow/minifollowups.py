@@ -54,7 +54,9 @@ def write_config_for_subworkflow(cp, config_path):
     """
     cp = copy.deepcopy(cp)
     cp.set('workflow', 'skip-resolve-input-files', '')
-    cp.write(open(config_path, 'w'))
+    makedir(os.path.dirname(config_path))
+    with open(config_path, 'w') as fp:
+        cp.write(fp)
 
 
 def add_wellfile_opt(node, workflow, option_name, out_dir, extra_tags=None):
@@ -143,7 +145,6 @@ def setup_foreground_minifollowups(
         return
 
     tags = [] if tags is None else tags
-    makedir(dax_output)
 
     # turn the config file into a File class
     config_path = os.path.abspath(
@@ -254,7 +255,6 @@ def setup_single_det_minifollowups(
         return
 
     tags = [] if tags is None else tags
-    makedir(dax_output)
 
     # turn the config file into a File class
     curr_ifo = single_trig_file.ifo
@@ -379,7 +379,6 @@ def setup_injection_minifollowups(
         return
 
     tags = [] if tags is None else tags
-    makedir(dax_output)
 
     # turn the config file into a File class
     config_path = os.path.abspath(
@@ -1384,7 +1383,6 @@ def setup_upload_prep_minifollowups(
         return
 
     tags = [] if tags is None else tags
-    makedir(dax_output)
 
     # turn the config file into a File class
     config_path = os.path.abspath(

@@ -191,8 +191,6 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
     onbefore = int(os.path.basename(cp.get("workflow-exttrig_segments", "on-before")))
     onafter = int(os.path.basename(cp.get("workflow-exttrig_segments", "on-after")))
     padding = int(os.path.basename(cp.get("workflow-exttrig_segments", "pad-data")))
-    if cp.has_option("workflow-condition_strain", "do-gating"):
-        padding += int(os.path.basename(cp.get("condition_strain", "pad-data")))
     quanta = int(os.path.basename(cp.get("workflow-exttrig_segments", "quanta")))
 
     # Check available data segments meet criteria specified in arguments
@@ -329,8 +327,6 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     onbefore = int(os.path.basename(cp.get("workflow-exttrig_segments", "on-before")))
     onafter = int(os.path.basename(cp.get("workflow-exttrig_segments", "on-after")))
     padding = int(os.path.basename(cp.get("workflow-exttrig_segments", "pad-data")))
-    if cp.has_option("workflow-condition_strain", "do-gating"):
-        padding += int(os.path.basename(cp.get("condition_strain", "pad-data")))
 
     # How many IFOs meet minimum data requirements?
     min_seg = segments.segment(
