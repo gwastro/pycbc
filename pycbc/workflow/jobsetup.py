@@ -473,15 +473,11 @@ def multi_ifo_coherent_job_setup(
         tags = []
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
     curr_out_files = FileList([])
-    ipn_sky_points = None
     bank_veto = None
     skygrid_file = None
     input_files = FileList(datafind_outs)
     for f in datafind_outs:
-        if "IPN_SKY_POINTS" in f.description:
-            ipn_sky_points = f
-            input_files.remove(f)
-        elif "vetoes" in f.description:
+        if "vetoes" in f.description:
             input_files.remove(f)
         elif "INPUT_BANK_VETO_BANK" in f.description:
             bank_veto = f
@@ -503,7 +499,6 @@ def multi_ifo_coherent_job_setup(
                 df_parents=input_files,
                 bank_veto_bank=bank_veto,
                 skygrid_file=skygrid_file,
-                ipn_file=ipn_sky_points,
                 slide=slide_dict,
                 tags=tag,
             )
@@ -525,7 +520,6 @@ def multi_ifo_coherent_job_setup(
                     df_parents=input_files,
                     bank_veto_bank=bank_veto,
                     skygrid_file=skygrid_file,
-                    ipn_file=ipn_sky_points,
                 )
                 workflow.add_node(node)
                 split_bank_counter += 1
@@ -955,20 +949,13 @@ class PyCBCMultiInspiralExecutable(Executable):
         df_parents=None,
         bank_veto_bank=None,
         skygrid_file=None,
-        ipn_file=None,
         slide=None,
         tags=None,
     ):
         if tags is None:
             tags = []
         node = Node(self)
-
-        if not (
-            df_parents
-            or self.has_opt("frame-files")
-            or self.has_opt("frame-cache")
-        ):
-            raise ValueError(f"{self.name} must be supplied with frame or cache files")
+        node.required_data_ifos = self.ifo_list
 
         # If doing single IFO search, make sure slides are disabled
         if len(self.ifo_list) < 2 and (
@@ -1019,9 +1006,6 @@ class PyCBCMultiInspiralExecutable(Executable):
 
         if skygrid_file is not None:
             node.add_input_opt("--sky-grid", skygrid_file)
-
-        if ipn_file is not None:
-            node.add_input_opt("--sky-positions-file", ipn_file)
 
         if inj_file is not None:
             if (
@@ -1277,56 +1261,20 @@ class LalappsInspinjExecutable(Executable):
     current_retention_level = Executable.FINAL_RESULT
     extension = ".xml"
 
-    def create_node(self, segment, exttrig_file=None, tags=None):
-        if tags is None:
-            tags = []
+    def create_node(self, segment):
         node = Node(self)
 
-        curr_tags = self.tags + tags
-        # This allows the desired number of injections to be given explicitly
-        # in the config file. Used for coh_PTF as segment length is unknown
-        # before run time.
         if self.get_opt("write-compress") is not None:
             self.extension = ".xml.gz"
 
-        # Check if these injections are using trigger information to choose
-        # sky positions for the simulated signals
-        if (
-            self.get_opt("l-distr") == "exttrig"
-            and exttrig_file is not None
-            and "trigger" in exttrig_file.description
-        ):
-            # Use an XML file containing trigger information
-            triggered = True
-            node.add_input_opt("--exttrig-file", exttrig_file)
-        elif (
-            self.get_opt("l-distr") == "ipn"
-            and exttrig_file is not None
-            and "IPN" in exttrig_file.description
-        ):
-            # Use an IPN sky points file
-            triggered = True
-            node.add_input_opt("--ipn-file", exttrig_file)
-        elif (self.get_opt("l-distr") != "exttrig") and (
-            self.get_opt("l-distr") != "ipn" and not self.has_opt("ipn-file")
-        ):
-            # Use no trigger information for generating injections
-            triggered = False
-        else:
-            err_msg = "The argument 'l-distr' passed to the "
-            err_msg += f"{self.tagged_name} job has the value "
-            err_msg += f"'{self.get_opt('l-distr')}' but you have not "
-            err_msg += "provided the corresponding ExtTrig or IPN file. "
-            err_msg += "Please check your configuration files and try again."
-            raise ValueError(err_msg)
-
-        if triggered:
-            num_injs = int(
-                self.cp.get_opt_tags("workflow-injections", "num-injs", curr_tags)
+        # These sky distributions need an external trigger or IPN file, which
+        # jobs made by this class are not given
+        if self.get_opt("l-distr") in ("exttrig", "ipn") or self.has_opt("ipn-file"):
+            raise ValueError(
+                f"The {self.tagged_name} job cannot be given the external "
+                "trigger or IPN file needed for its 'l-distr' or 'ipn-file' "
+                "option. Please check your configuration files."
             )
-            inj_tspace = float(segment[1] - segment[0]) / num_injs
-            node.add_opt("--time-interval", inj_tspace)
-            node.add_opt("--time-step", inj_tspace)
 
         node.new_output_file_opt(
             segment, self.extension, "--output", store_file=self.retain_files

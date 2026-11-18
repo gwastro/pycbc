@@ -6,12 +6,11 @@ Create a workflow for adding compressed waveforms to a template bank
 import argparse
 import logging
 import os
-import socket
 import sys
 
 import pycbc
 import pycbc.workflow as wf
-from pycbc.results import layout, save_fig_with_metadata
+from pycbc.results import layout, save_fig_with_metadata, save_workflow_log
 
 logger = logging.getLogger(__name__)
 
@@ -66,21 +65,9 @@ def finalize(container, workflow, finalize_workflow):
 
     # Close the log and flush to the html file
     logging.shutdown()
-    with open(wf_log_file.storage_path) as logfile:
-        logdata = logfile.read()
-    cwd = os.getcwd()
-    log_str = f"""
-    <p>Workflow generation script created workflow in output directory: {cwd}</p>
-    <p>Workflow name is: {args.workflow_name}</p>
-    <p>Workflow generation script run on host: {socket.gethostname()}</p>
-    <pre>{logdata}</pre>
-    """
-    kwds = {
-        "title": "Workflow Generation Log",
-        "caption": f"Log of the workflow script {sys.argv[0]}",
-        "cmd": " ".join(sys.argv),
-    }
-    save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+    save_workflow_log(
+        wf_log_file.storage_path, log_file_html.storage_path, args.workflow_name
+    )
 
     # Add the command line used to a specific file
     args_to_output = [sys.argv[0]]
