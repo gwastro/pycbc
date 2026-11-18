@@ -253,7 +253,8 @@ except KeyError:
     )
 
 
-class DefaultScheme(_default_scheme_class):
+# Replaces the placeholder set at the top of the module
+class DefaultScheme(_default_scheme_class):  # noqa: F811
     pass
 
 

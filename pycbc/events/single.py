@@ -294,7 +294,7 @@ class LiveSingle:
             statistic=args.ranking_statistic,
             sngl_ranking=args.sngl_ranking,
             stat_features=args.statistic_features,
-            stat_keywords=args.statistic_keywords,
+            stat_keywords=stat_keywords,
             stat_files=stat_files,
             statistic_refresh_rate=args.statistic_refresh_rate,
         )

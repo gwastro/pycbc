@@ -343,7 +343,7 @@ def compare_found_injs(reference_run, comparison_run, outfp):
 def compare_missed_injs(reference_run, comparison_run, outfp):
     logger.info("Comparing missed injections after vetoes")
     ifos = reference_run.inj_dets
-    fgroup = outfp.create_group("missed_after_vetoes")
+    outfp.create_group("missed_after_vetoes")
     ref_missed = reference_run.missed["after_vetoes"]
     com_missed = comparison_run.missed["after_vetoes"]
     ref_found_injs = reference_run.found_after_vetoes["injection_index"]

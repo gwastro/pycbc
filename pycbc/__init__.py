@@ -31,7 +31,6 @@ import os
 import random
 import signal
 import string
-import subprocess
 import sys
 import warnings
 from datetime import datetime as dt
@@ -237,7 +236,8 @@ except ImportError:
 
 # Check for MKL capability
 try:
-    import pycbc.fft.mkl
+    # Importing loads the MKL library, so this also catches it failing to load
+    import pycbc.fft.mkl  # noqa: F401
 
     HAVE_MKL = True
 except (ImportError, OSError):

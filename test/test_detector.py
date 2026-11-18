@@ -65,7 +65,7 @@ class TestDetector(unittest.TestCase):
 
         # Check it interacts with existing detectors
         d2 = det.Detector("H1")
-        t1 = d2.light_travel_time_to_detector(d)
+        d2.light_travel_time_to_detector(d)
 
     def test_response_matrix(self):
         import lal

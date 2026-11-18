@@ -107,7 +107,6 @@ def smooth_n_closest(
     """
     dist_sort = numpy.argsort(dists)
     templates_required = 0
-    n_triggers = 0
     # Count number of templates required to gather total_trigs templates,
     # starting at closest
     ntcs = nabove[dist_sort].cumsum()

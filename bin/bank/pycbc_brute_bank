@@ -486,7 +486,6 @@ class GenUniformWaveform:
             )
             maxlen = args.max_signal_length
             x = numpy.searchsorted(length, maxlen) - 1
-            signal_length = length[x]
             f = flow[x]
         else:
             f = self.f_lower

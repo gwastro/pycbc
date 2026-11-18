@@ -147,7 +147,7 @@ class SchemeTestBase(unittest.TestCase):
             # Force a move to the GPU by trivially multiplying by one:
             a1 = acopy * 1
             a2 = acopy * 1
-            truth = a1 == a2
+            _ = a1 == a2
             # Now verify that nothing moved
             self.assertTrue(isinstance(a1._scheme, type(self.context)))
             self.assertTrue(isinstance(a2._scheme, type(self.context)))

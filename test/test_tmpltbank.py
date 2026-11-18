@@ -491,8 +491,6 @@ class TmpltbankTestClass(unittest.TestCase):
         )
 
     def test_get_phys_cov_masses(self):
-        evecs = self.metric_params.evecs[self.f_upper]
-        evals = self.metric_params.evals[self.f_upper]
         masses1 = [2.2, 1.8, 0.4, 0.3]
         masses2 = [2.21, 1.79, 0.41, 0.29]
         xis1 = pycbc.tmpltbank.get_cov_params(
@@ -534,9 +532,7 @@ class TmpltbankTestClass(unittest.TestCase):
         # Test that returned masses and xis agree
         mass = output[0] + output[1]
         eta = output[0] * output[1] / (mass * mass)
-        spin_set = pycbc.pnutils.get_beta_sigma_from_aligned_spins(
-            eta, output[2], output[3]
-        )
+        pycbc.pnutils.get_beta_sigma_from_aligned_spins(eta, output[2], output[3])
         xis = pycbc.tmpltbank.get_cov_params(
             output[0], output[1], output[2], output[3], self.metric_params, self.f_upper
         )
@@ -574,8 +570,6 @@ class TmpltbankTestClass(unittest.TestCase):
 
     def test_stack_xi_direction(self):
         # Just run the function, no checking output
-        evecs = self.metric_params.evecs[self.f_upper]
-        evals = self.metric_params.evals[self.f_upper]
         masses1 = [2.2, 1.8, 0.4, 0.3]
         masses2 = [2.21, 1.79, 0.41, 0.29]
         xis1 = pycbc.tmpltbank.get_cov_params(
@@ -599,7 +593,7 @@ class TmpltbankTestClass(unittest.TestCase):
         best_masses = [b_mtot, b_eta, masses2[2], masses2[3]]
         best_xis = xis2
 
-        depths = pycbc.tmpltbank.stack_xi_direction_brute(
+        pycbc.tmpltbank.stack_xi_direction_brute(
             test_xis,
             best_masses,
             best_xis,

@@ -62,7 +62,7 @@ in particular that whichever backend is the default will be tested twice, once a
 import unittest
 
 import numpy
-from numpy import complex64, complex128, dtype, float32, float64, real, zeros
+from numpy import complex64, complex128, dtype, float32, float64, real
 from numpy.random import randn
 
 import pycbc

@@ -109,7 +109,6 @@ class TestModels(unittest.TestCase):
         cls.flow = {"H1": 25, "L1": 25, "V1": 25}
         inclination_prior = SinAngle(inclination=None)
         distance_prior = Uniform(distance=(10, 100))
-        tc_prior = Uniform(tc=(m.time - 0.1, m.time + 0.1))
         pol = UniformAngle(polarization=None)
         cls.prior = JointDistribution(cls.variable, inclination_prior, distance_prior)
 

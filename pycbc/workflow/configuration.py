@@ -133,7 +133,6 @@ def resolve_url_http(url, u, filename):
     with ciecplib.Session() as s:
         r = s.get(url, allow_redirects=True, headers=headers)
         r.raise_for_status()
-    content = r.content
 
     with open(filename, "wb") as output_fp:
         output_fp.write(r.content)

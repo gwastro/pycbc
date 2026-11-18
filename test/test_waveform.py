@@ -186,8 +186,8 @@ class TestWaveform(unittest.TestCase):
                                 phase_c = numpy.unwrap(numpy.angle(hc.data))
                                 index_amp_p = numpy.where(amp_p_lal != 0)
                                 index_phase_p = numpy.where(phase_p_lal != 0)
-                                index_amp_c = numpy.where(amp_c_lal != 0)
-                                index_phase_c = numpy.where(phase_c_lal != 0)
+                                index_amp_c = numpy.where(amp_c_lal != 0)  # noqa: F841
+                                index_phase_c = numpy.where(phase_c_lal != 0)  # noqa: F841
                                 amp_diff_p = max(
                                     abs(
                                         (amp_p[index_amp_p] - amp_p_lal[index_amp_p])
