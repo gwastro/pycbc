@@ -388,7 +388,8 @@ class TestSpherHarms(unittest.TestCase):
 
 
 suite = unittest.TestSuite()
-suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestParams, TestSpherHarms))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestParams))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestSpherHarms))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
