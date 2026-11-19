@@ -1,10 +1,10 @@
+import importlib.util
 import unittest
 
 import numpy
 from utils import simple_exit
 
 from pycbc import conversions, coordinates, distributions
-import importlib.util
 
 seed = 8202
 numpy.random.seed(seed)
@@ -360,7 +360,7 @@ class TestSpherHarms(unittest.TestCase):
 
     def test_broadcasting(self):
         """Test that wf transform properly broadcasts common params and agrees
-           with original"""
+        with original"""
         # an array inclination with a scalar azimuthal angle, and a 2D array
         incl = self.inclination[:12].reshape(3, 4)
         azimuthal = 0.3
@@ -386,9 +386,9 @@ class TestSpherHarms(unittest.TestCase):
         with self.assertRaises(ValueError):
             conversions.spher_harms("bogus", 2, 2, inclination=0.1)
 
+
 suite = unittest.TestSuite()
-suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestParams,
-                                                          TestSpherHarms))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestParams, TestSpherHarms))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
