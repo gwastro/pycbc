@@ -2014,6 +2014,73 @@ def final_spin_from_initial(
     )[1]
 
 
+def spher_harms(
+    harmonics="spherical",
+    l=None,
+    m=None,
+    n=0,
+    inclination=0.0,
+    azimuthal=0.0,
+    spin=None,
+    pol=None,
+    polnm=None,
+):
+    r"""Array version of :py:func:`pycbc.waveform.ringdown.spher_harms`.
+
+    Returns the +m and -m harmonics (spherical, spheroidal, or arbitrary) for
+    each element of the given ``inclination``, ``azimuthal``, ``spin``,
+    ``pol`` and ``polnm``, which may be floats or arrays (they are broadcast
+    against each other). The remaining arguments are as for
+    :py:func:`pycbc.waveform.ringdown.spher_harms`, which is called for each
+    element.
+
+    The harmonics are complex. To use them as parameters in, e.g.,
+    ``pycbc_inference_plot_posterior``, take a real part of one of them; for
+    example ``--parameters "absolute(spher_harms('spherical', 2, 2, 0,
+    inclination)[0])"`` gives :math:`|{}_{-2}Y_{22}|`, and
+    ``"spher_harms('spheroidal', 2, 2, 0, inclination, 0, final_spin)[1].real"``
+    the real part of the :math:`m = -2` spheroidal harmonic.
+
+    Returns
+    -------
+    xlm : complex or array of complex
+        The harmonic of the +m mode.
+    xlnm : complex or array of complex
+        The harmonic of the -m mode.
+    """
+    from pycbc.waveform.ringdown import spher_harms as _spher_harms
+
+    # the arguments that may vary sample to sample
+    varargs = {
+        "inclination": inclination,
+        "azimuthal": azimuthal,
+        "spin": spin,
+        "pol": pol,
+        "polnm": polnm,
+    }
+    varargs = {k: v for k, v in varargs.items() if v is not None}
+    names = list(varargs)
+    arrays = numpy.broadcast_arrays(
+        *[numpy.asarray(v, dtype=float) for v in varargs.values()]
+    )
+    shape = arrays[0].shape
+    fixed = {
+        "harmonics": str(harmonics),
+        "l": None if l is None else int(l),
+        "m": None if m is None else int(m),
+        "n": int(n),
+    }
+    xlm = numpy.empty(shape, dtype=complex)
+    xlnm = numpy.empty(shape, dtype=complex)
+    for idx in numpy.ndindex(shape):
+        kwargs = {
+            name: float(arr[idx]) for name, arr in zip(names, arrays, strict=True)
+        }
+        xlm[idx], xlnm[idx] = _spher_harms(**fixed, **kwargs)
+    if shape == ():
+        return xlm.item(), xlnm.item()
+    return xlm, xlnm
+
 #
 # =============================================================================
 #
@@ -2289,6 +2356,7 @@ __all__ = [
     "secondary_spin",
     "secondary_xi",
     "snr_from_loglr",
+    "spher_harms",
     "spin1x_from_xi1_phi_a_phi_s",
     "spin1y_from_xi1_phi_a_phi_s",
     "spin1z_from_mass1_mass2_chi_eff_chi_a",

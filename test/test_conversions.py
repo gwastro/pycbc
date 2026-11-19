@@ -4,6 +4,7 @@ import numpy
 from utils import simple_exit
 
 from pycbc import conversions, coordinates, distributions
+import importlib.util
 
 seed = 8202
 numpy.random.seed(seed)
@@ -282,8 +283,112 @@ class TestParams(unittest.TestCase):
                     self.assertAlmostEqual(back, time1, places=6)
 
 
+class TestSpherHarms(unittest.TestCase):
+    """Tests that conversions.spher_harms accepts scalars and arrays, and
+    agrees with pycbc.waveform.ringdown.spher_harms in both cases. Spherical
+    and arbitrary cases are always tested; spheroidal case is only tested if
+    pykerr is installed."""
+
+    def setUp(self):
+        from pycbc.waveform import ringdown
+
+        self.ringdown = ringdown
+        self.size = 50
+        rng = numpy.random.default_rng(seed)
+        self.inclination = rng.uniform(0, numpy.pi, self.size)
+        self.azimuthal = rng.uniform(0, 2 * numpy.pi, self.size)
+        self.spin = rng.uniform(-0.99, 0.99, self.size)
+        self.pol = rng.uniform(0, 2 * numpy.pi, self.size)
+        self.polnm = rng.uniform(0, 2 * numpy.pi, self.size)
+        # (harmonics, fixed arguments, names of the varying arguments)
+        self.cases = [
+            ("spherical", {"l": 2, "m": 2}, ["inclination", "azimuthal"]),
+            ("spherical", {"l": 3, "m": 1}, ["inclination", "azimuthal"]),
+            ("arbitrary", {}, ["pol", "polnm"]),
+        ]
+        # spheroidal harmonics need pykerr (ringdown.pykerr is a stub, not
+        # None, when it is not installed)
+        if importlib.util.find_spec("pykerr") is not None:
+            self.cases += [
+                (
+                    "spheroidal",
+                    {"l": 2, "m": 2, "n": 0},
+                    ["inclination", "azimuthal", "spin"],
+                ),
+                (
+                    "spheroidal",
+                    {"l": 3, "m": 3, "n": 1},
+                    ["inclination", "azimuthal", "spin"],
+                ),
+            ]
+
+    def _varying(self, names, idx=None):
+        """The varying arguments, as arrays or (if idx is given) scalars."""
+        args = {name: getattr(self, name) for name in names}
+        if idx is not None:
+            args = {name: float(val[idx]) for name, val in args.items()}
+        return args
+
+    def test_scalars(self):
+        """Test that wf transform can take scalars and agrees with original"""
+        for harmonics, fixed, names in self.cases:
+            for idx in range(5):
+                args = self._varying(names, idx)
+                with self.subTest(harmonics=harmonics, **fixed, **args):
+                    xlm, xlnm = conversions.spher_harms(harmonics, **fixed, **args)
+                    exlm, exlnm = self.ringdown.spher_harms(harmonics, **fixed, **args)
+                    # scalar input gives scalar output
+                    self.assertTrue(numpy.isscalar(xlm))
+                    self.assertTrue(numpy.isscalar(xlnm))
+                    self.assertAlmostEqual(xlm, exlm, places=12)
+                    self.assertAlmostEqual(xlnm, exlnm, places=12)
+
+    def test_arrays(self):
+        """Test that wf transform can take vectors and agrees with original"""
+        for harmonics, fixed, names in self.cases:
+            with self.subTest(harmonics=harmonics, **fixed):
+                args = self._varying(names)
+                xlm, xlnm = conversions.spher_harms(harmonics, **fixed, **args)
+                self.assertEqual(xlm.shape, (self.size,))
+                self.assertEqual(xlnm.shape, (self.size,))
+                for idx in range(self.size):
+                    exlm, exlnm = self.ringdown.spher_harms(
+                        harmonics, **fixed, **self._varying(names, idx)
+                    )
+                    self.assertAlmostEqual(xlm[idx], exlm, places=12)
+                    self.assertAlmostEqual(xlnm[idx], exlnm, places=12)
+
+    def test_broadcasting(self):
+        """Test that wf transform properly broadcasts common params and agrees
+           with original"""
+        # an array inclination with a scalar azimuthal angle, and a 2D array
+        incl = self.inclination[:12].reshape(3, 4)
+        azimuthal = 0.3
+        xlm, xlnm = conversions.spher_harms(
+            "spherical", 2, 2, inclination=incl, azimuthal=azimuthal
+        )
+        self.assertEqual(xlm.shape, (3, 4))
+        self.assertEqual(xlnm.shape, (3, 4))
+        for idx in numpy.ndindex(incl.shape):
+            exlm, exlnm = self.ringdown.spher_harms(
+                "spherical", 2, 2, inclination=incl[idx], azimuthal=azimuthal
+            )
+            self.assertAlmostEqual(xlm[idx], exlm, places=12)
+            self.assertAlmostEqual(xlnm[idx], exlnm, places=12)
+
+    def test_errors_match(self):
+        """Check that wf transform throws the same errors as original"""
+        # missing required arguments raise the same errors as the original
+        with self.assertRaises(ValueError):
+            conversions.spher_harms("arbitrary", inclination=self.inclination)
+        with self.assertRaises(ValueError):
+            conversions.spher_harms("spheroidal", 2, 2, inclination=self.inclination)
+        with self.assertRaises(ValueError):
+            conversions.spher_harms("bogus", 2, 2, inclination=0.1)
+
 suite = unittest.TestSuite()
-suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestParams))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestParams,
+                                                          TestSpherHarms))
 
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
