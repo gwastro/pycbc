@@ -55,6 +55,7 @@ class TestEventManager(unittest.TestCase):
             "bank_chisq",
             "bank_chisq_dof",
             "cont_chisq",
+            "cont_chisq_dof",
             "time_index",
             "sigmasq",
         ]
@@ -64,6 +65,7 @@ class TestEventManager(unittest.TestCase):
             np.float32,
             np.float32,
             np.float32,
+            np.int32,
             np.int64,
             np.float32,
         ]
@@ -87,6 +89,7 @@ class TestEventManager(unittest.TestCase):
             "bank_chisq": np.array([0.0, 0.0], dtype=np.float32),
             "bank_chisq_dof": np.array([0.0, 0.0], dtype=np.float32),
             "cont_chisq": np.array([0.0, 0.0], dtype=np.float32),
+            "cont_chisq_dof": np.array([0, 0], dtype=np.int32),
             "time_index": np.array([2048, 4096], dtype=np.int64),
             "sigmasq": np.array([50.0, 60.0], dtype=np.float32),
             "template_hash": np.array([h1_hash, h1_hash]),
@@ -110,10 +113,12 @@ class TestEventManager(unittest.TestCase):
             "bank_chisq": np.array([0.0], dtype=np.float32),
             "bank_chisq_dof": np.array([0.0], dtype=np.float32),
             "cont_chisq": np.array([0.0], dtype=np.float32),
+            "cont_chisq_dof": np.array([0], dtype=np.int32),
             "time_index": np.array([3000], dtype=np.int64),
             "sigmasq": np.array([45.0], dtype=np.float32),
             "template_hash": np.array([l1_hash]),
         }
+        mgr_l1.non_threshold_time = 4.0
         mgr_l1.add_template_events(self.columns, [l1_events[c] for c in self.columns])
         mgr_l1.finalize_template_events()
         mgr_l1.write_events(self.h5_path, mode="a")
@@ -134,6 +139,7 @@ class TestEventManager(unittest.TestCase):
             "bank_chisq": np.array([0.0], dtype=np.float32),
             "bank_chisq_dof": np.array([0.0], dtype=np.float32),
             "cont_chisq": np.array([0.0], dtype=np.float32),
+            "cont_chisq_dof": np.array([0], dtype=np.int32),
             "time_index": np.array([5120], dtype=np.int64),
             "sigmasq": np.array([35.0], dtype=np.float32),
             "template_hash": np.array([v1_hash]),
@@ -164,6 +170,8 @@ class TestEventManager(unittest.TestCase):
                 hf["L1/template_hash"][:], l1_events["template_hash"]
             )
             self.assertIn("L1/search/start_time", hf)
+            self.assertIn("L1/search/non_threshold_time", hf)
+            np.testing.assert_allclose(hf["L1/search/non_threshold_time"][:], [4.0])
 
             # Check V1 datasets
             self.assertIn("V1/snr", hf)
