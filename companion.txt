@@ -30,4 +30,4 @@ awkde @ git+https://github.com/mennthor/awkde.git@5b601fe4d92229d5deb8737fd121dc
 scikit-learn
 
 # Needed for hierarchical FIR/ratio matched filtering
-matchedfilter @ git+https://github.com/ahnitz/matchedfilter.git@1d6b6ae2a6a1d762b543919840b65cebee3035ac
+matchedfilter @ git+https://github.com/ahnitz/matchedfilter.git@bfa6eada0aab8c10780fa3d54596f7cdd793f537
