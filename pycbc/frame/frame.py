@@ -203,7 +203,9 @@ def frame_paths(
         # this case is tolerated for backward compatibility
         site = frame_type[0]
         warnings.warn(
-            f"Guessing site {site} from frame type {frame_type}", DeprecationWarning
+            f"Guessing site {site} from frame type {frame_type}",
+            DeprecationWarning,
+            stacklevel=2,
         )
     cache = find_frame_urls(
         site, frame_type, start_time, end_time, urltype=url_type, host=server
@@ -250,6 +252,7 @@ def get_site_from_type_or_channel(frame_type, channels):
     warnings.warn(
         f"Guessing site {frame_type[0]} from frame type {frame_type}",
         DeprecationWarning,
+        stacklevel=2,
     )
     return frame_type[0], frame_type
 

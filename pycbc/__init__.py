@@ -230,7 +230,8 @@ try:
     HAVE_CUDA = device_count > 0
     if device_count == 0:
         warnings.warn(
-            "PyCUDA imported but no CUDA device found; disabling CUDA support"
+            "PyCUDA imported but no CUDA device found; disabling CUDA support",
+            stacklevel=1,
         )
 except ImportError:
     HAVE_CUDA = False

@@ -125,15 +125,15 @@ for i, bank_fname in enumerate(args.bank_files):
         )
 
         logger.debug("Getting compression factors and mismatches")
-        for i, thash in enumerate(thashes):
+        for j, thash in enumerate(thashes):
             try:
                 this_grp = compressed_grp[str(thash)]
             except KeyError:
                 continue
 
-            compression_thisbank[i] = this_grp.attrs["compression_factor"]
-            mismatch_thisbank[i] = this_grp.attrs["mismatch"]
-            valid_idx[i] = True
+            compression_thisbank[j] = this_grp.attrs["compression_factor"]
+            mismatch_thisbank[j] = this_grp.attrs["mismatch"]
+            valid_idx[j] = True
 
         logger.info(
             "%d out of %d compressed waveforms in %s",
@@ -221,12 +221,12 @@ fig, axes = plt.subplots(
 )
 
 # Make the histogram and scatter points for each approximant separately
-apx_names, apx_count = np.unique(approximants, return_counts=True)
+apx_names, apx_counts = np.unique(approximants, return_counts=True)
 # The color cycle is usually longer than the list of approximants
 apx_colors = dict(
     zip(apx_names, plt.rcParams["axes.prop_cycle"].by_key()["color"], strict=False)
 )
-for apx_name, apx_count in zip(apx_names, apx_count, strict=True):
+for apx_name, apx_count in zip(apx_names, apx_counts, strict=True):
     # Filter to just this approximant
     this_appx = approximants == apx_name
 

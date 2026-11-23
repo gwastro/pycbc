@@ -234,7 +234,8 @@ class BoundedDist:
                 warnings.warn(
                     f"Param {param} has one or more "
                     "reflected boundaries. Reflected boundaries "
-                    "can cause issues when used in an MCMC."
+                    "can cause issues when used in an MCMC.",
+                    stacklevel=1,
                 )
         self._bounds = params
         self._params = sorted(params.keys())
@@ -259,8 +260,10 @@ class BoundedDist:
         try:
             for p in self._params:
                 isin = isin & self._bounds[p].contains_conditioned(params[p])
-        except KeyError:
-            raise ValueError(f"must provide all parameters [{', '.join(self._params)}]")
+        except KeyError as err:
+            raise ValueError(
+                f"must provide all parameters [{', '.join(self._params)}]"
+            ) from err
         return isin
 
     __contains__ = contains

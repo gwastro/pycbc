@@ -286,7 +286,7 @@ class TestLALSimulation(unittest.TestCase):
 
         hp, _ = get_waveform(self.p)
 
-        for i in range(10):
+        for _ in range(10):
             p_near = nearby(self.p)
             hpn, _ = get_waveform(p_near)
 
@@ -319,7 +319,7 @@ class TestLALSimulation(unittest.TestCase):
             nearby_params.coa_phase *= uniform(low=1 - tol, high=1 + tol)
             return nearby_params
 
-        for i in range(10):
+        for _ in range(10):
             p_near = nearby(self.p)
             get_waveform(p_near)
 

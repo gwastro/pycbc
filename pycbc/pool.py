@@ -146,7 +146,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
             except KeyboardInterrupt:
                 self.terminate()
                 self.join()
-                raise KeyboardInterrupt
+                raise
 
     def close_pool(self):
         """Close the pool and remove the reference"""
@@ -224,10 +224,10 @@ def choose_pool(processes, mpi=False, **kwargs):
 
             if do_mpi and not mpi:
                 logger.info("NOTE: using MPI as this process was launchedunder MPI")
-        except ImportError:
+        except ImportError as err:
             raise ValueError(
                 "Failed to start up an MPI pool, install mpi4py / schwimmbad"
-            )
+            ) from err
     elif processes == 1:
         pool = SinglePool(**kwargs)
     else:

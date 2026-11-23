@@ -223,8 +223,8 @@ class CommonMCMCMetadataIO:
         """
         try:
             return self[self.sampler_group]["is_burned_in"][()]
-        except KeyError:
-            raise ValueError("No burn in tests were performed")
+        except KeyError as err:
+            raise ValueError("No burn in tests were performed") from err
 
     @property
     def burn_in_iteration(self):
@@ -235,8 +235,8 @@ class CommonMCMCMetadataIO:
         """
         try:
             return self[self.sampler_group]["burn_in_iteration"][()]
-        except KeyError:
-            raise ValueError("No burn in tests were performed")
+        except KeyError as err:
+            raise ValueError("No burn in tests were performed") from err
 
     @property
     def burn_in_index(self):
@@ -259,8 +259,8 @@ class CommonMCMCMetadataIO:
         """
         try:
             return self[self.sampler_group]["act"][()]
-        except KeyError:
-            raise ValueError("ACT has not been calculated")
+        except KeyError as err:
+            raise ValueError("ACT has not been calculated") from err
 
     @act.setter
     def act(self, act):
@@ -291,8 +291,8 @@ class CommonMCMCMetadataIO:
         """
         try:
             group = self[self.sampler_group]["raw_acts"]
-        except KeyError:
-            raise ValueError("ACTs have not been calculated")
+        except KeyError as err:
+            raise ValueError("ACTs have not been calculated") from err
         acts = {}
         for param in group:
             acts[param] = group[param][()]

@@ -125,8 +125,8 @@ def insert_base_bank_options(parser, match_req=True):
         err_msg = f"must be a number between 0 and 1 excluded, not {s!r}"
         try:
             value = float(s)
-        except ValueError:
-            raise argparse.ArgumentTypeError(err_msg)
+        except ValueError as err:
+            raise argparse.ArgumentTypeError(err_msg) from err
         if value <= 0 or value >= 1:
             raise argparse.ArgumentTypeError(err_msg)
         return value

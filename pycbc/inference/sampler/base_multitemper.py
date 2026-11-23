@@ -105,8 +105,8 @@ def read_betas_from_hdf(filename):
             betas = numpy.array(fp.attrs["betas"])
             # betas must be in decending order
             betas = numpy.sort(betas)[::-1]
-        except KeyError:
-            raise AttributeError("No attribute called betas")
+        except KeyError as err:
+            raise AttributeError("No attribute called betas") from err
     return betas
 
 

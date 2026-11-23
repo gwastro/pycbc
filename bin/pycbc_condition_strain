@@ -120,7 +120,7 @@ out_strain = pycbc.strain.from_cli(
 if args.output_gates_file:
     logger.info("Writing output gates")
     with open(args.output_gates_file, "w") as gate_f:
-        for k, v in out_strain.gating_info.items():
+        for v in out_strain.gating_info.values():
             for t, w, p in v:
                 gate_f.write(f"{t:.4f} {w:.2f} {p:.2f}\n")
 

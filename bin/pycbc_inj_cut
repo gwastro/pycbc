@@ -98,7 +98,7 @@ out_sim_inspiral_missed = lsctables.SimInspiralTable.new(
     columns=injections.table.columnnames
 )
 
-for i, inj in enumerate(injections.table):
+for inj in injections.table:
     snrs = numpy.array([getattr(inj, column) for column in opts.snr_columns.values()])
     if sum(snrs < opts.snr_thresh):
         out_sim_inspiral_missed.append(inj)

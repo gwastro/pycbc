@@ -1253,8 +1253,8 @@ def sigmasq(htilde, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=N
     if psd:
         try:
             numpy.testing.assert_almost_equal(ht.delta_f, psd.delta_f)
-        except AssertionError:
-            raise ValueError("Waveform does not have same delta_f as psd")
+        except AssertionError as err:
+            raise ValueError("Waveform does not have same delta_f as psd") from err
 
     sq = ht.inner(ht) if psd is None else ht.weighted_inner(ht, psd[kmin:kmax])
 
@@ -1413,8 +1413,8 @@ def matched_filter_core(
         if isinstance(psd, FrequencySeries):
             try:
                 numpy.testing.assert_almost_equal(stilde.delta_f, psd.delta_f)
-            except AssertionError:
-                raise ValueError("PSD delta_f does not match data")
+            except AssertionError as err:
+                raise ValueError("PSD delta_f does not match data") from err
             qtilde[kmin:kmax] /= psd[kmin:kmax]
         else:
             raise TypeError("PSD must be a FrequencySeries")

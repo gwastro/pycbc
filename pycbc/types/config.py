@@ -479,7 +479,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         """
         if not self.has_section("sharedoptions"):
             return
-        for key, value in self.items("sharedoptions"):
+        for key, _ in self.items("sharedoptions"):
             self.remove_section(f"sharedoptions-{key}")
         self.remove_section("sharedoptions")
 
@@ -668,10 +668,10 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         try:
             return self.get(section, option)
-        except configparser.Error:
+        except configparser.Error as err:
             err_string = f"No option '{option}' in section [{section}] "
             if not tags:
-                raise configparser.Error(err_string + ".")
+                raise configparser.Error(err_string + ".") from err
             return_vals = []
             # First, check if there are any default values set:
             has_defaultvalue = False
@@ -700,13 +700,13 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             # We also want to recursively go into sections
             if not return_vals:
                 err_string += f"or in sections [{'] ['.join(section_list)}]."
-                raise configparser.Error(err_string)
+                raise configparser.Error(err_string) from err
             if len(return_vals) > 1:
                 err_string += (
                     "and multiple entries found in sections "
                     f"[{'] ['.join(err_section_list)}]."
                 )
-                raise configparser.Error(err_string)
+                raise configparser.Error(err_string) from err
             return return_vals[0]
 
     def has_option_tag(self, section, option, tag):

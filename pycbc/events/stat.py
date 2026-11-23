@@ -1893,8 +1893,8 @@ def get_statistic(stat):
     """
     try:
         return statistic_dict[stat]
-    except KeyError:
-        raise RuntimeError(f"{stat} is not an available detection statistic")
+    except KeyError as err:
+        raise RuntimeError(f"{stat} is not an available detection statistic") from err
 
 
 def insert_statistic_option_group(parser, default_ranking_statistic=None):
@@ -2001,13 +2001,13 @@ def parse_statistic_feature_options(stat_features, stat_kwarg_list):
         try:
             key, value = inputstr.split(":")
             stat_kwarg_dict[key] = value
-        except ValueError:
+        except ValueError as err:
             err_txt = (
                 "--statistic-keywords must take input in the "
                 "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... "
                 "Received {}".format(" ".join(stat_kwarg_list))
             )
-            raise ValueError(err_txt)
+            raise ValueError(err_txt) from err
 
     return stat_kwarg_dict
 

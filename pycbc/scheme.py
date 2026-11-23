@@ -244,13 +244,13 @@ _scheme_map = {v: k for (k, v) in scheme_prefix.items()}
 _default_scheme_prefix = os.getenv("PYCBC_SCHEME", "cpu")
 try:
     _default_scheme_class = _scheme_map[_default_scheme_prefix]
-except KeyError:
+except KeyError as exc:
     raise RuntimeError(
         "PYCBC_SCHEME={!r} not recognised, please select one of: {}".format(
             _default_scheme_prefix,
             ", ".join(map(repr, _scheme_map)),
         ),
-    )
+    ) from exc
 
 
 class DefaultScheme(_default_scheme_class):
@@ -276,7 +276,7 @@ def schemed(prefix):
         def _scheming_function(*args, **kwds):
             try:
                 return _import_cache[mgr.state][func](*args, **kwds)
-            except KeyError:
+            except KeyError as exc:
                 exc_errors = []
                 for sch in mgr.state.__class__.__mro__[0:-2]:
                     try:
@@ -301,7 +301,7 @@ def schemed(prefix):
                 )
                 for emsg in exc_errors:
                     err += str(emsg) + " "
-                raise RuntimeError(err)
+                raise RuntimeError(err) from exc
 
         return _scheming_function
 

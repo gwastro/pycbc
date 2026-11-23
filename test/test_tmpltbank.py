@@ -406,8 +406,8 @@ class TmpltbankTestClass(unittest.TestCase):
                 dist_fac = dist_fac**0.5
                 dist_fac = max(dist_fac, 0.01)
                 dist_fac = min(dist_fac, 2)
-                for idx, curr_mass2 in enumerate(masses2):
-                    masses2[idx] = masses1[idx] + (curr_mass2 - masses1[idx]) * dist_fac
+                for j, curr_mass2 in enumerate(masses2):
+                    masses2[j] = masses1[j] + (curr_mass2 - masses1[j]) * dist_fac
                 dist, _, _ = pycbc.tmpltbank.get_point_distance(
                     masses1, masses2, self.metric_params, self.f_upper
                 )

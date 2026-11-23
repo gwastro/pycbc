@@ -322,9 +322,9 @@ def main(
             for custom_frame in custom_frame_files[ifo]:
                 try:
                     frame_data = frame.read_frame(custom_frame, channel_names[ifo])
-                except RuntimeError:
+                except RuntimeError as err:
                     msg = f"Channel name in {custom_frame} is not {channel_names[ifo]}"
-                    raise RuntimeError(msg)
+                    raise RuntimeError(msg) from err
                 fr_start_times.append(frame_data.start_time)
                 fr_end_times.append(frame_data.end_time)
             if gps_start_time < min(fr_start_times):

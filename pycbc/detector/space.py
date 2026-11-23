@@ -377,8 +377,8 @@ class _LDCDetector(AbsSpaceDet):
         if orbits in defaults:
             try:
                 import lisaorbits
-            except ImportError:
-                raise ImportError("lisaorbits not found")
+            except ImportError as err:
+                raise ImportError("lisaorbits not found") from err
             if orbits == "EqualArmlength":
                 o = lisaorbits.EqualArmlengthOrbits()
             if orbits == "Keplerian":
@@ -430,8 +430,8 @@ class _LDCDetector(AbsSpaceDet):
         """
         try:
             from pytdi import Data
-        except ImportError:
-            raise ImportError("pyTDI required for TDI combinations")
+        except ImportError as err:
+            raise ImportError("pyTDI required for TDI combinations") from err
 
         links = ["12", "23", "31", "13", "32", "21"]
 
@@ -482,8 +482,8 @@ class _LDCDetector(AbsSpaceDet):
         """
         try:
             from lisagwresponse import ReadStrain
-        except ImportError:
-            raise ImportError("LISA GW Response not found")
+        except ImportError as err:
+            raise ImportError("LISA GW Response not found") from err
 
         if self.dt is None:
             self.dt = hp.delta_t
@@ -601,8 +601,8 @@ class _LDCDetector(AbsSpaceDet):
         """
         try:
             from pytdi import michelson
-        except ImportError:
-            raise ImportError("pyTDI not found")
+        except ImportError as err:
+            raise ImportError("pyTDI not found") from err
 
         # set TDI generation
         if tdi == 1.5:
@@ -763,8 +763,8 @@ class _FLRDetector(AbsSpaceDet):
 
         try:
             from lisatools import detector
-        except ImportError:
-            raise ImportError("LISA Analysis Tools required for FLR orbits")
+        except ImportError as err:
+            raise ImportError("LISA Analysis Tools required for FLR orbits") from err
 
         # load an orbit from lisatools
         defaults = ["EqualArmlength", "ESA"]
@@ -821,8 +821,8 @@ class _FLRDetector(AbsSpaceDet):
         """
         try:
             from fastlisaresponse import pyResponseTDI
-        except ImportError:
-            raise ImportError("FastLISAResponse not found")
+        except ImportError as err:
+            raise ImportError("FastLISAResponse not found") from err
 
         if self.dt is None:
             self.dt = hp.delta_t

@@ -918,9 +918,9 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
         try:
             if any(mass2 > mass1) and input_is_array:
                 raise ValueError("Require mass1 >= mass2")
-        except TypeError:
+        except TypeError as err:
             if mass2 > mass1 and not input_is_array:
-                raise ValueError(f"Require mass1 >= mass2. {mass1} < {mass2}")
+                raise ValueError(f"Require mass1 >= mass2. {mass1} < {mass2}") from err
     eta = eta_from_mass1_mass2(mass1, mass2)
     # If a maximum NS mass is not provided, accept all values and
     # let the EOS handle this (in ns.initialize_eos)

@@ -369,9 +369,6 @@ found_after_vetoes, vetoed, *_ = ppu.apply_vetoes_to_found_injs(
 # Post-process injections: skip this if there are no found injections
 # ===================================================================
 if len(found_after_vetoes["network/template_id"]):
-    # Calculate quantities not included in trigger files, such as chirp mass
-    found_trig_mchirp = template_mchirps[found_after_vetoes["network/template_id"]]
-
     # Construct conditions for injection:
     # 1) found (surviving vetoes) louder than background,
     zero_fap = np.zeros(len(found_after_vetoes["network/end_time_gc"])).astype(bool)
@@ -387,9 +384,7 @@ if len(found_after_vetoes["network/template_id"]):
     g_ifar = {}
     g_ifar["bestnr"] = found_after_vetoes["network/reweighted_snr"][nonzero_fap]
     g_ifar["stat"] = np.zeros([len(g_ifar["bestnr"])])
-    for ix, (mc, bestnr) in enumerate(
-        zip(found_trig_mchirp[nonzero_fap], g_ifar["bestnr"], strict=True)
-    ):
+    for ix, bestnr in enumerate(g_ifar["bestnr"]):
         g_ifar["stat"][ix] = (sorted_bkgd > bestnr).sum()
     g_ifar["stat"] = g_ifar["stat"] / total_trials
 

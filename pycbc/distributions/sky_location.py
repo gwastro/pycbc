@@ -330,7 +330,8 @@ class HealpixSky:
             warnings.warn(
                 "Sum of probs in HEALPix map is "
                 f"{self.pix_probs.sum(dtype=numpy.float64)}, far "
-                "from 1. Something might be wrong with that map"
+                "from 1. Something might be wrong with that map",
+                stacklevel=1,
             )
         self.pix_probs /= sum_pix_probs
 

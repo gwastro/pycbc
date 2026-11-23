@@ -523,13 +523,13 @@ class Executable(pegasus_workflow.Executable):
                 self.global_retention_threshold = retention_choices[
                     global_retention_level
                 ]
-            except KeyError:
+            except KeyError as err:
                 err_msg = "Cannot recognize the file-retention-level in the "
                 err_msg += "[workflow] section of the ini file. "
                 err_msg += f"Got : {global_retention_level}."
                 err_msg += "Valid options are: 'all_files', 'all_triggers',"
                 err_msg += "'merged_triggers' or 'results' "
-                raise ValueError(err_msg)
+                raise ValueError(err_msg) from err
             if self.current_retention_level == 5:
                 self.retain_files = True
                 if type(self).__name__ in Executable._warned_classes_list:
@@ -1806,7 +1806,7 @@ class FileList(list):
 
         # Set up storage
         self._split_lists = []
-        for idx in range(num_sub_lists):
+        for _ in range(num_sub_lists):
             self._split_lists.append(FileList([]))
 
         # Sort the files

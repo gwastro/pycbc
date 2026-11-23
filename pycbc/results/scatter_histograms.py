@@ -179,8 +179,8 @@ def construct_kde(samples_array, use_kombine=False, kdeargs=None):
     if use_kombine:
         try:
             import kombine
-        except ImportError:
-            raise ImportError("kombine is not installed.")
+        except ImportError as err:
+            raise ImportError("kombine is not installed.") from err
     if kdeargs is None:
         kdeargs = {}
     # construct the kde
