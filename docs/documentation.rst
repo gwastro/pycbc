@@ -11,7 +11,7 @@ Sphinx
 
 PyCBC uses the `sphinx` documentation system to produce automatic documentation from all modules and functions, with a layer on top to describe the code appropriately.
 
-The `sphinx website <http://sphinx-doc.org>`_ has a `nice tutorial <http://sphinx-doc.org/rest.html#rst-primer>`_ on the reStructuredText format used for documentation.
+The `sphinx website <https://sphinx-doc.org>`_ has a `nice tutorial <https://sphinx-doc.org/rest.html#rst-primer>`_ on the reStructuredText format used for documentation.
 
 Documenting the PyCBC package
 =============================
@@ -37,7 +37,7 @@ Documenting PyCBC modules
 
 All PyCBC modules should be documented using ``sphinx`` syntax, in the same way that ``matplotlib``, ``numpy`` and ``scipy`` functions are listed.
 
-The numpy github repository includes a `nice style guide <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_ for documenting modules and their members using sphinx.
+The numpydoc documentation includes a `nice style guide <https://numpydoc.readthedocs.io/en/latest/format.html>`_ for documenting modules and their members using sphinx.
 
 
 Documenting PyCBC scripts

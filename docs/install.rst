@@ -105,7 +105,7 @@ For more details, including instructions on starting a docker container  see:
 Building the Documentation
 =====================================
 
-To build the documentation from your virtual environment, first make sure that you have `Sphinx <http://sphinx-doc.org/>`_ and the required helper tools installed with
+To build the documentation from your virtual environment, first make sure that you have `Sphinx <https://www.sphinx-doc.org/>`_ and the required helper tools installed with
 
 .. code-block:: bash
 
