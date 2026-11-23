@@ -1,0 +1,22 @@
+name: Cache remote test data
+description: Restore and prefetch the shared Astropy test data cache.
+inputs:
+  best-effort:
+    description: Allow tests to download missing files if prefetch fails.
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - name: Cache downloaded test data
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        key: test-data-cache-${{ hashFiles('tools/ci_prefetch_test_data.py') }}
+        restore-keys: |
+          test-data-cache-
+        path: ~/.astropy/cache/download
+
+    - name: Pre-fetch remote test data
+      continue-on-error: ${{ inputs.best-effort == 'true' }}
+      shell: bash
+      run: |
+        python3 tools/ci_prefetch_test_data.py
