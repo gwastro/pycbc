@@ -87,6 +87,10 @@ jobs:
       run: |
         python3 tools/ci_prefetch_test_data.py
 
+    - name: List packages in the environment
+      run: |
+        pixi list
+
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data
