@@ -126,11 +126,13 @@ for i, seg_file in enumerate(sorted(args.segment_files)[::-1]):
 
     patches = plot_segs(start, end, y=y, h=h)
     for i, p in enumerate(patches):
-        l = label % (start[i], end[i], timestr(dur[i]))
+        text = label % (start[i], end[i], timestr(dur[i]))
         if i == 0:
-            mpld3.plugins.connect(fig, mpld3.plugins.PointHTMLTooltip(p, [l], css=css))
+            mpld3.plugins.connect(
+                fig, mpld3.plugins.PointHTMLTooltip(p, [text], css=css)
+            )
         else:
-            mpld3.plugins.connect(fig, Tooltip(p, [l], css=css))
+            mpld3.plugins.connect(fig, Tooltip(p, [text], css=css))
 
 for name, total, h in names:
     ax.text(smin, h, f"{name}: {total}")

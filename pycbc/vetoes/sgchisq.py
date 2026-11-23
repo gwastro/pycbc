@@ -173,7 +173,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         last 2 chisq bins. We cannot use the final chisq bin edge as it
         does not have to be where the waveform terminates.
         """
-        bins = self.cached_chisq_bins(template, psd)
+        bins, _ = self.cached_chisq_bins_and_weights(template, psd)
         fstep = bins[-2] - bins[-3]
         return float((bins[-2] + fstep) * template.delta_f)
 

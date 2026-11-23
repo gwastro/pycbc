@@ -98,7 +98,7 @@ else:
         service_url="https://gracedb-playground.ligo.org/api/", api_version="v2"
     )
 
-labels = [l.upper() for l in (args.labels or [])]
+labels = [label.upper() for label in (args.labels or [])]
 allowed_labels = gracedb.allowed_labels
 
 if set(labels) - set(allowed_labels):

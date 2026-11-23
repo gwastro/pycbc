@@ -54,6 +54,7 @@ def write_config_for_subworkflow(cp, config_path):
     """
     cp = copy.deepcopy(cp)
     cp.set('workflow', 'skip-resolve-input-files', '')
+    makedir(os.path.dirname(config_path))
     with open(config_path, 'w') as fp:
         cp.write(fp)
 
@@ -145,7 +146,6 @@ def setup_foreground_minifollowups(
         return
 
     tags = [] if tags is None else tags
-    makedir(dax_output)
 
     # turn the config file into a File class
     config_path = os.path.abspath(
@@ -262,7 +262,6 @@ def setup_single_det_minifollowups(
         return
 
     tags = [] if tags is None else tags
-    makedir(dax_output)
 
     # turn the config file into a File class
     curr_ifo = ifo or single_trig_file.ifo
@@ -389,7 +388,6 @@ def setup_injection_minifollowups(
         return
 
     tags = [] if tags is None else tags
-    makedir(dax_output)
 
     # turn the config file into a File class
     config_path = os.path.abspath(
@@ -506,7 +504,7 @@ def get_single_template_params(curr_idx, times, bank_data, bank_id, fsdt, tids):
         try:
             # Only present for precessing, so may not exist
             params[f"u_vals_{ifo}"] = fsdt[ifo][ifo]["u_vals"][tids[ifo][curr_idx]]
-        except:
+        except KeyError:
             pass
 
     params["mean_time"] = coinc.mean_if_greater_than_zero(
@@ -642,7 +640,7 @@ def make_single_template_files(
             node.add_opt("--inclination", f"{params['inclination']:.6f}")
             try:
                 node.add_opt("--u-val", f"{params['u_vals']:.6f}")
-            except:
+            except KeyError:
                 node.add_opt("--u-val", f"{params[f'u_vals_{ifo}']:.6f}")
         # If this is an eccentricity search
         if "eccentricity" in params:
@@ -1421,7 +1419,6 @@ def setup_upload_prep_minifollowups(
         return
 
     tags = [] if tags is None else tags
-    makedir(dax_output)
 
     # turn the config file into a File class
     config_path = os.path.abspath(

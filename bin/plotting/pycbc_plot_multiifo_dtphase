@@ -133,8 +133,8 @@ limits = [lims[i % 3] for i in range(ndims)]
 # Time dimensions have different limits
 for n, d in enumerate(tdiffs):
     limits[(n - 1) * 3] = (-d / 2.0, d / 2.0)
-for n, l in enumerate(tlegs):
-    legends[(n - 1) * 3] = l
+for n, legend in enumerate(tlegs):
+    legends[(n - 1) * 3] = legend
 
 # Get the minimum and maximum occupied bins for each dimension
 max_bin = [f[ref_ifo + "/param_bin"][dtn][:].max() for dtn in dtns]

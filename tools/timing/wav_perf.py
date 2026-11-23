@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import timeit
 from optparse import OptionParser
 
 from pycbc.scheme import CPUScheme, CUDAScheme
@@ -74,8 +75,6 @@ def taylorf2():
                 delta_f=options.deltaf,
             )
 
-
-import timeit
 
 gt = timeit.Timer(taylorf2)
 t = 1000 * gt.timeit(number=1) / niter

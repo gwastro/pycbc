@@ -131,9 +131,9 @@ ax.axhline(0, linestyle="dashed", color="gray", zorder=9)
 
 # save plot
 caption = (
-    "Difference in recovered value vs injected value vs injected "
-    f"value. The vertical lines show the width of the {opts.percentiles[0]} to {opts.percentiles[1]} "
-    "percentile credible interval."
+    "Difference in recovered value vs injected value vs injected value. "
+    f"The vertical lines show the width of the {opts.percentiles[0]} to "
+    f"{opts.percentiles[1]} percentile credible interval."
 )
 save_fig_with_metadata(
     fig,

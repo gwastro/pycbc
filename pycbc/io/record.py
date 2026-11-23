@@ -721,7 +721,9 @@ class FieldArray(numpy.recarray):
 
     Create an array with subfields:
 
-    >>> x = FieldArray(4, dtype=[('foo', [('cat', float), ('hat', int)]), ('bar', float)])
+    >>> x = FieldArray(
+    ...     4, dtype=[('foo', [('cat', float), ('hat', int)]), ('bar', float)]
+    ... )
     >>> x.fieldnames
         ['foo.cat', 'foo.hat', 'bar']
 
@@ -769,7 +771,9 @@ class FieldArray(numpy.recarray):
     array([u'SpinTaylorT2', u'SpinTaylorT2', u'SpinTaylorT2', ...,
            u'SpinTaylorT2', u'SpinTaylorT2', u'SpinTaylorT2'], dtype=object)
 
-    >>> sim_array = FieldArray.from_ligolw_table(sim_table, columns=['simulation_id', 'mass1', 'mass2'])
+    >>> sim_array = FieldArray.from_ligolw_table(
+    ...     sim_table, columns=['simulation_id', 'mass1', 'mass2']
+    ... )
     >>> sim_array
     FieldArray([(0, 2.274406909942627, 2.6340370178222656),
            (1, 1.8505810499191284, 2.8336880207061768),
@@ -1432,7 +1436,9 @@ class FieldArray(numpy.recarray):
         Return `"TaylorF2"` for all elements with `mtotal < 4`,
         `"SEOBNR_ROM_DoubleSpin"` otherwise:
 
-        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', 'else')])
+        >>> arr.parse_boolargs(
+        ...     [('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', 'else')]
+        ... )
             (array(['TaylorF2', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
             'SEOBNRv2_ROM_DoubleSpin'],
             dtype='|S23'),
@@ -1441,14 +1447,19 @@ class FieldArray(numpy.recarray):
         The following will also return the same:
 
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin',)])
-        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', '')])
+        >>> arr.parse_boolargs(
+        ...     [('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', '')]
+        ... )
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
 
         Return `"TaylorF2"` for all elements with `mtotal < 3`, `"IMRPhenomD"`
         for all elements with `3 <= mtotal < 4`, `"SEOBNRv2_ROM_DoubleSpin"`
         otherwise:
 
-        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<3'), ('IMRPhenomD', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
+        >>> arr.parse_boolargs(
+        ...     [('TaylorF2', 'mtotal<3'), ('IMRPhenomD', 'mtotal<4'),
+        ...      'SEOBNRv2_ROM_DoubleSpin']
+        ... )
             (array(['IMRPhenomD', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
             'SEOBNRv2_ROM_DoubleSpin'],
             dtype='|S23'),
@@ -1872,7 +1883,9 @@ class WaveformArray(_FieldArrayWithDefaults):
     Additional fields can also be specified using the additional_fields
     keyword argument. Example:
 
-    >>> warr = WaveformArray(10, names=['mass1', 'mass2'], additional_fields=[('bar', float)])
+    >>> warr = WaveformArray(
+    ...     10, names=['mass1', 'mass2'], additional_fields=[('bar', float)]
+    ... )
     >>> warr.fieldnames
         ('mass1', 'mass2', 'bar')
 

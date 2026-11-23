@@ -28,12 +28,12 @@ from setuptools import Command, Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext as _build_ext
 
 requires = []
-setup_requires = ["numpy>=1.16.0"]
+setup_requires = ["numpy>=2.0.0"]
 install_requires = [
     *setup_requires,
     "cython>=0.29",
-    "numpy>=1.16.0,!=1.19.0,!=2.2.2",
-    "scipy>=0.16.0",
+    "numpy>=2.0.0,!=2.2.2",
+    "scipy>=0.16.0,<1.17.0",
     "astropy>=2.0.3,!=4.2.1,!=4.0.5",
     "matplotlib>=1.5.1",
     "mpld3>=0.3",
@@ -96,7 +96,7 @@ def get_version_info():
     # If this is a pycbc git repo always populate version information using GIT
     try:
         vinfo = _version_helper.generate_git_version_info()
-    except:
+    except Exception:
         vinfo = VersionDummy()
         vinfo.version = "2.12.dev1"
         vinfo.release = False
@@ -269,7 +269,8 @@ with open("README.md") as fp:
 setup(
     name="PyCBC",
     version=VERSION,
-    description="Core library to analyze gravitational-wave data, find signals, and study their parameters.",
+    description="Core library to analyze gravitational-wave "
+    "data, find signals, and study their parameters.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="The PyCBC team",

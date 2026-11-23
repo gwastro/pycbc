@@ -46,6 +46,7 @@ from pycbc.waveform import get_fd_waveform
 
 matplotlib.use("Agg")
 
+import argparse
 import unittest
 
 from utils import parse_args_cpu_only, simple_exit
@@ -53,8 +54,6 @@ from utils import parse_args_cpu_only, simple_exit
 # This will return whatever is appropriate, depending on whether this
 # particular instance of the unittest was called for CPU, CUDA, or OpenCL
 parse_args_cpu_only("Template bank module")
-
-import argparse
 
 parser = argparse.ArgumentParser()
 

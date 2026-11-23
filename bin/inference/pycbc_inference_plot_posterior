@@ -114,8 +114,8 @@ parser.add_argument(
 parser.add_argument(
     "--legend-fontsize",
     default="medium",
-    help="The font size of legend. Default is 'medium'."
-    "Choose from int or {'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'}.",
+    help="The font size of legend. Default is 'medium'.Choose from int or "
+    "{'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'}.",
 )
 parser.add_argument(
     "--dpi", type=int, default=200, help="Set the DPI of the plot. Default is 200."

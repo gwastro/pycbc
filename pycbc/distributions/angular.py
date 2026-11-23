@@ -82,7 +82,8 @@ class UniformAngle(uniform.Uniform):
             # check that the bounds are in the domain
             if bnds.min < self._domain.min or bnds.max > self._domain.max:
                 raise ValueError(
-                    f"bounds must be in [{self._domain.min},{self._domain.max}); got [{bnds.min},{bnds.max})"
+                    f"bounds must be in [{self._domain.min},{self._domain.max}); "
+                    f"got [{bnds.min},{bnds.max})"
                 )
 
             # update
@@ -208,7 +209,7 @@ class SinAngle(UniformAngle):
         in [0,PI]. These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
-    """
+    """  # noqa: E501
 
     name = "sin_angle"
     _func = numpy.cos

@@ -265,7 +265,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
                 if option_intersection:
                     raise ValueError(
-                        f"Duplicate option(s) {', '.join(option_intersection)} found in section '{section}' in file '{filename}'"
+                        f"Duplicate option(s) {', '.join(option_intersection)} "
+                        f"found in section '{section}' in file '{filename}'"
                     )
 
                 options_seen[section].update(section_options)

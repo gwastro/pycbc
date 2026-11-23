@@ -84,9 +84,13 @@ def background_bin_from_string(background_bins, data):
 
         for bin_type, boundary in zip(bin_type_list, boundary_list, strict=True):
             if boundary[0:2] == "lt":
-                member_func = lambda vals, bd=boundary: vals < float(bd[2:])
+
+                def member_func(vals, bd=boundary):
+                    return vals < float(bd[2:])
             elif boundary[0:2] == "gt":
-                member_func = lambda vals, bd=boundary: vals > float(bd[2:])
+
+                def member_func(vals, bd=boundary):
+                    return vals > float(bd[2:])
             else:
                 raise RuntimeError(
                     "Can't parse boundary condition! Must begin with 'lt' or 'gt'"
@@ -397,8 +401,9 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
         return numpy.array([])
 
     if numpy.isfinite(slide):
-        # for a time shifted coinc, time1 is greater than time2 by approximately timeslide_id*slide
-        # adding this quantity gives a mean coinc time located around time1
+        # for a time shifted coinc, time1 is greater than time2 by approximately
+        # timeslide_id*slide. Adding this quantity gives a mean coinc time located
+        # around time1
         time = (time1 + time2 + timeslide_id * slide) / 2
     else:
         time = 0.5 * (time2 + time1)
@@ -539,11 +544,11 @@ def cluster_over_time(stat, time, window, method="python", argmax=numpy.argmax):
         i = 0
         j = 0
         while i < len(left):
-            l = left[i]
-            r = right[i]
+            start = left[i]
+            end = right[i]
 
             # If there are no other points to compare it is obviously the max
-            if (r - l) == 1:
+            if (end - start) == 1:
                 indices[j] = i
                 j += 1
                 i += 1
@@ -551,12 +556,12 @@ def cluster_over_time(stat, time, window, method="python", argmax=numpy.argmax):
 
             # Find the location of the maximum within the time interval
             # around i
-            max_loc = argmax(stat[l:r]) + l
+            max_loc = argmax(stat[start:end]) + start
 
             # If this point is the max, we can skip to the right boundary
             if max_loc == i:
                 indices[j] = i
-                i = r
+                i = end
                 j += 1
 
             # If the max is later than i, we can skip to it

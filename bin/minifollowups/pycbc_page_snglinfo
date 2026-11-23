@@ -133,9 +133,9 @@ stat = rank_method.rank_stat_single((sngl_file.ifo, sds))
 if args.n_loudest is not None:
     # Restrict to only the nth loudest, instead of all triggers up to nth
     # loudest
-    l = stat.argsort()
-    stat = stat[l[0]]
-    sngl_file.apply_mask(l[0])
+    sort_idx = stat.argsort()
+    stat = stat[sort_idx[0]]
+    sngl_file.apply_mask(sort_idx[0])
 
 # make a table for the single detector information ############################
 time = sngl_file.end_time[0]
@@ -199,12 +199,12 @@ headers.append("&chi;<sup>2</sup>&nbsp;bins")
 try:
     data[0].append(f"{sngl_file.sgchisq[0]:5.2f}")
     headers.append("sg&chi;<sup>2</sup>")
-except:
+except KeyError:
     pass
 try:
     data[0].append(f"{sngl_file.psd_var_val[0]:5.2f}")
     headers.append("PSD var")
-except:
+except KeyError:
     pass
 
 # Template parameters
@@ -266,7 +266,10 @@ if args.n_loudest:
     )
 else:
     title = "Parameters of single-detector event"
-    caption = "Parameters of the single-detector event. The figures below show the mini-followup data for this event."
+    caption = (
+        "Parameters of the single-detector event. The figures "
+        "below show the mini-followup data for this event."
+    )
 
 pycbc.results.save_fig_with_metadata(
     html,

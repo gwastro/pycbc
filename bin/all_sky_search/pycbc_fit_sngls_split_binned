@@ -603,11 +603,13 @@ logger.info("Saving to file %s", args.output_file)
 results.save_fig_with_metadata(
     fig,
     args.output_file,
-    title=f"{args.ifo}: {args.sngl_ranking} histogram of single detector triggers split by {args.split_param_one} and {args.split_param_two}",
+    title=f"{args.ifo}: {args.sngl_ranking} histogram of single detector "
+    f"triggers split by {args.split_param_one} and {args.split_param_two}",
     caption=(
-        rf"Histogram of {args.ifo} single detector {args.sngl_ranking} values binned by {args.bin_param}, split by "
-        f"{args.split_param_one} and {args.split_param_two}, with fitted {args.fit_function} distribution parameterized by"
-        " &alpha;"
+        rf"Histogram of {args.ifo} single detector {args.sngl_ranking} values "
+        rf"binned by {args.bin_param}, split by {args.split_param_one} and "
+        f"{args.split_param_two}, with fitted {args.fit_function} distribution "
+        "parameterized by &alpha;"
     ),
     cmd=" ".join(sys.argv),
 )

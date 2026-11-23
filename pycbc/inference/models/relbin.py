@@ -474,13 +474,15 @@ class Relative(DistMarg, BaseGaussianNoise):
         h12 = numpy.conjugate(h1) * h2 / self.psds[ifo]
 
         # constant terms
-        a0 = numpy.array([4.0 * self.df[ifo] * h12[l:h].sum() for l, h in bins])
+        a0 = numpy.array([4.0 * self.df[ifo] * h12[lo:hi].sum() for lo, hi in bins])
 
         # linear terms
         a1 = numpy.array(
             [
-                4.0 / (h - l) * (h12[l:h] * (self.f[ifo][l:h] - self.f[ifo][l])).sum()
-                for l, h in bins
+                4.0
+                / (hi - lo)
+                * (h12[lo:hi] * (self.f[ifo][lo:hi] - self.f[ifo][lo])).sum()
+                for lo, hi in bins
             ]
         )
 

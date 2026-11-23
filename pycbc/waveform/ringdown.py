@@ -26,14 +26,14 @@
 
 import numpy
 
+from pycbc.constants import C_SI, G_SI, MSUN_SI, PC_SI
+from pycbc.conversions import get_lm_f0tau_allmodes
 from pycbc.libutils import import_optional
+from pycbc.types import FrequencySeries, TimeSeries, complex128, float64, zeros
+from pycbc.waveform.waveform import get_obj_attrs
 
 pykerr = import_optional("pykerr")
 lal = import_optional("lal")
-from pycbc.constants import C_SI, G_SI, MSUN_SI, PC_SI
-from pycbc.conversions import get_lm_f0tau_allmodes
-from pycbc.types import FrequencySeries, TimeSeries, complex128, float64, zeros
-from pycbc.waveform.waveform import get_obj_attrs
 
 qnm_required_args = ["f_0", "tau", "amp", "phi"]
 mass_spin_required_args = ["final_mass", "final_spin", "lmns", "inclination"]
@@ -402,7 +402,7 @@ def fd_output_vector(freqs, damping_times, delta_f=None, f_final=None):
 
 def spher_harms(
     harmonics="spherical",
-    l=None,
+    l=None,  # noqa: E741
     m=None,
     n=0,
     inclination=0.0,
@@ -502,7 +502,7 @@ def td_damped_sinusoid(
     amp,
     phi,
     times,
-    l=2,
+    l=2,  # noqa: E741
     m=2,
     n=0,
     inclination=0.0,
@@ -659,7 +659,7 @@ def fd_damped_sinusoid(
     phi,
     freqs,
     t_0=0.0,
-    l=2,
+    l=2,  # noqa: E741
     m=2,
     n=0,
     inclination=0.0,

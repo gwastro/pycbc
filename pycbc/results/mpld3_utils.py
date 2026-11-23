@@ -107,7 +107,7 @@ class MPLSlide(mpld3.plugins.PluginBase):
             mpld3_ZoomPlugin.prototype.draw = function() {
                 if (this.props.enabled) this.fig.enable_zoom(); else this.fig.disable_zoom();
             };
-        """
+        """  # noqa: E501
 
     def __init__(self, button=True, enabled=None):
         if enabled is None:

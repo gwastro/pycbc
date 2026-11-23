@@ -34,6 +34,7 @@ import math
 import os
 import pickle
 import random
+import re
 import stat
 import string
 import subprocess
@@ -53,6 +54,7 @@ from igwn_ligolw.utils import segments as ligolw_segments
 
 from pycbc import makedir
 from pycbc.io.ligolw import LIGOLWContentHandler, create_process_table
+from pycbc.strain.strain import ensure_one_opt_groups
 
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
@@ -176,7 +178,7 @@ class Executable(pegasus_workflow.Executable):
 
         try:
             self.installed = cp.getboolean(f"pegasus_profile-{name}", "pycbc|installed")
-        except:
+        except (configparser.Error, ValueError):
             self.installed = False
 
         self.update_current_tags(tags)
@@ -793,7 +795,7 @@ class Workflow(pegasus_workflow.Workflow):
             try:
                 # The pfn may have been marked local...
                 pfn = node.executable.get_pfn()
-            except:
+            except Exception:
                 # or it may have been marked nonlocal.  That's
                 # fine, we'll resolve the URL and make a local
                 # entry.
@@ -934,6 +936,8 @@ class Node(pegasus_workflow.Node):
         self.executed = False
         self.set_category(executable.name)
         self.valid_seg = valid_seg
+        # Detectors this job must read data for, if this is known
+        self.required_data_ifos = None
 
         self._options += self.executable.common_options
         self._raw_options += self.executable.common_raw_options
@@ -948,6 +952,62 @@ class Node(pegasus_workflow.Node):
             # not overriden. But the Node is not connected to the Workflow
             # until the dax starts to be written.
             self.resolve_td_options(self.executable.unresolved_td_options)
+
+    def _check_one_data_source(self):
+        """
+        Check that this job is not told to get its data in more than one way.
+
+        If required_data_ifos is set, also check that it is told how to get
+        data for each of those detectors, so it has exactly one source.
+
+        The strain reading code rejects these when the job starts, but by then
+        the workflow has been running for a while. This has to look at the
+        final command line, as the options can be set from the configuration
+        file, by the code creating the job, or by a mix of both. For
+        multi-detector jobs each detector can use a different source.
+        """
+        raw_options = "".join(str(opt) for opt in self._raw_options)
+        arguments = [str(arg) for arg in self._args + self._options] + [raw_options]
+        parsed = []
+        for token in " ".join(arguments).split():
+            if token.startswith("--"):
+                parsed.append((token, []))
+            elif parsed:
+                parsed[-1][1].append(token)
+
+        for opt_group in ensure_one_opt_groups:
+            given = {}
+            for opt, values in parsed:
+                if opt in opt_group:
+                    ifos = {
+                        value.split(":")[0]
+                        for value in values
+                        if re.match(r"[A-Z][0-9]:", value)
+                    }
+                    for ifo in ifos or {None}:
+                        given.setdefault(ifo, []).append(opt)
+            # An option without a detector prefix applies to every detector
+            shared = given.pop(None, [])
+            per_ifo = {ifo: shared + opts for ifo, opts in given.items()}
+            for ifo, opts in (per_ifo or {None: shared}).items():
+                if len(opts) > 1:
+                    where = f" for {ifo}" if ifo else ""
+                    raise ValueError(
+                        f"{self.executable.name} job given more than one source "
+                        f"of data{where}: {', '.join(opts)}. Only one should be "
+                        "set, note that frame files may also come from datafind."
+                    )
+            for ifo in self.required_data_ifos or []:
+                if ifo not in per_ifo and not shared:
+                    raise ValueError(
+                        f"{self.executable.name} job given no source of data for "
+                        f"{ifo}. One of {', '.join(opt_group)} should be set, "
+                        "note that frame files may also come from datafind."
+                    )
+
+    def _finalize(self):
+        self._check_one_data_source()
+        super()._finalize()
 
     def get_command_line(self):
         # FIXME: Put in pegasus_workflow??
@@ -1149,11 +1209,22 @@ class File(pegasus_workflow.File):
 
     An example of initiating this class:
 
-    >> c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
+    >> c = File(
+    ..     "H1",
+    ..     "INSPIRAL_S6LOWMASS",
+    ..     segments.segment(815901601, 815902001),
+    ..     file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz",
+    .. )
 
     another where the file url is generated from the inputs:
 
-    >> c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
+    >> c = File(
+    ..     "H1",
+    ..     "INSPIRAL_S6LOWMASS",
+    ..     segments.segment(815901601, 815902001),
+    ..     directory="/home/spxiwh",
+    ..     extension="xml.gz",
+    .. )
 
     """
 
@@ -1981,7 +2052,7 @@ class SegFile(File):
             else:
                 try:
                     valid_segment = segmentlistdict.extent_all()
-                except:
+                except (AttributeError, ValueError):
                     # Numpty probably didn't supply a
                     # igwn_segments.segmentlistdict
                     segmentlistdict = segments.segmentlistdict(segmentlistdict)
@@ -2153,6 +2224,7 @@ class SegFile(File):
         url = urljoin("file:", pathname2url(self.storage_path))
         if not override_file_if_exists or not self.has_pfn(url, site="local"):
             self.add_pfn(url, site="local")
+        makedir(os.path.dirname(self.storage_path))
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 

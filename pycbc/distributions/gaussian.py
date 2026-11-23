@@ -80,9 +80,11 @@ class Gaussian(bounded.BoundedDist):
 
     Create a bounded Gaussian distribution with the same parameters, but with
     cyclic boundary conditions:
-    >>> dist = distributions.Gaussian(mass1=Bounds(1,10, cyclic=True), mass1_mean=3, mass1_var=2)
+    >>> dist = distributions.Gaussian(
+    ...     mass1=Bounds(1,10, cyclic=True), mass1_mean=3, mass1_var=2
+    ... )
 
-    """
+    """  # noqa: E501
 
     name = "gaussian"
 

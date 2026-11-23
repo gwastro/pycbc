@@ -21,8 +21,6 @@ import argparse
 import logging
 import os
 import shlex
-import socket
-import sys
 
 import numpy
 
@@ -440,18 +438,7 @@ layout.single_layout(base, wf_ini)
 
 # close the log and flush to the html file
 logging.shutdown()
-with open(log_file_txt.storage_path) as log_file:
-    log_data = log_file.read()
-log_str = f"""
-<p>Workflow generation script created workflow in output directory: {os.getcwd()}</p>
-<p>Workflow name is: {opts.workflow_name}</p>
-<p>Workflow generation script run on host: {socket.gethostname()}</p>
-<pre>{log_data}</pre>
-"""
-kwds = {
-    "title": "Workflow Generation Log",
-    "caption": f"Log of the workflow script {sys.argv[0]}",
-    "cmd": " ".join(sys.argv),
-}
-results.save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+results.save_workflow_log(
+    log_file_txt.storage_path, log_file_html.storage_path, opts.workflow_name
+)
 layout.single_layout(rdir["workflow"], ([log_file_html]))
