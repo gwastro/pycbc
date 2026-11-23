@@ -29,6 +29,7 @@ Full documentation for this module can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
+import configparser
 import logging
 import os.path
 
@@ -100,7 +101,7 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir, tags
                 "workflow-optimal-snr", "parallelization-factor", tags
             )
         )
-    except Exception as e:
+    except (configparser.Error, ValueError) as e:
         logger.warning(e)
         factor = 1
 

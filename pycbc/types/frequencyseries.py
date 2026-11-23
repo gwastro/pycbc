@@ -598,6 +598,7 @@ class FrequencySeries(Array):
             plot1 = pyplot.plot(self.sample_frequencies, self.real(), **kwds)
             plot2 = pyplot.plot(self.sample_frequencies, self.imag(), **kwds)
             return plot1, plot2
+        return None
 
 
 def load_frequencyseries(path, group=None):

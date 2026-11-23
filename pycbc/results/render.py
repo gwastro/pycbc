@@ -143,14 +143,14 @@ def render_default(path, cp):
     # initializations
     content = None
 
-    if path.endswith(".xml") or path.endswith(".xml.gz"):
+    if path.endswith((".xml", ".xml.gz")):
         # segment or veto file return a segmentslistdict instance
         try:
             wf_file = SegFile.from_segment_xml(path)
             # FIXME: This is a dictionary, but the code wants a segmentlist
             #        for now I just coalesce.
             wf_file.return_union_seglist()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("No segment table found in %s : %s", path, e)
 
     # render template

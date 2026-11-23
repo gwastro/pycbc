@@ -28,7 +28,7 @@ and the prior space. This is typical of many nested sampling algorithms.
 
 import numpy
 
-from .. import models
+from pycbc.inference import models
 
 
 def call_global_loglikelihood(cube):

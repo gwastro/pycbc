@@ -394,6 +394,7 @@ class DistMarg:
             # marginalizations.
             self.precalc_antenna_factors = None
             return None
+        return None
 
     def draw_times(self, snrs, size=None):
         """

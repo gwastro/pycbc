@@ -15,9 +15,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import numpy as _np
 
+from pycbc import opt
 from pycbc.types import complex64, float32
 
-from .. import opt
 from .simd_correlate_cython import ccorrf_parallel, ccorrf_simd
 
 """

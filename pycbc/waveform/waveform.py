@@ -503,7 +503,7 @@ def get_obj_attrs(obj):
                     value = getattr(obj, name)
                     if not name.startswith("__") and not inspect.ismethod(value):
                         pr[name] = value
-                except Exception:
+                except Exception:  # noqa: BLE001
                     continue
 
     return pr
@@ -589,7 +589,7 @@ def props_sgburst(obj, **kwargs):
                 value = getattr(obj, name)
                 if not name.startswith("__") and not inspect.ismethod(value):
                     pr[name] = value
-            except Exception:
+            except Exception:  # noqa: BLE001
                 continue
 
     # Get the parameters to generate the waveform
@@ -853,7 +853,7 @@ def get_fd_waveform_from_td(**params):
     try:
         f_end = get_waveform_end_frequency(**params)
         delta_t = 0.5 / pnutils.nearest_larger_binary_number(f_end)
-    except Exception:
+    except Exception:  # noqa: BLE001
         delta_t = 1.0 / 2048
 
     nparams["delta_t"] = delta_t

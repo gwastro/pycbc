@@ -125,7 +125,7 @@ def prefetch(url, attempts=5):
             with open(os.path.join(entry, "url"), "w") as fh:
                 fh.write(url)
             return "ok"
-        except Exception as exc:  # best effort
+        except Exception as exc:  # best effort  # noqa: BLE001
             last_exc = exc
             if i < attempts:
                 time.sleep(min(5, 2**i))
@@ -138,7 +138,7 @@ def main():
         try:
             status = prefetch(url)
             print(f"{status:6s} {url}")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             failures.append(url)
             print(f"FAIL   {url}  ({exc})")
     if failures:

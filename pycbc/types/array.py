@@ -1129,6 +1129,7 @@ def real_same_precision_as(data):
         return float32
     if data.precision == "double":
         return float64
+    return None
 
 
 def complex_same_precision_as(data):
@@ -1136,6 +1137,7 @@ def complex_same_precision_as(data):
         return complex64
     if data.precision == "double":
         return complex128
+    return None
 
 
 def _return_array(func):

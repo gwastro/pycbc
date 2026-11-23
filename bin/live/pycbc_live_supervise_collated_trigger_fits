@@ -10,7 +10,7 @@ import logging
 import os
 import re
 import shutil
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 
@@ -675,7 +675,7 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
 
 def get_yesterday_date():
     """Get the date string for yesterday's triggers"""
-    day_dt = datetime.utcnow() - timedelta(days=1)
+    day_dt = datetime.now(UTC) - timedelta(days=1)
     day_dt = datetime.combine(day_dt, datetime.min.time())
     day_str = day_dt.strftime("%Y_%m_%d")
     return day_dt, day_str
@@ -748,7 +748,8 @@ else:
     # run just once
     if args.date:
         day_str = args.date
-        day_dt = datetime.strptime(args.date, "%Y_%m_%d")
+        # naive, like get_yesterday_date(): pycbc.time treats naive datetimes as UTC
+        day_dt = datetime.strptime(args.date, "%Y_%m_%d")  # noqa: DTZ007
     else:
         day_dt, day_str = get_yesterday_date()
     supervise_collation_fits_dq(args, day_dt, day_str)

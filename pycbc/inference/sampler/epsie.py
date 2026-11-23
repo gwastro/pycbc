@@ -19,12 +19,12 @@ import epsie
 import numpy
 from epsie.samplers import ParallelTemperedSampler
 
+from pycbc.inference import models
+from pycbc.inference.burn_in import MultiTemperedMCMCBurnInTests
+from pycbc.inference.io import EpsieFile
+from pycbc.inference.jump import epsie_proposals_from_config
 from pycbc.pool import choose_pool
 
-from .. import models
-from ..burn_in import MultiTemperedMCMCBurnInTests
-from ..io import EpsieFile
-from ..jump import epsie_proposals_from_config
 from .base import BaseSampler, setup_output
 from .base_mcmc import BaseMCMC, get_optional_arg_from_config, nsamples_in_chain
 from .base_multitemper import (

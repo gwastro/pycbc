@@ -27,6 +27,7 @@ values.
 """
 
 import logging
+from datetime import UTC
 from datetime import datetime as dt
 from hashlib import sha1
 
@@ -116,7 +117,7 @@ class Stat:
         Get sha1 hashes for all the files
         """
         logger.debug("Getting file hashes")
-        start = dt.now()
+        start = dt.now(UTC)
         file_hashes = {}
         for stat, filename in self.files.items():
             with open(filename, "rb") as file_binary:
@@ -124,7 +125,7 @@ class Stat:
         logger.debug(
             "Got file hashes for %d files, took %.3es",
             len(self.files),
-            (dt.now() - start).total_seconds(),
+            (dt.now(UTC) - start).total_seconds(),
         )
         return file_hashes
 

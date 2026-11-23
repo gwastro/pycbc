@@ -28,6 +28,7 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
+import configparser
 import glob
 import logging
 import math
@@ -205,7 +206,7 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
         num_splits = cp.get_opt_tags(
             "workflow-splittable", "splittable-num-banks", tags
         )
-    except BaseException:
+    except configparser.Error:
         inj_interval = int(
             cp.get_opt_tags("workflow-splittable", "splitinjtable-interval", tags)
         )

@@ -125,7 +125,7 @@ def get_file(url, retry=5, backoff_cap=5, **args):
                 logger.warning(
                     "Failed on attempt %d to download %s (HTTP %d)", i, cand, exc.code
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 # Any other failure (URLError, ContentTooShortError, socket
                 # timeout, ...) is treated as transient and retried.
                 last_exc = exc

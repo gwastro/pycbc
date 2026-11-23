@@ -1817,6 +1817,7 @@ def select_waveform_generator(approximant, domain=None):
             return get_fd_generator(approximant)
         except ValueError:
             return get_td_generator(approximant)
+    return None
 
 
 def select_waveform_modes_generator(approximant, domain=None):
@@ -1852,3 +1853,4 @@ def select_waveform_modes_generator(approximant, domain=None):
             return get_fd_generator(approximant, modes=True)
         except ValueError:
             return get_td_generator(approximant, modes=True)
+    return None

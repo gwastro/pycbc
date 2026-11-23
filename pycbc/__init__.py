@@ -224,7 +224,7 @@ try:
     try:
         _pycudadrv.init()
         device_count = _pycudadrv.Device.count()
-    except Exception:
+    except Exception:  # noqa: BLE001
         device_count = 0
     # Set value to true if there is usable device
     HAVE_CUDA = device_count > 0
@@ -277,6 +277,6 @@ def load_source(modname, filename):
 # `pycbc.time.gps_now()`.
 try:
     from .time import gps_now
-except Exception:
+except Exception:  # noqa: BLE001
     # If pycbc imported during build this may fail; silently ignore.
     gps_now = None

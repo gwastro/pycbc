@@ -66,6 +66,7 @@ def callback_func(xk, convergence=0):  # noqa: ARG001
     if (time.time() - start_time) > 360:
         return True
     Nfeval += 1
+    return None
 
 
 def compute_network_snr_core(

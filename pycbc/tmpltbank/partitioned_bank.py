@@ -122,7 +122,7 @@ class PartitionedTmpltbank:
         self.chi2_max = chi2_max
 
         # How many adjacent bins should we check?
-        self.bin_range_check = 1
+        self.bin_range_check = bin_range_check
         self.bin_loop_order = coord_utils.outspiral_loop(self.bin_range_check)
 
     def get_point_from_bins_and_idx(self, chi1_bin, chi2_bin, idx):

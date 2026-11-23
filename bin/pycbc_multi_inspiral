@@ -83,7 +83,8 @@ def slide_limiter(n_ifos, slide_shift, segment_length):
         return 1
     stride_dur = segment_length / 2
     num_slides = 1 + int(stride_dur / (slide_shift * (n_ifos - 1)))
-    assert (num_slides >= low) and (num_slides <= upp), (
+    assert num_slides >= low, f"the number of slides ({num_slides}) is below {low}"
+    assert num_slides <= upp, (
         "the combination (slideshift, segment_dur)"
         f" = ({slide_shift:.2f},{stride_dur * 2:.2f})"
         f" goes over the allowed upper bound {upp}"

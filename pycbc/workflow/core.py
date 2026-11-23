@@ -771,7 +771,7 @@ class Workflow(pegasus_workflow.Workflow):
         """Site to use for staging to/from each site"""
         staging_site = {}
         for site in self.sites:
-            if site in ["condorpool_shared"]:
+            if site == "condorpool_shared":
                 staging_site[site] = site
             else:
                 staging_site[site] = "local"
@@ -795,7 +795,7 @@ class Workflow(pegasus_workflow.Workflow):
             try:
                 # The pfn may have been marked local...
                 pfn = node.executable.get_pfn()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 # or it may have been marked nonlocal.  That's
                 # fine, we'll resolve the URL and make a local
                 # entry.
