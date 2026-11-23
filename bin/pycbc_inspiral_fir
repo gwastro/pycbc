@@ -21,165 +21,13 @@ import pycbc.vetoes
 
 # --- Imports for Ratio Logic ---
 from pycbc.filter.matched_filter_ratio import MatchedFilterRatioControl
-from pycbc.types import Array, FrequencySeries, complex64, float32, zeros
-from pycbc.vetoes.sgchisq import SingleDetSGChisq
+from pycbc.types import complex64, float32
+from pycbc.vetoes.chain import SignalConsistencyChain
 from pycbc.waveform.bank import RatioFilterBank
 
 logger = logging.getLogger(__name__)
 
 tstart = time.time()
-
-
-def compute_batch_chisq(
-    ids_local,
-    t_idxs,
-    snrs,
-    fine_indices,
-    tstarts,
-    stilde,
-    bank,
-    chisq_estimator,
-    engine,
-    filters_f,
-    ref_template,
-    args,
-):
-    """
-    Assign a power chisq value to a batch of same-segment triggers.
-
-    The engine only produces SNR, so chisq is computed here by
-    reconstructing the fine template's filter, decimated, from the ratio
-    filter and the coarse template's cached SNR. That is the expensive
-    step, so this walks triggers from highest SNR down, computes chisq once
-    per trigger it visits, and gives that value to every other unassigned
-    trigger within chisq_window seconds -- at most chisq_iterations times.
-
-    Parameters
-    ----------
-    ids_local : array of int
-        Indices into `filters_f`/`snrs`/etc. for the triggers in this batch.
-    t_idxs : array of int
-        Sample index (into the reference SNR series) of each trigger.
-    snrs : array of complex64
-        Complex SNR of each trigger.
-    fine_indices : array of int
-        Maps `ids_local` to indices into `bank.table` (the fine bank).
-    tstarts : array of int
-        Start sample of the time block each trigger's SNR came from.
-    stilde : FrequencySeries
-        The data segment being analyzed.
-    bank : RatioFilterBank
-        The fine/coarse bank pair.
-    chisq_estimator : pycbc.vetoes.SingleDetPowerChisq
-        Does the actual chisq calculation given a correlation series.
-    engine : MatchedFilterRatioControl
-        The FIR/ratio engine, for its cached reference SNR.
-    filters_f : array
-        Frequency-domain ratio filters for this batch.
-    ref_template : FrequencySeries
-        The coarse template used as this batch's SNR reference.
-    args : argparse.Namespace
-        Parsed CLI options.
-
-    Returns
-    -------
-    chisq_vals, chisq_dof_vals : array of float32, array of int32
-        One entry per trigger in the batch, in `ids_local` order.
-
-    """
-    logger.info("starting chisq calculation")
-    chisq_window_samp = int(args.chisq_window * stilde.sample_rate)
-    max_iterations = args.chisq_iterations
-
-    global_ids = fine_indices[ids_local]
-
-    snr_amp = abs(snrs)
-    num_trigs = len(snrs)
-    chisq_vals = np.zeros(num_trigs, dtype=float32)
-    chisq_dof_vals = np.zeros(num_trigs, dtype=np.int32) - 100
-    assigned_mask = np.zeros(num_trigs, dtype=bool)
-
-    _ref_weight = None
-
-    cthresh = 0 if args.chisq_snr_threshold is None else args.chisq_snr_threshold
-    if np.any(snr_amp > cthresh):
-        sort_order = np.argsort(snr_amp)[::-1]
-        iterations = 0
-        for idx in sort_order:
-            if iterations >= max_iterations:
-                break
-            if snr_amp[idx] < cthresh:
-                break
-            if assigned_mask[idx]:
-                continue
-
-            snrv = snrs[idx]
-            t_idx = t_idxs[idx]
-            target_global_id = global_ids[idx]
-            tstart = tstarts[idx]
-
-            local_id = ids_local[idx]
-
-            # chisq_estimator.values() takes arrays; this computes chisq at
-            # just this one trigger's SNR and time.
-            snrvs = np.array([snrv], ndmin=1)
-            tids = np.array([t_idx], ndmin=1)
-
-            # Reconstruct the template, decimated.
-            logger.info("regenerating chisq inputs")
-            # refine > 1 is not currently supported.
-            refine = 1
-            df = args.sample_rate / args.fir_length
-
-            dfr = df / refine
-            ratio = filters_f[local_id]
-
-            # fixed for the whole batch, so computed once. Interpolating
-            # rather than decimating avoids a delta_f mismatch.
-            if _ref_weight is None:
-                dec = int(dfr / stilde.delta_f)
-                w = ref_template[::dec] / stilde.psd[::dec] ** 0.5
-                newf = np.arange(0, args.fir_length) * dfr
-                _ref_weight = np.interp(newf, w.sample_frequencies, w)
-
-            template2 = FrequencySeries(
-                ratio * _ref_weight, delta_f=dfr, dtype=stilde.dtype
-            )
-            template2[:] = abs(template2) / args.sample_rate
-            template2.params = bank.table[target_global_id]
-            template2.f_lower = max(
-                ref_template.f_lower, float(bank.table[target_global_id].f_lower)
-            )
-
-            psd2 = FrequencySeries(np.ones(len(ratio), dtype=np.float32), delta_f=dfr)
-
-            # Reconstruct fd correlation vector
-            ref = engine.ref_snr[tstart : tstart + args.fir_length]
-            ref_f = zeros(len(ref), dtype=complex64)
-            pycbc.fft.FFT(Array(ref, dtype=complex64), ref_f).execute()
-            corr2 = FrequencySeries(ratio * ref_f.numpy(), delta_f=df) / args.fir_length
-            corr2 = corr2.to_timeseries().to_frequencyseries(delta_f=dfr) / refine
-
-            tids2 = tids - tstart
-            logger.info("...done")
-            chi, dof = chisq_estimator.values(corr2, snrvs, 1, psd2, tids2, template2)
-
-            # Determine which points we should use the same chisq value for
-            window_mask = abs(t_idxs - t_idx) <= chisq_window_samp
-            update_mask = window_mask & (~assigned_mask)
-
-            chisq_vals[update_mask] = chi
-            chisq_dof_vals[update_mask] = dof
-            assigned_mask[update_mask] = True
-            num_assigned = update_mask.sum()
-            iterations += 1
-            logger.info(
-                "... assigning %s to %s triggers, peak SNR of %s",
-                chi / dof,
-                num_assigned,
-                snr_amp[idx],
-            )
-    return chisq_vals, chisq_dof_vals
 
 
 def get_args():
@@ -193,7 +41,7 @@ def get_args():
     pycbc.scheme.insert_processing_option_group(parser)
     pycbc.fft.insert_fft_option_group(parser)
     pycbc.inject.insert_injfilterrejector_option_group(parser)
-    SingleDetSGChisq.insert_option_group(parser)
+    SignalConsistencyChain.insert_option_group(parser)
 
     # --- Analysis Options ---
     parser.add_argument("--output", required=True, help="Path to output HDF5 file.")
@@ -242,52 +90,6 @@ def get_args():
         " resolution).",
     )
 
-    # power chisq related
-    parser.add_argument(
-        "--chisq-snr-threshold",
-        type=float,
-        help="Minimum SNR to calculate the power chisq",
-    )
-    parser.add_argument(
-        "--chisq-bins",
-        default=0,
-        help="Number of frequency bins to use for power chisq. Specify"
-        " an integer for a constant number of bins, or a function "
-        "of template attributes.  Math functions are "
-        "allowed, ex. "
-        "'10./math.sqrt((params.mass1+params.mass2)/100.)'. "
-        "Non-integer values will be rounded down.",
-    )
-    parser.add_argument(
-        "--chisq-threshold",
-        type=float,
-        default=0,
-        help="Maximum reduced chisq (chisq / (dof + delta *"
-        " snr^2)) a trigger may have; triggers above"
-        " this are removed. 0 disables the cut.",
-    )
-    parser.add_argument(
-        "--chisq-window",
-        type=float,
-        default=1.0,
-        help="Triggers within this window are assigned the same chisq value",
-    )
-    parser.add_argument(
-        "--chisq-iterations",
-        type=int,
-        default=10000,
-        help="Maximum chisq calculations per batch, highest "
-        "SNR first. Triggers not covered by one get no "
-        "chisq.",
-    )
-    parser.add_argument(
-        "--chisq-delta",
-        type=float,
-        default=0,
-        help="SNR-dependent term added to the chisq dof"
-        " before applying --chisq-threshold.",
-    )
-
     # Clustering
     parser.add_argument(
         "--cluster-window",
@@ -324,21 +126,6 @@ def get_args():
 def main():
     parser, args = get_args()
     pycbc.init_logging(args.verbose)
-
-    # EventManager.write_to_hdf unconditionally reads these autochi_* options
-    # to fill in cont_chisq_dof, but this engine has no autochisq step (unlike
-    # pycbc_inspiral, there is no SingleDetAutoChisq here and cont_chisq is
-    # always written as zeros -- see the dummy fill below). They are not real
-    # options: there is no --autochi-* flag to set them, and every value here
-    # is chosen so the dof computation collapses to 0. This block exists only
-    # to satisfy the attribute access, not to configure anything.
-    for k, v in {
-        "autochi_number_points": 0,
-        "autochi_onesided": False,
-        "autochi_two_phase": False,
-        "autochi_max_valued_dof": False,
-    }.items():
-        setattr(args, k, v)
 
     # --- 2. Verification ---
     pycbc.strain.verify_strain_options(args, parser)
@@ -384,22 +171,15 @@ def main():
             engine_sample_rate=args.sample_rate,
         )
 
-        power_chisq = pycbc.vetoes.SingleDetPowerChisq(
-            args.chisq_bins, args.chisq_snr_threshold
-        )
+        veto_chain = SignalConsistencyChain.from_cli(args, bank, args.sample_rate)
 
         # --- 5. Event Manager Setup ---
         out_types = {
             "time_index": int,
             "snr": complex64,
             "sigmasq": float32,
-            "chisq": float32,
-            "chisq_dof": int,
-            "bank_chisq": float32,
-            "bank_chisq_dof": int,
-            "cont_chisq": float32,
-            "sg_chisq": float32,
             "psd_var_val": float32,
+            **veto_chain.columns,
         }
 
         out_vals_ref = dict.fromkeys(out_types)
@@ -457,8 +237,7 @@ def main():
         seg_fine_mappings = []
         seg_h_norms = []
         seg_coarse_ids = []
-        seg_chi = []
-        seg_chi_dof = []
+        seg_vetoes = []
 
         tsetup = time.time() - tstart
 
@@ -476,7 +255,7 @@ def main():
                 logger.info("Processing Segment %s", s_num)
                 t1 = time.time()
 
-                ids_local, t_idxs, snrs, tstarts, h_norm = engine.process_segment(
+                ids_local, t_idxs, snrs, _, h_norm = engine.process_segment(
                     stilde,
                     stilde.psd,
                     ref_template,
@@ -484,37 +263,44 @@ def main():
                     n_taps,
                     np.arange(len(fine_indices)),
                     valid_slice=stilde.analyze,
+                    templates=bank.table[fine_indices],
                 )
 
                 if len(ids_local) > 0:
-                    chi, chi_dof = compute_batch_chisq(
-                        ids_local,
-                        t_idxs,
-                        snrs,
-                        fine_indices,
-                        tstarts,
-                        stilde,
-                        bank,
-                        power_chisq,
-                        engine,
-                        filters_f,
-                        ref_template,
-                        args,
-                    )
+                    t_offset = -stilde.analyze.start + stilde.cumulative_index
+                    columns = {}
+                    if args.psdvar_segment is not None:
+                        columns["psd_var_val"] = pycbc.psd.find_trigger_value(
+                            psd_var,
+                            t_idxs + t_offset,
+                            args.gps_start_time,
+                            args.sample_rate,
+                        )
 
-                    t_idxs += (
-                        -stilde.analyze.start
-                        + stilde.cumulative_index
-                        - shifts[ids_local]
+                    keep, vetoes = veto_chain.values(
+                        snrs,
+                        t_idxs - shifts[ids_local],
+                        fine_indices[ids_local],
+                        engine.fine_template,
+                        engine.fine_correlation,
+                        stilde=stilde,
+                        columns=columns,
                     )
+                    ids_local, t_idxs, snrs = (
+                        ids_local[keep],
+                        t_idxs[keep],
+                        snrs[keep],
+                    )
+                    vetoes = {k: v[keep] for k, v in vetoes.items()}
+
+                    t_idxs += t_offset - shifts[ids_local]
                     seg_ids_local.append(ids_local)
                     seg_t_idxs.append(t_idxs)
                     seg_snr_sqs.append(snrs)
                     seg_fine_mappings.append(fine_indices)
                     seg_h_norms.append(h_norm)
                     seg_coarse_ids.append(coarse_idx)
-                    seg_chi.append(chi)
-                    seg_chi_dof.append(chi_dof)
+                    seg_vetoes.append(vetoes)
 
                 t2 = time.time()
                 tperf = (
@@ -535,22 +321,23 @@ def main():
             coarse_id = seg_coarse_ids[k]
             norms = seg_h_norms[k]
             mapping = seg_fine_mappings[k]
-            chi = seg_chi[k]
-            chi_dof = seg_chi_dof[k]
+            vetoes = seg_vetoes[k]
 
             for j in range(len(ids)):
                 local_idx = ids[j]
                 global_idx = mapping[local_idx]
 
                 if global_idx not in triggers_by_template:
-                    triggers_by_template[global_idx] = ([], [], [], [], [], [])
+                    triggers_by_template[global_idx] = ([], [], [], [], {})
 
                 triggers_by_template[global_idx][0].append(snrs[j])
                 triggers_by_template[global_idx][1].append(times[j])
                 triggers_by_template[global_idx][2].append(norms)
                 triggers_by_template[global_idx][3].append(coarse_id)
-                triggers_by_template[global_idx][4].append(chi[j])
-                triggers_by_template[global_idx][5].append(chi_dof[j])
+                for col, val in vetoes.items():
+                    triggers_by_template[global_idx][4].setdefault(col, []).append(
+                        val[j]
+                    )
 
         # C. Store
         for global_id, (
@@ -558,8 +345,7 @@ def main():
             time_list,
             norm,
             _coarse_id,
-            chi,
-            chi_dof,
+            vetoes,
         ) in triggers_by_template.items():
             out_vals = out_vals_ref.copy()
             out_vals["time_index"] = np.array(time_list)
@@ -568,8 +354,8 @@ def main():
 
             out_vals["snr"] = np.array(snr)
             out_vals["sigmasq"] = np.ones(len(time_list)) * norm * sigmasq_rescale
-            out_vals["chisq"] = chi
-            out_vals["chisq_dof"] = chi_dof
+            for col, val in vetoes.items():
+                out_vals[col] = np.array(val)
 
             if args.psdvar_short_segment is not None:
                 out_vals["psd_var_val"] = pycbc.psd.find_trigger_value(
@@ -578,13 +364,6 @@ def main():
                     args.gps_start_time,
                     args.sample_rate,
                 )
-
-            # Zero-fill, these are all just dummy values for now
-            dummy = zeros(len(time_list), dtype=float32)
-            out_vals["bank_chisq"] = dummy
-            out_vals["bank_chisq_dof"] = dummy
-            out_vals["cont_chisq"] = dummy
-            out_vals["sg_chisq"] = dummy
 
             event_mgr.new_template(tmplt=bank.table[global_id])
             event_mgr.add_template_events(names, [out_vals[n] for n in names])
