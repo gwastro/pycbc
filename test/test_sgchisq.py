@@ -103,6 +103,34 @@ class TestSGChisq(unittest.TestCase):
         parser.add_argument("--chisq-bins", default="16")
         self.assertFalse(SingleDetSGChisq.from_cli(parser.parse_args([])).do)
 
+    def test_overlapping_tile_subtract_signal(self):
+        sg_inband = SingleDetSGChisq(None, num_bins="16")
+        sg_inband.do = True
+        sg_inband.params = {1: "20--120"}
+
+        unsubtracted = sg_inband.values(
+            self.signal,
+            self.template,
+            self.psd,
+            self.snrv,
+            self.norm,
+            indices=self.peak,
+            overwhitened=False,
+            subtract_signal=False,
+        )
+        subtracted = sg_inband.values(
+            self.signal,
+            self.template,
+            self.psd,
+            self.snrv,
+            self.norm,
+            indices=self.peak,
+            overwhitened=False,
+            subtract_signal=True,
+        )
+        self.assertGreater(unsubtracted[0], 5.0)
+        self.assertAlmostEqual(subtracted[0], 1.0, delta=1.0)
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestSGChisq))
