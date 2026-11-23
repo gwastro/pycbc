@@ -31,7 +31,7 @@ import scipy.integrate as scipy_integrate
 from pycbc.cosmology import get_cosmology
 from scipy.interpolate import CubicSpline
 
-
+# Base redshift evolution class
 class BaseRedshiftEvolution(ABC):
     """
     Abstract Base class for redshift evolution models with Astropy unit
@@ -128,24 +128,32 @@ class BaseRedshiftEvolution(ABC):
             If None, a uniform grid from 0 to z_max is used.
         z_max_cosmo : float
             Maximum redshift for grid for cosmological interpolation.
-            Must be positive. It is different from z_max which is required 
+            Must be positive. It is different from z_max which is required
             for normalization.
         z_grid_cosmo : array_like, optional
             Custom redshift grid for cosmological functions
             (must be strictly increasing, start at 0, end at z_max).
             If None, a uniform grid from 0 to z_max is used.
         """
+
+        # Validate z_max, z_max_cosmo, num_bin,
+        if not np.isfinite(z_max) or z_max <= 0:
+            raise ValueError("z_max must be finite and positive")
+
+        if not isinstance(num_zbins, (int, np.integer)) or num_zbins < 2:
+            raise ValueError("num_zbins must be an integer >= 2")
+
+        if not np.isfinite(z_max_cosmo) or z_max_cosmo <= 0:
+            raise ValueError("z_max_cosmo must be finite and positive")
+
+        if z_max_cosmo < z_max:
+            raise ValueError("z_max_cosmo must be >= z_max")
+
         self.z_max = float(z_max)
         self.z_max_cosmo = float(z_max_cosmo)
         self.num_zbins = int(num_zbins)
 
-        # Validate z_max, num_bin, and cosmology
-        if self.z_max <= 0:
-            raise ValueError("z_max must be positive")
-
-        if self.num_zbins < 2:
-            raise ValueError("num_zbins must be at least 2")
-
+        # Validate cosmology
         if cosmology is not None:
             self.cosmology = cosmology
         else:
@@ -153,7 +161,6 @@ class BaseRedshiftEvolution(ABC):
 
         # Redshift grid (dimensionless) validation
         if z_grid is None:
-            #self._z_grid = np.linspace(1e-3, self.z_max, num_zbins)
             self._z_grid = np.linspace(0.0, self.z_max, num_zbins)
         else:
             self._z_grid = np.asarray(z_grid, dtype=float)
@@ -174,7 +181,7 @@ class BaseRedshiftEvolution(ABC):
                 raise ValueError("z_grid must end at z_max")
 
         # Differential comoving volume on grid
-        # Full-sky differential comoving volume dVc/dz = 4pi dVc/dz/dOmega
+        # Full-sky differential comoving volume dVc/dz = 4pi dVc/dz
         self._dvc_dz_grid = (
             4.0
             * np.pi
@@ -189,7 +196,8 @@ class BaseRedshiftEvolution(ABC):
         # An additional grid for the cosmological quantities
         # that need not depend on the z_max and normalization
         # is not needed.
-        self._z_grid_cosmo = np.linspace(0.0, self.z_max_cosmo, int(10*self.num_zbins))
+        self._z_grid_cosmo = \
+                np.linspace(0.0, self.z_max_cosmo, int(10*self.num_zbins))
         self._dvc_dz_grid_cosmo = (
             4.0
             * np.pi
@@ -784,6 +792,304 @@ class MadauFragos2017SFR(BaseRedshiftEvolution):
 
 sfr_madau_fragos_2017_redshift = MadauFragos2017SFR()
 
+# ---------------------------------------------
+# Classes related to delay-time distributions
+# ---------------------------------------------
+
+class BaseDelayTimeDistribution(ABC):
+    """Probability distribution of astrophysical delay times.
+
+    All numerical times are expressed in Gyr.
+    The PDF is expressed in Gyr^-1.
+    """
+
+    @property
+    @abstractmethod
+    def min_delay(self) -> float:
+        """Minimum delay time in Gyr."""
+        pass
+
+    @property
+    @abstractmethod
+    def max_delay(self) -> float:
+        """Maximum delay time in Gyr."""
+        pass
+
+    @abstractmethod
+    def pdf(self, tau: np.ndarray) -> np.ndarray:
+        """Return the normalized delay-time PDF.
+
+        Parameters
+        ----------
+        tau : array_like
+            Delay times in Gyr.
+
+        Returns
+        -------
+        ndarray
+            Probability density at tau (dimensionless, in Gyr^-1).
+        """
+        pass
+
+    def cdf(self, tau: np.ndarray) -> np.ndarray:
+        """Compute the cumulative distribution function.
+
+        Parameters
+        ----------
+        tau : array_like
+            Delay times in Gyr.
+
+        Returns
+        -------
+        ndarray
+            Cumulative probability at tau.
+        """
+        tau = np.asarray(tau, dtype=float)
+        # Use numerical integration for CDF
+        tau_vals = np.linspace(self.min_delay, self.max_delay, 1000)
+        pdf_vals = self.pdf(tau_vals)
+        cdf_vals = np.cumsum(pdf_vals) * (tau_vals[1] - tau_vals[0])
+        cdf_vals = cdf_vals / cdf_vals[-1]  # Normalize to 1
+
+        # Interpolate to get CDF at requested tau values
+        return np.interp(tau, tau_vals, cdf_vals, left=0.0, right=1.0)
+
+    def sample(self, size: int = 1, random_state: np.random.RandomState = None) -> np.ndarray:
+        """Sample delay times from the distribution.
+
+        Parameters
+        ----------
+        size : int, optional
+            Number of samples to generate. Default is 1.
+        random_state : np.random.RandomState, optional
+            Random state for reproducibility.
+
+        Returns
+        -------
+        ndarray
+            Sampled delay times in Gyr.
+        """
+        if random_state is None:
+            random_state = np.random.RandomState()
+
+        # Use inverse transform sampling
+        u = random_state.uniform(0, 1, size)
+        tau_vals = np.linspace(self.min_delay, self.max_delay, 1000)
+        cdf_vals = self.cdf(tau_vals)
+
+        return np.interp(u, cdf_vals, tau_vals)
+
+
+class PowerLawDelayDistribution(BaseDelayTimeDistribution):
+    """Power-law delay time distribution.
+
+    The PDF is defined as:
+        p(tau) ∝ tau^(-alpha) for tau_min <= tau <= tau_max
+    """
+
+    def __init__(self, td_min: float = 0.02, td_max: float = 13.0, alpha: float = 0.81):
+        """
+        Parameters
+        ----------
+        td_min : float, optional
+            Minimum delay time in Gyr. Must be positive. Default is 0.02.
+        td_max : float, optional
+            Maximum delay time in Gyr. Must be greater than td_min. Default is 13.0.
+        alpha : float, optional
+            Power-law index. Default is 0.81.
+        """
+        if not np.isfinite(td_min) or td_min <= 0:
+            raise ValueError("td_min must be finite and positive")
+        if not np.isfinite(td_max) or td_max <= td_min:
+            raise ValueError("td_max must be greater than td_min")
+        if not np.isfinite(alpha):
+            raise ValueError("alpha must be finite")
+
+        self._td_min = float(td_min)
+        self._td_max = float(td_max)
+        self._alpha = float(alpha)
+
+        # Calculate normalization constant
+        if np.isclose(self._alpha, 1.0):
+            self._norm = np.log(self._td_max / self._td_min)
+        else:
+            self._norm = (self._td_max**(1-self._alpha) - self._td_min**(1-self._alpha)) / (1-self._alpha)
+
+    @property
+    def min_delay(self) -> float:
+        return self._td_min
+
+    @property
+    def max_delay(self) -> float:
+        return self._td_max
+
+    def pdf(self, tau: np.ndarray) -> np.ndarray:
+        tau = np.asarray(tau, dtype=float)
+        result = np.zeros_like(tau, dtype=float)
+
+        valid = (tau >= self.min_delay) & (tau <= self.max_delay)
+        result[valid] = tau[valid]**(-self._alpha) / self._norm
+
+        return result
+
+
+class InverseDelayDistribution(BaseDelayTimeDistribution):
+    """Inverse power-law delay time distribution (special case of PowerLawDelayDistribution with alpha=1).
+
+    The PDF is defined as:
+        p(tau) = 1 / (tau * ln(tau_max/tau_min)) for tau_min <= tau <= tau_max
+    """
+
+    def __init__(self, td_min: float = 0.02, td_max: float = 13.0):
+        """
+        Parameters
+        ----------
+        td_min : float, optional
+            Minimum delay time in Gyr. Must be positive. Default is 0.02.
+        td_max : float, optional
+            Maximum delay time in Gyr. Must be greater than td_min. Default is 13.0.
+        """
+        if not np.isfinite(td_min) or td_min <= 0:
+            raise ValueError("td_min must be finite and positive")
+        if not np.isfinite(td_max) or td_max <= td_min:
+            raise ValueError("td_max must be greater than td_min")
+
+        self._td_min = float(td_min)
+        self._td_max = float(td_max)
+        self._norm = np.log(td_max / td_min)
+
+    @property
+    def min_delay(self) -> float:
+        return self._td_min
+
+    @property
+    def max_delay(self) -> float:
+        return self._td_max
+
+    def pdf(self, tau: np.ndarray) -> np.ndarray:
+        tau = np.asarray(tau, dtype=float)
+        result = np.zeros_like(tau, dtype=float)
+
+        valid = (tau >= self.min_delay) & (tau <= self.max_delay)
+        result[valid] = 1.0 / (tau[valid] * self._norm)
+
+        return result
+
+
+class LogNormalDelayDistribution(BaseDelayTimeDistribution):
+    """Log-normal delay time distribution.
+
+    The PDF is defined as:
+        p(tau) = 1 / (tau * sigma * sqrt(2*pi)) * exp(-(ln(tau) - ln(t_peak))^2 / (2*sigma^2))
+    """
+
+    def __init__(self, td_min: float = 0.02, td_max: float = 13.0, t_peak: float = 2.9, sigma: float = 0.2):
+        """
+        Parameters
+        ----------
+        td_min : float, optional
+            Minimum delay time in Gyr. Must be positive. Default is 0.02.
+        td_max : float, optional
+            Maximum delay time in Gyr. Must be greater than td_min. Default is 13.0.
+        t_peak : float, optional
+            Peak of the distribution in Gyr. Default is 2.9.
+        sigma : float, optional
+            Standard deviation of the log-normal distribution. Default is 0.2.
+        """
+        if not np.isfinite(td_min) or td_min <= 0:
+            raise ValueError("td_min must be finite and positive")
+        if not np.isfinite(td_max) or td_max <= td_min:
+            raise ValueError("td_max must be greater than td_min")
+        if not np.isfinite(t_peak) or t_peak <= 0:
+            raise ValueError("t_peak must be finite and positive")
+        if not np.isfinite(sigma) or sigma <= 0:
+            raise ValueError("sigma must be finite and positive")
+
+        self._td_min = float(td_min)
+        self._td_max = float(td_max)
+        self._t_peak = float(t_peak)
+        self._sigma = float(sigma)
+
+        # Calculate normalization constant using numerical integration
+        tau_vals = np.logspace(np.log10(td_min), np.log10(td_max), 1000)
+        unnormalized_pdf = 1.0 / (tau_vals * self._sigma * np.sqrt(2*np.pi)) * \
+                          np.exp(-(np.log(tau_vals) - np.log(self._t_peak))**2 / (2*self._sigma**2))
+        self._norm = np.trapz(unnormalized_pdf, tau_vals)
+
+    @property
+    def min_delay(self) -> float:
+        return self._td_min
+
+    @property
+    def max_delay(self) -> float:
+        return self._td_max
+
+    def pdf(self, tau: np.ndarray) -> np.ndarray:
+        tau = np.asarray(tau, dtype=float)
+        result = np.zeros_like(tau, dtype=float)
+
+        valid = (tau >= self.min_delay) & (tau <= self.max_delay)
+        result[valid] = (1.0 / (tau[valid] * self._sigma * np.sqrt(2*np.pi)) *
+                        np.exp(-(np.log(tau[valid]) - np.log(self._t_peak))**2 / (2*self._sigma**2))) / self._norm
+
+        return result
+
+
+class GaussianDelayDistribution(BaseDelayTimeDistribution):
+    """Gaussian delay time distribution.
+
+    The PDF is defined as:
+        p(tau) = 1 / (sigma * sqrt(2*pi)) * exp(-(tau - t_mean)^2 / (2*sigma^2))
+    """
+
+    def __init__(self, td_min: float = 0.02, td_max: float = 13.0, t_mean: float = 2.0, sigma: float = 0.3):
+        """
+        Parameters
+        ----------
+        td_min : float, optional
+            Minimum delay time in Gyr. Must be positive. Default is 0.02.
+        td_max : float, optional
+            Maximum delay time in Gyr. Must be greater than td_min. Default is 13.0.
+        t_mean : float, optional
+            Mean of the Gaussian distribution in Gyr. Default is 2.0.
+        sigma : float, optional
+            Standard deviation of the Gaussian distribution. Default is 0.3.
+        """
+        if not np.isfinite(td_min) or td_min <= 0:
+            raise ValueError("td_min must be finite and positive")
+        if not np.isfinite(td_max) or td_max <= td_min:
+            raise ValueError("td_max must be greater than td_min")
+        if not np.isfinite(t_mean) or t_mean <= 0:
+            raise ValueError("t_mean must be finite and positive")
+        if not np.isfinite(sigma) or sigma <= 0:
+            raise ValueError("sigma must be finite and positive")
+
+        self._td_min = float(td_min)
+        self._td_max = float(td_max)
+        self._t_mean = float(t_mean)
+        self._sigma = float(sigma)
+
+        # Calculate normalization constant using numerical integration
+        tau_vals = np.linspace(td_min, td_max, 1000)
+        unnormalized_pdf = np.exp(-(tau_vals - self._t_mean)**2 / (2*self._sigma**2))
+        self._norm = np.trapz(unnormalized_pdf, tau_vals)
+
+    @property
+    def min_delay(self) -> float:
+        return self._td_min
+
+    @property
+    def max_delay(self) -> float:
+        return self._td_max
+
+    def pdf(self, tau: np.ndarray) -> np.ndarray:
+        tau = np.asarray(tau, dtype=float)
+        result = np.zeros_like(tau, dtype=float)
+
+        valid = (tau >= self.min_delay) & (tau <= self.max_delay)
+        result[valid] = np.exp(-(tau[valid] - self._t_mean)**2 / (2*self._sigma**2)) / (self._sigma * np.sqrt(2*np.pi) * self._norm)
+
+        return result
 
 class SFRTimeDelayRedshift(BaseRedshiftEvolution):
     r"""
@@ -794,16 +1100,17 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
     occur after star formation, with a time delay distribution.
 
     The evolution is computed as:
-        psi(z) = \int_{z}^{z_max} SFR(z_f) * p(t_d) * dt_f/dz_f dz_f
+        psi(z) = \int_{z}^{z_max} SFR(z_f; θ_sfr) * p(t_d; θ_td) * dt_f/dz_f dz_f
 
-    where t_d = t_lookback(z_f) - t_lookback(z).
+    where t_d = t_lookback(z_f) - t_lookback(z), and θ_sfr, θ_td are parameters
+    for the SFR and time delay models respectively.
 
     Parameters
     ----------
     sfr_model : BaseRedshiftEvolution
         SFR model (e.g., MadauDickinson2014SFR).
-    time_delay_model : str
-        Time delay model: 'log_normal', 'gaussian', 'power_law', 'inverse'.
+    time_delay_model : DelayTimeDistribution
+        Time delay distribution (e.g., PowerLawDelayDistribution).
     z_max : float, optional
         Maximum redshift for integration. Default is 10.0.
     num_zbins : int, optional
@@ -814,13 +1121,9 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         Custom redshift grid.
     z_formation_max : float, optional
         Maximum formation redshift for SFR grid. Default is 20.0.
-    **kwargs
-        Additional arguments:
-        - td_min : float, optional (default: 0.02 Gyr)
-        - td_max : float, optional (default: lookback time at z_formation_max)
     """
     name = "sfr_time_delay"
-    param_names = ()
+    param_names = ()  # Will be populated dynamically based on sub-models
 
     def __init__(
         self,
@@ -830,41 +1133,24 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         num_zbins=1000,
         cosmology=None,
         z_grid=None,
-        z_formation_max=20.0,# Gyr (20 Myr)
-        td_min=0.02,
-        td_max=None,
+        z_formation_max=20.0,
     ):
+        # Validate inputs
+        if not isinstance(sfr_model, BaseRedshiftEvolution):
+            raise TypeError("sfr_model must be an instance of BaseRedshiftEvolution")
+        if not isinstance(time_delay_model, BaseDelayTimeDistribution):
+            raise TypeError("time_delay_model must be an instance of DelayTimeDistribution")
+
         super().__init__(z_max, num_zbins, cosmology, z_grid=z_grid)
         self.sfr_model = sfr_model
         self.time_delay_model = time_delay_model
 
         # Validate z_formation_max
         if z_formation_max <= z_max:
-            raise ValueError(
-                "z_formation_max must be greater than z_max"
-            )
+            raise ValueError("z_formation_max must be greater than z_max")
         self.z_formation_max = z_formation_max
 
-        # Define boundaries for time delay
-        self.td_min = float(td_min)
-
-        # By default, maximum time-delay should be the lookback time
-        # at the redshift of formation of first stars
-        self.td_max = (
-            self.cosmology.lookback_time(self.z_formation_max).to_value(u.Gyr)
-            if td_max is None
-            else float(td_max)
-        )
-
-        if not np.isfinite(self.td_min) or self.td_min <= 0:
-            raise ValueError("td_min must be finite and positive")
-
-        if not np.isfinite(self.td_max) or self.td_max <= self.td_min:
-            raise ValueError("td_max must be finite and greater than td_min")
-
         # Precompute lookback times for formation redshift grid
-        # 5000 points is enough because adaptive quad handles sharp features
-        # perfectly
         self._zf_grid = np.linspace(0, self.z_formation_max, 5000)
         self._tf_grid = self.cosmology.lookback_time(self._zf_grid).to(u.Gyr).value
 
@@ -872,131 +1158,107 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         H_z = self.cosmology.H(self._zf_grid).to(1/u.Gyr).value
         self._dt_dz_f = 1.0 / (H_z * (1.0 + self._zf_grid))
 
-        # Evaluate SFR on the grid
-        self._sfr_f = self.sfr_model(self._zf_grid)
+        # Extract parameter names from sub-models
+        self._sfr_param_names = getattr(sfr_model, 'param_names', ())
+        self._td_param_names = ()  # Delay distributions typically don't have parameters
 
-        self._update_psi_z_grid()
+        # Combine parameter names
+        self.param_names = self._sfr_param_names + self._td_param_names
 
-    def time_delay_prob(self, tau):
+        # Cache for precomputed values
+        self._psi_z_cache = {}
+        self._last_sfr_params = None
+        self._last_td_params = None
+
+    def _update_psi_z_grid(self, sfr_params=None, td_params=None):
         """
-         Compute the probability density of a time delay tau.
-
-        This method supports several standard time delay models used in
-        astrophysics.
+        Evaluate and cache the convolution over the redshift grid.
+        Uses numerical integration for all delay time models.
 
         Parameters
         ----------
-        tau : array_like
-            Time delay(s) in Gyr.
-        time_delay_model : str
-            Name of the time delay model. Must be one of:
-            - 'log_normal': Log-normal distribution
-            - 'gaussian': Gaussian distribution
-            - 'power_law': Power-law distribution
-            - 'inverse': Inverse power-law with bounded support
-
-        Returns
-        -------
-        numpy.ndarray
-            Probability density at tau (dimensionless).
-
-        Raises
-        ------
-        ValueError
-            If time_delay_model is not one of the supported types.
-
-        Notes
-        -----
-        - For 'power_law' and 'inverse', normalization is approximate and may
-          require careful handling near zero.
-        - 'inverse' model uses a bounded support from td_min to td_max.
+        sfr_params : dict, optional
+            Parameters for the SFR model.
+        td_params : dict, optional
+            Parameters for the time delay model (if supported).
         """
-        tau = np.asarray(tau, dtype=float)
-        p_t = np.zeros_like(tau)
+        # Use default parameters if not provided
+        if sfr_params is None:
+            sfr_params = {}
+        if td_params is None:
+            td_params = {}
 
-        if self.time_delay_model == "log_normal":
-            t_ln = 2.9  # Gyr
-            sigma_ln = 0.2
-            p_t = np.exp(-(np.log(tau)-np.log(t_ln))**2/(2*sigma_ln**2)) / (np.sqrt(2*np.pi)*sigma_ln)
-        elif self.time_delay_model == "gaussian":
-            t_g = 2  # Gyr
-            sigma_g = 0.3
-            p_t = np.exp(-(tau-t_g)**2/(2*sigma_g**2)) / (np.sqrt(2*np.pi)*sigma_g)
-        elif self.time_delay_model == "power_law":
-            alpha_t = 0.81
-            valid = (tau > 0)
-            p_t[valid] = tau[valid]**(-alpha_t)
-        elif self.time_delay_model == "inverse":
-            norm_const = 1/np.log(self.td_max/self.td_min)
-            valid = (tau >= self.td_min) & (tau <= self.td_max)
-            p_t[valid] = norm_const * tau[valid]**(-0.999)
-        else:
-            raise ValueError(f"Currently, 'time_delay_model' must choose from: "
-                             f"['log_normal', 'gaussian', 'power_law', 'inverse'].")
-        return p_t
+        # Check if we need to recompute (cache invalidation)
+        current_sfr_params = tuple(sorted(sfr_params.items())) if sfr_params else ()
+        current_td_params = tuple(sorted(td_params.items())) if td_params else ()
 
-    def _update_psi_z_grid(self):
-        """
-        Evaluate and cache the convolution over the redshift grid.
-        Uses fast numeric grid integration for bounded models, and exact scipy quad
-        for models with integrable singularities (power_law) or discontinuities (inverse).
-        """
+        cache_key = (current_sfr_params, current_td_params)
+        if cache_key in self._psi_z_cache:
+            self._psi_z_grid = self._psi_z_cache[cache_key]
+            return
+
         self._psi_z_grid = np.zeros(len(self._z_grid))
 
-        # Pre-compute time grid for z_grid to vectorize delay calculation
+        # Pre-compute lookback times for z_grid to vectorize delay calculation
         tm_grid = self.cosmology.lookback_time(self._z_grid).to(u.Gyr).value
 
-        if self.time_delay_model in ["power_law", "inverse"]:
-            # Use CubicSpline to ensure C2 continuous derivatives for quad convergence
-            sfr_spline = CubicSpline(self._zf_grid, self._sfr_f, extrapolate=True)
-            dt_dz_spline = CubicSpline(self._zf_grid, self._dt_dz_f, extrapolate=True)
-            tf_spline = CubicSpline(self._zf_grid, self._tf_grid, extrapolate=True)
+        # Create splines for efficient interpolation
+        # Evaluate SFR on the grid with current parameters
+        sfr_values = self.sfr_model.psi_z(self._zf_grid, **sfr_params)
+        sfr_spline = CubicSpline(self._zf_grid, sfr_values, extrapolate=True)
+        dt_dz_spline = CubicSpline(self._zf_grid, self._dt_dz_f, extrapolate=True)
+        tf_spline = CubicSpline(self._zf_grid, self._tf_grid, extrapolate=True)
 
-            if self.time_delay_model == "inverse":
-                # Ensure strictly monotonic for inverse mapping
-                valid_idx = np.argsort(self._tf_grid)
-                z_of_t_spline = CubicSpline(self._tf_grid[valid_idx], self._zf_grid[valid_idx], extrapolate=True)
+        for i, (zm, tm) in enumerate(zip(self._z_grid, tm_grid, strict=True)):
+            # Define the integrand function
+            def integrand(zf):
+                td = tf_spline(zf) - tm
+                # Time delay must be positive and within the model's range
+                if td <= 0 or td < self.time_delay_model.min_delay or td > self.time_delay_model.max_delay:
+                    return 0.0
+                # Evaluate time delay PDF with parameters if supported
+                try:
+                    p_td = self.time_delay_model.pdf(td, **td_params)
+                except TypeError:
+                    # If pdf doesn't accept **kwargs, call without parameters
+                    p_td = self.time_delay_model.pdf(td)
+                return sfr_spline(zf) * p_td * dt_dz_spline(zf)
 
-            for i, zm in enumerate(self._z_grid):
-                # Pin the singularity mathematically perfectly to the zm boundary
-                tm_local = tf_spline(zm)
+            # Set integration limits
+            z_start = zm
+            # Find the redshift where td = td_max
+            try:
+                # Use root finding to find zf where tf(zf) = tm + td_max
+                from scipy.optimize import brentq
+                def td_func(zf):
+                    return tf_spline(zf) - tm - self.time_delay_model.max_delay
+                # Check if root exists within our grid
+                if td_func(self.z_formation_max) < 0:
+                    # td_max is larger than available lookback time
+                    z_end = self.z_formation_max
+                else:
+                    z_end = brentq(td_func, zm, self.z_formation_max)
+            except (ValueError, RuntimeError):
+                # If root finding fails, use the maximum redshift
+                z_end = self.z_formation_max
 
-                z_start = zm
-                if self.time_delay_model == "inverse":
-                    t_start = tm_local + self.td_min
-                    if t_start >= self._tf_grid[-1]:
-                        self._psi_z_grid[i] = 0.0
-                        continue
-                    z_start = max(zm, float(z_of_t_spline(t_start)))
+            # Perform numerical integration
+            if z_end > z_start:
+                # Add points near the lower limit for better resolution
+                points = [z_start + 1e-8, z_start + 1e-6, z_start + 1e-4, z_start + 1e-2]
+                points = [p for p in points if p < z_end]
 
-                def integrand(zf):
-                    td = tf_spline(zf) - tm_local
-                    if td <= 0:
-                        return 0.0
-                    p_td = float(self.time_delay_prob(td, self.time_delay_model))
-                    return sfr_spline(zf) * p_td * dt_dz_spline(zf)
-
-                # Guide quad to densely sample the incredibly narrow peak near z_start
-                # when td_min is extremely small (e.g. 1e-10) to prevent missing the peak entirely.
-                pts = [z_start + 1e-8, z_start + 1e-6, z_start + 1e-4, z_start + 1e-2]
-                pts = [p for p in pts if p < self.z_formation_max]
-
-                # Catch any minor roundoff warnings from quad to keep terminal clean
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    self._psi_z_grid[i] = scipy_integrate.quad(
-                        integrand, z_start, self.z_formation_max, points=pts, limit=1000
+                    result = scipy_integrate.quad(
+                        integrand, z_start, z_end, points=points, limit=1000
                     )[0]
-        else:
-            for i, (zm, tm) in enumerate(zip(self._z_grid, tm_grid, strict=True)):
-                valid = self._zf_grid >= zm
-                zf_valid = self._zf_grid[valid]
-                tf_valid = self._tf_grid[valid]
-                td = tf_valid - tm
+                    self._psi_z_grid[i] = result
+            else:
+                self._psi_z_grid[i] = 0.0
 
-                p_td = self.time_delay_prob(td, self.time_delay_model)
-                integrand = self._sfr_f[valid] * p_td * self._dt_dz_f[valid]
-                self._psi_z_grid[i] = np.trapz(integrand, zf_valid)
+        # Cache the result
+        self._psi_z_cache[cache_key] = self._psi_z_grid.copy()
 
     def psi_z(self, redshift, **parameters):
         """
@@ -1006,6 +1268,9 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
         ----------
         redshift : array_like
             Dimensionless redshift.
+        **parameters
+            Parameters for the SFR model and time delay model.
+            Parameters are passed to the respective sub-models based on their names.
 
         Returns
         -------
@@ -1013,6 +1278,30 @@ class SFRTimeDelayRedshift(BaseRedshiftEvolution):
             Dimensionless evolution factor.
         """
         redshift = np.asarray(redshift)
+
+        # Separate SFR and time delay parameters
+        sfr_params = {}
+        td_params = {}
+
+        for key, value in parameters.items():
+            if key in self._sfr_param_names:
+                sfr_params[key] = value
+            elif key in self._td_param_names:
+                td_params[key] = value
+            else:
+                # Ignore unknown parameters with a warning
+                warnings.warn(f"Unknown parameter '{key}' ignored in SFRTimeDelayRedshift.psi_z")
+
+        # Update the psi(z) grid if parameters have changed
+        current_sfr_params = tuple(sorted(sfr_params.items())) if sfr_params else ()
+        current_td_params = tuple(sorted(td_params.items())) if td_params else ()
+
+        if (current_sfr_params != self._last_sfr_params or
+            current_td_params != self._last_td_params):
+            self._update_psi_z_grid(sfr_params, td_params)
+            self._last_sfr_params = current_sfr_params
+            self._last_td_params = current_td_params
+
         return np.interp(redshift, self._z_grid, self._psi_z_grid, right=0.0)
 
     def __call__(self, redshift, **parameters):
