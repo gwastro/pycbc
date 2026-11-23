@@ -298,7 +298,7 @@ test_cut_output.append(
 
 # Mixed limits on trigger or derived parameters; single-limit is specified first
 def traditional_chisq_lower_snr_lower_upper_test(trigs, trig_idx, **kwargs):
-    value = get_chisq_from_file_choice(trigs, 'traditional')
+    value = get_chisq_from_file_choice(trigs, "traditional")
     return all((value[trig_idx] < 10) & ((trigs["snr"][trig_idx] < 5) | (trigs["snr"][trig_idx] > 7)))
 
 test_cut_output.append(
@@ -312,7 +312,7 @@ test_cut_output.append(
 
 # Mixed limits on trigger or derived parameters; double-limit is specified first
 def snr_lower_upper_traditional_chisq_lower_test(trigs, trig_idx, **kwargs):
-    value = get_chisq_from_file_choice(trigs, 'traditional')
+    value = get_chisq_from_file_choice(trigs, "traditional")
     return all((value[trig_idx] < 10) & ((trigs["snr"][trig_idx] < 5) | (trigs["snr"][trig_idx] > 7)))
 
 test_cut_output.append(
