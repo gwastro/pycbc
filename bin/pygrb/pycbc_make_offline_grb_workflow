@@ -122,15 +122,15 @@ elif len(sciSegs.keys()) < 2 and not single_ifo:
     logging.error(msg)
     sys.exit()
 
-onSrc, offSrc, bufferSeg = _workflow.generate_triggered_segment(
+on_src, off_src, bufferSeg = _workflow.generate_triggered_segment(
     wflow, seg_dir, sciSegs
 )
 
 sciSegs = segmentlistdict(sciSegs)
-if onSrc is None:
+if on_src is None:
     logging.info("Making segment plot and exiting.")
     # `make_grb_segments_plot()` wants a single segment for fail_criterion.
-    fail_criterion = offSrc[wflow.ifos[0]][0]
+    fail_criterion = off_src[wflow.ifos[0]][0]
     make_grb_segments_plot(
         wflow, sciSegs, triggertime, triggername,
         seg_dir, fail_criterion=fail_criterion)
@@ -138,11 +138,11 @@ if onSrc is None:
 
 plot_met = make_grb_segments_plot(
     wflow, sciSegs, triggertime, triggername, seg_dir,
-    coherent_seg=offSrc[tuple(offSrc.keys())[0]][0])
+    coherent_seg=off_src[tuple(off_src.keys())[0]][0])
 segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
                            file_url=plot_met[3])
 segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
-sciSegs = offSrc
+sciSegs = off_src
 all_files.append(segs_plot)
 
 if len(sciSegs) == 1:
